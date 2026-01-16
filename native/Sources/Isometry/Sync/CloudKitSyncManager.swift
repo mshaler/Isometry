@@ -133,7 +133,6 @@ public actor CloudKitSyncManager {
 
     /// Pushes local changes to CloudKit
     private func pushChanges() async throws {
-        let state = try await localDatabase.getSyncState()
         let pendingNodes = try await localDatabase.getPendingChanges(since: 0)
 
         guard !pendingNodes.isEmpty else { return }
@@ -180,7 +179,7 @@ public actor CloudKitSyncManager {
         var changedRecords: [CKRecord] = []
         var deletedRecordIDs: [CKRecord.ID] = []
 
-        let (modificationResultsByID, deletions, changeToken) = try await database.recordZoneChanges(
+        let (modificationResultsByID, deletions, changeToken, _) = try await database.recordZoneChanges(
             inZoneWith: zoneID,
             since: self.changeToken
         )

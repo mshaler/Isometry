@@ -321,7 +321,7 @@ public actor IsometryDatabase {
         }
     }
 
-    /// Calculates node importance based on inbound edge weights
+    /// Calculates node importance based on inbound edge weights (simple centrality)
     public func nodeImportance() async throws -> [(node: Node, importance: Double)] {
         try await dbPool.read { db in
             let sql = """
@@ -338,6 +338,265 @@ public actor IsometryDatabase {
                 let importance: Double = row["importance"]
                 return (node: node, importance: importance)
             }
+        }
+    }
+
+    // MARK: - PageRank Algorithm
+
+    /// Calculates PageRank scores for all nodes using iterative power method
+    /// - Parameters:
+    ///   - dampingFactor: Probability of following a link (typically 0.85)
+    ///   - iterations: Number of iterations to converge
+    /// - Returns: Nodes with their PageRank scores, sorted by rank descending
+    public func pageRank(dampingFactor: Double = 0.85, iterations: Int = 20) async throws -> [(node: Node, rank: Double)] {
+        try await dbPool.read { db in
+            // PageRank formula: PR(n) = (1-d)/N + d * Σ(PR(m)/outDegree(m)) for all m linking to n
+            // SQLite recursive CTEs have limitations for iterative algorithms,
+            // so we use in-memory iteration for accuracy:
+            return try self.performPageRankInMemory(db: db, dampingFactor: dampingFactor, iterations: iterations)
+        }
+    }
+
+    /// In-memory PageRank implementation for accuracy
+    private nonisolated func performPageRankInMemory(db: Database, dampingFactor: Double, iterations: Int) throws -> [(node: Node, rank: Double)] {
+        // Fetch all nodes
+        let nodes = try Node.filter(Node.Columns.deletedAt == nil).fetchAll(db)
+        guard !nodes.isEmpty else { return [] }
+
+        // Build adjacency structure
+        let edges = try Edge.fetchAll(db)
+
+        // Map node IDs to indices
+        var idToIndex: [String: Int] = [:]
+        for (index, node) in nodes.enumerated() {
+            idToIndex[node.id] = index
+        }
+
+        let n = nodes.count
+        let initialRank = 1.0 / Double(n)
+
+        // Initialize ranks
+        var ranks = Array(repeating: initialRank, count: n)
+
+        // Build outbound edges and compute out-degrees
+        var outEdges: [[Int]] = Array(repeating: [], count: n)
+        var outDegree: [Int] = Array(repeating: 0, count: n)
+
+        for edge in edges {
+            guard let sourceIdx = idToIndex[edge.sourceId],
+                  let targetIdx = idToIndex[edge.targetId] else { continue }
+            outEdges[sourceIdx].append(targetIdx)
+            outDegree[sourceIdx] += 1
+        }
+
+        // Iterative PageRank
+        for _ in 0..<iterations {
+            var newRanks = Array(repeating: (1.0 - dampingFactor) / Double(n), count: n)
+
+            for sourceIdx in 0..<n {
+                guard outDegree[sourceIdx] > 0 else { continue }
+                let contribution = dampingFactor * ranks[sourceIdx] / Double(outDegree[sourceIdx])
+                for targetIdx in outEdges[sourceIdx] {
+                    newRanks[targetIdx] += contribution
+                }
+            }
+
+            // Handle dangling nodes (no outbound edges)
+            let danglingSum = zip(ranks, outDegree)
+                .filter { $0.1 == 0 }
+                .reduce(0.0) { $0 + $1.0 }
+            let danglingContribution = dampingFactor * danglingSum / Double(n)
+
+            for i in 0..<n {
+                newRanks[i] += danglingContribution
+            }
+
+            ranks = newRanks
+        }
+
+        // Combine with nodes and sort
+        var results: [(node: Node, rank: Double)] = []
+        for (index, node) in nodes.enumerated() {
+            results.append((node: node, rank: ranks[index]))
+        }
+
+        return results.sorted { $0.rank > $1.rank }
+    }
+
+    // MARK: - Dijkstra's Algorithm (Weighted Shortest Path)
+
+    /// Finds the shortest weighted path between two nodes using Dijkstra's algorithm
+    /// - Parameters:
+    ///   - fromId: Source node ID
+    ///   - toId: Target node ID
+    /// - Returns: Path as array of (node, cumulative distance), or nil if no path exists
+    public func dijkstraPath(from fromId: String, to toId: String) async throws -> [(node: Node, distance: Double)]? {
+        try await dbPool.read { db in
+            try self.performDijkstraInMemory(db: db, from: fromId, to: toId)
+        }
+    }
+
+    /// In-memory Dijkstra implementation
+    private nonisolated func performDijkstraInMemory(db: Database, from fromId: String, to toId: String) throws -> [(node: Node, distance: Double)]? {
+        // Fetch all active nodes
+        let nodes = try Node.filter(Node.Columns.deletedAt == nil).fetchAll(db)
+        guard !nodes.isEmpty else { return nil }
+
+        // Build node lookup
+        var nodeById: [String: Node] = [:]
+        for node in nodes {
+            nodeById[node.id] = node
+        }
+
+        guard nodeById[fromId] != nil, nodeById[toId] != nil else { return nil }
+
+        // Fetch all edges
+        let edges = try Edge.fetchAll(db)
+
+        // Build adjacency list with weights
+        var adjacency: [String: [(targetId: String, weight: Double)]] = [:]
+        for node in nodes {
+            adjacency[node.id] = []
+        }
+
+        for edge in edges {
+            // Outbound from source
+            adjacency[edge.sourceId]?.append((targetId: edge.targetId, weight: edge.weight))
+            // If undirected, also add reverse
+            if !edge.directed {
+                adjacency[edge.targetId]?.append((targetId: edge.sourceId, weight: edge.weight))
+            }
+        }
+
+        // Dijkstra's algorithm
+        var distances: [String: Double] = [:]
+        var previous: [String: String] = [:]
+        var visited: Set<String> = []
+
+        // Initialize
+        for node in nodes {
+            distances[node.id] = node.id == fromId ? 0 : .infinity
+        }
+
+        while visited.count < nodes.count {
+            // Find unvisited node with minimum distance
+            var minDist = Double.infinity
+            var current: String?
+
+            for (nodeId, dist) in distances where !visited.contains(nodeId) {
+                if dist < minDist {
+                    minDist = dist
+                    current = nodeId
+                }
+            }
+
+            guard let currentId = current, minDist != .infinity else { break }
+
+            // Found target
+            if currentId == toId {
+                break
+            }
+
+            visited.insert(currentId)
+
+            // Update neighbors
+            for (neighborId, weight) in adjacency[currentId] ?? [] {
+                guard !visited.contains(neighborId) else { continue }
+
+                let newDist = distances[currentId]! + weight
+                if newDist < (distances[neighborId] ?? .infinity) {
+                    distances[neighborId] = newDist
+                    previous[neighborId] = currentId
+                }
+            }
+        }
+
+        // Reconstruct path
+        guard distances[toId] != .infinity else { return nil }
+
+        var path: [(node: Node, distance: Double)] = []
+        var currentId: String? = toId
+
+        while let id = currentId, let node = nodeById[id] {
+            path.insert((node: node, distance: distances[id] ?? 0), at: 0)
+            currentId = previous[id]
+        }
+
+        return path
+    }
+
+    /// Finds shortest paths from a source to all reachable nodes
+    /// - Parameter fromId: Source node ID
+    /// - Returns: Dictionary mapping node IDs to (node, distance) tuples
+    public func dijkstraAll(from fromId: String) async throws -> [String: (node: Node, distance: Double)] {
+        try await dbPool.read { db in
+            // Fetch all active nodes
+            let nodes = try Node.filter(Node.Columns.deletedAt == nil).fetchAll(db)
+            guard !nodes.isEmpty else { return [:] }
+
+            var nodeById: [String: Node] = [:]
+            for node in nodes {
+                nodeById[node.id] = node
+            }
+
+            guard nodeById[fromId] != nil else { return [:] }
+
+            // Fetch all edges and build adjacency
+            let edges = try Edge.fetchAll(db)
+            var adjacency: [String: [(targetId: String, weight: Double)]] = [:]
+            for node in nodes {
+                adjacency[node.id] = []
+            }
+
+            for edge in edges {
+                adjacency[edge.sourceId]?.append((targetId: edge.targetId, weight: edge.weight))
+                if !edge.directed {
+                    adjacency[edge.targetId]?.append((targetId: edge.sourceId, weight: edge.weight))
+                }
+            }
+
+            // Dijkstra
+            var distances: [String: Double] = [:]
+            var visited: Set<String> = []
+
+            for node in nodes {
+                distances[node.id] = node.id == fromId ? 0 : .infinity
+            }
+
+            while visited.count < nodes.count {
+                var minDist = Double.infinity
+                var current: String?
+
+                for (nodeId, dist) in distances where !visited.contains(nodeId) {
+                    if dist < minDist {
+                        minDist = dist
+                        current = nodeId
+                    }
+                }
+
+                guard let currentId = current, minDist != .infinity else { break }
+
+                visited.insert(currentId)
+
+                for (neighborId, weight) in adjacency[currentId] ?? [] {
+                    guard !visited.contains(neighborId) else { continue }
+
+                    let newDist = distances[currentId]! + weight
+                    if newDist < (distances[neighborId] ?? .infinity) {
+                        distances[neighborId] = newDist
+                    }
+                }
+            }
+
+            // Build result
+            var results: [String: (node: Node, distance: Double)] = [:]
+            for (nodeId, distance) in distances where distance != .infinity {
+                if let node = nodeById[nodeId] {
+                    results[nodeId] = (node: node, distance: distance)
+                }
+            }
+
+            return results
         }
     }
 
@@ -369,7 +628,7 @@ public actor IsometryDatabase {
     // MARK: - Transaction Support
 
     /// Executes a block within a database transaction
-    public func transaction<T>(_ block: @Sendable (Database) throws -> T) async throws -> T {
+    public func transaction<T>(_ block: @escaping @Sendable (Database) throws -> T) async throws -> T {
         try await dbPool.write { db in
             try block(db)
         }
