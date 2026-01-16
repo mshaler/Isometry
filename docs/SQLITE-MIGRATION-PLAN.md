@@ -2,9 +2,11 @@
 
 ## Overview
 
-This document outlines the migration from sql.js (WASM + IndexedDB) to native SQLite with FTS5 full-text search, iCloud sync via CloudKit, and graph analytics using recursive CTEs.
+This document outlines the migration to native SQLite with FTS5 full-text search, iCloud sync via CloudKit, and graph analytics using recursive CTEs.
 
-## Current State
+**Key Architecture Decision**: Native apps (iOS/macOS) use **pure SQLite + CloudKit** for offline-first sync. No sql.js or IndexedDB needed—CloudKit provides automatic offline support with conflict resolution. sql.js remains only for web (if web support is required).
+
+## Current State (Web Prototype)
 
 ```
 ┌─────────────────────────────────────────┐
@@ -23,38 +25,79 @@ This document outlines the migration from sql.js (WASM + IndexedDB) to native SQ
 
 ## Target Architecture
 
+### Native Apps (iOS/macOS) — Pure SQLite + CloudKit
+
+No web technologies needed. SQLite provides full offline capability; CloudKit handles sync.
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Client Layer                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
-│  │ React Web    │  │  iOS App     │  │  macOS App           │  │
-│  │ (PWA)        │  │ (SwiftUI)    │  │  (SwiftUI/Catalyst)  │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────┘  │
-│         │                 │                      │               │
-│         ▼                 ▼                      ▼               │
+│                    Native Apps (iOS/macOS)                       │
+│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
+│  │  iOS App (SwiftUI)   │    │  macOS App (SwiftUI/Catalyst)│  │
+│  └──────────┬───────────┘    └───────────────┬──────────────┘  │
+│             │                                 │                  │
+│             ▼                                 ▼                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Unified Data Layer (Swift/TS)               │   │
+│  │              Native Data Layer (Swift)                   │   │
 │  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────────────┐  │   │
 │  │  │ Nodes   │  │ Edges   │  │  FTS5   │  │ Graph CTEs │  │   │
 │  │  └─────────┘  └─────────┘  └─────────┘  └────────────┘  │   │
 │  └──────────────────────────────────────────────────────────┘   │
 │                              │                                   │
-└──────────────────────────────┼───────────────────────────────────┘
-                               │
-┌──────────────────────────────▼───────────────────────────────────┐
-│                      Storage Layer                                │
-│  ┌──────────────────────┐         ┌──────────────────────────┐   │
-│  │   Local SQLite       │◀───────▶│      iCloud Sync         │   │
-│  │   (iOS/macOS)        │         │   (CloudKit + CKSync)    │   │
-│  │   ┌────────────────┐ │         │   ┌──────────────────┐   │   │
-│  │   │ isometry.db    │ │         │   │  CKRecord zones  │   │   │
-│  │   │ ├─ nodes       │ │         │   │  ├─ nodes        │   │   │
-│  │   │ ├─ edges       │ │         │   │  ├─ edges        │   │   │
-│  │   │ ├─ nodes_fts   │ │         │   │  └─ sync_state   │   │   │
-│  │   │ └─ sync_state  │ │         │   └──────────────────┘   │   │
-│  │   └────────────────┘ │         └──────────────────────────┘   │
-│  └──────────────────────┘                                        │
-└──────────────────────────────────────────────────────────────────┘
+│  ┌───────────────────────────▼──────────────────────────────┐   │
+│  │                    SQLite (Native)                        │   │
+│  │  ┌────────────────┐                                      │   │
+│  │  │ isometry.db    │  ✅ FTS5 full-text search           │   │
+│  │  │ ├─ nodes       │  ✅ Recursive CTEs for graphs        │   │
+│  │  │ ├─ edges       │  ✅ Full offline capability          │   │
+│  │  │ ├─ nodes_fts   │  ✅ WAL mode for performance         │   │
+│  │  │ └─ sync_state  │                                      │   │
+│  │  └────────────────┘                                      │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │              CloudKit + CKSyncEngine                      │   │
+│  │  ✅ Automatic offline queue                              │   │
+│  │  ✅ Automatic conflict resolution                        │   │
+│  │  ✅ Background sync                                      │   │
+│  │  ✅ Cross-device sync (iPhone, iPad, Mac)                │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Web App (Optional) — SQLite WASM or Online-Only
+
+If web support is needed, two options:
+
+```
+```text
+Option A: SQLite WASM + OPFS (Full Offline)
+┌─────────────────────────────────────────┐
+│           Browser (React)               │
+│  ┌─────────────┐    ┌───────────────┐  │
+│  │ SQLite WASM │───▶│     OPFS      │  │
+│  │ (official)  │    │ (persistence) │  │
+│  └─────────────┘    └───────────────┘  │
+│         │                               │
+│  ✅ FTS5 support                        │
+│  ✅ Full offline                        │
+│  ⚠️ Requires sync server for iCloud    │
+└─────────────────────────────────────────┘
+```
+
+```text
+Option B: Online-Only (Simpler)
+┌─────────────────────────────────────────┐
+│           Browser (React)               │
+│  ┌─────────────┐                       │
+│  │  REST API   │───▶ Sync Server       │
+│  └─────────────┘                       │
+│         │                               │
+│  ✅ No local storage needed             │
+│  ✅ Always in sync                      │
+│  ❌ Requires internet connection        │
+└─────────────────────────────────────────┘
 ```
 
 ---
@@ -1111,7 +1154,9 @@ public final class CloudKitSyncManager: ObservableObject {
 
 ---
 
-## Phase 4: React Web Migration
+## Phase 4: Web Support (Optional)
+
+> **Note**: This phase is only needed if web browser support is required. Native iOS/macOS apps are fully functional with just Phases 1-3 (SQLite + CloudKit).
 
 ### 4.1 API Client for Web
 
@@ -1241,14 +1286,17 @@ interface SyncResult {
 }
 ```
 
-### 4.2 Hybrid Provider (Local + API)
+### 4.2 Web Database Provider
+
+For web apps requiring offline support, use SQLite WASM with OPFS. For online-only web apps, use just the API client.
 
 ```typescript
-// src/db/HybridDatabaseProvider.tsx
+// src/db/WebDatabaseProvider.tsx
+// Web-only provider - native apps use IsometryDatabase.swift directly
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { IsometryAPIClient } from './api-client';
-import { initDatabase, getDatabase } from './init'; // Keep sql.js for offline
+// Optional: import sqlite-wasm for offline support
 
 interface HybridDatabaseContextValue {
   // State
@@ -1533,89 +1581,103 @@ export function useHybridDatabase() {
 
 ### Pre-Migration
 
-- [ ] Backup existing IndexedDB data
-- [ ] Document current API surface (`useSQLiteQuery`, `useNodes`, etc.)
 - [ ] Set up CloudKit container in Apple Developer Portal
-- [ ] Create sync server (if needed for web)
+- [ ] Enable iCloud capability in Xcode project
+- [ ] Document current React prototype API surface (for reference)
 
-### Schema Migration
+### Schema Migration (Phase 1)
 
 - [ ] Add sync metadata columns to schema
 - [ ] Create FTS5 virtual table and triggers
 - [ ] Test graph CTEs with sample data
-- [ ] Write migration script for existing data
+- [ ] Validate schema with native SQLite
 
-### iOS/macOS Implementation
+### Native Implementation (Phases 2-3)
 
-- [ ] Create `IsometryDatabase.swift`
+- [ ] Create `IsometryDatabase.swift` with FTS5 support
 - [ ] Create Swift data models (`Node`, `Edge`)
-- [ ] Implement `CloudKitSyncManager`
+- [ ] Implement `CloudKitSyncManager` with CKSyncEngine
 - [ ] Add conflict resolution UI
 - [ ] Test offline/online transitions
+- [ ] Test cross-device sync (iPhone ↔ iPad ↔ Mac)
 
-### Web Implementation
+### Web Implementation (Phase 4 - Optional)
 
-- [ ] Create API client
-- [ ] Create `HybridDatabaseProvider`
-- [ ] Update hooks to use new provider
-- [ ] Test offline fallback behavior
-- [ ] Test sync recovery
+- [ ] Decide: online-only or SQLite WASM offline support
+- [ ] Create API client (if sync server approach)
+- [ ] Create `WebDatabaseProvider`
+- [ ] Test offline fallback behavior (if applicable)
 
 ### Testing
 
-- [ ] Unit tests for graph queries
+- [ ] Unit tests for graph queries (recursive CTEs)
 - [ ] Unit tests for FTS5 search
-- [ ] Integration tests for sync
+- [ ] Integration tests for CloudKit sync
 - [ ] Conflict resolution scenarios
 - [ ] Performance benchmarks (10k, 100k nodes)
+- [ ] Airplane mode testing
 
 ### Rollout
 
-- [ ] Feature flag for gradual rollout
-- [ ] Data migration for existing users
+- [ ] TestFlight beta with CloudKit sync
 - [ ] Monitor sync success rates
 - [ ] Monitor conflict rates
+- [ ] Data migration for existing prototype users (if any)
 
 ---
 
-## Timeline Estimate
+## Phase Dependencies
 
-| Phase | Description | Dependencies |
-|-------|-------------|--------------|
-| 1 | Schema Migration | None |
-| 2 | iOS/macOS Native Layer | Phase 1 |
-| 3 | iCloud Sync | Phase 2 |
-| 4 | Web API Layer | Phase 1 |
-| 5 | Testing & Rollout | All phases |
+| Phase | Description                      | Dependencies | Required |
+|-------|----------------------------------|--------------|----------|
+| 1     | Schema Migration (FTS5 + Graph)  | None         | Yes      |
+| 2     | iOS/macOS Native Layer (Swift)   | Phase 1      | Yes      |
+| 3     | iCloud Sync (CloudKit)           | Phase 2      | Yes      |
+| 4     | Web Support                      | Phase 1      | Optional |
+| 5     | Testing & Rollout                | Phases 1-3   | Yes      |
+
+Native apps (iOS/macOS) are fully functional after Phases 1-3. Phase 4 adds optional web browser support.
 
 ---
 
 ## Decision Points
 
-### Server Architecture
+### Native Architecture (iOS/macOS)
 
-**Option A: CloudKit Only**
-- Pros: No server to maintain, Apple handles sync
-- Cons: Web requires CloudKit web services (complex), Apple ecosystem lock-in
+Decision: Pure SQLite + CloudKit
 
-**Option B: Custom Sync Server**
-- Pros: Full control, works everywhere
-- Cons: Infrastructure to maintain
+Native apps use SQLite directly with CloudKit for sync. No sql.js, no IndexedDB, no web tech.
 
-**Option C: Hybrid (CloudKit + API)**
-- Pros: Best of both worlds
-- Cons: More complex
+Why this is cleaner:
 
-**Recommendation**: Start with Option A (CloudKit only) for iOS/macOS. Add custom sync server later for web if needed.
+- **Full offline built-in**: SQLite stores all data locally; CloudKit queues changes when offline
+- **Automatic conflict resolution**: CKSyncEngine handles merge conflicts
+- **Single source of truth**: SQLite is the database; CloudKit is the sync transport
+- **Full feature support**: FTS5, recursive CTEs, WAL mode—all native SQLite features work
+- **No WASM overhead**: Native performance, smaller binary size
 
-### Offline Strategy
+### Web Architecture (If Needed)
 
-**Option A: Full Offline**
-- Keep sql.js in web for complete offline support
-- Complex sync logic
+#### Option A: SQLite WASM + OPFS (Recommended for offline)
 
-**Option B: Online-First**
-- Remove sql.js, require connection
-- Simpler, but limited offline
+- Use official SQLite WASM build with Origin Private File System
+- Full FTS5 and CTE support
+- Requires sync server to bridge to CloudKit
 
-**Recommendation**: Option A (Full Offline) - essential for a notes app.
+#### Option B: Online-Only (Simpler)
+
+- REST API to sync server
+- No local storage complexity
+- Requires internet connection
+
+Recommendation: Start with native apps (iOS/macOS) using pure SQLite + CloudKit. Add web support later if needed, likely as online-only for simplicity.
+
+### Why Not sql.js for Native?
+
+The earlier prototype used sql.js (WASM) for cross-platform consistency. However:
+
+- Native SQLite is faster and smaller
+- CloudKit provides offline queuing that sql.js+IndexedDB would need to reimplement
+- FTS5 isn't available in CDN sql.js builds
+- Recursive CTEs are slower in WASM
+- No benefit to web tech on native platforms
