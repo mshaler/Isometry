@@ -1,78 +1,81 @@
-import { useState, useEffect, useMemo } from 'react';
-import { getDatabase } from '@/db/init';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useDatabase } from '../db/DatabaseContext';
+import { rowToNode, Node } from '../types/node';
 
 interface QueryState<T> {
   data: T[] | null;
   loading: boolean;
   error: Error | null;
+  refetch: () => void;
 }
 
-/**
- * Hook for executing SQLite queries with automatic re-execution on param changes
- * @param sql SQL query string with ? placeholders
- * @param params Parameter values to bind
- * @returns Query state with data, loading, and error
- */
-export function useSQLiteQuery<T>(
+interface QueryOptions<T> {
+  enabled?: boolean;
+  transform?: (rows: Record<string, unknown>[]) => T[];
+}
+
+export function useSQLiteQuery<T = Record<string, unknown>>(
   sql: string,
-  params: any[] = []
+  params: unknown[] = [],
+  options: QueryOptions<T> = {}
 ): QueryState<T> {
-  const [state, setState] = useState<QueryState<T>>({
-    data: null,
-    loading: true,
-    error: null,
-  });
-
-  // Memoize params to prevent unnecessary re-renders
-  const paramsKey = useMemo(() => JSON.stringify(params), [params]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function executeQuery() {
-      setState(prev => ({ ...prev, loading: true, error: null }));
-
-      try {
-        const db = getDatabase();
-
-        if (!db) {
-          throw new Error('Database not initialized');
-        }
-
-        // Execute query with parameters
-        // sql.js exec returns array of result objects with columns and values
-        const results = db.exec(sql, params);
-
-        if (cancelled) return;
-
-        // Transform results to array of objects
-        if (results.length === 0) {
-          setState({ data: [] as T[], loading: false, error: null });
-          return;
-        }
-
-        const { columns, values } = results[0];
-        const data = values.map((row: unknown[]) => {
-          const obj: Record<string, unknown> = {};
-          columns.forEach((col: string, i: number) => {
-            obj[col] = row[i];
-          });
-          return obj as T;
-        });
-
-        setState({ data, loading: false, error: null });
-      } catch (error) {
-        if (!cancelled) {
-          setState({ data: null, loading: false, error: error as Error });
-        }
-      }
+  const { execute, loading: dbLoading, error: dbError } = useDatabase();
+  const { enabled = true, transform } = options;
+  
+  const [data, setData] = useState<T[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Track previous values for dependency comparison
+  const _paramsRef = useRef(params);
+  const _sqlRef = useRef(sql);
+  _paramsRef.current = params;
+  _sqlRef.current = sql;
+  
+  const fetchData = useCallback(() => {
+    if (!enabled || dbLoading) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const rows = execute<Record<string, unknown>>(sql, params);
+      const result = transform ? transform(rows) : (rows as unknown as T[]);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+      setData(null);
+    } finally {
+      setLoading(false);
     }
+  }, [execute, sql, JSON.stringify(params), enabled, dbLoading, transform]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+  
+  return {
+    data,
+    loading: loading || dbLoading,
+    error: error || dbError,
+    refetch: fetchData,
+  };
+}
 
-    executeQuery();
-    return () => {
-      cancelled = true;
-    };
-  }, [sql, paramsKey]);
-
-  return state;
+// Convenience hook for node queries
+export function useNodes(
+  whereClause: string = '1=1',
+  params: unknown[] = [],
+  options: Omit<QueryOptions<Node>, 'transform'> = {}
+): QueryState<Node> {
+  const sql = `
+    SELECT * FROM nodes 
+    WHERE ${whereClause} AND deleted_at IS NULL
+    ORDER BY modified_at DESC
+  `;
+  
+  return useSQLiteQuery<Node>(sql, params, {
+    ...options,
+    transform: (rows) => rows.map(rowToNode),
+  });
 }
