@@ -73,14 +73,14 @@ export function Toolbar() {
     },
   ];
 
-  const commandButtons = [
+  const commandButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
     { icon: FileText, label: 'New', action: () => console.log('New') },
     { icon: FolderOpen, label: 'Open', action: () => console.log('Open') },
     { icon: Save, label: 'Save', action: () => console.log('Save') },
     { icon: Download, label: 'Export', action: () => console.log('Export') },
   ];
 
-  const appLauncherButtons = [
+  const appLauncherButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
     { icon: LayoutGrid, label: 'Grid View', action: () => console.log('Grid View') },
     { icon: Layers, label: 'Dimensions', action: () => console.log('Dimensions') },
     { icon: BarChart3, label: 'Charts', action: () => console.log('Charts') },
@@ -163,35 +163,27 @@ export function Toolbar() {
           : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
       }`}>
         {commandButtons.map((button, index) => (
-          <button
+          <IconButton
             key={index}
+            icon={<button.icon className="w-5 h-5" />}
+            label={button.label}
             onClick={button.action}
-            className={`w-10 h-10 flex items-center justify-center ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#d8d8d8]'
-                : 'rounded-lg hover:bg-gray-100'
-            }`}
-            title={button.label}
-          >
-            <button.icon className="w-5 h-5" />
-          </button>
+            variant="ghost"
+            className="w-10 h-10"
+          />
         ))}
 
         <div className={theme === 'NeXTSTEP' ? 'w-[3px] h-8 bg-[#808080] mx-1' : 'w-px h-8 bg-gray-300 mx-2'} />
 
         {appLauncherButtons.map((button, index) => (
-          <button
+          <IconButton
             key={index}
+            icon={<button.icon className="w-5 h-5" />}
+            label={button.label}
             onClick={button.action}
-            className={`w-10 h-10 flex items-center justify-center ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#d8d8d8]'
-                : 'rounded-lg hover:bg-gray-100'
-            }`}
-            title={button.label}
-          >
-            <button.icon className="w-5 h-5" />
-          </button>
+            variant="ghost"
+            className="w-10 h-10"
+          />
         ))}
 
         <div className="flex-1" />
