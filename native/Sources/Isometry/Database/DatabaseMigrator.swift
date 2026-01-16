@@ -3,22 +3,27 @@ import GRDB
 
 /// Manages database schema migrations
 public struct DatabaseMigrator {
-    /// Registers all migrations and runs them against the database
-    public static func migrate(_ db: Database) throws {
+    /// Creates a configured GRDB migrator with all registered migrations
+    public static func createMigrator() -> GRDB.DatabaseMigrator {
         var migrator = GRDB.DatabaseMigrator()
 
-        // Migration 1: Initial schema (handled by schema.sql)
-        // This is a placeholder since we load schema.sql directly
+        // Migration 1: Initial schema is loaded from schema.sql
+        // Future migrations are registered here:
 
-        // Migration 2: Example future migration
+        // Example:
         // migrator.registerMigration("002_add_some_column") { db in
         //     try db.alter(table: "nodes") { t in
         //         t.add(column: "some_column", .text)
         //     }
         // }
 
-        // Apply migrations
-        try migrator.migrate(db)
+        return migrator
+    }
+
+    /// Runs migrations against a database writer (DatabasePool or DatabaseQueue)
+    public static func migrate(_ writer: some DatabaseWriter) throws {
+        let migrator = createMigrator()
+        try migrator.migrate(writer)
     }
 
     /// Returns the current schema version

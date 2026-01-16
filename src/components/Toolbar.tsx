@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3 } from 'lucide-react';
+import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, type LucideIcon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { IconButton } from '@/components/ui/buttons/IconButton';
 
 interface MenuItem {
   label?: string;

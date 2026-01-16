@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Filter, FileText, X } from 'lucide-react';
+import { Filter, FileText, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFilters } from '@/contexts/FilterContext';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { TabPanel, type Tab } from '@/components/ui/TabPanel';
+import { AccordionSection } from '@/components/ui/AccordionSection';
 
 type TabType = 'filters' | 'templates';
 
@@ -17,7 +19,6 @@ interface ColumnInfo {
 
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<TabType>('filters');
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Analytics']));
   const [activeFilterPanel, setActiveFilterPanel] = useState<string | null>(null);
   const { theme } = useTheme();
   const { filters, addFilter, removeFilter, clearFilters } = useFilters();
@@ -117,13 +118,6 @@ export function Sidebar() {
     [],
     { enabled: availableFilters.includes('Time') }
   );
-
-  const toggleSection = (title: string) => {
-    const newExpanded = new Set(expandedSections);
-    if (newExpanded.has(title)) newExpanded.delete(title);
-    else newExpanded.add(title);
-    setExpandedSections(newExpanded);
-  };
 
   const handleFilterItemClick = (item: string) => {
     if (availableFilters.includes(item)) {
@@ -264,134 +258,134 @@ export function Sidebar() {
     );
   };
 
+  // Render active filters display
+  const renderActiveFilters = () => {
+    if (filters.length === 0) return null;
+
+    return (
+      <div className={`p-2 border-b ${
+        theme === 'NeXTSTEP' ? 'border-[#808080] bg-[#b8b8b8]' : 'border-gray-200 bg-blue-50'
+      }`}>
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium">Active Filters</span>
+          <button
+            onClick={clearFilters}
+            className={`text-xs ${
+              theme === 'NeXTSTEP' ? 'text-[#404040] hover:underline' : 'text-blue-500 hover:underline'
+            }`}
+          >
+            Clear All
+          </button>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {filters.map((filter, index) => (
+            <span
+              key={index}
+              className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs ${
+                theme === 'NeXTSTEP'
+                  ? 'bg-[#d4d4d4] border border-[#808080]'
+                  : 'bg-blue-100 text-blue-700 rounded-full'
+              }`}
+            >
+              {filter.field} {filter.operator} {String(filter.value)}
+              <button
+                onClick={() => removeFilter(index)}
+                className="hover:text-red-500"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Render filter item button
+  const renderFilterItem = (item: string) => (
+    <button
+      key={item}
+      onClick={() => handleFilterItemClick(item)}
+      className={`w-full h-7 px-3 text-left text-sm ${
+        activeFilterPanel === item
+          ? theme === 'NeXTSTEP'
+            ? 'bg-black text-white'
+            : 'bg-blue-500 text-white rounded-md'
+          : theme === 'NeXTSTEP'
+            ? 'bg-[#d4d4d4] border border-[#a0a0a0] hover:bg-black hover:text-white'
+            : 'bg-white hover:bg-blue-500 hover:text-white rounded-md border border-gray-200'
+      }`}
+    >
+      {item}
+    </button>
+  );
+
+  // Render filters tab content
+  const renderFiltersContent = () => (
+    <div className="p-2">
+      {renderActiveFilters()}
+      {filterSections.map((section) => (
+        <AccordionSection
+          key={section.title}
+          title={section.title}
+          defaultExpanded={section.title === 'Analytics'}
+          className="mb-1"
+        >
+          <div className="mt-1 ml-2 space-y-0.5">
+            {section.items.map(renderFilterItem)}
+          </div>
+        </AccordionSection>
+      ))}
+      {renderFilterPanel()}
+    </div>
+  );
+
+  // Render templates tab content
+  const renderTemplatesContent = () => (
+    <div className="p-2">
+      {templateBuilders.map((builder) => (
+        <button
+          key={builder}
+          className={`w-full h-8 px-2 mb-2 flex items-center text-sm ${
+            theme === 'NeXTSTEP'
+              ? 'bg-[#a8a8a8] border-t-2 border-l-2 border-[#c8c8c8] border-b-2 border-r-2 border-b-[#505050] border-r-[#505050]'
+              : 'bg-gray-100 hover:bg-gray-200 rounded-lg'
+          }`}
+        >
+          {builder}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Define tabs for TabPanel
+  const tabs: Tab[] = [
+    {
+      id: 'filters',
+      label: 'Filters',
+      icon: <Filter className="w-4 h-4" />,
+      content: renderFiltersContent(),
+    },
+    {
+      id: 'templates',
+      label: 'Templates',
+      icon: <FileText className="w-4 h-4" />,
+      content: renderTemplatesContent(),
+    },
+  ];
+
   return (
     <div className={`w-64 h-full flex flex-col ${
       theme === 'NeXTSTEP'
         ? 'bg-[#c0c0c0] border-r-2 border-[#505050]'
         : 'bg-white/80 backdrop-blur-xl border-r border-gray-200'
     }`}>
-      {/* Tabs */}
-      <div className={theme === 'NeXTSTEP' ? 'flex border-b-2 border-[#808080]' : 'flex border-b border-gray-200'}>
-        <button
-          onClick={() => setActiveTab('filters')}
-          className={`flex-1 h-9 flex items-center justify-center gap-2 ${
-            theme === 'NeXTSTEP'
-              ? activeTab === 'filters' ? 'bg-[#d4d4d4]' : 'bg-[#b0b0b0]'
-              : activeTab === 'filters' ? 'bg-white text-blue-500 border-b-2 border-blue-500' : 'bg-gray-50 text-gray-600'
-          }`}
-        >
-          <Filter className="w-4 h-4" />
-          <span className="text-sm">Filters</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('templates')}
-          className={`flex-1 h-9 flex items-center justify-center gap-2 ${
-            theme === 'NeXTSTEP'
-              ? activeTab === 'templates' ? 'bg-[#d4d4d4]' : 'bg-[#b0b0b0]'
-              : activeTab === 'templates' ? 'bg-white text-blue-500 border-b-2 border-blue-500' : 'bg-gray-50 text-gray-600'
-          }`}
-        >
-          <FileText className="w-4 h-4" />
-          <span className="text-sm">Templates</span>
-        </button>
-      </div>
-
-      {/* Active Filters Display */}
-      {filters.length > 0 && activeTab === 'filters' && (
-        <div className={`p-2 border-b ${
-          theme === 'NeXTSTEP' ? 'border-[#808080] bg-[#b8b8b8]' : 'border-gray-200 bg-blue-50'
-        }`}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium">Active Filters</span>
-            <button
-              onClick={clearFilters}
-              className={`text-xs ${
-                theme === 'NeXTSTEP' ? 'text-[#404040] hover:underline' : 'text-blue-500 hover:underline'
-              }`}
-            >
-              Clear All
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {filters.map((filter, index) => (
-              <span
-                key={index}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs ${
-                  theme === 'NeXTSTEP'
-                    ? 'bg-[#d4d4d4] border border-[#808080]'
-                    : 'bg-blue-100 text-blue-700 rounded-full'
-                }`}
-              >
-                {filter.field} {filter.operator} {String(filter.value)}
-                <button
-                  onClick={() => removeFilter(index)}
-                  className="hover:text-red-500"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {activeTab === 'filters' && (
-          <>
-            {filterSections.map((section) => (
-              <div key={section.title} className="mb-1">
-                <button
-                  onClick={() => toggleSection(section.title)}
-                  className={`w-full h-8 px-2 flex items-center gap-2 ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#a8a8a8] border-t-2 border-l-2 border-[#c8c8c8] border-b-2 border-r-2 border-b-[#505050] border-r-[#505050]'
-                      : 'bg-gray-100 hover:bg-gray-200 rounded-lg'
-                  }`}
-                >
-                  {expandedSections.has(section.title) ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                  <span className="font-medium text-sm">{section.title}</span>
-                </button>
-                {expandedSections.has(section.title) && (
-                  <div className="mt-1 ml-2 space-y-0.5">
-                    {section.items.map((item) => (
-                      <button
-                        key={item}
-                        onClick={() => handleFilterItemClick(item)}
-                        className={`w-full h-7 px-3 text-left text-sm ${
-                          activeFilterPanel === item
-                            ? theme === 'NeXTSTEP'
-                              ? 'bg-black text-white'
-                              : 'bg-blue-500 text-white rounded-md'
-                            : theme === 'NeXTSTEP'
-                              ? 'bg-[#d4d4d4] border border-[#a0a0a0] hover:bg-black hover:text-white'
-                              : 'bg-white hover:bg-blue-500 hover:text-white rounded-md border border-gray-200'
-                        }`}
-                      >
-                        {item}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-            {renderFilterPanel()}
-          </>
-        )}
-
-        {activeTab === 'templates' && templateBuilders.map((builder) => (
-          <button
-            key={builder}
-            className={`w-full h-8 px-2 mb-2 flex items-center text-sm ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#a8a8a8] border-t-2 border-l-2 border-[#c8c8c8] border-b-2 border-r-2 border-b-[#505050] border-r-[#505050]'
-                : 'bg-gray-100 hover:bg-gray-200 rounded-lg'
-            }`}
-          >
-            {builder}
-          </button>
-        ))}
-      </div>
+      <TabPanel
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={(tabId) => setActiveTab(tabId as TabType)}
+        className="flex-1 flex flex-col"
+      />
     </div>
   );
 }
