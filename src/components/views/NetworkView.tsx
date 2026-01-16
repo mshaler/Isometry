@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useCanvasTheme } from '@/hooks/useComponentTheme';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { createColorScale, setupZoom } from '@/d3/hooks';
+import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
 
 interface EdgeData {
@@ -36,12 +39,11 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const canvasTheme = useCanvasTheme();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
   // Fetch edges
-  const { data: edges } = useSQLiteQuery<EdgeData>(
-    'SELECT * FROM edges'
-  );
+  const { data: edges } = useSQLiteQuery<EdgeData>('SELECT * FROM edges');
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || !data.length) return;
@@ -49,9 +51,11 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     const container = containerRef.current;
     const width = container.clientWidth;
     const height = container.clientHeight;
+    const themeValues = getTheme(theme as ThemeName);
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
+    svg.attr('width', width).attr('height', height);
 
     // Convert data to simulation format
     const nodes: SimNode[] = data.map(d => ({
@@ -75,14 +79,9 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
         label: e.label,
       }));
 
-    // Color scale for folders
-    const folders = Array.from(new Set(nodes.map(n => n.folder).filter(Boolean)));
-    const colorScale = d3.scaleOrdinal<string>()
-      .domain(folders as string[])
-      .range(theme === 'NeXTSTEP'
-        ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090']
-        : d3.schemeTableau10
-      );
+    // Create color scale using utility
+    const folders = Array.from(new Set(nodes.map(n => n.folder).filter(Boolean))) as string[];
+    const colorScale = createColorScale(folders, theme as ThemeName);
 
     // Create simulation
     const simulation = d3.forceSimulation<SimNode>(nodes)
@@ -95,19 +94,10 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .force('collision', d3.forceCollide().radius(30));
 
     // Main group
-    const g = svg
-      .attr('width', width)
-      .attr('height', height)
-      .append('g');
+    const g = svg.append('g');
 
-    // Add zoom behavior
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.2, 4])
-      .on('zoom', (event) => {
-        g.attr('transform', event.transform);
-      });
-
-    svg.call(zoom);
+    // Setup zoom using utility
+    setupZoom(svg, g, { scaleExtent: [0.2, 4] });
 
     // Arrow marker for directed edges
     svg.append('defs').append('marker')
@@ -119,7 +109,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('markerHeight', 6)
       .attr('orient', 'auto')
       .append('path')
-      .attr('fill', theme === 'NeXTSTEP' ? '#707070' : '#9ca3af')
+      .attr('fill', themeValues.chart.axis)
       .attr('d', 'M0,-5L10,0L0,5');
 
     // Links
@@ -128,7 +118,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .selectAll('line')
       .data(links)
       .join('line')
-      .attr('stroke', theme === 'NeXTSTEP' ? '#808080' : '#d1d5db')
+      .attr('stroke', themeValues.chart.grid)
       .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
       .attr('stroke-opacity', 0.6)
       .attr('marker-end', 'url(#arrow)');
@@ -140,7 +130,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .data(links.filter(l => l.label))
       .join('text')
       .attr('class', 'text-xs')
-      .attr('fill', theme === 'NeXTSTEP' ? '#505050' : '#6b7280')
+      .attr('fill', themeValues.text.secondary)
       .attr('text-anchor', 'middle')
       .text(d => d.label || '');
 
@@ -175,7 +165,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('fill', d => colorScale(d.folder || 'Unknown'))
       .attr('stroke', d => selectedNode === d.id
         ? (theme === 'NeXTSTEP' ? '#000000' : '#3b82f6')
-        : (theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
+        : themeValues.chart.stroke
       )
       .attr('stroke-width', d => selectedNode === d.id ? 3 : 1.5);
 
@@ -184,7 +174,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('dy', 30)
       .attr('text-anchor', 'middle')
       .attr('class', 'text-xs font-medium')
-      .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#374151')
+      .attr('fill', themeValues.chart.axisText)
       .text(d => d.name.length > 12 ? d.name.slice(0, 12) + '...' : d.name);
 
     // Node click handler
@@ -224,7 +214,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       <svg ref={svgRef} className="w-full h-full" />
       {(!edges || edges.length === 0) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className={`text-sm ${theme === 'NeXTSTEP' ? 'text-[#707070]' : 'text-gray-400'}`}>
+          <div className={`text-sm ${canvasTheme.emptyState}`}>
             No edges defined. Add relationships to see the network.
           </div>
         </div>

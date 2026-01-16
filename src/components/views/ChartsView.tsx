@@ -1,6 +1,9 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
+import { usePanelTheme, useInputTheme, useTextTheme } from '@/hooks/useComponentTheme';
+import { createColorScale, styleAxis, setupHoverEffect } from '@/d3/hooks';
+import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
 
 interface ChartsViewProps {
@@ -15,6 +18,9 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
+  const panelTheme = usePanelTheme();
+  const inputTheme = useInputTheme();
+  const textTheme = useTextTheme();
   const [chartType, setChartType] = useState<ChartType>('bar');
   const [groupBy, setGroupBy] = useState<GroupBy>('folder');
 
@@ -36,14 +42,10 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
       .sort((a, b) => b.count - a.count);
   }, [data, groupBy]);
 
-  // Color scale
+  // Color scale using utility
   const colorScale = useMemo(() => {
-    return d3.scaleOrdinal<string>()
-      .domain(groupedData.map(d => d.name))
-      .range(theme === 'NeXTSTEP'
-        ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090', '#b0b0b0']
-        : d3.schemeTableau10
-      );
+    const domain = groupedData.map(d => d.name);
+    return createColorScale(domain, theme as ThemeName);
   }, [groupedData, theme]);
 
   useEffect(() => {
@@ -53,20 +55,18 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
     const width = container.clientWidth;
     const height = container.clientHeight - 50; // Leave room for controls
     const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const themeValues = getTheme(theme as ThemeName);
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
-
-    svg
-      .attr('width', width)
-      .attr('height', height);
+    svg.attr('width', width).attr('height', height);
 
     if (chartType === 'bar') {
-      renderBarChart(svg, groupedData, width, height, margin, colorScale, theme, onNodeClick);
+      renderBarChart(svg, groupedData, width, height, margin, colorScale, theme as ThemeName, themeValues, onNodeClick);
     } else if (chartType === 'pie') {
-      renderPieChart(svg, groupedData, width, height, colorScale, theme, onNodeClick);
+      renderPieChart(svg, groupedData, width, height, colorScale, theme as ThemeName, themeValues, onNodeClick);
     } else if (chartType === 'treemap') {
-      renderTreemap(svg, groupedData, width, height, colorScale, theme, onNodeClick);
+      renderTreemap(svg, groupedData, width, height, colorScale, theme as ThemeName, themeValues, onNodeClick);
     }
 
   }, [groupedData, chartType, theme, colorScale, onNodeClick]);
@@ -74,19 +74,13 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col">
       {/* Chart controls */}
-      <div className={`h-12 flex items-center gap-4 px-4 ${
-        theme === 'NeXTSTEP' ? 'bg-[#c0c0c0]' : 'bg-gray-50'
-      }`}>
+      <div className={`h-12 flex items-center gap-4 px-4 ${panelTheme.section}`}>
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${theme === 'NeXTSTEP' ? 'text-[#404040]' : 'text-gray-600'}`}>Chart:</span>
+          <span className={textTheme.label}>Chart:</span>
           <select
             value={chartType}
             onChange={(e) => setChartType(e.target.value as ChartType)}
-            className={`h-7 px-2 text-sm ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#d4d4d4] border-2 border-[#707070]'
-                : 'bg-white border border-gray-300 rounded'
-            }`}
+            className={`h-7 px-2 text-sm ${inputTheme.select}`}
           >
             <option value="bar">Bar Chart</option>
             <option value="pie">Pie Chart</option>
@@ -95,15 +89,11 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`text-xs ${theme === 'NeXTSTEP' ? 'text-[#404040]' : 'text-gray-600'}`}>Group by:</span>
+          <span className={textTheme.label}>Group by:</span>
           <select
             value={groupBy}
             onChange={(e) => setGroupBy(e.target.value as GroupBy)}
-            className={`h-7 px-2 text-sm ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#d4d4d4] border-2 border-[#707070]'
-                : 'bg-white border border-gray-300 rounded'
-            }`}
+            className={`h-7 px-2 text-sm ${inputTheme.select}`}
           >
             <option value="folder">Folder</option>
             <option value="status">Status</option>
@@ -111,7 +101,7 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
           </select>
         </div>
 
-        <div className={`ml-auto text-xs ${theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-500'}`}>
+        <div className={`ml-auto text-xs ${textTheme.secondary}`}>
           {data.length} notes in {groupedData.length} groups
         </div>
       </div>
@@ -131,7 +121,8 @@ function renderBarChart(
   height: number,
   margin: { top: number; right: number; bottom: number; left: number },
   colorScale: d3.ScaleOrdinal<string, string>,
-  theme: string,
+  theme: ThemeName,
+  themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
 ) {
   const g = svg.append('g')
@@ -150,29 +141,18 @@ function renderBarChart(
     .range([innerHeight, 0])
     .nice();
 
-  // X-axis
+  // X-axis with theme styling
   const xAxis = g.append('g')
     .attr('transform', `translate(0, ${innerHeight})`)
     .call(d3.axisBottom(xScale));
+  styleAxis(xAxis, theme, { textRotation: -30, textAnchor: 'end' });
 
-  xAxis.selectAll('text')
-    .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
-    .attr('transform', 'rotate(-30)')
-    .attr('text-anchor', 'end');
-  xAxis.selectAll('line, path')
-    .attr('stroke', theme === 'NeXTSTEP' ? '#808080' : '#d1d5db');
+  // Y-axis with theme styling
+  const yAxis = g.append('g').call(d3.axisLeft(yScale).ticks(5));
+  styleAxis(yAxis, theme);
 
-  // Y-axis
-  const yAxis = g.append('g')
-    .call(d3.axisLeft(yScale).ticks(5));
-
-  yAxis.selectAll('text')
-    .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280');
-  yAxis.selectAll('line, path')
-    .attr('stroke', theme === 'NeXTSTEP' ? '#808080' : '#d1d5db');
-
-  // Bars
-  g.append('g')
+  // Bars with hover effect
+  const bars = g.append('g')
     .selectAll('rect')
     .data(data)
     .join('rect')
@@ -184,17 +164,12 @@ function renderBarChart(
     .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
-      // Click the first node in the group
       if (d.nodes.length > 0) {
         onNodeClick?.(d.nodes[0]);
       }
-    })
-    .on('mouseenter', function() {
-      d3.select(this).attr('opacity', 0.8);
-    })
-    .on('mouseleave', function() {
-      d3.select(this).attr('opacity', 1);
     });
+
+  setupHoverEffect(bars);
 
   // Labels
   g.append('g')
@@ -205,7 +180,7 @@ function renderBarChart(
     .attr('y', d => yScale(d.count) - 5)
     .attr('text-anchor', 'middle')
     .attr('class', 'text-xs font-medium')
-    .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#374151')
+    .attr('fill', themeValues.chart.axisText)
     .text(d => d.count);
 }
 
@@ -215,7 +190,8 @@ function renderPieChart(
   width: number,
   height: number,
   colorScale: d3.ScaleOrdinal<string, string>,
-  theme: string,
+  theme: ThemeName,
+  themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
 ) {
   const radius = Math.min(width, height) / 2 - 60;
@@ -241,7 +217,7 @@ function renderPieChart(
     .join('path')
     .attr('d', arc)
     .attr('fill', d => colorScale(d.data.name))
-    .attr('stroke', theme === 'NeXTSTEP' ? '#404040' : '#ffffff')
+    .attr('stroke', theme === 'NeXTSTEP' ? themeValues.border.dark : '#ffffff')
     .attr('stroke-width', 2)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
@@ -278,7 +254,7 @@ function renderPieChart(
       return midangle < Math.PI ? 'start' : 'end';
     })
     .attr('class', 'text-xs')
-    .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#374151')
+    .attr('fill', themeValues.chart.axisText)
     .text(d => `${d.data.name} (${d.data.count})`);
 
   // Center label
@@ -287,14 +263,14 @@ function renderPieChart(
     .attr('text-anchor', 'middle')
     .attr('dy', '-0.2em')
     .attr('class', 'text-2xl font-bold')
-    .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#374151')
+    .attr('fill', themeValues.chart.axisText)
     .text(total);
 
   g.append('text')
     .attr('text-anchor', 'middle')
     .attr('dy', '1.2em')
     .attr('class', 'text-xs')
-    .attr('fill', theme === 'NeXTSTEP' ? '#606060' : '#6b7280')
+    .attr('fill', themeValues.text.secondary)
     .text('Total');
 }
 
@@ -304,7 +280,8 @@ function renderTreemap(
   width: number,
   height: number,
   colorScale: d3.ScaleOrdinal<string, string>,
-  theme: string,
+  theme: ThemeName,
+  themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
 ) {
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
@@ -339,12 +316,12 @@ function renderTreemap(
     .join('g')
     .attr('transform', d => `translate(${(d as any).x0},${(d as any).y0})`);
 
-  cells.append('rect')
+  const rects = cells.append('rect')
     .attr('width', d => (d as any).x1 - (d as any).x0)
     .attr('height', d => (d as any).y1 - (d as any).y0)
     .attr('fill', d => colorScale((d.data as any).name))
     .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
-    .attr('stroke', theme === 'NeXTSTEP' ? '#404040' : '#ffffff')
+    .attr('stroke', theme === 'NeXTSTEP' ? themeValues.border.dark : '#ffffff')
     .attr('stroke-width', 1)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
@@ -352,20 +329,16 @@ function renderTreemap(
       if (nodes && nodes.length > 0) {
         onNodeClick?.(nodes[0]);
       }
-    })
-    .on('mouseenter', function() {
-      d3.select(this).attr('opacity', 0.8);
-    })
-    .on('mouseleave', function() {
-      d3.select(this).attr('opacity', 1);
     });
+
+  setupHoverEffect(rects);
 
   // Labels
   cells.append('text')
     .attr('x', 4)
     .attr('y', 14)
     .attr('class', 'text-xs font-medium')
-    .attr('fill', theme === 'NeXTSTEP' ? '#ffffff' : '#ffffff')
+    .attr('fill', '#ffffff')
     .text(d => {
       const name = (d.data as any).name;
       const w = (d as any).x1 - (d as any).x0;
