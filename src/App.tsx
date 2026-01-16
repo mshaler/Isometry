@@ -1,53 +1,59 @@
-import { useEffect, useState } from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from './contexts/ThemeContext';
-import { AppStateProvider } from './contexts/AppStateContext';
-import { FilterProvider } from './contexts/FilterContext';
-import { PAFVProvider } from './contexts/PAFVContext';
-import { AppLayout } from './components/AppLayout';
-import { initDatabase } from './db/init';
+import { useTheme, ThemeProvider } from './contexts/ThemeContext';
+import { DatabaseProvider } from './db/DatabaseContext';
+import { FilterProvider } from './state/FilterContext';
+import { PAFVProvider } from './state/PAFVContext';
+import { SelectionProvider } from './state/SelectionContext';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+
+// Import Figma components (when ready)
+// import { Toolbar } from './components/Toolbar';
+// import { Navigator } from './components/Navigator';
+// import { Sidebar } from './components/Sidebar';
+// import { Canvas } from './components/Canvas';
+
+function AppContent() {
+  const { theme } = useTheme();
+  
+  return (
+    <div className={`app ${theme === 'NeXTSTEP' ? 'theme-nextstep' : 'theme-modern'}`}>
+      <header className="app-header">
+        {/* <Toolbar /> */}
+        <h1 className="text-xl font-bold p-4">Isometry</h1>
+      </header>
+      
+      <main className="app-main">
+        {/* <Navigator /> */}
+        {/* <Sidebar /> */}
+        {/* <Canvas /> */}
+        <div className="p-8 text-center">
+          <p className="text-lg mb-4">🎉 Isometry is ready for development!</p>
+          <p className="text-sm text-gray-600">
+            Database, types, views, filters, and state management are all set up.
+          </p>
+          <p className="text-sm text-gray-600 mt-2">
+            Start Claude Code and run: <code className="bg-gray-100 px-2 py-1 rounded">npm run dev</code>
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
 
 function App() {
-  const [dbReady, setDbReady] = useState(false);
-  const [dbError, setDbError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    initDatabase()
-      .then(() => setDbReady(true))
-      .catch(err => setDbError(err));
-  }, []);
-
-  if (dbError) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-red-50">
-        <div className="text-red-600">
-          <h1 className="text-xl font-bold">Database Error</h1>
-          <p>{dbError.message}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!dbReady) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-gray-600">Loading database...</div>
-      </div>
-    );
-  }
-
   return (
-    <BrowserRouter>
+    <ErrorBoundary>
       <ThemeProvider>
-        <AppStateProvider>
+        <DatabaseProvider>
           <FilterProvider>
             <PAFVProvider>
-              <AppLayout />
+              <SelectionProvider>
+                <AppContent />
+              </SelectionProvider>
             </PAFVProvider>
           </FilterProvider>
-        </AppStateProvider>
+        </DatabaseProvider>
       </ThemeProvider>
-    </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -1,23 +1,26 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState } from '@/contexts/AppStateContext';
 import { useFilters } from '@/contexts/FilterContext';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
-
-interface CardData {
-  id: string;
-  name: string;
-  content: string;
-  category: string;
-  status: string;
-  priority: number;
-}
+import {
+  ListView,
+  GridView,
+  KanbanView,
+  TimelineView,
+  CalendarView,
+  ChartsView,
+  NetworkView,
+  TreeView,
+} from './views';
+import type { CardData } from '@/types/CardData';
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
-  const { activeDataset } = useAppState();
+  const { activeView, activeDataset } = useAppState();
   const { compiledQuery } = useFilters();
 
   // Query cards from SQLite with filters
@@ -26,6 +29,70 @@ export function Canvas() {
     [activeDataset.toLowerCase(), ...compiledQuery.params]
   );
 
+  const handleCardClick = useCallback((card: CardData) => {
+    setSelectedCard(card);
+    // Could open a detail panel, modal, etc.
+    console.log('Card clicked:', card);
+  }, []);
+
+  // Render the appropriate view based on activeView
+  const renderView = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-500">
+          Loading cards...
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-full text-red-500">
+          Error: {error.message}
+        </div>
+      );
+    }
+
+    if (!cards || cards.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full text-gray-400">
+          No cards found
+        </div>
+      );
+    }
+
+    switch (activeView) {
+      case 'List':
+        return <ListView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Gallery':
+      case 'Grid':
+        return <GridView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Kanban':
+        return <KanbanView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Timeline':
+        return <TimelineView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Calendar':
+        return <CalendarView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Charts':
+        return <ChartsView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Graphs':
+        return <NetworkView data={cards} onCardClick={handleCardClick} />;
+
+      case 'Tree':
+        return <TreeView data={cards} onCardClick={handleCardClick} />;
+
+      default:
+        // Default to List view
+        return <ListView data={cards} onCardClick={handleCardClick} />;
+    }
+  };
+
   return (
     <div className={`flex-1 flex flex-col m-3 overflow-hidden ${
       theme === 'NeXTSTEP'
@@ -33,54 +100,29 @@ export function Canvas() {
         : 'bg-white rounded-lg shadow-lg border border-gray-200'
     }`}>
       {/* Main Canvas Area */}
-      <div className="flex-1 overflow-auto p-4">
-        {loading && (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            Loading cards...
-          </div>
-        )}
-        {error && (
-          <div className="flex items-center justify-center h-full text-red-500">
-            Error: {error.message}
-          </div>
-        )}
-        {!loading && !error && cards && cards.length === 0 && (
-          <div className="flex items-center justify-center h-full text-gray-400">
-            No cards found
-          </div>
-        )}
-        {!loading && !error && cards && cards.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {cards.map(card => (
-              <div
-                key={card.id}
-                className={`p-4 ${
-                  theme === 'NeXTSTEP'
-                    ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070]'
-                    : 'bg-white rounded-lg shadow border border-gray-200 hover:shadow-md transition-shadow'
-                }`}
-              >
-                <h3 className="font-medium text-sm mb-1">{card.name}</h3>
-                {card.content && (
-                  <p className="text-xs text-gray-600 mb-2">{card.content}</p>
-                )}
-                <div className="flex gap-2 text-xs">
-                  <span className={`px-2 py-0.5 rounded ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#a0a0a0]'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}>{card.category}</span>
-                  <span className={`px-2 py-0.5 rounded ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#a0a0a0]'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>{card.status}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="flex-1 overflow-hidden">
+        {renderView()}
       </div>
+
+      {/* Selected Card Info (optional mini-display) */}
+      {selectedCard && (
+        <div className={`h-8 flex items-center px-3 text-xs ${
+          theme === 'NeXTSTEP'
+            ? 'bg-[#d4d4d4] border-t border-[#808080]'
+            : 'bg-gray-50 border-t border-gray-200'
+        }`}>
+          <span className="font-medium mr-2">Selected:</span>
+          <span className="truncate">{selectedCard.name}</span>
+          <button
+            onClick={() => setSelectedCard(null)}
+            className={`ml-auto px-2 ${
+              theme === 'NeXTSTEP' ? 'hover:bg-[#c0c0c0]' : 'hover:bg-gray-200 rounded'
+            }`}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Sheet Tabs */}
       <div className={theme === 'NeXTSTEP'

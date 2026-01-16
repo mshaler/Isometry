@@ -1,116 +1,140 @@
 -- ============================================================================
--- Isometry Database Schema
+-- Isometry SQLite Schema
 -- ============================================================================
--- SQLite schema for cards, edges, facets, apps, and datasets
--- Based on PAFV + LATCH + GRAPH architecture
+-- Optimized for LATCH filtering and GRAPH traversal
+-- Compatible with sql.js (browser) and SQLite.swift (native)
 -- ============================================================================
 
--- Apps table (Demo, Inbox, Projects, etc.)
-CREATE TABLE IF NOT EXISTS apps (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  description TEXT,
-  icon TEXT,
-  created TEXT DEFAULT (datetime('now')),
-  updated TEXT DEFAULT (datetime('now'))
+-- Nodes: Primary data table (cards)
+CREATE TABLE IF NOT EXISTS nodes (
+    id TEXT PRIMARY KEY,
+    node_type TEXT NOT NULL DEFAULT 'note',
+    name TEXT NOT NULL,
+    content TEXT,
+    summary TEXT,
+    
+    -- LATCH: Location
+    latitude REAL,
+    longitude REAL,
+    location_name TEXT,
+    location_address TEXT,
+    
+    -- LATCH: Time
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    modified_at TEXT NOT NULL DEFAULT (datetime('now')),
+    due_at TEXT,
+    completed_at TEXT,
+    event_start TEXT,
+    event_end TEXT,
+    
+    -- LATCH: Category
+    folder TEXT,
+    tags TEXT,  -- JSON array
+    status TEXT,
+    
+    -- LATCH: Hierarchy
+    priority INTEGER DEFAULT 0,
+    importance INTEGER DEFAULT 0,
+    sort_order INTEGER DEFAULT 0,
+    
+    -- Metadata
+    source TEXT,
+    source_id TEXT,
+    source_url TEXT,
+    deleted_at TEXT,
+    version INTEGER DEFAULT 1
 );
 
--- Datasets table (ETL, CAS, Catalog, etc.)
-CREATE TABLE IF NOT EXISTS datasets (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
-  app_id TEXT REFERENCES apps(id),
-  description TEXT,
-  created TEXT DEFAULT (datetime('now')),
-  updated TEXT DEFAULT (datetime('now'))
+-- Indexes for LATCH filtering
+CREATE INDEX IF NOT EXISTS idx_nodes_folder ON nodes(folder);
+CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at);
+CREATE INDEX IF NOT EXISTS idx_nodes_modified ON nodes(modified_at);
+CREATE INDEX IF NOT EXISTS idx_nodes_priority ON nodes(priority DESC);
+CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(node_type);
+CREATE INDEX IF NOT EXISTS idx_nodes_active ON nodes(deleted_at) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_source ON nodes(source, source_id) WHERE source IS NOT NULL;
+
+-- Full-text search
+CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
+    name, content, tags, folder,
+    content='nodes',
+    content_rowid='rowid',
+    tokenize='porter unicode61'
 );
 
--- Cards table (nodes in LPG model)
-CREATE TABLE IF NOT EXISTS cards (
-  id TEXT PRIMARY KEY,
-  dataset_id TEXT REFERENCES datasets(id),
+-- FTS sync triggers
+CREATE TRIGGER IF NOT EXISTS nodes_fts_insert AFTER INSERT ON nodes BEGIN
+    INSERT INTO nodes_fts(rowid, name, content, tags, folder)
+    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
+END;
 
-  -- Core fields
-  name TEXT NOT NULL,
-  content TEXT,
+CREATE TRIGGER IF NOT EXISTS nodes_fts_delete AFTER DELETE ON nodes BEGIN
+    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, tags, folder)
+    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
+END;
 
-  -- LATCH: Location
-  location TEXT,
-  latitude REAL,
-  longitude REAL,
+CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes BEGIN
+    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, tags, folder)
+    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
+    INSERT INTO nodes_fts(rowid, name, content, tags, folder)
+    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
+END;
 
-  -- LATCH: Alphabet (name is used for sorting)
-
-  -- LATCH: Time
-  created TEXT DEFAULT (datetime('now')),
-  updated TEXT DEFAULT (datetime('now')),
-  due TEXT,
-
-  -- LATCH: Category
-  category TEXT,
-  status TEXT DEFAULT 'active',
-  tags TEXT, -- JSON array
-
-  -- LATCH: Hierarchy
-  priority INTEGER DEFAULT 3,
-  parent_id TEXT REFERENCES cards(id),
-
-  -- Additional metadata
-  metadata TEXT -- JSON object
-);
-
--- Edges table (relationships in LPG model)
+-- Edges: Relationships (GRAPH)
 CREATE TABLE IF NOT EXISTS edges (
-  id TEXT PRIMARY KEY,
-  dataset_id TEXT REFERENCES datasets(id),
-
-  source_id TEXT NOT NULL REFERENCES cards(id),
-  target_id TEXT NOT NULL REFERENCES cards(id),
-
-  -- Edge type/label
-  type TEXT NOT NULL DEFAULT 'link',
-
-  -- Edge properties
-  weight REAL DEFAULT 1.0,
-  label TEXT,
-  metadata TEXT, -- JSON object
-
-  created TEXT DEFAULT (datetime('now')),
-  updated TEXT DEFAULT (datetime('now'))
+    id TEXT PRIMARY KEY,
+    edge_type TEXT NOT NULL,  -- LINK, NEST, SEQUENCE, AFFINITY
+    source_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    target_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    label TEXT,
+    weight REAL DEFAULT 1.0,
+    directed INTEGER DEFAULT 1,
+    sequence_order INTEGER,
+    channel TEXT,
+    timestamp TEXT,
+    subject TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(source_id, target_id, edge_type)
 );
 
--- Facets table (available facets per dataset for PAFV)
+CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, edge_type);
+CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, edge_type);
+
+-- Facets: Available filtering dimensions
 CREATE TABLE IF NOT EXISTS facets (
-  id TEXT PRIMARY KEY,
-  dataset_id TEXT REFERENCES datasets(id),
-
-  name TEXT NOT NULL,
-  field TEXT NOT NULL, -- maps to cards column or metadata key
-  axis TEXT NOT NULL, -- LATCH axis: location, alphabet, time, category, hierarchy
-
-  -- Display config
-  label TEXT,
-  icon TEXT,
-  color TEXT,
-
-  -- Facet options for category axis
-  options TEXT, -- JSON array of valid values
-
-  created TEXT DEFAULT (datetime('now'))
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    facet_type TEXT NOT NULL,
+    axis TEXT NOT NULL,  -- L, A, T, C, H
+    source_column TEXT NOT NULL,
+    options TEXT,
+    icon TEXT,
+    color TEXT,
+    enabled INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0
 );
 
--- Indexes for common queries
-CREATE INDEX IF NOT EXISTS idx_cards_dataset ON cards(dataset_id);
-CREATE INDEX IF NOT EXISTS idx_cards_category ON cards(category);
-CREATE INDEX IF NOT EXISTS idx_cards_status ON cards(status);
-CREATE INDEX IF NOT EXISTS idx_cards_priority ON cards(priority);
-CREATE INDEX IF NOT EXISTS idx_cards_created ON cards(created);
-CREATE INDEX IF NOT EXISTS idx_cards_parent ON cards(parent_id);
+INSERT OR IGNORE INTO facets (id, name, facet_type, axis, source_column) VALUES
+    ('folder', 'Folder', 'select', 'C', 'folder'),
+    ('tags', 'Tags', 'multi_select', 'C', 'tags'),
+    ('status', 'Status', 'select', 'C', 'status'),
+    ('priority', 'Priority', 'number', 'H', 'priority'),
+    ('created', 'Created', 'date', 'T', 'created_at'),
+    ('modified', 'Modified', 'date', 'T', 'modified_at'),
+    ('due', 'Due Date', 'date', 'T', 'due_at'),
+    ('name', 'Name', 'text', 'A', 'name'),
+    ('location', 'Location', 'location', 'L', 'location_name');
 
-CREATE INDEX IF NOT EXISTS idx_edges_dataset ON edges(dataset_id);
-CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id);
-CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id);
-CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(type);
+-- Settings: User preferences
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 
-CREATE INDEX IF NOT EXISTS idx_facets_dataset ON facets(dataset_id);
-CREATE INDEX IF NOT EXISTS idx_facets_axis ON facets(axis);
+INSERT OR IGNORE INTO settings (key, value) VALUES
+    ('theme', 'NeXTSTEP'),
+    ('sidebar_collapsed', 'false'),
+    ('right_sidebar_collapsed', 'false'),
+    ('last_app', 'notes'),
+    ('last_view', 'grid');
