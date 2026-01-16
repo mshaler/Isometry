@@ -129,6 +129,7 @@ struct MacOSNodeListView: View {
     @State private var nodes: [Node] = []
     @State private var isLoading = true
     @State private var sortOrder = [KeyPathComparator(\Node.modifiedAt, order: .reverse)]
+    @State private var selectedNodeId: String?
 
     let folder: String?
     let searchText: String
@@ -142,7 +143,7 @@ struct MacOSNodeListView: View {
             } else if nodes.isEmpty {
                 MacOSEmptyListView(searchText: searchText)
             } else {
-                Table(nodes, selection: $selectedNode, sortOrder: $sortOrder) {
+                Table(nodes, selection: $selectedNodeId, sortOrder: $sortOrder) {
                     TableColumn("Name", value: \.name) { node in
                         HStack {
                             Image(systemName: iconForNode(node))
@@ -153,7 +154,7 @@ struct MacOSNodeListView: View {
                     }
                     .width(min: 150, ideal: 200)
 
-                    TableColumn("Folder", value: \.folder ?? "") { node in
+                    TableColumn("Folder") { node in
                         Text(node.folder ?? "—")
                             .foregroundStyle(.secondary)
                     }
@@ -175,6 +176,9 @@ struct MacOSNodeListView: View {
                 .tableStyle(.inset(alternatesRowBackgrounds: true))
                 .onChange(of: sortOrder) { _, newOrder in
                     nodes.sort(using: newOrder)
+                }
+                .onChange(of: selectedNodeId) { _, newId in
+                    selectedNode = nodes.first { $0.id == newId }
                 }
             }
         }
@@ -240,7 +244,10 @@ struct MacOSNodeDetailView: View {
                 // Metadata bar
                 HStack(spacing: 16) {
                     Label(node.folder ?? "No Folder", systemImage: "folder")
-                    Label(node.modifiedAt, format: .dateTime)
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                        Text(node.modifiedAt, style: .relative)
+                    }
                     if node.priority > 0 {
                         PriorityBadge(priority: node.priority)
                     }
@@ -426,17 +433,7 @@ struct PriorityBadge: View {
     }
 }
 
-struct LoadingView: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            ProgressView()
-                .scaleEffect(1.5)
-            Text("Loading database...")
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
+// LoadingView is defined in ContentView.swift
 
 // MARK: - Preview
 
