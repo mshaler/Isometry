@@ -1,9 +1,19 @@
 # Isometry - Claude Code Context
 
 ## Quick Start
+
+### React Prototype (for rapid UI iteration)
+
 ```bash
 npm install
 npm run dev
+```
+
+### Native iOS/macOS (production target)
+
+```bash
+cd ios
+open Package.swift  # Opens in Xcode
 ```
 
 ## Architecture
@@ -12,13 +22,26 @@ npm run dev
 - **GRAPH**: Links, Nesting, Sequence (connections)
 
 ## Tech Stack
+
+### React Prototype
+
 - React 18 + TypeScript
 - D3.js for visualization
-- sql.js (SQLite in browser)
+- sql.js (SQLite in browser) - dev only
 - Tailwind CSS
 - Vite
 
+### Native Apps (iOS/macOS)
+
+- Swift 5.9+ / SwiftUI
+- GRDB.swift (SQLite wrapper)
+- Native SQLite with FTS5, recursive CTEs
+- CloudKit for sync
+
 ## Key Files
+
+### React Prototype Files
+
 - `src/types/` - All TypeScript interfaces
 - `src/db/` - SQLite schema, init, context
 - `src/hooks/` - useSQLiteQuery, useD3, etc.
@@ -27,15 +50,30 @@ npm run dev
 - `src/filters/` - Filter compiler (LATCH → SQL)
 - `docs/` - Architecture docs, gap analysis
 
+### Native iOS/macOS Files
+
+- `ios/Sources/Isometry/Database/` - IsometryDatabase actor, migrations
+- `ios/Sources/Isometry/Models/` - Node, Edge, SyncState (Codable, Sendable)
+- `ios/Sources/Isometry/Sync/` - CloudKitSyncManager actor
+- `ios/Sources/Isometry/Views/` - SwiftUI views
+- `ios/Sources/Isometry/Resources/schema.sql` - Full schema with FTS5
+
 ## Current Phase
-Phase 1: Data Pipeline (MVP)
-- [x] SQLite schema
-- [x] Type definitions
+
+Phase 2: Native Implementation
+
+- [x] SQLite schema (React + Native)
+- [x] Type definitions (TypeScript + Swift)
 - [x] Database initialization
 - [x] Sample data
 - [x] Provider hierarchy
-- [ ] Canvas D3 rendering
-- [ ] View switching
+- [x] Native iOS project structure
+- [x] Swift Actor database layer
+- [x] Graph query CTEs
+- [x] CloudKit sync manager
+- [ ] macOS-specific UI adaptations
+- [ ] Canvas D3 rendering (React)
+- [ ] View switching (React)
 
 ## Important Docs
 1. `docs/cardboard-architecture-truth.md` - Core concepts

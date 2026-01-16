@@ -1,7 +1,7 @@
 /**
- * cb-card Component Tests
+ * iso-card Component Tests
  *
- * TDD tests for CardBoard card D3 component.
+ * TDD tests for Isometry card D3 component.
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';

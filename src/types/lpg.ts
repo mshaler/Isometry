@@ -1,5 +1,5 @@
 /**
- * CardBoard LPG Types - Labeled Property Graph
+ * Isometry LPG Types - Labeled Property Graph
  *
  * Core types aligned with PAFV + LATCH + GRAPH architecture.
  * Includes adapters for bidirectional conversion with Isometry's Node type.
@@ -15,8 +15,15 @@ import type { Node, Edge, NodeType as IsometryNodeType } from './node';
 // LATCH Types
 // ============================================
 
-/** The five fundamental organizing axes (full names for CardBoard D3 components) */
-export type CardBoardLATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarchy';
+/**
+ * LATCH axis types for D3 component positioning.
+ * Uses full names: location, alphabet, time, category, hierarchy
+ * (Different from pafv.ts LATCHAxis which uses single letters: L, A, T, C, H)
+ */
+export type D3LATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarchy';
+
+/** @deprecated Use D3LATCHAxis instead */
+export type CardBoardLATCHAxis = D3LATCHAxis;
 
 /** LATCH coordinates for any Value (Node or Edge) */
 export interface LATCHCoordinates {
@@ -57,8 +64,8 @@ export interface BaseValue {
   latch: LATCHCoordinates;
 }
 
-/** Node types in CardBoard (capitalized) */
-export type CardBoardNodeType =
+/** LPG Node types (capitalized display names) */
+export type LPGNodeType =
   | 'Task'
   | 'Note'
   | 'Person'
@@ -67,11 +74,14 @@ export type CardBoardNodeType =
   | 'Resource'
   | 'Custom';
 
+/** @deprecated Use LPGNodeType instead */
+export type CardBoardNodeType = LPGNodeType;
+
 /** A Node value - entities like tasks, people, projects */
 export interface NodeValue extends BaseValue {
   type: 'node';
   /** Classification of the node */
-  nodeType: CardBoardNodeType;
+  nodeType: LPGNodeType;
   /** Display name */
   name: string;
   /** Rich text content (markdown) */
@@ -120,8 +130,8 @@ export function isEdge(value: CardValue): value is EdgeValue {
 // Type Mapping
 // ============================================
 
-/** Map Isometry nodeType (lowercase) to CardBoard nodeType (capitalized) */
-const nodeTypeToCardBoard: Record<IsometryNodeType, CardBoardNodeType> = {
+/** Map Isometry nodeType (lowercase) to LPG nodeType (capitalized) */
+const nodeTypeToLPG: Record<IsometryNodeType, LPGNodeType> = {
   task: 'Task',
   note: 'Note',
   contact: 'Person',
@@ -130,8 +140,8 @@ const nodeTypeToCardBoard: Record<IsometryNodeType, CardBoardNodeType> = {
   resource: 'Resource',
 };
 
-/** Map CardBoard nodeType back to Isometry */
-const nodeTypeToIsometry: Record<CardBoardNodeType, IsometryNodeType> = {
+/** Map LPG nodeType back to Isometry */
+const nodeTypeToIsometry: Record<LPGNodeType, IsometryNodeType> = {
   Task: 'task',
   Note: 'note',
   Person: 'contact',
@@ -142,11 +152,11 @@ const nodeTypeToIsometry: Record<CardBoardNodeType, IsometryNodeType> = {
 };
 
 // ============================================
-// Adapters: Isometry → CardBoard
+// Adapters: Isometry Node → LPG NodeValue
 // ============================================
 
 /**
- * Convert Isometry Node to CardBoard NodeValue
+ * Convert Isometry Node to LPG NodeValue
  */
 export function nodeToCardValue(node: Node): NodeValue {
   // Build location
@@ -168,7 +178,7 @@ export function nodeToCardValue(node: Node): NodeValue {
   return {
     id: node.id,
     type: 'node',
-    nodeType: nodeTypeToCardBoard[node.nodeType] || 'Custom',
+    nodeType: nodeTypeToLPG[node.nodeType] || 'Custom',
     name: node.name,
     content: node.content || undefined,
     createdAt: new Date(node.createdAt),
@@ -194,7 +204,7 @@ export function nodeToCardValue(node: Node): NodeValue {
 }
 
 /**
- * Convert Isometry Edge to CardBoard EdgeValue
+ * Convert Isometry Edge to LPG EdgeValue
  */
 export function edgeToCardValue(edge: Edge): EdgeValue {
   return {
@@ -220,11 +230,11 @@ export function edgeToCardValue(edge: Edge): EdgeValue {
 }
 
 // ============================================
-// Adapters: CardBoard → Isometry
+// Adapters: LPG NodeValue → Isometry Node
 // ============================================
 
 /**
- * Convert CardBoard NodeValue back to Isometry Node
+ * Convert LPG NodeValue back to Isometry Node
  */
 export function cardValueToNode(value: NodeValue): Node {
   // Extract location
@@ -294,7 +304,7 @@ export function cardValueToNode(value: NodeValue): Node {
  */
 export function getLATCHValue(
   card: CardValue,
-  axis: CardBoardLATCHAxis
+  axis: D3LATCHAxis
 ): string | string[] | number | Date | [number, number] | undefined {
   return card.latch[axis];
 }
@@ -304,32 +314,44 @@ export function getLATCHValue(
 // ============================================
 
 /** How LATCH axes map to visual planes */
-export interface CardBoardViewProjection {
+export interface ViewProjection {
   /** Axis mapped to horizontal (x) plane */
-  xAxis: CardBoardLATCHAxis;
+  xAxis: D3LATCHAxis;
   /** Axis mapped to vertical (y) plane */
-  yAxis: CardBoardLATCHAxis;
+  yAxis: D3LATCHAxis;
   /** Optional axis mapped to depth (z) plane - for stacking/layering */
-  zAxis?: CardBoardLATCHAxis;
+  zAxis?: D3LATCHAxis;
 }
 
-/** Available CardBoard view types (includes 'chart', superset of Isometry's ViewType) */
-export type CardBoardViewType = 'grid' | 'kanban' | 'network' | 'timeline' | 'calendar' | 'list' | 'tree' | 'chart';
+/** @deprecated Use ViewProjection instead */
+export type CardBoardViewProjection = ViewProjection;
 
-/** View configuration for CardBoard D3 components */
-export interface CardBoardViewConfig {
-  type: CardBoardViewType;
-  projection: CardBoardViewProjection;
+/**
+ * D3 view types for Isometry visualizations.
+ * (Extends view.ts ViewType with additional chart type)
+ */
+export type D3ViewType = 'grid' | 'kanban' | 'network' | 'timeline' | 'calendar' | 'list' | 'tree' | 'chart';
+
+/** @deprecated Use D3ViewType instead */
+export type CardBoardViewType = D3ViewType;
+
+/** View configuration for Isometry D3 components */
+export interface ViewConfig {
+  type: D3ViewType;
+  projection: ViewProjection;
   /** View-specific options */
   options?: Record<string, unknown>;
 }
+
+/** @deprecated Use ViewConfig instead */
+export type CardBoardViewConfig = ViewConfig;
 
 // ============================================
 // Event Types
 // ============================================
 
-/** CardBoard custom event */
-export interface CardboardEvent<TData = unknown> {
+/** Isometry custom event */
+export interface IsometryEvent<TData = unknown> {
   /** Event type name */
   type: string;
   /** The CardValue that triggered the event */
@@ -340,8 +362,11 @@ export interface CardboardEvent<TData = unknown> {
   originalEvent?: Event;
 }
 
+/** @deprecated Use IsometryEvent instead */
+export type CardboardEvent<TData = unknown> = IsometryEvent<TData>;
+
 /** Event handler function */
-export type EventHandler<TData = unknown> = (event: CardboardEvent<TData>) => void;
+export type EventHandler<TData = unknown> = (event: IsometryEvent<TData>) => void;
 
 // ============================================
 // Component Types

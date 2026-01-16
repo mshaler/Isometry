@@ -4,5 +4,5 @@ export * from './filter';
 export * from './view';
 export * from './pafv';
 
-// CardBoard LPG types
+// Isometry LPG types
 export * from './lpg';

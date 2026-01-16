@@ -1,14 +1,14 @@
 /**
- * GridViewV2 - CardBoard-powered Grid View
+ * GridViewV2 - Isometry-powered Grid View
  *
- * Proof-of-concept view using the new CardBoard D3 component patterns:
+ * Proof-of-concept view using Isometry D3 component patterns:
  * - D3ViewWrapper for React-D3 bridging
- * - cb-canvas for canvas structure
+ * - iso-canvas for canvas structure
  * - CSS custom properties for theming
  * - LATCH data adapters
  *
  * Note: This view uses SVG-based card rendering. For HTML-based cards
- * with the full cb-card component, use a foreignObject or overlay layer.
+ * with the full iso-card component, use a foreignObject or overlay layer.
  */
 
 import { useCallback, useMemo } from 'react';
@@ -83,7 +83,7 @@ export function GridViewV2({ data, onNodeClick }: GridViewV2Props) {
   const xAxis = wells.xRows[0]?.id || 'folder';
   const yAxis = wells.yColumns[0]?.id || 'priority';
 
-  // Convert Node[] to NodeValue[] for CardBoard components
+  // Convert Node[] to NodeValue[] for Isometry D3 components
   const cardData = useMemo(() => data.map(nodeToCardValue), [data]);
 
   // Create lookup map from NodeValue.id back to Node for click handling

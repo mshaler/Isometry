@@ -1,14 +1,14 @@
 /**
- * cb-canvas - CardBoard Canvas Component
+ * iso-canvas - Isometry Canvas Component
  *
  * Root container for D3 visualizations with zoom/pan support.
- * Follows factory + closure + fluent API pattern from CardBoard.
+ * Follows factory + closure + fluent API pattern.
  */
 
 import * as d3 from 'd3';
 import { createAccessor, cx } from '../factory';
 import type {
-  CardBoardViewType,
+  D3ViewType,
   BackgroundPattern,
   CanvasDimensions,
   CanvasPadding,
@@ -20,11 +20,11 @@ import type {
 
 /** Canvas component props */
 interface CanvasProps {
-  viewType: CardBoardViewType;
+  viewType: D3ViewType;
   background: BackgroundPattern;
   zoomable: boolean;
   padding: CanvasPadding;
-  [key: string]: CardBoardViewType | BackgroundPattern | boolean | CanvasPadding;
+  [key: string]: D3ViewType | BackgroundPattern | boolean | CanvasPadding;
 }
 
 /** D3 selection type for canvas container */
@@ -178,7 +178,7 @@ export function cbCanvas() {
   // Fluent API - Accessors
   // ============================================
 
-  canvas.viewType = createAccessor<typeof canvas, CardBoardViewType>(
+  canvas.viewType = createAccessor<typeof canvas, D3ViewType>(
     canvas,
     props,
     'viewType'

@@ -1,8 +1,8 @@
 /**
  * D3ViewWrapper - React-D3 Bridge Component
  *
- * React wrapper that bridges to cb-canvas for D3 visualizations.
- * React owns the container, D3 (via cb-canvas) owns the visualization.
+ * React wrapper that bridges to iso-canvas for D3 visualizations.
+ * React owns the container, D3 (via iso-canvas) owns the visualization.
  */
 
 import { useEffect, useRef } from 'react';
@@ -11,7 +11,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cbCanvas, type CbCanvas } from './cb-canvas';
 import type {
   CardValue,
-  CardBoardViewType,
+  D3ViewType,
   BackgroundPattern,
   CanvasDimensions,
   CanvasPadding,
@@ -39,7 +39,7 @@ export interface D3ViewWrapperProps<T extends CardValue = CardValue> {
   /** Data to render */
   data: T[];
   /** View type for cb-canvas configuration */
-  viewType: CardBoardViewType;
+  viewType: D3ViewType;
   /** Render function that receives D3 context */
   renderContent: (
     contentArea: ContentAreaSelection,

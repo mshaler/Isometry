@@ -1,13 +1,13 @@
 /**
- * cb-card - CardBoard Card Component
+ * iso-card - Isometry Card Component
  *
  * D3 component for rendering cards using the reusable chart pattern.
- * Follows factory + closure + fluent API pattern from CardBoard.
+ * Follows factory + closure + fluent API pattern.
  */
 
 import * as d3 from 'd3';
 import { createAccessor, cx } from '../factory';
-import type { NodeValue, CardVariant, Size, CardboardEvent } from '@/types/lpg';
+import type { NodeValue, CardVariant, Size, IsometryEvent } from '@/types/lpg';
 
 // ============================================
 // Types
@@ -24,14 +24,14 @@ interface CardProps {
 
 /** Card event types */
 interface CardEvents {
-  click: (event: CardboardEvent<{ id: string }>) => void;
-  dblclick: (event: CardboardEvent<{ id: string }>) => void;
-  select: (event: CardboardEvent<{ id: string; selected: boolean }>) => void;
-  hover: (event: CardboardEvent<{ id: string; hovering: boolean }>) => void;
+  click: (event: IsometryEvent<{ id: string }>) => void;
+  dblclick: (event: IsometryEvent<{ id: string }>) => void;
+  select: (event: IsometryEvent<{ id: string; selected: boolean }>) => void;
+  hover: (event: IsometryEvent<{ id: string; hovering: boolean }>) => void;
 }
 
-/** D3 selection type for card */
-type CardSelection = d3.Selection<HTMLDivElement, NodeValue, HTMLElement, unknown>;
+/** D3 selection type for card - uses BaseType for parent flexibility */
+type CardSelection = d3.Selection<HTMLDivElement, NodeValue, d3.BaseType, unknown>;
 
 // ============================================
 // Default Props
@@ -132,7 +132,7 @@ export function cbCard() {
       if (props.interactive) {
         cardEl
           .on('click', function (event) {
-            const cbEvent: CardboardEvent<{ id: string }> = {
+            const cbEvent: IsometryEvent<{ id: string }> = {
               type: 'click',
               target: d,
               data: { id: d.id },
@@ -142,7 +142,7 @@ export function cbCard() {
             events.click?.(cbEvent);
 
             // Also trigger select
-            const selectEvent: CardboardEvent<{ id: string; selected: boolean }> = {
+            const selectEvent: IsometryEvent<{ id: string; selected: boolean }> = {
               type: 'select',
               target: d,
               data: { id: d.id, selected: true },
@@ -151,7 +151,7 @@ export function cbCard() {
             events.select?.(selectEvent);
           })
           .on('dblclick', function (event) {
-            const cbEvent: CardboardEvent<{ id: string }> = {
+            const cbEvent: IsometryEvent<{ id: string }> = {
               type: 'dblclick',
               target: d,
               data: { id: d.id },
@@ -160,7 +160,7 @@ export function cbCard() {
             events.dblclick?.(cbEvent);
           })
           .on('mouseenter', function (event) {
-            const cbEvent: CardboardEvent<{ id: string; hovering: boolean }> = {
+            const cbEvent: IsometryEvent<{ id: string; hovering: boolean }> = {
               type: 'hover',
               target: d,
               data: { id: d.id, hovering: true },
@@ -169,7 +169,7 @@ export function cbCard() {
             events.hover?.(cbEvent);
           })
           .on('mouseleave', function (event) {
-            const cbEvent: CardboardEvent<{ id: string; hovering: boolean }> = {
+            const cbEvent: IsometryEvent<{ id: string; hovering: boolean }> = {
               type: 'hover',
               target: d,
               data: { id: d.id, hovering: false },
