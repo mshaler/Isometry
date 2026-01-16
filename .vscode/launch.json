@@ -1,0 +1,91 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Launch Chrome",
+      "url": "http://localhost:5173",
+      "webRoot": "${workspaceFolder}/src"
+    }
+  ]
+}
+EXT_EOF
+
+echo "  ✓ Created .vscode/launch.json"
+
+# Create tasks.json
+cat > "$PROJECT_PATH/.vscode/tasks.json" << 'TASKS_EOF'
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "test",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Claude Code",
+      "type": "shell",
+      "command": "claude",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
+TASKS_EOF
+
+echo "  ✓ Created .vscode/tasks.json"
+
+echo ""
+echo -e "${YELLOW}Opening VS Code...${NC}"
+
+# Open VS Code in the project directory
+code "$PROJECT_PATH"
+
+echo ""
+echo -e "${GREEN}============================================================================${NC}"
+echo -e "${GREEN}  VS Code Launched!${NC}"
+echo -e "${GREEN}============================================================================${NC}"
+echo ""
+echo -e "Project opened: ${BLUE}$PROJECT_PATH${NC}"
+echo ""
+echo -e "${YELLOW}To start Claude Code:${NC}"
+echo ""
+echo "  Option 1: Open integrated terminal (Ctrl+\`) and run:"
+echo -e "           ${BLUE}claude${NC}"
+echo ""
+echo "  Option 2: Run task 'Claude Code':"
+echo -e "           ${BLUE}Cmd+Shift+P → Tasks: Run Task → Claude Code${NC}"
+echo ""
+echo -e "${YELLOW}First prompt for Claude Code:${NC}"
+echo -e "${BLUE}\"Read design/isometry-ui-handoff/FIGMA-HANDOFF.md and start Phase 1\"${NC}"
+echo ""
+echo -e "${YELLOW}Recommended: Install suggested extensions${NC}"
+echo -e "${BLUE}Cmd+Shift+P → Extensions: Show Recommended Extensions${NC}"
+echo ""

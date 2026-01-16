@@ -1,0 +1,50 @@
+{
+  // Editor
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.tabSize": 2,
+  "editor.rulers": [100],
+  
+  // TypeScript
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.suggest.autoImports": true,
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  
+  // Files
+  "files.exclude": {
+    "node_modules": true,
+    "dist": true,
+    ".git": true
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  
+  // Search
+  "search.exclude": {
+    "node_modules": true,
+    "dist": true,
+    "*.lock": true
+  },
+  
+  // Tailwind CSS
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["className\\s*=\\s*['\"]([^'\"]*)['\"]", "([^'\"\\s]*)"]
+  ],
+  
+  // Terminal - Claude Code works best from integrated terminal
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "terminal.integrated.cwd": "${workspaceFolder}",
+  
+  // ESLint
+  "eslint.validate": ["javascript", "typescript", "typescriptreact"],
+  
+  // Path aliases
+  "path-intellisense.mappings": {
+    "@": "${workspaceFolder}/src"
+  }
+}

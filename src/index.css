@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  transition-property: background-color, border-color, color;
+  transition-duration: 150ms;
+}
