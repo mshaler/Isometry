@@ -1,61 +1,69 @@
 import { useState } from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { useTheme, ThemeProvider } from './contexts/ThemeContext';
 import { DatabaseProvider } from './db/DatabaseContext';
-import { FilterProvider } from './state/FilterContext';
+import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './contexts/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
-// Import Figma components (when ready)
-// import { Toolbar } from './components/Toolbar';
-// import { Navigator } from './components/Navigator';
-// import { Sidebar } from './components/Sidebar';
+// Layout components
+import { Toolbar } from './components/Toolbar';
+import { Navigator } from './components/Navigator';
+import { Sidebar } from './components/Sidebar';
+import { RightSidebar } from './components/RightSidebar';
+import { CommandBar } from './components/CommandBar';
 import { Canvas } from './components/Canvas';
 import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 
 function AppContent() {
-  const { theme, setTheme } = useTheme();
-  const [showDemo, setShowDemo] = useState(true); // Start with demo visible
-
-  const toggleTheme = () => {
-    setTheme(theme === 'NeXTSTEP' ? 'Modern' : 'NeXTSTEP');
-  };
+  const { theme } = useTheme();
+  const [showDemo, setShowDemo] = useState(false); // Start with main app
 
   return (
-    <div className={`app ${theme === 'NeXTSTEP' ? 'theme-nextstep' : 'theme-modern'}`}>
-      <header className="app-header flex items-center justify-between px-4">
-        {/* <Toolbar /> */}
-        <h1 className="text-xl font-bold py-4">Isometry</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowDemo(!showDemo)}
-            className={`px-3 py-1.5 text-sm rounded ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#c0c0c0] border-2 border-t-white border-l-white border-b-[#707070] border-r-[#707070]'
-                : 'bg-blue-100 border border-blue-300 hover:bg-blue-200'
-            }`}
-          >
-            {showDemo ? '📊 Main App' : '🧪 D3 Demo'}
-          </button>
-          <button
-            onClick={toggleTheme}
-            className={`px-3 py-1.5 text-sm rounded ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#c0c0c0] border-2 border-t-white border-l-white border-b-[#707070] border-r-[#707070]'
-                : 'bg-gray-100 border border-gray-300 hover:bg-gray-200'
-            }`}
-          >
-            {theme === 'NeXTSTEP' ? '🖥️ NeXTSTEP' : '✨ Modern'}
-          </button>
-        </div>
-      </header>
+    <div className={`h-screen flex flex-col ${theme === 'NeXTSTEP' ? 'theme-nextstep bg-[#808080]' : 'theme-modern bg-gray-50'}`}>
+      {/* Top: Toolbar (menu bar + toolbar buttons) */}
+      <Toolbar />
 
-      <main className="app-main">
-        {/* <Navigator /> */}
-        {/* <Sidebar /> */}
-        {showDemo ? <D3ComponentsDemo /> : <Canvas />}
-      </main>
+      {/* Navigator row (App/View/Dataset dropdowns + PAFV) */}
+      <Navigator />
+
+      {/* Main content area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - LATCH filters */}
+        <Sidebar />
+
+        {/* Main Canvas area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Toggle for demo mode */}
+          <div className={`flex items-center gap-2 px-3 py-1 ${
+            theme === 'NeXTSTEP' ? 'bg-[#c0c0c0]' : 'bg-white/50'
+          }`}>
+            <button
+              onClick={() => setShowDemo(!showDemo)}
+              className={`px-2 py-0.5 text-xs rounded ${
+                theme === 'NeXTSTEP'
+                  ? 'bg-[#d4d4d4] border border-[#707070]'
+                  : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              {showDemo ? 'Main App' : 'D3 Demo'}
+            </button>
+          </div>
+
+          {/* Canvas or Demo */}
+          <div className="flex-1 overflow-hidden">
+            {showDemo ? <D3ComponentsDemo /> : <Canvas />}
+          </div>
+
+          {/* Command Bar at bottom */}
+          <CommandBar />
+        </div>
+
+        {/* Right Sidebar - Formats + Settings */}
+        <RightSidebar />
+      </div>
     </div>
   );
 }
@@ -63,19 +71,21 @@ function AppContent() {
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider>
-        <DatabaseProvider>
-          <FilterProvider>
-            <PAFVProvider>
-              <SelectionProvider>
-                <AppStateProvider>
-                  <AppContent />
-                </AppStateProvider>
-              </SelectionProvider>
-            </PAFVProvider>
-          </FilterProvider>
-        </DatabaseProvider>
-      </ThemeProvider>
+      <BrowserRouter>
+        <ThemeProvider>
+          <DatabaseProvider>
+            <AppStateProvider>
+              <FilterProvider>
+                <PAFVProvider>
+                  <SelectionProvider>
+                    <AppContent />
+                  </SelectionProvider>
+                </PAFVProvider>
+              </FilterProvider>
+            </AppStateProvider>
+          </DatabaseProvider>
+        </ThemeProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }

@@ -6,16 +6,22 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { Navigator } from './Navigator';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AppStateProvider } from '@/contexts/AppStateContext';
+import { PAFVProvider } from '@/contexts/PAFVContext';
 
-// Helper to wrap component with providers
-function renderWithProviders(ui: React.ReactElement) {
+// Helper to wrap component with providers (including Router for URL state and PAFV for Navigator wells)
+function renderWithProviders(ui: React.ReactElement, { theme }: { theme?: 'NeXTSTEP' | 'Modern' } = {}) {
   return render(
-    <ThemeProvider>
-      <AppStateProvider>{ui}</AppStateProvider>
-    </ThemeProvider>
+    <MemoryRouter>
+      <ThemeProvider defaultTheme={theme}>
+        <AppStateProvider>
+          <PAFVProvider>{ui}</PAFVProvider>
+        </AppStateProvider>
+      </ThemeProvider>
+    </MemoryRouter>
   );
 }
 
@@ -161,13 +167,7 @@ describe('Navigator', () => {
 
   describe('theme support', () => {
     it('applies NeXTSTEP theme styles', () => {
-      render(
-        <ThemeProvider defaultTheme="NeXTSTEP">
-          <AppStateProvider>
-            <Navigator />
-          </AppStateProvider>
-        </ThemeProvider>
-      );
+      renderWithProviders(<Navigator />, { theme: 'NeXTSTEP' });
 
       // NeXTSTEP uses specific bg color
       const container = document.querySelector('[class*="bg-[#b8b8b8]"]');
@@ -175,13 +175,7 @@ describe('Navigator', () => {
     });
 
     it('applies Modern theme styles', () => {
-      render(
-        <ThemeProvider defaultTheme="Modern">
-          <AppStateProvider>
-            <Navigator />
-          </AppStateProvider>
-        </ThemeProvider>
-      );
+      renderWithProviders(<Navigator />, { theme: 'Modern' });
 
       // Modern theme uses backdrop-blur
       const container = document.querySelector('[class*="backdrop-blur"]');

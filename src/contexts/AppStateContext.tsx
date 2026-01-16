@@ -1,4 +1,5 @@
-import { createContext, useContext, ReactNode, useState } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
+import { useURLState } from '@/hooks/useURLState';
 
 export type AppName = 'Demo' | 'Inbox' | 'Projects' | 'LinkedIn' | 'MTGs' | 'ReadWatch';
 export type ViewName = 'List' | 'Gallery' | 'Timeline' | 'Calendar' | 'Tree' | 'Kanban' | 'Grid' | 'Charts' | 'Graphs';
@@ -16,10 +17,10 @@ interface AppStateContextType {
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  // Use regular state for MVP (URL state requires React Router)
-  const [activeApp, setActiveApp] = useState<AppName>('Demo');
-  const [activeView, setActiveView] = useState<ViewName>('Grid');
-  const [activeDataset, setActiveDataset] = useState<DatasetName>('Notes');
+  // URL-synced state for shareable views
+  const [activeApp, setActiveApp] = useURLState<AppName>('app', 'Demo');
+  const [activeView, setActiveView] = useURLState<ViewName>('view', 'Grid');
+  const [activeDataset, setActiveDataset] = useURLState<DatasetName>('dataset', 'Notes');
 
   return (
     <AppStateContext.Provider value={{

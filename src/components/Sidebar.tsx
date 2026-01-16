@@ -30,101 +30,112 @@ export function Sidebar() {
     `PRAGMA table_info(cards)`
   );
 
+  // Full LATCH filter list - always show all, dim unavailable ones
+  const LATCH_FILTERS = ['Location', 'Alphabet', 'Time', 'Category', 'Hierarchy'];
+
   // Determine which filterable columns exist in the schema
   const availableFilters = useMemo(() => {
-    if (!columns) return [];
+    if (!columns) return new Set<string>();
 
     const columnNames = new Set(columns.map(c => c.name));
-    const filterOptions: string[] = [];
+    const available = new Set<string>();
 
-    // Only add filter options for columns that actually exist
-    if (columnNames.has('category')) filterOptions.push('Category');
-    if (columnNames.has('status')) filterOptions.push('Status');
-    if (columnNames.has('priority')) filterOptions.push('Priority');
-    if (columnNames.has('created') || columnNames.has('due')) filterOptions.push('Time');
-    if (columnNames.has('tags')) filterOptions.push('Tags');
+    // Map LATCH axes to available columns
+    if (columnNames.has('location') || columnNames.has('lat') || columnNames.has('lng')) available.add('Location');
+    if (columnNames.has('name') || columnNames.has('title')) available.add('Alphabet');
+    if (columnNames.has('created') || columnNames.has('due') || columnNames.has('createdAt')) available.add('Time');
+    if (columnNames.has('category') || columnNames.has('status') || columnNames.has('priority') || columnNames.has('tags') || columnNames.has('folder')) available.add('Category');
+    if (columnNames.has('parent') || columnNames.has('parent_id') || columnNames.has('folder')) available.add('Hierarchy');
 
-    return filterOptions;
+    return available;
   }, [columns]);
 
-  // Build filter sections dynamically based on available data
+  // Build filter sections - show all LATCH filters, mark availability
   const filterSections = useMemo(() => {
-    const sections = [];
-
-    if (availableFilters.length > 0) {
-      sections.push({ title: 'Analytics', items: availableFilters });
-    }
-
-    // Synthetics only show if we have edges table
-    sections.push({
-      title: 'Synthetics',
-      items: ['Links', 'Paths', 'Vectors', 'Centrality', 'Similarity', 'Community']
-    });
-
-    sections.push({
-      title: 'Formulas',
-      items: ['Active Filters', 'Algorithms', 'Audit View', 'Versions']
-    });
-
-    return sections;
+    return [
+      {
+        title: 'Analytics',
+        items: LATCH_FILTERS.map(filter => ({
+          name: filter,
+          available: availableFilters.has(filter)
+        }))
+      },
+      {
+        title: 'Synthetics',
+        items: ['Links', 'Paths', 'Vectors', 'Centrality', 'Similarity', 'Community'].map(item => ({
+          name: item,
+          available: false // TODO: Check for edges table
+        }))
+      },
+      {
+        title: 'Formulas',
+        items: ['Active Filters', 'Algorithms', 'Audit View', 'Versions'].map(item => ({
+          name: item,
+          available: true // These are always available
+        }))
+      }
+    ];
   }, [availableFilters]);
 
-  // Query distinct values for category facet (only if category column exists)
+  // Check if Category filter is available (has category-related columns)
+  const hasCategoryFilter = availableFilters.has('Category');
+  const hasTimeFilter = availableFilters.has('Time');
+
+  // Query distinct values for category facet (uses 'folder' as proxy since our schema uses folder)
   const { data: categories } = useSQLiteQuery<FacetValue>(
-    availableFilters.includes('Category')
-      ? `SELECT category as value, COUNT(*) as count FROM cards WHERE category IS NOT NULL AND category != '' GROUP BY category ORDER BY count DESC`
-      : `SELECT NULL as value, 0 as count WHERE 0`, // No-op query
+    hasCategoryFilter
+      ? `SELECT folder as value, COUNT(*) as count FROM cards WHERE folder IS NOT NULL AND folder != '' GROUP BY folder ORDER BY count DESC`
+      : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: availableFilters.includes('Category') }
+    { enabled: hasCategoryFilter }
   );
 
   // Query distinct values for status facet
   const { data: statuses } = useSQLiteQuery<FacetValue>(
-    availableFilters.includes('Status')
+    hasCategoryFilter
       ? `SELECT status as value, COUNT(*) as count FROM cards WHERE status IS NOT NULL AND status != '' GROUP BY status ORDER BY count DESC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: availableFilters.includes('Status') }
+    { enabled: hasCategoryFilter }
   );
 
   // Query distinct values for priority facet
   const { data: priorities } = useSQLiteQuery<FacetValue>(
-    availableFilters.includes('Priority')
+    hasCategoryFilter
       ? `SELECT CAST(priority as TEXT) as value, COUNT(*) as count FROM cards WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority ASC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: availableFilters.includes('Priority') }
+    { enabled: hasCategoryFilter }
   );
 
   // Query distinct values for tags facet
   const { data: tags } = useSQLiteQuery<FacetValue>(
-    availableFilters.includes('Tags')
+    hasCategoryFilter
       ? `SELECT tags as value, COUNT(*) as count FROM cards WHERE tags IS NOT NULL AND tags != '' GROUP BY tags ORDER BY count DESC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: availableFilters.includes('Tags') }
+    { enabled: hasCategoryFilter }
   );
 
   // Query date range info for time filters
   const { data: dateRange } = useSQLiteQuery<{ min_date: string; max_date: string; has_created: number; has_due: number }>(
-    availableFilters.includes('Time')
+    hasTimeFilter
       ? `SELECT
-          MIN(COALESCE(created, due)) as min_date,
-          MAX(COALESCE(created, due)) as max_date,
-          SUM(CASE WHEN created IS NOT NULL THEN 1 ELSE 0 END) as has_created,
+          MIN(COALESCE(createdAt, created, due)) as min_date,
+          MAX(COALESCE(createdAt, created, due)) as max_date,
+          SUM(CASE WHEN createdAt IS NOT NULL OR created IS NOT NULL THEN 1 ELSE 0 END) as has_created,
           SUM(CASE WHEN due IS NOT NULL THEN 1 ELSE 0 END) as has_due
          FROM cards`
       : `SELECT NULL as min_date, NULL as max_date, 0 as has_created, 0 as has_due WHERE 0`,
     [],
-    { enabled: availableFilters.includes('Time') }
+    { enabled: hasTimeFilter }
   );
 
-  const handleFilterItemClick = (item: string) => {
-    if (availableFilters.includes(item)) {
+  const handleFilterItemClick = (item: string, isAvailable: boolean) => {
+    if (isAvailable) {
       setActiveFilterPanel(activeFilterPanel === item ? null : item);
-    } else {
-      console.log('Selected:', item);
     }
+    // Unavailable items are dimmed and not clickable
   };
 
   const handleFacetClick = (field: string, value: string) => {
@@ -301,22 +312,27 @@ export function Sidebar() {
     );
   };
 
-  // Render filter item button
-  const renderFilterItem = (item: string) => (
+  // Render filter item button with availability state
+  const renderFilterItem = (item: { name: string; available: boolean }) => (
     <button
-      key={item}
-      onClick={() => handleFilterItemClick(item)}
-      className={`w-full h-7 px-3 text-left text-sm ${
-        activeFilterPanel === item
+      key={item.name}
+      onClick={() => handleFilterItemClick(item.name, item.available)}
+      disabled={!item.available}
+      className={`w-full h-7 px-3 text-left text-sm transition-opacity ${
+        !item.available
           ? theme === 'NeXTSTEP'
-            ? 'bg-black text-white'
-            : 'bg-blue-500 text-white rounded-md'
-          : theme === 'NeXTSTEP'
-            ? 'bg-[#d4d4d4] border border-[#a0a0a0] hover:bg-black hover:text-white'
-            : 'bg-white hover:bg-blue-500 hover:text-white rounded-md border border-gray-200'
+            ? 'bg-[#d4d4d4] border border-[#a0a0a0] opacity-40 cursor-not-allowed text-[#808080]'
+            : 'bg-gray-100 border border-gray-200 opacity-40 cursor-not-allowed text-gray-400 rounded-md'
+          : activeFilterPanel === item.name
+            ? theme === 'NeXTSTEP'
+              ? 'bg-black text-white'
+              : 'bg-blue-500 text-white rounded-md'
+            : theme === 'NeXTSTEP'
+              ? 'bg-[#d4d4d4] border border-[#a0a0a0] hover:bg-black hover:text-white'
+              : 'bg-white hover:bg-blue-500 hover:text-white rounded-md border border-gray-200'
       }`}
     >
-      {item}
+      {item.name}
     </button>
   );
 

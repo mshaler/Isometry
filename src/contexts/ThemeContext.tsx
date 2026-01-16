@@ -14,7 +14,7 @@ interface ThemeProviderProps {
   defaultTheme?: Theme;
 }
 
-export function ThemeProvider({ children, defaultTheme = 'NeXTSTEP' }: ThemeProviderProps) {
+export function ThemeProvider({ children, defaultTheme = 'Modern' }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(defaultTheme);
 
   return (

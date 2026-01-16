@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import { rowToNode, Node } from '../types/node';
 
-interface QueryState<T> {
+export interface QueryState<T> {
   data: T[] | null;
   loading: boolean;
   error: Error | null;

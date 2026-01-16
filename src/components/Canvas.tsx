@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState } from '@/contexts/AppStateContext';
+import { useFilters } from '@/contexts/FilterContext';
 import { useNodes } from '@/hooks/useSQLiteQuery';
 import {
   ListView,
@@ -12,6 +13,8 @@ import {
   NetworkView,
   TreeView,
 } from './views';
+import { AxisSelector } from './AxisSelector';
+import { FilterBar } from './FilterBar';
 import type { Node } from '@/types/node';
 
 export function Canvas() {
@@ -20,9 +23,13 @@ export function Canvas() {
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
+  const { compiledQuery } = useFilters();
 
-  // Query nodes from SQLite - useNodes handles deleted_at filtering
-  const { data: nodes, loading, error } = useNodes();
+  // Query nodes from SQLite with filters applied
+  const { data: nodes, loading, error } = useNodes(
+    compiledQuery.sql,
+    compiledQuery.params
+  );
 
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);
@@ -93,6 +100,14 @@ export function Canvas() {
         ? 'bg-white border-t-2 border-l-2 border-[#707070] border-b-2 border-r-2 border-b-[#e8e8e8] border-r-[#e8e8e8]'
         : 'bg-white rounded-lg shadow-lg border border-gray-200'
     }`}>
+      {/* Filter Bar */}
+      <FilterBar />
+
+      {/* Axis Selector (for Grid/Gallery views) */}
+      {(activeView === 'Grid' || activeView === 'Gallery') && (
+        <AxisSelector compact />
+      )}
+
       {/* Main Canvas Area */}
       <div className="flex-1 overflow-hidden">
         {renderView()}
