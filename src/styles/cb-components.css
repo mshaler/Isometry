@@ -1,0 +1,317 @@
+/**
+ * CardBoard Component Styles
+ *
+ * Styles for CardBoard D3 components (cb-card, cb-canvas, etc.)
+ * Uses CSS custom properties from variables.css for theming.
+ */
+
+/* ============================================
+   Card Component
+   ============================================ */
+
+.cb-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--cb-bg-raised);
+  border: 1px solid var(--cb-border-default);
+  border-radius: var(--cb-card-radius);
+  padding: var(--cb-card-padding);
+  color: var(--cb-fg-primary);
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-sm);
+  line-height: var(--cb-leading-normal);
+  transition:
+    box-shadow var(--cb-transition-fast),
+    transform var(--cb-transition-fast),
+    border-color var(--cb-transition-fast);
+  cursor: default;
+  user-select: none;
+}
+
+/* Card Header */
+.cb-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cb-space-2);
+  margin-bottom: var(--cb-space-2);
+}
+
+/* Card Title */
+.cb-card__title {
+  flex: 1;
+  margin: 0;
+  font-size: var(--cb-text-sm);
+  font-weight: var(--cb-font-weight-semibold);
+  color: var(--cb-fg-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Card Content */
+.cb-card__content {
+  flex: 1;
+  font-size: var(--cb-text-xs);
+  color: var(--cb-fg-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Card Badge */
+.cb-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-medium);
+  background: var(--cb-border-subtle);
+  color: var(--cb-fg-secondary);
+  border-radius: var(--cb-radius-sm);
+  text-transform: capitalize;
+}
+
+/* ============================================
+   Card Variants
+   ============================================ */
+
+/* Glass variant */
+.cb-card--glass {
+  background: var(--cb-glass-bg);
+  backdrop-filter: var(--cb-glass-blur);
+  -webkit-backdrop-filter: var(--cb-glass-blur);
+  border-color: var(--cb-glass-border);
+}
+
+/* Elevated variant */
+.cb-card--elevated {
+  box-shadow: var(--cb-shadow-md);
+}
+
+/* Outline variant */
+.cb-card--outline {
+  background: transparent;
+  border: 2px solid var(--cb-border-strong);
+}
+
+/* ============================================
+   Card Sizes
+   ============================================ */
+
+/* Small size */
+.cb-card--sm {
+  padding: var(--cb-card-padding-sm);
+}
+
+.cb-card--sm .cb-card__title {
+  font-size: var(--cb-text-xs);
+}
+
+.cb-card--sm .cb-card__content {
+  font-size: 10px;
+  -webkit-line-clamp: 1;
+}
+
+.cb-card--sm .cb-card__badge {
+  font-size: 10px;
+  padding: 1px 4px;
+}
+
+/* Large size */
+.cb-card--lg {
+  padding: var(--cb-card-padding-lg);
+}
+
+.cb-card--lg .cb-card__title {
+  font-size: var(--cb-text-base);
+}
+
+.cb-card--lg .cb-card__content {
+  font-size: var(--cb-text-sm);
+  -webkit-line-clamp: 3;
+}
+
+/* ============================================
+   Card States
+   ============================================ */
+
+/* Interactive */
+.cb-card--interactive {
+  cursor: pointer;
+}
+
+.cb-card--interactive:hover {
+  border-color: var(--cb-border-strong);
+  box-shadow: var(--cb-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.cb-card--interactive:active {
+  transform: translateY(0);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+/* Selected */
+.cb-card--selected {
+  border-color: var(--cb-accent);
+  box-shadow: var(--cb-shadow-glow);
+}
+
+.cb-card--selected .cb-card__badge {
+  background: var(--cb-accent);
+  color: var(--cb-fg-inverse);
+}
+
+/* Draggable */
+.cb-card--draggable {
+  cursor: grab;
+}
+
+.cb-card--draggable:active {
+  cursor: grabbing;
+}
+
+/* ============================================
+   NeXTSTEP Theme Overrides
+   ============================================ */
+
+[data-theme="NeXTSTEP"] .cb-card {
+  border: 2px solid;
+  border-top-color: var(--cb-border-raised-top);
+  border-left-color: var(--cb-border-raised-top);
+  border-bottom-color: var(--cb-border-raised-bottom);
+  border-right-color: var(--cb-border-raised-bottom);
+  box-shadow: none;
+  border-radius: 0;
+}
+
+[data-theme="NeXTSTEP"] .cb-card__badge {
+  border-radius: 0;
+  border: 1px solid var(--cb-border-default);
+}
+
+[data-theme="NeXTSTEP"] .cb-card--interactive:hover {
+  background: #c8c8c8;
+  transform: none;
+  box-shadow: none;
+}
+
+[data-theme="NeXTSTEP"] .cb-card--selected {
+  border-color: var(--cb-accent);
+  box-shadow: 2px 2px 0 var(--cb-border-strong);
+}
+
+[data-theme="NeXTSTEP"] .cb-card--glass {
+  background: var(--cb-bg-raised);
+  backdrop-filter: none;
+}
+
+[data-theme="NeXTSTEP"] .cb-card--elevated {
+  box-shadow: 2px 2px 0 var(--cb-border-strong);
+}
+
+/* ============================================
+   Canvas Component
+   ============================================ */
+
+.cb-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--cb-canvas-bg);
+}
+
+.cb-canvas__svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cb-canvas__content {
+  /* Content layer for cards */
+}
+
+.cb-canvas__overlay {
+  /* Overlay layer for selections, tooltips */
+  pointer-events: none;
+}
+
+/* Canvas background patterns */
+.cb-canvas--dots {
+  background-image: radial-gradient(var(--cb-canvas-grid-color) 1px, transparent 1px);
+  background-size: var(--cb-canvas-grid-size) var(--cb-canvas-grid-size);
+}
+
+.cb-canvas--grid {
+  background-image:
+    linear-gradient(var(--cb-canvas-grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cb-canvas-grid-color) 1px, transparent 1px);
+  background-size: var(--cb-canvas-grid-size) var(--cb-canvas-grid-size);
+}
+
+/* ============================================
+   Utility Classes
+   ============================================ */
+
+/* Spinner animation */
+@keyframes cb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cb-spinner {
+  animation: cb-spin 1s linear infinite;
+}
+
+/* Fade animations */
+@keyframes cb-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes cb-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.cb-fade-in {
+  animation: cb-fade-in var(--cb-duration-normal) var(--cb-ease-out);
+}
+
+.cb-fade-out {
+  animation: cb-fade-out var(--cb-duration-fast) var(--cb-ease-in);
+}
+
+/* Scale animations */
+@keyframes cb-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cb-scale-in {
+  animation: cb-scale-in var(--cb-duration-normal) var(--cb-ease-bounce);
+}
+
+/* Focus visible for accessibility */
+.cb-card:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: 2px;
+}
