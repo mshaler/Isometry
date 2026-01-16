@@ -1,3 +1,6 @@
+@import './styles/variables.css';
+@import './styles/cb-components.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
