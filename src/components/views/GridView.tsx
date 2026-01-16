@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { usePAFV } from '@/contexts/PAFVContext';
+import { usePAFV, type Chip } from '@/contexts/PAFVContext';
 import type { Node } from '@/types/node';
 
 interface GridViewProps {
@@ -37,137 +37,299 @@ function getFieldValue(node: Node, chipId: string): string {
   return String(value ?? 'Unknown');
 }
 
+// Get composite key for multiple axes
+function getCompositeKey(node: Node, chips: Chip[]): string {
+  return chips.map(chip => getFieldValue(node, chip.id)).join('|');
+}
+
+// Hierarchical header node for nested headers
+interface HeaderNode {
+  label: string;
+  depth: number;
+  span: number;
+  children: HeaderNode[];
+  path: string[];
+}
+
+// Build hierarchical header structure from data
+function buildHeaderTree(data: Node[], chips: Chip[]): HeaderNode {
+  if (chips.length === 0) {
+    return { label: '', depth: 0, span: 1, children: [], path: [] };
+  }
+
+  const root: HeaderNode = { label: 'root', depth: -1, span: 0, children: [], path: [] };
+  const valuePaths = new Map<string, boolean>();
+
+  data.forEach(node => {
+    const values = chips.map(chip => getFieldValue(node, chip.id));
+    valuePaths.set(values.join('|'), true);
+  });
+
+  Array.from(valuePaths.keys()).forEach(pathStr => {
+    const values = pathStr.split('|');
+    let current = root;
+
+    values.forEach((value, depth) => {
+      const path = values.slice(0, depth + 1);
+      let child = current.children.find(c => c.label === value);
+
+      if (!child) {
+        child = { label: value, depth, span: 0, children: [], path };
+        current.children.push(child);
+      }
+      current = child;
+    });
+  });
+
+  function calcSpan(node: HeaderNode): number {
+    if (node.children.length === 0) {
+      node.span = 1;
+    } else {
+      node.span = node.children.reduce((sum, child) => sum + calcSpan(child), 0);
+    }
+    return node.span;
+  }
+  calcSpan(root);
+
+  function sortChildren(node: HeaderNode) {
+    node.children.sort((a, b) => a.label.localeCompare(b.label));
+    node.children.forEach(sortChildren);
+  }
+  sortChildren(root);
+
+  return root;
+}
+
+// Flatten header tree into rows for rendering
+function flattenHeaderLevels(root: HeaderNode, maxDepth: number): HeaderNode[][] {
+  const levels: HeaderNode[][] = [];
+  for (let d = 0; d < maxDepth; d++) {
+    levels.push([]);
+  }
+
+  function traverse(node: HeaderNode, depth: number) {
+    if (depth >= 0 && depth < maxDepth) {
+      levels[depth].push(node);
+    }
+    node.children.forEach(child => traverse(child, depth + 1));
+  }
+  traverse(root, -1);
+
+  return levels;
+}
+
+// Get leaf paths for cell positioning
+function getLeafPaths(root: HeaderNode): string[][] {
+  const leaves: string[][] = [];
+
+  function traverse(node: HeaderNode, path: string[]) {
+    if (node.children.length === 0 && node.label !== 'root') {
+      leaves.push(path);
+    } else {
+      node.children.forEach(child => traverse(child, [...path, child.label]));
+    }
+  }
+  traverse(root, []);
+
+  return leaves;
+}
+
+// React component for a single header cell
+interface HeaderCellProps {
+  label: string;
+  span: number;
+  isColumn: boolean;
+  theme: 'NeXTSTEP' | 'Modern';
+}
+
+function HeaderCell({ label, span, isColumn, theme }: HeaderCellProps) {
+  const truncatedLabel = label.length > (isColumn ? 12 : 8)
+    ? label.slice(0, isColumn ? 12 : 8) + '…'
+    : label;
+
+  return (
+    <div
+      className={`flex items-center justify-center text-xs font-medium px-1 ${
+        theme === 'NeXTSTEP'
+          ? 'bg-[#d4d4d4] border border-[#a0a0a0]'
+          : 'bg-gray-100 border border-gray-200 rounded'
+      }`}
+      style={isColumn ? { gridColumn: `span ${span}` } : { gridRow: `span ${span}` }}
+      title={label}
+    >
+      {truncatedLabel}
+    </div>
+  );
+}
+
+// React component for column headers (horizontal, multiple rows for nesting)
+interface ColumnHeadersProps {
+  levels: HeaderNode[][];
+  theme: 'NeXTSTEP' | 'Modern';
+}
+
+function ColumnHeaders({ levels, theme }: ColumnHeadersProps) {
+  if (levels.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      {levels.map((level, levelIdx) => (
+        <div
+          key={levelIdx}
+          className="grid gap-0.5"
+          style={{
+            gridTemplateColumns: level.map(h => `${h.span}fr`).join(' ')
+          }}
+        >
+          {level.map((header, idx) => (
+            <HeaderCell
+              key={`${levelIdx}-${idx}-${header.label}`}
+              label={header.label}
+              span={1}
+              isColumn={true}
+              theme={theme}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// React component for row headers (vertical, multiple columns for nesting)
+interface RowHeadersProps {
+  levels: HeaderNode[][];
+  theme: 'NeXTSTEP' | 'Modern';
+  cellHeight: number;
+}
+
+function RowHeaders({ levels, theme, cellHeight }: RowHeadersProps) {
+  if (levels.length === 0) return null;
+
+  return (
+    <div className="flex gap-0.5">
+      {levels.map((level, levelIdx) => (
+        <div
+          key={levelIdx}
+          className="flex flex-col gap-0.5 w-14"
+        >
+          {level.map((header, idx) => (
+            <div
+              key={`${levelIdx}-${idx}-${header.label}`}
+              className={`flex items-center justify-center text-xs font-medium px-1 ${
+                theme === 'NeXTSTEP'
+                  ? 'bg-[#d4d4d4] border border-[#a0a0a0]'
+                  : 'bg-gray-100 border border-gray-200 rounded'
+              }`}
+              style={{ height: header.span * cellHeight - 2 }}
+              title={header.label}
+            >
+              {header.label.length > 8 ? header.label.slice(0, 8) + '…' : header.label}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function GridView({ data, onNodeClick }: GridViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const { wells } = usePAFV();
 
-  // Get axis assignments from PAFV wells
-  const xAxis = wells.xRows[0]?.id || 'folder';
-  const yAxis = wells.yColumns[0]?.id || 'priority';
+  // Get all axis chips from PAFV wells
+  const xChips = wells.xRows.length > 0 ? wells.xRows : [{ id: 'folder', label: 'Folder', hasCheckbox: false }];
+  const yChips = wells.yColumns.length > 0 ? wells.yColumns : [{ id: 'priority', label: 'Priority', hasCheckbox: false }];
 
-  // Group data by x and y axes
-  const { xValues, yValues, grouped } = useMemo(() => {
-    const xSet = new Set<string>();
-    const ySet = new Set<string>();
+  // Build hierarchical header structures
+  const { xLeafPaths, yLeafPaths, grouped, xLevels, yLevels } = useMemo(() => {
+    const xTree = buildHeaderTree(data, xChips);
+    const yTree = buildHeaderTree(data, yChips);
+    const xLeaves = getLeafPaths(xTree);
+    const yLeaves = getLeafPaths(yTree);
+    const xLvls = flattenHeaderLevels(xTree, xChips.length);
+    const yLvls = flattenHeaderLevels(yTree, yChips.length);
+
     const map = new Map<string, Node[]>();
-
     data.forEach(node => {
-      const xVal = getFieldValue(node, xAxis);
-      const yVal = getFieldValue(node, yAxis);
-      xSet.add(xVal);
-      ySet.add(yVal);
-
-      const key = `${xVal}|${yVal}`;
+      const xKey = getCompositeKey(node, xChips);
+      const yKey = getCompositeKey(node, yChips);
+      const key = `${xKey}||${yKey}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(node);
     });
 
     return {
-      xValues: Array.from(xSet).sort(),
-      yValues: Array.from(ySet).sort(),
+      xLeafPaths: xLeaves,
+      yLeafPaths: yLeaves,
       grouped: map,
+      xLevels: xLvls,
+      yLevels: yLvls,
     };
-  }, [data, xAxis, yAxis]);
+  }, [data, xChips, yChips]);
 
+  // Calculate dimensions
+  const numCols = xLeafPaths.length || 1;
+  const numRows = yLeafPaths.length || 1;
+  const rowHeaderWidth = yChips.length * 58; // 56px + 2px gap per level
+  const colHeaderHeight = xChips.length * 26; // 24px + 2px gap per level
+
+  // D3 rendering for the grid cells and cards
   useEffect(() => {
-    if (!svgRef.current || !containerRef.current) return;
+    if (!svgRef.current || !gridContainerRef.current) return;
 
-    const container = containerRef.current;
+    const container = gridContainerRef.current;
     const width = container.clientWidth;
     const height = container.clientHeight;
-    const margin = { top: 40, right: 20, bottom: 20, left: 100 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
 
     const svg = d3.select(svgRef.current);
     svg.selectAll('*').remove();
 
-    // Scales
-    const xScale = d3.scaleBand()
-      .domain(xValues)
-      .range([0, innerWidth])
-      .padding(0.1);
+    const cellWidth = width / numCols;
+    const cellHeight = height / numRows;
 
-    const yScale = d3.scaleBand()
-      .domain(yValues)
-      .range([0, innerHeight])
-      .padding(0.1);
-
-    // Main group with margin
     const g = svg
       .attr('width', width)
       .attr('height', height)
-      .append('g')
-      .attr('transform', `translate(${margin.left},${margin.top})`);
+      .append('g');
 
     // Grid lines
-    g.append('g')
-      .attr('class', 'grid-lines')
-      .selectAll('line.h')
-      .data(yValues)
-      .join('line')
-      .attr('class', 'h')
-      .attr('x1', 0)
-      .attr('x2', innerWidth)
-      .attr('y1', d => (yScale(d) || 0) + yScale.bandwidth())
-      .attr('y2', d => (yScale(d) || 0) + yScale.bandwidth())
-      .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
-      .attr('stroke-width', 1);
+    for (let i = 0; i <= numRows; i++) {
+      g.append('line')
+        .attr('x1', 0)
+        .attr('x2', width)
+        .attr('y1', i * cellHeight)
+        .attr('y2', i * cellHeight)
+        .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
+        .attr('stroke-width', 1);
+    }
 
-    g.selectAll('line.v')
-      .data(xValues)
-      .join('line')
-      .attr('class', 'v')
-      .attr('x1', d => (xScale(d) || 0) + xScale.bandwidth())
-      .attr('x2', d => (xScale(d) || 0) + xScale.bandwidth())
-      .attr('y1', 0)
-      .attr('y2', innerHeight)
-      .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
-      .attr('stroke-width', 1);
+    for (let i = 0; i <= numCols; i++) {
+      g.append('line')
+        .attr('x1', i * cellWidth)
+        .attr('x2', i * cellWidth)
+        .attr('y1', 0)
+        .attr('y2', height)
+        .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
+        .attr('stroke-width', 1);
+    }
 
-    // X axis labels (top)
-    g.append('g')
-      .attr('class', 'x-axis')
-      .attr('transform', 'translate(0,-10)')
-      .selectAll('text')
-      .data(xValues)
-      .join('text')
-      .attr('x', d => (xScale(d) || 0) + xScale.bandwidth() / 2)
-      .attr('y', 0)
-      .attr('text-anchor', 'middle')
-      .attr('class', 'text-xs font-medium')
-      .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
-      .text(d => d);
-
-    // Y axis labels (left)
-    g.append('g')
-      .attr('class', 'y-axis')
-      .selectAll('text')
-      .data(yValues)
-      .join('text')
-      .attr('x', -10)
-      .attr('y', d => (yScale(d) || 0) + yScale.bandwidth() / 2)
-      .attr('text-anchor', 'end')
-      .attr('dominant-baseline', 'middle')
-      .attr('class', 'text-xs font-medium')
-      .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
-      .text(d => d);
-
-    // Cells with cards
-    const cellWidth = xScale.bandwidth();
-    const cellHeight = yScale.bandwidth();
+    // Card dimensions
     const cardWidth = Math.min(cellWidth * 0.9, 120);
     const cardHeight = Math.min(cellHeight * 0.8, 60);
 
-    xValues.forEach(xVal => {
-      yValues.forEach(yVal => {
-        const nodes = grouped.get(`${xVal}|${yVal}`) || [];
-        const cellX = xScale(xVal) || 0;
-        const cellY = yScale(yVal) || 0;
+    // Render cells with cards
+    xLeafPaths.forEach((xPath, colIdx) => {
+      yLeafPaths.forEach((yPath, rowIdx) => {
+        const xKey = xPath.join('|');
+        const yKey = yPath.join('|');
+        const nodes = grouped.get(`${xKey}||${yKey}`) || [];
 
-        // Position nodes in a mini-grid within the cell
+        const cellX = colIdx * cellWidth;
+        const cellY = rowIdx * cellHeight;
+
         const cols = Math.max(1, Math.floor(cellWidth / (cardWidth + 4)));
 
         nodes.forEach((node, i) => {
@@ -182,7 +344,6 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
             .style('cursor', 'pointer')
             .on('click', () => onNodeClick?.(node));
 
-          // Node background
           nodeGroup.append('rect')
             .attr('width', cardWidth)
             .attr('height', cardHeight)
@@ -191,7 +352,6 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
             .attr('stroke', theme === 'NeXTSTEP' ? '#707070' : '#e5e7eb')
             .attr('stroke-width', 1);
 
-          // Node title
           nodeGroup.append('text')
             .attr('x', 6)
             .attr('y', 16)
@@ -199,7 +359,6 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
             .attr('fill', '#374151')
             .text(node.name.length > 15 ? node.name.slice(0, 15) + '...' : node.name);
 
-          // Node priority badge
           nodeGroup.append('text')
             .attr('x', cardWidth - 6)
             .attr('y', 16)
@@ -211,11 +370,34 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
       });
     });
 
-  }, [data, xValues, yValues, grouped, theme, onNodeClick]);
+  }, [data, xLeafPaths, yLeafPaths, numCols, numRows, grouped, theme, onNodeClick]);
+
+  // Calculate cell height for row headers
+  const estimatedCellHeight = gridContainerRef.current
+    ? gridContainerRef.current.clientHeight / numRows
+    : 60;
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      <svg ref={svgRef} className="w-full h-full" />
+    <div className="w-full h-full flex flex-col">
+      {/* Column headers row */}
+      <div className="flex" style={{ marginLeft: rowHeaderWidth }}>
+        <div className="flex-1" style={{ minHeight: colHeaderHeight }}>
+          <ColumnHeaders levels={xLevels} theme={theme} />
+        </div>
+      </div>
+
+      {/* Main content row: row headers + grid */}
+      <div className="flex flex-1 min-h-0">
+        {/* Row headers */}
+        <div style={{ width: rowHeaderWidth }}>
+          <RowHeaders levels={yLevels} theme={theme} cellHeight={estimatedCellHeight} />
+        </div>
+
+        {/* Grid container (D3 renders here) */}
+        <div ref={gridContainerRef} className="flex-1">
+          <svg ref={svgRef} className="w-full h-full" />
+        </div>
+      </div>
     </div>
   );
 }
