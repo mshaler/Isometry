@@ -12,7 +12,7 @@ npm run dev
 ### Native iOS/macOS (production target)
 
 ```bash
-cd ios
+cd native
 open Package.swift  # Opens in Xcode
 ```
 
@@ -52,11 +52,11 @@ open Package.swift  # Opens in Xcode
 
 ### Native iOS/macOS Files
 
-- `ios/Sources/Isometry/Database/` - IsometryDatabase actor, migrations
-- `ios/Sources/Isometry/Models/` - Node, Edge, SyncState (Codable, Sendable)
-- `ios/Sources/Isometry/Sync/` - CloudKitSyncManager actor
-- `ios/Sources/Isometry/Views/` - SwiftUI views
-- `ios/Sources/Isometry/Resources/schema.sql` - Full schema with FTS5
+- `native/Sources/Isometry/Database/` - IsometryDatabase actor, migrations
+- `native/Sources/Isometry/Models/` - Node, Edge, SyncState (Codable, Sendable)
+- `native/Sources/Isometry/Sync/` - CloudKitSyncManager actor
+- `native/Sources/Isometry/Views/` - SwiftUI views
+- `native/Sources/Isometry/Resources/schema.sql` - Full schema with FTS5
 
 ## Current Phase
 
@@ -71,7 +71,7 @@ Phase 2: Native Implementation
 - [x] Swift Actor database layer
 - [x] Graph query CTEs
 - [x] CloudKit sync manager
-- [ ] macOS-specific UI adaptations
+- [x] macOS-specific UI adaptations
 - [ ] Canvas D3 rendering (React)
 - [ ] View switching (React)
 
