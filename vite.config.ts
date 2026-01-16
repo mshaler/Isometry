@@ -10,7 +10,11 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    // sql.js needs special handling for WASM
     exclude: ['sql.js'],
   },
-  assetsInclude: ['**/*.sql'],
+  assetsInclude: ['**/*.sql', '**/*.wasm'],
+  build: {
+    target: 'esnext',
+  },
 });

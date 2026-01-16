@@ -1,5 +1,4 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { useURLState } from '@/hooks/useURLState';
+import { createContext, useContext, ReactNode, useState } from 'react';
 
 export type AppName = 'Demo' | 'Inbox' | 'Projects' | 'LinkedIn' | 'MTGs' | 'ReadWatch';
 export type ViewName = 'List' | 'Gallery' | 'Timeline' | 'Calendar' | 'Tree' | 'Kanban' | 'Grid' | 'Charts' | 'Graphs';
@@ -17,9 +16,10 @@ interface AppStateContextType {
 const AppStateContext = createContext<AppStateContextType | undefined>(undefined);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [activeApp, setActiveApp] = useURLState<AppName>('app', 'Demo');
-  const [activeView, setActiveView] = useURLState<ViewName>('view', 'List');
-  const [activeDataset, setActiveDataset] = useURLState<DatasetName>('dataset', 'ETL');
+  // Use regular state for MVP (URL state requires React Router)
+  const [activeApp, setActiveApp] = useState<AppName>('Demo');
+  const [activeView, setActiveView] = useState<ViewName>('Grid');
+  const [activeDataset, setActiveDataset] = useState<DatasetName>('Notes');
 
   return (
     <AppStateContext.Provider value={{

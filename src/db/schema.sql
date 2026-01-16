@@ -54,31 +54,10 @@ CREATE INDEX IF NOT EXISTS idx_nodes_type ON nodes(node_type);
 CREATE INDEX IF NOT EXISTS idx_nodes_active ON nodes(deleted_at) WHERE deleted_at IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_source ON nodes(source, source_id) WHERE source IS NOT NULL;
 
--- Full-text search
-CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
-    name, content, tags, folder,
-    content='nodes',
-    content_rowid='rowid',
-    tokenize='porter unicode61'
-);
-
--- FTS sync triggers
-CREATE TRIGGER IF NOT EXISTS nodes_fts_insert AFTER INSERT ON nodes BEGIN
-    INSERT INTO nodes_fts(rowid, name, content, tags, folder)
-    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
-END;
-
-CREATE TRIGGER IF NOT EXISTS nodes_fts_delete AFTER DELETE ON nodes BEGIN
-    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, tags, folder)
-    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
-END;
-
-CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes BEGIN
-    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, tags, folder)
-    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
-    INSERT INTO nodes_fts(rowid, name, content, tags, folder)
-    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
-END;
+-- Full-text search index on name/content for basic LIKE queries
+-- NOTE: FTS5 not available in CDN sql.js; use LIKE queries for MVP
+CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
+CREATE INDEX IF NOT EXISTS idx_nodes_content ON nodes(content);
 
 -- Edges: Relationships (GRAPH)
 CREATE TABLE IF NOT EXISTS edges (
