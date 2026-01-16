@@ -3,13 +3,14 @@ import { DatabaseProvider } from './db/DatabaseContext';
 import { FilterProvider } from './state/FilterContext';
 import { PAFVProvider } from './state/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
+import { AppStateProvider } from './contexts/AppStateContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 
 // Import Figma components (when ready)
 // import { Toolbar } from './components/Toolbar';
 // import { Navigator } from './components/Navigator';
 // import { Sidebar } from './components/Sidebar';
-// import { Canvas } from './components/Canvas';
+import { Canvas } from './components/Canvas';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -24,16 +25,7 @@ function AppContent() {
       <main className="app-main">
         {/* <Navigator /> */}
         {/* <Sidebar /> */}
-        {/* <Canvas /> */}
-        <div className="p-8 text-center">
-          <p className="text-lg mb-4">🎉 Isometry is ready for development!</p>
-          <p className="text-sm text-gray-600">
-            Database, types, views, filters, and state management are all set up.
-          </p>
-          <p className="text-sm text-gray-600 mt-2">
-            Start Claude Code and run: <code className="bg-gray-100 px-2 py-1 rounded">npm run dev</code>
-          </p>
-        </div>
+        <Canvas />
       </main>
     </div>
   );
@@ -47,7 +39,9 @@ function App() {
           <FilterProvider>
             <PAFVProvider>
               <SelectionProvider>
-                <AppContent />
+                <AppStateProvider>
+                  <AppContent />
+                </AppStateProvider>
               </SelectionProvider>
             </PAFVProvider>
           </FilterProvider>

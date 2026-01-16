@@ -1,14 +1,14 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface ListViewProps {
-  data: CardData[];
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  onNodeClick?: (node: Node) => void;
 }
 
-export function ListView({ data, onCardClick }: ListViewProps) {
+export function ListView({ data, onNodeClick }: ListViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
 
@@ -19,7 +19,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
 
     // Clear and rebuild - D3 handles the diffing via key function
     const rows = container
-      .selectAll<HTMLDivElement, CardData>('.list-row')
+      .selectAll<HTMLDivElement, Node>('.list-row')
       .data(data, d => d.id)
       .join(
         enter => enter
@@ -47,7 +47,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
       .style('padding', '12px 16px')
       .style('gap', '16px')
       .style('align-items', 'center')
-      .on('click', (_event, d) => onCardClick?.(d));
+      .on('click', (_event, d) => onNodeClick?.(d));
 
     // Update cell contents
     rows.each(function(d) {
@@ -61,7 +61,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
         .attr('class', 'font-medium text-sm truncate')
         .text(d.name);
 
-      // Category cell
+      // Folder cell
       row.append('div')
         .append('span')
         .attr('class', `px-2 py-0.5 text-xs rounded ${
@@ -69,7 +69,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
             ? 'bg-[#a0a0a0]'
             : 'bg-blue-100 text-blue-700'
         }`)
-        .text(d.category || '—');
+        .text(d.folder || '—');
 
       // Status cell
       row.append('div')
@@ -87,7 +87,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
         .text(`P${d.priority}`);
     });
 
-  }, [data, theme, onCardClick]);
+  }, [data, theme, onNodeClick]);
 
   return (
     <div ref={containerRef} className="w-full">
@@ -101,7 +101,7 @@ export function ListView({ data, onCardClick }: ListViewProps) {
         style={{ gridTemplateColumns: '1fr 120px 100px 80px' }}
       >
         <div>Name</div>
-        <div>Category</div>
+        <div>Folder</div>
         <div>Status</div>
         <div className="text-center">Priority</div>
       </div>

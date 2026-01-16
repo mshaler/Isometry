@@ -1,38 +1,38 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface ChartsViewProps {
-  data: CardData[];
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  onNodeClick?: (node: Node) => void;
 }
 
 type ChartType = 'bar' | 'pie' | 'treemap';
-type GroupBy = 'category' | 'status' | 'priority';
+type GroupBy = 'folder' | 'status' | 'priority';
 
-export function ChartsView({ data, onCardClick }: ChartsViewProps) {
+export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const [chartType, setChartType] = useState<ChartType>('bar');
-  const [groupBy, setGroupBy] = useState<GroupBy>('category');
+  const [groupBy, setGroupBy] = useState<GroupBy>('folder');
 
   // Group data
   const groupedData = useMemo(() => {
-    const groups = new Map<string, CardData[]>();
-    data.forEach(card => {
+    const groups = new Map<string, Node[]>();
+    data.forEach(node => {
       let key: string;
       if (groupBy === 'priority') {
-        key = `Priority ${card.priority}`;
+        key = `Priority ${node.priority}`;
       } else {
-        key = card[groupBy] || 'Unknown';
+        key = node[groupBy] || 'Unknown';
       }
       if (!groups.has(key)) groups.set(key, []);
-      groups.get(key)!.push(card);
+      groups.get(key)!.push(node);
     });
     return Array.from(groups.entries())
-      .map(([name, cards]) => ({ name, count: cards.length, cards }))
+      .map(([name, nodes]) => ({ name, count: nodes.length, nodes }))
       .sort((a, b) => b.count - a.count);
   }, [data, groupBy]);
 
@@ -62,14 +62,14 @@ export function ChartsView({ data, onCardClick }: ChartsViewProps) {
       .attr('height', height);
 
     if (chartType === 'bar') {
-      renderBarChart(svg, groupedData, width, height, margin, colorScale, theme, onCardClick);
+      renderBarChart(svg, groupedData, width, height, margin, colorScale, theme, onNodeClick);
     } else if (chartType === 'pie') {
-      renderPieChart(svg, groupedData, width, height, colorScale, theme, onCardClick);
+      renderPieChart(svg, groupedData, width, height, colorScale, theme, onNodeClick);
     } else if (chartType === 'treemap') {
-      renderTreemap(svg, groupedData, width, height, colorScale, theme, onCardClick);
+      renderTreemap(svg, groupedData, width, height, colorScale, theme, onNodeClick);
     }
 
-  }, [groupedData, chartType, theme, colorScale, onCardClick]);
+  }, [groupedData, chartType, theme, colorScale, onNodeClick]);
 
   return (
     <div ref={containerRef} className="w-full h-full flex flex-col">
@@ -105,14 +105,14 @@ export function ChartsView({ data, onCardClick }: ChartsViewProps) {
                 : 'bg-white border border-gray-300 rounded'
             }`}
           >
-            <option value="category">Category</option>
+            <option value="folder">Folder</option>
             <option value="status">Status</option>
             <option value="priority">Priority</option>
           </select>
         </div>
 
         <div className={`ml-auto text-xs ${theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-500'}`}>
-          {data.length} cards in {groupedData.length} groups
+          {data.length} notes in {groupedData.length} groups
         </div>
       </div>
 
@@ -126,13 +126,13 @@ export function ChartsView({ data, onCardClick }: ChartsViewProps) {
 
 function renderBarChart(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-  data: { name: string; count: number; cards: CardData[] }[],
+  data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
   margin: { top: number; right: number; bottom: number; left: number },
   colorScale: d3.ScaleOrdinal<string, string>,
   theme: string,
-  onCardClick?: (card: CardData) => void
+  onNodeClick?: (node: Node) => void
 ) {
   const g = svg.append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top})`);
@@ -184,9 +184,9 @@ function renderBarChart(
     .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
-      // Click the first card in the group
-      if (d.cards.length > 0) {
-        onCardClick?.(d.cards[0]);
+      // Click the first node in the group
+      if (d.nodes.length > 0) {
+        onNodeClick?.(d.nodes[0]);
       }
     })
     .on('mouseenter', function() {
@@ -211,26 +211,26 @@ function renderBarChart(
 
 function renderPieChart(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-  data: { name: string; count: number; cards: CardData[] }[],
+  data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
   colorScale: d3.ScaleOrdinal<string, string>,
   theme: string,
-  onCardClick?: (card: CardData) => void
+  onNodeClick?: (node: Node) => void
 ) {
   const radius = Math.min(width, height) / 2 - 60;
   const g = svg.append('g')
     .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
-  const pie = d3.pie<{ name: string; count: number; cards: CardData[] }>()
+  const pie = d3.pie<{ name: string; count: number; nodes: Node[] }>()
     .value(d => d.count)
     .sort(null);
 
-  const arc = d3.arc<d3.PieArcDatum<{ name: string; count: number; cards: CardData[] }>>()
+  const arc = d3.arc<d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>>()
     .innerRadius(radius * 0.4)
     .outerRadius(radius);
 
-  const outerArc = d3.arc<d3.PieArcDatum<{ name: string; count: number; cards: CardData[] }>>()
+  const outerArc = d3.arc<d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>>()
     .innerRadius(radius * 1.1)
     .outerRadius(radius * 1.1);
 
@@ -245,11 +245,11 @@ function renderPieChart(
     .attr('stroke-width', 2)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
-      if (d.data.cards.length > 0) {
-        onCardClick?.(d.data.cards[0]);
+      if (d.data.nodes.length > 0) {
+        onNodeClick?.(d.data.nodes[0]);
       }
     })
-    .on('mouseenter', function(_event: MouseEvent, d: d3.PieArcDatum<{ name: string; count: number; cards: CardData[] }>) {
+    .on('mouseenter', function(_event: MouseEvent, d: d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>) {
       d3.select(this)
         .transition()
         .duration(100)
@@ -300,12 +300,12 @@ function renderPieChart(
 
 function renderTreemap(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-  data: { name: string; count: number; cards: CardData[] }[],
+  data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
   colorScale: d3.ScaleOrdinal<string, string>,
   theme: string,
-  onCardClick?: (card: CardData) => void
+  onNodeClick?: (node: Node) => void
 ) {
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   const innerWidth = width - margin.left - margin.right;
@@ -316,7 +316,7 @@ function renderTreemap(
 
   // Create hierarchy
   interface TreemapData {
-    children?: { name: string; count: number; cards: CardData[] }[];
+    children?: { name: string; count: number; nodes: Node[] }[];
   }
 
   const root = d3.hierarchy<TreemapData>({ children: data })
@@ -348,9 +348,9 @@ function renderTreemap(
     .attr('stroke-width', 1)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
-      const cards = (d.data as any).cards as CardData[];
-      if (cards && cards.length > 0) {
-        onCardClick?.(cards[0]);
+      const nodes = (d.data as any).nodes as Node[];
+      if (nodes && nodes.length > 0) {
+        onNodeClick?.(nodes[0]);
       }
     })
     .on('mouseenter', function() {

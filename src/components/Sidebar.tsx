@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Filter, FileText, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useFilters } from '@/contexts/FilterContext';
@@ -11,6 +11,10 @@ interface FacetValue {
   count: number;
 }
 
+interface ColumnInfo {
+  name: string;
+}
+
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<TabType>('filters');
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['Analytics']));
@@ -18,22 +22,100 @@ export function Sidebar() {
   const { theme } = useTheme();
   const { filters, addFilter, removeFilter, clearFilters } = useFilters();
 
-  const filterSections = [
-    { title: 'Analytics', items: ['Category', 'Status', 'Priority', 'Time'] },
-    { title: 'Synthetics', items: ['Links', 'Paths', 'Vectors', 'Centrality', 'Similarity', 'Community'] },
-    { title: 'Formulas', items: ['Active Filters', 'Algorithms', 'Audit View', 'Versions'] }
-  ];
-
   const templateBuilders = ['Apps Builder', 'Views Builder', 'Buttons Builder', 'Charts Builder'];
 
-  // Query distinct values for category facet
+  // Query table schema to discover available columns
+  const { data: columns } = useSQLiteQuery<ColumnInfo>(
+    `PRAGMA table_info(cards)`
+  );
+
+  // Determine which filterable columns exist in the schema
+  const availableFilters = useMemo(() => {
+    if (!columns) return [];
+
+    const columnNames = new Set(columns.map(c => c.name));
+    const filterOptions: string[] = [];
+
+    // Only add filter options for columns that actually exist
+    if (columnNames.has('category')) filterOptions.push('Category');
+    if (columnNames.has('status')) filterOptions.push('Status');
+    if (columnNames.has('priority')) filterOptions.push('Priority');
+    if (columnNames.has('created') || columnNames.has('due')) filterOptions.push('Time');
+    if (columnNames.has('tags')) filterOptions.push('Tags');
+
+    return filterOptions;
+  }, [columns]);
+
+  // Build filter sections dynamically based on available data
+  const filterSections = useMemo(() => {
+    const sections = [];
+
+    if (availableFilters.length > 0) {
+      sections.push({ title: 'Analytics', items: availableFilters });
+    }
+
+    // Synthetics only show if we have edges table
+    sections.push({
+      title: 'Synthetics',
+      items: ['Links', 'Paths', 'Vectors', 'Centrality', 'Similarity', 'Community']
+    });
+
+    sections.push({
+      title: 'Formulas',
+      items: ['Active Filters', 'Algorithms', 'Audit View', 'Versions']
+    });
+
+    return sections;
+  }, [availableFilters]);
+
+  // Query distinct values for category facet (only if category column exists)
   const { data: categories } = useSQLiteQuery<FacetValue>(
-    `SELECT category as value, COUNT(*) as count FROM cards WHERE category IS NOT NULL GROUP BY category ORDER BY count DESC`
+    availableFilters.includes('Category')
+      ? `SELECT category as value, COUNT(*) as count FROM cards WHERE category IS NOT NULL AND category != '' GROUP BY category ORDER BY count DESC`
+      : `SELECT NULL as value, 0 as count WHERE 0`, // No-op query
+    [],
+    { enabled: availableFilters.includes('Category') }
   );
 
   // Query distinct values for status facet
   const { data: statuses } = useSQLiteQuery<FacetValue>(
-    `SELECT status as value, COUNT(*) as count FROM cards WHERE status IS NOT NULL GROUP BY status ORDER BY count DESC`
+    availableFilters.includes('Status')
+      ? `SELECT status as value, COUNT(*) as count FROM cards WHERE status IS NOT NULL AND status != '' GROUP BY status ORDER BY count DESC`
+      : `SELECT NULL as value, 0 as count WHERE 0`,
+    [],
+    { enabled: availableFilters.includes('Status') }
+  );
+
+  // Query distinct values for priority facet
+  const { data: priorities } = useSQLiteQuery<FacetValue>(
+    availableFilters.includes('Priority')
+      ? `SELECT CAST(priority as TEXT) as value, COUNT(*) as count FROM cards WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority ASC`
+      : `SELECT NULL as value, 0 as count WHERE 0`,
+    [],
+    { enabled: availableFilters.includes('Priority') }
+  );
+
+  // Query distinct values for tags facet
+  const { data: tags } = useSQLiteQuery<FacetValue>(
+    availableFilters.includes('Tags')
+      ? `SELECT tags as value, COUNT(*) as count FROM cards WHERE tags IS NOT NULL AND tags != '' GROUP BY tags ORDER BY count DESC`
+      : `SELECT NULL as value, 0 as count WHERE 0`,
+    [],
+    { enabled: availableFilters.includes('Tags') }
+  );
+
+  // Query date range info for time filters
+  const { data: dateRange } = useSQLiteQuery<{ min_date: string; max_date: string; has_created: number; has_due: number }>(
+    availableFilters.includes('Time')
+      ? `SELECT
+          MIN(COALESCE(created, due)) as min_date,
+          MAX(COALESCE(created, due)) as max_date,
+          SUM(CASE WHEN created IS NOT NULL THEN 1 ELSE 0 END) as has_created,
+          SUM(CASE WHEN due IS NOT NULL THEN 1 ELSE 0 END) as has_due
+         FROM cards`
+      : `SELECT NULL as min_date, NULL as max_date, 0 as has_created, 0 as has_due WHERE 0`,
+    [],
+    { enabled: availableFilters.includes('Time') }
   );
 
   const toggleSection = (title: string) => {
@@ -44,7 +126,7 @@ export function Sidebar() {
   };
 
   const handleFilterItemClick = (item: string) => {
-    if (['Category', 'Status', 'Priority', 'Time'].includes(item)) {
+    if (availableFilters.includes(item)) {
       setActiveFilterPanel(activeFilterPanel === item ? null : item);
     } else {
       console.log('Selected:', item);
@@ -56,89 +138,91 @@ export function Sidebar() {
     setActiveFilterPanel(null);
   };
 
+  const renderFacetList = (
+    data: FacetValue[] | null | undefined,
+    field: string,
+    emptyMessage: string
+  ) => {
+    if (!data || data.length === 0) {
+      return <div className="text-xs text-gray-400 p-2">{emptyMessage}</div>;
+    }
+
+    return (
+      <div className="space-y-1">
+        {data.filter(item => item.value).map((item) => (
+          <button
+            key={item.value}
+            onClick={() => handleFacetClick(field, item.value)}
+            className={`w-full h-7 px-2 flex items-center justify-between text-sm ${
+              theme === 'NeXTSTEP'
+                ? 'bg-[#d4d4d4] hover:bg-black hover:text-white'
+                : 'bg-white hover:bg-blue-500 hover:text-white rounded'
+            }`}
+          >
+            <span>{item.value}</span>
+            <span className={`text-xs ${theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-400'}`}>
+              {item.count}
+            </span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   const renderFilterPanel = () => {
     if (!activeFilterPanel) return null;
 
     const panelContent = () => {
       switch (activeFilterPanel) {
         case 'Category':
-          return (
-            <div className="space-y-1">
-              {categories?.map((cat) => (
-                <button
-                  key={cat.value}
-                  onClick={() => handleFacetClick('category', cat.value)}
-                  className={`w-full h-7 px-2 flex items-center justify-between text-sm ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#d4d4d4] hover:bg-black hover:text-white'
-                      : 'bg-white hover:bg-blue-500 hover:text-white rounded'
-                  }`}
-                >
-                  <span>{cat.value}</span>
-                  <span className={`text-xs ${theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-400'}`}>
-                    {cat.count}
-                  </span>
-                </button>
-              ))}
-              {(!categories || categories.length === 0) && (
-                <div className="text-xs text-gray-400 p-2">No categories found</div>
-              )}
-            </div>
-          );
+          return renderFacetList(categories, 'category', 'No categories in data');
 
         case 'Status':
-          return (
-            <div className="space-y-1">
-              {statuses?.map((status) => (
-                <button
-                  key={status.value}
-                  onClick={() => handleFacetClick('status', status.value)}
-                  className={`w-full h-7 px-2 flex items-center justify-between text-sm ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#d4d4d4] hover:bg-black hover:text-white'
-                      : 'bg-white hover:bg-blue-500 hover:text-white rounded'
-                  }`}
-                >
-                  <span>{status.value}</span>
-                  <span className={`text-xs ${theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-400'}`}>
-                    {status.count}
-                  </span>
-                </button>
-              ))}
-              {(!statuses || statuses.length === 0) && (
-                <div className="text-xs text-gray-400 p-2">No statuses found</div>
-              )}
-            </div>
-          );
+          return renderFacetList(statuses, 'status', 'No statuses in data');
 
         case 'Priority':
-          return (
-            <div className="space-y-1">
-              {[1, 2, 3, 4, 5].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => handleFacetClick('priority', p.toString())}
-                  className={`w-full h-7 px-2 flex items-center text-sm ${
-                    theme === 'NeXTSTEP'
-                      ? 'bg-[#d4d4d4] hover:bg-black hover:text-white'
-                      : 'bg-white hover:bg-blue-500 hover:text-white rounded'
-                  }`}
-                >
-                  Priority {p} {'⭐'.repeat(6 - p)}
-                </button>
-              ))}
-            </div>
-          );
+          return renderFacetList(priorities, 'priority', 'No priorities in data');
+
+        case 'Tags':
+          return renderFacetList(tags, 'tags', 'No tags in data');
 
         case 'Time':
+          // Only show time filters if we have date data
+          if (!dateRange || dateRange.length === 0 || (!dateRange[0]?.has_created && !dateRange[0]?.has_due)) {
+            return <div className="text-xs text-gray-400 p-2">No date fields in data</div>;
+          }
+
+          const timeRanges = [];
+          const now = new Date();
+          const today = now.toISOString().split('T')[0];
+
+          // Calculate date boundaries
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+          const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0];
+          const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+
+          timeRanges.push({ label: 'Today', start: today, end: today });
+          timeRanges.push({ label: 'This Week', start: weekAgo, end: today });
+          timeRanges.push({ label: 'This Month', start: monthAgo, end: today });
+          timeRanges.push({ label: 'This Year', start: yearAgo, end: today });
+
+          if (dateRange[0]?.has_due) {
+            timeRanges.push({ label: 'Overdue', start: '1900-01-01', end: today, field: 'due' });
+          }
+
           return (
             <div className="space-y-1">
-              {['Today', 'This Week', 'This Month', 'This Year', 'Overdue'].map((range) => (
+              {timeRanges.map((range) => (
                 <button
-                  key={range}
+                  key={range.label}
                   onClick={() => {
-                    // TODO: Implement time range filter
-                    console.log('Time filter:', range);
+                    // Add time range filter
+                    const dateField = range.field || (dateRange[0]?.has_created ? 'created' : 'due');
+                    addFilter({
+                      field: dateField,
+                      operator: range.label === 'Overdue' ? '<' : '>=',
+                      value: range.label === 'Overdue' ? today : range.start
+                    });
                     setActiveFilterPanel(null);
                   }}
                   className={`w-full h-7 px-2 text-left text-sm ${
@@ -147,7 +231,7 @@ export function Sidebar() {
                       : 'bg-white hover:bg-blue-500 hover:text-white rounded'
                   }`}
                 >
-                  {range}
+                  {range.label}
                 </button>
               ))}
             </div>
@@ -238,7 +322,7 @@ export function Sidebar() {
                     : 'bg-blue-100 text-blue-700 rounded-full'
                 }`}
               >
-                {filter.field}: {String(filter.value)}
+                {filter.field} {filter.operator} {String(filter.value)}
                 <button
                   onClick={() => removeFilter(index)}
                   className="hover:text-red-500"
