@@ -2,66 +2,66 @@ import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV } from '@/contexts/PAFVContext';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface GridViewProps {
-  data: CardData[];
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  onNodeClick?: (node: Node) => void;
 }
 
-// Map chip IDs to card fields
-const FIELD_MAP: Record<string, keyof CardData> = {
-  folder: 'category',
+// Map chip IDs to Node fields
+const FIELD_MAP: Record<string, keyof Node> = {
+  folder: 'folder',
   subfolder: 'status',
-  tags: 'category',
-  year: 'created',
-  month: 'created',
-  category: 'category',
+  tags: 'folder',
+  year: 'createdAt',
+  month: 'createdAt',
+  category: 'folder',
   status: 'status',
   priority: 'priority',
 };
 
-function getFieldValue(card: CardData, chipId: string): string {
-  const field = FIELD_MAP[chipId] || 'category';
-  const value = card[field];
+function getFieldValue(node: Node, chipId: string): string {
+  const field = FIELD_MAP[chipId] || 'folder';
+  const value = node[field];
 
-  if (field === 'created' && value) {
+  if (field === 'createdAt' && value) {
     if (chipId === 'year') {
-      return new Date(value).getFullYear().toString();
+      return new Date(value as string).getFullYear().toString();
     }
     if (chipId === 'month') {
-      return new Date(value).toLocaleString('default', { month: 'short' });
+      return new Date(value as string).toLocaleString('default', { month: 'short' });
     }
   }
 
   return String(value ?? 'Unknown');
 }
 
-export function GridView({ data, onCardClick }: GridViewProps) {
+export function GridView({ data, onNodeClick }: GridViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const { wells } = usePAFV();
 
   // Get axis assignments from PAFV wells
-  const xAxis = wells.xRows[0]?.id || 'category';
-  const yAxis = wells.yColumns[0]?.id || 'status';
+  const xAxis = wells.xRows[0]?.id || 'folder';
+  const yAxis = wells.yColumns[0]?.id || 'priority';
 
   // Group data by x and y axes
   const { xValues, yValues, grouped } = useMemo(() => {
     const xSet = new Set<string>();
     const ySet = new Set<string>();
-    const map = new Map<string, CardData[]>();
+    const map = new Map<string, Node[]>();
 
-    data.forEach(card => {
-      const xVal = getFieldValue(card, xAxis);
-      const yVal = getFieldValue(card, yAxis);
+    data.forEach(node => {
+      const xVal = getFieldValue(node, xAxis);
+      const yVal = getFieldValue(node, yAxis);
       xSet.add(xVal);
       ySet.add(yVal);
 
       const key = `${xVal}|${yVal}`;
       if (!map.has(key)) map.set(key, []);
-      map.get(key)!.push(card);
+      map.get(key)!.push(node);
     });
 
     return {
@@ -163,27 +163,27 @@ export function GridView({ data, onCardClick }: GridViewProps) {
 
     xValues.forEach(xVal => {
       yValues.forEach(yVal => {
-        const cards = grouped.get(`${xVal}|${yVal}`) || [];
+        const nodes = grouped.get(`${xVal}|${yVal}`) || [];
         const cellX = xScale(xVal) || 0;
         const cellY = yScale(yVal) || 0;
 
-        // Position cards in a mini-grid within the cell
+        // Position nodes in a mini-grid within the cell
         const cols = Math.max(1, Math.floor(cellWidth / (cardWidth + 4)));
 
-        cards.forEach((card, i) => {
+        nodes.forEach((node, i) => {
           const col = i % cols;
           const row = Math.floor(i / cols);
           const x = cellX + 4 + col * (cardWidth + 4);
           const y = cellY + 4 + row * (cardHeight + 4);
 
-          const cardGroup = g.append('g')
-            .attr('class', 'card-group')
+          const nodeGroup = g.append('g')
+            .attr('class', 'node-group')
             .attr('transform', `translate(${x},${y})`)
             .style('cursor', 'pointer')
-            .on('click', () => onCardClick?.(card));
+            .on('click', () => onNodeClick?.(node));
 
-          // Card background
-          cardGroup.append('rect')
+          // Node background
+          nodeGroup.append('rect')
             .attr('width', cardWidth)
             .attr('height', cardHeight)
             .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
@@ -191,27 +191,27 @@ export function GridView({ data, onCardClick }: GridViewProps) {
             .attr('stroke', theme === 'NeXTSTEP' ? '#707070' : '#e5e7eb')
             .attr('stroke-width', 1);
 
-          // Card title
-          cardGroup.append('text')
+          // Node title
+          nodeGroup.append('text')
             .attr('x', 6)
             .attr('y', 16)
             .attr('class', 'text-xs font-medium')
             .attr('fill', '#374151')
-            .text(card.name.length > 15 ? card.name.slice(0, 15) + '...' : card.name);
+            .text(node.name.length > 15 ? node.name.slice(0, 15) + '...' : node.name);
 
-          // Card priority badge
-          cardGroup.append('text')
+          // Node priority badge
+          nodeGroup.append('text')
             .attr('x', cardWidth - 6)
             .attr('y', 16)
             .attr('text-anchor', 'end')
             .attr('class', 'text-xs')
             .attr('fill', '#9ca3af')
-            .text(`P${card.priority}`);
+            .text(`P${node.priority}`);
         });
       });
     });
 
-  }, [data, xValues, yValues, grouped, theme, onCardClick]);
+  }, [data, xValues, yValues, grouped, theme, onNodeClick]);
 
   return (
     <div ref={containerRef} className="w-full h-full">

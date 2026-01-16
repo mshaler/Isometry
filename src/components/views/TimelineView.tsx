@@ -1,15 +1,15 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface TimelineViewProps {
-  data: CardData[];
-  dateField?: 'created' | 'due';
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  dateField?: 'createdAt' | 'dueAt';
+  onNodeClick?: (node: Node) => void;
 }
 
-export function TimelineView({ data, dateField = 'created', onCardClick }: TimelineViewProps) {
+export function TimelineView({ data, dateField = 'createdAt', onNodeClick }: TimelineViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
@@ -17,11 +17,11 @@ export function TimelineView({ data, dateField = 'created', onCardClick }: Timel
   // Parse dates and filter valid items
   const timelineData = useMemo(() => {
     return data
-      .map(card => ({
-        ...card,
-        date: card[dateField] ? new Date(card[dateField]!) : null,
+      .map(node => ({
+        ...node,
+        date: node[dateField] ? new Date(node[dateField]!) : null,
       }))
-      .filter(card => card.date && !isNaN(card.date.getTime()))
+      .filter(node => node.date && !isNaN(node.date.getTime()))
       .sort((a, b) => a.date!.getTime() - b.date!.getTime());
   }, [data, dateField]);
 
@@ -43,8 +43,8 @@ export function TimelineView({ data, dateField = 'created', onCardClick }: Timel
       .range([margin.left, width - margin.right])
       .nice();
 
-    // Category scale for y-axis (swim lanes)
-    const categories = Array.from(new Set(timelineData.map(d => d.category || 'Uncategorized')));
+    // Folder scale for y-axis (swim lanes)
+    const categories = Array.from(new Set(timelineData.map(d => d.folder || 'Uncategorized')));
     const yScale = d3.scaleBand()
       .domain(categories)
       .range([margin.top, height - margin.bottom])
@@ -73,7 +73,7 @@ export function TimelineView({ data, dateField = 'created', onCardClick }: Timel
 
         cards.attr('transform', d => {
           const x = newXScale(d.date!);
-          const y = yScale(d.category || 'Uncategorized')! + yScale.bandwidth() / 2;
+          const y = yScale(d.folder || 'Uncategorized')! + yScale.bandwidth() / 2;
           return `translate(${x},${y})`;
         });
 
@@ -122,28 +122,28 @@ export function TimelineView({ data, dateField = 'created', onCardClick }: Timel
       .attr('stroke-width', 1)
       .attr('stroke-dasharray', '4,4');
 
-    // Cards
+    // Nodes
     const cards = g.append('g')
-      .attr('class', 'cards')
+      .attr('class', 'nodes')
       .selectAll<SVGGElement, typeof timelineData[0]>('g')
       .data(timelineData, d => d.id)
       .join('g')
-      .attr('class', 'card')
+      .attr('class', 'node')
       .attr('transform', d => {
         const x = xScale(d.date!);
-        const y = yScale(d.category || 'Uncategorized')! + yScale.bandwidth() / 2;
+        const y = yScale(d.folder || 'Uncategorized')! + yScale.bandwidth() / 2;
         return `translate(${x},${y})`;
       })
       .style('cursor', 'pointer')
       .on('click', (event, d) => {
         event.stopPropagation();
-        onCardClick?.(d);
+        onNodeClick?.(d);
       });
 
-    // Card circles
+    // Node circles
     cards.append('circle')
       .attr('r', d => 6 + (6 - d.priority) * 1.5)
-      .attr('fill', d => colorScale(d.category || 'Uncategorized'))
+      .attr('fill', d => colorScale(d.folder || 'Uncategorized'))
       .attr('stroke', theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
       .attr('stroke-width', 1.5);
 
@@ -199,7 +199,7 @@ export function TimelineView({ data, dateField = 'created', onCardClick }: Timel
     return () => {
       tooltip.remove();
     };
-  }, [timelineData, theme, onCardClick]);
+  }, [timelineData, theme, onNodeClick]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">

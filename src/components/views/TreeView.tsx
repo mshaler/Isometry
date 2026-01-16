@@ -1,52 +1,48 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import type { CardData } from '@/types/CardData';
+import type { Node as DataNode } from '@/types/node';
 
 interface TreeViewProps {
-  data: CardData[];
-  onCardClick?: (card: CardData) => void;
+  data: DataNode[];
+  onNodeClick?: (node: DataNode) => void;
 }
 
 interface TreeNode {
   id: string;
   name: string;
-  category: string | null;
+  folder: string | null;
   priority: number;
   children?: TreeNode[];
-  _card: CardData;
+  _node: DataNode;
 }
 
-function buildTree(data: CardData[]): TreeNode[] {
+function buildTree(data: DataNode[]): TreeNode[] {
   const nodeMap = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
-  // Create all nodes
-  data.forEach(card => {
-    nodeMap.set(card.id, {
-      id: card.id,
-      name: card.name,
-      category: card.category,
-      priority: card.priority,
+  // Create all nodes (no parent_id in schema, so all are roots)
+  data.forEach(node => {
+    nodeMap.set(node.id, {
+      id: node.id,
+      name: node.name,
+      folder: node.folder,
+      priority: node.priority,
       children: [],
-      _card: card,
+      _node: node,
     });
   });
 
-  // Build tree structure
-  data.forEach(card => {
-    const node = nodeMap.get(card.id)!;
-    if (card.parent_id && nodeMap.has(card.parent_id)) {
-      nodeMap.get(card.parent_id)!.children!.push(node);
-    } else {
-      roots.push(node);
-    }
+  // All nodes are roots since there's no parent_id in the schema
+  data.forEach(node => {
+    const treeNode = nodeMap.get(node.id)!;
+    roots.push(treeNode);
   });
 
   return roots;
 }
 
-export function TreeView({ data, onCardClick }: TreeViewProps) {
+export function TreeView({ data, onNodeClick }: TreeViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
@@ -71,10 +67,10 @@ export function TreeView({ data, onCardClick }: TreeViewProps) {
       : {
           id: '__root__',
           name: 'Root',
-          category: null,
+          folder: null,
           priority: 0,
           children: treeRoots,
-          _card: { id: '__root__', name: 'Root', content: null, category: null, status: null, priority: 0, parent_id: null, created: null, due: null },
+          _node: data[0], // Use first node as placeholder
         };
 
     // Create hierarchy
@@ -87,9 +83,9 @@ export function TreeView({ data, onCardClick }: TreeViewProps) {
     const treeData = treeLayout(root);
 
     // Color scale
-    const categories = Array.from(new Set(data.map(d => d.category).filter(Boolean)));
+    const folders = Array.from(new Set(data.map(d => d.folder).filter(Boolean)));
     const colorScale = d3.scaleOrdinal<string>()
-      .domain(categories as string[])
+      .domain(folders as string[])
       .range(theme === 'NeXTSTEP'
         ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090']
         : d3.schemeTableau10
@@ -137,14 +133,14 @@ export function TreeView({ data, onCardClick }: TreeViewProps) {
       .style('cursor', 'pointer')
       .on('click', (event, d) => {
         event.stopPropagation();
-        onCardClick?.(d.data._card);
+        onNodeClick?.(d.data._node);
       });
 
     // Node circles
     node.append('circle')
       .attr('r', d => 8 + (6 - d.data.priority) * 1.5)
-      .attr('fill', d => d.data.category
-        ? colorScale(d.data.category)
+      .attr('fill', d => d.data.folder
+        ? colorScale(d.data.folder)
         : (theme === 'NeXTSTEP' ? '#b0b0b0' : '#e5e7eb')
       )
       .attr('stroke', theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
@@ -172,10 +168,10 @@ export function TreeView({ data, onCardClick }: TreeViewProps) {
         .attr('stroke-width', 1.5);
     });
 
-  }, [treeRoots, data, theme, onCardClick]);
+  }, [treeRoots, data, theme, onNodeClick]);
 
-  // Check if there's actual hierarchy
-  const hasHierarchy = data.some(d => d.parent_id !== null);
+  // Tree view shows all nodes (no parent_id in schema)
+  const hasHierarchy = false;
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
@@ -183,7 +179,7 @@ export function TreeView({ data, onCardClick }: TreeViewProps) {
       {!hasHierarchy && data.length > 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className={`text-sm ${theme === 'NeXTSTEP' ? 'text-[#707070]' : 'text-gray-400'}`}>
-            No hierarchy defined. Set parent_id on cards to see the tree.
+            No hierarchy defined. Add NEST edges to see the tree.
           </div>
         </div>
       )}

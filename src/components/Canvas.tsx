@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState } from '@/contexts/AppStateContext';
-import { useFilters } from '@/contexts/FilterContext';
-import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { useNodes } from '@/hooks/useSQLiteQuery';
 import {
   ListView,
   GridView,
@@ -13,26 +12,21 @@ import {
   NetworkView,
   TreeView,
 } from './views';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
-  const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
-  const { activeView, activeDataset } = useAppState();
-  const { compiledQuery } = useFilters();
+  const { activeView } = useAppState();
 
-  // Query cards from SQLite with filters
-  const { data: cards, loading, error } = useSQLiteQuery<CardData>(
-    `SELECT * FROM cards WHERE dataset_id = ? AND (${compiledQuery.sql})`,
-    [activeDataset.toLowerCase(), ...compiledQuery.params]
-  );
+  // Query nodes from SQLite - useNodes handles deleted_at filtering
+  const { data: nodes, loading, error } = useNodes();
 
-  const handleCardClick = useCallback((card: CardData) => {
-    setSelectedCard(card);
-    // Could open a detail panel, modal, etc.
-    console.log('Card clicked:', card);
+  const handleNodeClick = useCallback((node: Node) => {
+    setSelectedNode(node);
+    console.log('Node clicked:', node);
   }, []);
 
   // Render the appropriate view based on activeView
@@ -40,7 +34,7 @@ export function Canvas() {
     if (loading) {
       return (
         <div className="flex items-center justify-center h-full text-gray-500">
-          Loading cards...
+          Loading notes...
         </div>
       );
     }
@@ -53,43 +47,43 @@ export function Canvas() {
       );
     }
 
-    if (!cards || cards.length === 0) {
+    if (!nodes || nodes.length === 0) {
       return (
         <div className="flex items-center justify-center h-full text-gray-400">
-          No cards found
+          No notes found
         </div>
       );
     }
 
     switch (activeView) {
       case 'List':
-        return <ListView data={cards} onCardClick={handleCardClick} />;
+        return <ListView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Gallery':
       case 'Grid':
-        return <GridView data={cards} onCardClick={handleCardClick} />;
+        return <GridView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Kanban':
-        return <KanbanView data={cards} onCardClick={handleCardClick} />;
+        return <KanbanView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Timeline':
-        return <TimelineView data={cards} onCardClick={handleCardClick} />;
+        return <TimelineView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Calendar':
-        return <CalendarView data={cards} onCardClick={handleCardClick} />;
+        return <CalendarView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Charts':
-        return <ChartsView data={cards} onCardClick={handleCardClick} />;
+        return <ChartsView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Graphs':
-        return <NetworkView data={cards} onCardClick={handleCardClick} />;
+        return <NetworkView data={nodes} onNodeClick={handleNodeClick} />;
 
       case 'Tree':
-        return <TreeView data={cards} onCardClick={handleCardClick} />;
+        return <TreeView data={nodes} onNodeClick={handleNodeClick} />;
 
       default:
-        // Default to List view
-        return <ListView data={cards} onCardClick={handleCardClick} />;
+        // Default to Grid view for MVP
+        return <GridView data={nodes} onNodeClick={handleNodeClick} />;
     }
   };
 
@@ -104,17 +98,17 @@ export function Canvas() {
         {renderView()}
       </div>
 
-      {/* Selected Card Info (optional mini-display) */}
-      {selectedCard && (
+      {/* Selected Node Info (optional mini-display) */}
+      {selectedNode && (
         <div className={`h-8 flex items-center px-3 text-xs ${
           theme === 'NeXTSTEP'
             ? 'bg-[#d4d4d4] border-t border-[#808080]'
             : 'bg-gray-50 border-t border-gray-200'
         }`}>
           <span className="font-medium mr-2">Selected:</span>
-          <span className="truncate">{selectedCard.name}</span>
+          <span className="truncate">{selectedNode.name}</span>
           <button
-            onClick={() => setSelectedCard(null)}
+            onClick={() => setSelectedNode(null)}
             className={`ml-auto px-2 ${
               theme === 'NeXTSTEP' ? 'hover:bg-[#c0c0c0]' : 'hover:bg-gray-200 rounded'
             }`}

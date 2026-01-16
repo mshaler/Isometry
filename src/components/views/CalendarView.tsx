@@ -2,15 +2,15 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface CalendarViewProps {
-  data: CardData[];
-  dateField?: 'created' | 'due';
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  dateField?: 'createdAt' | 'dueAt';
+  onNodeClick?: (node: Node) => void;
 }
 
-export function CalendarView({ data, dateField = 'created', onCardClick }: CalendarViewProps) {
+export function CalendarView({ data, dateField = 'createdAt', onNodeClick }: CalendarViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
@@ -19,17 +19,17 @@ export function CalendarView({ data, dateField = 'created', onCardClick }: Calen
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
 
-  // Group cards by date
-  const cardsByDate = useMemo(() => {
-    const map = new Map<string, CardData[]>();
-    data.forEach(card => {
-      const dateValue = card[dateField];
+  // Group nodes by date
+  const nodesByDate = useMemo(() => {
+    const map = new Map<string, Node[]>();
+    data.forEach(node => {
+      const dateValue = node[dateField];
       if (dateValue) {
         const date = new Date(dateValue);
         if (!isNaN(date.getTime())) {
           const key = date.toISOString().split('T')[0];
           if (!map.has(key)) map.set(key, []);
-          map.get(key)!.push(card);
+          map.get(key)!.push(node);
         }
       }
     });
@@ -68,9 +68,9 @@ export function CalendarView({ data, dateField = 'created', onCardClick }: Calen
 
   // Color scale
   const colorScale = useMemo(() => {
-    const categories = Array.from(new Set(data.map(d => d.category).filter(Boolean))) as string[];
+    const folders = Array.from(new Set(data.map(d => d.folder).filter(Boolean))) as string[];
     return d3.scaleOrdinal<string>()
-      .domain(categories)
+      .domain(folders)
       .range(theme === 'NeXTSTEP'
         ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090']
         : d3.schemeTableau10
@@ -152,32 +152,32 @@ export function CalendarView({ data, dateField = 'created', onCardClick }: Calen
       })
       .text(d => d.date?.getDate() ?? '');
 
-    // Cards in cells
+    // Nodes in cells
     cells.each(function(d) {
       if (!d.date) return;
       const dateKey = d.date.toISOString().split('T')[0];
-      const dayCards = cardsByDate.get(dateKey) || [];
+      const dayNodes = nodesByDate.get(dateKey) || [];
 
-      if (dayCards.length === 0) return;
+      if (dayNodes.length === 0) return;
 
       const cell = d3.select(this);
       const maxVisible = Math.floor((cellHeight - 20) / 14);
-      const visibleCards = dayCards.slice(0, maxVisible);
-      const hiddenCount = dayCards.length - maxVisible;
+      const visibleNodes = dayNodes.slice(0, maxVisible);
+      const hiddenCount = dayNodes.length - maxVisible;
 
-      visibleCards.forEach((card, i) => {
+      visibleNodes.forEach((node, i) => {
         cell.append('rect')
           .attr('x', 4)
           .attr('y', 18 + i * 14)
           .attr('width', cellWidth - 12)
           .attr('height', 12)
           .attr('rx', 2)
-          .attr('fill', colorScale(card.category || 'Uncategorized'))
+          .attr('fill', colorScale(node.folder || 'Uncategorized'))
           .attr('opacity', 0.8)
           .style('cursor', 'pointer')
           .on('click', (event) => {
             event.stopPropagation();
-            onCardClick?.(card);
+            onNodeClick?.(node);
           })
           .on('mouseenter', function() {
             d3.select(this).attr('opacity', 1);
@@ -192,7 +192,7 @@ export function CalendarView({ data, dateField = 'created', onCardClick }: Calen
           .attr('class', 'text-[9px]')
           .attr('fill', theme === 'NeXTSTEP' ? '#ffffff' : '#ffffff')
           .style('pointer-events', 'none')
-          .text(card.name.length > 12 ? card.name.slice(0, 12) + '...' : card.name);
+          .text(node.name.length > 12 ? node.name.slice(0, 12) + '...' : node.name);
       });
 
       if (hiddenCount > 0) {
@@ -205,7 +205,7 @@ export function CalendarView({ data, dateField = 'created', onCardClick }: Calen
       }
     });
 
-  }, [calendarDays, cardsByDate, theme, colorScale, onCardClick]);
+  }, [calendarDays, nodesByDate, theme, colorScale, onNodeClick]);
 
   const monthName = currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 

@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
-import { useAppState } from '@/contexts/AppStateContext';
-import type { CardData } from '@/types/CardData';
+import type { Node } from '@/types/node';
 
 interface EdgeData {
   id: string;
@@ -15,14 +14,14 @@ interface EdgeData {
 }
 
 interface NetworkViewProps {
-  data: CardData[];
-  onCardClick?: (card: CardData) => void;
+  data: Node[];
+  onNodeClick?: (node: Node) => void;
 }
 
 interface SimNode extends d3.SimulationNodeDatum {
   id: string;
   name: string;
-  category: string | null;
+  folder: string | null;
   priority: number;
 }
 
@@ -33,17 +32,15 @@ interface SimLink extends d3.SimulationLinkDatum<SimNode> {
   label: string | null;
 }
 
-export function NetworkView({ data, onCardClick }: NetworkViewProps) {
+export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
-  const { activeDataset } = useAppState();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
-  // Fetch edges for this dataset
+  // Fetch edges
   const { data: edges } = useSQLiteQuery<EdgeData>(
-    'SELECT * FROM edges WHERE dataset_id = ?',
-    [activeDataset.toLowerCase()]
+    'SELECT * FROM edges'
   );
 
   useEffect(() => {
@@ -60,7 +57,7 @@ export function NetworkView({ data, onCardClick }: NetworkViewProps) {
     const nodes: SimNode[] = data.map(d => ({
       id: d.id,
       name: d.name,
-      category: d.category,
+      folder: d.folder,
       priority: d.priority,
     }));
 
@@ -78,10 +75,10 @@ export function NetworkView({ data, onCardClick }: NetworkViewProps) {
         label: e.label,
       }));
 
-    // Color scale for categories
-    const categories = Array.from(new Set(nodes.map(n => n.category).filter(Boolean)));
+    // Color scale for folders
+    const folders = Array.from(new Set(nodes.map(n => n.folder).filter(Boolean)));
     const colorScale = d3.scaleOrdinal<string>()
-      .domain(categories as string[])
+      .domain(folders as string[])
       .range(theme === 'NeXTSTEP'
         ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090']
         : d3.schemeTableau10
@@ -175,7 +172,7 @@ export function NetworkView({ data, onCardClick }: NetworkViewProps) {
     // Node circles
     node.append('circle')
       .attr('r', d => 12 + (6 - d.priority) * 2)
-      .attr('fill', d => colorScale(d.category || 'Unknown'))
+      .attr('fill', d => colorScale(d.folder || 'Unknown'))
       .attr('stroke', d => selectedNode === d.id
         ? (theme === 'NeXTSTEP' ? '#000000' : '#3b82f6')
         : (theme === 'NeXTSTEP' ? '#404040' : '#6b7280')
@@ -194,8 +191,8 @@ export function NetworkView({ data, onCardClick }: NetworkViewProps) {
     node.on('click', (event, d) => {
       event.stopPropagation();
       setSelectedNode(prev => prev === d.id ? null : d.id);
-      const cardData = data.find(c => c.id === d.id);
-      if (cardData) onCardClick?.(cardData);
+      const nodeData = data.find(c => c.id === d.id);
+      if (nodeData) onNodeClick?.(nodeData);
     });
 
     // Background click to deselect
@@ -220,7 +217,7 @@ export function NetworkView({ data, onCardClick }: NetworkViewProps) {
     return () => {
       simulation.stop();
     };
-  }, [data, edges, theme, selectedNode, onCardClick]);
+  }, [data, edges, theme, selectedNode, onNodeClick]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
