@@ -45,7 +45,8 @@ export function Navigator() {
 
   return (
     <>
-      <div className={`h-12 flex items-center px-3 gap-4 ${
+      {/* Navigator row needs relative + z-20 so dropdown menus appear above PAFVNavigator */}
+      <div className={`relative z-20 h-12 flex items-center px-3 gap-4 ${
         theme === 'NeXTSTEP'
           ? 'bg-[#b8b8b8] border-b-2 border-[#505050]'
           : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
@@ -81,7 +82,12 @@ export function Navigator() {
         />
       </div>
 
-      {isExpanded && <PAFVNavigator />}
+      {/* PAFVNavigator at z-10, below Navigator dropdowns (z-20) */}
+      {isExpanded && (
+        <div className="relative z-10">
+          <PAFVNavigator />
+        </div>
+      )}
     </>
   );
 }

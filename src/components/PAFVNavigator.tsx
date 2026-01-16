@@ -1,18 +1,20 @@
-import { useState } from 'react';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useTheme } from '@/contexts/ThemeContext';
-
-interface Chip {
-  id: string;
-  label: string;
-  hasCheckbox?: boolean;
-  checked?: boolean;
-}
+import { usePAFV, type Chip, type Wells } from '@/contexts/PAFVContext';
 
 const ItemType = 'CHIP';
 
-function DraggableChip({ chip, well, index, moveChip, toggleCheckbox, theme }: any) {
+interface DraggableChipProps {
+  chip: Chip;
+  well: keyof Wells;
+  index: number;
+  moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
+  toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  theme: 'NeXTSTEP' | 'Modern';
+}
+
+function DraggableChip({ chip, well, index, moveChip, toggleCheckbox, theme }: DraggableChipProps) {
   const [{ isDragging }, drag] = useDrag({
     type: ItemType,
     item: { well, index, chip },
@@ -55,10 +57,19 @@ function DraggableChip({ chip, well, index, moveChip, toggleCheckbox, theme }: a
   );
 }
 
-function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: any) {
+interface DropWellProps {
+  title: string;
+  well: keyof Wells;
+  chips: Chip[];
+  moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
+  toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  theme: 'NeXTSTEP' | 'Modern';
+}
+
+function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: DropWellProps) {
   const [, drop] = useDrop({
     accept: ItemType,
-    drop: (item: any) => {
+    drop: (item: { well: keyof Wells; index: number }) => {
       if (item.well !== well) {
         moveChip(item.well, item.index, well, chips.length);
       }
@@ -78,7 +89,7 @@ function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: any) 
             : 'bg-gray-50 border border-gray-300 rounded-lg'
         }`}
       >
-        {chips.map((chip: Chip, index: number) => (
+        {chips.map((chip, index) => (
           <DraggableChip key={chip.id} chip={chip} well={well} index={index} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
         ))}
       </div>
@@ -88,39 +99,8 @@ function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: any) 
 
 function PAFVNavigatorContent() {
   const { theme } = useTheme();
-  const [wells, setWells] = useState<Record<string, Chip[]>>({
-    available: [],
-    xRows: [
-      { id: 'folder', label: 'Folder' },
-      { id: 'subfolder', label: 'Sub-folder' },
-      { id: 'tags', label: 'Tags' },
-    ],
-    yColumns: [
-      { id: 'year', label: 'Year' },
-      { id: 'month', label: 'Month' },
-    ],
-    zLayers: [
-      { id: 'auditview', label: 'Audit View', hasCheckbox: true, checked: false },
-    ],
-  });
-
-  const moveChip = (fromWell: string, fromIndex: number, toWell: string, toIndex: number) => {
-    setWells((prev) => {
-      const newWells = { ...prev };
-      const [movedChip] = newWells[fromWell].splice(fromIndex, 1);
-      newWells[toWell].splice(toIndex, 0, movedChip);
-      return newWells;
-    });
-  };
-
-  const toggleCheckbox = (well: string, chipId: string) => {
-    setWells((prev) => ({
-      ...prev,
-      [well]: prev[well].map((chip) =>
-        chip.id === chipId ? { ...chip, checked: !chip.checked } : chip
-      ),
-    }));
-  };
+  // Use shared context state so GridView reacts to chip changes
+  const { wells, moveChip, toggleCheckbox } = usePAFV();
 
   return (
     <div className={`p-3 ${
