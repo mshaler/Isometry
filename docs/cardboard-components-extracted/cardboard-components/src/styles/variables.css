@@ -1,0 +1,249 @@
+/**
+ * CardBoard Design Tokens
+ * Darwin-UI inspired, macOS glass aesthetic
+ */
+
+:root {
+  /* ============================================
+     Color Palette
+     ============================================ */
+  
+  /* Background layers (dark mode default) */
+  --cb-bg-base: #0a0a0a;
+  --cb-bg-raised: #1a1a1a;
+  --cb-bg-overlay: #2a2a2a;
+  --cb-bg-glass: rgba(30, 30, 30, 0.7);
+  
+  /* Foreground / text */
+  --cb-fg-primary: #f5f5f5;
+  --cb-fg-secondary: #a0a0a0;
+  --cb-fg-muted: #666666;
+  --cb-fg-inverse: #0a0a0a;
+  
+  /* Accent colors (macOS-inspired) */
+  --cb-accent-blue: #0a84ff;
+  --cb-accent-purple: #bf5af2;
+  --cb-accent-pink: #ff375f;
+  --cb-accent-orange: #ff9f0a;
+  --cb-accent-yellow: #ffd60a;
+  --cb-accent-green: #30d158;
+  --cb-accent-teal: #64d2ff;
+  --cb-accent-red: #ff453a;
+  
+  /* Current accent (user-configurable) */
+  --cb-accent: var(--cb-accent-blue);
+  --cb-accent-hover: color-mix(in srgb, var(--cb-accent) 85%, white);
+  --cb-accent-active: color-mix(in srgb, var(--cb-accent) 70%, black);
+  
+  /* Semantic colors */
+  --cb-success: var(--cb-accent-green);
+  --cb-warning: var(--cb-accent-orange);
+  --cb-error: var(--cb-accent-red);
+  --cb-info: var(--cb-accent-blue);
+  
+  /* Borders */
+  --cb-border-subtle: rgba(255, 255, 255, 0.06);
+  --cb-border-default: rgba(255, 255, 255, 0.1);
+  --cb-border-strong: rgba(255, 255, 255, 0.2);
+  --cb-border-accent: var(--cb-accent);
+  
+  /* Shadows */
+  --cb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --cb-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --cb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --cb-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.6);
+  --cb-shadow-glow: 0 0 20px color-mix(in srgb, var(--cb-accent) 30%, transparent);
+  
+  /* ============================================
+     Typography
+     ============================================ */
+  
+  --cb-font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+  --cb-font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+  
+  --cb-text-xs: 0.75rem;    /* 12px */
+  --cb-text-sm: 0.875rem;   /* 14px */
+  --cb-text-base: 1rem;     /* 16px */
+  --cb-text-lg: 1.125rem;   /* 18px */
+  --cb-text-xl: 1.25rem;    /* 20px */
+  --cb-text-2xl: 1.5rem;    /* 24px */
+  --cb-text-3xl: 2rem;      /* 32px */
+  
+  --cb-leading-tight: 1.25;
+  --cb-leading-normal: 1.5;
+  --cb-leading-relaxed: 1.75;
+  
+  --cb-tracking-tight: -0.02em;
+  --cb-tracking-normal: 0;
+  --cb-tracking-wide: 0.02em;
+  
+  --cb-font-weight-normal: 400;
+  --cb-font-weight-medium: 500;
+  --cb-font-weight-semibold: 600;
+  --cb-font-weight-bold: 700;
+  
+  /* ============================================
+     Spacing
+     ============================================ */
+  
+  --cb-space-0: 0;
+  --cb-space-1: 0.25rem;    /* 4px */
+  --cb-space-2: 0.5rem;     /* 8px */
+  --cb-space-3: 0.75rem;    /* 12px */
+  --cb-space-4: 1rem;       /* 16px */
+  --cb-space-5: 1.25rem;    /* 20px */
+  --cb-space-6: 1.5rem;     /* 24px */
+  --cb-space-8: 2rem;       /* 32px */
+  --cb-space-10: 2.5rem;    /* 40px */
+  --cb-space-12: 3rem;      /* 48px */
+  --cb-space-16: 4rem;      /* 64px */
+  
+  /* ============================================
+     Border Radius
+     ============================================ */
+  
+  --cb-radius-none: 0;
+  --cb-radius-sm: 4px;
+  --cb-radius-md: 8px;
+  --cb-radius-lg: 12px;
+  --cb-radius-xl: 16px;
+  --cb-radius-2xl: 24px;
+  --cb-radius-full: 9999px;
+  
+  /* ============================================
+     Effects
+     ============================================ */
+  
+  --cb-blur-sm: blur(4px);
+  --cb-blur-md: blur(12px);
+  --cb-blur-lg: blur(20px);
+  --cb-blur-xl: blur(40px);
+  
+  /* Glass effect shorthand */
+  --cb-glass-bg: var(--cb-bg-glass);
+  --cb-glass-border: var(--cb-border-default);
+  --cb-glass-blur: var(--cb-blur-lg);
+  
+  /* ============================================
+     Transitions
+     ============================================ */
+  
+  --cb-ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --cb-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --cb-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --cb-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --cb-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  --cb-duration-fast: 150ms;
+  --cb-duration-normal: 300ms;
+  --cb-duration-slow: 500ms;
+  
+  --cb-transition-fast: var(--cb-duration-fast) var(--cb-ease-default);
+  --cb-transition-normal: var(--cb-duration-normal) var(--cb-ease-default);
+  --cb-transition-slow: var(--cb-duration-slow) var(--cb-ease-default);
+  
+  /* ============================================
+     Z-Index Scale
+     ============================================ */
+  
+  --cb-z-base: 0;
+  --cb-z-raised: 10;
+  --cb-z-dropdown: 100;
+  --cb-z-sticky: 200;
+  --cb-z-overlay: 300;
+  --cb-z-modal: 400;
+  --cb-z-popover: 500;
+  --cb-z-tooltip: 600;
+  --cb-z-toast: 700;
+  
+  /* ============================================
+     Component-Specific Tokens
+     ============================================ */
+  
+  /* Card */
+  --cb-card-padding: var(--cb-space-4);
+  --cb-card-padding-sm: var(--cb-space-2) var(--cb-space-3);
+  --cb-card-padding-lg: var(--cb-space-5) var(--cb-space-6);
+  --cb-card-radius: var(--cb-radius-lg);
+  --cb-card-gap: var(--cb-space-3);
+  
+  /* Button */
+  --cb-button-height-sm: 28px;
+  --cb-button-height-md: 36px;
+  --cb-button-height-lg: 44px;
+  --cb-button-padding-x: var(--cb-space-4);
+  --cb-button-padding-x-sm: var(--cb-space-3);
+  --cb-button-padding-x-lg: var(--cb-space-6);
+  --cb-button-radius: var(--cb-radius-md);
+  
+  /* Input */
+  --cb-input-height: 36px;
+  --cb-input-height-sm: 28px;
+  --cb-input-height-lg: 44px;
+  --cb-input-padding-x: var(--cb-space-3);
+  --cb-input-radius: var(--cb-radius-md);
+  
+  /* Canvas */
+  --cb-canvas-bg: var(--cb-bg-base);
+  --cb-canvas-grid-color: var(--cb-border-subtle);
+  --cb-canvas-grid-size: 24px;
+  
+  /* Window */
+  --cb-window-header-height: 38px;
+  --cb-window-radius: var(--cb-radius-xl);
+  --cb-window-traffic-light-size: 12px;
+  --cb-window-traffic-light-gap: 8px;
+}
+
+/* ============================================
+   Light Mode Override
+   ============================================ */
+
+[data-theme="light"],
+.cb-theme-light {
+  --cb-bg-base: #f5f5f7;
+  --cb-bg-raised: #ffffff;
+  --cb-bg-overlay: #f0f0f0;
+  --cb-bg-glass: rgba(255, 255, 255, 0.7);
+  
+  --cb-fg-primary: #1d1d1f;
+  --cb-fg-secondary: #6e6e73;
+  --cb-fg-muted: #aeaeb2;
+  --cb-fg-inverse: #ffffff;
+  
+  --cb-border-subtle: rgba(0, 0, 0, 0.04);
+  --cb-border-default: rgba(0, 0, 0, 0.1);
+  --cb-border-strong: rgba(0, 0, 0, 0.2);
+  
+  --cb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --cb-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --cb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+  --cb-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   Prefers Color Scheme (Auto)
+   ============================================ */
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --cb-bg-base: #f5f5f7;
+    --cb-bg-raised: #ffffff;
+    --cb-bg-overlay: #f0f0f0;
+    --cb-bg-glass: rgba(255, 255, 255, 0.7);
+    
+    --cb-fg-primary: #1d1d1f;
+    --cb-fg-secondary: #6e6e73;
+    --cb-fg-muted: #aeaeb2;
+    --cb-fg-inverse: #ffffff;
+    
+    --cb-border-subtle: rgba(0, 0, 0, 0.04);
+    --cb-border-default: rgba(0, 0, 0, 0.1);
+    --cb-border-strong: rgba(0, 0, 0, 0.2);
+    
+    --cb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --cb-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+    --cb-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.16);
+    --cb-shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.2);
+  }
+}

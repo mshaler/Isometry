@@ -12,7 +12,7 @@
  */
 
 import * as d3 from 'd3';
-import type { CardValue, CardBoardLATCHAxis } from '@/types/lpg';
+import type { CardValue, D3LATCHAxis } from '@/types/lpg';
 
 // ============================================
 // Types
@@ -33,9 +33,9 @@ export interface LATCHScale<TDomain = unknown, TRange = number> {
   /** The underlying D3 scale function */
   (value: TDomain): TRange | undefined;
   /** The LATCH axis this scale represents */
-  axis: CardBoardLATCHAxis;
+  axis: D3LATCHAxis;
   /** The scale type identifier */
-  type: CardBoardLATCHAxis;
+  type: D3LATCHAxis;
   /** Get the scale domain */
   domain(): TDomain[];
   /** Get the scale range */
@@ -262,7 +262,7 @@ export function createLocationScale(
  * ```
  */
 export function createLATCHScale(
-  axis: CardBoardLATCHAxis,
+  axis: D3LATCHAxis,
   data: CardValue[],
   range: [number, number],
   options: ScaleOptions = {}
@@ -334,6 +334,22 @@ export function createLATCHScale(
   // Forward scale methods
   latchScale.domain = () => baseScale.domain();
   latchScale.range = () => baseScale.range();
+
+  // Forward copy method (required by D3 axis)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  latchScale.copy = () => (baseScale as any).copy();
+
+  // Forward ticks method if available (for continuous scales)
+  if ('ticks' in baseScale) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    latchScale.ticks = (...args: unknown[]) => (baseScale as any).ticks(...args);
+  }
+
+  // Forward tickFormat if available
+  if ('tickFormat' in baseScale) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    latchScale.tickFormat = (...args: unknown[]) => (baseScale as any).tickFormat(...args);
+  }
 
   // Add bandwidth if available (band scales)
   if ('bandwidth' in baseScale) {

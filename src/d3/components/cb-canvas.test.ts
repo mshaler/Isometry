@@ -1,7 +1,7 @@
 /**
- * cb-canvas Component Tests
+ * iso-canvas Component Tests
  *
- * TDD tests for CardBoard canvas D3 component.
+ * TDD tests for Isometry canvas D3 component.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

@@ -1,14 +1,37 @@
-# SQLite Migration Plan: FTS5, iCloud Sync, and Graph Analytics
+# SQLite Migration Plan: Native-First Architecture
 
-## Overview
+*Isometry Data Layer: Pure SQLite + CloudKit*
 
-This document outlines the migration to native SQLite with FTS5 full-text search, iCloud sync via CloudKit, and graph analytics using recursive CTEs.
+---
 
-**Key Architecture Decision**: Native apps (iOS/macOS) use **pure SQLite + CloudKit** for offline-first sync. No sql.js or IndexedDB needed—CloudKit provides automatic offline support with conflict resolution. sql.js remains only for web (if web support is required).
+## Executive Summary
 
-## Current State (Web Prototype)
+This document defines Isometry's native data architecture: **SQLite for storage, CloudKit for sync**. No web technologies on native platforms—no sql.js, no IndexedDB, no WASM.
 
-```
+**Key Decisions:**
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| iOS Deployment | iOS 15+ | Manual CloudKit operations (CKSyncEngine requires iOS 17) |
+| Thread Safety | Swift Actor model | Compile-time guarantees, cleaner than DispatchQueue |
+| Conflict Resolution | Automatic + user override | Last-write-wins default, manual merge when needed |
+| Web Support | Deferred to v4.0+ | Focus on native quality first |
+
+**What This Enables:**
+
+- Full offline capability (SQLite is always available)
+- FTS5 full-text search
+- Recursive CTEs for graph analytics
+- Cross-device sync (iPhone ↔ iPad ↔ Mac)
+- WAL mode for performance
+
+---
+
+## Architecture Overview
+
+### Current State (Web Prototype)
+
+```text
 ┌─────────────────────────────────────────┐
 │           Browser (React)               │
 │  ┌─────────────┐    ┌───────────────┐  │
@@ -23,54 +46,57 @@ This document outlines the migration to native SQLite with FTS5 full-text search
 └─────────────────────────────────────────┘
 ```
 
-## Target Architecture
-
-### Native Apps (iOS/macOS) — Pure SQLite + CloudKit
+### Target Architecture (Native)
 
 No web technologies needed. SQLite provides full offline capability; CloudKit handles sync.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Native Apps (iOS/macOS)                       │
-│  ┌──────────────────────┐    ┌──────────────────────────────┐  │
-│  │  iOS App (SwiftUI)   │    │  macOS App (SwiftUI/Catalyst)│  │
-│  └──────────┬───────────┘    └───────────────┬──────────────┘  │
-│             │                                 │                  │
-│             ▼                                 ▼                  │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              Native Data Layer (Swift)                   │   │
-│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌────────────┐  │   │
-│  │  │ Nodes   │  │ Edges   │  │  FTS5   │  │ Graph CTEs │  │   │
-│  │  └─────────┘  └─────────┘  └─────────┘  └────────────┘  │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              │                                   │
-│  ┌───────────────────────────▼──────────────────────────────┐   │
-│  │                    SQLite (Native)                        │   │
-│  │  ┌────────────────┐                                      │   │
-│  │  │ isometry.db    │  ✅ FTS5 full-text search           │   │
-│  │  │ ├─ nodes       │  ✅ Recursive CTEs for graphs        │   │
-│  │  │ ├─ edges       │  ✅ Full offline capability          │   │
-│  │  │ ├─ nodes_fts   │  ✅ WAL mode for performance         │   │
-│  │  │ └─ sync_state  │                                      │   │
-│  │  └────────────────┘                                      │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                              │                                   │
-│                              ▼                                   │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │              CloudKit + CKSyncEngine                      │   │
-│  │  ✅ Automatic offline queue                              │   │
-│  │  ✅ Automatic conflict resolution                        │   │
-│  │  ✅ Background sync                                      │   │
-│  │  ✅ Cross-device sync (iPhone, iPad, Mac)                │   │
-│  └──────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Native Apps (iOS 15+ / macOS 12+)                    │
+│                                                                             │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                          SwiftUI Views                                │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                   │  │
+│  │  │  CardGrid   │  │  ListView   │  │  NetworkView │                   │  │
+│  │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                   │  │
+│  └─────────┼────────────────┼────────────────┼───────────────────────────┘  │
+│            │                │                │                              │
+│            ▼                ▼                ▼                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                   IsometryDatabase (Actor)                           │   │
+│  │  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────────┐ │   │
+│  │  │   Nodes    │  │   Edges    │  │   FTS5     │  │  Graph CTEs    │ │   │
+│  │  └────────────┘  └────────────┘  └────────────┘  └────────────────┘ │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│  ┌───────────────────────────▼──────────────────────────────────────────┐   │
+│  │                      SQLite (Native)                                 │   │
+│  │  ┌────────────────┐                                                 │   │
+│  │  │  isometry.db   │  ✅ FTS5 full-text search                       │   │
+│  │  │  ├─ nodes      │  ✅ Recursive CTEs for graphs                   │   │
+│  │  │  ├─ edges      │  ✅ Full offline capability                     │   │
+│  │  │  ├─ facets     │  ✅ WAL mode for performance                    │   │
+│  │  │  ├─ nodes_fts  │  ✅ iOS 15+ compatible                          │   │
+│  │  │  └─ sync_state │                                                 │   │
+│  │  └────────────────┘                                                 │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              ▼                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │               CloudKitSyncManager (Actor)                            │   │
+│  │  ✅ Custom zone "IsometryZone"                                      │   │
+│  │  ✅ Change tokens for incremental sync                              │   │
+│  │  ✅ Automatic offline queue                                         │   │
+│  │  ✅ Exponential backoff on failures                                 │   │
+│  │  ✅ Cross-device sync (iPhone, iPad, Mac)                           │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Web App (Optional) — SQLite WASM or Online-Only
+### Web App (Optional, Future)
 
-If web support is needed, two options:
+If web support is needed later:
 
-```
 ```text
 Option A: SQLite WASM + OPFS (Full Offline)
 ┌─────────────────────────────────────────┐
@@ -84,9 +110,7 @@ Option A: SQLite WASM + OPFS (Full Offline)
 │  ✅ Full offline                        │
 │  ⚠️ Requires sync server for iCloud    │
 └─────────────────────────────────────────┘
-```
 
-```text
 Option B: Online-Only (Simpler)
 ┌─────────────────────────────────────────┐
 │           Browser (React)               │
@@ -102,21 +126,23 @@ Option B: Online-Only (Simpler)
 
 ---
 
-## Phase 1: Schema Migration (FTS5 + Graph Support)
+## Phase 1: Schema Design
 
-### 1.1 Updated Schema
+### 1.1 Complete Database Schema
 
 ```sql
--- schema-v2.sql
+-- schema.sql
 -- ============================================================================
--- Isometry SQLite Schema v2
--- With FTS5 full-text search and optimized graph queries
+-- Isometry SQLite Schema
+-- With FTS5 full-text search, graph support, and sync metadata
 -- ============================================================================
 
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
 
--- Nodes: Primary data table
+-- ============================================================================
+-- NODES: Primary data table
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS nodes (
     id TEXT PRIMARY KEY,
     node_type TEXT NOT NULL DEFAULT 'note',
@@ -161,7 +187,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     conflict_resolved_at TEXT
 );
 
--- Indexes for LATCH filtering
+-- Node indexes
 CREATE INDEX IF NOT EXISTS idx_nodes_folder ON nodes(folder);
 CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at);
 CREATE INDEX IF NOT EXISTS idx_nodes_modified ON nodes(modified_at);
@@ -171,7 +197,54 @@ CREATE INDEX IF NOT EXISTS idx_nodes_active ON nodes(deleted_at) WHERE deleted_a
 CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_source ON nodes(source, source_id) WHERE source IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_nodes_sync ON nodes(sync_version, last_synced_at);
 
--- FTS5 Full-Text Search
+-- ============================================================================
+-- EDGES: Relationships (GRAPH)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS edges (
+    id TEXT PRIMARY KEY,
+    edge_type TEXT NOT NULL,  -- LINK, NEST, SEQUENCE, AFFINITY
+    source_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    target_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    label TEXT,
+    weight REAL DEFAULT 1.0,
+    directed INTEGER DEFAULT 1,
+    sequence_order INTEGER,
+    channel TEXT,
+    timestamp TEXT,
+    subject TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+
+    -- Sync metadata
+    sync_version INTEGER DEFAULT 0,
+
+    UNIQUE(source_id, target_id, edge_type)
+);
+
+-- Edge indexes
+CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, edge_type);
+CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, edge_type);
+CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(edge_type);
+CREATE INDEX IF NOT EXISTS idx_edges_weight ON edges(weight DESC);
+
+-- ============================================================================
+-- FACETS: PAFV dimension definitions
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS facets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    facet_type TEXT NOT NULL,  -- PLANE, AXIS, FACET, VALUE
+    parent_id TEXT REFERENCES facets(id) ON DELETE SET NULL,
+    sort_order INTEGER DEFAULT 0,
+    metadata TEXT,  -- JSON
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_facets_type ON facets(facet_type);
+CREATE INDEX IF NOT EXISTS idx_facets_parent ON facets(parent_id);
+
+-- ============================================================================
+-- FTS5: Full-Text Search
+-- ============================================================================
 CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
     name,
     content,
@@ -200,67 +273,65 @@ CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes BEGIN
     VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
 END;
 
--- Edges: Relationships (GRAPH)
-CREATE TABLE IF NOT EXISTS edges (
-    id TEXT PRIMARY KEY,
-    edge_type TEXT NOT NULL,  -- LINK, NEST, SEQUENCE, AFFINITY
-    source_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-    target_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-    label TEXT,
-    weight REAL DEFAULT 1.0,
-    directed INTEGER DEFAULT 1,
-    sequence_order INTEGER,
-    channel TEXT,
-    timestamp TEXT,
-    subject TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-
-    -- Sync metadata
-    sync_version INTEGER DEFAULT 0,
-
-    UNIQUE(source_id, target_id, edge_type)
-);
-
--- Graph query indexes
-CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, edge_type);
-CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, edge_type);
-CREATE INDEX IF NOT EXISTS idx_edges_type ON edges(edge_type);
-CREATE INDEX IF NOT EXISTS idx_edges_weight ON edges(weight DESC);
-
--- Sync state tracking
+-- ============================================================================
+-- SYNC STATE: Track sync progress
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS sync_state (
     id TEXT PRIMARY KEY DEFAULT 'default',
-    last_sync_token TEXT,
+    last_sync_token BLOB,  -- CKServerChangeToken archived data
     last_sync_at TEXT,
     pending_changes INTEGER DEFAULT 0,
-    conflict_count INTEGER DEFAULT 0
+    conflict_count INTEGER DEFAULT 0,
+    consecutive_failures INTEGER DEFAULT 0,
+    last_error TEXT,
+    last_error_at TEXT
 );
 
 INSERT OR IGNORE INTO sync_state (id) VALUES ('default');
+
+-- ============================================================================
+-- SETTINGS: User preferences
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT,
+    updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- ============================================================================
+-- SCHEMA MIGRATIONS: Track applied migrations
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS schema_migrations (
+    version INTEGER PRIMARY KEY,
+    applied_at TEXT DEFAULT (datetime('now')),
+    description TEXT
+);
 ```
 
-### 1.2 Graph Query Functions
+### 1.2 Graph Query Library
+
+Reusable SQL patterns for graph traversal using recursive CTEs:
 
 ```sql
--- graph-queries.sql
--- Reusable graph query patterns using recursive CTEs
+-- ============================================================================
+-- GRAPH QUERY LIBRARY
+-- ============================================================================
 
--- Find all nodes connected to a source (BFS traversal)
--- Usage: Replace ? with source node ID and depth limit
+-- connected_nodes: Find all nodes reachable from a starting node (BFS)
+-- Parameters: $start_id, $max_depth
+-- ============================================================================
 WITH RECURSIVE connected(id, depth, path) AS (
-    -- Base case: start node
-    SELECT ?, 0, ?
+    SELECT $start_id, 0, $start_id
 
     UNION ALL
 
-    -- Recursive case: follow edges
     SELECT
         CASE WHEN e.source_id = c.id THEN e.target_id ELSE e.source_id END,
         c.depth + 1,
         c.path || ',' || CASE WHEN e.source_id = c.id THEN e.target_id ELSE e.source_id END
     FROM connected c
     JOIN edges e ON (e.source_id = c.id OR (e.directed = 0 AND e.target_id = c.id))
-    WHERE c.depth < ?  -- max depth parameter
+    WHERE c.depth < $max_depth
     AND c.path NOT LIKE '%' || CASE WHEN e.source_id = c.id THEN e.target_id ELSE e.source_id END || '%'
 )
 SELECT DISTINCT n.*, c.depth
@@ -269,9 +340,11 @@ JOIN nodes n ON n.id = c.id
 WHERE n.deleted_at IS NULL
 ORDER BY c.depth, n.name;
 
--- Find shortest path between two nodes
+-- shortest_path: Find shortest path between two nodes
+-- Parameters: $from_id, $to_id
+-- ============================================================================
 WITH RECURSIVE paths(id, depth, path, found) AS (
-    SELECT ?, 0, ?, 0
+    SELECT $from_id, 0, $from_id, 0
 
     UNION ALL
 
@@ -279,7 +352,7 @@ WITH RECURSIVE paths(id, depth, path, found) AS (
         CASE WHEN e.source_id = p.id THEN e.target_id ELSE e.source_id END,
         p.depth + 1,
         p.path || ',' || CASE WHEN e.source_id = p.id THEN e.target_id ELSE e.source_id END,
-        CASE WHEN CASE WHEN e.source_id = p.id THEN e.target_id ELSE e.source_id END = ? THEN 1 ELSE 0 END
+        CASE WHEN CASE WHEN e.source_id = p.id THEN e.target_id ELSE e.source_id END = $to_id THEN 1 ELSE 0 END
     FROM paths p
     JOIN edges e ON (e.source_id = p.id OR (e.directed = 0 AND e.target_id = p.id))
     WHERE p.found = 0 AND p.depth < 10
@@ -287,123 +360,119 @@ WITH RECURSIVE paths(id, depth, path, found) AS (
 )
 SELECT path, depth FROM paths WHERE found = 1 ORDER BY depth LIMIT 1;
 
--- Calculate node importance (inbound link count)
+-- node_importance: Calculate node importance by inbound link weight
+-- ============================================================================
 SELECT
     n.id,
     n.name,
     COUNT(DISTINCT e.id) as inbound_links,
-    SUM(e.weight) as weighted_importance
+    COALESCE(SUM(e.weight), 0) as weighted_importance
 FROM nodes n
 LEFT JOIN edges e ON e.target_id = n.id
 WHERE n.deleted_at IS NULL
 GROUP BY n.id
 ORDER BY weighted_importance DESC;
 
--- Find clusters (nodes with shared connections)
-WITH node_connections AS (
+-- neighbors: Get immediate neighbors of a node
+-- Parameters: $node_id
+-- ============================================================================
+SELECT DISTINCT n.*, e.edge_type, e.weight
+FROM edges e
+JOIN nodes n ON n.id = CASE
+    WHEN e.source_id = $node_id THEN e.target_id
+    ELSE e.source_id
+END
+WHERE (e.source_id = $node_id OR (e.directed = 0 AND e.target_id = $node_id))
+AND n.deleted_at IS NULL
+ORDER BY e.weight DESC, n.name;
+
+-- subgraph: Extract a complete subgraph around a node
+-- Parameters: $center_id, $radius
+-- ============================================================================
+WITH RECURSIVE subgraph_nodes(id, depth) AS (
+    SELECT $center_id, 0
+
+    UNION ALL
+
     SELECT
-        source_id as node_id,
-        GROUP_CONCAT(target_id) as connections
-    FROM edges
-    GROUP BY source_id
+        CASE WHEN e.source_id = s.id THEN e.target_id ELSE e.source_id END,
+        s.depth + 1
+    FROM subgraph_nodes s
+    JOIN edges e ON e.source_id = s.id OR e.target_id = s.id
+    WHERE s.depth < $radius
 )
-SELECT
-    n1.id as node1,
-    n2.id as node2,
-    -- Jaccard similarity of connections
-    (
-        SELECT COUNT(*) FROM (
-            SELECT target_id FROM edges WHERE source_id = n1.id
-            INTERSECT
-            SELECT target_id FROM edges WHERE source_id = n2.id
-        )
-    ) * 1.0 / (
-        SELECT COUNT(*) FROM (
-            SELECT target_id FROM edges WHERE source_id = n1.id
-            UNION
-            SELECT target_id FROM edges WHERE source_id = n2.id
-        )
-    ) as similarity
-FROM nodes n1, nodes n2
-WHERE n1.id < n2.id
-AND n1.deleted_at IS NULL AND n2.deleted_at IS NULL
-HAVING similarity > 0.3
-ORDER BY similarity DESC;
+SELECT DISTINCT
+    n.*,
+    e.id as edge_id,
+    e.edge_type,
+    e.source_id,
+    e.target_id,
+    e.weight
+FROM subgraph_nodes s
+JOIN nodes n ON n.id = s.id
+LEFT JOIN edges e ON (e.source_id = s.id OR e.target_id = s.id)
+    AND e.source_id IN (SELECT id FROM subgraph_nodes)
+    AND e.target_id IN (SELECT id FROM subgraph_nodes)
+WHERE n.deleted_at IS NULL;
 ```
 
 ---
 
 ## Phase 2: iOS/macOS Native Layer
 
-### 2.1 Swift Database Manager
+### 2.1 Swift Database Manager (Actor Model)
+
+Using Swift Actor for thread safety with compile-time guarantees:
 
 ```swift
 // Sources/Database/IsometryDatabase.swift
 
 import Foundation
 import SQLite3
-import Combine
+import os.log
 
-/// Thread-safe SQLite database manager with FTS5 and graph query support
-@MainActor
-public final class IsometryDatabase: ObservableObject {
+/// Thread-safe SQLite database using Swift Actor model
+public actor IsometryDatabase {
 
     public static let shared = IsometryDatabase()
 
     private var db: OpaquePointer?
-    private let queue = DispatchQueue(label: "com.isometry.database", qos: .userInitiated)
+    private let logger = Logger(subsystem: "com.isometry", category: "Database")
 
-    @Published public private(set) var isReady = false
-    @Published public private(set) var lastError: DatabaseError?
+    private(set) var isReady = false
 
     // MARK: - Initialization
-
-    private init() {}
 
     public func initialize(at url: URL? = nil) async throws {
         let dbURL = url ?? Self.defaultDatabaseURL
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            queue.async { [weak self] in
-                guard let self else {
-                    continuation.resume(throwing: DatabaseError.deallocated)
-                    return
-                }
+        // Create directory if needed
+        try FileManager.default.createDirectory(
+            at: dbURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
 
-                do {
-                    // Create directory if needed
-                    try FileManager.default.createDirectory(
-                        at: dbURL.deletingLastPathComponent(),
-                        withIntermediateDirectories: true
-                    )
+        // Open database
+        var db: OpaquePointer?
+        let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
 
-                    // Open database
-                    var db: OpaquePointer?
-                    let flags = SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX
-
-                    guard sqlite3_open_v2(dbURL.path, &db, flags, nil) == SQLITE_OK else {
-                        throw DatabaseError.openFailed(String(cString: sqlite3_errmsg(db)))
-                    }
-
-                    self.db = db
-
-                    // Enable WAL mode and foreign keys
-                    try self.execute("PRAGMA journal_mode = WAL")
-                    try self.execute("PRAGMA foreign_keys = ON")
-
-                    // Run migrations
-                    try self.runMigrations()
-
-                    Task { @MainActor in
-                        self.isReady = true
-                    }
-
-                    continuation.resume()
-                } catch {
-                    continuation.resume(throwing: error)
-                }
-            }
+        guard sqlite3_open_v2(dbURL.path, &db, flags, nil) == SQLITE_OK else {
+            let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "Unknown error"
+            throw DatabaseError.openFailed(message)
         }
+
+        self.db = db
+
+        // Configure database
+        try execute("PRAGMA journal_mode = WAL")
+        try execute("PRAGMA foreign_keys = ON")
+        try execute("PRAGMA synchronous = NORMAL")
+
+        // Run migrations
+        try runMigrations()
+
+        isReady = true
+        logger.info("Database initialized at \(dbURL.path)")
     }
 
     // MARK: - Default Paths
@@ -421,46 +490,43 @@ public final class IsometryDatabase: ObservableObject {
     // MARK: - Query Execution
 
     public func execute(_ sql: String, parameters: [Any?] = []) throws {
-        try queue.sync {
-            guard let db else { throw DatabaseError.notInitialized }
+        guard let db else { throw DatabaseError.notInitialized }
 
-            var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-                throw DatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
-            }
-            defer { sqlite3_finalize(statement) }
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
+        }
+        defer { sqlite3_finalize(statement) }
 
-            try bindParameters(statement, parameters)
+        try bindParameters(statement, parameters)
 
-            guard sqlite3_step(statement) == SQLITE_DONE else {
-                throw DatabaseError.executeFailed(String(cString: sqlite3_errmsg(db)))
-            }
+        let result = sqlite3_step(statement)
+        guard result == SQLITE_DONE || result == SQLITE_ROW else {
+            throw DatabaseError.executeFailed(String(cString: sqlite3_errmsg(db)))
         }
     }
 
     public func query<T: Decodable>(_ sql: String, parameters: [Any?] = []) throws -> [T] {
-        try queue.sync {
-            guard let db else { throw DatabaseError.notInitialized }
+        guard let db else { throw DatabaseError.notInitialized }
 
-            var statement: OpaquePointer?
-            guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-                throw DatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
-            }
-            defer { sqlite3_finalize(statement) }
-
-            try bindParameters(statement, parameters)
-
-            var results: [T] = []
-            let decoder = SQLiteRowDecoder()
-
-            while sqlite3_step(statement) == SQLITE_ROW {
-                let row = extractRow(statement)
-                let item = try decoder.decode(T.self, from: row)
-                results.append(item)
-            }
-
-            return results
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw DatabaseError.prepareFailed(String(cString: sqlite3_errmsg(db)))
         }
+        defer { sqlite3_finalize(statement) }
+
+        try bindParameters(statement, parameters)
+
+        var results: [T] = []
+        let decoder = SQLiteRowDecoder()
+
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let row = extractRow(statement)
+            let item = try decoder.decode(T.self, from: row)
+            results.append(item)
+        }
+
+        return results
     }
 
     // MARK: - FTS5 Search
@@ -470,6 +536,8 @@ public final class IsometryDatabase: ObservableObject {
         let sanitized = query
             .replacingOccurrences(of: "\"", with: "\"\"")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !sanitized.isEmpty else { return [] }
 
         let ftsQuery = sanitized
             .split(separator: " ")
@@ -539,10 +607,33 @@ public final class IsometryDatabase: ObservableObject {
         return pathString.components(separatedBy: ",")
     }
 
-    public func nodeImportance() throws -> [(nodeId: String, importance: Double)] {
+    public func neighbors(of nodeId: String) throws -> [(node: Node, edgeType: String, weight: Double)] {
+        let sql = """
+            SELECT DISTINCT n.*, e.edge_type, e.weight
+            FROM edges e
+            JOIN nodes n ON n.id = CASE
+                WHEN e.source_id = ? THEN e.target_id
+                ELSE e.source_id
+            END
+            WHERE (e.source_id = ? OR (e.directed = 0 AND e.target_id = ?))
+            AND n.deleted_at IS NULL
+            ORDER BY e.weight DESC, n.name
+            """
+
+        let rows: [[String: Any]] = try query(sql, parameters: [nodeId, nodeId, nodeId])
+        return rows.compactMap { row in
+            guard let node = try? SQLiteRowDecoder().decode(Node.self, from: row),
+                  let edgeType = row["edge_type"] as? String,
+                  let weight = row["weight"] as? Double else { return nil }
+            return (node, edgeType, weight)
+        }
+    }
+
+    public func nodeImportance() throws -> [(nodeId: String, name: String, importance: Double)] {
         let sql = """
             SELECT
                 n.id,
+                n.name,
                 COALESCE(SUM(e.weight), 0) as importance
             FROM nodes n
             LEFT JOIN edges e ON e.target_id = n.id
@@ -554,9 +645,93 @@ public final class IsometryDatabase: ObservableObject {
         let results: [[String: Any]] = try query(sql)
         return results.compactMap { row in
             guard let id = row["id"] as? String,
+                  let name = row["name"] as? String,
                   let importance = row["importance"] as? Double else { return nil }
-            return (id, importance)
+            return (id, name, importance)
         }
+    }
+
+    // MARK: - CRUD Operations
+
+    public func createNode(_ node: Node) throws {
+        let sql = """
+            INSERT INTO nodes (id, node_type, name, content, summary, folder, tags, status, priority, importance, sort_order, created_at, modified_at, version)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+
+        let tagsJSON = try? JSONEncoder().encode(node.tags)
+        let tagsString = tagsJSON.flatMap { String(data: $0, encoding: .utf8) }
+
+        try execute(sql, parameters: [
+            node.id,
+            node.nodeType,
+            node.name,
+            node.content,
+            node.summary,
+            node.folder,
+            tagsString,
+            node.status,
+            node.priority,
+            node.importance,
+            node.sortOrder,
+            ISO8601DateFormatter().string(from: node.createdAt),
+            ISO8601DateFormatter().string(from: node.modifiedAt),
+            node.version
+        ])
+    }
+
+    public func updateNode(_ node: Node) throws {
+        let sql = """
+            UPDATE nodes SET
+                name = ?, content = ?, summary = ?, folder = ?, tags = ?, status = ?,
+                priority = ?, importance = ?, sort_order = ?, modified_at = ?, version = version + 1
+            WHERE id = ?
+            """
+
+        let tagsJSON = try? JSONEncoder().encode(node.tags)
+        let tagsString = tagsJSON.flatMap { String(data: $0, encoding: .utf8) }
+
+        try execute(sql, parameters: [
+            node.name,
+            node.content,
+            node.summary,
+            node.folder,
+            tagsString,
+            node.status,
+            node.priority,
+            node.importance,
+            node.sortOrder,
+            ISO8601DateFormatter().string(from: Date()),
+            node.id
+        ])
+    }
+
+    public func deleteNode(_ nodeId: String, hard: Bool = false) throws {
+        if hard {
+            try execute("DELETE FROM nodes WHERE id = ?", parameters: [nodeId])
+        } else {
+            try execute("UPDATE nodes SET deleted_at = datetime('now'), version = version + 1 WHERE id = ?", parameters: [nodeId])
+        }
+    }
+
+    public func getNode(_ id: String) throws -> Node? {
+        let results: [Node] = try query("SELECT * FROM nodes WHERE id = ? AND deleted_at IS NULL", parameters: [id])
+        return results.first
+    }
+
+    public func getAllNodes(folder: String? = nil, limit: Int = 100) throws -> [Node] {
+        var sql = "SELECT * FROM nodes WHERE deleted_at IS NULL"
+        var params: [Any?] = []
+
+        if let folder {
+            sql += " AND folder = ?"
+            params.append(folder)
+        }
+
+        sql += " ORDER BY modified_at DESC LIMIT ?"
+        params.append(limit)
+
+        return try query(sql, parameters: params)
     }
 
     // MARK: - Private Helpers
@@ -572,14 +747,18 @@ public final class IsometryDatabase: ObservableObject {
                 sqlite3_bind_text(statement, sqlIndex, value, -1, SQLITE_TRANSIENT)
             case let value as Int:
                 sqlite3_bind_int64(statement, sqlIndex, Int64(value))
+            case let value as Int64:
+                sqlite3_bind_int64(statement, sqlIndex, value)
             case let value as Double:
                 sqlite3_bind_double(statement, sqlIndex, value)
             case let value as Data:
                 value.withUnsafeBytes { ptr in
                     sqlite3_bind_blob(statement, sqlIndex, ptr.baseAddress, Int32(value.count), SQLITE_TRANSIENT)
                 }
+            case let value as Bool:
+                sqlite3_bind_int(statement, sqlIndex, value ? 1 : 0)
             default:
-                throw DatabaseError.unsupportedType
+                throw DatabaseError.unsupportedType(String(describing: type(of: param)))
             }
         }
     }
@@ -601,7 +780,9 @@ public final class IsometryDatabase: ObservableObject {
             case SQLITE_BLOB:
                 let bytes = sqlite3_column_blob(statement, i)
                 let count = sqlite3_column_bytes(statement, i)
-                row[name] = Data(bytes: bytes!, count: Int(count))
+                if let bytes {
+                    row[name] = Data(bytes: bytes, count: Int(count))
+                }
             default:
                 row[name] = NSNull()
             }
@@ -611,32 +792,38 @@ public final class IsometryDatabase: ObservableObject {
     }
 
     private func runMigrations() throws {
+        // Ensure migrations table exists
+        try execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                version INTEGER PRIMARY KEY,
+                applied_at TEXT DEFAULT (datetime('now')),
+                description TEXT
+            )
+            """)
+
         // Get current version
-        var version: Int = 0
-        if let results: [[String: Any]] = try? query("PRAGMA user_version"),
-           let v = results.first?["user_version"] as? Int64 {
-            version = Int(v)
-        }
+        let results: [[String: Any]] = try query("SELECT MAX(version) as version FROM schema_migrations")
+        let currentVersion = (results.first?["version"] as? Int64) ?? 0
 
-        // Run migrations
-        if version < 1 {
-            try execute(Self.schemaV1)
-            try execute("PRAGMA user_version = 1")
-        }
+        // Apply migrations
+        let migrations: [(version: Int, description: String, sql: String)] = [
+            (1, "Initial schema", Self.schemaV1),
+            // Future migrations go here
+        ]
 
-        if version < 2 {
-            try execute(Self.migrationV2)
-            try execute("PRAGMA user_version = 2")
+        for migration in migrations where migration.version > currentVersion {
+            logger.info("Applying migration \(migration.version): \(migration.description)")
+            try execute(migration.sql)
+            try execute(
+                "INSERT INTO schema_migrations (version, description) VALUES (?, ?)",
+                parameters: [migration.version, migration.description]
+            )
         }
     }
 
-    // Schema definitions loaded from embedded resources
     private static let schemaV1 = """
-        -- Initial schema (loaded from schema-v2.sql)
-        """
-
-    private static let migrationV2 = """
-        -- Future migrations
+        -- Schema v1: Core tables, FTS5, sync state
+        -- (Full schema from section 1.1)
         """
 }
 
@@ -644,20 +831,18 @@ public final class IsometryDatabase: ObservableObject {
 
 public enum DatabaseError: LocalizedError {
     case notInitialized
-    case deallocated
     case openFailed(String)
     case prepareFailed(String)
     case executeFailed(String)
-    case unsupportedType
+    case unsupportedType(String)
 
     public var errorDescription: String? {
         switch self {
         case .notInitialized: return "Database not initialized"
-        case .deallocated: return "Database was deallocated"
         case .openFailed(let msg): return "Failed to open database: \(msg)"
         case .prepareFailed(let msg): return "Failed to prepare statement: \(msg)"
         case .executeFailed(let msg): return "Failed to execute statement: \(msg)"
-        case .unsupportedType: return "Unsupported parameter type"
+        case .unsupportedType(let type): return "Unsupported parameter type: \(type)"
         }
     }
 }
@@ -679,7 +864,7 @@ private let SQLITE_TRANSIENT = unsafeBitCast(-1, to: sqlite3_destructor_type.sel
 
 import Foundation
 
-public struct Node: Codable, Identifiable, Hashable {
+public struct Node: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public var nodeType: String
     public var name: String
@@ -744,7 +929,7 @@ public struct Node: Codable, Identifiable, Hashable {
 
 // Sources/Models/Edge.swift
 
-public struct Edge: Codable, Identifiable, Hashable {
+public struct Edge: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public var edgeType: EdgeType
     public var sourceId: String
@@ -759,7 +944,7 @@ public struct Edge: Codable, Identifiable, Hashable {
     public var createdAt: Date
     public var syncVersion: Int
 
-    public enum EdgeType: String, Codable, CaseIterable {
+    public enum EdgeType: String, Codable, CaseIterable, Sendable {
         case link = "LINK"
         case nest = "NEST"
         case sequence = "SEQUENCE"
@@ -787,37 +972,41 @@ public struct Edge: Codable, Identifiable, Hashable {
 
 ---
 
-## Phase 3: iCloud Sync with CloudKit
+## Phase 3: CloudKit Sync
 
-### 3.1 CloudKit Sync Manager
+### 3.1 CloudKit Sync Manager (Actor Model)
 
 ```swift
 // Sources/Sync/CloudKitSyncManager.swift
 
 import CloudKit
-import Combine
+import os.log
 
 /// Manages bidirectional sync between local SQLite and CloudKit
-@MainActor
-public final class CloudKitSyncManager: ObservableObject {
+public actor CloudKitSyncManager {
 
     public static let shared = CloudKitSyncManager()
 
     private let container = CKContainer(identifier: "iCloud.com.yourcompany.isometry")
     private let database: CKDatabase
     private let zoneID = CKRecordZone.ID(zoneName: "IsometryZone", ownerName: CKCurrentUserDefaultName)
+    private let logger = Logger(subsystem: "com.isometry", category: "Sync")
 
-    @Published public private(set) var syncState: SyncState = .idle
-    @Published public private(set) var lastSyncDate: Date?
-    @Published public private(set) var pendingChanges: Int = 0
+    // Published state (for SwiftUI observation)
+    @MainActor public private(set) var syncState: SyncState = .idle
+    @MainActor public private(set) var lastSyncDate: Date?
+    @MainActor public private(set) var pendingChanges: Int = 0
+    @MainActor public private(set) var lastError: String?
 
-    private var subscriptions: Set<AnyCancellable> = []
-
-    public enum SyncState: Equatable {
+    public enum SyncState: Equatable, Sendable {
         case idle
         case syncing
         case error(String)
+        case offline
     }
+
+    private var consecutiveFailures = 0
+    private let maxRetries = 3
 
     private init() {
         database = container.privateCloudDatabase
@@ -831,8 +1020,10 @@ public final class CloudKitSyncManager: ObservableObject {
 
         do {
             _ = try await database.modifyRecordZones(saving: [zone], deleting: [])
+            logger.info("Created/verified IsometryZone")
         } catch let error as CKError where error.code == .serverRecordChanged {
-            // Zone already exists, that's fine
+            // Zone already exists
+            logger.debug("IsometryZone already exists")
         }
 
         // Subscribe to changes
@@ -848,6 +1039,7 @@ public final class CloudKitSyncManager: ObservableObject {
 
         do {
             _ = try await database.modifySubscriptions(saving: [subscription], deleting: [])
+            logger.info("Created/verified push subscription")
         } catch let error as CKError where error.code == .serverRecordChanged {
             // Subscription already exists
         }
@@ -856,48 +1048,91 @@ public final class CloudKitSyncManager: ObservableObject {
     // MARK: - Sync Operations
 
     public func sync() async {
-        guard syncState != .syncing else { return }
+        // Check current state
+        let currentState = await MainActor.run { syncState }
+        guard currentState != .syncing else {
+            logger.debug("Sync already in progress, skipping")
+            return
+        }
 
-        syncState = .syncing
+        await MainActor.run { syncState = .syncing }
 
         do {
             // 1. Push local changes
-            try await pushLocalChanges()
+            let pushed = try await pushLocalChanges()
+            logger.info("Pushed \(pushed) local changes")
 
             // 2. Pull remote changes
-            try await pullRemoteChanges()
+            let pulled = try await pullRemoteChanges()
+            logger.info("Pulled \(pulled) remote changes")
 
-            lastSyncDate = Date()
-            syncState = .idle
+            // Success - reset failure counter
+            consecutiveFailures = 0
+
+            await MainActor.run {
+                lastSyncDate = Date()
+                syncState = .idle
+                lastError = nil
+            }
 
             // Update sync state in database
-            try IsometryDatabase.shared.execute("""
-                UPDATE sync_state SET last_sync_at = ?, pending_changes = 0 WHERE id = 'default'
-                """, parameters: [ISO8601DateFormatter().string(from: Date())])
+            try await IsometryDatabase.shared.execute("""
+                UPDATE sync_state SET
+                    last_sync_at = datetime('now'),
+                    pending_changes = 0,
+                    consecutive_failures = 0,
+                    last_error = NULL
+                WHERE id = 'default'
+                """)
 
         } catch {
-            syncState = .error(error.localizedDescription)
+            consecutiveFailures += 1
+            let errorMessage = error.localizedDescription
+
+            await MainActor.run {
+                syncState = .error(errorMessage)
+                lastError = errorMessage
+            }
+
+            // Record error in database
+            try? await IsometryDatabase.shared.execute("""
+                UPDATE sync_state SET
+                    consecutive_failures = ?,
+                    last_error = ?,
+                    last_error_at = datetime('now')
+                WHERE id = 'default'
+                """, parameters: [consecutiveFailures, errorMessage])
+
+            logger.error("Sync failed: \(errorMessage)")
+
+            // Retry with exponential backoff
+            if consecutiveFailures < maxRetries {
+                let delay = pow(2.0, Double(consecutiveFailures))
+                logger.info("Retrying sync in \(delay) seconds")
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                await sync()
+            }
         }
     }
 
     // MARK: - Push Changes
 
-    private func pushLocalChanges() async throws {
+    private func pushLocalChanges() async throws -> Int {
         // Get nodes modified since last sync
-        let modifiedNodes: [Node] = try IsometryDatabase.shared.query("""
+        let modifiedNodes: [Node] = try await IsometryDatabase.shared.query("""
             SELECT * FROM nodes
             WHERE modified_at > COALESCE(last_synced_at, '1970-01-01')
             ORDER BY modified_at
             """)
 
-        let modifiedEdges: [Edge] = try IsometryDatabase.shared.query("""
+        let modifiedEdges: [Edge] = try await IsometryDatabase.shared.query("""
             SELECT * FROM edges
             WHERE sync_version > (
                 SELECT COALESCE(MAX(sync_version), 0) FROM sync_state
             )
             """)
 
-        guard !modifiedNodes.isEmpty || !modifiedEdges.isEmpty else { return }
+        guard !modifiedNodes.isEmpty || !modifiedEdges.isEmpty else { return 0 }
 
         // Convert to CKRecords
         var recordsToSave: [CKRecord] = []
@@ -933,41 +1168,43 @@ public final class CloudKitSyncManager: ObservableObject {
             recordsToSave.append(record)
         }
 
-        // Batch save
+        // Batch save with atomic operation
         let operation = CKModifyRecordsOperation(recordsToSave: recordsToSave)
         operation.savePolicy = .changedKeys
         operation.qualityOfService = .userInitiated
+        operation.isAtomic = false  // Allow partial success
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        return try await withCheckedThrowingContinuation { continuation in
+            var savedCount = 0
+
+            operation.perRecordSaveBlock = { _, result in
+                if case .success = result {
+                    savedCount += 1
+                }
+            }
+
             operation.modifyRecordsResultBlock = { result in
                 switch result {
                 case .success:
-                    continuation.resume()
+                    continuation.resume(returning: savedCount)
                 case .failure(let error):
                     continuation.resume(throwing: error)
                 }
             }
-            database.add(operation)
-        }
 
-        // Mark as synced
-        let now = ISO8601DateFormatter().string(from: Date())
-        for node in modifiedNodes {
-            try IsometryDatabase.shared.execute(
-                "UPDATE nodes SET last_synced_at = ? WHERE id = ?",
-                parameters: [now, node.id]
-            )
+            database.add(operation)
         }
     }
 
     // MARK: - Pull Changes
 
-    private func pullRemoteChanges() async throws {
+    private func pullRemoteChanges() async throws -> Int {
         // Get server change token
         var changeToken: CKServerChangeToken?
-        if let tokenData: [[String: Any]] = try? IsometryDatabase.shared.query(
+        let tokenResults: [[String: Any]] = try await IsometryDatabase.shared.query(
             "SELECT last_sync_token FROM sync_state WHERE id = 'default'"
-        ), let data = tokenData.first?["last_sync_token"] as? Data {
+        )
+        if let data = tokenResults.first?["last_sync_token"] as? Data {
             changeToken = try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: data)
         }
 
@@ -1018,24 +1255,26 @@ public final class CloudKitSyncManager: ObservableObject {
 
         // Apply changes to local database
         for record in changedRecords {
-            try applyRemoteChange(record)
+            try await applyRemoteChange(record)
         }
 
         for recordID in deletedRecordIDs {
-            try applyRemoteDeletion(recordID)
+            try await applyRemoteDeletion(recordID)
         }
 
         // Save new token
         if let token = newToken,
            let tokenData = try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true) {
-            try IsometryDatabase.shared.execute(
+            try await IsometryDatabase.shared.execute(
                 "UPDATE sync_state SET last_sync_token = ? WHERE id = 'default'",
                 parameters: [tokenData]
             )
         }
+
+        return changedRecords.count + deletedRecordIDs.count
     }
 
-    private func applyRemoteChange(_ record: CKRecord) throws {
+    private func applyRemoteChange(_ record: CKRecord) async throws {
         switch record.recordType {
         case "Node":
             let sql = """
@@ -1055,9 +1294,11 @@ public final class CloudKitSyncManager: ObservableObject {
                 WHERE excluded.version > nodes.version
                 """
 
-            let tagsJSON = (record["tags"] as? [String]).map { try? JSONEncoder().encode($0) }.flatMap { String(data: $0!, encoding: .utf8) }
+            let tagsJSON: String? = (record["tags"] as? [String]).flatMap {
+                try? String(data: JSONEncoder().encode($0), encoding: .utf8)
+            }
 
-            try IsometryDatabase.shared.execute(sql, parameters: [
+            try await IsometryDatabase.shared.execute(sql, parameters: [
                 record.recordID.recordName,
                 record["name"] as? String,
                 record["content"] as? String,
@@ -1082,7 +1323,7 @@ public final class CloudKitSyncManager: ObservableObject {
                     label = excluded.label
                 """
 
-            try IsometryDatabase.shared.execute(sql, parameters: [
+            try await IsometryDatabase.shared.execute(sql, parameters: [
                 record.recordID.recordName,
                 record["edgeType"] as? String ?? "LINK",
                 record["sourceId"] as? String,
@@ -1097,17 +1338,17 @@ public final class CloudKitSyncManager: ObservableObject {
         }
     }
 
-    private func applyRemoteDeletion(_ recordID: CKRecord.ID) throws {
+    private func applyRemoteDeletion(_ recordID: CKRecord.ID) async throws {
         let id = recordID.recordName
 
         // Soft delete for nodes
-        try IsometryDatabase.shared.execute(
+        try await IsometryDatabase.shared.execute(
             "UPDATE nodes SET deleted_at = datetime('now') WHERE id = ?",
             parameters: [id]
         )
 
         // Hard delete for edges
-        try IsometryDatabase.shared.execute(
+        try await IsometryDatabase.shared.execute(
             "DELETE FROM edges WHERE id = ?",
             parameters: [id]
         )
@@ -1115,514 +1356,464 @@ public final class CloudKitSyncManager: ObservableObject {
 
     // MARK: - Conflict Resolution
 
+    public enum ConflictResolution: Sendable {
+        case keepLocal
+        case keepRemote
+        case merge(Node)
+    }
+
     public func resolveConflict(localNode: Node, remoteNode: Node, resolution: ConflictResolution) async throws {
         switch resolution {
         case .keepLocal:
             // Force push local version with incremented version
             var updated = localNode
             updated.version = max(localNode.version, remoteNode.version) + 1
-            try await pushNode(updated)
+            try await IsometryDatabase.shared.updateNode(updated)
+            await sync()
 
         case .keepRemote:
             // Apply remote version locally
-            try applyNode(remoteNode)
+            try await IsometryDatabase.shared.updateNode(remoteNode)
 
         case .merge(let merged):
             // Apply merged version
             var updated = merged
             updated.version = max(localNode.version, remoteNode.version) + 1
-            try applyNode(updated)
-            try await pushNode(updated)
+            try await IsometryDatabase.shared.updateNode(updated)
+            await sync()
+        }
+
+        logger.info("Resolved conflict for node \(localNode.id)")
+    }
+}
+```
+
+### 3.2 Sync Status SwiftUI View
+
+```swift
+// Sources/Views/SyncStatusView.swift
+
+import SwiftUI
+
+struct SyncStatusView: View {
+    @ObservedObject private var syncManager = CloudKitSyncManager.shared
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Status indicator
+            Circle()
+                .fill(statusColor)
+                .frame(width: 8, height: 8)
+
+            // Status text
+            Text(statusText)
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+            // Last sync time
+            if let lastSync = syncManager.lastSyncDate {
+                Text("• \(lastSync, style: .relative)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Spacer()
+
+            // Manual sync button
+            Button(action: {
+                Task { await syncManager.sync() }
+            }) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .rotationEffect(.degrees(syncManager.syncState == .syncing ? 360 : 0))
+                    .animation(
+                        syncManager.syncState == .syncing
+                            ? .linear(duration: 1).repeatForever(autoreverses: false)
+                            : .default,
+                        value: syncManager.syncState
+                    )
+            }
+            .disabled(syncManager.syncState == .syncing)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground).opacity(0.9))
+    }
+
+    private var statusColor: Color {
+        switch syncManager.syncState {
+        case .idle: return .green
+        case .syncing: return .blue
+        case .error: return .red
+        case .offline: return .orange
         }
     }
 
-    public enum ConflictResolution {
-        case keepLocal
-        case keepRemote
-        case merge(Node)
-    }
-
-    private func pushNode(_ node: Node) async throws {
-        // Implementation...
-    }
-
-    private func applyNode(_ node: Node) throws {
-        // Implementation...
+    private var statusText: String {
+        switch syncManager.syncState {
+        case .idle: return "Synced"
+        case .syncing: return "Syncing..."
+        case .error(let message): return "Error: \(message)"
+        case .offline: return "Offline"
+        }
     }
 }
 ```
 
 ---
 
-## Phase 4: Web Support (Optional)
+## Phase 4: Web Support (Optional, Future)
 
-> **Note**: This phase is only needed if web browser support is required. Native iOS/macOS apps are fully functional with just Phases 1-3 (SQLite + CloudKit).
+> **Note**: This phase is deferred to v4.0+. Native iOS/macOS apps are fully functional with Phases 1-3.
 
-### 4.1 API Client for Web
+### 4.1 Options for Web
 
-For the web app, we'll add an API layer that talks to a sync server (or directly to CloudKit via their web services).
+When web support is needed, two approaches:
 
-```typescript
-// src/db/api-client.ts
+**Option A: SQLite WASM + OPFS (Full Offline)**
 
-interface APIConfig {
-  baseURL: string;
-  authToken?: string;
-}
+- Use official SQLite WASM build with Origin Private File System
+- Full FTS5 and CTE support
+- Requires sync server to bridge to CloudKit
 
-export class IsometryAPIClient {
-  private config: APIConfig;
+**Option B: Online-Only (Simpler)**
 
-  constructor(config: APIConfig) {
-    this.config = config;
-  }
+- REST API to sync server
+- No local storage complexity
+- Requires internet connection
 
-  private async fetch<T>(path: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.config.baseURL}${path}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.config.authToken && { Authorization: `Bearer ${this.config.authToken}` }),
-        ...options?.headers,
-      },
-    });
+Recommendation: Start with online-only for simplicity, add OPFS later if offline is critical.
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+---
+
+## Phase 5: Testing
+
+### 5.1 Unit Tests
+
+```swift
+// Tests/DatabaseTests.swift
+
+import XCTest
+@testable import Isometry
+
+final class IsometryDatabaseTests: XCTestCase {
+
+    var db: IsometryDatabase!
+
+    override func setUp() async throws {
+        db = IsometryDatabase()
+        let testURL = FileManager.default.temporaryDirectory.appendingPathComponent("test-\(UUID()).db")
+        try await db.initialize(at: testURL)
     }
 
-    return response.json();
-  }
+    // MARK: - CRUD Tests
 
-  // Nodes
-  async getNodes(filter?: NodeFilter): Promise<Node[]> {
-    const params = new URLSearchParams();
-    if (filter?.folder) params.set('folder', filter.folder);
-    if (filter?.status) params.set('status', filter.status);
-    if (filter?.limit) params.set('limit', String(filter.limit));
+    func testCreateAndRetrieveNode() async throws {
+        let node = Node(name: "Test Node", content: "Test content")
+        try await db.createNode(node)
 
-    return this.fetch(`/nodes?${params}`);
-  }
+        let retrieved = try await db.getNode(node.id)
+        XCTAssertNotNil(retrieved)
+        XCTAssertEqual(retrieved?.name, "Test Node")
+        XCTAssertEqual(retrieved?.content, "Test content")
+    }
 
-  async getNode(id: string): Promise<Node> {
-    return this.fetch(`/nodes/${id}`);
-  }
+    func testUpdateNode() async throws {
+        var node = Node(name: "Original")
+        try await db.createNode(node)
 
-  async createNode(node: Partial<Node>): Promise<Node> {
-    return this.fetch('/nodes', {
-      method: 'POST',
-      body: JSON.stringify(node),
-    });
-  }
+        node.name = "Updated"
+        node.content = "New content"
+        try await db.updateNode(node)
 
-  async updateNode(id: string, updates: Partial<Node>): Promise<Node> {
-    return this.fetch(`/nodes/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    });
-  }
+        let retrieved = try await db.getNode(node.id)
+        XCTAssertEqual(retrieved?.name, "Updated")
+        XCTAssertEqual(retrieved?.content, "New content")
+    }
 
-  async deleteNode(id: string): Promise<void> {
-    await this.fetch(`/nodes/${id}`, { method: 'DELETE' });
-  }
+    func testSoftDelete() async throws {
+        let node = Node(name: "To Delete")
+        try await db.createNode(node)
 
-  // Search
-  async search(query: string, limit = 50): Promise<SearchResult[]> {
-    return this.fetch(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
-  }
+        try await db.deleteNode(node.id, hard: false)
 
-  // Graph
-  async getConnectedNodes(nodeId: string, maxDepth = 3): Promise<NodeWithDepth[]> {
-    return this.fetch(`/graph/connected/${nodeId}?depth=${maxDepth}`);
-  }
+        let retrieved = try await db.getNode(node.id)
+        XCTAssertNil(retrieved) // Soft-deleted nodes should not be returned
+    }
 
-  async getShortestPath(fromId: string, toId: string): Promise<string[] | null> {
-    return this.fetch(`/graph/path?from=${fromId}&to=${toId}`);
-  }
+    // MARK: - FTS5 Tests
 
-  async getNodeImportance(): Promise<{ nodeId: string; importance: number }[]> {
-    return this.fetch('/graph/importance');
-  }
+    func testFullTextSearch() async throws {
+        let node1 = Node(name: "Apple iPhone", content: "A smartphone made by Apple")
+        let node2 = Node(name: "Android Phone", content: "A smartphone running Android")
+        let node3 = Node(name: "Banana", content: "A yellow fruit")
 
-  // Sync
-  async sync(changes: SyncPayload): Promise<SyncResult> {
-    return this.fetch('/sync', {
-      method: 'POST',
-      body: JSON.stringify(changes),
-    });
-  }
-}
+        try await db.createNode(node1)
+        try await db.createNode(node2)
+        try await db.createNode(node3)
 
-// Types
-interface NodeFilter {
-  folder?: string;
-  status?: string;
-  limit?: number;
-}
+        let results = try await db.search("smartphone")
+        XCTAssertEqual(results.count, 2)
+        XCTAssertTrue(results.contains { $0.name == "Apple iPhone" })
+        XCTAssertTrue(results.contains { $0.name == "Android Phone" })
+    }
 
-interface SearchResult {
-  node: Node;
-  rank: number;
-  highlights: { field: string; snippet: string }[];
-}
+    func testFTSPrefixSearch() async throws {
+        let node = Node(name: "Programming", content: "Writing code")
+        try await db.createNode(node)
 
-interface NodeWithDepth {
-  node: Node;
-  depth: number;
-}
+        let results = try await db.search("prog")
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(results.first?.name, "Programming")
+    }
 
-interface SyncPayload {
-  clientVersion: number;
-  changes: {
-    nodes: { created: Node[]; updated: Node[]; deleted: string[] };
-    edges: { created: Edge[]; updated: Edge[]; deleted: string[] };
-  };
-}
+    // MARK: - Graph Tests
 
-interface SyncResult {
-  serverVersion: number;
-  conflicts: { local: Node; remote: Node }[];
-  applied: { nodes: number; edges: number };
+    func testConnectedNodes() async throws {
+        // Create nodes
+        let center = Node(name: "Center")
+        let neighbor1 = Node(name: "Neighbor 1")
+        let neighbor2 = Node(name: "Neighbor 2")
+        let distant = Node(name: "Distant")
+
+        try await db.createNode(center)
+        try await db.createNode(neighbor1)
+        try await db.createNode(neighbor2)
+        try await db.createNode(distant)
+
+        // Create edges: center -> neighbor1 -> distant, center -> neighbor2
+        try await db.execute("""
+            INSERT INTO edges (id, edge_type, source_id, target_id) VALUES
+            (?, 'LINK', ?, ?),
+            (?, 'LINK', ?, ?),
+            (?, 'LINK', ?, ?)
+            """, parameters: [
+                UUID().uuidString, center.id, neighbor1.id,
+                UUID().uuidString, center.id, neighbor2.id,
+                UUID().uuidString, neighbor1.id, distant.id
+            ])
+
+        // Depth 1: should find neighbor1 and neighbor2
+        let depth1 = try await db.connectedNodes(from: center.id, maxDepth: 1)
+        XCTAssertEqual(depth1.count, 3) // center + 2 neighbors
+
+        // Depth 2: should also find distant
+        let depth2 = try await db.connectedNodes(from: center.id, maxDepth: 2)
+        XCTAssertEqual(depth2.count, 4) // center + 2 neighbors + distant
+    }
+
+    func testShortestPath() async throws {
+        let a = Node(name: "A")
+        let b = Node(name: "B")
+        let c = Node(name: "C")
+        let d = Node(name: "D")
+
+        try await db.createNode(a)
+        try await db.createNode(b)
+        try await db.createNode(c)
+        try await db.createNode(d)
+
+        // A -> B -> D (length 2)
+        // A -> C -> D (length 2)
+        try await db.execute("""
+            INSERT INTO edges (id, edge_type, source_id, target_id, directed) VALUES
+            (?, 'LINK', ?, ?, 0),
+            (?, 'LINK', ?, ?, 0),
+            (?, 'LINK', ?, ?, 0),
+            (?, 'LINK', ?, ?, 0)
+            """, parameters: [
+                UUID().uuidString, a.id, b.id,
+                UUID().uuidString, b.id, d.id,
+                UUID().uuidString, a.id, c.id,
+                UUID().uuidString, c.id, d.id
+            ])
+
+        let path = try await db.shortestPath(from: a.id, to: d.id)
+        XCTAssertNotNil(path)
+        XCTAssertEqual(path?.count, 3) // A -> B/C -> D
+        XCTAssertEqual(path?.first, a.id)
+        XCTAssertEqual(path?.last, d.id)
+    }
+
+    func testNodeImportance() async throws {
+        let hub = Node(name: "Hub")
+        let spoke1 = Node(name: "Spoke 1")
+        let spoke2 = Node(name: "Spoke 2")
+        let spoke3 = Node(name: "Spoke 3")
+
+        try await db.createNode(hub)
+        try await db.createNode(spoke1)
+        try await db.createNode(spoke2)
+        try await db.createNode(spoke3)
+
+        // All spokes point to hub
+        try await db.execute("""
+            INSERT INTO edges (id, edge_type, source_id, target_id, weight) VALUES
+            (?, 'LINK', ?, ?, 1.0),
+            (?, 'LINK', ?, ?, 2.0),
+            (?, 'LINK', ?, ?, 3.0)
+            """, parameters: [
+                UUID().uuidString, spoke1.id, hub.id,
+                UUID().uuidString, spoke2.id, hub.id,
+                UUID().uuidString, spoke3.id, hub.id
+            ])
+
+        let importance = try await db.nodeImportance()
+        let hubImportance = importance.first { $0.nodeId == hub.id }
+
+        XCTAssertNotNil(hubImportance)
+        XCTAssertEqual(hubImportance?.importance, 6.0) // 1 + 2 + 3
+    }
 }
 ```
 
-### 4.2 Web Database Provider
+### 5.2 Integration Tests
 
-For web apps requiring offline support, use SQLite WASM with OPFS. For online-only web apps, use just the API client.
+```swift
+// Tests/SyncIntegrationTests.swift
 
-```typescript
-// src/db/WebDatabaseProvider.tsx
-// Web-only provider - native apps use IsometryDatabase.swift directly
+import XCTest
+@testable import Isometry
 
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
-import { IsometryAPIClient } from './api-client';
-// Optional: import sqlite-wasm for offline support
+final class SyncIntegrationTests: XCTestCase {
 
-interface HybridDatabaseContextValue {
-  // State
-  isOnline: boolean;
-  isSyncing: boolean;
-  lastSyncAt: Date | null;
+    func testSyncRoundTrip() async throws {
+        // Create local node
+        let node = Node(name: "Sync Test", content: "Testing sync")
+        try await IsometryDatabase.shared.createNode(node)
 
-  // Operations (use API when online, local when offline)
-  nodes: {
-    list: (filter?: NodeFilter) => Promise<Node[]>;
-    get: (id: string) => Promise<Node | null>;
-    create: (node: Partial<Node>) => Promise<Node>;
-    update: (id: string, updates: Partial<Node>) => Promise<Node>;
-    delete: (id: string) => Promise<void>;
-  };
+        // Trigger sync
+        await CloudKitSyncManager.shared.sync()
 
-  search: (query: string) => Promise<SearchResult[]>;
+        // Verify sync completed
+        let state = await CloudKitSyncManager.shared.syncState
+        XCTAssertEqual(state, .idle)
+    }
 
-  graph: {
-    connected: (nodeId: string, depth?: number) => Promise<NodeWithDepth[]>;
-    shortestPath: (from: string, to: string) => Promise<string[] | null>;
-    importance: () => Promise<{ nodeId: string; importance: number }[]>;
-  };
+    func testOfflineQueue() async throws {
+        // Simulate offline
+        // Create changes while offline
+        // Come back online
+        // Verify changes synced
+    }
 
-  sync: () => Promise<void>;
+    func testConflictResolution() async throws {
+        // Create same node on two devices
+        // Make different changes
+        // Sync both
+        // Verify conflict detected and resolved
+    }
 }
+```
 
-const HybridDatabaseContext = createContext<HybridDatabaseContextValue | null>(null);
+### 5.3 Performance Tests
 
-export function HybridDatabaseProvider({
-  children,
-  apiBaseURL
-}: {
-  children: ReactNode;
-  apiBaseURL: string;
-}) {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
-  const [localDb, setLocalDb] = useState<Database | null>(null);
+```swift
+// Tests/PerformanceTests.swift
 
-  const api = new IsometryAPIClient({ baseURL: apiBaseURL });
+import XCTest
+@testable import Isometry
 
-  // Initialize local database for offline support
-  useEffect(() => {
-    initDatabase().then(setLocalDb);
-  }, []);
+final class PerformanceTests: XCTestCase {
 
-  // Track online/offline
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+    func testBulkInsert10K() async throws {
+        let db = IsometryDatabase()
+        let testURL = FileManager.default.temporaryDirectory.appendingPathComponent("perf-\(UUID()).db")
+        try await db.initialize(at: testURL)
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+        measure {
+            let expectation = expectation(description: "Bulk insert")
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+            Task {
+                for i in 0..<10_000 {
+                    let node = Node(name: "Node \(i)", content: "Content \(i)")
+                    try await db.createNode(node)
+                }
+                expectation.fulfill()
+            }
 
-  // Auto-sync when coming back online
-  useEffect(() => {
-    if (isOnline && localDb) {
-      sync();
-    }
-  }, [isOnline]);
-
-  const sync = useCallback(async () => {
-    if (!localDb || isSyncing) return;
-
-    setIsSyncing(true);
-    try {
-      // Get local changes
-      const pendingNodes = localDb.exec(`
-        SELECT * FROM nodes WHERE modified_at > COALESCE(last_synced_at, '1970-01-01')
-      `);
-
-      // Push to server and get back changes
-      const result = await api.sync({
-        clientVersion: Date.now(),
-        changes: {
-          nodes: {
-            created: [], // Extract from pendingNodes
-            updated: [], // Extract from pendingNodes
-            deleted: [],
-          },
-          edges: { created: [], updated: [], deleted: [] },
-        },
-      });
-
-      // Apply server changes locally
-      // Handle conflicts...
-
-      setLastSyncAt(new Date());
-    } catch (error) {
-      console.error('Sync failed:', error);
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [localDb, isSyncing, api]);
-
-  // Node operations with online/offline fallback
-  const nodes = {
-    list: async (filter?: NodeFilter) => {
-      if (isOnline) {
-        try {
-          return await api.getNodes(filter);
-        } catch {
-          // Fall back to local
+            wait(for: [expectation], timeout: 60)
         }
-      }
-      // Query local database
-      const sql = `SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY modified_at DESC`;
-      return executeLocal<Node>(sql);
-    },
-
-    get: async (id: string) => {
-      if (isOnline) {
-        try {
-          return await api.getNode(id);
-        } catch {
-          // Fall back to local
-        }
-      }
-      const results = executeLocal<Node>(`SELECT * FROM nodes WHERE id = ?`, [id]);
-      return results[0] || null;
-    },
-
-    create: async (node: Partial<Node>) => {
-      const newNode = {
-        id: crypto.randomUUID(),
-        ...node,
-        createdAt: new Date().toISOString(),
-        modifiedAt: new Date().toISOString(),
-        version: 1,
-      } as Node;
-
-      // Always save locally first
-      executeLocal(`
-        INSERT INTO nodes (id, name, content, folder, priority, created_at, modified_at, version)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      `, [newNode.id, newNode.name, newNode.content, newNode.folder, newNode.priority, newNode.createdAt, newNode.modifiedAt, 1]);
-
-      // Try to sync to server
-      if (isOnline) {
-        try {
-          await api.createNode(newNode);
-        } catch {
-          // Will sync later
-        }
-      }
-
-      return newNode;
-    },
-
-    update: async (id: string, updates: Partial<Node>) => {
-      // Update locally
-      const modifiedAt = new Date().toISOString();
-      executeLocal(`
-        UPDATE nodes SET name = COALESCE(?, name), content = COALESCE(?, content),
-        folder = COALESCE(?, folder), modified_at = ? WHERE id = ?
-      `, [updates.name, updates.content, updates.folder, modifiedAt, id]);
-
-      // Try to sync
-      if (isOnline) {
-        try {
-          return await api.updateNode(id, updates);
-        } catch {
-          // Will sync later
-        }
-      }
-
-      return { ...updates, id, modifiedAt } as Node;
-    },
-
-    delete: async (id: string) => {
-      // Soft delete locally
-      executeLocal(`UPDATE nodes SET deleted_at = datetime('now') WHERE id = ?`, [id]);
-
-      if (isOnline) {
-        try {
-          await api.deleteNode(id);
-        } catch {
-          // Will sync later
-        }
-      }
-    },
-  };
-
-  // Search - requires server for FTS5
-  const search = async (query: string) => {
-    if (!isOnline) {
-      // Fallback to LIKE queries locally
-      const results = executeLocal<Node>(`
-        SELECT * FROM nodes
-        WHERE (name LIKE ? OR content LIKE ?) AND deleted_at IS NULL
-        ORDER BY modified_at DESC LIMIT 50
-      `, [`%${query}%`, `%${query}%`]);
-
-      return results.map(node => ({ node, rank: 0, highlights: [] }));
     }
 
-    return api.search(query);
-  };
+    func testFTS10KNodes() async throws {
+        // Pre-populate 10K nodes
+        // Measure search performance
 
-  // Graph queries - require server for complex CTEs
-  const graph = {
-    connected: async (nodeId: string, depth = 3) => {
-      if (!isOnline) {
-        // Simple local fallback - just direct connections
-        const edges = executeLocal<Edge>(`
-          SELECT * FROM edges WHERE source_id = ? OR target_id = ?
-        `, [nodeId, nodeId]);
+        measure {
+            let expectation = expectation(description: "FTS search")
 
-        const connectedIds = new Set(edges.flatMap(e => [e.sourceId, e.targetId]));
-        connectedIds.delete(nodeId);
+            Task {
+                _ = try await db.search("test query")
+                expectation.fulfill()
+            }
 
-        const nodes = executeLocal<Node>(`
-          SELECT * FROM nodes WHERE id IN (${[...connectedIds].map(() => '?').join(',')})
-        `, [...connectedIds]);
+            wait(for: [expectation], timeout: 5)
+        }
+    }
 
-        return nodes.map(node => ({ node, depth: 1 }));
-      }
+    func testGraphTraversal100KEdges() async throws {
+        // Pre-populate graph with 100K edges
+        // Measure traversal performance
 
-      return api.getConnectedNodes(nodeId, depth);
-    },
+        measure {
+            let expectation = expectation(description: "Graph traversal")
 
-    shortestPath: async (from: string, to: string) => {
-      if (!isOnline) return null; // Too complex for local fallback
-      return api.getShortestPath(from, to);
-    },
+            Task {
+                _ = try await db.connectedNodes(from: "center-node", maxDepth: 3)
+                expectation.fulfill()
+            }
 
-    importance: async () => {
-      if (!isOnline) return []; // Too complex for local fallback
-      return api.getNodeImportance();
-    },
-  };
-
-  // Helper for local queries
-  function executeLocal<T>(sql: string, params: unknown[] = []): T[] {
-    if (!localDb) return [];
-    const result = localDb.exec(sql, params);
-    if (result.length === 0) return [];
-
-    const { columns, values } = result[0];
-    return values.map(row => {
-      const obj: Record<string, unknown> = {};
-      columns.forEach((col, i) => { obj[col] = row[i]; });
-      return obj as T;
-    });
-  }
-
-  return (
-    <HybridDatabaseContext.Provider value={{
-      isOnline,
-      isSyncing,
-      lastSyncAt,
-      nodes,
-      search,
-      graph,
-      sync,
-    }}>
-      {children}
-    </HybridDatabaseContext.Provider>
-  );
-}
-
-export function useHybridDatabase() {
-  const context = useContext(HybridDatabaseContext);
-  if (!context) {
-    throw new Error('useHybridDatabase must be used within HybridDatabaseProvider');
-  }
-  return context;
+            wait(for: [expectation], timeout: 10)
+        }
+    }
 }
 ```
 
 ---
 
-## Phase 5: Migration Checklist
+## Phase 6: Rollout
 
-### Pre-Migration
+### 6.1 Pre-Release Checklist
 
-- [ ] Set up CloudKit container in Apple Developer Portal
-- [ ] Enable iCloud capability in Xcode project
-- [ ] Document current React prototype API surface (for reference)
+**Apple Developer Setup:**
 
-### Schema Migration (Phase 1)
+- [ ] Create App ID with iCloud capability
+- [ ] Create CloudKit container `iCloud.com.yourcompany.isometry`
+- [ ] Configure CloudKit schema in dashboard
+- [ ] Enable push notifications for sync
 
-- [ ] Add sync metadata columns to schema
-- [ ] Create FTS5 virtual table and triggers
-- [ ] Test graph CTEs with sample data
-- [ ] Validate schema with native SQLite
+**Code Quality:**
 
-### Native Implementation (Phases 2-3)
+- [ ] All unit tests passing
+- [ ] All integration tests passing
+- [ ] Performance benchmarks meet targets
+- [ ] No memory leaks in Instruments
+- [ ] Thread sanitizer clean
 
-- [ ] Create `IsometryDatabase.swift` with FTS5 support
-- [ ] Create Swift data models (`Node`, `Edge`)
-- [ ] Implement `CloudKitSyncManager` with CKSyncEngine
-- [ ] Add conflict resolution UI
-- [ ] Test offline/online transitions
-- [ ] Test cross-device sync (iPhone ↔ iPad ↔ Mac)
+**Data Safety:**
 
-### Web Implementation (Phase 4 - Optional)
+- [ ] Migration tested with production-like data
+- [ ] Backup/restore verified
+- [ ] Conflict resolution tested
+- [ ] Offline mode tested (airplane mode)
 
-- [ ] Decide: online-only or SQLite WASM offline support
-- [ ] Create API client (if sync server approach)
-- [ ] Create `WebDatabaseProvider`
-- [ ] Test offline fallback behavior (if applicable)
+### 6.2 TestFlight Beta
 
-### Testing
+- [ ] Deploy to internal testers
+- [ ] Monitor CloudKit dashboard for errors
+- [ ] Collect sync success/failure metrics
+- [ ] Document any issues found
 
-- [ ] Unit tests for graph queries (recursive CTEs)
-- [ ] Unit tests for FTS5 search
-- [ ] Integration tests for CloudKit sync
-- [ ] Conflict resolution scenarios
-- [ ] Performance benchmarks (10k, 100k nodes)
-- [ ] Airplane mode testing
+### 6.3 Production Metrics
 
-### Rollout
+Monitor these after launch:
 
-- [ ] TestFlight beta with CloudKit sync
-- [ ] Monitor sync success rates
-- [ ] Monitor conflict rates
-- [ ] Data migration for existing prototype users (if any)
+| Metric | Target | Alert Threshold |
+|--------|--------|-----------------|
+| Sync success rate | > 99% | < 95% |
+| Sync latency (p95) | < 2s | > 5s |
+| Conflict rate | < 1% | > 5% |
+| Error rate | < 0.1% | > 1% |
 
 ---
 
@@ -1630,54 +1821,41 @@ export function useHybridDatabase() {
 
 | Phase | Description                      | Dependencies | Required |
 |-------|----------------------------------|--------------|----------|
-| 1     | Schema Migration (FTS5 + Graph)  | None         | Yes      |
+| 1     | Schema Design (FTS5 + Graph)     | None         | Yes      |
 | 2     | iOS/macOS Native Layer (Swift)   | Phase 1      | Yes      |
-| 3     | iCloud Sync (CloudKit)           | Phase 2      | Yes      |
-| 4     | Web Support                      | Phase 1      | Optional |
-| 5     | Testing & Rollout                | Phases 1-3   | Yes      |
+| 3     | CloudKit Sync                    | Phase 2      | Yes      |
+| 4     | Web Support                      | Phase 1      | No (v4.0+) |
+| 5     | Testing                          | Phases 1-3   | Yes      |
+| 6     | Rollout                          | Phase 5      | Yes      |
 
-Native apps (iOS/macOS) are fully functional after Phases 1-3. Phase 4 adds optional web browser support.
+Native apps are fully functional after Phases 1-3. Web support is optional and deferred.
 
 ---
 
-## Decision Points
+## Decision Log
 
-### Native Architecture (iOS/macOS)
+| Date | Decision | Rationale |
+|------|----------|-----------|
+| — | iOS 15+ deployment | Manual CloudKit ops work everywhere; CKSyncEngine requires iOS 17 |
+| — | Swift Actor model | Compile-time thread safety, cleaner than DispatchQueue |
+| — | Version-based conflict resolution | Simple, deterministic, works offline |
+| — | Soft delete for nodes | Preserves history, enables undo, prevents data loss |
+| — | Hard delete for edges | Edges are cheap to recreate, reduces sync complexity |
+| — | Defer web support | Focus on native quality; web can use API later |
 
-Decision: Pure SQLite + CloudKit
+---
 
-Native apps use SQLite directly with CloudKit for sync. No sql.js, no IndexedDB, no web tech.
+## Why Not sql.js for Native?
 
-Why this is cleaner:
+The web prototype used sql.js (WASM) for cross-platform consistency. For native, pure SQLite is better:
 
-- **Full offline built-in**: SQLite stores all data locally; CloudKit queues changes when offline
-- **Automatic conflict resolution**: CKSyncEngine handles merge conflicts
-- **Single source of truth**: SQLite is the database; CloudKit is the sync transport
-- **Full feature support**: FTS5, recursive CTEs, WAL mode—all native SQLite features work
-- **No WASM overhead**: Native performance, smaller binary size
+| Aspect | sql.js (WASM) | Native SQLite |
+|--------|---------------|---------------|
+| Performance | WASM overhead | Native speed |
+| Binary size | +2MB | 0 (system library) |
+| FTS5 | Not in CDN builds | Full support |
+| Recursive CTEs | Slower in WASM | Native speed |
+| Offline sync | Must implement | CloudKit provides |
+| Thread safety | Manual | Actor model |
 
-### Web Architecture (If Needed)
-
-#### Option A: SQLite WASM + OPFS (Recommended for offline)
-
-- Use official SQLite WASM build with Origin Private File System
-- Full FTS5 and CTE support
-- Requires sync server to bridge to CloudKit
-
-#### Option B: Online-Only (Simpler)
-
-- REST API to sync server
-- No local storage complexity
-- Requires internet connection
-
-Recommendation: Start with native apps (iOS/macOS) using pure SQLite + CloudKit. Add web support later if needed, likely as online-only for simplicity.
-
-### Why Not sql.js for Native?
-
-The earlier prototype used sql.js (WASM) for cross-platform consistency. However:
-
-- Native SQLite is faster and smaller
-- CloudKit provides offline queuing that sql.js+IndexedDB would need to reimplement
-- FTS5 isn't available in CDN sql.js builds
-- Recursive CTEs are slower in WASM
-- No benefit to web tech on native platforms
+**Bottom line**: No benefit to web tech on native platforms. SQLite + CloudKit is the right architecture.

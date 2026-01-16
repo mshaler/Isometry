@@ -1,10 +1,8 @@
 /**
- * CardBoard Component System - Factory Utilities
+ * Isometry Component Factory Utilities
  *
  * Core utilities for building D3 components with the reusable chart pattern.
  * Provides getter/setter generation, transitions, and DOM helpers.
- *
- * Adapted from CardBoard components for Isometry hybrid integration.
  */
 
 import * as d3 from 'd3';

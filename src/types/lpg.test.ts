@@ -122,7 +122,7 @@ describe('type guards', () => {
 });
 
 describe('nodeToCardValue', () => {
-  it('converts Isometry Node to CardBoard NodeValue', () => {
+  it('converts Isometry Node to LPG NodeValue', () => {
     const result = nodeToCardValue(mockIsometryNode);
 
     expect(result.id).toBe('node-1');
@@ -205,7 +205,7 @@ describe('nodeToCardValue', () => {
 });
 
 describe('edgeToCardValue', () => {
-  it('converts Isometry Edge to CardBoard EdgeValue', () => {
+  it('converts Isometry Edge to LPG EdgeValue', () => {
     const result = edgeToCardValue(mockIsometryEdge);
 
     expect(result.id).toBe('edge-1');
@@ -220,7 +220,7 @@ describe('edgeToCardValue', () => {
 });
 
 describe('cardValueToNode', () => {
-  it('converts CardBoard NodeValue back to Isometry Node', () => {
+  it('converts LPG NodeValue back to Isometry Node', () => {
     const result = cardValueToNode(mockNodeValue);
 
     expect(result.id).toBe('node-1');

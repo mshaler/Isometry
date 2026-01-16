@@ -1,7 +1,7 @@
 /**
  * Factory Utilities Tests
  *
- * TDD tests for D3 component factory utilities adapted from CardBoard.
+ * TDD tests for Isometry D3 component factory utilities.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
