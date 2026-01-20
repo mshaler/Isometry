@@ -80,8 +80,9 @@ export function GridViewV2({ data, onNodeClick }: GridViewV2Props) {
   const { wells } = usePAFV();
 
   // Get axis assignments from PAFV wells
-  const xAxis = wells.xRows[0]?.id || 'folder';
-  const yAxis = wells.yColumns[0]?.id || 'priority';
+  // columns = horizontal (x-axis), rows = vertical (y-axis)
+  const xAxis = wells.columns[0]?.id || 'year';
+  const yAxis = wells.rows[0]?.id || 'folder';
 
   // Convert Node[] to NodeValue[] for Isometry D3 components
   const cardData = useMemo(() => data.map(nodeToCardValue), [data]);

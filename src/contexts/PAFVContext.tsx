@@ -9,8 +9,8 @@ export interface Chip {
 
 export interface Wells {
   available: Chip[];
-  xRows: Chip[];
-  yColumns: Chip[];
+  rows: Chip[];      // Row headers (left side, vertical grouping)
+  columns: Chip[];   // Column headers (top, horizontal grouping)
   zLayers: Chip[];
 }
 
@@ -18,18 +18,19 @@ interface PAFVContextType {
   wells: Wells;
   moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
   toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  transpose: () => void;
 }
 
 const PAFVContext = createContext<PAFVContextType | undefined>(undefined);
 
 const DEFAULT_WELLS: Wells = {
   available: [],
-  xRows: [
+  rows: [
     { id: 'folder', label: 'Folder' },
     { id: 'subfolder', label: 'Sub-folder' },
     { id: 'tags', label: 'Tags' },
   ],
-  yColumns: [
+  columns: [
     { id: 'year', label: 'Year' },
     { id: 'month', label: 'Month' },
   ],
@@ -50,8 +51,8 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     setWells(prev => {
       const newWells: Wells = {
         available: [...prev.available],
-        xRows: [...prev.xRows],
-        yColumns: [...prev.yColumns],
+        rows: [...prev.rows],
+        columns: [...prev.columns],
         zLayers: [...prev.zLayers],
       };
       const [movedChip] = newWells[fromWell].splice(fromIndex, 1);
@@ -69,8 +70,16 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const transpose = useCallback(() => {
+    setWells(prev => ({
+      ...prev,
+      rows: prev.columns,
+      columns: prev.rows,
+    }));
+  }, []);
+
   return (
-    <PAFVContext.Provider value={{ wells, moveChip, toggleCheckbox }}>
+    <PAFVContext.Provider value={{ wells, moveChip, toggleCheckbox, transpose }}>
       {children}
     </PAFVContext.Provider>
   );

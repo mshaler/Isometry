@@ -191,20 +191,20 @@ export function Sidebar() {
         case 'Tags':
           return renderFacetList(tags, 'tags', 'No tags in data');
 
-        case 'Time':
+        case 'Time': {
           // Only show time filters if we have date data
           if (!dateRange || dateRange.length === 0 || (!dateRange[0]?.has_created && !dateRange[0]?.has_due)) {
             return <div className="text-xs text-gray-400 p-2">No date fields in data</div>;
           }
 
-          const timeRanges = [];
+          const timeRanges: Array<{ label: string; start: string; end: string; field?: string }> = [];
           const now = new Date();
-          const today = now.toISOString().split('T')[0];
+          const today = now.toISOString().split('T')[0]!;
 
           // Calculate date boundaries
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0];
-          const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0];
+          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+          const monthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()).toISOString().split('T')[0]!;
+          const yearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate()).toISOString().split('T')[0]!
 
           timeRanges.push({ label: 'Today', start: today, end: today });
           timeRanges.push({ label: 'This Week', start: weekAgo, end: today });
@@ -241,6 +241,7 @@ export function Sidebar() {
               ))}
             </div>
           );
+        }
 
         default:
           return null;

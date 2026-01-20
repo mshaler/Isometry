@@ -5,3 +5,12 @@ dist/
 coverage/
 .env
 *.log
+
+# Swift/Xcode
+native/.build/
+native/.swiftpm/xcode/xcuserdata/
+*.xcuserstate
+xcuserdata/
+
+# ChunkHound database
+.chunkhound/

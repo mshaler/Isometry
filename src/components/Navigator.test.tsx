@@ -135,8 +135,8 @@ describe('Navigator', () => {
       renderWithProviders(<Navigator />);
 
       // PAFVNavigator should be visible by default
-      // It renders content with "x Rows", "y Columns", "z Layers" labels
-      expect(screen.getByText('x Rows')).toBeInTheDocument();
+      // It renders content with "Rows", "Columns", "Layers" labels
+      expect(screen.getByText('Rows')).toBeInTheDocument();
     });
 
     it('hides PAFVNavigator when collapsed', () => {
@@ -147,7 +147,7 @@ describe('Navigator', () => {
       fireEvent.click(toggleButton);
 
       // PAFVNavigator content should be hidden
-      expect(screen.queryByText('x Rows')).not.toBeInTheDocument();
+      expect(screen.queryByText('Rows')).not.toBeInTheDocument();
     });
 
     it('shows PAFVNavigator again when re-expanded', () => {
@@ -157,11 +157,11 @@ describe('Navigator', () => {
 
       // Collapse
       fireEvent.click(toggleButton);
-      expect(screen.queryByText('x Rows')).not.toBeInTheDocument();
+      expect(screen.queryByText('Rows')).not.toBeInTheDocument();
 
       // Re-expand
       fireEvent.click(toggleButton);
-      expect(screen.getByText('x Rows')).toBeInTheDocument();
+      expect(screen.getByText('Rows')).toBeInTheDocument();
     });
   });
 

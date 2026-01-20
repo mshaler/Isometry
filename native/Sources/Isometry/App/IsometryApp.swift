@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Main entry point for the Isometry app
-@main
-public struct IsometryApp: App {
+/// Isometry app scene configuration
+/// Note: @main entry point is in the IsometryApp executable target
+public struct IsometryAppScene: App {
     @StateObject private var appState = AppState()
 
     public init() {}
@@ -98,9 +98,14 @@ public final class AppState: ObservableObject {
             try await db.initialize()
             self.database = db
 
-            // Initialize sync manager
-            let sync = CloudKitSyncManager(database: db)
-            self.syncManager = sync
+            // Initialize sync manager only if CloudKit entitlements are present
+            // CKContainer crashes without proper entitlements, so check first
+            if Self.isCloudKitAvailable() {
+                let sync = CloudKitSyncManager(database: db)
+                self.syncManager = sync
+            } else {
+                print("CloudKit sync disabled: entitlements not configured")
+            }
 
             isLoading = false
 
@@ -108,6 +113,56 @@ public final class AppState: ObservableObject {
             self.error = error
             isLoading = false
         }
+    }
+
+    // MARK: - CloudKit Availability Check
+
+    /// Checks if CloudKit entitlements are properly configured
+    /// CKContainer will crash without entitlements, so we check the entitlements plist
+    private static func isCloudKitAvailable() -> Bool {
+        // SwiftUI previews don't have CloudKit
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return false
+        }
+
+        #if os(iOS) || os(visionOS)
+        // On iOS/visionOS, CloudKit is available if the app is properly signed
+        // We check for the ubiquity identity token as a proxy
+        return FileManager.default.ubiquityIdentityToken != nil
+        #elseif os(macOS)
+        // On macOS, check for proper code signing with CloudKit entitlements
+        guard let entitlements = Bundle.main.infoDictionary else {
+            return false
+        }
+
+        // Check if we're running from Xcode with a proper signing identity
+        if let prefix = entitlements["AppIdentifierPrefix"] as? String, !prefix.isEmpty {
+            return true
+        }
+
+        // For command-line builds, check if we can read the entitlements
+        let hasCodeSignature = Bundle.main.executableURL.flatMap { url in
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+            task.arguments = ["-d", "--entitlements", "-", url.path]
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            task.standardError = pipe
+            do {
+                try task.run()
+                task.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let output = String(data: data, encoding: .utf8) ?? ""
+                return output.contains("com.apple.developer.icloud-container-identifiers")
+            } catch {
+                return false
+            }
+        } ?? false
+
+        return hasCodeSignature
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Sync
@@ -121,6 +176,59 @@ public final class AppState: ObservableObject {
             syncStatus = .synced
         } catch {
             syncStatus = .error(error)
+        }
+    }
+
+    // MARK: - Import
+
+    @Published public var importStatus: ImportStatus = .idle
+    @Published public var lastImportResult: ImportResult?
+
+    /// Imports notes from alto-index directory
+    public func importNotes(from url: URL) async {
+        guard let db = database else { return }
+
+        importStatus = .importing
+        do {
+            let importer = AltoIndexImporter(database: db)
+            let result = try await importer.importNotes(from: url)
+            lastImportResult = result
+            importStatus = .completed(imported: result.imported, failed: result.failed)
+        } catch {
+            importStatus = .failed(error)
+        }
+    }
+
+    /// Gets the default alto-index notes path
+    public static var defaultAltoIndexPath: URL? {
+        #if os(macOS)
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        return home
+            .appendingPathComponent("Library/Containers/com.altoindex.AltoIndex/Data/Documents/alto-index/notes")
+        #else
+        // On iOS, we need to use document picker or file import
+        return nil
+        #endif
+    }
+}
+
+/// Import status enum
+public enum ImportStatus: Equatable {
+    case idle
+    case importing
+    case completed(imported: Int, failed: Int)
+    case failed(Error)
+
+    public static func == (lhs: ImportStatus, rhs: ImportStatus) -> Bool {
+        switch (lhs, rhs) {
+        case (.idle, .idle), (.importing, .importing):
+            return true
+        case (.completed(let lImported, let lFailed), .completed(let rImported, let rFailed)):
+            return lImported == rImported && lFailed == rFailed
+        case (.failed, .failed):
+            return true
+        default:
+            return false
         }
     }
 }

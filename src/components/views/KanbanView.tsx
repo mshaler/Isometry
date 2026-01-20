@@ -34,7 +34,7 @@ export function KanbanView({ data, groupBy = 'status', onNodeClick }: KanbanView
     });
 
     // Sort columns
-    let cols = Array.from(map.keys());
+    const cols = Array.from(map.keys());
     if (groupBy === 'status') {
       cols.sort((a, b) => {
         const ai = STATUS_ORDER.indexOf(a.toLowerCase());

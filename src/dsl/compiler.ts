@@ -133,9 +133,9 @@ export function compile(ast: ASTNode | null): CompiledQuery {
 /**
  * Convenience function: parse + compile in one step
  */
-export function compileString(dsl: string): CompiledQuery {
+export async function compileString(dsl: string): Promise<CompiledQuery> {
   // Import dynamically to avoid circular dependency
-  const { parse } = require('./parser');
+  const { parse } = await import('./parser');
   const ast = parse(dsl);
   return compile(ast);
 }

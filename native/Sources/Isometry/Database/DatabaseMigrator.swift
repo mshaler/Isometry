@@ -5,7 +5,7 @@ import GRDB
 public struct DatabaseMigrator {
     /// Creates a configured GRDB migrator with all registered migrations
     public static func createMigrator() -> GRDB.DatabaseMigrator {
-        var migrator = GRDB.DatabaseMigrator()
+        let migrator = GRDB.DatabaseMigrator()
 
         // Migration 1: Initial schema is loaded from schema.sql
         // Future migrations are registered here:

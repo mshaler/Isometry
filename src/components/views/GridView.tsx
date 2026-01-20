@@ -1,5 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
-import * as d3 from 'd3';
+import { useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV, type Chip } from '@/contexts/PAFVContext';
 import type { Node } from '@/types/node';
@@ -100,24 +99,6 @@ function buildHeaderTree(data: Node[], chips: Chip[]): HeaderNode {
   return root;
 }
 
-// Flatten header tree into rows for rendering
-function flattenHeaderLevels(root: HeaderNode, maxDepth: number): HeaderNode[][] {
-  const levels: HeaderNode[][] = [];
-  for (let d = 0; d < maxDepth; d++) {
-    levels.push([]);
-  }
-
-  function traverse(node: HeaderNode, depth: number) {
-    if (depth >= 0 && depth < maxDepth) {
-      levels[depth].push(node);
-    }
-    node.children.forEach(child => traverse(child, depth + 1));
-  }
-  traverse(root, -1);
-
-  return levels;
-}
-
 // Get leaf paths for cell positioning
 function getLeafPaths(root: HeaderNode): string[][] {
   const leaves: string[][] = [];
@@ -134,269 +115,204 @@ function getLeafPaths(root: HeaderNode): string[][] {
   return leaves;
 }
 
-// React component for a single header cell
-interface HeaderCellProps {
+// Flatten header tree by level with position info for CSS Grid
+interface FlatHeader {
   label: string;
   span: number;
-  isColumn: boolean;
-  theme: 'NeXTSTEP' | 'Modern';
+  depth: number;
+  startCol: number; // 1-indexed for CSS grid
 }
 
-function HeaderCell({ label, span, isColumn, theme }: HeaderCellProps) {
-  const truncatedLabel = label.length > (isColumn ? 12 : 8)
-    ? label.slice(0, isColumn ? 12 : 8) + '…'
-    : label;
+function flattenForGrid(root: HeaderNode, maxDepth: number): FlatHeader[][] {
+  const levels: FlatHeader[][] = [];
+  for (let d = 0; d < maxDepth; d++) {
+    levels.push([]);
+  }
 
-  return (
-    <div
-      className={`flex items-center justify-center text-xs font-medium px-1 ${
-        theme === 'NeXTSTEP'
-          ? 'bg-[#d4d4d4] border border-[#a0a0a0]'
-          : 'bg-gray-100 border border-gray-200 rounded'
-      }`}
-      style={isColumn ? { gridColumn: `span ${span}` } : { gridRow: `span ${span}` }}
-      title={label}
-    >
-      {truncatedLabel}
-    </div>
-  );
-}
+  function traverse(node: HeaderNode, depth: number, startCol: number): number {
+    if (depth >= 0 && depth < maxDepth) {
+      levels[depth].push({
+        label: node.label,
+        span: node.span,
+        depth,
+        startCol,
+      });
+    }
 
-// React component for column headers (horizontal, multiple rows for nesting)
-interface ColumnHeadersProps {
-  levels: HeaderNode[][];
-  theme: 'NeXTSTEP' | 'Modern';
-}
+    let currentCol = startCol;
+    node.children.forEach(child => {
+      currentCol = traverse(child, depth + 1, currentCol);
+    });
 
-function ColumnHeaders({ levels, theme }: ColumnHeadersProps) {
-  if (levels.length === 0) return null;
+    return depth >= 0 ? startCol + node.span : currentCol;
+  }
 
-  return (
-    <div className="flex flex-col gap-0.5">
-      {levels.map((level, levelIdx) => (
-        <div
-          key={levelIdx}
-          className="grid gap-0.5"
-          style={{
-            gridTemplateColumns: level.map(h => `${h.span}fr`).join(' ')
-          }}
-        >
-          {level.map((header, idx) => (
-            <HeaderCell
-              key={`${levelIdx}-${idx}-${header.label}`}
-              label={header.label}
-              span={1}
-              isColumn={true}
-              theme={theme}
-            />
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// React component for row headers (vertical, multiple columns for nesting)
-interface RowHeadersProps {
-  levels: HeaderNode[][];
-  theme: 'NeXTSTEP' | 'Modern';
-  cellHeight: number;
-}
-
-function RowHeaders({ levels, theme, cellHeight }: RowHeadersProps) {
-  if (levels.length === 0) return null;
-
-  return (
-    <div className="flex gap-0.5">
-      {levels.map((level, levelIdx) => (
-        <div
-          key={levelIdx}
-          className="flex flex-col gap-0.5 w-14"
-        >
-          {level.map((header, idx) => (
-            <div
-              key={`${levelIdx}-${idx}-${header.label}`}
-              className={`flex items-center justify-center text-xs font-medium px-1 ${
-                theme === 'NeXTSTEP'
-                  ? 'bg-[#d4d4d4] border border-[#a0a0a0]'
-                  : 'bg-gray-100 border border-gray-200 rounded'
-              }`}
-              style={{ height: header.span * cellHeight - 2 }}
-              title={header.label}
-            >
-              {header.label.length > 8 ? header.label.slice(0, 8) + '…' : header.label}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
+  traverse(root, -1, 1);
+  return levels;
 }
 
 export function GridView({ data, onNodeClick }: GridViewProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   const { wells } = usePAFV();
 
-  // Get all axis chips from PAFV wells
-  const xChips = wells.xRows.length > 0 ? wells.xRows : [{ id: 'folder', label: 'Folder', hasCheckbox: false }];
-  const yChips = wells.yColumns.length > 0 ? wells.yColumns : [{ id: 'priority', label: 'Priority', hasCheckbox: false }];
+  // Get axis chips from PAFV wells
+  const colChips = wells.columns.length > 0 ? wells.columns : [{ id: 'year', label: 'Year', hasCheckbox: false }];
+  const rowChips = wells.rows.length > 0 ? wells.rows : [{ id: 'folder', label: 'Folder', hasCheckbox: false }];
 
   // Build hierarchical header structures
-  const { xLeafPaths, yLeafPaths, grouped, xLevels, yLevels } = useMemo(() => {
-    const xTree = buildHeaderTree(data, xChips);
-    const yTree = buildHeaderTree(data, yChips);
-    const xLeaves = getLeafPaths(xTree);
-    const yLeaves = getLeafPaths(yTree);
-    const xLvls = flattenHeaderLevels(xTree, xChips.length);
-    const yLvls = flattenHeaderLevels(yTree, yChips.length);
+  const { colLeafPaths, rowLeafPaths, grouped, colLevels, rowLevels } = useMemo(() => {
+    const colTree = buildHeaderTree(data, colChips);
+    const rowTree = buildHeaderTree(data, rowChips);
+    const colLeaves = getLeafPaths(colTree);
+    const rowLeaves = getLeafPaths(rowTree);
+    const colLvls = flattenForGrid(colTree, colChips.length);
+    const rowLvls = flattenForGrid(rowTree, rowChips.length);
 
     const map = new Map<string, Node[]>();
     data.forEach(node => {
-      const xKey = getCompositeKey(node, xChips);
-      const yKey = getCompositeKey(node, yChips);
-      const key = `${xKey}||${yKey}`;
+      const colKey = getCompositeKey(node, colChips);
+      const rowKey = getCompositeKey(node, rowChips);
+      const key = `${colKey}||${rowKey}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(node);
     });
 
     return {
-      xLeafPaths: xLeaves,
-      yLeafPaths: yLeaves,
+      colLeafPaths: colLeaves,
+      rowLeafPaths: rowLeaves,
       grouped: map,
-      xLevels: xLvls,
-      yLevels: yLvls,
+      colLevels: colLvls,
+      rowLevels: rowLvls,
     };
-  }, [data, xChips, yChips]);
+  }, [data, colChips, rowChips]);
 
-  // Calculate dimensions
-  const numCols = xLeafPaths.length || 1;
-  const numRows = yLeafPaths.length || 1;
-  const rowHeaderWidth = yChips.length * 58; // 56px + 2px gap per level
-  const colHeaderHeight = xChips.length * 26; // 24px + 2px gap per level
+  // Grid dimensions
+  const numColHeaders = rowChips.length; // Number of row header columns on the left
+  const numRowHeaders = colChips.length; // Number of column header rows at the top
+  const numDataCols = colLeafPaths.length || 1;
+  const numDataRows = rowLeafPaths.length || 1;
 
-  // D3 rendering for the grid cells and cards
-  useEffect(() => {
-    if (!svgRef.current || !gridContainerRef.current) return;
+  // Cell styling
+  const headerBg = theme === 'NeXTSTEP' ? 'bg-[#e8e8e8]' : 'bg-gray-100';
+  const headerBorder = theme === 'NeXTSTEP' ? 'border-[#a0a0a0]' : 'border-gray-300';
+  const cellBorder = theme === 'NeXTSTEP' ? 'border-[#c0c0c0]' : 'border-gray-200';
+  const cellBg = theme === 'NeXTSTEP' ? 'bg-white' : 'bg-white';
 
-    const container = gridContainerRef.current;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
-
-    const cellWidth = width / numCols;
-    const cellHeight = height / numRows;
-
-    const g = svg
-      .attr('width', width)
-      .attr('height', height)
-      .append('g');
-
-    // Grid lines
-    for (let i = 0; i <= numRows; i++) {
-      g.append('line')
-        .attr('x1', 0)
-        .attr('x2', width)
-        .attr('y1', i * cellHeight)
-        .attr('y2', i * cellHeight)
-        .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
-        .attr('stroke-width', 1);
-    }
-
-    for (let i = 0; i <= numCols; i++) {
-      g.append('line')
-        .attr('x1', i * cellWidth)
-        .attr('x2', i * cellWidth)
-        .attr('y1', 0)
-        .attr('y2', height)
-        .attr('stroke', theme === 'NeXTSTEP' ? '#a0a0a0' : '#e5e7eb')
-        .attr('stroke-width', 1);
-    }
-
-    // Card dimensions
-    const cardWidth = Math.min(cellWidth * 0.9, 120);
-    const cardHeight = Math.min(cellHeight * 0.8, 60);
-
-    // Render cells with cards
-    xLeafPaths.forEach((xPath, colIdx) => {
-      yLeafPaths.forEach((yPath, rowIdx) => {
-        const xKey = xPath.join('|');
-        const yKey = yPath.join('|');
-        const nodes = grouped.get(`${xKey}||${yKey}`) || [];
-
-        const cellX = colIdx * cellWidth;
-        const cellY = rowIdx * cellHeight;
-
-        const cols = Math.max(1, Math.floor(cellWidth / (cardWidth + 4)));
-
-        nodes.forEach((node, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const x = cellX + 4 + col * (cardWidth + 4);
-          const y = cellY + 4 + row * (cardHeight + 4);
-
-          const nodeGroup = g.append('g')
-            .attr('class', 'node-group')
-            .attr('transform', `translate(${x},${y})`)
-            .style('cursor', 'pointer')
-            .on('click', () => onNodeClick?.(node));
-
-          nodeGroup.append('rect')
-            .attr('width', cardWidth)
-            .attr('height', cardHeight)
-            .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
-            .attr('fill', theme === 'NeXTSTEP' ? '#d4d4d4' : '#ffffff')
-            .attr('stroke', theme === 'NeXTSTEP' ? '#707070' : '#e5e7eb')
-            .attr('stroke-width', 1);
-
-          nodeGroup.append('text')
-            .attr('x', 6)
-            .attr('y', 16)
-            .attr('class', 'text-xs font-medium')
-            .attr('fill', '#374151')
-            .text(node.name.length > 15 ? node.name.slice(0, 15) + '...' : node.name);
-
-          nodeGroup.append('text')
-            .attr('x', cardWidth - 6)
-            .attr('y', 16)
-            .attr('text-anchor', 'end')
-            .attr('class', 'text-xs')
-            .attr('fill', '#9ca3af')
-            .text(`P${node.priority}`);
-        });
-      });
-    });
-
-  }, [data, xLeafPaths, yLeafPaths, numCols, numRows, grouped, theme, onNodeClick]);
-
-  // Calculate cell height for row headers
-  const estimatedCellHeight = gridContainerRef.current
-    ? gridContainerRef.current.clientHeight / numRows
-    : 60;
+  // Calculate minimum cell width for proper display
+  const minCellWidth = 100;
+  const rowHeaderWidth = 80;
+  const totalRowHeaderWidth = numColHeaders * rowHeaderWidth;
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* Column headers row */}
-      <div className="flex" style={{ marginLeft: rowHeaderWidth }}>
-        <div className="flex-1" style={{ minHeight: colHeaderHeight }}>
-          <ColumnHeaders levels={xLevels} theme={theme} />
-        </div>
-      </div>
+    <div className="w-full h-full overflow-auto">
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: `repeat(${numColHeaders}, ${rowHeaderWidth}px) repeat(${numDataCols}, minmax(${minCellWidth}px, 1fr))`,
+          gridTemplateRows: `repeat(${numRowHeaders}, 28px) repeat(${numDataRows}, minmax(40px, 1fr))`,
+          minWidth: totalRowHeaderWidth + (numDataCols * minCellWidth),
+        }}
+      >
+        {/* Top-left corner: empty cells where row headers and column headers meet */}
+        {numColHeaders > 0 && numRowHeaders > 0 && (
+          <div
+            className={`${headerBg} border ${headerBorder}`}
+            style={{
+              gridColumn: `1 / ${numColHeaders + 1}`,
+              gridRow: `1 / ${numRowHeaders + 1}`,
+            }}
+          />
+        )}
 
-      {/* Main content row: row headers + grid */}
-      <div className="flex flex-1 min-h-0">
-        {/* Row headers */}
-        <div style={{ width: rowHeaderWidth }}>
-          <RowHeaders levels={yLevels} theme={theme} cellHeight={estimatedCellHeight} />
-        </div>
+        {/* Column headers (horizontal, at top) */}
+        {colLevels.map((level, levelIdx) =>
+          level.map((header, idx) => (
+            <div
+              key={`col-${levelIdx}-${idx}-${header.label}`}
+              className={`${headerBg} border ${headerBorder} flex items-center justify-center text-sm font-medium px-2 truncate`}
+              style={{
+                gridColumn: `${numColHeaders + header.startCol} / span ${header.span}`,
+                gridRow: levelIdx + 1,
+              }}
+              title={header.label}
+            >
+              {header.label}
+            </div>
+          ))
+        )}
 
-        {/* Grid container (D3 renders here) */}
-        <div ref={gridContainerRef} className="flex-1">
-          <svg ref={svgRef} className="w-full h-full" />
-        </div>
+        {/* Row headers (vertical, on left) */}
+        {rowLevels.map((level, levelIdx) =>
+          level.map((header, idx) => (
+            <div
+              key={`row-${levelIdx}-${idx}-${header.label}`}
+              className={`${headerBg} border ${headerBorder} flex items-center justify-center text-sm font-medium px-2 truncate`}
+              style={{
+                gridColumn: levelIdx + 1,
+                gridRow: `${numRowHeaders + header.startCol} / span ${header.span}`,
+              }}
+              title={header.label}
+            >
+              {header.label}
+            </div>
+          ))
+        )}
+
+        {/* Data cells */}
+        {colLeafPaths.map((colPath, colIdx) =>
+          rowLeafPaths.map((rowPath, rowIdx) => {
+            const colKey = colPath.join('|');
+            const rowKey = rowPath.join('|');
+            const nodes = grouped.get(`${colKey}||${rowKey}`) || [];
+
+            return (
+              <div
+                key={`cell-${colIdx}-${rowIdx}`}
+                className={`${cellBg} border ${cellBorder} p-1 overflow-hidden`}
+                style={{
+                  gridColumn: numColHeaders + colIdx + 1,
+                  gridRow: numRowHeaders + rowIdx + 1,
+                }}
+              >
+                {nodes.length === 1 ? (
+                  // Single node: fill the cell
+                  <div
+                    className={`w-full h-full flex items-center justify-center cursor-pointer hover:bg-gray-50 text-sm ${
+                      theme === 'NeXTSTEP' ? 'hover:bg-[#f0f0f0]' : ''
+                    }`}
+                    onClick={() => onNodeClick?.(nodes[0])}
+                    title={nodes[0].name}
+                  >
+                    <span className="truncate px-1">{nodes[0].name}</span>
+                  </div>
+                ) : nodes.length > 1 ? (
+                  // Multiple nodes: show count or stack
+                  <div className="w-full h-full flex flex-col gap-0.5 overflow-auto">
+                    {nodes.slice(0, 3).map((node) => (
+                      <div
+                        key={node.id}
+                        className={`flex-shrink-0 px-2 py-1 text-xs cursor-pointer truncate rounded ${
+                          theme === 'NeXTSTEP'
+                            ? 'bg-[#e8e8e8] hover:bg-[#d8d8d8] border border-[#c0c0c0]'
+                            : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                        onClick={() => onNodeClick?.(node)}
+                        title={node.name}
+                      >
+                        {node.name}
+                      </div>
+                    ))}
+                    {nodes.length > 3 && (
+                      <div className="text-xs text-gray-400 text-center">
+                        +{nodes.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

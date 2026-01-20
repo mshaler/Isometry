@@ -1,5 +1,6 @@
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ArrowRightLeft } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV, type Chip, type Wells } from '@/contexts/PAFVContext';
 
@@ -99,8 +100,7 @@ function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: DropW
 
 function PAFVNavigatorContent() {
   const { theme } = useTheme();
-  // Use shared context state so GridView reacts to chip changes
-  const { wells, moveChip, toggleCheckbox } = usePAFV();
+  const { wells, moveChip, toggleCheckbox, transpose } = usePAFV();
 
   return (
     <div className={`p-3 ${
@@ -110,9 +110,25 @@ function PAFVNavigatorContent() {
     }`}>
       <div className="flex gap-3">
         <DropWell title="Available" well="available" chips={wells.available} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-        <DropWell title="x Rows" well="xRows" chips={wells.xRows} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-        <DropWell title="y Columns" well="yColumns" chips={wells.yColumns} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-        <DropWell title="z Layers" well="zLayers" chips={wells.zLayers} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+        <DropWell title="Rows" well="rows" chips={wells.rows} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+
+        {/* Transpose button between Rows and Columns */}
+        <div className="flex items-center">
+          <button
+            onClick={transpose}
+            className={`p-2 rounded transition-colors ${
+              theme === 'NeXTSTEP'
+                ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#c0c0c0] active:border-t-[#707070] active:border-l-[#707070] active:border-b-[#ffffff] active:border-r-[#ffffff]'
+                : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+            }`}
+            title="Transpose rows and columns"
+          >
+            <ArrowRightLeft className="w-4 h-4" />
+          </button>
+        </div>
+
+        <DropWell title="Columns" well="columns" chips={wells.columns} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+        <DropWell title="Layers" well="zLayers" chips={wells.zLayers} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
       </div>
     </div>
   );

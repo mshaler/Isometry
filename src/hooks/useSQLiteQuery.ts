@@ -49,7 +49,6 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [execute, sql, paramsKey, enabled, dbLoading]);
 
   useEffect(() => {

@@ -55,7 +55,9 @@ open Package.swift  # Opens in Xcode
 - `native/Sources/Isometry/Database/` - IsometryDatabase actor, migrations
 - `native/Sources/Isometry/Models/` - Node, Edge, SyncState (Codable, Sendable)
 - `native/Sources/Isometry/Sync/` - CloudKitSyncManager actor
+- `native/Sources/Isometry/Import/` - AltoIndexImporter actor (Apple Notes import)
 - `native/Sources/Isometry/Views/` - SwiftUI views
+- `native/Sources/Isometry/App/` - IsometryApp, ContentView, AppState
 - `native/Sources/Isometry/Resources/schema.sql` - Full schema with FTS5
 
 ## Current Phase
@@ -72,8 +74,10 @@ Phase 2: Native Implementation
 - [x] Graph query CTEs
 - [x] CloudKit sync manager
 - [x] macOS-specific UI adaptations
+- [x] Alto-index Notes importer (6,891 notes imported)
 - [ ] Canvas D3 rendering (React)
 - [ ] View switching (React)
+- [ ] Test CloudKit sync with developer account
 
 ## Important Docs
 1. `docs/cardboard-architecture-truth.md` - Core concepts

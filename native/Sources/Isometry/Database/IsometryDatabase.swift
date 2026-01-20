@@ -16,17 +16,27 @@ public actor IsometryDatabase {
     /// Creates a new database actor with the specified path
     /// - Parameter path: File path for the SQLite database. Use `:memory:` for in-memory database.
     public init(path: String) throws {
+        let isMemory = path == ":memory:" || path.isEmpty
+        let enableWAL = !isMemory
+
         var config = Configuration()
         config.foreignKeysEnabled = true
         config.prepareDatabase { db in
-            // Enable WAL mode for better concurrent access
-            try db.execute(sql: "PRAGMA journal_mode = WAL")
-            try db.execute(sql: "PRAGMA synchronous = NORMAL")
+            // Only enable WAL mode for file-based databases
+            // In-memory databases don't support WAL
+            if enableWAL {
+                try db.execute(sql: "PRAGMA journal_mode = WAL")
+                try db.execute(sql: "PRAGMA synchronous = NORMAL")
+            }
             try db.execute(sql: "PRAGMA cache_size = -64000") // 64MB cache
         }
 
-        if path == ":memory:" {
-            dbPool = try DatabasePool(path: "", configuration: config)
+        if isMemory {
+            // For in-memory databases, use a temporary file-based database
+            // GRDB's DatabasePool doesn't support true in-memory databases
+            let tempDir = FileManager.default.temporaryDirectory
+            let tempPath = tempDir.appendingPathComponent(UUID().uuidString + ".sqlite").path
+            dbPool = try DatabasePool(path: tempPath, configuration: config)
         } else {
             dbPool = try DatabasePool(path: path, configuration: config)
         }
@@ -70,8 +80,9 @@ public actor IsometryDatabase {
         updatedNode.version += 1
         updatedNode.syncVersion += 1
 
+        let nodeToSave = updatedNode // Capture immutable copy for sendable closure
         try await dbPool.write { db in
-            try updatedNode.update(db)
+            try nodeToSave.update(db)
         }
     }
 
@@ -137,6 +148,25 @@ public actor IsometryDatabase {
         }
     }
 
+    /// Fetches a node by source ID and source name
+    public func getNode(bySourceId sourceId: String, source: String) async throws -> Node? {
+        try await dbPool.read { db in
+            try Node
+                .filter(Node.Columns.sourceId == sourceId)
+                .filter(Node.Columns.source == source)
+                .fetchOne(db)
+        }
+    }
+
+    /// Counts all active (non-deleted) nodes
+    public func countNodes() async throws -> Int {
+        try await dbPool.read { db in
+            try Node
+                .filter(Node.Columns.deletedAt == nil)
+                .fetchCount(db)
+        }
+    }
+
     // MARK: - Full-Text Search (FTS5)
 
     /// Searches nodes using FTS5 full-text search
@@ -170,8 +200,9 @@ public actor IsometryDatabase {
         var updatedEdge = edge
         updatedEdge.syncVersion += 1
 
+        let edgeToSave = updatedEdge // Capture immutable copy for sendable closure
         try await dbPool.write { db in
-            try updatedEdge.update(db)
+            try edgeToSave.update(db)
         }
     }
 
@@ -311,13 +342,17 @@ public actor IsometryDatabase {
                 SELECT DISTINCT n.*
                 FROM nodes n
                 JOIN edges e ON (
+                    -- Outbound: node is source, return targets
                     (e.source_id = ? AND e.target_id = n.id) OR
-                    (e.target_id = ? AND e.source_id = n.id AND e.directed = 0)
+                    -- Inbound: node is target, return sources (for undirected edges)
+                    (e.target_id = ? AND e.source_id = n.id AND e.directed = 0) OR
+                    -- Inbound: node is target, return sources (for directed edges too, as neighbors)
+                    (e.target_id = ? AND e.source_id = n.id)
                 )
                 WHERE n.deleted_at IS NULL
                 ORDER BY n.name
                 """
-            return try Node.fetchAll(db, sql: sql, arguments: [nodeId, nodeId])
+            return try Node.fetchAll(db, sql: sql, arguments: [nodeId, nodeId, nodeId])
         }
     }
 

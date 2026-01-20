@@ -34,6 +34,44 @@ public enum SyncError: LocalizedError, Sendable {
     }
 }
 
+/// Conflict resolution strategy
+public enum ConflictResolutionStrategy: Sendable {
+    /// Server version always wins (default for simplicity)
+    case serverWins
+    /// Local version always wins
+    case localWins
+    /// Most recently modified version wins
+    case latestWins
+    /// Merge field-by-field, preferring newer values
+    case fieldLevelMerge
+    /// Queue for manual resolution
+    case manualResolution
+}
+
+/// Represents a sync conflict requiring resolution
+public struct SyncConflict: Sendable {
+    public let nodeId: String
+    public let localNode: Node
+    public let serverNode: Node
+    public let detectedAt: Date
+    public let conflictType: ConflictType
+
+    public enum ConflictType: String, Sendable {
+        case bothModified = "both_modified"
+        case localDeleted = "local_deleted"
+        case serverDeleted = "server_deleted"
+        case versionMismatch = "version_mismatch"
+    }
+}
+
+/// Result of conflict resolution
+public struct ConflictResolution: Sendable {
+    public let nodeId: String
+    public let resolvedNode: Node
+    public let strategy: ConflictResolutionStrategy
+    public let resolvedAt: Date
+}
+
 /// Thread-safe CloudKit sync manager
 ///
 /// Handles bidirectional sync between local SQLite and CloudKit.
@@ -60,6 +98,34 @@ public actor CloudKitSyncManager {
     private let baseRetryDelay: TimeInterval = 1.0
     private let maxRetryDelay: TimeInterval = 300.0 // 5 minutes
     private let maxRetries = 5
+
+    // Conflict resolution
+    private var conflictStrategy: ConflictResolutionStrategy = .latestWins
+    private var pendingConflicts: [SyncConflict] = []
+
+    // MARK: - Configuration
+
+    /// Sets the conflict resolution strategy
+    public func setConflictResolutionStrategy(_ strategy: ConflictResolutionStrategy) {
+        self.conflictStrategy = strategy
+    }
+
+    /// Returns any pending conflicts requiring manual resolution
+    public func getPendingConflicts() -> [SyncConflict] {
+        return pendingConflicts
+    }
+
+    /// Manually resolves a conflict with a chosen node
+    public func resolveConflict(nodeId: String, with resolvedNode: Node) async throws {
+        try await localDatabase.updateNode(resolvedNode)
+        pendingConflicts.removeAll { $0.nodeId == nodeId }
+
+        // Mark as conflict resolved
+        var updatedNode = resolvedNode
+        updatedNode.conflictResolvedAt = Date()
+        updatedNode.syncVersion += 1
+        try await localDatabase.updateNode(updatedNode)
+    }
 
     // MARK: - Initialization
 
@@ -200,16 +266,31 @@ public actor CloudKitSyncManager {
             deletedRecordIDs.append(deletion.recordID)
         }
 
-        // Apply changes to local database
+        // Apply changes to local database with conflict resolution
         for record in changedRecords {
-            if let node = recordToNode(record) {
-                if let existing = try await localDatabase.getNode(id: node.id) {
-                    // Merge conflict: server wins if newer
-                    if node.syncVersion > existing.syncVersion {
-                        try await localDatabase.updateNode(node)
+            if let serverNode = recordToNode(record) {
+                if let localNode = try await localDatabase.getNode(id: serverNode.id) {
+                    // Check for conflict: both modified since last sync
+                    let localModifiedSinceSync = localNode.lastSyncedAt == nil ||
+                        localNode.modifiedAt > (localNode.lastSyncedAt ?? .distantPast)
+                    let hasConflict = localModifiedSinceSync && serverNode.syncVersion != localNode.syncVersion
+
+                    if hasConflict {
+                        let resolvedNode = try await resolveConflict(
+                            local: localNode,
+                            server: serverNode
+                        )
+                        if let resolved = resolvedNode {
+                            try await localDatabase.updateNode(resolved)
+                        }
+                    } else if serverNode.syncVersion > localNode.syncVersion {
+                        // No conflict, server is newer - apply update
+                        try await localDatabase.updateNode(serverNode)
                     }
+                    // If local is newer (syncVersion >= server), keep local
                 } else {
-                    try await localDatabase.createNode(node)
+                    // New record from server
+                    try await localDatabase.createNode(serverNode)
                 }
             }
         }
@@ -221,6 +302,83 @@ public actor CloudKitSyncManager {
 
         // Save change token
         self.changeToken = changeToken
+    }
+
+    // MARK: - Conflict Resolution
+
+    /// Resolves a conflict between local and server versions based on the current strategy
+    private func resolveConflict(local: Node, server: Node) async throws -> Node? {
+        switch conflictStrategy {
+        case .serverWins:
+            return server
+
+        case .localWins:
+            // Return local but increment sync version to push our changes
+            var resolved = local
+            resolved.syncVersion = server.syncVersion + 1
+            return resolved
+
+        case .latestWins:
+            // Compare modification timestamps
+            if local.modifiedAt > server.modifiedAt {
+                var resolved = local
+                resolved.syncVersion = server.syncVersion + 1
+                return resolved
+            } else {
+                return server
+            }
+
+        case .fieldLevelMerge:
+            // Merge fields, preferring newer values for each
+            let merged = mergeNodes(local: local, server: server)
+            return merged
+
+        case .manualResolution:
+            // Queue for manual resolution, don't update yet
+            let conflict = SyncConflict(
+                nodeId: local.id,
+                localNode: local,
+                serverNode: server,
+                detectedAt: Date(),
+                conflictType: .bothModified
+            )
+            pendingConflicts.append(conflict)
+
+            // Update sync state to indicate pending conflicts
+            var state = try await localDatabase.getSyncState()
+            state.conflictCount = pendingConflicts.count
+            try await localDatabase.updateSyncState(state)
+
+            return nil // Don't update automatically
+        }
+    }
+
+    /// Merges two nodes field-by-field, preferring more recent changes
+    private func mergeNodes(local: Node, server: Node) -> Node {
+        // Use the more recent modification as the base
+        var merged = local.modifiedAt > server.modifiedAt ? local : server
+
+        // For text content, use the most recently modified version
+        if local.modifiedAt > server.modifiedAt {
+            merged.content = local.content
+            merged.name = local.name
+            merged.summary = local.summary
+        }
+
+        // For status fields, prefer the most recent
+        merged.status = local.modifiedAt > server.modifiedAt ? local.status : server.status
+        merged.priority = local.modifiedAt > server.modifiedAt ? local.priority : server.priority
+
+        // Merge tags: union of both sets
+        let allTags = Set(local.tags).union(Set(server.tags))
+        merged.tags = Array(allTags).sorted()
+
+        // Increment version to mark as merged
+        merged.version = max(local.version, server.version) + 1
+        merged.syncVersion = max(local.syncVersion, server.syncVersion) + 1
+        merged.conflictResolvedAt = Date()
+
+        return merged
     }
 
     // MARK: - Record Conversion

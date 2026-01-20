@@ -13,7 +13,6 @@ import {
   NetworkView,
   TreeView,
 } from './views';
-import { AxisSelector } from './AxisSelector';
 import { FilterBar } from './FilterBar';
 import type { Node } from '@/types/node';
 
@@ -102,11 +101,6 @@ export function Canvas() {
     }`}>
       {/* Filter Bar */}
       <FilterBar />
-
-      {/* Axis Selector (for Grid/Gallery views) */}
-      {(activeView === 'Grid' || activeView === 'Gallery') && (
-        <AxisSelector compact />
-      )}
 
       {/* Main Canvas Area */}
       <div className="flex-1 overflow-hidden">

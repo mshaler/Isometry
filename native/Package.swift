@@ -12,6 +12,10 @@ let package = Package(
             name: "Isometry",
             targets: ["Isometry"]
         ),
+        .executable(
+            name: "IsometryApp",
+            targets: ["IsometryApp"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.24.0"),
@@ -25,6 +29,11 @@ let package = Package(
             resources: [
                 .process("Resources")
             ]
+        ),
+        .executableTarget(
+            name: "IsometryApp",
+            dependencies: ["Isometry"],
+            path: "IsometryApp"
         ),
         .testTarget(
             name: "IsometryTests",

@@ -80,7 +80,8 @@ export function cbCanvas() {
   // ============================================
 
   function canvas(selection: CanvasContainerSelection): CanvasContainerSelection {
-    selection.each(function () {
+    selection.each(function (this: HTMLDivElement) {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       containerEl = this;
       const containerSelection = d3.select(containerEl);
 
