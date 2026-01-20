@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -13,7 +13,7 @@
 
 /* Begin PBXFileReference section */
 		1A0000020000000000000001 /* IsometryiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IsometryiOSApp.swift; sourceTree = "<group>"; };
-		1A0000050000000000000001 /* Isometry.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Isometry.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1A0000050000000000000001 /* IsometryiOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = IsometryiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1A0000060000000000000001 /* native */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = native; path = ../native; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -57,7 +57,7 @@
 		1A00000B0000000000000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				1A0000050000000000000001 /* Isometry.app */,
+				1A0000050000000000000001 /* IsometryiOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -89,7 +89,7 @@
 				1A0000040000000000000001 /* Isometry */,
 			);
 			productName = IsometryiOS;
-			productReference = 1A0000050000000000000001 /* Isometry.app */;
+			productReference = 1A0000050000000000000001 /* IsometryiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -117,7 +117,7 @@
 			);
 			mainGroup = 1A0000080000000000000001;
 			packageReferences = (
-				1A0000120000000000000001 /* XCLocalSwiftPackageReference "native" */,
+				1A0000120000000000000001 /* XCLocalSwiftPackageReference "../native" */,
 			);
 			productRefGroup = 1A00000B0000000000000001 /* Products */;
 			projectDirPath = "";
@@ -267,7 +267,7 @@
 				CODE_SIGN_ENTITLEMENTS = Isometry/Isometry.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 77CCZHWQL7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -296,7 +296,7 @@
 				CODE_SIGN_ENTITLEMENTS = Isometry/Isometry.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 77CCZHWQL7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -341,7 +341,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		1A0000120000000000000001 /* XCLocalSwiftPackageReference "native" */ = {
+		1A0000120000000000000001 /* XCLocalSwiftPackageReference "../native" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = ../native;
 		};

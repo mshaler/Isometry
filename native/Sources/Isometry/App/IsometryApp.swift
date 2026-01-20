@@ -98,6 +98,9 @@ public final class AppState: ObservableObject {
             try await db.initialize()
             self.database = db
 
+            // Auto-import alto-index notes on first launch (if database is empty)
+            await autoImportNotesIfNeeded(database: db)
+
             // Initialize sync manager only if CloudKit entitlements are present
             // CKContainer crashes without proper entitlements, so check first
             if Self.isCloudKitAvailable() {
@@ -183,6 +186,42 @@ public final class AppState: ObservableObject {
 
     @Published public var importStatus: ImportStatus = .idle
     @Published public var lastImportResult: ImportResult?
+
+    /// Auto-imports alto-index notes on first launch if database is empty
+    private func autoImportNotesIfNeeded(database: IsometryDatabase) async {
+        #if os(macOS)
+        do {
+            // Check if database already has nodes
+            let existingNodes = try await database.getAllNodes()
+            guard existingNodes.isEmpty else {
+                print("Database already has \(existingNodes.count) nodes, skipping auto-import")
+                return
+            }
+
+            // Check if alto-index notes directory exists
+            guard let altoIndexPath = Self.defaultAltoIndexPath,
+                  FileManager.default.fileExists(atPath: altoIndexPath.path) else {
+                print("alto-index notes directory not found, skipping auto-import")
+                return
+            }
+
+            // Perform auto-import
+            print("Auto-importing notes from alto-index...")
+            importStatus = .importing
+
+            let importer = AltoIndexImporter(database: database)
+            let result = try await importer.importNotes(from: altoIndexPath)
+            lastImportResult = result
+            importStatus = .completed(imported: result.imported, failed: result.failed)
+
+            print("Auto-import complete: \(result.imported) imported, \(result.failed) failed")
+
+        } catch {
+            print("Auto-import failed: \(error)")
+            // Don't set importStatus to failed - this is a background auto-import
+        }
+        #endif
+    }
 
     /// Imports notes from alto-index directory
     public func importNotes(from url: URL) async {
