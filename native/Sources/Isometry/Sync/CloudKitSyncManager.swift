@@ -79,7 +79,7 @@ public struct ConflictResolution: Sendable {
 public actor CloudKitSyncManager {
     // MARK: - Configuration
 
-    public static let containerIdentifier = "iCloud.com.isometry.app"
+    public static let containerIdentifier = "iCloud.com.cardboard.app"
     public static let zoneName = "IsometryZone"
     public static let subscriptionID = "isometry-changes"
 
