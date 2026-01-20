@@ -28,12 +28,13 @@ public actor AltoIndexImporter {
             guard fileURL.pathExtension == "md" else { continue }
 
             do {
-                let node = try await importNote(from: fileURL)
+                let node = try await importNote(from: fileURL, relativeTo: directoryURL)
                 result.imported += 1
                 result.nodes.append(node)
             } catch {
                 result.failed += 1
                 result.errors.append(ImportError.fileFailed(fileURL.lastPathComponent, error))
+                print("Import failed for \(fileURL.path): \(error)")
             }
         }
 
@@ -41,9 +42,18 @@ public actor AltoIndexImporter {
     }
 
     /// Imports a single markdown note
-    public func importNote(from fileURL: URL) async throws -> Node {
+    public func importNote(from fileURL: URL, relativeTo baseURL: URL? = nil) async throws -> Node {
         let content = try String(contentsOf: fileURL, encoding: .utf8)
-        let parsed = try parseMarkdown(content, filename: fileURL.lastPathComponent)
+
+        // Use relative path for sourceId to handle duplicate filenames in different folders
+        let relativeId: String
+        if let base = baseURL {
+            relativeId = fileURL.path.replacingOccurrences(of: base.path + "/", with: "")
+        } else {
+            relativeId = fileURL.lastPathComponent
+        }
+
+        let parsed = try parseMarkdown(content, filename: fileURL.lastPathComponent, fallbackSourceId: relativeId)
 
         // Check if already imported (by sourceId)
         if let existingNode = try await database.getNode(bySourceId: parsed.sourceId, source: "apple-notes") {
@@ -93,15 +103,15 @@ public actor AltoIndexImporter {
 
     /// Parses alto-index markdown with YAML frontmatter
     /// Follows the same parsing logic as the TypeScript alto-parser.ts
-    private func parseMarkdown(_ content: String, filename: String) throws -> ParsedNote {
+    private func parseMarkdown(_ content: String, filename: String, fallbackSourceId: String) throws -> ParsedNote {
         // Split on "---" to separate frontmatter from body
         let parts = content.components(separatedBy: "---")
 
         guard parts.count >= 3 else {
-            // No frontmatter, use filename as title
+            // No frontmatter, use filename as title and relative path as sourceId
             return ParsedNote(
                 title: filename.replacingOccurrences(of: ".md", with: ""),
-                sourceId: filename,
+                sourceId: fallbackSourceId,  // Use full relative path to avoid duplicates
                 created: nil,
                 modified: nil,
                 folder: nil,
