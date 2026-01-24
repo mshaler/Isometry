@@ -1,5 +1,6 @@
 import { useFilters } from '@/state/FilterContext';
 import type { FilterState } from '@/types/filter';
+import { LocationMapWidget } from './LocationMapWidget';
 
 /**
  * LATCHFilter - Individual axis filter component
@@ -40,35 +41,29 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
     switch (axis) {
       case 'location':
         return (
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="City name (e.g., San Francisco)"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={
-                currentFilter && 'latitude' in currentFilter
-                  ? `${currentFilter.latitude}, ${currentFilter.longitude}`
-                  : ''
-              }
-              onChange={(e) => {
-                const value = e.target.value.trim();
-                if (!value) {
-                  setPreviewLocation(null);
-                } else {
-                  // For MVP, store as text (future: geocode to lat/lng)
-                  // Using placeholder coordinates for now
-                  setPreviewLocation({
-                    type: 'point',
-                    latitude: 0,
-                    longitude: 0,
-                  });
-                }
-              }}
-            />
-            <p className="text-xs text-gray-500">
-              Complex location filtering (map widget) coming in Wave 4
-            </p>
-          </div>
+          <LocationMapWidget
+            center={
+              currentFilter &&
+              'centerLat' in currentFilter &&
+              currentFilter.centerLat !== undefined &&
+              currentFilter.centerLon !== undefined
+                ? { lat: currentFilter.centerLat, lng: currentFilter.centerLon }
+                : null
+            }
+            radiusMeters={
+              currentFilter && 'radiusKm' in currentFilter && currentFilter.radiusKm
+                ? currentFilter.radiusKm * 1000
+                : 5000
+            }
+            onChange={(center, radiusMeters) => {
+              setPreviewLocation({
+                type: 'radius',
+                centerLat: center.lat,
+                centerLon: center.lng,
+                radiusKm: radiusMeters / 1000,
+              });
+            }}
+          />
         );
 
       case 'alphabet':
