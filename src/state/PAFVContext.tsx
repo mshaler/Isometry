@@ -1,19 +1,8 @@
-import React, { createContext, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
 import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
-
-interface PAFVContextValue {
-  state: PAFVState;
-  setMapping: (mapping: AxisMapping) => void;
-  removeMapping: (plane: Plane) => void;
-  setViewMode: (mode: 'grid' | 'list') => void;
-  resetToDefaults: () => void;
-  getAxisForPlane: (plane: Plane) => LATCHAxis | null;
-  getPlaneForAxis: (axis: LATCHAxis) => Plane | null;
-}
-
-const PAFVContext = createContext<PAFVContextValue | null>(null);
+import { PAFVContext, type PAFVContextValue } from '../hooks/usePAFV';
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<PAFVState>(DEFAULT_PAFV);
@@ -63,10 +52,5 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function usePAFV(): PAFVContextValue {
-  const context = React.useContext(PAFVContext);
-  if (!context) {
-    throw new Error('usePAFV must be used within PAFVProvider');
-  }
-  return context;
-}
+// Export usePAFV hook for convenience
+export { usePAFV } from '../hooks/usePAFV';
