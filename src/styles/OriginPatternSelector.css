@@ -1,0 +1,106 @@
+/**
+ * OriginPatternSelector Component Styles
+ *
+ * Two-button toggle for origin patterns with visual previews.
+ * NeXTSTEP-inspired button styling.
+ */
+
+/* Container */
+.origin-selector {
+  display: flex;
+  gap: 8px;
+}
+
+/* Origin pattern button */
+.origin-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  background: var(--cb-bg-base);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  /* Remove default button styles */
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.origin-button:hover {
+  background: var(--cb-bg-raised);
+  border-color: var(--cb-border-strong);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+.origin-button.active {
+  background: var(--cb-accent);
+  border-color: var(--cb-accent);
+  box-shadow: var(--cb-shadow-md);
+}
+
+.origin-button.active:hover {
+  background: var(--cb-accent-hover);
+  border-color: var(--cb-accent-hover);
+}
+
+.origin-button:active {
+  transform: translateY(1px);
+}
+
+/* Button content layout */
+.origin-button-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Icon container */
+.origin-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cb-fg-secondary);
+  transition: color 0.15s ease;
+}
+
+.origin-button.active .origin-icon {
+  color: var(--cb-fg-inverse);
+}
+
+/* Label */
+.origin-label {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-sm);
+  font-weight: var(--cb-font-weight-semibold);
+  color: var(--cb-fg-primary);
+  transition: color 0.15s ease;
+}
+
+.origin-button.active .origin-label {
+  color: var(--cb-fg-inverse);
+}
+
+/* Description */
+.origin-description {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  color: var(--cb-fg-muted);
+  transition: color 0.15s ease;
+}
+
+.origin-button.active .origin-description {
+  color: var(--cb-fg-inverse);
+  opacity: 0.9;
+}
+
+/* Focus visible for accessibility */
+.origin-button:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: 2px;
+}
