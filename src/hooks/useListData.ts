@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { usePAFV } from './usePAFV';
-import { useNodes } from './useSQLiteQuery';
+import { useFilteredNodes } from './useFilteredNodes';
 import type { Node } from '../types/node';
 import type { LATCHAxis } from '../types/pafv';
 
@@ -37,8 +37,8 @@ export function useListData(groupingEnabled: boolean = true): ListData {
   const sortAxis = yMapping?.axis ?? null;
   const sortFacet = yMapping?.facet ?? null;
 
-  // Query all nodes (TODO: apply filters from FilterContext)
-  const { data: nodes } = useNodes();
+  // Query filtered nodes (integrates with FilterContext)
+  const { data: nodes } = useFilteredNodes();
 
   // Sort nodes by the selected facet
   const sortedNodes = useMemo(() => {
