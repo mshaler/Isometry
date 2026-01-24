@@ -246,36 +246,62 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
 
       case 'hierarchy':
         return (
-          <div className="space-y-2">
-            <input
-              type="text"
-              placeholder="Parent node ID or breadcrumb path"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={
-                currentFilter && 'minPriority' in currentFilter
-                  ? currentFilter.minPriority?.toString() || ''
-                  : ''
-              }
-              onChange={(e) => {
-                const value = e.target.value.trim();
-                if (!value) {
+          <HierarchyTreeView
+            tree={tree}
+            selectedIds={
+              currentFilter && 'subtreeRoots' in currentFilter
+                ? currentFilter.subtreeRoots || []
+                : []
+            }
+            onSelectionChange={(ids) => {
+              if (ids.length === 0) {
+                // No selection: clear filter or use priority-only
+                if (priorityRange[0] === 1 && priorityRange[1] === 10) {
                   setPreviewHierarchy(null);
                 } else {
-                  // For MVP, use as priority filter (future: tree navigation)
-                  const priority = parseInt(value, 10);
-                  if (!isNaN(priority)) {
-                    setPreviewHierarchy({
-                      type: 'priority',
-                      minPriority: priority,
-                    });
-                  }
+                  setPreviewHierarchy({
+                    type: 'range',
+                    minPriority: priorityRange[0],
+                    maxPriority: priorityRange[1],
+                  });
                 }
-              }}
-            />
-            <p className="text-xs text-gray-500">
-              Complex hierarchy UI (tree view) coming in Wave 4
-            </p>
-          </div>
+              } else {
+                // Subtree selection with priority range
+                setPreviewHierarchy({
+                  type: 'subtree',
+                  subtreeRoots: ids,
+                  minPriority: priorityRange[0],
+                  maxPriority: priorityRange[1],
+                });
+              }
+            }}
+            priorityRange={priorityRange}
+            onPriorityRangeChange={(range) => {
+              setPriorityRange(range);
+              // Update filter with new priority range
+              const subtreeRoots =
+                currentFilter && 'subtreeRoots' in currentFilter
+                  ? currentFilter.subtreeRoots
+                  : undefined;
+
+              if (subtreeRoots && subtreeRoots.length > 0) {
+                setPreviewHierarchy({
+                  type: 'subtree',
+                  subtreeRoots,
+                  minPriority: range[0],
+                  maxPriority: range[1],
+                });
+              } else if (range[0] !== 1 || range[1] !== 10) {
+                setPreviewHierarchy({
+                  type: 'range',
+                  minPriority: range[0],
+                  maxPriority: range[1],
+                });
+              } else {
+                setPreviewHierarchy(null);
+              }
+            }}
+          />
         );
 
       default:
