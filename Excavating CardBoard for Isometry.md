@@ -42,7 +42,21 @@ Historical architectural decisions with rationale:
 - Data Import (new in V4 - Apple Notes)
 - Sync/Offline (V1 failed → V4 CloudKit)
 
-### 4. Conversation Archive
+### 4. GitHub Issues
+
+`docs/issues/` - Implementation tracking via GitHub Issues integration
+
+**Index:** [[issues/README]]
+
+**14 issues** tracking MVP implementation across 3 phases:
+
+- Phase 1: Foundation (SQLite, schema, hooks) - 5 issues
+- Phase 2: Views (Grid, List, PAFV) - 5 issues
+- Phase 3: Filters (State, SQL compilation) - 4 issues
+
+**Sync:** `python3 scripts/sync-github-issues.py`
+
+### 5. Conversation Archive
 `docs/conversations/` - Planning session transcripts with reasoning
 
 **Index:** [[conversations/README]]

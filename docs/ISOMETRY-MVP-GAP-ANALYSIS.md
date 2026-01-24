@@ -362,6 +362,8 @@ Feature: PAFV Configuration
 
 ## 5. Implementation Roadmap
 
+**GitHub Issues:** [[issues/README|Track implementation progress via GitHub Issues →]]
+
 ### Phase 1: Data Pipeline (Week 1-2)
 *Goal: Data flows from SQLite to screen*
 

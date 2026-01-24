@@ -105,12 +105,22 @@ This project uses Foam for documentation with direct Claude Code integration ins
 
 ```
 /docs/
-├── specs/        # Feature specifications
-├── plans/        # Implementation plans
-├── decisions/    # Architecture decision records (ADRs)
-├── notes/        # Working notes (from Apple Notes)
-└── journal/      # Daily notes (Foam feature, Alt+D to create)
+├── specs/          # Feature specifications
+├── plans/          # Implementation plans
+├── decisions/      # Architecture decision records (ADRs)
+├── notes/          # Working notes (from Apple Notes)
+├── issues/         # GitHub Issues (synced from GitHub API)
+├── conversations/  # Planning session transcripts
+└── journal/        # Daily notes (Foam feature, Alt+D to create)
 ```
+
+### GitHub Issues Integration
+
+Track implementation via GitHub Issues synced to Foam:
+
+- **View:** [[issues/README]] - Issue index by phase
+- **Sync:** `python3 scripts/sync-github-issues.py` - Update from GitHub
+- 14 issues across 3 phases (Foundation, Views, Filters)
 
 ### Templates
 
