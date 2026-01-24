@@ -17,7 +17,7 @@ import {
   presetNameExists
 } from '../utils/filter-presets';
 import { useURLState } from '../hooks/useURLState';
-import { serializeFilters, deserializeFilters, isEmptyFilters } from '../utils/filter-serialization';
+import { serializeFilters, deserializeFilters, isEmptyFilters, validateFilterURLLength } from '../utils/filter-serialization';
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
@@ -118,6 +118,19 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
 
     // Set new timer for debounced URL update
     urlUpdateTimerRef.current = setTimeout(() => {
+      // Validate URL length before updating
+      const serialized = serializeFilters(activeFilters);
+
+      if (!validateFilterURLLength(serialized)) {
+        console.warn(
+          'Filter state is too complex for URL (>1500 characters).',
+          'Consider saving as a preset instead.',
+          `Current length: ${serialized.length}`
+        );
+        // Still update URL, but user is warned
+        // Alternative: could skip URL update and rely on presets only
+      }
+
       setUrlFilters(activeFilters);
     }, 300);
 
