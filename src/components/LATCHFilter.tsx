@@ -184,9 +184,9 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
                     type="checkbox"
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     checked={
-                      currentFilter &&
+                      !!(currentFilter &&
                       'tags' in currentFilter &&
-                      currentFilter.tags?.includes(tag)
+                      currentFilter.tags?.includes(tag))
                     }
                     onChange={(e) => {
                       const checked = e.target.checked;
