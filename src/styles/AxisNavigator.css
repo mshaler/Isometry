@@ -171,11 +171,13 @@
 .plane-zone-content {
   min-height: 24px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .plane-zone-content.empty {
   justify-content: center;
+  align-items: center;
 }
 
 .plane-zone-hint {
@@ -183,4 +185,28 @@
   font-size: var(--cb-text-xs);
   color: var(--cb-fg-muted);
   font-style: italic;
+}
+
+/* Facet selector dropdown */
+.facet-select {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--cb-bg-raised);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  color: var(--cb-fg-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.facet-select:hover {
+  border-color: var(--cb-border-strong);
+}
+
+.facet-select:focus {
+  outline: none;
+  border-color: var(--cb-accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cb-accent) 20%, transparent);
 }

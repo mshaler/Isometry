@@ -41,6 +41,34 @@ const AXIS_CONFIG: Record<LATCHAxis, { label: string; icon: string }> = {
   hierarchy: { label: 'Hierarchy', icon: '🌳' },
 };
 
+// Facet options for each axis
+const FACET_OPTIONS: Record<LATCHAxis, { value: string; label: string }[]> = {
+  time: [
+    { value: 'year', label: 'Year' },
+    { value: 'month', label: 'Month' },
+    { value: 'day', label: 'Day' },
+    { value: 'hour', label: 'Hour' },
+  ],
+  category: [
+    { value: 'tag', label: 'Tag' },
+    { value: 'folder', label: 'Folder' },
+    { value: 'type', label: 'Type' },
+  ],
+  location: [
+    { value: 'city', label: 'City' },
+    { value: 'country', label: 'Country' },
+    { value: 'region', label: 'Region' },
+  ],
+  alphabet: [
+    { value: 'letter', label: 'First Letter' },
+    { value: 'word', label: 'First Word' },
+  ],
+  hierarchy: [
+    { value: 'level', label: 'Level' },
+    { value: 'parent', label: 'Parent' },
+  ],
+};
+
 /**
  * AxisNavigator component - drag-and-drop axis-to-plane mapper.
  *
@@ -96,6 +124,14 @@ export function AxisNavigator({ pafvState, onPAFVChange }: AxisNavigatorProps) {
   // Remove mapping from a plane
   const handleRemoveMapping = (plane: Plane) => {
     const newMappings = pafvState.mappings.filter((m) => m.plane !== plane);
+    onPAFVChange({ ...pafvState, mappings: newMappings });
+  };
+
+  // Handle facet change for a mapping
+  const handleFacetChange = (plane: Plane, newFacet: string) => {
+    const newMappings = pafvState.mappings.map((m) =>
+      m.plane === plane ? { ...m, facet: newFacet } : m
+    );
     onPAFVChange({ ...pafvState, mappings: newMappings });
   };
 
@@ -162,6 +198,19 @@ export function AxisNavigator({ pafvState, onPAFVChange }: AxisNavigatorProps) {
                     <span className="axis-chip-icon">{AXIS_CONFIG[mapping.axis].icon}</span>
                     <span className="axis-chip-label">{AXIS_CONFIG[mapping.axis].label}</span>
                   </div>
+                  {/* Facet selector dropdown */}
+                  <select
+                    className="facet-select"
+                    value={mapping.facet}
+                    onChange={(e) => handleFacetChange(plane.id, e.target.value)}
+                    aria-label={`Select facet for ${AXIS_CONFIG[mapping.axis].label} on ${plane.label}`}
+                  >
+                    {FACET_OPTIONS[mapping.axis].map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               ) : (
                 <div className="plane-zone-content empty">
