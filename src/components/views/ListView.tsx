@@ -2,10 +2,8 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { VariableSizeList as List } from 'react-window';
 import { Search, X, ArrowUpDown } from 'lucide-react';
 import { useListData } from '../../hooks/useListData';
-import { usePAFV } from '../../hooks/usePAFV';
 import { useSelection } from '../../state/SelectionContext';
 import { ListItem } from '../ListItem';
-import { ListGroup } from '../ListGroup';
 import type { Node } from '../../types/node';
 
 // Item heights for virtualization
@@ -30,7 +28,6 @@ interface ListViewProps {
  * - Integrates with SelectionContext for Card Overlay
  */
 export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
-  const { state } = usePAFV();
   const { selection, select } = useSelection();
   const listRef = useRef<List>(null);
 

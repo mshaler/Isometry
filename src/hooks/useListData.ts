@@ -38,7 +38,7 @@ export function useListData(groupingEnabled: boolean = true): ListData {
   const sortFacet = yMapping?.facet ?? null;
 
   // Query all nodes (TODO: apply filters from FilterContext)
-  const { data: nodes, loading, error } = useNodes();
+  const { data: nodes } = useNodes();
 
   // Sort nodes by the selected facet
   const sortedNodes = useMemo(() => {
