@@ -5,8 +5,10 @@ import { DatabaseProvider } from './db/DatabaseContext';
 import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './contexts/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
+import { CardOverlayProvider } from './state/CardOverlayContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { CardOverlay } from './components/CardOverlay';
 
 // Layout components
 import { Toolbar } from './components/Toolbar';
@@ -113,7 +115,10 @@ function App() {
               <FilterProvider>
                 <PAFVProvider>
                   <SelectionProvider>
-                    <AppContent />
+                    <CardOverlayProvider>
+                      <AppContent />
+                      <CardOverlay />
+                    </CardOverlayProvider>
                   </SelectionProvider>
                 </PAFVProvider>
               </FilterProvider>
