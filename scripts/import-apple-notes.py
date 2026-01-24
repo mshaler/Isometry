@@ -12,16 +12,23 @@ Usage:
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from datetime import datetime
 
-# Configuration
-ALTO_INDEX_BASE = Path("/Users/mshaler/Library/Containers/com.altoindex.AltoIndex/Data/Documents/alto-index/notes/Learning")
-TARGET_BASE = Path("docs/notes/apple-notes")
+# Add scripts directory to path for config import
+sys.path.insert(0, str(Path(__file__).parent))
+from kb_config import CONFIG
+
+# Configuration from .kb-config.yaml (with fallback defaults)
+ALTO_INDEX_BASE = Path(CONFIG["alto_index"]["base_path"])
+TARGET_BASE = Path("docs") / CONFIG["paths"]["apple_notes"]
+AUTO_COMMIT = CONFIG["sync"]["auto_commit"]
+COMMIT_PREFIX = CONFIG["sync"]["commit_prefix"]
 
 FOLDERS_TO_IMPORT = {
-    "ClaudeAI": ALTO_INDEX_BASE / "ClaudeAI",
-    "CardBoard": ALTO_INDEX_BASE / "CardBoard"
+    folder: ALTO_INDEX_BASE / folder
+    for folder in CONFIG["alto_index"]["folders"]
 }
 
 def sanitize_filename(filename):

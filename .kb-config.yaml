@@ -1,0 +1,39 @@
+# IsometryKB Configuration
+# Paths and settings for knowledge base sync automation
+
+alto_index:
+  # Base path to alto-index export
+  base_path: /Users/mshaler/Library/Containers/com.altoindex.AltoIndex/Data/Documents/alto-index/notes/Learning
+
+  # Folders to import from alto-index
+  folders:
+    - ClaudeAI
+    - CardBoard
+
+github:
+  # GitHub repository for issues sync
+  repo: mshaler/Isometry
+
+  # GitHub API base URL (constructed automatically)
+  api_url: https://api.github.com/repos/mshaler/Isometry/issues
+
+sync:
+  # Automatically commit changes after sync
+  auto_commit: true
+
+  # Commit message prefix
+  commit_prefix: "docs:"
+
+  # Default branch for commits
+  branch: main
+
+paths:
+  # Target paths within knowledge base
+  apple_notes: notes/apple-notes
+  github_issues: issues
+
+# Sync script locations (relative to parent Isometry repo root)
+scripts:
+  sync_issues: scripts/sync-github-issues.py
+  import_notes: scripts/import-apple-notes.py
+  sync_all: scripts/sync-all.sh

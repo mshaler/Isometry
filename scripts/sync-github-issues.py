@@ -14,14 +14,21 @@ import urllib.request
 import urllib.error
 import os
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
-# Configuration
-GITHUB_REPO = "mshaler/Isometry"
-GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/issues"
-ISSUES_DIR = Path("docs/issues")
+# Add scripts directory to path for config import
+sys.path.insert(0, str(Path(__file__).parent))
+from kb_config import CONFIG
+
+# Configuration from .kb-config.yaml (with fallback defaults)
+GITHUB_REPO = CONFIG["github"]["repo"]
+GITHUB_API_URL = CONFIG["github"]["api_url"]
+ISSUES_DIR = Path("docs") / CONFIG["paths"]["github_issues"]
 README_PATH = ISSUES_DIR / "README.md"
+AUTO_COMMIT = CONFIG["sync"]["auto_commit"]
+COMMIT_PREFIX = CONFIG["sync"]["commit_prefix"]
 
 def fetch_issues():
     """Fetch all issues from GitHub API"""
