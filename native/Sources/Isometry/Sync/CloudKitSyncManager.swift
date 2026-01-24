@@ -409,6 +409,47 @@ public actor CloudKitSyncManager {
         return record
     }
 
+    /// Convert ViewConfig to CloudKit record
+    private func viewConfigToRecord(_ config: ViewConfig) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: config.id, zoneID: zone.zoneID)
+        let record = CKRecord(recordType: "ViewConfig", recordID: recordID)
+
+        record["name"] = config.name
+        record["isDefault"] = config.isDefault ? 1 : 0
+        record["originPattern"] = config.originPattern
+        record["xAxisMapping"] = config.xAxisMapping
+        record["yAxisMapping"] = config.yAxisMapping
+        record["zoomLevel"] = config.zoomLevel
+        record["panOffsetX"] = config.panOffsetX
+        record["panOffsetY"] = config.panOffsetY
+        record["filterConfig"] = config.filterConfig
+        record["createdAt"] = config.createdAt
+        record["modifiedAt"] = config.modifiedAt
+        record["lastUsedAt"] = config.lastUsedAt
+        record["syncVersion"] = config.syncVersion
+
+        return record
+    }
+
+    /// Convert FilterPreset to CloudKit record
+    private func filterPresetToRecord(_ preset: FilterPreset) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: preset.id, zoneID: zone.zoneID)
+        let record = CKRecord(recordType: "FilterPreset", recordID: recordID)
+
+        record["name"] = preset.name
+        record["isDefault"] = preset.isDefault ? 1 : 0
+        record["filterConfig"] = preset.filterConfig
+        record["description"] = preset.description
+        record["iconName"] = preset.iconName
+        record["usageCount"] = preset.usageCount
+        record["lastUsedAt"] = preset.lastUsedAt
+        record["createdAt"] = preset.createdAt
+        record["modifiedAt"] = preset.modifiedAt
+        record["syncVersion"] = preset.syncVersion
+
+        return record
+    }
+
     private func recordToNode(_ record: CKRecord) -> Node? {
         guard let name = record["name"] as? String else { return nil }
 
@@ -437,6 +478,128 @@ public actor CloudKitSyncManager {
             syncVersion: record["syncVersion"] as? Int ?? 0,
             lastSyncedAt: Date()
         )
+    }
+
+    /// Convert CloudKit record to ViewConfig
+    private func recordToViewConfig(_ record: CKRecord) -> ViewConfig? {
+        guard let name = record["name"] as? String else { return nil }
+
+        return ViewConfig(
+            id: record.recordID.recordName,
+            name: name,
+            isDefault: (record["isDefault"] as? Int ?? 0) == 1,
+            originPattern: record["originPattern"] as? String ?? "anchor",
+            xAxisMapping: record["xAxisMapping"] as? String ?? "time",
+            yAxisMapping: record["yAxisMapping"] as? String ?? "category",
+            zoomLevel: record["zoomLevel"] as? Double ?? 1.0,
+            panOffsetX: record["panOffsetX"] as? Double ?? 0.0,
+            panOffsetY: record["panOffsetY"] as? Double ?? 0.0,
+            filterConfig: record["filterConfig"] as? String,
+            createdAt: record["createdAt"] as? Date ?? Date(),
+            modifiedAt: record["modifiedAt"] as? Date ?? Date(),
+            lastUsedAt: record["lastUsedAt"] as? Date,
+            syncVersion: record["syncVersion"] as? Int ?? 0
+        )
+    }
+
+    /// Convert CloudKit record to FilterPreset
+    private func recordToFilterPreset(_ record: CKRecord) -> FilterPreset? {
+        guard let name = record["name"] as? String,
+              let filterConfig = record["filterConfig"] as? String else { return nil }
+
+        return FilterPreset(
+            id: record.recordID.recordName,
+            name: name,
+            isDefault: (record["isDefault"] as? Int ?? 0) == 1,
+            filterConfig: filterConfig,
+            description: record["description"] as? String,
+            iconName: record["iconName"] as? String,
+            usageCount: record["usageCount"] as? Int ?? 0,
+            lastUsedAt: record["lastUsedAt"] as? Date,
+            createdAt: record["createdAt"] as? Date ?? Date(),
+            modifiedAt: record["modifiedAt"] as? Date ?? Date(),
+            syncVersion: record["syncVersion"] as? Int ?? 0
+        )
+    }
+
+    // MARK: - SuperGrid Sync Methods
+
+    /// Sync view configurations to CloudKit
+    public func syncViewConfigs(_ configs: [ViewConfig]) async throws {
+        let records = configs.map(viewConfigToRecord)
+        try await pushRecords(records)
+    }
+
+    /// Sync filter presets to CloudKit
+    public func syncFilterPresets(_ presets: [FilterPreset]) async throws {
+        let records = presets.map(filterPresetToRecord)
+        try await pushRecords(records)
+    }
+
+    /// Pull view configurations from CloudKit
+    public func pullViewConfigs() async throws -> [ViewConfig] {
+        let predicate = NSPredicate(format: "TRUEPREDICATE")
+        let query = CKQuery(recordType: "ViewConfig", predicate: predicate)
+
+        let (records, _) = try await database.records(matching: query, inZoneWith: zone.zoneID)
+
+        var configs: [ViewConfig] = []
+        for (_, result) in records {
+            switch result {
+            case .success(let record):
+                if let config = recordToViewConfig(record) {
+                    configs.append(config)
+                }
+            case .failure(let error):
+                print("Failed to fetch view config: \(error)")
+            }
+        }
+
+        return configs
+    }
+
+    /// Pull filter presets from CloudKit
+    public func pullFilterPresets() async throws -> [FilterPreset] {
+        let predicate = NSPredicate(format: "TRUEPREDICATE")
+        let query = CKQuery(recordType: "FilterPreset", predicate: predicate)
+
+        let (records, _) = try await database.records(matching: query, inZoneWith: zone.zoneID)
+
+        var presets: [FilterPreset] = []
+        for (_, result) in records {
+            switch result {
+            case .success(let record):
+                if let preset = recordToFilterPreset(record) {
+                    presets.append(preset)
+                }
+            case .failure(let error):
+                print("Failed to fetch filter preset: \(error)")
+            }
+        }
+
+        return presets
+    }
+
+    /// Generic method to push records to CloudKit
+    private func pushRecords(_ records: [CKRecord]) async throws {
+        guard !records.isEmpty else { return }
+
+        let (savedResults, _) = try await database.modifyRecords(
+            saving: records,
+            deleting: [],
+            savePolicy: .changedKeys,
+            atomically: false
+        )
+
+        for (recordID, result) in savedResults {
+            switch result {
+            case .success:
+                print("Successfully synced record: \(recordID.recordName)")
+            case .failure(let error):
+                print("Failed to sync record \(recordID.recordName): \(error)")
+                throw error
+            }
+        }
     }
 
     // MARK: - Error Handling
