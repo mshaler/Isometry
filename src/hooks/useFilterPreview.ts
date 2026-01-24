@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDatabase } from '@/db/DatabaseContext';
-import { buildFilterSQL } from '@/utils/filter-sql-builder';
+import { compileFilters } from '@/filters/compiler';
 import type { FilterState } from '@/types/filter';
 
 /**
@@ -70,7 +70,7 @@ export function useFilterPreview(
 
       try {
         // Build SQL WHERE clause from filters
-        const { sql, params } = buildFilterSQL(filters);
+        const { sql, params } = compileFilters(filters);
 
         // Execute COUNT query
         const query = `
