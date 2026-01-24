@@ -7,7 +7,6 @@
  * @module components/OriginPatternSelector
  */
 
-import React from 'react';
 import type { OriginPattern } from '../types/coordinates';
 import '../styles/OriginPatternSelector.css';
 

@@ -1,5 +1,0 @@
-/Users/mshaler/.zshrc:[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
-/Users/mshaler/.zshrc:# [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
-/Users/mshaler/.zprofile:eval "$(/opt/homebrew/bin/brew shellenv)"
-/Users/mshaler/.bash_profile:export PATH="/opt/homebrew/bin:$PATH"
-/Users/mshaler/.bash_profile:eval "$(/opt/homebrew/bin/brew shellenv bash)"

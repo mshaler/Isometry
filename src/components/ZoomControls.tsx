@@ -7,7 +7,6 @@
  * @module components/ZoomControls
  */
 
-import React from 'react';
 import '../styles/ZoomControls.css';
 
 export interface ZoomControlsProps {

@@ -10,7 +10,6 @@
  * @module components/MiniNav
  */
 
-import React from 'react';
 import type { CoordinateSystem, OriginPattern } from '../types/coordinates';
 import type { PAFVState } from '../types/pafv';
 import ViewSwitcher from './ViewSwitcher';
@@ -71,7 +70,12 @@ export function MiniNav({
           <h2 className="mininav-section-title">View</h2>
           <ViewSwitcher
             currentView={pafvState.viewMode}
-            onViewChange={(mode) => onPAFVChange({ ...pafvState, viewMode: mode })}
+            onViewChange={(mode) => {
+              // Only update if it's a valid PAFV view mode (grid or list)
+              if (mode === 'grid' || mode === 'list') {
+                onPAFVChange({ ...pafvState, viewMode: mode });
+              }
+            }}
           />
         </section>
 

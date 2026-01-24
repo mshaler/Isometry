@@ -7,7 +7,6 @@
  * @module components/ViewSwitcher
  */
 
-import React from 'react';
 import '../styles/ViewSwitcher.css';
 
 export type ViewMode = 'grid' | 'list' | 'kanban';

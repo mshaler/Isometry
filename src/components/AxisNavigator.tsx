@@ -7,7 +7,7 @@
  * @module components/AxisNavigator
  */
 
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import type { PAFVState, LATCHAxis, Plane, AxisMapping } from '../types/pafv';
 import { useDragDrop } from '../hooks/useDragDrop';
 import '../styles/AxisNavigator.css';

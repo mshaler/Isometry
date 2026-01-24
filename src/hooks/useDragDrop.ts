@@ -97,7 +97,7 @@ export function useDragDrop(): UseDragDropResult {
 
   // Leave drop zone
   const handleDragLeave = useCallback((zoneId: string) => {
-    return (e: React.DragEvent) => {
+    return (_e: React.DragEvent) => {
       // Only clear hover if leaving the specific zone
       setDragState((prev) => ({
         ...prev,

@@ -7,7 +7,6 @@
  * @module components/MiniNavDemo
  */
 
-import React from 'react';
 import MiniNav from './MiniNav';
 import { useCoordinates } from '../hooks/useCoordinates';
 import { usePAFV } from '../hooks/usePAFV';
