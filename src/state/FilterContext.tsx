@@ -1,13 +1,21 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo, useState } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useState, useEffect } from 'react';
 import type {
   FilterState,
   LocationFilter,
   AlphabetFilter,
   TimeFilter,
   CategoryFilter,
-  HierarchyFilter
+  HierarchyFilter,
+  FilterPreset
 } from '../types/filter';
 import { EMPTY_FILTERS } from '../types/filter';
+import {
+  loadPresets,
+  savePreset as savePresetToStorage,
+  deletePreset as deletePresetFromStorage,
+  generatePresetId,
+  presetNameExists
+} from '../utils/filter-presets';
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
@@ -65,6 +73,14 @@ interface FilterContextValue {
   applyPreviewFilters: () => void;
   startPreview: () => void;
   cancelPreview: () => void;
+
+  // Preset management
+  presets: FilterPreset[];
+  saveCurrentAsPreset: (name: string) => FilterPreset;
+  loadPreset: (id: string) => void;
+  deletePreset: (id: string) => void;
+  listPresets: () => FilterPreset[];
+  checkPresetNameExists: (name: string, excludeId?: string) => boolean;
 }
 
 const FilterContext = createContext<FilterContextValue | null>(null);
@@ -72,6 +88,13 @@ const FilterContext = createContext<FilterContextValue | null>(null);
 export function FilterProvider({ children }: { children: React.ReactNode }) {
   const [activeFilters, dispatch] = useReducer(filterReducer, EMPTY_FILTERS);
   const [previewFilters, setPreviewFilters] = useState<FilterState | null>(null);
+  const [presets, setPresets] = useState<FilterPreset[]>([]);
+
+  // Load presets from localStorage on mount
+  useEffect(() => {
+    const loadedPresets = loadPresets();
+    setPresets(loadedPresets);
+  }, []);
 
   // Active filter setters (directly applied)
   const setLocation = useCallback((filter: LocationFilter | null) => {
@@ -169,6 +192,41 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     }
   }, [previewFilters]);
 
+  // Preset management methods
+  const saveCurrentAsPreset = useCallback((name: string): FilterPreset => {
+    const preset: FilterPreset = {
+      id: generatePresetId(),
+      name,
+      filters: { ...activeFilters },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    savePresetToStorage(preset);
+    setPresets(loadPresets());
+    return preset;
+  }, [activeFilters]);
+
+  const loadPresetById = useCallback((id: string) => {
+    const preset = presets.find((p) => p.id === id);
+    if (preset) {
+      dispatch({ type: 'APPLY_PREVIEW', payload: preset.filters });
+    }
+  }, [presets]);
+
+  const deletePresetById = useCallback((id: string) => {
+    deletePresetFromStorage(id);
+    setPresets(loadPresets());
+  }, []);
+
+  const listPresets = useCallback(() => {
+    return presets;
+  }, [presets]);
+
+  const checkPresetNameExists = useCallback((name: string, excludeId?: string) => {
+    return presetNameExists(name, excludeId);
+  }, []);
+
   return (
     <FilterContext.Provider
       value={{
@@ -191,6 +249,12 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
         applyPreviewFilters,
         startPreview,
         cancelPreview,
+        presets,
+        saveCurrentAsPreset,
+        loadPreset: loadPresetById,
+        deletePreset: deletePresetById,
+        listPresets,
+        checkPresetNameExists,
       }}
     >
       {children}
