@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { PAFVProvider, usePAFV } from '../PAFVContext';
@@ -124,29 +124,43 @@ describe('PAFVContext', () => {
     it('should restore grid mappings when switching back to grid', () => {
       const { result } = renderHook(() => usePAFV(), { wrapper });
 
-      const originalGridMappings = result.current.state.mappings;
+      // Ensure we start in grid mode with default mappings
+      act(() => {
+        result.current.resetToDefaults();
+      });
+
+      const initialXMapping = result.current.state.mappings.find(m => m.plane === 'x');
+      const initialYMapping = result.current.state.mappings.find(m => m.plane === 'y');
 
       // Switch to list
       act(() => {
         result.current.setViewMode('list');
       });
 
-      // Modify mappings in list view
+      expect(result.current.state.viewMode).toBe('list');
+
+      // Modify mappings in list view (add a color mapping)
       act(() => {
         result.current.setMapping({
-          plane: 'x',
+          plane: 'color',
           axis: 'alphabet',
           facet: 'name',
         });
       });
+
+      // Verify color mapping was added in list view
+      expect(result.current.state.mappings.find(m => m.plane === 'color')).toBeDefined();
 
       // Switch back to grid
       act(() => {
         result.current.setViewMode('grid');
       });
 
-      // Should restore original grid mappings
-      expect(result.current.state.mappings).toEqual(originalGridMappings);
+      // Should restore original grid mappings (x and y), without the color mapping
+      expect(result.current.state.viewMode).toBe('grid');
+      expect(result.current.state.mappings.find(m => m.plane === 'x')).toEqual(initialXMapping);
+      expect(result.current.state.mappings.find(m => m.plane === 'y')).toEqual(initialYMapping);
+      expect(result.current.state.mappings.find(m => m.plane === 'color')).toBeUndefined();
     });
   });
 

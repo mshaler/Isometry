@@ -33,48 +33,49 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state.mappings, state.viewMode]);
 
   const setMapping = useCallback((mapping: AxisMapping) => {
-    setState(prevState => setMappingUtil(prevState, mapping));
-  }, []);
+    setState(setMappingUtil(state, mapping));
+  }, [state, setState]);
 
   const removeMappingCallback = useCallback((plane: Plane) => {
-    setState(prevState => removeMapping(prevState, plane));
-  }, []);
+    setState(removeMapping(state, plane));
+  }, [state, setState]);
 
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
-    setState(prevState => {
-      // If switching view modes, preserve and restore previous mappings
-      if (prevState.viewMode === mode) {
-        // No change, just update viewMode
-        return { ...prevState, viewMode: mode };
-      }
+    // If switching view modes, preserve and restore previous mappings
+    if (state.viewMode === mode) {
+      // No change, just update viewMode
+      setState({ ...state, viewMode: mode });
+      return;
+    }
 
-      // When switching to Grid, restore last Grid mappings
-      if (mode === 'grid') {
-        return {
-          viewMode: mode,
-          mappings: lastGridMappings.current.length > 0
-            ? lastGridMappings.current
-            : DEFAULT_PAFV.mappings,
-        };
-      }
+    // When switching to Grid, restore last Grid mappings
+    if (mode === 'grid') {
+      setState({
+        viewMode: mode,
+        mappings: lastGridMappings.current.length > 0
+          ? lastGridMappings.current
+          : DEFAULT_PAFV.mappings,
+      });
+      return;
+    }
 
-      // When switching to List, restore last List mappings
-      if (mode === 'list') {
-        return {
-          viewMode: mode,
-          mappings: lastListMappings.current.length > 0
-            ? lastListMappings.current
-            : prevState.mappings, // Preserve current mappings if no list history
-        };
-      }
+    // When switching to List, restore last List mappings
+    if (mode === 'list') {
+      setState({
+        viewMode: mode,
+        mappings: lastListMappings.current.length > 0
+          ? lastListMappings.current
+          : state.mappings, // Preserve current mappings if no list history
+      });
+      return;
+    }
 
-      return { ...prevState, viewMode: mode };
-    });
-  }, [setState]);
+    setState({ ...state, viewMode: mode });
+  }, [state, setState]);
 
   const resetToDefaults = useCallback(() => {
     setState(DEFAULT_PAFV);
-  }, []);
+  }, [setState]);
 
   const getAxisForPlane = useCallback((plane: Plane): LATCHAxis | null => {
     const mapping = getMappingForPlane(state, plane);
