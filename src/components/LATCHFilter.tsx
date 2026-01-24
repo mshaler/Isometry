@@ -1,6 +1,11 @@
+import { useState } from 'react';
 import { useFilters } from '@/state/FilterContext';
 import type { FilterState } from '@/types/filter';
 import { LocationMapWidget } from './LocationMapWidget';
+import { HierarchyTreeView } from '@/components/HierarchyTreeView';
+import { useNodes, useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { useNodeTree } from '@/hooks/useNodeTree';
+import { useMapMarkers } from '@/hooks/useMapMarkers';
 
 /**
  * LATCHFilter - Individual axis filter component
@@ -31,6 +36,23 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
     setPreviewCategory,
     setPreviewHierarchy,
   } = useFilters();
+
+  // For Hierarchy filter: fetch all nodes and NEST edges
+  const { data: allNodes } = useNodes('1=1', [], { enabled: axis === 'hierarchy' });
+  const { data: nestEdges } = useSQLiteQuery<{ source_id: string; target_id: string }>(
+    'SELECT source_id, target_id FROM edges WHERE edge_type = ?',
+    ['NEST'],
+    { enabled: axis === 'hierarchy' }
+  );
+
+  // Build tree for Hierarchy filter
+  const tree = useNodeTree(allNodes || [], nestEdges || []);
+
+  // Priority range state for tree view
+  const [priorityRange, setPriorityRange] = useState<[number, number]>([1, 10]);
+
+  // For Location filter: fetch all nodes with location data
+  const { markers } = useMapMarkers();
 
   if (!previewFilters) return null;
 
@@ -63,6 +85,7 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
                 radiusKm: radiusMeters / 1000,
               });
             }}
+            markers={markers}
           />
         );
 
