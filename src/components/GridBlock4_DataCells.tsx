@@ -53,7 +53,8 @@ export function renderDataCells({
         const group = enter.append('g')
           .attr('class', 'data-cell')
           .attr('data-node-id', d => d.node.id)
-          .style('cursor', 'pointer');
+          .style('cursor', 'pointer')
+          .style('opacity', 0); // Start invisible for fade-in
 
         // Cell background
         group.append('rect')
@@ -94,34 +95,55 @@ export function renderDataCells({
           });
         }
 
+        // Fade in new cells
+        group.transition()
+          .duration(300)
+          .ease(d3.easeCubicInOut)
+          .style('opacity', 1);
+
         return group;
       },
-      // UPDATE: Update existing elements
-      update => update,
-      // EXIT: Remove old elements
-      exit => exit.remove()
+      // UPDATE: Update existing elements with transition
+      update => {
+        // Transition to new position when axis changes
+        return update;
+      },
+      // EXIT: Remove old elements with fade-out
+      exit => {
+        exit.transition()
+          .duration(200)
+          .ease(d3.easeCubicOut)
+          .style('opacity', 0)
+          .remove();
+        return exit;
+      }
     );
 
-  // Position and update all cells
+  // Position and update all cells with smooth transitions
   cellGroups.each(function(d) {
     const group = d3.select(this);
     const { x, y } = coordinateSystem.logicalToScreen(d.logicalX, d.logicalY);
 
-    // Update rectangle position
+    // Transition rectangle position (smooth axis change animation)
     group.select<SVGRectElement>('.cell-bg')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', x)
       .attr('y', y)
       .attr('width', cellWidth - 2) // -2 for visual gap between cells
       .attr('height', cellHeight - 2);
 
-    // Update text with truncation
+    // Transition text position
     const maxTextWidth = cellWidth - 12; // Padding on both sides
     group.select<SVGTextElement>('.cell-text')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', x + 6) // 6px left padding
       .attr('y', y + 6) // 6px top padding
-      .text(d.value)
-      .each(function() {
-        // Truncate text if too long
+      .on('end', function() {
+        // Update text content after position transition completes
         const textElement = this as SVGTextElement;
         let text = d.value;
         textElement.textContent = text;
@@ -130,7 +152,8 @@ export function renderDataCells({
           text = text.slice(0, -1);
           textElement.textContent = text + '…';
         }
-      });
+      })
+      .text(d.value);
   });
 
   // Performance optimization: Add will-change for zoom transforms

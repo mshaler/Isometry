@@ -41,7 +41,9 @@ export function renderRowHeaders({
     .join(
       // ENTER: Create new header elements
       enter => {
-        const group = enter.append('g').attr('class', 'row-header');
+        const group = enter.append('g')
+          .attr('class', 'row-header')
+          .style('opacity', 0); // Fade in
 
         // Background rectangle
         group.append('rect')
@@ -59,29 +61,49 @@ export function renderRowHeaders({
           .attr('text-anchor', 'end')
           .attr('dominant-baseline', 'middle');
 
+        // Fade in with stagger delay (offset from columns)
+        group.transition()
+          .delay((_d, i) => 100 + i * 20) // 100ms after columns start, then 20ms stagger
+          .duration(300)
+          .ease(d3.easeCubicInOut)
+          .style('opacity', 1);
+
         return group;
       },
       // UPDATE: Update existing elements
       update => update,
-      // EXIT: Remove old elements
-      exit => exit.remove()
+      // EXIT: Remove old elements with fade out
+      exit => {
+        exit.transition()
+          .duration(200)
+          .ease(d3.easeCubicOut)
+          .style('opacity', 0)
+          .remove();
+        return exit;
+      }
     );
 
-  // Position and size all headers
+  // Position and size all headers with smooth transitions
   headers.each(function(d) {
     const group = d3.select(this);
     const { y } = coordinateSystem.logicalToScreen(0, d.logicalY);
     const screenHeight = d.height * coordinateSystem.cellHeight;
 
-    // Update rectangle
+    // Transition rectangle position
     group.select<SVGRectElement>('.header-bg')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', 0)
       .attr('y', y)
       .attr('width', headerWidth)
       .attr('height', screenHeight);
 
-    // Update text (right-aligned, vertically centered)
+    // Transition text position and update label
     group.select<SVGTextElement>('.header-text')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', headerWidth - 10) // 10px padding from right edge
       .attr('y', y + screenHeight / 2)
       .text(d.label);

@@ -1,15 +1,13 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
+import type { LATCHAxis } from '@/types/pafv';
+import type { OriginPattern } from '@/types/coordinates';
 import { useD3Zoom, type ZoomTransform } from '@/hooks/useD3Zoom';
+import { useGridCoordinates, getUniqueAxisValues } from '@/hooks/useGridCoordinates';
 import { renderColumnHeaders } from './GridBlock2_ColumnHeaders';
 import { renderRowHeaders } from './GridBlock3_RowHeaders';
 import { renderDataCells } from './GridBlock4_DataCells';
-import {
-  getCellData,
-  extractColumnHeaders,
-  extractRowHeaders,
-} from '@/utils/d3-helpers';
 
 export interface CoordinateSystem {
   originX: number;
@@ -23,8 +21,11 @@ export interface CoordinateSystem {
 export interface D3SparsityLayerProps {
   data: Node[];
   coordinateSystem: CoordinateSystem;
+  xAxis?: LATCHAxis;
   xAxisFacet?: string;
+  yAxis?: LATCHAxis;
   yAxisFacet?: string;
+  originPattern?: OriginPattern;
   onCellClick?: (node: Node) => void;
   onZoomChange?: (transform: ZoomTransform) => void;
   width?: number;
@@ -45,8 +46,11 @@ export interface D3SparsityLayerProps {
 export function D3SparsityLayer({
   data,
   coordinateSystem,
+  xAxis = 'category',
   xAxisFacet = 'folder',
-  yAxisFacet = 'modifiedAt',
+  yAxis = 'time',
+  yAxisFacet = 'year',
+  originPattern = 'anchor',
   onCellClick,
   onZoomChange,
   width = 800,
@@ -64,18 +68,50 @@ export function D3SparsityLayer({
   // Memoize dimensions to avoid unnecessary re-renders
   const dimensions = useMemo(() => ({ width, height }), [width, height]);
 
-  // Prepare grid data from nodes
-  const gridData = useMemo(() => {
-    if (!data || data.length === 0) {
-      return { columns: [], rows: [], cells: [] };
-    }
+  // Calculate grid coordinates based on PAFV axis mappings
+  const coordinates = useGridCoordinates({
+    nodes: data,
+    xAxis,
+    xFacet: xAxisFacet,
+    yAxis,
+    yFacet: yAxisFacet,
+    originPattern,
+  });
 
-    const columns = extractColumnHeaders(data, xAxisFacet);
-    const rows = extractRowHeaders(data, yAxisFacet);
-    const cells = data.map(node => getCellData(node, xAxisFacet, yAxisFacet));
+  // Extract unique column and row headers
+  const { columns, rows } = useMemo(() => {
+    const cols = getUniqueAxisValues(coordinates, 'x');
+    const rws = getUniqueAxisValues(coordinates, 'y');
 
-    return { columns, rows, cells };
-  }, [data, xAxisFacet, yAxisFacet]);
+    return {
+      columns: cols.map(c => ({
+        id: `col-${c.value}`,
+        label: c.label,
+        logicalX: c.value,
+        width: 1,
+      })),
+      rows: rws.map(r => ({
+        id: `row-${r.value}`,
+        label: r.label,
+        logicalY: r.value,
+        height: 1,
+      })),
+    };
+  }, [coordinates]);
+
+  // Create cell data with calculated coordinates
+  const cells = useMemo(() => {
+    return data.map(node => {
+      const coord = coordinates.get(node.id);
+      return {
+        id: node.id,
+        node,
+        logicalX: coord?.x ?? 0,
+        logicalY: coord?.y ?? 0,
+        value: node.name || node.summary || '(untitled)',
+      };
+    });
+  }, [data, coordinates]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || !data) return;
@@ -99,7 +135,7 @@ export function D3SparsityLayer({
     // Render GridBlock 2: Column Headers
     renderColumnHeaders({
       container: columnHeadersGroup,
-      columns: gridData.columns,
+      columns,
       coordinateSystem,
       headerHeight: 40,
     });
@@ -107,20 +143,20 @@ export function D3SparsityLayer({
     // Render GridBlock 3: Row Headers
     renderRowHeaders({
       container: rowHeadersGroup,
-      rows: gridData.rows,
+      rows,
       coordinateSystem,
       headerWidth: 150,
     });
 
-    // Render GridBlock 4: Data Cells
+    // Render GridBlock 4: Data Cells with smooth transitions
     renderDataCells({
       container: dataCellsGroup,
-      cells: gridData.cells,
+      cells,
       coordinateSystem,
       onCellClick,
     });
 
-  }, [data, coordinateSystem, dimensions, onCellClick, gridData]);
+  }, [data, coordinateSystem, dimensions, onCellClick, columns, rows, cells]);
 
   return (
     <svg

@@ -41,7 +41,9 @@ export function renderColumnHeaders({
     .join(
       // ENTER: Create new header elements
       enter => {
-        const group = enter.append('g').attr('class', 'column-header');
+        const group = enter.append('g')
+          .attr('class', 'column-header')
+          .style('opacity', 0); // Fade in
 
         // Background rectangle
         group.append('rect')
@@ -59,29 +61,49 @@ export function renderColumnHeaders({
           .attr('text-anchor', 'middle')
           .attr('dominant-baseline', 'middle');
 
+        // Fade in with stagger delay
+        group.transition()
+          .delay((_d, i) => i * 20) // 20ms stagger
+          .duration(300)
+          .ease(d3.easeCubicInOut)
+          .style('opacity', 1);
+
         return group;
       },
       // UPDATE: Update existing elements
       update => update,
-      // EXIT: Remove old elements
-      exit => exit.remove()
+      // EXIT: Remove old elements with fade out
+      exit => {
+        exit.transition()
+          .duration(200)
+          .ease(d3.easeCubicOut)
+          .style('opacity', 0)
+          .remove();
+        return exit;
+      }
     );
 
-  // Position and size all headers
+  // Position and size all headers with smooth transitions
   headers.each(function(d) {
     const group = d3.select(this);
     const { x } = coordinateSystem.logicalToScreen(d.logicalX, 0);
     const screenWidth = d.width * coordinateSystem.cellWidth;
 
-    // Update rectangle
+    // Transition rectangle position
     group.select<SVGRectElement>('.header-bg')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', x)
       .attr('y', 0)
       .attr('width', screenWidth)
       .attr('height', headerHeight);
 
-    // Update text
+    // Transition text position and update label
     group.select<SVGTextElement>('.header-text')
+      .transition()
+      .duration(300)
+      .ease(d3.easeCubicInOut)
       .attr('x', x + screenWidth / 2)
       .attr('y', headerHeight / 2)
       .text(d.label);
