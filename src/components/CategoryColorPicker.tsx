@@ -23,9 +23,14 @@ export interface CategoryColorPickerProps {
   /** Called when selected tags change */
   onSelectedTagsChange: (tags: Set<string>) => void;
 
+  /** Optional tag usage counts for sorting */
+  tagCounts?: Map<string, number>;
+
   /** Optional className */
   className?: string;
 }
+
+type SortMode = 'alphabetical' | 'color' | 'usage';
 
 /**
  * CategoryColorPicker component
@@ -34,10 +39,13 @@ export function CategoryColorPicker({
   tags,
   selectedTags,
   onSelectedTagsChange,
+  tagCounts,
   className = '',
 }: CategoryColorPickerProps) {
   const { tagColors, setTagColor, getTagColor } = useTagColors();
   const [tagForColorAssignment, setTagForColorAssignment] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<SortMode>('alphabetical');
 
   /**
    * Handle color swatch click - assign color to selected tag
@@ -78,11 +86,46 @@ export function CategoryColorPicker({
   };
 
   /**
-   * Get sorted tags by name
+   * Filter and sort tags
    */
-  const sortedTags = useMemo(() => {
-    return [...tags].sort((a, b) => a.localeCompare(b));
-  }, [tags]);
+  const filteredAndSortedTags = useMemo(() => {
+    // Filter by search query
+    let filtered = tags;
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = tags.filter((tag) => tag.toLowerCase().includes(query));
+    }
+
+    // Sort by selected mode
+    const sorted = [...filtered];
+    switch (sortMode) {
+      case 'alphabetical':
+        sorted.sort((a, b) => a.localeCompare(b));
+        break;
+
+      case 'color':
+        sorted.sort((a, b) => {
+          const colorA = getTagColor(a);
+          const colorB = getTagColor(b);
+          return colorA.localeCompare(colorB);
+        });
+        break;
+
+      case 'usage':
+        if (tagCounts) {
+          sorted.sort((a, b) => {
+            const countA = tagCounts.get(a) || 0;
+            const countB = tagCounts.get(b) || 0;
+            return countB - countA; // Descending order (most used first)
+          });
+        } else {
+          sorted.sort((a, b) => a.localeCompare(b));
+        }
+        break;
+    }
+
+    return sorted;
+  }, [tags, searchQuery, sortMode, getTagColor, tagCounts]);
 
   return (
     <div className={`flex flex-col gap-4 ${className}`}>
@@ -143,36 +186,58 @@ export function CategoryColorPicker({
         <div>• Click color swatch to assign to selected tag</div>
       </div>
 
-      {/* Tag Pills */}
+      {/* Search and Sort Controls */}
       <div className="flex flex-col gap-2">
         <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Tags ({tags.length})
+          Tags ({filteredAndSortedTags.length}/{tags.length})
         </div>
-        <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
-          {sortedTags.length === 0 ? (
-            <div className="text-sm text-gray-400 dark:text-gray-500 italic">
-              No tags available
+        <div className="flex gap-2">
+          {/* Search input */}
+          <input
+            type="text"
+            placeholder="Search tags..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {/* Sort dropdown */}
+          <select
+            value={sortMode}
+            onChange={(e) => setSortMode(e.target.value as SortMode)}
+            className="px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="alphabetical">A-Z</option>
+            <option value="color">Color</option>
+            <option value="usage">Usage</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Tag Pills */}
+      <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+        {filteredAndSortedTags.length === 0 ? (
+          <div className="text-sm text-gray-400 dark:text-gray-500 italic">
+            {searchQuery.trim() ? 'No matching tags' : 'No tags available'}
+          </div>
+        ) : (
+          filteredAndSortedTags.map((tag) => (
+            <div
+              key={tag}
+              onDoubleClick={() => handleTagDoubleClick(tag)}
+              onContextMenu={(e) => handleTagContextMenu(e, tag)}
+              className={`
+                ${tagForColorAssignment === tag ? 'ring-2 ring-blue-400' : ''}
+              `}
+            >
+              <CategoryTagPill
+                tag={tag}
+                color={getTagColor(tag)}
+                selected={selectedTags.has(tag)}
+                onClick={() => handleTagClick(tag)}
+              />
             </div>
-          ) : (
-            sortedTags.map((tag) => (
-              <div
-                key={tag}
-                onDoubleClick={() => handleTagDoubleClick(tag)}
-                onContextMenu={(e) => handleTagContextMenu(e, tag)}
-                className={`
-                  ${tagForColorAssignment === tag ? 'ring-2 ring-blue-400' : ''}
-                `}
-              >
-                <CategoryTagPill
-                  tag={tag}
-                  color={getTagColor(tag)}
-                  selected={selectedTags.has(tag)}
-                  onClick={() => handleTagClick(tag)}
-                />
-              </div>
-            ))
-          )}
-        </div>
+          ))
+        )}
       </div>
 
       {/* Selection Actions */}
