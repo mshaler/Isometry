@@ -1,6 +1,7 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
+import { useD3Zoom, type ZoomTransform } from '@/hooks/useD3Zoom';
 
 export interface CoordinateSystem {
   originX: number;
@@ -15,6 +16,7 @@ export interface D3SparsityLayerProps {
   data: Node[];
   coordinateSystem: CoordinateSystem;
   onCellClick?: (node: Node) => void;
+  onZoomChange?: (transform: ZoomTransform) => void;
   width?: number;
   height?: number;
 }
@@ -34,11 +36,22 @@ export function D3SparsityLayer({
   data,
   coordinateSystem,
   onCellClick,
+  onZoomChange,
   width = 800,
   height = 600,
 }: D3SparsityLayerProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<SVGGElement>(null);
+  const [zoomTransform, setZoomTransform] = useState<ZoomTransform>({ x: 0, y: 0, k: 1 });
+
+  // Integrate d3-zoom behavior
+  const svgRef = useD3Zoom<SVGSVGElement>({
+    minZoom: 0.1,
+    maxZoom: 10,
+    onZoom: (transform) => {
+      setZoomTransform(transform);
+      onZoomChange?.(transform);
+    },
+  });
 
   // Memoize dimensions to avoid unnecessary re-renders
   const dimensions = useMemo(() => ({ width, height }), [width, height]);
