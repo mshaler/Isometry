@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
 import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
@@ -15,6 +15,23 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     deserializePAFV
   );
 
+  // Store last Grid and List mappings for smooth view transitions
+  const lastGridMappings = useRef<AxisMapping[]>(
+    state.viewMode === 'grid' ? state.mappings : DEFAULT_PAFV.mappings
+  );
+  const lastListMappings = useRef<AxisMapping[]>(
+    state.viewMode === 'list' ? state.mappings : []
+  );
+
+  // Update last mappings when state changes
+  useEffect(() => {
+    if (state.viewMode === 'grid') {
+      lastGridMappings.current = state.mappings;
+    } else if (state.viewMode === 'list') {
+      lastListMappings.current = state.mappings;
+    }
+  }, [state.mappings, state.viewMode]);
+
   const setMapping = useCallback((mapping: AxisMapping) => {
     setState(prevState => setMappingUtil(prevState, mapping));
   }, []);
@@ -24,11 +41,36 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
-    setState(prevState => ({
-      ...prevState,
-      viewMode: mode,
-    }));
-  }, []);
+    setState(prevState => {
+      // If switching view modes, preserve and restore previous mappings
+      if (prevState.viewMode === mode) {
+        // No change, just update viewMode
+        return { ...prevState, viewMode: mode };
+      }
+
+      // When switching to Grid, restore last Grid mappings
+      if (mode === 'grid') {
+        return {
+          viewMode: mode,
+          mappings: lastGridMappings.current.length > 0
+            ? lastGridMappings.current
+            : DEFAULT_PAFV.mappings,
+        };
+      }
+
+      // When switching to List, restore last List mappings
+      if (mode === 'list') {
+        return {
+          viewMode: mode,
+          mappings: lastListMappings.current.length > 0
+            ? lastListMappings.current
+            : prevState.mappings, // Preserve current mappings if no list history
+        };
+      }
+
+      return { ...prevState, viewMode: mode };
+    });
+  }, [setState]);
 
   const resetToDefaults = useCallback(() => {
     setState(DEFAULT_PAFV);
