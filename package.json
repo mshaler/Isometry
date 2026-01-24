@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@types/react-window": "^1.8.8",
     "d3": "^7.8.5",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
@@ -20,6 +21,7 @@
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
+    "react-window": "^2.2.5",
     "sql.js": "^1.9.0"
   },
   "devDependencies": {
