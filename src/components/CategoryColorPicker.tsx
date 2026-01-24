@@ -46,12 +46,18 @@ export function CategoryColorPicker({
   const [tagForColorAssignment, setTagForColorAssignment] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('alphabetical');
+  const [colorFilterMode, setColorFilterMode] = useState(false);
 
   /**
-   * Handle color swatch click - assign color to selected tag
+   * Handle color swatch click - assign color OR filter by color
    */
   const handleColorClick = (color: string) => {
-    if (tagForColorAssignment) {
+    if (colorFilterMode) {
+      // Filter by color: select all tags with this color
+      const tagsWithColor = tags.filter((tag) => getTagColor(tag) === color);
+      onSelectedTagsChange(new Set(tagsWithColor));
+    } else if (tagForColorAssignment) {
+      // Assign color to selected tag
       setTagColor(tagForColorAssignment, color);
       // Keep tag selected for further color changes
     }
@@ -131,8 +137,19 @@ export function CategoryColorPicker({
     <div className={`flex flex-col gap-4 ${className}`}>
       {/* Color Palette Grid */}
       <div className="flex flex-col gap-2">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Color Palette
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Color Palette
+          </div>
+          <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={colorFilterMode}
+              onChange={(e) => setColorFilterMode(e.target.checked)}
+              className="rounded border-gray-300 dark:border-gray-600"
+            />
+            Filter by color
+          </label>
         </div>
         <div className="grid grid-cols-6 gap-2">
           {DEFAULT_PALETTE.map((color, index) => (
@@ -183,7 +200,11 @@ export function CategoryColorPicker({
       <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
         <div>• Click tag to include in filter</div>
         <div>• Double-click tag to assign color</div>
-        <div>• Click color swatch to assign to selected tag</div>
+        {colorFilterMode ? (
+          <div>• Click color swatch to select all tags with that color</div>
+        ) : (
+          <div>• Click color swatch to assign to selected tag</div>
+        )}
       </div>
 
       {/* Search and Sort Controls */}
