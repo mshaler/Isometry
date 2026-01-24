@@ -1,0 +1,82 @@
+/**
+ * MiniNav Component Styles
+ *
+ * Fixed sidebar component at z=1 (Density Layer).
+ * Uses NeXTSTEP theme variables for consistent styling.
+ */
+
+/* MiniNav container: fixed sidebar */
+.mininav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: var(--cb-bg-raised);
+  border-right: 1px solid var(--cb-border-default);
+  z-index: 1; /* z=1 Density Layer */
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* NeXTSTEP-style raised panel */
+  box-shadow: var(--cb-shadow-sm);
+}
+
+/* Inner container for padding */
+.mininav-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Section containers */
+.mininav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Section titles */
+.mininav-section-title {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cb-fg-secondary);
+  margin: 0;
+  padding: 0 0 4px 0;
+  border-bottom: 1px solid var(--cb-border-subtle);
+}
+
+/* Scrollbar styling for NeXTSTEP theme */
+.mininav::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mininav::-webkit-scrollbar-track {
+  background: var(--cb-bg-base);
+}
+
+.mininav::-webkit-scrollbar-thumb {
+  background: var(--cb-border-default);
+  border-radius: 4px;
+}
+
+.mininav::-webkit-scrollbar-thumb:hover {
+  background: var(--cb-border-strong);
+}
+
+/* Accessibility: Focus visible */
+.mininav:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: -2px;
+}
+
+/* Responsive: collapse on small screens (future enhancement) */
+@media (max-width: 768px) {
+  .mininav {
+    width: 200px;
+  }
+}
