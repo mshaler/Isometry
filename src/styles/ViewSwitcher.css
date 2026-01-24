@@ -1,0 +1,93 @@
+/**
+ * ViewSwitcher Component Styles
+ *
+ * Three-button toggle group with active state.
+ * NeXTSTEP-inspired button styling with clear visual feedback.
+ */
+
+/* Container: horizontal button group */
+.view-switcher {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+}
+
+/* Individual view button */
+.view-button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--cb-bg-base);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  /* Typography */
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-medium);
+  color: var(--cb-fg-secondary);
+
+  /* Remove default button styles */
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+/* Hover state */
+.view-button:hover:not(:disabled) {
+  background: var(--cb-bg-raised);
+  border-color: var(--cb-border-strong);
+  color: var(--cb-fg-primary);
+}
+
+/* Active state (selected view) */
+.view-button.active {
+  background: var(--cb-accent);
+  border-color: var(--cb-accent);
+  color: var(--cb-fg-inverse);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+/* Active state hover */
+.view-button.active:hover:not(:disabled) {
+  background: var(--cb-accent-hover);
+  border-color: var(--cb-accent-hover);
+}
+
+/* Disabled state (Kanban in MVP) */
+.view-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--cb-bg-base);
+  border-color: var(--cb-border-subtle);
+  color: var(--cb-fg-muted);
+}
+
+/* SVG icon styling */
+.view-button svg {
+  width: 16px;
+  height: 16px;
+  color: inherit;
+}
+
+/* Focus visible for accessibility */
+.view-button:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: 2px;
+}
+
+/* Active button press effect */
+.view-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Text label */
+.view-button span {
+  line-height: 1;
+}
