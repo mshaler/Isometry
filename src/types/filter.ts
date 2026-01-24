@@ -73,3 +73,11 @@ export const EMPTY_FILTERS: FilterState = {
   hierarchy: null,
   dsl: null,
 };
+
+export interface FilterPreset {
+  id: string; // UUID
+  name: string; // User-provided name
+  filters: FilterState; // Active filter state
+  createdAt: Date;
+  updatedAt: Date;
+}
