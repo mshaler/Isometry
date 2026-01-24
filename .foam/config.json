@@ -1,0 +1,7 @@
+{
+  "dailyNotes": {
+    "directory": "docs/journal",
+    "titleFormat": "YYYY-MM-DD",
+    "filenameFormat": "YYYY-MM-DD"
+  }
+}

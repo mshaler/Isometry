@@ -19,9 +19,9 @@ Isometry has strong architectural foundations (PAFV + LATCH + GRAPH) and promisi
 
 | Asset | Status | Location |
 |-------|--------|----------|
-| PAFV Framework | ✅ Defined | `docs/cardboard-architecture-truth.md` |
-| LATCH Taxonomy | ✅ Defined | Architecture doc |
-| GRAPH Operations | ✅ Defined | Architecture doc |
+| PAFV Framework | ✅ Defined | [[cardboard-architecture-truth]] |
+| LATCH Taxonomy | ✅ Defined | [[cardboard-architecture-truth]] |
+| GRAPH Operations | ✅ Defined | [[cardboard-architecture-truth]] |
 | LPG Data Model | ✅ Defined | Edges as Cards concept |
 | Boring Stack Decision | ✅ Committed | SQLite + D3.js |
 

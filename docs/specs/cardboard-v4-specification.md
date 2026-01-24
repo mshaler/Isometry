@@ -1,9 +1,9 @@
-# CardBoard v4: Architecture Specification
+# Isometry v4: Architecture Specification
 
 *The Polymorphic Data Visualization Platform*
 
-**Version:** 4.0.0-draft  
-**Date:** January 2026  
+**Version:** 4.0.0-draft
+**Date:** January 2026
 **Authors:** Michael + Claude
 
 ---
@@ -13,7 +13,7 @@
 1. [Executive Summary](#1-executive-summary)
 2. [Core Architecture](#2-core-architecture)
 3. [Data Layer: SQLite + CloudKit](#3-data-layer)
-4. [Control Plane: React Chrome](#4-control-plane)
+4. [Control Plane: React Chrome](#4-control-plane-react-chrome)
 5. [Data Plane: D3 Visualization](#5-data-plane)
 6. [Notebook: Capture, Shell, Preview](#6-notebook)
 7. [App Builder: Designer Workbench](#7-app-builder)
@@ -25,16 +25,16 @@
 
 ## 1. Executive Summary
 
-### 1.1 What is CardBoard?
+### 1.1 What is Isometry?
 
-CardBoard is a **polymorphic data visualization platform** that enables users to view, manipulate, and build applications from the same underlying data through multiple lenses—grids, graphs, timelines, kanban boards—without translation layers or data duplication.
+Isometry is a **polymorphic data visualization platform** that enables users to view, manipulate, and build applications from the same underlying data through multiple lenses—grids, graphs, timelines, kanban boards—without translation layers or data duplication.
 
 ### 1.2 Core Philosophy
 
-**The Boring Stack Wins.** CardBoard achieves power through elegant combination of proven technologies, not through complex frameworks:
+**The Boring Stack Wins.** Isometry achieves power through elegant combination of proven technologies, not through complex frameworks:
 
 | Layer | Technology | Rationale |
-| ----- | ---------- | --------- |
+| --- | --- | --- |
 | Persistence | SQLite | Universal, powerful, zero-config |
 | Sync | CloudKit | Native Apple ecosystem integration |
 | Visualization | D3.js | Industry standard, full control |
@@ -43,9 +43,9 @@ CardBoard is a **polymorphic data visualization platform** that enables users to
 
 ### 1.3 The Z-Axis Architecture
 
-CardBoard's UI separates into distinct z-axis layers:
+Isometry's UI separates into distinct z-axis layers:
 
-``` md
+```
 z: 1000+  │ Modals, Dialogs, Command Palette (React)
 ──────────┼──────────────────────────────────────────
 z: 100+   │ Control Chrome: Filters, Axis Config, Time Slider (React)
@@ -60,7 +60,7 @@ Data      │ SQLite + State Store (Zustand)
 ### 1.4 Key Concepts
 
 | Concept | Definition |
-|---------|------------|
+| --- | --- |
 | **Card** | Atomic data unit—a node or edge in the LPG model |
 | **Canvas** | Container for cards with layout rules |
 | **PAFV** | Planes → Axes → Facets → Values (spatial projection) |
@@ -103,12 +103,12 @@ z-plane ──────┤             └─ event_start        │   Edges)
 
 **Key Insight:** Any axis can map to any plane. View transitions are axis→plane remappings, not data rebuilds.
 
-### 2.2 LATCH vs GRAPH Duality
+### 2.2 LATCH vs GRAPH Duality (or Continuity?)
 
 This is the fundamental architectural insight: **LATCH separates, GRAPH joins.**
 
-| | LATCH | GRAPH |
-|---|-------|-------|
+|  | LATCH | GRAPH |
+| --- | --- | --- |
 | **Operation** | Separation | Connection |
 | **SQL analog** | `WHERE`, `GROUP BY`, `ORDER BY` | `JOIN`, recursive CTE |
 | **Set theory** | Partition | Union/Intersection |
@@ -118,8 +118,8 @@ This is the fundamental architectural insight: **LATCH separates, GRAPH joins.**
 ### 2.3 View Type Taxonomy
 
 | View Type | Primary Operation | Axis Mapping |
-|-----------|-------------------|--------------|
-| **SuperGrid** | LATCH separation | Category × Category |
+| --- | --- | --- |
+| **SuperGrid** | LATCH separation | Nested Categories × Nested Categories |
 | **Network** | GRAPH connection | Force-directed layout |
 | **Timeline** | LATCH separation | Time → x-plane |
 | **Kanban** | LATCH separation | Category → x-plane |
@@ -129,7 +129,7 @@ This is the fundamental architectural insight: **LATCH separates, GRAPH joins.**
 
 ### 2.4 The Card/Canvas Duality
 
-Everything in CardBoard is either a **Card** or a **Canvas**:
+Everything in Isometry is either a **Card** or a **Canvas**:
 
 ```typescript
 // Card: Atomic renderable unit (node or edge)
@@ -150,9 +150,9 @@ interface Canvas {
 
 Both are URL-addressable:
 
-- `cardboard://card/{id}`
-- `cardboard://canvas/{id}`
-- `cardboard://canvas/{id}/card/{cardId}`
+- `isometry://card/{id}`
+- `isometry://canvas/{id}`
+- `isometry://canvas/{id}/card/{cardId}`
 
 ---
 
@@ -162,7 +162,7 @@ Both are URL-addressable:
 
 ```sql
 -- ============================================================================
--- CardBoard SQLite Schema v4
+-- Isometry SQLite Schema v4
 -- ============================================================================
 -- Features: FTS5 full-text search, LPG graph model, CloudKit sync
 -- Deployment: iOS 15+, macOS 12+, WebKit (sql.js)
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     id TEXT PRIMARY KEY NOT NULL,
     node_type TEXT NOT NULL DEFAULT 'note'
         CHECK (node_type IN ('note', 'task', 'contact', 'event', 'project', 'resource', 'custom')),
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- CONTENT
     -- ════════════════════════════════════════════════════════════════════
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     summary TEXT,                    -- AI-generated or manual summary
     content_type TEXT DEFAULT 'markdown'
         CHECK (content_type IN ('markdown', 'plain', 'html', 'json')),
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- LATCH: LOCATION
     -- ════════════════════════════════════════════════════════════════════
@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     location_name TEXT,
     location_address TEXT,
     location_place_id TEXT,          -- Google Places ID for deduplication
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- LATCH: TIME
     -- ════════════════════════════════════════════════════════════════════
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS nodes (
     event_start TEXT,
     event_end TEXT,
     event_all_day INTEGER DEFAULT 0,
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- LATCH: CATEGORY
     -- ════════════════════════════════════════════════════════════════════
@@ -226,14 +226,14 @@ CREATE TABLE IF NOT EXISTS nodes (
     status TEXT,                     -- Workflow status
     color TEXT,                      -- User-assigned color
     icon TEXT,                       -- User-assigned icon (emoji or icon name)
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- LATCH: HIERARCHY
     -- ════════════════════════════════════════════════════════════════════
     priority INTEGER NOT NULL DEFAULT 0 CHECK (priority BETWEEN 0 AND 5),
     importance INTEGER NOT NULL DEFAULT 0 CHECK (importance BETWEEN 0 AND 5),
     sort_order INTEGER NOT NULL DEFAULT 0,
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- SOURCE TRACKING (ETL deduplication)
     -- ════════════════════════════════════════════════════════════════════
@@ -241,14 +241,14 @@ CREATE TABLE IF NOT EXISTS nodes (
     source_id TEXT,                  -- Original ID in source system
     source_url TEXT,                 -- Deep link back to source
     source_hash TEXT,                -- Content hash for change detection
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- LIFECYCLE
     -- ════════════════════════════════════════════════════════════════════
     deleted_at TEXT,                 -- Soft delete timestamp
     archived_at TEXT,                -- Archive timestamp
     version INTEGER NOT NULL DEFAULT 1,
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- SYNC (CloudKit)
     -- ════════════════════════════════════════════════════════════════════
@@ -312,25 +312,25 @@ CREATE TABLE IF NOT EXISTS edges (
     id TEXT PRIMARY KEY NOT NULL,
     edge_type TEXT NOT NULL
         CHECK (edge_type IN ('LINK', 'NEST', 'SEQUENCE', 'AFFINITY')),
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- ENDPOINTS
     -- ════════════════════════════════════════════════════════════════════
     source_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
     target_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- EDGE PROPERTIES
     -- ════════════════════════════════════════════════════════════════════
     label TEXT,                      -- Human-readable label
     weight REAL NOT NULL DEFAULT 1.0 CHECK (weight >= 0 AND weight <= 1),
     directed INTEGER NOT NULL DEFAULT 1,  -- 1 = directed, 0 = undirected
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- SEQUENCE PROPERTIES
     -- ════════════════════════════════════════════════════════════════════
     sequence_order INTEGER,          -- For SEQUENCE edges
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- COMMUNICATION PROPERTIES (for message/interaction edges)
     -- ════════════════════════════════════════════════════════════════════
@@ -338,20 +338,20 @@ CREATE TABLE IF NOT EXISTS edges (
     timestamp TEXT,                  -- When the interaction occurred
     subject TEXT,                    -- Message subject
     sentiment REAL,                  -- -1.0 to 1.0 sentiment score
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- METADATA
     -- ════════════════════════════════════════════════════════════════════
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     properties TEXT,                 -- JSON object for arbitrary properties
-    
+  
     -- ════════════════════════════════════════════════════════════════════
     -- SYNC
     -- ════════════════════════════════════════════════════════════════════
     sync_version INTEGER NOT NULL DEFAULT 0,
     sync_status TEXT DEFAULT 'pending'
         CHECK (sync_status IN ('pending', 'synced', 'conflict', 'error')),
-    
+  
     -- Prevent duplicate edges of same type between same nodes
     UNIQUE(source_id, target_id, edge_type)
 );
@@ -423,24 +423,24 @@ CREATE TABLE IF NOT EXISTS canvases (
     name TEXT NOT NULL,
     canvas_type TEXT NOT NULL DEFAULT 'view'
         CHECK (canvas_type IN ('view', 'app', 'notebook', 'dashboard')),
-    
+  
     -- Parent canvas for nesting
     parent_id TEXT REFERENCES canvases(id) ON DELETE CASCADE,
-    
+  
     -- Layout configuration (JSON)
     layout_config TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- View state (JSON) - PAFV + LATCH configuration
     view_state TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- Visual properties
     background_color TEXT,
     thumbnail TEXT,                  -- Base64 or URL
-    
+  
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     modified_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
-    
+  
     -- Sync
     sync_version INTEGER NOT NULL DEFAULT 0,
     sync_status TEXT DEFAULT 'pending'
@@ -458,19 +458,19 @@ CREATE TABLE IF NOT EXISTS canvas_cards (
     id TEXT PRIMARY KEY NOT NULL,
     canvas_id TEXT NOT NULL REFERENCES canvases(id) ON DELETE CASCADE,
     node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
-    
+  
     -- Position on canvas
     x REAL,
     y REAL,
     z INTEGER DEFAULT 0,             -- Stacking order
     width REAL,
     height REAL,
-    
+  
     -- Visual overrides
     collapsed INTEGER DEFAULT 0,
     pinned INTEGER DEFAULT 0,
     style_overrides TEXT,            -- JSON
-    
+  
     UNIQUE(canvas_id, node_id)
 );
 
@@ -490,21 +490,21 @@ CREATE TABLE IF NOT EXISTS facets (
                               'multi_select', 'location', 'boolean', 'url', 'email')),
     axis TEXT NOT NULL CHECK (axis IN ('L', 'A', 'T', 'C', 'H')),
     source_column TEXT NOT NULL,     -- SQLite column name
-    
+  
     -- For select/multi_select types
     options TEXT,                    -- JSON array: [{value, label, color}, ...]
-    
+  
     -- Display
     icon TEXT,
     color TEXT,
     format TEXT,                     -- Display format string
-    
+  
     -- Behavior
     enabled INTEGER NOT NULL DEFAULT 1,
     editable INTEGER NOT NULL DEFAULT 1,
     required INTEGER NOT NULL DEFAULT 0,
     sort_order INTEGER NOT NULL DEFAULT 0,
-    
+  
     -- Validation
     min_value REAL,
     max_value REAL,
@@ -535,25 +535,25 @@ CREATE TABLE IF NOT EXISTS views (
     view_type TEXT NOT NULL
         CHECK (view_type IN ('supergrid', 'network', 'timeline', 'kanban', 
                              'calendar', 'tree', 'table', 'list')),
-    
+  
     -- Canvas this view belongs to (optional)
     canvas_id TEXT REFERENCES canvases(id) ON DELETE SET NULL,
-    
+  
     -- PAFV configuration (JSON)
     pafv_config TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- LATCH configuration (JSON)
     latch_config TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- View-specific options (JSON)
     view_options TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- Display
     icon TEXT,
     color TEXT,
     is_default INTEGER DEFAULT 0,
     sort_order INTEGER NOT NULL DEFAULT 0,
-    
+  
     -- Metadata
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     modified_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
@@ -571,24 +571,24 @@ CREATE TABLE IF NOT EXISTS apps (
     id TEXT PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
     description TEXT,
-    
+  
     -- App definition (JSON) - Component tree
     component_spec TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- Data bindings (JSON)
     data_bindings TEXT NOT NULL DEFAULT '{}',
-    
+  
     -- Theme overrides (JSON)
     theme_overrides TEXT,
-    
+  
     -- Entry point canvas
     root_canvas_id TEXT REFERENCES canvases(id),
-    
+  
     -- Publishing
     published INTEGER DEFAULT 0,
     published_at TEXT,
     version TEXT DEFAULT '1.0.0',
-    
+  
     -- Metadata
     icon TEXT,
     thumbnail TEXT,
@@ -602,25 +602,25 @@ CREATE TABLE IF NOT EXISTS apps (
 
 CREATE TABLE IF NOT EXISTS sync_state (
     id TEXT PRIMARY KEY DEFAULT 'default',
-    
+  
     -- CloudKit tokens
     change_token BLOB,               -- Serialized CKServerChangeToken
     subscription_id TEXT,
-    
+  
     -- Timestamps
     last_sync_at TEXT,
     last_push_at TEXT,
     last_pull_at TEXT,
-    
+  
     -- Counters
     pending_push_count INTEGER NOT NULL DEFAULT 0,
     pending_pull_count INTEGER NOT NULL DEFAULT 0,
-    
+  
     -- Error tracking
     last_error TEXT,
     last_error_at TEXT,
     consecutive_failures INTEGER NOT NULL DEFAULT 0,
-    
+  
     -- Backoff state
     next_retry_at TEXT,
     backoff_seconds INTEGER DEFAULT 1
@@ -877,7 +877,7 @@ AND e.target_id IN (SELECT DISTINCT id FROM component);
 **Record Types:**
 
 - `Node` — maps to `nodes` table
-- `Edge` — maps to `edges` table  
+- `Edge` — maps to `edges` table
 - `Canvas` — maps to `canvases` table
 - `View` — maps to `views` table
 - `App` — maps to `apps` table
@@ -904,7 +904,7 @@ AND e.target_id IN (SELECT DISTINCT id FROM component);
 │   ┌──────────────────────────────────────────────────────────────┐ │
 │   │                     Component Tree                            │ │
 │   │                                                               │ │
-│   │   <CardBoardProvider>                                         │ │
+│   │   <IsometryProvider>                                         │ │
 │   │     <CommandPalette />           z: 1000                      │ │
 │   │     <ContextMenuProvider />      z: 1001                      │ │
 │   │     <ToastProvider />            z: 1002                      │ │
@@ -928,7 +928,7 @@ AND e.target_id IN (SELECT DISTINCT id FROM component);
 │   │                                                               │ │
 │   │       <DetailPanel />            z: 100 (conditional)         │ │
 │   │     </WorkspaceLayout>                                        │ │
-│   │   </CardBoardProvider>                                        │ │
+│   │   </IsometryProvider>                                        │ │
 │   │                                                               │ │
 │   └──────────────────────────────────────────────────────────────┘ │
 │                                                                     │
@@ -1259,51 +1259,52 @@ src/
 ```
 
 ---
+
 *Add this to Section 4 (Control Plane) after the component architecture, or as a new Section 4.5*
 
 ---
 
 ## 4.X Design Philosophy: The NeXTSTEP Lineage
 
-CardBoard's architecture draws from two revolutionary NeXTSTEP-era applications that anticipated modern computing by decades:
+Isometry's architecture draws from two revolutionary NeXTSTEP-era applications that anticipated modern computing by decades:
 
 ### Lotus Improv → PAFV Architecture
 
-Improv (1991) recognized that **spreadsheets fatally conflate data with presentation**. Its solution—separating the data cube from its projections—directly informs CardBoard's PAFV model:
+Improv (1991) recognized that **spreadsheets fatally conflate data with presentation**. Its solution—separating the data cube from its projections—directly informs Isometry's PAFV model:
 
-| Improv Concept | CardBoard Equivalent |
-|----------------|---------------------|
+| Improv Concept | Isometry Equivalent |
+| --- | --- |
 | Data cube (multidimensional) | SQLite LPG (nodes + edges) |
 | Categories (named dimensions) | LATCH axes |
 | Views (projections of the cube) | Polymorphic views (Grid, Kanban, Network, Timeline) |
 | Formulas on names, not cell addresses | HyperFormula on semantic references |
 
-Improv failed commercially because users couldn't see "the cell"—the atomic unit was invisible. CardBoard solves this: **Cards are visible, tangible, draggable atoms** that exist independent of any particular view projection.
+Improv failed commercially because users couldn't see "the cell"—the atomic unit was invisible. Isometry solves this: **Cards are visible, tangible, draggable atoms** that exist independent of any particular view projection.
 
 ### Interface Builder → Designer Workbench
 
 Interface Builder (1988) pioneered **direct manipulation of live objects**—not drawing pictures of interfaces, but instantiating real objects and wiring them visually. The Designer Workbench inherits this philosophy:
 
 | Interface Builder | Designer Workbench |
-|-------------------|-------------------|
+| --- | --- |
 | Objects are live, not mockups | Cards and Canvases are persisted entities |
 | Visual arrangement is the specification | Layout is data, stored in SQLite |
 | Property inspector for configuration | LATCH facet editor |
 | Outlets/Actions for wiring | Edge connections between Cards |
 | NIB files as serialization | Canvas bundles as JSON + SQLite |
 
-The meta-level insight: **CardBoard builds CardBoard**. The Designer Workbench is itself a CardBoard app, creating CardBoard apps.
+The meta-level insight: **Isometry builds Isometry**. The Designer Workbench is itself a Isometry app, creating Isometry apps.
 
 ### Kanban as State-Space Navigation
 
 Kanban boards add what neither Improv nor Interface Builder possessed: **state as spatial position**. Dragging a card from "Backlog" to "In Progress" is simultaneously:
 
 - A data mutation (status field update in SQLite)
-- A visual transformation (column membership change)  
+- A visual transformation (column membership change)
 - A workflow event (state machine transition)
 - An edge creation (sequence relationship to prior card)
 
-This unification—where manipulation IS specification IS data—is the core CardBoard insight.
+This unification—where manipulation IS specification IS data—is the core Isometry insight.
 
 ---
 
@@ -1314,7 +1315,7 @@ This unification—where manipulation IS specification IS data—is the core Car
 The Control Plane requires **Interface Builder-quality primitives** to build a tool that builds tools. After evaluating React component libraries, shadcn/ui emerges as the clear choice:
 
 | Criterion | shadcn/ui Approach |
-|-----------|-------------------|
+| --- | --- |
 | **Ownership** | Copy-paste, not npm dependency—code is yours |
 | **Foundation** | Radix primitives (accessibility) + Tailwind (styling) |
 | **Customization** | Full control for NeXTSTEP aesthetic |
@@ -1333,7 +1334,7 @@ shadcn/ui isn't a component library you *install*—it's a collection of well-cr
 ### Component Adoption Strategy
 
 ```bash
-# Initialize shadcn/ui in CardBoard
+# Initialize shadcn/ui in Isometry
 npx shadcn@latest init
 
 # Core control plane components
@@ -1383,8 +1384,8 @@ Override `globals.css` to achieve the classic NeXT aesthetic:
 
 ### Component-to-Feature Mapping
 
-| CardBoard Feature | shadcn/ui Components |
-|-------------------|---------------------|
+| Isometry Feature | shadcn/ui Components |
+| --- | --- |
 | Command Palette (⌘K) | `Command`, `Dialog` |
 | View Switcher | `Tabs`, `DropdownMenu` |
 | LATCH Axis Configurator | `Select`, `ContextMenu`, `Popover` |
@@ -1645,7 +1646,7 @@ src/
 
 ### 6.1 Overview
 
-The Notebook is CardBoard's sidecar workspace for planning, AI interaction, and preview. It consists of three integrated canvases:
+The Notebook is Isometry's sidecar workspace for planning, AI interaction, and preview. It consists of three integrated canvases:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -1666,7 +1667,7 @@ The Notebook is CardBoard's sidecar workspace for planning, AI interaction, and 
 │   │                                                            │    │
 │   │    Claude AI conversation interface                        │    │
 │   │    Context-aware: sees current selection, view state       │    │
-│   │    Can execute CardBoard commands                          │    │
+│   │    Can execute Isometry commands                          │    │
 │   │    Persistent conversation history                         │    │
 │   │                                                            │    │
 │   └───────────────────────────────────────────────────────────┘    │
@@ -1739,7 +1740,7 @@ interface ShellCanvasProps {
   
   // Callbacks
   onSendMessage: (content: string) => void;
-  onExecuteCommand: (command: CardBoardCommand) => void;
+  onExecuteCommand: (command: IsometryCommand) => void;
   onInsertToCapture: (content: string) => void;
   onCreateCards: (cards: Partial<Node>[]) => void;
 }
@@ -1750,14 +1751,14 @@ interface Message {
   content: string;
   timestamp: Date;
   
-  // CardBoard-specific
+  // Isometry-specific
   attachedCards?: string[];          // Card IDs referenced
   generatedCards?: string[];         // Cards created by this message
-  executedCommands?: CardBoardCommand[];
+  executedCommands?: IsometryCommand[];
 }
 
 // Commands Claude can execute
-type CardBoardCommand =
+type IsometryCommand =
   | { type: 'CREATE_CARD'; data: Partial<Node> }
   | { type: 'UPDATE_CARD'; cardId: string; changes: Partial<Node> }
   | { type: 'CREATE_EDGE'; sourceId: string; targetId: string; edgeType: EdgeType }
@@ -1829,9 +1830,9 @@ function Notebook() {
             onCreateCard={handleCreateCard}
           />
         </Panel>
-        
+      
         <PanelResizeHandle />
-        
+      
         {/* Shell Canvas */}
         <Panel defaultSize={35} minSize={20}>
           <PanelHeader 
@@ -1845,9 +1846,9 @@ function Notebook() {
             onExecuteCommand={handleCommand}
           />
         </Panel>
-        
+      
         <PanelResizeHandle />
-        
+      
         {/* Preview Canvas */}
         <Panel defaultSize={25} minSize={15}>
           <PanelHeader 
@@ -1873,7 +1874,7 @@ function Notebook() {
 
 ### 7.1 Overview
 
-The Designer Workbench enables visual construction of CardBoard applications through component composition, data binding, and live preview.
+The Designer Workbench enables visual construction of Isometry applications through component composition, data binding, and live preview.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -1948,7 +1949,7 @@ type ComponentType =
   // Navigation
   | 'Menu' | 'Breadcrumb' | 'Pagination'
   
-  // CardBoard-specific
+  // Isometry-specific
   | 'Card' | 'CardCompact' | 'CardExpanded'
   | 'FilterBar' | 'ViewSwitcher' | 'TimeSlider'
   | 'D3View';
@@ -2018,23 +2019,23 @@ function resolveBinding(binding: Binding, context: AppDataContext): any {
   switch (binding.source) {
     case 'facet':
       return context.item?.[binding.path];
-    
+  
     case 'context':
       return get(context, binding.path);
-    
+  
     case 'query':
       const [queryName, ...pathParts] = binding.path.split('.');
       const queryResult = context.queries[queryName];
       return pathParts.length > 0 
         ? get(queryResult?.data, pathParts.join('.'))
         : queryResult?.data;
-    
+  
     case 'computed':
       return evaluateExpression(binding.path, context);
-    
+  
     case 'static':
       return binding.path;
-    
+  
     default:
       return binding.fallback;
   }
@@ -2075,7 +2076,7 @@ const kanbanAppSpec: ComponentSpec = {
         },
       ],
     },
-    
+  
     // Board
     {
       id: 'board',
@@ -2212,7 +2213,7 @@ import {
   Card, CardCompact, Lane, Board,
   FilterBar, ViewSwitcher, TimeSlider,
   D3View,
-} from '@cardboard/components';
+} from '@isometry/components';
 
 const componentRegistry: Record<ComponentType, React.ComponentType<any>> = {
   // Layout
@@ -2268,7 +2269,7 @@ const componentRegistry: Record<ComponentType, React.ComponentType<any>> = {
   Breadcrumb,
   Pagination,
   
-  // CardBoard-specific
+  // Isometry-specific
   Card,
   CardCompact,
   CardExpanded,
@@ -2292,7 +2293,7 @@ const componentRegistry: Record<ComponentType, React.ComponentType<any>> = {
 
 interface CardJSON {
   // Format metadata
-  $schema: 'https://cardboard.app/schemas/card/v4.json';
+  $schema: 'https://isometry.app/schemas/card/v4.json';
   version: '4.0';
   exportedAt: string;  // ISO 8601
   
@@ -2306,7 +2307,7 @@ interface CardJSON {
     name: string;
     content?: string;
     summary?: string;
-    
+  
     // LATCH properties
     location?: {
       latitude?: number;
@@ -2334,7 +2335,7 @@ interface CardJSON {
       importance?: number;
       sortOrder?: number;
     };
-    
+  
     // Source
     source?: {
       system?: string;
@@ -2364,7 +2365,7 @@ interface CardJSON {
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface ViewJSON {
-  $schema: 'https://cardboard.app/schemas/view/v4.json';
+  $schema: 'https://isometry.app/schemas/view/v4.json';
   version: '4.0';
   exportedAt: string;
   
@@ -2413,7 +2414,7 @@ interface ViewJSON {
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface AppJSON {
-  $schema: 'https://cardboard.app/schemas/app/v4.json';
+  $schema: 'https://isometry.app/schemas/app/v4.json';
   version: '4.0';
   exportedAt: string;
   
@@ -2461,7 +2462,7 @@ interface AppJSON {
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface CanvasBundleJSON {
-  $schema: 'https://cardboard.app/schemas/bundle/v4.json';
+  $schema: 'https://isometry.app/schemas/bundle/v4.json';
   version: '4.0';
   exportedAt: string;
   
@@ -2515,16 +2516,16 @@ async function exportCards(nodeIds: string[], format: 'json' | 'csv' | 'markdown
   switch (format) {
     case 'json':
       return JSON.stringify({
-        $schema: 'https://cardboard.app/schemas/bundle/v4.json',
+        $schema: 'https://isometry.app/schemas/bundle/v4.json',
         version: '4.0',
         exportedAt: new Date().toISOString(),
         nodes: nodes.map(nodeToCardJSON),
         edges: edges.map(edgeToCardJSON),
       }, null, 2);
-    
+  
     case 'csv':
       return nodesToCSV(nodes);
-    
+  
     case 'markdown':
       return nodesToMarkdown(nodes, edges);
   }
@@ -2556,7 +2557,7 @@ async function importBundle(bundle: CanvasBundleJSON, options: ImportOptions): P
     for (const cardJson of bundle.nodes) {
       try {
         const node = cardJSONToNode(cardJson);
-        
+      
         if (options.deduplicateBySource && node.source && node.sourceId) {
           const existing = await db.query(
             'SELECT id FROM nodes WHERE source = ? AND source_id = ?',
@@ -2567,14 +2568,14 @@ async function importBundle(bundle: CanvasBundleJSON, options: ImportOptions): P
             continue;
           }
         }
-        
+      
         await db.saveNode(node);
         result.imported.nodes++;
       } catch (error) {
         result.errors.push({ type: 'node', id: cardJson.id, error: error.message });
       }
     }
-    
+  
     // Import edges
     for (const cardJson of bundle.edges) {
       try {
@@ -2610,7 +2611,7 @@ interface ImportResult {
 ### 9.1 Target Platforms
 
 | Platform | Technology | Priority | Status |
-|----------|------------|----------|--------|
+| --- | --- | --- | --- |
 | **macOS** | Swift/SwiftUI + WebKit | P0 | In Development |
 | **iOS/iPadOS** | Swift/SwiftUI + WebKit | P0 | In Development |
 | **Web** | React + D3 (standalone) | P1 | Planned |
@@ -2634,7 +2635,7 @@ interface ImportResult {
 │   WebKit WKWebView                                                  │
 │   ┌─────────────────────────────────────────────────────────────┐  │
 │   │  React Control Plane + D3 Data Plane                         │  │
-│   │  (Full CardBoard web interface)                              │  │
+│   │  (Full Isometry web interface)                              │  │
 │   └─────────────────────────────────────────────────────────────┘  │
 │                              │                                      │
 │                              ▼                                      │
@@ -2685,28 +2686,28 @@ interface ImportResult {
 
 ```
 packages/
-├── @cardboard/core                  # Shared TypeScript types & utilities
+├── @isometry/core                  # Shared TypeScript types & utilities
 │   ├── types/                       # All type definitions
 │   ├── utils/                       # Pure utility functions
 │   └── constants/                   # Shared constants
 │
-├── @cardboard/components            # React component library
+├── @isometry/components            # React component library
 │   ├── controls/                    # LATCH, PAFV controls
 │   ├── primitives/                  # Base UI components
 │   ├── cards/                       # Card renderers
 │   └── notebook/                    # Capture, Shell, Preview
 │
-├── @cardboard/d3                    # D3 visualization layer
+├── @isometry/d3                    # D3 visualization layer
 │   ├── views/                       # View implementations
 │   ├── scales/                      # LATCH → visual mapping
 │   └── behaviors/                   # Zoom, drag, brush
 │
-├── @cardboard/data                  # Data access layer
+├── @isometry/data                  # Data access layer
 │   ├── sqlite/                      # SQLite operations
 │   ├── queries/                     # Query builders
 │   └── sync/                        # Sync abstractions
 │
-└── @cardboard/app                   # App shell (platform-specific)
+└── @isometry/app                   # App shell (platform-specific)
     ├── web/                         # Web PWA entry point
     └── native/                      # Native bridge utilities
 ```
@@ -2873,26 +2874,26 @@ packages/
 ## Appendix B: Keyboard Shortcuts
 
 | Category | Shortcut | Action |
-|----------|----------|--------|
+| --- | --- | --- |
 | **Navigation** | `⌘1-9` | Switch to view 1-9 |
-| | `⌘[` / `⌘]` | Navigate back/forward |
-| | `⌘/` | Open command palette |
-| | `⌘K` | Quick search |
+|  | `⌘[` / `⌘]` | Navigate back/forward |
+|  | `⌘/` | Open command palette |
+|  | `⌘K` | Quick search |
 | **Selection** | `⌘A` | Select all |
-| | `⌘⇧A` | Deselect all |
-| | `⎋` | Clear selection |
+|  | `⌘⇧A` | Deselect all |
+|  | `⎋` | Clear selection |
 | **Editing** | `⌘N` | New card |
-| | `⌘⌫` | Delete selected |
-| | `⌘D` | Duplicate selected |
-| | `⌘E` | Edit selected card |
+|  | `⌘⌫` | Delete selected |
+|  | `⌘D` | Duplicate selected |
+|  | `⌘E` | Edit selected card |
 | **View** | `⌘+` / `⌘-` | Zoom in/out |
-| | `⌘0` | Reset zoom |
-| | `⌘⇧F` | Toggle fullscreen |
-| | `⌘B` | Toggle sidebar |
+|  | `⌘0` | Reset zoom |
+|  | `⌘⇧F` | Toggle fullscreen |
+|  | `⌘B` | Toggle sidebar |
 | **Notebook** | `⌘⇧C` | Focus Capture |
-| | `⌘⇧S` | Focus Shell |
-| | `⌘⇧P` | Focus Preview |
+|  | `⌘⇧S` | Focus Shell |
+|  | `⌘⇧P` | Focus Preview |
 
 ---
 
-*End of CardBoard v4 Architecture Specification*
+*End of Isometry v4 Architecture Specification*
