@@ -1,11 +1,19 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
 import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
+import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
+import { useURLState } from '../hooks/useURLState';
 import { PAFVContext, type PAFVContextValue } from '../hooks/usePAFV';
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<PAFVState>(DEFAULT_PAFV);
+  // Use URL state for persistence
+  const [state, setState] = useURLState<PAFVState>(
+    'pafv',
+    DEFAULT_PAFV,
+    serializePAFV,
+    deserializePAFV
+  );
 
   const setMapping = useCallback((mapping: AxisMapping) => {
     setState(prevState => setMappingUtil(prevState, mapping));
