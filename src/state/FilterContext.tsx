@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import type {
   FilterState,
   LocationFilter,
@@ -16,6 +16,8 @@ import {
   generatePresetId,
   presetNameExists
 } from '../utils/filter-presets';
+import { useURLState } from '../hooks/useURLState';
+import { serializeFilters, deserializeFilters, isEmptyFilters } from '../utils/filter-serialization';
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
@@ -86,15 +88,46 @@ interface FilterContextValue {
 const FilterContext = createContext<FilterContextValue | null>(null);
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
-  const [activeFilters, dispatch] = useReducer(filterReducer, EMPTY_FILTERS);
+  // URL state integration with debouncing
+  const [urlFilters, setUrlFilters] = useURLState<FilterState>(
+    'filters',
+    EMPTY_FILTERS,
+    serializeFilters,
+    deserializeFilters
+  );
+
+  const [activeFilters, dispatch] = useReducer(filterReducer, urlFilters);
   const [previewFilters, setPreviewFilters] = useState<FilterState | null>(null);
   const [presets, setPresets] = useState<FilterPreset[]>([]);
+
+  // Debounce timer for URL updates (300ms)
+  const urlUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load presets from localStorage on mount
   useEffect(() => {
     const loadedPresets = loadPresets();
     setPresets(loadedPresets);
   }, []);
+
+  // Sync activeFilters to URL with debouncing
+  useEffect(() => {
+    // Clear existing timer
+    if (urlUpdateTimerRef.current) {
+      clearTimeout(urlUpdateTimerRef.current);
+    }
+
+    // Set new timer for debounced URL update
+    urlUpdateTimerRef.current = setTimeout(() => {
+      setUrlFilters(activeFilters);
+    }, 300);
+
+    // Cleanup on unmount
+    return () => {
+      if (urlUpdateTimerRef.current) {
+        clearTimeout(urlUpdateTimerRef.current);
+      }
+    };
+  }, [activeFilters, setUrlFilters]);
 
   // Active filter setters (directly applied)
   const setLocation = useCallback((filter: LocationFilter | null) => {
