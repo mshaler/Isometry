@@ -9,3 +9,31 @@
   transition-property: background-color, border-color, color;
   transition-duration: 150ms;
 }
+
+/* ============================================================================
+ * SuperGrid Z-Layer System
+ * ============================================================================
+ * z=0: SPARSITY - D3 data floor (column/row headers, data cells)
+ * z=1: DENSITY - React controls (MiniNav, spanning logic)
+ * z=2: OVERLAY - React overlays (Cards, inspector panels)
+ */
+
+.d3-sparsity-layer {
+  z-index: 0;
+  pointer-events: all;
+}
+
+/* Performance optimization for zoom transforms */
+.sparsity-container {
+  will-change: transform;
+}
+
+/* Data cell hover states are handled in D3, but we can add global styles */
+.data-cell {
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.data-cell:hover {
+  opacity: 0.9;
+}
