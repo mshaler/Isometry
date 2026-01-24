@@ -17,7 +17,7 @@ import {
   presetNameExists
 } from '../utils/filter-presets';
 import { useURLState } from '../hooks/useURLState';
-import { serializeFilters, deserializeFilters, isEmptyFilters, validateFilterURLLength } from '../utils/filter-serialization';
+import { serializeFilters, deserializeFilters, validateFilterURLLength } from '../utils/filter-serialization';
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
