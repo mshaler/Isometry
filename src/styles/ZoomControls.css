@@ -1,0 +1,147 @@
+/**
+ * ZoomControls Component Styles
+ *
+ * Zoom in/out buttons with current scale display.
+ * NeXTSTEP-inspired compact button group.
+ */
+
+/* Container */
+.zoom-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Button group */
+.zoom-buttons {
+  display: flex;
+  gap: 4px;
+  align-items: stretch;
+}
+
+/* Zoom button (+ and -) */
+.zoom-button {
+  flex: 0 0 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--cb-bg-base);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--cb-fg-primary);
+
+  /* Remove default button styles */
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.zoom-button:hover:not(:disabled) {
+  background: var(--cb-bg-raised);
+  border-color: var(--cb-border-strong);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+.zoom-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.zoom-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--cb-bg-base);
+  border-color: var(--cb-border-subtle);
+  color: var(--cb-fg-muted);
+}
+
+/* Current zoom display (center) */
+.zoom-display {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--cb-bg-raised);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  /* Typography */
+  font-family: var(--cb-font-mono);
+  font-size: var(--cb-text-sm);
+  font-weight: var(--cb-font-weight-semibold);
+  color: var(--cb-fg-primary);
+
+  /* Remove default button styles */
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.zoom-display:hover {
+  border-color: var(--cb-border-strong);
+  background: var(--cb-bg-base);
+}
+
+.zoom-display.default {
+  color: var(--cb-fg-secondary);
+}
+
+.zoom-display:not(.default):hover {
+  color: var(--cb-accent);
+  border-color: var(--cb-accent);
+}
+
+/* Focus visible for accessibility */
+.zoom-button:focus-visible,
+.zoom-display:focus-visible {
+  outline: 2px solid var(--cb-accent);
+  outline-offset: 2px;
+}
+
+/* Optional: Zoom slider styles (future enhancement) */
+.zoom-slider {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--cb-border-default);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--cb-accent);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoom-slider::-webkit-slider-thumb:hover {
+  background: var(--cb-accent-hover);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+.zoom-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--cb-accent);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.zoom-slider::-moz-range-thumb:hover {
+  background: var(--cb-accent-hover);
+  box-shadow: var(--cb-shadow-sm);
+}
