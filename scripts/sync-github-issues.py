@@ -13,6 +13,7 @@ import json
 import urllib.request
 import urllib.error
 import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
@@ -279,10 +280,42 @@ def main():
     print(f"  ✓ {README_PATH}")
 
     print(f"\n✅ Successfully synced {len(issues)} issues to docs/issues/")
-    print("\nNext steps:")
-    print("  1. Review generated markdown files")
-    print("  2. git add docs/issues/")
-    print("  3. git commit -m 'docs: sync GitHub issues'")
+
+    # Auto-commit changes
+    print("\nCommitting changes...")
+    try:
+        # Stage changes
+        subprocess.run(['git', 'add', 'docs/issues/'], check=True, capture_output=True)
+
+        # Create commit
+        result = subprocess.run(
+            ['git', 'commit', '-m', 'docs: sync GitHub issues'],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        # Extract commit hash
+        commit_hash = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            check=True,
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+
+        print(f"  ✓ Committed as {commit_hash}")
+        print("\nNext steps:")
+        print("  git push origin main")
+
+    except subprocess.CalledProcessError as e:
+        if b'nothing to commit' in e.stderr or 'nothing to commit' in str(e.stderr):
+            print("  ℹ️  No changes to commit (issues already up to date)")
+        else:
+            print(f"  ⚠️  Git commit failed: {e}")
+            print("\nManual steps:")
+            print("  1. git add docs/issues/")
+            print("  2. git commit -m 'docs: sync GitHub issues'")
+            print("  3. git push origin main")
 
 if __name__ == "__main__":
     main()

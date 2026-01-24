@@ -1,0 +1,130 @@
+# =============================================================================
+# ~/.zshrc - Cleaned and organized 2026-01-22
+# Backup saved to: ~/.zshrc.backup-2026-01-22
+# =============================================================================
+
+# =============================================================================
+# ENVIRONMENT MANAGERS (loaded first)
+# =============================================================================
+
+# --- NVM (Node Version Manager) ---
+# Single initialization - uses nvm installed in ~/.nvm
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+# NVM auto-switch on directory change
+# Only set up if nvm is loaded
+if command -v nvm &> /dev/null; then
+  autoload -U add-zsh-hook
+  load-nvmrc() {
+    local nvmrc_path="$(nvm_find_nvmrc)"
+    if [ -n "$nvmrc_path" ]; then
+      local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+      if [ "$nvmrc_node_version" = "N/A" ]; then
+        nvm install
+      elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
+        nvm use
+      fi
+    elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
+      nvm use default
+    fi
+  }
+  add-zsh-hook chpwd load-nvmrc
+  load-nvmrc
+fi
+
+# --- Conda (Anaconda) ---
+# Only initialize if you actively use conda, otherwise comment out
+__conda_setup="$('/opt/anaconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/opt/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/opt/anaconda3/etc/profile.d/conda.sh"
+    fi
+fi
+unset __conda_setup
+
+# --- Rust (Cargo) ---
+[ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+# --- Ruby (rbenv) ---
+# This is also initialized in .zprofile
+
+# =============================================================================
+# LANGUAGE RUNTIMES
+# =============================================================================
+
+# --- Bun (JavaScript runtime) ---
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$PATH:$BUN_INSTALL/bin"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"
+
+# =============================================================================
+# CUSTOM PATH ADDITIONS
+# =============================================================================
+
+# User scripts and tools (append to PATH to keep Homebrew first)
+export PATH="$PATH:$HOME/.local/bin"
+export PATH="$PATH:$HOME/bin/notes-exporter"
+
+# =============================================================================
+# ALIASES
+# =============================================================================
+
+# --- Fuz (note finder) ---
+alias fuz='/Users/mshaler/fuz/fuz --path "/Users/mshaler/fuz/notes"'
+alias fz='fuz --sorttime'
+alias fze='fuz --edit'
+alias fzd='fuz --dir-search'
+alias nfz="fuz -p ~/_macosx_notes"
+alias nfze="fuz -e -p ~/_macosx_notes"
+
+# --- Task Master ---
+alias tm='task-master'
+alias taskmaster='task-master'
+
+# =============================================================================
+# FUNCTIONS
+# =============================================================================
+
+# Open directories/files in Cling app
+function cling() {
+    local folders=()
+    for arg in "$@"; do
+        if [ -d "$arg" ]; then
+            folders+=("$arg")
+        elif [ -f "$arg" ]; then
+            folders+=("$(dirname "$arg")")
+        fi
+    done
+    open -a Cling "${folders[@]}"
+}
+
+# =============================================================================
+# OPTIONAL: HOMEBREW CONFIGURATION
+# =============================================================================
+
+# Uncomment if you need to bypass Homebrew environment filtering
+# export HOMEBREW_NO_ENV_FILTER=1
+
+# For Homebrew GitHub API token (if needed for rate limits):
+# DO NOT store tokens here! Use macOS Keychain instead:
+# 1. Store: security add-generic-password -a "$USER" -s "homebrew-github-token" -w
+# 2. Retrieve: export HOMEBREW_GITHUB_API_TOKEN=$(security find-generic-password -a "$USER" -s "homebrew-github-token" -w 2>/dev/null)
+
+# =============================================================================
+# LOCAL OVERRIDES
+# =============================================================================
+
+# Source local environment file if it exists (for machine-specific config)
+[ -s "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# - Homebrew is initialized in ~/.zprofile (loaded before .zshrc)
+# - MacPorts PATH in ~/.zprofile conflicts with Homebrew - consider removing
+# - SSH key setup: Run `ssh-keygen -t ed25519 -C "mshaler@gmail.com"` to create keys
+# - Git auth: Configure with `gh auth login` or add SSH key to GitHub
+# =============================================================================

@@ -1,0 +1,19 @@
+/Users/mshaler/.zshrc:export NVM_DIR="$HOME/.nvm"
+/Users/mshaler/.zshrc:[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+/Users/mshaler/.zshrc:# [ -s "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/opt/homebrew/opt/nvm/etc/bash_completion.d/nvm"
+/Users/mshaler/.zshrc:export NVM_DIR="$HOME/.nvm"
+/Users/mshaler/.zshrc:[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+/Users/mshaler/.zshrc:# [ -s "$NVM_DIR/nvm.sh.bash_completion" ] && \. "$NVM_DIR/nvm.sh.bash_completion"
+/Users/mshaler/.zshrc:# nvm auto-switch
+/Users/mshaler/.zshrc:load-nvmrc() {
+/Users/mshaler/.zshrc:  local nvmrc_path="$(nvm_find_nvmrc)"
+/Users/mshaler/.zshrc:  if [ -n "$nvmrc_path" ]; then
+/Users/mshaler/.zshrc:    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
+/Users/mshaler/.zshrc:    if [ "$nvmrc_node_version" = "N/A" ]; then
+/Users/mshaler/.zshrc:      nvm install
+/Users/mshaler/.zshrc:    elif [ "$nvmrc_node_version" != "$(nvm version)" ]; then
+/Users/mshaler/.zshrc:      nvm use
+/Users/mshaler/.zshrc:  elif [ -n "$(PWD=$OLDPWD nvm_find_nvmrc)" ] && [ "$(nvm version)" != "$(nvm version default)" ]; then
+/Users/mshaler/.zshrc:    nvm use default
+/Users/mshaler/.zshrc:add-zsh-hook chpwd load-nvmrc
+/Users/mshaler/.zshrc:load-nvmrc

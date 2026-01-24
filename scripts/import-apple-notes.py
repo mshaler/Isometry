@@ -11,6 +11,7 @@ Usage:
 
 import os
 import shutil
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -192,11 +193,45 @@ def main():
     print()
 
     print(f"✅ Successfully imported {total_md} notes and {total_img} images")
+
+    # Auto-commit changes
     print()
-    print("Next steps:")
-    print("  1. Review imported notes in docs/notes/apple-notes/")
-    print("  2. git add docs/notes/apple-notes/")
-    print("  3. git commit -m 'docs: import Apple Notes from alto-index'")
+    print("Committing changes...")
+    try:
+        # Stage changes
+        subprocess.run(['git', 'add', 'docs/notes/apple-notes/'], check=True, capture_output=True)
+
+        # Create commit
+        result = subprocess.run(
+            ['git', 'commit', '-m', 'docs: sync Apple Notes from alto-index'],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        # Extract commit hash
+        commit_hash = subprocess.run(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            check=True,
+            capture_output=True,
+            text=True
+        ).stdout.strip()
+
+        print(f"  ✓ Committed as {commit_hash}")
+        print()
+        print("Next steps:")
+        print("  git push origin main")
+
+    except subprocess.CalledProcessError as e:
+        if b'nothing to commit' in e.stderr or 'nothing to commit' in str(e.stderr):
+            print("  ℹ️  No changes to commit (notes already up to date)")
+        else:
+            print(f"  ⚠️  Git commit failed: {e}")
+            print()
+            print("Manual steps:")
+            print("  1. git add docs/notes/apple-notes/")
+            print("  2. git commit -m 'docs: sync Apple Notes from alto-index'")
+            print("  3. git push origin main")
 
 if __name__ == "__main__":
     main()

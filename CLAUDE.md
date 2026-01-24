@@ -114,21 +114,17 @@ This project uses Foam for documentation with direct Claude Code integration ins
 └── journal/        # Daily notes (Foam feature, Alt+D to create)
 ```
 
-### GitHub Issues Integration
+### Knowledge Base Automation
 
-Track implementation via GitHub Issues synced to Foam:
+**Sync all sources:** `./scripts/sync-all.sh` (auto-commits, you push when ready)
 
-- **View:** [[issues/README]] - Issue index by phase
-- **Sync:** `python3 scripts/sync-github-issues.py` - Update from GitHub
-- 14 issues across 3 phases (Foundation, Views, Filters)
+Or run individually:
+- **GitHub Issues:** `python3 scripts/sync-github-issues.py` - Fetches from GitHub API, auto-commits
+- **Apple Notes:** `python3 scripts/import-apple-notes.py` - Re-imports from alto-index, auto-commits
 
-### Apple Notes Archive
-
-Imported notes from Apple Notes app (ClaudeAI and CardBoard folders):
-
-- **View:** [[apple-notes/README]] - Apple Notes archive index
-- **Import:** `python3 scripts/import-apple-notes.py` - Re-import from alto-index
-- 155 notes (45 ClaudeAI, 110 CardBoard + 41 images)
+**View synced content:**
+- [[issues/README]] - 14 issues across 3 phases
+- [[apple-notes/README]] - 155 notes (45 ClaudeAI, 110 CardBoard + 41 images)
 
 ### Templates
 
