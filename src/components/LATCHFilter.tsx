@@ -3,9 +3,11 @@ import { useFilters } from '@/state/FilterContext';
 import type { FilterState } from '@/types/filter';
 import { LocationMapWidget } from './LocationMapWidget';
 import { HierarchyTreeView } from '@/components/HierarchyTreeView';
+import { CategoryColorPicker } from './CategoryColorPicker';
 import { useNodes, useSQLiteQuery } from '@/hooks/useSQLiteQuery';
 import { useNodeTree } from '@/hooks/useNodeTree';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
+import { useAllTags } from '@/hooks/useTagColors';
 
 /**
  * LATCHFilter - Individual axis filter component
@@ -53,6 +55,9 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
 
   // For Location filter: fetch all nodes with location data
   const { markers } = useMapMarkers();
+
+  // For Category filter: fetch all unique tags
+  const { tags: allTags, tagCounts } = useAllTags();
 
   if (!previewFilters) return null;
 
@@ -201,47 +206,25 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
 
       case 'category':
         return (
-          <div className="space-y-2">
-            <div className="space-y-1">
-              {['Work', 'Personal', 'Projects', 'Archive'].map((tag) => (
-                <label key={tag} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    checked={
-                      !!(currentFilter &&
-                      'tags' in currentFilter &&
-                      currentFilter.tags?.includes(tag))
-                    }
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      const currentTags =
-                        currentFilter && 'tags' in currentFilter
-                          ? currentFilter.tags || []
-                          : [];
-
-                      const newTags = checked
-                        ? [...currentTags, tag]
-                        : currentTags.filter((t) => t !== tag);
-
-                      if (newTags.length === 0) {
-                        setPreviewCategory(null);
-                      } else {
-                        setPreviewCategory({
-                          type: 'include',
-                          tags: newTags,
-                        });
-                      }
-                    }}
-                  />
-                  {tag}
-                </label>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500">
-              Future: Load tags dynamically from database
-            </p>
-          </div>
+          <CategoryColorPicker
+            tags={allTags}
+            selectedTags={
+              currentFilter && 'tags' in currentFilter && currentFilter.tags
+                ? new Set(currentFilter.tags)
+                : new Set()
+            }
+            onSelectedTagsChange={(tags) => {
+              if (tags.size === 0) {
+                setPreviewCategory(null);
+              } else {
+                setPreviewCategory({
+                  type: 'include',
+                  tags: Array.from(tags),
+                });
+              }
+            }}
+            tagCounts={tagCounts}
+          />
         );
 
       case 'hierarchy':
