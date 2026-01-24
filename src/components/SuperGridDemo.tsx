@@ -1,9 +1,13 @@
 import { useState, useCallback } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
+import { MiniNav } from './MiniNav';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
 import { useFilteredNodes } from '@/hooks/useFilteredNodes';
 import { useCardOverlay } from '@/state/CardOverlayContext';
+import { usePAFV } from '@/hooks/usePAFV';
 import type { Node } from '@/types/node';
+import type { LATCHAxis } from '@/types/pafv';
+import type { OriginPattern } from '@/types/coordinates';
 import type { ZoomTransform } from '@/hooks/useD3Zoom';
 
 /**
@@ -22,13 +26,27 @@ import type { ZoomTransform } from '@/hooks/useD3Zoom';
  */
 export function SuperGridDemo() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [originPattern, setOriginPattern] = useState<OriginPattern>('anchor');
   const { selectedNode, setSelectedNode } = useCardOverlay();
+
+  // Get PAFV context for axis mappings
+  const pafv = usePAFV();
+  const pafvState = pafv.state;
 
   // Fetch filtered nodes from SQLite (respects FilterContext)
   const { data: nodes, loading, error } = useFilteredNodes();
 
-  // Create coordinate system (Anchor origin for now)
-  const coordinateSystem = createCoordinateSystem('anchor', 120, 60);
+  // Extract X and Y axis mappings from PAFV state
+  const xMapping = pafvState.mappings.find(m => m.plane === 'x');
+  const yMapping = pafvState.mappings.find(m => m.plane === 'y');
+
+  const xAxis: LATCHAxis = xMapping?.axis || 'time';
+  const xFacet = xMapping?.facet || 'year';
+  const yAxis: LATCHAxis = yMapping?.axis || 'category';
+  const yFacet = yMapping?.facet || 'tag';
+
+  // Create coordinate system with current origin pattern
+  const coordinateSystem = createCoordinateSystem(originPattern, 120, 60);
 
   // Handle cell clicks - open card overlay
   const handleCellClick = useCallback((node: Node) => {
@@ -67,12 +85,62 @@ export function SuperGridDemo() {
 
   return (
     <div className="relative w-full h-screen bg-gray-50">
+      {/* MiniNav - Left sidebar for axis control */}
+      <div className="absolute left-0 top-0 h-full z-20">
+        <MiniNav
+          coordinateSystem={coordinateSystem}
+          pafvState={pafvState}
+          onPAFVChange={(newState) => {
+            // Handle view mode changes
+            if (newState.viewMode !== pafvState.viewMode) {
+              pafv.setViewMode(newState.viewMode);
+              return;
+            }
+
+            // Handle mapping changes
+            const currentMappingKeys = new Set(
+              pafvState.mappings.map((m) => `${m.plane}:${m.axis}:${m.facet}`)
+            );
+            const newMappingKeys = new Set(
+              newState.mappings.map((m) => `${m.plane}:${m.axis}:${m.facet}`)
+            );
+
+            // Find added/changed mappings
+            newState.mappings.forEach((mapping) => {
+              const key = `${mapping.plane}:${mapping.axis}:${mapping.facet}`;
+              if (!currentMappingKeys.has(key)) {
+                pafv.setMapping(mapping);
+              }
+            });
+
+            // Find removed mappings
+            pafvState.mappings.forEach((mapping) => {
+              const key = `${mapping.plane}:${mapping.axis}:${mapping.facet}`;
+              if (!newMappingKeys.has(key)) {
+                pafv.removeMapping(mapping.plane);
+              }
+            });
+          }}
+          onOriginChange={setOriginPattern}
+          onZoom={setZoomLevel}
+        />
+      </div>
+
       {/* Info Panel */}
-      <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-sm">
+      <div className="absolute top-4 left-64 z-10 bg-white rounded-lg shadow-lg p-4 max-w-sm">
         <h2 className="text-lg font-semibold mb-2">SuperGrid Demo</h2>
         <div className="text-sm space-y-1">
           <div>
             <span className="font-medium">Nodes:</span> {nodes.length}
+          </div>
+          <div>
+            <span className="font-medium">X-Axis:</span> {xAxis} ({xFacet})
+          </div>
+          <div>
+            <span className="font-medium">Y-Axis:</span> {yAxis} ({yFacet})
+          </div>
+          <div>
+            <span className="font-medium">Origin:</span> {originPattern}
           </div>
           <div>
             <span className="font-medium">Zoom:</span> {(zoomLevel * 100).toFixed(0)}%
@@ -92,19 +160,23 @@ export function SuperGridDemo() {
       <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-xs">
         <h3 className="text-sm font-semibold mb-2">Controls</h3>
         <ul className="text-xs space-y-1 text-gray-600">
+          <li>• <strong>Drag axes:</strong> Map to X/Y planes in MiniNav</li>
+          <li>• <strong>Change facet:</strong> Use dropdown in axis chip</li>
           <li>• <strong>Mouse wheel:</strong> Zoom in/out</li>
           <li>• <strong>Click + drag:</strong> Pan viewport</li>
           <li>• <strong>Click cell:</strong> Select node</li>
-          <li>• <strong>Trackpad pinch:</strong> Zoom</li>
         </ul>
       </div>
 
-      {/* D3 Sparsity Layer */}
+      {/* D3 Sparsity Layer - now driven by PAFV axis mappings */}
       <D3SparsityLayer
         data={nodes}
         coordinateSystem={coordinateSystem}
-        xAxisFacet="folder"
-        yAxisFacet="modifiedAt"
+        xAxis={xAxis}
+        xAxisFacet={xFacet}
+        yAxis={yAxis}
+        yAxisFacet={yFacet}
+        originPattern={originPattern}
         onCellClick={handleCellClick}
         onZoomChange={handleZoomChange}
         width={window.innerWidth}
