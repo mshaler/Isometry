@@ -50,8 +50,6 @@ export function compileFilters(filters: FilterState): CompiledQuery {
 }
 
 function compileAlphabetFilter(filter: AlphabetFilter): CompiledQuery {
-  const params: string[] = [];
-
   if (filter.type === 'search' && filter.value) {
     // Use FTS5 for fast full-text search with relevance ranking
     const fts5Query = buildFTS5Query(filter.value);
