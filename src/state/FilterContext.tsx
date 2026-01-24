@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
-import type { 
-  FilterState, 
-  LocationFilter, 
-  AlphabetFilter, 
-  TimeFilter, 
-  CategoryFilter, 
-  HierarchyFilter 
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useState } from 'react';
+import type {
+  FilterState,
+  LocationFilter,
+  AlphabetFilter,
+  TimeFilter,
+  CategoryFilter,
+  HierarchyFilter
 } from '../types/filter';
 import { EMPTY_FILTERS } from '../types/filter';
 
@@ -16,7 +16,8 @@ type FilterAction =
   | { type: 'SET_CATEGORY'; payload: CategoryFilter | null }
   | { type: 'SET_HIERARCHY'; payload: HierarchyFilter | null }
   | { type: 'SET_DSL'; payload: string | null }
-  | { type: 'CLEAR_ALL' };
+  | { type: 'CLEAR_ALL' }
+  | { type: 'APPLY_PREVIEW'; payload: FilterState };
 
 function filterReducer(state: FilterState, action: FilterAction): FilterState {
   switch (action.type) {
@@ -34,13 +35,16 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
       return { ...EMPTY_FILTERS, dsl: action.payload };
     case 'CLEAR_ALL':
       return EMPTY_FILTERS;
+    case 'APPLY_PREVIEW':
+      return action.payload;
     default:
       return state;
   }
 }
 
 interface FilterContextValue {
-  filters: FilterState;
+  // Active filters (applied to grid)
+  activeFilters: FilterState;
   setLocation: (filter: LocationFilter | null) => void;
   setAlphabet: (filter: AlphabetFilter | null) => void;
   setTime: (filter: TimeFilter | null) => void;
@@ -49,64 +53,146 @@ interface FilterContextValue {
   setDSL: (dsl: string | null) => void;
   clearAll: () => void;
   activeCount: number;
+
+  // Preview filters (being edited in overlay, not yet applied)
+  previewFilters: FilterState | null;
+  setPreviewLocation: (filter: LocationFilter | null) => void;
+  setPreviewAlphabet: (filter: AlphabetFilter | null) => void;
+  setPreviewTime: (filter: TimeFilter | null) => void;
+  setPreviewCategory: (filter: CategoryFilter | null) => void;
+  setPreviewHierarchy: (filter: HierarchyFilter | null) => void;
+  clearPreviewFilters: () => void;
+  applyPreviewFilters: () => void;
+  startPreview: () => void;
+  cancelPreview: () => void;
 }
 
 const FilterContext = createContext<FilterContextValue | null>(null);
 
 export function FilterProvider({ children }: { children: React.ReactNode }) {
-  const [filters, dispatch] = useReducer(filterReducer, EMPTY_FILTERS);
-  
+  const [activeFilters, dispatch] = useReducer(filterReducer, EMPTY_FILTERS);
+  const [previewFilters, setPreviewFilters] = useState<FilterState | null>(null);
+
+  // Active filter setters (directly applied)
   const setLocation = useCallback((filter: LocationFilter | null) => {
     dispatch({ type: 'SET_LOCATION', payload: filter });
   }, []);
-  
+
   const setAlphabet = useCallback((filter: AlphabetFilter | null) => {
     dispatch({ type: 'SET_ALPHABET', payload: filter });
   }, []);
-  
+
   const setTime = useCallback((filter: TimeFilter | null) => {
     dispatch({ type: 'SET_TIME', payload: filter });
   }, []);
-  
+
   const setCategory = useCallback((filter: CategoryFilter | null) => {
     dispatch({ type: 'SET_CATEGORY', payload: filter });
   }, []);
-  
+
   const setHierarchy = useCallback((filter: HierarchyFilter | null) => {
     dispatch({ type: 'SET_HIERARCHY', payload: filter });
   }, []);
-  
+
   const setDSL = useCallback((dsl: string | null) => {
     dispatch({ type: 'SET_DSL', payload: dsl });
   }, []);
-  
+
   const clearAll = useCallback(() => {
     dispatch({ type: 'CLEAR_ALL' });
   }, []);
-  
+
   const activeCount = useMemo(() => {
     let count = 0;
-    if (filters.location) count++;
-    if (filters.alphabet) count++;
-    if (filters.time) count++;
-    if (filters.category) count++;
-    if (filters.hierarchy) count++;
-    if (filters.dsl) count++;
+    if (activeFilters.location) count++;
+    if (activeFilters.alphabet) count++;
+    if (activeFilters.time) count++;
+    if (activeFilters.category) count++;
+    if (activeFilters.hierarchy) count++;
+    if (activeFilters.dsl) count++;
     return count;
-  }, [filters]);
-  
+  }, [activeFilters]);
+
+  // Preview filter management
+  const startPreview = useCallback(() => {
+    // Initialize preview with current active filters
+    setPreviewFilters({ ...activeFilters });
+  }, [activeFilters]);
+
+  const cancelPreview = useCallback(() => {
+    setPreviewFilters(null);
+  }, []);
+
+  const setPreviewLocation = useCallback((filter: LocationFilter | null) => {
+    setPreviewFilters((prev) => {
+      if (!prev) return null;
+      return { ...prev, location: filter, dsl: null };
+    });
+  }, []);
+
+  const setPreviewAlphabet = useCallback((filter: AlphabetFilter | null) => {
+    setPreviewFilters((prev) => {
+      if (!prev) return null;
+      return { ...prev, alphabet: filter, dsl: null };
+    });
+  }, []);
+
+  const setPreviewTime = useCallback((filter: TimeFilter | null) => {
+    setPreviewFilters((prev) => {
+      if (!prev) return null;
+      return { ...prev, time: filter, dsl: null };
+    });
+  }, []);
+
+  const setPreviewCategory = useCallback((filter: CategoryFilter | null) => {
+    setPreviewFilters((prev) => {
+      if (!prev) return null;
+      return { ...prev, category: filter, dsl: null };
+    });
+  }, []);
+
+  const setPreviewHierarchy = useCallback((filter: HierarchyFilter | null) => {
+    setPreviewFilters((prev) => {
+      if (!prev) return null;
+      return { ...prev, hierarchy: filter, dsl: null };
+    });
+  }, []);
+
+  const clearPreviewFilters = useCallback(() => {
+    setPreviewFilters(EMPTY_FILTERS);
+  }, []);
+
+  const applyPreviewFilters = useCallback(() => {
+    if (previewFilters) {
+      dispatch({ type: 'APPLY_PREVIEW', payload: previewFilters });
+      setPreviewFilters(null);
+    }
+  }, [previewFilters]);
+
   return (
-    <FilterContext.Provider value={{
-      filters,
-      setLocation,
-      setAlphabet,
-      setTime,
-      setCategory,
-      setHierarchy,
-      setDSL,
-      clearAll,
-      activeCount,
-    }}>
+    <FilterContext.Provider
+      value={{
+        activeFilters,
+        setLocation,
+        setAlphabet,
+        setTime,
+        setCategory,
+        setHierarchy,
+        setDSL,
+        clearAll,
+        activeCount,
+        previewFilters,
+        setPreviewLocation,
+        setPreviewAlphabet,
+        setPreviewTime,
+        setPreviewCategory,
+        setPreviewHierarchy,
+        clearPreviewFilters,
+        applyPreviewFilters,
+        startPreview,
+        cancelPreview,
+      }}
+    >
       {children}
     </FilterContext.Provider>
   );
@@ -119,3 +205,6 @@ export function useFilters(): FilterContextValue {
   }
   return context;
 }
+
+// Backward compatibility export
+export const useFilter = useFilters;
