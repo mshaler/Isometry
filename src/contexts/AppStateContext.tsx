@@ -18,9 +18,24 @@ const AppStateContext = createContext<AppStateContextType | undefined>(undefined
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   // URL-synced state for shareable views
-  const [activeApp, setActiveApp] = useURLState<AppName>('app', 'Demo');
-  const [activeView, setActiveView] = useURLState<ViewName>('view', 'Grid');
-  const [activeDataset, setActiveDataset] = useURLState<DatasetName>('dataset', 'Notes');
+  const [activeApp, setActiveApp] = useURLState<AppName>(
+    'app',
+    'Demo',
+    (v) => v,
+    (s) => s as AppName
+  );
+  const [activeView, setActiveView] = useURLState<ViewName>(
+    'view',
+    'Grid',
+    (v) => v,
+    (s) => s as ViewName
+  );
+  const [activeDataset, setActiveDataset] = useURLState<DatasetName>(
+    'dataset',
+    'Notes',
+    (v) => v,
+    (s) => s as DatasetName
+  );
 
   return (
     <AppStateContext.Provider value={{

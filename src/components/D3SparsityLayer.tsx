@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useState } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import { useD3Zoom, type ZoomTransform } from '@/hooks/useD3Zoom';
@@ -53,16 +53,12 @@ export function D3SparsityLayer({
   height = 600,
 }: D3SparsityLayerProps) {
   const containerRef = useRef<SVGGElement>(null);
-  const [zoomTransform, setZoomTransform] = useState<ZoomTransform>({ x: 0, y: 0, k: 1 });
 
   // Integrate d3-zoom behavior
-  const svgRef = useD3Zoom<SVGSVGElement>({
+  const svgRef = useD3Zoom({
     minZoom: 0.1,
     maxZoom: 10,
-    onZoom: (transform) => {
-      setZoomTransform(transform);
-      onZoomChange?.(transform);
-    },
+    onZoom: onZoomChange,
   });
 
   // Memoize dimensions to avoid unnecessary re-renders

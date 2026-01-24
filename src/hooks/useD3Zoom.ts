@@ -29,16 +29,16 @@ export interface UseD3ZoomOptions {
  * @param options - Configuration for zoom behavior
  * @returns ref - React ref to attach to SVG element
  */
-export function useD3Zoom<T extends SVGSVGElement>(
+export function useD3Zoom(
   options: UseD3ZoomOptions = {}
-): React.RefObject<T> {
+): React.RefObject<SVGSVGElement> {
   const {
     minZoom = 0.1,
     maxZoom = 10,
     onZoom,
   } = options;
 
-  const svgRef = useRef<T>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const onZoomRef = useRef(onZoom);
   onZoomRef.current = onZoom;
 
@@ -62,7 +62,7 @@ export function useD3Zoom<T extends SVGSVGElement>(
   useEffect(() => {
     if (!svgRef.current) return;
 
-    const svg = d3.select(svgRef.current);
+    const svg = d3.select<SVGSVGElement, unknown>(svgRef.current);
 
     // Initialize d3-zoom behavior
     const zoom = d3.zoom<SVGSVGElement, unknown>()
