@@ -1,6 +1,7 @@
 import { useFilters } from '@/state/FilterContext';
 import { useFilterPreview } from '@/hooks/useFilterPreview';
 import { LATCHFilter } from './LATCHFilter';
+import { FilterPresetDropdown } from './FilterPresetDropdown';
 
 /**
  * FilterPanelOverlay - LATCH filter control panel for overlay
@@ -61,6 +62,11 @@ export function FilterPanelOverlay({
 
       {/* Filter Sections - Scrollable */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {/* Filter Presets */}
+        <div className="pb-4 border-b border-gray-200">
+          <FilterPresetDropdown onPresetLoad={onApply} />
+        </div>
+
         {/* Location Filter */}
         <LATCHFilter
           axis="location"
