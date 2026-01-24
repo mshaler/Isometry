@@ -56,7 +56,20 @@ Historical architectural decisions with rationale:
 
 **Sync:** `python3 scripts/sync-github-issues.py`
 
-### 5. Conversation Archive
+### 5. Apple Notes Archive
+
+`docs/notes/apple-notes/` - Imported notes from Apple Notes app
+
+**Index:** [[apple-notes/README]]
+
+**155 notes** from ClaudeAI and CardBoard folders:
+
+- ClaudeAI: 45 notes (Claude AI research, agent development, tooling)
+- CardBoard: 110 notes + 41 images (project ideas, design sketches, planning)
+
+**Import:** `python3 scripts/import-apple-notes.py`
+
+### 6. Conversation Archive
 `docs/conversations/` - Planning session transcripts with reasoning
 
 **Index:** [[conversations/README]]
