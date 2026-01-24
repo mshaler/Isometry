@@ -49,6 +49,127 @@ export function compileFilters(filters: FilterState): CompiledQuery {
   };
 }
 
+function compileAlphabetFilter(filter: AlphabetFilter): CompiledQuery {
+  const params: string[] = [];
+
+  if (filter.type === 'search' && filter.value) {
+    // Use FTS5 for fast full-text search with relevance ranking
+    const fts5Query = buildFTS5Query(filter.value);
+    if (fts5Query) {
+      // Join with FTS5 virtual table for fast search
+      return {
+        sql: 'id IN (SELECT rowid FROM nodes_fts WHERE nodes_fts MATCH ?)',
+        params: [fts5Query],
+      };
+    } else {
+      // Fallback to LIKE if query is invalid
+      const searchTerm = `%${filter.value}%`;
+      return {
+        sql: '(name LIKE ? OR content LIKE ?)',
+        params: [searchTerm, searchTerm],
+      };
+    }
+  } else if (filter.type === 'startsWith' && filter.value) {
+    // Prefix search (efficient with indexes)
+    return {
+      sql: 'name LIKE ?',
+      params: [`${filter.value}%`],
+    };
+  } else if (filter.type === 'range' && filter.value) {
+    // Alphabetic range (A-F, G-M, etc.)
+    const end = String.fromCharCode(filter.value.charCodeAt(0) + 1);
+    return {
+      sql: 'name >= ? AND name < ?',
+      params: [filter.value, end],
+    };
+  }
+
+  return { sql: '', params: [] };
+}
+
+/**
+ * Build FTS5 MATCH query with operator support
+ *
+ * FTS5 Syntax:
+ * - Prefix search: "test*" (matches test, testing, tester)
+ * - Phrase search: "exact phrase" (matches exact phrase)
+ * - AND operator: "foo AND bar" or just "foo bar" (both terms required)
+ * - OR operator: "foo OR bar" (either term)
+ * - NOT operator: "foo NOT bar" (exclude term)
+ * - Column filter: "name:test" (search only in name column)
+ * - Parentheses: "(foo OR bar) AND baz" (complex logic)
+ *
+ * Security: Escapes FTS5 special characters to prevent query syntax errors
+ *
+ * @param input - User search query
+ * @returns FTS5 MATCH query string, or null if invalid
+ */
+function buildFTS5Query(input: string): string | null {
+  if (!input || input.trim().length === 0) {
+    return null;
+  }
+
+  // Trim and truncate very long queries
+  let query = input.trim();
+  if (query.length > 200) {
+    query = query.substring(0, 200);
+  }
+
+  // Check if query looks like FTS5 syntax (has operators or quotes)
+  const hasOperators = /\b(AND|OR|NOT)\b|["*()-]/.test(query);
+
+  if (hasOperators) {
+    // User is using FTS5 operators, validate and sanitize
+    try {
+      // Basic validation: balanced quotes and parentheses
+      const quoteCount = (query.match(/"/g) || []).length;
+      const openParen = (query.match(/\(/g) || []).length;
+      const closeParen = (query.match(/\)/g) || []).length;
+
+      if (quoteCount % 2 !== 0) {
+        // Unbalanced quotes - add closing quote
+        query += '"';
+      }
+
+      if (openParen !== closeParen) {
+        // Unbalanced parentheses - fallback to simple search
+        return escapeFTS5Simple(query);
+      }
+
+      // Return as-is (user knows what they're doing)
+      return query;
+    } catch (e) {
+      // Invalid syntax - fallback to simple search
+      return escapeFTS5Simple(query);
+    }
+  } else {
+    // Simple search - escape special chars and search all terms
+    return escapeFTS5Simple(query);
+  }
+}
+
+/**
+ * Escape query for simple FTS5 search (no operators)
+ * Treats each word as a separate term with implicit AND
+ */
+function escapeFTS5Simple(input: string): string {
+  // Split into words
+  const words = input.trim().split(/\s+/);
+
+  // Escape FTS5 special characters in each word
+  const escapedWords = words.map(word => {
+    // Escape quotes and special FTS5 chars
+    return word.replace(/["*()-]/g, '');
+  }).filter(word => word.length > 0);
+
+  if (escapedWords.length === 0) {
+    return '';
+  }
+
+  // Join with implicit AND (space)
+  return escapedWords.join(' ');
+}
+
 function compileCategoryFilter(filter: CategoryFilter): CompiledQuery {
   const conditions: string[] = [];
   const params: (string | number | null)[] = [];
