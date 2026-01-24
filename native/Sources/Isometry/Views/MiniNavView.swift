@@ -182,7 +182,7 @@ struct MiniNavView: View {
 }
 
 // MARK: - View Type Enum
-enum ViewType: String, CaseIterable {
+public enum ViewType: String, CaseIterable {
     case grid = "grid"
     case list = "list"
     case kanban = "kanban"
