@@ -1,4 +1,5 @@
 import { useFilters } from '@/state/FilterContext';
+import { useFilterPreview } from '@/hooks/useFilterPreview';
 import { LATCHFilter } from './LATCHFilter';
 
 /**
@@ -10,7 +11,7 @@ import { LATCHFilter } from './LATCHFilter';
  * Architecture:
  * - Each LATCH axis gets its own control section
  * - Preview filters stored separately from active filters
- * - Real-time preview count shows "N notes match these filters"
+ * - Real-time preview count shows "N notes match these filters" (debounced 300ms)
  * - Apply button commits preview to active filters
  * - Cancel button discards preview
  * - Clear All button resets all preview filters
@@ -26,15 +27,14 @@ import { LATCHFilter } from './LATCHFilter';
 interface FilterPanelOverlayProps {
   onApply: () => void;
   onCancel: () => void;
-  previewCount?: number;
 }
 
 export function FilterPanelOverlay({
   onApply,
   onCancel,
-  previewCount,
 }: FilterPanelOverlayProps) {
   const { previewFilters, clearPreviewFilters } = useFilters();
+  const { count, isLoading } = useFilterPreview(previewFilters);
 
   if (!previewFilters) {
     return null;
@@ -100,12 +100,18 @@ export function FilterPanelOverlay({
       {/* Footer - Preview Count + Actions */}
       <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
         {/* Preview Count */}
-        {previewCount !== undefined && (
-          <div className="text-sm text-gray-600 mb-3">
-            <span className="font-medium">{previewCount.toLocaleString()}</span>{' '}
-            {previewCount === 1 ? 'note matches' : 'notes match'} these filters
-          </div>
-        )}
+        <div className="text-sm text-gray-600 mb-3">
+          {isLoading ? (
+            <span className="text-gray-400">Calculating...</span>
+          ) : count !== null ? (
+            <>
+              <span className="font-medium">{count.toLocaleString()}</span>{' '}
+              {count === 1 ? 'note matches' : 'notes match'} these filters
+            </>
+          ) : (
+            <span className="text-gray-400">Adjust filters to see preview</span>
+          )}
+        </div>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-between">
