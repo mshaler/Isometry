@@ -5,7 +5,6 @@
  * Shows selected state with border, supports click interaction.
  */
 
-import React from 'react';
 import { getContrastText } from '../utils/tag-colors';
 
 export interface CategoryTagPillProps {

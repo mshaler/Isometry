@@ -42,7 +42,7 @@ export function CategoryColorPicker({
   tagCounts,
   className = '',
 }: CategoryColorPickerProps) {
-  const { tagColors, setTagColor, getTagColor } = useTagColors();
+  const { setTagColor, getTagColor } = useTagColors();
   const [tagForColorAssignment, setTagForColorAssignment] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('alphabetical');
