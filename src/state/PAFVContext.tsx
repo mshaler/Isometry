@@ -1,96 +1,70 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
-import type { PAFVState } from '../types/pafv';
+import React, { createContext, useState, useCallback } from 'react';
+import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
-
-type PAFVAction =
-  | { type: 'SET_X_AXIS'; payload: string | null }
-  | { type: 'SET_Y_AXIS'; payload: string | null }
-  | { type: 'SET_Z_AXIS'; payload: string | null }
-  | { type: 'MOVE_TO_AVAILABLE'; payload: string }
-  | { type: 'RESET' };
-
-function pafvReducer(state: PAFVState, action: PAFVAction): PAFVState {
-  switch (action.type) {
-    case 'SET_X_AXIS': {
-      const oldX = state.xAxis;
-      const newAvailable = state.available.filter(id => id !== action.payload);
-      if (oldX) newAvailable.push(oldX);
-      return { ...state, xAxis: action.payload, available: newAvailable };
-    }
-    case 'SET_Y_AXIS': {
-      const oldY = state.yAxis;
-      const newAvailable = state.available.filter(id => id !== action.payload);
-      if (oldY) newAvailable.push(oldY);
-      return { ...state, yAxis: action.payload, available: newAvailable };
-    }
-    case 'SET_Z_AXIS': {
-      const oldZ = state.zAxis;
-      const newAvailable = state.available.filter(id => id !== action.payload);
-      if (oldZ) newAvailable.push(oldZ);
-      return { ...state, zAxis: action.payload, available: newAvailable };
-    }
-    case 'MOVE_TO_AVAILABLE': {
-      const facetId = action.payload;
-      return {
-        ...state,
-        xAxis: state.xAxis === facetId ? null : state.xAxis,
-        yAxis: state.yAxis === facetId ? null : state.yAxis,
-        zAxis: state.zAxis === facetId ? null : state.zAxis,
-        available: state.available.includes(facetId) 
-          ? state.available 
-          : [...state.available, facetId],
-      };
-    }
-    case 'RESET':
-      return DEFAULT_PAFV;
-    default:
-      return state;
-  }
-}
+import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
 
 interface PAFVContextValue {
-  pafv: PAFVState;
-  setXAxis: (facetId: string | null) => void;
-  setYAxis: (facetId: string | null) => void;
-  setZAxis: (facetId: string | null) => void;
-  moveToAvailable: (facetId: string) => void;
-  reset: () => void;
+  state: PAFVState;
+  setMapping: (mapping: AxisMapping) => void;
+  removeMapping: (plane: Plane) => void;
+  setViewMode: (mode: 'grid' | 'list') => void;
+  resetToDefaults: () => void;
+  getAxisForPlane: (plane: Plane) => LATCHAxis | null;
+  getPlaneForAxis: (axis: LATCHAxis) => Plane | null;
 }
 
 const PAFVContext = createContext<PAFVContextValue | null>(null);
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
-  const [pafv, dispatch] = useReducer(pafvReducer, DEFAULT_PAFV);
-  
-  const setXAxis = useCallback((facetId: string | null) => {
-    dispatch({ type: 'SET_X_AXIS', payload: facetId });
+  const [state, setState] = useState<PAFVState>(DEFAULT_PAFV);
+
+  const setMapping = useCallback((mapping: AxisMapping) => {
+    setState(prevState => setMappingUtil(prevState, mapping));
   }, []);
-  
-  const setYAxis = useCallback((facetId: string | null) => {
-    dispatch({ type: 'SET_Y_AXIS', payload: facetId });
+
+  const removeMappingCallback = useCallback((plane: Plane) => {
+    setState(prevState => removeMapping(prevState, plane));
   }, []);
-  
-  const setZAxis = useCallback((facetId: string | null) => {
-    dispatch({ type: 'SET_Z_AXIS', payload: facetId });
+
+  const setViewMode = useCallback((mode: 'grid' | 'list') => {
+    setState(prevState => ({
+      ...prevState,
+      viewMode: mode,
+    }));
   }, []);
-  
-  const moveToAvailable = useCallback((facetId: string) => {
-    dispatch({ type: 'MOVE_TO_AVAILABLE', payload: facetId });
+
+  const resetToDefaults = useCallback(() => {
+    setState(DEFAULT_PAFV);
   }, []);
-  
-  const reset = useCallback(() => {
-    dispatch({ type: 'RESET' });
-  }, []);
-  
+
+  const getAxisForPlane = useCallback((plane: Plane): LATCHAxis | null => {
+    const mapping = getMappingForPlane(state, plane);
+    return mapping ? mapping.axis : null;
+  }, [state]);
+
+  const getPlaneForAxisCallback = useCallback((axis: LATCHAxis): Plane | null => {
+    return getPlaneForAxis(state, axis);
+  }, [state]);
+
+  const value: PAFVContextValue = {
+    state,
+    setMapping,
+    removeMapping: removeMappingCallback,
+    setViewMode,
+    resetToDefaults,
+    getAxisForPlane,
+    getPlaneForAxis: getPlaneForAxisCallback,
+  };
+
   return (
-    <PAFVContext.Provider value={{ pafv, setXAxis, setYAxis, setZAxis, moveToAvailable, reset }}>
+    <PAFVContext.Provider value={value}>
       {children}
     </PAFVContext.Provider>
   );
 }
 
 export function usePAFV(): PAFVContextValue {
-  const context = useContext(PAFVContext);
+  const context = React.useContext(PAFVContext);
   if (!context) {
     throw new Error('usePAFV must be used within PAFVProvider');
   }
