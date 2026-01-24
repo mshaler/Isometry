@@ -1,0 +1,195 @@
+/**
+ * CategoryColorPicker - Visual color picker for category tags
+ *
+ * Provides:
+ * - Color palette grid (24 colors)
+ * - Tag pill display with assigned colors
+ * - Tag selection for color assignment
+ * - Tag filtering inclusion
+ */
+
+import React, { useState, useMemo } from 'react';
+import { CategoryTagPill } from './CategoryTagPill';
+import { useTagColors } from '../state/TagColorContext';
+import { DEFAULT_PALETTE, PALETTE_NAMES, getContrastText } from '../utils/tag-colors';
+
+export interface CategoryColorPickerProps {
+  /** Available tags to display */
+  tags: string[];
+
+  /** Currently selected/included tags for filtering */
+  selectedTags: Set<string>;
+
+  /** Called when selected tags change */
+  onSelectedTagsChange: (tags: Set<string>) => void;
+
+  /** Optional className */
+  className?: string;
+}
+
+/**
+ * CategoryColorPicker component
+ */
+export function CategoryColorPicker({
+  tags,
+  selectedTags,
+  onSelectedTagsChange,
+  className = '',
+}: CategoryColorPickerProps) {
+  const { tagColors, setTagColor, getTagColor } = useTagColors();
+  const [tagForColorAssignment, setTagForColorAssignment] = useState<string | null>(null);
+
+  /**
+   * Handle color swatch click - assign color to selected tag
+   */
+  const handleColorClick = (color: string) => {
+    if (tagForColorAssignment) {
+      setTagColor(tagForColorAssignment, color);
+      // Keep tag selected for further color changes
+    }
+  };
+
+  /**
+   * Handle tag pill click - toggle filter inclusion
+   */
+  const handleTagClick = (tag: string) => {
+    const newSelected = new Set(selectedTags);
+    if (newSelected.has(tag)) {
+      newSelected.delete(tag);
+    } else {
+      newSelected.add(tag);
+    }
+    onSelectedTagsChange(newSelected);
+  };
+
+  /**
+   * Handle tag pill right-click - select for color assignment
+   */
+  const handleTagContextMenu = (e: React.MouseEvent, tag: string) => {
+    e.preventDefault();
+    setTagForColorAssignment(tag);
+  };
+
+  /**
+   * Handle tag pill double-click - select for color assignment
+   */
+  const handleTagDoubleClick = (tag: string) => {
+    setTagForColorAssignment(tag);
+  };
+
+  /**
+   * Get sorted tags by name
+   */
+  const sortedTags = useMemo(() => {
+    return [...tags].sort((a, b) => a.localeCompare(b));
+  }, [tags]);
+
+  return (
+    <div className={`flex flex-col gap-4 ${className}`}>
+      {/* Color Palette Grid */}
+      <div className="flex flex-col gap-2">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Color Palette
+        </div>
+        <div className="grid grid-cols-6 gap-2">
+          {DEFAULT_PALETTE.map((color, index) => (
+            <button
+              key={color}
+              onClick={() => handleColorClick(color)}
+              className={`
+                w-10 h-10 rounded-md
+                border-2
+                transition-all
+                hover:scale-110
+                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                ${tagForColorAssignment && getTagColor(tagForColorAssignment) === color ? 'border-blue-500 shadow-lg' : 'border-gray-300'}
+              `}
+              style={{ backgroundColor: color }}
+              title={PALETTE_NAMES[index] || color}
+              aria-label={`${PALETTE_NAMES[index] || color} color`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Selected Tag Info */}
+      {tagForColorAssignment && (
+        <div className="flex items-center gap-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Assigning color to:
+          </div>
+          <div
+            className="px-3 py-1.5 rounded-full text-sm font-medium"
+            style={{
+              backgroundColor: getTagColor(tagForColorAssignment),
+              color: getContrastText(getTagColor(tagForColorAssignment)),
+            }}
+          >
+            {tagForColorAssignment}
+          </div>
+          <button
+            onClick={() => setTagForColorAssignment(null)}
+            className="ml-auto text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Instructions */}
+      <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+        <div>• Click tag to include in filter</div>
+        <div>• Double-click tag to assign color</div>
+        <div>• Click color swatch to assign to selected tag</div>
+      </div>
+
+      {/* Tag Pills */}
+      <div className="flex flex-col gap-2">
+        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Tags ({tags.length})
+        </div>
+        <div className="flex flex-wrap gap-2 max-h-[300px] overflow-y-auto p-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+          {sortedTags.length === 0 ? (
+            <div className="text-sm text-gray-400 dark:text-gray-500 italic">
+              No tags available
+            </div>
+          ) : (
+            sortedTags.map((tag) => (
+              <div
+                key={tag}
+                onDoubleClick={() => handleTagDoubleClick(tag)}
+                onContextMenu={(e) => handleTagContextMenu(e, tag)}
+                className={`
+                  ${tagForColorAssignment === tag ? 'ring-2 ring-blue-400' : ''}
+                `}
+              >
+                <CategoryTagPill
+                  tag={tag}
+                  color={getTagColor(tag)}
+                  selected={selectedTags.has(tag)}
+                  onClick={() => handleTagClick(tag)}
+                />
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Selection Actions */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSelectedTagsChange(new Set(tags))}
+          className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          Select All
+        </button>
+        <button
+          onClick={() => onSelectedTagsChange(new Set())}
+          className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
+        >
+          Deselect All
+        </button>
+      </div>
+    </div>
+  );
+}
