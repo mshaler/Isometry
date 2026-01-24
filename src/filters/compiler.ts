@@ -1,4 +1,4 @@
-import type { FilterState, CompiledQuery, AlphabetFilter, TimeFilter, CategoryFilter, HierarchyFilter, TimePreset } from '../types/filter';
+import type { FilterState, CompiledQuery, AlphabetFilter, TimeFilter, CategoryFilter, HierarchyFilter, TimePreset, LocationFilter } from '../types/filter';
 
 export function compileFilters(filters: FilterState): CompiledQuery {
   const conditions: string[] = [];
@@ -6,6 +6,15 @@ export function compileFilters(filters: FilterState): CompiledQuery {
 
   // Always exclude deleted
   conditions.push('deleted_at IS NULL');
+
+  // Location filter
+  if (filters.location) {
+    const locationSQL = compileLocationFilter(filters.location);
+    if (locationSQL.sql) {
+      conditions.push(locationSQL.sql);
+      params.push(...locationSQL.params);
+    }
+  }
 
   // Alphabet filter (text search with FTS5)
   if (filters.alphabet) {
@@ -47,6 +56,43 @@ export function compileFilters(filters: FilterState): CompiledQuery {
     sql: conditions.join(' AND '),
     params,
   };
+}
+
+function compileLocationFilter(filter: LocationFilter): CompiledQuery {
+  // For MVP: Use bounding box (fast, indexed)
+  // Future: Use spatialite extension for accurate radius queries
+
+  if (filter.type === 'box' && filter.north != null && filter.south != null && filter.east != null && filter.west != null) {
+    // Bounding box query
+    return {
+      sql: 'latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?',
+      params: [filter.south, filter.north, filter.west, filter.east],
+    };
+  } else if (filter.type === 'radius' && filter.centerLat != null && filter.centerLon != null && filter.radiusKm != null) {
+    // Convert radius to approximate bounding box
+    // 1 degree latitude ≈ 111km
+    // 1 degree longitude varies by latitude (cos adjustment)
+    const latDelta = filter.radiusKm / 111;
+    const lngDelta = filter.radiusKm / (111 * Math.cos((filter.centerLat * Math.PI) / 180));
+
+    const south = filter.centerLat - latDelta;
+    const north = filter.centerLat + latDelta;
+    const west = filter.centerLon - lngDelta;
+    const east = filter.centerLon + lngDelta;
+
+    return {
+      sql: 'latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?',
+      params: [south, north, west, east],
+    };
+  } else if (filter.type === 'point' && filter.latitude != null && filter.longitude != null) {
+    // Exact point match (unlikely, but supported)
+    return {
+      sql: 'latitude = ? AND longitude = ?',
+      params: [filter.latitude, filter.longitude],
+    };
+  }
+
+  return { sql: '', params: [] };
 }
 
 function compileAlphabetFilter(filter: AlphabetFilter): CompiledQuery {
@@ -250,21 +296,51 @@ function getPresetSQL(preset: TimePreset, column: string): string {
 }
 
 function compileHierarchyFilter(filter: HierarchyFilter): CompiledQuery {
-  if (filter.type === 'priority' || filter.type === 'range') {
-    const conditions: string[] = [];
-    const params: number[] = [];
-    
-    if (filter.minPriority != null) {
-      conditions.push('priority >= ?');
-      params.push(filter.minPriority);
-    }
-    if (filter.maxPriority != null) {
-      conditions.push('priority <= ?');
-      params.push(filter.maxPriority);
-    }
-    
-    return { sql: conditions.join(' AND '), params };
+  const conditions: string[] = [];
+  const params: (string | number)[] = [];
+
+  // Priority range filter
+  if (filter.minPriority != null) {
+    conditions.push('priority >= ?');
+    params.push(filter.minPriority);
   }
-  
-  return { sql: '', params: [] };
+  if (filter.maxPriority != null) {
+    conditions.push('priority <= ?');
+    params.push(filter.maxPriority);
+  }
+
+  // Subtree filter (via recursive CTE)
+  if (filter.type === 'subtree' && filter.subtreeRoots?.length) {
+    // Build recursive CTE to get all descendants of selected root nodes
+    const rootPlaceholders = filter.subtreeRoots.map(() => '?').join(', ');
+
+    // Recursive CTE pattern:
+    // 1. Start with selected root nodes
+    // 2. Recursively add all descendants via NEST edges
+    // Note: This uses a subquery that will be joined with the main query
+    const subtreeSQL = `id IN (
+      WITH RECURSIVE subtree AS (
+        -- Base case: selected root nodes
+        SELECT id FROM nodes WHERE id IN (${rootPlaceholders})
+
+        UNION ALL
+
+        -- Recursive case: find children via NEST edges
+        SELECT n.id
+        FROM nodes n
+        INNER JOIN edges e ON e.target_id = n.id
+        INNER JOIN subtree s ON e.source_id = s.id
+        WHERE e.edge_type = 'NEST'
+      )
+      SELECT id FROM subtree
+    )`;
+
+    conditions.push(subtreeSQL);
+    params.push(...filter.subtreeRoots);
+  }
+
+  return {
+    sql: conditions.join(' AND '),
+    params
+  };
 }

@@ -44,11 +44,12 @@ export interface CategoryFilter {
 }
 
 export interface HierarchyFilter {
-  type: 'priority' | 'top-n' | 'range';
+  type: 'priority' | 'top-n' | 'range' | 'subtree';
   minPriority?: number;
   maxPriority?: number;
   limit?: number;
   sortBy?: 'priority' | 'importance' | 'sortOrder';
+  subtreeRoots?: string[]; // Node IDs to include with all descendants (via recursive CTE)
 }
 
 export interface FilterState {
