@@ -16,10 +16,13 @@ import { RightSidebar } from './components/RightSidebar';
 import { CommandBar } from './components/CommandBar';
 import { Canvas } from './components/Canvas';
 import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
+import { SuperGridDemo } from './components/SuperGridDemo';
+
+type ViewMode = 'app' | 'd3demo' | 'supergrid';
 
 function AppContent() {
   const { theme } = useTheme();
-  const [showDemo, setShowDemo] = useState(false); // Start with main app
+  const [viewMode, setViewMode] = useState<ViewMode>('app'); // Start with main app
 
   return (
     <div className={`h-screen flex flex-col ${theme === 'NeXTSTEP' ? 'theme-nextstep bg-[#808080]' : 'theme-modern bg-gray-50'}`}>
@@ -41,20 +44,52 @@ function AppContent() {
             theme === 'NeXTSTEP' ? 'bg-[#c0c0c0]' : 'bg-white/50'
           }`}>
             <button
-              onClick={() => setShowDemo(!showDemo)}
+              onClick={() => setViewMode('app')}
               className={`px-2 py-0.5 text-xs rounded ${
-                theme === 'NeXTSTEP'
-                  ? 'bg-[#d4d4d4] border border-[#707070]'
-                  : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+                viewMode === 'app'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
               }`}
             >
-              {showDemo ? 'Main App' : 'D3 Demo'}
+              Main App
+            </button>
+            <button
+              onClick={() => setViewMode('d3demo')}
+              className={`px-2 py-0.5 text-xs rounded ${
+                viewMode === 'd3demo'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              D3 Demo
+            </button>
+            <button
+              onClick={() => setViewMode('supergrid')}
+              className={`px-2 py-0.5 text-xs rounded ${
+                viewMode === 'supergrid'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              SuperGrid
             </button>
           </div>
 
           {/* Canvas or Demo */}
           <div className="flex-1 overflow-hidden">
-            {showDemo ? <D3ComponentsDemo /> : <Canvas />}
+            {viewMode === 'd3demo' ? (
+              <D3ComponentsDemo />
+            ) : viewMode === 'supergrid' ? (
+              <SuperGridDemo />
+            ) : (
+              <Canvas />
+            )}
           </div>
 
           {/* Command Bar at bottom */}
