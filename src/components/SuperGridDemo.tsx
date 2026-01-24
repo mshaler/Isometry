@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
-import { useNodes } from '@/hooks/useSQLiteQuery';
+import { useFilteredNodes } from '@/hooks/useFilteredNodes';
 import { useCardOverlay } from '@/state/CardOverlayContext';
 import type { Node } from '@/types/node';
 import type { ZoomTransform } from '@/hooks/useD3Zoom';
@@ -24,8 +24,8 @@ export function SuperGridDemo() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const { selectedNode, setSelectedNode } = useCardOverlay();
 
-  // Fetch nodes from SQLite
-  const { data: nodes, loading, error } = useNodes();
+  // Fetch filtered nodes from SQLite (respects FilterContext)
+  const { data: nodes, loading, error } = useFilteredNodes();
 
   // Create coordinate system (Anchor origin for now)
   const coordinateSystem = createCoordinateSystem('anchor', 120, 60);

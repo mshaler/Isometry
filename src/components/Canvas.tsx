@@ -1,8 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState } from '@/contexts/AppStateContext';
-import { useFilters } from '@/contexts/FilterContext';
-import { useNodes } from '@/hooks/useSQLiteQuery';
+import { useFilteredNodes } from '@/hooks/useFilteredNodes';
 import {
   ListView,
   GridView,
@@ -22,13 +21,9 @@ export function Canvas() {
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
-  const { compiledQuery } = useFilters();
 
-  // Query nodes from SQLite with filters applied
-  const { data: nodes, loading, error } = useNodes(
-    compiledQuery.sql,
-    compiledQuery.params
-  );
+  // Query nodes from SQLite with LATCH filters applied
+  const { data: nodes, loading, error } = useFilteredNodes();
 
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);
