@@ -19,8 +19,9 @@ import { CommandBar } from './components/CommandBar';
 import { Canvas } from './components/Canvas';
 import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 import { SuperGridDemo } from './components/SuperGridDemo';
+import { ComponentCatalog } from './pages/ComponentCatalog';
 
-type ViewMode = 'app' | 'd3demo' | 'supergrid';
+type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -81,6 +82,18 @@ function AppContent() {
             >
               SuperGrid
             </button>
+            <button
+              onClick={() => setViewMode('components')}
+              className={`px-2 py-0.5 text-xs rounded ${
+                viewMode === 'components'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              Components
+            </button>
           </div>
 
           {/* Canvas or Demo */}
@@ -89,6 +102,8 @@ function AppContent() {
               <D3ComponentsDemo />
             ) : viewMode === 'supergrid' ? (
               <SuperGridDemo />
+            ) : viewMode === 'components' ? (
+              <ComponentCatalog />
             ) : (
               <Canvas />
             )}
