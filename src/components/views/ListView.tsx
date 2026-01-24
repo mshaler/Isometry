@@ -47,6 +47,8 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
         sortAxis: null,
         sortFacet: null,
         isGrouped: false,
+        loading: false,
+        error: null,
       }
     : hookData;
 
@@ -187,6 +189,27 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
     setSortAscending(!sortAscending);
   };
 
+  // Show loading state
+  if (listData.loading) {
+    return (
+      <div className="list-view flex items-center justify-center h-full w-full bg-white dark:bg-gray-900">
+        <div className="text-gray-500 dark:text-gray-400">Loading filtered notes...</div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (listData.error) {
+    return (
+      <div className="list-view flex items-center justify-center h-full w-full bg-white dark:bg-gray-900">
+        <div className="text-center">
+          <div className="text-red-600 dark:text-red-400 font-medium mb-2">Error loading notes</div>
+          <div className="text-sm text-gray-600 dark:text-gray-400">{listData.error.message}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="list-view flex flex-col h-full w-full bg-white dark:bg-gray-900">
       {/* Search and Sort Controls */}
@@ -244,8 +267,9 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
       {/* Virtualized List */}
       <div className="flex-1">
         {listItems.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
-            <p>No items found</p>
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
+            <p className="text-lg font-medium mb-2">No notes match these filters</p>
+            <p className="text-sm">Try adjusting your filter criteria or clearing all filters</p>
           </div>
         ) : (
           <List

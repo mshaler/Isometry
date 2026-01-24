@@ -16,6 +16,8 @@ export interface ListData {
   sortAxis: LATCHAxis | null;
   sortFacet: string | null;
   isGrouped: boolean;
+  loading: boolean;
+  error: Error | null;
 }
 
 /**
@@ -38,7 +40,7 @@ export function useListData(groupingEnabled: boolean = true): ListData {
   const sortFacet = yMapping?.facet ?? null;
 
   // Query filtered nodes (integrates with FilterContext)
-  const { data: nodes } = useFilteredNodes();
+  const { data: nodes, loading, error } = useFilteredNodes();
 
   // Sort nodes by the selected facet
   const sortedNodes = useMemo(() => {
@@ -191,5 +193,7 @@ export function useListData(groupingEnabled: boolean = true): ListData {
     sortAxis,
     sortFacet,
     isGrouped: groupingEnabled && groups !== null,
+    loading,
+    error,
   };
 }

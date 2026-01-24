@@ -1,12 +1,21 @@
-import type { FilterState, CompiledQuery, TimeFilter, CategoryFilter, HierarchyFilter, TimePreset } from '../types/filter';
+import type { FilterState, CompiledQuery, AlphabetFilter, TimeFilter, CategoryFilter, HierarchyFilter, TimePreset } from '../types/filter';
 
 export function compileFilters(filters: FilterState): CompiledQuery {
   const conditions: string[] = [];
   const params: (string | number | boolean | null)[] = [];
-  
+
   // Always exclude deleted
   conditions.push('deleted_at IS NULL');
-  
+
+  // Alphabet filter (text search with FTS5)
+  if (filters.alphabet) {
+    const alphabetSQL = compileAlphabetFilter(filters.alphabet);
+    if (alphabetSQL.sql) {
+      conditions.push(alphabetSQL.sql);
+      params.push(...alphabetSQL.params);
+    }
+  }
+
   // Category filter
   if (filters.category) {
     const categorySQL = compileCategoryFilter(filters.category);
@@ -15,7 +24,7 @@ export function compileFilters(filters: FilterState): CompiledQuery {
       params.push(...categorySQL.params);
     }
   }
-  
+
   // Time filter
   if (filters.time) {
     const timeSQL = compileTimeFilter(filters.time);
@@ -24,7 +33,7 @@ export function compileFilters(filters: FilterState): CompiledQuery {
       params.push(...timeSQL.params);
     }
   }
-  
+
   // Hierarchy filter
   if (filters.hierarchy) {
     const hierarchySQL = compileHierarchyFilter(filters.hierarchy);
@@ -33,7 +42,7 @@ export function compileFilters(filters: FilterState): CompiledQuery {
       params.push(...hierarchySQL.params);
     }
   }
-  
+
   return {
     sql: conditions.join(' AND '),
     params,
