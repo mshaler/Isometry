@@ -1,0 +1,186 @@
+/**
+ * AxisNavigator Component Styles
+ *
+ * Drag-and-drop interface for mapping LATCH axes to planes.
+ * Visual feedback for drag states.
+ */
+
+/* Container */
+.axis-navigator {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Available Axes Section */
+.axis-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.axis-chips-label {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-medium);
+  color: var(--cb-fg-secondary);
+}
+
+.axis-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.axis-chips-empty {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  color: var(--cb-fg-muted);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Axis chip (draggable) */
+.axis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--cb-bg-raised);
+  border: 1px solid var(--cb-border-default);
+  border-radius: 4px;
+  cursor: grab;
+  transition: all 0.15s ease;
+  user-select: none;
+
+  /* Typography */
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-medium);
+  color: var(--cb-fg-primary);
+}
+
+.axis-chip:hover {
+  border-color: var(--cb-border-strong);
+  box-shadow: var(--cb-shadow-sm);
+}
+
+.axis-chip.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.axis-chip.assigned {
+  cursor: default;
+  background: var(--cb-accent);
+  border-color: var(--cb-accent);
+  color: var(--cb-fg-inverse);
+}
+
+.axis-chip-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.axis-chip-label {
+  line-height: 1;
+}
+
+/* Plane Drop Zones */
+.plane-zones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plane-zones-label {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-medium);
+  color: var(--cb-fg-secondary);
+}
+
+/* Individual plane zone */
+.plane-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: var(--cb-bg-base);
+  border: 2px dashed var(--cb-border-default);
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.plane-zone.hovered {
+  border-color: var(--cb-accent);
+  background: color-mix(in srgb, var(--cb-accent) 10%, var(--cb-bg-base));
+}
+
+.plane-zone.has-mapping {
+  border-style: solid;
+  border-color: var(--cb-border-strong);
+  background: var(--cb-bg-raised);
+}
+
+.plane-zone.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: var(--cb-border-subtle);
+}
+
+/* Plane zone header */
+.plane-zone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plane-zone-label {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  font-weight: var(--cb-font-weight-semibold);
+  color: var(--cb-fg-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.plane-zone-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--cb-fg-muted);
+  transition: all 0.15s ease;
+}
+
+.plane-zone-remove:hover {
+  background: var(--cb-error);
+  color: var(--cb-fg-inverse);
+}
+
+/* Plane zone content */
+.plane-zone-content {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+.plane-zone-content.empty {
+  justify-content: center;
+}
+
+.plane-zone-hint {
+  font-family: var(--cb-font-sans);
+  font-size: var(--cb-text-xs);
+  color: var(--cb-fg-muted);
+  font-style: italic;
+}
