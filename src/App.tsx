@@ -7,6 +7,7 @@ import { PAFVProvider } from './contexts/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
 import { CardOverlayProvider } from './state/CardOverlayContext';
 import { AppStateProvider } from './contexts/AppStateContext';
+import { TagColorProvider } from './state/TagColorContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CardOverlay } from './components/CardOverlay';
 
@@ -131,8 +132,10 @@ function App() {
                 <PAFVProvider>
                   <SelectionProvider>
                     <CardOverlayProvider>
-                      <AppContent />
-                      <CardOverlay />
+                      <TagColorProvider>
+                        <AppContent />
+                        <CardOverlay />
+                      </TagColorProvider>
                     </CardOverlayProvider>
                   </SelectionProvider>
                 </PAFVProvider>
