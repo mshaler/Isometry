@@ -84,7 +84,7 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
                   : ''
               }
               onChange={(e) => {
-                const value = e.target.value.trim();
+                const value = e.target.value;
                 if (!value) {
                   setPreviewAlphabet(null);
                 } else {
@@ -95,9 +95,16 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
                 }
               }}
             />
-            <p className="text-xs text-gray-500">
-              Uses SQLite FTS5 for fast full-text search
-            </p>
+            <div className="text-xs text-gray-500 space-y-1">
+              <p className="font-medium">FTS5 full-text search with operators:</p>
+              <ul className="list-disc list-inside ml-2 space-y-0.5">
+                <li><code className="bg-gray-100 px-1 rounded">test*</code> - prefix search</li>
+                <li><code className="bg-gray-100 px-1 rounded">"exact phrase"</code> - phrase match</li>
+                <li><code className="bg-gray-100 px-1 rounded">foo AND bar</code> - both terms</li>
+                <li><code className="bg-gray-100 px-1 rounded">foo OR bar</code> - either term</li>
+                <li><code className="bg-gray-100 px-1 rounded">foo NOT bar</code> - exclude term</li>
+              </ul>
+            </div>
           </div>
         );
 
