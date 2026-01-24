@@ -2,6 +2,14 @@ import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import { useD3Zoom, type ZoomTransform } from '@/hooks/useD3Zoom';
+import { renderColumnHeaders } from './GridBlock2_ColumnHeaders';
+import { renderRowHeaders } from './GridBlock3_RowHeaders';
+import { renderDataCells } from './GridBlock4_DataCells';
+import {
+  getCellData,
+  extractColumnHeaders,
+  extractRowHeaders,
+} from '@/utils/d3-helpers';
 
 export interface CoordinateSystem {
   originX: number;
@@ -15,6 +23,8 @@ export interface CoordinateSystem {
 export interface D3SparsityLayerProps {
   data: Node[];
   coordinateSystem: CoordinateSystem;
+  xAxisFacet?: string;
+  yAxisFacet?: string;
   onCellClick?: (node: Node) => void;
   onZoomChange?: (transform: ZoomTransform) => void;
   width?: number;
@@ -35,6 +45,8 @@ export interface D3SparsityLayerProps {
 export function D3SparsityLayer({
   data,
   coordinateSystem,
+  xAxisFacet = 'folder',
+  yAxisFacet = 'modifiedAt',
   onCellClick,
   onZoomChange,
   width = 800,
@@ -56,6 +68,19 @@ export function D3SparsityLayer({
   // Memoize dimensions to avoid unnecessary re-renders
   const dimensions = useMemo(() => ({ width, height }), [width, height]);
 
+  // Prepare grid data from nodes
+  const gridData = useMemo(() => {
+    if (!data || data.length === 0) {
+      return { columns: [], rows: [], cells: [] };
+    }
+
+    const columns = extractColumnHeaders(data, xAxisFacet);
+    const rows = extractRowHeaders(data, yAxisFacet);
+    const cells = data.map(node => getCellData(node, xAxisFacet, yAxisFacet));
+
+    return { columns, rows, cells };
+  }, [data, xAxisFacet, yAxisFacet]);
+
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || !data) return;
 
@@ -75,11 +100,31 @@ export function D3SparsityLayer({
     const rowHeadersGroup = container.append('g').attr('class', 'row-headers');
     const dataCellsGroup = container.append('g').attr('class', 'data-cells');
 
-    // Store groups for child components to use
-    // These will be populated by GridBlock2, GridBlock3, GridBlock4 components
-    // For now, we create the structure but don't render content yet
+    // Render GridBlock 2: Column Headers
+    renderColumnHeaders({
+      container: columnHeadersGroup,
+      columns: gridData.columns,
+      coordinateSystem,
+      headerHeight: 40,
+    });
 
-  }, [data, coordinateSystem, dimensions, onCellClick]);
+    // Render GridBlock 3: Row Headers
+    renderRowHeaders({
+      container: rowHeadersGroup,
+      rows: gridData.rows,
+      coordinateSystem,
+      headerWidth: 150,
+    });
+
+    // Render GridBlock 4: Data Cells
+    renderDataCells({
+      container: dataCellsGroup,
+      cells: gridData.cells,
+      coordinateSystem,
+      onCellClick,
+    });
+
+  }, [data, coordinateSystem, dimensions, onCellClick, gridData]);
 
   return (
     <svg
