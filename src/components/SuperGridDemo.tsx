@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
 import { useNodes } from '@/hooks/useSQLiteQuery';
+import { useCardOverlay } from '@/state/CardOverlayContext';
 import type { Node } from '@/types/node';
 import type { ZoomTransform } from '@/hooks/useD3Zoom';
 
@@ -20,8 +21,8 @@ import type { ZoomTransform } from '@/hooks/useD3Zoom';
  * 3. Integration testing with PAFV state
  */
 export function SuperGridDemo() {
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const { selectedNode, setSelectedNode } = useCardOverlay();
 
   // Fetch nodes from SQLite
   const { data: nodes, loading, error } = useNodes();
@@ -29,12 +30,11 @@ export function SuperGridDemo() {
   // Create coordinate system (Anchor origin for now)
   const coordinateSystem = createCoordinateSystem('anchor', 120, 60);
 
-  // Handle cell clicks
+  // Handle cell clicks - open card overlay
   const handleCellClick = useCallback((node: Node) => {
     setSelectedNode(node);
-    console.log('Cell clicked:', node);
-    // Future: Expand to Card overlay at z=2
-  }, []);
+    console.log('Cell clicked, opening card overlay:', node.name);
+  }, [setSelectedNode]);
 
   // Handle zoom changes
   const handleZoomChange = useCallback((transform: ZoomTransform) => {
