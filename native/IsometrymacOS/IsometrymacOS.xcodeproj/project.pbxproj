@@ -89,6 +89,9 @@
 			dependencies = (
 			);
 			name = IsometrymacOS;
+			packageProductDependencies = (
+				91000001 /* GRDB */,
+			);
 			productName = IsometrymacOS;
 			productReference = 21000004 /* IsometrymacOS.app */;
 			productType = "com.apple.product-type.application";
@@ -350,6 +353,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		81000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/groue/GRDB.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.24.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		91000001 /* GRDB */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 81000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
+			productName = GRDB;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 71000001 /* Project object */;
 }
