@@ -14,6 +14,10 @@ public final class PerformanceMonitor: @unchecked Sendable {
 
     private var gridRenderTimes: [TimeInterval] = []
     private var queryTimes: [String: [TimeInterval]] = [:]
+    private var notebookRenderTimes: [TimeInterval] = []
+    private var notebookCardQueryTimes: [TimeInterval] = []
+    private var componentResizeTimes: [TimeInterval] = []
+    private var signpostTimes: [OSSignpostID: TimeInterval] = [:]
     private let maxSamples = 100
 
     // MARK: - Performance Thresholds
@@ -68,6 +72,93 @@ public final class PerformanceMonitor: @unchecked Sendable {
         }
 
         return result
+    }
+
+    // MARK: - Notebook Performance Tracking
+
+    /// Start measuring notebook layout render time
+    public func startNotebookRender() -> OSSignpostID {
+        let id = OSSignpostID(log: log)
+        let startTime = CACurrentMediaTime()
+
+        lock.lock()
+        signpostTimes[id] = startTime
+        lock.unlock()
+
+        os_signpost(.begin, log: log, name: "Notebook Render", signpostID: id)
+        return id
+    }
+
+    /// End measuring notebook layout render time
+    public func endNotebookRender(_ id: OSSignpostID, layoutType: String = "") {
+        os_signpost(.end, log: log, name: "Notebook Render", signpostID: id,
+                   "Layout: %{public}@", layoutType)
+
+        lock.lock()
+        defer { lock.unlock() }
+
+        let endTime = CACurrentMediaTime()
+        if let startTime = signpostTimes.removeValue(forKey: id) {
+            let renderTime = endTime - startTime
+            notebookRenderTimes.append(renderTime)
+            limitArray(&notebookRenderTimes, to: maxSamples)
+
+            if renderTime > Self.targetFrameTime {
+                os_log(.error, log: metricsLog,
+                       "Notebook render exceeded target: %.2fms (target: %.2fms)",
+                       renderTime * 1000, Self.targetFrameTime * 1000)
+            }
+        }
+    }
+
+    /// Track notebook card database queries
+    public func recordNotebookCardQuery(_ duration: TimeInterval, operation: String) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        notebookCardQueryTimes.append(duration)
+        limitArray(&notebookCardQueryTimes, to: maxSamples)
+
+        if duration > Self.maxQueryTime {
+            os_log(.error, log: metricsLog,
+                   "Notebook card query exceeded limit: %{public}@ took %.2fms",
+                   operation, duration * 1000)
+        }
+    }
+
+    /// Track component resize performance
+    public func recordComponentResize(_ duration: TimeInterval) {
+        lock.lock()
+        defer { lock.unlock() }
+
+        componentResizeTimes.append(duration)
+        limitArray(&componentResizeTimes, to: maxSamples)
+    }
+
+    /// Measure notebook render time with a closure
+    @discardableResult
+    public func measureNotebookRender<T>(layoutType: String = "", _ block: () -> T) -> T {
+        let id = startNotebookRender()
+        let result = block()
+        endNotebookRender(id, layoutType: layoutType)
+        return result
+    }
+
+    // MARK: - Notebook Metrics
+
+    public var notebookMetrics: NotebookPerformanceMetrics {
+        lock.lock()
+        defer { lock.unlock() }
+
+        return NotebookPerformanceMetrics(
+            averageRenderTime: notebookRenderTimes.isEmpty ? 0 : notebookRenderTimes.reduce(0, +) / Double(notebookRenderTimes.count),
+            maxRenderTime: notebookRenderTimes.max() ?? 0,
+            averageQueryTime: notebookCardQueryTimes.isEmpty ? 0 : notebookCardQueryTimes.reduce(0, +) / Double(notebookCardQueryTimes.count),
+            maxQueryTime: notebookCardQueryTimes.max() ?? 0,
+            averageResizeTime: componentResizeTimes.isEmpty ? 0 : componentResizeTimes.reduce(0, +) / Double(componentResizeTimes.count),
+            renderSampleCount: notebookRenderTimes.count,
+            querySampleCount: notebookCardQueryTimes.count
+        )
     }
 
     // MARK: - Query Measurement
@@ -162,6 +253,13 @@ public final class PerformanceMonitor: @unchecked Sendable {
         }
     }
 
+    /// Helper method to limit array size while maintaining chronological order
+    private func limitArray<T>(_ array: inout [T], to maxCount: Int) {
+        while array.count > maxCount {
+            array.removeFirst()
+        }
+    }
+
     private func recordQueryTime(name: String, elapsed: TimeInterval) {
         lock.lock()
         defer { lock.unlock() }
@@ -251,6 +349,10 @@ public final class PerformanceMonitor: @unchecked Sendable {
 
         gridRenderTimes.removeAll()
         queryTimes.removeAll()
+        notebookRenderTimes.removeAll()
+        notebookCardQueryTimes.removeAll()
+        componentResizeTimes.removeAll()
+        signpostTimes.removeAll()
     }
 }
 
@@ -285,4 +387,24 @@ public struct QueryStats {
     public var p95MS: Double { p95 * 1000 }
 
     public var meetsTarget: Bool { average <= PerformanceMonitor.maxQueryTime }
+}
+
+public struct NotebookPerformanceMetrics {
+    public let averageRenderTime: TimeInterval
+    public let maxRenderTime: TimeInterval
+    public let averageQueryTime: TimeInterval
+    public let maxQueryTime: TimeInterval
+    public let averageResizeTime: TimeInterval
+    public let renderSampleCount: Int
+    public let querySampleCount: Int
+
+    public var averageRenderMS: Double { averageRenderTime * 1000 }
+    public var maxRenderMS: Double { maxRenderTime * 1000 }
+    public var averageQueryMS: Double { averageQueryTime * 1000 }
+    public var maxQueryMS: Double { maxQueryTime * 1000 }
+    public var averageResizeMS: Double { averageResizeTime * 1000 }
+
+    public var meetsRenderTarget: Bool { averageRenderTime <= PerformanceMonitor.targetFrameTime }
+    public var meetsQueryTarget: Bool { averageQueryTime <= PerformanceMonitor.maxQueryTime }
+    public var estimatedFPS: Double { averageRenderTime > 0 ? 1.0 / averageRenderTime : 0 }
 }
