@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Terminal, Minimize2, Maximize2, Circle } from 'lucide-react';
+import { useTerminal } from '../../hooks/useTerminal';
 
 interface ShellComponentProps {
   className?: string;
@@ -7,7 +8,51 @@ interface ShellComponentProps {
 
 export function ShellComponent({ className }: ShellComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [connectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const terminalContainerRef = useRef<HTMLDivElement>(null);
+  const { createTerminal, attachToProcess, dispose, resizeTerminal, isConnected } = useTerminal();
+
+  // Initialize terminal when component mounts
+  useEffect(() => {
+    if (!isMinimized && terminalContainerRef.current) {
+      const containerId = 'terminal-container';
+      terminalContainerRef.current.id = containerId;
+
+      setConnectionStatus('connecting');
+
+      const terminal = createTerminal(containerId);
+      if (terminal) {
+        // Attach to simulated process
+        attachToProcess();
+        setConnectionStatus('connected');
+      } else {
+        setConnectionStatus('disconnected');
+      }
+
+      // Handle resize
+      const handleResize = () => {
+        resizeTerminal(0, 0); // Use fit addon
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [isMinimized, createTerminal, attachToProcess, resizeTerminal]);
+
+  // Update connection status based on terminal state
+  useEffect(() => {
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+  }, [isConnected]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      dispose();
+    };
+  }, [dispose]);
 
   if (isMinimized) {
     return (
@@ -61,52 +106,23 @@ export function ShellComponent({ className }: ShellComponentProps) {
       </div>
 
       {/* Terminal Area */}
-      <div className="flex-1 p-3 font-mono text-sm">
-        <div className="text-green-400 mb-2">
-          Welcome to Isometry Notebook Shell
-        </div>
-        <div className="text-gray-500 mb-2">
-          Type 'happy' to interact with Claude Code
-        </div>
-        <div className="text-gray-500 mb-4">
-          Regular shell commands also supported
-        </div>
-
-        {/* Mock terminal session */}
-        <div className="space-y-1">
-          <div className="flex">
-            <span className="text-blue-400 mr-2">$</span>
-            <span className="text-gray-300">pwd</span>
-          </div>
-          <div className="text-gray-400 ml-4">/Users/mshaler/Developer/Projects/Isometry</div>
-
-          <div className="flex mt-3">
-            <span className="text-blue-400 mr-2">$</span>
-            <span className="text-gray-300">ls -la</span>
-          </div>
-          <div className="text-gray-400 ml-4 space-y-0.5">
-            <div>drwxr-xr-x  12 user  staff   384 Jan 25 13:27 src/</div>
-            <div>drwxr-xr-x   8 user  staff   256 Jan 25 13:15 docs/</div>
-            <div>-rw-r--r--   1 user  staff  1234 Jan 25 13:20 package.json</div>
-          </div>
-
-          {/* Current prompt */}
-          <div className="flex mt-4">
-            <span className="text-blue-400 mr-2">$</span>
-            <span className="bg-gray-700 w-2 h-4 animate-pulse"></span>
-          </div>
-        </div>
+      <div className="flex-1 flex flex-col">
+        <div
+          ref={terminalContainerRef}
+          className="flex-1 min-h-0"
+          style={{ height: '300px' }} // Minimum height for terminal
+        />
       </div>
 
       {/* Status Bar */}
       <div className="border-t border-gray-700 bg-gray-800 px-3 py-1">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
-            <span className="text-gray-400">Claude Code: {connectionStatus}</span>
-            <span className="text-gray-400">Shell: bash</span>
+            <span className="text-gray-400">Terminal: {connectionStatus}</span>
+            <span className="text-gray-400">Shell: zsh</span>
           </div>
           <div className="text-gray-400">
-            Ready for commands
+            {connectionStatus === 'connected' ? 'Ready for commands' : 'Initializing...'}
           </div>
         </div>
       </div>

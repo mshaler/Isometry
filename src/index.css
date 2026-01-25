@@ -1,5 +1,6 @@
 @import './styles/variables.css';
 @import './styles/cb-components.css';
+@import '@xterm/xterm/css/xterm.css';
 
 @tailwind base;
 @tailwind components;
