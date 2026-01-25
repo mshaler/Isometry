@@ -32,12 +32,12 @@ public func routes(_ app: Application) throws {
     let v1 = app.grouped("api", "v1")
 
     // Add JSON content type middleware for v1 routes
-    v1.middleware.use(ContentTypeMiddleware())
+    let v1WithMiddleware = v1.grouped(ContentTypeMiddleware())
 
     // Register route groups
-    try v1.register(collection: NodesController())
-    try v1.register(collection: EdgesController())
-    try v1.register(collection: GraphController())
+    try v1WithMiddleware.register(collection: NodesController())
+    try v1WithMiddleware.register(collection: EdgesController())
+    try v1WithMiddleware.register(collection: GraphController())
     try v1.register(collection: FiltersController())
 
     // MARK: - Documentation Routes

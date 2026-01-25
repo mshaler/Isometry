@@ -298,7 +298,7 @@ public struct BetaFeedback: Identifiable {
     public let description: String
     public let severity: FeedbackSeverity
     public let attachments: [FeedbackAttachment]
-    public let deviceInfo: DeviceInfo
+    public let deviceInfo: BetaDeviceInfo
     public let timestamp: Date
     public var status: FeedbackStatus = .pending
 
@@ -346,7 +346,7 @@ public struct FeedbackAttachment {
     }
 }
 
-public struct DeviceInfo {
+public struct BetaDeviceInfo {
     public let model: String
     public let osVersion: String
     public let appVersion: String
@@ -354,7 +354,7 @@ public struct DeviceInfo {
     public let locale: String
     public let timezone: String
 
-    public static var current: DeviceInfo {
+    public static var current: BetaDeviceInfo {
         #if os(iOS)
         let model = UIDevice.current.model
         let osVersion = UIDevice.current.systemVersion
@@ -363,7 +363,7 @@ public struct DeviceInfo {
         let osVersion = ProcessInfo.processInfo.operatingSystemVersionString
         #endif
 
-        return DeviceInfo(
+        return BetaDeviceInfo(
             model: model,
             osVersion: osVersion,
             appVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown",

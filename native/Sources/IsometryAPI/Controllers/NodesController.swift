@@ -58,9 +58,9 @@ struct NodesController: RouteCollection {
         let createRequest = try req.content.decode(CreateNodeRequest.self)
 
         let node = Node(
+            nodeType: createRequest.nodeType ?? "note",
             name: createRequest.name,
             content: createRequest.content,
-            nodeType: createRequest.nodeType ?? "note",
             folder: createRequest.folder,
             tags: createRequest.tags ?? [],
             priority: createRequest.priority ?? 0,
