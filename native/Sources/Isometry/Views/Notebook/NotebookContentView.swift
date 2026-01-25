@@ -140,7 +140,7 @@ public struct NotebookContentView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .cursor(isDragging != nil ? .resizeLeftRight : .arrow)
+        // TODO: Add cursor handling in Phase 6.2 with proper macOS integration
     }
 
     // MARK: - Divider View
@@ -154,7 +154,7 @@ public struct NotebookContentView: View {
                 Rectangle()
                     .fill(Color.clear)
                     .frame(width: 8) // Wider hit target
-                    .cursor(.resizeLeftRight)
+                    // TODO: Add cursor(.resizeLeftRight) in Phase 6.2
             }
             .onHover { isHovering in
                 // Visual feedback on hover
@@ -201,23 +201,7 @@ private extension View {
 }
 
 // MARK: - Cursor Modifier
-
-private extension View {
-    @ViewBuilder
-    func cursor(_ cursor: NSCursor) -> some View {
-        #if os(macOS)
-        self.onHover { isHovering in
-            if isHovering {
-                cursor.push()
-            } else {
-                NSCursor.pop()
-            }
-        }
-        #else
-        self
-        #endif
-    }
-}
+// TODO: Implement cursor handling in Phase 6.2 with proper macOS NSCursor integration
 
 // MARK: - Enhanced Desktop Layout with Drag Handling
 
@@ -327,7 +311,7 @@ private struct DividerView: View {
                     .fill(Color.clear)
                     .frame(width: 8) // Wider hit target for easier dragging
             }
-            .cursor(.resizeLeftRight)
+            // TODO: Add cursor(.resizeLeftRight) in Phase 6.2
             .gesture(
                 DragGesture(coordinateSpace: .local)
                     .onChanged { value in
