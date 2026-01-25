@@ -603,36 +603,27 @@ enum RenderQuality {
 }
 
 // MARK: - Grid Headers Overlay
-/// SwiftUI overlay for column and row headers
-/// Equivalent to React header spanning logic
+/// SwiftUI overlay for column and row headers with header spanning support
+/// Enhanced with signature SuperGrid header spanning functionality
 struct GridHeadersOverlay: View {
     let viewConfig: ViewConfig
     let size: CGSize
 
-    var body: some View {
-        VStack {
-            // Column headers
-            HStack {
-                ForEach(columnHeaders, id: \.self) { header in
-                    Text(header)
-                        .font(.caption)
-                        .frame(width: 120)
-                        .background(Color.gray.opacity(0.1))
-                }
-            }
-            .frame(height: 30)
+    // Header spanning configuration
+    private let cellSize: CGFloat = 120
+    private let headerHeight: CGFloat = 30
+    private let headerWidth: CGFloat = 120
 
-            HStack {
-                // Row headers
-                VStack {
-                    ForEach(rowHeaders, id: \.self) { header in
-                        Text(header)
-                            .font(.caption)
-                            .frame(height: 80)
-                            .background(Color.gray.opacity(0.1))
-                    }
-                }
-                .frame(width: 120)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Column headers with spanning
+            columnHeadersView
+                .frame(height: headerHeight)
+
+            HStack(alignment: .top, spacing: 0) {
+                // Row headers with spanning
+                rowHeadersView
+                    .frame(width: headerWidth)
 
                 Spacer()
             }
@@ -641,33 +632,166 @@ struct GridHeadersOverlay: View {
         }
     }
 
-    private var columnHeaders: [String] {
-        // Generate headers based on viewConfig.xAxisMapping
-        switch viewConfig.xAxisMapping {
-        case "time":
-            return ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
-        case "category":
-            return ["Work", "Personal", "Learning", "Health"]
-        case "hierarchy":
-            return ["P1", "P2", "P3", "P4"]
-        default:
-            return ["Col 1", "Col 2", "Col 3", "Col 4"]
+    private var columnHeadersView: some View {
+        HStack(spacing: 0) {
+            // Skip space for row headers
+            Rectangle()
+                .fill(Color.clear)
+                .frame(width: headerWidth)
+
+            // Column header spans
+            HeaderSpanOverlay(
+                spans: columnHeaderSpans,
+                orientation: .horizontal,
+                cellSize: cellSize
+            ) { index in
+                CGFloat(index) * cellSize
+            }
+            .frame(height: headerHeight)
         }
     }
 
-    private var rowHeaders: [String] {
-        // Generate headers based on viewConfig.yAxisMapping
-        switch viewConfig.yAxisMapping {
-        case "category":
-            return ["Important", "Normal", "Low"]
-        case "time":
-            return ["Today", "This Week", "Later"]
-        case "hierarchy":
-            return ["High", "Medium", "Low"]
-        default:
-            return ["Row 1", "Row 2", "Row 3"]
+    private var rowHeadersView: some View {
+        VStack(spacing: 0) {
+            // Skip space for column headers
+            Rectangle()
+                .fill(Color.clear)
+                .frame(height: headerHeight)
+
+            // Row header spans
+            HeaderSpanOverlay(
+                spans: rowHeaderSpans,
+                orientation: .vertical,
+                cellSize: 80 // Row height
+            ) { index in
+                CGFloat(index) * 80
+            }
         }
     }
+
+    // Generate column header spans based on current configuration
+    private var columnHeaderSpans: [HeaderSpan] {
+        let combinations = generateColumnCombinations()
+        let dimensions = generateColumnDimensions()
+        return HeaderSpanCalculator.calculateHeaderSpans(
+            combinations: combinations,
+            dimensions: dimensions
+        )
+    }
+
+    // Generate row header spans based on current configuration
+    private var rowHeaderSpans: [HeaderSpan] {
+        let combinations = generateRowCombinations()
+        let dimensions = generateRowDimensions()
+        return HeaderSpanCalculator.calculateHeaderSpans(
+            combinations: combinations,
+            dimensions: dimensions
+        )
+    }
+
+    private func generateColumnCombinations() -> [[String]] {
+        // Generate header combinations based on viewConfig.xAxisMapping
+        switch viewConfig.xAxisMapping {
+        case "time":
+            return [
+                ["2024", "Q1", "Jan"],
+                ["2024", "Q1", "Feb"],
+                ["2024", "Q1", "Mar"],
+                ["2024", "Q2", "Apr"],
+                ["2024", "Q2", "May"],
+                ["2024", "Q2", "Jun"]
+            ]
+        case "category":
+            return [
+                ["Work", "Projects"],
+                ["Work", "Meetings"],
+                ["Personal", "Health"],
+                ["Personal", "Learning"]
+            ]
+        case "hierarchy":
+            return [
+                ["High", "P1"],
+                ["High", "P2"],
+                ["Medium", "P3"],
+                ["Low", "P4"]
+            ]
+        default:
+            return [["Col1"], ["Col2"], ["Col3"], ["Col4"]]
+        }
+    }
+
+    private func generateRowCombinations() -> [[String]] {
+        // Generate header combinations based on viewConfig.yAxisMapping
+        switch viewConfig.yAxisMapping {
+        case "category":
+            return [
+                ["Important", "Urgent"],
+                ["Important", "Normal"],
+                ["Normal", "Low"]
+            ]
+        case "time":
+            return [
+                ["This Week", "Today"],
+                ["This Week", "Tomorrow"],
+                ["Next Week", "Monday"],
+                ["Next Week", "Tuesday"]
+            ]
+        case "hierarchy":
+            return [
+                ["Critical", "High"],
+                ["Important", "Medium"],
+                ["Nice to Have", "Low"]
+            ]
+        default:
+            return [["Row1"], ["Row2"], ["Row3"]]
+        }
+    }
+
+    private func generateColumnDimensions() -> [GridDimension] {
+        switch viewConfig.xAxisMapping {
+        case "time":
+            return [
+                GridDimension(id: "year", name: "Year", type: .time),
+                GridDimension(id: "quarter", name: "Quarter", type: .time),
+                GridDimension(id: "month", name: "Month", type: .time)
+            ]
+        case "category":
+            return [
+                GridDimension(id: "area", name: "Area", type: .category),
+                GridDimension(id: "type", name: "Type", type: .category)
+            ]
+        case "hierarchy":
+            return [
+                GridDimension(id: "importance", name: "Importance", type: .hierarchy),
+                GridDimension(id: "priority", name: "Priority", type: .hierarchy)
+            ]
+        default:
+            return [GridDimension(id: "column", name: "Column", type: .category)]
+        }
+    }
+
+    private func generateRowDimensions() -> [GridDimension] {
+        switch viewConfig.yAxisMapping {
+        case "category":
+            return [
+                GridDimension(id: "importance", name: "Importance", type: .category),
+                GridDimension(id: "urgency", name: "Urgency", type: .category)
+            ]
+        case "time":
+            return [
+                GridDimension(id: "timeframe", name: "Timeframe", type: .time),
+                GridDimension(id: "day", name: "Day", type: .time)
+            ]
+        case "hierarchy":
+            return [
+                GridDimension(id: "criticality", name: "Criticality", type: .hierarchy),
+                GridDimension(id: "level", name: "Level", type: .hierarchy)
+            ]
+        default:
+            return [GridDimension(id: "row", name: "Row", type: .category)]
+        }
+    }
+
 }
 
 // MARK: - Grid Cell Data
