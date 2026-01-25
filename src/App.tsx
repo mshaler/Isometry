@@ -11,6 +11,7 @@ import { TagColorProvider } from './state/TagColorContext';
 import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CardOverlay } from './components/CardOverlay';
+import { NotebookLayout } from './components/notebook/NotebookLayout';
 
 // Layout components
 import { Toolbar } from './components/Toolbar';
@@ -127,12 +128,7 @@ function AppContent() {
             ) : viewMode === 'components' ? (
               <ComponentCatalog />
             ) : viewMode === 'notebook' ? (
-              <div className="flex-1 p-4">
-                <div className="text-center text-gray-500">
-                  <h2 className="text-2xl font-bold mb-2">Notebook Sidecar</h2>
-                  <p>Three-component layout coming soon...</p>
-                </div>
-              </div>
+              <NotebookLayout />
             ) : (
               <Canvas />
             )}
