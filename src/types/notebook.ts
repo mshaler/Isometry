@@ -48,11 +48,15 @@ export interface NotebookTemplate {
   id: string;
   name: string;
   description: string;
-  defaultProperties: NotebookCardProperties;
-  defaultMarkdown: string;
+  category: 'built-in' | 'custom';
   cardType: NotebookCardType;
-  created_at: string;
-  modified_at: string;
+  markdownContent: string;
+  properties: Record<string, unknown>;
+  previewImage?: string; // Base64 or URL
+  tags: string[];
+  createdAt: string;
+  modifiedAt: string;
+  usageCount?: number;
 }
 
 export interface NotebookCard {
@@ -336,3 +340,280 @@ export function deserializePropertyValue(value: unknown, type: PropertyType): un
       return value;
   }
 }
+
+// Built-in template library
+export const BUILT_IN_TEMPLATES: NotebookTemplate[] = [
+  {
+    id: 'meeting-notes',
+    name: 'Meeting Notes',
+    description: 'Structured template for meeting documentation',
+    category: 'built-in',
+    cardType: 'meeting',
+    markdownContent: `# Meeting: [Title]
+
+**Date:** ${new Date().toLocaleDateString()}
+**Attendees:**
+**Duration:**
+
+## Agenda
+- [ ]
+- [ ]
+- [ ]
+
+## Discussion Notes
+
+
+## Action Items
+- [ ] **[Name]** -
+- [ ] **[Name]** -
+
+## Next Steps
+
+`,
+    properties: {
+      status: 'draft',
+      priority: 'medium',
+      'due-date': null
+    },
+    tags: ['meeting', 'structured'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  },
+  {
+    id: 'code-snippet',
+    name: 'Code Snippet',
+    description: 'Template for documenting code examples and solutions',
+    category: 'built-in',
+    cardType: 'code',
+    markdownContent: `# Code: [Title]
+
+## Problem
+Describe what this code solves...
+
+## Solution
+\`\`\`typescript
+// Your code here
+function example() {
+  return "Hello World";
+}
+\`\`\`
+
+## Usage
+\`\`\`typescript
+// How to use it
+const result = example();
+\`\`\`
+
+## Notes
+- Additional considerations
+- Performance implications
+- Related patterns
+
+## References
+- [Link to docs](https://example.com)
+`,
+    properties: {
+      tags: ['code', 'solution'],
+      status: 'complete',
+      priority: 'medium'
+    },
+    tags: ['code', 'programming', 'snippet'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  },
+  {
+    id: 'project-plan',
+    name: 'Project Plan',
+    description: 'Template for project planning and tracking',
+    category: 'built-in',
+    cardType: 'project',
+    markdownContent: `# Project: [Name]
+
+## Overview
+Brief description of the project and its goals...
+
+## Objectives
+- [ ] Primary objective 1
+- [ ] Primary objective 2
+- [ ] Primary objective 3
+
+## Timeline
+| Phase | Description | Start Date | End Date | Status |
+|-------|-------------|------------|----------|--------|
+| 1     | Planning    | YYYY-MM-DD | YYYY-MM-DD | Not Started |
+| 2     | Development | YYYY-MM-DD | YYYY-MM-DD | Not Started |
+| 3     | Testing     | YYYY-MM-DD | YYYY-MM-DD | Not Started |
+| 4     | Launch      | YYYY-MM-DD | YYYY-MM-DD | Not Started |
+
+## Resources
+### Team
+- **Project Lead:** [Name]
+- **Developer:** [Name]
+- **Designer:** [Name]
+
+### Tools & Technologies
+- Technology 1
+- Technology 2
+- Technology 3
+
+## Risks & Mitigation
+| Risk | Impact | Probability | Mitigation |
+|------|--------|-------------|------------|
+| Risk 1 | High | Medium | Mitigation strategy |
+
+## Success Metrics
+- Metric 1: Target value
+- Metric 2: Target value
+- Metric 3: Target value
+
+## Notes
+Additional project notes...
+`,
+    properties: {
+      status: 'in-progress',
+      priority: 'high',
+      'due-date': null,
+      assignee: null
+    },
+    tags: ['project', 'planning', 'management'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  },
+  {
+    id: 'daily-standup',
+    name: 'Daily Standup',
+    description: 'Quick template for daily standup notes',
+    category: 'built-in',
+    cardType: 'meeting',
+    markdownContent: `# Daily Standup - ${new Date().toLocaleDateString()}
+
+## Yesterday's Accomplishments
+- [ ] Task completed 1
+- [ ] Task completed 2
+
+## Today's Goals
+- [ ] Task to complete 1
+- [ ] Task to complete 2
+
+## Blockers
+- None / [Describe blocker]
+
+## Notes
+- Additional context
+- Team updates
+- Upcoming deadlines
+`,
+    properties: {
+      status: 'complete',
+      priority: 'low',
+      tags: ['standup', 'daily']
+    },
+    tags: ['standup', 'meeting', 'daily'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  },
+  {
+    id: 'retrospective',
+    name: 'Retrospective',
+    description: 'Template for team retrospectives and reflection',
+    category: 'built-in',
+    cardType: 'meeting',
+    markdownContent: `# Retrospective - [Period/Sprint Name]
+
+**Date:** ${new Date().toLocaleDateString()}
+**Participants:**
+**Facilitator:**
+
+## What Went Well? 💚
+- Success 1
+- Success 2
+- Success 3
+
+## What Could Be Improved? 🔶
+- Challenge 1
+- Challenge 2
+- Challenge 3
+
+## Action Items 🎯
+- [ ] **[Owner]** - Action item 1 (Due: YYYY-MM-DD)
+- [ ] **[Owner]** - Action item 2 (Due: YYYY-MM-DD)
+- [ ] **[Owner]** - Action item 3 (Due: YYYY-MM-DD)
+
+## Insights & Learnings 💡
+- Key insight 1
+- Key insight 2
+- Key insight 3
+
+## Next Sprint Focus
+- Priority 1
+- Priority 2
+- Priority 3
+`,
+    properties: {
+      status: 'complete',
+      priority: 'medium',
+      tags: ['retrospective', 'team']
+    },
+    tags: ['retrospective', 'meeting', 'team', 'agile'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  },
+  {
+    id: 'research-notes',
+    name: 'Research Notes',
+    description: 'Template for research documentation and findings',
+    category: 'built-in',
+    cardType: 'capture',
+    markdownContent: `# Research: [Topic]
+
+## Research Question
+What are you trying to understand or discover?
+
+## Hypothesis
+Initial assumptions or predictions...
+
+## Methodology
+- Research method 1
+- Research method 2
+- Research method 3
+
+## Findings
+### Key Insights
+1. **Finding 1:** Description and implications
+2. **Finding 2:** Description and implications
+3. **Finding 3:** Description and implications
+
+### Supporting Evidence
+- Evidence point 1
+- Evidence point 2
+- Evidence point 3
+
+## Conclusion
+Summary of what was learned...
+
+## Next Steps
+- [ ] Follow-up research needed
+- [ ] Action items based on findings
+- [ ] Areas for deeper investigation
+
+## Sources
+- [Source 1](https://example.com)
+- [Source 2](https://example.com)
+- [Source 3](https://example.com)
+`,
+    properties: {
+      status: 'in-progress',
+      priority: 'medium',
+      tags: ['research', 'documentation']
+    },
+    tags: ['research', 'documentation', 'analysis'],
+    createdAt: new Date().toISOString(),
+    modifiedAt: new Date().toISOString(),
+    usageCount: 0
+  }
+];

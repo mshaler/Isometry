@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import type { NotebookCard, NotebookCardType, NotebookTemplate, LayoutPosition } from '../types/notebook';
-import { createNotebookCardTemplate, rowToNotebookCard, notebookCardToRow } from '../types/notebook';
+import { createNotebookCardTemplate, rowToNotebookCard, notebookCardToRow, BUILT_IN_TEMPLATES } from '../types/notebook';
 import { useDatabase } from '../db/DatabaseContext';
 
 interface NotebookLayoutState {
@@ -19,19 +19,29 @@ interface NotebookContextType {
   loading: boolean;
   error: Error | null;
 
-  // Methods
-  createCard: (type: NotebookCardType, template?: string) => Promise<NotebookCard>;
+  // Card Methods
+  createCard: (type: NotebookCardType, templateId?: string) => Promise<NotebookCard>;
   updateCard: (id: string, updates: Partial<NotebookCard>) => Promise<void>;
   deleteCard: (id: string) => Promise<void>;
   setActiveCard: (card: NotebookCard | null) => void;
+  loadCards: () => Promise<void>;
+
+  // Template Methods
+  createTemplate: (name: string, description: string, fromCard: NotebookCard) => Promise<NotebookTemplate>;
+  deleteTemplate: (templateId: string) => Promise<void>;
+  updateTemplate: (templateId: string, updates: Partial<NotebookTemplate>) => Promise<void>;
+  duplicateTemplate: (templateId: string, newName: string) => Promise<NotebookTemplate>;
+
+  // Layout Methods
   updateLayout: (component: keyof NotebookLayoutState, position: LayoutPosition) => void;
   toggleNotebookMode: () => void;
-  loadCards: () => Promise<void>;
 }
 
 const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
 
 const LAYOUT_STORAGE_KEY = 'isometry-notebook-layout';
+const TEMPLATES_STORAGE_KEY = 'isometry-notebook-templates';
+
 const DEFAULT_LAYOUT: NotebookLayoutState = {
   capture: { x: 0, y: 0, width: 400, height: 600 },
   shell: { x: 400, y: 0, width: 400, height: 300 },
@@ -51,7 +61,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   });
   const [isNotebookMode, setIsNotebookMode] = useState(false);
-  const [templates] = useState<NotebookTemplate[]>([]); // TODO: Implement template management
+  const [templates, setTemplates] = useState<NotebookTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
@@ -64,12 +74,45 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   }, [layout]);
 
+  // Load templates on mount
+  useEffect(() => {
+    loadTemplates();
+  }, []);
+
   // Load cards on database ready
   useEffect(() => {
     if (db && isNotebookMode) {
       loadCards().catch(console.error);
     }
   }, [db, isNotebookMode]);
+
+  // Load templates from localStorage and merge with built-in templates
+  const loadTemplates = useCallback(() => {
+    try {
+      const savedTemplates = localStorage.getItem(TEMPLATES_STORAGE_KEY);
+      const customTemplates: NotebookTemplate[] = savedTemplates ? JSON.parse(savedTemplates) : [];
+
+      // Validate custom templates structure
+      const validCustomTemplates = customTemplates.filter(template =>
+        template.id && template.name && template.markdownContent !== undefined
+      );
+
+      // Merge built-in and custom templates
+      setTemplates([...BUILT_IN_TEMPLATES, ...validCustomTemplates]);
+    } catch (error) {
+      console.warn('Failed to load custom templates:', error);
+      setTemplates(BUILT_IN_TEMPLATES);
+    }
+  }, []);
+
+  // Save custom templates to localStorage
+  const saveCustomTemplates = useCallback((customTemplates: NotebookTemplate[]) => {
+    try {
+      localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(customTemplates));
+    } catch (error) {
+      console.warn('Failed to save custom templates:', error);
+    }
+  }, []);
 
   const loadCards = useCallback(async () => {
     if (!db) return;
@@ -105,18 +148,40 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     const now = new Date().toISOString();
 
     try {
+      // Find template if provided
+      let template: NotebookTemplate | undefined;
+      if (templateId) {
+        template = templates.find(t => t.id === templateId);
+        if (template) {
+          // Increment usage count for custom templates
+          if (template.category === 'custom') {
+            template.usageCount = (template.usageCount || 0) + 1;
+            const customTemplates = templates.filter(t => t.category === 'custom');
+            saveCustomTemplates(customTemplates);
+          }
+        }
+      }
+
       // Create node first
+      const cardName = template ?
+        template.markdownContent.split('\n')[0].replace(/^#\s*/, '') || `Untitled ${type} card` :
+        `Untitled ${type} card`;
+
       execute(
         `INSERT INTO nodes (id, node_type, name, created_at, modified_at)
          VALUES (?, ?, ?, ?, ?)`,
-        [nodeId, 'notebook', `Untitled ${type} card`, now, now]
+        [nodeId, 'notebook', cardName, now, now]
       );
 
-      // Create notebook card
-      const cardTemplate = createNotebookCardTemplate(nodeId, type);
+      // Create notebook card with template content
+      const cardTemplate = createNotebookCardTemplate(nodeId, template?.cardType || type);
       cardTemplate.id = cardId;
-      if (templateId) {
-        cardTemplate.templateId = templateId;
+      cardTemplate.templateId = templateId || null;
+
+      // Apply template content and properties
+      if (template) {
+        cardTemplate.markdownContent = template.markdownContent;
+        cardTemplate.properties = { ...template.properties };
       }
 
       const rowData = notebookCardToRow(cardTemplate);
@@ -148,7 +213,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       setError(error);
       throw error;
     }
-  }, [db, execute]);
+  }, [db, execute, templates, saveCustomTemplates]);
 
   const updateCard = useCallback(async (id: string, updates: Partial<NotebookCard>): Promise<void> => {
     if (!db) throw new Error('Database not initialized');
@@ -222,6 +287,91 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     setIsNotebookMode(prev => !prev);
   }, []);
 
+  // Template management methods
+  const createTemplate = useCallback(async (name: string, description: string, fromCard: NotebookCard): Promise<NotebookTemplate> => {
+    const now = new Date().toISOString();
+
+    const newTemplate: NotebookTemplate = {
+      id: `custom-${Date.now()}`,
+      name: name.trim(),
+      description: description.trim(),
+      category: 'custom',
+      cardType: fromCard.cardType,
+      markdownContent: fromCard.markdownContent || '',
+      properties: { ...fromCard.properties } || {},
+      tags: [],
+      createdAt: now,
+      modifiedAt: now,
+      usageCount: 0
+    };
+
+    const customTemplates = templates.filter(t => t.category === 'custom');
+    const updatedCustomTemplates = [...customTemplates, newTemplate];
+
+    saveCustomTemplates(updatedCustomTemplates);
+    setTemplates([...BUILT_IN_TEMPLATES, ...updatedCustomTemplates]);
+
+    return newTemplate;
+  }, [templates, saveCustomTemplates]);
+
+  const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template || template.category === 'built-in') {
+      throw new Error('Cannot delete built-in templates');
+    }
+
+    const customTemplates = templates.filter(t => t.category === 'custom' && t.id !== templateId);
+    saveCustomTemplates(customTemplates);
+    setTemplates([...BUILT_IN_TEMPLATES, ...customTemplates]);
+  }, [templates, saveCustomTemplates]);
+
+  const updateTemplate = useCallback(async (templateId: string, updates: Partial<NotebookTemplate>): Promise<void> => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template || template.category === 'built-in') {
+      throw new Error('Cannot modify built-in templates');
+    }
+
+    const updatedTemplate = {
+      ...template,
+      ...updates,
+      modifiedAt: new Date().toISOString()
+    };
+
+    const customTemplates = templates.filter(t => t.category === 'custom').map(t =>
+      t.id === templateId ? updatedTemplate : t
+    );
+
+    saveCustomTemplates(customTemplates);
+    setTemplates([...BUILT_IN_TEMPLATES, ...customTemplates]);
+  }, [templates, saveCustomTemplates]);
+
+  const duplicateTemplate = useCallback(async (templateId: string, newName: string): Promise<NotebookTemplate> => {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) {
+      throw new Error('Template not found');
+    }
+
+    const now = new Date().toISOString();
+    const duplicatedTemplate: NotebookTemplate = {
+      ...template,
+      id: `custom-${Date.now()}`,
+      name: newName.trim(),
+      description: `Copy of ${template.description}`,
+      category: 'custom',
+      createdAt: now,
+      modifiedAt: now,
+      usageCount: 0
+    };
+
+    const customTemplates = templates.filter(t => t.category === 'custom');
+    const updatedCustomTemplates = [...customTemplates, duplicatedTemplate];
+
+    saveCustomTemplates(updatedCustomTemplates);
+    setTemplates([...BUILT_IN_TEMPLATES, ...updatedCustomTemplates]);
+
+    return duplicatedTemplate;
+  }, [templates, saveCustomTemplates]);
+
   const value: NotebookContextType = {
     activeCard,
     cards,
@@ -234,9 +384,13 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     updateCard,
     deleteCard,
     setActiveCard,
+    loadCards,
+    createTemplate,
+    deleteTemplate,
+    updateTemplate,
+    duplicateTemplate,
     updateLayout,
     toggleNotebookMode,
-    loadCards,
   };
 
   return (
