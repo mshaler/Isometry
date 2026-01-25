@@ -64,6 +64,13 @@ public actor IsometryDatabase {
         isInitialized = true
     }
 
+    // MARK: - Database Access
+
+    /// Perform a read-only database operation
+    public func read<T>(_ block: (Database) throws -> T) async throws -> T {
+        return try await dbPool.read(block)
+    }
+
     // MARK: - Node CRUD
 
     /// Creates a new node
@@ -219,7 +226,7 @@ public actor IsometryDatabase {
     public func getAllNotebookCards() async throws -> [NotebookCard] {
         try await dbPool.read { db in
             try NotebookCard.active
-                .byModificationDate
+                .order(NotebookCard.Columns.modifiedAt.desc)
                 .fetchAll(db)
         }
     }
@@ -227,9 +234,17 @@ public actor IsometryDatabase {
     /// Fetches notebook cards in a specific folder
     public func getNotebookCards(inFolder folder: String?) async throws -> [NotebookCard] {
         try await dbPool.read { db in
-            try NotebookCard.active
-                .inFolder(folder)
-                .byModificationDate
+            let baseQuery = NotebookCard.active
+            let filteredQuery: QueryInterfaceRequest<NotebookCard>
+
+            if let folder = folder {
+                filteredQuery = baseQuery.filter(NotebookCard.Columns.folder == folder)
+            } else {
+                filteredQuery = baseQuery.filter(NotebookCard.Columns.folder == nil)
+            }
+
+            return try filteredQuery
+                .order(NotebookCard.Columns.modifiedAt.desc)
                 .fetchAll(db)
         }
     }
