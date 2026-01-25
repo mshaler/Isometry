@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Terminal, Minimize2, Maximize2, Circle } from 'lucide-react';
 import { useTerminal } from '../../hooks/useTerminal';
+import { useCommandRouter } from '../../hooks/useCommandRouter';
+import { useProjectContext } from '../../hooks/useProjectContext';
+import { useClaudeAPI } from '../../hooks/useClaudeAPI';
 
 interface ShellComponentProps {
   className?: string;
@@ -9,8 +12,49 @@ interface ShellComponentProps {
 export function ShellComponent({ className }: ShellComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<'configured' | 'not-configured'>('not-configured');
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const { createTerminal, attachToProcess, dispose, resizeTerminal, isConnected } = useTerminal();
+  const { executeCommand: executeRouterCommand, isExecuting } = useCommandRouter();
+  const { getActiveCardContext } = useProjectContext();
+  const { isConfigured: isClaudeConfigured } = useClaudeAPI();
+
+  // Format output for terminal display
+  const formatTerminalOutput = (output: string, type: 'system' | 'claude'): string => {
+    if (type === 'claude') {
+      // Claude output is already formatted by the API hook
+      return output;
+    }
+
+    // System command output - return as-is
+    return output;
+  };
+
+  // Handle command routing through terminal
+  const handleTerminalCommand = async (command: string) => {
+    try {
+      // Execute command through router
+      const response = await executeRouterCommand(command);
+
+      // Display response using terminal output methods
+      if (response.error) {
+        writeOutput(response.error, true);
+      } else if (response.output) {
+        // Format output for terminal display
+        const formattedOutput = formatTerminalOutput(response.output, response.type);
+        writeOutput(formattedOutput, false);
+      }
+
+      // Show new prompt
+      showPrompt();
+    } catch (error) {
+      writeOutput(`Error executing command: ${error}`, true);
+      showPrompt();
+    }
+  };
+
+  const { createTerminal, attachToProcess, dispose, resizeTerminal, isConnected, writeOutput, showPrompt } = useTerminal({
+    onCommand: handleTerminalCommand
+  });
 
   // Initialize terminal when component mounts
   useEffect(() => {
@@ -46,6 +90,11 @@ export function ShellComponent({ className }: ShellComponentProps) {
   useEffect(() => {
     setConnectionStatus(isConnected ? 'connected' : 'disconnected');
   }, [isConnected]);
+
+  // Update Claude connection status
+  useEffect(() => {
+    setClaudeConnectionStatus(isClaudeConfigured ? 'configured' : 'not-configured');
+  }, [isClaudeConfigured]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -118,11 +167,33 @@ export function ShellComponent({ className }: ShellComponentProps) {
       <div className="border-t border-gray-700 bg-gray-800 px-3 py-1">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
-            <span className="text-gray-400">Terminal: {connectionStatus}</span>
-            <span className="text-gray-400">Shell: zsh</span>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400">Terminal:</span>
+              <Circle size={6} className={`fill-current ${statusColors[connectionStatus]}`} />
+              <span className={statusColors[connectionStatus]}>{connectionStatus}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-400">Claude:</span>
+              <Circle size={6} className={`fill-current ${claudeConnectionStatus === 'configured' ? 'text-green-400' : 'text-gray-500'}`} />
+              <span className={claudeConnectionStatus === 'configured' ? 'text-green-400' : 'text-gray-500'}>
+                {claudeConnectionStatus === 'configured' ? 'ready' : 'not configured'}
+              </span>
+            </div>
+            {getActiveCardContext() && (
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400">Context:</span>
+                <span className="text-blue-400">{getActiveCardContext()?.title}</span>
+              </div>
+            )}
           </div>
           <div className="text-gray-400">
-            {connectionStatus === 'connected' ? 'Ready for commands' : 'Initializing...'}
+            {isExecuting ? (
+              <span className="text-yellow-400">Executing...</span>
+            ) : connectionStatus === 'connected' ? (
+              'Ready for commands'
+            ) : (
+              'Initializing...'
+            )}
           </div>
         </div>
       </div>

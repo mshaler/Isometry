@@ -6,11 +6,14 @@ import { WebLinksAddon } from '@xterm/addon-web-links';
 interface UseTerminalOptions {
   workingDirectory?: string;
   shell?: string;
+  onCommand?: (command: string) => void;
 }
 
 interface UseTerminalReturn {
   createTerminal: (containerId: string) => Terminal | null;
   executeCommand: (command: string) => void;
+  writeOutput: (output: string, isError?: boolean) => void;
+  showPrompt: () => void;
   attachToProcess: () => void;
   dispose: () => void;
   resizeTerminal: (cols: number, rows: number) => void;
@@ -101,34 +104,60 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     return terminal;
   }, []);
 
+  const writeOutput = useCallback((output: string, isError = false) => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    if (isError) {
+      terminal.write(`\x1b[31m${output}\x1b[0m\r\n`);
+    } else {
+      terminal.write(`${output}\r\n`);
+    }
+  }, []);
+
+  const showPrompt = useCallback(() => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
+    terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
+  }, []);
+
   const executeCommand = useCallback((command: string) => {
     const terminal = terminalRef.current;
     if (!terminal) return;
 
+    // If we have a custom command handler, use it
+    if (options.onCommand) {
+      options.onCommand(command);
+      return;
+    }
+
     // Write the command to terminal
     terminal.write(`\r\n$ ${command}\r\n`);
 
-    // Simple command simulation
+    // Simple command simulation (fallback for when no router is provided)
     setTimeout(() => {
       if (command.trim() === '') {
+        showPrompt();
         return;
       }
 
       const cmd = command.trim();
 
       if (cmd === 'pwd') {
-        terminal.write(`${currentDirRef.current}\r\n`);
+        writeOutput(currentDirRef.current);
       } else if (cmd === 'ls' || cmd === 'ls -la') {
-        terminal.write('drwxr-xr-x  12 user  staff   384 Jan 25 13:27 src/\r\n');
-        terminal.write('drwxr-xr-x   8 user  staff   256 Jan 25 13:15 docs/\r\n');
-        terminal.write('-rw-r--r--   1 user  staff  1234 Jan 25 13:20 package.json\r\n');
-        terminal.write('-rw-r--r--   1 user  staff  2048 Jan 25 13:20 package-lock.json\r\n');
-        terminal.write('drwxr-xr-x   6 user  staff   192 Jan 25 13:15 node_modules/\r\n');
-        terminal.write('-rw-r--r--   1 user  staff  1500 Jan 25 13:20 vite.config.ts\r\n');
-        terminal.write('-rw-r--r--   1 user  staff   800 Jan 25 13:20 tsconfig.json\r\n');
+        writeOutput('drwxr-xr-x  12 user  staff   384 Jan 25 13:27 src/');
+        writeOutput('drwxr-xr-x   8 user  staff   256 Jan 25 13:15 docs/');
+        writeOutput('-rw-r--r--   1 user  staff  1234 Jan 25 13:20 package.json');
+        writeOutput('-rw-r--r--   1 user  staff  2048 Jan 25 13:20 package-lock.json');
+        writeOutput('drwxr-xr-x   6 user  staff   192 Jan 25 13:15 node_modules/');
+        writeOutput('-rw-r--r--   1 user  staff  1500 Jan 25 13:20 vite.config.ts');
+        writeOutput('-rw-r--r--   1 user  staff   800 Jan 25 13:20 tsconfig.json');
       } else if (cmd.startsWith('echo ')) {
         const text = cmd.substring(5).replace(/"/g, '');
-        terminal.write(`${text}\r\n`);
+        writeOutput(text);
       } else if (cmd === 'clear' || cmd === 'cls') {
         terminal.clear();
       } else if (cmd.startsWith('cd ')) {
@@ -145,21 +174,18 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         }
         // No output for cd command
       } else if (cmd === 'whoami') {
-        terminal.write('mshaler\r\n');
+        writeOutput('mshaler');
       } else if (cmd === 'date') {
-        terminal.write(`${new Date().toLocaleString()}\r\n`);
-      } else if (cmd.startsWith('happy')) {
-        terminal.write('🎉 Claude Code integration will be available in the next phase!\r\n');
-        terminal.write('For now, enjoy this functional terminal interface.\r\n');
+        writeOutput(new Date().toLocaleString());
+      } else if (cmd.startsWith('claude') || cmd.startsWith('ai ') || cmd.startsWith('ask ')) {
+        writeOutput('🤖 Command router not configured. Commands will be handled locally.', true);
       } else {
-        terminal.write(`zsh: command not found: ${cmd}\r\n`);
+        writeOutput(`zsh: command not found: ${cmd}`, true);
       }
 
-      // Show new prompt
-      const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
-      terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
+      showPrompt();
     }, 100);
-  }, []);
+  }, [options.onCommand, writeOutput, showPrompt]);
 
   const attachToProcess = useCallback(() => {
     const terminal = terminalRef.current;
@@ -170,11 +196,10 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
     // Show initial welcome message
     terminal.write('\x1b[32mWelcome to Isometry Notebook Shell\x1b[0m\r\n');
-    terminal.write('Terminal emulator ready. Type commands or \'happy\' for Claude Code info.\r\n\r\n');
+    terminal.write('Terminal emulator ready. Type \'claude help\' for AI commands.\r\n\r\n');
 
     // Show initial prompt
-    const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
-    terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
+    showPrompt();
 
     // Handle keyboard input
     let currentLine = '';
@@ -195,12 +220,11 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         terminal.write(data);
       } else if (code === 3) { // Ctrl+C
         terminal.write('^C\r\n');
-        const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
-        terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
+        showPrompt();
         currentLine = '';
       }
     });
-  }, [executeCommand]);
+  }, [executeCommand, showPrompt]);
 
   const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;
@@ -236,6 +260,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   return {
     createTerminal,
     executeCommand,
+    writeOutput,
+    showPrompt,
     attachToProcess,
     dispose,
     resizeTerminal,
