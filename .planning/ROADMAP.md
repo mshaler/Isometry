@@ -56,6 +56,7 @@ Plans:
 **Goal:** Users can execute terminal commands and interact with Claude Code API within notebook context
 **Dependencies:** Phase 2 (requires capture workflow for context)
 **Requirements:** SHELL-01, SHELL-02, SHELL-03, SHELL-04
+**Plans:** 4 plans
 
 **Success Criteria:**
 1. User can execute system commands in embedded terminal
@@ -63,6 +64,12 @@ Plans:
 3. Terminal commands can access current notebook card content as context
 4. User can distinguish between system commands and AI commands through clear indicators
 5. Command history persists and includes both command types
+
+Plans:
+- [ ] 03-01-PLAN.md — Terminal emulator integration with @xterm/xterm and node-pty
+- [ ] 03-02-PLAN.md — Claude Code API integration with @anthropic-ai/sdk
+- [ ] 03-03-PLAN.md — Command routing system and project context awareness
+- [ ] 03-04-PLAN.md — Command history with persistence and navigation
 
 ### Phase 4: Preview & Integration Polish
 **Goal:** Users can preview content universally and export in multiple formats while experiencing seamless data flow
@@ -195,8 +202,8 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 │                    ISOMETRY NOTEBOOK SIDECAR                   │
 ├─────────────────┬─────────────────┬─────────────────────────────┤
 │     CAPTURE     │      SHELL      │           PREVIEW           │
-│ (@uiw/react-md  │ (react-xtermjs) │      (WKWebView +           │
-│  + Properties)  │ (Claude API)    │       D3.js)                │
+│ (@uiw/react-md  │ (@xterm/xterm   │      (WKWebView +           │
+│  + Properties)  │ + Claude API)   │       D3.js)                │
 └─────────────────┴─────────────────┴─────────────────────────────┘
 │                     SHARED CONTEXT LAYER                       │
 │    NotebookCtx + FilterCtx + PAFVCtx + ThemeCtx (existing)     │
@@ -248,4 +255,4 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 
 ---
 
-**Phase 1 complete.** **Phase 2 revised and ready for execution.** Next step: `/gsd:execute-phase 02-capture-implementation` to implement remaining capture functionality.
+**Phase 1 complete.** **Phase 2 revised and ready for execution.** **Phase 3 planned and ready for execution.** Next step: `/gsd:execute-phase 03-shell-integration` to implement terminal and AI integration.
