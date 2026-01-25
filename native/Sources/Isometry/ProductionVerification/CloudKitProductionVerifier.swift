@@ -100,7 +100,6 @@ public class CloudKitProductionVerifier: ObservableObject {
                 containerStatus = .unknown
                 addError("❌ Unknown CloudKit account status")
             }
-
         } catch {
             containerStatus = .error
             addError("❌ Failed to access CloudKit container: \(error.localizedDescription)")

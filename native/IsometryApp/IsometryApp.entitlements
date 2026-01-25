@@ -5,7 +5,7 @@
     <!-- CloudKit -->
     <key>com.apple.developer.icloud-container-identifiers</key>
     <array>
-        <string>iCloud.com.isometry.app</string>
+        <string>iCloud.com.mshaler.isometry</string>
     </array>
     <key>com.apple.developer.icloud-services</key>
     <array>

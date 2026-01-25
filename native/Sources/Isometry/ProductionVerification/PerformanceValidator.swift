@@ -7,6 +7,17 @@ import Combine
 @MainActor
 public class PerformanceValidator: ObservableObject {
 
+    // MARK: - Performance Constants
+
+    /// iOS memory threshold: 150MB as specified in Phase 4 roadmap
+    public static let iOSMemoryThreshold = 150 * 1024 * 1024
+
+    /// macOS memory threshold: 300MB as specified in Phase 4 roadmap
+    public static let macOSMemoryThreshold = 300 * 1024 * 1024
+
+    /// Target frame rate: 60fps as specified in Phase 4 roadmap
+    public static let targetFrameRate = 60
+
     // MARK: - Published State
 
     @Published public var overallPerformanceStatus: PerformanceStatus = .notStarted
@@ -18,6 +29,14 @@ public class PerformanceValidator: ObservableObject {
     @Published public var performanceResults: [PerformanceResult] = []
     @Published public var performanceIssues: [PerformanceIssue] = []
     @Published public var performanceRecommendations: [String] = []
+
+    // MARK: - Aliases for Test Compatibility
+
+    /// Alias for performanceResults for test compatibility
+    public var results: [PerformanceResult] { performanceResults }
+
+    /// Alias for overallPerformanceStatus for test compatibility
+    public var validationStatus: PerformanceStatus { overallPerformanceStatus }
 
     // MARK: - Performance Metrics
 

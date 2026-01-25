@@ -62,7 +62,7 @@ public struct IsometryAppScene: App {
 
 /// Global app state
 @MainActor
-public final class AppState: ObservableObject {
+public class AppState: ObservableObject {
     // MARK: - Published Properties
 
     @Published public var isLoading = true

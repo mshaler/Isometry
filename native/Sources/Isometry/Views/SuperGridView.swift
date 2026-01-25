@@ -392,25 +392,33 @@ struct OptimizedGridCanvas: View {
     private func drawGridLines(in context: GraphicsContext, size: CGSize) {
         // Draw major grid lines every 5 cells
         // Implementation similar to D3 grid in React version
-        let _ = Color.gray.opacity(0.2)
+        let majorLineColor = Color.gray.opacity(0.2)
         let minorLineColor = Color.gray.opacity(0.1)
 
         // Vertical lines
-        for x in stride(from: 0, to: size.width, by: 120) {
+        for (index, x) in stride(from: 0, to: size.width, by: 120).enumerated() {
+            let isMajor = index % 5 == 0
+            let color = isMajor ? majorLineColor : minorLineColor
+            let lineWidth: CGFloat = isMajor ? 1.0 : 0.5
+
             let path = Path { p in
                 p.move(to: CGPoint(x: x, y: 0))
                 p.addLine(to: CGPoint(x: x, y: size.height))
             }
-            context.stroke(path, with: .color(minorLineColor), lineWidth: 0.5)
+            context.stroke(path, with: .color(color), lineWidth: lineWidth)
         }
 
         // Horizontal lines
-        for y in stride(from: 0, to: size.height, by: 80) {
+        for (index, y) in stride(from: 0, to: size.height, by: 80).enumerated() {
+            let isMajor = index % 5 == 0
+            let color = isMajor ? majorLineColor : minorLineColor
+            let lineWidth: CGFloat = isMajor ? 1.0 : 0.5
+
             let path = Path { p in
                 p.move(to: CGPoint(x: 0, y: y))
                 p.addLine(to: CGPoint(x: size.width, y: y))
             }
-            context.stroke(path, with: .color(minorLineColor), lineWidth: 0.5)
+            context.stroke(path, with: .color(color), lineWidth: lineWidth)
         }
     }
 

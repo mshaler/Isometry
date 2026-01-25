@@ -94,6 +94,27 @@ extension ViewConfig: FetchableRecord, PersistableRecord {
     }
 }
 
+// MARK: - Defaults and Factory Methods
+extension ViewConfig {
+    /// Default view configuration for testing and initialization
+    public static var `default`: ViewConfig {
+        ViewConfig(
+            name: "Default Grid",
+            isDefault: true
+        )
+    }
+
+    /// Eisenhower Matrix configuration
+    public static var eisenhowerMatrix: ViewConfig {
+        ViewConfig(
+            name: "Eisenhower Matrix",
+            originPattern: "bipolar",
+            xAxisMapping: "hierarchy",
+            yAxisMapping: "hierarchy"
+        )
+    }
+}
+
 // MARK: - Computed Properties
 extension ViewConfig {
     /// Whether this is an Eisenhower Matrix (bipolar importance/urgency)

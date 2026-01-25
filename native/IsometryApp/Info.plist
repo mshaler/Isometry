@@ -9,7 +9,7 @@
     <key>CFBundleExecutable</key>
     <string>IsometryApp</string>
     <key>CFBundleIdentifier</key>
-    <string>com.isometry.app</string>
+    <string>com.mshaler.isometry</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
@@ -94,7 +94,7 @@
             <string>Editor</string>
             <key>LSItemContentTypes</key>
             <array>
-                <string>com.isometry.workspace</string>
+                <string>com.mshaler.isometry.workspace</string>
             </array>
         </dict>
     </array>

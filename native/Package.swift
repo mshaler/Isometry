@@ -9,6 +9,10 @@ let package = Package(
     ],
     products: [
         .library(
+            name: "IsometryCore",
+            targets: ["IsometryCore"]
+        ),
+        .library(
             name: "Isometry",
             targets: ["Isometry"]
         ),
@@ -22,8 +26,13 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "IsometryCore",
+            dependencies: []
+        ),
+        .target(
             name: "Isometry",
             dependencies: [
+                "IsometryCore",
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
             resources: [
@@ -48,11 +57,6 @@ let package = Package(
             name: "IsometryUITestsmacOS",
             dependencies: ["Isometry"],
             path: "Tests/UI/macOS"
-        ),
-        .testTarget(
-            name: "IsometryPerformanceTests",
-            dependencies: ["Isometry"],
-            path: "Tests/Performance"
         ),
     ]
 )

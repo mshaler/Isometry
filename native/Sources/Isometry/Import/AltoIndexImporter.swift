@@ -24,9 +24,15 @@ public actor AltoIndexImporter {
             throw ImportError.directoryNotFound(directoryURL.path)
         }
 
-        for case let fileURL as URL in enumerator {
-            guard fileURL.pathExtension == "md" else { continue }
+        // Collect all markdown file URLs first to avoid async iteration issues
+        let markdownFiles: [URL] = enumerator.compactMap { element in
+            guard let fileURL = element as? URL,
+                  fileURL.pathExtension == "md" else { return nil }
+            return fileURL
+        }
 
+        // Now process them asynchronously
+        for fileURL in markdownFiles {
             do {
                 let node = try await importNote(from: fileURL, relativeTo: directoryURL)
                 result.imported += 1

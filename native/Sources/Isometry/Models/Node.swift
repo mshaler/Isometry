@@ -1,119 +1,13 @@
 import Foundation
 import GRDB
+import IsometryCore
 
-/// Primary data entity representing a card in Isometry
-public struct Node: Codable, Sendable, Identifiable, Hashable {
-    // MARK: - Core Identity
-    public let id: String
-    public var nodeType: String
-    public var name: String
-    public var content: String?
-    public var summary: String?
-
-    // MARK: - LATCH: Location
-    public var latitude: Double?
-    public var longitude: Double?
-    public var locationName: String?
-    public var locationAddress: String?
-
-    // MARK: - LATCH: Time
-    public var createdAt: Date
-    public var modifiedAt: Date
-    public var dueAt: Date?
-    public var completedAt: Date?
-    public var eventStart: Date?
-    public var eventEnd: Date?
-
-    // MARK: - LATCH: Category
-    public var folder: String?
-    public var tags: [String]
-    public var status: String?
-
-    // MARK: - LATCH: Hierarchy
-    public var priority: Int
-    public var importance: Int
-    public var sortOrder: Int
-
-    // MARK: - Metadata
-    public var source: String?
-    public var sourceId: String?
-    public var sourceUrl: String?
-    public var deletedAt: Date?
-    public var version: Int
-
-    // MARK: - Sync
-    public var syncVersion: Int
-    public var lastSyncedAt: Date?
-    public var conflictResolvedAt: Date?
-
-    // MARK: - Initialization
-
-    public init(
-        id: String = UUID().uuidString,
-        nodeType: String = "note",
-        name: String,
-        content: String? = nil,
-        summary: String? = nil,
-        latitude: Double? = nil,
-        longitude: Double? = nil,
-        locationName: String? = nil,
-        locationAddress: String? = nil,
-        createdAt: Date = Date(),
-        modifiedAt: Date = Date(),
-        dueAt: Date? = nil,
-        completedAt: Date? = nil,
-        eventStart: Date? = nil,
-        eventEnd: Date? = nil,
-        folder: String? = nil,
-        tags: [String] = [],
-        status: String? = nil,
-        priority: Int = 0,
-        importance: Int = 0,
-        sortOrder: Int = 0,
-        source: String? = nil,
-        sourceId: String? = nil,
-        sourceUrl: String? = nil,
-        deletedAt: Date? = nil,
-        version: Int = 1,
-        syncVersion: Int = 0,
-        lastSyncedAt: Date? = nil,
-        conflictResolvedAt: Date? = nil
-    ) {
-        self.id = id
-        self.nodeType = nodeType
-        self.name = name
-        self.content = content
-        self.summary = summary
-        self.latitude = latitude
-        self.longitude = longitude
-        self.locationName = locationName
-        self.locationAddress = locationAddress
-        self.createdAt = createdAt
-        self.modifiedAt = modifiedAt
-        self.dueAt = dueAt
-        self.completedAt = completedAt
-        self.eventStart = eventStart
-        self.eventEnd = eventEnd
-        self.folder = folder
-        self.tags = tags
-        self.status = status
-        self.priority = priority
-        self.importance = importance
-        self.sortOrder = sortOrder
-        self.source = source
-        self.sourceId = sourceId
-        self.sourceUrl = sourceUrl
-        self.deletedAt = deletedAt
-        self.version = version
-        self.syncVersion = syncVersion
-        self.lastSyncedAt = lastSyncedAt
-        self.conflictResolvedAt = conflictResolvedAt
-    }
-}
+// Import the core Node entity and extend it with GRDB functionality
+public typealias Node = IsometryCore.Node
 
 // MARK: - GRDB Record Conformance
 
-extension Node: FetchableRecord, PersistableRecord {
+extension IsometryCore.Node: FetchableRecord, PersistableRecord {
     public static let databaseTableName = "nodes"
 
     // Custom column mapping for snake_case database columns
@@ -149,70 +43,39 @@ extension Node: FetchableRecord, PersistableRecord {
         static let conflictResolvedAt = Column(CodingKeys.conflictResolvedAt)
     }
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case nodeType = "node_type"
-        case name
-        case content
-        case summary
-        case latitude
-        case longitude
-        case locationName = "location_name"
-        case locationAddress = "location_address"
-        case createdAt = "created_at"
-        case modifiedAt = "modified_at"
-        case dueAt = "due_at"
-        case completedAt = "completed_at"
-        case eventStart = "event_start"
-        case eventEnd = "event_end"
-        case folder
-        case tags
-        case status
-        case priority
-        case importance
-        case sortOrder = "sort_order"
-        case source
-        case sourceId = "source_id"
-        case sourceUrl = "source_url"
-        case deletedAt = "deleted_at"
-        case version
-        case syncVersion = "sync_version"
-        case lastSyncedAt = "last_synced_at"
-        case conflictResolvedAt = "conflict_resolved_at"
-    }
-
     // Custom decoding for tags JSON array
     public init(row: Row) throws {
-        id = row[CodingKeys.id.rawValue]
-        nodeType = row[CodingKeys.nodeType.rawValue]
-        name = row[CodingKeys.name.rawValue]
-        content = row[CodingKeys.content.rawValue]
-        summary = row[CodingKeys.summary.rawValue]
-        latitude = row[CodingKeys.latitude.rawValue]
-        longitude = row[CodingKeys.longitude.rawValue]
-        locationName = row[CodingKeys.locationName.rawValue]
-        locationAddress = row[CodingKeys.locationAddress.rawValue]
-        createdAt = row[CodingKeys.createdAt.rawValue]
-        modifiedAt = row[CodingKeys.modifiedAt.rawValue]
-        dueAt = row[CodingKeys.dueAt.rawValue]
-        completedAt = row[CodingKeys.completedAt.rawValue]
-        eventStart = row[CodingKeys.eventStart.rawValue]
-        eventEnd = row[CodingKeys.eventEnd.rawValue]
-        folder = row[CodingKeys.folder.rawValue]
-        status = row[CodingKeys.status.rawValue]
-        priority = row[CodingKeys.priority.rawValue]
-        importance = row[CodingKeys.importance.rawValue]
-        sortOrder = row[CodingKeys.sortOrder.rawValue]
-        source = row[CodingKeys.source.rawValue]
-        sourceId = row[CodingKeys.sourceId.rawValue]
-        sourceUrl = row[CodingKeys.sourceUrl.rawValue]
-        deletedAt = row[CodingKeys.deletedAt.rawValue]
-        version = row[CodingKeys.version.rawValue]
-        syncVersion = row[CodingKeys.syncVersion.rawValue]
-        lastSyncedAt = row[CodingKeys.lastSyncedAt.rawValue]
-        conflictResolvedAt = row[CodingKeys.conflictResolvedAt.rawValue]
+        let id: String = row[CodingKeys.id.rawValue]
+        let nodeType: String = row[CodingKeys.nodeType.rawValue]
+        let name: String = row[CodingKeys.name.rawValue]
+        let content: String? = row[CodingKeys.content.rawValue]
+        let summary: String? = row[CodingKeys.summary.rawValue]
+        let latitude: Double? = row[CodingKeys.latitude.rawValue]
+        let longitude: Double? = row[CodingKeys.longitude.rawValue]
+        let locationName: String? = row[CodingKeys.locationName.rawValue]
+        let locationAddress: String? = row[CodingKeys.locationAddress.rawValue]
+        let createdAt: Date = row[CodingKeys.createdAt.rawValue]
+        let modifiedAt: Date = row[CodingKeys.modifiedAt.rawValue]
+        let dueAt: Date? = row[CodingKeys.dueAt.rawValue]
+        let completedAt: Date? = row[CodingKeys.completedAt.rawValue]
+        let eventStart: Date? = row[CodingKeys.eventStart.rawValue]
+        let eventEnd: Date? = row[CodingKeys.eventEnd.rawValue]
+        let folder: String? = row[CodingKeys.folder.rawValue]
+        let status: String? = row[CodingKeys.status.rawValue]
+        let priority: Int = row[CodingKeys.priority.rawValue]
+        let importance: Int = row[CodingKeys.importance.rawValue]
+        let sortOrder: Int = row[CodingKeys.sortOrder.rawValue]
+        let source: String? = row[CodingKeys.source.rawValue]
+        let sourceId: String? = row[CodingKeys.sourceId.rawValue]
+        let sourceUrl: String? = row[CodingKeys.sourceUrl.rawValue]
+        let deletedAt: Date? = row[CodingKeys.deletedAt.rawValue]
+        let version: Int = row[CodingKeys.version.rawValue]
+        let syncVersion: Int = row[CodingKeys.syncVersion.rawValue]
+        let lastSyncedAt: Date? = row[CodingKeys.lastSyncedAt.rawValue]
+        let conflictResolvedAt: Date? = row[CodingKeys.conflictResolvedAt.rawValue]
 
         // Decode tags from JSON string
+        let tags: [String]
         if let tagsJSON: String = row[CodingKeys.tags.rawValue],
            let data = tagsJSON.data(using: .utf8),
            let decoded = try? JSONDecoder().decode([String].self, from: data) {
@@ -220,6 +83,39 @@ extension Node: FetchableRecord, PersistableRecord {
         } else {
             tags = []
         }
+
+        // Initialize using the core Node initializer
+        self.init(
+            id: id,
+            nodeType: nodeType,
+            name: name,
+            content: content,
+            summary: summary,
+            latitude: latitude,
+            longitude: longitude,
+            locationName: locationName,
+            locationAddress: locationAddress,
+            createdAt: createdAt,
+            modifiedAt: modifiedAt,
+            dueAt: dueAt,
+            completedAt: completedAt,
+            eventStart: eventStart,
+            eventEnd: eventEnd,
+            folder: folder,
+            tags: tags,
+            status: status,
+            priority: priority,
+            importance: importance,
+            sortOrder: sortOrder,
+            source: source,
+            sourceId: sourceId,
+            sourceUrl: sourceUrl,
+            deletedAt: deletedAt,
+            version: version,
+            syncVersion: syncVersion,
+            lastSyncedAt: lastSyncedAt,
+            conflictResolvedAt: conflictResolvedAt
+        )
     }
 
     // Custom encoding for tags JSON array
@@ -260,25 +156,5 @@ extension Node: FetchableRecord, PersistableRecord {
         } else {
             container[CodingKeys.tags.rawValue] = "[]"
         }
-    }
-}
-
-// MARK: - Computed Properties
-
-extension Node {
-    /// Whether this node has been soft-deleted
-    public var isDeleted: Bool {
-        deletedAt != nil
-    }
-
-    /// Whether this node has location data
-    public var hasLocation: Bool {
-        latitude != nil && longitude != nil
-    }
-
-    /// Whether this node is overdue
-    public var isOverdue: Bool {
-        guard let dueAt, completedAt == nil else { return false }
-        return dueAt < Date()
     }
 }

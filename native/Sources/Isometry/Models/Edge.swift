@@ -1,75 +1,14 @@
 import Foundation
 import GRDB
+import IsometryCore
 
-/// Edge types for graph relationships
-public enum EdgeType: String, Codable, Sendable, CaseIterable {
-    case link = "LINK"           // Explicit user-created link
-    case nest = "NEST"           // Parent-child hierarchy
-    case sequence = "SEQUENCE"   // Ordered sequence
-    case affinity = "AFFINITY"   // Computed similarity
-}
-
-/// Relationship between two nodes in the graph
-public struct Edge: Codable, Sendable, Identifiable, Hashable {
-    // MARK: - Core Identity
-    public let id: String
-    public var edgeType: EdgeType
-    public var sourceId: String
-    public var targetId: String
-
-    // MARK: - Attributes
-    public var label: String?
-    public var weight: Double
-    public var directed: Bool
-    public var sequenceOrder: Int?
-
-    // MARK: - Communication metadata (for email/message edges)
-    public var channel: String?
-    public var timestamp: Date?
-    public var subject: String?
-
-    // MARK: - Timestamps
-    public var createdAt: Date
-
-    // MARK: - Sync
-    public var syncVersion: Int
-
-    // MARK: - Initialization
-
-    public init(
-        id: String = UUID().uuidString,
-        edgeType: EdgeType,
-        sourceId: String,
-        targetId: String,
-        label: String? = nil,
-        weight: Double = 1.0,
-        directed: Bool = true,
-        sequenceOrder: Int? = nil,
-        channel: String? = nil,
-        timestamp: Date? = nil,
-        subject: String? = nil,
-        createdAt: Date = Date(),
-        syncVersion: Int = 0
-    ) {
-        self.id = id
-        self.edgeType = edgeType
-        self.sourceId = sourceId
-        self.targetId = targetId
-        self.label = label
-        self.weight = weight
-        self.directed = directed
-        self.sequenceOrder = sequenceOrder
-        self.channel = channel
-        self.timestamp = timestamp
-        self.subject = subject
-        self.createdAt = createdAt
-        self.syncVersion = syncVersion
-    }
-}
+// Import the core Edge entities and extend them with GRDB functionality
+public typealias EdgeType = IsometryCore.EdgeType
+public typealias Edge = IsometryCore.Edge
 
 // MARK: - GRDB Record Conformance
 
-extension Edge: FetchableRecord, PersistableRecord {
+extension IsometryCore.Edge: FetchableRecord, PersistableRecord {
     public static let databaseTableName = "edges"
 
     enum Columns {
@@ -88,42 +27,43 @@ extension Edge: FetchableRecord, PersistableRecord {
         static let syncVersion = Column(CodingKeys.syncVersion)
     }
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case edgeType = "edge_type"
-        case sourceId = "source_id"
-        case targetId = "target_id"
-        case label
-        case weight
-        case directed
-        case sequenceOrder = "sequence_order"
-        case channel
-        case timestamp
-        case subject
-        case createdAt = "created_at"
-        case syncVersion = "sync_version"
-    }
-
     public init(row: Row) throws {
-        id = row[CodingKeys.id.rawValue]
-        sourceId = row[CodingKeys.sourceId.rawValue]
-        targetId = row[CodingKeys.targetId.rawValue]
-        label = row[CodingKeys.label.rawValue]
-        weight = row[CodingKeys.weight.rawValue]
-        sequenceOrder = row[CodingKeys.sequenceOrder.rawValue]
-        channel = row[CodingKeys.channel.rawValue]
-        timestamp = row[CodingKeys.timestamp.rawValue]
-        subject = row[CodingKeys.subject.rawValue]
-        createdAt = row[CodingKeys.createdAt.rawValue]
-        syncVersion = row[CodingKeys.syncVersion.rawValue]
+        let id: String = row[CodingKeys.id.rawValue]
+        let sourceId: String = row[CodingKeys.sourceId.rawValue]
+        let targetId: String = row[CodingKeys.targetId.rawValue]
+        let label: String? = row[CodingKeys.label.rawValue]
+        let weight: Double = row[CodingKeys.weight.rawValue]
+        let sequenceOrder: Int? = row[CodingKeys.sequenceOrder.rawValue]
+        let channel: String? = row[CodingKeys.channel.rawValue]
+        let timestamp: Date? = row[CodingKeys.timestamp.rawValue]
+        let subject: String? = row[CodingKeys.subject.rawValue]
+        let createdAt: Date = row[CodingKeys.createdAt.rawValue]
+        let syncVersion: Int = row[CodingKeys.syncVersion.rawValue]
 
         // Decode directed as Bool from Int
         let directedInt: Int = row[CodingKeys.directed.rawValue]
-        directed = directedInt != 0
+        let directed = directedInt != 0
 
         // Decode edgeType from string
         let edgeTypeString: String = row[CodingKeys.edgeType.rawValue]
-        edgeType = EdgeType(rawValue: edgeTypeString) ?? .link
+        let edgeType = EdgeType(rawValue: edgeTypeString) ?? .link
+
+        // Initialize using the core Edge initializer
+        self.init(
+            id: id,
+            edgeType: edgeType,
+            sourceId: sourceId,
+            targetId: targetId,
+            label: label,
+            weight: weight,
+            directed: directed,
+            sequenceOrder: sequenceOrder,
+            channel: channel,
+            timestamp: timestamp,
+            subject: subject,
+            createdAt: createdAt,
+            syncVersion: syncVersion
+        )
     }
 
     public func encode(to container: inout PersistenceContainer) throws {
@@ -145,15 +85,15 @@ extension Edge: FetchableRecord, PersistableRecord {
 
 // MARK: - Associations
 
-extension Edge {
-    static let source = belongsTo(Node.self, using: ForeignKey(["source_id"]))
-    static let target = belongsTo(Node.self, using: ForeignKey(["target_id"]))
+extension IsometryCore.Edge {
+    static let source = belongsTo(IsometryCore.Node.self, using: ForeignKey(["source_id"]))
+    static let target = belongsTo(IsometryCore.Node.self, using: ForeignKey(["target_id"]))
 
-    var source: QueryInterfaceRequest<Node> {
-        request(for: Edge.source)
+    var source: QueryInterfaceRequest<IsometryCore.Node> {
+        request(for: IsometryCore.Edge.source)
     }
 
-    var target: QueryInterfaceRequest<Node> {
-        request(for: Edge.target)
+    var target: QueryInterfaceRequest<IsometryCore.Node> {
+        request(for: IsometryCore.Edge.target)
     }
 }

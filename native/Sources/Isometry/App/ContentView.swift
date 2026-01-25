@@ -28,6 +28,12 @@ public struct ContentView: View {
             ToolbarItem(placement: .automatic) {
                 SyncStatusButton()
             }
+
+            #if DEBUG
+            ToolbarItem(placement: .primaryAction) {
+                ProductionVerificationMenuButton()
+            }
+            #endif
         }
     }
 }
@@ -273,6 +279,45 @@ struct SyncStatusButton: View {
         .help("Sync with iCloud")
     }
 }
+
+// MARK: - Production Verification Menu Button
+
+#if DEBUG
+struct ProductionVerificationMenuButton: View {
+    @State private var showingCloudKitVerification = false
+    @State private var showingAppStoreCompliance = false
+    @State private var showingPerformanceValidation = false
+
+    var body: some View {
+        Menu {
+            Button("CloudKit Production Verification") {
+                showingCloudKitVerification = true
+            }
+
+            Button("App Store Compliance") {
+                showingAppStoreCompliance = true
+            }
+
+            Button("Performance Validation") {
+                showingPerformanceValidation = true
+            }
+        } label: {
+            Image(systemName: "gear.badge.checkmark")
+                .foregroundColor(.blue)
+        }
+        .help("Production Verification Tools")
+        .sheet(isPresented: $showingCloudKitVerification) {
+            CloudKitProductionVerificationView()
+        }
+        .sheet(isPresented: $showingAppStoreCompliance) {
+            AppStoreComplianceView()
+        }
+        .sheet(isPresented: $showingPerformanceValidation) {
+            PerformanceValidationView()
+        }
+    }
+}
+#endif
 
 // MARK: - Preview
 
