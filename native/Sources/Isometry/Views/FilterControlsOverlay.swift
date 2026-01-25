@@ -212,7 +212,11 @@ struct FilterControlsOverlay: View {
                 }
             }
             .padding()
+            #if os(macOS)
             .background(Color(NSColor.controlBackgroundColor))
+            #else
+            .background(Color(UIColor.secondarySystemBackground))
+            #endif
             .cornerRadius(12)
             .frame(width: 400, height: 600)
             .shadow(radius: 20)
@@ -439,7 +443,9 @@ struct SavePresetSheet: View {
                 }
             }
             .navigationTitle("Save Preset")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {

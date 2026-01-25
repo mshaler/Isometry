@@ -119,7 +119,11 @@ struct MiniNavView: View {
             }
         }
         .padding(12)
+        #if os(macOS)
         .background(Color(NSColor.controlBackgroundColor))
+        #else
+        .background(Color(UIColor.secondarySystemBackground))
+        #endif
         .cornerRadius(8)
         .frame(width: 280)
         .popover(isPresented: $showingOriginPicker) {
