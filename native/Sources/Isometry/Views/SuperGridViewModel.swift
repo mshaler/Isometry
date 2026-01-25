@@ -421,7 +421,7 @@ public class SuperGridViewModel: ObservableObject {
         let density = windowSize.width * windowSize.height / (displayScale * displayScale)
 
         // Optimize node count based on window capacity
-        let maxNodes = min(Int(density / 10000), allNodes.count)
+        let _ = min(Int(density / 10000), allNodes.count)
 
         Task {
             // Re-calculate grid with optimized node set

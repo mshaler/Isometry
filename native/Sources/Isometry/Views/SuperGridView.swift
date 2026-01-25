@@ -392,7 +392,7 @@ struct OptimizedGridCanvas: View {
     private func drawGridLines(in context: GraphicsContext, size: CGSize) {
         // Draw major grid lines every 5 cells
         // Implementation similar to D3 grid in React version
-        let majorLineColor = Color.gray.opacity(0.2)
+        let _ = Color.gray.opacity(0.2)
         let minorLineColor = Color.gray.opacity(0.1)
 
         // Vertical lines

@@ -41,34 +41,28 @@ public class CloudKitProductionVerifier: ObservableObject {
         verificationResults.removeAll()
         errorMessages.removeAll()
 
-        do {
-            // Step 1: Verify container accessibility
-            await verifyContainerAccess()
+        // Step 1: Verify container accessibility
+        await verifyContainerAccess()
 
-            // Step 2: Verify schema deployment
-            await verifySchemaDeployment()
+        // Step 2: Verify schema deployment
+        await verifySchemaDeployment()
 
-            // Step 3: Verify permissions and entitlements
-            await verifyPermissions()
+        // Step 3: Verify permissions and entitlements
+        await verifyPermissions()
 
-            // Step 4: Verify quota and limits
-            await verifyQuotaStatus()
+        // Step 4: Verify quota and limits
+        await verifyQuotaStatus()
 
-            // Step 5: Test multi-device sync capability
-            await testMultiDeviceSync()
+        // Step 5: Test multi-device sync capability
+        await testMultiDeviceSync()
 
-            // Final status determination
-            if errorMessages.isEmpty {
-                verificationStatus = .completed
-                addResult(.success, "✅ Production CloudKit setup verified successfully")
-            } else {
-                verificationStatus = .failed
-                addResult(.error, "❌ Production verification failed with \(errorMessages.count) issues")
-            }
-
-        } catch {
+        // Final status determination
+        if errorMessages.isEmpty {
+            verificationStatus = .completed
+            addResult(.success, "✅ Production CloudKit setup verified successfully")
+        } else {
             verificationStatus = .failed
-            addError("Critical error during verification: \(error.localizedDescription)")
+            addResult(.error, "❌ Production verification failed with \(errorMessages.count) issues")
         }
     }
 
@@ -97,6 +91,10 @@ public class CloudKitProductionVerifier: ObservableObject {
             case .couldNotDetermine:
                 containerStatus = .unknown
                 addError("❌ Could not determine CloudKit account status")
+
+            case .temporarilyUnavailable:
+                containerStatus = .unknown
+                addError("❌ CloudKit temporarily unavailable")
 
             @unknown default:
                 containerStatus = .unknown

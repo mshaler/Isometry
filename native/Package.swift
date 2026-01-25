@@ -39,5 +39,20 @@ let package = Package(
             name: "IsometryTests",
             dependencies: ["Isometry"]
         ),
+        .testTarget(
+            name: "IsometryUITestsiOS",
+            dependencies: ["Isometry"],
+            path: "Tests/UI/iOS"
+        ),
+        .testTarget(
+            name: "IsometryUITestsmacOS",
+            dependencies: ["Isometry"],
+            path: "Tests/UI/macOS"
+        ),
+        .testTarget(
+            name: "IsometryPerformanceTests",
+            dependencies: ["Isometry"],
+            path: "Tests/Performance"
+        ),
     ]
 )

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- CloudKit -->
+    <key>com.apple.developer.icloud-container-identifiers</key>
+    <array>
+        <string>iCloud.com.isometry.app</string>
+    </array>
+    <key>com.apple.developer.icloud-services</key>
+    <array>
+        <string>CloudKit</string>
+    </array>
+
+    <!-- App Sandbox (for macOS) -->
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+
+    <!-- Network access for CloudKit -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+
+    <!-- File access for data import/export -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+
+    <!-- Allow outgoing connections -->
+    <key>com.apple.security.network.server</key>
+    <false/>
+
+    <!-- Background execution -->
+    <key>com.apple.developer.background-modes</key>
+    <array>
+        <string>background-app-refresh</string>
+        <string>background-processing</string>
+    </array>
+</dict>
+</plist>
