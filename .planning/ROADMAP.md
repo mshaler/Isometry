@@ -1,16 +1,17 @@
 # Isometry Notebook Sidecar Implementation Roadmap
 
 **Project:** Isometry Notebook Sidecar
-**Version:** v2.0 (Extended with Native Integration)
-**Target:** Production-ready native iOS/macOS apps with React prototype foundation
+**Version:** v2.0 (Extended with Native Integration + SQL.js Migration)
+**Target:** Production-ready native iOS/macOS apps with React prototype foundation and native API bridge
 **Approach:** Multi-milestone incremental delivery
 
 ---
 
 ## Milestones
 
-- ✅ **v1.0 React Prototype** - Phases 1-4 (completed YYYY-MM-DD)
-- 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (planned)
+- ✅ **v1.0 React Prototype** - Phases 1-4 (completed)
+- 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (in progress)
+- 🚧 **v2.1 SQL.js Migration** - Phases 7.1-7.3 (planned)
 
 ## Milestone Overview
 
@@ -19,6 +20,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v1.0 Goal (Completed):** Deliver a working three-component React sidecar that captures notes as Isometry cards, provides embedded terminal with Claude Code integration, and offers universal preview capabilities.
 
 **v2.0 Goal (Current):** Integrate React prototype functionality into native iOS/macOS apps that leverage existing infrastructure while providing superior performance and user experience within App Sandbox constraints.
+
+**v2.1 Goal (Migration):** Phase out sql.js dependency by implementing native API bridge, maintaining React prototype functionality while connecting to production GRDB/CloudKit backend.
 
 ---
 
@@ -182,30 +185,91 @@ Plans:
 - [ ] 06.4-03: iOS-specific features (multitasking, touch optimization)
 - [ ] 06.4-04: macOS-specific features and App Store compliance
 
+### 📋 v2.1 SQL.js Migration (Planned)
+
+**Milestone Goal:** Deprecate sql.js dependency by creating native API bridge while maintaining React prototype functionality for development testing.
+
+#### Phase 7.1: API Bridge Foundation
+**Goal:** Replace sql.js database layer with native API calls while maintaining exact same React component interfaces
+**Dependencies:** Phase 6.4 (requires complete native implementation)
+**Requirements:** MIG-API-01, MIG-API-02, MIG-API-03, MIG-API-04
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. React DatabaseContext connects to native API instead of sql.js
+2. All existing SQL queries work through API translation layer
+3. IndexedDB persistence replaced with native app communication
+4. Zero breaking changes to React component layer
+5. Performance equals or exceeds sql.js implementation
+
+Plans:
+- [ ] 07.1-01: Native API server with HTTP endpoints matching database operations
+- [ ] 07.1-02: React API client replacing sql.js DatabaseContext
+- [ ] 07.1-03: Query translation layer with sql.js compatibility
+
+#### Phase 7.2: WebView Bridge Integration
+**Goal:** Implement secure communication channel between React prototype and native app using WebView messaging
+**Dependencies:** Phase 7.1 (requires API foundation)
+**Requirements:** MIG-WV-01, MIG-WV-02, MIG-WV-03, MIG-WV-04
+**Plans:** 4 plans
+
+**Success Criteria:**
+1. React prototype runs within native WKWebView with full functionality
+2. Database operations route securely through WebView message handlers
+3. File system access respects App Sandbox constraints
+4. Real-time data sync maintains consistency between views
+5. Performance monitoring shows native-equivalent response times
+
+Plans:
+- [ ] 07.2-01: WKWebView integration with MessageHandler bridge
+- [ ] 07.2-02: Secure API routing through native message handlers
+- [ ] 07.2-03: File system abstraction layer for sandbox compliance
+- [ ] 07.2-04: Real-time sync and conflict resolution
+
+#### Phase 7.3: Migration Completion & Cleanup
+**Goal:** Complete sql.js removal with automated testing, rollback procedures, and clean deprecation path
+**Dependencies:** Phase 7.2 (requires bridge integration)
+**Requirements:** MIG-COMP-01, MIG-COMP-02, MIG-COMP-03, MIG-COMP-04
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. Comprehensive test suite validates migration integrity
+2. Rollback procedures allow safe reversion to sql.js if needed
+3. Build system removes sql.js dependencies and CDN loading
+4. Documentation guides future developers on native-first architecture
+5. Performance benchmarks demonstrate migration success
+
+Plans:
+- [ ] 07.3-01: Comprehensive migration testing and validation
+- [ ] 07.3-02: Rollback mechanisms and safety procedures
+- [ ] 07.3-03: Final cleanup and documentation
+
 ## Dependencies
 
-### v2.0 External Dependencies
-- **iOS 16+ / macOS 14+** for latest SwiftUI and performance features
-- **Claude Code API** access with native URLSession integration
-- **App Store Review** approval for sandbox and API usage
-- **CloudKit** account and development team for sync functionality
+### v2.1 Migration External Dependencies
+- **Native v2.0 completion** with full GRDB/CloudKit functionality
+- **WKWebView** support for React prototype hosting
+- **MessageHandler** API for secure bridge communication
+- **App Sandbox** compliance for file system operations
 
-### v2.0 Internal Dependencies
-- **Existing native codebase** with SuperGrid Canvas, database, and CloudKit sync
-- **React prototype completion** providing feature specification and UX patterns
-- **Database schema compatibility** maintaining existing node/edge relationships
-- **Performance infrastructure** including PerformanceMonitor and optimization systems
+### v2.1 Migration Internal Dependencies
+- **Existing sql.js implementation** providing compatibility reference
+- **Native GRDB database** with complete schema and operations
+- **React prototype** providing UI patterns and workflows
+- **Performance infrastructure** for migration validation
 
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
-v2.0: Phase 6.1 → Phase 6.2 → Phase 6.3 → Phase 6.4 (PLANNED)
+v2.0: Phase 6.1 → Phase 6.2 → Phase 6.3 → Phase 6.4 (IN PROGRESS)
+v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
 ```
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 6.1 → 6.2 → 6.3 → 6.4
+Native: 6.1 → 6.2 → 6.3 → 6.4
+Migration: 7.1 → 7.2 → 7.3
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -217,27 +281,45 @@ Phases execute in numeric order: 6.1 → 6.2 → 6.3 → 6.4
 | 6.2. Native Capture | v2.0 | 0/4 | Not started | - |
 | 6.3. Native Shell | v2.0 | 0/4 | Not started | - |
 | 6.4. Native Platform | v2.0 | 0/4 | Not started | - |
+| 7.1. API Bridge | v2.1 | 0/3 | Not started | - |
+| 7.2. WebView Bridge | v2.1 | 0/4 | Not started | - |
+| 7.3. Migration Complete | v2.1 | 0/3 | Not started | - |
 
 ## Architecture Integration Summary
 
-### v1.0 React Prototype → v2.0 Native Integration
+### v1.0 → v2.0 → v2.1 Evolution
 
 ```
-React Components          Native SwiftUI
-=================        ===============
-Three-pane layout   →    NavigationSplitView
-Markdown editor     →    NSTextView/UITextView
-Properties panel    →    SwiftUI Forms
-D3 visualizations   →    Canvas + SuperGrid patterns
-Terminal emulation  →    NSTask/Process
-Export functions    →    Native share sheet
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete
+====================    =======================    ========================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid
+React Components        SwiftUI Views              React + SwiftUI Hybrid
+Browser Environment     Native iOS/macOS           WebView + Native
 ```
 
-### Performance Targets (v2.0 vs v1.0)
-- **Rendering:** 60fps maintained (vs 30-45fps web)
-- **Memory:** 50% reduction compared to React/browser
-- **Launch Time:** Under 3 seconds (vs 5-8 seconds web)
-- **Battery:** 25% improvement on iOS devices
+### Migration Data Flow
+```
+React Components
+       ↓
+DatabaseContext (React)
+       ↓ (API calls)
+Native HTTP Server
+       ↓ (GRDB operations)
+IsometryDatabase (Swift)
+       ↓ (CloudKit sync)
+Production Backend
+```
+
+### Performance Targets (v2.1 vs v1.0 vs v2.0)
+
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge |
+|--------|-------------|-------------|-------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps |
+| **Memory** | Baseline | -50% | -40% |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds |
+| **Battery** | Baseline | +25% | +20% |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync |
 
 ---
 
@@ -297,6 +379,48 @@ Export functions    →    Native share sheet
 
 **v2.0 Coverage:** 20/20 requirements mapped ✓
 
+### v2.1 SQL.js Migration Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| MIG-API-01 | Phase 7.1 | ❌ Planned |
+| MIG-API-02 | Phase 7.1 | ❌ Planned |
+| MIG-API-03 | Phase 7.1 | ❌ Planned |
+| MIG-API-04 | Phase 7.1 | ❌ Planned |
+| MIG-WV-01 | Phase 7.2 | ❌ Planned |
+| MIG-WV-02 | Phase 7.2 | ❌ Planned |
+| MIG-WV-03 | Phase 7.2 | ❌ Planned |
+| MIG-WV-04 | Phase 7.2 | ❌ Planned |
+| MIG-COMP-01 | Phase 7.3 | ❌ Planned |
+| MIG-COMP-02 | Phase 7.3 | ❌ Planned |
+| MIG-COMP-03 | Phase 7.3 | ❌ Planned |
+| MIG-COMP-04 | Phase 7.3 | ❌ Planned |
+
+**v2.1 Coverage:** 12/12 requirements mapped ✓
+
 ---
 
-**Next step:** `/gsd:execute-phase 6.1` to begin SwiftUI foundation and database integration for native iOS/macOS implementation.
+## Migration Strategy
+
+### Zero-Downtime Approach
+1. **Phase 7.1**: Build API compatibility layer alongside existing sql.js
+2. **Phase 7.2**: Implement WebView bridge with feature-flag toggles
+3. **Phase 7.3**: Complete transition with rollback procedures
+
+### Data Integrity Protection
+- Automated backup before each migration phase
+- Comprehensive test suite for data validation
+- Real-time sync verification with native backend
+- Rollback procedures for safe reversion
+
+### Performance Validation
+- Benchmark current sql.js performance as baseline
+- Continuous monitoring during bridge implementation
+- Regression testing for UI responsiveness
+- Memory usage and battery consumption tracking
+
+---
+
+**Current step:** Phase 6.1 in progress - Complete native foundation before beginning migration planning.
+
+**Next migration step:** `/gsd:plan-phase 7.1` after Phase 6.4 completion.

@@ -1,17 +1,17 @@
 # Isometry Project State
 
 **Last Updated:** 2026-01-26
-**Current Milestone:** v2.0 Native Integration
-**Current Phase:** Phase 6.1 - Foundation & Layout (Native)
-**Current Position:** Phase 6.1 completed - Ready for Phase 6.2
-**Recent:** Completed foundation and layout infrastructure for native notebook integration
+**Current Milestone:** v2.0 Native Integration + v2.1 SQL.js Migration Planning
+**Current Phase:** Phase 6.1 - Foundation & Layout (Native) Complete
+**Current Position:** Phase 6.2 ready to plan + Migration plans created
+**Recent:** Completed Phase 6.1 foundation infrastructure + Created comprehensive sql.js migration plan
 **Blockers:** None
 
 ---
 
 ## Project Context
 
-Isometry has completed the React prototype milestone (v1.0) and is now ready for Phase 6: Native iOS/macOS Integration (v2.0). The goal is to transform the proven React/D3 UI and Notebook features into native apps that leverage existing infrastructure while providing superior performance and user experience within App Sandbox constraints.
+Isometry has completed the React prototype milestone (v1.0) and Phase 6.1 of native integration (v2.0). A comprehensive sql.js migration plan (v2.1) has been created to transition the React prototype from browser-based sql.js to production native GRDB/CloudKit backend while maintaining React functionality through WebView bridge.
 
 ## Milestone Progress
 
@@ -61,7 +61,7 @@ Isometry has completed the React prototype milestone (v1.0) and is now ready for
 **Plans:** 4 plans
 - App Sandbox terminal with NSTask/Process security
 - Claude Code API native integration via URLSession
-- Secure process execution framework
+- Secure process execution framework within sandbox
 - Command history and context management
 
 #### Phase 6.4: Preview & Platform Integration (Planned)
@@ -71,81 +71,143 @@ Isometry has completed the React prototype milestone (v1.0) and is now ready for
 - iOS-specific features (multitasking, touch optimization)
 - macOS-specific features and App Store compliance
 
+### 📋 v2.1 SQL.js Migration (PLANNED)
+
+**Goal:** Deprecate sql.js dependency while maintaining React prototype functionality through native bridge
+
+#### Phase 7.1: API Bridge Foundation (Planned)
+**Plans:** 3 plans (0/3 complete)
+- [ ] 07.1-01: Native HTTP API server with endpoints matching sql.js operations
+- [ ] 07.1-02: React API client replacing sql.js DatabaseContext
+- [ ] 07.1-03: Query translation layer with optimization and performance monitoring
+
+#### Phase 7.2: WebView Bridge Integration (Planned)
+**Plans:** 4 plans (0/4 complete)
+- [ ] 07.2-01: WKWebView container with MessageHandler bridge
+- [ ] 07.2-02: Secure API routing through native message handlers
+- [ ] 07.2-03: File system abstraction layer for App Sandbox compliance
+- [ ] 07.2-04: Real-time sync and conflict resolution
+
+#### Phase 7.3: Migration Completion & Cleanup (Planned)
+**Plans:** 3 plans (0/3 complete)
+- [ ] 07.3-01: Comprehensive migration testing and validation
+- [ ] 07.3-02: Rollback mechanisms and safety procedures
+- [ ] 07.3-03: Final cleanup, documentation, and performance benchmarking
+
 ---
 
-## Architecture Integration Strategy
+## Migration Strategy Overview
 
-### React → Native Component Mapping
+### Zero-Downtime Migration Approach
+1. **Phase 7.1**: Build native API alongside existing sql.js (environment toggle)
+2. **Phase 7.2**: Implement WebView bridge with feature flags and rollback
+3. **Phase 7.3**: Complete transition with comprehensive testing and cleanup
+
+### Data Integrity Protection
+- Automated backup before each migration phase
+- Comprehensive test suite validates migration integrity
+- Real-time sync verification with native backend
+- Complete rollback procedures for safe reversion
+
+### Performance Validation
+- Benchmark current sql.js performance as baseline
+- Continuous monitoring during bridge implementation
+- Regression testing for UI responsiveness
+- Memory usage and battery consumption tracking
+
+---
+
+## Architecture Evolution Summary
+
+### Current: v1.0 React Prototype
 ```
-React Prototype          Native Implementation
-===============         =====================
-Three-pane layout  →    SwiftUI NavigationSplitView
-Markdown editor    →    NSTextView/UITextView + live preview
-Properties panel   →    SwiftUI Forms + CloudKit bindings
-D3 visualizations  →    Canvas + existing SuperGrid patterns
-Terminal emulation →    NSTask/Process + native text views
-Export functions   →    Native share sheet + PDF generation
+React Components → sql.js (browser) → IndexedDB
 ```
 
-### Key Integration Points
-1. **React SuperGrid → SwiftUI Canvas**: Port D3.js visualization to existing SuperGrid patterns
-2. **Notebook Sidecar → Native**: Three-component layout using SwiftUI
-3. **Terminal Integration → App Sandbox**: Process execution within security constraints
-4. **Claude Code API → Native**: Direct URLSession integration
+### In Progress: v2.0 Native Integration
+```
+SwiftUI Views → IsometryDatabase (GRDB) → CloudKit
+```
+
+### Planned: v2.1 Hybrid Bridge
+```
+React Components (WebView) → MessageHandlers → IsometryDatabase (GRDB) → CloudKit
+```
+
+### Migration Data Flow
+```
+React Components
+       ↓
+DatabaseContext (React)
+       ↓ (Environment Detection)
+├─ sql.js (browser fallback)
+├─ HTTP API (development bridge)
+└─ WebView MessageHandlers (production bridge)
+       ↓
+IsometryDatabase (Swift Actor)
+       ↓
+CloudKit Sync (Production Backend)
+```
 
 ---
 
-## Performance Targets (v2.0 vs v1.0)
+## Performance Targets
 
-- **Rendering:** 60fps maintained (vs 30-45fps web)
-- **Memory:** 50% reduction compared to React/browser
-- **Launch Time:** Under 3 seconds (vs 5-8 seconds web)
-- **Battery:** 25% improvement on iOS devices
+### v2.1 Migration vs v1.0 sql.js vs v2.0 Native
+
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge |
+|--------|-------------|-------------|-------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps |
+| **Memory** | Baseline | -50% | -40% |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds |
+| **Battery** | Baseline | +25% | +20% |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync |
+| **Bundle Size** | Baseline | N/A | -60% (no sql.js) |
 
 ---
 
-## Current Focus: Phase 6.2 Planning
+## Current Focus: Dual Track Development
 
-**Phase 6.1 Completion Summary:**
-1. ✅ SwiftUI three-component layout with responsive breakpoints and state persistence
-2. ✅ NotebookCard database schema with FTS5 search and CloudKit sync support
-3. ✅ Navigation architecture with mode switching and context preservation
-4. ✅ Performance monitoring infrastructure with 60fps target validation
-
-**Immediate Next Steps for Phase 6.2:**
+**Track 1: Phase 6.2 Native Implementation**
 1. Plan native markdown editor integration (NSTextView/UITextView)
 2. Design property management interface with CloudKit synchronization
 3. Implement template system using native collection view patterns
 4. Create slash command system with native completion infrastructure
 
-**Key Challenges to Address:**
-- App Sandbox security model constraints for shell functionality
-- CloudKit schema evolution while maintaining backward compatibility
-- Performance optimization for SwiftUI Canvas rendering
-- Platform-specific differences (iOS vs macOS)
+**Track 2: Migration Planning Complete**
+1. ✅ Comprehensive migration roadmap with 3 phases and 10 plans
+2. ✅ Zero-downtime migration strategy with rollback procedures
+3. ✅ Performance validation and data integrity protection
+4. ✅ WebView bridge architecture for App Sandbox compliance
+
+**Key Integration Point:** Phase 7.1 depends on Phase 6.4 completion (native foundation required for API bridge)
 
 ---
 
 ## Risk Mitigation
 
 ### High Risk Areas
-- **App Sandbox restrictions** may limit shell terminal functionality
-- **App Store review** could reject process execution features
-- **Performance degradation** compared to React prototype
+- **App Sandbox restrictions** for WebView bridge communication
+- **Performance regression** during migration transition
+- **Data consistency** across sql.js and native implementations
 
 ### Mitigation Strategies
-- Focus on Claude Code API integration over raw shell access
-- Use only approved APIs with extensive compliance testing
-- Leverage existing SuperGrid Canvas patterns for performance
+- Comprehensive rollback procedures for safe reversion
+- Performance monitoring with automated alerts
+- Extensive testing with data integrity validation
+- Phased migration with feature flags and environment detection
 
 ---
 
 ## Ready for Execution
 
-Phase 6 roadmap complete with:
+Phase 6 roadmap complete + Migration plan ready:
 - ✅ 20 native integration requirements defined
-- ✅ 4-phase delivery structure established
-- ✅ Architecture integration strategy documented
-- ✅ Performance targets and success criteria defined
+- ✅ 4-phase native delivery structure established
+- ✅ 10-plan migration strategy documented
+- ✅ Zero-downtime migration approach defined
+- ✅ Rollback procedures and safety validation planned
 
-**Next Action:** `/gsd:plan-phase 6.2` to begin capture implementation planning with native markdown editor and property management.
+**Next Actions:**
+1. **Immediate:** `/gsd:plan-phase 6.2` to continue native development
+2. **Future:** `/gsd:plan-phase 7.1` after Phase 6.4 completion for migration execution
