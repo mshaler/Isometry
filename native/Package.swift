@@ -27,7 +27,9 @@ let package = Package(
     targets: [
         .target(
             name: "IsometryCore",
-            dependencies: []
+            dependencies: [
+                .product(name: "GRDB", package: "GRDB.swift"),
+            ]
         ),
         .target(
             name: "Isometry",
