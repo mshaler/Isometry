@@ -104,12 +104,12 @@ public struct NotebookShellView: View {
         .padding()
         .background {
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(.systemBackground))
+                .fill(.background)
                 .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(.separator), lineWidth: 0.5)
+                .stroke(.separator, lineWidth: 0.5)
         }
     }
 }
@@ -119,5 +119,5 @@ public struct NotebookShellView: View {
 #Preview {
     NotebookShellView()
         .padding()
-        .background(Color(.systemGroupedBackground))
+        .background(.background.secondary)
 }

@@ -148,7 +148,7 @@ public struct NotebookContentView: View {
     @ViewBuilder
     private func dividerView(for type: String) -> some View {
         Rectangle()
-            .fill(Color(.separator).opacity(isDragging == type ? 0.8 : 0.4))
+            .fill(.separator.opacity(isDragging == type ? 0.8 : 0.4))
             .frame(width: 1)
             .overlay {
                 Rectangle()
@@ -320,7 +320,7 @@ private struct DividerView: View {
 
     var body: some View {
         Rectangle()
-            .fill(Color(.separator).opacity(isDragging ? 0.8 : 0.4))
+            .fill(.separator.opacity(isDragging ? 0.8 : 0.4))
             .frame(width: 1)
             .background {
                 Rectangle()
