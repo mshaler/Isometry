@@ -83,7 +83,7 @@ struct FilterControlsOverlay: View {
                                 }
                             }
                             .pickerStyle(.segmented)
-                            .onChange(of: timeRange) { _ in
+                            .onChange(of: timeRange) {
                                 applyFilters()
                             }
                         }
@@ -302,7 +302,7 @@ struct FilterControlsOverlay: View {
             selectedPriorities = Set(config["priority"] as? [Int] ?? [])
 
             // Parse time range if present
-            if let timeRangeConfig = config["timeRange"] as? [String: String] {
+            if config["timeRange"] is [String: String] {
                 timeRange = TimeRange.custom // Could be enhanced
             } else {
                 timeRange = .all
