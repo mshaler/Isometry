@@ -48,9 +48,9 @@ Plans:
 5. Created cards appear immediately in main Isometry application queries ✓ (implemented)
 
 Plans:
-- [ ] 02-01-PLAN.md — Slash commands system for Isometry DSL patterns
-- [ ] 02-02-PLAN.md — Editable properties panel with multiple field types
-- [ ] 02-03-PLAN.md — Template system and card creation workflow
+- [x] 02-01-PLAN.md — Slash commands system for Isometry DSL patterns
+- [x] 02-02-PLAN.md — Editable properties panel with multiple field types
+- [x] 02-03-PLAN.md — Template system and card creation workflow
 
 ### Phase 3: Shell Integration
 **Goal:** Users can execute terminal commands and interact with Claude Code API within notebook context
@@ -66,15 +66,16 @@ Plans:
 5. Command history persists and includes both command types
 
 Plans:
-- [ ] 03-01-PLAN.md — Terminal emulator integration with @xterm/xterm and node-pty
-- [ ] 03-02-PLAN.md — Claude Code API integration with @anthropic-ai/sdk
-- [ ] 03-03-PLAN.md — Command routing system and project context awareness
-- [ ] 03-04-PLAN.md — Command history with persistence and navigation
+- [x] 03-01-PLAN.md — Terminal emulator integration with @xterm/xterm and node-pty
+- [x] 03-02-PLAN.md — Claude Code API integration with @anthropic-ai/sdk
+- [x] 03-03-PLAN.md — Command routing system and project context awareness
+- [x] 03-04-PLAN.md — Command history with persistence and navigation
 
 ### Phase 4: Preview & Integration Polish
 **Goal:** Users can preview content universally and export in multiple formats while experiencing seamless data flow
 **Dependencies:** Phase 3 (requires full workflow for integration testing)
 **Requirements:** PREV-01, PREV-02, PREV-03, PREV-04, INT-01, INT-02, INT-03, INT-04
+**Plans:** 3 plans
 
 **Success Criteria:**
 1. User can view web content, PDFs, and images in preview component
@@ -82,6 +83,11 @@ Plans:
 3. User can export notebook content in multiple formats (PDF, HTML, data)
 4. User experiences consistent theme across all components
 5. System maintains 60fps performance with large datasets
+
+Plans:
+- [ ] 04-01-PLAN.md — Universal content preview and export functionality
+- [ ] 04-02-PLAN.md — D3 visualization rendering with live data updates
+- [ ] 04-03-PLAN.md — Integration polish and performance optimization
 
 ## Dependencies
 
@@ -150,22 +156,21 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 - Context integration: 2-3 hours
 - Layout implementation: 1-2 hours
 
-### Phase 2: Capture Implementation (8-10 hours)
+### Phase 2: Capture Implementation (8-10 hours) ✓ COMPLETE
 - Slash command system: 3-4 hours
 - Editable properties panel: 3-4 hours
 - Template system: 2-3 hours
 
-### Phase 3: Shell Integration (10-12 hours)
+### Phase 3: Shell Integration (10-12 hours) ✓ COMPLETE
 - Terminal embedding: 4-5 hours
 - Claude Code API setup: 3-4 hours
 - Context awareness: 2-3 hours
 - Command routing: 2 hours
 
-### Phase 4: Preview & Integration Polish (8-10 hours)
-- Browser component: 3-4 hours
-- D3 visualization: 2-3 hours
-- Export functionality: 2 hours
-- Performance optimization: 2-3 hours
+### Phase 4: Preview & Integration Polish (8-10 hours) **PLANNED**
+- Universal content preview: 3-4 hours
+- D3 visualization rendering: 3-4 hours
+- Integration and performance: 2-3 hours
 
 **Total Estimated Development Time:** 32-40 hours
 **With Testing and Iteration:** 40-50 hours
@@ -234,25 +239,25 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 | FOUND-02 | Phase 1 | ✓ Complete |
 | FOUND-03 | Phase 1 | ✓ Complete |
 | FOUND-04 | Phase 1 | ✓ Complete |
-| CAP-01 | Phase 2 | ⚠ Partially (editor working, slash commands needed) |
-| CAP-02 | Phase 2 | ❌ Planned (properties read-only, need editing) |
-| CAP-03 | Phase 2 | ❌ Planned (slash commands not implemented) |
-| CAP-04 | Phase 2 | ❌ Planned (templates stub exists, need implementation) |
-| SHELL-01 | Phase 3 | ❌ Pending |
-| SHELL-02 | Phase 3 | ❌ Pending |
-| SHELL-03 | Phase 3 | ❌ Pending |
-| SHELL-04 | Phase 3 | ❌ Pending |
-| PREV-01 | Phase 4 | ❌ Pending |
-| PREV-02 | Phase 4 | ❌ Pending |
-| PREV-03 | Phase 4 | ❌ Pending |
-| PREV-04 | Phase 4 | ❌ Pending |
-| INT-01 | Phase 4 | ❌ Pending |
-| INT-02 | Phase 4 | ❌ Pending |
-| INT-03 | Phase 4 | ❌ Pending |
-| INT-04 | Phase 4 | ❌ Pending |
+| CAP-01 | Phase 2 | ✓ Complete |
+| CAP-02 | Phase 2 | ✓ Complete |
+| CAP-03 | Phase 2 | ✓ Complete |
+| CAP-04 | Phase 2 | ✓ Complete |
+| SHELL-01 | Phase 3 | ✓ Complete |
+| SHELL-02 | Phase 3 | ✓ Complete |
+| SHELL-03 | Phase 3 | ✓ Complete |
+| SHELL-04 | Phase 3 | ✓ Complete |
+| PREV-01 | Phase 4 | ❌ Planned |
+| PREV-02 | Phase 4 | ❌ Planned |
+| PREV-03 | Phase 4 | ❌ Planned |
+| PREV-04 | Phase 4 | ❌ Planned |
+| INT-01 | Phase 4 | ❌ Planned |
+| INT-02 | Phase 4 | ❌ Planned |
+| INT-03 | Phase 4 | ❌ Planned |
+| INT-04 | Phase 4 | ❌ Planned |
 
 **Coverage:** 20/20 requirements mapped ✓
 
 ---
 
-**Phase 1 complete.** **Phase 2 revised and ready for execution.** **Phase 3 planned and ready for execution.** Next step: `/gsd:execute-phase 03-shell-integration` to implement terminal and AI integration.
+**All phases planned and ready for execution.** Next step: `/gsd:execute-phase 04-preview-integration-polish` to complete the notebook sidecar project.
