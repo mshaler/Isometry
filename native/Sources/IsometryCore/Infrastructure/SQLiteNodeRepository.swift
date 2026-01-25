@@ -76,11 +76,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -110,11 +110,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -133,11 +133,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -156,11 +156,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -192,11 +192,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -215,11 +215,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -248,11 +248,11 @@ public actor SQLiteNodeRepository: NodeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -264,7 +264,7 @@ public actor SQLiteNodeRepository: NodeRepository {
 
     public func executeSQL(_ sql: String, arguments: [Any]) async throws -> [Node] {
         try await database.read { db in
-            let statementArguments = StatementArguments(arguments)
+            let statementArguments = StatementArguments(arguments) ?? StatementArguments()
             return try Node.fetchAll(db, sql: sql, arguments: statementArguments)
         }
     }

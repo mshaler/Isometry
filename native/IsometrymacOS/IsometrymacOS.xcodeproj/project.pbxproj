@@ -12,6 +12,8 @@
 		11000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 21000003 /* Assets.xcassets */; };
 		11000004 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 21000005 /* Preview Assets.xcassets */; };
 		11000005 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 91000001 /* GRDB */; };
+		11000006 /* Isometry in Frameworks */ = {isa = PBXBuildFile; productRef = 91000002 /* Isometry */; };
+		11000007 /* IsometryCore in Frameworks */ = {isa = PBXBuildFile; productRef = 91000003 /* IsometryCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -30,6 +32,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				11000005 /* GRDB in Frameworks */,
+				11000006 /* Isometry in Frameworks */,
+				11000007 /* IsometryCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -91,6 +95,8 @@
 			name = IsometrymacOS;
 			packageProductDependencies = (
 				91000001 /* GRDB */,
+				91000002 /* Isometry */,
+				91000003 /* IsometryCore */,
 			);
 			productName = IsometrymacOS;
 			productReference = 21000004 /* IsometrymacOS.app */;
@@ -122,6 +128,7 @@
 			mainGroup = 41000001;
 			packageReferences = (
 				81000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
+				81000002 /* XCLocalSwiftPackageReference ".." */,
 			);
 			productRefGroup = 41000003 /* Products */;
 			projectDirPath = "";
@@ -299,7 +306,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mshaler.isometry;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
 			};
 			name = Debug;
 		};
@@ -327,7 +334,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mshaler.isometry;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_VERSION = 5.0;
+				SWIFT_VERSION = 5.9;
 			};
 			name = Release;
 		};
@@ -365,11 +372,28 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		81000002 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		91000001 /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 81000001 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
+		};
+		91000002 /* Isometry */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 81000002 /* XCLocalSwiftPackageReference ".." */;
+			productName = Isometry;
+		};
+		91000003 /* IsometryCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 81000002 /* XCLocalSwiftPackageReference ".." */;
+			productName = IsometryCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

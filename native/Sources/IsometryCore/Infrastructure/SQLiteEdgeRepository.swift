@@ -59,11 +59,11 @@ public actor SQLiteEdgeRepository: EdgeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -88,11 +88,11 @@ public actor SQLiteEdgeRepository: EdgeRepository {
 
             if let limit = limit {
                 sql += " LIMIT ?"
-                arguments.append(limit)
+                arguments.append(contentsOf: [limit])
 
                 if let offset = offset {
                     sql += " OFFSET ?"
-                    arguments.append(offset)
+                    arguments.append(contentsOf: [offset])
                 }
             }
 
@@ -187,7 +187,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
 
             if let edgeType = edgeType {
                 sql += " AND edge_type = ?"
-                arguments.append(edgeType.rawValue)
+                arguments.append(contentsOf: [edgeType.rawValue])
             }
 
             return try String.fetchAll(db, sql: sql, arguments: arguments)
@@ -199,7 +199,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
             let edgeCondition = edgeType != nil ? "AND edge_type = ?" : ""
             var arguments: StatementArguments = [sourceId, distance]
             if let edgeType = edgeType {
-                arguments.append(edgeType.rawValue)
+                arguments.append(contentsOf: [edgeType.rawValue])
             }
 
             let directionCondition: String
@@ -229,7 +229,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
                 SELECT DISTINCT node_id FROM graph_traversal WHERE depth = ?
             """
 
-            arguments.append(distance)
+            arguments.append(contentsOf: [distance])
             return try String.fetchAll(db, sql: sql, arguments: arguments)
         }
     }
@@ -239,9 +239,9 @@ public actor SQLiteEdgeRepository: EdgeRepository {
             let edgeCondition = edgeType != nil ? "AND edge_type = ?" : ""
             var arguments: StatementArguments = [sourceId, maxDistance]
             if let edgeType = edgeType {
-                arguments.append(edgeType.rawValue)
+                arguments.append(contentsOf: [edgeType.rawValue])
             }
-            arguments.append(targetId)
+            arguments.append(contentsOf: [targetId])
 
             let sql = """
                 WITH RECURSIVE path_search(node_id, path, depth) AS (
@@ -276,7 +276,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
             let edgeCondition = edgeType != nil ? "AND edge_type = ?" : ""
             var arguments: StatementArguments = [centerId, depth]
             if let edgeType = edgeType {
-                arguments.append(edgeType.rawValue)
+                arguments.append(contentsOf: [edgeType.rawValue])
             }
 
             let directionCondition: String
@@ -322,7 +322,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
 
             var edgeArguments = StatementArguments(nodeIds + nodeIds)
             if let edgeType = edgeType {
-                edgeArguments.append(edgeType.rawValue)
+                edgeArguments.append(contentsOf: [edgeType.rawValue])
             }
 
             let edges = try Edge.fetchAll(db, sql: edgesSql, arguments: edgeArguments)
@@ -336,7 +336,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
             let edgeCondition = edgeType != nil ? "WHERE edge_type = ?" : ""
             var arguments: StatementArguments = []
             if let edgeType = edgeType {
-                arguments.append(edgeType.rawValue)
+                arguments.append(contentsOf: [edgeType.rawValue])
             }
 
             // Get all unique node IDs
@@ -353,7 +353,7 @@ public actor SQLiteEdgeRepository: EdgeRepository {
             // For each unvisited node, find its connected component
             for node in allNodes {
                 if !visited.contains(node) {
-                    let component = try findComponentForNode(node, db: db, edgeType: edgeType)
+                    let component = try self.findComponentForNode(node, db: db, edgeType: edgeType)
 
                     // Mark all nodes in this component as visited
                     for nodeId in component {
@@ -396,27 +396,27 @@ public actor SQLiteEdgeRepository: EdgeRepository {
     }
 
     public func getAllSequences(minLength: Int) async throws -> [[String]] {
-        try await database.read { db in
-            // Find all sequence start points (nodes that are sequence sources but not targets)
+        // First, get all sequence start points
+        let startNodes = try await database.read { db in
             let startNodesSql = """
                 SELECT DISTINCT source_id FROM edges WHERE edge_type = 'SEQUENCE'
                 AND source_id NOT IN (
                     SELECT DISTINCT target_id FROM edges WHERE edge_type = 'SEQUENCE'
                 )
             """
-
-            let startNodes = try String.fetchAll(db, sql: startNodesSql)
-            var sequences: [[String]] = []
-
-            for startNode in startNodes {
-                let sequence = try await getSequence(startId: startNode, maxLength: 100) // Reasonable max
-                if sequence.count >= minLength {
-                    sequences.append(sequence)
-                }
-            }
-
-            return sequences
+            return try String.fetchAll(db, sql: startNodesSql)
         }
+
+        // Then, get sequences for each start node
+        var sequences: [[String]] = []
+        for startNode in startNodes {
+            let sequence = try await getSequence(startId: startNode, maxLength: 100) // Reasonable max
+            if sequence.count >= minLength {
+                sequences.append(sequence)
+            }
+        }
+
+        return sequences
     }
 
     // MARK: - Hierarchy Operations
@@ -508,11 +508,11 @@ public actor SQLiteEdgeRepository: EdgeRepository {
     // MARK: - Private Helper Methods
 
     /// Find all nodes in the connected component containing the given node
-    private func findComponentForNode(_ nodeId: String, db: Database, edgeType: EdgeType?) throws -> [String] {
+    private nonisolated func findComponentForNode(_ nodeId: String, db: Database, edgeType: EdgeType?) throws -> [String] {
         let edgeCondition = edgeType != nil ? "AND edge_type = ?" : ""
         var arguments: StatementArguments = [nodeId]
         if let edgeType = edgeType {
-            arguments.append(edgeType.rawValue)
+            arguments.append(contentsOf: [edgeType.rawValue])
         }
 
         let sql = """
