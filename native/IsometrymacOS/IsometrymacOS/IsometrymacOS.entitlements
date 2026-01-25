@@ -24,8 +24,11 @@
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
 
-    <!-- Allow outgoing connections -->
-    <key>com.apple.security.network.server</key>
-    <false/>
+    <!-- Background execution -->
+    <key>com.apple.developer.background-modes</key>
+    <array>
+        <string>background-app-refresh</string>
+        <string>background-processing</string>
+    </array>
 </dict>
 </plist>
