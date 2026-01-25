@@ -1,9 +1,9 @@
 # Isometry Project State
 
-**Last Updated:** 2026-01-25
+**Last Updated:** 2026-01-24
 **Current Phase:** Phase 4 - Production (Native Apps)
-**Current Position:** Phase 4 Complete - All waves executed
-**Blockers:** None (ready for device testing)
+**Current Position:** Wave 3 Performance Optimization executed
+**Blockers:** None
 
 ---
 
@@ -82,6 +82,9 @@ Phase 4: Production  [========] 100%
 - FTS5 queries <20ms on 6,891 notes
 - Virtualization reduces memory for large datasets
 - Debounced updates maintain smooth scrolling
+- QueryCache: 50MB NSCache with 5-min TTL
+- PerformanceMonitor: os_signpost for Instruments profiling
+- GridCellData stable identity via node.id (not UUID)
 
 **Architecture Decisions:**
 - z-layer separation: Canvas(0) -> Overlays(1) -> Sheets(2)
@@ -97,9 +100,9 @@ Phase 4: Production  [========] 100%
 
 ## Session Continuity
 
-**Last session:** 2026-01-25 02:12 UTC
-**Stopped at:** Phase 4 Wave 5 complete
-**Resume file:** None (Phase 4 complete)
+**Last session:** 2026-01-24
+**Stopped at:** Phase 4 Wave 3 (Performance Optimization) complete
+**Resume file:** None
 
 ## Next Steps
 
