@@ -176,5 +176,64 @@ CREATE TABLE IF NOT EXISTS sync_state (
 
 INSERT OR IGNORE INTO sync_state (id) VALUES ('default');
 
+-- Notebook Cards for capture-shell-preview workflow
+CREATE TABLE IF NOT EXISTS notebook_cards (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    markdown_content TEXT,
+    properties TEXT DEFAULT '{}',  -- JSON object
+    template_id TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    modified_at TEXT NOT NULL DEFAULT (datetime('now')),
+    folder TEXT,
+    tags TEXT DEFAULT '[]',  -- JSON array matching nodes table pattern
+
+    -- Integration with existing nodes (optional relationship)
+    linked_node_id TEXT REFERENCES nodes(id),
+
+    -- CloudKit sync fields (matching existing pattern)
+    sync_version INTEGER DEFAULT 0,
+    last_synced_at TEXT,
+    conflict_resolved_at TEXT,
+    deleted_at TEXT,
+
+    FOREIGN KEY (linked_node_id) REFERENCES nodes(id) ON DELETE SET NULL
+);
+
+-- Indexes for performance (match existing pattern)
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_created_at ON notebook_cards(created_at);
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_modified_at ON notebook_cards(modified_at);
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_folder ON notebook_cards(folder);
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_template_id ON notebook_cards(template_id);
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_sync ON notebook_cards(sync_version, last_synced_at);
+CREATE INDEX IF NOT EXISTS idx_notebook_cards_active ON notebook_cards(deleted_at) WHERE deleted_at IS NULL;
+
+-- Full-text search (matching existing FTS pattern)
+CREATE VIRTUAL TABLE IF NOT EXISTS notebook_cards_fts USING fts5(
+    title,
+    markdown_content,
+    content='notebook_cards',
+    content_rowid='rowid'
+);
+
+-- FTS triggers to maintain search index (matching existing pattern)
+CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_insert AFTER INSERT ON notebook_cards BEGIN
+    INSERT INTO notebook_cards_fts(rowid, title, markdown_content)
+    VALUES (NEW.rowid, NEW.title, NEW.markdown_content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_delete AFTER DELETE ON notebook_cards BEGIN
+    INSERT INTO notebook_cards_fts(notebook_cards_fts, rowid, title, markdown_content)
+    VALUES ('delete', OLD.rowid, OLD.title, OLD.markdown_content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_update AFTER UPDATE ON notebook_cards BEGIN
+    INSERT INTO notebook_cards_fts(notebook_cards_fts, rowid, title, markdown_content)
+    VALUES ('delete', OLD.rowid, OLD.title, OLD.markdown_content);
+    INSERT INTO notebook_cards_fts(rowid, title, markdown_content)
+    VALUES (NEW.rowid, NEW.title, NEW.markdown_content);
+END;
+
 -- Record initial schema version
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (1, 'Initial schema with sync support');
+INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (2, 'Added notebook_cards table with FTS support');
