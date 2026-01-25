@@ -30,9 +30,9 @@ Deliver a working three-component React sidecar that captures notes as Isometry 
 5. Layout state persists across browser sessions
 
 Plans:
-- [ ] 01-01-PLAN.md — Extend SQLite schema and TypeScript definitions
-- [ ] 01-02-PLAN.md — Create NotebookContext and integrate mode toggle
-- [ ] 01-03-PLAN.md — Implement three-component layout with shells
+- [x] 01-01-PLAN.md — Extend SQLite schema and TypeScript definitions
+- [x] 01-02-PLAN.md — Create NotebookContext and integrate mode toggle
+- [x] 01-03-PLAN.md — Implement three-component layout with shells
 
 ### Phase 2: Capture Implementation
 **Goal:** Users can create and edit rich markdown cards with properties that seamlessly integrate into Isometry
@@ -41,16 +41,16 @@ Plans:
 **Plans:** 3 plans
 
 **Success Criteria:**
-1. User can write markdown with live preview and auto-save functionality
+1. User can write markdown with live preview and auto-save functionality ✓ (implemented)
 2. User can add and edit card properties through collapsible panel
 3. User can trigger slash commands to insert Isometry DSL patterns
 4. User can create new cards from templates and save custom templates
-5. Created cards appear immediately in main Isometry application queries
+5. Created cards appear immediately in main Isometry application queries ✓ (implemented)
 
 Plans:
-- [ ] 02-01-PLAN.md — Markdown editor integration with @uiw/react-md-editor
-- [ ] 02-02-PLAN.md — Properties panel enhancement and persistence
-- [ ] 02-03-PLAN.md — Slash commands system and auto-save functionality
+- [ ] 02-01-PLAN.md — Slash commands system for Isometry DSL patterns
+- [ ] 02-02-PLAN.md — Editable properties panel with multiple field types
+- [ ] 02-03-PLAN.md — Template system and card creation workflow
 
 ### Phase 3: Shell Integration
 **Goal:** Users can execute terminal commands and interact with Claude Code API within notebook context
@@ -137,17 +137,16 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 
 ## Timeline Estimation
 
-### Phase 1: Foundation & Layout (6-8 hours)
+### Phase 1: Foundation & Layout (6-8 hours) ✓ COMPLETE
 - Component structure setup: 2 hours
 - SQLite schema extension: 2 hours
 - Context integration: 2-3 hours
 - Layout implementation: 1-2 hours
 
 ### Phase 2: Capture Implementation (8-10 hours)
-- Markdown editor integration: 3-4 hours
-- Properties panel: 2-3 hours
-- Slash command system: 3 hours
-- Template system: 2 hours
+- Slash command system: 3-4 hours
+- Editable properties panel: 3-4 hours
+- Template system: 2-3 hours
 
 ### Phase 3: Shell Integration (10-12 hours)
 - Terminal embedding: 4-5 hours
@@ -224,29 +223,29 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 1 | Planned |
-| FOUND-02 | Phase 1 | Planned |
-| FOUND-03 | Phase 1 | Planned |
-| FOUND-04 | Phase 1 | Planned |
-| CAP-01 | Phase 2 | Planned |
-| CAP-02 | Phase 2 | Planned |
-| CAP-03 | Phase 2 | Planned |
-| CAP-04 | Phase 2 | Planned |
-| SHELL-01 | Phase 3 | Pending |
-| SHELL-02 | Phase 3 | Pending |
-| SHELL-03 | Phase 3 | Pending |
-| SHELL-04 | Phase 3 | Pending |
-| PREV-01 | Phase 4 | Pending |
-| PREV-02 | Phase 4 | Pending |
-| PREV-03 | Phase 4 | Pending |
-| PREV-04 | Phase 4 | Pending |
-| INT-01 | Phase 4 | Pending |
-| INT-02 | Phase 4 | Pending |
-| INT-03 | Phase 4 | Pending |
-| INT-04 | Phase 4 | Pending |
+| FOUND-01 | Phase 1 | ✓ Complete |
+| FOUND-02 | Phase 1 | ✓ Complete |
+| FOUND-03 | Phase 1 | ✓ Complete |
+| FOUND-04 | Phase 1 | ✓ Complete |
+| CAP-01 | Phase 2 | ⚠ Partially (editor working, slash commands needed) |
+| CAP-02 | Phase 2 | ❌ Planned (properties read-only, need editing) |
+| CAP-03 | Phase 2 | ❌ Planned (slash commands not implemented) |
+| CAP-04 | Phase 2 | ❌ Planned (templates stub exists, need implementation) |
+| SHELL-01 | Phase 3 | ❌ Pending |
+| SHELL-02 | Phase 3 | ❌ Pending |
+| SHELL-03 | Phase 3 | ❌ Pending |
+| SHELL-04 | Phase 3 | ❌ Pending |
+| PREV-01 | Phase 4 | ❌ Pending |
+| PREV-02 | Phase 4 | ❌ Pending |
+| PREV-03 | Phase 4 | ❌ Pending |
+| PREV-04 | Phase 4 | ❌ Pending |
+| INT-01 | Phase 4 | ❌ Pending |
+| INT-02 | Phase 4 | ❌ Pending |
+| INT-03 | Phase 4 | ❌ Pending |
+| INT-04 | Phase 4 | ❌ Pending |
 
 **Coverage:** 20/20 requirements mapped ✓
 
 ---
 
-**Phase 1 planned.** **Phase 2 planned.** Next step: `/gsd:execute-phase 02-capture-implementation` to begin Phase 2 implementation.
+**Phase 1 complete.** **Phase 2 revised and ready for execution.** Next step: `/gsd:execute-phase 02-capture-implementation` to implement remaining capture functionality.
