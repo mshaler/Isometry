@@ -167,6 +167,96 @@ public actor IsometryDatabase {
         }
     }
 
+    // MARK: - NotebookCard CRUD
+
+    /// Creates a new notebook card
+    public func createNotebookCard(_ card: NotebookCard) async throws {
+        try await dbPool.write { db in
+            try card.insert(db)
+        }
+    }
+
+    /// Updates an existing notebook card
+    public func updateNotebookCard(_ card: NotebookCard) async throws {
+        let updatedCard = card.updated() // Increment version and set modified date
+
+        try await dbPool.write { db in
+            try updatedCard.update(db)
+        }
+    }
+
+    /// Soft-deletes a notebook card by setting deleted_at
+    public func deleteNotebookCard(id: String) async throws {
+        try await dbPool.write { db in
+            try db.execute(
+                sql: """
+                    UPDATE notebook_cards
+                    SET deleted_at = datetime('now'),
+                        modified_at = datetime('now'),
+                        sync_version = sync_version + 1
+                    WHERE id = ?
+                    """,
+                arguments: [id]
+            )
+        }
+    }
+
+    /// Permanently removes a notebook card from the database
+    public func purgeNotebookCard(id: String) async throws {
+        try await dbPool.write { db in
+            try db.execute(sql: "DELETE FROM notebook_cards WHERE id = ?", arguments: [id])
+        }
+    }
+
+    /// Fetches a notebook card by ID
+    public func getNotebookCard(id: String) async throws -> NotebookCard? {
+        try await dbPool.read { db in
+            try NotebookCard.fetchOne(db, key: id)
+        }
+    }
+
+    /// Fetches all active notebook cards
+    public func getAllNotebookCards() async throws -> [NotebookCard] {
+        try await dbPool.read { db in
+            try NotebookCard.active
+                .byModificationDate
+                .fetchAll(db)
+        }
+    }
+
+    /// Fetches notebook cards in a specific folder
+    public func getNotebookCards(inFolder folder: String?) async throws -> [NotebookCard] {
+        try await dbPool.read { db in
+            try NotebookCard.active
+                .inFolder(folder)
+                .byModificationDate
+                .fetchAll(db)
+        }
+    }
+
+    /// Searches notebook cards using FTS5 full-text search
+    public func searchNotebookCards(_ query: String) async throws -> [NotebookCard] {
+        try await dbPool.read { db in
+            let sql = """
+                SELECT notebook_cards.*
+                FROM notebook_cards
+                JOIN notebook_cards_fts ON notebook_cards.rowid = notebook_cards_fts.rowid
+                WHERE notebook_cards_fts MATCH ?
+                  AND notebook_cards.deleted_at IS NULL
+                ORDER BY rank
+                """
+            return try NotebookCard.fetchAll(db, sql: sql, arguments: [query])
+        }
+    }
+
+    /// Counts active notebook cards
+    public func countNotebookCards() async throws -> Int {
+        try await dbPool.read { db in
+            try NotebookCard.active
+                .fetchCount(db)
+        }
+    }
+
     // MARK: - Full-Text Search (FTS5)
 
     /// Searches nodes using FTS5 full-text search

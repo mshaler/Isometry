@@ -337,6 +337,94 @@ public actor CloudKitSyncManager {
         }
     }
 
+    /// Pushes pending NotebookCard changes to CloudKit
+    /// TODO: Integrate with main sync flow in Phase 6.2
+    public func pushNotebookCards() async throws {
+        let pendingCards = try await localDatabase.getAllNotebookCards()
+            .filter { $0.lastSyncedAt == nil || $0.modifiedAt > ($0.lastSyncedAt ?? .distantPast) }
+
+        guard !pendingCards.isEmpty else {
+            return
+        }
+
+        let records = pendingCards.map { notebookCardToRecord($0) }
+
+        // Use existing chunk upload pattern
+        let chunks = stride(from: 0, to: records.count, by: Self.recordsPerChunk).map {
+            Array(records[$0..<min($0 + Self.recordsPerChunk, records.count)])
+        }
+
+        for (index, chunk) in chunks.enumerated() {
+            try await pushNotebookCardChunk(chunk, chunkIndex: index, totalChunks: chunks.count)
+        }
+    }
+
+    /// Pushes a single chunk of NotebookCard records to CloudKit
+    private func pushNotebookCardChunk(_ records: [CKRecord], chunkIndex: Int, totalChunks: Int, retryAttempt: Int = 0) async throws {
+        let maxRetries = 3
+
+        do {
+            let operation = CKModifyRecordsOperation(
+                recordsToSave: records,
+                recordIDsToDelete: nil
+            )
+            operation.savePolicy = .changedKeys
+            operation.qualityOfService = .userInitiated
+
+            // Async/await wrapper for CloudKit operation
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                operation.modifyRecordsResultBlock = { result in
+                    switch result {
+                    case .success:
+                        continuation.resume()
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
+                }
+
+                database.add(operation)
+            }
+
+            // Update sync metadata for uploaded cards
+            for record in records {
+                let cardId = record.recordID.recordName
+                if let card = try await localDatabase.getNotebookCard(id: cardId) {
+                    let syncedCard = NotebookCard(
+                        id: card.id,
+                        title: card.title,
+                        markdownContent: card.markdownContent,
+                        properties: card.properties,
+                        templateId: card.templateId,
+                        createdAt: card.createdAt,
+                        modifiedAt: card.modifiedAt,
+                        folder: card.folder,
+                        tags: card.tags,
+                        linkedNodeId: card.linkedNodeId,
+                        syncVersion: card.syncVersion,
+                        lastSyncedAt: Date(),
+                        conflictResolvedAt: card.conflictResolvedAt,
+                        deletedAt: card.deletedAt
+                    )
+                    try await localDatabase.updateNotebookCard(syncedCard)
+                }
+            }
+
+        } catch {
+            // Handle retry logic similar to Node sync
+            if let ckError = error as? CKError {
+                if ckError.code == .requestRateLimited || ckError.code == .serviceUnavailable {
+                    if retryAttempt < maxRetries {
+                        let delay = retryDelay(attempt: retryAttempt + 1)
+                        try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                        try await pushNotebookCardChunk(records, chunkIndex: chunkIndex, totalChunks: totalChunks, retryAttempt: retryAttempt + 1)
+                        return
+                    }
+                }
+            }
+            throw error
+        }
+    }
+
     /// Pulls remote changes from CloudKit with progress tracking
     private func pullChanges() async throws {
         let zoneID = zone.zoneID
@@ -379,30 +467,62 @@ public actor CloudKitSyncManager {
 
         // Apply changes to local database with conflict resolution
         for record in changedRecords {
-            if let serverNode = recordToNode(record) {
-                if let localNode = try await localDatabase.getNode(id: serverNode.id) {
-                    // Check for conflict: both modified since last sync
-                    let localModifiedSinceSync = localNode.lastSyncedAt == nil ||
-                        localNode.modifiedAt > (localNode.lastSyncedAt ?? .distantPast)
-                    let hasConflict = localModifiedSinceSync && serverNode.syncVersion != localNode.syncVersion
+            // Handle different record types
+            switch record.recordType {
+            case "Node":
+                if let serverNode = recordToNode(record) {
+                    if let localNode = try await localDatabase.getNode(id: serverNode.id) {
+                        // Check for conflict: both modified since last sync
+                        let localModifiedSinceSync = localNode.lastSyncedAt == nil ||
+                            localNode.modifiedAt > (localNode.lastSyncedAt ?? .distantPast)
+                        let hasConflict = localModifiedSinceSync && serverNode.syncVersion != localNode.syncVersion
 
-                    if hasConflict {
-                        let resolvedNode = try await resolveConflict(
-                            local: localNode,
-                            server: serverNode
-                        )
-                        if let resolved = resolvedNode {
-                            try await localDatabase.updateNode(resolved)
+                        if hasConflict {
+                            let resolvedNode = try await resolveConflict(
+                                local: localNode,
+                                server: serverNode
+                            )
+                            if let resolved = resolvedNode {
+                                try await localDatabase.updateNode(resolved)
+                            }
+                        } else if serverNode.syncVersion > localNode.syncVersion {
+                            // No conflict, server is newer - apply update
+                            try await localDatabase.updateNode(serverNode)
                         }
-                    } else if serverNode.syncVersion > localNode.syncVersion {
-                        // No conflict, server is newer - apply update
-                        try await localDatabase.updateNode(serverNode)
+                        // If local is newer (syncVersion >= server), keep local
+                    } else {
+                        // New record from server
+                        try await localDatabase.createNode(serverNode)
                     }
-                    // If local is newer (syncVersion >= server), keep local
-                } else {
-                    // New record from server
-                    try await localDatabase.createNode(serverNode)
                 }
+
+            case "NotebookCard":
+                if let serverCard = recordToNotebookCard(record) {
+                    if let localCard = try await localDatabase.getNotebookCard(id: serverCard.id) {
+                        // Check for conflict: both modified since last sync
+                        let localModifiedSinceSync = localCard.lastSyncedAt == nil ||
+                            localCard.modifiedAt > (localCard.lastSyncedAt ?? .distantPast)
+                        let hasConflict = localModifiedSinceSync && serverCard.syncVersion != localCard.syncVersion
+
+                        if hasConflict {
+                            // For now, use server wins strategy for notebook cards
+                            // TODO: Add notebook-specific conflict resolution in Phase 6.2
+                            try await localDatabase.updateNotebookCard(serverCard)
+                        } else if serverCard.syncVersion > localCard.syncVersion {
+                            // No conflict, server is newer - apply update
+                            try await localDatabase.updateNotebookCard(serverCard)
+                        }
+                        // If local is newer (syncVersion >= server), keep local
+                    } else {
+                        // New record from server
+                        try await localDatabase.createNotebookCard(serverCard)
+                    }
+                }
+
+            default:
+                // Handle other record types (ViewConfig, FilterPreset, etc.)
+                // For now, skip unknown types - they'll be handled by existing specific sync methods
+                break
             }
 
             processedChanges += 1
@@ -643,6 +763,80 @@ public actor CloudKitSyncManager {
             createdAt: record["createdAt"] as? Date ?? Date(),
             modifiedAt: record["modifiedAt"] as? Date ?? Date(),
             syncVersion: record["syncVersion"] as? Int ?? 0
+        )
+    }
+
+    /// Converts NotebookCard to CloudKit record
+    private func notebookCardToRecord(_ card: NotebookCard) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: card.id, zoneID: zone.zoneID)
+        let record = CKRecord(recordType: "NotebookCard", recordID: recordID)
+
+        record["title"] = card.title
+        record["markdownContent"] = card.markdownContent
+        record["templateId"] = card.templateId
+        record["folder"] = card.folder
+        record["linkedNodeId"] = card.linkedNodeId
+        record["syncVersion"] = card.syncVersion
+        record["createdAt"] = card.createdAt
+        record["modifiedAt"] = card.modifiedAt
+        record["lastSyncedAt"] = card.lastSyncedAt
+        record["conflictResolvedAt"] = card.conflictResolvedAt
+        record["deletedAt"] = card.deletedAt
+
+        // Encode properties as JSON string
+        if let propertiesData = try? JSONEncoder().encode(card.properties),
+           let propertiesString = String(data: propertiesData, encoding: .utf8) {
+            record["properties"] = propertiesString
+        }
+
+        // Encode tags as JSON string
+        if let tagsData = try? JSONEncoder().encode(card.tags),
+           let tagsString = String(data: tagsData, encoding: .utf8) {
+            record["tags"] = tagsString
+        }
+
+        return record
+    }
+
+    /// Converts CloudKit record to NotebookCard
+    private func recordToNotebookCard(_ record: CKRecord) -> NotebookCard? {
+        guard let title = record["title"] as? String else { return nil }
+
+        // Decode properties from JSON string
+        let properties: [String: String]
+        if let propertiesString = record["properties"] as? String,
+           let data = propertiesString.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([String: String].self, from: data) {
+            properties = decoded
+        } else {
+            properties = [:]
+        }
+
+        // Decode tags from JSON string
+        let tags: [String]
+        if let tagsString = record["tags"] as? String,
+           let data = tagsString.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode([String].self, from: data) {
+            tags = decoded
+        } else {
+            tags = []
+        }
+
+        return NotebookCard(
+            id: record.recordID.recordName,
+            title: title,
+            markdownContent: record["markdownContent"] as? String,
+            properties: properties,
+            templateId: record["templateId"] as? String,
+            createdAt: record["createdAt"] as? Date ?? Date(),
+            modifiedAt: record["modifiedAt"] as? Date ?? Date(),
+            folder: record["folder"] as? String,
+            tags: tags,
+            linkedNodeId: record["linkedNodeId"] as? String,
+            syncVersion: record["syncVersion"] as? Int ?? 0,
+            lastSyncedAt: record["lastSyncedAt"] as? Date,
+            conflictResolvedAt: record["conflictResolvedAt"] as? Date,
+            deletedAt: record["deletedAt"] as? Date
         )
     }
 
