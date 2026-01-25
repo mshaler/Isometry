@@ -48,6 +48,20 @@ Deliver native SuperGrid applications that match React prototype functionality w
 - UI Polish checklist
 - Phase 4 Execution Report
 
+### Phase 5: Xcode Project Migration
+
+**Requirements:** XCODE-01, XCODE-02, XCODE-03, XCODE-04
+**Goal:** Migrate Swift Package Manager project to traditional Xcode project with proper code signing and capabilities
+**Status:** Planning
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Create Xcode project structure and migrate source code
+- [ ] 05-02-PLAN.md — Configure Package Manager dependencies and build settings
+- [ ] 05-03-PLAN.md — Set up code signing, capabilities, and entitlements
+- [ ] 05-04-PLAN.md — Verify builds and test migration completeness
+
 ## Success Metrics
 
 **Performance Targets:**
@@ -100,6 +114,11 @@ Deliver native SuperGrid applications that match React prototype functionality w
 - Wave 2: 60 minutes (platform optimization)
 - Wave 3: 90 minutes (production prep with checkpoints)
 
+**Phase 5 Total:** ~120 minutes (2 hours) with sequential execution
+- Wave 1: 30 minutes (Xcode project creation)
+- Wave 2: 45 minutes (dependency configuration)
+- Wave 3: 45 minutes (signing & verification)
+
 **Beta Testing:** 1-2 weeks (external dependency)
 **App Store Review:** 1-7 days (Apple dependency)
 
@@ -114,10 +133,15 @@ Deliver native SuperGrid applications that match React prototype functionality w
 | PROD-03 | CloudKit production verification | 4-W3 | Schema Ready |
 | PROD-04 | App Store compliance | 4-W3 | Docs Ready |
 | PROD-05 | Beta testing validation | 4-W3 | Ready for Testing |
+| XCODE-01 | Create traditional Xcode project structure | 5-W1 | Planned |
+| XCODE-02 | Configure Swift Package Manager dependencies | 5-W2 | Planned |
+| XCODE-03 | Set up code signing and capabilities | 5-W3 | Planned |
+| XCODE-04 | Verify migration completeness | 5-W3 | Planned |
 
 ---
 
 **Phase 4 Complete.** Ready for:
+- Xcode project migration (Phase 5)
 - Physical device testing
 - CloudKit production deployment
 - App Store submission

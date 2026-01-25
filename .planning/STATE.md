@@ -1,15 +1,15 @@
 # Isometry Project State
 
 **Last Updated:** 2026-01-25
-**Current Phase:** Phase 4 - Production (Native Apps)
-**Current Position:** CloudKit Sync Production Testing complete
+**Current Phase:** Phase 5 - Xcode Migration
+**Current Position:** Starting Swift Package Manager to Xcode project migration
 **Blockers:** None
 
 ---
 
 ## Project Context
 
-Isometry is a PAFV-based data visualization system with SuperGrid architecture. React prototype MVP complete (Phases 1-3), native iOS/macOS production implementation complete (Phase 4).
+Isometry is a PAFV-based data visualization system with SuperGrid architecture. React prototype MVP complete (Phases 1-3), native iOS/macOS production implementation complete (Phase 4). Now migrating Swift Package Manager project to traditional Xcode project for code signing and App Store submission.
 
 ## Phase Progress
 
@@ -43,6 +43,13 @@ Isometry is a PAFV-based data visualization system with SuperGrid architecture. 
 - [x] **Wave 4:** UI polish and accessibility
 - [x] **Wave 5:** E2E testing documentation
 
+### Phase 5: Xcode Migration
+**Status:** Planning
+- [ ] **Wave 1:** Create Xcode project structure and migrate source code
+- [ ] **Wave 2:** Configure Package Manager dependencies and build settings
+- [ ] **Wave 3:** Set up code signing, capabilities, and entitlements
+- [ ] **Wave 4:** Verify builds and test migration completeness
+
 ## Progress Bar
 
 ```
@@ -50,6 +57,7 @@ Phase 1: Foundation  [========] 100%
 Phase 2: Views       [========] 100%
 Phase 3: Filters     [========] 100%
 Phase 4: Production  [========] 100%
+Phase 5: Xcode Mig   [        ]   0%
 ```
 
 ## Current Implementation Status
@@ -83,6 +91,14 @@ Phase 4: Production  [========] 100%
 - UI Polish Checklist (`docs/app-store/POLISH-CHECKLIST.md`)
 - Phase 4 Execution Report (`docs/plans/PHASE-4-EXECUTION-REPORT.md`)
 
+### Swift Package Manager Project (Current)
+- Working executable target: `IsometryApp`
+- GRDB.swift dependency configured
+- Proper entitlements and Info.plist
+- Bundle ID: `com.mshaler.isometry`
+- CloudKit integration configured
+- **Limitation:** No Signing & Capabilities in Xcode
+
 ## Accumulated Knowledge
 
 **Performance Insights:**
@@ -106,15 +122,28 @@ Phase 4: Production  [========] 100%
 - User-friendly error message mapping (especially CloudKit)
 - Debounce interval of 16ms (~60fps) for updates
 
+**Phase 5 Requirements:**
+- Traditional Xcode project structure for code signing
+- Swift Package Manager dependency integration
+- Preserved CloudKit entitlements and capabilities
+- iOS/macOS deployment target configuration
+
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** CloudKit Sync Production Testing complete (04-02-SUMMARY.md)
+**Stopped at:** Phase 5 planning initiated
 **Resume file:** None
 
 ## Next Steps
 
-**Ready for:**
+**Phase 5 Priority:**
+1. Create traditional iOS and macOS Xcode projects
+2. Migrate all Swift source code and resources
+3. Configure Swift Package Manager dependencies in Xcode
+4. Set up code signing and capabilities
+5. Verify builds work on both platforms
+
+**Ready for after Phase 5:**
 1. Physical device testing (requires hardware)
 2. CloudKit production deployment (requires Apple Developer enrollment)
 3. App Store submission preparation
@@ -136,6 +165,7 @@ Phase 4: Production  [========] 100%
 - App Store compliance: Documentation checklists created
 - Device testing: Simulator testing complete, hardware pending
 - Performance: Optimization complete, meets 60fps targets
+- **New Risk:** Xcode project migration complexity (dependency configuration)
 
 ---
 
@@ -144,3 +174,4 @@ Phase 4: Production  [========] 100%
 - `native/` (Swift implementation)
 - `docs/app-store/` (App Store documentation)
 - `docs/plans/PHASE-4-EXECUTION-REPORT.md` (detailed report)
+- `.planning/phases/05-xcode-migration/` (current phase)
