@@ -1,0 +1,17 @@
+{
+  "project_name": "Isometry",
+  "model_profile": "balanced",
+  "commit_docs": true,
+  "verifier": true,
+  "workflow": {
+    "verifier": true,
+    "auto_spawn": true,
+    "parallel_execution": true
+  },
+  "testing": {
+    "xcode_ui_tests": true,
+    "device_testing": true,
+    "visual_regression": true,
+    "cloudkit_sync": true
+  }
+}

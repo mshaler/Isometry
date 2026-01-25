@@ -306,6 +306,19 @@ struct AxisMappingPicker: View {
     }
 }
 
+// MARK: - Accessibility Identifiers
+extension MiniNavView {
+    enum AccessibilityID {
+        static let viewSwitcher = "mininav.viewType"
+        static let patternSelector = "mininav.pattern"
+        static let axisSelector = "mininav.axes"
+        static let filterButton = "mininav.filters"
+        static let zoomIn = "mininav.zoomIn"
+        static let zoomOut = "mininav.zoomOut"
+        static let zoomLevel = "mininav.zoomLevel"
+    }
+}
+
 struct AxisOptionRow: View {
     let option: (String, String, String)
     let isSelected: Bool

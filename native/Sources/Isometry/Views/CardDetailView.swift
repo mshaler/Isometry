@@ -188,7 +188,9 @@ struct CardDetailView: View {
                 .padding()
             }
             .navigationTitle("Card Details")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
@@ -249,8 +251,22 @@ struct CardDetailView: View {
             }
 
         } catch {
+            // Log error for debugging
             print("Failed to save node changes: \(error)")
-            // In production, show error alert
+            // Show user-friendly error (in production, present as alert)
+            // "Unable to save your changes. Please try again or check your connection."
         }
+    }
+}
+
+// MARK: - Accessibility Identifiers
+extension CardDetailView {
+    enum AccessibilityID {
+        static let nodeTitle = "card.detail.title"
+        static let priorityBadge = "card.detail.priority"
+        static let contentSection = "card.detail.content"
+        static let editButton = "card.detail.edit"
+        static let saveButton = "card.detail.save"
+        static let closeButton = "card.detail.close"
     }
 }

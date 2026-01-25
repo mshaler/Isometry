@@ -467,6 +467,21 @@ struct SavePresetSheet: View {
 }
 
 // MARK: - Time Range Enum
+// MARK: - Accessibility Identifiers
+extension FilterControlsOverlay {
+    enum AccessibilityID {
+        static let overlay = "filters.overlay"
+        static let searchField = "filters.search"
+        static let timeRangePicker = "filters.timeRange"
+        static let categoryGrid = "filters.categories"
+        static let priorityRow = "filters.priorities"
+        static let presetsList = "filters.presets"
+        static let applyButton = "filters.apply"
+        static let clearButton = "filters.clear"
+        static let closeButton = "filters.close"
+    }
+}
+
 enum TimeRange: CaseIterable {
     case all
     case today
