@@ -668,4 +668,162 @@ public actor IsometryDatabase {
             try block(db)
         }
     }
+
+    // MARK: - Sync-Safe Transactions
+
+    /// Result of a sync transaction that can be rolled back
+    public struct SyncTransactionResult<T> {
+        public let value: T
+        public let affectedNodeIds: [String]
+        public let previousVersions: [String: Int]
+    }
+
+    /// Executes a sync operation within a transaction with rollback support
+    /// If the CloudKit operation fails, changes can be rolled back
+    ///
+    /// - Parameters:
+    ///   - nodeIds: The IDs of nodes being synced
+    ///   - operation: The sync operation to perform
+    /// - Returns: The result of the operation with rollback metadata
+    public func syncTransaction<T>(
+        nodeIds: [String],
+        operation: @escaping @Sendable (Database) throws -> T
+    ) async throws -> SyncTransactionResult<T> {
+        try await dbPool.write { db in
+            // Capture previous sync versions for rollback
+            var previousVersions: [String: Int] = [:]
+            for nodeId in nodeIds {
+                if let node = try Node.fetchOne(db, key: nodeId) {
+                    previousVersions[nodeId] = node.syncVersion
+                }
+            }
+
+            // Execute the operation
+            let result = try operation(db)
+
+            return SyncTransactionResult(
+                value: result,
+                affectedNodeIds: nodeIds,
+                previousVersions: previousVersions
+            )
+        }
+    }
+
+    /// Rolls back sync versions for nodes after a CloudKit error
+    ///
+    /// - Parameter result: The sync transaction result containing rollback metadata
+    public func rollbackSyncVersions(_ result: SyncTransactionResult<some Any>) async throws {
+        try await dbPool.write { db in
+            for (nodeId, previousVersion) in result.previousVersions {
+                try db.execute(
+                    sql: """
+                        UPDATE nodes
+                        SET sync_version = ?
+                        WHERE id = ?
+                        """,
+                    arguments: [previousVersion, nodeId]
+                )
+            }
+        }
+    }
+
+    /// Batch updates nodes in a single transaction (efficient for sync operations)
+    ///
+    /// - Parameter nodes: The nodes to update
+    /// - Returns: The number of nodes successfully updated
+    @discardableResult
+    public func batchUpdateNodes(_ nodes: [Node]) async throws -> Int {
+        try await dbPool.write { db in
+            var updateCount = 0
+            for node in nodes {
+                var updatedNode = node
+                updatedNode.modifiedAt = Date()
+                try updatedNode.update(db)
+                updateCount += 1
+            }
+            return updateCount
+        }
+    }
+
+    /// Batch creates nodes in a single transaction (efficient for initial sync)
+    ///
+    /// - Parameter nodes: The nodes to create
+    /// - Returns: The number of nodes successfully created
+    @discardableResult
+    public func batchCreateNodes(_ nodes: [Node]) async throws -> Int {
+        try await dbPool.write { db in
+            var createCount = 0
+            for node in nodes {
+                try node.insert(db)
+                createCount += 1
+            }
+            return createCount
+        }
+    }
+
+    /// Updates sync state and nodes in a single atomic transaction
+    ///
+    /// - Parameters:
+    ///   - nodes: Nodes to update
+    ///   - syncState: New sync state
+    public func atomicSyncUpdate(nodes: [Node], syncState: SyncState) async throws {
+        try await dbPool.write { db in
+            // Update all nodes
+            for node in nodes {
+                var updatedNode = node
+                updatedNode.lastSyncedAt = Date()
+                try updatedNode.update(db)
+            }
+
+            // Update sync state
+            try syncState.save(db)
+        }
+    }
+
+    /// Marks nodes as synced after successful CloudKit push
+    ///
+    /// - Parameter nodeIds: IDs of successfully synced nodes
+    public func markNodesSynced(_ nodeIds: [String]) async throws {
+        try await dbPool.write { db in
+            let now = Date()
+            for nodeId in nodeIds {
+                try db.execute(
+                    sql: """
+                        UPDATE nodes
+                        SET last_synced_at = ?
+                        WHERE id = ?
+                        """,
+                    arguments: [now, nodeId]
+                )
+            }
+        }
+    }
+
+    /// Increments pending changes count in sync state
+    public func incrementPendingChanges(by count: Int = 1) async throws {
+        try await dbPool.write { db in
+            try db.execute(
+                sql: """
+                    UPDATE sync_state
+                    SET pending_changes = pending_changes + ?
+                    WHERE id = 'default'
+                    """,
+                arguments: [count]
+            )
+        }
+    }
+
+    /// Decrements pending changes count in sync state
+    public func decrementPendingChanges(by count: Int = 1) async throws {
+        try await dbPool.write { db in
+            try db.execute(
+                sql: """
+                    UPDATE sync_state
+                    SET pending_changes = MAX(0, pending_changes - ?)
+                    WHERE id = 'default'
+                    """,
+                arguments: [count]
+            )
+        }
+    }
 }

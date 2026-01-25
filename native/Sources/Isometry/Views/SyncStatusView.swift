@@ -324,12 +324,12 @@ public struct SyncStatusView: View {
 
     private func setupProgressTracking() {
         // Set up progress callback from sync manager
+        // Note: We capture syncProgress binding directly since View is a struct
         Task {
             if let syncManager = appState.syncManager {
-                await syncManager.onProgressUpdate = { progress in
-                    Task { @MainActor in
-                        self.syncProgress = progress
-                    }
+                await syncManager.setProgressCallback { progress in
+                    // This runs on MainActor, updating State
+                    syncProgress = progress
                 }
             }
         }

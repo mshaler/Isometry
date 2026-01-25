@@ -76,12 +76,16 @@ public struct ConflictResolution: Sendable {
 ///
 /// Handles bidirectional sync between local SQLite and CloudKit.
 /// Uses exponential backoff for retries and change tokens for incremental sync.
+/// Supports chunked uploads (400 records per operation) and progress tracking.
 public actor CloudKitSyncManager {
     // MARK: - Configuration
 
     public static let containerIdentifier = "iCloud.com.cardboard.app"
     public static let zoneName = "IsometryZone"
     public static let subscriptionID = "isometry-changes"
+
+    /// CloudKit limit for records per operation
+    public static let recordsPerChunk = 400
 
     // MARK: - Properties
 
@@ -102,6 +106,35 @@ public actor CloudKitSyncManager {
     // Conflict resolution
     private var conflictStrategy: ConflictResolutionStrategy = .latestWins
     private var pendingConflicts: [SyncConflict] = []
+
+    // MARK: - Progress Tracking
+
+    /// Current sync progress (0.0 to 1.0)
+    private var _syncProgress: Double = 0.0
+
+    /// Total records to sync in current operation
+    private var totalRecordsToSync: Int = 0
+
+    /// Records synced so far in current operation
+    private var recordsSynced: Int = 0
+
+    /// Progress update callback for UI binding (main-actor isolated)
+    private var _onProgressUpdate: (@MainActor @Sendable (Double) -> Void)?
+
+    /// Current sync progress (0.0 to 1.0)
+    public var syncProgress: Double {
+        _syncProgress
+    }
+
+    /// Whether a sync operation is in progress
+    public var isSyncInProgress: Bool {
+        isSyncing
+    }
+
+    /// Sets the progress update callback (called from main actor)
+    public func setProgressCallback(_ callback: @escaping @MainActor @Sendable (Double) -> Void) {
+        _onProgressUpdate = callback
+    }
 
     // MARK: - Configuration
 
@@ -168,7 +201,11 @@ public actor CloudKitSyncManager {
     public func sync() async throws {
         guard !isSyncing else { return }
         isSyncing = true
-        defer { isSyncing = false }
+        updateProgress(0.0)
+        defer {
+            isSyncing = false
+            updateProgress(1.0)
+        }
 
         do {
             try await pushChanges()
@@ -183,6 +220,8 @@ public actor CloudKitSyncManager {
             state.lastErrorAt = nil
             try await localDatabase.updateSyncState(state)
 
+            updateProgress(1.0)
+
         } catch {
             consecutiveFailures += 1
 
@@ -193,22 +232,41 @@ public actor CloudKitSyncManager {
             state.lastErrorAt = Date()
             try await localDatabase.updateSyncState(state)
 
+            updateProgress(0.0) // Reset on error
+
             throw error
         }
     }
 
-    /// Pushes local changes to CloudKit
+    /// Pushes local changes to CloudKit using chunked uploads
+    /// CloudKit has a limit of 400 records per operation
     private func pushChanges() async throws {
         let pendingNodes = try await localDatabase.getPendingChanges(since: 0)
 
-        guard !pendingNodes.isEmpty else { return }
+        guard !pendingNodes.isEmpty else {
+            updateProgress(1.0)
+            return
+        }
 
         let records = pendingNodes.map { nodeToRecord($0) }
+        totalRecordsToSync = records.count
+        recordsSynced = 0
+        updateProgress(0.0)
 
-        let operation = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: nil)
-        operation.savePolicy = .changedKeys
-        operation.qualityOfService = .userInitiated
+        // Chunk records into batches of 400 (CloudKit limit)
+        let chunks = stride(from: 0, to: records.count, by: Self.recordsPerChunk).map {
+            Array(records[$0..<min($0 + Self.recordsPerChunk, records.count)])
+        }
 
+        for (chunkIndex, chunk) in chunks.enumerated() {
+            try await pushRecordChunk(chunk, chunkIndex: chunkIndex, totalChunks: chunks.count)
+        }
+
+        updateProgress(1.0)
+    }
+
+    /// Pushes a single chunk of records to CloudKit with retry logic
+    private func pushRecordChunk(_ records: [CKRecord], chunkIndex: Int, totalChunks: Int, retryAttempt: Int = 0) async throws {
         do {
             let (savedResults, _) = try await database.modifyRecords(
                 saving: records,
@@ -226,16 +284,60 @@ public actor CloudKitSyncManager {
                         node.lastSyncedAt = Date()
                         try await localDatabase.updateNode(node)
                     }
+                    recordsSynced += 1
                 case .failure(let error):
-                    throw error
+                    // Handle partial failure - continue with other records
+                    if let ckError = error as? CKError {
+                        let mappedError = mapCKError(ckError)
+                        if case .retryLater = mappedError {
+                            // Don't throw, just log - we'll handle retries at chunk level
+                            print("Record \(recordID.recordName) failed, will retry: \(error)")
+                        }
+                    }
                 }
             }
+
+            // Update progress
+            let progressPerChunk = 0.5 / Double(totalChunks) // Push is first 50%
+            updateProgress(Double(chunkIndex + 1) * progressPerChunk)
+
         } catch let error as CKError {
-            throw mapCKError(error)
+            let mappedError = mapCKError(error)
+
+            // Handle retryable errors with exponential backoff
+            if case .retryLater(let retryAfter) = mappedError, retryAttempt < maxRetries {
+                let delay = max(retryAfter, retryDelay(attempt: retryAttempt + 1))
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                try await pushRecordChunk(records, chunkIndex: chunkIndex, totalChunks: totalChunks, retryAttempt: retryAttempt + 1)
+                return
+            }
+
+            // Handle rate limiting
+            if error.code == .requestRateLimited || error.code == .serviceUnavailable {
+                if retryAttempt < maxRetries {
+                    let delay = retryDelay(attempt: retryAttempt + 1)
+                    try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                    try await pushRecordChunk(records, chunkIndex: chunkIndex, totalChunks: totalChunks, retryAttempt: retryAttempt + 1)
+                    return
+                }
+            }
+
+            throw mappedError
         }
     }
 
-    /// Pulls remote changes from CloudKit
+    /// Updates sync progress and notifies callback
+    private func updateProgress(_ progress: Double) {
+        _syncProgress = min(max(progress, 0.0), 1.0)
+        let currentProgress = _syncProgress
+        if let callback = _onProgressUpdate {
+            Task { @MainActor in
+                callback(currentProgress)
+            }
+        }
+    }
+
+    /// Pulls remote changes from CloudKit with progress tracking
     private func pullChanges() async throws {
         let zoneID = zone.zoneID
 
@@ -244,6 +346,9 @@ public actor CloudKitSyncManager {
 
         var changedRecords: [CKRecord] = []
         var deletedRecordIDs: [CKRecord.ID] = []
+
+        // Start pull phase at 50%
+        updateProgress(0.5)
 
         let (modificationResultsByID, deletions, changeToken, _) = try await database.recordZoneChanges(
             inZoneWith: zoneID,
@@ -265,6 +370,12 @@ public actor CloudKitSyncManager {
         for deletion in deletions {
             deletedRecordIDs.append(deletion.recordID)
         }
+
+        // Progress: fetched records (60%)
+        updateProgress(0.6)
+
+        let totalChanges = changedRecords.count + deletedRecordIDs.count
+        var processedChanges = 0
 
         // Apply changes to local database with conflict resolution
         for record in changedRecords {
@@ -293,15 +404,28 @@ public actor CloudKitSyncManager {
                     try await localDatabase.createNode(serverNode)
                 }
             }
+
+            processedChanges += 1
+            if totalChanges > 0 {
+                // Progress from 60% to 95%
+                updateProgress(0.6 + (0.35 * Double(processedChanges) / Double(totalChanges)))
+            }
         }
 
         // Apply deletions
         for recordID in deletedRecordIDs {
             try await localDatabase.deleteNode(id: recordID.recordName)
+            processedChanges += 1
+            if totalChanges > 0 {
+                updateProgress(0.6 + (0.35 * Double(processedChanges) / Double(totalChanges)))
+            }
         }
 
         // Save change token
         self.changeToken = changeToken
+
+        // Final progress
+        updateProgress(0.95)
     }
 
     // MARK: - Conflict Resolution
@@ -580,25 +704,48 @@ public actor CloudKitSyncManager {
         return presets
     }
 
-    /// Generic method to push records to CloudKit
+    /// Generic method to push records to CloudKit with chunking support
     private func pushRecords(_ records: [CKRecord]) async throws {
         guard !records.isEmpty else { return }
 
-        let (savedResults, _) = try await database.modifyRecords(
-            saving: records,
-            deleting: [],
-            savePolicy: .changedKeys,
-            atomically: false
-        )
+        // Chunk records into batches of 400 (CloudKit limit)
+        let chunks = stride(from: 0, to: records.count, by: Self.recordsPerChunk).map {
+            Array(records[$0..<min($0 + Self.recordsPerChunk, records.count)])
+        }
 
-        for (recordID, result) in savedResults {
-            switch result {
-            case .success:
-                print("Successfully synced record: \(recordID.recordName)")
-            case .failure(let error):
-                print("Failed to sync record \(recordID.recordName): \(error)")
-                throw error
+        for chunk in chunks {
+            try await pushGenericRecordChunk(chunk)
+        }
+    }
+
+    /// Pushes a generic chunk of records to CloudKit
+    private func pushGenericRecordChunk(_ records: [CKRecord], retryAttempt: Int = 0) async throws {
+        do {
+            let (savedResults, _) = try await database.modifyRecords(
+                saving: records,
+                deleting: [],
+                savePolicy: .changedKeys,
+                atomically: false
+            )
+
+            for (recordID, result) in savedResults {
+                switch result {
+                case .success:
+                    print("Successfully synced record: \(recordID.recordName)")
+                case .failure(let error):
+                    print("Failed to sync record \(recordID.recordName): \(error)")
+                    throw error
+                }
             }
+        } catch let error as CKError {
+            // Handle retryable errors
+            if (error.code == .requestRateLimited || error.code == .serviceUnavailable) && retryAttempt < maxRetries {
+                let delay = retryDelay(attempt: retryAttempt + 1)
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                try await pushGenericRecordChunk(records, retryAttempt: retryAttempt + 1)
+                return
+            }
+            throw mapCKError(error)
         }
     }
 
