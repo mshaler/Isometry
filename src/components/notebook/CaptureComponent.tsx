@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight, Save, AlertCircle, Hash, Code } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight, Save, AlertCircle, Hash, Code, Settings } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMarkdownEditor } from '../../hooks/useMarkdownEditor';
 import { useSlashCommands, type SlashCommand } from '../../hooks/useSlashCommands';
+import PropertyEditor from './PropertyEditor';
 
 interface CaptureComponentProps {
   className?: string;
@@ -14,6 +15,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
   const [previewMode, setPreviewMode] = useState<'edit' | 'split' | 'preview'>('split');
+  const [propertyUpdateCount, setPropertyUpdateCount] = useState(0);
   const editorRef = useRef<any>(null);
 
   const {
@@ -118,6 +120,21 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
         return null;
     }
   };
+
+  // Handle property updates from PropertyEditor
+  const handlePropertyUpdate = useCallback((properties: Record<string, unknown>) => {
+    setPropertyUpdateCount(prev => prev + 1);
+    // PropertyEditor handles the actual database update
+  }, []);
+
+  // Count non-empty properties
+  const propertyCount = useMemo(() => {
+    if (!activeCard?.properties) return 0;
+    return Object.values(activeCard.properties).filter(value =>
+      value !== null && value !== undefined && value !== '' &&
+      !(Array.isArray(value) && value.length === 0)
+    ).length;
+  }, [activeCard?.properties, propertyUpdateCount]);
 
   if (isMinimized) {
     return (
@@ -300,7 +317,19 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
             onClick={() => setPropertiesExpanded(!propertiesExpanded)}
             className={`w-full flex items-center justify-between p-2 hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-100'} transition-colors`}
           >
-            <span className="text-sm font-medium">Properties</span>
+            <div className="flex items-center gap-2">
+              <Settings size={14} className="text-gray-600" />
+              <span className="text-sm font-medium">Properties</span>
+              {propertyCount > 0 && (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  theme === 'NeXTSTEP'
+                    ? 'bg-[#0066cc] text-white'
+                    : 'bg-blue-500 text-white'
+                }`}>
+                  {propertyCount}
+                </span>
+              )}
+            </div>
             {propertiesExpanded ? (
               <ChevronDown size={14} className="text-gray-600" />
             ) : (
@@ -309,42 +338,54 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
           </button>
 
           {propertiesExpanded && activeCard && (
-            <div className="p-3 space-y-2">
-              <div>
-                <label className="text-xs text-gray-600 block mb-1">Card Type</label>
-                <input
-                  type="text"
-                  value={activeCard.cardType}
-                  readOnly
-                  className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 block mb-1">Node ID</label>
-                <input
-                  type="text"
-                  value={activeCard.nodeId}
-                  readOnly
-                  className={`w-full text-xs p-1 border rounded bg-gray-100 font-mono ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 block mb-1">Created</label>
-                <input
-                  type="text"
-                  value={new Date(activeCard.createdAt).toLocaleString()}
-                  readOnly
-                  className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-600 block mb-1">Modified</label>
-                <input
-                  type="text"
-                  value={new Date(activeCard.modifiedAt).toLocaleString()}
-                  readOnly
-                  className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
-                />
+            <div className="p-3">
+              <PropertyEditor
+                card={activeCard}
+                onUpdate={handlePropertyUpdate}
+                theme={theme}
+              />
+
+              {/* System Properties */}
+              <div className={`mt-4 pt-4 border-t space-y-2 ${
+                theme === 'NeXTSTEP' ? 'border-[#999999]' : 'border-gray-300'
+              }`}>
+                <div className="text-xs text-gray-500 mb-2">System Properties</div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Card Type</label>
+                  <input
+                    type="text"
+                    value={activeCard.cardType}
+                    readOnly
+                    className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Node ID</label>
+                  <input
+                    type="text"
+                    value={activeCard.nodeId}
+                    readOnly
+                    className={`w-full text-xs p-1 border rounded bg-gray-100 font-mono ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Created</label>
+                  <input
+                    type="text"
+                    value={new Date(activeCard.createdAt).toLocaleString()}
+                    readOnly
+                    className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-600 block mb-1">Modified</label>
+                  <input
+                    type="text"
+                    value={new Date(activeCard.modifiedAt).toLocaleString()}
+                    readOnly
+                    className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
+                  />
+                </div>
               </div>
             </div>
           )}
