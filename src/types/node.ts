@@ -1,6 +1,6 @@
 // Node (Card) types
 
-export type NodeType = 'note' | 'task' | 'contact' | 'event' | 'project' | 'resource';
+export type NodeType = 'note' | 'task' | 'contact' | 'event' | 'project' | 'resource' | 'notebook';
 export type TaskStatus = 'active' | 'pending' | 'completed' | 'archived';
 export type EdgeType = 'LINK' | 'NEST' | 'SEQUENCE' | 'AFFINITY';
 

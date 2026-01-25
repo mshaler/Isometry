@@ -138,6 +138,7 @@ const nodeTypeToLPG: Record<IsometryNodeType, LPGNodeType> = {
   event: 'Event',
   project: 'Project',
   resource: 'Resource',
+  notebook: 'Note', // Map notebook to Note for LPG compatibility
 };
 
 /** Map LPG nodeType back to Isometry */
