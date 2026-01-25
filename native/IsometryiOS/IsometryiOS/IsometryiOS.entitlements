@@ -12,10 +12,6 @@
         <string>CloudKit</string>
     </array>
 
-    <!-- Network access for CloudKit -->
-    <key>com.apple.security.network.client</key>
-    <true/>
-
     <!-- Background execution -->
     <key>com.apple.developer.background-modes</key>
     <array>
