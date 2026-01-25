@@ -9,31 +9,49 @@ public struct ContentView: View {
     public init() {}
 
     public var body: some View {
-        NavigationSplitView {
-            SidebarView(selectedFolder: $selectedFolder)
-        } detail: {
-            if appState.isLoading {
-                LoadingView()
-            } else if let error = appState.error {
-                ErrorView(error: error)
+        Group {
+            if appState.isNotebookMode {
+                NotebookContentView()
+                    .environmentObject(appState)
             } else {
-                NodeListView(
-                    folder: selectedFolder,
-                    searchText: searchText
-                )
+                NavigationSplitView {
+                    SidebarView(selectedFolder: $selectedFolder)
+                } detail: {
+                    if appState.isLoading {
+                        LoadingView()
+                    } else if let error = appState.error {
+                        ErrorView(error: error)
+                    } else {
+                        NodeListView(
+                            folder: selectedFolder,
+                            searchText: searchText
+                        )
+                    }
+                }
+                .searchable(text: $searchText, prompt: "Search nodes...")
             }
         }
-        .searchable(text: $searchText, prompt: "Search nodes...")
         .toolbar {
-            ToolbarItem(placement: .automatic) {
-                SyncStatusButton()
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    appState.navigation.toggleMode()
+                } label: {
+                    Image(systemName: appState.navigation.currentMode.systemImage)
+                }
+                .help("Switch to \(appState.navigation.currentMode == .main ? "Notebook" : "Main") Mode")
             }
 
-            #if DEBUG
-            ToolbarItem(placement: .primaryAction) {
-                ProductionVerificationMenuButton()
+            if !appState.isNotebookMode {
+                ToolbarItem(placement: .automatic) {
+                    SyncStatusButton()
+                }
+
+                #if DEBUG
+                ToolbarItem(placement: .primaryAction) {
+                    ProductionVerificationMenuButton()
+                }
+                #endif
             }
-            #endif
         }
     }
 }

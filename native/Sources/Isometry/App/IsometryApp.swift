@@ -68,6 +68,14 @@ public class AppState: ObservableObject {
     @Published public var isLoading = true
     @Published public var error: Error?
     @Published public var syncStatus: SyncStatus = .idle
+    @Published public var navigation = NavigationModel()
+
+    // MARK: - Navigation
+
+    /// Whether the app is currently in notebook mode
+    public var isNotebookMode: Bool {
+        navigation.currentMode == .notebook
+    }
 
     // MARK: - Database
 
