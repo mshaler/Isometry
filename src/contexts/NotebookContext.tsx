@@ -2,6 +2,10 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import type { NotebookCard, NotebookCardType, NotebookTemplate, LayoutPosition } from '../types/notebook';
 import { createNotebookCardTemplate, rowToNotebookCard, notebookCardToRow, BUILT_IN_TEMPLATES } from '../types/notebook';
 import { useDatabase } from '../db/DatabaseContext';
+import { useNotebookIntegration } from '../hooks/useNotebookIntegration';
+import { useNotebookPerformance } from '../hooks/useNotebookPerformance';
+import type { NotebookIntegrationState } from '../hooks/useNotebookIntegration';
+import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '../hooks/useNotebookPerformance';
 
 interface NotebookLayoutState {
   capture: LayoutPosition;
@@ -35,6 +39,33 @@ interface NotebookContextType {
   // Layout Methods
   updateLayout: (component: keyof NotebookLayoutState, position: LayoutPosition) => void;
   toggleNotebookMode: () => void;
+
+  // Integration State and Methods
+  integrationStatus: NotebookIntegrationState;
+  syncWithMainApp: () => Promise<void>;
+  resolveConflicts: (cardId: string, resolution: 'notebook' | 'main' | 'merge') => Promise<void>;
+  enableOfflineMode: () => void;
+  disableOfflineMode: () => void;
+
+  // Performance Monitoring
+  performanceMetrics: PerformanceMetrics;
+  performanceAlerts: PerformanceAlert[];
+  optimizationSuggestions: OptimizationSuggestion[];
+  performanceScore: number;
+  performanceGrade: 'A' | 'B' | 'C' | 'D' | 'F';
+
+  // Performance Methods
+  startPerformanceMonitoring: () => void;
+  stopPerformanceMonitoring: () => void;
+  measureRender: (componentName: string, duration: number) => void;
+  measureQuery: (queryName: string, duration: number) => void;
+  clearPerformanceMetrics: () => void;
+
+  // Memory Management
+  cardCache: Map<string, NotebookCard>;
+  maxCacheSize: number;
+  isOffline: boolean;
+  pendingChanges: number;
 }
 
 const NotebookContext = createContext<NotebookContextType | undefined>(undefined);
@@ -64,6 +95,13 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const [templates, setTemplates] = useState<NotebookTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Card cache for performance optimization
+  const [cardCache] = useState<Map<string, NotebookCard>>(new Map());
+  const maxCacheSize = 100;
+
+  // Performance hook
+  const performanceHook = useNotebookPerformance('NotebookProvider');
 
   // Persist layout to localStorage
   useEffect(() => {
@@ -120,6 +158,8 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
 
+    const queryStart = performance.now();
+
     try {
       const rows = execute<Record<string, unknown>>(
         `SELECT nc.*, n.name, n.node_type
@@ -129,7 +169,21 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
          ORDER BY nc.modified_at DESC`
       );
 
+      const queryDuration = performance.now() - queryStart;
+      performanceHook.measureQuery('loadCards', queryDuration);
+
       const notebookCards = rows.map(rowToNotebookCard);
+
+      // Update cache with LRU eviction
+      notebookCards.forEach(card => {
+        if (cardCache.size >= maxCacheSize) {
+          // Remove oldest entry (simple LRU)
+          const firstKey = cardCache.keys().next().value;
+          if (firstKey) cardCache.delete(firstKey);
+        }
+        cardCache.set(card.id, card);
+      });
+
       setCards(notebookCards);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load cards');
@@ -138,7 +192,14 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [db, execute]);
+  }, [db, execute, performanceHook, cardCache, maxCacheSize]);
+
+  // Integration hook (with parameters to avoid circular dependency)
+  const integrationHook = useNotebookIntegration({
+    activeCard,
+    cards,
+    loadCards
+  });
 
   const createCard = useCallback(async (type: NotebookCardType, templateId?: string): Promise<NotebookCard> => {
     if (!db) throw new Error('Database not initialized');
@@ -298,7 +359,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       category: 'custom',
       cardType: fromCard.cardType,
       markdownContent: fromCard.markdownContent || '',
-      properties: { ...fromCard.properties } || {},
+      properties: { ...(fromCard.properties || {}) },
       tags: [],
       createdAt: now,
       modifiedAt: now,
@@ -391,6 +452,38 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     duplicateTemplate,
     updateLayout,
     toggleNotebookMode,
+
+    // Integration features
+    integrationStatus: {
+      isMainAppConnected: integrationHook.isMainAppConnected,
+      lastSyncTime: integrationHook.lastSyncTime,
+      pendingChanges: integrationHook.pendingChanges,
+      syncInProgress: integrationHook.syncInProgress,
+      conflictedCards: integrationHook.conflictedCards,
+      offlineQueueSize: integrationHook.offlineQueueSize
+    },
+    syncWithMainApp: integrationHook.forceSync,
+    resolveConflicts: integrationHook.resolveConflict,
+    enableOfflineMode: integrationHook.enableOfflineMode,
+    disableOfflineMode: integrationHook.disableOfflineMode,
+
+    // Performance features
+    performanceMetrics: performanceHook.metrics,
+    performanceAlerts: performanceHook.alerts,
+    optimizationSuggestions: performanceHook.suggestions,
+    performanceScore: performanceHook.performanceScore,
+    performanceGrade: performanceHook.performanceGrade,
+    startPerformanceMonitoring: performanceHook.startMonitoring,
+    stopPerformanceMonitoring: performanceHook.stopMonitoring,
+    measureRender: performanceHook.measureRender,
+    measureQuery: performanceHook.measureQuery,
+    clearPerformanceMetrics: performanceHook.clearMetrics,
+
+    // Memory management
+    cardCache,
+    maxCacheSize,
+    isOffline: !integrationHook.isMainAppConnected,
+    pendingChanges: integrationHook.pendingChanges,
   };
 
   return (
