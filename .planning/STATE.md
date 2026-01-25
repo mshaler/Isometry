@@ -138,10 +138,16 @@ Phase 5: Xcode Mig   [████    ]  50%
 - Build verification successful for both platforms with all dependencies
 - Code signing infrastructure ready
 
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Three fixes: Terminal shell, GitHub CI/CD, CLI alias | 2026-01-25 | 039f96d | [001-three-fixes-terminal-shell-github-ci-cd-cl](./quick/001-three-fixes-terminal-shell-github-ci-cd-cl/) |
+
 ## Session Continuity
 
 **Last session:** 2026-01-25
-**Stopped at:** Completed Phase 5 Wave 2 - Swift Package Manager dependencies configured
+**Stopped at:** Completed quick task 001: Three fixes: Terminal shell, GitHub CI/CD, CLI alias
 **Resume file:** None
 
 ## Next Steps
