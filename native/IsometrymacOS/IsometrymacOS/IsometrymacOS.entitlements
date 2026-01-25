@@ -24,11 +24,5 @@
         <string>CloudKit</string>
     </array>
 
-    <!-- Background execution -->
-    <key>com.apple.developer.background-modes</key>
-    <array>
-        <string>background-app-refresh</string>
-        <string>background-processing</string>
-    </array>
 </dict>
 </plist>
