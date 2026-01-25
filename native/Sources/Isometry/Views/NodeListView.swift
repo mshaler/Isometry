@@ -66,9 +66,38 @@ public struct NodeListView: View {
     }
 
     private var nodeList: some View {
-        List(nodes, selection: $selectedNode) { node in
-            NodeRow(node: node)
-                .tag(node)
+        ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: []) {
+                ForEach(nodes) { node in
+                    NodeRow(node: node)
+                        .id(node.id) // Stable identity for efficient diffing
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedNode = node
+                        }
+                        .background(selectedNode?.id == node.id ? Color.accentColor.opacity(0.1) : Color.clear)
+                        .onAppear {
+                            // Prefetch next batch when approaching end
+                            prefetchIfNeeded(for: node)
+                        }
+                    Divider()
+                }
+            }
+        }
+    }
+
+    /// Prefetch more data when user scrolls near the end
+    /// Threshold: start prefetching when 10 items from end
+    private func prefetchIfNeeded(for node: Node) {
+        guard let index = nodes.firstIndex(where: { $0.id == node.id }) else { return }
+
+        let prefetchThreshold = 10
+        let remainingItems = nodes.count - index
+
+        if remainingItems <= prefetchThreshold {
+            // In a paginated implementation, this would trigger loading more data
+            // For now, just log for performance monitoring
+            PerformanceMonitor.shared.logEvent("Prefetch", "Near end of list, \(remainingItems) items remaining")
         }
     }
 

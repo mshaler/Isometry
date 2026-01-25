@@ -5,17 +5,34 @@ import GRDB
 public struct DatabaseMigrator {
     /// Creates a configured GRDB migrator with all registered migrations
     public static func createMigrator() -> GRDB.DatabaseMigrator {
-        let migrator = GRDB.DatabaseMigrator()
+        var migrator = GRDB.DatabaseMigrator()
 
         // Migration 1: Initial schema is loaded from schema.sql
-        // Future migrations are registered here:
+        // Registered migrations ensure indexes exist for databases created before schema update
 
-        // Example:
-        // migrator.registerMigration("002_add_some_column") { db in
-        //     try db.alter(table: "nodes") { t in
-        //         t.add(column: "some_column", .text)
-        //     }
-        // }
+        // Migration 002: Ensure performance indexes exist
+        // These indexes optimize LATCH filtering and graph traversal for 10k+ datasets
+        migrator.registerMigration("002_add_performance_indexes") { db in
+            // Nodes indexes for temporal sorting (60fps rendering optimization)
+            try db.execute(sql: """
+                CREATE INDEX IF NOT EXISTS idx_nodes_created ON nodes(created_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_nodes_modified ON nodes(modified_at DESC);
+            """)
+
+            // Edge indexes for graph traversal (<100ms query target)
+            try db.execute(sql: """
+                CREATE INDEX IF NOT EXISTS idx_edges_source ON edges(source_id, edge_type);
+                CREATE INDEX IF NOT EXISTS idx_edges_target ON edges(target_id, edge_type);
+            """)
+
+            // Record migration in custom table if it exists
+            try? db.execute(
+                sql: """
+                    INSERT OR IGNORE INTO schema_migrations (version, description, applied_at)
+                    VALUES (2, 'Add performance indexes for 10k+ datasets', datetime('now'))
+                """
+            )
+        }
 
         return migrator
     }
