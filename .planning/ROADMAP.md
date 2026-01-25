@@ -38,6 +38,7 @@ Plans:
 **Goal:** Users can create and edit rich markdown cards with properties that seamlessly integrate into Isometry
 **Dependencies:** Phase 1 (requires foundation and database)
 **Requirements:** CAP-01, CAP-02, CAP-03, CAP-04
+**Plans:** 3 plans
 
 **Success Criteria:**
 1. User can write markdown with live preview and auto-save functionality
@@ -45,6 +46,11 @@ Plans:
 3. User can trigger slash commands to insert Isometry DSL patterns
 4. User can create new cards from templates and save custom templates
 5. Created cards appear immediately in main Isometry application queries
+
+Plans:
+- [ ] 02-01-PLAN.md — Markdown editor integration with @uiw/react-md-editor
+- [ ] 02-02-PLAN.md — Properties panel enhancement and persistence
+- [ ] 02-03-PLAN.md — Slash commands system and auto-save functionality
 
 ### Phase 3: Shell Integration
 **Goal:** Users can execute terminal commands and interact with Claude Code API within notebook context
@@ -222,10 +228,10 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 | FOUND-02 | Phase 1 | Planned |
 | FOUND-03 | Phase 1 | Planned |
 | FOUND-04 | Phase 1 | Planned |
-| CAP-01 | Phase 2 | Pending |
-| CAP-02 | Phase 2 | Pending |
-| CAP-03 | Phase 2 | Pending |
-| CAP-04 | Phase 2 | Pending |
+| CAP-01 | Phase 2 | Planned |
+| CAP-02 | Phase 2 | Planned |
+| CAP-03 | Phase 2 | Planned |
+| CAP-04 | Phase 2 | Planned |
 | SHELL-01 | Phase 3 | Pending |
 | SHELL-02 | Phase 3 | Pending |
 | SHELL-03 | Phase 3 | Pending |
@@ -243,4 +249,4 @@ Phase 1 (Foundation) → Phase 2 (Capture) → Phase 3 (Shell) → Phase 4 (Prev
 
 ---
 
-**Phase 1 planned.** Next step: `/gsd:execute-phase 01-notebook-foundation` to begin implementation.
+**Phase 1 planned.** **Phase 2 planned.** Next step: `/gsd:execute-phase 02-capture-implementation` to begin Phase 2 implementation.
