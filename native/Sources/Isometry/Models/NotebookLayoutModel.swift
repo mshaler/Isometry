@@ -21,7 +21,7 @@ public final class NotebookLayoutModel: ObservableObject {
     }
 
     /// Screen size categories matching React prototype breakpoints
-    public enum ScreenSize: String, CaseIterable {
+    public enum ScreenSize: String, CaseIterable, Codable {
         case mobile // < 768pts
         case tablet // 768-1023pts
         case desktop // >= 1024pts
