@@ -1,8 +1,19 @@
 import SwiftUI
-import Isometry
 
 struct ContentView: View {
     var body: some View {
-        Isometry.ContentView()
+        VStack {
+            Text("Isometry iOS")
+                .font(.largeTitle)
+                .padding()
+
+            Text("Xcode project structure ready")
+                .foregroundColor(.secondary)
+
+            Text("Source files will be added in next wave")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .padding()
+        }
     }
 }

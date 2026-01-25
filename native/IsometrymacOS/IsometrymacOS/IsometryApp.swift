@@ -1,14 +1,10 @@
 import SwiftUI
-import Isometry
 
 @main
 struct IsometryAppMain: App {
-    @StateObject private var appState = AppState()
-
     var body: some Scene {
         WindowGroup {
-            MacOSContentView()
-                .environmentObject(appState)
+            ContentView()
         }
         .windowStyle(.hiddenTitleBar)
         .windowToolbarStyle(.unified(showsTitle: false))
@@ -43,8 +39,17 @@ struct IsometryAppMain: App {
         }
 
         Settings {
-            MacOSSettingsView()
-                .environmentObject(appState)
+            SettingsView()
         }
+    }
+}
+
+struct SettingsView: View {
+    var body: some View {
+        VStack {
+            Text("Settings")
+            Text("Placeholder settings view")
+        }
+        .padding()
     }
 }
