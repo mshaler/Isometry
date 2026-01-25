@@ -123,10 +123,10 @@ Plans:
 5. Performance monitoring tracks notebook operations at 60fps target
 
 Plans:
-- [ ] 06.1-01-PLAN.md — SwiftUI three-component layout with responsive design
-- [ ] 06.1-02-PLAN.md — Database schema extension and CloudKit integration
-- [ ] 06.1-03-PLAN.md — Navigation architecture and state management
-- [ ] 06.1-04-PLAN.md — Performance infrastructure and monitoring setup
+- [x] 06.1-01-PLAN.md — SwiftUI three-component layout with responsive design
+- [x] 06.1-02-PLAN.md — Database schema extension and CloudKit integration
+- [x] 06.1-03-PLAN.md — Navigation architecture and state management
+- [x] 06.1-04-PLAN.md — Performance infrastructure and monitoring setup
 
 #### Phase 6.2: Capture Implementation
 **Goal:** Users can create and edit rich markdown notebook cards with native text editing and property management
@@ -142,10 +142,10 @@ Plans:
 5. Auto-save preserves work with CloudKit synchronization
 
 Plans:
-- [ ] 06.2-01: Native markdown editor with NSTextView/UITextView
-- [ ] 06.2-02: Property management interface with CloudKit integration
-- [ ] 06.2-03: Template system using native collection views
-- [ ] 06.2-04: Slash command system with native completion
+- [ ] 06.2-01-PLAN.md — Native markdown editor with NSTextView/UITextView and live preview
+- [ ] 06.2-02-PLAN.md — Property management interface with type-safe validation and CloudKit sync
+- [ ] 06.2-03-PLAN.md — Template system using native collection views with built-in library
+- [ ] 06.2-04-PLAN.md — Slash command system with native completion and Isometry DSL patterns
 
 #### Phase 6.3: Shell Integration
 **Goal:** Users can execute terminal commands and interact with Claude Code API within App Sandbox security constraints
@@ -277,8 +277,8 @@ Migration: 7.1 → 7.2 → 7.3
 | 2. Capture | v1.0 | 3/3 | Complete | YYYY-MM-DD |
 | 3. Shell | v1.0 | 4/4 | Complete | YYYY-MM-DD |
 | 4. Preview | v1.0 | 3/3 | Complete | YYYY-MM-DD |
-| 6.1. Native Foundation | v2.0 | 0/4 | Not started | - |
-| 6.2. Native Capture | v2.0 | 0/4 | Not started | - |
+| 6.1. Native Foundation | v2.0 | 4/4 | Complete | 2026-01-25 |
+| 6.2. Native Capture | v2.0 | 0/4 | Planned | - |
 | 6.3. Native Shell | v2.0 | 0/4 | Not started | - |
 | 6.4. Native Platform | v2.0 | 0/4 | Not started | - |
 | 7.1. API Bridge | v2.1 | 0/3 | Not started | - |
@@ -356,10 +356,10 @@ Production Backend
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NAT-FOUND-01 | Phase 6.1 | ❌ Planned |
-| NAT-FOUND-02 | Phase 6.1 | ❌ Planned |
-| NAT-FOUND-03 | Phase 6.1 | ❌ Planned |
-| NAT-FOUND-04 | Phase 6.1 | ❌ Planned |
+| NAT-FOUND-01 | Phase 6.1 | ✓ Complete |
+| NAT-FOUND-02 | Phase 6.1 | ✓ Complete |
+| NAT-FOUND-03 | Phase 6.1 | ✓ Complete |
+| NAT-FOUND-04 | Phase 6.1 | ✓ Complete |
 | NAT-CAP-01 | Phase 6.2 | ❌ Planned |
 | NAT-CAP-02 | Phase 6.2 | ❌ Planned |
 | NAT-CAP-03 | Phase 6.2 | ❌ Planned |
@@ -421,6 +421,6 @@ Production Backend
 
 ---
 
-**Current step:** Phase 6.1 in progress - Complete native foundation before beginning migration planning.
+**Current step:** Phase 6.2 planning complete - Ready for capture implementation execution.
 
 **Next migration step:** `/gsd:plan-phase 7.1` after Phase 6.4 completion.
