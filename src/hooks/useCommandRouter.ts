@@ -1,25 +1,15 @@
-import { useCallback, useState, useRef } from 'react';
-import { useTerminal } from './useTerminal';
+import { useCallback, useState } from 'react';
 import { useClaudeAPI } from './useClaudeAPI';
 import { useProjectContext } from './useProjectContext';
+import { useCommandHistory } from './useCommandHistory';
 import { parseCommand, isClaudeHelp, getClaudeHelpText } from '../utils/commandParsing';
-import type { CommandResponse, CommandType } from '../types/shell';
-
-export interface CommandHistoryItem {
-  id: string;
-  command: string;
-  type: CommandType;
-  response: CommandResponse;
-  timestamp: Date;
-  context?: {
-    cardTitle?: string;
-    projectName?: string;
-  };
-}
+import type { CommandResponse, CommandType, HistoryEntry } from '../types/shell';
 
 interface UseCommandRouterReturn {
   executeCommand: (input: string) => Promise<CommandResponse>;
-  getCommandHistory: () => CommandHistoryItem[];
+  getCommandHistory: () => HistoryEntry[];
+  navigateHistory: (direction: 'up' | 'down') => string | null;
+  searchHistory: (query: string) => void;
   clearHistory: () => void;
   isExecuting: boolean;
 }
@@ -28,12 +18,11 @@ interface UseCommandRouterReturn {
  * Command router that dispatches to appropriate handlers (terminal vs Claude)
  */
 export function useCommandRouter(): UseCommandRouterReturn {
-  const terminal = useTerminal();
   const claudeAPI = useClaudeAPI();
   const projectContext = useProjectContext();
+  const history = useCommandHistory();
 
   const [isExecuting, setIsExecuting] = useState(false);
-  const historyRef = useRef<CommandHistoryItem[]>([]);
 
   const executeCommand = useCallback(async (input: string): Promise<CommandResponse> => {
     setIsExecuting(true);
@@ -77,7 +66,19 @@ export function useCommandRouter(): UseCommandRouterReturn {
           type: 'claude'
         };
 
-        addToHistory(originalInput, 'claude', helpResponse);
+        const historyEntry: HistoryEntry = {
+          id: commandId,
+          command: originalInput,
+          type: 'claude',
+          timestamp: new Date(),
+          response: helpResponse,
+          duration: Date.now() - startTime,
+          cwd: '/Users/mshaler/Developer/Projects/Isometry',
+          context: {
+            cardTitle: projectContext.getActiveCardContext()?.title
+          }
+        };
+        history.addHistoryEntry(historyEntry);
         return helpResponse;
       }
 
@@ -100,24 +101,21 @@ export function useCommandRouter(): UseCommandRouterReturn {
       const response = await claudeAPI.executeClaudeCommand(enhancedPrompt);
 
       // Add to history with context info
-      const historyItem: CommandHistoryItem = {
+      const historyEntry: HistoryEntry = {
         id: commandId,
         command: originalInput,
         type: 'claude',
-        response,
         timestamp: new Date(),
+        response,
+        duration: Date.now() - startTime,
+        cwd: '/Users/mshaler/Developer/Projects/Isometry', // TODO: Get from terminal context
         context: {
-          cardTitle: activeCard?.title,
-          projectName: 'Isometry'
+          cardId: activeCard?.title, // Using title as ID since nodeId doesn't exist on this type
+          cardTitle: activeCard?.title
         }
       };
 
-      historyRef.current.unshift(historyItem);
-
-      // Limit history size
-      if (historyRef.current.length > 100) {
-        historyRef.current = historyRef.current.slice(0, 100);
-      }
+      history.addHistoryEntry(historyEntry);
 
       return response;
 
@@ -131,10 +129,22 @@ export function useCommandRouter(): UseCommandRouterReturn {
         type: 'claude'
       };
 
-      addToHistory(originalInput, 'claude', errorResponse);
+      const errorHistoryEntry: HistoryEntry = {
+        id: commandId,
+        command: originalInput,
+        type: 'claude',
+        timestamp: new Date(),
+        response: errorResponse,
+        duration: Date.now() - startTime,
+        cwd: '/Users/mshaler/Developer/Projects/Isometry',
+        context: {
+          cardTitle: projectContext.getActiveCardContext()?.title
+        }
+      };
+      history.addHistoryEntry(errorHistoryEntry);
       return errorResponse;
     }
-  }, [claudeAPI, projectContext]);
+  }, [claudeAPI, projectContext, history]);
 
   const executeSystemCommand = useCallback(async (command: string, originalInput: string): Promise<CommandResponse> => {
     const startTime = Date.now();
@@ -175,7 +185,16 @@ Type 'claude help' for AI command documentation.`;
             type: 'system'
           };
 
-          addToHistory(originalInput, 'system', response);
+          const historyEntry: HistoryEntry = {
+            id: commandId,
+            command: originalInput,
+            type: 'system',
+            timestamp: new Date(),
+            response,
+            duration: Date.now() - startTime,
+            cwd: '/Users/mshaler/Developer/Projects/Isometry'
+          };
+          history.addHistoryEntry(historyEntry);
           resolve(response);
         }, 100); // Simulate some delay
       });
@@ -190,43 +209,41 @@ Type 'claude help' for AI command documentation.`;
         type: 'system'
       };
 
-      addToHistory(originalInput, 'system', errorResponse);
+      const errorHistoryEntry: HistoryEntry = {
+        id: commandId,
+        command: originalInput,
+        type: 'system',
+        timestamp: new Date(),
+        response: errorResponse,
+        duration: Date.now() - startTime,
+        cwd: '/Users/mshaler/Developer/Projects/Isometry'
+      };
+      history.addHistoryEntry(errorHistoryEntry);
       return errorResponse;
     }
-  }, []);
+  }, [history]);
 
-  const addToHistory = useCallback((command: string, type: CommandType, response: CommandResponse) => {
-    const historyItem: CommandHistoryItem = {
-      id: response.id,
-      command,
-      type,
-      response,
-      timestamp: new Date(),
-      context: type === 'claude' ? {
-        cardTitle: projectContext.getActiveCardContext()?.title,
-        projectName: 'Isometry'
-      } : undefined
-    };
+  const getCommandHistory = useCallback((): HistoryEntry[] => {
+    return history.getHistory();
+  }, [history]);
 
-    historyRef.current.unshift(historyItem);
+  const navigateHistory = useCallback((direction: 'up' | 'down'): string | null => {
+    return history.navigateHistory(direction);
+  }, [history]);
 
-    // Limit history size
-    if (historyRef.current.length > 100) {
-      historyRef.current = historyRef.current.slice(0, 100);
-    }
-  }, [projectContext]);
-
-  const getCommandHistory = useCallback((): CommandHistoryItem[] => {
-    return [...historyRef.current];
-  }, []);
+  const searchHistory = useCallback((query: string) => {
+    history.searchHistory(query);
+  }, [history]);
 
   const clearHistory = useCallback(() => {
-    historyRef.current = [];
-  }, []);
+    history.clearHistory();
+  }, [history]);
 
   return {
     executeCommand,
     getCommandHistory,
+    navigateHistory,
+    searchHistory,
     clearHistory,
     isExecuting
   };

@@ -7,6 +7,7 @@ interface UseTerminalOptions {
   workingDirectory?: string;
   shell?: string;
   onCommand?: (command: string) => void;
+  onNavigateHistory?: (direction: 'up' | 'down') => string | null;
 }
 
 interface UseTerminalReturn {
@@ -215,6 +216,35 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
           currentLine = currentLine.slice(0, -1);
           terminal.write('\b \b');
         }
+      } else if (code === 27) { // Escape sequences (arrows)
+        // Handle arrow keys for history navigation
+        if (options.onNavigateHistory) {
+          terminal.onData((seq) => {
+            if (seq === '[A') { // Up arrow
+              const historyCommand = options.onNavigateHistory!('up');
+              if (historyCommand !== null) {
+                // Clear current line
+                terminal.write('\r\x1b[K');
+                showPrompt();
+
+                // Write history command
+                currentLine = historyCommand;
+                terminal.write(historyCommand);
+              }
+            } else if (seq === '[B') { // Down arrow
+              const historyCommand = options.onNavigateHistory!('down');
+              if (historyCommand !== null) {
+                // Clear current line
+                terminal.write('\r\x1b[K');
+                showPrompt();
+
+                // Write history command
+                currentLine = historyCommand;
+                terminal.write(historyCommand);
+              }
+            }
+          });
+        }
       } else if (code >= 32 && code <= 126) { // Printable characters
         currentLine += data;
         terminal.write(data);
@@ -224,7 +254,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         currentLine = '';
       }
     });
-  }, [executeCommand, showPrompt]);
+  }, [executeCommand, showPrompt, options.onNavigateHistory]);
 
   const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;

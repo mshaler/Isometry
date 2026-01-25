@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useNotebook } from '../contexts/NotebookContext';
 import { useDatabase } from '../db/DatabaseContext';
 
@@ -44,7 +44,7 @@ interface UseProjectContextReturn {
  * Hook for aggregating project context for AI commands
  */
 export function useProjectContext(): UseProjectContextReturn {
-  const { activeCard, cards } = useNotebook();
+  const { activeCard } = useNotebook();
   const { db, execute } = useDatabase();
 
   const getActiveCardContext = useCallback((): ProjectContext['activeCard'] => {

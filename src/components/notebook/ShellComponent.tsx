@@ -14,7 +14,7 @@ export function ShellComponent({ className }: ShellComponentProps) {
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<'configured' | 'not-configured'>('not-configured');
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const { executeCommand: executeRouterCommand, isExecuting } = useCommandRouter();
+  const { executeCommand: executeRouterCommand, navigateHistory, isExecuting } = useCommandRouter();
   const { getActiveCardContext } = useProjectContext();
   const { isConfigured: isClaudeConfigured } = useClaudeAPI();
 
@@ -53,7 +53,8 @@ export function ShellComponent({ className }: ShellComponentProps) {
   };
 
   const { createTerminal, attachToProcess, dispose, resizeTerminal, isConnected, writeOutput, showPrompt } = useTerminal({
-    onCommand: handleTerminalCommand
+    onCommand: handleTerminalCommand,
+    onNavigateHistory: navigateHistory
   });
 
   // Initialize terminal when component mounts
