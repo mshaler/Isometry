@@ -16,13 +16,22 @@ let package = Package(
             name: "Isometry",
             targets: ["Isometry"]
         ),
+        .library(
+            name: "IsometryAPI",
+            targets: ["IsometryAPI"]
+        ),
         .executable(
             name: "IsometryApp",
             targets: ["IsometryApp"]
         ),
+        .executable(
+            name: "IsometryAPIServer",
+            targets: ["IsometryAPIServer"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.24.0"),
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
     ],
     targets: [
         .target(
@@ -41,10 +50,23 @@ let package = Package(
                 .process("Resources")
             ]
         ),
+        .target(
+            name: "IsometryAPI",
+            dependencies: [
+                "IsometryCore",
+                .product(name: "Vapor", package: "vapor"),
+                .product(name: "GRDB", package: "GRDB.swift"),
+            ]
+        ),
         .executableTarget(
             name: "IsometryApp",
             dependencies: ["Isometry"],
             path: "IsometryApp"
+        ),
+        .executableTarget(
+            name: "IsometryAPIServer",
+            dependencies: ["IsometryAPI"],
+            path: "Sources/IsometryAPIServer"
         ),
         .testTarget(
             name: "IsometryTests",
