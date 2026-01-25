@@ -8,6 +8,7 @@ import { SelectionProvider } from './state/SelectionContext';
 import { CardOverlayProvider } from './state/CardOverlayContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { TagColorProvider } from './state/TagColorContext';
+import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CardOverlay } from './components/CardOverlay';
 
@@ -22,11 +23,19 @@ import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { ComponentCatalog } from './pages/ComponentCatalog';
 
-type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components';
+type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
 function AppContent() {
   const { theme } = useTheme();
+  const { toggleNotebookMode } = useNotebook();
   const [viewMode, setViewMode] = useState<ViewMode>('app'); // Start with main app
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (mode === 'notebook') {
+      toggleNotebookMode();
+    }
+  };
 
   return (
     <div className={`h-screen flex flex-col ${theme === 'NeXTSTEP' ? 'theme-nextstep bg-[#808080]' : 'theme-modern bg-gray-50'}`}>
@@ -48,7 +57,7 @@ function AppContent() {
             theme === 'NeXTSTEP' ? 'bg-[#c0c0c0]' : 'bg-white/50'
           }`}>
             <button
-              onClick={() => setViewMode('app')}
+              onClick={() => handleViewModeChange('app')}
               className={`px-2 py-0.5 text-xs rounded ${
                 viewMode === 'app'
                   ? 'bg-blue-500 text-white'
@@ -60,7 +69,7 @@ function AppContent() {
               Main App
             </button>
             <button
-              onClick={() => setViewMode('d3demo')}
+              onClick={() => handleViewModeChange('d3demo')}
               className={`px-2 py-0.5 text-xs rounded ${
                 viewMode === 'd3demo'
                   ? 'bg-blue-500 text-white'
@@ -72,7 +81,7 @@ function AppContent() {
               D3 Demo
             </button>
             <button
-              onClick={() => setViewMode('supergrid')}
+              onClick={() => handleViewModeChange('supergrid')}
               className={`px-2 py-0.5 text-xs rounded ${
                 viewMode === 'supergrid'
                   ? 'bg-blue-500 text-white'
@@ -84,7 +93,7 @@ function AppContent() {
               SuperGrid
             </button>
             <button
-              onClick={() => setViewMode('components')}
+              onClick={() => handleViewModeChange('components')}
               className={`px-2 py-0.5 text-xs rounded ${
                 viewMode === 'components'
                   ? 'bg-blue-500 text-white'
@@ -94,6 +103,18 @@ function AppContent() {
               }`}
             >
               Components
+            </button>
+            <button
+              onClick={() => handleViewModeChange('notebook')}
+              className={`px-2 py-0.5 text-xs rounded ${
+                viewMode === 'notebook'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              Notebook
             </button>
           </div>
 
@@ -105,6 +126,13 @@ function AppContent() {
               <SuperGridDemo />
             ) : viewMode === 'components' ? (
               <ComponentCatalog />
+            ) : viewMode === 'notebook' ? (
+              <div className="flex-1 p-4">
+                <div className="text-center text-gray-500">
+                  <h2 className="text-2xl font-bold mb-2">Notebook Sidecar</h2>
+                  <p>Three-component layout coming soon...</p>
+                </div>
+              </div>
             ) : (
               <Canvas />
             )}
@@ -127,20 +155,22 @@ function App() {
       <BrowserRouter>
         <ThemeProvider>
           <DatabaseProvider>
-            <AppStateProvider>
-              <FilterProvider>
-                <PAFVProvider>
-                  <SelectionProvider>
-                    <CardOverlayProvider>
-                      <TagColorProvider>
-                        <AppContent />
-                        <CardOverlay />
-                      </TagColorProvider>
-                    </CardOverlayProvider>
-                  </SelectionProvider>
-                </PAFVProvider>
-              </FilterProvider>
-            </AppStateProvider>
+            <NotebookProvider>
+              <AppStateProvider>
+                <FilterProvider>
+                  <PAFVProvider>
+                    <SelectionProvider>
+                      <CardOverlayProvider>
+                        <TagColorProvider>
+                          <AppContent />
+                          <CardOverlay />
+                        </TagColorProvider>
+                      </CardOverlayProvider>
+                    </SelectionProvider>
+                  </PAFVProvider>
+                </FilterProvider>
+              </AppStateProvider>
+            </NotebookProvider>
           </DatabaseProvider>
         </ThemeProvider>
       </BrowserRouter>
