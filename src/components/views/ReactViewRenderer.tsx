@@ -50,8 +50,8 @@ export abstract class ReactViewRenderer extends BaseViewRenderer {
   // Initialize with DOM container
   initialize(container: HTMLElement): void {
     if (this.containerRef && this.containerRef.current !== container) {
-      // Update container reference
-      (this.containerRef as any).current = container;
+      // Create new ref with the provided container
+      this.containerRef = { current: container };
     }
   }
 

@@ -483,7 +483,7 @@ describe('System Integration Performance Tests', () => {
         );
       };
 
-      const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      const initialMemory = ('memory' in performance && performance.memory?.usedJSHeapSize) || 0;
 
       render(
         <ConfigurationProvider>
@@ -499,7 +499,7 @@ describe('System Integration Performance Tests', () => {
         expect(screen.getByTestId('memory-operations')).toHaveTextContent('100');
       });
 
-      const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
+      const finalMemory = ('memory' in performance && performance.memory?.usedJSHeapSize) || 0;
       const memoryIncrease = finalMemory - initialMemory;
 
       // Memory increase should be reasonable (less than 10MB)

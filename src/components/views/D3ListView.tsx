@@ -121,7 +121,7 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
       nodes: group.nodes.filter(node =>
         node.name.toLowerCase().includes(query) ||
         node.content?.toLowerCase().includes(query) ||
-        (node as any).tags?.some?.((tag: string) => tag.toLowerCase().includes(query))
+        node.tags.some((tag: string) => tag.toLowerCase().includes(query))
       )
     })).filter(group => group.nodes.length > 0);
   }, [groups, listState.searchQuery]);
