@@ -9,7 +9,6 @@ import type { FilterPreset } from '../types/filter';
 import {
   setEncryptedItem,
   getEncryptedItem,
-  removeEncryptedItem,
   migrateToEncryptedStorage,
   isEncryptedStorageSupported
 } from './encrypted-storage';

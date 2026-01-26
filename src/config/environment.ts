@@ -362,7 +362,7 @@ export function validateEnvironmentSecurity(): { valid: boolean; errors: string[
     if (config.workingDirectory) {
       getSecureWorkingDirectory();
     }
-  } catch (error) {
+  } catch {
     if (config.isProduction) {
       errors.push('Working directory not properly configured');
     }

@@ -285,7 +285,7 @@ export function useDatabaseCompat(): {
  * Utility component to display connection status for debugging
  */
 export function WebViewDatabaseStatus() {
-  const { db, loading, error, getBridgeHealth } = useWebViewDatabase();
+  const { loading, error, getBridgeHealth } = useWebViewDatabase();
 
   if (loading) {
     return <div className="text-sm text-gray-500">Connecting to WebView bridge...</div>;

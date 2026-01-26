@@ -11,7 +11,6 @@ import {
   sanitizeDSLValue,
   sanitizeFieldName,
   sanitizeOperator,
-  validateUserInput,
   isSecurityRisk
 } from './input-sanitization';
 import {
