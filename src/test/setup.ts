@@ -209,10 +209,58 @@ Object.defineProperty(window, 'webkit', {
 });
 
 // Setup global error handler for unhandled promise rejections
+const rejectionTracker = new Map();
+
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[Test] Unhandled promise rejection at:', promise, 'reason:', reason);
-  // Don't throw in tests to avoid false negatives
+  // Track unhandled rejections for debugging
+  const rejectionId = Math.random().toString(36);
+  rejectionTracker.set(promise, { reason, id: rejectionId, timestamp: Date.now() });
+
+  // Only log in verbose mode or if it's not a test-expected error
+  if (process.env.VITEST_VERBOSE || !isTestExpectedError(reason)) {
+    console.warn(`[Test] Unhandled promise rejection ${rejectionId}:`, reason);
+  }
+
+  // Don't throw in tests to avoid false negatives, but ensure tests can detect these
+  if (global.__VITEST_UNHANDLED_REJECTIONS__) {
+    global.__VITEST_UNHANDLED_REJECTIONS__.push({ reason, promise, id: rejectionId });
+  } else {
+    global.__VITEST_UNHANDLED_REJECTIONS__ = [{ reason, promise, id: rejectionId }];
+  }
 });
+
+process.on('rejectionHandled', (promise) => {
+  // Clean up tracked rejections that got handled later
+  rejectionTracker.delete(promise);
+  if (global.__VITEST_UNHANDLED_REJECTIONS__) {
+    const index = global.__VITEST_UNHANDLED_REJECTIONS__.findIndex(r => r.promise === promise);
+    if (index !== -1) {
+      global.__VITEST_UNHANDLED_REJECTIONS__.splice(index, 1);
+    }
+  }
+});
+
+function isTestExpectedError(error: any): boolean {
+  if (!error || typeof error !== 'object') return false;
+
+  // Common test-expected error patterns
+  const expectedPatterns = [
+    'Test error message',
+    'Crypto not available',
+    'Test timeout',
+    'Mock implementation',
+    'WebView request timeout'
+  ];
+
+  const errorMessage = error.message || error.toString();
+  return expectedPatterns.some(pattern => errorMessage.includes(pattern));
+}
+
+// Add cleanup utility for tests
+global.__VITEST_CLEAR_UNHANDLED_REJECTIONS__ = () => {
+  global.__VITEST_UNHANDLED_REJECTIONS__ = [];
+  rejectionTracker.clear();
+};
 
 // Mock addEventListener for WebView events
 const originalAddEventListener = global.addEventListener;
