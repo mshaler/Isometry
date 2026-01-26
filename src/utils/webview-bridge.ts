@@ -7,7 +7,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Node } from '@/types/node';
+import type { Node } from '../types/node';
 
 export interface WebKitMessageHandlers {
   database: {
@@ -80,13 +80,7 @@ export class WebViewBridge {
     retryCount: number;
   }>();
 
-  private messageQueue: Array<{
-    id: string;
-    handler: string;
-    method: string;
-    params: Record<string, unknown>;
-    timestamp: number;
-  }> = [];
+  private messageQueue: WebViewMessage[] = [];
 
   private isConnected = false;
   private connectionCheckInterval: NodeJS.Timeout | null = null;
@@ -148,9 +142,9 @@ export class WebViewBridge {
   /**
    * Register callback for request correlation
    */
-  registerCallback(
+  registerCallback<T = unknown>(
     id: string,
-    resolve: (value: unknown) => void,
+    resolve: (value: T) => void,
     reject: (error: Error) => void,
     timeout: number = this.DEFAULT_TIMEOUT
   ): void {
@@ -160,7 +154,7 @@ export class WebViewBridge {
     }, timeout);
 
     this.pendingRequests.set(id, {
-      resolve,
+      resolve: resolve as (value: unknown) => void,
       reject,
       timeout: timeoutHandle,
       timestamp: Date.now(),
@@ -209,7 +203,7 @@ export class WebViewBridge {
     return new Promise<T>((resolve, reject) => {
       try {
         // Register callback before sending
-        this.registerCallback(requestId, resolve, reject);
+        this.registerCallback<T>(requestId, resolve, reject);
 
         // If not connected, queue the message
         if (!this.isConnected) {
@@ -223,7 +217,7 @@ export class WebViewBridge {
 
       } catch (error) {
         this.pendingRequests.delete(requestId);
-        this.handleSendFailure(error, handler, method, params, retries, resolve, reject);
+        this.handleSendFailure<T>(error, handler, method, params, retries, resolve, reject);
       }
     });
   }
@@ -278,9 +272,12 @@ export class WebViewBridge {
    * Check if error is retriable
    */
   private isRetriableError(error: unknown): boolean {
-    if (!error) return false;
+    if (!error || typeof error !== 'object') return false;
 
-    const message = error.message?.toLowerCase() || '';
+    const errorObj = error as Record<string, unknown>;
+    const message = typeof errorObj.message === 'string' ?
+      errorObj.message.toLowerCase() :
+      '';
     return message.includes('timeout') ||
            message.includes('network') ||
            message.includes('connection');
@@ -410,7 +407,7 @@ export class WebViewBridge {
     },
 
     deleteNode: async (id: string): Promise<boolean> => {
-      const result = await this.postMessage('database', 'deleteNode', { id });
+      const result = await this.postMessage<{ success: boolean }>('database', 'deleteNode', { id });
       return result.success;
     },
 
@@ -436,12 +433,12 @@ export class WebViewBridge {
     },
 
     writeFile: async (path: string, content: string): Promise<boolean> => {
-      const result = await this.postMessage('filesystem', 'writeFile', { path, content });
+      const result = await this.postMessage<{ success: boolean }>('filesystem', 'writeFile', { path, content });
       return result.success;
     },
 
     deleteFile: async (path: string): Promise<boolean> => {
-      const result = await this.postMessage('filesystem', 'deleteFile', { path });
+      const result = await this.postMessage<{ success: boolean }>('filesystem', 'deleteFile', { path });
       return result.success;
     },
 
@@ -456,7 +453,7 @@ export class WebViewBridge {
     },
 
     fileExists: async (path: string): Promise<boolean> => {
-      const result = await this.postMessage('filesystem', 'fileExists', { path });
+      const result = await this.postMessage<{ exists: boolean }>('filesystem', 'fileExists', { path });
       return result.exists;
     }
   };
@@ -631,12 +628,13 @@ export class WebViewBridge {
    * Send message immediately to native bridge
    */
   private sendMessageImmediate(message: WebViewMessage, retries: number): void {
-    if (!window.webkit?.messageHandlers?.[message.handler]) {
+    const handler = message.handler as keyof WebKitMessageHandlers;
+    if (!window.webkit?.messageHandlers?.[handler]) {
       throw new Error(`WebView handler '${message.handler}' not available`);
     }
 
     try {
-      window.webkit.messageHandlers[message.handler].postMessage(message);
+      window.webkit.messageHandlers[handler].postMessage(message);
 
       // Debug logging
       if (process.env.NODE_ENV === 'development') {
@@ -659,13 +657,13 @@ export class WebViewBridge {
   /**
    * Handle send failure with retry logic
    */
-  private handleSendFailure(
+  private handleSendFailure<T = unknown>(
     error: unknown,
-    handler: string,
+    handler: 'database' | 'filesystem',
     method: string,
     params: Record<string, unknown>,
     retries: number,
-    resolve: (value: unknown) => void,
+    resolve: (value: T) => void,
     reject: (error: Error) => void
   ): void {
     // Retry logic for transient failures
@@ -675,7 +673,7 @@ export class WebViewBridge {
       const totalDelay = delay + jitter;
 
       setTimeout(() => {
-        this.postMessage(handler, method, params, retries + 1)
+        this.postMessage<T>(handler, method, params, retries + 1)
           .then(resolve)
           .catch(reject);
       }, totalDelay);
