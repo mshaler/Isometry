@@ -1110,4 +1110,96 @@ public actor IsometryDatabase {
             )
         }
     }
+
+    // MARK: - Notebook Cards
+
+    /// Get all notebook cards
+    public func getAllNotebookCards() async throws -> [NotebookCard] {
+        try await dbPool.read { db in
+            try NotebookCard.active.fetchAll(db)
+        }
+    }
+
+    /// Insert a new notebook card
+    public func insertCard(_ card: NotebookCard) async throws {
+        try await dbPool.write { db in
+            try card.insert(db)
+        }
+    }
+
+    /// Update an existing notebook card
+    public func updateCard(_ card: NotebookCard) async throws {
+        try await dbPool.write { db in
+            try card.update(db)
+        }
+    }
+
+    /// Delete a notebook card (soft delete)
+    public func deleteCard(id: String) async throws {
+        try await dbPool.write { db in
+            try NotebookCard
+                .filter(NotebookCard.Columns.id == id)
+                .updateAll(db, NotebookCard.Columns.deletedAt.set(to: Date()))
+        }
+    }
+}
+
+// MARK: - Preview Support
+
+extension IsometryDatabase {
+    /// Create a preview database with sample data for SwiftUI previews
+    public static let preview: IsometryDatabase = {
+        do {
+            let database = try IsometryDatabase(path: ":memory:")
+
+            // Initialize with sample data in a Task for async context
+            Task {
+                try await database.initializeDatabase()
+
+                // Add some sample notebook cards for previewing
+                let sampleCards = [
+                    Node(
+                        id: UUID().uuidString,
+                        nodeType: "notebook_card",
+                        name: "Sample Note",
+                        content: "This is a sample notebook card for preview purposes",
+                        tags: ["preview", "sample"],
+                        priority: 1
+                    ),
+                    Node(
+                        id: UUID().uuidString,
+                        nodeType: "notebook_card",
+                        name: "Another Card",
+                        content: "Another sample card with different tags",
+                        tags: ["test", "demo"],
+                        priority: 2
+                    ),
+                    Node(
+                        id: UUID().uuidString,
+                        nodeType: "notebook_card",
+                        name: "High Priority Task",
+                        content: "An important task that needs attention",
+                        tags: ["urgent", "work"],
+                        priority: 3
+                    )
+                ]
+
+                // Convert nodes to notebook cards and insert them
+                for node in sampleCards {
+                    let notebookCard = NotebookCard(
+                        title: node.name,
+                        markdownContent: node.content,
+                        properties: ["type": "note", "priority": String(node.priority)],
+                        tags: node.tags,
+                        folder: node.folder
+                    )
+                    try await database.insertCard(notebookCard)
+                }
+            }
+
+            return database
+        } catch {
+            fatalError("Failed to create preview database: \(error)")
+        }
+    }()
 }
