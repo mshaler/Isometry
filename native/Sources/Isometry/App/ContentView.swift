@@ -10,7 +10,10 @@ public struct ContentView: View {
 
     public var body: some View {
         Group {
-            if appState.isNotebookMode {
+            if appState.navigation.isDatabaseMode {
+                DatabaseContentView()
+                    .environmentObject(appState)
+            } else if appState.isNotebookMode {
                 NotebookContentView()
                     .environmentObject(appState)
             } else {
@@ -33,15 +36,32 @@ public struct ContentView: View {
         }
         .toolbar {
             ToolbarItem(placement: .navigation) {
-                Button {
-                    appState.navigation.toggleMode()
+                Menu {
+                    ForEach(AppMode.allCases, id: \.self) { mode in
+                        Button {
+                            appState.navigation.switchMode(to: mode)
+                        } label: {
+                            HStack {
+                                Image(systemName: mode.systemImage)
+                                Text(mode.title)
+                                if appState.navigation.currentMode == mode {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
                 } label: {
-                    Image(systemName: appState.navigation.currentMode.systemImage)
+                    HStack {
+                        Image(systemName: appState.navigation.currentMode.systemImage)
+                        Text(appState.navigation.currentMode.title)
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                    }
                 }
-                .help("Switch to \(appState.navigation.currentMode == .main ? "Notebook" : "Main") Mode")
+                .help("Switch App Mode")
             }
 
-            if !appState.isNotebookMode {
+            if !appState.isNotebookMode && !appState.navigation.isDatabaseMode {
                 ToolbarItem(placement: .automatic) {
                     SyncStatusButton()
                 }
@@ -79,11 +99,31 @@ struct SidebarView: View {
                 }
             }
 
-            Section {
+            Section("Tools") {
                 Button {
                     showingImportSheet = true
                 } label: {
                     Label("Import Notes...", systemImage: "square.and.arrow.down")
+                }
+
+                Divider()
+
+                Button {
+                    appState.navigation.navigateToVersionControl()
+                } label: {
+                    Label("Database Version Control", systemImage: "arrow.triangle.branch")
+                }
+
+                Button {
+                    appState.navigation.navigateToETLWorkflow()
+                } label: {
+                    Label("ETL Operations", systemImage: "arrow.triangle.2.circlepath.circle")
+                }
+
+                Button {
+                    appState.navigation.navigateToDataCatalog()
+                } label: {
+                    Label("Data Catalog", systemImage: "rectangle.3.group")
                 }
             }
         }
@@ -336,6 +376,211 @@ struct ProductionVerificationMenuButton: View {
     }
 }
 #endif
+
+// MARK: - Database Content View
+
+/// Database management content view for v2.2 features
+struct DatabaseContentView: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        NavigationSplitView {
+            // Database navigation sidebar
+            DatabaseSidebarView()
+        } detail: {
+            // Content area based on selected section
+            DatabaseDetailView()
+        }
+        .navigationTitle("Database Management")
+    }
+}
+
+// MARK: - Database Sidebar
+
+struct DatabaseSidebarView: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        List(selection: appState.navigation.$selectedDatabaseSection) {
+            Section("Database Operations") {
+                ForEach(DatabaseSection.allCases, id: \.self) { section in
+                    NavigationLink(value: section) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(section.title)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text(section.description)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(2)
+                            }
+                        } icon: {
+                            Image(systemName: section.systemImage)
+                                .foregroundColor(.blue)
+                        }
+                    }
+                }
+            }
+
+            Section("Quick Actions") {
+                Button {
+                    appState.navigation.navigateToVersionControl()
+                } label: {
+                    Label("Create Branch", systemImage: "plus.branch")
+                }
+
+                Button {
+                    appState.navigation.navigateToETLWorkflow()
+                } label: {
+                    Label("Start ETL Operation", systemImage: "play.circle")
+                }
+
+                Button {
+                    appState.navigation.navigateToDataCatalog()
+                } label: {
+                    Label("Browse Data Sources", systemImage: "magnifyingglass")
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .navigationTitle("Database")
+    }
+}
+
+// MARK: - Database Detail View
+
+struct DatabaseDetailView: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        Group {
+            switch appState.navigation.selectedDatabaseSection {
+            case .versionControl:
+                if let database = appState.database {
+                    DatabaseVersionControlView(
+                        database: database,
+                        storageManager: ContentAwareStorageManager(database: database)
+                    )
+                } else {
+                    DatabaseNotAvailableView()
+                }
+
+            case .etlWorkflow:
+                if let database = appState.database {
+                    ETLWorkflowView(database: database)
+                } else {
+                    DatabaseNotAvailableView()
+                }
+
+            case .dataCatalog:
+                if let database = appState.database {
+                    ETLDataCatalogView(database: database)
+                } else {
+                    DatabaseNotAvailableView()
+                }
+
+            case .none:
+                DatabaseOverviewView()
+            }
+        }
+    }
+}
+
+// MARK: - Database Overview View
+
+struct DatabaseOverviewView: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 16) {
+                Image(systemName: "cylinder.split.1x2")
+                    .font(.system(size: 64))
+                    .foregroundColor(.blue)
+
+                Text("Database Management")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Text("Access advanced database features including version control, ETL operations, and data catalog management.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 400)
+            }
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                ForEach(DatabaseSection.allCases, id: \.self) { section in
+                    DatabaseFeatureCard(section: section)
+                }
+            }
+            .padding(.horizontal, 40)
+
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct DatabaseFeatureCard: View {
+    let section: DatabaseSection
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        Button {
+            appState.navigation.switchToDatabaseSection(section)
+        } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Image(systemName: section.systemImage)
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(section.title)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    Text(section.description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(3)
+                }
+
+                Spacer()
+            }
+            .padding()
+            .frame(height: 120)
+            .background(.ultraThinMaterial)
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Database Not Available View
+
+struct DatabaseNotAvailableView: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundColor(.orange)
+
+            Text("Database Not Available")
+                .font(.headline)
+
+            Text("The database is not currently available. Please try again later.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
+    }
+}
 
 // MARK: - Preview
 
