@@ -43,7 +43,7 @@ export abstract class ReactViewRenderer extends BaseViewRenderer {
       ...props
     }, React.createElement(Component, {
       ...props,
-      transitionState: this.transitionState
+      transitionState: this.getTransitionState()
     }));
   }
 
@@ -139,7 +139,7 @@ export abstract class ReactViewRenderer extends BaseViewRenderer {
  */
 interface ViewRendererWrapperProps extends ViewComponentProps {
   renderer: ReactViewRenderer;
-  containerRef: React.RefObject<HTMLElement>;
+  containerRef: React.RefObject<HTMLElement> | null;
   children: React.ReactElement;
 }
 
@@ -150,7 +150,7 @@ const ViewRendererWrapper = React.memo<ViewRendererWrapperProps>(({
 }) => {
   useEffect(() => {
     // Initialize renderer with container when mounted
-    if (containerRef.current) {
+    if (containerRef?.current) {
       renderer.initialize(containerRef.current);
     }
 
@@ -162,15 +162,16 @@ const ViewRendererWrapper = React.memo<ViewRendererWrapperProps>(({
 
   useEffect(() => {
     // Restore scroll position after render
-    if (containerRef.current && renderer.transitionState.scrollPosition) {
+    const transitionState = renderer.getTransitionState();
+    if (containerRef?.current && transitionState.scrollPosition) {
       const element = containerRef.current;
-      element.scrollLeft = renderer.transitionState.scrollPosition.x;
-      element.scrollTop = renderer.transitionState.scrollPosition.y;
+      element.scrollLeft = transitionState.scrollPosition.x;
+      element.scrollTop = transitionState.scrollPosition.y;
     }
   });
 
   return (
-    <div ref={containerRef} className="view-renderer-container w-full h-full">
+    <div ref={containerRef as React.RefObject<HTMLDivElement>} className="view-renderer-container w-full h-full">
       {children}
     </div>
   );

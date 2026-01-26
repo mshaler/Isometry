@@ -4,7 +4,6 @@ import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { usePAFV } from '../hooks/usePAFV';
 import { performanceTracker } from './views/PerformanceMonitor';
 import type { Node } from '@/types/node';
-import type { ViewType } from '@/types/view';
 import type { MemoryInfo } from '@/types/performance';
 
 /**

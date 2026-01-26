@@ -5,7 +5,7 @@
  * Handles WebView and HTTP API providers
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Environment } from '../utils/webview-bridge';
 
 export enum DatabaseMode {

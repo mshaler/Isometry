@@ -68,6 +68,7 @@ export interface ViewRenderer {
   destroy(): void;
 
   // State management for transitions
+  getTransitionState(): ViewTransitionState;
   saveState(): ViewTransitionState;
   loadState(state: ViewTransitionState): void;
 

@@ -43,6 +43,11 @@ export abstract class BaseViewRenderer implements ViewRenderer {
     };
   }
 
+  // Public getter for transition state
+  getTransitionState(): ViewTransitionState {
+    return this.transitionState;
+  }
+
   // State management for smooth transitions
   saveState(): ViewTransitionState {
     return {

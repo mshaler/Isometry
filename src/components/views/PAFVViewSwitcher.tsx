@@ -77,10 +77,10 @@ export function PAFVViewSwitcher({
   }, [pafvState.viewMode, switchToView]);
 
   // Apply PAFV axis mappings to the renderer
-  const applyPAFVConfiguration = useCallback((renderer: ViewRenderer, _mappings: AxisMapping[]) => {
+  const applyPAFVConfiguration = useCallback((renderer: ViewRenderer, mappings: AxisMapping[]) => {
     // Find X and Y axis mappings
-    const xMapping = mappings.find(m => m.plane === 'x');
-    const yMapping = mappings.find(m => m.plane === 'y');
+    const xMapping = mappings.find((m) => m.plane === 'x');
+    const yMapping = mappings.find((m) => m.plane === 'y');
 
     // Apply axis configuration to renderer
     if (xMapping) {

@@ -75,7 +75,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
     }
   }, []);
 
-  const registerComponent = useCallback((component: FocusableComponent, _element: HTMLElement) => {
+  const registerComponent = useCallback((component: FocusableComponent, element: HTMLElement) => {
     // Clean up existing listeners if component is being re-registered
     const existingListeners = componentListeners.current.get(component);
     if (existingListeners) {

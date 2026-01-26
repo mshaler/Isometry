@@ -283,7 +283,7 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
     // Create groups for items
     const itemGroups = container
       .selectAll('.list-item')
-      .data(visibleItems, (d: { item: ListItem; y: number; height: number }) => d.item.id)
+      .data(visibleItems, (d) => (d as { item: ListItem; y: number; height: number }).item.id)
       .enter()
       .append('g')
       .attr('class', 'list-item')

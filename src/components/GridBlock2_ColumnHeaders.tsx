@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import type { CoordinateSystem } from './D3SparsityLayer';
+import type { D3CoordinateSystem } from './D3SparsityLayer';
 
 export interface ColumnHeaderData {
   id: string;
@@ -11,7 +11,7 @@ export interface ColumnHeaderData {
 export interface GridBlock2Props {
   container: d3.Selection<SVGGElement, unknown, null, undefined>;
   columns: ColumnHeaderData[];
-  coordinateSystem: CoordinateSystem;
+  coordinateSystem: D3CoordinateSystem;
   headerHeight?: number;
 }
 
