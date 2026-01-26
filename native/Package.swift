@@ -67,7 +67,11 @@ let package = Package(
         ),
         .executableTarget(
             name: "IsometryAPIServer",
-            dependencies: ["IsometryAPI"],
+            dependencies: [
+                "IsometryAPI",
+                "Isometry",
+                "IsometryCore"
+            ],
             path: "Sources/IsometryAPIServer"
         ),
         .testTarget(

@@ -253,7 +253,7 @@ public actor DatabaseVersionControl {
     public func commit(
         message: String,
         author: String = "user",
-        metadata: [String: Any] = [:]
+        metadata: [String: String] = [:]
     ) async throws -> DatabaseCommit {
 
         // Phase 1: Collect all changes
@@ -649,7 +649,7 @@ public struct DatabaseCommit: Codable, Sendable {
     public let changeCount: Int
     public let changeDiff: DatabaseChangeDiff?
     public let artifactIds: [UUID]
-    public let metadata: [String: Any]
+    public let metadata: [String: String]
 }
 
 public struct DatabaseChange: Codable, Sendable {

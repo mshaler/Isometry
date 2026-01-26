@@ -283,7 +283,8 @@ public class NotebookPropertyModel: ObservableObject {
         // Convert card properties to PropertyValue format
         var newProperties: [String: PropertyValue] = [:]
 
-        if let cardProperties = card.properties {
+        let cardProperties = card.properties
+        if !cardProperties.isEmpty {
             for (key, value) in cardProperties {
                 if let propertyValue = convertToPropertyValue(value, forKey: key) {
                     newProperties[key] = propertyValue

@@ -33,7 +33,7 @@ public actor CommandHistoryManager {
     private let cacheSize: Int = 100
 
     public init(
-        database: IsometryDatabase = .shared,
+        database: IsometryDatabase,
         maxHistorySize: Int = 1000,
         retentionDays: Int = 30,
         cloudKitSync: Bool = true
@@ -472,11 +472,6 @@ extension HistoryEntry {
         self.success = success ?? response?.success
     }
 
-    /// Session identifier for grouping commands
-    public var sessionId: String {
-        // Extract from context or generate default
-        return context?.cardId?.uuidString ?? "default"
-    }
 
     /// Success status derived from response
     public var success: Bool? {

@@ -214,7 +214,7 @@ public class NotebookEditorModel: ObservableObject {
         autoSaveTimer?.invalidate()
 
         // Only schedule if there are changes to save
-        guard isDirty, let activeCard = activeCard else { return }
+        guard isDirty, activeCard != nil else { return }
 
         // Schedule new auto-save
         autoSaveTimer = Timer.scheduledTimer(withTimeInterval: autoSaveDelay, repeats: false) { [weak self] _ in
@@ -307,11 +307,11 @@ public class NotebookEditorModel: ObservableObject {
         // Look backwards from cursor to find the slash
         for i in (0..<cursorPosition).reversed() {
             let char = nsString.character(at: i)
-            if char == UnicodeScalar("/")!.value {
+            if char == UnicodeScalar("/").value {
                 slashLocation = i
                 break
             }
-            if char == UnicodeScalar("\n")!.value || char == UnicodeScalar(" ")!.value {
+            if char == UnicodeScalar("\n").value || char == UnicodeScalar(" ").value {
                 break // Stop at line or word boundaries
             }
         }
