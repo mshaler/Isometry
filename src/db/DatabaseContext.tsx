@@ -1,6 +1,7 @@
 import React from 'react';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
 import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
+import { FallbackDatabaseProvider, useFallbackDatabase } from './FallbackDatabaseContext';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';
 
 // Legacy interface for backward compatibility during migration
@@ -72,13 +73,21 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
         </NativeDatabaseProvider>
       );
 
-    default:
-      // Fallback to HTTP API - sql.js is no longer supported
-      console.log('Unknown database mode - using HTTP API');
+    case DatabaseMode.FALLBACK:
+      console.log('Using Fallback Database (no backend available)');
       return (
-        <NativeDatabaseProvider>
+        <FallbackDatabaseProvider>
           {children}
-        </NativeDatabaseProvider>
+        </FallbackDatabaseProvider>
+      );
+
+    default:
+      // Fallback to FALLBACK mode - no backend required
+      console.log('Unknown database mode - using fallback mode');
+      return (
+        <FallbackDatabaseProvider>
+          {children}
+        </FallbackDatabaseProvider>
       );
   }
 }
@@ -109,8 +118,11 @@ export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue
     case DatabaseMode.HTTP_API:
       return useNativeDatabase();
 
+    case DatabaseMode.FALLBACK:
+      return useFallbackDatabase();
+
     default:
-      // Unknown mode - fallback to native API
-      return useNativeDatabase();
+      // Unknown mode - fallback to fallback mode
+      return useFallbackDatabase();
   }
 }

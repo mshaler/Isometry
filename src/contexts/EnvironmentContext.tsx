@@ -11,6 +11,7 @@ import { Environment } from '../utils/webview-bridge';
 export enum DatabaseMode {
   HTTP_API = 'http-api',
   WEBVIEW_BRIDGE = 'webview-bridge',
+  FALLBACK = 'fallback',
   AUTO = 'auto'
 }
 
@@ -90,13 +91,13 @@ export function EnvironmentProvider({
         return DatabaseMode.HTTP_API;
       }
 
-      // Fall back to HTTP API (sql.js no longer supported)
-      console.log('Environment: Falling back to HTTP API');
-      return DatabaseMode.HTTP_API;
+      // Fall back to FALLBACK mode (no backend required)
+      console.log('Environment: No backend available, using fallback mode');
+      return DatabaseMode.FALLBACK;
 
     } catch (error) {
       console.warn('Environment detection failed:', error);
-      return DatabaseMode.HTTP_API;
+      return DatabaseMode.FALLBACK;
     }
   };
 
@@ -166,6 +167,16 @@ export function EnvironmentProvider({
           hasCloudSync: true
         };
 
+      case DatabaseMode.FALLBACK:
+        return {
+          canReadFiles: false,
+          canWriteFiles: false,
+          hasRealTimeSync: false,
+          supportsOffline: false,
+          hasNativeExport: false,
+          hasCloudSync: false
+        };
+
       default:
         return {
           canReadFiles: false,
@@ -173,7 +184,7 @@ export function EnvironmentProvider({
           hasRealTimeSync: false,
           supportsOffline: false,
           hasNativeExport: false,
-          hasCloudSync: true
+          hasCloudSync: false
         };
     }
   }
@@ -230,8 +241,8 @@ export function EnvironmentProvider({
       setError(errorMessage);
       console.error('Environment initialization failed:', err);
 
-      // Fall back to HTTP API on error
-      setEnvironment(createEnvironmentInfo(DatabaseMode.HTTP_API));
+      // Fall back to FALLBACK mode on error
+      setEnvironment(createEnvironmentInfo(DatabaseMode.FALLBACK));
     } finally {
       setIsLoading(false);
     }
@@ -263,8 +274,10 @@ export function EnvironmentProvider({
       case DatabaseMode.WEBVIEW_BRIDGE:
         return testWebViewBridge();
       case DatabaseMode.HTTP_API:
-      default:
         return testHTTPAPIConnection();
+      case DatabaseMode.FALLBACK:
+      default:
+        return Promise.resolve(true); // Fallback mode always "works"
     }
   };
 
