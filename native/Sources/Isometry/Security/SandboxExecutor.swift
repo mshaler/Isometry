@@ -385,6 +385,73 @@ public actor SandboxExecutor {
     public var accessibleDirectories: Set<String> {
         return allowedDirectories
     }
+
+    /// Execute Claude command through API client
+    /// - Parameters:
+    ///   - prompt: User prompt for Claude
+    ///   - context: Shell context for enrichment
+    ///   - client: Claude API client
+    /// - Returns: ExecutionResult with Claude response
+    public func executeClaudeCommand(
+        prompt: String,
+        context: ShellContext,
+        client: ClaudeAPIClient
+    ) async -> ExecutionResult {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let command = "/claude \(prompt)"
+
+        logger.info("Executing Claude command: \(prompt.prefix(50))...")
+
+        do {
+            // Performance monitoring
+            let signpostID = performanceMonitor.startNotebookRender()
+            defer { performanceMonitor.endNotebookRender(signpostID, layoutType: "claude-api") }
+
+            // Send to Claude with shell context
+            let response = try await client.sendShellCommand(
+                prompt: prompt,
+                context: context,
+                maxTokens: 1000
+            )
+
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            let formattedOutput = ClaudeAPIClient.formatForShell(response)
+
+            logger.info("Claude command completed successfully in \(Int(duration * 1000))ms")
+
+            return ExecutionResult(
+                success: true,
+                output: formattedOutput,
+                error: nil,
+                duration: duration,
+                exitCode: nil,
+                workingDirectory: context.workingDirectory,
+                command: command
+            )
+
+        } catch {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            let errorMessage: String
+
+            if let claudeError = error as? ClaudeError {
+                errorMessage = "Claude API Error: \(claudeError.localizedDescription)"
+                logger.error("Claude API error: \(claudeError.debugDescription)")
+            } else {
+                errorMessage = "Network Error: \(error.localizedDescription)"
+                logger.error("Claude network error: \(error.localizedDescription)")
+            }
+
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: errorMessage,
+                duration: duration,
+                exitCode: nil,
+                workingDirectory: context.workingDirectory,
+                command: command
+            )
+        }
+    }
 }
 
 // MARK: - Extensions

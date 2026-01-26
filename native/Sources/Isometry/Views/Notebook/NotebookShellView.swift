@@ -13,6 +13,10 @@ public struct NotebookShellView: View {
     @State private var historyIndex: Int = -1
     @State private var errorMessage: String?
 
+    // Claude API integration
+    @State private var claudeAPIClient: ClaudeAPIClient?
+    @State private var isClaudeConfigured: Bool = false
+
     public init() {}
 
     public var body: some View {
@@ -151,15 +155,31 @@ public struct NotebookShellView: View {
         VStack(alignment: .leading, spacing: 2) {
             // Command prompt
             HStack(spacing: 4) {
-                Text(promptString)
-                    .foregroundStyle(.green)
-                    .fontDesign(.monospaced)
+                // Show different prompt for Claude vs system commands
+                if entry.type == .claude {
+                    Text("🤖")
+                        .foregroundStyle(.blue)
+                        .fontDesign(.monospaced)
+                } else {
+                    Text(promptString)
+                        .foregroundStyle(.green)
+                        .fontDesign(.monospaced)
+                }
 
                 Text(entry.command)
                     .foregroundStyle(.primary)
                     .fontDesign(.monospaced)
 
                 Spacer()
+
+                // Show command type indicator
+                Text(entry.type == .claude ? "AI" : "SYS")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .fontDesign(.monospaced)
+                    .padding(.horizontal, 4)
+                    .background(entry.type == .claude ? Color.blue.opacity(0.2) : Color.green.opacity(0.2))
+                    .cornerRadius(4)
 
                 if let duration = entry.duration {
                     Text(String(format: "%.0fms", duration * 1000))
@@ -274,6 +294,10 @@ public struct NotebookShellView: View {
     private func initializeShell() {
         currentWorkingDirectory = FileManager.default.currentDirectoryPath
         shellSession.updateCurrentDirectory(currentWorkingDirectory)
+
+        // Initialize Claude API client
+        claudeAPIClient = ClaudeAPIClient.create()
+        isClaudeConfigured = ClaudeAPIClient.isConfigured()
     }
 
     private func executeCommand() {
@@ -288,6 +312,12 @@ public struct NotebookShellView: View {
 
         // Handle built-in commands
         if handleBuiltinCommand(command) {
+            return
+        }
+
+        // Handle Claude commands
+        if command.hasPrefix("/claude") {
+            executeClaudeCommand(command)
             return
         }
 
@@ -342,18 +372,142 @@ public struct NotebookShellView: View {
         }
     }
 
+    private func executeClaudeCommand(_ command: String) {
+        // Extract prompt from "/claude prompt text"
+        let prompt = command.replacingOccurrences(of: "/claude", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if prompt.isEmpty {
+            addBuiltinResponse(command: command, output: "Usage: /claude <your question or prompt>")
+            return
+        }
+
+        // Check if Claude is configured
+        guard isClaudeConfigured, let client = claudeAPIClient else {
+            let instructions = ClaudeAPIClient.configurationInstructions().joined(separator: "\n")
+            addBuiltinResponse(
+                command: command,
+                output: "❌ Claude API not configured.\n\n\(instructions)"
+            )
+            return
+        }
+
+        isExecuting = true
+
+        Task {
+            let startTime = CFAbsoluteTimeGetCurrent()
+
+            do {
+                // Create shell context for enrichment
+                let recentCommands = commandHistory.suffix(3).map { $0.command }
+                let shellContext = ShellContext(
+                    workingDirectory: currentWorkingDirectory,
+                    recentCommands: Array(recentCommands),
+                    environment: ProcessInfo.processInfo.environment
+                )
+
+                // Send to Claude with context
+                let (response, duration) = try await client.sendMessageWithTracking(
+                    ClaudeRequest.text(prompt: prompt, maxTokens: 1000),
+                    context: "shell_command"
+                )
+
+                // Format response for terminal display
+                let formattedOutput = ClaudeAPIClient.formatForShell(response)
+
+                // Create command response
+                let commandResponse = CommandResponse(
+                    commandId: UUID(),
+                    success: true,
+                    output: formattedOutput,
+                    duration: duration,
+                    type: .claude
+                )
+
+                let historyEntry = HistoryEntry(
+                    command: command,
+                    type: .claude,
+                    timestamp: Date(),
+                    response: commandResponse,
+                    duration: duration,
+                    cwd: currentWorkingDirectory
+                )
+
+                await MainActor.run {
+                    commandHistory.append(historyEntry)
+
+                    let shellCommand = ShellCommand(
+                        type: .claude,
+                        command: command,
+                        cwd: currentWorkingDirectory
+                    )
+                    shellSession.addCommand(shellCommand)
+
+                    isExecuting = false
+                }
+
+            } catch {
+                let duration = CFAbsoluteTimeGetCurrent() - startTime
+                let errorOutput: String
+
+                if let claudeError = error as? ClaudeError {
+                    errorOutput = "❌ Claude Error: \(claudeError.localizedDescription)"
+                } else {
+                    errorOutput = "❌ Network Error: \(error.localizedDescription)"
+                }
+
+                let commandResponse = CommandResponse(
+                    commandId: UUID(),
+                    success: false,
+                    output: "",
+                    error: errorOutput,
+                    duration: duration,
+                    type: .claude
+                )
+
+                let historyEntry = HistoryEntry(
+                    command: command,
+                    type: .claude,
+                    timestamp: Date(),
+                    response: commandResponse,
+                    duration: duration,
+                    cwd: currentWorkingDirectory
+                )
+
+                await MainActor.run {
+                    commandHistory.append(historyEntry)
+
+                    let shellCommand = ShellCommand(
+                        type: .claude,
+                        command: command,
+                        cwd: currentWorkingDirectory
+                    )
+                    shellSession.addCommand(shellCommand)
+
+                    isExecuting = false
+                }
+            }
+        }
+    }
+
     private func handleBuiltinCommand(_ command: String) -> Bool {
         let parts = command.split(separator: " ", maxSplits: 1).map(String.init)
         let cmd = parts[0]
 
         switch cmd {
         case "help":
+            let claudeStatus = isClaudeConfigured ? "✅ Available" : "❌ Not configured"
             let helpText = """
                 Available commands:
                 • File operations: ls, pwd, cat, head, tail, find
                 • Text processing: grep, sort, uniq, wc
                 • System info: date, whoami, uname, which, echo
                 • Built-in: help, clear, history
+                • AI Assistant: /claude <prompt> (\(claudeStatus))
+
+                Examples:
+                  /claude what is the current working directory?
+                  /claude explain this error message
+                  /claude help me debug this issue
 
                 Security: App Sandbox restrictions apply.
                 """
