@@ -143,7 +143,7 @@ public struct BetaFeedbackView: View {
 
             if includeDeviceInfo {
                 VStack(alignment: .leading, spacing: 4) {
-                    let deviceInfo = DeviceInfo.current
+                    let deviceInfo = BetaDeviceInfo.current
                     Text("Device: \(deviceInfo.model)")
                     Text("OS: \(deviceInfo.osVersion)")
                     Text("App Version: \(deviceInfo.appVersion) (\(deviceInfo.buildNumber))")
@@ -205,7 +205,7 @@ public struct BetaFeedbackView: View {
                 description: feedbackDescription,
                 severity: selectedSeverity,
                 attachments: attachments,
-                deviceInfo: includeDeviceInfo ? DeviceInfo.current : DeviceInfo(
+                deviceInfo: includeDeviceInfo ? BetaDeviceInfo.current : BetaDeviceInfo(
                     model: "Unknown",
                     osVersion: "Unknown",
                     appVersion: "Unknown",
