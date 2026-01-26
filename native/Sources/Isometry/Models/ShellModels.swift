@@ -1,5 +1,6 @@
 import Foundation
 import CloudKit
+import GRDB
 
 // MARK: - Command Types
 
@@ -299,6 +300,8 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
     public let duration: TimeInterval?
     public let cwd: String?
     public let context: CommandContext?
+    public let sessionId: String
+    public let success: Bool?
 
     public init(
         id: UUID = UUID(),
@@ -308,7 +311,9 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
         response: CommandResponse? = nil,
         duration: TimeInterval? = nil,
         cwd: String? = nil,
-        context: CommandContext? = nil
+        context: CommandContext? = nil,
+        sessionId: String = "default",
+        success: Bool? = nil
     ) {
         self.id = id
         self.command = command
@@ -318,6 +323,87 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
         self.duration = duration
         self.cwd = cwd
         self.context = context
+        self.sessionId = sessionId
+        self.success = success ?? response?.success
+    }
+}
+
+// MARK: - Database Support
+
+extension HistoryEntry: FetchableRecord, PersistableRecord {
+    public static var databaseTableName: String {
+        return "command_history"
+    }
+
+    /// Initialize from database row
+    public init(row: Row) throws {
+        let iso8601Formatter = ISO8601DateFormatter()
+
+        id = UUID(uuidString: row["id"]) ?? UUID()
+        command = row["command_text"]
+        type = CommandType(rawValue: row["command_type"]) ?? .system
+
+        if let timestampString: String = row["timestamp"] {
+            timestamp = iso8601Formatter.date(from: timestampString) ?? Date()
+        } else {
+            timestamp = Date()
+        }
+
+        duration = row["duration"]
+        cwd = row["working_directory"]
+        sessionId = row["session_id"] ?? "default"
+
+        // Map integer to boolean
+        if let successInt: Int = row["success"] {
+            success = successInt == 1
+        } else {
+            success = nil
+        }
+
+        // Reconstruct response if data is available
+        let outputPreview: String? = row["output_preview"]
+        let errorMessage: String? = row["error_message"]
+
+        if outputPreview != nil || errorMessage != nil {
+            response = CommandResponse(
+                commandId: id,
+                success: success ?? false,
+                output: outputPreview ?? "",
+                error: errorMessage,
+                duration: duration ?? 0,
+                type: type
+            )
+        } else {
+            response = nil
+        }
+
+        // Reconstruct context if available
+        let cardIdString: String? = row["card_id"]
+        let cardTitle: String? = row["card_title"]
+
+        if let cardIdString = cardIdString, let cardId = UUID(uuidString: cardIdString) {
+            context = CommandContext(cardId: cardId, cardTitle: cardTitle)
+        } else if let cardTitle = cardTitle {
+            context = CommandContext(cardId: nil, cardTitle: cardTitle)
+        } else {
+            context = nil
+        }
+    }
+
+    /// Encode for database storage
+    public func encode(to container: inout PersistenceContainer) throws {
+        let iso8601Formatter = ISO8601DateFormatter()
+
+        container["id"] = id.uuidString
+        container["command_text"] = command
+        container["command_type"] = type.rawValue
+        container["timestamp"] = iso8601Formatter.string(from: timestamp)
+        container["duration"] = duration
+        container["success"] = success.map { $0 ? 1 : 0 }
+        container["output_preview"] = response?.output.prefix(500).description
+        container["error_message"] = response?.error
+        container["working_directory"] = cwd
+        container["session_id"] = sessionId
     }
 }
 

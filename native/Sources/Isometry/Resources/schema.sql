@@ -234,6 +234,85 @@ CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_update AFTER UPDATE ON notebook_
     VALUES (NEW.rowid, NEW.title, NEW.markdown_content);
 END;
 
+-- ============================================================================
+-- Command History Tables
+-- ============================================================================
+
+-- Command history: Persistent storage for all executed commands
+CREATE TABLE IF NOT EXISTS command_history (
+    id TEXT PRIMARY KEY,
+    command_text TEXT NOT NULL,
+    command_type TEXT NOT NULL DEFAULT 'system', -- 'system' or 'claude'
+    timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+    duration REAL,
+    success INTEGER, -- 0 for false, 1 for true, NULL for unknown
+    output_preview TEXT, -- First 500 chars of output
+    error_message TEXT,
+    working_directory TEXT,
+    session_id TEXT NOT NULL,
+
+    -- CloudKit integration fields
+    ck_record_id TEXT UNIQUE,
+    ck_modified_date TEXT,
+    sync_version INTEGER DEFAULT 0,
+    last_synced_at TEXT,
+    deleted_at TEXT,
+
+    -- Performance fields
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Notebook context: Links commands to notebook cards
+CREATE TABLE IF NOT EXISTS notebook_context (
+    id TEXT PRIMARY KEY,
+    command_id TEXT NOT NULL,
+    card_id TEXT,
+    card_title TEXT,
+    context_type TEXT DEFAULT 'execution', -- 'execution', 'suggestion', etc.
+
+    FOREIGN KEY (command_id) REFERENCES command_history(id) ON DELETE CASCADE,
+    FOREIGN KEY (card_id) REFERENCES notebook_cards(id) ON DELETE SET NULL
+);
+
+-- Indexes for command history performance
+CREATE INDEX IF NOT EXISTS idx_command_history_timestamp ON command_history(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_command_history_type ON command_history(command_type);
+CREATE INDEX IF NOT EXISTS idx_command_history_session ON command_history(session_id);
+CREATE INDEX IF NOT EXISTS idx_command_history_success ON command_history(success);
+CREATE INDEX IF NOT EXISTS idx_command_history_sync ON command_history(sync_version, last_synced_at);
+CREATE INDEX IF NOT EXISTS idx_command_history_active ON command_history(deleted_at) WHERE deleted_at IS NULL;
+
+-- Indexes for notebook context
+CREATE INDEX IF NOT EXISTS idx_notebook_context_command ON notebook_context(command_id);
+CREATE INDEX IF NOT EXISTS idx_notebook_context_card ON notebook_context(card_id);
+
+-- Full-text search for command history
+CREATE VIRTUAL TABLE IF NOT EXISTS command_history_fts USING fts5(
+    command_text,
+    output_preview,
+    content='command_history',
+    content_rowid='rowid'
+);
+
+-- FTS triggers for command history
+CREATE TRIGGER IF NOT EXISTS command_history_fts_insert AFTER INSERT ON command_history BEGIN
+    INSERT INTO command_history_fts(rowid, command_text, output_preview)
+    VALUES (NEW.rowid, NEW.command_text, NEW.output_preview);
+END;
+
+CREATE TRIGGER IF NOT EXISTS command_history_fts_delete AFTER DELETE ON command_history BEGIN
+    INSERT INTO command_history_fts(command_history_fts, rowid, command_text, output_preview)
+    VALUES ('delete', OLD.rowid, OLD.command_text, OLD.output_preview);
+END;
+
+CREATE TRIGGER IF NOT EXISTS command_history_fts_update AFTER UPDATE ON command_history BEGIN
+    INSERT INTO command_history_fts(command_history_fts, rowid, command_text, output_preview)
+    VALUES ('delete', OLD.rowid, OLD.command_text, OLD.output_preview);
+    INSERT INTO command_history_fts(rowid, command_text, output_preview)
+    VALUES (NEW.rowid, NEW.command_text, NEW.output_preview);
+END;
+
 -- Record initial schema version
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (1, 'Initial schema with sync support');
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (2, 'Added notebook_cards table with FTS support');
+INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (3, 'Added command_history and notebook_context tables with FTS support');

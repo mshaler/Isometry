@@ -931,4 +931,183 @@ public actor IsometryDatabase {
             )
         }
     }
+
+    // MARK: - Command History Operations
+
+    /// Save command history entry to database
+    public func saveCommandHistory(_ entry: HistoryEntry) async throws {
+        try await dbPool.write { db in
+            let outputPreview = entry.response?.output.prefix(500).description
+            let iso8601Formatter = ISO8601DateFormatter()
+            let timestamp = iso8601Formatter.string(from: entry.timestamp)
+
+            try db.execute(
+                sql: """
+                    INSERT INTO command_history (
+                        id, command_text, command_type, timestamp, duration, success,
+                        output_preview, error_message, working_directory, session_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                arguments: [
+                    entry.id.uuidString,
+                    entry.command,
+                    entry.type.rawValue,
+                    timestamp,
+                    entry.duration,
+                    entry.success.map { $0 ? 1 : 0 },
+                    outputPreview,
+                    entry.response?.error,
+                    entry.cwd,
+                    entry.sessionId
+                ]
+            )
+
+            // Save notebook context if available
+            if let context = entry.context {
+                try db.execute(
+                    sql: """
+                        INSERT INTO notebook_context (
+                            id, command_id, card_id, card_title
+                        ) VALUES (?, ?, ?, ?)
+                        """,
+                    arguments: [
+                        UUID().uuidString,
+                        entry.id.uuidString,
+                        context.cardId?.uuidString,
+                        context.cardTitle
+                    ]
+                )
+            }
+        }
+    }
+
+    /// Search command history using FTS5
+    public func searchCommandHistory(query: String) async throws -> [HistoryEntry] {
+        return try await dbPool.read { db in
+            let sql = """
+                SELECT h.*, nc.card_id, nc.card_title
+                FROM command_history h
+                LEFT JOIN notebook_context nc ON h.id = nc.command_id
+                JOIN command_history_fts fts ON h.rowid = fts.rowid
+                WHERE command_history_fts MATCH ?
+                AND h.deleted_at IS NULL
+                ORDER BY h.timestamp DESC
+                LIMIT 100
+                """
+
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: [query])
+        }
+    }
+
+    /// Get recent commands with optional type filtering
+    public func getRecentCommands(limit: Int, type: CommandType?) async throws -> [HistoryEntry] {
+        return try await dbPool.read { db in
+            var sql = """
+                SELECT h.*, nc.card_id, nc.card_title
+                FROM command_history h
+                LEFT JOIN notebook_context nc ON h.id = nc.command_id
+                WHERE h.deleted_at IS NULL
+                """
+            var arguments: [DatabaseValueConvertible] = []
+
+            if let type = type {
+                sql += " AND h.command_type = ?"
+                arguments.append(type.rawValue)
+            }
+
+            sql += " ORDER BY h.timestamp DESC LIMIT ?"
+            arguments.append(limit)
+
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+        }
+    }
+
+    /// Get commands by session ID
+    public func getCommandsBySession(sessionId: String) async throws -> [HistoryEntry] {
+        return try await dbPool.read { db in
+            let sql = """
+                SELECT h.*, nc.card_id, nc.card_title
+                FROM command_history h
+                LEFT JOIN notebook_context nc ON h.id = nc.command_id
+                WHERE h.session_id = ?
+                AND h.deleted_at IS NULL
+                ORDER BY h.timestamp ASC
+                """
+
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: [sessionId])
+        }
+    }
+
+    /// Get commands for a specific notebook card
+    public func getCommandsForCard(cardId: String) async throws -> [HistoryEntry] {
+        return try await dbPool.read { db in
+            let sql = """
+                SELECT h.*, nc.card_id, nc.card_title
+                FROM command_history h
+                JOIN notebook_context nc ON h.id = nc.command_id
+                WHERE nc.card_id = ?
+                AND h.deleted_at IS NULL
+                ORDER BY h.timestamp DESC
+                """
+
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: [cardId])
+        }
+    }
+
+    /// Clean up old command history entries
+    public func cleanupOldHistory(olderThan: Date) async throws {
+        try await dbPool.write { db in
+            let iso8601Formatter = ISO8601DateFormatter()
+            let cutoffDate = iso8601Formatter.string(from: olderThan)
+
+            try db.execute(
+                sql: """
+                    UPDATE command_history
+                    SET deleted_at = datetime('now')
+                    WHERE timestamp < ?
+                    AND deleted_at IS NULL
+                    """,
+                arguments: [cutoffDate]
+            )
+        }
+    }
+
+    /// Get command history statistics for a session
+    public func getSessionStatistics(sessionId: String) async throws -> SessionStatistics {
+        return try await dbPool.read { db in
+            let row = try Row.fetchOne(db,
+                sql: """
+                    SELECT
+                        COUNT(*) as total_commands,
+                        COUNT(CASE WHEN success = 1 THEN 1 END) as successful_commands,
+                        COUNT(CASE WHEN command_type = 'system' THEN 1 END) as system_commands,
+                        COUNT(CASE WHEN command_type = 'claude' THEN 1 END) as claude_commands,
+                        AVG(duration) as average_duration,
+                        SUM(duration) as total_duration
+                    FROM command_history
+                    WHERE session_id = ?
+                    AND deleted_at IS NULL
+                    """,
+                arguments: [sessionId]
+            )
+
+            let totalCommands = row?["total_commands"] as? Int ?? 0
+            let successfulCommands = row?["successful_commands"] as? Int ?? 0
+            let systemCommands = row?["system_commands"] as? Int ?? 0
+            let claudeCommands = row?["claude_commands"] as? Int ?? 0
+            let averageDuration = row?["average_duration"] as? Double ?? 0
+            let totalDuration = row?["total_duration"] as? Double ?? 0
+
+            return SessionStatistics(
+                sessionId: sessionId,
+                totalCommands: totalCommands,
+                successfulCommands: successfulCommands,
+                systemCommands: systemCommands,
+                claudeCommands: claudeCommands,
+                successRate: totalCommands > 0 ? Double(successfulCommands) / Double(totalCommands) : 0,
+                averageDuration: averageDuration,
+                totalDuration: totalDuration
+            )
+        }
+    }
 }

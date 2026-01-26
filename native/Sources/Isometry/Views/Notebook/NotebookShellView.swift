@@ -25,6 +25,10 @@ public struct NotebookShellView: View {
     @State private var claudeAPIClient: ClaudeAPIClient?
     @State private var isClaudeConfigured: Bool = false
 
+    // Command history
+    @State private var commandHistoryManager: CommandHistoryManager?
+    @State private var showingHistoryView: Bool = false
+
     public init() {}
 
     public var body: some View {
@@ -53,6 +57,9 @@ public struct NotebookShellView: View {
         }
         .sheet(isPresented: $showProcessDetails) {
             processDetailsView
+        }
+        .sheet(isPresented: $showingHistoryView) {
+            CommandHistoryView()
         }
     }
 
@@ -96,6 +103,13 @@ public struct NotebookShellView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
+
+            // History button
+            Button(action: { showingHistoryView = true }) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(PlainButtonStyle())
 
             // Clear button
             Button(action: clearHistory) {
@@ -474,6 +488,9 @@ public struct NotebookShellView: View {
         claudeAPIClient = ClaudeAPIClient.create()
         isClaudeConfigured = ClaudeAPIClient.isConfigured()
 
+        // Initialize command history manager
+        commandHistoryManager = CommandHistoryManager()
+
         // Start process monitoring
         startProcessMonitoring()
     }
@@ -544,6 +561,11 @@ public struct NotebookShellView: View {
                 shellSession.addCommand(shellCommand)
                 isExecuting = false
                 currentlyExecutingCommand = ""
+
+                // Save to persistent history
+                Task {
+                    await saveCommandToHistory(shellCommand, response: response)
+                }
 
                 // Update working directory if pwd command was successful
                 if command == "pwd" && result.success {
@@ -628,6 +650,11 @@ public struct NotebookShellView: View {
                     shellSession.addCommand(shellCommand)
 
                     isExecuting = false
+
+                    // Save to persistent history
+                    Task {
+                        await saveCommandToHistory(shellCommand, response: commandResponse)
+                    }
                 }
 
             } catch {
@@ -669,6 +696,11 @@ public struct NotebookShellView: View {
                     shellSession.addCommand(shellCommand)
 
                     isExecuting = false
+
+                    // Save to persistent history
+                    Task {
+                        await saveCommandToHistory(shellCommand, response: commandResponse)
+                    }
                 }
             }
         }
@@ -801,6 +833,23 @@ public struct NotebookShellView: View {
                 await updateProcessStatus()
                 try? await Task.sleep(for: .seconds(2))
             }
+        }
+    }
+
+    /// Save command to persistent history
+    private func saveCommandToHistory(_ command: ShellCommand, response: CommandResponse) async {
+        guard let historyManager = commandHistoryManager else { return }
+
+        do {
+            try await historyManager.saveCommand(
+                command,
+                response: response,
+                context: command.context,
+                sessionId: shellSession.sessionId.uuidString
+            )
+        } catch {
+            // Log error but don't interrupt shell operation
+            print("Failed to save command history: \(error)")
         }
     }
 
