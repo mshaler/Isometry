@@ -5,7 +5,7 @@
  * Handles JSON serialization with Date objects and provides secure storage.
  */
 
-import type { FilterPreset } from '../types/filter';
+import type { FilterPreset, FilterState } from '../types/filter';
 import {
   setEncryptedItem,
   getEncryptedItem,
@@ -41,9 +41,10 @@ function serializePreset(preset: FilterPreset): Record<string, unknown> {
 function deserializePreset(data: SerializedFilterPreset): FilterPreset {
   return {
     ...data,
+    filters: data.filters as FilterState,
     createdAt: new Date(data.createdAt),
     updatedAt: new Date(data.updatedAt),
-  };
+  } as FilterPreset;
 }
 
 /**

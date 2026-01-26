@@ -224,7 +224,7 @@ export function sanitizeDSLValue(value: unknown): ValidationResult {
   if (value == null) {
     return {
       isValid: true,
-      sanitizedValue: null,
+      sanitizedValue: undefined,
       errors: [],
       warnings: []
     };
@@ -281,7 +281,7 @@ export function sanitizeDSLValue(value: unknown): ValidationResult {
 
       return {
         isValid: errors.length === 0,
-        sanitizedValue: { preset: presetValidation.sanitizedValue },
+        sanitizedValue: presetValidation.sanitizedValue,
         errors,
         warnings: [...warnings, ...presetValidation.warnings]
       };
