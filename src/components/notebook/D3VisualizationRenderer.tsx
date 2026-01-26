@@ -8,7 +8,6 @@ import type {
   D3SVGSelection,
   D3GroupSelection,
   ChartDatum,
-  NetworkLinkDatum,
   D3ChartTheme,
   D3LineGenerator,
   D3AreaGenerator,
