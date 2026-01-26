@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
-import mammoth from 'mammoth';
-import JSZip from 'jszip';
+import * as mammoth from 'mammoth';
+import * as JSZip from 'jszip';
 import type { Node, NodeType } from '../types/node';
 
 // Type definitions for document processing
@@ -10,6 +10,7 @@ interface DocumentStyle {
   color?: string;
   bold?: boolean;
   italic?: boolean;
+  underline?: boolean;
 }
 
 interface ParsedElement {
@@ -63,7 +64,7 @@ export interface WordDocumentData {
   content: string;
   html: string;
   images: { id: string; buffer: ArrayBuffer; contentType: string }[];
-  styles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; }>;
+  styles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; underline?: boolean; }>;
 }
 
 interface MammothImage {
@@ -85,7 +86,7 @@ export class OfficeDocumentProcessor {
   async importExcel(file: File, options: OfficeImportOptions = {}): Promise<OfficeImportResult> {
     const {
       nodeType = 'spreadsheet',
-      folder = null,
+      folder = undefined,
       source = 'excel-import',
       sheetNames = [],
       extractTables = true
@@ -180,7 +181,7 @@ export class OfficeDocumentProcessor {
   async importWord(file: File, options: OfficeImportOptions = {}): Promise<OfficeImportResult> {
     const {
       nodeType = 'document',
-      folder = null,
+      folder = undefined,
       source = 'word-import',
       preserveFormatting = true
     } = options;
@@ -323,7 +324,7 @@ export class OfficeDocumentProcessor {
         "i => em",
         "u => u"
       ] : [],
-      transformDocument: preserveFormatting ? (mammoth as unknown as { transforms: { paragraph: (fn: (element: ParsedElement) => ParsedElement) => unknown } }).transforms.paragraph((element: ParsedElement) => {
+      transformDocument: preserveFormatting ? ((element: any) => {
         // Extract style information from paragraph elements
         if (element.styleId && element.styleName) {
           const styleInfo: DocumentStyle = {
@@ -517,8 +518,8 @@ export class OfficeDocumentProcessor {
     markdown = markdown.replace(/<br[^>]*>/gi, '\n');
 
     // Convert lists
-    markdown = markdown.replace(/<ul[^>]*>(.*?)<\/ul>/gis, '$1\n');
-    markdown = markdown.replace(/<ol[^>]*>(.*?)<\/ol>/gis, '$1\n');
+    markdown = markdown.replace(/<ul[^>]*>([\s\S]*?)<\/ul>/gi, '$1\n');
+    markdown = markdown.replace(/<ol[^>]*>([\s\S]*?)<\/ol>/gi, '$1\n');
     markdown = markdown.replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n');
 
     // Remove remaining HTML tags
@@ -548,7 +549,7 @@ export class OfficeDocumentProcessor {
 
     // Convert lists (simple)
     html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    html = html.replace(/(<li>[\s\S]*<\/li>)/, '<ul>$1</ul>');
 
     return html;
   }
