@@ -25,9 +25,7 @@ const mockWindow = {
   removeEventListener: vi.fn()
 };
 
-const mockEnvironment = {
-  isWebView: vi.fn(() => true)
-};
+// Environment context available for future WebView tests
 
 describe('WebView Bridge & Migration Safety Integration', () => {
   let bridge: WebViewBridge;
@@ -150,7 +148,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
     it('should create backup through reliable bridge connection', async () => {
       // Mock comprehensive backup data
       mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
-        const { method, params } = message;
+        const { params } = message;
         const sql = params?.sql as string;
 
         let response: unknown = [];
@@ -273,13 +271,11 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const backup = await migrationSafety.createDataBackup();
 
       // Mock rollback operations
-      let transactionStarted = false;
       mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
         const sql = message.params?.sql as string;
         let response: unknown = [];
 
         if (sql?.includes('BEGIN')) {
-          transactionStarted = true;
           response = [];
         } else if (sql?.includes('COMMIT')) {
           response = [];
@@ -507,8 +503,6 @@ describe('WebView Bridge & Migration Safety Integration', () => {
     it('should clean up bridge resources when migration operations complete', async () => {
       // Perform several migration operations
       await migrationSafety.assessRollbackSafety();
-
-      const healthBefore = bridge.getHealthStatus();
 
       // Cleanup bridge
       bridge.cleanup();

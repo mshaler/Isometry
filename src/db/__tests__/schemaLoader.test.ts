@@ -9,14 +9,22 @@ import {
   loadTableSchema,
   loadDatabaseSchema,
   getSchemaFields,
-  clearSchemaCache,
-  type SchemaField,
-  type TableInfo
+  clearSchemaCache
 } from '../schemaLoader';
 
+// Mock database interfaces
+interface MockTableInfo {
+  cid: number;
+  name: string;
+  type: string;
+  notnull: number;
+  dflt_value: string | null;
+  pk: number;
+}
+
 // Mock database function
-const createMockExecute = (mockData: Record<string, any[]>) => {
-  return vi.fn(async (sql: string, params: any[]) => {
+const createMockExecute = (mockData: Record<string, MockTableInfo[]>) => {
+  return vi.fn(async (sql: string, _params: unknown[]) => {
     // Handle PRAGMA table_info queries
     if (sql.includes('PRAGMA table_info')) {
       const tableMatch = sql.match(/PRAGMA table_info\((\w+)\)/);

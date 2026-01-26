@@ -5,7 +5,7 @@
  * conflict resolution, and cross-device consistency.
  */
 
-import { EnhancedSyncManager, type OfflineChange, type ConflictResolutionStrategy } from '../enhanced-sync';
+import { EnhancedSyncManager, type ConflictResolutionStrategy } from '../enhanced-sync';
 import { type DataChange, type SyncConflict } from '../sync-manager';
 
 // Mock localStorage
@@ -48,9 +48,17 @@ jest.mock('../performance-monitor', () => ({
 Object.defineProperty(global, 'localStorage', { value: mockLocalStorage, writable: true });
 Object.defineProperty(global, 'performance', { value: mockPerformance, writable: true });
 
+// Mock sync manager interface
+interface MockSyncManager {
+  syncChanges: jest.Mock;
+  getLastSyncTimestamp: jest.Mock;
+  registerChangeHandler: jest.Mock;
+  emit: jest.Mock;
+}
+
 describe('EnhancedSyncManager', () => {
   let syncManager: EnhancedSyncManager;
-  let mockSyncManager: any;
+  let mockSyncManager: MockSyncManager;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -363,7 +371,7 @@ describe('EnhancedSyncManager', () => {
     });
 
     it('should use custom merge function when provided', async () => {
-      const customMergeFunction = (local: any, remote: any) => ({
+      const customMergeFunction = (local: Record<string, unknown>, remote: Record<string, unknown>) => ({
         ...local,
         ...remote,
         mergedBy: 'custom-function'

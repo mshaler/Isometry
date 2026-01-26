@@ -122,8 +122,8 @@ describe('WebView Bridge Reliability', () => {
       for (let i = 0; i < 6; i++) {
         try {
           await bridge.postMessage('database', 'test', {});
-        } catch (error) {
-          // Expected to fail
+        } catch {
+          // Expected to fail - circuit breaker should open
         }
       }
 

@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   MigrationSafety,
-  migrationSafety,
   assessRollbackSafety,
   createDataBackup,
   validateDataIntegrity,
@@ -148,7 +147,7 @@ describe('Migration Safety Validation', () => {
       expect(assessment1).toEqual(assessment2);
 
       // Should have called database operations only once (for first assessment)
-      const callCount = mockWebViewBridge.database.execute.mock.calls.length;
+      // Note: Monitoring call count for cache validation
 
       // Reset and call again - should make new calls
       mockWebViewBridge.database.execute.mockClear();
@@ -185,9 +184,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should generate consistent checksums for same data', async () => {
-      // Mock consistent data export
-      const mockData = { test: 'data', timestamp: '2024-01-01' };
-
+      // Mock consistent data export for checksum generation
       const backup1 = await createDataBackup();
       const backup2 = await createDataBackup();
 

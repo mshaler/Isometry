@@ -15,7 +15,7 @@ import { clearSchemaCache } from '../../db/schemaLoader';
 
 // Mock database function that returns sample schema
 const createMockExecute = () => {
-  return vi.fn(async (sql: string, params: any[]) => {
+  return vi.fn(async (sql: string, _params: unknown[]) => {
     if (sql.includes('PRAGMA table_info(nodes)')) {
       return [
         { cid: 0, name: 'id', type: 'TEXT', notnull: 1, dflt_value: null, pk: 1 },
