@@ -45,10 +45,14 @@ export function loadHistory(): HistoryEntry[] {
     }
 
     // Convert back from storage format (parse dates)
-    const entries = parsed.map((entry: unknown) => ({
-      ...entry,
-      timestamp: new Date(entry.timestamp)
-    } as HistoryEntry)).filter((entry: HistoryEntry) =>
+    const entries = parsed.map((entry: unknown) => {
+      // Type assertion for safe spreading and property access
+      const typedEntry = entry as HistoryEntry & { timestamp: string };
+      return {
+        ...typedEntry,
+        timestamp: new Date(typedEntry.timestamp)
+      } as HistoryEntry;
+    }).filter((entry: HistoryEntry) =>
       // Validate entry structure
       entry.id &&
       entry.command !== undefined &&
