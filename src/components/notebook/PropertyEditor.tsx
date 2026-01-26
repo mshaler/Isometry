@@ -11,6 +11,24 @@ import { debounce } from '../../utils/debounce';
 import { PropertyField, CustomFieldAdder, StatusFooter } from './property-editor';
 import type { PropertyEditorProps } from './property-editor';
 
+// Type definitions for global error reporting
+interface ErrorReportingAction {
+  label: string;
+  action: () => void | Promise<void>;
+}
+
+interface GlobalErrorReporting {
+  reportUserError: (title: string, message: string, actions?: ErrorReportingAction[]) => void;
+  reportUserInfo: (title: string, message: string) => void;
+  reportUserWarning: (title: string, message: string) => void;
+}
+
+declare global {
+  interface Window {
+    errorReporting?: GlobalErrorReporting;
+  }
+}
+
 export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
   const { updateCard } = useNotebook();
   const [properties, setProperties] = useState<Record<string, unknown>>(card.properties || {});
@@ -37,8 +55,8 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
         console.error('Failed to save properties:', error);
 
         // Report error to global error service
-        if (typeof window !== 'undefined' && (window as any).errorReporting) {
-          (window as any).errorReporting.reportUserError(
+        if (typeof window !== 'undefined' && window.errorReporting) {
+          window.errorReporting.reportUserError(
             'Property Save Failed',
             'Your property changes could not be saved. Please try again.',
             [
@@ -47,16 +65,16 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
                 action: async () => {
                   try {
                     await updateCard(card.id, { properties: props });
-                    (window as any).errorReporting.reportUserInfo('Properties Saved', 'Your property changes have been saved.');
+                    window.errorReporting?.reportUserInfo('Properties Saved', 'Your property changes have been saved.');
                   } catch {
-                    (window as any).errorReporting.reportUserError('Save Still Failed', 'Unable to save properties. Please refresh and try again.');
+                    window.errorReporting?.reportUserError('Save Still Failed', 'Unable to save properties. Please refresh and try again.');
                   }
                 }
               },
               {
                 label: 'Continue',
                 action: () => {
-                  (window as any).errorReporting.reportUserWarning('Changes Not Saved', 'Your property changes are not saved and may be lost.');
+                  window.errorReporting?.reportUserWarning('Changes Not Saved', 'Your property changes are not saved and may be lost.');
                 }
               }
             ]
