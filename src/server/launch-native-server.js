@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-/* eslint-env node */
+/* global console, process, __dirname, __filename, Buffer */
 /* eslint no-console: "off" */
 
 /**
