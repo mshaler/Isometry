@@ -1,176 +1,199 @@
 /**
  * WebView Database Context
  *
- * Provides the same React context interface as DatabaseContext but uses WebView bridge
- * Enables seamless component compatibility between browser and WebView environments
+ * Mirror exact interface of existing DatabaseContext but uses WebViewClient instead of sql.js.
+ * Provides same loading/error state management and hook interfaces for seamless compatibility.
  */
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { WebViewClient, webViewClient } from './WebViewClient';
-import { webViewBridge, Environment } from '../utils/webview-bridge';
-import type { DatabaseClient, Node, Edge, SearchResult } from './types';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { WebViewClient, createWebViewClient } from './WebViewClient';
+import { isWebViewEnvironment } from '../utils/webview-bridge';
 
-interface WebViewDatabaseContextType {
+/**
+ * WebView Database Context interface matching existing DatabaseContext exactly
+ * Provides identical interface for seamless component compatibility
+ */
+export interface WebViewDatabaseContextValue {
   db: WebViewClient | null;
   loading: boolean;
   error: Error | null;
   execute: <T = Record<string, unknown>>(sql: string, params?: unknown[]) => Promise<T[]>;
   save: () => Promise<void>;
   reset: () => Promise<void>;
+  isConnected: () => boolean;
+  getConnectionStatus: () => any;
 }
 
-const WebViewDatabaseContext = createContext<WebViewDatabaseContextType | null>(null);
+const WebViewDatabaseContext = createContext<WebViewDatabaseContextValue | null>(null);
 
 export interface WebViewDatabaseProviderProps {
-  children: ReactNode;
-  fallbackComponent?: React.ComponentType<{ error: string }>;
-  loadingComponent?: React.ComponentType;
+  children: React.ReactNode;
+  timeout?: number;
+  retryAttempts?: number;
+  retryDelay?: number;
 }
 
 /**
- * WebView Database Provider
- *
- * Initializes WebView bridge and provides database context to child components
+ * WebView Database Provider using WebView bridge instead of sql.js
+ * Maintains identical interface and state management patterns as DatabaseProvider
  */
 export function WebViewDatabaseProvider({
   children,
-  fallbackComponent: FallbackComponent,
-  loadingComponent: LoadingComponent
+  timeout = 10000,
+  retryAttempts = 3,
+  retryDelay = 1000,
 }: WebViewDatabaseProviderProps) {
   const [db, setDb] = useState<WebViewClient | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Initialize client with retry logic
   useEffect(() => {
-    let mounted = true;
+    let isCancelled = false;
 
-    const initializeWebViewDatabase = async () => {
+    const initializeClient = async (attempt: number = 1) => {
+      if (isCancelled) return;
+
+      setLoading(true);
+      setError(null);
+
       try {
-        setLoading(true);
-        setError(null);
+        console.log(`Connecting to WebView bridge (attempt ${attempt}/${retryAttempts})`);
 
-        // Verify WebView environment
-        if (!Environment.isWebView()) {
-          throw new Error('WebView environment not detected');
+        if (!isWebViewEnvironment()) {
+          throw new Error('WebView environment not available - ensure running in native app');
         }
 
-        // Wait for bridge to be ready
-        await webViewBridge.waitForReady();
+        const client = await createWebViewClient(timeout);
 
-        // Initialize database client
-        await webViewClient.initialize();
-
-        if (!mounted) return;
-
-        setDb(webViewClient);
-        setLoading(false);
-
+        if (!isCancelled) {
+          setDb(client);
+          console.log('WebView client connected successfully');
+        }
       } catch (err) {
-        if (!mounted) return;
+        console.error(`WebView connection attempt ${attempt} failed:`, err);
 
-        const error = err instanceof Error ? err : new Error('WebView initialization failed');
-        setError(error);
-        setLoading(false);
-        console.error('WebView database initialization failed:', err);
+        if (!isCancelled) {
+          if (attempt < retryAttempts) {
+            // Retry after delay
+            setTimeout(() => {
+              if (!isCancelled) {
+                initializeClient(attempt + 1);
+              }
+            }, retryDelay * attempt); // Exponential backoff
+            return; // Don't set loading to false yet
+          } else {
+            // All retry attempts failed
+            setError(err as Error);
+          }
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
-    initializeWebViewDatabase();
+    initializeClient();
 
     return () => {
-      mounted = false;
+      isCancelled = true;
     };
-  }, []);
+  }, [timeout, retryAttempts, retryDelay]);
 
-  // Execute method matching DatabaseContext interface
-  const execute = React.useCallback(async <T = Record<string, unknown>>(
+  /**
+   * Execute SQL query - identical interface to sql.js DatabaseContext
+   */
+  const execute = useCallback(async <T = Record<string, unknown>>(
     sql: string,
     params?: unknown[]
   ): Promise<T[]> => {
     if (!db) {
-      throw new Error('WebView database not initialized');
+      throw new Error('WebView database client not initialized');
     }
 
-    const result = await db.execute(sql, params);
-    return result as T[];
+    try {
+      return await db.execute<T>(sql, params);
+    } catch (err) {
+      console.error('WebView database execution error:', sql, params, err);
+
+      // Check if error indicates disconnection
+      const errorMessage = (err as Error).message.toLowerCase();
+      if (errorMessage.includes('timeout') || errorMessage.includes('bridge') || errorMessage.includes('webview')) {
+        setError(err as Error);
+      }
+
+      throw err;
+    }
   }, [db]);
 
-  // Save method (no-op for WebView)
-  const save = React.useCallback(async () => {
-    // WebView automatically persists through native bridge
-    return Promise.resolve();
-  }, []);
-
-  // Reset method
-  const reset = React.useCallback(async () => {
+  /**
+   * Save operation - no-op for compatibility (native handles persistence)
+   */
+  const save = useCallback(async () => {
     if (!db) {
-      throw new Error('WebView database not initialized');
+      throw new Error('WebView database client not initialized');
+    }
+
+    await db.save();
+  }, [db]);
+
+  /**
+   * Reset database - calls WebView reset and reinitializes client
+   */
+  const reset = useCallback(async () => {
+    if (!db) {
+      throw new Error('WebView database client not initialized');
     }
 
     setLoading(true);
+    setError(null);
+
     try {
       await db.reset();
-      // Re-initialize after reset
-      await db.initialize();
+      console.log('WebView database reset successfully');
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Reset failed'));
+      console.error('WebView database reset error:', err);
+      setError(err as Error);
+
+      // Try to reconnect after failed reset
+      try {
+        const newClient = await createWebViewClient(timeout);
+        setDb(newClient);
+        console.log('Reconnected to WebView bridge after reset failure');
+      } catch (reconnectErr) {
+        console.error('Failed to reconnect after reset failure:', reconnectErr);
+        setError(reconnectErr as Error);
+      }
     } finally {
       setLoading(false);
     }
+  }, [db, timeout]);
+
+  /**
+   * Check if database client is connected
+   */
+  const isConnected = useCallback(() => {
+    return db ? db.isConnected() : false;
   }, [db]);
 
-  // Context value matching exact interface
-  const contextValue: WebViewDatabaseContextType = {
+  /**
+   * Get connection status for monitoring
+   */
+  const getConnectionStatus = useCallback(() => {
+    return db ? db.getConnectionStatus() : { isConnected: false };
+  }, [db]);
+
+  const contextValue: WebViewDatabaseContextValue = {
     db,
     loading,
     error,
     execute,
     save,
-    reset
+    reset,
+    isConnected,
+    getConnectionStatus,
   };
-
-  // Show loading component while initializing
-  if (loading && LoadingComponent) {
-    return <LoadingComponent />;
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="text-gray-600">Initializing WebView Database...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error component if initialization failed
-  if (error) {
-    if (FallbackComponent) {
-      return <FallbackComponent error={error} />;
-    }
-
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4 p-6 border border-red-300 rounded-lg bg-red-50">
-          <div className="text-red-600">
-            <svg className="h-8 w-8 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <h3 className="text-lg font-semibold">WebView Database Error</h3>
-          </div>
-          <p className="text-red-700">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <WebViewDatabaseContext.Provider value={contextValue}>
@@ -180,91 +203,62 @@ export function WebViewDatabaseProvider({
 }
 
 /**
- * Hook to use WebView database context
+ * Hook to access WebView database context
+ * Identical interface to useDatabase() for drop-in replacement
  */
-export function useWebViewDatabase(): WebViewDatabaseContextType {
+export function useWebViewDatabase(): WebViewDatabaseContextValue {
   const context = useContext(WebViewDatabaseContext);
-
   if (!context) {
     throw new Error('useWebViewDatabase must be used within WebViewDatabaseProvider');
   }
-
   return context;
 }
 
 /**
- * Hook that mimics useSQLiteQuery for compatibility
+ * Hook that provides the same interface as useDatabase() from DatabaseContext
+ * Allows components to use WebView database transparently
  */
-export function useWebViewQuery(sql: string, params: any[] = [], dependencies: any[] = []) {
-  const { execute } = useWebViewDatabase();
-  const [data, setData] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useDatabaseCompat(): {
+  db: WebViewClient | null;
+  loading: boolean;
+  error: Error | null;
+  execute: <T = Record<string, unknown>>(sql: string, params?: unknown[]) => Promise<T[]>;
+  save: () => Promise<void>;
+  reset: () => Promise<void>;
+} {
+  const { db, loading, error, execute, save, reset } = useWebViewDatabase();
 
-  useEffect(() => {
-    let mounted = true;
-
-    const runQuery = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-
-        const result = await execute(sql, params);
-
-        if (mounted) {
-          setData(result);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (mounted) {
-          const errorMessage = err instanceof Error ? err.message : 'Query failed';
-          setError(errorMessage);
-          setIsLoading(false);
-        }
-      }
-    };
-
-    runQuery();
-
-    return () => {
-      mounted = false;
-    };
-  }, [sql, JSON.stringify(params), ...dependencies]);
-
-  return { data, isLoading, error };
+  return {
+    db,
+    loading,
+    error,
+    execute,
+    save,
+    reset,
+  };
 }
 
 /**
- * Environment detection hook
+ * Utility component to display connection status for debugging
  */
-export function useWebViewEnvironment() {
-  const [environment, setEnvironment] = useState(() => Environment.info());
+export function WebViewDatabaseStatus() {
+  const { db, loading, error } = useWebViewDatabase();
 
-  useEffect(() => {
-    // Update environment info when bridge becomes ready
-    const handleBridgeReady = () => {
-      setEnvironment(Environment.info());
-    };
+  if (loading) {
+    return <div className="text-sm text-gray-500">Connecting to WebView bridge...</div>;
+  }
 
-    window.addEventListener('isometry-bridge-ready', handleBridgeReady);
+  if (error) {
+    return (
+      <div className="text-sm text-red-500">
+        WebView Bridge Error: {error.message}
+      </div>
+    );
+  }
 
-    return () => {
-      window.removeEventListener('isometry-bridge-ready', handleBridgeReady);
-    };
-  }, []);
+  if (db?.isConnected()) {
+    return <div className="text-sm text-green-500">WebView Bridge Connected</div>;
+  }
 
-  return environment;
-}
-
-/**
- * Component for displaying environment information
- */
-export function WebViewEnvironmentInfo() {
-  const environment = useWebViewEnvironment();
-
-  return (
-    <div className="text-xs text-gray-500 font-mono">
-      {environment.transport} on {environment.platform} v{environment.version}
-    </div>
-  );
+  return <div className="text-sm text-yellow-500">WebView Bridge Status Unknown</div>;
 }
