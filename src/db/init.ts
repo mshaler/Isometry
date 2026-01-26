@@ -1,17 +1,14 @@
-// MIGRATION COMPLETED: This file previously handled sql.js initialization
-// All database operations now use native GRDB through WebView bridge or HTTP API
+// REMOVED: This file previously handled sql.js initialization
+// SQL.js has been completely removed from the codebase
 //
-// The DatabaseContext automatically selects the appropriate provider based on environment:
+// The DatabaseProvider component automatically selects the appropriate provider:
 // - WebView: MessageHandler bridge to native IsometryDatabase
 // - Development: HTTP API to native server
-// - Legacy: No longer used (sql.js removed)
 
-console.warn('src/db/init.ts: sql.js initialization deprecated. Use DatabaseContext with native providers.');
-
-// Legacy exports for backward compatibility during transition
+// Legacy exports throw errors to prevent usage
 export async function initDatabase(): Promise<never> {
   throw new Error(
-    'sql.js initialization deprecated. Use DatabaseContext with automatic provider selection.'
+    'Legacy sql.js initialization has been removed. Use DatabaseProvider component for automatic database provider selection.'
   );
 }
 

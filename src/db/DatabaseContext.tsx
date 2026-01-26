@@ -24,127 +24,8 @@ interface DatabaseContextValue {
 
 const DatabaseContext = createContext<DatabaseContextValue | null>(null);
 
-// DEPRECATED: SQL.js Database Provider (removed - migration to native completed)
-// This provider has been replaced by native database providers
-
-// Legacy compatibility provider - redirects to native API
-function LegacyCompatibilityProvider({ children }: { children: React.ReactNode }) {
-  const [db, setDb] = useState<LegacyDatabase | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const initializeDatabase = async () => {
-      try {
-        // Connect to native API
-        const isNativeAvailable = await nativeAPI.checkAvailability();
-
-        if (isNativeAvailable) {
-          console.log('✅ Connected to native API server');
-          const nativeDb = nativeAPI.createCompatibleDatabase();
-          setDb(nativeDb);
-        } else {
-          throw new Error('Native API not available and sql.js fallback removed');
-        }
-      } catch (err) {
-        console.error('Database initialization failed:', err);
-        setError(err as Error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeDatabase();
-  }, []);
-
-  const execute = useCallback(<T = Record<string, unknown>>(
-    sql: string,
-    params?: unknown[]
-  ): T[] => {
-    if (!db) throw new Error('Database not initialized');
-
-    const startTime = performance.now();
-    const provider = 'native-api';
-
-    try {
-      const result = db.exec(sql, params);
-      if (result.length === 0) {
-        const duration = performance.now() - startTime;
-        performanceMonitor.logQueryPerformance(sql, duration, provider, {
-          rowCount: 0,
-          success: true
-        });
-        return [];
-      }
-
-      const { columns, values } = result[0];
-      const resultData = values.map((row) => {
-        const obj: Record<string, unknown> = {};
-        columns.forEach((col, i) => {
-          obj[col] = row[i];
-        });
-        return obj as T;
-      });
-
-      const duration = performance.now() - startTime;
-      performanceMonitor.logQueryPerformance(sql, duration, provider, {
-        rowCount: resultData.length,
-        success: true,
-        nativeAPI: true
-      });
-
-      return resultData;
-    } catch (err) {
-      const duration = performance.now() - startTime;
-      performanceMonitor.logQueryPerformance(sql, duration, provider, {
-        success: false,
-        error: err instanceof Error ? err.message : String(err),
-        nativeAPI: true
-      });
-      console.error('SQL Error:', sql, params, err);
-      throw err;
-    }
-  }, [db]);
-
-  const save = useCallback(async () => {
-    // Native API handles persistence automatically
-    console.log('Native API: Auto-saved');
-  }, []);
-
-  const reset = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Database reset must be done through native provider
-      throw new Error('Database reset not supported in legacy compatibility mode');
-    } catch (err) {
-      setError(err as Error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return (
-    <DatabaseContext.Provider value={{
-      db,
-      loading,
-      error,
-      execute,
-      save,
-      reset
-    }}>
-      {children}
-    </DatabaseContext.Provider>
-  );
-}
-
-// Legacy database hook for compatibility mode
-function useLegacyDatabase(): DatabaseContextValue {
-  const context = useContext(DatabaseContext);
-  if (!context) {
-    throw new Error('useLegacyDatabase must be used within LegacyCompatibilityProvider');
-  }
-  return context;
-}
+// DEPRECATED: SQL.js Database Provider has been completely removed
+// Use NativeDatabaseProvider or WebViewDatabaseProvider instead
 
 /**
  * Smart Database Provider that uses EnvironmentContext for provider selection
@@ -196,12 +77,12 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
 
     case DatabaseMode.SQLJS:
     default:
-      // Legacy compatibility mode - native API only (sql.js removed)
-      console.log('Using Legacy Compatibility Provider (native API only)');
+      // Fallback to HTTP API - sql.js is no longer supported
+      console.log('SQL.js mode no longer supported - using HTTP API');
       return (
-        <LegacyCompatibilityProvider>
+        <NativeDatabaseProvider>
           {children}
-        </LegacyCompatibilityProvider>
+        </NativeDatabaseProvider>
       );
   }
 }
@@ -234,6 +115,7 @@ export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue
 
     case DatabaseMode.SQLJS:
     default:
-      return useLegacyDatabase();
+      // SQL.js mode no longer supported - fallback to native API
+      return useNativeDatabase();
   }
 }

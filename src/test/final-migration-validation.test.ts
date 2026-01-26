@@ -80,7 +80,7 @@ class FinalMigrationValidator {
         console.error('❌ Legacy initDatabase should throw error');
         return false;
       } catch (error) {
-        if (!error.message.includes('sql.js initialization deprecated')) {
+        if (!error.message.includes('Legacy sql.js initialization has been removed')) {
           console.error('❌ Unexpected error from legacy initDatabase:', error);
           return false;
         }
@@ -353,12 +353,12 @@ describe('Final Migration Validation', () => {
   });
 
   describe('SQL.js Removal Validation', () => {
-    it.skip('should confirm sql.js is completely removed from dependencies (legacy cleanup pending)', async () => {
+    it('should confirm sql.js is completely removed from dependencies', async () => {
       const result = await validator.validateSqlJsRemoval();
       expect(result).toBe(true);
     });
 
-    it.skip('should confirm no sql.js imports remain in codebase (legacy cleanup pending)', async () => {
+    it('should confirm no sql.js imports remain in codebase', async () => {
       const sqlJsRefs = await validator['searchForSqlJsReferences']();
       expect(sqlJsRefs).toHaveLength(0);
     });
@@ -418,7 +418,7 @@ describe('Final Migration Validation', () => {
   });
 
   describe('Overall Migration Success', () => {
-    it.skip('should meet all migration success criteria (legacy cleanup pending)', async () => {
+    it('should meet all migration success criteria', async () => {
       const criteria = await validator.generateMigrationSuccessReport();
 
       expect(criteria.sqlJsRemoved).toBe(true);
@@ -429,7 +429,7 @@ describe('Final Migration Validation', () => {
       expect(criteria.documentationComplete).toBe(true);
     });
 
-    it.skip('should approve production deployment (legacy cleanup pending)', async () => {
+    it('should approve production deployment', async () => {
       const criteria = await validator.generateMigrationSuccessReport();
       const allCriteriaMet = Object.values(criteria).every(Boolean);
 

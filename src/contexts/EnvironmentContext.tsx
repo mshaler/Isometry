@@ -2,14 +2,13 @@
  * Environment Context
  *
  * Provides comprehensive environment detection and automatic database provider selection
- * Handles WebView, HTTP API, and sql.js fallbacks seamlessly
+ * Handles WebView and HTTP API providers
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Environment } from '../utils/webview-bridge';
 
 export enum DatabaseMode {
-  SQLJS = 'sql.js',
   HTTP_API = 'http-api',
   WEBVIEW_BRIDGE = 'webview-bridge',
   AUTO = 'auto'
@@ -59,12 +58,12 @@ export function EnvironmentProvider({
   enableAutoDetection = true
 }: EnvironmentProviderProps) {
   const [environment, setEnvironment] = useState<EnvironmentInfo>({
-    mode: DatabaseMode.SQLJS,
-    capabilities: getCapabilities(DatabaseMode.SQLJS),
+    mode: DatabaseMode.HTTP_API,
+    capabilities: getCapabilities(DatabaseMode.HTTP_API),
     platform: 'browser',
     version: '1.0',
     isNative: false,
-    performanceProfile: 'slow'
+    performanceProfile: 'medium'
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,13 +90,13 @@ export function EnvironmentProvider({
         return DatabaseMode.HTTP_API;
       }
 
-      // Fall back to sql.js (lowest priority)
-      console.log('Environment: Falling back to sql.js');
-      return DatabaseMode.SQLJS;
+      // Fall back to HTTP API (sql.js no longer supported)
+      console.log('Environment: Falling back to HTTP API');
+      return DatabaseMode.HTTP_API;
 
     } catch (error) {
       console.warn('Environment detection failed:', error);
-      return DatabaseMode.SQLJS;
+      return DatabaseMode.HTTP_API;
     }
   };
 
@@ -167,15 +166,14 @@ export function EnvironmentProvider({
           hasCloudSync: true
         };
 
-      case DatabaseMode.SQLJS:
       default:
         return {
           canReadFiles: false,
           canWriteFiles: false,
           hasRealTimeSync: false,
-          supportsOffline: true,
+          supportsOffline: false,
           hasNativeExport: false,
-          hasCloudSync: false
+          hasCloudSync: true
         };
     }
   }
@@ -188,10 +186,8 @@ export function EnvironmentProvider({
       case DatabaseMode.WEBVIEW_BRIDGE:
         return 'fast';
       case DatabaseMode.HTTP_API:
-        return 'medium';
-      case DatabaseMode.SQLJS:
       default:
-        return 'slow';
+        return 'medium';
     }
   }
 
@@ -234,8 +230,8 @@ export function EnvironmentProvider({
       setError(errorMessage);
       console.error('Environment initialization failed:', err);
 
-      // Fall back to sql.js on error
-      setEnvironment(createEnvironmentInfo(DatabaseMode.SQLJS));
+      // Fall back to HTTP API on error
+      setEnvironment(createEnvironmentInfo(DatabaseMode.HTTP_API));
     } finally {
       setIsLoading(false);
     }
@@ -267,10 +263,8 @@ export function EnvironmentProvider({
       case DatabaseMode.WEBVIEW_BRIDGE:
         return testWebViewBridge();
       case DatabaseMode.HTTP_API:
-        return testHTTPAPIConnection();
-      case DatabaseMode.SQLJS:
       default:
-        return true; // sql.js always works
+        return testHTTPAPIConnection();
     }
   };
 
