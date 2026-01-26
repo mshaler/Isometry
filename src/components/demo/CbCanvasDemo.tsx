@@ -4,8 +4,17 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cbCanvas } from '@/d3/components/cb-canvas';
 import { cbCard } from '@/d3/components/cb-card';
 import { nodeToCardValue } from '@/types/lpg';
-import type { BackgroundPattern } from '@/types/lpg';
+import type { BackgroundPattern, CardValue } from '@/types/lpg';
 import { sampleNodes } from './data/sampleData';
+
+// ============================================
+// Types for D3 Component Integration
+// ============================================
+
+/** Card renderer interface for D3 card component calls */
+interface CardRenderer {
+  (selection: d3.Selection<SVGGElement, CardValue, null, undefined>): void;
+}
 
 export function CbCanvasDemo() {
   const { theme } = useTheme();
@@ -60,7 +69,7 @@ export function CbCanvasDemo() {
           .attr('transform', `translate(${x}, ${y})`)
           .datum(data);
 
-        cardGroup.call(card as any);
+        cardGroup.call(card as CardRenderer);
       });
     }
 
