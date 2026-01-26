@@ -33,7 +33,7 @@ export type D3ElementSelection<TElement extends d3.BaseType, TDatum> =
 
 /** Base chart data interface */
 export interface ChartDatum {
-  [key: string]: string | number | Date | boolean | null | undefined;
+  [key: string]: string | number | Date | boolean | null | undefined | unknown;
 }
 
 /** Network node data */
@@ -147,11 +147,11 @@ export type D3TouchEventHandler<TElement extends d3.BaseType, TDatum> =
   (this: TElement, _event: TouchEvent, d: TDatum) => void;
 
 /** Drag event handler */
-export type D3DragEventHandler<TElement extends d3.BaseType, TDatum> =
+export type D3DragEventHandler<TElement extends Element, TDatum> =
   (this: TElement, _event: d3.D3DragEvent<TElement, TDatum, unknown>, d: TDatum) => void;
 
 /** Zoom event handler */
-export type D3ZoomEventHandler<TElement extends d3.BaseType> =
+export type D3ZoomEventHandler<TElement extends Element> =
   (this: TElement, _event: d3.D3ZoomEvent<TElement, unknown>) => void;
 
 // ============================================================================
@@ -211,11 +211,11 @@ export interface D3TreemapNode<T = TreemapDatum> extends d3.HierarchyRectangular
 // ============================================================================
 
 /** Drag behavior type */
-export type D3DragBehavior<TElement extends d3.BaseType, TDatum> =
+export type D3DragBehavior<TElement extends Element, TDatum> =
   d3.DragBehavior<TElement, TDatum, unknown>;
 
 /** Zoom behavior type */
-export type D3ZoomBehavior<TElement extends d3.BaseType> =
+export type D3ZoomBehavior<TElement extends Element> =
   d3.ZoomBehavior<TElement, unknown>;
 
 // ============================================================================
