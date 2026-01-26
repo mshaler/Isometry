@@ -3,6 +3,34 @@ import mammoth from 'mammoth';
 import JSZip from 'jszip';
 import type { Node, NodeType } from '../types/node';
 
+// Type definitions for document processing
+interface DocumentStyle {
+  fontSize?: number;
+  fontFamily?: string;
+  color?: string;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+interface ParsedElement {
+  type: string;
+  content: string;
+  style?: DocumentStyle;
+  children?: ParsedElement[];
+  styleId?: string;
+  styleName?: string;
+  alignment?: {
+    bold?: boolean;
+    italic?: boolean;
+  };
+  font?: {
+    name?: string;
+    size?: number;
+  };
+  color?: string;
+}
+
+
 export interface OfficeImportOptions {
   nodeType?: string;
   folder?: string;
@@ -295,10 +323,10 @@ export class OfficeDocumentProcessor {
         "i => em",
         "u => u"
       ] : [],
-      transformDocument: preserveFormatting ? (mammoth as any).transforms.paragraph((element: any) => {
+      transformDocument: preserveFormatting ? (mammoth as unknown as { transforms: { paragraph: (fn: (element: ParsedElement) => ParsedElement) => unknown } }).transforms.paragraph((element: ParsedElement) => {
         // Extract style information from paragraph elements
         if (element.styleId && element.styleName) {
-          const styleInfo: any = {
+          const styleInfo: DocumentStyle = {
             bold: element.alignment?.bold || false,
             italic: element.alignment?.italic || false
           };
@@ -632,7 +660,7 @@ export class OfficeDocumentProcessor {
   /**
    * Extract style information from HTML content
    */
-  private extractStylesFromHtml(html: string, styles: Record<string, any>): void {
+  private extractStylesFromHtml(html: string, styles: Record<string, DocumentStyle>): void {
     // Parse HTML to extract inline styles and class-based styles
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -664,8 +692,8 @@ export class OfficeDocumentProcessor {
   /**
    * Parse inline CSS style string into style object
    */
-  private parseInlineStyle(styleStr: string): any {
-    const style: any = {};
+  private parseInlineStyle(styleStr: string): DocumentStyle {
+    const style: DocumentStyle = {};
     const declarations = styleStr.split(';').filter(d => d.trim());
 
     declarations.forEach(decl => {
@@ -697,8 +725,8 @@ export class OfficeDocumentProcessor {
   /**
    * Get default style for HTML elements
    */
-  private getDefaultStyleForElement(tagName: string, className?: string): any {
-    const baseStyles: Record<string, any> = {
+  private getDefaultStyleForElement(tagName: string, className?: string): DocumentStyle {
+    const baseStyles: Record<string, DocumentStyle> = {
       'h1': { fontSize: 24, bold: true },
       'h2': { fontSize: 20, bold: true },
       'h3': { fontSize: 18, bold: true },

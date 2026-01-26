@@ -15,6 +15,21 @@ export interface ConnectionStatus {
   transport: 'webview' | 'fallback';
 }
 
+// Type definition for WebView bridge
+interface WebViewBridge {
+  postMessage: (namespace: string, method: string, data: unknown) => Promise<unknown>;
+  getHealthStatus: () => {
+    isConnected: boolean;
+    pendingRequests: number;
+    environment: {
+      isNative: boolean;
+      platform: string;
+      version: string;
+      transport: string;
+    };
+  };
+}
+
 /**
  * WebView client for database operations through MessageHandler bridge
  * Maintains exact same interface as sql.js Database for drop-in compatibility
@@ -22,7 +37,7 @@ export interface ConnectionStatus {
 export class WebViewClient {
   private connected: boolean = false;
   private timeout: number;
-  private bridge: any = null;
+  private bridge: WebViewBridge | null = null;
 
   constructor(timeout: number = 10000) {
     this.timeout = timeout;

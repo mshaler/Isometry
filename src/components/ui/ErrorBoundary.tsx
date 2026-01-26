@@ -1,6 +1,25 @@
 import { Component, ReactNode, ErrorInfo } from 'react';
 import { AlertTriangle, RefreshCw, Bug, ChevronDown, ChevronUp } from 'lucide-react';
 
+// Type definitions for global error reporting
+interface ErrorReportingData {
+  error: Error;
+  errorInfo?: ErrorInfo;
+  level?: string;
+  name?: string;
+  retryCount: number;
+}
+
+interface GlobalErrorReporting {
+  reportError: (data: ErrorReportingData) => void;
+}
+
+declare global {
+  interface Window {
+    errorReporting?: GlobalErrorReporting;
+  }
+}
+
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
@@ -51,8 +70,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     }
 
     // Report to global error service if available
-    if (typeof window !== 'undefined' && (window as any).errorReporting) {
-      (window as any).errorReporting.reportError({
+    if (typeof window !== 'undefined' && window.errorReporting) {
+      window.errorReporting.reportError({
         error,
         errorInfo,
         level: this.props.level,

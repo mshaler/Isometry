@@ -76,7 +76,7 @@ class ErrorReportingService {
     });
 
     // Make service available globally for error boundaries
-    (window as any).errorReporting = this;
+    (window as unknown as { errorReporting: ErrorReportingService }).errorReporting = this;
   }
 
   public reportError(params: {
