@@ -1,7 +1,7 @@
 # Isometry Notebook Sidecar Implementation Roadmap
 
 **Project:** Isometry Notebook Sidecar
-**Version:** v2.0 (Extended with Native Integration + SQL.js Migration + Error Elimination)
+**Version:** v2.0 (Extended with Native Integration + SQL.js Migration + Production Readiness)
 **Target:** Production-ready native iOS/macOS apps with React prototype foundation and native API bridge
 **Approach:** Multi-milestone incremental delivery
 
@@ -13,7 +13,8 @@
 - 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (in progress)
 - 🚧 **v2.1 SQL.js Migration** - Phases 7.1-7.3 (planned)
 - 📋 **v2.2 Database Versioning & ETL Operations** - Phases 8.1-8.4 (retrofitting milestone)
-- 🆕 **v2.3 Error Elimination** - Phase 9 (codebase cleanup)
+- 🏗️ **v2.3 Production Readiness Infrastructure** - Phases 9.1-9.4 (App Store submission capability)
+- 🆕 **v2.4 Error Elimination** - Phase 10 (codebase cleanup)
 
 ## Milestone Overview
 
@@ -27,7 +28,9 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 
 **v2.2 Goal (Retrofitting):** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
 
-**v2.3 Goal (Error Elimination):** Achieve zero errors and warnings across all platforms by eliminating sql.js references, fixing TypeScript issues, resolving Swift concurrency warnings, and establishing comprehensive type safety.
+**v2.3 Goal (Production Readiness):** Establish comprehensive App Store submission capability through systematic verification of production readiness infrastructure including compliance validation, CloudKit production deployment, performance benchmarking, and beta testing frameworks.
+
+**v2.4 Goal (Error Elimination):** Achieve zero errors and warnings across all platforms by eliminating sql.js references, fixing TypeScript issues, resolving Swift concurrency warnings, and establishing comprehensive type safety.
 
 ---
 
@@ -314,11 +317,67 @@ Plans:
 3. Cross-system integration verified for production readiness
 4. End-to-end scenarios confirmed with comprehensive testing
 
-### 🆕 v2.3 Error Elimination (New)
+### 🏗️ v2.3 Production Readiness Infrastructure (New)
+
+**Milestone Goal:** Establish comprehensive App Store submission capability through systematic verification of production readiness infrastructure including compliance validation, CloudKit production deployment, performance benchmarking, and beta testing frameworks.
+
+#### Phase 9.1: Requirements & Foundation Verification (Planned)
+**Goal:** Establish requirements traceability and verification infrastructure for production readiness systems
+**Dependencies:** None (retrofitting existing implementations)
+**Requirements:** All 14 production readiness requirements (COMP-01 through UI-02)
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. Requirements traceability matrix mapping 14 requirements to 14 Swift files
+2. Verification infrastructure operational for App Store compliance testing
+3. Performance benchmarking framework ready for production validation
+4. Foundation established for systematic verification in phases 9.2-9.4
+
+Plans:
+- [ ] 09.1-01-PLAN.md — Production Readiness Requirements Traceability Matrix and verification infrastructure setup
+- [ ] 09.1-02-PLAN.md — Integration testing framework and performance baseline metrics establishment
+
+#### Phase 9.2: Core Compliance & Performance Verification (Planned)
+**Goal:** Verify App Store compliance and performance validation systems
+**Dependencies:** Phase 9.1 (requires foundation verification)
+**Requirements:** COMP-01, COMP-02, COMP-03, COMP-04, PERF-01, PERF-02
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. App Store compliance verification (privacy, accessibility, content guidelines) validated
+2. Performance benchmarking (60fps, memory, battery) achieved on target devices
+3. Privacy manifest and accessibility standards compliance verified
+4. Technical requirements and stability validation completed
+
+#### Phase 9.3: CloudKit & Beta Infrastructure Verification (Planned)
+**Goal:** Verify CloudKit production systems and beta testing infrastructure
+**Dependencies:** Phase 9.2 (requires compliance and performance verification)
+**Requirements:** CLOUD-01, CLOUD-02, CLOUD-03, BETA-01, BETA-02
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. CloudKit production container configuration validated
+2. Beta testing infrastructure operational for external users
+3. Feedback collection systems functional and categorizing input
+4. Schema deployment and sync performance verified across environments
+
+#### Phase 9.4: UI & Reporting Integration Validation (Planned)
+**Goal:** Verify user interfaces and complete production readiness reporting
+**Dependencies:** Phase 9.3 (requires CloudKit and beta verification)
+**Requirements:** PERF-03, BETA-03, REPORT-01, REPORT-02, UI-01, UI-02
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. All production verification UI components verified and functional
+2. Comprehensive reporting systems generating actionable insights
+3. Beta user experience validated and optimized
+4. Stakeholder reports ready for App Store submission
+
+### 🆕 v2.4 Error Elimination (New)
 
 **Milestone Goal:** Achieve zero errors and warnings across all platforms by eliminating sql.js references, fixing TypeScript issues, resolving Swift concurrency warnings, and establishing comprehensive type safety.
 
-#### Phase 9: Error Elimination
+#### Phase 10: Error Elimination
 **Goal:** Complete codebase cleanup to achieve zero errors and warnings
 **Dependencies:** None (cleanup can run independently)
 **Plans:** 5 plans in 4 waves
@@ -332,11 +391,11 @@ Plans:
 6. D3 operations have comprehensive type safety
 
 Plans:
-- [ ] 09-01-PLAN.md — SQL.js Reference Elimination (Wave 1)
-- [ ] 09-02-PLAN.md — TypeScript Test Configuration (Wave 1)
-- [ ] 09-03-PLAN.md — D3 Type Safety Implementation (Wave 2)
-- [ ] 09-04-PLAN.md — Swift Actor Isolation Fixes (Wave 3)
-- [ ] 09-05-PLAN.md — Final Lint Warning Cleanup (Wave 4)
+- [ ] 10-01-PLAN.md — SQL.js Reference Elimination (Wave 1)
+- [ ] 10-02-PLAN.md — TypeScript Test Configuration (Wave 1)
+- [ ] 10-03-PLAN.md — D3 Type Safety Implementation (Wave 2)
+- [ ] 10-04-PLAN.md — Swift Actor Isolation Fixes (Wave 3)
+- [ ] 10-05-PLAN.md — Final Lint Warning Cleanup (Wave 4)
 
 ## Dependencies
 
@@ -352,13 +411,20 @@ Plans:
 - **React prototype** providing UI patterns and workflows
 - **Performance infrastructure** for migration validation
 
+### v2.3 Production Readiness External Dependencies
+- Apple Developer Account with production access
+- CloudKit production container approval
+- TestFlight beta testing approval
+- Performance testing on physical devices
+
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
 v2.0: Phase 6.1 → Phase 6.2 → Phase 6.3 → Phase 6.4 (IN PROGRESS)
 v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
 v2.2: Phase 8.1 → Phase 8.2 → Phase 8.3 → Phase 8.4 (RETROFITTING)
-v2.3: Phase 9 (CLEANUP - INDEPENDENT)
+v2.3: Phase 9.1 → Phase 9.2 → Phase 9.3 → Phase 9.4 (PRODUCTION READINESS)
+v2.4: Phase 10 (CLEANUP - INDEPENDENT)
 ```
 
 ## Progress
@@ -367,7 +433,8 @@ v2.3: Phase 9 (CLEANUP - INDEPENDENT)
 Native: 6.1 → 6.2 → 6.3 → 6.4
 Migration: 7.1 → 7.2 → 7.3
 Retrofitting: 8.1 → 8.2 → 8.3 → 8.4
-Error Elimination: 9 (independent)
+Production Readiness: 9.1 → 9.2 → 9.3 → 9.4
+Error Elimination: 10 (independent)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -386,19 +453,23 @@ Error Elimination: 9 (independent)
 | 8.2. Core Versioning | v2.2 | 2/2 | Complete | 2026-01-26 |
 | 8.3. ETL Integration | v2.2 | 2/2 | Complete | 2026-01-26 |
 | 8.4. UI Validation | v2.2 | 0/4 | Planned | - |
-| 9. Error Elimination | v2.3 | 0/5 | Planned | - |
+| 9.1. Production Readiness Foundation | v2.3 | 2/2 | Planned | - |
+| 9.2. Compliance & Performance | v2.3 | 0/2 | Planned | - |
+| 9.3. CloudKit & Beta Infrastructure | v2.3 | 0/2 | Planned | - |
+| 9.4. UI & Reporting Integration | v2.3 | 0/2 | Planned | - |
+| 10. Error Elimination | v2.4 | 0/5 | Planned | - |
 
 ## Architecture Integration Summary
 
-### v1.0 → v2.0 → v2.1 → v2.3 Evolution
+### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Error-Free
-====================    =======================    ========================    =================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           Zero errors/warnings
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Type-safe D3
-React Components        SwiftUI Views              React + SwiftUI Hybrid      Clean TypeScript
-Browser Environment     Native iOS/macOS           WebView + Native            Swift concurrency-safe
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free
+====================    =======================    ========================    =====================      =================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript
+Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe
 ```
 
 ### Migration Data Flow
@@ -414,16 +485,17 @@ IsometryDatabase (Swift)
 Production Backend
 ```
 
-### Performance Targets (v2.3 vs v1.0 vs v2.0)
+### Performance Targets (v2.4 vs v1.0 vs v2.0)
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Clean |
-|--------|-------------|-------------|-------------|------------|
-| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps+ |
-| **Memory** | Baseline | -50% | -40% | -45% |
-| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds |
-| **Battery** | Baseline | +25% | +20% | +25% |
-| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | CloudKit sync |
-| **Code Quality** | 345 warnings | N/A | 345 warnings | 0 warnings |
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean |
+|--------|-------------|-------------|-------------|-----------------|------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ |
+| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds |
+| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit |
+| **Code Quality** | 345 warnings | N/A | 345 warnings | App Store Ready | 0 warnings |
+| **Deployment** | Manual | Manual | Manual | Automated Beta/Prod | Automated |
 
 ---
 
@@ -502,6 +574,30 @@ Production Backend
 
 **v2.1 Coverage:** 12/12 requirements mapped ✓
 
+### v2.3 Production Readiness Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| COMP-01 | Phase 9.2 | ❌ Planned |
+| COMP-02 | Phase 9.2 | ❌ Planned |
+| COMP-03 | Phase 9.2 | ❌ Planned |
+| COMP-04 | Phase 9.2 | ❌ Planned |
+| CLOUD-01 | Phase 9.3 | ❌ Planned |
+| CLOUD-02 | Phase 9.3 | ❌ Planned |
+| CLOUD-03 | Phase 9.3 | ❌ Planned |
+| PERF-01 | Phase 9.2 | ❌ Planned |
+| PERF-02 | Phase 9.2 | ❌ Planned |
+| PERF-03 | Phase 9.4 | ❌ Planned |
+| BETA-01 | Phase 9.3 | ❌ Planned |
+| BETA-02 | Phase 9.3 | ❌ Planned |
+| BETA-03 | Phase 9.4 | ❌ Planned |
+| REPORT-01 | Phase 9.4 | ❌ Planned |
+| REPORT-02 | Phase 9.4 | ❌ Planned |
+| UI-01 | Phase 9.4 | ❌ Planned |
+| UI-02 | Phase 9.4 | ❌ Planned |
+
+**v2.3 Coverage:** 17/17 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -523,14 +619,20 @@ Production Backend
 - Regression testing for UI responsiveness
 - Memory usage and battery consumption tracking
 
+### Production Readiness Strategy
+1. **Phase 9.1**: Establish verification infrastructure and requirements traceability
+2. **Phase 9.2**: Validate App Store compliance and performance standards
+3. **Phase 9.3**: Verify CloudKit production and beta testing infrastructure
+4. **Phase 9.4**: Complete UI validation and stakeholder reporting
+
 ### Error Elimination Strategy
-1. **Phase 9.1-9.2**: Eliminate sql.js references and TypeScript errors (Wave 1)
-2. **Phase 9.3**: Establish comprehensive D3 type safety (Wave 2)
-3. **Phase 9.4**: Resolve Swift concurrency warnings (Wave 3)
-4. **Phase 9.5**: Final lint cleanup for zero warnings (Wave 4)
+1. **Phase 10.1-10.2**: Eliminate sql.js references and TypeScript errors (Wave 1)
+2. **Phase 10.3**: Establish comprehensive D3 type safety (Wave 2)
+3. **Phase 10.4**: Resolve Swift concurrency warnings (Wave 3)
+4. **Phase 10.5**: Final lint cleanup for zero warnings (Wave 4)
 
 ---
 
-**Current step:** Phase 9 planning complete - Ready for comprehensive error elimination.
+**Current step:** Phase 9.1 planning complete - Ready for production readiness infrastructure verification.
 
-**Next step:** `/gsd:execute-phase 9` to eliminate all errors and warnings across the codebase.
+**Next step:** `/gsd:execute-phase 9.1` to establish requirements traceability and verification foundation for App Store submission capability.
