@@ -119,7 +119,7 @@ export function useDragDrop(): UseDragDropResult {
         e.preventDefault();
         const itemId = e.dataTransfer.getData('text/plain');
         if (itemId) {
-          onDrop(itemId, zoneId);
+          _onDrop(itemId, zoneId);
         }
         setDragState({ draggedId: null, hoveredZone: null });
       };
