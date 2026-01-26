@@ -4,16 +4,16 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cbCanvas } from '@/d3/components/cb-canvas';
 import { cbCard } from '@/d3/components/cb-card';
 import { nodeToCardValue } from '@/types/lpg';
-import type { BackgroundPattern } from '@/types/lpg';
+import type { BackgroundPattern, NodeValue } from '@/types/lpg';
 import { sampleNodes } from './data/sampleData';
 
 // ============================================
 // Types for D3 Component Integration
 // ============================================
 
-/** Card renderer interface for D3 card component calls */
+/** Card renderer interface for D3 card component calls - generic selection type for maximum compatibility */
 interface CardRenderer {
-  (selection: d3.Selection<SVGGElement, NodeValue, null, undefined>): void;
+  <T extends Element>(selection: d3.Selection<T, NodeValue, null, undefined>): void;
 }
 
 export function CbCanvasDemo() {
@@ -69,7 +69,7 @@ export function CbCanvasDemo() {
           .attr('transform', `translate(${x}, ${y})`)
           .datum(data);
 
-        cardGroup.call(card as CardRenderer);
+        cardGroup.call(card);
       });
     }
 
