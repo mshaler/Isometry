@@ -6,6 +6,8 @@ import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './contexts/PAFVContext';
 import { Canvas } from './components/Canvas';
 import { UnifiedApp } from './components/UnifiedApp';
+import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { NotificationSystem } from './components/ui/NotificationSystem';
 
 /**
  * Minimal MVP Demo - bypasses all complex dependencies
@@ -16,39 +18,49 @@ function MVPDemo() {
   const [showUnified, setShowUnified] = useState(false);
 
   if (showUnified) {
-    return <UnifiedApp />;
+    return (
+      <ErrorBoundary level="app" name="UnifiedApp">
+        <UnifiedApp />
+        <NotificationSystem />
+      </ErrorBoundary>
+    );
   }
 
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <AppStateProvider>
-          <FilterProvider>
-            <PAFVProvider>
-              <div className="h-screen bg-gray-50">
-                <div className="p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h1 className="text-2xl font-bold mb-2">Isometry MVP Demo</h1>
-                      <p className="text-gray-600">Canvas with mock data - no database dependencies</p>
+    <ErrorBoundary level="app" name="MVPDemo">
+      <BrowserRouter>
+        <ThemeProvider>
+          <AppStateProvider>
+            <FilterProvider>
+              <PAFVProvider>
+                <div className="h-screen bg-gray-50">
+                  <div className="p-4">
+                    <div className="flex justify-between items-center mb-4">
+                      <div>
+                        <h1 className="text-2xl font-bold mb-2">Isometry MVP Demo</h1>
+                        <p className="text-gray-600">Canvas with mock data - no database dependencies</p>
+                      </div>
+                      <button
+                        onClick={() => setShowUnified(true)}
+                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                      >
+                        Test Unified UI
+                      </button>
                     </div>
-                    <button
-                      onClick={() => setShowUnified(true)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                    >
-                      Test Unified UI
-                    </button>
                   </div>
+                  <ErrorBoundary level="feature" name="Canvas">
+                    <div className="h-[calc(100vh-120px)]">
+                      <Canvas />
+                    </div>
+                  </ErrorBoundary>
                 </div>
-                <div className="h-[calc(100vh-120px)]">
-                  <Canvas />
-                </div>
-              </div>
-            </PAFVProvider>
-          </FilterProvider>
-        </AppStateProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+                <NotificationSystem />
+              </PAFVProvider>
+            </FilterProvider>
+          </AppStateProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -14,6 +14,8 @@ import { RightSidebar } from './RightSidebar';
 import { Canvas } from './Canvas';
 import { NavigatorFooter } from './NavigatorFooter';
 import { CommandBar } from './CommandBar';
+import { ErrorBoundary } from './ui/ErrorBoundary';
+import { NotificationSystem } from './ui/NotificationSystem';
 
 /**
  * Unified App Component
@@ -41,34 +43,51 @@ export function UnifiedApp() {
               <PAFVProvider>
               <div className="h-screen flex flex-col bg-gray-50">
                 {/* Toolbar: Menu bar + command buttons */}
-                <Toolbar />
+                <ErrorBoundary level="component" name="Toolbar">
+                  <Toolbar />
+                </ErrorBoundary>
 
                 {/* Navigator: App/View/Dataset selectors */}
-                <Navigator />
+                <ErrorBoundary level="component" name="Navigator">
+                  <Navigator />
+                </ErrorBoundary>
 
                 {/* PAFVNavigator: Drag-drop axis assignment wells */}
-                <PAFVNavigator />
+                <ErrorBoundary level="component" name="PAFVNavigator">
+                  <PAFVNavigator />
+                </ErrorBoundary>
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex min-h-0">
                   {/* Left Sidebar: LATCH filters + Templates */}
-                  <Sidebar />
+                  <ErrorBoundary level="feature" name="Sidebar">
+                    <Sidebar />
+                  </ErrorBoundary>
 
                   {/* Central Canvas: Main data visualization */}
                   <div className="flex-1 flex flex-col">
-                    <Canvas />
+                    <ErrorBoundary level="feature" name="Canvas">
+                      <Canvas />
+                    </ErrorBoundary>
                   </div>
 
                   {/* Right Sidebar: Formats + Settings */}
-                  <RightSidebar />
+                  <ErrorBoundary level="feature" name="RightSidebar">
+                    <RightSidebar />
+                  </ErrorBoundary>
                 </div>
 
                 {/* Navigator Footer: Location map + Time slider */}
-                <NavigatorFooter />
+                <ErrorBoundary level="component" name="NavigatorFooter">
+                  <NavigatorFooter />
+                </ErrorBoundary>
 
                 {/* Command Bar: DSL command input */}
-                <CommandBar />
+                <ErrorBoundary level="feature" name="CommandBar">
+                  <CommandBar />
+                </ErrorBoundary>
               </div>
+              <NotificationSystem />
               </PAFVProvider>
             </FilterProvider>
           </AppStateProvider>
