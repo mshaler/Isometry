@@ -560,10 +560,13 @@ async function performStressTesting(): Promise<BridgeStressTestResult> {
   const operationResults = await Promise.all(operations);
   const totalDuration = performance.now() - startTime;
 
-  const successfulOperations = operationResults.filter((r: BridgeTestResult) => r.success).length;
-  const failedOperations = operationResults.filter((r: BridgeTestResult) => !r.success).length;
+  // Type assertion for the operation results array
+  const typedResults = operationResults as BridgeTestResult[];
 
-  const latencies = operationResults
+  const successfulOperations = typedResults.filter((r: BridgeTestResult) => r.success).length;
+  const failedOperations = typedResults.filter((r: BridgeTestResult) => !r.success).length;
+
+  const latencies = typedResults
     .filter(r => r.success)
     .map(r => r.duration);
 
@@ -583,7 +586,7 @@ async function performStressTesting(): Promise<BridgeStressTestResult> {
     maxLatency,
     minLatency,
     throughput,
-    errors: [...new Set(errors)] // Remove duplicates
+    errors: Array.from(new Set(errors)) // Remove duplicates
   };
 }
 
