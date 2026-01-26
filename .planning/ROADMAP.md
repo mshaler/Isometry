@@ -161,10 +161,10 @@ Plans:
 5. Process execution continues appropriately when app backgrounds
 
 Plans:
-- [ ] 06.3-01: App Sandbox terminal with NSTask/Process security
-- [ ] 06.3-02: Claude Code API native integration via URLSession
-- [ ] 06.3-03: Secure process execution framework within sandbox
-- [ ] 06.3-04: Command history and context management
+- [ ] 06.3-01-PLAN.md — App Sandbox terminal with NSTask/Process security
+- [ ] 06.3-02-PLAN.md — Claude Code API native integration via URLSession
+- [ ] 06.3-03-PLAN.md — Secure process execution framework within sandbox
+- [ ] 06.3-04-PLAN.md — Command history and context management
 
 #### Phase 6.4: Preview & Platform Integration
 **Goal:** Users can preview content with native Canvas visualizations and export capabilities while experiencing seamless platform integration
@@ -279,7 +279,7 @@ Migration: 7.1 → 7.2 → 7.3
 | 4. Preview | v1.0 | 3/3 | Complete | YYYY-MM-DD |
 | 6.1. Native Foundation | v2.0 | 4/4 | Complete | 2026-01-25 |
 | 6.2. Native Capture | v2.0 | 0/4 | Planned | - |
-| 6.3. Native Shell | v2.0 | 0/4 | Not started | - |
+| 6.3. Native Shell | v2.0 | 4/4 | Planned | - |
 | 6.4. Native Platform | v2.0 | 0/4 | Not started | - |
 | 7.1. API Bridge | v2.1 | 0/3 | Not started | - |
 | 7.2. WebView Bridge | v2.1 | 0/4 | Not started | - |
@@ -421,6 +421,6 @@ Production Backend
 
 ---
 
-**Current step:** Phase 6.2 planning complete - Ready for capture implementation execution.
+**Current step:** Phase 6.3 planning complete - Ready for shell integration execution.
 
-**Next migration step:** `/gsd:plan-phase 7.1` after Phase 6.4 completion.
+**Next step:** `/gsd:execute-phase 6.3` to implement native shell integration.
