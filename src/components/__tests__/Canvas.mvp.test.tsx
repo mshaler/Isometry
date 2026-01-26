@@ -96,7 +96,7 @@ describe('Canvas MVP Integration', () => {
       expect(screen.getByText('Selected:')).toBeInTheDocument();
       // Use more specific selector for selected node text
       expect(screen.getByText((content, element) =>
-        element?.classList.contains('truncate') && content === 'Test Node 1'
+        Boolean(element?.classList.contains('truncate') && content === 'Test Node 1')
       )).toBeInTheDocument();
     });
   });

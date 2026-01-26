@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OfficeDocumentProcessor, importOfficeFile } from '../utils/officeDocumentProcessor';
+import type { Node } from '../types/node';
 
 // Mock File.arrayBuffer for test environment
 Object.defineProperty(File.prototype, 'arrayBuffer', {

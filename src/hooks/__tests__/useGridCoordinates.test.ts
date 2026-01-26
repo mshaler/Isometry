@@ -10,9 +10,42 @@ import { useGridCoordinates, getUniqueAxisValues } from '../useGridCoordinates';
 import type { Node } from '@/types/node';
 import type { OriginPattern } from '@/types/coordinates';
 
+// Helper to create mock Node
+function createMockNode(overrides: Partial<Node>): Node {
+  return {
+    id: '1',
+    nodeType: 'note',
+    name: 'Mock Node',
+    content: null,
+    summary: null,
+    latitude: null,
+    longitude: null,
+    locationName: null,
+    locationAddress: null,
+    createdAt: '2024-01-01T00:00:00Z',
+    modifiedAt: '2024-01-01T00:00:00Z',
+    dueAt: null,
+    completedAt: null,
+    eventStart: null,
+    eventEnd: null,
+    folder: null,
+    tags: [],
+    status: null,
+    priority: 0,
+    importance: 0,
+    sortOrder: 0,
+    source: null,
+    sourceId: null,
+    sourceUrl: null,
+    deletedAt: null,
+    version: 1,
+    ...overrides,
+  };
+}
+
 // Sample test nodes
 const testNodes: Node[] = [
-  {
+  createMockNode({
     id: '1',
     name: 'Node A',
     summary: 'First node',
@@ -24,8 +57,8 @@ const testNodes: Node[] = [
     createdAt: '2024-01-15T10:00:00Z',
     modifiedAt: '2024-01-20T15:30:00Z',
     status: 'active',
-  },
-  {
+  }),
+  createMockNode({
     id: '2',
     name: 'Node B',
     summary: 'Second node',
@@ -37,8 +70,8 @@ const testNodes: Node[] = [
     createdAt: '2024-02-10T09:00:00Z',
     modifiedAt: '2024-02-15T12:00:00Z',
     status: 'pending',
-  },
-  {
+  }),
+  createMockNode({
     id: '3',
     name: 'Node C',
     summary: 'Third node',
@@ -50,7 +83,7 @@ const testNodes: Node[] = [
     createdAt: '2024-01-20T14:00:00Z',
     modifiedAt: '2024-01-25T11:00:00Z',
     status: 'active',
-  },
+  }),
 ];
 
 describe('useGridCoordinates', () => {
@@ -224,7 +257,7 @@ describe('useGridCoordinates', () => {
 
   it('should handle missing values with default to 0', () => {
     const nodesWithMissing: Node[] = [
-      {
+      createMockNode({
         id: '1',
         name: 'Node A',
         summary: '',
@@ -236,7 +269,7 @@ describe('useGridCoordinates', () => {
         createdAt: '',
         modifiedAt: '',
         status: 'active',
-      },
+      }),
     ];
 
     const { result } = renderHook(() =>

@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vitest/globals" />
 
 // Declare modules for raw SQL imports
 declare module '*.sql?raw' {

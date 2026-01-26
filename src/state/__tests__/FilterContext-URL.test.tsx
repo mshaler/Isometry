@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, useSearchParams } from 'react-router-dom';
 import { FilterProvider, useFilters } from '../FilterContext';
-import type { FilterState } from '../../types/filter';
 
 // Wrapper component that provides both Router and FilterProvider
 function createWrapper() {
@@ -188,7 +187,7 @@ describe('FilterContext URL Integration', () => {
 
   describe('browser history integration', () => {
     it('should restore filters on browser back', async () => {
-      const { result, rerender } = renderHook(
+      const { result } = renderHook(
         () => {
           const [searchParams] = useSearchParams();
           const filters = useFilters();
