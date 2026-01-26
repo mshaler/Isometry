@@ -34,7 +34,7 @@ export interface SanitizationOptions {
 const SQL_INJECTION_PATTERNS = [
   /(\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE)?|INSERT( +INTO)?|MERGE|SELECT|UPDATE|UNION( +ALL)?)\b)/i,
   /(\b(AND|OR)\b.*(=|<|>|!=|<>|<=|>=).*(\b(SELECT|INSERT|UPDATE|DELETE)\b))/i,
-  /(;|\-\-|\||\/\*|\*\/)/,
+  /(;|--|\/\*|\*\/)/,
   /(\b(SCRIPT|JAVASCRIPT|VBSCRIPT|ONLOAD|ONERROR)\b)/i,
   /'(\s*|\s*[\w\s]*\s*);?\s*(DROP|DELETE|INSERT|UPDATE|SELECT|UNION)/i
 ];
@@ -48,7 +48,7 @@ const XSS_PATTERNS = [
   /javascript:/gi,
   /vbscript:/gi,
   /on\w+\s*=/gi,
-  /<img[^>]+src[\\s]*=[\\s]*["\']javascript:/gi
+  /<img[^>]+src[\s]*=[\s]*["']javascript:/gi
 ];
 
 /**
@@ -237,7 +237,7 @@ export function sanitizeDSLValue(value: unknown): ValidationResult {
       stripHTML: true,
       escapeSQL: true,
       normalizeWhitespace: true,
-      allowedCharacters: /^[a-zA-Z0-9\s\-_.:@\/]+$/
+      allowedCharacters: /^[a-zA-Z0-9\s\-_.:@/]+$/
     });
   }
 
@@ -350,7 +350,7 @@ export function validateUserInput(input: {
         maxLength: 500,
         stripHTML: true,
         normalizeWhitespace: true,
-        allowedCharacters: /^[a-zA-Z0-9\s\-_.:@\/\(\)\[\]"']+$/
+        allowedCharacters: /^[a-zA-Z0-9\s\-_.:@/()[\]"']+$/
       });
 
     case 'filter':
@@ -419,7 +419,7 @@ export const validateSearchQuery = createValidator({
   maxLength: 500,
   stripHTML: true,
   normalizeWhitespace: true,
-  allowedCharacters: /^[a-zA-Z0-9\s\-_.:@\/\(\)\[\]"']+$/
+  allowedCharacters: /^[a-zA-Z0-9\s\-_.:@/()[\]"']+$/
 });
 
 export const validateFileName = createValidator({
