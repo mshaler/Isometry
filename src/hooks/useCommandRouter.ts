@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useClaudeAPI } from './useClaudeAPI';
 import { useProjectContext } from './useProjectContext';
 import { useCommandHistory } from './useCommandHistory';
+import { useTerminalContext } from '../context/TerminalContext';
 import { parseCommand, isClaudeHelp, getClaudeHelpText } from '../utils/commandParsing';
 import type { CommandResponse, CommandType, HistoryEntry } from '../types/shell';
 
@@ -21,6 +22,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
   const claudeAPI = useClaudeAPI();
   const projectContext = useProjectContext();
   const history = useCommandHistory();
+  const terminalContext = useTerminalContext();
 
   const [isExecuting, setIsExecuting] = useState(false);
 
@@ -108,7 +110,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
         timestamp: new Date(),
         response,
         duration: Date.now() - startTime,
-        cwd: '/Users/mshaler/Developer/Projects/Isometry', // TODO: Get from terminal context
+        cwd: terminalContext.getWorkingDirectory(),
         context: {
           cardId: activeCard?.title, // Using title as ID since nodeId doesn't exist on this type
           cardTitle: activeCard?.title
@@ -136,7 +138,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
         timestamp: new Date(),
         response: errorResponse,
         duration: Date.now() - startTime,
-        cwd: '/Users/mshaler/Developer/Projects/Isometry',
+        cwd: terminalContext.getWorkingDirectory(),
         context: {
           cardTitle: projectContext.getActiveCardContext()?.title
         }
@@ -144,7 +146,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
       history.addHistoryEntry(errorHistoryEntry);
       return errorResponse;
     }
-  }, [claudeAPI, projectContext, history]);
+  }, [claudeAPI, projectContext, history, terminalContext]);
 
   const executeSystemCommand = useCallback(async (command: string, originalInput: string): Promise<CommandResponse> => {
     const startTime = Date.now();

@@ -4,12 +4,13 @@ import { useTerminal } from '../../hooks/useTerminal';
 import { useCommandRouter } from '../../hooks/useCommandRouter';
 import { useProjectContext } from '../../hooks/useProjectContext';
 import { useClaudeAPI } from '../../hooks/useClaudeAPI';
+import { TerminalProvider } from '../../context/TerminalContext';
 
 interface ShellComponentProps {
   className?: string;
 }
 
-export function ShellComponent({ className }: ShellComponentProps) {
+function ShellComponentInner({ className }: ShellComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<'configured' | 'not-configured'>('not-configured');
@@ -199,5 +200,13 @@ export function ShellComponent({ className }: ShellComponentProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+export function ShellComponent({ className }: ShellComponentProps) {
+  return (
+    <TerminalProvider>
+      <ShellComponentInner className={className} />
+    </TerminalProvider>
   );
 }

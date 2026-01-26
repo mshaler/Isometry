@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 import JSZip from 'jszip';
-import type { Node } from '../types/node';
+import type { Node, NodeType } from '../types/node';
 
 export interface OfficeImportOptions {
   nodeType?: string;
@@ -295,7 +295,7 @@ export class OfficeDocumentProcessor {
         "i => em",
         "u => u"
       ] : [],
-      transformDocument: preserveFormatting ? mammoth.transforms.paragraph((element: any) => {
+      transformDocument: preserveFormatting ? (mammoth as any).transforms.paragraph((element: any) => {
         // Extract style information from paragraph elements
         if (element.styleId && element.styleName) {
           const styleInfo: any = {
@@ -344,17 +344,41 @@ export class OfficeDocumentProcessor {
 
     return {
       id: crypto.randomUUID(),
-      nodeType: options.nodeType || 'spreadsheet',
+      nodeType: (options.nodeType || 'resource') as NodeType,
       name: `${filename} - ${sheetName}`,
       content: markdownContent,
       summary: this.generateSheetSummary(sheetData),
+
+      // LATCH: Location
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+
+      // LATCH: Time
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString(),
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+
+      // LATCH: Category
       folder: options.folder || null,
       tags: [`excel-import`, `sheet-${sheetName.toLowerCase()}`],
+      status: null,
+
+      // LATCH: Hierarchy
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+
+      // Metadata
       source: options.source || 'excel-import',
       sourceId: `${filename}-${sheetName}`,
-      sourceUrl: null
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     };
   }
 
@@ -365,17 +389,41 @@ export class OfficeDocumentProcessor {
   ): Promise<Node> {
     return {
       id: crypto.randomUUID(),
-      nodeType: options.nodeType || 'document',
+      nodeType: (options.nodeType || 'note') as NodeType,
       name: filename.replace(/\.docx?$/i, ''),
       content: docData.content,
       summary: this.generateDocumentSummary(docData.content),
+
+      // LATCH: Location
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+
+      // LATCH: Time
       createdAt: new Date().toISOString(),
       modifiedAt: new Date().toISOString(),
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+
+      // LATCH: Category
       folder: options.folder || null,
       tags: ['word-import', options.preserveFormatting ? 'formatted' : 'plain-text'],
+      status: null,
+
+      // LATCH: Hierarchy
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+
+      // Metadata
       source: options.source || 'word-import',
       sourceId: filename,
-      sourceUrl: null
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     };
   }
 
@@ -664,7 +712,7 @@ export class OfficeDocumentProcessor {
       'blockquote': { italic: true, color: '#666666' }
     };
 
-    const style = { ...baseStyles[tagName] } || {};
+    const style = { ...(baseStyles[tagName] || {}) };
 
     // Add class-specific styles
     if (className) {

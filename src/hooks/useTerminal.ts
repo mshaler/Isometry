@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { useTerminalContext } from '../context/TerminalContext';
 
 interface UseTerminalOptions {
   workingDirectory?: string;
@@ -18,6 +19,8 @@ interface UseTerminalReturn {
   attachToProcess: () => void;
   dispose: () => void;
   resizeTerminal: (cols: number, rows: number) => void;
+  getCurrentWorkingDirectory: () => string;
+  setWorkingDirectory: (path: string) => void;
   terminal: Terminal | null;
   isConnected: boolean;
 }
@@ -33,9 +36,18 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   const containerRef = useRef<HTMLElement | null>(null);
   const isConnectedRef = useRef(false);
 
-  // Simulated file system state for demo purposes
-  const workingDir = options.workingDirectory || '/Users/mshaler/Developer/Projects/Isometry';
-  const currentDirRef = useRef(workingDir);
+  // Use terminal context for shared working directory state
+  const terminalContext = useTerminalContext();
+
+  // Initialize working directory from options or use context default
+  useEffect(() => {
+    if (options.workingDirectory) {
+      terminalContext.setWorkingDirectory(options.workingDirectory);
+    }
+  }, [options.workingDirectory, terminalContext]);
+
+  // Local reference to working directory (updated via context)
+  const currentDirRef = terminalContext.currentWorkingDirectory;
 
   const createTerminal = useCallback((containerId: string) => {
     if (terminalRef.current) {
@@ -166,12 +178,14 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         if (path === '..' || path === '../') {
           const pathParts = currentDirRef.current.split('/');
           pathParts.pop();
-          currentDirRef.current = pathParts.join('/') || '/';
+          const newPath = pathParts.join('/') || '/';
+          terminalContext.setWorkingDirectory(newPath);
         } else if (path === '~') {
-          currentDirRef.current = '/Users/mshaler';
+          terminalContext.setWorkingDirectory('/Users/mshaler');
         } else {
           // For demo, just update the path
-          currentDirRef.current = path.startsWith('/') ? path : `${currentDirRef.current}/${path}`;
+          const newPath = path.startsWith('/') ? path : `${currentDirRef.current}/${path}`;
+          terminalContext.setWorkingDirectory(newPath);
         }
         // No output for cd command
       } else if (cmd === 'whoami') {
@@ -269,6 +283,14 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     }
   }, []);
 
+  const getCurrentWorkingDirectory = useCallback(() => {
+    return terminalContext.getWorkingDirectory();
+  }, [terminalContext]);
+
+  const setWorkingDirectory = useCallback((path: string) => {
+    terminalContext.setWorkingDirectory(path);
+  }, [terminalContext]);
+
   const dispose = useCallback(() => {
     const terminal = terminalRef.current;
     if (terminal) {
@@ -295,6 +317,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     attachToProcess,
     dispose,
     resizeTerminal,
+    getCurrentWorkingDirectory,
+    setWorkingDirectory,
     terminal: terminalRef.current,
     isConnected: isConnectedRef.current
   };
