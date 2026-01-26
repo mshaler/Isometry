@@ -9,6 +9,12 @@
 // ============================================================================
 
 import type { ASTNode, CompiledQuery, FilterOperator, TimePreset, FilterValue } from './types';
+import {
+  sanitizeDSLValue,
+  sanitizeFieldName,
+  sanitizeOperator,
+  isSecurityRisk
+} from '../utils/input-sanitization';
 
 /**
  * Compile AST to SQL WHERE clause with parameterized values
@@ -48,77 +54,142 @@ export function compile(ast: ASTNode | null): CompiledQuery {
   }
   
   function compileFilter(field: string, operator: FilterOperator, value: FilterValue): string {
+    // Validate and sanitize field name
+    const fieldValidation = sanitizeFieldName(field);
+    if (!fieldValidation.isValid || isSecurityRisk(fieldValidation)) {
+      throw new Error(`Invalid field name: ${fieldValidation.errors.join(', ')}`);
+    }
+    const safeField = fieldValidation.sanitizedValue as string;
+
+    // Validate and sanitize operator
+    const operatorValidation = sanitizeOperator(operator);
+    if (!operatorValidation.isValid) {
+      throw new Error(`Invalid operator: ${operatorValidation.errors.join(', ')}`);
+    }
+    const safeOperator = operatorValidation.sanitizedValue as string;
+
+    // Validate and sanitize value
+    const valueValidation = sanitizeDSLValue(value);
+    if (!valueValidation.isValid || isSecurityRisk(valueValidation)) {
+      throw new Error(`Invalid filter value: ${valueValidation.errors.join(', ')}`);
+    }
+    const safeValue = valueValidation.sanitizedValue;
+
     // Handle time presets
-    if (typeof value === 'object' && 'preset' in value) {
-      return compileTimePreset(field, value.preset);
+    if (typeof safeValue === 'object' && safeValue && 'preset' in safeValue) {
+      return compileTimePreset(safeField, (safeValue as { preset: string }).preset);
     }
-    
+
     // Handle LIKE operator
-    if (operator === '~') {
-      params.push(`%${value}%`);
-      return `${field} LIKE ?`;
+    if (safeOperator === '~') {
+      params.push(`%${safeValue}%`);
+      return `${safeField} LIKE ?`;
     }
-    
+
     // Handle standard operators
-    const sqlOp = operator === '=' ? '=' : operator;
-    params.push(value);
-    return `${field} ${sqlOp} ?`;
+    params.push(safeValue);
+    return `${safeField} ${safeOperator} ?`;
   }
   
   function compileAxisFilter(axis: string, value: FilterValue): string {
+    // Validate axis name
+    const allowedAxes = ['time', 'category', 'hierarchy', 'alphabet', 'location'];
+    if (!allowedAxes.includes(axis)) {
+      throw new Error(`Invalid axis: ${axis}`);
+    }
+
+    // Validate and sanitize value
+    const valueValidation = sanitizeDSLValue(value);
+    if (!valueValidation.isValid || isSecurityRisk(valueValidation)) {
+      throw new Error(`Invalid axis value: ${valueValidation.errors.join(', ')}`);
+    }
+    const safeValue = valueValidation.sanitizedValue;
+
     // Map LATCH axes to SQL
     switch (axis) {
       case 'time':
-        if (typeof value === 'object' && 'preset' in value) {
-          return compileTimePreset('created', value.preset);
+        if (typeof safeValue === 'object' && safeValue && 'preset' in safeValue) {
+          return compileTimePreset('created', (safeValue as { preset: string }).preset);
         }
-        params.push(value);
+        params.push(safeValue);
         return `created = ?`;
-      
+
       case 'category':
-        params.push(value);
+        params.push(safeValue);
         return `category = ?`;
-      
+
       case 'hierarchy':
-        params.push(value);
+        params.push(safeValue);
         return `priority <= ?`;
-      
+
       case 'alphabet':
-        // Handle ranges like A-M
-        if (typeof value === 'string' && value.includes('-')) {
-          const [start, end] = value.split('-');
-          return `SUBSTR(name, 1, 1) BETWEEN '${start}' AND '${end}'`;
+        // Handle ranges like A-M with proper parameterization
+        if (typeof safeValue === 'string' && safeValue.includes('-')) {
+          const rangeParts = safeValue.split('-');
+          if (rangeParts.length !== 2) {
+            throw new Error('Invalid alphabet range format');
+          }
+
+          const [start, end] = rangeParts;
+
+          // Validate range characters (single uppercase letters only)
+          if (!/^[A-Z]$/.test(start) || !/^[A-Z]$/.test(end)) {
+            throw new Error('Alphabet range must be single uppercase letters (A-Z)');
+          }
+
+          // Use parameterized query for range
+          params.push(start);
+          params.push(end);
+          return `SUBSTR(name, 1, 1) BETWEEN ? AND ?`;
         }
-        params.push(`${value}%`);
+
+        params.push(`${safeValue}%`);
         return `name LIKE ?`;
-      
+
       case 'location':
-        params.push(value);
+        params.push(safeValue);
         return `location = ?`;
-      
+
       default:
         return '1=1';
     }
   }
   
   function compileTimePreset(field: string, preset: TimePreset): string {
+    // Validate field name for SQL injection
+    const fieldValidation = sanitizeFieldName(field);
+    if (!fieldValidation.isValid || isSecurityRisk(fieldValidation)) {
+      throw new Error(`Invalid time field name: ${fieldValidation.errors.join(', ')}`);
+    }
+    const safeField = fieldValidation.sanitizedValue as string;
+
+    // Validate preset value
+    const allowedPresets = [
+      'today', 'yesterday', 'last-week', 'last-7-days',
+      'last-month', 'last-30-days', 'this-year', 'next-week', 'overdue'
+    ] as const;
+
+    if (!allowedPresets.includes(preset as typeof allowedPresets[number])) {
+      throw new Error(`Invalid time preset: ${preset}`);
+    }
+
     switch (preset) {
       case 'today':
-        return `date(${field}) = date('now')`;
+        return `date(${safeField}) = date('now')`;
       case 'yesterday':
-        return `date(${field}) = date('now', '-1 day')`;
+        return `date(${safeField}) = date('now', '-1 day')`;
       case 'last-week':
       case 'last-7-days':
-        return `${field} >= date('now', '-7 days')`;
+        return `${safeField} >= date('now', '-7 days')`;
       case 'last-month':
       case 'last-30-days':
-        return `${field} >= date('now', '-30 days')`;
+        return `${safeField} >= date('now', '-30 days')`;
       case 'this-year':
-        return `${field} >= date('now', 'start of year')`;
+        return `${safeField} >= date('now', 'start of year')`;
       case 'next-week':
-        return `${field} <= date('now', '+7 days')`;
+        return `${safeField} <= date('now', '+7 days')`;
       case 'overdue':
-        return `${field} < date('now')`;
+        return `${safeField} < date('now')`;
       default:
         return '1=1';
     }
