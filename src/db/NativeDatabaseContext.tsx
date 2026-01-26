@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { NativeAPIClient, createClient } from './NativeAPIClient';
+import { NativeAPIClient, nativeAPI } from './NativeAPIClient';
 
 /**
  * Native Database Context interface matching existing DatabaseContext exactly
@@ -51,7 +51,12 @@ export function NativeDatabaseProvider({
 
       try {
         console.log(`Connecting to native API server at ${baseURL} (attempt ${attempt}/${retryAttempts})`);
-        const client = await createClient(baseURL, timeout);
+        // Use existing nativeAPI instance instead of creating new client
+        const isAvailable = await nativeAPI.checkAvailability();
+        if (!isAvailable) {
+          throw new Error('Native API not available');
+        }
+        const client = nativeAPI;
 
         if (!isCancelled) {
           setDb(client);
@@ -146,8 +151,12 @@ export function NativeDatabaseProvider({
 
       // Try to reconnect after failed reset
       try {
-        const newClient = await createClient(baseURL, timeout);
-        setDb(newClient);
+        const isAvailable = await nativeAPI.checkAvailability();
+        if (isAvailable) {
+          setDb(nativeAPI);
+        } else {
+          throw new Error('Native API not available after reset');
+        }
         console.log('Reconnected to native API after reset failure');
       } catch (reconnectErr) {
         console.error('Failed to reconnect after reset failure:', reconnectErr);

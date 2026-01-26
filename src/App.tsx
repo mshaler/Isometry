@@ -24,8 +24,9 @@ import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { ComponentCatalog } from './pages/ComponentCatalog';
 import MVPDemo from './MVPDemo';
+import UnifiedDemo from './UnifiedDemo';
 
-type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
+type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook' | 'unified';
 
 function AppContent() {
   const { theme } = useTheme();
@@ -118,6 +119,18 @@ function AppContent() {
             >
               Notebook
             </button>
+            <button
+              onClick={() => handleViewModeChange('unified')}
+              className={`px-2 py-0.5 text-xs rounded ${
+                viewMode === 'unified'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+            >
+              Unified
+            </button>
           </div>
 
           {/* Canvas or Demo */}
@@ -130,6 +143,8 @@ function AppContent() {
               <ComponentCatalog />
             ) : viewMode === 'notebook' ? (
               <NotebookLayout />
+            ) : viewMode === 'unified' ? (
+              <UnifiedDemo />
             ) : (
               <Canvas />
             )}
@@ -147,9 +162,9 @@ function AppContent() {
 }
 
 function App() {
-  // GSD: Use minimal MVP demo to prove data visualization works
-  // TODO: Re-enable full app once database issues are resolved
-  return <MVPDemo />;
+  // GSD: Enable full app to test unified interface integration
+  // Switches between MVP demo and full integrated UI
+  return <FullApp />;
 }
 
 // Original complex App - disabled for MVP
