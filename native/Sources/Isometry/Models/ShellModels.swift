@@ -352,6 +352,188 @@ public struct DateRange {
     }
 }
 
+// MARK: - Process Management Models
+
+/// Background task wrapper for process execution tracking
+public struct BackgroundTask: Identifiable, Codable, Sendable {
+    public let id: UUID
+    public let processId: Int32
+    public let command: String
+    public let startTime: Date
+    public let maxDuration: TimeInterval
+    public let workingDirectory: String
+
+    public init(
+        id: UUID = UUID(),
+        processId: Int32,
+        command: String,
+        startTime: Date = Date(),
+        maxDuration: TimeInterval = 600.0, // 10 minutes
+        workingDirectory: String
+    ) {
+        self.id = id
+        self.processId = processId
+        self.command = command
+        self.startTime = startTime
+        self.maxDuration = maxDuration
+        self.workingDirectory = workingDirectory
+    }
+
+    public var isExpired: Bool {
+        Date().timeIntervalSince(startTime) > maxDuration
+    }
+
+    public var remainingTime: TimeInterval {
+        max(0, maxDuration - Date().timeIntervalSince(startTime))
+    }
+}
+
+/// Enhanced process state for lifecycle management
+public enum ProcessState: String, CaseIterable, Codable, Sendable {
+    case starting = "starting"
+    case running = "running"
+    case suspended = "suspended"
+    case completed = "completed"
+    case failed = "failed"
+    case cancelled = "cancelled"
+
+    public var isActive: Bool {
+        switch self {
+        case .starting, .running, .suspended:
+            return true
+        case .completed, .failed, .cancelled:
+            return false
+        }
+    }
+
+    public var userDescription: String {
+        switch self {
+        case .starting:
+            return "Starting..."
+        case .running:
+            return "Running"
+        case .suspended:
+            return "Paused"
+        case .completed:
+            return "Completed"
+        case .failed:
+            return "Failed"
+        case .cancelled:
+            return "Cancelled"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .starting:
+            return "clock"
+        case .running:
+            return "play.circle"
+        case .suspended:
+            return "pause.circle"
+        case .completed:
+            return "checkmark.circle"
+        case .failed:
+            return "xmark.circle"
+        case .cancelled:
+            return "stop.circle"
+        }
+    }
+}
+
+/// Execution limits for resource management
+public struct ExecutionLimits: Codable, Sendable {
+    public let maxExecutionTime: TimeInterval
+    public let maxOutputSize: Int64  // bytes
+    public let maxMemoryUsage: Int64 // bytes
+
+    public init(
+        maxExecutionTime: TimeInterval = 300.0, // 5 minutes
+        maxOutputSize: Int64 = 1024 * 1024,     // 1MB
+        maxMemoryUsage: Int64 = 100 * 1024 * 1024 // 100MB
+    ) {
+        self.maxExecutionTime = maxExecutionTime
+        self.maxOutputSize = maxOutputSize
+        self.maxMemoryUsage = maxMemoryUsage
+    }
+
+    public static let `default` = ExecutionLimits()
+
+    public static let restrictive = ExecutionLimits(
+        maxExecutionTime: 30.0,      // 30 seconds
+        maxOutputSize: 512 * 1024,   // 512KB
+        maxMemoryUsage: 50 * 1024 * 1024 // 50MB
+    )
+
+    public static let permissive = ExecutionLimits(
+        maxExecutionTime: 600.0,     // 10 minutes
+        maxOutputSize: 10 * 1024 * 1024, // 10MB
+        maxMemoryUsage: 200 * 1024 * 1024 // 200MB
+    )
+}
+
+/// Security violations detected during execution
+public enum SecurityViolation: String, CaseIterable, Codable, Sendable {
+    case commandNotAllowed = "command_not_allowed"
+    case pathTraversal = "path_traversal"
+    case commandInjection = "command_injection"
+    case unauthorizedFileAccess = "unauthorized_file_access"
+    case environmentVariableAccess = "environment_variable_access"
+    case networkAccess = "network_access"
+    case systemDirectoryAccess = "system_directory_access"
+    case privilegeEscalation = "privilege_escalation"
+
+    public var userDescription: String {
+        switch self {
+        case .commandNotAllowed:
+            return "Command not allowed in App Sandbox"
+        case .pathTraversal:
+            return "Attempted path traversal outside sandbox"
+        case .commandInjection:
+            return "Command injection attempt detected"
+        case .unauthorizedFileAccess:
+            return "Unauthorized file system access"
+        case .environmentVariableAccess:
+            return "Attempted access to restricted environment variables"
+        case .networkAccess:
+            return "Network access not permitted"
+        case .systemDirectoryAccess:
+            return "System directory access denied"
+        case .privilegeEscalation:
+            return "Privilege escalation attempt blocked"
+        }
+    }
+
+    public var severity: SecuritySeverity {
+        switch self {
+        case .commandNotAllowed, .systemDirectoryAccess:
+            return .low
+        case .pathTraversal, .unauthorizedFileAccess, .environmentVariableAccess:
+            return .medium
+        case .commandInjection, .networkAccess, .privilegeEscalation:
+            return .high
+        }
+    }
+}
+
+/// Security violation severity levels
+public enum SecuritySeverity: String, CaseIterable, Codable, Sendable {
+    case low = "low"
+    case medium = "medium"
+    case high = "high"
+
+    public var color: String {
+        switch self {
+        case .low:
+            return "yellow"
+        case .medium:
+            return "orange"
+        case .high:
+            return "red"
+        }
+    }
+}
+
 // MARK: - Execution Context
 
 /// Context for command execution with App Sandbox constraints
@@ -415,28 +597,24 @@ public struct TimeoutLimits: Sendable {
 
 extension Set where Element == String {
     /// Default allowed commands for App Sandbox
-    public static let defaultAllowed: Set<String> = [
-        "ls", "pwd", "echo", "cat", "head", "tail",
-        "find", "grep", "wc", "sort", "uniq",
-        "date", "whoami", "uname", "which"
-    ]
+    public static var defaultAllowed: Set<String> {
+        return [
+            "ls", "pwd", "echo", "cat", "head", "tail",
+            "find", "grep", "wc", "sort", "uniq",
+            "date", "whoami", "uname", "which"
+        ]
+    }
 
     /// Default restricted paths for App Sandbox
-    public static let defaultRestricted: Set<String> = [
-        "/System", "/usr", "/bin", "/sbin", "/private",
-        "/etc", "/var/root", "/Applications"
-    ]
-}
-
-// MARK: - Array Extensions
-
-extension Array where Element: Hashable {
-    /// Remove duplicate elements while preserving order
-    func removingDuplicates() -> [Element] {
-        var seen = Set<Element>()
-        return filter { seen.insert($0).inserted }
+    public static var defaultRestricted: Set<String> {
+        return [
+            "/System", "/usr", "/bin", "/sbin", "/private",
+            "/etc", "/var/root", "/Applications"
+        ]
     }
 }
+
+// Note: Array removingDuplicates extension available in NotebookTemplate.swift
 
 // MARK: - CloudKit Support
 

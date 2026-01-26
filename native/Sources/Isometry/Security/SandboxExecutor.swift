@@ -59,25 +59,28 @@ public struct ExecutionResult: Sendable {
 public actor SandboxExecutor {
     private let logger = Logger(subsystem: "com.isometry.app", category: "SandboxExecutor")
     private let performanceMonitor: PerformanceMonitor
-    private let maxExecutionTime: TimeInterval
-    private let maxOutputSize: Int
+    private let processManager: ProcessManager
+    private let executionLimits: ExecutionLimits
 
     // Security constraints
     private let allowedCommands: Set<String>
     private let allowedDirectories: Set<String>
     private let restrictedPaths: Set<String>
 
+    // Process tracking
+    private var activeProcesses: [String: UUID] = [:]
+
     public init(
-        maxExecutionTime: TimeInterval = 30.0,
-        maxOutputSize: Int = 1024 * 1024, // 1MB
+        executionLimits: ExecutionLimits = .default,
         allowedCommands: Set<String> = .defaultAllowed,
-        restrictedPaths: Set<String> = .defaultRestricted
+        restrictedPaths: Set<String> = .defaultRestricted,
+        processManager: ProcessManager = ProcessManager()
     ) {
         self.performanceMonitor = PerformanceMonitor.shared
-        self.maxExecutionTime = maxExecutionTime
-        self.maxOutputSize = maxOutputSize
+        self.executionLimits = executionLimits
         self.allowedCommands = allowedCommands
         self.restrictedPaths = restrictedPaths
+        self.processManager = processManager
 
         // Define allowed directories within App Sandbox
         let fileManager = FileManager.default
@@ -102,16 +105,18 @@ public actor SandboxExecutor {
         self.allowedDirectories = allowedDirs
     }
 
-    /// Execute a command with App Sandbox security constraints
+    /// Execute a command with enhanced security and background support
     /// - Parameters:
     ///   - command: The full command string to execute
     ///   - workingDirectory: Working directory (must be within sandbox)
     ///   - environment: Additional environment variables
+    ///   - allowBackground: Whether to enable background execution for long-running commands
     /// - Returns: ExecutionResult with output, timing, and success status
     public func execute(
         _ command: String,
         workingDirectory: String? = nil,
-        environment: [String: String] = [:]
+        environment: [String: String] = [:],
+        allowBackground: Bool = true
     ) async -> ExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
         let cwd = workingDirectory ?? FileManager.default.currentDirectoryPath
@@ -386,6 +391,352 @@ public actor SandboxExecutor {
         return allowedDirectories
     }
 
+    /// Execute command with background support using ProcessManager
+    /// - Parameters:
+    ///   - command: Command to execute
+    ///   - workingDirectory: Working directory
+    ///   - environment: Environment variables
+    /// - Returns: ExecutionResult with process management
+    public func executeWithBackgroundSupport(
+        _ command: String,
+        workingDirectory: String? = nil,
+        environment: [String: String] = [:]
+    ) async -> ExecutionResult {
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let cwd = workingDirectory ?? FileManager.default.currentDirectoryPath
+
+        // Enhanced security validation
+        guard let securityResult = await validateEnhancedSecurity(command: command, workingDirectory: cwd, environment: environment) else {
+            // Security check passed, proceed with execution
+        } else {
+            return securityResult
+        }
+
+        // Check if we can start a new process
+        guard await processManager.canStartNewProcess else {
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: "Process limit exceeded. Maximum \(await processManager.activeProcessCount) concurrent processes allowed.",
+                duration: CFAbsoluteTimeGetCurrent() - startTime,
+                exitCode: nil,
+                workingDirectory: cwd,
+                command: command
+            )
+        }
+
+        // Parse and validate command
+        let components = parseCommand(command)
+        guard let executableName = components.first else {
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: "Empty command",
+                duration: CFAbsoluteTimeGetCurrent() - startTime,
+                exitCode: nil,
+                workingDirectory: cwd,
+                command: command
+            )
+        }
+
+        // Enhanced command validation
+        if let validationError = validateCommandEnhanced(executableName, arguments: Array(components.dropFirst()), workingDirectory: cwd) {
+            logger.warning("Enhanced validation failed: \(validationError)")
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: validationError,
+                duration: CFAbsoluteTimeGetCurrent() - startTime,
+                exitCode: nil,
+                workingDirectory: cwd,
+                command: command
+            )
+        }
+
+        do {
+            // Start process through ProcessManager
+            let sanitizedEnvironment = sanitizeEnvironment(environment)
+
+            guard let processId = try await processManager.startProcess(
+                executable: executableName,
+                arguments: Array(components.dropFirst()),
+                workingDirectory: cwd,
+                environment: sanitizedEnvironment,
+                command: command
+            ) else {
+                return ExecutionResult(
+                    success: false,
+                    output: "",
+                    error: "Failed to start process",
+                    duration: CFAbsoluteTimeGetCurrent() - startTime,
+                    exitCode: nil,
+                    workingDirectory: cwd,
+                    command: command
+                )
+            }
+
+            // Track the process
+            activeProcesses[command] = processId
+
+            // Wait for completion with timeout
+            return await waitForProcessCompletion(
+                processId: processId,
+                command: command,
+                workingDirectory: cwd,
+                startTime: startTime
+            )
+
+        } catch {
+            logger.error("Process execution failed: \(error.localizedDescription)")
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: "Execution failed: \(error.localizedDescription)",
+                duration: CFAbsoluteTimeGetCurrent() - startTime,
+                exitCode: nil,
+                workingDirectory: cwd,
+                command: command
+            )
+        }
+    }
+
+    /// Cancel a running command
+    /// - Parameter command: Command to cancel
+    public func cancelCommand(_ command: String) async {
+        guard let processId = activeProcesses[command] else {
+            logger.warning("Attempted to cancel unknown command: \(command)")
+            return
+        }
+
+        logger.info("Cancelling command: \(command)")
+        await processManager.terminate(processId: processId)
+        activeProcesses.removeValue(forKey: command)
+    }
+
+    /// Get status of active processes
+    public var activeProcessStatus: [String: ProcessState] {
+        get async {
+            var status: [String: ProcessState] = [:]
+            for (command, processId) in activeProcesses {
+                if let processInfo = await processManager.getProcessInfo(processId: processId) {
+                    status[command] = processInfo.state
+                }
+            }
+            return status
+        }
+    }
+
+    /// Enhanced security validation
+    private func validateEnhancedSecurity(
+        command: String,
+        workingDirectory: String,
+        environment: [String: String]
+    ) async -> ExecutionResult? {
+        // Check for command injection patterns
+        let dangerousPatterns = [";", "&&", "||", "|", ">", "<", "`", "$(", "$[", "eval", "exec"]
+        for pattern in dangerousPatterns {
+            if command.contains(pattern) {
+                logger.error("Command injection attempt detected: \(pattern)")
+                return ExecutionResult(
+                    success: false,
+                    output: "",
+                    error: SecurityViolation.commandInjection.userDescription,
+                    duration: 0.001,
+                    exitCode: nil,
+                    workingDirectory: workingDirectory,
+                    command: command
+                )
+            }
+        }
+
+        // Check for path traversal attempts
+        if command.contains("../") || command.contains("..\\") {
+            logger.error("Path traversal attempt detected")
+            return ExecutionResult(
+                success: false,
+                output: "",
+                error: SecurityViolation.pathTraversal.userDescription,
+                duration: 0.001,
+                exitCode: nil,
+                workingDirectory: workingDirectory,
+                command: command
+            )
+        }
+
+        // Check environment variables for sensitive data
+        for (key, value) in environment {
+            if key.lowercased().contains("password") ||
+               key.lowercased().contains("secret") ||
+               key.lowercased().contains("token") ||
+               value.contains("sk-") { // API keys
+                logger.error("Attempted to set sensitive environment variable: \(key)")
+                return ExecutionResult(
+                    success: false,
+                    output: "",
+                    error: SecurityViolation.environmentVariableAccess.userDescription,
+                    duration: 0.001,
+                    exitCode: nil,
+                    workingDirectory: workingDirectory,
+                    command: command
+                )
+            }
+        }
+
+        return nil // Security check passed
+    }
+
+    /// Enhanced command validation with additional security checks
+    private func validateCommandEnhanced(_ executable: String, arguments: [String], workingDirectory: String) -> String? {
+        // Use existing validation first
+        if let basicError = validateCommand(executable, arguments: arguments, workingDirectory: workingDirectory) {
+            return basicError
+        }
+
+        // Additional enhanced validations
+
+        // Check for network-related commands
+        let networkCommands = ["curl", "wget", "ssh", "scp", "rsync", "ping", "telnet", "ftp", "nc", "netcat"]
+        if networkCommands.contains(executable) {
+            return SecurityViolation.networkAccess.userDescription
+        }
+
+        // Check for privilege escalation attempts
+        let privilegeCommands = ["sudo", "su", "doas", "chroot", "setuid"]
+        if privilegeCommands.contains(executable) {
+            return SecurityViolation.privilegeEscalation.userDescription
+        }
+
+        // Check arguments for dangerous patterns
+        for argument in arguments {
+            // Check for absolute paths to system directories
+            if argument.hasPrefix("/System/") ||
+               argument.hasPrefix("/usr/bin/") ||
+               argument.hasPrefix("/bin/") {
+                return SecurityViolation.systemDirectoryAccess.userDescription
+            }
+
+            // Check for shell metacharacters in arguments
+            let metacharacters = CharacterSet(charactersIn: ";|&$`()<>\"'\\")
+            if argument.rangeOfCharacter(from: metacharacters) != nil {
+                return SecurityViolation.commandInjection.userDescription
+            }
+        }
+
+        return nil
+    }
+
+    /// Sanitize environment variables for security
+    private func sanitizeEnvironment(_ environment: [String: String]) -> [String: String] {
+        var sanitized: [String: String] = [:]
+
+        // Start with safe base environment
+        let safeBaseVars = ["PATH", "HOME", "USER", "LANG", "LC_ALL", "TMPDIR"]
+        for key in safeBaseVars {
+            if let value = ProcessInfo.processInfo.environment[key] {
+                sanitized[key] = value
+            }
+        }
+
+        // Add allowed custom variables
+        for (key, value) in environment {
+            // Only allow ISOMETRY_ prefixed variables and known safe variables
+            if key.hasPrefix("ISOMETRY_") || safeBaseVars.contains(key) {
+                // Sanitize value - remove dangerous characters
+                let sanitizedValue = value.replacingOccurrences(of: ";", with: "")
+                                         .replacingOccurrences(of: "|", with: "")
+                                         .replacingOccurrences(of: "&", with: "")
+                                         .replacingOccurrences(of: "$", with: "")
+                                         .replacingOccurrences(of: "`", with: "")
+
+                sanitized[key] = sanitizedValue
+            }
+        }
+
+        return sanitized
+    }
+
+    /// Wait for process completion with proper monitoring
+    private func waitForProcessCompletion(
+        processId: UUID,
+        command: String,
+        workingDirectory: String,
+        startTime: CFAbsoluteTime
+    ) async -> ExecutionResult {
+        // Monitor process state
+        var lastState: ProcessState = .starting
+
+        while true {
+            guard let processInfo = await processManager.getProcessInfo(processId: processId) else {
+                // Process no longer exists
+                activeProcesses.removeValue(forKey: command)
+                break
+            }
+
+            let currentState = processInfo.state
+            if currentState != lastState {
+                logger.debug("Process \(processId) state changed: \(lastState.rawValue) -> \(currentState.rawValue)")
+                lastState = currentState
+            }
+
+            // Check if process completed
+            if !currentState.isActive {
+                activeProcesses.removeValue(forKey: command)
+
+                let duration = CFAbsoluteTimeGetCurrent() - startTime
+                let success = currentState == .completed
+
+                return ExecutionResult(
+                    success: success,
+                    output: success ? "Command completed successfully" : "Command failed",
+                    error: success ? nil : "Process \(currentState.userDescription.lowercased())",
+                    duration: duration,
+                    exitCode: success ? 0 : 1,
+                    workingDirectory: workingDirectory,
+                    command: command
+                )
+            }
+
+            // Check for timeout
+            let currentDuration = CFAbsoluteTimeGetCurrent() - startTime
+            if currentDuration > executionLimits.maxExecutionTime {
+                logger.warning("Process \(processId) timed out after \(executionLimits.maxExecutionTime)s")
+                await processManager.terminate(processId: processId)
+                activeProcesses.removeValue(forKey: command)
+
+                return ExecutionResult(
+                    success: false,
+                    output: "",
+                    error: "Command timed out after \(executionLimits.maxExecutionTime)s",
+                    duration: currentDuration,
+                    exitCode: nil,
+                    workingDirectory: workingDirectory,
+                    command: command
+                )
+            }
+
+            // Check if long-running and should be backgrounded
+            if currentDuration > 30.0 && currentState == .running {
+                logger.info("Enabling background execution for long-running process: \(command)")
+                await processManager.enableBackgroundExecution(processId: processId)
+            }
+
+            // Wait before next check
+            try? await Task.sleep(for: .milliseconds(500))
+        }
+
+        // Process disappeared unexpectedly
+        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        return ExecutionResult(
+            success: false,
+            output: "",
+            error: "Process terminated unexpectedly",
+            duration: duration,
+            exitCode: nil,
+            workingDirectory: workingDirectory,
+            command: command
+        )
+    }
+
     /// Execute Claude command through API client
     /// - Parameters:
     ///   - prompt: User prompt for Claude
@@ -456,29 +807,8 @@ public actor SandboxExecutor {
 
 // MARK: - Extensions
 
-extension Set where Element == String {
-    /// Commands safe for App Sandbox execution
-    public static let defaultAllowed: Set<String> = [
-        // File system
-        "ls", "pwd", "find",
-
-        // Text processing
-        "cat", "head", "tail", "grep", "sort", "uniq", "wc",
-
-        // System info
-        "date", "whoami", "uname", "which", "echo",
-
-        // Development tools (read-only)
-        "git", "swift", "node", "python3"
-    ]
-
-    /// Paths restricted for App Sandbox security
-    public static let defaultRestricted: Set<String> = [
-        "/System", "/usr", "/bin", "/sbin", "/private",
-        "/etc", "/var/root", "/Applications",
-        "/Library/System", "/Library/Security"
-    ]
-}
+// MARK: - Set Extensions defined in ShellModels.swift
+// Using extensions from ShellModels.swift for defaultAllowed and defaultRestricted
 
 // MARK: - Performance Integration
 

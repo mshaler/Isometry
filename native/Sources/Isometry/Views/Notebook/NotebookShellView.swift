@@ -13,6 +13,14 @@ public struct NotebookShellView: View {
     @State private var historyIndex: Int = -1
     @State private var errorMessage: String?
 
+    // Process management
+    @State private var activeProcesses: [String: ProcessState] = [:]
+    @State private var currentlyExecutingCommand: String = ""
+    @State private var processStartTime: Date = Date()
+    @State private var showCancelConfirmation: Bool = false
+    @State private var backgroundProcessCount: Int = 0
+    @State private var showProcessDetails: Bool = false
+
     // Claude API integration
     @State private var claudeAPIClient: ClaudeAPIClient?
     @State private var isClaudeConfigured: Bool = false
@@ -58,11 +66,8 @@ public struct NotebookShellView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
 
-                // Connection status indicator
-                Circle()
-                    .fill(isExecuting ? .yellow : .green)
-                    .frame(width: 8, height: 8)
-                    .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isExecuting)
+                // Process status indicator
+                processStatusIndicator
             }
 
             Spacer()

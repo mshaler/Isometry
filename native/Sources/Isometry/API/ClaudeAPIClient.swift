@@ -364,9 +364,4 @@ private extension String {
 
 // MARK: - Task Extension
 
-extension Task where Success == Never, Failure == Never {
-    /// Sleep for duration in seconds
-    static func sleep(for duration: Duration) async throws {
-        try await Task.sleep(nanoseconds: UInt64(duration.components.seconds * 1_000_000_000))
-    }
-}
+// Task.sleep extension defined in ProcessManager.swift
