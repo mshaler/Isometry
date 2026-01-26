@@ -1,11 +1,11 @@
 # Isometry Project State
 
 **Last Updated:** 2026-01-26
-**Current Milestone:** v2.1 SQL.js Migration (IN PROGRESS)
-**Current Phase:** Phase 7.1 - API Bridge Foundation (IN PROGRESS)
-**Current Position:** 07.1-02 completed + 1 remaining plan
-**Recent:** Completed React API client migration with zero breaking changes - seamless provider switching implemented
-**Blockers:** Linking issues in native build (IsometryDatabase symbols) need resolution
+**Current Milestone:** v2.0 Native Integration (NEAR COMPLETE)
+**Current Phase:** Phase 6.4 - Preview & Platform Integration (READY)
+**Current Position:** Phase 6.3 completed (4/4 plans) - shell integration with Claude API, process management, and command history complete
+**Recent:** Completed comprehensive shell integration with advanced process management, FTS5 command history, and Claude API integration
+**Blockers:** None - Phase 6.4 ready to begin with production shell system
 
 ---
 
@@ -57,12 +57,12 @@ Isometry has completed the React prototype milestone (v1.0) and Phase 6.1 of nat
 - [x] Template system using native collection views
 - [x] Slash command system with native completion
 
-#### Phase 6.3: Shell Integration (IN PROGRESS)
-**Plans:** 4 plans (1/4 complete)
+#### Phase 6.3: Shell Integration (COMPLETE)
+**Plans:** 4 plans (4/4 complete)
 - [x] 06.3-01: App Sandbox terminal with NSTask/Process security (EXCEEDED)
-- [ ] 06.3-02: Claude Code API native integration via URLSession
-- [ ] 06.3-03: Secure process execution framework within sandbox
-- [ ] 06.3-04: Command history and context management
+- [x] 06.3-02: Claude Code API native integration via URLSession (PRE-EXISTING)
+- [x] 06.3-03: Secure process execution framework within sandbox (COMPLETE)
+- [x] 06.3-04: Command history and context management (COMPLETE)
 
 #### Phase 6.4: Preview & Platform Integration (Planned)
 **Plans:** 4 plans
