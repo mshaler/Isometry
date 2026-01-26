@@ -6,6 +6,15 @@ import { nodeToCardValue } from '@/types/lpg';
 import type { CardValue } from '@/types/lpg';
 import { sampleNodes } from './data/sampleData';
 
+// ============================================
+// Types for D3 View Component Integration
+// ============================================
+
+/** View renderer interface for D3 view wrapper calls */
+interface ViewRenderer {
+  (selection: d3.Selection<SVGGElement, CardValue, null, undefined>): void;
+}
+
 export function D3ViewWrapperDemo() {
   const { theme } = useTheme();
   const [lastEvent, setLastEvent] = useState<string>('None');
@@ -48,7 +57,7 @@ export function D3ViewWrapperDemo() {
           .datum(cardValue);
 
         // Use .call() correctly for d3 components
-        cardGroup.call(card as any);
+        cardGroup.call(card as ViewRenderer);
       });
 
       // Add connecting lines
