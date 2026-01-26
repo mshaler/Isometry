@@ -8,7 +8,7 @@ export interface Node {
   type: string;
   title: string;
   content: string;
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   createdAt: Date;
   modifiedAt: Date;
   deletedAt?: Date;
@@ -23,7 +23,7 @@ export interface Edge {
   toId: string;
   type: string;
   weight?: number;
-  properties?: Record<string, any>;
+  properties?: Record<string, unknown>;
   createdAt: Date;
   modifiedAt: Date;
   deletedAt?: Date;
@@ -48,20 +48,20 @@ export interface DatabaseStats {
   isOnline: boolean;
 }
 
-export type QueryResult = Record<string, any>;
+export type QueryResult = Record<string, unknown>;
 
 /**
  * Database client interface
  * Implemented by sql.js, HTTP API, and WebView bridge clients
  */
 export interface DatabaseClient {
-  execute(sql: string, params?: any[]): Promise<QueryResult[]>;
-  getNodes(options?: any): Promise<Node[]>;
+  execute(sql: string, params?: unknown[]): Promise<QueryResult[]>;
+  getNodes(options?: SearchOptions): Promise<Node[]>;
   createNode(node: Omit<Node, 'id' | 'createdAt' | 'modifiedAt' | 'version'>): Promise<Node>;
   updateNode(node: Node): Promise<Node>;
   deleteNode(id: string): Promise<void>;
   search(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-  getGraph(options?: any): Promise<{ nodes: Node[]; edges: Edge[] }>;
+  getGraph(options?: { nodeId?: string; depth?: number; }): Promise<{ nodes: Node[]; edges: Edge[] }>;
   getStats(): Promise<DatabaseStats>;
   save(): Promise<void>;
   reset(): Promise<void>;
