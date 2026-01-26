@@ -13,12 +13,12 @@ export function D3ViewWrapperDemo() {
   const cardData = useMemo(() => sampleNodes.slice(0, 3).map(nodeToCardValue), []);
 
   const onNodeClick = useCallback((node: CardValue) => {
-    setLastEvent(`Node clicked: ${node.title || node.id || 'Unknown'}`);
+    setLastEvent(`Node clicked: ${(node.type === 'node' ? node.name : node.id) || 'Unknown'}`);
   }, []);
 
   const onNodeHover = useCallback((node: CardValue | null) => {
     if (node) {
-      setLastEvent(`Node hovered: ${node.title || node.id || 'Unknown'}`);
+      setLastEvent(`Node hovered: ${(node.type === 'node' ? node.name : node.id) || 'Unknown'}`);
     }
   }, []);
 

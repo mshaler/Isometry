@@ -13,23 +13,6 @@ interface DocumentStyle {
   underline?: boolean;
 }
 
-interface ParsedElement {
-  type: string;
-  content: string;
-  style?: DocumentStyle;
-  children?: ParsedElement[];
-  styleId?: string;
-  styleName?: string;
-  alignment?: {
-    bold?: boolean;
-    italic?: boolean;
-  };
-  font?: {
-    name?: string;
-    size?: number;
-  };
-  color?: string;
-}
 
 
 export interface OfficeImportOptions {
