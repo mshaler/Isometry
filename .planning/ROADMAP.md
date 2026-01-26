@@ -283,13 +283,17 @@ Plans:
 **Goal:** Verify ETL operations and data lineage systems integration
 **Dependencies:** Phase 8.2 (requires core system verification)
 **Requirements:** ETL-01, ETL-02, ETL-03
-**Plans:** ETL system verification
+**Plans:** 2 plans
 
 **Success Criteria:**
 1. GSD executor pattern implementation verified and tested
 2. Seven-phase execution model validated with real workflows
 3. Data lineage tracking (Sources → Streams → Surfaces) confirmed
 4. Data catalog search and discovery functionality validated
+
+Plans:
+- [ ] 08.3-01-PLAN.md — ETL Operations Management and Data Lineage Verification
+- [ ] 08.3-02-PLAN.md — Data Catalog & Cross-System Integration Verification
 
 #### Phase 8.4: UI & Integration Validation
 **Goal:** Verify user interfaces and complete system integration
@@ -346,8 +350,8 @@ Retrofitting: 8.1 → 8.2 → 8.3 → 8.4
 | 7.2. WebView Bridge | v2.1 | 0/4 | Not started | - |
 | 7.3. Migration Complete | v2.1 | 0/3 | Not started | - |
 | 8.1. Requirements Verification | v2.2 | 2/2 | Ready | - |
-| 8.2. Core Versioning | v2.2 | 0/4 | Planned | - |
-| 8.3. ETL Integration | v2.2 | 0/4 | Planned | - |
+| 8.2. Core Versioning | v2.2 | 2/2 | Complete | 2026-01-26 |
+| 8.3. ETL Integration | v2.2 | 2/2 | Ready | - |
 | 8.4. UI Validation | v2.2 | 0/4 | Planned | - |
 
 ## Architecture Integration Summary
@@ -486,6 +490,6 @@ Production Backend
 
 ---
 
-**Current step:** Phase 8.1 planning complete - Ready for requirements and foundation verification.
+**Current step:** Phase 8.3 planning complete - Ready for ETL integration verification.
 
-**Next step:** `/gsd:execute-phase 8.1` to establish requirements traceability and verification framework.
+**Next step:** `/gsd:execute-phase 8.3` to verify ETL operations management, data lineage tracking, and cross-system integration.
