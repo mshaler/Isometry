@@ -50,13 +50,6 @@ interface D3PerformanceStats {
   scaleGeneration?: number;
   layoutCalculation?: number;
   renderPrep?: number;
-  [key: string]: {
-    average: number;
-    min: number;
-    max: number;
-    latest: number;
-    samples: number;
-  } | number | undefined;
 }
 
 interface PerformanceOverlayProps {
@@ -562,7 +555,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         {/* Enhanced performance overlay */}
         {showPerformanceOverlay && (
           <PerformanceOverlay
-            performance={performance}
+            performance={performance as D3PerformanceStats}
             frameRate={frameRate}
             error={error}
           />
