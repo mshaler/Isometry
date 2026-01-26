@@ -12,6 +12,7 @@ public actor IsometryAPIServer {
 
     private var app: Application?
     private let database: IsometryDatabase
+    private var sqlExecutor: SQLExecutor?
     private var isRunning = false
 
     public private(set) var port: Int
@@ -60,6 +61,9 @@ public actor IsometryAPIServer {
         // Configure JSON content configuration
         ContentConfiguration.global.use(decoder: JSONDecoder(), for: .json)
         ContentConfiguration.global.use(encoder: JSONEncoder(), for: .json)
+
+        // Initialize SQL executor
+        self.sqlExecutor = SQLExecutor(database: database)
 
         // Register routes
         try await registerRoutes(app)
@@ -137,9 +141,12 @@ public actor IsometryAPIServer {
     private func executeSQL(_ req: Request) async throws -> Response {
         let sqlRequest = try req.content.decode(SQLExecuteRequest.self)
 
+        guard let executor = sqlExecutor else {
+            throw APIServerError.serverNotInitialized
+        }
+
         do {
-            let results = try await executeSQLQuery(sql: sqlRequest.sql, params: sqlRequest.params ?? [])
-            // The SQL results are an array, but we need to encode each result
+            let results = try await executor.execute(sql: sqlRequest.sql, params: sqlRequest.params ?? [])
             return try await encodeJSONResponse(results, for: req)
         } catch {
             throw APIServerError.sqlExecutionFailed(sql: sqlRequest.sql, error: error)
@@ -403,47 +410,6 @@ public actor IsometryAPIServer {
         return response
     }
 
-    private func executeSQLQuery(sql: String, params: [SQLParameter]) async throws -> [[String: Any]] {
-        // This will be implemented in SQLExecutor.swift in Task 2
-        // For now, provide a basic implementation using existing database methods
-
-        let trimmedSQL = sql.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-
-        if trimmedSQL.hasPrefix("select") && trimmedSQL.contains("nodes") {
-            // Handle common node queries
-            let nodes = try await database.getAllNodes()
-            return nodes.map { node in
-                [
-                    "id": node.id,
-                    "node_type": node.nodeType,
-                    "name": node.name,
-                    "content": node.content ?? "",
-                    "folder": node.folder ?? "",
-                    "tags": node.tags.joined(separator: ","),
-                    "created_at": node.createdAt.timeIntervalSince1970,
-                    "modified_at": node.modifiedAt.timeIntervalSince1970
-                ]
-            }
-        } else if trimmedSQL.hasPrefix("select") && trimmedSQL.contains("notebook_cards") {
-            // Handle common notebook card queries
-            let cards = try await database.getAllNotebookCards()
-            return cards.map { card in
-                [
-                    "id": card.id,
-                    "title": card.title,
-                    "markdown_content": card.markdownContent ?? "",
-                    "properties": card.properties,
-                    "template_id": card.templateId ?? "",
-                    "folder": card.folder ?? "",
-                    "created_at": card.createdAt.timeIntervalSince1970,
-                    "modified_at": card.modifiedAt.timeIntervalSince1970
-                ]
-            }
-        } else {
-            // For non-SELECT queries, return simple success
-            return [["success": true, "affected_rows": 1]]
-        }
-    }
 }
 
 // MARK: - Data Transfer Objects
@@ -508,6 +474,7 @@ public enum APIServerError: LocalizedError {
     case alreadyRunning
     case portUnavailable(originalPort: Int, error: Error)
     case startupFailed
+    case serverNotInitialized
     case sqlExecutionFailed(sql: String, error: Error)
 
     public var errorDescription: String? {
@@ -518,6 +485,8 @@ public enum APIServerError: LocalizedError {
             return "Port \(port) is unavailable: \(error.localizedDescription)"
         case .startupFailed:
             return "Failed to start API server after multiple attempts"
+        case .serverNotInitialized:
+            return "API server is not properly initialized"
         case .sqlExecutionFailed(let sql, let error):
             return "SQL execution failed for query '\(sql)': \(error.localizedDescription)"
         }
