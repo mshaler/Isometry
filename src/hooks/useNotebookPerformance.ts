@@ -1,6 +1,16 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNotebook } from '../contexts/NotebookContext';
 
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+interface PerformanceWithMemory extends Performance {
+  memory: PerformanceMemory;
+}
+
 export interface PerformanceMetrics {
   renderTime: number; // ms
   memoryUsage: number; // MB
@@ -126,7 +136,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
     // Monitor memory usage
     const measureMemory = () => {
       if ('memory' in performance) {
-        const memory = (performance as any).memory;
+        const memory = (performance as PerformanceWithMemory).memory;
         const usedMB = memory.usedJSHeapSize / (1024 * 1024);
 
         setMetrics(prev => ({ ...prev, memoryUsage: Math.round(usedMB) }));

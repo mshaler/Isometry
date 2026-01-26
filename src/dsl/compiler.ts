@@ -8,7 +8,7 @@
 //   const { sql, params } = compile(ast);
 // ============================================================================
 
-import type { ASTNode, CompiledQuery, FilterOperator, TimePreset } from './types';
+import type { ASTNode, CompiledQuery, FilterOperator, TimePreset, FilterValue } from './types';
 
 /**
  * Compile AST to SQL WHERE clause with parameterized values
@@ -47,7 +47,7 @@ export function compile(ast: ASTNode | null): CompiledQuery {
     }
   }
   
-  function compileFilter(field: string, operator: FilterOperator, value: any): string {
+  function compileFilter(field: string, operator: FilterOperator, value: FilterValue): string {
     // Handle time presets
     if (typeof value === 'object' && 'preset' in value) {
       return compileTimePreset(field, value.preset);
@@ -65,7 +65,7 @@ export function compile(ast: ASTNode | null): CompiledQuery {
     return `${field} ${sqlOp} ?`;
   }
   
-  function compileAxisFilter(axis: string, value: any): string {
+  function compileAxisFilter(axis: string, value: FilterValue): string {
     // Map LATCH axes to SQL
     switch (axis) {
       case 'time':

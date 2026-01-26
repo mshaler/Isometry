@@ -2,6 +2,17 @@ import { useCallback, useRef, useState } from 'react';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { CommandResponse, ClaudeAPIConfig } from '../types/shell';
 
+interface ProcessEnv {
+  ANTHROPIC_API_KEY?: string;
+  [key: string]: string | undefined;
+}
+
+interface GlobalThis {
+  process?: {
+    env?: ProcessEnv;
+  };
+}
+
 interface UseClaudeAPIOptions {
   maxTokens?: number;
   temperature?: number;
@@ -27,7 +38,7 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
   const initializeClient = useCallback(() => {
     // Use import.meta.env for Vite environment, with fallback
     const viteKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const nodeKey = (globalThis as any).process?.env?.ANTHROPIC_API_KEY;
+    const nodeKey = (globalThis as GlobalThis).process?.env?.ANTHROPIC_API_KEY;
     const apiKey = viteKey || nodeKey;
 
     if (!apiKey) {
@@ -57,7 +68,7 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
 
   const validateAPIKey = useCallback((): boolean => {
     const viteKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    const nodeKey = (globalThis as any).process?.env?.ANTHROPIC_API_KEY;
+    const nodeKey = (globalThis as GlobalThis).process?.env?.ANTHROPIC_API_KEY;
     const apiKey = viteKey || nodeKey;
 
     if (!apiKey) {

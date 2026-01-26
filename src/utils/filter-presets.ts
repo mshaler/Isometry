@@ -9,6 +9,15 @@ import type { FilterPreset } from '../types/filter';
 
 const STORAGE_KEY = 'isometry:filter-presets';
 
+interface SerializedFilterPreset {
+  id: string;
+  name: string;
+  filters: unknown;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: unknown;
+}
+
 /**
  * Serialize preset for storage (converts Dates to ISO strings)
  */
@@ -23,7 +32,7 @@ function serializePreset(preset: FilterPreset): Record<string, unknown> {
 /**
  * Deserialize preset from storage (converts ISO strings to Dates)
  */
-function deserializePreset(data: any): FilterPreset {
+function deserializePreset(data: SerializedFilterPreset): FilterPreset {
   return {
     ...data,
     createdAt: new Date(data.createdAt),

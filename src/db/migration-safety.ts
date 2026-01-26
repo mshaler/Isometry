@@ -570,7 +570,7 @@ export class MigrationSafety {
   }
 
   // Placeholder implementations for methods that would integrate with actual database
-  private async exportCurrentData(): Promise<any> {
+  private async exportCurrentData(): Promise<ArrayBuffer | null> {
     if (Environment.isWebView()) {
       return webViewBridge.rollback.exportToSQLjs();
     }

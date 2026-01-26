@@ -18,6 +18,30 @@ export interface DataChange {
   sessionId?: string;
 }
 
+interface SyncEvent {
+  type: 'dataChange' | 'connectionChange' | 'conflictResolved' | 'queueProcessed';
+  payload: DataChange | ConnectionStatus | ConflictResolution | QueueStatus;
+  timestamp: number;
+}
+
+interface ConnectionStatus {
+  connected: boolean;
+  lastActivity: number;
+  environment: Environment;
+}
+
+interface ConflictResolution {
+  conflictId: string;
+  resolution: 'local' | 'remote' | 'manual';
+  resolvedData: Record<string, unknown>;
+}
+
+interface QueueStatus {
+  pending: number;
+  processed: number;
+  errors: string[];
+}
+
 export interface SyncConflict {
   id: string;
   localChange: DataChange;
@@ -218,7 +242,7 @@ export class SyncManager {
     }
   }
 
-  private async handleSyncEvent(event: any): Promise<void> {
+  private async handleSyncEvent(event: SyncEvent): Promise<void> {
     const change = event.detail as DataChange;
     await this.handleRemoteChange(change);
   }
@@ -442,7 +466,7 @@ export function useSyncManager() {
   const [syncState, setSyncState] = useState(syncManager.getSyncState());
 
   useEffect(() => {
-    const handleStateChange = (event: any) => {
+    const handleStateChange = (event: SyncEvent) => {
       setSyncState(event.detail);
     };
 

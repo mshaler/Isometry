@@ -1,6 +1,11 @@
 // Database interface for FTS5 maintenance
 interface Database {
-  exec: (sql: string) => any[]
+  exec: (sql: string) => DatabaseExecResult[]
+}
+
+interface DatabaseExecResult {
+  columns: string[];
+  values: (string | number | null)[][];
 }
 
 /**

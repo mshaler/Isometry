@@ -6,6 +6,35 @@ import { usePAFV } from '../contexts/PAFVContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDatabase } from '../db/DatabaseContext';
 
+interface NotebookCard {
+  id: string;
+  nodeId: string;
+  content: string;
+  properties: Record<string, unknown>;
+  modifiedAt: Date;
+  syncStatus: 'synced' | 'pending' | 'conflict';
+}
+
+interface NotebookHookParams {
+  activeCard: NotebookCard | null;
+  cards: NotebookCard[];
+  loadCards: () => Promise<void>;
+}
+
+interface ConflictQueryResult {
+  card_id: string;
+  card_modified: string;
+  node_modified: string;
+}
+
+interface NodeQueryResult {
+  id: string;
+  name?: string;
+  content?: string;
+  modified_at: string;
+  [key: string]: string | number | null | undefined;
+}
+
 export interface NotebookIntegrationState {
   isMainAppConnected: boolean;
   lastSyncTime: Date | null;
@@ -32,11 +61,7 @@ export interface UseNotebookIntegrationReturn extends NotebookIntegrationState, 
 /**
  * Hook for bidirectional synchronization between notebook and main Isometry application
  */
-export function useNotebookIntegration(params: {
-  activeCard: any;
-  cards: any[];
-  loadCards: () => Promise<void>;
-}): UseNotebookIntegrationReturn {
+export function useNotebookIntegration(params: NotebookHookParams): UseNotebookIntegrationReturn {
   const { activeCard, cards, loadCards } = params;
   const { filters } = useFilters();
   const { wells } = usePAFV();
@@ -174,7 +199,7 @@ export function useNotebookIntegration(params: {
     const conflicts: string[] = [];
 
     // Query for nodes that have been modified in both notebook and main app recently
-    const recentlyModified = execute<Record<string, any>>(
+    const recentlyModified = execute<ConflictQueryResult>(
       `SELECT nc.id as card_id, nc.modified_at as card_modified, n.modified_at as node_modified
        FROM notebook_cards nc
        JOIN nodes n ON nc.node_id = n.id
@@ -228,7 +253,7 @@ export function useNotebookIntegration(params: {
 
         case 'main': {
           // Keep main app version, update notebook card
-          const nodeData = execute<Record<string, any>>(
+          const nodeData = execute<NodeQueryResult>(
             `SELECT * FROM nodes WHERE id = ?`,
             [card.nodeId]
           )[0];
