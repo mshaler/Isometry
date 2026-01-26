@@ -17,7 +17,8 @@ export function useMarkdownEditor(options: UseMarkdownEditorOptions = {}) {
 
   // Auto-save functionality with debouncing
   const debouncedSave = useCallback(
-    debounce(async (cardId: string, newContent: string) => {
+    debounce(async (...args: unknown[]) => {
+      const [cardId, newContent] = args as [string, string];
       if (!enableAutoSave) return;
 
       setIsSaving(true);
