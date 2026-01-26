@@ -5,20 +5,27 @@
 // ============================================================================
 
 import type { AutocompleteItem } from './types';
+import type { SchemaField } from '../db/schemaLoader';
+import { getSchemaFields } from '../db/schemaLoader';
+import type { DatabaseFunction } from '../db/DatabaseContext';
 
-/** Available schema fields - TODO: Load from SQLite */
-const SCHEMA_FIELDS = [
-  { name: 'status', type: 'select', values: ['active', 'pending', 'archived', 'completed'] },
-  { name: 'priority', type: 'number' },
-  { name: 'due', type: 'date' },
-  { name: 'created', type: 'date' },
-  { name: 'modified', type: 'date' },
-  { name: 'name', type: 'text' },
-  { name: 'project', type: 'text' },
-  { name: 'tags', type: 'array' },
-  { name: 'category', type: 'select', values: ['work', 'personal', 'health', 'finance'] },
-  { name: 'location', type: 'text' },
-];
+/** Schema fields loaded from database */
+let cachedSchemaFields: SchemaField[] = [];
+
+/** Clear autocomplete cache (for testing) */
+export function clearAutocompleteCache(): void {
+  cachedSchemaFields = [];
+}
+
+/** Load schema fields from database */
+async function loadSchemaFields(execute: DatabaseFunction): Promise<void> {
+  try {
+    cachedSchemaFields = await getSchemaFields(execute);
+  } catch (error) {
+    console.error('Failed to load schema fields for autocomplete:', error);
+    // Keep existing cached fields on error
+  }
+}
 
 /** LATCH axis shortcuts */
 const AXIS_SHORTCUTS: AutocompleteItem[] = [
@@ -40,19 +47,36 @@ const TIME_PRESETS: AutocompleteItem[] = [
 ];
 
 /**
+ * Initialize autocomplete with database connection
+ * @param execute Database execute function
+ */
+export async function initializeAutocomplete(execute: DatabaseFunction): Promise<void> {
+  await loadSchemaFields(execute);
+}
+
+/**
  * Get autocomplete suggestions based on current input
  * @param input Current text in CommandBar
  * @param cursorPosition Cursor position in input
+ * @param execute Optional database execute function for real-time schema loading
  * @returns Array of suggestions
  */
-export function getSuggestions(input: string, cursorPosition: number): AutocompleteItem[] {
+export async function getSuggestions(
+  input: string,
+  cursorPosition: number,
+  execute?: DatabaseFunction
+): Promise<AutocompleteItem[]> {
+  // Load schema if execute function provided and no cached fields
+  if (execute && cachedSchemaFields.length === 0) {
+    await loadSchemaFields(execute);
+  }
   const textBeforeCursor = input.substring(0, cursorPosition);
   
   // Empty input - suggest fields and axes
   if (!textBeforeCursor.trim()) {
     return [
       ...AXIS_SHORTCUTS,
-      ...SCHEMA_FIELDS.map(f => ({
+      ...cachedSchemaFields.map(f => ({
         label: f.name,
         type: 'field' as const,
         insertText: `${f.name}:`,
@@ -78,12 +102,12 @@ export function getSuggestions(input: string, cursorPosition: number): Autocompl
   const fieldMatch = textBeforeCursor.match(/(\w+):$/);
   if (fieldMatch) {
     const fieldName = fieldMatch[1];
-    const field = SCHEMA_FIELDS.find(f => f.name === fieldName);
-    
+    const field = cachedSchemaFields.find(f => f.name === fieldName);
+
     if (field?.type === 'date') {
       return TIME_PRESETS;
     }
-    
+
     if (field?.type === 'select' && field.values) {
       return field.values.map(v => ({
         label: v,
@@ -92,7 +116,7 @@ export function getSuggestions(input: string, cursorPosition: number): Autocompl
         documentation: `${fieldName} = ${v}`
       }));
     }
-    
+
     // Suggest operators for number fields
     if (field?.type === 'number') {
       return [
@@ -110,7 +134,7 @@ export function getSuggestions(input: string, cursorPosition: number): Autocompl
       { label: 'AND', type: 'operator', insertText: 'AND ', documentation: 'Logical AND' },
       { label: 'OR', type: 'operator', insertText: 'OR ', documentation: 'Logical OR' },
       { label: 'NOT', type: 'operator', insertText: 'NOT ', documentation: 'Logical NOT' },
-      ...SCHEMA_FIELDS.map(f => ({
+      ...cachedSchemaFields.map(f => ({
         label: f.name,
         type: 'field' as const,
         insertText: `${f.name}:`,
@@ -123,7 +147,7 @@ export function getSuggestions(input: string, cursorPosition: number): Autocompl
   const partialMatch = textBeforeCursor.match(/(\w+)$/);
   if (partialMatch) {
     const partial = partialMatch[1].toLowerCase();
-    return SCHEMA_FIELDS
+    return cachedSchemaFields
       .filter(f => f.name.toLowerCase().startsWith(partial))
       .map(f => ({
         label: f.name,
@@ -133,5 +157,100 @@ export function getSuggestions(input: string, cursorPosition: number): Autocompl
       }));
   }
   
+  return [];
+}
+
+/**
+ * Synchronous version for backward compatibility
+ * Uses cached schema fields only
+ */
+export function getSuggestionsSync(input: string, cursorPosition: number): AutocompleteItem[] {
+  const textBeforeCursor = input.substring(0, cursorPosition);
+
+  // Empty input - suggest fields and axes
+  if (!textBeforeCursor.trim()) {
+    return [
+      ...AXIS_SHORTCUTS,
+      ...cachedSchemaFields.map(f => ({
+        label: f.name,
+        type: 'field' as const,
+        insertText: `${f.name}:`,
+        documentation: `Filter by ${f.name}`
+      }))
+    ];
+  }
+
+  // After @ - suggest axis shortcuts
+  if (textBeforeCursor.endsWith('@')) {
+    return AXIS_SHORTCUTS.map(a => ({
+      ...a,
+      insertText: a.insertText.substring(1) // Remove leading @
+    }));
+  }
+
+  // After @time: - suggest time presets
+  if (textBeforeCursor.match(/@time:$/i)) {
+    return TIME_PRESETS;
+  }
+
+  // After field: - suggest values
+  const fieldMatch = textBeforeCursor.match(/(\w+):$/);
+  if (fieldMatch) {
+    const fieldName = fieldMatch[1];
+    const field = cachedSchemaFields.find(f => f.name === fieldName);
+
+    if (field?.type === 'date') {
+      return TIME_PRESETS;
+    }
+
+    if (field?.type === 'select' && field.values) {
+      return field.values.map(v => ({
+        label: v,
+        type: 'value' as const,
+        insertText: v,
+        documentation: `${fieldName} = ${v}`
+      }));
+    }
+
+    // Suggest operators for number fields
+    if (field?.type === 'number') {
+      return [
+        { label: '>', type: 'operator', insertText: '>', documentation: 'Greater than' },
+        { label: '<', type: 'operator', insertText: '<', documentation: 'Less than' },
+        { label: '>=', type: 'operator', insertText: '>=', documentation: 'Greater or equal' },
+        { label: '<=', type: 'operator', insertText: '<=', documentation: 'Less or equal' },
+      ];
+    }
+  }
+
+  // After space - suggest AND/OR or new field
+  if (textBeforeCursor.endsWith(' ')) {
+    return [
+      { label: 'AND', type: 'operator', insertText: 'AND ', documentation: 'Logical AND' },
+      { label: 'OR', type: 'operator', insertText: 'OR ', documentation: 'Logical OR' },
+      { label: 'NOT', type: 'operator', insertText: 'NOT ', documentation: 'Logical NOT' },
+      ...cachedSchemaFields.map(f => ({
+        label: f.name,
+        type: 'field' as const,
+        insertText: `${f.name}:`,
+        documentation: `Filter by ${f.name}`
+      }))
+    ];
+  }
+
+  // Partial field name - filter matching fields
+  const partialMatch = textBeforeCursor.match(/(\w+)$/);
+  if (partialMatch) {
+    const partial = partialMatch[1].toLowerCase();
+    return cachedSchemaFields
+      .filter(f => f.name.toLowerCase().startsWith(partial))
+      .map(f => ({
+        label: f.name,
+        type: 'field' as const,
+        insertText: `${f.name}:`,
+        documentation: `Filter by ${f.name}`
+      }));
+  }
+
   return [];
 }

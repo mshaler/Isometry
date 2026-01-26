@@ -4,7 +4,7 @@
 
 export { parse, validate } from './parser';
 export { compile, compileString } from './compiler';
-export { getSuggestions } from './autocomplete';
+export { getSuggestions, getSuggestionsSync, initializeAutocomplete } from './autocomplete';
 export type {
   ASTNode,
   FilterNode,
