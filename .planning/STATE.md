@@ -57,12 +57,12 @@ Isometry has completed the React prototype milestone (v1.0) and Phase 6.1 of nat
 - [x] Template system using native collection views
 - [x] Slash command system with native completion
 
-#### Phase 6.3: Shell Integration (Planned)
-**Plans:** 4 plans
-- App Sandbox terminal with NSTask/Process security
-- Claude Code API native integration via URLSession
-- Secure process execution framework within sandbox
-- Command history and context management
+#### Phase 6.3: Shell Integration (IN PROGRESS)
+**Plans:** 4 plans (1/4 complete)
+- [x] 06.3-01: App Sandbox terminal with NSTask/Process security (EXCEEDED)
+- [ ] 06.3-02: Claude Code API native integration via URLSession
+- [ ] 06.3-03: Secure process execution framework within sandbox
+- [ ] 06.3-04: Command history and context management
 
 #### Phase 6.4: Preview & Platform Integration (Planned)
 **Plans:** 4 plans
