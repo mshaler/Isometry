@@ -51,7 +51,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   // Register text insertion callback for slash commands
   useEffect(() => {
     const insertText = (text: string, cursorOffset?: number) => {
-      const textarea = editorRef.current?.textarea;
+      const textarea = editorRef.current;
       if (!textarea) return;
 
       const start = textarea.selectionStart;
@@ -100,7 +100,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     setContent(newContent);
 
     // Update slash command query if menu is open
-    const textarea = editorRef.current?.textarea;
+    const textarea = editorRef.current;
     if (textarea && menuState.isOpen) {
       handleTextInput(newContent, textarea.selectionStart, newContent);
     }
