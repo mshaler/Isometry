@@ -10,7 +10,7 @@ interface PoolableCanvasElement {
   y: number;
   width?: number;
   height?: number;
-  style: Record<string, any>;
+  style: Record<string, string | number>;
   text?: string;
   reset(): void;
 }
@@ -21,7 +21,7 @@ class CanvasElement implements PoolableCanvasElement {
   y: number = 0;
   width?: number;
   height?: number;
-  style: Record<string, any> = {};
+  style: Record<string, string | number> = {};
   text?: string;
 
   constructor(type: PoolableCanvasElement['type'] = 'rect') {
@@ -119,7 +119,7 @@ class TextureCache {
   private maxEntries = 50;
   private maxAge = 300000; // 5 minutes
 
-  createCacheKey(type: string, config: Record<string, any>): string {
+  createCacheKey(type: string, config: Record<string, string | number | boolean>): string {
     return `${type}:${JSON.stringify(config)}`;
   }
 
@@ -493,8 +493,8 @@ class PerformanceMonitor {
     return { average, min, max, latest, samples: samples.length };
   }
 
-  getAllStats(): Record<string, any> {
-    const stats: Record<string, any> = {
+  getAllStats(): Record<string, unknown> {
+    const stats: Record<string, unknown> = {
       fps: this.getFPS(),
       frameHistory: this.frameTimeHistory.length
     };
@@ -513,7 +513,7 @@ class PerformanceMonitor {
   }
 
   getMemoryUsage(): { used: number; total: number; percentage: number } {
-    const memory = (performance as any).memory;
+    const memory = (performance as { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
     if (memory) {
       return {
         used: memory.usedJSHeapSize / 1024 / 1024, // MB
@@ -566,7 +566,7 @@ export const createPAFVTransition = (
 // Utility Functions
 // ============================================================================
 
-export const debounce = <T extends (...args: unknown[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   fn: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
@@ -577,7 +577,7 @@ export const debounce = <T extends (...args: unknown[]) => any>(
   };
 };
 
-export const throttle = <T extends (...args: unknown[]) => any>(
+export const throttle = <T extends (...args: unknown[]) => unknown>(
   fn: T,
   limit: number
 ): ((...args: Parameters<T>) => void) => {
