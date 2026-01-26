@@ -499,7 +499,7 @@ class PerformanceMonitor {
       frameHistory: this.frameTimeHistory.length
     };
 
-    for (const [name, metric] of this.metrics) {
+    for (const [name] of this.metrics) {
       stats[name] = this.getMetricStats(name);
     }
 
@@ -551,7 +551,7 @@ export const createPAFVTransition = (
     transitionManager.start(transitionId, startValues, endValues, {
       duration,
       easing: d3.easeCubicInOut,
-      onUpdate: (progress) => {
+      onUpdate: (_progress) => {
         // Custom PAFV transition logic can be added here
         // For now, just track progress
       },

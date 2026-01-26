@@ -421,7 +421,7 @@ describe('System Integration Performance Tests', () => {
 
     it('should maintain data consistency across systems', async () => {
       const ConsistencyTestComponent = () => {
-        const { isEnabled, getFlagConfiguration } = useFeatureFlags();
+        const { isEnabled } = useFeatureFlags();
         const { getVariant, experiments } = useABTests();
         const { getValue } = useConfiguration();
 
@@ -557,7 +557,7 @@ describe('System Integration Performance Tests', () => {
       let updateCount = 0;
       const UpdateTestComponent = () => {
         const { hotReload } = useConfiguration();
-        const configValue = useConfigValue<number>('api_timeout', 30.0);
+        useConfigValue<number>('api_timeout', 30.0);
 
         React.useEffect(() => {
           const rapidUpdates = async () => {
@@ -567,7 +567,7 @@ describe('System Integration Performance Tests', () => {
               try {
                 await hotReload();
                 updateCount++;
-              } catch (error) {
+              } catch {
                 // Ignore errors for this test
               }
             }
