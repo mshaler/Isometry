@@ -182,7 +182,7 @@ public actor ETLOperationManager: ObservableObject {
 
 // MARK: - ETL Operation Types
 
-public struct ETLOperation: Identifiable, Codable {
+public struct ETLOperation: Identifiable, Codable, Sendable {
     public let id: UUID
     public let template: ETLOperationTemplate
     public var configuration: ETLOperationConfiguration
@@ -237,7 +237,7 @@ public enum ETLExecutionStatus: Equatable {
     case cancelled
 }
 
-public enum ETLResultStatus: Codable {
+public enum ETLResultStatus: Codable, Sendable {
     case success
     case partialSuccess
     case failed(String)
