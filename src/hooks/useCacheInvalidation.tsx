@@ -114,11 +114,11 @@ export function useCacheInvalidation() {
 export function useQueryCacheRegistration(tags: CacheTag[], _refetch: () => void) {
   const { register } = useCacheInvalidation();
 
-  const currentRefetch = useRef(refetch);
+  const currentRefetch = useRef(_refetch);
   const cleanupRef = useRef<(() => void) | null>(null);
   const lastTagsRef = useRef<string>('');
 
-  currentRefetch.current = refetch;
+  currentRefetch.current = _refetch;
 
   // Stable refetch function that always calls the latest refetch
   const stableRefetch = useCallback(() => {

@@ -130,11 +130,17 @@ export function EnvironmentProvider({
 
     try {
       const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+      // Use AbortController for timeout instead of invalid timeout property
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+
       const response = await fetch(`${baseURL}/health`, {
         method: 'GET',
-        timeout: 2000
-      } as RequestInit);
+        signal: controller.signal
+      });
 
+      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       console.warn('HTTP API test failed:', error);

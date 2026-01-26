@@ -4,7 +4,7 @@ import { EnvironmentProvider } from '../contexts/EnvironmentContext';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { PAFVProvider } from '../contexts/PAFVContext';
-import { NativeDatabaseProvider } from '../db/NativeDatabaseContext';
+import { DatabaseProvider } from '../db/DatabaseContext';
 
 // Import all Figma components
 import { Toolbar } from './Toolbar';
@@ -39,7 +39,7 @@ export function UnifiedApp() {
     <BrowserRouter>
       <ThemeProvider>
         <EnvironmentProvider>
-          <NativeDatabaseProvider>
+          <DatabaseProvider>
             <CacheInvalidationProvider>
               <AppStateProvider>
                 <FilterProvider>
@@ -92,7 +92,7 @@ export function UnifiedApp() {
                 </FilterProvider>
               </AppStateProvider>
             </CacheInvalidationProvider>
-          </NativeDatabaseProvider>
+          </DatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>
     </BrowserRouter>
