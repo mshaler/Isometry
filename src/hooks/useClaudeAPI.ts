@@ -1,6 +1,12 @@
 import { useCallback, useRef, useState } from 'react';
 import { Anthropic } from '@anthropic-ai/sdk';
 import { CommandResponse } from '../types/shell';
+import {
+  shouldUseAPIProxy,
+  getSecureAPIEndpoint,
+  getSecurityHeaders,
+  validateSecurityConfig
+} from '../config/security';
 
 interface ProcessEnv {
   ANTHROPIC_API_KEY?: string;
@@ -34,9 +40,26 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
   const anthropicRef = useRef<Anthropic | null>(null);
   const [isConfigured, setIsConfigured] = useState(false);
 
-  // Initialize Anthropic client
+  // Initialize Anthropic client with security configuration
   const initializeClient = useCallback(() => {
-    // Use import.meta.env for Vite environment, with fallback
+    // Validate security configuration first
+    const securityValidation = validateSecurityConfig();
+    if (!securityValidation.valid) {
+      console.error('Security configuration invalid:', securityValidation.errors);
+      setIsConfigured(false);
+      return null;
+    }
+
+    // Check if we should use proxy (production) or direct API (development)
+    if (shouldUseAPIProxy()) {
+      console.log('🔒 Using secure API proxy for Claude requests');
+      setIsConfigured(true);
+      return { proxy: true }; // Proxy client placeholder
+    }
+
+    // Development fallback - direct API access
+    console.warn('🔓 Using direct API access (development mode)');
+
     const viteKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
     const nodeKey = (globalThis as GlobalThis).process?.env?.ANTHROPIC_API_KEY;
     const apiKey = viteKey || nodeKey;
@@ -54,8 +77,8 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
     try {
       anthropicRef.current = new Anthropic({
         apiKey,
-        // Note: In production, API calls should go through a backend to hide the API key
-        dangerouslyAllowBrowser: true, // Only for development/demo
+        // Only allow browser access in development
+        dangerouslyAllowBrowser: true
       });
       setIsConfigured(true);
       return anthropicRef.current;
@@ -84,6 +107,63 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
     return true;
   }, []);
 
+  // Secure proxy execution for production API calls
+  const executeViaProxy = useCallback(async (
+    prompt: string,
+    commandId: string,
+    startTime: number
+  ): Promise<CommandResponse> => {
+    try {
+      const endpoint = getSecureAPIEndpoint();
+      const headers = getSecurityHeaders();
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Authorization': `Bearer proxy`, // Proxy handles actual API key
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 8192,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const duration = Date.now() - startTime;
+
+      return {
+        id: commandId,
+        success: true,
+        output: data.content?.[0]?.text || 'No response content',
+        duration,
+        type: 'claude'
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      return {
+        id: commandId,
+        success: false,
+        output: '',
+        error: `Proxy API call failed: ${errorMessage}`,
+        duration,
+        type: 'claude'
+      };
+    }
+  }, []);
+
   const executeClaudeCommand = useCallback(async (prompt: string): Promise<CommandResponse> => {
     const startTime = Date.now();
     const commandId = `claude-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -102,6 +182,11 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
         duration: Date.now() - startTime,
         type: 'claude'
       };
+    }
+
+    // Use secure proxy for API calls if configured
+    if (shouldUseAPIProxy()) {
+      return executeViaProxy(prompt, commandId, startTime);
     }
 
     try {
