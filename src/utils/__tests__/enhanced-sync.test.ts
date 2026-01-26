@@ -57,7 +57,7 @@ describe('EnhancedSyncManager', () => {
     mockLocalStorage.clear();
 
     // Reset mock implementation
-    mockSyncManager = require('../sync-manager').syncManager;
+    mockSyncManager = jest.requireActual('../sync-manager').syncManager;
     mockSyncManager.publishLocalChange.mockResolvedValue(undefined);
 
     syncManager = new EnhancedSyncManager();

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "dev:native": "cross-env REACT_APP_USE_NATIVE_API=true vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "build:with-typecheck": "tsc --project tsconfig.build.json --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext ts,tsx",
     "typecheck": "tsc --noEmit",
