@@ -9,7 +9,6 @@ import { NativeDatabaseProvider } from '../db/NativeDatabaseContext';
 // Import all Figma components
 import { Toolbar } from './Toolbar';
 import { Navigator } from './Navigator';
-import { PAFVNavigator } from './PAFVNavigator';
 import { Sidebar } from './Sidebar';
 import { RightSidebar } from './RightSidebar';
 import { Canvas } from './Canvas';
@@ -17,6 +16,7 @@ import { NavigatorFooter } from './NavigatorFooter';
 import { CommandBar } from './CommandBar';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { NotificationSystem } from './ui/NotificationSystem';
+import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
 
 /**
  * Unified App Component
@@ -40,9 +40,10 @@ export function UnifiedApp() {
       <ThemeProvider>
         <EnvironmentProvider>
           <NativeDatabaseProvider>
-            <AppStateProvider>
-              <FilterProvider>
-                <PAFVProvider>
+            <CacheInvalidationProvider>
+              <AppStateProvider>
+                <FilterProvider>
+                  <PAFVProvider>
                   <div className="h-screen flex flex-col bg-gray-50">
                     {/* Toolbar: Menu bar + command buttons */}
                     <ErrorBoundary level="component" name="Toolbar">
@@ -87,9 +88,10 @@ export function UnifiedApp() {
                     </ErrorBoundary>
                   </div>
                   <NotificationSystem />
-                </PAFVProvider>
-              </FilterProvider>
-            </AppStateProvider>
+                  </PAFVProvider>
+                </FilterProvider>
+              </AppStateProvider>
+            </CacheInvalidationProvider>
           </NativeDatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>
