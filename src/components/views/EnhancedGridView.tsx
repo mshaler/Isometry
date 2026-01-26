@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { GridView } from './GridView';
 import { usePAFV } from '../../hooks/usePAFV';
+import { ViewTransition, SkeletonLoader } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
 
 /**
@@ -10,6 +11,7 @@ import type { ViewComponentProps } from '../../types/view';
  * - Integrates with ViewRenderer interface
  * - Maintains PAFV context integration
  * - Supports transition state restoration
+ * - Enhanced with loading states and animations
  * - Performance optimized with React.memo
  */
 export const EnhancedGridView = React.memo<ViewComponentProps>(({
@@ -18,14 +20,49 @@ export const EnhancedGridView = React.memo<ViewComponentProps>(({
   transitionState
 }) => {
   const { state: pafvState } = usePAFV();
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
-  // The original GridView uses PAFV context internally via usePAFV hook,
-  // so we just need to pass through the props it expects
+  // Simulate loading state when PAFV mappings change
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 150); // Brief loading state for smooth transitions
+
+    return () => clearTimeout(timeout);
+  }, [pafvState.mappings]);
+
+  const handleNodeClick = useCallback((node: any) => {
+    try {
+      onNodeClick?.(node);
+    } catch (error) {
+      console.error('Error handling node click:', error);
+      setHasError(true);
+      setTimeout(() => setHasError(false), 3000); // Clear error after 3 seconds
+    }
+  }, [onNodeClick]);
+
   return (
-    <GridView
-      data={data}
-      onNodeClick={onNodeClick}
-    />
+    <ViewTransition
+      viewKey={`grid-${JSON.stringify(pafvState.mappings)}`}
+      isLoading={isLoading}
+      hasError={hasError}
+      config={{ duration: 250, easing: 'ease-out' }}
+    >
+      {isLoading ? (
+        <div className="p-4">
+          <SkeletonLoader type="grid" count={6} />
+        </div>
+      ) : (
+        <GridView
+          data={data}
+          onNodeClick={handleNodeClick}
+        />
+      )}
+    </ViewTransition>
   );
 });
 

@@ -105,6 +105,7 @@ export function CanvasV2() {
             duration: 300,
             easing: 'ease-out'
           }}
+          showPerformanceMonitor={process.env.NODE_ENV === 'development'}
         />
       );
     }

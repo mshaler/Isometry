@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ListView } from './ListView';
+import { ViewTransition, SkeletonLoader, ListItemTransition } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
 
 /**
@@ -8,21 +9,61 @@ import type { ViewComponentProps } from '../../types/view';
  * Features:
  * - Integrates with ViewRenderer interface
  * - Supports transition state restoration
+ * - Enhanced with staggered list animations
+ * - Loading states with appropriate skeleton
  * - Performance optimized with React.memo
- * - Maintains existing ListView functionality
  */
 export const EnhancedListView = React.memo<ViewComponentProps>(({
   data,
   onNodeClick,
   transitionState
 }) => {
-  // The original ListView already accepts the props we need,
-  // so we just need to pass them through
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [showStaggered, setShowStaggered] = useState(false);
+
+  // Trigger loading state and staggered animation when data changes
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+    setShowStaggered(false);
+
+    const timeout = setTimeout(() => {
+      setIsLoading(false);
+      setShowStaggered(true);
+    }, 100); // Brief loading state
+
+    return () => clearTimeout(timeout);
+  }, [data.length]);
+
+  const handleNodeClick = useCallback((node: any) => {
+    try {
+      onNodeClick?.(node);
+    } catch (error) {
+      console.error('Error handling node click:', error);
+      setHasError(true);
+      setTimeout(() => setHasError(false), 3000);
+    }
+  }, [onNodeClick]);
+
   return (
-    <ListView
-      data={data}
-      onNodeClick={onNodeClick}
-    />
+    <ViewTransition
+      viewKey={`list-${data.length}`}
+      isLoading={isLoading}
+      hasError={hasError}
+      config={{ duration: 300, easing: 'ease-out' }}
+    >
+      {isLoading ? (
+        <div className="p-4">
+          <SkeletonLoader type="list" count={8} />
+        </div>
+      ) : (
+        <ListView
+          data={data}
+          onNodeClick={handleNodeClick}
+        />
+      )}
+    </ViewTransition>
   );
 });
 

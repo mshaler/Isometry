@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { usePAFV } from '../../hooks/usePAFV';
 import { useViewRegistry } from './ViewRegistry';
+import { PerformanceMonitor, usePerformanceTracking } from './PerformanceMonitor';
 import type { ViewType, ViewComponentProps, ViewRenderer } from '../../types/view';
 import type { Node } from '../../types/node';
 import type { AxisMapping } from '../../types/pafv';
@@ -17,6 +18,9 @@ export interface PAFVViewSwitcherProps {
     duration?: number;
     easing?: 'ease' | 'ease-in' | 'ease-out' | 'ease-in-out' | 'linear';
   };
+
+  /** Whether to show performance monitoring overlay */
+  showPerformanceMonitor?: boolean;
 }
 
 /**
@@ -32,7 +36,8 @@ export interface PAFVViewSwitcherProps {
 export function PAFVViewSwitcher({
   data,
   onNodeClick,
-  transitionConfig
+  transitionConfig,
+  showPerformanceMonitor = false
 }: PAFVViewSwitcherProps) {
   const {
     state: pafvState,
@@ -45,6 +50,8 @@ export function PAFVViewSwitcher({
     switchToView,
     getCurrentRenderer
   } = useViewRegistry();
+
+  const { trackOperation } = usePerformanceTracking();
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentRenderer, setCurrentRenderer] = useState<ViewRenderer | null>(null);
@@ -97,7 +104,7 @@ export function PAFVViewSwitcher({
     }
   }, [currentRenderer, pafvState.mappings, applyPAFVConfiguration]);
 
-  // Handle view switching through PAFV
+  // Handle view switching through PAFV with performance tracking
   const handleViewSwitch = useCallback(async (viewType: ViewType) => {
     if (isTransitioning || viewType === pafvState.viewMode) {
       return;
@@ -112,21 +119,23 @@ export function PAFVViewSwitcher({
     setIsTransitioning(true);
 
     try {
-      // Update PAFV state (which preserves per-view mappings)
-      setViewMode(viewType);
+      await trackOperation(`view-transition-${pafvState.viewMode}-to-${viewType}`, async () => {
+        // Update PAFV state (which preserves per-view mappings)
+        setViewMode(viewType);
 
-      // Switch to the new view
-      const newRenderer = await switchToView(viewType);
-      if (newRenderer) {
-        setCurrentRenderer(newRenderer);
-        // PAFV configuration will be applied via useEffect
-      }
+        // Switch to the new view
+        const newRenderer = await switchToView(viewType);
+        if (newRenderer) {
+          setCurrentRenderer(newRenderer);
+          // PAFV configuration will be applied via useEffect
+        }
+      });
     } catch (error) {
       console.error('Failed to switch view:', error);
     } finally {
       setIsTransitioning(false);
     }
-  }, [isTransitioning, pafvState.viewMode, setViewMode, switchToView]);
+  }, [isTransitioning, pafvState.viewMode, setViewMode, switchToView, trackOperation]);
 
   // Update dimensions when container resizes
   useEffect(() => {
@@ -161,19 +170,43 @@ export function PAFVViewSwitcher({
             onClick={() => handleViewSwitch(viewType)}
             disabled={isDisabled}
             className={`
-              px-4 py-2 rounded-md font-medium transition-colors
+              px-4 py-2 rounded-md font-medium transition-all duration-200
               ${isActive
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+                ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-sm hover:transform hover:scale-102'}
               ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
             `}
+            style={{
+              transform: isActive ? 'scale(1.05)' : isDisabled ? 'scale(1)' : 'scale(1)',
+            }}
             aria-pressed={isActive}
             aria-label={`Switch to ${viewType} view`}
           >
-            {viewType === 'grid' ? 'Grid' : 'List'}
-            {isTransitioning && isActive && (
-              <span className="ml-2 inline-block w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
-            )}
+            <div className="flex items-center space-x-2">
+              {/* View Icon */}
+              <div className="w-4 h-4">
+                {viewType === 'grid' ? (
+                  <svg viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="1" width="6" height="6" rx="1" />
+                    <rect x="9" y="1" width="6" height="6" rx="1" />
+                    <rect x="1" y="9" width="6" height="6" rx="1" />
+                    <rect x="9" y="9" width="6" height="6" rx="1" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 16 16" fill="currentColor">
+                    <rect x="1" y="2" width="14" height="3" rx="1" />
+                    <rect x="1" y="7" width="14" height="3" rx="1" />
+                    <rect x="1" y="12" width="14" height="3" rx="1" />
+                  </svg>
+                )}
+              </div>
+
+              <span>{viewType === 'grid' ? 'Grid' : 'List'}</span>
+
+              {isTransitioning && isActive && (
+                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+              )}
+            </div>
           </button>
         );
       })}
@@ -259,6 +292,13 @@ export function PAFVViewSwitcher({
       <div className="view-content flex-1 relative overflow-hidden">
         {renderCurrentView()}
       </div>
+
+      {/* Performance Monitor Overlay */}
+      <PerformanceMonitor
+        visible={showPerformanceMonitor}
+        position="bottom-left"
+        autoTrackFrames={true}
+      />
     </div>
   );
 }
