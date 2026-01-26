@@ -4,8 +4,13 @@ import SwiftUI
 import AppKit
 #endif
 
+#if os(iOS)
+import UIKit
+#endif
+
 /// Main notebook content view with responsive three-component layout
 /// Provides desktop drag-to-resize, tablet/mobile adaptive layouts, and state persistence
+/// Enhanced with iOS multitasking and touch optimizations
 public struct NotebookContentView: View {
 
     @StateObject private var layout = NotebookLayoutModel()
@@ -13,12 +18,28 @@ public struct NotebookContentView: View {
     @State private var isDragging: String? = nil
     @State private var dragStart = DragStartState()
 
+    #if os(iOS)
+    @StateObject private var multitaskingSupport = MultitaskingSupport()
+    @StateObject private var touchOptimizations = TouchOptimizations()
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    #endif
+
     public init() {}
 
     public var body: some View {
         NavigationView {
             GeometryReader { geometry in
                 Group {
+                    #if os(iOS)
+                    // iOS layout with multitasking support
+                    if multitaskingSupport.isSlideOverMode {
+                        slideOverLayout
+                    } else {
+                        adaptiveLayout(for: geometry)
+                    }
+                    #else
+                    // macOS/other platforms
                     switch screenSize {
                     case .mobile:
                         mobileLayout
@@ -27,13 +48,26 @@ public struct NotebookContentView: View {
                     case .desktop:
                         desktopLayout(for: geometry.size)
                     }
+                    #endif
                 }
                 .onAppear {
                     updateScreenSize(for: geometry.size.width)
+                    #if os(iOS)
+                    setupiOSConfiguration(geometry: geometry)
+                    #endif
                 }
                 .onChange(of: geometry.size.width) { _, width in
                     updateScreenSize(for: width)
+                    #if os(iOS)
+                    updateMultitaskingLayout(width: width)
+                    #endif
                 }
+                #if os(iOS)
+                .onChange(of: horizontalSizeClass) { _, _ in
+                    handleSizeClassChange()
+                }
+                .modifier(touchOptimizations.touchOptimizations())
+                #endif
             }
         }
         .navigationTitle("Notebook")
@@ -326,6 +360,234 @@ private struct DividerView: View {
             )
     }
 }
+
+// MARK: - iOS-Specific Layouts
+
+#if os(iOS)
+extension NotebookContentView {
+
+    /// Slide-over optimized layout for quick capture
+    @ViewBuilder
+    private var slideOverLayout: some View {
+        let config = multitaskingSupport.getSlideOverConfiguration()
+
+        VStack(spacing: 8) {
+            if config.showCaptureOnly {
+                NotebookCaptureView()
+                    .frame(minHeight: 400)
+            } else {
+                // Compact three-component stack
+                NotebookCaptureView()
+                    .frame(minHeight: 200)
+
+                NotebookShellView()
+                    .frame(minHeight: 150)
+
+                NotebookPreviewView()
+                    .frame(minHeight: 150)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .gesture(multitaskingSupport.handleSlideOverDismissal())
+    }
+
+    /// Adaptive layout for split view and other multitasking modes
+    @ViewBuilder
+    private func adaptiveLayout(for geometry: GeometryReader<some View>.Content) -> some View {
+        let size = geometry.size
+        let layoutComponents = multitaskingSupport.calculateSplitViewLayout(containerWidth: size.width)
+
+        switch multitaskingSupport.currentWindowMode.layoutPriority {
+        case .balanced:
+            // Three-component layout adapted for split view
+            HStack(spacing: 4) {
+                if layoutComponents.capture > 0 {
+                    NotebookCaptureView()
+                        .frame(width: layoutComponents.capture)
+                        .frame(minWidth: 280)
+                }
+
+                if layoutComponents.shell > 0 {
+                    NotebookShellView()
+                        .frame(width: layoutComponents.shell)
+                        .frame(minWidth: 200)
+                }
+
+                if layoutComponents.preview > 0 {
+                    NotebookPreviewView()
+                        .frame(width: layoutComponents.preview)
+                        .frame(minWidth: 200)
+                }
+            }
+            .padding(.horizontal, 8)
+
+        case .captureFirst:
+            // Capture prioritized for narrow split view
+            VStack(spacing: 4) {
+                NotebookCaptureView()
+                    .frame(height: size.height * 0.6)
+
+                HStack(spacing: 4) {
+                    if layoutComponents.shell > 0 {
+                        NotebookShellView()
+                            .frame(minWidth: 150)
+                    }
+
+                    if layoutComponents.preview > 0 {
+                        NotebookPreviewView()
+                            .frame(minWidth: 150)
+                    }
+                }
+                .frame(height: size.height * 0.4)
+            }
+            .padding(.horizontal, 8)
+
+        case .captureOnly:
+            // Only capture component visible
+            NotebookCaptureView()
+                .padding(.horizontal, 8)
+
+        case .shellPreview:
+            // Only shell and preview (rare case)
+            HStack(spacing: 4) {
+                NotebookShellView()
+                NotebookPreviewView()
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+
+    /// Setup iOS-specific configuration
+    private func setupiOSConfiguration(geometry: GeometryReader<some View>.Content) {
+        // Configure multitasking based on initial geometry
+        updateMultitaskingLayout(width: geometry.size.width)
+
+        // Setup touch optimizations
+        touchOptimizations.isHapticEnabled = true
+
+        // Configure accessibility
+        // This would be called on the main container view
+    }
+
+    /// Update multitasking layout when geometry changes
+    private func updateMultitaskingLayout(width: CGFloat) {
+        // This triggers recalculation in MultitaskingSupport
+        let _ = multitaskingSupport.calculateSplitViewLayout(containerWidth: width)
+    }
+
+    /// Handle size class changes (iPad rotation, split view changes)
+    private func handleSizeClassChange() {
+        // Respond to iOS size class changes
+        switch (horizontalSizeClass, verticalSizeClass) {
+        case (.compact, .regular):
+            // iPhone portrait or narrow split view
+            screenSize = .mobile
+
+        case (.regular, .compact):
+            // iPad landscape or wide split view
+            screenSize = .tablet
+
+        case (.regular, .regular):
+            // iPad portrait
+            screenSize = .desktop
+
+        default:
+            screenSize = .mobile
+        }
+    }
+}
+
+/// iOS-specific toolbar configuration
+extension NotebookContentView {
+
+    @ToolbarContentBuilder
+    private var iOSToolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .navigationBarTrailing) {
+            Menu {
+                Button("Reset Layout") {
+                    layout.resetToDefaults()
+                    touchOptimizations.triggerHaptic(.light)
+                }
+
+                Divider()
+
+                Button("Focus Capture") {
+                    // Focus on capture component
+                    touchOptimizations.triggerHaptic(.selection)
+                }
+
+                Button("Focus Shell") {
+                    // Focus on shell component
+                    touchOptimizations.triggerHaptic(.selection)
+                }
+
+                Button("Focus Preview") {
+                    // Focus on preview component
+                    touchOptimizations.triggerHaptic(.selection)
+                }
+
+                Divider()
+
+                Toggle("Haptic Feedback", isOn: $touchOptimizations.isHapticEnabled)
+
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+        }
+
+        // Add multitasking status indicator for debugging/info
+        ToolbarItem(placement: .navigationBarLeading) {
+            HStack {
+                if multitaskingSupport.isInBackground {
+                    Image(systemName: "moon.fill")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                }
+
+                if multitaskingSupport.backgroundSyncInProgress {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                }
+
+                Text(windowModeText)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var windowModeText: String {
+        switch multitaskingSupport.currentWindowMode {
+        case .fullScreen:
+            return "Full"
+        case .splitView(let width):
+            return "Split \(Int(width))"
+        case .slideOver:
+            return "Slide"
+        case .compact:
+            return "Compact"
+        }
+    }
+}
+
+/// Background app refresh handling
+extension NotebookContentView {
+
+    /// Handle app entering background
+    private func handleAppBackground() {
+        // Triggered by MultitaskingSupport notifications
+        // Save current state, prepare for backgrounding
+    }
+
+    /// Handle app returning to foreground
+    private func handleAppForeground() {
+        // Triggered by MultitaskingSupport notifications
+        // Refresh data, restore state
+    }
+}
+
+#endif
 
 // MARK: - Keyboard Shortcuts
 
