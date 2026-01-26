@@ -12,7 +12,7 @@ import {
 import * as d3 from 'd3';
 
 // ============================================================================
-// Type Definitions
+// Type Definitions - TypeScript strict mode compliant
 // ============================================================================
 
 interface D3CanvasProps {
