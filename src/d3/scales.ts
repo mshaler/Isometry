@@ -29,7 +29,7 @@ export interface ScaleOptions {
 }
 
 /** Extended scale with LATCH metadata and helpers */
-export interface LATCHScale<TDomain = unknown, TRange = number> {
+export interface LATCHScale<TDomain = string | number | Date, TRange = number> {
   /** The underlying D3 scale function */
   (value: TDomain): TRange | undefined;
   /** The LATCH axis this scale represents */
@@ -42,6 +42,12 @@ export interface LATCHScale<TDomain = unknown, TRange = number> {
   range(): TRange[];
   /** Get bandwidth for band scales */
   bandwidth?(): number;
+  /** Copy method for D3 axis compatibility */
+  copy?(): LATCHScale<TDomain, TRange>;
+  /** Ticks method for continuous scales */
+  ticks?(...args: unknown[]): TDomain[];
+  /** Tick format method for continuous scales */
+  tickFormat?(...args: unknown[]): (d: TDomain) => string;
   /** Get LATCH value from a CardValue */
   getValue(card: CardValue): TDomain | undefined;
   /** Get the scaled position for a CardValue */
@@ -294,7 +300,7 @@ export function createLATCHScale(
   }
 
   // Helper to get LATCH value from a card
-  function getValue(card: CardValue): unknown {
+  function getValue(card: CardValue): string | number | Date | undefined {
     const value = card.latch[axis];
 
     // For location coordinates, convert to string
@@ -307,7 +313,7 @@ export function createLATCHScale(
       return (value as string[])[0];
     }
 
-    return value;
+    return value as string | number | Date;
   }
 
   // Helper to get scaled position for a card
@@ -315,50 +321,61 @@ export function createLATCHScale(
     const value = getValue(card);
     if (value === undefined) return undefined;
 
-    // Apply the scale
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (baseScale as any)(value);
+    // Apply the scale with proper typing
+    if ('bandwidth' in baseScale) {
+      // Band scale
+      return (baseScale as d3.ScaleBand<string>)(value as string);
+    } else if (axis === 'time') {
+      // Time scale
+      return (baseScale as d3.ScaleTime<number, number>)(value as Date);
+    } else {
+      // Linear scale
+      return (baseScale as d3.ScaleLinear<number, number>)(value as number);
+    }
   }
 
-  // Create the enhanced LATCH scale
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const latchScale: any = (value: unknown) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (baseScale as any)(value);
-  };
-
-  // Add metadata
-  latchScale.axis = axis;
-  latchScale.type = axis;
-
-  // Forward scale methods
-  latchScale.domain = () => baseScale.domain();
-  latchScale.range = () => baseScale.range();
+  // Create the enhanced LATCH scale with proper typing
+  const latchScale = Object.assign(
+    (value: string | number | Date) => {
+      if ('bandwidth' in baseScale) {
+        return (baseScale as d3.ScaleBand<string>)(value as string);
+      } else if (axis === 'time') {
+        return (baseScale as d3.ScaleTime<number, number>)(value as Date);
+      } else {
+        return (baseScale as d3.ScaleLinear<number, number>)(value as number);
+      }
+    },
+    {
+      axis,
+      type: axis,
+      domain: () => baseScale.domain(),
+      range: () => baseScale.range(),
+      getValue,
+      getPosition,
+    }
+  );
 
   // Forward copy method (required by D3 axis)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  latchScale.copy = () => (baseScale as any).copy();
+  if ('copy' in baseScale) {
+    latchScale.copy = () => createLATCHScale(axis, data, range, options);
+  }
 
   // Forward ticks method if available (for continuous scales)
   if ('ticks' in baseScale) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    latchScale.ticks = (...args: unknown[]) => (baseScale as any).ticks(...args);
+    latchScale.ticks = (...args: unknown[]) =>
+      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).ticks(...args);
   }
 
   // Forward tickFormat if available
   if ('tickFormat' in baseScale) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    latchScale.tickFormat = (...args: unknown[]) => (baseScale as any).tickFormat(...args);
+    latchScale.tickFormat = (...args: unknown[]) =>
+      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).tickFormat(...args);
   }
 
   // Add bandwidth if available (band scales)
   if ('bandwidth' in baseScale) {
     latchScale.bandwidth = () => (baseScale as d3.ScaleBand<string>).bandwidth();
   }
-
-  // Add helpers
-  latchScale.getValue = getValue;
-  latchScale.getPosition = getPosition;
 
   return latchScale as LATCHScale;
 }
