@@ -17,7 +17,10 @@ public actor ETLOperationManager: ObservableObject {
 
     public init(database: IsometryDatabase) {
         self.database = database
-        loadOperationHistory()
+        // loadOperationHistory is actor-isolated, call asynchronously
+        Task {
+            await loadOperationHistory()
+        }
     }
 
     // MARK: - Public Interface
@@ -200,7 +203,7 @@ public struct ETLOperationExecution: Identifiable {
     public var id: UUID { operation.id }
 }
 
-public struct ETLOperationResult: Identifiable {
+public struct ETLOperationResult: Identifiable, Sendable {
     public let operationId: UUID
     public let operation: ETLOperation
     public let status: ETLResultStatus
@@ -247,7 +250,7 @@ public enum ETLResultStatus: Codable {
     }
 }
 
-public enum ETLPhase: CaseIterable, Codable {
+public enum ETLPhase: CaseIterable, Codable, Sendable {
     case preparing
     case scanning
     case extracting
@@ -362,7 +365,7 @@ public enum ETLPermission: String, CaseIterable, Codable {
     }
 }
 
-public enum ETLSourceType: String, CaseIterable, Codable {
+public enum ETLSourceType: String, CaseIterable, Codable, Sendable {
     case appleNotes = "Apple Notes"
     case appleReminders = "Apple Reminders"
     case appleCalendar = "Apple Calendar"

@@ -26,7 +26,7 @@ public final class PerformanceMonitor: @unchecked Sendable {
 // MARK: - Process State Models
 
 /// State of a managed process
-public enum ProcessState: String, CaseIterable, Sendable {
+public enum ManagedManagedProcessState: String, CaseIterable, Sendable {
     case idle = "idle"
     case running = "running"
     case suspended = "suspended"
@@ -84,7 +84,7 @@ public struct BackgroundExecution: Sendable {
 public struct ManagedProcess: Sendable {
     public let id: UUID
     public let process: Process
-    public let state: ProcessState
+    public let state: ManagedProcessState
     public let command: String
     public let startTime: Date
     public let workingDirectory: String
@@ -95,7 +95,7 @@ public struct ManagedProcess: Sendable {
     public init(
         id: UUID = UUID(),
         process: Process,
-        state: ProcessState = .idle,
+        state: ManagedProcessState = .idle,
         command: String,
         startTime: Date = Date(),
         workingDirectory: String,
@@ -157,8 +157,11 @@ public actor ProcessManager {
         self.maxMemoryPerProcess = maxMemoryPerProcess
         self.cleanupInterval = cleanupInterval
 
-        setupBackgroundSupport()
-        startCleanupTimer()
+        // Initialize background support and cleanup asynchronously
+        Task {
+            await setupBackgroundSupport()
+            await startCleanupTimer()
+        }
     }
 
     // MARK: - Process Management
@@ -598,7 +601,7 @@ public actor ProcessManager {
     // MARK: - Public Interface
 
     /// Get current process states
-    public var processStates: [UUID: ProcessState] {
+    public var processStates: [UUID: ManagedProcessState] {
         return managedProcesses.mapValues { $0.state }
     }
 

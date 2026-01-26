@@ -40,7 +40,6 @@ public struct ShellCommand: Identifiable, Codable, Sendable, Hashable {
 }
 
 /// Command context linking to Isometry cards
-@MainActor
 public struct CommandContext: Codable, Sendable, Hashable {
     public let cardId: UUID?
     public let cardTitle: String?
@@ -52,7 +51,6 @@ public struct CommandContext: Codable, Sendable, Hashable {
 }
 
 /// Response from command execution
-@MainActor
 public struct CommandResponse: Identifiable, Codable, Sendable {
     public let id: UUID
     public let commandId: UUID
@@ -301,7 +299,7 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
     public let cwd: String?
     public let context: CommandContext?
     public let sessionId: String
-    public let success: Bool?
+    public let success: Bool
 
     public init(
         id: UUID = UUID(),
@@ -324,7 +322,7 @@ public struct HistoryEntry: Identifiable, Codable, Sendable {
         self.cwd = cwd
         self.context = context
         self.sessionId = sessionId
-        self.success = success ?? response?.success
+        self.success = success ?? response?.success ?? false
     }
 }
 
@@ -475,7 +473,7 @@ public struct BackgroundTask: Identifiable, Codable, Sendable {
 }
 
 /// Enhanced process state for lifecycle management
-public enum ProcessState: String, CaseIterable, Codable, Sendable {
+public enum ShellShellProcessState: String, CaseIterable, Codable, Sendable {
     case starting = "starting"
     case running = "running"
     case suspended = "suspended"

@@ -14,7 +14,7 @@ public struct NotebookShellView: View {
     @State private var errorMessage: String?
 
     // Process management
-    @State private var activeProcesses: [String: ProcessState] = [:]
+    @State private var activeProcesses: [String: ManagedProcessState] = [:]
     @State private var currentlyExecutingCommand: String = ""
     @State private var processStartTime: Date = Date()
     @State private var showCancelConfirmation: Bool = false
@@ -451,7 +451,7 @@ public struct NotebookShellView: View {
         }
     }
 
-    private func colorForState(_ state: ProcessState) -> Color {
+    private func colorForState(_ state: ManagedProcessState) -> Color {
         switch state {
         case .starting:
             return .orange

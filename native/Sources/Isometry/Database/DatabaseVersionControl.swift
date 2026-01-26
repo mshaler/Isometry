@@ -652,14 +652,29 @@ public struct DatabaseCommit: Codable, Sendable {
     public let metadata: [String: String]
 }
 
+// Type-safe database change values
+public struct DatabaseChangeValues: Codable, Sendable {
+    public let strings: [String: String]?
+    public let numbers: [String: Double]?
+    public let booleans: [String: Bool]?
+    public let dates: [String: Date]?
+
+    public init(strings: [String: String]? = nil, numbers: [String: Double]? = nil, booleans: [String: Bool]? = nil, dates: [String: Date]? = nil) {
+        self.strings = strings
+        self.numbers = numbers
+        self.booleans = booleans
+        self.dates = dates
+    }
+}
+
 public struct DatabaseChange: Codable, Sendable {
     public let id: UUID
     public let table: String
     public let recordId: String
     public let operation: DatabaseOperation
     public let timestamp: Date
-    public let previousValues: [String: Any]?
-    public let newValues: [String: Any]?
+    public let previousValues: DatabaseChangeValues?
+    public let newValues: DatabaseChangeValues?
     public let author: String
 }
 
@@ -739,7 +754,7 @@ public struct DatabaseTriggerState: Codable, Sendable {
 
 // MARK: - Analytics and Synthetic Data Support
 
-public struct AnalyticsBranch {
+public struct AnalyticsBranch: Sendable {
     public let baseBranch: DatabaseBranch
     public let configuration: AnalyticsConfiguration
     public let isolationLevel: IsolationLevel
@@ -748,11 +763,26 @@ public struct AnalyticsBranch {
     public let isEphemeral: Bool
 }
 
+// Type-safe analytics filters
+public struct AnalyticsFilters: Codable, Sendable {
+    public let stringFilters: [String: String]
+    public let numericFilters: [String: Double]
+    public let booleanFilters: [String: Bool]
+    public let dateFilters: [String: Date]
+
+    public init(stringFilters: [String: String] = [:], numericFilters: [String: Double] = [:], booleanFilters: [String: Bool] = [:], dateFilters: [String: Date] = [:]) {
+        self.stringFilters = stringFilters
+        self.numericFilters = numericFilters
+        self.booleanFilters = booleanFilters
+        self.dateFilters = dateFilters
+    }
+}
+
 public struct AnalyticsConfiguration: Codable, Sendable {
     public let analysisType: AnalysisType
     public let targetTables: [String]
     public let timeRange: DateInterval?
-    public let filters: [String: Any]
+    public let filters: AnalyticsFilters
     public let aggregations: [String]
 }
 
@@ -769,7 +799,7 @@ public enum IsolationLevel: String, Codable, CaseIterable, Sendable {
     case serializable = "serializable"
 }
 
-public struct SyntheticBranch {
+public struct SyntheticBranch: Sendable {
     public let baseBranch: DatabaseBranch
     public let generator: SyntheticDataGenerator
     public let preserveSchema: Bool
@@ -777,7 +807,7 @@ public struct SyntheticBranch {
     public let isEphemeral: Bool
 }
 
-public struct SyntheticDataGenerator {
+public struct SyntheticDataGenerator: Sendable {
     public let description: String
     public let scale: DataScale
 

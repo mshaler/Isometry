@@ -513,9 +513,9 @@ public actor SandboxExecutor {
     }
 
     /// Get status of active processes
-    public var activeProcessStatus: [String: ProcessState] {
+    public var activeProcessStatus: [String: ManagedProcessState] {
         get async {
-            var status: [String: ProcessState] = [:]
+            var status: [String: ManagedProcessState] = [:]
             for (command, processId) in activeProcesses {
                 if let processInfo = await processManager.getProcessInfo(processId: processId) {
                     status[command] = processInfo.state
@@ -662,7 +662,7 @@ public actor SandboxExecutor {
         startTime: CFAbsoluteTime
     ) async -> ExecutionResult {
         // Monitor process state
-        var lastState: ProcessState = .starting
+        var lastState: ManagedProcessState = .starting
 
         while true {
             guard let processInfo = await processManager.getProcessInfo(processId: processId) else {

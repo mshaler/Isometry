@@ -154,6 +154,21 @@ public actor ETLVersionManager {
 
 // MARK: - Supporting Types
 
+// Type-safe ETL metadata
+public struct ETLMetadata: Codable, Sendable {
+    public let stringValues: [String: String]
+    public let numericValues: [String: Double]
+    public let booleanValues: [String: Bool]
+    public let dateValues: [String: Date]
+
+    public init(stringValues: [String: String] = [:], numericValues: [String: Double] = [:], booleanValues: [String: Bool] = [:], dateValues: [String: Date] = [:]) {
+        self.stringValues = stringValues
+        self.numericValues = numericValues
+        self.booleanValues = booleanValues
+        self.dateValues = dateValues
+    }
+}
+
 public struct ETLDataVersion: Codable, Sendable {
     public let id: UUID
     public let streamId: String
@@ -161,7 +176,7 @@ public struct ETLDataVersion: Codable, Sendable {
     public let description: String
     public let createdAt: Date
     public let createdBy: UUID? // ETL Operation ID
-    public let metadata: [String: Any]
+    public let metadata: ETLMetadata
     public let status: ETLVersionStatus
 
     public init(
@@ -171,7 +186,7 @@ public struct ETLDataVersion: Codable, Sendable {
         description: String,
         createdAt: Date,
         createdBy: UUID? = nil,
-        metadata: [String: Any] = [:],
+        metadata: ETLMetadata = ETLMetadata(),
         status: ETLVersionStatus = .active
     ) {
         self.id = id
@@ -227,6 +242,19 @@ public struct ETLVersionDiff: Sendable {
     }
 }
 
+// Type-safe lineage changes
+public struct ETLLineageChanges: Codable, Sendable {
+    public let fieldChanges: [String: String]
+    public let valueChanges: [String: String]
+    public let metadataChanges: [String: String]
+
+    public init(fieldChanges: [String: String] = [:], valueChanges: [String: String] = [:], metadataChanges: [String: String] = [:]) {
+        self.fieldChanges = fieldChanges
+        self.valueChanges = valueChanges
+        self.metadataChanges = metadataChanges
+    }
+}
+
 public struct ETLLineageEntry: Codable, Sendable {
     public let nodeId: String
     public let operationId: UUID
@@ -234,7 +262,7 @@ public struct ETLLineageEntry: Codable, Sendable {
     public let sourceSystem: String
     public let versionId: UUID
     public let timestamp: Date
-    public let changes: [String: Any]
+    public let changes: ETLLineageChanges
 }
 
 public struct ETLSchemaChange: Codable, Sendable {

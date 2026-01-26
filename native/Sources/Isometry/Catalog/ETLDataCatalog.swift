@@ -182,6 +182,19 @@ public actor ETLDataCatalog {
 
 // MARK: - Supporting Types
 
+// Configuration for ETL data sources
+public struct ETLSourceConfiguration: Codable, Sendable {
+    public let settings: [String: String]  // String-only configuration
+    public let flags: [String: Bool]       // Boolean flags
+    public let numbers: [String: Double]   // Numeric configuration
+
+    public init(settings: [String: String] = [:], flags: [String: Bool] = [:], numbers: [String: Double] = [:]) {
+        self.settings = settings
+        self.flags = flags
+        self.numbers = numbers
+    }
+}
+
 // Sources (ETL Origins)
 public struct ETLDataSource: Codable, Sendable, Identifiable {
     public let id: String
@@ -190,7 +203,7 @@ public struct ETLDataSource: Codable, Sendable, Identifiable {
     public let category: ETLSourceCategory
     public let type: ETLSourceType
     public let connectionString: String?
-    public let configuration: [String: Any]
+    public let configuration: ETLSourceConfiguration
     public let status: ETLSourceStatus
     public let healthMetrics: ETLSourceMetrics?
     public let createdAt: Date

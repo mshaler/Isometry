@@ -166,7 +166,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 result = ["success": true]
 
             default:
-                throw DatabaseError.invalidOperation("Unknown method: \\(method)")
+                throw DatabaseMessageError.invalidOperation("Unknown method: \\(method)")
             }
 
             // Record successful operation
@@ -222,7 +222,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         database: IsometryDatabase
     ) async throws -> [[String: Any]] {
         guard let sql = params["sql"] as? String else {
-            throw DatabaseError.invalidQuery("Missing SQL query")
+            throw DatabaseMessageError.invalidQuery("Missing SQL query")
         }
 
         let sqlParams = params["params"] as? [Any] ?? []
@@ -268,7 +268,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
         // Validate pagination parameters
         guard limit > 0, limit <= 1000, offset >= 0 else {
-            throw DatabaseError.invalidQuery("Invalid pagination parameters")
+            throw DatabaseMessageError.invalidQuery("Invalid pagination parameters")
         }
 
         return try await database.read { db in
@@ -312,7 +312,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         database: IsometryDatabase
     ) async throws -> [String: Any] {
         guard let nodeData = params["node"] as? [String: Any] else {
-            throw DatabaseError.invalidData("Missing node data")
+            throw DatabaseMessageError.invalidData("Missing node data")
         }
 
         // Parse and validate node data
@@ -333,7 +333,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         database: IsometryDatabase
     ) async throws -> [String: Any] {
         guard let nodeData = params["node"] as? [String: Any] else {
-            throw DatabaseError.invalidData("Missing node data")
+            throw DatabaseMessageError.invalidData("Missing node data")
         }
 
         let node = try parseNodeFromDict(nodeData)
@@ -352,12 +352,12 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         database: IsometryDatabase
     ) async throws -> [String: Bool] {
         guard let nodeId = params["id"] as? String else {
-            throw DatabaseError.invalidData("Missing node ID")
+            throw DatabaseMessageError.invalidData("Missing node ID")
         }
 
         // Validate node ID format
         guard !nodeId.isEmpty, nodeId.count <= 255 else {
-            throw DatabaseError.invalidData("Invalid node ID format")
+            throw DatabaseMessageError.invalidData("Invalid node ID format")
         }
 
         try await database.deleteNode(id: nodeId)
@@ -372,14 +372,14 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         database: IsometryDatabase
     ) async throws -> [[String: Any]] {
         guard let query = params["query"] as? String else {
-            throw DatabaseError.invalidQuery("Missing search query")
+            throw DatabaseMessageError.invalidQuery("Missing search query")
         }
 
         let limit = params["limit"] as? Int ?? 50
 
         // Validate search parameters
         guard !query.isEmpty, query.count <= 1000, limit > 0, limit <= 100 else {
-            throw DatabaseError.invalidQuery("Invalid search parameters")
+            throw DatabaseMessageError.invalidQuery("Invalid search parameters")
         }
 
         return try await database.read { db in
@@ -421,7 +421,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
         // Validate depth parameter
         guard depth >= 0, depth <= 10 else {
-            throw DatabaseError.invalidQuery("Invalid graph depth")
+            throw DatabaseMessageError.invalidQuery("Invalid graph depth")
         }
 
         return try await database.read { db in
@@ -501,7 +501,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
     private func nodeToDict(_ node: Node) throws -> [String: Any] {
         let data = try encoder.encode(node)
         guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
-            throw DatabaseError.encodingFailed("Failed to convert node to dictionary")
+            throw DatabaseMessageError.encodingFailed("Failed to convert node to dictionary")
         }
         return dict
     }
@@ -510,7 +510,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
      * Format error for client response
      */
     private func formatError(_ error: Error) -> String {
-        if let dbError = error as? DatabaseError {
+        if let dbError = error as? DatabaseMessageError {
             return dbError.localizedDescription
         } else {
             return "Database operation failed: \\(error.localizedDescription)"
@@ -588,7 +588,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         do {
             let responseData = try JSONSerialization.data(withJSONObject: response, options: .sortedKeys)
             guard let responseString = String(data: responseData, encoding: .utf8) else {
-                throw DatabaseError.encodingFailed("Failed to encode response")
+                throw DatabaseMessageError.encodingFailed("Failed to encode response")
             }
 
             let script = "window.resolveWebViewRequest('\(id)', \(result != nil ? "\(responseString)" : "null"), \(error != nil ? "\"\(error!)\"" : "null"))"
@@ -665,7 +665,7 @@ private class MessageHandlerSecurityValidator {
 
     func validateSQLQuery(_ sql: String) async throws {
         if let error = validateSQLSecurity(sql) {
-            throw DatabaseError.securityViolation(error)
+            throw DatabaseMessageError.securityViolation(error)
         }
     }
 
@@ -695,7 +695,7 @@ private class MessageHandlerSecurityValidator {
 
 // MARK: - Enhanced Database Error Types
 
-public enum DatabaseError: LocalizedError {
+public enum DatabaseMessageError: LocalizedError {
     case invalidOperation(String)
     case invalidQuery(String)
     case invalidData(String)

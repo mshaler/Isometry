@@ -18,13 +18,13 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
     public func validateNotebookPerformance() async -> NotebookPerformanceResult {
         let metrics = performanceMonitor.notebookMetrics
 
-        var issues: [NotebookNotebookPerformanceIssue] = []
+        var issues: [NotebookPerformanceIssue] = []
 
         // Validate render performance (60fps target)
         if metrics.averageRenderTime > PerformanceMonitor.targetFrameTime {
-            let severity: NotebookNotebookPerformanceIssue.Severity = metrics.averageRenderTime > (PerformanceMonitor.targetFrameTime * 1.5) ? .error : .warning
+            let severity: NotebookPerformanceIssue.Severity = metrics.averageRenderTime > (PerformanceMonitor.targetFrameTime * 1.5) ? .error : .warning
 
-            issues.append(NotebookNotebookPerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: severity,
                 category: "Render Performance",
                 description: "Average notebook render time exceeds 16.67ms target",
@@ -165,7 +165,7 @@ public struct NotebookPerformanceResult {
     public var warningCount: Int { issues.filter { $0.severity == .warning }.count }
 }
 
-public struct NotebookNotebookPerformanceIssue {
+public struct NotebookPerformanceIssue {
     public let severity: Severity
     public let category: String
     public let description: String
