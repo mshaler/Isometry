@@ -698,7 +698,7 @@ export const useConfiguration = (): ConfigurationContextValue => {
 };
 
 // Hook for getting a specific configuration value
-export const useConfigValue = <T>(key: string, defaultValue?: T): T | undefined => {
+export const useConfigValue = <T = unknown>(key: string, defaultValue?: T): T | undefined => {
   const { getValue } = useConfiguration();
   return getValue(key, defaultValue);
 };
