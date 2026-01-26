@@ -15,27 +15,22 @@ export function renderHistogram({
 
   const values = data.map(d => d[xField]).filter(v => typeof v === 'number') as number[];
 
-  // Create histogram with safe extent handling (IIFE pattern from 10-03)
-  const { domain, bins } = (() => {
-    const extent = d3.extent(values);
-    const safeDomain = extent[0] != null && extent[1] != null ?
-      extent as [number, number] :
-      [0, Math.max(1, Math.max(...values) || 1)];
+  // Create histogram with safe extent handling
+  const extent = d3.extent(values);
+  const safeDomain: [number, number] = extent[0] != null && extent[1] != null ?
+    extent as [number, number] :
+    [0, Math.max(1, Math.max(...values) || 1)];
 
-    const histogram = d3.histogram<number, number>()
-      .value(d => d)
-      .domain(safeDomain)
-      .thresholds(Math.min(20, Math.sqrt(values.length)));
+  const histogram = d3.histogram<number, number>()
+    .value(d => d)
+    .domain(safeDomain)
+    .thresholds(Math.min(20, Math.sqrt(values.length)));
 
-    return {
-      domain: safeDomain,
-      bins: histogram(values)
-    };
-  })();
+  const bins = histogram(values);
 
   // Scales
   const x = d3.scaleLinear()
-    .domain(domain)
+    .domain(safeDomain)
     .range([0, innerWidth]);
 
   const y = d3.scaleLinear()
