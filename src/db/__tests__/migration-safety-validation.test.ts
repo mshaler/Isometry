@@ -34,12 +34,7 @@ const mockSyncManager = {
   }))
 };
 
-// Mock global crypto
-const mockCrypto = {
-  subtle: {
-    digest: vi.fn(() => Promise.resolve(new ArrayBuffer(32)))
-  }
-};
+// Crypto is now mocked globally in test setup
 
 describe('Migration Safety Validation', () => {
   beforeEach(() => {
@@ -79,10 +74,7 @@ describe('Migration Safety Validation', () => {
       return Promise.resolve([]);
     });
 
-    mockCrypto.subtle.digest.mockResolvedValue(new ArrayBuffer(32));
-
-    // Mock global objects
-    global.crypto = mockCrypto as unknown as Crypto;
+    // Crypto is already mocked globally in test setup
   });
 
   afterEach(() => {
@@ -617,7 +609,7 @@ describe('Migration Safety Validation', () => {
       const safety = new MigrationSafety();
 
       // Mock crypto failure
-      global.crypto.subtle.digest = vi.fn().mockRejectedValue(new Error('Crypto not available'));
+      vi.spyOn(global.crypto.subtle, 'digest').mockRejectedValue(new Error('Crypto not available'));
 
       await expect(safety['generateChecksum']('test')).rejects.toThrow();
     });
