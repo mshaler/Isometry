@@ -23,11 +23,10 @@ vi.mock('xlsx', () => ({
 }));
 
 vi.mock('mammoth', () => ({
-  default: {
-    convertToHtml: vi.fn(),
-    extractRawText: vi.fn(),
-    images: {
-      imgElement: vi.fn()
+  convertToHtml: vi.fn(),
+  extractRawText: vi.fn(),
+  images: {
+    imgElement: vi.fn()
     }
   }
 }));
@@ -158,7 +157,7 @@ describe('OfficeDocumentProcessor', () => {
     it('should process DOCX file', async () => {
       const mockFile = new File(['mock word data'], 'document.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
-      const { default: mammoth } = await import('mammoth');
+      const mammoth = await import('mammoth');
       vi.mocked(mammoth.convertToHtml).mockResolvedValue({
         value: '<h1>Test Document</h1><p>This is a test paragraph.</p>',
         messages: []
@@ -182,7 +181,7 @@ describe('OfficeDocumentProcessor', () => {
     it('should preserve formatting when requested', async () => {
       const mockFile = new File(['mock word data'], 'formatted.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
-      const { default: mammoth } = await import('mammoth');
+      const mammoth = await import('mammoth');
       vi.mocked(mammoth.convertToHtml).mockResolvedValue({
         value: '<h1>Title</h1><p>Normal text with <strong>bold</strong> and <em>italic</em>.</p>',
         messages: []
@@ -204,7 +203,7 @@ describe('OfficeDocumentProcessor', () => {
     it('should handle Word document with tables', async () => {
       const mockFile = new File(['mock word data'], 'tables.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
-      const { default: mammoth } = await import('mammoth');
+      const mammoth = await import('mammoth');
       vi.mocked(mammoth.convertToHtml).mockResolvedValue({
         value: '<h1>Document with Table</h1><table><tr><td>Cell 1</td><td>Cell 2</td></tr></table>',
         messages: []
@@ -315,7 +314,7 @@ describe('OfficeDocumentProcessor', () => {
       const XLSX = await import('xlsx');
       vi.mocked(XLSX.read).mockReturnValue({ SheetNames: [], Sheets: {} });
 
-      const { default: mammoth } = await import('mammoth');
+      const mammoth = await import('mammoth');
       vi.mocked(mammoth.convertToHtml).mockResolvedValue({ value: '', messages: [] });
       vi.mocked(mammoth.extractRawText).mockResolvedValue({ value: '', messages: [] });
 
@@ -378,7 +377,7 @@ describe('OfficeDocumentProcessor', () => {
       const corruptFile = new File(['invalid docx data'], 'corrupt.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 
       const mammoth = await import('mammoth');
-      vi.mocked(mammoth.default.convertToHtml).mockRejectedValue(new Error('Invalid DOCX format'));
+      vi.mocked(mammoth.convertToHtml).mockRejectedValue(new Error('Invalid DOCX format'));
 
       await expect(processor.importWord(corruptFile)).rejects.toThrow('Failed to import Word document');
     });
