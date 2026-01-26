@@ -51,6 +51,9 @@ public struct NotebookShellView: View {
         .onAppear {
             initializeShell()
         }
+        .sheet(isPresented: $showProcessDetails) {
+            processDetailsView
+        }
     }
 
     // MARK: - Header
@@ -72,6 +75,11 @@ public struct NotebookShellView: View {
 
             Spacer()
 
+            // Process statistics
+            if !activeProcesses.isEmpty {
+                processStatistics
+            }
+
             // Working directory display
             Text(currentWorkingDirectory.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
                 .font(.caption)
@@ -79,6 +87,15 @@ public struct NotebookShellView: View {
                 .fontDesign(.monospaced)
                 .lineLimit(1)
                 .truncationMode(.head)
+
+            // Process details button
+            if !activeProcesses.isEmpty {
+                Button(action: { showProcessDetails = true }) {
+                    Image(systemName: "list.bullet.circle")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
 
             // Clear button
             Button(action: clearHistory) {
@@ -273,15 +290,168 @@ public struct NotebookShellView: View {
 
             if isExecuting {
                 Button("Cancel") {
-                    cancelExecution()
+                    if currentlyExecutingCommand.isEmpty {
+                        cancelExecution()
+                    } else {
+                        showCancelConfirmation = true
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.red)
+                .confirmationDialog(
+                    "Cancel Command?",
+                    isPresented: $showCancelConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("Cancel Command", role: .destructive) {
+                        cancelCurrentCommand()
+                    }
+                    Button("Continue", role: .cancel) { }
+                } message: {
+                    Text("This will terminate the running process: '\(currentlyExecutingCommand)'")
+                }
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(Color.primary.opacity(0.03))
+    }
+
+    // MARK: - Process Management Views
+
+    private var processStatusIndicator: some View {
+        HStack(spacing: 4) {
+            if isExecuting {
+                ProgressView()
+                    .scaleEffect(0.7)
+                    .foregroundStyle(.orange)
+                Text("Running")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            } else if !activeProcesses.isEmpty {
+                let runningCount = activeProcesses.values.filter { $0.isActive }.count
+                if runningCount > 0 {
+                    Circle()
+                        .fill(.blue)
+                        .frame(width: 8, height: 8)
+                    Text("\(runningCount) bg")
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                } else {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 8, height: 8)
+                }
+            } else {
+                Circle()
+                    .fill(.green)
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: isExecuting)
+        .animation(.easeInOut(duration: 0.3), value: activeProcesses.count)
+    }
+
+    private var processStatistics: some View {
+        HStack(spacing: 4) {
+            let runningProcesses = activeProcesses.values.filter { $0.isActive }.count
+            let backgroundProcesses = activeProcesses.values.filter { $0 == .backgrounded }.count
+
+            if runningProcesses > 0 {
+                Image(systemName: "play.circle.fill")
+                    .foregroundStyle(.blue)
+                    .font(.caption)
+                Text("\(runningProcesses)")
+                    .font(.caption)
+                    .foregroundStyle(.blue)
+            }
+
+            if backgroundProcesses > 0 {
+                Image(systemName: "moon.circle.fill")
+                    .foregroundStyle(.purple)
+                    .font(.caption)
+                Text("\(backgroundProcesses)")
+                    .font(.caption)
+                    .foregroundStyle(.purple)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
+    }
+
+    private var processDetailsView: some View {
+        NavigationView {
+            List {
+                if activeProcesses.isEmpty {
+                    ContentUnavailableView(
+                        "No Active Processes",
+                        systemImage: "terminal",
+                        description: Text("All commands have completed")
+                    )
+                } else {
+                    ForEach(Array(activeProcesses.keys.enumerated()), id: \.element) { index, command in
+                        let state = activeProcesses[command] ?? .completed
+
+                        HStack {
+                            Image(systemName: state.icon)
+                                .foregroundStyle(colorForState(state))
+                                .font(.title2)
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(command)
+                                    .font(.body)
+                                    .fontDesign(.monospaced)
+
+                                Text(state.userDescription)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            if state.isActive {
+                                Button("Cancel") {
+                                    Task {
+                                        await sandboxExecutor.cancelCommand(command)
+                                        await updateProcessStatus()
+                                    }
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .navigationTitle("Process Manager")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        showProcessDetails = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func colorForState(_ state: ProcessState) -> Color {
+        switch state {
+        case .starting:
+            return .orange
+        case .running:
+            return .blue
+        case .suspended:
+            return .yellow
+        case .completed:
+            return .green
+        case .failed:
+            return .red
+        case .cancelled:
+            return .gray
+        }
     }
 
     // MARK: - Helper Properties
@@ -303,6 +473,9 @@ public struct NotebookShellView: View {
         // Initialize Claude API client
         claudeAPIClient = ClaudeAPIClient.create()
         isClaudeConfigured = ClaudeAPIClient.isConfigured()
+
+        // Start process monitoring
+        startProcessMonitoring()
     }
 
     private func executeCommand() {
@@ -335,12 +508,18 @@ public struct NotebookShellView: View {
         )
 
         isExecuting = true
+        currentlyExecutingCommand = command
+        processStartTime = Date()
 
         Task {
-            let result = await sandboxExecutor.execute(
+            // Use enhanced execution with background support
+            let result = await sandboxExecutor.executeWithBackgroundSupport(
                 command,
                 workingDirectory: currentWorkingDirectory
             )
+
+            // Update process status
+            await updateProcessStatus()
 
             let response = CommandResponse(
                 commandId: shellCommand.id,
@@ -364,6 +543,7 @@ public struct NotebookShellView: View {
                 commandHistory.append(historyEntry)
                 shellSession.addCommand(shellCommand)
                 isExecuting = false
+                currentlyExecutingCommand = ""
 
                 // Update working directory if pwd command was successful
                 if command == "pwd" && result.success {
@@ -582,9 +762,46 @@ public struct NotebookShellView: View {
         errorMessage = nil
     }
 
+    private func cancelCurrentCommand() {
+        guard !currentlyExecutingCommand.isEmpty else { return }
+
+        Task {
+            await sandboxExecutor.cancelCommand(currentlyExecutingCommand)
+            await updateProcessStatus()
+
+            await MainActor.run {
+                isExecuting = false
+                currentlyExecutingCommand = ""
+                errorMessage = "Command cancelled by user"
+            }
+        }
+    }
+
     private func cancelExecution() {
-        isExecuting = false
-        // Note: Process termination would be handled by SandboxExecutor timeout
+        if !currentlyExecutingCommand.isEmpty {
+            cancelCurrentCommand()
+        } else {
+            isExecuting = false
+            currentlyExecutingCommand = ""
+        }
+    }
+
+    /// Update process status from SandboxExecutor
+    private func updateProcessStatus() async {
+        let status = await sandboxExecutor.activeProcessStatus
+        await MainActor.run {
+            activeProcesses = status
+        }
+    }
+
+    /// Start monitoring process status
+    private func startProcessMonitoring() {
+        Task {
+            while true {
+                await updateProcessStatus()
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
     }
 
     // MARK: - Supporting Types

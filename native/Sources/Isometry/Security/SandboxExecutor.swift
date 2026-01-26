@@ -406,9 +406,8 @@ public actor SandboxExecutor {
         let cwd = workingDirectory ?? FileManager.default.currentDirectoryPath
 
         // Enhanced security validation
-        guard let securityResult = await validateEnhancedSecurity(command: command, workingDirectory: cwd, environment: environment) else {
-            // Security check passed, proceed with execution
-        } else {
+        if let securityResult = await validateEnhancedSecurity(command: command, workingDirectory: cwd, environment: environment) {
+            // Security check failed
             return securityResult
         }
 
