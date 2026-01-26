@@ -21,7 +21,7 @@ export interface WebViewEnvironment {
   isNative: boolean;
   platform: 'iOS' | 'macOS' | 'browser';
   version: string;
-  transport: 'webview-bridge' | 'http-api' | 'sql.js';
+  transport: 'webview-bridge' | 'http-api';
 }
 
 export interface WebViewMessage {
@@ -487,17 +487,12 @@ export const Environment = {
   /**
    * Get preferred transport method
    */
-  getTransport: (): 'webview-bridge' | 'http-api' | 'sql.js' => {
+  getTransport: (): 'webview-bridge' | 'http-api' => {
     if (webViewBridge.isWebViewEnvironment()) {
       return 'webview-bridge';
     }
 
-    // Check if native API is available
-    if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      return 'http-api';
-    }
-
-    return 'sql.js';
+    return 'http-api';
   }
 };
 

@@ -1,13 +1,13 @@
 /**
  * Performance Monitor for Database Operations
  *
- * Comprehensive performance tracking and comparison between sql.js and native API
- * implementations. Provides insights for optimization and migration validation.
+ * Comprehensive performance tracking for native database implementations.
+ * Provides insights for optimization and performance validation.
  */
 
 export interface PerformanceMetric {
   operation: string;
-  method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge';
+  method: 'native' | 'native-api' | 'optimized' | 'webview-bridge';
   duration: number;
   timestamp: number;
   rowCount?: number;
@@ -84,7 +84,7 @@ export class PerformanceMonitor {
   async measureOperation<T>(
     name: string,
     operation: () => Promise<T>,
-    metadata: { method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge'; query?: string } = { method: 'sql.js' }
+    metadata: { method: 'native' | 'optimized' | 'webview-bridge'; query?: string } = { method: 'native' }
   ): Promise<T> {
     if (!this.enabled) {
       return operation();
@@ -135,7 +135,7 @@ export class PerformanceMonitor {
   logQueryPerformance(
     query: string,
     duration: number,
-    method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge',
+    method: 'native' | 'native-api' | 'optimized' | 'webview-bridge',
     metadata: {
       rowCount?: number;
       success?: boolean;
@@ -602,7 +602,7 @@ export class PerformanceMonitor {
     return (successful / metrics.length) * 100;
   }
 
-  private getLastMetricDuration(method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge'): number {
+  private getLastMetricDuration(method: 'native' | 'optimized' | 'webview-bridge'): number {
     for (let i = this.metrics.length - 1; i >= 0; i--) {
       if (this.metrics[i].method === method) {
         return this.metrics[i].duration;
@@ -649,7 +649,7 @@ export const performanceMonitor = new PerformanceMonitor({
 export function logQueryPerformance(
   query: string,
   duration: number,
-  method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge',
+  method: 'native' | 'native-api' | 'optimized' | 'webview-bridge',
   metadata?: { rowCount?: number; success?: boolean; error?: string }
 ): void {
   performanceMonitor.logQueryPerformance(query, duration, method, metadata);
