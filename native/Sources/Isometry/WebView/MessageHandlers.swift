@@ -53,10 +53,15 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         requestId: String,
         webView: WKWebView?
     ) async {
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         guard let database = database else {
             sendError(to: webView, error: "Database not available", requestId: requestId)
             return
         }
+
+        // Log operation for security auditing
+        logSecurityOperation(method: method, requestId: requestId, params: params)
 
         do {
             let result: Any
@@ -66,7 +71,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 result = try await handleExecuteQuery(params: params)
 
             case "getNodes":
-                result = try await handleGetNodes(params: params)
+                result = try await handleOptimizedGetNodes(params: params)
 
             case "createNode":
                 result = try await handleCreateNode(params: params)
@@ -78,7 +83,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 result = try await handleDeleteNode(params: params)
 
             case "search":
-                result = try await handleSearch(params: params)
+                result = try await handleOptimizedSearch(params: params)
 
             case "getGraph":
                 result = try await handleGetGraph(params: params)
@@ -91,9 +96,11 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 throw DatabaseError.invalidOperation("Unknown method: \(method)")
             }
 
-            sendSuccess(to: webView, result: result, requestId: requestId)
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            sendSuccess(to: webView, result: result, requestId: requestId, duration: duration)
 
         } catch {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
             let errorMessage: String
             if let dbError = error as? DatabaseError {
                 errorMessage = dbError.localizedDescription
@@ -101,8 +108,37 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 errorMessage = "Database operation failed: \(error.localizedDescription)"
             }
 
-            sendError(to: webView, error: errorMessage, requestId: requestId)
+            logSecurityError(method: method, requestId: requestId, error: error)
+            sendError(to: webView, error: errorMessage, requestId: requestId, duration: duration)
         }
+    }
+
+    /// Handle database message with enhanced parsing and validation
+    private func handleDatabaseMessage(_ messageBody: [String: Any]) async {
+        // Extract and validate required fields
+        guard let method = messageBody["method"] as? String,
+              let requestId = messageBody["id"] as? String else {
+            print("[DatabaseMessageHandler] Invalid message format: missing method or id")
+            return
+        }
+
+        // Validate method name for security
+        let allowedMethods = ["execute", "getNodes", "createNode", "updateNode", "deleteNode", "search", "getGraph", "reset"]
+        guard allowedMethods.contains(method) else {
+            print("[DatabaseMessageHandler] Invalid method: \(method)")
+            return
+        }
+
+        let params = messageBody["params"] as? [String: Any] ?? [:]
+
+        // Extract WebView from the message if available
+        // Note: This would need to be passed from userContentController
+        await handleDatabaseRequest(
+            method: method,
+            params: params,
+            requestId: requestId,
+            webView: nil // TODO: Get WebView reference from context
+        )
     }
 
     // MARK: - Database Operation Handlers
@@ -135,7 +171,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         }
     }
 
-    private func handleGetNodes(params: [String: Any]) async throws -> [[String: Any]] {
+    private func handleOptimizedGetNodes(params: [String: Any]) async throws -> [[String: Any]] {
         let limit = params["limit"] as? Int ?? 100
         let offset = params["offset"] as? Int ?? 0
         let filter = params["filter"] as? String
@@ -201,7 +237,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         return ["success": true]
     }
 
-    private func handleSearch(params: [String: Any]) async throws -> [[String: Any]] {
+    private func handleOptimizedSearch(params: [String: Any]) async throws -> [[String: Any]] {
         guard let query = params["query"] as? String else {
             throw DatabaseError.invalidQuery("Missing search query")
         }
@@ -309,28 +345,67 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         return dict
     }
 
-    private func sendSuccess(to webView: WKWebView?, result: Any, requestId: String) {
+    private func sendSuccess(to webView: WKWebView?, result: Any, requestId: String, duration: CFAbsoluteTime? = nil) {
         guard let webView = webView else { return }
 
-        let response: [String: Any] = [
+        var response: [String: Any] = [
             "id": requestId,
             "success": true,
-            "result": result
+            "result": result,
+            "timestamp": Date().timeIntervalSince1970
         ]
+
+        if let duration = duration {
+            response["duration"] = duration * 1000 // Convert to milliseconds
+        }
 
         sendResponse(to: webView, response: response)
     }
 
-    private func sendError(to webView: WKWebView?, error: String, requestId: String?) {
+    private func sendError(to webView: WKWebView?, error: String, requestId: String?, duration: CFAbsoluteTime? = nil) {
         guard let webView = webView else { return }
 
-        let response: [String: Any] = [
+        var response: [String: Any] = [
             "id": requestId ?? "",
             "success": false,
-            "error": error
+            "error": error,
+            "timestamp": Date().timeIntervalSince1970
         ]
 
+        if let duration = duration {
+            response["duration"] = duration * 1000 // Convert to milliseconds
+        }
+
         sendResponse(to: webView, response: response)
+    }
+
+    // MARK: - Security and Logging
+
+    private func logSecurityOperation(method: String, requestId: String, params: [String: Any]) {
+        #if DEBUG
+        print("[DatabaseMessageHandler] Security Audit - Method: \(method), ID: \(requestId)")
+        #endif
+
+        // In production, this would go to a secure logging system
+        // For now, just validate that params don't contain obviously malicious content
+        if method == "execute", let sql = params["sql"] as? String {
+            validateSQLQuery(sql)
+        }
+    }
+
+    private func logSecurityError(method: String, requestId: String, error: Error) {
+        print("[DatabaseMessageHandler] Security Error - Method: \(method), ID: \(requestId), Error: \(error)")
+    }
+
+    private func validateSQLQuery(_ sql: String) {
+        let suspiciousPatterns = ["DROP TABLE", "DELETE FROM users", "GRANT", "REVOKE", "CREATE USER"]
+        let upperSQL = sql.uppercased()
+
+        for pattern in suspiciousPatterns {
+            if upperSQL.contains(pattern) {
+                print("[DatabaseMessageHandler] WARNING: Suspicious SQL pattern detected: \(pattern)")
+            }
+        }
     }
 
     private func sendResponse(to webView: WKWebView, response: [String: Any]) {

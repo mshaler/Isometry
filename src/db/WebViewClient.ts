@@ -16,9 +16,21 @@ import type {
   SearchResult
 } from './types';
 
+export interface ConnectionStatus {
+  isConnected: boolean;
+  lastPing?: Date;
+  pendingRequests: number;
+  environment: string;
+}
+
 export class WebViewClient implements DatabaseClient {
   private isInitialized = false;
   private initializationPromise: Promise<void> | null = null;
+  private connectionStatus: ConnectionStatus = {
+    isConnected: false,
+    pendingRequests: 0,
+    environment: 'unknown'
+  };
 
   constructor() {
     // Auto-initialize when created
@@ -54,9 +66,35 @@ export class WebViewClient implements DatabaseClient {
     try {
       // Test connection with simple query
       await this.execute('SELECT 1 as test', []);
+
+      // Update connection status
+      this.connectionStatus = {
+        isConnected: true,
+        lastPing: new Date(),
+        pendingRequests: 0,
+        environment: webViewBridge.getEnvironment().transport
+      };
     } catch (error) {
+      this.connectionStatus.isConnected = false;
       throw new Error(`WebView bridge initialization failed: ${error}`);
     }
+  }
+
+  /**
+   * Check if client is connected to WebView bridge
+   */
+  public isConnected(): boolean {
+    return this.isInitialized && this.connectionStatus.isConnected;
+  }
+
+  /**
+   * Get current connection status
+   */
+  public getConnectionStatus(): ConnectionStatus {
+    return {
+      ...this.connectionStatus,
+      pendingRequests: webViewBridge.getHealthStatus().pendingRequests
+    };
   }
 
   /**
