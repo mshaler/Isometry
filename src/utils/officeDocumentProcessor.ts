@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
+import JSZip from 'jszip';
 import type { Node } from '../types/node';
 
 export interface OfficeImportOptions {
@@ -251,11 +252,33 @@ export class OfficeDocumentProcessor {
     arrayBuffer: ArrayBuffer,
     preserveFormatting: boolean
   ): Promise<WordDocumentData> {
+    const extractedImages: { id: string; buffer: ArrayBuffer; contentType: string }[] = [];
+    const extractedStyles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; }> = {};
+
     const options = {
       convertImage: mammoth.images.imgElement((image: MammothImage) => {
         return image.read('base64').then((imageBuffer: string) => {
+          // Generate unique ID for this image
+          const imageId = `img_${crypto.randomUUID()}`;
+
+          // Convert base64 back to ArrayBuffer for storage
+          const binaryString = atob(imageBuffer);
+          const buffer = new ArrayBuffer(binaryString.length);
+          const uint8Array = new Uint8Array(buffer);
+          for (let i = 0; i < binaryString.length; i++) {
+            uint8Array[i] = binaryString.charCodeAt(i);
+          }
+
+          // Store image data
+          extractedImages.push({
+            id: imageId,
+            buffer: buffer,
+            contentType: image.contentType
+          });
+
           return {
-            src: `data:${image.contentType};base64,${imageBuffer}`
+            src: `data:${image.contentType};base64,${imageBuffer}`,
+            'data-image-id': imageId
           };
         });
       }),
@@ -264,19 +287,49 @@ export class OfficeDocumentProcessor {
         "p[style-name='Heading 1'] => h1",
         "p[style-name='Heading 2'] => h2",
         "p[style-name='Heading 3'] => h3",
+        "p[style-name='Title'] => h1.document-title",
+        "p[style-name='Subtitle'] => h2.document-subtitle",
+        "p[style-name='Quote'] => blockquote",
+        "p[style-name='Code'] => code",
         "b => strong",
-        "i => em"
-      ] : []
+        "i => em",
+        "u => u"
+      ] : [],
+      transformDocument: preserveFormatting ? mammoth.transforms.paragraph((element: any) => {
+        // Extract style information from paragraph elements
+        if (element.styleId && element.styleName) {
+          const styleInfo: any = {
+            bold: element.alignment?.bold || false,
+            italic: element.alignment?.italic || false
+          };
+
+          // Extract font information if available
+          if (element.font) {
+            styleInfo.fontFamily = element.font.name;
+            styleInfo.fontSize = element.font.size;
+          }
+
+          // Extract color information if available
+          if (element.color) {
+            styleInfo.color = element.color;
+          }
+
+          extractedStyles[element.styleName] = styleInfo;
+        }
+        return element;
+      }) : undefined
     };
 
     const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-    // const _textResult = await mammoth.extractRawText({ arrayBuffer }); // Reserved for text extraction
+
+    // Parse the HTML to extract additional style information
+    this.extractStylesFromHtml(result.value, extractedStyles);
 
     return {
       content: this.convertHtmlToMarkdown(result.value),
       html: result.value,
-      images: [], // TODO: Extract images if needed
-      styles: {} // TODO: Extract style information
+      images: extractedImages,
+      styles: extractedStyles
     };
   }
 
@@ -528,30 +581,281 @@ export class OfficeDocumentProcessor {
 </w:document>`;
   }
 
+  /**
+   * Extract style information from HTML content
+   */
+  private extractStylesFromHtml(html: string, styles: Record<string, any>): void {
+    // Parse HTML to extract inline styles and class-based styles
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Extract styles from elements with style attributes
+    const elementsWithStyles = doc.querySelectorAll('[style]');
+    elementsWithStyles.forEach((element, index) => {
+      const styleAttr = element.getAttribute('style');
+      if (styleAttr) {
+        const parsedStyle = this.parseInlineStyle(styleAttr);
+        styles[`inline-style-${index}`] = parsedStyle;
+      }
+    });
+
+    // Extract styles from class names and tag names
+    const styledElements = doc.querySelectorAll('h1, h2, h3, h4, h5, h6, strong, em, u, code, blockquote');
+    styledElements.forEach((element) => {
+      const tagName = element.tagName.toLowerCase();
+      const className = element.className;
+
+      if (className) {
+        styles[className] = this.getDefaultStyleForElement(tagName, className);
+      } else if (!styles[tagName]) {
+        styles[tagName] = this.getDefaultStyleForElement(tagName);
+      }
+    });
+  }
+
+  /**
+   * Parse inline CSS style string into style object
+   */
+  private parseInlineStyle(styleStr: string): any {
+    const style: any = {};
+    const declarations = styleStr.split(';').filter(d => d.trim());
+
+    declarations.forEach(decl => {
+      const [property, value] = decl.split(':').map(s => s.trim());
+      if (property && value) {
+        switch (property) {
+          case 'color':
+            style.color = value;
+            break;
+          case 'font-size':
+            style.fontSize = parseInt(value.replace(/[^\d]/g, ''));
+            break;
+          case 'font-family':
+            style.fontFamily = value.replace(/['"]/g, '');
+            break;
+          case 'font-weight':
+            style.bold = value === 'bold' || parseInt(value) >= 600;
+            break;
+          case 'font-style':
+            style.italic = value === 'italic';
+            break;
+        }
+      }
+    });
+
+    return style;
+  }
+
+  /**
+   * Get default style for HTML elements
+   */
+  private getDefaultStyleForElement(tagName: string, className?: string): any {
+    const baseStyles: Record<string, any> = {
+      'h1': { fontSize: 24, bold: true },
+      'h2': { fontSize: 20, bold: true },
+      'h3': { fontSize: 18, bold: true },
+      'h4': { fontSize: 16, bold: true },
+      'h5': { fontSize: 14, bold: true },
+      'h6': { fontSize: 12, bold: true },
+      'strong': { bold: true },
+      'em': { italic: true },
+      'u': { underline: true },
+      'code': { fontFamily: 'monospace' },
+      'blockquote': { italic: true, color: '#666666' }
+    };
+
+    const style = { ...baseStyles[tagName] } || {};
+
+    // Add class-specific styles
+    if (className) {
+      if (className.includes('document-title')) {
+        style.fontSize = 28;
+        style.bold = true;
+      } else if (className.includes('document-subtitle')) {
+        style.fontSize = 18;
+        style.italic = true;
+      }
+    }
+
+    return style;
+  }
+
   private convertHTMLToWordML(html: string): string {
-    // Simplified HTML to WordML conversion
+    // Enhanced HTML to WordML conversion with better style support
     let wordML = html;
 
-    // Convert paragraphs
+    // Convert paragraphs with style preservation
     wordML = wordML.replace(/<p[^>]*>(.*?)<\/p>/gi, '<w:p><w:r><w:t>$1</w:t></w:r></w:p>');
 
-    // Convert headers
+    // Convert headers with proper styles
     wordML = wordML.replace(/<h1[^>]*>(.*?)<\/h1>/gi, '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr><w:r><w:t>$1</w:t></w:r></w:p>');
+    wordML = wordML.replace(/<h2[^>]*>(.*?)<\/h2>/gi, '<w:p><w:pPr><w:pStyle w:val="Heading2"/></w:pPr><w:r><w:t>$1</w:t></w:r></w:p>');
+    wordML = wordML.replace(/<h3[^>]*>(.*?)<\/h3>/gi, '<w:p><w:pPr><w:pStyle w:val="Heading3"/></w:pPr><w:r><w:t>$1</w:t></w:r></w:p>');
 
-    // Remove other HTML tags for now
+    // Convert formatting elements
+    wordML = wordML.replace(/<strong[^>]*>(.*?)<\/strong>/gi, '<w:r><w:rPr><w:b/></w:rPr><w:t>$1</w:t></w:r>');
+    wordML = wordML.replace(/<em[^>]*>(.*?)<\/em>/gi, '<w:r><w:rPr><w:i/></w:rPr><w:t>$1</w:t></w:r>');
+    wordML = wordML.replace(/<u[^>]*>(.*?)<\/u>/gi, '<w:r><w:rPr><w:u w:val="single"/></w:rPr><w:t>$1</w:t></w:r>');
+
+    // Convert blockquotes
+    wordML = wordML.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '<w:p><w:pPr><w:pStyle w:val="Quote"/></w:pPr><w:r><w:t>$1</w:t></w:r></w:p>');
+
+    // Handle images with proper WordML structure
+    wordML = wordML.replace(/<img[^>]*data-image-id="([^"]*)"[^>]*>/gi,
+      '<w:p><w:r><w:drawing><wp:inline><wp:extent cx="3048000" cy="2286000"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="Image $1"/></pic:nvPicPr></pic:pic></a:graphic></wp:inline></w:drawing></w:r></w:p>');
+
+    // Remove remaining HTML tags
     wordML = wordML.replace(/<[^>]*>/g, '');
 
     return wordML;
   }
 
-  private async packageAsDocx(wordXML: string, _node: Node): Promise<Blob> {
-    // For now, return as plain XML - full DOCX packaging would require ZIP library
-    // TODO: Implement proper DOCX packaging with relationships, content types, etc.
-    const xmlBlob = new Blob([wordXML], {
-      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  private async packageAsDocx(wordXML: string, node: Node): Promise<Blob> {
+    const zip = new JSZip();
+
+    // Add [Content_Types].xml
+    const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+  <Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+  <Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>
+  <Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+</Types>`;
+
+    // Add _rels/.rels
+    const mainRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+</Relationships>`;
+
+    // Add word/_rels/document.xml.rels
+    const wordRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+    // Add word/styles.xml
+    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:docDefaults>
+    <w:rPrDefault>
+      <w:rPr>
+        <w:rFonts w:ascii="Calibri" w:eastAsia="Calibri" w:hAnsi="Calibri" w:cs="Calibri"/>
+        <w:sz w:val="22"/>
+        <w:szCs w:val="22"/>
+        <w:lang w:val="en-US" w:eastAsia="en-US" w:bidi="ar-SA"/>
+      </w:rPr>
+    </w:rPrDefault>
+    <w:pPrDefault>
+      <w:pPr>
+        <w:spacing w:after="160" w:line="259" w:lineRule="auto"/>
+      </w:pPr>
+    </w:pPrDefault>
+  </w:docDefaults>
+  <w:style w:type="paragraph" w:default="1" w:styleId="Normal">
+    <w:name w:val="Normal"/>
+    <w:qFormat/>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading1">
+    <w:name w:val="Heading 1"/>
+    <w:basedOn w:val="Normal"/>
+    <w:next w:val="Normal"/>
+    <w:link w:val="Heading1Char"/>
+    <w:uiPriority w:val="9"/>
+    <w:qFormat/>
+    <w:pPr>
+      <w:keepNext/>
+      <w:keepLines/>
+      <w:spacing w:before="480" w:after="0"/>
+      <w:outlineLvl w:val="0"/>
+    </w:pPr>
+    <w:rPr>
+      <w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>
+      <w:color w:val="2F5496" w:themeColor="accent1" w:themeShade="BF"/>
+      <w:sz w:val="32"/>
+      <w:szCs w:val="32"/>
+    </w:rPr>
+  </w:style>
+  <w:style w:type="paragraph" w:styleId="Heading2">
+    <w:name w:val="Heading 2"/>
+    <w:basedOn w:val="Normal"/>
+    <w:next w:val="Normal"/>
+    <w:link w:val="Heading2Char"/>
+    <w:uiPriority w:val="9"/>
+    <w:qFormat/>
+    <w:pPr>
+      <w:keepNext/>
+      <w:keepLines/>
+      <w:spacing w:before="200" w:after="0"/>
+      <w:outlineLvl w:val="1"/>
+    </w:pPr>
+    <w:rPr>
+      <w:rFonts w:asciiTheme="majorHAnsi" w:eastAsiaTheme="majorEastAsia" w:hAnsiTheme="majorHAnsi" w:cstheme="majorBidi"/>
+      <w:color w:val="2F5496" w:themeColor="accent1" w:themeShade="BF"/>
+      <w:sz w:val="26"/>
+      <w:szCs w:val="26"/>
+    </w:rPr>
+  </w:style>
+</w:styles>`;
+
+    // Add docProps/app.xml
+    const appProps = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">
+  <Application>Isometry Document Processor</Application>
+  <ScaleCrop>false</ScaleCrop>
+  <LinksUpToDate>false</LinksUpToDate>
+  <SharedDoc>false</SharedDoc>
+  <HyperlinksChanged>false</HyperlinksChanged>
+  <AppVersion>1.0.0</AppVersion>
+</Properties>`;
+
+    // Add docProps/core.xml
+    const coreProps = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <dc:title>${this.escapeXml(node.name || 'Untitled Document')}</dc:title>
+  <dc:creator>Isometry</dc:creator>
+  <cp:lastModifiedBy>Isometry</cp:lastModifiedBy>
+  <dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created>
+  <dcterms:modified xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:modified>
+</cp:coreProperties>`;
+
+    // Create zip structure
+    zip.file('[Content_Types].xml', contentTypes);
+    zip.folder('_rels')?.file('.rels', mainRels);
+    zip.folder('docProps')?.file('app.xml', appProps);
+    zip.folder('docProps')?.file('core.xml', coreProps);
+
+    const wordFolder = zip.folder('word');
+    wordFolder?.file('document.xml', wordXML);
+    wordFolder?.file('styles.xml', styles);
+    wordFolder?.folder('_rels')?.file('document.xml.rels', wordRels);
+
+    // Generate the DOCX file
+    const docxArrayBuffer = await zip.generateAsync({
+      type: 'arraybuffer',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
     });
 
-    return xmlBlob;
+    return new Blob([docxArrayBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+  }
+
+  /**
+   * Escape XML special characters
+   */
+  private escapeXml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 }
 
