@@ -22,6 +22,12 @@ interface D3CanvasProps {
   showPerformanceOverlay?: boolean;
 }
 
+interface CellData {
+  nodes: Node[];
+  rowKey: string;
+  colKey: string;
+}
+
 interface InteractionState {
   hoveredCell: string | null;
   selectedCells: Set<string>;
@@ -36,6 +42,14 @@ interface InteractionState {
 interface D3PerformanceStats {
   fps?: number;
   frameHistory?: number;
+  totalPipeline?: number;
+  memoryUsage?: number;
+  nodeCount?: number;
+  cellCount?: number;
+  dataTransform?: number;
+  scaleGeneration?: number;
+  layoutCalculation?: number;
+  renderPrep?: number;
   [key: string]: {
     average: number;
     min: number;
@@ -45,12 +59,18 @@ interface D3PerformanceStats {
   } | number | undefined;
 }
 
-const PerformanceOverlay: React.FC<{
+interface PerformanceOverlayProps {
   performance: D3PerformanceStats;
   frameRate: number;
   error: string | null;
-}> = ({ performance, frameRate, error }) => {
-  if (!performance || performance.totalPipeline === 0) return null;
+}
+
+const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
+  performance,
+  frameRate,
+  error
+}) => {
+  if (!performance || (performance.totalPipeline ?? 0) === 0) return null;
 
   const renderStats = performanceMonitor.getMetricStats('canvas-render');
   const spatialStats = spatialIndex.getStats();
@@ -69,23 +89,23 @@ const PerformanceOverlay: React.FC<{
         </span>
 
         <span>Pipeline:</span>
-        <span className={performance.totalPipeline <= 100 ? 'text-green-400' : 'text-yellow-400'}>
-          {performance.totalPipeline.toFixed(1)}ms
+        <span className={(performance.totalPipeline ?? 0) <= 100 ? 'text-green-400' : 'text-yellow-400'}>
+          {(performance.totalPipeline ?? 0).toFixed(1)}ms
         </span>
 
         <span>Render:</span>
         <span>{renderStats ? renderStats.latest.toFixed(1) : '0.0'}ms</span>
 
         <span>Memory:</span>
-        <span className={performance.memoryUsage <= 50 ? 'text-green-400' : 'text-yellow-400'}>
-          {performance.memoryUsage.toFixed(1)}MB
+        <span className={(performance.memoryUsage ?? 0) <= 50 ? 'text-green-400' : 'text-yellow-400'}>
+          {(performance.memoryUsage ?? 0).toFixed(1)}MB
         </span>
 
         <span>Nodes:</span>
-        <span>{performance.nodeCount}</span>
+        <span>{performance.nodeCount ?? 0}</span>
 
         <span>Cells:</span>
-        <span>{performance.cellCount}</span>
+        <span>{performance.cellCount ?? 0}</span>
       </div>
 
       <div className="mb-3 pb-2 border-b border-gray-600">
@@ -101,16 +121,16 @@ const PerformanceOverlay: React.FC<{
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
         <span>Transform:</span>
-        <span>{performance.dataTransform.toFixed(1)}ms</span>
+        <span>{(performance.dataTransform ?? 0).toFixed(1)}ms</span>
 
         <span>Scales:</span>
-        <span>{performance.scaleGeneration.toFixed(1)}ms</span>
+        <span>{(performance.scaleGeneration ?? 0).toFixed(1)}ms</span>
 
         <span>Layout:</span>
-        <span>{performance.layoutCalculation.toFixed(1)}ms</span>
+        <span>{(performance.layoutCalculation ?? 0).toFixed(1)}ms</span>
 
         <span>Prep:</span>
-        <span>{performance.renderPrep.toFixed(1)}ms</span>
+        <span>{(performance.renderPrep ?? 0).toFixed(1)}ms</span>
       </div>
 
       {error && (
@@ -454,7 +474,8 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     // Optimized click handling using spatial index
     const hitItem = spatialIndex.findAtPoint(x, y);
     if (hitItem && hitItem.data) {
-      const { nodes, rowKey, colKey } = hitItem.data;
+      const cellData = hitItem.data as CellData;
+      const { nodes, rowKey, colKey } = cellData;
 
       // Call click handler
       onCellClick?.({
