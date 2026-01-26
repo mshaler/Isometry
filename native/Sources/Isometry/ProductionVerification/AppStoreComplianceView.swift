@@ -65,6 +65,8 @@ public struct AppStoreComplianceView: View {
         .background(verifier.overallStatus.color.opacity(0.1))
         .foregroundColor(verifier.overallStatus.color)
         .cornerRadius(8)
+        .accessibilityLabel("Compliance status: \(verifier.overallStatus.displayText)")
+        .accessibilityValue(verifier.overallStatus.displayText)
     }
 
     // MARK: - Compliance Overview Section
@@ -73,6 +75,7 @@ public struct AppStoreComplianceView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Compliance Areas")
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
@@ -117,6 +120,7 @@ public struct AppStoreComplianceView: View {
                 HStack {
                     Text("Compliance Issues")
                         .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
 
                     Spacer()
 
@@ -125,6 +129,8 @@ public struct AppStoreComplianceView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                    .accessibilityLabel("View compliance violations details")
+                    .accessibilityHint("Opens detailed view of compliance issues with resolution guidance")
                 }
 
                 VStack(spacing: 8) {
@@ -181,6 +187,8 @@ public struct AppStoreComplianceView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(isRunningVerification)
+            .accessibilityLabel(isRunningVerification ? "Compliance verification in progress" : "Run App Store compliance verification")
+            .accessibilityHint(isRunningVerification ? "Please wait while compliance checks are performed" : "Tap to start comprehensive App Store compliance verification")
 
             if verifier.overallStatus == .compliant {
                 appStoreReadySection

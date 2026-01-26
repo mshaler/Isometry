@@ -71,6 +71,8 @@ public struct PerformanceValidationView: View {
         .background(validator.overallPerformanceStatus.color.opacity(0.1))
         .foregroundColor(validator.overallPerformanceStatus.color)
         .cornerRadius(8)
+        .accessibilityLabel("Performance status: \(validator.overallPerformanceStatus.displayText)")
+        .accessibilityValue(validator.overallPerformanceStatus.displayText)
     }
 
     // MARK: - Performance Overview Section
@@ -79,6 +81,7 @@ public struct PerformanceValidationView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Performance Areas")
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
@@ -187,6 +190,8 @@ public struct PerformanceValidationView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(isRunningValidation)
+            .accessibilityLabel(isRunningValidation ? "Performance validation in progress" : "Run performance validation")
+            .accessibilityHint(isRunningValidation ? "Please wait while app performance is being validated" : "Tap to start comprehensive performance validation checks")
 
             if validator.overallPerformanceStatus == .excellent {
                 productionReadySection

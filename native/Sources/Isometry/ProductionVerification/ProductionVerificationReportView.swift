@@ -246,6 +246,8 @@ public struct ProductionVerificationReportView: View {
                     }
                 }
                 .buttonStyle(.bordered)
+                .accessibilityLabel("Export verification report as text")
+                .accessibilityHint("Copies the verification report to the clipboard as plain text")
 
                 Button(action: shareReport) {
                     HStack {
@@ -254,6 +256,8 @@ public struct ProductionVerificationReportView: View {
                     }
                 }
                 .buttonStyle(.bordered)
+                .accessibilityLabel("Share verification report")
+                .accessibilityHint("Opens share sheet to send the report to stakeholders")
 
                 Spacer()
             }

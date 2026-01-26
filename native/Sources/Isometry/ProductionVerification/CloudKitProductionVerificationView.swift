@@ -108,6 +108,7 @@ public struct CloudKitProductionVerificationView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Verification Steps")
                 .font(.headline)
+                .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
@@ -181,6 +182,8 @@ public struct CloudKitProductionVerificationView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isRunningVerification)
+                .accessibilityLabel(isRunningVerification ? "CloudKit verification in progress" : "Run CloudKit production verification")
+                .accessibilityHint(isRunningVerification ? "Please wait while CloudKit production setup is verified" : "Tap to start CloudKit production verification checks")
 
                 if verifier.verificationStatus == .completed || verifier.verificationStatus == .failed {
                     Button("View Report") {
@@ -339,12 +342,17 @@ struct CheckpointItem: View {
                     .foregroundColor(isChecked ? .purple : .gray)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isChecked ? "Verified: \(text)" : "Not verified: \(text)")
+            .accessibilityHint("Tap to toggle verification status")
+            .accessibilityRole(.checkbox)
+            .accessibilityValue(isChecked ? "checked" : "unchecked")
 
             Text(text)
                 .font(.caption)
                 .strikethrough(isChecked)
                 .foregroundStyle(isChecked ? .secondary : .primary)
         }
+        .accessibilityElement(children: .combine)
     }
 }
 

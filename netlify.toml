@@ -1,0 +1,60 @@
+# Netlify deployment configuration for Isometry React prototype
+[build]
+  # Build command
+  command = "npm run build"
+  # Output directory
+  publish = "dist"
+  # Build environment
+  environment = { NODE_VERSION = "18" }
+
+# Production site settings
+[context.production]
+  command = "npm run build"
+
+# Deploy preview settings for PRs
+[context.deploy-preview]
+  command = "npm run build"
+
+# Branch deployment settings
+[context.branch-deploy]
+  command = "npm run build"
+
+# SPA routing - redirect all routes to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Security headers for production
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https: wss:;"
+
+# Cache optimization for assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Cache optimization for WASM files
+[[headers]]
+  for = "/*.wasm"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+    Content-Type = "application/wasm"
+
+# Performance optimizations
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
