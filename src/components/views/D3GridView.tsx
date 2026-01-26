@@ -262,11 +262,11 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
                   )}
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`px-1 py-0.5 text-xs rounded ${
-                      node.priority === 'high' ? 'bg-red-100 text-red-700' :
-                      node.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                      node.priority >= 7 ? 'bg-red-100 text-red-700' :
+                      node.priority >= 4 ? 'bg-yellow-100 text-yellow-700' :
                       'bg-green-100 text-green-700'
                     }`}>
-                      {node.priority}
+{node.priority >= 7 ? 'High' : node.priority >= 4 ? 'Medium' : 'Low'}
                     </span>
                     <span className="text-xs text-gray-500">{node.status}</span>
                   </div>

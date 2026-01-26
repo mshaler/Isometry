@@ -283,16 +283,16 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
     // Create groups for items
     const itemGroups = container
       .selectAll('.list-item')
-      .data(visibleItems, d => d.item.id)
+      .data(visibleItems, (d: { item: ListItem; y: number; height: number }) => d.item.id)
       .enter()
       .append('g')
       .attr('class', 'list-item')
       .attr('transform', d => `translate(0, ${d.y})`)
       .style('cursor', 'pointer')
-      .on('click', (event, d) => handleItemClick(d.item));
+      .on('click', (_event, d) => handleItemClick(d.item));
 
     // Render group headers
-    const groupHeaders = itemGroups.filter(d => d.item.isGroupHeader);
+    const groupHeaders = itemGroups.filter(d => d.item.isGroupHeader ?? false);
 
     groupHeaders
       .append('rect')
@@ -383,8 +383,8 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
       .attr('height', ITEM_HEIGHT - 20)
       .attr('fill', d => {
         const priority = d.item.node.priority;
-        return priority === 'high' ? '#ef4444' :
-               priority === 'medium' ? '#f59e0b' : '#10b981';
+        return priority >= 7 ? '#ef4444' :
+               priority >= 4 ? '#f59e0b' : '#10b981';
       });
 
     // Search highlighting
