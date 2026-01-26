@@ -93,7 +93,7 @@ async function deriveKey(
     const key = await crypto.subtle.deriveKey(
       {
         name: 'PBKDF2',
-        salt,
+        salt: salt.buffer as ArrayBuffer,
         iterations,
         hash: 'SHA-256'
       },
@@ -159,7 +159,7 @@ async function encryptData(data: string, password?: string): Promise<EncryptedDa
     const encryptedBuffer = await crypto.subtle.encrypt(
       {
         name: 'AES-GCM',
-        iv
+        iv: iv.buffer as ArrayBuffer
       },
       key,
       encodedData
@@ -167,10 +167,10 @@ async function encryptData(data: string, password?: string): Promise<EncryptedDa
 
     // Encode to base64 for storage
     const encryptedData = btoa(
-      String.fromCharCode(...new Uint8Array(encryptedBuffer))
+      String.fromCharCode(...Array.from(new Uint8Array(encryptedBuffer)))
     );
-    const encodedSalt = btoa(String.fromCharCode(...salt));
-    const encodedIV = btoa(String.fromCharCode(...iv));
+    const encodedSalt = btoa(String.fromCharCode(...Array.from(salt)));
+    const encodedIV = btoa(String.fromCharCode(...Array.from(iv)));
 
     return {
       version: 1,
@@ -210,7 +210,7 @@ async function decryptData(encryptedData: EncryptedData, password?: string): Pro
     const decryptedBuffer = await crypto.subtle.decrypt(
       {
         name: 'AES-GCM',
-        iv
+        iv: iv.buffer as ArrayBuffer
       },
       key,
       data
