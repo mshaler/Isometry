@@ -8,6 +8,19 @@
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from './webview-bridge';
 
+interface BridgePerformanceResults {
+  bridgeLatency?: number;
+  databaseLatency?: number;
+  syncLatency?: number;
+  uiLatency?: number;
+  databaseThroughput?: number;
+  syncThroughput?: number;
+  memoryUsage?: number;
+  cpuUsage?: number;
+  networkLatency?: number;
+  diskIO?: number;
+}
+
 export interface PerformanceBaseline {
   id: string;
   provider: DatabaseMode;
@@ -532,7 +545,7 @@ export const performanceBenchmarks = new PerformanceBenchmarks();
 /**
  * Helper function to create baseline metrics from bridge performance results
  */
-export function createBaselineFromBridgeResults(results: any): BaselineMetrics {
+export function createBaselineFromBridgeResults(results: BridgePerformanceResults): BaselineMetrics {
   const defaultMetrics: BaselineMetrics = {
     bridgeLatency: 50,
     databaseLatency: 30,

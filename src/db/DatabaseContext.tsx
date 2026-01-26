@@ -1,4 +1,4 @@
-import React, { createContext } from 'react';
+import React from 'react';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
 import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';

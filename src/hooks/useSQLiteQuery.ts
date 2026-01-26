@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import { rowToNode, Node } from '../types/node';
-import { translateQuery, TranslationResult, OptimizedCall, SQLCall } from '../db/QueryTranslation';
+import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
 
 // Environment variable detection for API mode
 const USE_NATIVE_API = import.meta.env.REACT_APP_USE_NATIVE_API === 'true';

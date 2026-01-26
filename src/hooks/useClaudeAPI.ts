@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { CommandResponse, ClaudeAPIConfig } from '../types/shell';
+import { CommandResponse } from '../types/shell';
 
 interface ProcessEnv {
   ANTHROPIC_API_KEY?: string;

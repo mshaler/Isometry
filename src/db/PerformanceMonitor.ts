@@ -149,7 +149,6 @@ export class PerformanceMonitor {
     }
 
     const totalOperations = this.metrics.length;
-    const _successfulOperations = this.metrics.filter(m => m.success);
     const failedOperations = this.metrics.filter(m => !m.success);
 
     const averageDuration =
@@ -354,7 +353,7 @@ export class PerformanceMonitor {
 
     try {
       // Test 1: Create and retrieve data
-      const _testData = { id: 'test-integrity', name: 'Test Node', content: 'Test Content' };
+      // Test data structure defined for integrity checks
 
       // This would need to be implemented with actual bridge methods
       // For now, we'll simulate the test structure

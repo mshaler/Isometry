@@ -9,7 +9,6 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   fileSystemBridge,
   FileInfo,
-  ExportFormat,
   ExportOptions
 } from '../utils/file-system-bridge';
 import { Environment } from '../utils/webview-bridge';

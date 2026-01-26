@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
-import { translateQuery, TranslationResult, OptimizedCall, SQLCall } from '../db/QueryTranslation';
+import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
 import { rowToNode, Node } from '../types/node';
 
 // Environment variable detection for API mode

@@ -52,7 +52,7 @@ export function buildNodeTree(
   const hasParent = new Set<string>();
 
   // Cycle detection: track path from root to current node
-  const visited = new Set<string>();
+  // const visited = new Set<string>(); // Reserved for future cycle detection
 
   // Build parent-child relationships from NEST edges
   edges.forEach(edge => {
@@ -98,7 +98,7 @@ export function buildNodeTree(
 function isAncestor(
   potentialAncestor: TreeNode,
   node: TreeNode,
-  nodeMap: Map<string, TreeNode>
+  _nodeMap: Map<string, TreeNode>
 ): boolean {
   const visited = new Set<string>();
 

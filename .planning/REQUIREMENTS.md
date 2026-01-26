@@ -54,9 +54,24 @@
 
 Requirements mapped to phases in ROADMAP.md:
 
-- **Phase TBD**: Foundation requirements (FOUND-01 to FOUND-04)
-- **Phase TBD**: Type safety requirements (TYPE-01 to TYPE-05)
-- **Phase TBD**: Cross-platform coordination requirements (COORD-01 to COORD-05)
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FOUND-01 | Phase 10 | Pending |
+| FOUND-02 | Phase 10 | Pending |
+| FOUND-03 | Phase 10 | Pending |
+| FOUND-04 | Phase 10 | Pending |
+| TYPE-01 | Phase 11 | Pending |
+| TYPE-02 | Phase 11 | Pending |
+| TYPE-03 | Phase 11 | Pending |
+| TYPE-04 | Phase 11 | Pending |
+| TYPE-05 | Phase 11 | Pending |
+| COORD-01 | Phase 12 | Pending |
+| COORD-02 | Phase 12 | Pending |
+| COORD-03 | Phase 12 | Pending |
+| COORD-04 | Phase 12 | Pending |
+| COORD-05 | Phase 12 | Pending |
+
+**Coverage:** 14/14 requirements mapped (100%)
 
 ---
 
