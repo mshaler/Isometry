@@ -13,12 +13,15 @@ import {
   NetworkView,
   TreeView,
 } from './views';
+import { D3GridView } from './views/D3GridView';
+import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
 import type { Node } from '@/types/node';
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [useD3Mode, setUseD3Mode] = useState(false); // Toggle for D3 vs CSS rendering
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
@@ -57,6 +60,20 @@ export function Canvas() {
       );
     }
 
+    // D3 Mode - Use D3 Canvas rendering
+    if (useD3Mode) {
+      switch (activeView) {
+        case 'List':
+          return <D3ListView data={nodes} onNodeClick={handleNodeClick} />;
+
+        case 'Gallery':
+        case 'Grid':
+        default:
+          return <D3GridView data={nodes} onNodeClick={handleNodeClick} />;
+      }
+    }
+
+    // CSS Mode - Use existing CSS-based components
     switch (activeView) {
       case 'List':
         return <ListView data={nodes} onNodeClick={handleNodeClick} />;
@@ -95,8 +112,33 @@ export function Canvas() {
         ? 'bg-white border-t-2 border-l-2 border-[#707070] border-b-2 border-r-2 border-b-[#e8e8e8] border-r-[#e8e8e8]'
         : 'bg-white rounded-lg shadow-lg border border-gray-200'
     }`}>
-      {/* Filter Bar */}
-      <FilterBar />
+      {/* Filter Bar with D3 Mode Toggle */}
+      <div className="flex items-center">
+        <div className="flex-1">
+          <FilterBar />
+        </div>
+
+        {/* D3 Mode Toggle */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="px-3 py-2">
+            <button
+              onClick={() => setUseD3Mode(!useD3Mode)}
+              className={`px-3 py-1 text-xs font-medium rounded ${
+                useD3Mode
+                  ? theme === 'NeXTSTEP'
+                    ? 'bg-[#0066cc] text-white'
+                    : 'bg-blue-600 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#e8e8e8] text-gray-700 hover:bg-[#d8d8d8]'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+              title={useD3Mode ? 'Switch to CSS rendering' : 'Switch to D3 rendering'}
+            >
+              {useD3Mode ? 'D3 Mode' : 'CSS Mode'}
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Main Canvas Area */}
       <div className="flex-1 overflow-hidden">
