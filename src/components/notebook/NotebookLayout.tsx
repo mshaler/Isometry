@@ -4,15 +4,22 @@ import { CaptureComponent } from './CaptureComponent';
 import { ShellComponent } from './ShellComponent';
 import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
+import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
 
 interface ComponentLayout {
   width: number;
   height: number;
 }
 
-export function NotebookLayout() {
+function NotebookLayoutInner() {
   const { updateLayout } = useNotebook();
+  const { focusComponent } = useFocusContext();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Focus management refs
+  const captureRef = useFocusableComponent('capture');
+  const shellRef = useFocusableComponent('shell');
+  const previewRef = useFocusableComponent('preview');
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [componentLayouts, setComponentLayouts] = useState<{
     capture: ComponentLayout;
@@ -42,22 +49,22 @@ export function NotebookLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts for focus management
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey)) {
         switch (event.key) {
           case '1':
             event.preventDefault();
-            // Focus capture component (implement focus logic later)
+            focusComponent('capture');
             break;
           case '2':
             event.preventDefault();
-            // Focus shell component
+            focusComponent('shell');
             break;
           case '3':
             event.preventDefault();
-            // Focus preview component
+            focusComponent('preview');
             break;
         }
       }
@@ -65,7 +72,7 @@ export function NotebookLayout() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [focusComponent]);
 
   // Drag resize functionality
   const [isDragging, setIsDragging] = useState<string | null>(null);
@@ -164,17 +171,17 @@ export function NotebookLayout() {
     return (
       <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
         <ErrorBoundary level="feature" name="CaptureComponent">
-          <div className="flex-1 min-h-[300px]">
+          <div ref={captureRef} className="flex-1 min-h-[300px] relative focusable-component" tabIndex={0}>
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="ShellComponent">
-          <div className="flex-1 min-h-[200px]">
+          <div ref={shellRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
             <ShellComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="PreviewComponent">
-          <div className="flex-1 min-h-[200px]">
+          <div ref={previewRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
             <PreviewComponent className="h-full" />
           </div>
         </ErrorBoundary>
@@ -187,18 +194,18 @@ export function NotebookLayout() {
     return (
       <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
         <ErrorBoundary level="feature" name="CaptureComponent">
-          <div className="flex-1 min-h-[300px]">
+          <div ref={captureRef} className="flex-1 min-h-[300px] relative focusable-component" tabIndex={0}>
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <div className="flex-1 flex gap-2 min-h-[300px]">
           <ErrorBoundary level="feature" name="ShellComponent">
-            <div className="flex-1 min-w-[300px]">
+            <div ref={shellRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
               <ShellComponent className="h-full" />
             </div>
           </ErrorBoundary>
           <ErrorBoundary level="feature" name="PreviewComponent">
-            <div className="flex-1 min-w-[300px]">
+            <div ref={previewRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
               <PreviewComponent className="h-full" />
             </div>
           </ErrorBoundary>
@@ -217,8 +224,10 @@ export function NotebookLayout() {
       {/* Capture Component */}
       <ErrorBoundary level="feature" name="CaptureComponent">
         <div
+          ref={captureRef}
           style={{ width: `${componentLayouts.capture.width}%` }}
-          className="min-w-[300px] relative"
+          className="min-w-[300px] relative focusable-component"
+          tabIndex={0}
         >
           <CaptureComponent className="h-full" />
         </div>
@@ -230,8 +239,10 @@ export function NotebookLayout() {
       {/* Shell Component */}
       <ErrorBoundary level="feature" name="ShellComponent">
         <div
+          ref={shellRef}
           style={{ width: `${componentLayouts.shell.width}%` }}
-          className="min-w-[250px] relative"
+          className="min-w-[250px] relative focusable-component"
+          tabIndex={0}
         >
           <ShellComponent className="h-full" />
         </div>
@@ -243,12 +254,22 @@ export function NotebookLayout() {
       {/* Preview Component */}
       <ErrorBoundary level="feature" name="PreviewComponent">
         <div
+          ref={previewRef}
           style={{ width: `${componentLayouts.preview.width}%` }}
-          className="min-w-[250px] relative"
+          className="min-w-[250px] relative focusable-component"
+          tabIndex={0}
         >
           <PreviewComponent className="h-full" />
         </div>
       </ErrorBoundary>
     </div>
+  );
+}
+
+export function NotebookLayout() {
+  return (
+    <FocusProvider>
+      <NotebookLayoutInner />
+    </FocusProvider>
   );
 }
