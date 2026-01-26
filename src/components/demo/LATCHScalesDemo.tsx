@@ -36,21 +36,19 @@ export function LATCHScalesDemo() {
     const categoryScale = createLATCHScale(
       'category',
       cardData,
-      'folder',
       [0, innerWidth]
     );
 
     const hierarchyScale = createLATCHScale(
       'hierarchy',
       cardData,
-      'priority',
       [innerHeight, 0] // Inverted for SVG coordinates
     );
 
     // Draw axes
-    // X-axis (Category)
+    // X-axis (Category) - using the scale directly since it's already a proper D3 scale
     const xAxis = d3
-      .axisBottom(categoryScale.scale)
+      .axisBottom(categoryScale as any)
       .tickFormat((d) => String(d));
 
     g.append('g')
@@ -62,7 +60,7 @@ export function LATCHScalesDemo() {
 
     // Y-axis (Hierarchy)
     const yAxis = d3
-      .axisLeft(hierarchyScale.scale)
+      .axisLeft(hierarchyScale as any)
       .tickFormat((d) => `P${d}`);
 
     g.append('g')
@@ -118,7 +116,7 @@ export function LATCHScalesDemo() {
           .attr('fill', 'var(--cb-fg-primary)')
           .attr('font-size', '11px')
           .attr('font-weight', '500')
-          .text(d.name);
+          .text(d.name ?? 'Unknown');
       })
       .on('mouseleave', function () {
         d3.select(this).transition().duration(150).attr('r', 8).attr('opacity', 0.8);

@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cbCanvas } from '@/d3/components/cb-canvas';
 import { cbCard } from '@/d3/components/cb-card';
 import { nodeToCardValue } from '@/types/lpg';
-import type { CanvasDimensions, BackgroundPattern } from '@/types/lpg';
+import type { BackgroundPattern } from '@/types/lpg';
 import { sampleNodes } from './data/sampleData';
 
 export function CbCanvasDemo() {
@@ -14,12 +14,6 @@ export function CbCanvasDemo() {
 
   const cardData = useMemo(() => sampleNodes.slice(0, 6).map(nodeToCardValue), []);
 
-  const canvasDimensions: CanvasDimensions = {
-    width: 800,
-    height: 600,
-    viewBox: { x: 0, y: 0, width: 1200, height: 900 },
-  };
-
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -28,9 +22,9 @@ export function CbCanvasDemo() {
 
     // Create canvas
     const canvas = cbCanvas()
-      .dimensions(canvasDimensions)
+      .viewType('grid')
       .background(backgroundPattern)
-      .interactive(true);
+      .zoomable(true);
 
     // Render canvas
     const canvasContainer = container
@@ -46,7 +40,7 @@ export function CbCanvasDemo() {
     canvasContainer.call(canvas);
 
     // Get content layer and add cards
-    const contentLayer = canvas.getContentLayer();
+    const contentLayer = canvas.getContentArea();
     if (contentLayer) {
       // Create card component
       const card = cbCard()
@@ -66,12 +60,12 @@ export function CbCanvasDemo() {
           .attr('transform', `translate(${x}, ${y})`)
           .datum(data);
 
-        cardGroup.call(card);
+        cardGroup.call(card as any);
       });
     }
 
     // Get overlay layer and add title
-    const overlayLayer = canvas.getOverlayLayer();
+    const overlayLayer = canvas.getOverlayArea();
     if (overlayLayer) {
       overlayLayer
         .append('text')
