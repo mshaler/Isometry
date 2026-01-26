@@ -19,6 +19,17 @@ interface BridgePerformanceResults {
   cpuUsage?: number;
   networkLatency?: number;
   diskIO?: number;
+  results?: Array<{
+    test: string;
+    duration: number;
+    success: boolean;
+  }>;
+  stress?: {
+    throughput: number;
+    successfulOperations: number;
+    failedOperations: number;
+    totalOperations: number;
+  };
 }
 
 export interface PerformanceBaseline {

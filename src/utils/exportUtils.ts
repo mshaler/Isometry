@@ -37,7 +37,7 @@ export async function exportToPDF(card: NotebookCard, options: PDFOptions = {}):
     pageSize = 'a4',
     orientation = 'portrait',
     margin = 0.5,
-    filename = `${sanitizeFilename(card.properties?.title || 'notebook-card')}.pdf`,
+    filename = `${sanitizeFilename(String(card.properties?.title || 'notebook-card'))}.pdf`,
     quality = 1.2,
   } = options;
 
@@ -93,7 +93,7 @@ export function exportToHTML(card: NotebookCard, options: HTMLOptions = {}): voi
   const {
     includeCSS = true,
     standalone = true,
-    filename = `${sanitizeFilename(card.properties?.title || 'notebook-card')}.html`,
+    filename = `${sanitizeFilename(String(card.properties?.title || 'notebook-card'))}.html`,
     theme = 'Modern',
   } = options;
 
@@ -114,7 +114,7 @@ export function exportToJSON(
   options: JSONOptions = {}
 ): void {
   const {
-    filename = Array.isArray(cardOrCards) ? 'notebook-cards.json' : `${sanitizeFilename(cardOrCards.properties?.title || 'notebook-card')}.json`,
+    filename = Array.isArray(cardOrCards) ? 'notebook-cards.json' : `${sanitizeFilename(String(cardOrCards.properties?.title || 'notebook-card'))}.json`,
     includeMetadata = true,
     prettyPrint = true,
   } = options;
@@ -166,7 +166,7 @@ function createHTMLContent(card: NotebookCard, options: HTMLOptions): string {
   const { includeCSS = true, standalone = true, theme = 'Modern' } = options;
 
   // Get card properties
-  const title = card.properties?.title || 'Untitled Card';
+  const title = String(card.properties?.title || 'Untitled Card');
   const content = card.markdownContent || '';
   const createdAt = card.createdAt ? new Date(card.createdAt).toLocaleDateString() : '';
   const cardType = card.cardType;
@@ -430,7 +430,7 @@ export async function exportToExcel(
   options: OfficeExportOptions = {}
 ): Promise<void> {
   const {
-    filename = Array.isArray(cardOrCards) ? 'notebook-cards.xlsx' : `${sanitizeFilename(cardOrCards.properties?.title || 'notebook-card')}.xlsx`,
+    filename = Array.isArray(cardOrCards) ? 'notebook-cards.xlsx' : `${sanitizeFilename(String(cardOrCards.properties?.title || 'notebook-card'))}.xlsx`,
     // includeMetadata = true, // Reserved for future metadata inclusion
     // multipleSheets = true, // Reserved for multi-sheet functionality
   } = options;
@@ -439,20 +439,59 @@ export async function exportToExcel(
     const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
 
     // Convert NotebookCards to Nodes for office processor
-    const nodes = cards.map(card => ({
-      id: card.id,
-      nodeType: card.cardType,
-      name: card.properties?.title || 'Untitled',
-      content: card.markdownContent || '',
-      summary: card.properties?.title || '',
-      createdAt: card.createdAt,
-      modifiedAt: card.modifiedAt,
-      folder: null,
-      tags: [],
-      source: 'notebook-export',
-      sourceId: card.id,
-      sourceUrl: null
-    }));
+    const nodes = cards.map(card => {
+      // Map NotebookCardType to NodeType
+      const getNodeType = (cardType: string): 'note' | 'task' | 'contact' | 'event' | 'project' | 'resource' | 'notebook' => {
+        switch (cardType) {
+          case 'capture':
+          case 'preview':
+            return 'note';
+          case 'shell':
+          case 'code':
+            return 'task';
+          case 'meeting':
+            return 'event';
+          case 'project':
+            return 'project';
+          default:
+            return 'note';
+        }
+      };
+
+      return {
+        id: card.id,
+        nodeType: getNodeType(card.cardType),
+        name: String(card.properties?.title || 'Untitled'),
+        content: card.markdownContent || '',
+        summary: String(card.properties?.title || ''),
+        // LATCH: Location
+        latitude: null,
+        longitude: null,
+        locationName: null,
+        locationAddress: null,
+        // LATCH: Time
+        createdAt: card.createdAt,
+        modifiedAt: card.modifiedAt,
+        dueAt: null,
+        completedAt: null,
+        eventStart: null,
+        eventEnd: null,
+        // LATCH: Category
+        folder: null,
+        tags: [],
+        status: null,
+        // LATCH: Hierarchy
+        priority: 0,
+        importance: 0,
+        sortOrder: 0,
+        // Metadata
+        source: 'notebook-export',
+        sourceId: card.id,
+        sourceUrl: null,
+        deletedAt: null,
+        version: 1
+      };
+    });
 
     const blob = await officeProcessor.exportToExcel(nodes, filename);
     downloadBlob(blob, filename);
@@ -470,24 +509,61 @@ export async function exportToWord(
   options: OfficeExportOptions = {}
 ): Promise<void> {
   const {
-    filename = `${sanitizeFilename(card.properties?.title || 'notebook-card')}.docx`,
+    filename = `${sanitizeFilename(String(card.properties?.title || 'notebook-card'))}.docx`,
   } = options;
 
   try {
     // Convert NotebookCard to Node for office processor
+    // Map NotebookCardType to NodeType
+    const getNodeType = (cardType: string): 'note' | 'task' | 'contact' | 'event' | 'project' | 'resource' | 'notebook' => {
+      switch (cardType) {
+        case 'capture':
+        case 'preview':
+          return 'note';
+        case 'shell':
+        case 'code':
+          return 'task';
+        case 'meeting':
+          return 'event';
+        case 'project':
+          return 'project';
+        default:
+          return 'note';
+      }
+    };
+
     const node = {
       id: card.id,
-      nodeType: card.cardType,
-      name: card.properties?.title || 'Untitled',
+      nodeType: getNodeType(card.cardType),
+      name: String(card.properties?.title || 'Untitled'),
       content: card.markdownContent || '',
-      summary: card.properties?.title || '',
+      summary: String(card.properties?.title || ''),
+      // LATCH: Location
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      // LATCH: Time
       createdAt: card.createdAt,
       modifiedAt: card.modifiedAt,
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+      // LATCH: Category
       folder: null,
       tags: [],
+      status: null,
+      // LATCH: Hierarchy
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+      // Metadata
       source: 'notebook-export',
       sourceId: card.id,
-      sourceUrl: null
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     };
 
     const blob = await officeProcessor.exportToWord(node);
