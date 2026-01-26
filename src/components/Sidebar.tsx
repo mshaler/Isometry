@@ -17,6 +17,13 @@ interface ColumnInfo {
   name: string;
 }
 
+interface DateRangeInfo {
+  min_date: string;
+  max_date: string;
+  has_created: number;
+  has_due: number;
+}
+
 export function Sidebar() {
   const [activeTab, setActiveTab] = useState<TabType>('filters');
   const [activeFilterPanel, setActiveFilterPanel] = useState<string | null>(null);
@@ -50,7 +57,7 @@ export function Sidebar() {
 
   // Determine which filterable columns exist in the schema
   const availableFilters = useMemo(() => {
-    if (!columns) return new Set<string>();
+    if (!columns || !Array.isArray(columns)) return new Set<string>();
 
     const columnNames = new Set(columns.map(c => c.name));
     const available = new Set<string>();
@@ -157,7 +164,7 @@ export function Sidebar() {
   );
 
   // Query date range info for time filters
-  const { data: dateRange } = useSQLiteQuery<{ min_date: string; max_date: string; has_created: number; has_due: number }>(
+  const { data: dateRange } = useSQLiteQuery<DateRangeInfo>(
     hasTimeFilter
       ? `SELECT
           MIN(COALESCE(createdAt, created, due)) as min_date,
