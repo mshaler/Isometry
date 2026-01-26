@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useMockData } from '../hooks/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { usePAFV } from '../hooks/usePAFV';
-import { performanceTracker, PerformanceStats } from './views/PerformanceMonitor';
+import { performanceTracker } from './views/PerformanceMonitor';
 import type { Node } from '@/types/node';
 import type { ViewType } from '@/types/view';
 
@@ -83,7 +83,7 @@ export function ViewRendererTest() {
 
   const { data: mockData } = useMockData();
   const { setViewMode } = usePAFV();
-  const testIntervalRef = useRef<NodeJS.Timeout>();
+  // Removed unused testIntervalRef - performance testing now uses different timing mechanism
 
   // Generate test data based on scenario
   const generateTestData = useCallback((size: number): Node[] => {
@@ -113,7 +113,9 @@ export function ViewRendererTest() {
     setCurrentTransition(0);
 
     const startTime = performance.now();
-    const startMemory = (performance as any).memory?.usedJSHeapSize / 1024 / 1024;
+    const startMemory = 'memory' in performance && performance.memory
+      ? (performance.memory as MemoryInfo).usedJSHeapSize / 1024 / 1024
+      : 0;
 
     // Generate test data
     const data = generateTestData(scenario.dataSize);
@@ -137,7 +139,9 @@ export function ViewRendererTest() {
 
       // Calculate results
       const endTime = performance.now();
-      const endMemory = (performance as any).memory?.usedJSHeapSize / 1024 / 1024;
+      const endMemory = 'memory' in performance && performance.memory
+        ? (performance.memory as MemoryInfo).usedJSHeapSize / 1024 / 1024
+        : 0;
       const stats = performanceTracker.getStats();
 
       const result: TestResult = {

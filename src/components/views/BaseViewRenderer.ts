@@ -137,7 +137,7 @@ export abstract class BaseViewRenderer implements ViewRenderer {
     };
   }
 
-  protected async applyTransition(config: TransitionConfig, type: 'fade-in' | 'fade-out'): Promise<void> {
+  protected async applyTransition(config: TransitionConfig, _type: 'fade-in' | 'fade-out'): Promise<void> {
     return new Promise((resolve) => {
       // This is a basic implementation - subclasses should override for specific animations
       setTimeout(resolve, config.duration);
@@ -145,15 +145,15 @@ export abstract class BaseViewRenderer implements ViewRenderer {
   }
 
   // Default event handlers (can be overridden)
-  onCardClick?(node: Node, event: MouseEvent): void {
+  onCardClick?(node: Node, _event: MouseEvent): void {
     console.log('Card clicked:', node.name);
   }
 
-  onCardHover?(node: Node | null): void {
+  onCardHover?(_node: Node | null): void {
     // Default hover handling
   }
 
-  onResize?(dimensions: Dimensions): void {
+  onResize?(_dimensions: Dimensions): void {
     // Default resize handling
   }
 }
