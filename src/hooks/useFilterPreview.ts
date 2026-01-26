@@ -36,7 +36,7 @@ export function useFilterPreview(
   filters: FilterState | null,
   debounceMs: number = 300
 ): UseFilterPreviewResult {
-  const { db } = useDatabase();
+  const { db, execute } = useDatabase();
   const [count, setCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,10 +79,13 @@ export function useFilterPreview(
           WHERE ${sql}
         `;
 
-        const result = db.exec(query, params);
+        const rowsResult = execute<{ count: number }>(query, params);
 
-        if (result.length > 0 && result[0].values.length > 0) {
-          const countValue = result[0].values[0][0] as number;
+        // Handle both sync (sql.js) and async (native API) execute results
+        const rows = Array.isArray(rowsResult) ? rowsResult : await rowsResult;
+
+        if (rows.length > 0) {
+          const countValue = rows[0].count;
           setCount(countValue);
         } else {
           setCount(0);

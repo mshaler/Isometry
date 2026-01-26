@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import { rowToNode, Node } from '../types/node';
 
+// Environment variable detection for API mode
+const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
+
 export interface QueryState<T> {
   data: T[] | null;
   loading: boolean;
@@ -33,14 +36,23 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
   // Memoize params string to avoid re-renders
   const paramsKey = useMemo(() => JSON.stringify(params), [params]);
 
-  const fetchData = useCallback(() => {
+  const fetchData = useCallback(async () => {
     if (!enabled || dbLoading) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const rows = execute<Record<string, unknown>>(sql, params);
+      let rows: Record<string, unknown>[];
+
+      if (USE_NATIVE_API) {
+        // Native API returns Promise<T[]>
+        rows = await (execute as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(sql, params);
+      } else {
+        // SQL.js returns T[] synchronously
+        rows = (execute as (sql: string, params?: unknown[]) => Record<string, unknown>[])(sql, params);
+      }
+
       const result = transformRef.current ? transformRef.current(rows) : (rows as unknown as T[]);
       setData(result);
     } catch (err) {

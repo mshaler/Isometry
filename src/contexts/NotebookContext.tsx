@@ -161,13 +161,16 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     const queryStart = performance.now();
 
     try {
-      const rows = execute<Record<string, unknown>>(
+      const rowsResult = execute<Record<string, unknown>>(
         `SELECT nc.*, n.name, n.node_type
          FROM notebook_cards nc
          JOIN nodes n ON nc.node_id = n.id
          WHERE n.deleted_at IS NULL
          ORDER BY nc.modified_at DESC`
       );
+
+      // Handle both sync (sql.js) and async (native API) execute results
+      const rows = Array.isArray(rowsResult) ? rowsResult : await rowsResult;
 
       const queryDuration = performance.now() - queryStart;
       performanceHook.measureQuery('loadCards', queryDuration);

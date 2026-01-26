@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { Database } from 'sql.js';
 import { initDatabase, saveDatabase, resetDatabase } from './init';
+import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -11,9 +12,13 @@ interface DatabaseContextValue {
   reset: () => Promise<void>;
 }
 
+// Union type for unified database context (currently unused but may be needed for future type checking)
+// type UnifiedDatabaseContextValue = DatabaseContextValue | NativeDatabaseContextValue;
+
 const DatabaseContext = createContext<DatabaseContextValue | null>(null);
 
-export function DatabaseProvider({ children }: { children: React.ReactNode }) {
+// SQL.js Database Provider (original implementation)
+function SQLJSDatabaseProvider({ children }: { children: React.ReactNode }) {
   const [db, setDb] = useState<Database | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -72,10 +77,54 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useDatabase(): DatabaseContextValue {
+// Original sql.js useDatabase hook for internal use
+function useSQLJSDatabase(): DatabaseContextValue {
   const context = useContext(DatabaseContext);
   if (!context) {
-    throw new Error('useDatabase must be used within DatabaseProvider');
+    throw new Error('useSQLJSDatabase must be used within SQLJSDatabaseProvider');
   }
   return context;
+}
+
+/**
+ * Environment variable detection for API selection
+ * REACT_APP_USE_NATIVE_API=true enables native API mode
+ * REACT_APP_USE_NATIVE_API=false or undefined uses sql.js mode
+ */
+const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
+
+/**
+ * Unified Database Provider that conditionally renders sql.js or native provider
+ * Based on REACT_APP_USE_NATIVE_API environment variable
+ */
+export function DatabaseProvider({ children }: { children: React.ReactNode }) {
+  if (USE_NATIVE_API) {
+    console.log('Using Native Database API (REACT_APP_USE_NATIVE_API=true)');
+    return (
+      <NativeDatabaseProvider>
+        {children}
+      </NativeDatabaseProvider>
+    );
+  } else {
+    console.log('Using SQL.js Database (REACT_APP_USE_NATIVE_API=false or undefined)');
+    return (
+      <SQLJSDatabaseProvider>
+        {children}
+      </SQLJSDatabaseProvider>
+    );
+  }
+}
+
+/**
+ * Unified database hook that works with both sql.js and native contexts
+ * Automatically detects current provider and returns appropriate interface
+ */
+export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue {
+  if (USE_NATIVE_API) {
+    // When using native API, return the native context
+    return useNativeDatabase();
+  } else {
+    // When using sql.js, return the sql.js context
+    return useSQLJSDatabase();
+  }
 }
