@@ -48,7 +48,7 @@ export function LATCHScalesDemo() {
     // Draw axes
     // X-axis (Category) - using the scale directly since it's already a proper D3 scale
     const xAxis = d3
-      .axisBottom(categoryScale as any)
+      .axisBottom(categoryScale as d3.AxisScale<string>)
       .tickFormat((d) => String(d));
 
     g.append('g')
@@ -60,7 +60,7 @@ export function LATCHScalesDemo() {
 
     // Y-axis (Hierarchy)
     const yAxis = d3
-      .axisLeft(hierarchyScale as any)
+      .axisLeft(hierarchyScale as d3.AxisScale<number>)
       .tickFormat((d) => `P${d}`);
 
     g.append('g')
