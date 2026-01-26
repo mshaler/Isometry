@@ -38,6 +38,6 @@ export default tseslint.config(
     }
   },
   {
-    ignores: ['node_modules', 'dist', '*.js', 'native/**', 'src/dsl/grammar/parser.cjs'],
+    ignores: ['node_modules', 'dist', '*.js', 'native/**', 'src/dsl/grammar/parser.cjs', '**/*.d.ts'],
   }
 );
