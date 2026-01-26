@@ -1,172 +1,188 @@
 # Codebase Structure
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
 ## Directory Layout
 
 ```
 Isometry/
-├── src/                    # React prototype source
-│   ├── components/         # React UI components
-│   ├── contexts/           # React Context providers
-│   ├── d3/                 # D3.js visualization layer
-│   ├── db/                 # Database (sql.js)
-│   ├── dsl/                # Filter DSL (parser, compiler)
-│   ├── filters/            # LATCH filter compiler
-│   ├── hooks/              # Custom React hooks
-│   ├── state/              # Additional state contexts
-│   ├── styles/             # Theme definitions
-│   ├── test/               # Test setup & utilities
-│   └── types/              # TypeScript interfaces
-├── native/                 # Swift Package (iOS/macOS)
-│   ├── Sources/Isometry/   # Swift source code
-│   │   ├── App/            # App entry, ContentView
-│   │   ├── Database/       # IsometryDatabase actor
-│   │   ├── Import/         # Data importers
-│   │   ├── Models/         # Node, Edge, SyncState
-│   │   ├── Sync/           # CloudKit sync manager
-│   │   ├── Views/          # SwiftUI views
-│   │   └── Resources/      # schema.sql, assets
-│   └── Tests/              # Swift tests
-├── ios/                    # iOS Xcode project
-├── macos/                  # macOS Xcode project
-├── docs/                   # Architecture documentation
-├── design/                 # UI handoff files
-└── .planning/              # Planning documents
+├── src/                    # React web prototype
+├── native/                 # Swift native apps (iOS/macOS)
+├── docs/                   # Foam documentation system
+├── .planning/              # GSD project management
+├── scripts/                # Automation and sync scripts
+├── design/                 # UI handoff and design assets
+├── public/                 # Static web assets
+└── dist/                   # Build output
 ```
 
-## React Prototype Structure
+## Directory Purposes
 
-### `src/types/` - Type Definitions
-- `index.ts` - Barrel export
-- `pafv.ts` - PAFV model (Facet, PAFVState, LATCHAxis)
-- `filter.ts` - LATCH filters (FilterState, *Filter, CompiledQuery)
-- `node.ts` - Node, Edge entities + rowToNode converter
-- `view.ts` - ViewType, ViewRenderer interface, D3Container
-- `lpg.ts` - Labeled Property Graph types
+**src/**
+- Purpose: React web application and development prototype
+- Contains: Components, contexts, hooks, database clients, types
+- Key files: `App.tsx`, `MVPDemo.tsx`, database contexts
 
-### `src/db/` - Database Layer
-- `DatabaseContext.tsx` - Context + useDatabase() hook
-- `init.ts` - initDatabase(), saveDatabase(), resetDatabase()
-- `schema.sql` - SQLite DDL
+**native/**
+- Purpose: Production iOS and macOS applications
+- Contains: Swift source code, resources, test suites
+- Key files: SwiftUI views, database actors, sync managers
 
-### `src/contexts/` - State Providers
-- `ThemeContext.tsx` - useTheme() (NeXTSTEP/Modern)
-- `FilterContext.tsx` - useFilters() + compiledQuery
-- `PAFVContext.tsx` - usePAFV() for axis assignments
-- `AppStateContext.tsx` - useAppState() for current view
+**native/Sources/Isometry/**
+- Purpose: Main application module
+- Contains: App logic, views, database, sync, import systems
+- Key files: `App/IsometryApp.swift`, `Database/`, `Views/`
 
-### `src/hooks/` - Custom Hooks
-- `useSQLiteQuery.ts` - Generic SQL query with transform
-- `useNodes.ts` - Convenience for node queries
-- `useFilteredNodes.ts` - Filters + query combined
-- `useD3.ts` - D3 container lifecycle
-- `useComponentTheme.ts` - Theme-aware styling
-- `useURLState.ts` - URL-based state persistence
+**native/Sources/IsometryCore/**
+- Purpose: Core domain logic and protocols
+- Contains: Shared entities, services, infrastructure abstractions
+- Key files: Domain models, service protocols
 
-### `src/d3/` - D3 Visualization
-- `D3View.tsx` - Generic D3 wrapper component
-- `factory.ts` - ViewRenderer factory
-- `scales.ts` - D3 scale utilities
-- `hooks.ts` - useD3Scales(), useD3DataBinding()
-- `components/` - Card, Canvas components
+**native/Sources/IsometryAPI/**
+- Purpose: HTTP API server for React web integration
+- Contains: Controllers, DTOs, API models
+- Key files: Database controllers, model DTOs
 
-### `src/components/` - UI Components
-- `App.tsx` - Root with provider hierarchy
-- `Canvas.tsx` - Main content, view selector
-- `Toolbar.tsx` - Menu bar + actions
-- `Navigator.tsx` - App/View/Dataset dropdowns
-- `Sidebar.tsx` - LATCH filter UI
-- `RightSidebar.tsx` - Formats + Settings
-- `CommandBar.tsx` - DSL input
-- `views/` - View implementations (Grid, List, Kanban, etc.)
+**src/components/**
+- Purpose: React UI components and widgets
+- Contains: Views, UI primitives, demo components
+- Key files: Canvas, navigation, sidebars, visualization components
 
-## Native Structure
+**src/contexts/**
+- Purpose: React state management and providers
+- Contains: Global state contexts, theme management
+- Key files: FilterContext, PAFVContext, AppStateContext
 
-### `native/Sources/Isometry/App/`
-- `IsometryApp.swift` - @main entry point
-- `ContentView.swift` - Root SwiftUI view
-- `AppState.swift` - ViewModel (@MainActor)
+**src/db/**
+- Purpose: Database abstraction and clients
+- Contains: Environment-aware database providers
+- Key files: DatabaseContext, NativeAPIClient, WebViewClient
 
-### `native/Sources/Isometry/Models/`
-- `Node.swift` - Codable, Sendable, GRDB conformance
-- `Edge.swift` - Relationship entity
-- `SyncState.swift` - CloudKit sync tracking
+**src/hooks/**
+- Purpose: Custom React hooks and utilities
+- Contains: Data fetching, D3 integration, UI utilities
+- Key files: useSQLiteQuery, useD3, navigation hooks
 
-### `native/Sources/Isometry/Database/`
-- `IsometryDatabase.swift` - Thread-safe actor
-- `DatabaseError.swift` - Custom error types
-- Resources: `schema.sql` (full schema with FTS5)
+**docs/**
+- Purpose: Foam-based knowledge management
+- Contains: Specifications, plans, decisions, notes
+- Key files: Architecture docs, feature specs, Apple Notes import
 
-### `native/Sources/Isometry/Sync/`
-- `CloudKitSyncManager.swift` - Thread-safe sync actor
+**.planning/**
+- Purpose: GSD project management and phase tracking
+- Contains: Phase plans, codebase analysis, execution logs
+- Key files: STATE.md, phase directories
 
-### `native/Sources/Isometry/Import/`
-- `AltoIndexImporter.swift` - Apple Notes import
-
-### `native/Sources/Isometry/Views/`
-- `NodeListView.swift` - Master list
-- `SyncStatusView.swift` - Sync status display
-- macOS-specific views in subdirectory
+**scripts/**
+- Purpose: Development automation and data sync
+- Contains: GitHub sync, Apple Notes import, setup scripts
+- Key files: sync-github-issues.py, import-apple-notes.py
 
 ## Key File Locations
 
-### Entry Points
-- `src/main.tsx` - React entry point
-- `native/Sources/Isometry/App/IsometryApp.swift` - Native entry
+**Entry Points:**
+- `src/App.tsx`: React application root with provider setup
+- `src/MVPDemo.tsx`: Simplified entry point for MVP development
+- `native/Sources/Isometry/App/IsometryApp.swift`: Native app entry point
 
-### Configuration
-- `package.json` - npm dependencies
-- `tsconfig.json` - TypeScript config
-- `vite.config.ts` - Build config
-- `vitest.config.ts` - Test config
-- `eslint.config.js` - Linting (ESLint v9)
-- `tailwind.config.js` - Styling
-- `native/Package.swift` - Swift dependencies
+**Configuration:**
+- `package.json`: Node.js dependencies and scripts
+- `native/Package.swift`: Swift package configuration
+- `vite.config.ts`: React development server configuration
+- `tsconfig.json`: TypeScript compiler settings
 
-### Database Schemas
-- `src/db/schema.sql` - React prototype schema
-- `native/Sources/Isometry/Resources/schema.sql` - Native schema (with FTS5)
+**Core Logic:**
+- `src/contexts/`: React state management
+- `src/db/DatabaseContext.tsx`: Environment-aware database provider
+- `native/Sources/Isometry/Database/IsometryDatabase.swift`: Native database actor
+- `native/Sources/Isometry/App/IsometryApp.swift`: Native app state management
+
+**Testing:**
+- `src/__tests__/`: React component and utility tests
+- `src/**/__tests__/`: Co-located test files
+- `native/Tests/IsometryTests/`: Native Swift test suites
 
 ## Naming Conventions
 
-### Files
-- PascalCase.tsx: React components
-- camelCase.ts: Utilities, hooks (prefixed with `use`)
-- kebab-case.md: Documentation
-- UPPERCASE.md: Important files (README, CLAUDE, CHANGELOG)
+**Files:**
+- React components: `PascalCase.tsx` (e.g., `Canvas.tsx`, `FilterContext.tsx`)
+- Hooks: `camelCase.ts` with `use` prefix (e.g., `useD3.ts`, `useEnvironment.ts`)
+- Swift files: `PascalCase.swift` (e.g., `ContentView.swift`, `IsometryDatabase.swift`)
+- Test files: `*.test.ts`, `*.test.tsx`, `*Tests.swift`
 
-### Directories
-- kebab-case for all directories
-- Plural for collections: `components/`, `hooks/`, `views/`
+**Directories:**
+- React: `kebab-case` or `camelCase` (e.g., `components/ui`, `d3/hooks`)
+- Swift: `PascalCase` (e.g., `Sources/Isometry`, `Database/`)
+- Documentation: `kebab-case` (e.g., `docs/specs`, `docs/decisions`)
 
-### Special Patterns
-- `*.test.ts` / `*.test.tsx`: Test files
-- `index.ts`: Barrel exports
+**Variables:**
+- React: `camelCase` for variables, `PascalCase` for components
+- Swift: `camelCase` for properties, `PascalCase` for types
+- Database: `snake_case` for SQL columns
 
 ## Where to Add New Code
 
-### New React Component
-- Component: `src/components/{Name}.tsx`
-- Tests: `src/components/{Name}.test.tsx`
-- Types (if needed): `src/types/{name}.ts`
+**New React Component:**
+- Primary code: `src/components/{category}/ComponentName.tsx`
+- Tests: `src/components/{category}/__tests__/ComponentName.test.tsx`
+- Export: Add to relevant index file or import directly
 
-### New View Type
-- Implementation: `src/components/views/{Name}View.tsx`
-- Register in: `src/d3/factory.ts`
-- Add to: ViewType enum in `src/types/view.ts`
+**New Context/Hook:**
+- Context: `src/contexts/NameContext.tsx`
+- Hook: `src/hooks/useName.ts`
+- Tests: `src/hooks/__tests__/useName.test.ts`
 
-### New Custom Hook
-- Implementation: `src/hooks/use{Name}.ts`
-- Tests: `src/hooks/use{Name}.test.ts`
+**New Database Feature:**
+- React client: `src/db/` (add to appropriate client)
+- Native implementation: `native/Sources/Isometry/Database/`
+- Migrations: Native database actor handles schema updates
 
-### New Swift Feature
-- Models: `native/Sources/Isometry/Models/`
-- Database operations: `native/Sources/Isometry/Database/`
-- Views: `native/Sources/Isometry/Views/`
-- Tests: `native/Tests/IsometryTests/`
+**New Swift View:**
+- Implementation: `native/Sources/Isometry/Views/{Category}/ViewName.swift`
+- Platform-specific: `native/Sources/Isometry/Views/{iOS|macOS}/`
+
+**New API Endpoint:**
+- Controller: `native/Sources/IsometryAPI/Controllers/`
+- Models: `native/Sources/IsometryAPI/Models/DTOs/`
+- Client: `src/db/NativeAPIClient.ts` (add method)
+
+**Utilities:**
+- React: `src/utils/utility-name.ts`
+- Swift: `native/Sources/Isometry/Utils/`
+- Shared types: `src/types/` for TypeScript, `native/Sources/IsometryCore/Domain/` for Swift
+
+## Special Directories
+
+**.planning/codebase/**
+- Purpose: Generated codebase analysis documents
+- Generated: Yes (via GSD commands)
+- Committed: Yes (for future reference)
+
+**.planning/phases/**
+- Purpose: Phase-specific implementation plans and logs
+- Generated: Yes (via GSD workflow)
+- Committed: Yes (tracks project progress)
+
+**node_modules/**
+- Purpose: NPM package dependencies
+- Generated: Yes (via npm install)
+- Committed: No (excluded by .gitignore)
+
+**native/.build/**
+- Purpose: Swift build artifacts and dependencies
+- Generated: Yes (via Swift Package Manager)
+- Committed: No (excluded by .gitignore)
+
+**dist/**
+- Purpose: React production build output
+- Generated: Yes (via npm run build)
+- Committed: No (excluded by .gitignore)
+
+**docs/notes/**
+- Purpose: Imported Apple Notes for knowledge management
+- Generated: Yes (via sync scripts)
+- Committed: Yes (source of truth for project documentation)
 
 ---
 
-*Structure analysis: 2026-01-21*
-*Update when directory structure changes*
+*Structure analysis: 2026-01-25*

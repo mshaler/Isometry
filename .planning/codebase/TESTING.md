@@ -1,221 +1,191 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
 ## Test Framework
 
-### React Prototype
-
 **Runner:**
 - Vitest 4.0.17
-- Config: `vitest.config.ts` in project root
+- Config: `vitest.config.ts`
 
 **Assertion Library:**
-- Vitest built-in expect
+- Vitest built-in `expect`
 - @testing-library/jest-dom for DOM assertions
+- @testing-library/react for component testing
+- @testing-library/user-event for user interactions
 
 **Run Commands:**
 ```bash
 npm test                              # Run all tests
-npm test -- --watch                   # Watch mode
-npm test -- src/d3/factory.test.ts   # Single file
-npm run test:coverage                 # Coverage report
-```
-
-### Native (Swift)
-
-**Framework:**
-- Swift Testing (modern `@Test` macros)
-- XCTest for foundation
-
-**Run Commands:**
-```bash
-swift test                            # Run all tests
-swift test --filter IsometryTests     # Filter by target
+npm run test:run                      # Single run mode
+npm run test:coverage                 # With coverage report
+vitest                               # Watch mode (default)
 ```
 
 ## Test File Organization
 
-### React
-**Location:** `*.test.ts` alongside source files
+**Location:**
+- Co-located pattern: `*.test.ts` and `*.spec.ts` alongside source files
+- Some centralized in `src/test/` for integration tests
+
+**Naming:**
+- Unit tests: `filter-presets.test.ts`
+- Component tests: `LocationMapWidget.test.tsx`, `PAFVContext.test.tsx`
+- Integration tests: `migration-e2e.test.ts`, `data-integrity-validation.test.ts`
 
 **Structure:**
 ```
 src/
-  d3/
-    factory.ts
-    factory.test.ts
-    scales.ts
-    scales.test.ts
-  types/
-    lpg.ts
-    lpg.test.ts
-  components/
-    Sidebar.tsx
-    Sidebar.test.tsx
-```
-
-### Swift
-**Location:** Separate `Tests/` directory
-
-**Structure:**
-```
-native/
-  Sources/Isometry/
-    Database/IsometryDatabase.swift
-  Tests/IsometryTests/
-    IsometryDatabaseTests.swift
+├── components/
+│   ├── LocationMapWidget.tsx
+│   └── __tests__/
+│       ├── LocationMapWidget.test.tsx
+│       ├── Canvas.mvp.test.tsx
+│       └── HierarchyTreeView.test.tsx
+├── utils/
+│   └── __tests__/
+│       ├── filter-presets.test.ts
+│       └── geo-utils.test.ts
+├── state/
+│   └── __tests__/
+│       └── PAFVContext.test.tsx
+└── test/
+    ├── setup.ts
+    ├── migration-e2e.test.ts
+    └── performance-regression.test.ts
 ```
 
 ## Test Structure
 
-### React (Vitest)
-
+**Suite Organization:**
 ```typescript
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 
-describe('ModuleName', () => {
-  describe('functionName', () => {
-    beforeEach(() => {
-      // reset state
+describe('ComponentName', () => {
+  const defaultProps = {
+    // test props
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('rendering', () => {
+    it('renders basic elements', () => {
+      render(<Component {...defaultProps} />);
+      expect(screen.getByText('Expected Text')).toBeInTheDocument();
     });
+  });
 
-    it('should handle valid input', () => {
-      // arrange
-      const input = createTestInput();
+  describe('user interactions', () => {
+    it('handles click events', async () => {
+      const mockOnClick = vi.fn();
+      render(<Component {...defaultProps} onClick={mockOnClick} />);
 
-      // act
-      const result = functionName(input);
+      screen.getByRole('button').click();
 
-      // assert
-      expect(result).toEqual(expectedOutput);
-    });
-
-    it('should throw on invalid input', () => {
-      expect(() => functionName(null)).toThrow('Invalid input');
+      await waitFor(() => {
+        expect(mockOnClick).toHaveBeenCalledWith(/* expected args */);
+      });
     });
   });
 });
 ```
 
-### Swift (Swift Testing)
-
-```swift
-import Testing
-@testable import Isometry
-
-@Suite("IsometryDatabase Tests")
-struct IsometryDatabaseTests {
-    @Test("Database initialization creates tables")
-    func testInitialization() async throws {
-        let db = try IsometryDatabase(path: ":memory:")
-        try await db.initialize()
-
-        let nodes = try await db.getAllNodes()
-        #expect(nodes.isEmpty)
-    }
-
-    @Test("Node CRUD operations")
-    func testNodeCRUD() async throws {
-        let db = try IsometryDatabase(path: ":memory:")
-        try await db.initialize()
-
-        // Create
-        let node = Node(name: "Test", content: "Content")
-        try await db.createNode(node)
-
-        // Read
-        let fetched = try await db.getNode(id: node.id)
-        #expect(fetched?.name == "Test")
-    }
-}
-```
+**Patterns:**
+- Setup/teardown: `beforeEach()` and `afterEach()` for mock cleanup
+- Nested `describe` blocks for feature grouping
+- Descriptive test names starting with 'should' or action verbs
 
 ## Mocking
 
-### React (Vitest)
+**Framework:** Vitest `vi` utilities
 
-**Module Mocking:**
+**Patterns:**
 ```typescript
-vi.mock('@/hooks/useSQLiteQuery', () => ({
-  useSQLiteQuery: vi.fn(() => ({
-    data: [{ name: 'test' }],
-    loading: false,
-    error: null,
-  })),
+// Module mocking
+vi.mock('leaflet', () => ({
+  default: {
+    map: vi.fn(() => mockMap),
+    tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
+    marker: vi.fn(() => mockMarker),
+  },
 }));
+
+// Function mocking
+const mockOnChange = vi.fn();
+mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+  success({ coords: { latitude: 37.7749, longitude: -122.4194 } });
+});
+
+// Object mocking
+const mockMarker = {
+  addTo: vi.fn().mockReturnThis(),
+  on: vi.fn().mockReturnThis(),
+  setLatLng: vi.fn().mockReturnThis(),
+  bindPopup: vi.fn().mockReturnThis(),
+};
 ```
 
-**Function Mocking:**
-```typescript
-const mockFn = vi.fn();
-mockFn.mockReturnValue('result');
-mockFn.mockResolvedValue(asyncResult);
+**What to Mock:**
+- External libraries: `leaflet`, `d3`, browser APIs
+- Geolocation API: `navigator.geolocation`
+- Database operations for unit tests
+- Time-sensitive functions
 
-expect(mockFn).toHaveBeenCalledWith('arg');
-```
-
-**Timer Mocking:**
-```typescript
-vi.useFakeTimers();
-vi.advanceTimersByTime(300);
-vi.useRealTimers();
-```
-
-### What to Mock
-- External dependencies (sql.js, fetch)
-- Time-based functions
-- Browser APIs (ResizeObserver, matchMedia)
-
-### What NOT to Mock
-- Pure functions
-- Simple utilities
+**What NOT to Mock:**
+- Pure utility functions
 - Internal business logic
+- Simple data transformations
 
 ## Fixtures and Factories
 
-### React
-
+**Test Data:**
 ```typescript
-// Test data factory
-function createTestNode(overrides?: Partial<Node>): Node {
+// Factory pattern for test objects
+function createTestPreset(overrides?: Partial<FilterPreset>): FilterPreset {
   return {
-    id: 'test-id',
-    name: 'Test Node',
-    nodeType: 'note',
-    createdAt: '2026-01-01T00:00:00Z',
-    modifiedAt: '2026-01-01T00:00:00Z',
-    ...overrides
+    id: 'test-1',
+    name: 'Test Preset',
+    filters: EMPTY_FILTERS,
+    createdAt: new Date('2026-01-24'),
+    updatedAt: new Date('2026-01-24'),
+    ...overrides,
   };
 }
 
-// In tests
-const nodes = [
-  createTestNode({ name: 'Node 1', priority: 1 }),
-  createTestNode({ name: 'Node 2', priority: 2 }),
-];
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { store = {}; },
+  };
+})();
 ```
 
-### Provider Wrapping
-
-```typescript
-function renderWithProviders(ui: React.ReactElement) {
-  return render(
-    <ThemeProvider>
-      <FilterProvider>
-        {ui}
-      </FilterProvider>
-    </ThemeProvider>
-  );
-}
-
-// Usage
-renderWithProviders(<Sidebar />);
-```
+**Location:**
+- Test utilities defined within test files
+- Shared mocks in test setup files
 
 ## Coverage
 
-### Configuration (Vitest)
+**Requirements:** No specific target enforced
+
+**View Coverage:**
+```bash
+npm run test:coverage
+open coverage/index.html
+```
+
+**Configuration:**
 ```typescript
 // vitest.config.ts
 coverage: {
@@ -226,101 +196,112 @@ coverage: {
 }
 ```
 
-### View Coverage
-```bash
-npm run test:coverage
-open coverage/index.html
-```
-
 ## Test Types
 
-### Unit Tests
-- Test single function/class in isolation
-- Mock external dependencies
-- Fast execution (<100ms per test)
-- Examples: `factory.test.ts`, `scales.test.ts`, `lpg.test.ts`
+**Unit Tests:**
+- Pure functions and utilities: `src/utils/__tests__/filter-presets.test.ts`
+- Type guards and converters: `src/types/lpg.test.ts`
+- Individual hooks and contexts: `src/state/__tests__/PAFVContext.test.tsx`
 
-### Integration Tests
-- Test multiple modules together
-- Use in-memory database
-- Examples: `IsometryDatabaseTests.swift`
+**Integration Tests:**
+- End-to-end data flows: `src/test/migration-e2e.test.ts`
+- Database operations: `src/test/data-integrity-validation.test.ts`
+- Performance validation: `src/test/performance-regression.test.ts`
 
-### Component Tests
-- Test React component rendering
-- Use React Testing Library
-- Mock data fetching hooks
-- Examples: `Sidebar.test.tsx`
-
-### E2E Tests
-- Not currently implemented
-- Planned: Playwright for React prototype
+**Component Tests:**
+- React component rendering and behavior
+- User interaction testing with Testing Library
+- Mock external dependencies and focus on component logic
 
 ## Common Patterns
 
-### Async Testing (Vitest)
+**Async Testing:**
 ```typescript
-it('should handle async operation', async () => {
-  const result = await asyncFunction();
-  expect(result).toBe('expected');
+it('handles async geolocation', async () => {
+  mockGeolocation.getCurrentPosition.mockImplementation((success) => {
+    success({ coords: { latitude: 37.7749, longitude: -122.4194 } });
+  });
+
+  render(<LocationMapWidget {...defaultProps} />);
+
+  const button = screen.getByText('Use my location');
+  button.click();
+
+  await waitFor(() => {
+    expect(screen.getByText('✓ Location granted')).toBeInTheDocument();
+  });
 });
 ```
 
-### Async Testing (Swift)
-```swift
-@Test("Async database operation")
-func testAsync() async throws {
-    let result = try await db.fetchNodes()
-    #expect(!result.isEmpty)
+**Error Testing:**
+```typescript
+it('handles geolocation errors', async () => {
+  mockGeolocation.getCurrentPosition.mockImplementation((_success, error) => {
+    error(new Error('User denied geolocation'));
+  });
+
+  render(<LocationMapWidget {...defaultProps} />);
+
+  const button = screen.getByText('Use my location');
+  button.click();
+
+  await waitFor(() => {
+    expect(screen.getByText('✗ Location denied')).toBeInTheDocument();
+  });
+});
+
+it('throws on invalid preset update', () => {
+  expect(() => {
+    updatePreset('non-existent-id', { name: 'New Name' });
+  }).toThrow('Failed to update preset');
+});
+```
+
+**Context Testing:**
+```typescript
+// Wrapper for provider testing
+function wrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <BrowserRouter>
+      <PAFVProvider>{children}</PAFVProvider>
+    </BrowserRouter>
+  );
 }
-```
 
-### Error Testing (Vitest)
-```typescript
-it('should throw on invalid input', () => {
-  expect(() => parse(null)).toThrow('Cannot parse null');
-});
-
-it('should reject on failure', async () => {
-  await expect(asyncCall()).rejects.toThrow('Error');
+it('throws error when used outside provider', () => {
+  expect(() => {
+    renderHook(() => usePAFV());
+  }).toThrow('usePAFV must be used within PAFVProvider');
 });
 ```
 
-### Setup File
+**Setup File:**
 ```typescript
 // src/test/setup.ts
 import '@testing-library/jest-dom';
 
-// Mock ResizeObserver
-global.ResizeObserver = class {
+// Mock ResizeObserver for D3 components
+class ResizeObserverMock {
   observe() {}
   unobserve() {}
   disconnect() {}
-};
+}
+global.ResizeObserver = ResizeObserverMock;
 
-// Mock matchMedia
-window.matchMedia = vi.fn().mockImplementation(query => ({
-  matches: false,
-  media: query,
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-}));
+// Mock matchMedia for theme detection
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  }),
+});
 ```
-
-## Test Coverage Areas
-
-### Well-Tested
-- D3 factory utilities (accessors, transitions, class names)
-- Scale creation and data extraction
-- LPG type conversions and guards
-- Database CRUD operations (Swift)
-
-### Needs More Tests
-- Filter compilation
-- DSL parser
-- View rendering
-- CloudKit sync
 
 ---
 
-*Testing analysis: 2026-01-21*
-*Update when test patterns change*
+*Testing analysis: 2026-01-25*

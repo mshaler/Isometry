@@ -1,144 +1,94 @@
 # Technology Stack
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
-## Languages & Runtimes
+## Languages
 
-### React Prototype
-- **TypeScript** 5.2.2 - Primary language
-- **Node.js/npm** - Runtime & package manager
-- **ES2020 Target** - Compilation target with DOM APIs
-- **ESNext Module System** - ESM imports/exports
+**Primary:**
+- TypeScript 5.2.2 - React frontend development
+- Swift 5.9+ - Native iOS/macOS application
 
-### Native iOS/macOS
-- **Swift** 5.9+ - Primary language
-- **iOS Minimum** 17.0 - Deployment target
-- **macOS Minimum** 14.0 - Deployment target
-- **Swift Concurrency** - Async/await with Sendable actors
+**Secondary:**
+- JavaScript (ES2020) - Build tooling and server scripts
+- SQL - Database schema and queries
 
-## Build Tools
+## Runtime
 
-### React Prototype
+**Environment:**
+- Node.js (ES2020 target)
+- Swift runtime (iOS 17+, macOS 14+)
 
-| Tool | Version | File | Purpose |
-|------|---------|------|---------|
-| Vite | 5.0.0 | `vite.config.ts` | Dev server & bundler |
-| TypeScript | 5.2.2 | `tsconfig.json` | Type checking |
-| ESLint | 9.39.2 | `eslint.config.js` | Linting (v9 flat config) |
-| TypeScript ESLint | 8.53.0 | `eslint.config.js` | TS-specific rules |
+**Package Manager:**
+- npm (with package-lock.json)
+- Swift Package Manager
 
-### Native Apps
+## Frameworks
 
-| Tool | Version | File | Purpose |
-|------|---------|------|---------|
-| Swift Package Manager | 5.9 | `native/Package.swift` | Dependency management |
-| Xcode | Latest | `.swiftpm/xcode/` | IDE & build system |
+**Core:**
+- React 18.2.0 - Frontend UI framework
+- SwiftUI - Native mobile/desktop UI
+- Vite 7.3.1 - Build tool and dev server
+- Vapor 4.89.0+ - Swift HTTP server framework
 
-## Frontend Frameworks
+**Testing:**
+- Vitest 4.0.17 - Test runner with coverage
+- @testing-library/react 16.3.1 - React testing utilities
+- jsdom 27.4.0 - DOM environment for tests
 
-### React Prototype
-
-| Library | Version | Purpose |
-|---------|---------|---------|
-| React | 18.2.0 | UI rendering |
-| ReactDOM | 18.2.0 | Browser rendering |
-| React Router DOM | 6.20.0 | Client-side routing |
-| D3.js | 7.8.5 | Data visualization |
-| react-dnd | 16.0.1 | Drag-and-drop (PAFV) |
-| lucide-react | 0.294.0 | Icon library |
-
-### Native Apps
-
-| Framework | Purpose |
-|-----------|---------|
-| SwiftUI | UI framework (iOS 17+, macOS 14+) |
-| Foundation | Core APIs |
-
-## Styling
-
-| Tool | Version | File |
-|------|---------|------|
-| Tailwind CSS | 3.3.5 | `tailwind.config.js` |
-| PostCSS | 8.4.31 | `postcss.config.js` |
-| Autoprefixer | 10.4.16 | CSS vendor prefixing |
-
-**Theme System:**
-- NeXTSTEP theme (retro)
-- Modern theme (glass)
-- CSS variables in `index.css`
-
-## Database
-
-### React Prototype (Development)
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| sql.js | 1.9.0 | In-browser SQLite (WASM) |
-
-**Configuration:**
-```typescript
-// vite.config.ts
-optimizeDeps: { exclude: ['sql.js'] }
-assetsInclude: ['**/*.sql', '**/*.wasm']
-```
-
-### Native Apps (Production)
-
-| Package | Version | Purpose |
-|---------|---------|---------|
-| GRDB.swift | 6.24.0+ | SQLite ORM with async/await |
-
-**Features:**
-- DatabasePool for thread-safe access
-- WAL (Write-Ahead Logging) mode
-- FTS5 (Full-Text Search)
-- Recursive CTEs for graph queries
-- 64MB cache configuration
-
-## Testing
-
-### React Prototype
-
-| Tool | Version | Purpose |
-|------|---------|---------|
-| Vitest | 4.0.17 | Test runner |
-| JSDOM | 27.4.0 | DOM simulation |
-| @testing-library/react | 16.3.1 | Component testing |
-| @testing-library/jest-dom | 6.9.1 | DOM matchers |
-| v8 | Built-in | Coverage provider |
-
-### Native Apps
-
-| Framework | Purpose |
-|-----------|---------|
-| Swift Testing | Modern test framework (@Test, #expect) |
-| XCTest | Foundation testing |
+**Build/Dev:**
+- TypeScript 5.2.2 - Type checking and compilation
+- ESLint 9.39.2 - Code linting with flat config
+- typescript-eslint 8.53.0 - TypeScript-specific rules
+- Tailwind CSS 3.3.5 - Utility-first styling
+- PostCSS 8.4.31 - CSS processing
 
 ## Key Dependencies
 
-### React Stack
-```
-Framework:     React 18.2.0 + TypeScript 5.2.2
-Visualization: D3.js 7.8.5
-Database:      sql.js 1.9.0 (development)
-Routing:       React Router DOM 6.20.0
-UI/Icons:      Lucide React 0.294.0 + Tailwind CSS 3.3.5
-Drag-Drop:     react-dnd 16.0.1
-Testing:       Vitest 4.0.17 + React Testing Library 16.3.1
-Build:         Vite 5.0.0
-Linting:       ESLint 9.39.2 + TypeScript ESLint 8.53.0
-```
+**Critical:**
+- GRDB.swift 6.24.0+ - SQLite database wrapper for Swift
+- D3.js 7.8.5 - Data visualization library
+- @anthropic-ai/sdk 0.71.2 - Claude API integration
 
-### Native Stack
-```
-Language:      Swift 5.9+
-UI:            SwiftUI (iOS 17+, macOS 14+)
-Database:      GRDB.swift 6.24.0+ → SQLite
-Sync:          CloudKit (iCloud.com.cardboard.app)
-Import:        AltoIndexImporter (Apple Notes format)
-```
+**Infrastructure:**
+- @radix-ui/* components - Accessible UI primitives
+- react-router-dom 6.20.0 - Client-side routing
+- react-dnd 16.0.1 - Drag-and-drop interactions
+- Leaflet 1.9.4 - Interactive maps
+- ZipArchive 2.5.5+ - Archive handling in Swift
+
+**Document Processing:**
+- mammoth 1.7.2 - Word document parsing
+- xlsx 0.18.5 - Excel file handling
+- html2pdf.js 0.10.2 - PDF generation
+
+## Configuration
+
+**Environment:**
+- TypeScript with strict mode enabled
+- Path aliases: `@/*` → `./src/*`
+- Vite with React plugin and asset inclusion for .sql files
+- ESNext build target with external sql.js exclusion
+
+**Build:**
+- `tsconfig.json` - TypeScript configuration with ES2020 target
+- `vite.config.ts` - Build and dev server config
+- `vitest.config.ts` - Test runner configuration
+- `eslint.config.js` - ESLint 9 flat config format
+- `tailwind.config.js` - CSS framework config with custom themes
+- `native/Package.swift` - Swift package dependencies
+
+## Platform Requirements
+
+**Development:**
+- Node.js with ES2020+ support
+- Swift 5.9+ for native development
+- iOS 17+ / macOS 14+ for native targets
+
+**Production:**
+- React SPA deployment target
+- Native iOS/macOS app distribution
+- SQLite with FTS5 and recursive CTE support
 
 ---
 
-*Stack analysis: 2026-01-21*
-*Update when dependencies change*
+*Stack analysis: 2026-01-25*

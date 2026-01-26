@@ -1,107 +1,138 @@
 # External Integrations
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
-## Cloud Services
+## APIs & External Services
 
-### CloudKit (Native Only)
-- **Container:** `iCloud.com.cardboard.app`
-- **Zone:** `IsometryZone` (private database)
-- **Subscription ID:** `isometry-changes`
-- **Database:** Private CloudKit Database
+**AI Services:**
+- Anthropic Claude API - AI-assisted development commands
+  - SDK/Client: @anthropic-ai/sdk 0.71.2
+  - Auth: VITE_ANTHROPIC_API_KEY / ANTHROPIC_API_KEY
+  - Implementation: `src/hooks/useClaudeAPI.ts`
 
-**Implementation:** `native/Sources/Isometry/Sync/CloudKitSyncManager.swift`
-
-**Features:**
-- Bidirectional sync (push local → pull remote)
-- Change tokens for incremental sync
-- Conflict resolution strategies:
-  - `.serverWins` - Server version takes precedence
-  - `.localWins` - Client-only changes win
-  - `.latestWins` - Timestamp-based (default)
-  - `.fieldLevelMerge` - Per-field resolution
-  - `.manualResolution` - Queue for user intervention
-- Exponential backoff: 1s → 300s (5 min max)
-- Error handling for common CloudKit errors
+**Development Tools:**
+- Native HTTP API Server - Bridge between React and Swift backend
+  - Endpoint: http://localhost:8080
+  - Framework: Vapor 4.89.0+
+  - Server: `src/server/launch-native-server.js`
 
 ## Data Storage
 
-### SQLite (Both Platforms)
+**Databases:**
+- SQLite with GRDB.swift
+  - Connection: Native file system
+  - Client: GRDB.swift 6.24.0+ wrapper
+  - Features: FTS5 full-text search, recursive CTEs, WAL mode
+  - Location: Application Support directory (native)
+  - Config: 64MB cache, foreign keys enabled
 
-**React Prototype:**
-- Provider: sql.js (WASM in browser)
-- Storage: IndexedDB persistence
-- Client: Custom DatabaseContext
-- Location: Browser storage (auto-persist)
+**File Storage:**
+- Local filesystem only
+- Archive support via ZipArchive 2.5.5+ for import/export
+- Native Application Support directory for persistence
 
-**Native Apps:**
-- Provider: Native SQLite via GRDB.swift
-- Storage: Application Support directory
-- Client: IsometryDatabase actor
-- Location: `~/Library/Application Support/Isometry/isometry.sqlite`
+**Caching:**
+- Browser-based caching for React app
+- Native SQLite WAL mode for write performance
 
-**Pragmas:**
-```sql
-PRAGMA foreign_keys = ON
-PRAGMA journal_mode = WAL
-PRAGMA synchronous = NORMAL
-PRAGMA cache_size = -64000  -- 64MB
-```
+## Authentication & Identity
 
-## Data Import
+**Auth Provider:**
+- iCloud Account integration
+  - Implementation: CloudKit entitlements
+  - Required for sync functionality
 
-### Apple Notes Import (Native Only)
-- **Format:** alto-index markdown with YAML frontmatter
-- **Importer:** `native/Sources/Isometry/Import/AltoIndexImporter.swift`
-- **Source:** `~/Documents/alto-index/Notes/`
-- **Fields parsed:** title, id, created, modified, folder, tags
-- **Deduplication:** By sourceId + source name
-- **Auto-import:** On first launch (6,891 notes imported)
+## Monitoring & Observability
 
-## Authentication
+**Error Tracking:**
+- Console-based logging
+- Performance monitoring via `src/utils/performance-benchmarks.ts`
+- Migration safety checks via `src/db/migration-safety.ts`
 
-### iCloud Account (Native Only)
-- Required for CloudKit sync
-- Detected via entitlements check
-- No additional OAuth providers
-- SwiftUI previews: CloudKit disabled
+**Logs:**
+- Browser console for React frontend
+- Native Swift logging for backend operations
+
+## CI/CD & Deployment
+
+**Hosting:**
+- React: Static site deployment
+- Native: iOS App Store / macOS distribution
+
+**CI Pipeline:**
+- None detected (manual build process)
 
 ## Environment Configuration
 
-### Development (React)
-- Required: None (sql.js auto-loads from CDN)
-- Storage: IndexedDB (browser-local)
-- Database: In-memory with IndexedDB persistence
+**Required env vars:**
+- VITE_ANTHROPIC_API_KEY - Claude API access for development features
+- REACT_APP_USE_NATIVE_API - Toggle between native and legacy backends
 
-### Development (Native)
-- Required: Xcode with signing configured
-- Storage: Application Support directory
-- CloudKit: Requires entitlements + code signing
-
-### Production (Native)
-- CloudKit container: `iCloud.com.cardboard.app`
-- Entitlements: CloudKit capability required
-- Database: Local SQLite with iCloud sync
-
-## CDN Dependencies
-
-### sql.js (React Prototype)
-- **URL:** `https://sql.js.org/dist/sql-wasm.js`
-- **WASM:** `https://sql.js.org/dist/sql-wasm.wasm`
-- **Fallback:** None (app fails if CDN unavailable)
-- **Note:** Development only, not in production native apps
+**Secrets location:**
+- Environment variables for development
+- Native keychain for production credentials
 
 ## Webhooks & Callbacks
 
-### Incoming
-- **CloudKit Push Notifications** - Triggers sync when remote changes detected
-  - Subscription: CKDatabaseSubscription
-  - Handler: CloudKitSyncManager.handleRemoteNotification()
+**Incoming:**
+- Native HTTP server at `/api/` endpoints:
+  - `/api/execute` - SQL execution via `src/db/NativeAPIClient.ts`
+  - `/api/nodes` - Node queries
+  - `/api/notebook-cards` - Notebook operations
+  - `/api/search` - Full-text search
+  - `/health` - Health check endpoint
 
-### Outgoing
-- None
+**Outgoing:**
+- CloudKit sync operations (when enabled)
+- WebView message passing between React and native components
+
+## Data Synchronization
+
+**CloudKit Integration:**
+- Container: `iCloud.com.cardboard.app`
+- Zone: `IsometryZone` (private database)
+- Bi-directional sync for iOS/macOS
+- Files: `native/Sources/Isometry/` CloudKit-related modules
+- Conflict resolution strategies (server wins, local wins, latest wins, etc.)
+- Status checking via WebView bridge
+
+**WebView Bridge:**
+- Message passing between React and native Swift code
+- Handles database operations and sync status
+- Files: `src/utils/webview-bridge.ts`, `src/db/WebViewClient.ts`
+
+## Import/Export
+
+**Document Processing:**
+- Word documents via mammoth 1.7.2
+- Excel files via xlsx 0.18.5
+- Apple Notes via alto-index import system (`~/Documents/alto-index/Notes/`)
+- PDF generation via html2pdf.js 0.10.2
+
+**Map Integration:**
+- Leaflet 1.9.4 for interactive maps
+- OpenStreetMap tile layers
+- Location-based data visualization via react-leaflet 4.2.1
+
+**Apple Notes Import:**
+- Format: alto-index markdown with YAML frontmatter
+- Importer: `native/Sources/Isometry/Import/AltoIndexImporter.swift`
+- Deduplication by sourceId + source name
+- Auto-import on first launch
+
+## Terminal Integration
+
+**Terminal Emulation:**
+- @xterm/xterm 5.5.0 - Terminal rendering
+- @xterm/addon-fit 0.10.0 - Responsive sizing
+- @xterm/addon-web-links 0.11.0 - Clickable links
+- node-pty 1.1.0 - Pseudo-terminal interface
+
+**Command Processing:**
+- Shell command execution via native bridge
+- Command history tracking
+- Slash command system via `src/hooks/useSlashCommands.ts`
 
 ---
 
-*Integration audit: 2026-01-21*
-*Update when adding/removing external services*
+*Integration audit: 2026-01-25*

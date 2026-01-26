@@ -1,197 +1,152 @@
-# System Architecture
+# Architecture
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
-## Architectural Pattern
+## Pattern Overview
 
-**Dual-Stack Application:**
-- React Prototype: Web-based rapid UI iteration
-- Native Apps: Production iOS/macOS with CloudKit sync
+**Overall:** Hybrid Dual-Stack Architecture (React Web + Swift Native)
 
-## Core Frameworks
+**Key Characteristics:**
+- Cross-platform data synchronization between web prototype and native apps
+- Context-driven state management with React providers
+- Actor-based concurrent database operations in Swift
+- Bridge-based communication between React and native environments
+- MVP-focused simplification with production-ready native implementation
 
-### PAFV (Planes → Axes → Facets → Values)
-Spatial projection framework for data visualization.
+## Layers
 
-| Layer | Purpose | Example |
-|-------|---------|---------|
-| **Planes** | 2D projection surfaces | Canvas, Card grid |
-| **Axes** | Coordinate systems | X = Category, Y = Time |
-| **Facets** | Filterable dimensions | Priority, Status, Folder |
-| **Values** | Data binding | Node properties → visual attributes |
+**Presentation Layer:**
+- Purpose: User interface and interaction handling
+- Location: `src/components`, `native/Sources/Isometry/Views`
+- Contains: React components, SwiftUI views, theme providers
+- Depends on: State management contexts, database abstractions
+- Used by: Application entry points, routing systems
 
-### LATCH (Location, Alphabet, Time, Category, Hierarchy)
-Information filtering framework from Richard Saul Wurman.
+**Application Layer:**
+- Purpose: Business logic orchestration and state management
+- Location: `src/contexts`, `src/hooks`, `native/Sources/Isometry/App`
+- Contains: React contexts, custom hooks, Swift app state actors
+- Depends on: Data layer, external services
+- Used by: Presentation components
 
-| Axis | Filter Type | SQL Column |
-|------|-------------|------------|
-| **L** (Location) | Geographic | latitude, longitude |
-| **A** (Alphabet) | Text search | name (FTS5) |
-| **T** (Time) | Date ranges | created_at, modified_at, due_at |
-| **C** (Category) | Tags/folders | folder, tags, status |
-| **H** (Hierarchy) | Priority/importance | priority, importance |
+**Data Layer:**
+- Purpose: Data persistence, querying, and synchronization
+- Location: `src/db`, `native/Sources/Isometry/Database`
+- Contains: Database clients, migration logic, sync managers
+- Depends on: External database engines (SQLite, CloudKit)
+- Used by: Application layer hooks and contexts
 
-### GRAPH (Links, Nesting, Sequence)
-Relationship modeling between nodes.
+**Infrastructure Layer:**
+- Purpose: Cross-platform communication and environment abstraction
+- Location: `src/utils`, `native/Sources/Isometry/WebView`
+- Contains: WebView bridges, API clients, performance monitors
+- Depends on: Platform-specific APIs
+- Used by: Data layer for environment-aware operations
 
-| Type | Purpose | Example |
-|------|---------|---------|
-| **LINK** | References | Note links to Project |
-| **NEST** | Parent-child | Folder contains Notes |
-| **SEQUENCE** | Order | Task follows Task |
-| **AFFINITY** | Similarity | Related by tags |
+**Domain Layer:**
+- Purpose: Core business entities and shared protocols
+- Location: `src/types`, `native/Sources/IsometryCore/Domain`
+- Contains: TypeScript interfaces, Swift protocols, data models
+- Depends on: Nothing (pure domain logic)
+- Used by: All other layers
 
 ## Data Flow
 
-### React Prototype
+**React Web Prototype Flow:**
 
-```
-User Interaction
-       ↓
-React Context (FilterContext, PAFVContext)
-       ↓
-Filter Compiler (LATCH → SQL)
-       ↓
-useSQLiteQuery Hook
-       ↓
-DatabaseContext.execute()
-       ↓
-sql.js Query
-       ↓
-Transform (rowToNode)
-       ↓
-View Renderer (Grid, List, Network)
-       ↓
-D3.js Visualization
-```
+1. User interacts with React components (`src/components`)
+2. Components trigger context actions (`src/contexts`)
+3. Contexts execute database operations via environment-aware providers (`src/db`)
+4. Database providers route to appropriate backend (Native API, WebView Bridge, or Mock)
+5. Results flow back through contexts to update component state
 
-### Native Apps
+**Native App Flow:**
 
-```
-User Action (SwiftUI)
-       ↓
-AppState ViewModel (@Published)
-       ↓
-IsometryDatabase Actor
-       ↓
-GRDB.swift SQLite Driver
-       ↓
-[Node] Result Array
-       ↓
-SwiftUI View
-       ↓
-CloudKitSyncManager (background)
-```
+1. User interacts with SwiftUI views (`native/Sources/Isometry/Views`)
+2. Views trigger AppState actions (`native/Sources/Isometry/App/IsometryApp.swift`)
+3. AppState coordinates with IsometryDatabase actor (`native/Sources/Isometry/Database`)
+4. Database operations execute with CloudKit sync via CloudKitSyncManager
+5. State updates propagate to views through SwiftUI's @Published properties
 
-## Provider Hierarchy (React)
+**Cross-Platform Communication:**
 
-```typescript
-<ErrorBoundary>
-  <BrowserRouter>
-    <ThemeProvider>           // UI theme
-      <DatabaseProvider>      // sql.js instance
-        <AppStateProvider>    // Current app/view/dataset
-          <FilterProvider>    // LATCH filters + DSL
-            <PAFVProvider>    // Axis assignments
-              <SelectionProvider>  // Selected nodes
-                <AppContent />
-              </SelectionProvider>
-            </PAFVProvider>
-          </FilterProvider>
-        </AppStateProvider>
-      </DatabaseProvider>
-    </ThemeProvider>
-  </BrowserRouter>
-</ErrorBoundary>
-```
+1. React web app detects native environment via `useEnvironment` hook
+2. WebView bridge enables bidirectional message passing (`src/utils/webview-bridge.ts`)
+3. Native app handles messages through DatabaseMessageHandler (`native/Sources/Isometry/WebView`)
+4. Shared data models ensure consistency between platforms
 
-**Nesting Rationale:**
-- Inner contexts depend on outer providers
-- Filters require Database
-- Views require Filters + Database
-- Selection is independent
+**State Management:**
+- React: Context-based with URLState synchronization
+- Swift: Actor-based with @Published ObservableObject pattern
+- Cross-platform: Message-based state synchronization
 
 ## Key Abstractions
 
-### ViewRenderer Interface
-```typescript
-interface ViewRenderer {
-  readonly type: ViewType;
-  setXAxis(facetId: string | null): void;
-  setYAxis(facetId: string | null): void;
-  render(container: D3Container, nodes: Node[], dimensions: Dimensions): void;
-  destroy(): void;
-}
-```
+**Database Abstraction:**
+- Purpose: Environment-agnostic data access
+- Examples: `src/db/DatabaseContext.tsx`, `native/Sources/Isometry/Database/IsometryDatabase.swift`
+- Pattern: Factory pattern with environment detection
 
-**Implementations:** Grid, List, Kanban, Timeline, Calendar, Charts, Network, Tree
+**Filter System (LATCH):**
+- Purpose: Multi-dimensional data filtering
+- Examples: `src/filters/compiler.ts`, `src/contexts/FilterContext.tsx`
+- Pattern: Compiler pattern converting DSL to SQL
 
-### Database Actor (Native)
-```swift
-public actor IsometryDatabase {
-  // Thread-safe SQLite operations
-  public func createNode(_ node: Node) async throws
-  public func updateNode(_ node: Node) async throws
-  public func deleteNode(id: String) async throws
+**Visualization Pipeline (PAFV):**
+- Purpose: Data projection to spatial coordinates
+- Examples: `src/d3/hooks.ts`, `src/contexts/PAFVContext.tsx`
+- Pattern: Pipeline pattern with D3.js integration
 
-  // Graph algorithms
-  public func connectedNodes(from: String, maxDepth: Int) async throws -> [Node]
-  public func shortestPath(from: String, to: String) async throws -> [Node]?
-  public func pageRank(iterations: Int) async throws -> [(Node, Double)]
-}
-```
+**Sync Management:**
+- Purpose: Data consistency across devices and platforms
+- Examples: `native/Sources/Isometry/Sync/CloudKitSyncManager.swift`, `src/utils/sync-manager.ts`
+- Pattern: Observer pattern with conflict resolution
 
-## Query Compilation
+**Component Composition:**
+- Purpose: Modular UI construction with theme support
+- Examples: `src/components/ui`, `native/Sources/Isometry/Views`
+- Pattern: Composition pattern with provider injection
 
-### Filter → SQL
-```typescript
-// Input: LATCH filter state
-const filters = {
-  category: { folders: ['Work', 'Personal'] },
-  time: { preset: 'last-week' }
-};
+## Entry Points
 
-// Output: Parameterized SQL
-const compiled = {
-  sql: "folder IN (?, ?) AND created_at >= date('now', '-7 days')",
-  params: ['Work', 'Personal']
-};
-```
+**React Web App:**
+- Location: `src/App.tsx`
+- Triggers: Browser navigation, development server
+- Responsibilities: Provider setup, environment detection, MVP demo routing
 
-### DSL → SQL
-```
-status:active AND priority:>5
-       ↓ (Parser)
-AST: AndNode { FilterNode, FilterNode }
-       ↓ (Compiler)
-SQL: "status = ? AND priority > ?" [active, 5]
-```
+**MVP Demo Mode:**
+- Location: `src/MVPDemo.tsx`
+- Triggers: Default app configuration
+- Responsibilities: Simplified context setup, Canvas rendering with mock data
 
-## Graph Algorithms (Native)
+**Native iOS/macOS:**
+- Location: `native/Sources/Isometry/App/IsometryApp.swift`
+- Triggers: App launch, system events
+- Responsibilities: Database initialization, CloudKit setup, auto-import
 
-| Algorithm | Implementation | Use Case |
-|-----------|---------------|----------|
-| **BFS** | Recursive CTE | Connected nodes within depth |
-| **Shortest Path** | Recursive CTE | Path finding between nodes |
-| **PageRank** | Iterative power method | Node importance ranking |
-| **Dijkstra** | Weighted shortest path | Edge-weight pathfinding |
+**Native API Server:**
+- Location: `src/server/native-api-server.ts`
+- Triggers: Development environment setup
+- Responsibilities: Bridge React web app to native database via HTTP API
 
-## Sync Architecture (Native)
+## Error Handling
 
-```
-Local SQLite ←→ CloudKitSyncManager ←→ CloudKit
-      ↑                                    ↑
-   sync_version                    CKServerChangeToken
-   last_synced_at                  Zone changes
-```
+**Strategy:** Layered error boundaries with environment-specific fallbacks
 
-**Conflict Resolution:**
-1. Detect: Compare syncVersion vs server version
-2. Strategy: Apply configured resolution (default: latestWins)
-3. Merge: Union tags, prefer newer text
-4. Update: Increment syncVersion, set conflictResolvedAt
+**Patterns:**
+- React: ErrorBoundary components with user-friendly error displays
+- Swift: Result types with async/await error propagation
+- Cross-platform: Graceful degradation when native APIs unavailable
+- Database: Transaction rollback with detailed error context
+
+## Cross-Cutting Concerns
+
+**Logging:** Console-based development logging with performance metrics via PerformanceMonitor
+**Validation:** TypeScript/Swift type safety with runtime validation at API boundaries
+**Authentication:** CloudKit-based identity with graceful anonymous fallback
+**Performance:** Query performance monitoring, lazy loading, and actor-based concurrency
+**Environment Detection:** Automatic fallback chain (Native → WebView → Mock) based on runtime capabilities
 
 ---
 
-*Architecture analysis: 2026-01-21*
-*Update when patterns change*
+*Architecture analysis: 2026-01-25*

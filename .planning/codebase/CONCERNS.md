@@ -1,256 +1,192 @@
-# Technical Concerns
+# Codebase Concerns
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
-## Critical Blockers (🔴)
+## Tech Debt
 
-### 1. DSL Parser is Stub Implementation
-**Files:** `src/dsl/parser.ts`
+**Legacy sql.js Migration:**
+- Issue: Incomplete migration from sql.js to native database providers
+- Files: `src/db/init.ts`, `src/types/sql.js.d.ts` (deleted)
+- Impact: Legacy code throws errors if accessed, deprecated warnings in console
+- Fix approach: Remove legacy init.ts completely, ensure all components use DatabaseContext
 
-**Issue:** Parser only handles simple `field:value` patterns.
+**Extensive TODO Comments:**
+- Issue: 50+ TODO comments indicating incomplete implementations
+- Files: `src/dsl/parser.ts`, `src/components/notebook/CaptureComponent.tsx`, `src/utils/officeDocumentProcessor.ts`, `native/Sources/Isometry/Models/CommandHistory.swift`
+- Impact: Unfinished features, potential user confusion, incomplete functionality
+- Fix approach: Create tracking issues for each TODO, prioritize by user impact
 
-```typescript
-// Current (line 30-38) - only matches field:value
-const match = trimmed.match(/^(\w+):(.+)$/);
-```
+**Manual Parser Implementation:**
+- Issue: Hand-coded DSL parser instead of generated parser from grammar
+- Files: `src/dsl/parser.ts:13`, `src/dsl/parser.ts:26`
+- Impact: Error-prone parsing, difficult to extend DSL, maintenance burden
+- Fix approach: Implement PEG.js grammar and generate parser
 
-**Problems:**
-- Cannot handle boolean operators (AND, OR, NOT)
-- Cannot parse complex expressions or nested groups
-- No comparison operators (>, <, >=, <=)
-- TODO at line 13-14: "Generate parser from PEG.js grammar" never completed
+**Office Document Processing Gaps:**
+- Issue: Incomplete DOCX export with missing packaging implementation
+- Files: `src/utils/officeDocumentProcessor.ts:544`, `src/utils/officeDocumentProcessor.ts:273-274`
+- Impact: Non-functional document export feature
+- Fix approach: Implement proper DOCX packaging with relationships and content types
 
-**Impact:** DSL queries in CommandBar non-functional
-**Fix:** Run `npx pegjs src/dsl/grammar/IsometryDSL.pegjs` and integrate
+## Known Bugs
 
----
+**Missing Error Notifications:**
+- Symptoms: Silent failures in notebook operations
+- Files: `src/components/notebook/CaptureComponent.tsx:48`, `src/components/notebook/TemplateManager.tsx:233,245,260`
+- Trigger: Any error during capture or template operations
+- Workaround: Check browser console for errors
 
-### 2. Missing Data Flow Pipeline
-**Gap:** No complete path from SQLite → React State → D3 Visualization
+**Sync Queue Not Implemented:**
+- Symptoms: Data changes not queued for synchronization
+- Files: `src/utils/sync-manager.ts:48`
+- Trigger: Any data modification in offline mode
+- Workaround: None - feature incomplete
 
-**Current State:**
-- `useSQLiteQuery` hook exists but isolated
-- Filter state changes don't trigger query re-execution
-- CommandBar accepts DSL but changes have no effect
-- Views don't implement layout algorithms
+**WebView Bridge Connection Failures:**
+- Symptoms: Errors when database operations fail in native app
+- Files: `src/db/WebViewClient.ts:35,45,87,107,126,133`
+- Trigger: Using React prototype without native app context
+- Workaround: Use HTTP API mode instead
 
-**Impact:** Visualization system disconnected
+## Security Considerations
 
----
+**No Input Sanitization:**
+- Risk: SQL injection through DSL compiler
+- Files: `src/dsl/compiler.ts:50,68`
+- Current mitigation: Limited to internal use, but accepts any value type
+- Recommendations: Add proper parameterized query building, input validation
 
-### 3. Filter State Not Connected
-**Files:** `src/contexts/FilterContext.tsx`, `src/filters/compiler.ts`
+**Hard-coded Development Paths:**
+- Risk: Path disclosure in production builds
+- Files: `src/hooks/useCommandRouter.ts:111`
+- Current mitigation: Only in development mode
+- Recommendations: Use environment variables for all paths
 
-**Issue:** Filter UI changes don't recompile or re-execute queries
+**Extensive DEBUG Sections:**
+- Risk: Debug code in production builds, potential information disclosure
+- Files: Multiple Swift files with `#if DEBUG` blocks
+- Current mitigation: Compile-time conditional compilation
+- Recommendations: Audit all DEBUG blocks for sensitive information
 
-- FilterContext exists but useSQLiteQuery doesn't subscribe
-- `compileFilters()` produces SQL but never called
-- Sidebar marks edge filters unavailable with TODO
+**localStorage Usage Without Encryption:**
+- Risk: Sensitive filter presets stored in plain text
+- Files: `src/utils/filter-presets.ts:10,39,74,90,121`
+- Current mitigation: Only stores filter configurations
+- Recommendations: Consider encryption for sensitive filter data
 
-**Impact:** Filtering is UI theater with no functional effect
+## Performance Bottlenecks
 
----
+**Large File Size Concerns:**
+- Problem: Several files over 500+ lines indicating complexity
+- Files: `src/utils/migration-validator.ts` (777 lines), `src/utils/sqliteSyncManager.ts` (731 lines), `src/db/migration-safety.ts` (730 lines)
+- Cause: Monolithic implementations, extensive validation logic
+- Improvement path: Extract smaller, focused modules with single responsibilities
 
-## High Priority Issues (🟡)
+**Heavy Database Migration Logic:**
+- Problem: Complex migration validation with performance monitoring
+- Files: `src/db/migration-safety.ts`, `src/utils/migration-validator.ts`
+- Cause: Comprehensive safety checks and rollback procedures
+- Improvement path: Implement lazy validation, background processing
 
-### 4. Database Schema Fragmentation
-**React:** `src/db/schema.sql`
-**Native:** `native/Sources/Isometry/Resources/schema.sql`
+**Native Database File Size:**
+- Problem: Single database file approaching 1200 lines
+- Files: `native/Sources/Isometry/Database/IsometryDatabase.swift` (1205 lines)
+- Cause: All database operations in single actor
+- Improvement path: Split into focused repository classes
 
-- Schema defined in two places
-- React has `cards` table, Native has `nodes` table
-- No automated schema sync mechanism
-- Breaking changes silently corrupt data
+## Fragile Areas
 
----
+**DSL Compilation Chain:**
+- Files: `src/dsl/parser.ts`, `src/dsl/compiler.ts`, `src/dsl/autocomplete.ts`
+- Why fragile: Hand-coded parser, lacks comprehensive error handling
+- Safe modification: Always add tests before changes, validate grammar carefully
+- Test coverage: Partial - lacks edge case testing
 
-### 5. AutoComplete Hardcoded
-**File:** `src/dsl/autocomplete.ts` (line 9)
+**WebView Bridge Communication:**
+- Files: `src/db/WebViewClient.ts`, `src/utils/webview-bridge.ts`, `native/Sources/Isometry/WebView/WebViewBridge.swift`
+- Why fragile: Complex message passing between React and Swift, error handling spans multiple layers
+- Safe modification: Test in both WebView and standalone modes
+- Test coverage: Limited integration testing
 
-```typescript
-/** Available schema fields - TODO: Load from SQLite */
-const SCHEMA_FIELDS = [
-  { name: 'status', ... },
-  // ... hardcoded list
-];
-```
+**Database Migration System:**
+- Files: `src/db/migration-safety.ts`, `src/utils/migration-validator.ts`, `src/db/PerformanceMonitor.ts`
+- Why fragile: Complex validation chains, rollback procedures, performance monitoring
+- Safe modification: Always test with representative data, validate rollback procedures
+- Test coverage: Extensive but mainly unit tests
 
-- Suggestions never update if schema changes
-- May suggest non-existent fields
+**D3 Visualization Rendering:**
+- Files: `src/components/notebook/D3VisualizationRenderer.tsx` (684 lines), `src/d3/hooks/useD3DataBinding.ts`
+- Why fragile: Complex D3 lifecycle management, data binding patterns
+- Safe modification: Preserve existing data join patterns, test rendering performance
+- Test coverage: Component tests exist but limited integration
 
----
+## Scaling Limits
 
-### 6. CloudKit Conflict Resolution Risk
-**File:** `native/Sources/Isometry/Sync/CloudKitSyncManager.swift`
+**Single Database Actor:**
+- Current capacity: All database operations through single Swift actor
+- Limit: Potential bottleneck for concurrent operations
+- Scaling path: Implement database connection pooling, read replicas
 
-```swift
-private var conflictStrategy: ConflictResolutionStrategy = .latestWins
-```
+**In-Memory Caching:**
+- Current capacity: Limited browser memory for query caches
+- Limit: Large datasets may cause memory pressure
+- Scaling path: Implement LRU eviction, persistent cache storage
 
-- "Latest wins" may overwrite local work unexpectedly
-- User deletes note, server version reappears
-- No merge/3-way resolution by default
-- Manual resolution queue requires UI that doesn't exist
+## Dependencies at Risk
 
-**Recommendation:** Default to `.serverWins` or `.manualResolution`
+**Swift Package Dependencies:**
+- Risk: GRDB.swift dependency for native database operations
+- Impact: Core database functionality would break
+- Migration plan: No viable alternative - maintain compatibility
 
----
+**D3.js Version Lock:**
+- Risk: Using specific D3 version with custom data binding patterns
+- Impact: Visualization system heavily coupled to current version
+- Migration plan: Gradual migration to newer D3 patterns, maintain compatibility layer
 
-### 7. CDN Dependency (React)
-**File:** `src/db/init.ts` (line 29)
+## Missing Critical Features
 
-```typescript
-script.src = 'https://sql.js.org/dist/sql-wasm.js';
-```
+**Comprehensive Error Reporting:**
+- Problem: Silent failures throughout the application
+- Blocks: User troubleshooting, error diagnosis
+- Priority: High - affects user experience
 
-- External CDN with no fallback
-- No integrity checking
-- WASM loaded from internet without verification
+**Data Synchronization:**
+- Problem: Sync queue implementation incomplete
+- Blocks: Offline usage, data consistency across devices
+- Priority: Medium - workaround exists (online-only usage)
 
----
+**Node Picker Interface:**
+- Problem: Disabled node selection UI in property editor
+- Blocks: Relationship creation, data linking
+- Priority: Medium - affects advanced features
 
-### 8. Auto-Import Without User Consent
-**File:** `native/Sources/Isometry/App/IsometryApp.swift`
+## Test Coverage Gaps
 
-- Imports alto-index Notes on first launch without confirmation
-- No progress indicator during import
-- 6,891 notes = potential UI freeze
-- No memory constraints check
+**DSL Parser Edge Cases:**
+- What's not tested: Complex nested queries, malformed input handling
+- Files: `src/dsl/parser.ts`, `src/dsl/compiler.ts`
+- Risk: Parser crashes on edge cases, incorrect SQL generation
+- Priority: High
 
----
+**WebView Bridge Error Scenarios:**
+- What's not tested: Connection failures, message corruption, timeout handling
+- Files: `src/db/WebViewClient.ts`, `src/utils/webview-bridge.ts`
+- Risk: App crashes when bridge communication fails
+- Priority: High
 
-## Technical Debt (🟢)
+**Migration Rollback Procedures:**
+- What's not tested: Actual rollback execution, data integrity after rollback
+- Files: `src/db/migration-safety.ts`, `src/utils/migration-validator.ts`
+- Risk: Data loss during failed migrations
+- Priority: Medium
 
-### 9. View System Not Implemented
-**Files:** `src/components/views/`
-
-All 8 view types defined but not wired:
-- GridView, ListView, KanbanView
-- TimelineView, CalendarView, ChartsView
-- NetworkView, TreeView
-
----
-
-### 10. PAFV State Not Connected
-**File:** `src/state/PAFVContext.tsx`
-
-- Users can drag facets in PAFVNavigator
-- Axis assignments don't affect rendering
-- No computation transforms PAFV → D3 scales
-
----
-
-### 11. LocationFilter Never Implemented
-**Files:** `src/types/filter.ts`, `src/components/NavigatorFooter.tsx`
-
-- Type definition exists, no implementation
-- SpatiaLite support missing
-- Map rendering marked as v3.1 feature
-
----
-
-### 12. No Pagination in Native Queries
-**File:** `native/Sources/Isometry/Database/IsometryDatabase.swift`
-
-```swift
-let nodes = try Node.filter(...).fetchAll(db)  // Entire table
-```
-
-- Large datasets load entirely into memory
-- 10,000+ notes = hundreds of MB
-- Risk of memory pressure on iOS
-
----
-
-### 13. FilterContext Not Debounced
-**File:** `src/contexts/FilterContext.tsx`
-
-- Every keystroke triggers new query
-- No debouncing logic
-- Could overwhelm database on large datasets
-
----
-
-### 14. Sync Version Update Not Atomic
-**File:** `native/Sources/Isometry/Sync/CloudKitSyncManager.swift`
-
-```swift
-try await localDatabase.updateNode(resolvedNode)  // First update
-var updatedNode = resolvedNode
-updatedNode.syncVersion += 1
-try await localDatabase.updateNode(updatedNode)   // Second update!
-```
-
-- Two separate writes for conflict resolution
-- If first succeeds, second fails: inconsistent state
-
----
-
-## Missing Features
-
-### 15. No Empty State Handling
-- No message when no nodes match filter
-- No feedback when database is empty
-- Loading states inconsistent
-
-### 16. No Undo/Redo
-- User deletes node, no recovery option
-- Native has versioning but no undo UI
-
-### 17. No Keyboard Shortcuts
-- Hotkey system not implemented
-- No accessibility considerations
+**D3 Rendering Performance:**
+- What's not tested: Large dataset rendering, memory usage patterns
+- Files: `src/components/notebook/D3VisualizationRenderer.tsx`
+- Risk: Browser crashes with large visualizations
+- Priority: Medium
 
 ---
 
-## Safe to Modify
-
-1. **Filter compiler logic** - Isolated, parameterized queries
-2. **Schema files** - Keep both React/Native in sync
-3. **View implementations** - Add without affecting existing
-4. **Error handling** - Improve without breaking changes
-
-## Risky to Modify
-
-1. **CloudKit sync manager** - Conflict resolution affects data integrity
-2. **DSL parser** - Careful integration to avoid breaking CommandBar
-3. **Database initialization** - Changes affect both platforms
-4. **Node model properties** - Sync version tracking depends on exact fields
-
-## Do Not Modify Without Plan
-
-1. **sql.js CDN URL** - Changing breaks app entirely
-2. **Database schema** - Must migrate both platforms atomically
-3. **IndexedDB storage key** - Breaks existing user data
-4. **CloudKit container ID** - Loses all synced data
-
----
-
-## Implementation Priority
-
-| Phase | Days | Focus |
-|-------|------|-------|
-| **0** | 1-2 | Generate DSL parser from PEG.js grammar |
-| **1** | 3-7 | Wire FilterContext → useSQLiteQuery → D3 |
-| **2** | 8-10 | Implement Grid and List views |
-| **3** | 11-14 | Connect PAFV state to rendering |
-| **4** | 15+ | CloudKit testing, error boundaries |
-
----
-
-## Summary
-
-| Category | Count |
-|----------|-------|
-| Critical Blockers | 3 |
-| High Priority Issues | 5 |
-| Technical Debt | 6 |
-| Missing Features | 3 |
-| **Total** | **17** |
-
-The architecture is sound but integration work is substantial. Focus first on completing the data pipeline (Phase 1) before expanding features.
-
----
-
-*Concerns analysis: 2026-01-21*
-*Update when issues resolved or discovered*
+*Concerns audit: 2026-01-25*

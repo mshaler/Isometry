@@ -1,187 +1,122 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-01-21
+**Analysis Date:** 2026-01-25
 
 ## Naming Patterns
 
-### Files
-- **Components:** PascalCase (`Sidebar.tsx`, `Navigator.tsx`)
-- **Hooks:** camelCase with `use` prefix (`useSQLiteQuery.ts`, `useD3.ts`)
-- **Utilities:** camelCase (`compiler.ts`, `factory.ts`)
-- **Types:** PascalCase files with lowercase names (`node.ts`, `filter.ts`)
-- **Tests:** Same name + `.test.ts` (`factory.test.ts`)
+**Files:**
+- PascalCase for React components: `UnifiedApp.tsx`, `LocationMapWidget.tsx`, `PAFVNavigator.tsx`
+- camelCase for utilities and modules: `filter-presets.ts`, `webview-bridge.ts`, `sqliteSyncManager.ts`
+- kebab-case for test files: `data-integrity-validation.test.ts`, `final-migration-validation.test.ts`
+- camelCase for hooks: `useSlashCommands.ts`, `useD3Visualization.ts`, `useCommandRouter.ts`
 
-### Functions
-- camelCase for all functions
-- No special prefix for async functions
-- `handle*` for event handlers (`handleClick`, `handleSubmit`)
-- `use*` for hooks (`useDatabase`, `useFilters`)
-- `is*` for type guards (`isNode`, `isEdge`)
-- `*To*` for converters (`rowToNode`, `nodeToCardValue`)
+**Functions:**
+- camelCase for functions and methods: `compileString()`, `getSuggestions()`, `loadPresets()`, `generatePresetId()`
+- PascalCase for React components: `UnifiedApp()`, `LocationMapWidget()`, `ThemeProvider()`
+- `handle*` pattern for event handlers: observed in component patterns
+- `use*` prefix for custom hooks: `usePAFV()`, `useSlashCommands()`
 
-### Variables
-- camelCase for variables
-- UPPER_SNAKE_CASE for constants (not strictly enforced)
-- No underscore prefix for private members
+**Variables:**
+- camelCase for variables: `mockGeolocation`, `localStorageMock`, `trimmed`, `textBeforeCursor`
+- SCREAMING_SNAKE_CASE for module constants: `EMPTY_FILTERS`, `DEFAULT_PAFV`, `SCHEMA_FIELDS`, `ISOMETRY_COMMANDS`
+- Prefix `mock` for test mocks: `mockMarker`, `mockCircle`, `mockMap`
 
-### Types (TypeScript)
-- PascalCase for interfaces (`Node`, `Edge`, `FilterState`)
-- PascalCase for type aliases (`ViewType`, `LATCHAxis`)
-- No `I` prefix for interfaces
-
-### Swift Naming
-- PascalCase for types (`Node`, `IsometryDatabase`)
-- camelCase for properties (`nodeType`, `createdAt`)
-- camelCase for enum cases (`.link`, `.nest`)
-- `MARK:` comments for section organization
+**Types:**
+- PascalCase for interfaces and types: `SlashCommand`, `FilterPreset`, `ConnectionStatus`, `AxisMapping`
+- camelCase for interface properties: `isOpen`, `cursorOffset`, `selectedIndex`, `radiusMeters`
+- Union types for constrained values: `type FilterOperator = '=' | '<' | '>' | '<=' | '>=' | '~'`
 
 ## Code Style
 
-### Formatting
-- **Tool:** Prettier (implicit via ESLint)
-- **Indentation:** 2 spaces
-- **Line length:** ~100 characters
-- **Quotes:** Single quotes for strings
-- **Semicolons:** Required
+**Formatting:**
+- No Prettier config detected - relies on ESLint TypeScript formatting
+- 2-space indentation (consistent across all source files)
+- Single quotes for strings
+- Trailing commas in multiline objects and arrays
 
-### Linting (ESLint v9)
-```javascript
-// eslint.config.js
-{
-  '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-  '@typescript-eslint/no-explicit-any': 'warn',
-}
-```
-
-### TypeScript Config
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
-  }
-}
-```
+**Linting:**
+- ESLint 9 with TypeScript support via `typescript-eslint`
+- Config file: `eslint.config.js`
+- Key rules:
+  - `@typescript-eslint/no-unused-vars: ['warn', { argsIgnorePattern: '^_' }]`
+  - `@typescript-eslint/no-explicit-any: 'warn'`
+- Ignores: `['node_modules', 'dist', '*.js', 'native/**']`
 
 ## Import Organization
 
-### Order
-1. External packages (`react`, `d3`, `sql.js`)
-2. Internal modules (`@/lib`, `@/components`)
-3. Relative imports (`./utils`, `../types`)
-4. Type imports (`import type { }`)
+**Order:**
+1. React imports: `import { useState, useCallback, useRef } from 'react'`
+2. External library imports: `import * as d3 from 'd3'`, `import { BrowserRouter } from 'react-router-dom'`
+3. Internal absolute imports: `import { ThemeProvider } from '../contexts/ThemeContext'`
+4. Type-only imports: `import type { Database, QueryExecResult } from 'sql.js'`
 
-### Path Aliases
-- `@/` maps to `src/`
-- Configured in `tsconfig.json`
-
-### Example
-```typescript
-import { useState, useCallback } from 'react';
-import * as d3 from 'd3';
-
-import { useDatabase } from '@/db/DatabaseContext';
-import { compile } from '@/dsl/compiler';
-
-import type { Node, Edge } from '@/types';
-```
+**Path Aliases:**
+- `@/*` maps to `./src/*` (configured in `tsconfig.json`)
+- Used consistently: `import { Button } from '@/components/ui/button'`
 
 ## Error Handling
 
-### React/TypeScript
-- Try-catch with error state management
-- Error passed through `QueryState<T>` interface
-- `ErrorBoundary` component wraps entire app
-- Optional chaining for null safety
-
-```typescript
-try {
-  const rows = execute<Record<string, unknown>>(sql, params);
-  setData(transformRef.current ? transformRef.current(rows) : rows);
-} catch (err) {
-  setError(err as Error);
-  setData(null);
-}
-```
-
-### Swift
-- Custom error types conforming to `LocalizedError, Sendable`
-- Associated values for context
-- Async/await with throws
-
-```swift
-public enum DatabaseError: LocalizedError, Sendable {
-    case queryFailed(sql: String, underlying: Error)
-    case nodeNotFound(id: String)
-
-    var errorDescription: String? {
-        switch self {
-        case .queryFailed(let sql, let error):
-            return "Query failed: \(sql) - \(error.localizedDescription)"
-        case .nodeNotFound(let id):
-            return "Node not found: \(id)"
-        }
-    }
-}
-```
+**Patterns:**
+- Throw descriptive Error objects: `throw new Error('WebView bridge not available - ensure running in native app')`
+- Include context in error messages: operation, parameters, and underlying error
+- Try-catch blocks for external API calls and database operations
+- Graceful fallbacks: Native API falls back to sql.js when unavailable
+- Error state management in React hooks with `QueryState<T>` pattern
 
 ## Logging
 
-### React
-- `console.error` for SQL errors (with query + params)
-- No production logging framework yet
+**Framework:** Native `console` methods
 
-### Swift
-- `print()` for debug output
-- Structured logging not implemented
+**Patterns:**
+- `console.error()` for failures and exceptions with context
+- `console.log()` for successful operations
+- `console.warn()` for recoverable issues
+- Include operation context: `console.error('WebView database execution error:', sql, params, error)`
 
 ## Comments
 
-### When to Comment
-- Explain "why", not "what"
-- Document business rules and edge cases
-- Section headers with `// ============`
+**When to Comment:**
+- File headers for complex modules with purpose and context
+- Inline comments for business logic and workarounds
+- TODOs for known technical debt
+- @ts-expect-error with explanation for necessary type violations
 
-### JSDoc
-- Required for public hook APIs
-- Use `@param`, `@returns`, `@example` tags
-
-### TODO Format
-```typescript
-// TODO: Load schema from SQLite
-// TODO(username): Fix race condition
-```
+**JSDoc/TSDoc:**
+- Used for exported functions and interfaces
+- Example: `/** * Vitest Test Setup * * Global test configuration and mocks for Isometry tests. */`
+- Include purpose, parameters, and usage examples
 
 ## Function Design
 
-### Size
-- Keep under 50 lines
-- Extract helpers for complex logic
+**Size:**
+- Functions kept focused and under 100 lines
+- Complex functions broken into smaller helpers
+- Single responsibility principle
 
-### Parameters
-- Max 3-4 parameters
-- Use options object for more: `function create(options: CreateOptions)`
-- Destructure in parameter list
+**Parameters:**
+- TypeScript interfaces for complex parameter objects
+- Optional parameters clearly marked with `?`
+- Destructured parameters in React components
+- Default values for optional parameters
 
-### Return Values
-- Explicit returns
-- Return early for guard clauses
-- Use `QueryState<T>` for async data
+**Return Values:**
+- Explicit return types for public functions
+- Use `void` for side-effect functions
+- Promise types for async operations
+- `QueryState<T>` pattern for data-fetching hooks
 
 ## Module Design
 
-### Exports
-- Named exports preferred
-- Barrel exports via `index.ts`
+**Exports:**
+- Named exports preferred: `export function compile()`, `export interface SlashCommand`
+- Default exports for React components
+- Barrel files minimal - direct imports preferred
 
-### Context Pattern
+**Context Pattern:**
 ```typescript
 const Context = createContext<T | undefined>(undefined);
 
 export function Provider({ children }) {
-  // state management
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
@@ -192,56 +127,35 @@ export function useHook() {
 }
 ```
 
-### Hook Pattern
-```typescript
-export function useSomething<T>(query: string, options: Options = {}): QueryState<T> {
-  const [data, setData] = useState<T[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+## TypeScript Configuration
 
-  // effect logic
+**Strict Settings:**
+- `strict: true`
+- `noUnusedLocals: true`
+- `noUnusedParameters: true`
+- `noFallthroughCasesInSwitch: true`
+- `isolatedModules: true`
 
-  return { data, loading, error, refetch };
-}
-```
+**Type Patterns:**
+- Union types for enums: `type ViewMode = 'grid' | 'list'`
+- Generic constraints where appropriate
+- Interface composition with extends
+- Readonly arrays for immutable data
 
-## Swift Conventions
+## React Conventions
 
-### Actor Pattern
-```swift
-public actor IsometryDatabase {
-    private let dbPool: DatabasePool
+**Component Structure:**
+- Props interfaces defined above component
+- Functional components with TypeScript
+- Use `React.ReactNode` for children props
+- Context validation in hooks with descriptive error messages
 
-    public func createNode(_ node: Node) async throws {
-        try await dbPool.write { db in
-            try node.insert(db)
-        }
-    }
-}
-```
-
-### Codable + CodingKeys
-```swift
-struct Node: Codable, Sendable {
-    let nodeType: String
-
-    enum CodingKeys: String, CodingKey {
-        case nodeType = "node_type"  // snake_case DB → camelCase Swift
-    }
-}
-```
-
-### Computed Properties
-```swift
-var isDeleted: Bool { deletedAt != nil }
-var hasLocation: Bool { latitude != nil && longitude != nil }
-var isOverdue: Bool {
-    guard let dueAt, completedAt == nil else { return false }
-    return dueAt < Date()
-}
-```
+**Hook Patterns:**
+- Custom hooks follow `use*` naming
+- Proper dependency arrays in useEffect/useMemo
+- State management with TypeScript generics
+- Error boundaries for component error handling
 
 ---
 
-*Convention analysis: 2026-01-21*
-*Update when patterns change*
+*Convention analysis: 2026-01-25*
