@@ -6,8 +6,6 @@
  */
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
-import { syncManager } from '../utils/sync-manager';
-import { Environment } from '../utils/webview-bridge';
 
 export interface ConsistencyReport {
   provider: DatabaseMode;
@@ -24,8 +22,8 @@ export interface ConsistencyCheck {
   name: string;
   type: 'field-comparison' | 'relationship-integrity' | 'schema-compliance' | 'data-type-validation';
   passed: boolean;
-  expected: any;
-  actual: any;
+  expected: unknown;
+  actual: unknown;
   deviation?: string;
   severity: 'low' | 'medium' | 'high' | 'critical';
 }
@@ -54,7 +52,7 @@ export interface DataLossAnalysis {
   edgesLost: number;
   totalLoss: number;
   lossPercentage: number;
-  lostData: any[];
+  lostData: unknown[];
 }
 
 export interface CorruptionAnalysis {
@@ -94,16 +92,53 @@ export interface ConcurrencyReport {
 export interface ConflictResolution {
   type: 'timestamp-based' | 'user-choice' | 'field-merge';
   recordId: string;
-  localVersion: any;
-  remoteVersion: any;
-  resolution: any;
+  localVersion: unknown;
+  remoteVersion: unknown;
+  resolution: unknown;
   preservedData: boolean;
 }
 
+export interface TestNode {
+  id: string;
+  name: string;
+  content: string;
+  nodeType: string;
+  tags: string[];
+  folder: string;
+}
+
+export interface TestNotebookCard {
+  id: string;
+  title: string;
+  markdownContent: string;
+  properties: Record<string, unknown>;
+  tags: string[];
+  folder: string;
+}
+
+export interface TestEdge {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  edgeType: string;
+}
+
+export interface ConflictData {
+  id: string;
+  localVersion: Record<string, unknown>;
+  remoteVersion: Record<string, unknown>;
+}
+
+export interface ConcurrencyOperation {
+  nodeId: string;
+  operationId: number;
+  success: boolean;
+}
+
 export interface TestDataset {
-  nodes: any[];
-  notebookCards: any[];
-  edges: any[];
+  nodes: TestNode[];
+  notebookCards: TestNotebookCard[];
+  edges: TestEdge[];
   metadata: DatasetMetadata;
 }
 
@@ -317,7 +352,7 @@ export async function validateConcurrentOperations(): Promise<ConcurrencyReport>
     await populateProviderWithData(DatabaseMode.WEBVIEW_BRIDGE, baseData);
 
     // Simulate concurrent operations
-    const operations: Promise<any>[] = [];
+    const operations: Promise<ConcurrencyOperation>[] = [];
 
     for (let i = 0; i < totalOperations; i++) {
       const operation = simulateConcurrentEdit(baseData.nodes[i % baseData.nodes.length].id, i);
@@ -488,9 +523,9 @@ async function createTestDataset(): Promise<TestDataset> {
   };
 }
 
-async function populateProviderWithData(provider: DatabaseMode, dataset: TestDataset): Promise<void> {
+async function populateProviderWithData(_provider: DatabaseMode, _dataset: TestDataset): Promise<void> {
   // Implementation would populate the specific provider with test data
-  console.log(`Populating ${provider} with test data`);
+  console.log(`Populating ${_provider} with test data`);
 }
 
 async function compareProviderData(
@@ -556,8 +591,8 @@ async function compareRelationships(
 }
 
 async function compareSchemaCompliance(
-  providerA: DatabaseMode,
-  providerB: DatabaseMode
+  _providerA: DatabaseMode,
+  _providerB: DatabaseMode
 ): Promise<ConsistencyCheck[]> {
   // Implementation would compare schema compliance
   return [{
@@ -570,7 +605,7 @@ async function compareSchemaCompliance(
   }];
 }
 
-async function validateDataTypes(provider: DatabaseMode, dataset: TestDataset): Promise<ConsistencyCheck[]> {
+async function validateDataTypes(_provider: DatabaseMode, _dataset: TestDataset): Promise<ConsistencyCheck[]> {
   // Implementation would validate data types
   return [{
     name: 'data-types',
@@ -582,17 +617,17 @@ async function validateDataTypes(provider: DatabaseMode, dataset: TestDataset): 
   }];
 }
 
-async function calculateDataChecksum(provider: DatabaseMode, dataset: TestDataset): Promise<string> {
+async function calculateDataChecksum(_provider: DatabaseMode, _dataset: TestDataset): Promise<string> {
   // Implementation would calculate cryptographic checksum of data
   return 'checksum-' + Date.now();
 }
 
-async function performDataMigration(migrationPath: MigrationPath, dataset: TestDataset): Promise<void> {
+async function performDataMigration(_migrationPath: MigrationPath, _dataset: TestDataset): Promise<void> {
   // Implementation would perform actual data migration
   console.log('Performing data migration...');
 }
 
-async function analyzeDataLoss(migrationPath: MigrationPath, dataset: TestDataset): Promise<DataLossAnalysis> {
+async function analyzeDataLoss(_migrationPath: MigrationPath, _dataset: TestDataset): Promise<DataLossAnalysis> {
   // Implementation would analyze data loss
   return {
     nodesLost: 0,
@@ -604,7 +639,7 @@ async function analyzeDataLoss(migrationPath: MigrationPath, dataset: TestDatase
   };
 }
 
-async function analyzeDataCorruption(provider: DatabaseMode, dataset: TestDataset): Promise<CorruptionAnalysis> {
+async function analyzeDataCorruption(_provider: DatabaseMode, _dataset: TestDataset): Promise<CorruptionAnalysis> {
   // Implementation would analyze data corruption
   return {
     corruptedRecords: 0,
@@ -631,7 +666,7 @@ async function createSimpleConcurrencyDataset(): Promise<TestDataset> {
   return createTestDataset();
 }
 
-async function simulateConcurrentEdit(nodeId: string, operationId: number): Promise<any> {
+async function simulateConcurrentEdit(nodeId: string, operationId: number): Promise<ConcurrencyOperation> {
   // Simulate editing operation that might conflict
   await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
 
@@ -642,7 +677,7 @@ async function simulateConcurrentEdit(nodeId: string, operationId: number): Prom
   return { nodeId, operationId, success: true };
 }
 
-async function detectConflict(nodeId: string): Promise<any> {
+async function detectConflict(nodeId: string): Promise<ConflictData> {
   // Implementation would detect actual conflict
   return {
     id: nodeId,
@@ -651,7 +686,7 @@ async function detectConflict(nodeId: string): Promise<any> {
   };
 }
 
-async function resolveConflict(conflictData: any): Promise<ConflictResolution> {
+async function resolveConflict(conflictData: ConflictData): Promise<ConflictResolution> {
   // Implementation would resolve conflict using established patterns
   return {
     type: 'timestamp-based',
@@ -663,12 +698,12 @@ async function resolveConflict(conflictData: any): Promise<ConflictResolution> {
   };
 }
 
-async function validatePostConcurrencyConsistency(dataset: TestDataset): Promise<boolean> {
+async function validatePostConcurrencyConsistency(_dataset: TestDataset): Promise<boolean> {
   // Implementation would validate data consistency after concurrent operations
   return true;
 }
 
-async function checkNodeCorruption(node: any): Promise<CorruptionDetail[]> {
+async function checkNodeCorruption(node: unknown): Promise<CorruptionDetail[]> {
   const corruption: CorruptionDetail[] = [];
 
   // Check for invalid characters
@@ -696,12 +731,12 @@ async function checkNodeCorruption(node: any): Promise<CorruptionDetail[]> {
   return corruption;
 }
 
-async function checkNotebookCardCorruption(card: any): Promise<CorruptionDetail[]> {
+async function checkNotebookCardCorruption(_card: unknown): Promise<CorruptionDetail[]> {
   // Similar implementation for notebook cards
   return [];
 }
 
-async function checkEdgeCorruption(edge: any): Promise<CorruptionDetail[]> {
+async function checkEdgeCorruption(_edge: unknown): Promise<CorruptionDetail[]> {
   // Similar implementation for edges
   return [];
 }
@@ -725,7 +760,7 @@ function generateRepairRecommendations(corruption: CorruptionDetail[]): string[]
   return Array.from(recommendations);
 }
 
-function generateConsistencySummary(score: number, failed: number, checks: ConsistencyCheck[]): string {
+function generateConsistencySummary(score: number, failed: number, _checks: ConsistencyCheck[]): string {
   if (score >= 95) {
     return `✅ Excellent data consistency: ${score.toFixed(1)}% (${failed} issues)`;
   } else if (score >= 85) {
@@ -737,7 +772,7 @@ function generateConsistencySummary(score: number, failed: number, checks: Consi
   }
 }
 
-async function calculateChecksum(data: any): Promise<string> {
+async function calculateChecksum(data: unknown): Promise<string> {
   // Simple checksum implementation
   const str = JSON.stringify(data, Object.keys(data).sort());
   let hash = 0;
@@ -750,10 +785,10 @@ async function calculateChecksum(data: any): Promise<string> {
 }
 
 // Mock provider access functions
-async function getNodeFromProvider(provider: DatabaseMode, id: string): Promise<any> {
-  return { id, name: 'Test Node', content: 'Test content' };
+async function getNodeFromProvider(provider: DatabaseMode, id: string): Promise<TestNode> {
+  return { id, name: 'Test Node', content: 'Test content', nodeType: 'test', tags: [], folder: 'test' };
 }
 
-async function getEdgeFromProvider(provider: DatabaseMode, id: string): Promise<any> {
+async function getEdgeFromProvider(provider: DatabaseMode, id: string): Promise<TestEdge> {
   return { id, sourceId: 'node-1', targetId: 'node-2', edgeType: 'references' };
 }

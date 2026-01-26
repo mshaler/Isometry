@@ -5,16 +5,15 @@
  * Leverages established Phase 7.2 infrastructure for complete workflow validation
  */
 
-import { bridgePerformanceTest, PERFORMANCE_TARGETS, BridgeTestResult } from '../utils/bridge-performance';
-import { useEnvironment, DatabaseMode, EnvironmentInfo } from '../contexts/EnvironmentContext';
+import { bridgePerformanceTest, PERFORMANCE_TARGETS } from '../utils/bridge-performance';
+import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from '../utils/webview-bridge';
-import { syncManager } from '../utils/sync-manager';
 
 export interface TestResult {
   success: boolean;
   duration: number;
   errors: string[];
-  data?: any;
+  data?: unknown;
   metadata?: Record<string, unknown>;
 }
 
@@ -142,9 +141,7 @@ export async function testProviderMigration(from: DatabaseMode, to: DatabaseMode
     const baselinePerf = await measurePerformance(from);
 
     // Perform migration
-    const migrationStart = performance.now();
     const migrationResult = await performProviderMigration(from, to, testData.data);
-    const migrationDuration = performance.now() - migrationStart;
 
     if (!migrationResult.success) {
       errors.push(`Migration failed: ${migrationResult.errors.join(', ')}`);
@@ -558,32 +555,32 @@ async function testPerformanceValidationFlow(provider: DatabaseMode): Promise<Te
 // Helper Functions (Simplified implementations for testing framework)
 // =============================================================================
 
-async function switchToProvider(provider: DatabaseMode): Promise<void> {
+async function switchToProvider(_provider: DatabaseMode): Promise<void> {
   // Implementation would switch the active database provider
-  console.log(`Switching to provider: ${provider}`);
+  console.log(`Switching to provider: ${_provider}`);
 }
 
-async function testCreateOperation(provider: DatabaseMode): Promise<TestResult> {
+async function testCreateOperation(_provider: DatabaseMode): Promise<TestResult> {
   // Simplified - would test actual CREATE operations
   return { success: true, duration: 10, errors: [] };
 }
 
-async function testReadOperation(provider: DatabaseMode): Promise<TestResult> {
+async function testReadOperation(_provider: DatabaseMode): Promise<TestResult> {
   // Simplified - would test actual READ operations
   return { success: true, duration: 5, errors: [] };
 }
 
-async function testUpdateOperation(provider: DatabaseMode): Promise<TestResult> {
+async function testUpdateOperation(_provider: DatabaseMode): Promise<TestResult> {
   // Simplified - would test actual UPDATE operations
   return { success: true, duration: 15, errors: [] };
 }
 
-async function testDeleteOperation(provider: DatabaseMode): Promise<TestResult> {
+async function testDeleteOperation(_provider: DatabaseMode): Promise<TestResult> {
   // Simplified - would test actual DELETE operations
   return { success: true, duration: 8, errors: [] };
 }
 
-async function createTestDataSet(provider: DatabaseMode): Promise<{ success: boolean; data: any; errors: string[] }> {
+async function createTestDataSet(_provider: DatabaseMode): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would create a comprehensive test dataset
   return {
     success: true,
@@ -596,7 +593,7 @@ async function createTestDataSet(provider: DatabaseMode): Promise<{ success: boo
   };
 }
 
-async function measurePerformance(provider: DatabaseMode): Promise<{ throughput: number; latency: number }> {
+async function measurePerformance(_provider: DatabaseMode): Promise<{ throughput: number; latency: number }> {
   // Implementation would measure actual performance metrics
   return {
     throughput: 150, // ops/sec
@@ -604,57 +601,57 @@ async function measurePerformance(provider: DatabaseMode): Promise<{ throughput:
   };
 }
 
-async function performProviderMigration(from: DatabaseMode, to: DatabaseMode, data: any): Promise<{ success: boolean; errors: string[] }> {
+async function performProviderMigration(_from: DatabaseMode, _to: DatabaseMode, _data: unknown): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would perform actual migration
   return { success: true, errors: [] };
 }
 
-async function validateDataIntegrity(originalData: any, provider: DatabaseMode): Promise<{ success: boolean; errors: string[] }> {
+async function validateDataIntegrity(_originalData: unknown, _provider: DatabaseMode): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would validate data integrity
   return { success: true, errors: [] };
 }
 
-async function createMigrationCheckpoint(provider: DatabaseMode): Promise<{ success: boolean; data: any }> {
+async function createMigrationCheckpoint(_provider: DatabaseMode): Promise<{ success: boolean; data: unknown }> {
   // Implementation would create actual checkpoint
   return { success: true, data: {} };
 }
 
-async function executeRollback(scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
+async function executeRollback(_scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would execute actual rollback
   return { success: true, errors: [] };
 }
 
-async function validateDataAfterRollback(checkpointData: any, provider: DatabaseMode): Promise<{ success: boolean; errors: string[] }> {
+async function validateDataAfterRollback(_checkpointData: unknown, _provider: DatabaseMode): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would validate data after rollback
   return { success: true, errors: [] };
 }
 
-function getExpectedTargetsForProvider(provider: DatabaseMode) {
+function getExpectedTargetsForProvider(_provider: DatabaseMode) {
   // Return expected performance targets for provider
   return PERFORMANCE_TARGETS;
 }
 
-function validatePerformanceTargets(actual: any, expected: any): boolean {
+function validatePerformanceTargets(_actual: unknown, _expected: unknown): boolean {
   // Implementation would validate performance targets
   return true;
 }
 
-async function testUIConsistency(platform: 'ios' | 'macos'): Promise<{ success: boolean; errors: string[] }> {
+async function testUIConsistency(_platform: 'ios' | 'macos'): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would test UI consistency
   return { success: true, errors: [] };
 }
 
-async function testPlatformFeatures(platform: 'ios' | 'macos'): Promise<{ success: boolean; errors: string[] }> {
+async function testPlatformFeatures(_platform: 'ios' | 'macos'): Promise<{ success: boolean; errors: string[] }> {
   // Implementation would test platform-specific features
   return { success: true, errors: [] };
 }
 
-async function measurePlatformPerformance(platform: 'ios' | 'macos'): Promise<{ profile: 'fast' | 'medium' | 'slow' }> {
+async function measurePlatformPerformance(_platform: 'ios' | 'macos'): Promise<{ profile: 'fast' | 'medium' | 'slow' }> {
   // Implementation would measure platform performance
   return { profile: 'fast' };
 }
 
-async function createNotebookCard(provider: DatabaseMode, data: any): Promise<{ success: boolean; data: any; errors: string[] }> {
+async function createNotebookCard(provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would create actual notebook card
   return {
     success: true,
@@ -663,7 +660,7 @@ async function createNotebookCard(provider: DatabaseMode, data: any): Promise<{ 
   };
 }
 
-async function retrieveNotebookCard(provider: DatabaseMode, id: string): Promise<{ success: boolean; data: any; errors: string[] }> {
+async function retrieveNotebookCard(provider: DatabaseMode, id: string): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would retrieve actual notebook card
   return {
     success: true,
@@ -672,12 +669,12 @@ async function retrieveNotebookCard(provider: DatabaseMode, id: string): Promise
   };
 }
 
-function validateNotebookContent(expected: any, actual: any): boolean {
+function validateNotebookContent(_expected: unknown, _actual: unknown): boolean {
   // Implementation would validate notebook content
   return true;
 }
 
-async function createNode(provider: DatabaseMode, data: any): Promise<{ success: boolean; data: any; errors: string[] }> {
+async function createNode(provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would create actual node
   return {
     success: true,
@@ -686,12 +683,17 @@ async function createNode(provider: DatabaseMode, data: any): Promise<{ success:
   };
 }
 
-async function measureProviderPerformance(provider: DatabaseMode): Promise<any> {
+interface ProviderPerformance {
+  throughput: number;
+  latency: number;
+}
+
+async function measureProviderPerformance(_provider: DatabaseMode): Promise<ProviderPerformance> {
   // Implementation would measure provider performance
   return { throughput: 100, latency: 30 };
 }
 
-function validateGenericTargets(performance: any): boolean {
+function validateGenericTargets(_performance: unknown): boolean {
   // Implementation would validate generic performance targets
   return true;
 }

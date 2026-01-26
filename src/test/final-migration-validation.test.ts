@@ -58,8 +58,8 @@ class FinalMigrationValidator {
     try {
       // Check package.json dependencies
       const packageJson = await import('../../package.json');
-      const hasSqlJsDependency = (packageJson.dependencies as any)?.['sql.js'] ||
-                                (packageJson.devDependencies as any)?.['sql.js'];
+      const hasSqlJsDependency = (packageJson.dependencies as Record<string, string> | undefined)?.['sql.js'] ||
+                                (packageJson.devDependencies as Record<string, string> | undefined)?.['sql.js'];
 
       if (hasSqlJsDependency) {
         console.error('❌ sql.js still present in package.json dependencies');
@@ -206,7 +206,6 @@ class FinalMigrationValidator {
   async validateComponentCompatibility(): Promise<boolean> {
     try {
       // Test that useDatabase hook works correctly
-      const { useDatabase: _useDatabase } = await import('../db/DatabaseContext');
 
       // Mock component test
       let hookResult: unknown;
@@ -229,7 +228,6 @@ class FinalMigrationValidator {
       }
 
       // Validate environment detection works
-      const { useEnvironment: _useEnvironment } = await import('../contexts/EnvironmentContext');
       // Mock environment detection validation
 
       console.log('✅ All React components maintain compatibility');

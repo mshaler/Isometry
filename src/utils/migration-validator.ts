@@ -63,7 +63,7 @@ export interface DataSnapshot {
 
 export interface ConfigurationSnapshot {
   provider: DatabaseMode;
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   environment: string;
   version: string;
 }
