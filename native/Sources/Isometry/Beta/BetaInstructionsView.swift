@@ -1,9 +1,16 @@
 import SwiftUI
 
-/// Detailed beta testing instructions and guidelines
+/// Detailed beta testing instructions and guidelines with interactive guidance
 public struct BetaInstructionsView: View {
     let betaVersion: BetaVersion?
     @Environment(\.dismiss) private var dismiss
+
+    // UX-03: Interactive testing guidance state
+    @StateObject private var betaManager = BetaTestingManager()
+    @State private var selectedTab = 0
+    @State private var completedSteps: Set<Int> = []
+    @State private var showingChecklist = false
+    @State private var showingHelp = false
 
     public init(betaVersion: BetaVersion?) {
         self.betaVersion = betaVersion
@@ -11,16 +18,54 @@ public struct BetaInstructionsView: View {
 
     public var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    headerSection
-                    testingFocusSection
-                    stepByStepGuide
-                    knownIssuesSection
-                    feedbackGuidelinesSection
-                    contactSection
+            TabView(selection: $selectedTab) {
+                // UX-03: Interactive Testing Guidance
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        headerSection
+                        progressSection
+                        interactiveTestingSection
+                        testingFocusSection
+                        stepByStepGuide
+                    }
+                    .padding()
                 }
-                .padding()
+                .tabItem {
+                    Image(systemName: "list.bullet.clipboard")
+                    Text("Testing Guide")
+                }
+                .tag(0)
+
+                // UX-03: Feature-specific testing scenarios
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        featureTestingScenariosSection
+                        performanceTestingSection
+                        accessibilityTestingSection
+                    }
+                    .padding()
+                }
+                .tabItem {
+                    Image(systemName: "testtube.2")
+                    Text("Scenarios")
+                }
+                .tag(1)
+
+                // UX-03: Help and support resources
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        knownIssuesSection
+                        feedbackGuidelinesSection
+                        contactSection
+                        helpResourcesSection
+                    }
+                    .padding()
+                }
+                .tabItem {
+                    Image(systemName: "questionmark.circle")
+                    Text("Help")
+                }
+                .tag(2)
             }
             .navigationTitle("Beta Testing Guide")
             #if os(iOS)
@@ -28,19 +73,33 @@ public struct BetaInstructionsView: View {
             #endif
             .toolbar {
                 #if os(iOS)
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: { showingChecklist = true }) {
+                        Image(systemName: "checkmark.circle")
+                    }
+                    .help("Testing Checklist")
+                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "instructions_viewed"))
                         dismiss()
                     }
                 }
                 #else
                 ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
+                        betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "instructions_viewed"))
                         dismiss()
                     }
                 }
                 #endif
             }
+        }
+        .sheet(isPresented: $showingChecklist) {
+            TestingChecklistView(completedSteps: $completedSteps)
+        }
+        .onAppear {
+            loadUserProgress()
         }
     }
 
@@ -74,6 +133,93 @@ public struct BetaInstructionsView: View {
         }
         .padding()
         .background(Color.orange.opacity(0.1))
+        .cornerRadius(12)
+    }
+
+    // MARK: - Progress Section (UX-03)
+
+    private var progressSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Testing Progress")
+                    .font(.headline)
+
+                Spacer()
+
+                Text("\(completedSteps.count)/6 completed")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.blue)
+            }
+
+            ProgressView(value: Double(completedSteps.count), total: 6.0)
+                .progressViewStyle(.linear)
+                .accentColor(.blue)
+
+            HStack {
+                if completedSteps.count == 6 {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Text("All testing activities completed!")
+                        .font(.caption)
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "clock")
+                        .foregroundColor(.orange)
+                    Text("Continue testing to unlock more features")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                }
+
+                Spacer()
+            }
+        }
+        .padding()
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(12)
+    }
+
+    // MARK: - Interactive Testing Section (UX-03)
+
+    private var interactiveTestingSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Quick Start Testing")
+                .font(.headline)
+
+            VStack(alignment: .leading, spacing: 12) {
+                QuickTestButton(
+                    icon: "play.circle.fill",
+                    title: "Start Basic Testing",
+                    description: "Begin with fundamental app navigation and basic features",
+                    color: .green,
+                    isCompleted: completedSteps.contains(1)
+                ) {
+                    markStepCompleted(1)
+                }
+
+                QuickTestButton(
+                    icon: "arrow.triangle.2.circlepath",
+                    title: "Test CloudKit Sync",
+                    description: "Verify data synchronization across devices",
+                    color: .blue,
+                    isCompleted: completedSteps.contains(2)
+                ) {
+                    markStepCompleted(2)
+                }
+
+                QuickTestButton(
+                    icon: "speedometer",
+                    title: "Performance Testing",
+                    description: "Check app responsiveness and battery usage",
+                    color: .orange,
+                    isCompleted: completedSteps.contains(3)
+                ) {
+                    markStepCompleted(3)
+                }
+            }
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(12)
     }
 
