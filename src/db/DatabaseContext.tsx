@@ -75,10 +75,9 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
         </NativeDatabaseProvider>
       );
 
-    case DatabaseMode.SQLJS:
     default:
       // Fallback to HTTP API - sql.js is no longer supported
-      console.log('SQL.js mode no longer supported - using HTTP API');
+      console.log('Unknown database mode - using HTTP API');
       return (
         <NativeDatabaseProvider>
           {children}
@@ -113,9 +112,8 @@ export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue
     case DatabaseMode.HTTP_API:
       return useNativeDatabase();
 
-    case DatabaseMode.SQLJS:
     default:
-      // SQL.js mode no longer supported - fallback to native API
+      // Unknown mode - fallback to native API
       return useNativeDatabase();
   }
 }

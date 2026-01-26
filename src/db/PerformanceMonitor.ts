@@ -47,23 +47,7 @@ export interface PerformanceReport {
   recommendations: string[];
 }
 
-export interface ComparisonResult {
-  operation: string;
-  sqlJsResult: {
-    duration: number;
-    success: boolean;
-    data?: unknown;
-    error?: string;
-  };
-  nativeResult: {
-    duration: number;
-    success: boolean;
-    data?: unknown;
-    error?: string;
-  };
-  speedup?: number; // How many times faster native is
-  consistent: boolean; // Whether results are identical
-}
+// ComparisonResult interface removed - sql.js comparison no longer supported
 
 /**
  * Performance Monitor class for comprehensive tracking
@@ -186,79 +170,7 @@ export class PerformanceMonitor {
     };
   }
 
-  /**
-   * Compare sql.js vs native implementation performance
-   */
-  async compareImplementations(
-    sql: string,
-    params: unknown[] = [],
-    sqlJsExecute: (sql: string, params?: unknown[]) => unknown,
-    nativeExecute: (sql: string, params?: unknown[]) => Promise<unknown>
-  ): Promise<ComparisonResult> {
-    const operation = `compare: ${sql.substring(0, 50)}...`;
-
-    let sqlJsResult: ComparisonResult['sqlJsResult'];
-    let nativeResult: ComparisonResult['nativeResult'];
-
-    // Test sql.js
-    try {
-      const result = await this.measureOperation(
-        operation + ' (sql.js)',
-        async () => sqlJsExecute(sql, params),
-        { method: 'sql.js', query: sql }
-      );
-
-      sqlJsResult = {
-        duration: this.getLastMetricDuration('sql.js'),
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      sqlJsResult = {
-        duration: this.getLastMetricDuration('sql.js'),
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-
-    // Test native
-    try {
-      const result = await this.measureOperation(
-        operation + ' (native)',
-        async () => nativeExecute(sql, params),
-        { method: 'native', query: sql }
-      );
-
-      nativeResult = {
-        duration: this.getLastMetricDuration('native'),
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      nativeResult = {
-        duration: this.getLastMetricDuration('native'),
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-
-    // Calculate speedup and consistency
-    let speedup: number | undefined;
-    let consistent = false;
-
-    if (sqlJsResult.success && nativeResult.success) {
-      speedup = sqlJsResult.duration / nativeResult.duration;
-      consistent = this.compareResults(sqlJsResult.data, nativeResult.data);
-    }
-
-    return {
-      operation,
-      sqlJsResult,
-      nativeResult,
-      speedup,
-      consistent,
-    };
-  }
+  // compareImplementations method removed - sql.js comparison no longer supported
 
   /**
    * Clear all metrics
@@ -504,16 +416,16 @@ export class PerformanceMonitor {
   }
 
   private calculateMethodBreakdown() {
-    const sqlJsMetrics = this.metrics.filter(m => m.method === 'sql.js');
     const nativeMetrics = this.metrics.filter(m => m.method === 'native');
+    const nativeApiMetrics = this.metrics.filter(m => m.method === 'native-api');
     const optimizedMetrics = this.metrics.filter(m => m.method === 'optimized');
     const webviewBridgeMetrics = this.metrics.filter(m => m.method === 'webview-bridge');
 
     return {
-      sqljs: {
-        operations: sqlJsMetrics.length,
-        averageDuration: this.calculateAverage(sqlJsMetrics),
-        successRate: this.calculateSuccessRate(sqlJsMetrics),
+      'native-api': {
+        operations: nativeApiMetrics.length,
+        averageDuration: this.calculateAverage(nativeApiMetrics),
+        successRate: this.calculateSuccessRate(nativeApiMetrics),
       },
       native: {
         operations: nativeMetrics.length,
@@ -655,17 +567,7 @@ export function logQueryPerformance(
   performanceMonitor.logQueryPerformance(query, duration, method, metadata);
 }
 
-/**
- * Performance comparison utility
- */
-export async function compareQueryPerformance(
-  sql: string,
-  params: unknown[] = [],
-  sqlJsExecute: (sql: string, params?: unknown[]) => unknown,
-  nativeExecute: (sql: string, params?: unknown[]) => Promise<unknown>
-): Promise<ComparisonResult> {
-  return performanceMonitor.compareImplementations(sql, params, sqlJsExecute, nativeExecute);
-}
+// compareQueryPerformance function removed - sql.js comparison no longer supported
 
 /**
  * Development helper to log performance report to console
