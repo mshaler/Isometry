@@ -666,7 +666,7 @@ export function logSecurityReport(report: SecurityValidationReport): void {
     failedTests.forEach(test => {
       console.error(`${test.testName}: ${test.message}`);
       if (test.details) {
-        console.log('Details:', test.details);
+        // Test details suppressed for production
       }
     });
     console.groupEnd();

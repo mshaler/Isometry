@@ -7,6 +7,7 @@
  */
 
 import { getWebViewBridge, postMessage, isWebViewEnvironment } from '../utils/webview-bridge';
+import { dbLogger } from '../utils/logger';
 
 export interface ConnectionStatus {
   isConnected: boolean;
@@ -133,7 +134,7 @@ export class WebViewClient {
 
       return result || [];
     } catch (error) {
-      console.error('WebView database execution error:', sql, params, error);
+      dbLogger.error('Database execution error', { sql, params }, error as Error);
 
       // Check if error indicates disconnection
       const errorMessage = (error as Error).message.toLowerCase();
@@ -165,9 +166,9 @@ export class WebViewClient {
 
     try {
       await postMessage('database', 'reset', {});
-      console.log('WebView database reset successfully');
+      dbLogger.info('Database reset successfully');
     } catch (error) {
-      console.error('WebView database reset error:', error);
+      dbLogger.error('Database reset error', undefined, error as Error);
       this.connected = false;
       throw new Error(`Database reset failed: ${error}`);
     }

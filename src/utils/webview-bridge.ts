@@ -8,6 +8,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '../types/node';
+import { bridgeLogger } from './logger';
 
 export interface WebKitMessageHandlers {
   database: {
@@ -129,7 +130,7 @@ export class WebViewBridge {
     });
 
     if (process.env.NODE_ENV === 'development') {
-      console.log('WebViewBridge initialized, WebView available:', this.isWebViewEnvironment());
+      bridgeLogger.debug('Bridge initialized', { webViewAvailable: this.isWebViewEnvironment() });
     }
   }
 
@@ -162,9 +163,7 @@ export class WebViewBridge {
       retryCount: 0
     });
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`WebViewBridge registered callback for request ${id}`);
-    }
+    bridgeLogger.debug('Request callback registered', { requestId: id });
   }
 
   /**
@@ -186,7 +185,7 @@ export class WebViewBridge {
         // Reset circuit breaker after timeout
         this.circuitBreakerOpen = false;
         this.failureCount = 0;
-        console.log('[WebView Bridge] Circuit breaker reset - attempting reconnection');
+        bridgeLogger.info('Circuit breaker reset, attempting reconnection');
       } else {
         throw new Error('WebView bridge circuit breaker is open - service temporarily unavailable');
       }
@@ -209,7 +208,7 @@ export class WebViewBridge {
         // If not connected, queue the message
         if (!this.isConnected) {
           this.queueMessage(message);
-          console.log(`[WebView Bridge] Queued message ${requestId} - bridge disconnected`);
+          bridgeLogger.debug('Message queued due to disconnected bridge', { requestId });
           return;
         }
 
@@ -245,7 +244,7 @@ export class WebViewBridge {
     const pending = this.pendingRequests.get(response.id);
     if (!pending) {
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`[WebView Bridge] Received response for unknown request: ${response.id}`);
+        bridgeLogger.warn('Received response for unknown request', { responseId: response.id });
       }
       return;
     }
@@ -508,12 +507,12 @@ export class WebViewBridge {
           // Connection lost
           this.isConnected = false;
           this.failureCount++;
-          console.warn('[WebView Bridge] Connection lost - switching to queue mode');
+          bridgeLogger.warn('Connection lost, switching to queue mode');
 
           if (this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
             this.circuitBreakerOpen = true;
             this.lastConnectionTest = Date.now();
-            console.error('[WebView Bridge] Circuit breaker opened due to repeated failures');
+            bridgeLogger.error('Circuit breaker opened due to repeated failures', { failureCount: this.failureCount });
           }
         } else if (connected && !this.isConnected) {
           // Connection restored

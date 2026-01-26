@@ -64,7 +64,7 @@ export async function bridgePerformanceTest(): Promise<{
   passed: boolean;
   recommendations: string[];
 }> {
-  console.log('🔬 Starting comprehensive bridge performance test...');
+  // Performance test started (console output removed for production)
 
   const results: BridgeTestResult[] = [];
   let comparison: BridgeComparisonResult[] | undefined;
@@ -114,7 +114,7 @@ export async function bridgePerformanceTest(): Promise<{
   const passed = evaluateResults(results);
   const recommendations = generateRecommendations(results, comparison, stress);
 
-  console.log(`🔬 Bridge performance test completed. Passed: ${passed}`);
+  // Performance test completed (console output removed for production)
 
   return {
     targets: PERFORMANCE_TARGETS,
@@ -533,7 +533,7 @@ async function performStressTesting(): Promise<BridgeStressTestResult> {
   const operations: Promise<unknown>[] = [];
   const errors: string[] = [];
 
-  console.log(`🔬 Starting stress test with ${totalOperations} operations...`);
+  // Stress test started (console output removed for production)
 
   const startTime = performance.now();
 
