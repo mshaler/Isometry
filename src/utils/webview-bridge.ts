@@ -318,9 +318,10 @@ export class WebViewBridge {
   }
 
   /**
-   * Clean up pending callbacks (useful for component unmounting)
+   * Clean up pending callbacks (useful for component unmounting) - Legacy method
+   * @deprecated Use the enhanced cleanup() method instead
    */
-  public cleanup(): void {
+  private legacyCleanup(): void {
     this.pendingRequests.forEach((callback) => {
       clearTimeout(callback.timeout);
       callback.reject(new Error('WebView bridge cleanup - request cancelled'));
