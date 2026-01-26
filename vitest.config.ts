@@ -12,9 +12,7 @@ export default defineConfig({
     testTimeout: 10000, // 10 seconds default timeout
     hookTimeout: 5000,  // 5 seconds for setup/teardown
     pool: 'threads',
-    poolOptions: {
-      singleThread: true, // Avoid race conditions in WebView bridge tests
-    },
+    singleThread: true, // Avoid race conditions in WebView bridge tests
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
