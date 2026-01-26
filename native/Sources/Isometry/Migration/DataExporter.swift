@@ -156,17 +156,17 @@ public class DataExporter {
 
         // Validate record counts
         guard export.metadata.recordCount > 0 else {
-            throw ExportError.emptyExport
+            throw DataExportError.emptyExport
         }
 
         // Validate schema presence
         guard !export.schema.isEmpty else {
-            throw ExportError.missingSchema
+            throw DataExportError.missingSchema
         }
 
         // Validate data presence
         guard !export.data.isEmpty else {
-            throw ExportError.missingData
+            throw DataExportError.missingData
         }
 
         // Additional validation logic would go here
@@ -459,7 +459,7 @@ private struct ColumnInfo {
     let primaryKey: Bool
 }
 
-public enum ExportError: LocalizedError {
+public enum DataExportError: LocalizedError {
     case emptyExport
     case missingSchema
     case missingData

@@ -328,7 +328,7 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
                 issues.append(PerformanceIssue(
                     type: .slowEvaluation,
                     flagName: flagName,
-                    description: "Flag evaluation taking \\(String(format: "%.3f", avgTime * 1000))ms on average",
+                    description: "Flag evaluation taking \(String(format: "%.3f", avgTime * 1000))ms on average",
                     severity: avgTime > 0.005 ? .high : .medium
                 ))
             }
@@ -339,7 +339,7 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
             issues.append(PerformanceIssue(
                 type: .highCpuUsage,
                 flagName: performanceMetrics.highestCpuFlag ?? "unknown",
-                description: "High CPU usage: \\(String(format: "%.1f", performanceMetrics.highestCpuImpact * 100))%",
+                description: "High CPU usage: \(String(format: "%.1f", performanceMetrics.highestCpuImpact * 100))%",
                 severity: .high
             ))
         }

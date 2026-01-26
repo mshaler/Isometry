@@ -55,7 +55,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         let startTime = CFAbsoluteTimeGetCurrent()
         defer {
             let retrievalTime = CFAbsoluteTimeGetCurrent() - startTime
-            logger.debug("Configuration retrieval for '\\(key)' took \\(String(format: "%.3f", retrievalTime * 1000))ms")
+            logger.debug("Configuration retrieval for '\(key)' took \(String(format: "%.3f", retrievalTime * 1000))ms")
         }
 
         guard let item = configurations[key] else {
