@@ -170,7 +170,7 @@ class TextureCache {
     let oldestKey: string | null = null;
     let oldestTime = Date.now();
 
-    for (const [key, texture] of this.cache) {
+    for (const [key, texture] of Array.from(this.cache)) {
       if (texture.lastUsed < oldestTime) {
         oldestTime = texture.lastUsed;
         oldestKey = key;
@@ -193,7 +193,7 @@ class TextureCache {
     let memoryEstimate = 0;
     let oldestAge = 0;
 
-    for (const texture of this.cache.values()) {
+    for (const texture of Array.from(this.cache.values())) {
       memoryEstimate += texture.width * texture.height * 4; // RGBA
       oldestAge = Math.max(oldestAge, now - texture.lastUsed);
     }
@@ -361,7 +361,7 @@ class TransitionManager {
     const now = performance.now();
     const completedTransitions: string[] = [];
 
-    for (const [id, transition] of this.activeTransitions) {
+    for (const [id, transition] of Array.from(this.activeTransitions)) {
       const elapsed = now - transition.startTime;
       const progress = Math.min(elapsed / transition.config.duration, 1);
       const easedProgress = transition.config.easing(progress);
@@ -499,7 +499,7 @@ class PerformanceMonitor {
       frameHistory: this.frameTimeHistory.length
     };
 
-    for (const [name] of this.metrics) {
+    for (const [name] of Array.from(this.metrics)) {
       stats[name] = this.getMetricStats(name);
     }
 
@@ -532,8 +532,8 @@ export const performanceMonitor = new PerformanceMonitor();
 // ============================================================================
 
 export const createPAFVTransition = (
-  fromState: unknown,
-  toState: unknown,
+  _fromState: unknown,
+  _toState: unknown,
   duration: number = 300
 ): Promise<void> => {
   return new Promise((resolve) => {
