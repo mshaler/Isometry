@@ -25,8 +25,17 @@ interface QueryOptions<T> {
 export function useSQLiteQuery<T = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
-  options: QueryOptions<T> = {}
+  fallbackDataOrOptions?: T[] | QueryOptions<T>
 ): QueryState<T> {
+  // Handle legacy API where third parameter was fallback data
+  let options: QueryOptions<T> = {};
+  let fallbackData: T[] | null = null;
+
+  if (Array.isArray(fallbackDataOrOptions)) {
+    fallbackData = fallbackDataOrOptions;
+  } else if (fallbackDataOrOptions) {
+    options = fallbackDataOrOptions;
+  }
   const { execute, loading: dbLoading, error: dbError } = useDatabase();
   const { enabled = true, transform, cacheTags } = options;
 
@@ -44,7 +53,17 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
   const paramsKey = useMemo(() => JSON.stringify(params), [params]);
 
   const fetchData = useCallback(async () => {
-    if (!enabled || dbLoading) return;
+    if (!enabled) return;
+
+    // If database is loading or not available and we have fallback data, use it
+    if (dbLoading && fallbackData) {
+      setData(fallbackData);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    if (dbLoading) return;
 
     setLoading(true);
     setError(null);
@@ -109,11 +128,17 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
       }
     } catch (err) {
       setError(err as Error);
-      setData(null);
+      // Use fallback data if available when query fails
+      if (fallbackData) {
+        setData(fallbackData);
+        setError(null); // Clear error since we have fallback data
+      } else {
+        setData(null);
+      }
     } finally {
       setLoading(false);
     }
-  }, [execute, sql, paramsKey, enabled, dbLoading]);
+  }, [execute, sql, paramsKey, enabled, dbLoading, fallbackData]);
 
   // Register for cache invalidation (empty array if no cacheTags provided)
   const finalCacheTags = useMemo(() => cacheTags || [], [cacheTags]);

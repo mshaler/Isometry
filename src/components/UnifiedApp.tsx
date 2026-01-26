@@ -5,7 +5,6 @@ import { AppStateProvider } from '../contexts/AppStateContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { PAFVProvider } from '../contexts/PAFVContext';
 import { NativeDatabaseProvider } from '../db/NativeDatabaseContext';
-import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
 
 // Import all Figma components
 import { Toolbar } from './Toolbar';
@@ -41,58 +40,56 @@ export function UnifiedApp() {
       <ThemeProvider>
         <EnvironmentProvider>
           <NativeDatabaseProvider>
-            <CacheInvalidationProvider>
-              <AppStateProvider>
+            <AppStateProvider>
               <FilterProvider>
                 <PAFVProvider>
-              <div className="h-screen flex flex-col bg-gray-50">
-                {/* Toolbar: Menu bar + command buttons */}
-                <ErrorBoundary level="component" name="Toolbar">
-                  <Toolbar />
-                </ErrorBoundary>
+                  <div className="h-screen flex flex-col bg-gray-50">
+                    {/* Toolbar: Menu bar + command buttons */}
+                    <ErrorBoundary level="component" name="Toolbar">
+                      <Toolbar />
+                    </ErrorBoundary>
 
-                {/* Navigator: App/View/Dataset selectors */}
-                <ErrorBoundary level="component" name="Navigator">
-                  <Navigator />
-                </ErrorBoundary>
+                    {/* Navigator: App/View/Dataset selectors */}
+                    <ErrorBoundary level="component" name="Navigator">
+                      <Navigator />
+                    </ErrorBoundary>
 
-                {/* PAFVNavigator: Already included in Navigator component above */}
+                    {/* PAFVNavigator: Already included in Navigator component above */}
 
-                {/* Main Content Area */}
-                <div className="flex-1 flex min-h-0">
-                  {/* Left Sidebar: LATCH filters + Templates */}
-                  <ErrorBoundary level="feature" name="Sidebar">
-                    <Sidebar />
-                  </ErrorBoundary>
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex min-h-0">
+                      {/* Left Sidebar: LATCH filters + Templates */}
+                      <ErrorBoundary level="feature" name="Sidebar">
+                        <Sidebar />
+                      </ErrorBoundary>
 
-                  {/* Central Canvas: Main data visualization */}
-                  <div className="flex-1 flex flex-col">
-                    <ErrorBoundary level="feature" name="Canvas">
-                      <Canvas />
+                      {/* Central Canvas: Main data visualization */}
+                      <div className="flex-1 flex flex-col">
+                        <ErrorBoundary level="feature" name="Canvas">
+                          <Canvas />
+                        </ErrorBoundary>
+                      </div>
+
+                      {/* Right Sidebar: Formats + Settings */}
+                      <ErrorBoundary level="feature" name="RightSidebar">
+                        <RightSidebar />
+                      </ErrorBoundary>
+                    </div>
+
+                    {/* Navigator Footer: Location map + Time slider */}
+                    <ErrorBoundary level="component" name="NavigatorFooter">
+                      <NavigatorFooter />
+                    </ErrorBoundary>
+
+                    {/* Command Bar: DSL command input */}
+                    <ErrorBoundary level="feature" name="CommandBar">
+                      <CommandBar />
                     </ErrorBoundary>
                   </div>
-
-                  {/* Right Sidebar: Formats + Settings */}
-                  <ErrorBoundary level="feature" name="RightSidebar">
-                    <RightSidebar />
-                  </ErrorBoundary>
-                </div>
-
-                {/* Navigator Footer: Location map + Time slider */}
-                <ErrorBoundary level="component" name="NavigatorFooter">
-                  <NavigatorFooter />
-                </ErrorBoundary>
-
-                {/* Command Bar: DSL command input */}
-                <ErrorBoundary level="feature" name="CommandBar">
-                  <CommandBar />
-                </ErrorBoundary>
-              </div>
-              <NotificationSystem />
+                  <NotificationSystem />
                 </PAFVProvider>
               </FilterProvider>
-              </AppStateProvider>
-            </CacheInvalidationProvider>
+            </AppStateProvider>
           </NativeDatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>

@@ -26,8 +26,23 @@ export function Sidebar() {
   const templateBuilders = ['Apps Builder', 'Views Builder', 'Buttons Builder', 'Charts Builder'];
 
   // Query table schema to discover available columns
+  // Fallback to mock data for MVP demo when database isn't available
   const { data: columns } = useSQLiteQuery<ColumnInfo>(
-    `PRAGMA table_info(cards)`
+    `PRAGMA table_info(cards)`,
+    [],
+    // Fallback data for demo
+    [
+      { name: 'id' },
+      { name: 'title' },
+      { name: 'category' },
+      { name: 'status' },
+      { name: 'priority' },
+      { name: 'folder' },
+      { name: 'sub_folder' },
+      { name: 'tags' },
+      { name: 'year' },
+      { name: 'month' }
+    ]
   );
 
   // Full LATCH filter list - always show all, dim unavailable ones
@@ -87,7 +102,14 @@ export function Sidebar() {
       ? `SELECT folder as value, COUNT(*) as count FROM cards WHERE folder IS NOT NULL AND folder != '' GROUP BY folder ORDER BY count DESC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: hasCategoryFilter }
+    // Fallback data for demo
+    [
+      { value: 'Development', count: 1 },
+      { value: 'Documentation', count: 1 },
+      { value: 'Meetings', count: 1 },
+      { value: 'Projects', count: 2 },
+      { value: 'Research', count: 1 }
+    ]
   );
 
   // Query distinct values for status facet
@@ -96,7 +118,13 @@ export function Sidebar() {
       ? `SELECT status as value, COUNT(*) as count FROM cards WHERE status IS NOT NULL AND status != '' GROUP BY status ORDER BY count DESC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: hasCategoryFilter }
+    // Fallback data for demo
+    [
+      { value: 'active', count: 2 },
+      { value: 'completed', count: 2 },
+      { value: 'draft', count: 1 },
+      { value: 'pending', count: 1 }
+    ]
   );
 
   // Query distinct values for priority facet
@@ -105,7 +133,12 @@ export function Sidebar() {
       ? `SELECT CAST(priority as TEXT) as value, COUNT(*) as count FROM cards WHERE priority IS NOT NULL GROUP BY priority ORDER BY priority ASC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: hasCategoryFilter }
+    // Fallback data for demo
+    [
+      { value: '1', count: 2 },
+      { value: '2', count: 2 },
+      { value: '3', count: 2 }
+    ]
   );
 
   // Query distinct values for tags facet
@@ -114,7 +147,13 @@ export function Sidebar() {
       ? `SELECT tags as value, COUNT(*) as count FROM cards WHERE tags IS NOT NULL AND tags != '' GROUP BY tags ORDER BY count DESC`
       : `SELECT NULL as value, 0 as count WHERE 0`,
     [],
-    { enabled: hasCategoryFilter }
+    // Fallback data for demo
+    [
+      { value: 'urgent', count: 2 },
+      { value: 'important', count: 3 },
+      { value: 'project', count: 2 },
+      { value: 'review', count: 1 }
+    ]
   );
 
   // Query date range info for time filters
@@ -128,7 +167,13 @@ export function Sidebar() {
          FROM cards`
       : `SELECT NULL as min_date, NULL as max_date, 0 as has_created, 0 as has_due WHERE 0`,
     [],
-    { enabled: hasTimeFilter }
+    // Fallback data for demo
+    [{
+      min_date: '2024-01-01',
+      max_date: '2024-12-31',
+      has_created: 6,
+      has_due: 3
+    }]
   );
 
   const handleFilterItemClick = (item: string, _isAvailable: boolean) => {
