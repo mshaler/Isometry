@@ -1,9 +1,12 @@
 /**
- * WebView Bridge for React-Native Communication
+ * WebView Bridge Communication Layer
  *
- * Detects WebView environment and provides unified interface for database operations
- * Falls back to HTTP API when running in browser environment
+ * Provides secure React-to-native communication through WebKit MessageHandler bridge.
+ * Handles request/response correlation, environment detection, and promise-based async operations.
+ * Replaces HTTP transport with direct native messaging for better security and performance.
  */
+
+import { v4 as uuidv4 } from 'uuid';
 
 export interface WebKitMessageHandlers {
   database: {
@@ -51,7 +54,12 @@ declare global {
       environment: WebViewEnvironment;
       sendMessage: (handler: string, method: string, params: any) => Promise<any>;
       handleResponse: (response: BridgeResponse) => void;
+      debug?: {
+        logMessages?: boolean;
+        showPerformance?: boolean;
+      };
     };
+    resolveWebViewRequest?: (id: string, result: unknown, error?: string) => void;
     isometryDatabase?: any;
     isometryFilesystem?: any;
   }
@@ -63,7 +71,6 @@ declare global {
  * Provides unified interface for React components to communicate with native app
  */
 export class WebViewBridge {
-  private requestId = 0;
   private pendingRequests = new Map<string, {
     resolve: (value: any) => void;
     reject: (error: Error) => void;
@@ -76,11 +83,16 @@ export class WebViewBridge {
   private readonly RETRY_DELAY = 1000; // 1 second
 
   constructor() {
+    // Set up global response handler for native to call back
+    if (typeof window !== 'undefined') {
+      window.resolveWebViewRequest = this.handleResponse.bind(this);
+    }
+
     // Set up bridge response handler if not already set
     if (this.isWebViewEnvironment() && window._isometryBridge) {
       const originalHandler = window._isometryBridge.handleResponse;
       window._isometryBridge.handleResponse = (response: WebViewResponse) => {
-        this.handleResponse(response);
+        this.handleResponseInternal(response);
         if (originalHandler) {
           originalHandler(response);
         }
@@ -89,21 +101,23 @@ export class WebViewBridge {
 
     // Set up cleanup interval for timed out requests
     setInterval(() => this.cleanupTimedOutRequests(), 30000);
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('WebViewBridge initialized, WebView available:', this.isWebViewEnvironment());
+    }
   }
 
   /**
-   * Generate unique request ID with UUID format
+   * Generate unique request ID for correlation
    */
-  private generateRequestId(): string {
-    const timestamp = Date.now().toString(36);
-    const random = Math.random().toString(36).substr(2, 9);
-    return `${timestamp}-${random}-${++this.requestId}`;
+  generateRequestId(): string {
+    return uuidv4();
   }
 
   /**
-   * Register callback for request tracking
+   * Register callback for request correlation
    */
-  private registerCallback(
+  registerCallback(
     id: string,
     resolve: (value: any) => void,
     reject: (error: Error) => void,
@@ -111,7 +125,7 @@ export class WebViewBridge {
   ): void {
     const timeoutHandle = setTimeout(() => {
       this.pendingRequests.delete(id);
-      reject(new Error(`WebView bridge request timeout after ${timeout}ms`));
+      reject(new Error(`WebView request timeout after ${timeout}ms: ${id}`));
     }, timeout);
 
     this.pendingRequests.set(id, {
@@ -120,6 +134,10 @@ export class WebViewBridge {
       timeout: timeoutHandle,
       timestamp: Date.now()
     });
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`WebViewBridge registered callback for request ${id}`);
+    }
   }
 
   /**
@@ -181,9 +199,24 @@ export class WebViewBridge {
   }
 
   /**
-   * Handle response from native bridge
+   * Handle response from native side
    */
-  private handleResponse(response: WebViewResponse): void {
+  handleResponse(id: string, result: unknown, error?: string): void {
+    const response: WebViewResponse = {
+      id,
+      result,
+      error,
+      success: !error,
+      timestamp: Date.now()
+    };
+
+    this.handleResponseInternal(response);
+  }
+
+  /**
+   * Handle response from native bridge (internal)
+   */
+  private handleResponseInternal(response: WebViewResponse): void {
     const pending = this.pendingRequests.get(response.id);
     if (!pending) {
       if (process.env.NODE_ENV === 'development') {
@@ -252,25 +285,39 @@ export class WebViewBridge {
   }
 
   /**
-   * Cleanup all pending requests
+   * Clean up pending callbacks (useful for component unmounting)
    */
   public cleanup(): void {
-    for (const request of this.pendingRequests.values()) {
-      clearTimeout(request.timeout);
-      request.reject(new Error('Bridge cleanup'));
+    for (const [, callback] of this.pendingRequests) {
+      clearTimeout(callback.timeout);
+      callback.reject(new Error('WebView bridge cleanup - request cancelled'));
     }
     this.pendingRequests.clear();
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('WebViewBridge cleaned up all pending callbacks');
+    }
   }
 
   /**
-   * Detect if running in WebView environment
+   * Check if WebView environment is available
    */
   public isWebViewEnvironment(): boolean {
-    return !!(
-      typeof window !== 'undefined' &&
-      window.webkit?.messageHandlers &&
-      window._isometryBridge
-    );
+    return typeof window !== 'undefined' &&
+           typeof window.webkit !== 'undefined' &&
+           typeof window.webkit.messageHandlers !== 'undefined';
+  }
+
+  /**
+   * Check if specific handler is available
+   */
+  public isHandlerAvailable(handler: 'database' | 'filesystem'): boolean {
+    if (!this.isWebViewEnvironment()) {
+      return false;
+    }
+
+    return typeof window.webkit!.messageHandlers[handler] !== 'undefined' &&
+           typeof window.webkit!.messageHandlers[handler]!.postMessage === 'function';
   }
 
   /**
@@ -453,15 +500,28 @@ export const Environment = {
 };
 
 /**
+ * Get or create global WebView bridge instance
+ */
+export function getWebViewBridge(): WebViewBridge {
+  if (!webViewBridge) {
+    throw new Error('WebView bridge not initialized');
+  }
+  return webViewBridge;
+}
+
+/**
  * Standalone WebView environment detection
  * @returns true if running in WebView environment
  */
 export function isWebViewEnvironment(): boolean {
-  return !!(
-    typeof window !== 'undefined' &&
-    window.webkit?.messageHandlers &&
-    (window.webkit.messageHandlers.database || window.webkit.messageHandlers.filesystem)
-  );
+  return webViewBridge.isWebViewEnvironment();
+}
+
+/**
+ * Check if specific handler is available
+ */
+export function isHandlerAvailable(handler: 'database' | 'filesystem'): boolean {
+  return webViewBridge.isHandlerAvailable(handler);
 }
 
 /**
@@ -480,6 +540,84 @@ export async function postMessage<T = any>(
 }
 
 /**
+ * Test WebView bridge connectivity
+ */
+export async function testBridge(): Promise<{
+  isWebView: boolean;
+  database: boolean;
+  filesystem: boolean;
+  healthInfo: ReturnType<WebViewBridge['getHealthStatus']>;
+}> {
+  const bridge = webViewBridge;
+  const isWebView = bridge.isWebViewEnvironment();
+
+  let databaseConnected = false;
+  let filesystemConnected = false;
+
+  if (isWebView) {
+    try {
+      await bridge.postMessage('database', 'ping', {});
+      databaseConnected = true;
+    } catch {
+      databaseConnected = false;
+    }
+
+    try {
+      await bridge.postMessage('filesystem', 'ping', {});
+      filesystemConnected = true;
+    } catch {
+      filesystemConnected = false;
+    }
+  }
+
+  return {
+    isWebView,
+    database: databaseConnected,
+    filesystem: filesystemConnected,
+    healthInfo: bridge.getHealthStatus(),
+  };
+}
+
+/**
+ * Utility for graceful environment detection with fallback
+ */
+export function detectEnvironment(): {
+  type: 'webview' | 'browser' | 'unknown';
+  capabilities: {
+    database: boolean;
+    filesystem: boolean;
+    webkit: boolean;
+  };
+  recommendedTransport: 'webview' | 'http' | 'sqljs';
+} {
+  const isWebView = isWebViewEnvironment();
+  const hasDatabase = isHandlerAvailable('database');
+  const hasFilesystem = isHandlerAvailable('filesystem');
+
+  let type: 'webview' | 'browser' | 'unknown' = 'unknown';
+  let recommendedTransport: 'webview' | 'http' | 'sqljs' = 'sqljs';
+
+  if (isWebView && hasDatabase) {
+    type = 'webview';
+    recommendedTransport = 'webview';
+  } else if (typeof window !== 'undefined' && window.location) {
+    type = 'browser';
+    // Check if HTTP API is available in browser environment
+    recommendedTransport = 'http'; // Could test availability and fall back to 'sqljs'
+  }
+
+  return {
+    type,
+    capabilities: {
+      database: hasDatabase,
+      filesystem: hasFilesystem,
+      webkit: isWebView,
+    },
+    recommendedTransport,
+  };
+}
+
+/**
  * Development utilities
  */
 export const DevTools = {
@@ -488,7 +626,6 @@ export const DevTools = {
    */
   enableLogging: (): void => {
     if (webViewBridge.isWebViewEnvironment() && window._isometryBridge) {
-      // @ts-ignore - debug property might not exist in types
       if (window._isometryBridge.debug) {
         window._isometryBridge.debug.logMessages = true;
         window._isometryBridge.debug.showPerformance = true;
@@ -501,8 +638,8 @@ export const DevTools = {
    */
   testConnection: async (): Promise<boolean> => {
     try {
-      await webViewBridge.database.execute('SELECT 1 as test');
-      return true;
+      const result = await testBridge();
+      return result.database && result.isWebView;
     } catch {
       return false;
     }
@@ -516,7 +653,8 @@ export const DevTools = {
       environment: webViewBridge.getEnvironment(),
       isWebView: webViewBridge.isWebViewEnvironment(),
       bridgeReady: !!(window._isometryBridge),
-      webkitReady: !!(window.webkit?.messageHandlers)
+      webkitReady: !!(window.webkit?.messageHandlers),
+      healthInfo: webViewBridge.getHealthStatus()
     };
   }
 };
