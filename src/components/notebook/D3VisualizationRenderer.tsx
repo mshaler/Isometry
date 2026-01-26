@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { useD3Visualization } from '../../hooks/useD3Visualization';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useD3 } from '../../hooks/useD3';
-import type { VisualizationConfig } from '../../utils/d3Parsers';
+// import type { VisualizationConfig } from '../../utils/d3Parsers';
 import type { D3ChartTheme } from '../../types/d3';
 import {
   renderBarChart,

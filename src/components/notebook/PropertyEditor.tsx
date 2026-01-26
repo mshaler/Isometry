@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import {
-  type NotebookCard,
+  // type NotebookCard,
   type PropertyDefinition,
-  type PropertyType,
+  // type PropertyType,
   BUILT_IN_PROPERTY_DEFINITIONS,
   validatePropertyValue
 } from '../../types/notebook';

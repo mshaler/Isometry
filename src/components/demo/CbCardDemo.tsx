@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cbCard } from '@/d3/components/cb-card';
