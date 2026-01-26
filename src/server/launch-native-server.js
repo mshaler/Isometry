@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+/* eslint-env node */
+/* eslint no-console: "off" */
+
 /**
  * Launch script for native API server
  *
@@ -58,6 +61,7 @@ Examples:
   NATIVE_API_PORT=9000 node launch-native-server.js
 `);
       process.exit(0);
+      break;
     default:
       console.error(`Unknown option: ${args[i]}`);
       process.exit(1);

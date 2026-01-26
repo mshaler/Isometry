@@ -40,8 +40,10 @@ export interface WebViewResponse {
   timestamp?: number;
 }
 
-// Alias for compatibility
-export interface BridgeResponse extends WebViewResponse {}
+// Alias for compatibility with existing code
+export interface BridgeResponse extends WebViewResponse {
+  // This interface extends WebViewResponse for backward compatibility
+}
 
 declare global {
   interface Window {

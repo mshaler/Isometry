@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   X, Search, Plus, Copy, Edit3, Trash2, Bookmark, BookOpen, Code2,
-  Calendar, Lightbulb, Filter, Star, Clock, Users
+  Calendar, Lightbulb, Filter, Clock, Users
 } from 'lucide-react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useTheme } from '../../contexts/ThemeContext';

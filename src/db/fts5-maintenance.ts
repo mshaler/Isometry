@@ -1,4 +1,7 @@
-import type { Database } from 'sql.js';
+// Database interface for FTS5 maintenance
+interface Database {
+  exec: (sql: string) => any[]
+}
 
 /**
  * FTS5 Index Maintenance Utilities

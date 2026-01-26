@@ -212,9 +212,9 @@ export const TRANSITION_DURATIONS = {
 } as const;
 
 export function transitionEnter<GElement extends d3.BaseType, Datum>(
-  selection: d3.Selection<GElement, Datum, any, unknown>,
+  selection: d3.Selection<GElement, Datum, d3.BaseType, unknown>,
   duration = TRANSITION_DURATIONS.slow
-): d3.Transition<GElement, Datum, any, unknown> {
+): d3.Transition<GElement, Datum, d3.BaseType, unknown> {
   return selection
     .style('opacity', 0)
     .transition()
@@ -223,9 +223,9 @@ export function transitionEnter<GElement extends d3.BaseType, Datum>(
 }
 
 export function transitionExit<GElement extends d3.BaseType, Datum>(
-  selection: d3.Selection<GElement, Datum, any, unknown>,
+  selection: d3.Selection<GElement, Datum, d3.BaseType, unknown>,
   duration = TRANSITION_DURATIONS.normal
-): d3.Transition<GElement, Datum, any, unknown> {
+): d3.Transition<GElement, Datum, d3.BaseType, unknown> {
   return selection
     .transition()
     .duration(duration)
@@ -234,9 +234,9 @@ export function transitionExit<GElement extends d3.BaseType, Datum>(
 }
 
 export function transitionUpdate<GElement extends d3.BaseType, Datum>(
-  selection: d3.Selection<GElement, Datum, any, unknown>,
+  selection: d3.Selection<GElement, Datum, d3.BaseType, unknown>,
   duration = TRANSITION_DURATIONS.normal
-): d3.Transition<GElement, Datum, any, unknown> {
+): d3.Transition<GElement, Datum, d3.BaseType, unknown> {
   return selection
     .transition()
     .duration(duration);
@@ -247,7 +247,7 @@ export function transitionUpdate<GElement extends d3.BaseType, Datum>(
 // ============================================================================
 
 export function setupHoverEffect<GElement extends d3.BaseType, Datum>(
-  selection: d3.Selection<GElement, Datum, any, unknown>,
+  selection: d3.Selection<GElement, Datum, d3.BaseType, unknown>,
   options: {
     hoverOpacity?: number;
     normalOpacity?: number;

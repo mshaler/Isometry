@@ -7,6 +7,10 @@ import UIKit
 import AppKit
 #endif
 
+#if canImport(UniformTypeIdentifiers)
+import UniformTypeIdentifiers
+#endif
+
 /// Export and share interface for notebook content
 /// Provides native platform sharing with format selection and export options
 public struct ExportShareView: View {
@@ -632,8 +636,6 @@ extension ExportFormat {
     }
 
     #if canImport(UniformTypeIdentifiers)
-    import UniformTypeIdentifiers
-
     var utType: UTType {
         switch self {
         case .pdf:

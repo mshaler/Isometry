@@ -274,6 +274,26 @@ function renderPieChart(
     .text('Total');
 }
 
+// Define proper interfaces for treemap data
+interface TreemapDataItem {
+  name: string;
+  count: number;
+  nodes: Node[];
+}
+
+interface TreemapData {
+  children?: TreemapDataItem[];
+}
+
+// Extend d3.HierarchyRectangularNode to include x0, x1, y0, y1 properties
+interface TreemapNode extends d3.HierarchyRectangularNode<TreemapData> {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+  data: TreemapDataItem;
+}
+
 function renderTreemap(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
   data: { name: string; count: number; nodes: Node[] }[],
@@ -291,14 +311,9 @@ function renderTreemap(
   const g = svg.append('g')
     .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-  // Create hierarchy
-  interface TreemapData {
-    children?: { name: string; count: number; nodes: Node[] }[];
-  }
-
   const root = d3.hierarchy<TreemapData>({ children: data })
     .sum(d => {
-      const item = d as unknown as { count?: number };
+      const item = d as unknown as TreemapDataItem;
       return item.count || 0;
     })
     .sort((a, b) => (b.value || 0) - (a.value || 0));
@@ -312,20 +327,20 @@ function renderTreemap(
 
   // Cells
   const cells = g.selectAll('g')
-    .data(root.leaves())
+    .data(root.leaves() as TreemapNode[])
     .join('g')
-    .attr('transform', d => `translate(${(d as any).x0},${(d as any).y0})`);
+    .attr('transform', d => `translate(${d.x0},${d.y0})`);
 
   const rects = cells.append('rect')
-    .attr('width', d => (d as any).x1 - (d as any).x0)
-    .attr('height', d => (d as any).y1 - (d as any).y0)
-    .attr('fill', d => colorScale((d.data as any).name))
+    .attr('width', d => d.x1 - d.x0)
+    .attr('height', d => d.y1 - d.y0)
+    .attr('fill', d => colorScale(d.data.name))
     .attr('rx', theme === 'NeXTSTEP' ? 0 : 4)
     .attr('stroke', theme === 'NeXTSTEP' ? themeValues.border.dark : '#ffffff')
     .attr('stroke-width', 1)
     .style('cursor', 'pointer')
     .on('click', (_event, d) => {
-      const nodes = (d.data as any).nodes as Node[];
+      const nodes = d.data.nodes;
       if (nodes && nodes.length > 0) {
         onNodeClick?.(nodes[0]);
       }
@@ -340,8 +355,8 @@ function renderTreemap(
     .attr('class', 'text-xs font-medium')
     .attr('fill', '#ffffff')
     .text(d => {
-      const name = (d.data as any).name;
-      const w = (d as any).x1 - (d as any).x0;
+      const name = d.data.name;
+      const w = d.x1 - d.x0;
       if (w < 40) return '';
       if (w < 80) return name.slice(0, 5) + '...';
       return name;
@@ -353,8 +368,8 @@ function renderTreemap(
     .attr('class', 'text-xs')
     .attr('fill', theme === 'NeXTSTEP' ? '#e0e0e0' : '#e5e7eb')
     .text(d => {
-      const w = (d as any).x1 - (d as any).x0;
+      const w = d.x1 - d.x0;
       if (w < 40) return '';
-      return (d.data as any).count;
+      return d.data.count;
     });
 }

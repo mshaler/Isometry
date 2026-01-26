@@ -1,5 +1,6 @@
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from '../contexts/ThemeContext';
+import { EnvironmentProvider } from '../contexts/EnvironmentContext';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { PAFVProvider } from '../contexts/PAFVContext';
@@ -34,9 +35,10 @@ export function UnifiedApp() {
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <AppStateProvider>
-          <FilterProvider>
-            <PAFVProvider>
+        <EnvironmentProvider>
+          <AppStateProvider>
+            <FilterProvider>
+              <PAFVProvider>
               <div className="h-screen flex flex-col bg-gray-50">
                 {/* Toolbar: Menu bar + command buttons */}
                 <Toolbar />
@@ -67,9 +69,10 @@ export function UnifiedApp() {
                 {/* Command Bar: DSL command input */}
                 <CommandBar />
               </div>
-            </PAFVProvider>
-          </FilterProvider>
-        </AppStateProvider>
+              </PAFVProvider>
+            </FilterProvider>
+          </AppStateProvider>
+        </EnvironmentProvider>
       </ThemeProvider>
     </BrowserRouter>
   );

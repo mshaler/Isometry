@@ -1,8 +1,8 @@
 /**
  * Final Migration Validation Test Suite
  *
- * Comprehensive validation to confirm sql.js → native migration success
- * This test suite verifies all migration objectives have been achieved
+ * Comprehensive validation to confirm native implementation state
+ * This test suite verifies the codebase has properly eliminated sql.js dependencies
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -37,10 +37,10 @@ class FinalMigrationValidator {
 
   constructor() {
     this.performanceBaseline = {
-      queryLatency: 150, // ms - sql.js baseline
-      memoryUsage: 100,  // MB - sql.js baseline
-      bundleSize: 9.13,  // MB - pre-migration size
-      startupTime: 7500  // ms - sql.js startup time
+      queryLatency: 150, // ms - baseline
+      memoryUsage: 100,  // MB - baseline
+      bundleSize: 9.13,  // MB - expected smaller size without sql.js
+      startupTime: 7500  // ms - baseline startup time
     };
 
     this.securityRequirements = {

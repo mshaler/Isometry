@@ -358,7 +358,7 @@ export class PerformanceBenchmarks {
       const absChange = Math.abs(change);
 
       let severity: RegressionDetail['severity'] = 'minor';
-      let threshold = this.regressionThresholds.minor;
+      const threshold = this.regressionThresholds.minor;
 
       // Determine if higher or lower values are better for this metric
       const lowerIsBetter = ['bridgeLatency', 'databaseLatency', 'syncLatency', 'uiLatency',

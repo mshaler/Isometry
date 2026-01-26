@@ -75,7 +75,7 @@ export function FilterPresetDropdown({
       setIsSaving(false);
       setPresetName('');
       setSaveError(null);
-    } catch (error) {
+    } catch (_error) {
       setSaveError('Failed to save preset');
     }
   };
@@ -93,7 +93,7 @@ export function FilterPresetDropdown({
       setPresetName('');
       setSaveError(null);
       setShowOverwriteConfirm(false);
-    } catch (error) {
+    } catch (_error) {
       setSaveError('Failed to save preset');
     }
   };

@@ -45,12 +45,12 @@ export class SyncManager {
   private changeHandlers = new Map<string, SyncEventHandler>();
   private conflictHandlers: ConflictHandler[] = [];
   private pendingChanges = new Map<string, DataChange>();
-  private syncQueue: DataChange[] = [];
+  private _syncQueue: DataChange[] = []; // TODO: Implement queue processing
   private offlineQueue: DataChange[] = [];
 
   // Configuration
   private readonly debounceTime = 300; // 300ms debounce for changes
-  private readonly maxRetries = 3;
+  private readonly maxRetries = 3; // Used in retry logic for failed syncs
   private readonly batchSize = 10;
 
   // State
@@ -283,10 +283,19 @@ export class SyncManager {
   private async sendChange(change: DataChange): Promise<void> {
     try {
       if (Environment.isWebView()) {
-        await webViewBridge.database[change.operation as keyof typeof webViewBridge.database](
-          change.table,
-          change.data
-        );
+        switch (change.operation) {
+          case 'create':
+            await webViewBridge.database.createNode(change.data);
+            break;
+          case 'update':
+            await webViewBridge.database.updateNode(change.data);
+            break;
+          case 'delete':
+            await webViewBridge.database.deleteNode((change.data as { id: string }).id);
+            break;
+          default:
+            console.warn(`Unknown operation: ${change.operation}`);
+        }
       }
 
       // Remove from pending
@@ -453,4 +462,4 @@ export function useSyncManager() {
 }
 
 // Re-export for convenience
-export { SyncEventHandler, ConflictHandler };
+export type { SyncEventHandler, ConflictHandler };

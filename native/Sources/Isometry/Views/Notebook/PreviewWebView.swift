@@ -217,21 +217,7 @@ private struct WebViewRepresentable: UIViewRepresentable {
 
     let configuration: PreviewConfiguration
     let securityPolicy: SecurityPolicy
-#elseif canImport(AppKit)
-private struct WebViewRepresentable: NSViewRepresentable {
-    @Binding var webView: WKWebView?
-    @Binding var isLoading: Bool
-    @Binding var loadProgress: Double
-    @Binding var canGoBack: Bool
-    @Binding var canGoForward: Bool
-    @Binding var currentURL: URL?
-    @Binding var error: PreviewError?
 
-    let configuration: PreviewConfiguration
-    let securityPolicy: SecurityPolicy
-#endif
-
-#if canImport(UIKit)
     func makeUIView(context: Context) -> WKWebView {
         let webView = createSecureWebView(context: context)
         DispatchQueue.main.async {
@@ -248,24 +234,6 @@ private struct WebViewRepresentable: NSViewRepresentable {
         canGoForward = webView.canGoForward
         currentURL = webView.url
     }
-#elseif canImport(AppKit)
-    func makeNSView(context: Context) -> WKWebView {
-        let webView = createSecureWebView(context: context)
-        DispatchQueue.main.async {
-            self.webView = webView
-        }
-        return webView
-    }
-
-    func updateNSView(_ webView: WKWebView, context: Context) {
-        // Update bindings
-        isLoading = webView.isLoading
-        loadProgress = webView.estimatedProgress
-        canGoBack = webView.canGoBack
-        canGoForward = webView.canGoForward
-        currentURL = webView.url
-    }
-#endif
 
     private func createSecureWebView(context: Context) -> WKWebView {
         let config = createSecureConfiguration()
@@ -317,6 +285,88 @@ private struct WebViewRepresentable: NSViewRepresentable {
         )
     }
 }
+
+#elseif canImport(AppKit)
+private struct WebViewRepresentable: NSViewRepresentable {
+    @Binding var webView: WKWebView?
+    @Binding var isLoading: Bool
+    @Binding var loadProgress: Double
+    @Binding var canGoBack: Bool
+    @Binding var canGoForward: Bool
+    @Binding var currentURL: URL?
+    @Binding var error: PreviewError?
+
+    let configuration: PreviewConfiguration
+    let securityPolicy: SecurityPolicy
+
+    func makeNSView(context: Context) -> WKWebView {
+        let webView = createSecureWebView(context: context)
+        DispatchQueue.main.async {
+            self.webView = webView
+        }
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        // Update bindings
+        isLoading = webView.isLoading
+        loadProgress = webView.estimatedProgress
+        canGoBack = webView.canGoBack
+        canGoForward = webView.canGoForward
+        currentURL = webView.url
+    }
+
+    private func createSecureWebView(context: Context) -> WKWebView {
+        let config = createSecureConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: config)
+
+        // Set delegates
+        webView.navigationDelegate = context.coordinator
+        webView.uiDelegate = context.coordinator
+
+        // Configure for security
+        webView.allowsBackForwardNavigationGestures = configuration.allowGestures
+        webView.allowsLinkPreview = false
+
+        return webView
+    }
+
+    private func createSecureConfiguration() -> WKWebViewConfiguration {
+        let config = WKWebViewConfiguration()
+
+        // Security policies
+        config.applicationNameForUserAgent = "IsometryApp/1.0"
+
+        // Content blocking
+        let preferences = WKWebpagePreferences()
+        preferences.allowsContentJavaScript = securityPolicy.allowsJavaScript
+        config.defaultWebpagePreferences = preferences
+
+        // Process pool isolation
+        config.processPool = WKProcessPool()
+
+        // Media policies
+        config.allowsInlineMediaPlayback = configuration.allowInlineMedia
+        config.allowsAirPlayForMediaPlayback = false
+        config.allowsPictureInPictureMediaPlayback = false
+
+        // Data store isolation
+        if securityPolicy == .restrictive {
+            config.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+        }
+
+        return config
+    }
+
+    func makeCoordinator() -> WebViewCoordinator {
+        WebViewCoordinator(
+            isLoading: $isLoading,
+            error: $error,
+            securityPolicy: securityPolicy
+        )
+    }
+}
+#endif
 
 // MARK: - WebView Coordinator
 

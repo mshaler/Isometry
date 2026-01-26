@@ -1,8 +1,25 @@
-import type { Database, QueryExecResult, Statement } from 'sql.js'
+// Removed sql.js dependency - now uses native types
+interface QueryExecResult {
+  columns: string[]
+  values: any[][]
+}
+
+interface Statement {
+  run: (params?: any[]) => { changes: number }
+  get: (params?: any[]) => any
+  all: (params?: any[]) => any[]
+}
+
+interface Database {
+  exec: (sql: string) => QueryExecResult[]
+  prepare: (sql: string) => Statement
+  save?: () => Promise<void>
+  close?: () => void
+}
 
 /**
- * Native API client that replaces sql.js with HTTP calls to IsometryAPIServer
- * Provides drop-in compatibility with existing sql.js interface
+ * Native API client for HTTP calls to IsometryAPIServer
+ * Provides standard database interface for React components
  */
 export class NativeAPIClient {
   private baseUrl: string
@@ -24,14 +41,14 @@ export class NativeAPIClient {
       this.isAvailable = response.ok
       return this.isAvailable
     } catch (error) {
-      console.log('Native API not available, falling back to sql.js')
+      console.log('Native API not available')
       this.isAvailable = false
       return false
     }
   }
 
   /**
-   * Execute SQL query - matches sql.js exec() interface
+   * Execute SQL query - returns standard query results
    */
   async executeSQL(sql: string, params: any[] = []): Promise<QueryExecResult[]> {
     if (!this.isAvailable) {
@@ -57,7 +74,7 @@ export class NativeAPIClient {
 
       const result = await response.json()
 
-      // Convert to sql.js QueryExecResult format
+      // Convert to QueryExecResult format
       return [{
         columns: result.columns || [],
         values: result.rows || []
@@ -69,9 +86,10 @@ export class NativeAPIClient {
   }
 
   /**
-   * Create sql.js compatible Database interface
+   * Create compatible Database interface
    */
   createCompatibleDatabase(): Database {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const apiClient = this
 
     return {

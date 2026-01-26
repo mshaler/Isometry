@@ -158,7 +158,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
         // Simulate async execution
         setTimeout(() => {
           let output = '';
-          let success = true;
+          const success = true;
           let error: string | undefined;
 
           // Handle specific commands

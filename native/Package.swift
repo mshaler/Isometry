@@ -55,6 +55,7 @@ let package = Package(
         .target(
             name: "IsometryAPI",
             dependencies: [
+                "Isometry",
                 "IsometryCore",
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "GRDB", package: "GRDB.swift"),

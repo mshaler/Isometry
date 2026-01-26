@@ -4,8 +4,13 @@ import { parseChartData, detectVisualizationType, extractVisualizationConfig } f
 import type { ParsedData, VisualizationConfig, VisualizationDirective } from '../utils/d3Parsers';
 import { debounce } from '../utils/debounce';
 
+// Define a proper data interface for D3 visualizations
+interface D3DataItem {
+  [key: string]: string | number | Date | boolean | null | undefined;
+}
+
 export interface D3VisualizationState {
-  data: any[];
+  data: D3DataItem[];
   vizType: VisualizationConfig['type'];
   config: VisualizationConfig;
   directive: VisualizationDirective | null;
@@ -215,7 +220,7 @@ export function useD3VisualizationWithPerformance(): UseD3VisualizationReturn & 
       ...prev,
       parseTime,
       dataPoints,
-      memoryUsage: (performance as any).memory?.usedJSHeapSize
+      memoryUsage: (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize
     }));
 
     // Warn if parsing is slow

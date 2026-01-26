@@ -222,10 +222,10 @@ describe('OfficeDocumentProcessor', () => {
 
   describe('Export Functions', () => {
     it('should export nodes to Excel format', async () => {
-      const mockNodes = [
+      const mockNodes: Node[] = [
         {
           id: '1',
-          nodeType: 'spreadsheet',
+          nodeType: 'resource',
           name: 'Test Sheet',
           content: '| Name | Value |\n| --- | --- |\n| Test | 123 |',
           summary: 'Test summary',
@@ -235,7 +235,22 @@ describe('OfficeDocumentProcessor', () => {
           tags: [],
           source: 'test',
           sourceId: 'test-1',
-          sourceUrl: null
+          sourceUrl: null,
+          // Required Node fields
+          latitude: null,
+          longitude: null,
+          locationName: null,
+          locationAddress: null,
+          dueAt: null,
+          completedAt: null,
+          eventStart: null,
+          eventEnd: null,
+          status: null,
+          priority: 0,
+          importance: 0,
+          sortOrder: 0,
+          deletedAt: null,
+          version: 1
         }
       ];
 
@@ -253,9 +268,9 @@ describe('OfficeDocumentProcessor', () => {
     });
 
     it('should export node to Word format', async () => {
-      const mockNode = {
+      const mockNode: Node = {
         id: '1',
-        nodeType: 'document',
+        nodeType: 'note',
         name: 'Test Document',
         content: '# Title\n\nThis is test content with **bold** text.',
         summary: 'Test summary',
@@ -265,7 +280,22 @@ describe('OfficeDocumentProcessor', () => {
         tags: [],
         source: 'test',
         sourceId: 'test-1',
-        sourceUrl: null
+        sourceUrl: null,
+        // Required Node fields
+        latitude: null,
+        longitude: null,
+        locationName: null,
+        locationAddress: null,
+        dueAt: null,
+        completedAt: null,
+        eventStart: null,
+        eventEnd: null,
+        status: null,
+        priority: 0,
+        importance: 0,
+        sortOrder: 0,
+        deletedAt: null,
+        version: 1
       };
 
       const result = await processor.exportToWord(mockNode);

@@ -496,7 +496,22 @@ export class SQLiteSyncManager {
       tags: ['apple-notes', 'sqlite-import'],
       source: 'apple-notes-sqlite',
       sourceId: String(id),
-      sourceUrl: null
+      sourceUrl: null,
+      // Required Node fields
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+      status: null,
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+      deletedAt: null,
+      version: 1
     };
   }
 
@@ -523,7 +538,22 @@ export class SQLiteSyncManager {
       tags: ['apple-reminders', 'sqlite-import', isCompleted ? 'completed' : 'pending'],
       source: 'apple-reminders-sqlite',
       sourceId: String(id),
-      sourceUrl: null
+      sourceUrl: null,
+      // Required Node fields
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      dueAt: dueDate ? this.convertAppleTimestamp(dueDate as number).toISOString() : null,
+      completedAt: isCompleted ? modifiedAt.toISOString() : null,
+      eventStart: null,
+      eventEnd: null,
+      status: isCompleted ? 'completed' : 'active',
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+      deletedAt: null,
+      version: 1
     };
   }
 
@@ -562,7 +592,7 @@ export class SQLiteSyncManager {
 
     return {
       id: crypto.randomUUID(),
-      nodeType: 'person',
+      nodeType: 'contact',
       name: displayName,
       content,
       summary: organization as string || 'Contact',
@@ -583,7 +613,7 @@ export class SQLiteSyncManager {
 
     return {
       id: crypto.randomUUID(),
-      nodeType: 'bookmark',
+      nodeType: 'resource',
       name: title as string || 'Untitled Bookmark',
       content,
       summary: url as string || 'No URL',
@@ -606,7 +636,7 @@ export class SQLiteSyncManager {
 
     return {
       id: crypto.randomUUID(),
-      nodeType: 'article',
+      nodeType: 'resource',
       name: title as string || 'Untitled Article',
       content,
       summary: previewText ? String(previewText).substring(0, 100) : 'Reading list item',
@@ -641,7 +671,7 @@ export class SQLiteSyncManager {
 
     return {
       id: crypto.randomUUID(),
-      nodeType: 'database-table',
+      nodeType: 'resource',
       name: `${tableName} (${filename})`,
       content,
       summary: `Table with ${columns.length} columns and ${rows.length} rows`,
@@ -651,7 +681,22 @@ export class SQLiteSyncManager {
       tags: ['sqlite-import', 'generic-data'],
       source: 'generic-sqlite',
       sourceId: tableName,
-      sourceUrl: null
+      sourceUrl: null,
+      // Required Node fields
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+      status: null,
+      priority: 0,
+      importance: 0,
+      sortOrder: 0,
+      deletedAt: null,
+      version: 1
     };
   }
 

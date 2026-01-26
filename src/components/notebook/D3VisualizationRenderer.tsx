@@ -23,6 +23,24 @@ interface ThemeColors {
   grid: string;
 }
 
+// Define proper data types for D3 visualizations
+interface ChartData {
+  [key: string]: number | string | Date;
+}
+
+interface NetworkData {
+  source: string;
+  target: string;
+  [key: string]: number | string | Date;
+}
+
+interface HierarchyData extends ChartData {
+  children?: HierarchyData[];
+}
+
+// Tooltip selection type
+type TooltipSelection = d3.Selection<HTMLDivElement, unknown, null, undefined>;
+
 export function D3VisualizationRenderer({
   content,
   width = 600,
@@ -193,7 +211,7 @@ export function D3VisualizationRenderer({
 
 function renderBarChart(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -261,8 +279,8 @@ function renderBarChart(
     })
     .on('mouseout', function() {
       d3.select(this).style('fill', colors.primary);
-      const tooltip = d3.select(this).datum() as d3.Selection<HTMLDivElement, unknown, null, undefined>;
-      if (tooltip && (tooltip as any).remove) {
+      const tooltip = d3.select(this).datum() as TooltipSelection;
+      if (tooltip && typeof (tooltip as TooltipSelection).remove === 'function') {
         tooltip.transition()
           .duration(200)
           .style('opacity', 0)
@@ -273,7 +291,7 @@ function renderBarChart(
 
 function renderLineChart(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -307,15 +325,17 @@ function renderLineChart(
     .range([innerHeight, 0]);
 
   // Line generator
-  const line = d3.line<any>()
-    .x(d => x(d[xField]) as number)
-    .y(d => y(d[yField]) as number)
+  const line = d3.line<ChartData>()
+    .x(d => x(d[xField] as number | Date) as number)
+    .y(d => y(d[yField] as number) as number)
     .curve(d3.curveMonotoneX);
 
   // Axes
   g.append('g')
     .attr('transform', `translate(0,${innerHeight})`)
-    .call(config.encoding.xType === 'temporal' ? d3.axisBottom(x as d3.ScaleTime<number, number>).tickFormat(d3.timeFormat('%m/%d') as any) : d3.axisBottom(x as d3.ScaleLinear<number, number>))
+    .call(config.encoding.xType === 'temporal'
+      ? d3.axisBottom(x as d3.ScaleTime<number, number>).tickFormat(d3.timeFormat('%m/%d') as (domainValue: Date | { valueOf(): number }) => string)
+      : d3.axisBottom(x as d3.ScaleLinear<number, number>))
     .style('color', colors.text);
 
   g.append('g')
@@ -345,7 +365,7 @@ function renderLineChart(
 
 function renderScatterPlot(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -396,7 +416,7 @@ function renderScatterPlot(
 
 function renderHistogram(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -451,7 +471,7 @@ function renderHistogram(
 
 function renderPieChart(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -466,11 +486,11 @@ function renderPieChart(
   // Center the pie chart
   g.attr('transform', `translate(${innerWidth / 2}, ${innerHeight / 2})`);
 
-  const pie = d3.pie<any>()
-    .value(d => d[valueField])
+  const pie = d3.pie<ChartData>()
+    .value(d => d[valueField] as number)
     .sort(null);
 
-  const arc = d3.arc<any>()
+  const arc = d3.arc<d3.PieArcDatum<ChartData>>()
     .innerRadius(0)
     .outerRadius(radius);
 
@@ -500,7 +520,7 @@ function renderPieChart(
 
 function renderAreaChart(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: ChartData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -521,10 +541,10 @@ function renderAreaChart(
     .domain([0, d3.max(sortedData, d => d[yField]) || 0])
     .range([innerHeight, 0]);
 
-  const area = d3.area<any>()
-    .x(d => x(d[xField]))
+  const area = d3.area<ChartData>()
+    .x(d => x(d[xField] as number))
     .y0(innerHeight)
-    .y1(d => y(d[yField]))
+    .y1(d => y(d[yField] as number))
     .curve(d3.curveMonotoneX);
 
   // Axes
@@ -549,7 +569,7 @@ function renderAreaChart(
 
 function renderNetworkGraph(
   g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: any[],
+  data: NetworkData[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: ThemeColors
@@ -565,14 +585,23 @@ function renderNetworkGraph(
     nodeIds.add(d[targetField]);
   });
 
-  const nodes = Array.from(nodeIds).map(id => ({ id, x: 0, y: 0 }));
-  const links = data.map(d => ({
-    source: d[sourceField],
-    target: d[targetField]
+  interface SimulationNode extends d3.SimulationNodeDatum {
+    id: string;
+  }
+
+  interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
+    source: string | SimulationNode;
+    target: string | SimulationNode;
+  }
+
+  const nodes: SimulationNode[] = Array.from(nodeIds).map(id => ({ id, x: 0, y: 0 }));
+  const links: SimulationLink[] = data.map(d => ({
+    source: d[sourceField] as string,
+    target: d[targetField] as string
   }));
 
   const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id((d: any) => d.id))
+    .force('link', d3.forceLink<SimulationNode, SimulationLink>(links).id((d: SimulationNode) => d.id))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(innerWidth / 2, innerHeight / 2));
 
@@ -597,14 +626,14 @@ function renderNetworkGraph(
   // Update positions
   simulation.on('tick', () => {
     link
-      .attr('x1', (d: any) => d.source.x)
-      .attr('y1', (d: any) => d.source.y)
-      .attr('x2', (d: any) => d.target.x)
-      .attr('y2', (d: any) => d.target.y);
+      .attr('x1', (d: SimulationLink) => (d.source as SimulationNode).x || 0)
+      .attr('y1', (d: SimulationLink) => (d.source as SimulationNode).y || 0)
+      .attr('x2', (d: SimulationLink) => (d.target as SimulationNode).x || 0)
+      .attr('y2', (d: SimulationLink) => (d.target as SimulationNode).y || 0);
 
     node
-      .attr('cx', (d: any) => d.x)
-      .attr('cy', (d: any) => d.y);
+      .attr('cx', (d: SimulationNode) => d.x || 0)
+      .attr('cy', (d: SimulationNode) => d.y || 0);
   });
 
   // Stop simulation after a while to save CPU

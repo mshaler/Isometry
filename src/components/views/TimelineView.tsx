@@ -69,7 +69,7 @@ export function TimelineView({ data, dateField = 'createdAt', onNodeClick }: Tim
       .scaleExtent([0.5, 10])
       .on('zoom', (event) => {
         const newXScale = event.transform.rescaleX(xScale);
-        xAxisG.call(d3.axisBottom(newXScale).tickFormat(d3.timeFormat('%b %d') as any));
+        xAxisG.call(d3.axisBottom(newXScale).tickFormat(d3.timeFormat('%b %d') as (domainValue: Date | { valueOf(): number }) => string));
 
         cards.attr('transform', d => {
           const x = newXScale(d.date!);
@@ -89,7 +89,7 @@ export function TimelineView({ data, dateField = 'createdAt', onNodeClick }: Tim
     const xAxisG = g.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%b %d') as any));
+      .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%b %d') as (domainValue: Date | { valueOf(): number }) => string));
 
     xAxisG.selectAll('text')
       .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280');

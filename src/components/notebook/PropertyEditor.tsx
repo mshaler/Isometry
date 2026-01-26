@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Plus, X, Check, AlertCircle, Calendar, Hash, Tag, Link2, Type, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useNotebook } from '../../contexts/NotebookContext';
-import { useTheme } from '../../contexts/ThemeContext';
 import {
   type NotebookCard,
   type PropertyDefinition,
@@ -153,7 +152,7 @@ function PropertyField({
           </select>
         );
 
-      case 'tag':
+      case 'tag': {
         const tags = (localValue as string[]) || [];
         return (
           <div className="space-y-2">
@@ -193,8 +192,9 @@ function PropertyField({
             />
           </div>
         );
+      }
 
-      case 'reference':
+      case 'reference': {
         const refs = (localValue as string[]) || [];
         return (
           <div className="space-y-2">
@@ -235,6 +235,7 @@ function PropertyField({
             />
           </div>
         );
+      }
 
       default:
         return (

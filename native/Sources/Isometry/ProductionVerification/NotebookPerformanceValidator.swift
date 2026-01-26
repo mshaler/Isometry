@@ -18,13 +18,13 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
     public func validateNotebookPerformance() async -> NotebookPerformanceResult {
         let metrics = performanceMonitor.notebookMetrics
 
-        var issues: [PerformanceIssue] = []
+        var issues: [NotebookNotebookPerformanceIssue] = []
 
         // Validate render performance (60fps target)
         if metrics.averageRenderTime > PerformanceMonitor.targetFrameTime {
-            let severity: PerformanceIssue.Severity = metrics.averageRenderTime > (PerformanceMonitor.targetFrameTime * 1.5) ? .error : .warning
+            let severity: NotebookNotebookPerformanceIssue.Severity = metrics.averageRenderTime > (PerformanceMonitor.targetFrameTime * 1.5) ? .error : .warning
 
-            issues.append(PerformanceIssue(
+            issues.append(NotebookNotebookPerformanceIssue(
                 severity: severity,
                 category: "Render Performance",
                 description: "Average notebook render time exceeds 16.67ms target",
@@ -36,9 +36,9 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 
         // Validate query performance
         if metrics.averageQueryTime > PerformanceMonitor.maxQueryTime {
-            let severity: PerformanceIssue.Severity = metrics.averageQueryTime > (PerformanceMonitor.maxQueryTime * 2) ? .error : .warning
+            let severity: NotebookPerformanceIssue.Severity = metrics.averageQueryTime > (PerformanceMonitor.maxQueryTime * 2) ? .error : .warning
 
-            issues.append(PerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: severity,
                 category: "Database Performance",
                 description: "Notebook card queries are slower than recommended",
@@ -50,7 +50,7 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 
         // Validate worst-case render performance
         if metrics.maxRenderTime > (PerformanceMonitor.targetFrameTime * 2) {
-            issues.append(PerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: .warning,
                 category: "Peak Render Performance",
                 description: "Maximum notebook render time indicates potential frame drops",
@@ -62,7 +62,7 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 
         // Validate sample count (need sufficient data)
         if metrics.renderSampleCount < 10 {
-            issues.append(PerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: .info,
                 category: "Test Coverage",
                 description: "Insufficient notebook render samples for reliable metrics",
@@ -74,7 +74,7 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 
         // Validate query sample count
         if metrics.querySampleCount < 5 && metrics.renderSampleCount > 0 {
-            issues.append(PerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: .info,
                 category: "Test Coverage",
                 description: "Few notebook card query samples recorded",
@@ -86,7 +86,7 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 
         // Check for concerning performance patterns
         if metrics.estimatedFPS < 45 && metrics.renderSampleCount > 5 {
-            issues.append(PerformanceIssue(
+            issues.append(NotebookPerformanceIssue(
                 severity: .error,
                 category: "User Experience",
                 description: "Estimated FPS indicates poor performance",
@@ -156,7 +156,7 @@ public final class NotebookPerformanceValidator: @unchecked Sendable {
 public struct NotebookPerformanceResult {
     public let isValid: Bool
     public let metrics: NotebookPerformanceMetrics
-    public let issues: [PerformanceIssue]
+    public let issues: [NotebookPerformanceIssue]
     public let testDate: Date
 
     public var hasErrors: Bool { issues.contains { $0.severity == .error } }
@@ -165,7 +165,7 @@ public struct NotebookPerformanceResult {
     public var warningCount: Int { issues.filter { $0.severity == .warning }.count }
 }
 
-public struct PerformanceIssue {
+public struct NotebookNotebookPerformanceIssue {
     public let severity: Severity
     public let category: String
     public let description: String

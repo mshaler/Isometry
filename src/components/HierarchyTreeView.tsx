@@ -104,7 +104,7 @@ export function HierarchyTreeView({
     }
 
     // Get nodes matching search
-    let matchingNodes = searchTerm
+    const matchingNodes = searchTerm
       ? new Set(searchNodes(tree, searchTerm).map(n => n.id))
       : new Set(tree.nodeMap.keys());
 
@@ -137,7 +137,7 @@ export function HierarchyTreeView({
 
     // Expand all ancestor paths to matching nodes
     matching.forEach(node => {
-      let current = node;
+      const current = node;
       while (current) {
         expanded.add(current.id);
         // Find parent (would need to store parent refs or traverse from roots)

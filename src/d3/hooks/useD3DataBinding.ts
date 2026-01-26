@@ -21,13 +21,13 @@ export interface DataBindingOptions<TElement extends d3.BaseType, TDatum> {
   /** Enter selection handler */
   onEnter?: (
     enter: d3.Selection<d3.EnterElement, TDatum, TElement, unknown>
-  ) => d3.Selection<any, TDatum, TElement, unknown>;
+  ) => d3.Selection<TElement, TDatum, TElement, unknown>;
   /** Update selection handler */
   onUpdate?: (
-    update: d3.Selection<any, TDatum, TElement, unknown>
-  ) => d3.Selection<any, TDatum, TElement, unknown>;
+    update: d3.Selection<TElement, TDatum, TElement, unknown>
+  ) => d3.Selection<TElement, TDatum, TElement, unknown>;
   /** Exit selection handler */
-  onExit?: (exit: d3.Selection<any, TDatum, TElement, unknown>) => void;
+  onExit?: (exit: d3.Selection<TElement, TDatum, TElement, unknown>) => void;
   /** Transition duration for enter */
   enterDuration?: number;
   /** Transition duration for update */
@@ -36,16 +36,16 @@ export interface DataBindingOptions<TElement extends d3.BaseType, TDatum> {
   exitDuration?: number;
 }
 
-export interface DataBindingResult<TDatum> {
+export interface DataBindingResult<TElement extends d3.BaseType, TDatum> {
   /** Bind data to the container */
   bind: (
-    container: d3.Selection<any, unknown, null, undefined>,
+    container: d3.Selection<d3.BaseType, unknown, null, undefined>,
     data: TDatum[]
-  ) => d3.Selection<any, TDatum, any, unknown>;
+  ) => d3.Selection<TElement, TDatum, d3.BaseType, unknown>;
   /** Get the current selection */
-  getSelection: () => d3.Selection<any, TDatum, any, unknown> | null;
+  getSelection: () => d3.Selection<TElement, TDatum, d3.BaseType, unknown> | null;
   /** Clear all bound elements */
-  clear: (container: d3.Selection<any, unknown, null, undefined>) => void;
+  clear: (container: d3.Selection<d3.BaseType, unknown, null, undefined>) => void;
 }
 
 // ============================================
@@ -54,7 +54,7 @@ export interface DataBindingResult<TDatum> {
 
 export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
   options: DataBindingOptions<TElement, TDatum>
-): DataBindingResult<TDatum> {
+): DataBindingResult<TElement, TDatum> {
   const {
     className,
     key = (_d, i) => String(i),
@@ -66,21 +66,21 @@ export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
     exitDuration = TRANSITION_DURATIONS.normal,
   } = options;
 
-  const selectionRef = useRef<d3.Selection<any, TDatum, any, unknown> | null>(null);
+  const selectionRef = useRef<d3.Selection<TElement, TDatum, d3.BaseType, unknown> | null>(null);
 
   const bind = useCallback(
     (
-      container: d3.Selection<any, unknown, null, undefined>,
+      container: d3.Selection<d3.BaseType, unknown, null, undefined>,
       data: TDatum[]
-    ): d3.Selection<any, TDatum, any, unknown> => {
+    ): d3.Selection<TElement, TDatum, d3.BaseType, unknown> => {
       const selection = container
         .selectAll<TElement, TDatum>(`.${className}`)
-        .data(data, key as any)
+        .data(data, key as (datum: TDatum, index: number, groups: ArrayLike<TElement>) => string)
         .join(
           (enter) => {
             const entered = onEnter
-              ? onEnter(enter as any)
-              : enter.append('g').attr('class', className);
+              ? onEnter(enter)
+              : (enter.append('g').attr('class', className) as d3.Selection<TElement, TDatum, TElement, unknown>);
 
             // Apply enter transition
             entered.style('opacity', 0).transition().duration(enterDuration).style('opacity', 1);
@@ -112,7 +112,7 @@ export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
   const getSelection = useCallback(() => selectionRef.current, []);
 
   const clear = useCallback(
-    (container: d3.Selection<any, unknown, null, undefined>) => {
+    (container: d3.Selection<d3.BaseType, unknown, null, undefined>) => {
       container.selectAll(`.${className}`).remove();
       selectionRef.current = null;
     },
@@ -130,7 +130,7 @@ export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
  * Standard enter handler for group elements with fade-in.
  */
 export function defaultGroupEnter<TDatum>(className: string) {
-  return (enter: d3.Selection<d3.EnterElement, TDatum, any, unknown>) =>
+  return (enter: d3.Selection<d3.EnterElement, TDatum, d3.BaseType, unknown>) =>
     enter.append('g').attr('class', className);
 }
 
@@ -138,7 +138,7 @@ export function defaultGroupEnter<TDatum>(className: string) {
  * Standard enter handler for rect elements.
  */
 export function defaultRectEnter<TDatum>(className: string) {
-  return (enter: d3.Selection<d3.EnterElement, TDatum, any, unknown>) =>
+  return (enter: d3.Selection<d3.EnterElement, TDatum, d3.BaseType, unknown>) =>
     enter.append('rect').attr('class', className);
 }
 
@@ -146,7 +146,7 @@ export function defaultRectEnter<TDatum>(className: string) {
  * Standard enter handler for circle elements.
  */
 export function defaultCircleEnter<TDatum>(className: string) {
-  return (enter: d3.Selection<d3.EnterElement, TDatum, any, unknown>) =>
+  return (enter: d3.Selection<d3.EnterElement, TDatum, d3.BaseType, unknown>) =>
     enter.append('circle').attr('class', className);
 }
 
@@ -154,7 +154,7 @@ export function defaultCircleEnter<TDatum>(className: string) {
  * Standard enter handler for text elements.
  */
 export function defaultTextEnter<TDatum>(className: string) {
-  return (enter: d3.Selection<d3.EnterElement, TDatum, any, unknown>) =>
+  return (enter: d3.Selection<d3.EnterElement, TDatum, d3.BaseType, unknown>) =>
     enter.append('text').attr('class', className);
 }
 

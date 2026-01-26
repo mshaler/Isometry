@@ -383,7 +383,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         }
 
         return try await database.read { db in
-            let sql = \"\"\"
+            let sql = """
                 SELECT *,
                        snippet(nodes_fts, 1, '<mark>', '</mark>', '...', 32) as snippet,
                        rank
@@ -391,7 +391,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 WHERE nodes_fts MATCH ?
                 ORDER BY rank
                 LIMIT ?
-            \"\"\"
+            """
 
             var results: [[String: Any]] = []
             let rows = try db.makeSelectStatement(sql: sql)
@@ -430,7 +430,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
             if let nodeId = nodeId {
                 // Recursive graph traversal for specific node
-                sql = \"\"\"
+                sql = """
                     WITH RECURSIVE graph_traversal(id, level) AS (
                         SELECT ? as id, 0 as level
                         UNION ALL
@@ -444,16 +444,16 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                     JOIN graph_traversal gt ON n.id = gt.id
                     WHERE n.deleted_at IS NULL
                     ORDER BY gt.level, n.modified_at DESC
-                \"\"\"
+                """
                 arguments = [nodeId, depth]
             } else {
                 // Get all nodes for general graph view
-                sql = \"\"\"
+                sql = """
                     SELECT * FROM nodes
                     WHERE deleted_at IS NULL
                     ORDER BY modified_at DESC
                     LIMIT 100
-                \"\"\"
+                """
                 arguments = []
             }
 
@@ -591,14 +591,14 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 throw DatabaseError.encodingFailed("Failed to encode response")
             }
 
-            let script = "window.resolveWebViewRequest('\\(id)', \\(result != nil ? "\\(responseString)" : "null"), \\(error != nil ? "\"\\(error!)\"" : "null"))"
+            let script = "window.resolveWebViewRequest('\(id)', \(result != nil ? "\(responseString)" : "null"), \(error != nil ? "\"\(error!)\"" : "null"))"
 
             await webView.evaluateJavaScript(script)
 
         } catch {
-            print("[DatabaseMessageHandler] Failed to send response: \\(error)")
+            print("[DatabaseMessageHandler] Failed to send response: \(error)")
             // Attempt fallback response
-            let fallbackScript = "window.resolveWebViewRequest('\\(id)', null, 'Failed to serialize response')"
+            let fallbackScript = "window.resolveWebViewRequest('\(id)', null, 'Failed to serialize response')"
             await webView.evaluateJavaScript(fallbackScript)
         }
     }
@@ -614,7 +614,7 @@ private class MessageHandlerPerformanceMonitor {
     private var operations: [String: (startTime: CFAbsoluteTime, method: String)] = [:]
 
     func startOperation(method: String, requestId: String) async -> String {
-        let operationId = "\\(requestId)-\\(method)"
+        let operationId = "\(requestId)-\(method)"
         operations[operationId] = (CFAbsoluteTimeGetCurrent(), method)
         return operationId
     }
@@ -623,7 +623,7 @@ private class MessageHandlerPerformanceMonitor {
         operations.removeValue(forKey: operationId)
 
         #if DEBUG
-        print("[Performance] \\(operationId): \\(success ? "SUCCESS" : "FAILED") in \\(String(format: "%.2f", duration * 1000))ms")
+        print("[Performance] \(operationId): \(success ? "SUCCESS" : "FAILED") in \(String(format: "%.2f", duration * 1000))ms")
         #endif
     }
 }

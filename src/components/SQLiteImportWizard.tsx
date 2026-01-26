@@ -78,7 +78,7 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
   const processFiles = useCallback(async () => {
     const syncManager = new SQLiteSyncManager(syncOptions);
     const allNodes: Node[] = [];
-    let totalResult: SQLiteSyncResult = {
+    const totalResult: SQLiteSyncResult = {
       imported: 0,
       failed: 0,
       errors: [],

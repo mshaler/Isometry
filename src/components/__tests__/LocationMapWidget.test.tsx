@@ -96,7 +96,7 @@ describe('LocationMapWidget', () => {
   });
 
   it('updates radius when slider changes', async () => {
-    const { rerender } = render(<LocationMapWidget {...defaultProps} />);
+    const { rerender: _rerender } = render(<LocationMapWidget {...defaultProps} />);
 
     const slider = screen.getByRole('slider');
 
@@ -149,7 +149,7 @@ describe('LocationMapWidget', () => {
   });
 
   it('shows denied state after geolocation failure', async () => {
-    mockGeolocation.getCurrentPosition.mockImplementation((success, error) => {
+    mockGeolocation.getCurrentPosition.mockImplementation((_success, error) => {
       error(new Error('User denied geolocation'));
     });
 
@@ -195,10 +195,10 @@ describe('LocationMapWidget', () => {
   });
 
   it('updates center when props change', () => {
-    const { rerender } = render(<LocationMapWidget {...defaultProps} />);
+    const { rerender: _rerender } = render(<LocationMapWidget {...defaultProps} />);
 
     const newCenter = { lat: 40.7128, lng: -74.006 };
-    rerender(
+    _rerender(
       <LocationMapWidget
         {...defaultProps}
         center={newCenter}

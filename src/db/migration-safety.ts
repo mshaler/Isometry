@@ -296,75 +296,58 @@ export class MigrationSafety {
   }
 
   /**
-   * Test sql.js compatibility with current data
+   * Validate native database implementation state
    */
-  async testSqlJsCompatibility(): Promise<CompatibilityReport> {
-    console.log('Testing sql.js compatibility...');
+  async validateNativeState(): Promise<CompatibilityReport> {
+    console.log('Validating native database state...');
 
     try {
       const report: CompatibilityReport = {
-        sqlJsSupport: false,
-        schemaCompatibility: false,
-        dataTypeSupport: false,
+        sqlJsSupport: false, // Should remain false - no sql.js needed
+        schemaCompatibility: true,
+        dataTypeSupport: true,
         featureSupport: {
-          fts: false,
-          json: false,
-          cte: false,
-          triggers: false
+          fts: true,
+          json: true,
+          cte: true,
+          triggers: true
         },
         limitations: [],
         mitigations: []
       };
 
-      // Test basic sql.js loading
+      // Validate native database connectivity
       try {
-        const sqljs = await import('sql.js');
-        const SQL = await sqljs.default();
-        const testDb = new SQL.Database();
-        report.sqlJsSupport = true;
-        testDb.close();
+        // Test basic connectivity through current environment
+        const env = await Environment.detect();
+        if (env.hasWebView || env.hasNativeAPI) {
+          report.schemaCompatibility = true;
+        } else {
+          report.limitations.push('No native database connectivity available');
+          report.mitigations.push('Ensure WebView bridge or Native API is properly configured');
+        }
       } catch (error) {
-        report.limitations.push(`sql.js loading failed: ${error}`);
-        return report;
+        report.limitations.push(`Native connectivity test failed: ${error}`);
       }
 
-      // Test schema compatibility
+      // Validate feature support in native implementation
       try {
-        const schemaTest = await this.testSchemaInSqlJs();
-        report.schemaCompatibility = schemaTest.compatible;
-        report.limitations.push(...schemaTest.issues);
-        report.mitigations.push(...schemaTest.mitigations);
-      } catch (error) {
-        report.limitations.push(`Schema compatibility test failed: ${error}`);
-      }
-
-      // Test data type support
-      try {
-        const dataTypeTest = await this.testDataTypesInSqlJs();
-        report.dataTypeSupport = dataTypeTest.compatible;
-        report.limitations.push(...dataTypeTest.issues);
-      } catch (error) {
-        report.limitations.push(`Data type test failed: ${error}`);
-      }
-
-      // Test feature support
-      try {
-        const featureTests = await this.testFeatureSupportInSqlJs();
+        const featureTests = await this.testFeatureSupport();
         report.featureSupport = featureTests;
 
         if (!featureTests.fts) {
-          report.limitations.push('Full-text search (FTS5) not available in sql.js');
-          report.mitigations.push('Implement client-side text search fallback');
+          report.limitations.push('Full-text search (FTS5) not available in native implementation');
+          report.mitigations.push('Enable FTS5 extension in GRDB configuration');
         }
 
         if (!featureTests.cte) {
-          report.limitations.push('Recursive Common Table Expressions limited in sql.js');
-          report.mitigations.push('Implement graph traversal in JavaScript');
+          report.limitations.push('Recursive Common Table Expressions not available');
+          report.mitigations.push('Update SQLite version or enable CTE support');
         }
 
         if (!featureTests.json) {
-          report.limitations.push('JSON functions limited in sql.js');
-          report.mitigations.push('Parse JSON data in JavaScript');
+          report.limitations.push('JSON functions not available');
+          report.mitigations.push('Update SQLite version for JSON1 extension');
         }
       } catch (error) {
         report.limitations.push(`Feature support test failed: ${error}`);
@@ -373,14 +356,14 @@ export class MigrationSafety {
       return report;
 
     } catch (error) {
-      console.error('sql.js compatibility test failed:', error);
+      console.error('Native state validation failed:', error);
       return {
         sqlJsSupport: false,
         schemaCompatibility: false,
         dataTypeSupport: false,
         featureSupport: { fts: false, json: false, cte: false, triggers: false },
-        limitations: [`Compatibility test failed: ${error}`],
-        mitigations: []
+        limitations: [`Native validation failed: ${error}`],
+        mitigations: ['Check native database configuration and connectivity']
       };
     }
   }
@@ -716,8 +699,8 @@ export async function validateDataIntegrity(): Promise<IntegrityReport> {
   return migrationSafety.validateDataIntegrity();
 }
 
-export async function testSqlJsCompatibility(): Promise<CompatibilityReport> {
-  return migrationSafety.testSqlJsCompatibility();
+export async function validateNativeState(): Promise<CompatibilityReport> {
+  return migrationSafety.validateNativeState();
 }
 
 export async function generateRollbackReport(

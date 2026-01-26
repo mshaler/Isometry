@@ -219,7 +219,7 @@ export function useSlashCommands() {
         case 'Tab':
           event.preventDefault();
           return executeCommand();
-        case 'Backspace':
+        case 'Backspace': {
           // If we delete the last character and it was the '/', close menu
           const beforeCursor = currentContent.substring(0, cursorPosition - 1);
           const afterSlash = beforeCursor.split('/').pop() || '';
@@ -227,6 +227,7 @@ export function useSlashCommands() {
             closeMenu();
           }
           return false; // Let normal backspace happen
+        }
         default:
           // Continue typing to update query
           return false;

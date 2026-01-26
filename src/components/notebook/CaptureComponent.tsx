@@ -36,8 +36,8 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     handleKeyDown,
     handleTextInput,
     executeCommand,
-    navigateMenu,
-    closeMenu
+    navigateMenu: _navigateMenu,
+    closeMenu: _closeMenu
   } = useSlashCommands();
 
   const handleManualSave = useCallback(async () => {
@@ -122,7 +122,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   };
 
   // Handle property updates from PropertyEditor
-  const handlePropertyUpdate = useCallback((properties: Record<string, unknown>) => {
+  const handlePropertyUpdate = useCallback((_properties: Record<string, unknown>) => {
     setPropertyUpdateCount(prev => prev + 1);
     // PropertyEditor handles the actual database update
   }, []);

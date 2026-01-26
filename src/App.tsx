@@ -9,6 +9,7 @@ import { CardOverlayProvider } from './state/CardOverlayContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { TagColorProvider } from './state/TagColorContext';
 import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
+import { EnvironmentProvider } from './contexts/EnvironmentContext';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { CardOverlay } from './components/CardOverlay';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
@@ -162,9 +163,9 @@ function AppContent() {
 }
 
 function App() {
-  // GSD: Enable full app to test unified interface integration
-  // Switches between MVP demo and full integrated UI
-  return <FullApp />;
+  // GSD: Use working MVP demo with UnifiedApp accessible via "Unified" button
+  // This provides clean testing environment without complex context dependencies
+  return <MVPDemo />;
 }
 
 // Original complex App - disabled for MVP
@@ -173,23 +174,25 @@ function FullApp() {
     <ErrorBoundary>
       <BrowserRouter>
         <ThemeProvider>
-          {/* DatabaseProvider TEMPORARILY DISABLED FOR MVP - using mock data instead */}
-          <NotebookProvider>
-            <AppStateProvider>
-              <FilterProvider>
-                <PAFVProvider>
-                  <SelectionProvider>
-                    <CardOverlayProvider>
-                      <TagColorProvider>
-                        <AppContent />
-                        <CardOverlay />
-                      </TagColorProvider>
-                    </CardOverlayProvider>
-                  </SelectionProvider>
-                </PAFVProvider>
-              </FilterProvider>
-            </AppStateProvider>
-          </NotebookProvider>
+          <EnvironmentProvider>
+            {/* DatabaseProvider TEMPORARILY DISABLED FOR MVP - using mock data instead */}
+            <NotebookProvider>
+              <AppStateProvider>
+                <FilterProvider>
+                  <PAFVProvider>
+                    <SelectionProvider>
+                      <CardOverlayProvider>
+                        <TagColorProvider>
+                          <AppContent />
+                          <CardOverlay />
+                        </TagColorProvider>
+                      </CardOverlayProvider>
+                    </SelectionProvider>
+                  </PAFVProvider>
+                </FilterProvider>
+              </AppStateProvider>
+            </NotebookProvider>
+          </EnvironmentProvider>
         </ThemeProvider>
       </BrowserRouter>
     </ErrorBoundary>
