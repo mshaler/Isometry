@@ -212,11 +212,11 @@ function renderPieChart(
     .value(d => d.count)
     .sort(null);
 
-  const arc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<any, d3.PieArcDatum<PieData>>()
+  const arc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 0.4)
     .outerRadius(radius);
 
-  const outerArc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<any, d3.PieArcDatum<PieData>>()
+  const outerArc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 1.1)
     .outerRadius(radius * 1.1);
 

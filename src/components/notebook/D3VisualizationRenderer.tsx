@@ -8,10 +8,7 @@ import type {
   D3SVGSelection,
   D3GroupSelection,
   ChartDatum,
-  NetworkNodeDatum,
   NetworkLinkDatum,
-  HierarchyDatum,
-  D3ChartDimensions,
   D3ChartTheme,
   D3LineGenerator,
   D3AreaGenerator,
@@ -215,12 +212,12 @@ function renderBarChart(
 
   // Scales
   const x = d3.scaleBand()
-    .domain(data.map(d => d[xField]))
+    .domain(data.map(d => String(d[xField])))
     .range([0, innerWidth])
     .padding(0.1);
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(data, d => d[yField]) || 0])
+    .domain([0, d3.max(data, d => Number(d[yField])) || 0])
     .range([innerHeight, 0]);
 
   // Axes
@@ -238,10 +235,10 @@ function renderBarChart(
     .data(data)
     .enter().append('rect')
     .attr('class', 'bar')
-    .attr('x', d => x(d[xField]) || 0)
+    .attr('x', d => x(String(d[xField])) || 0)
     .attr('width', x.bandwidth())
-    .attr('y', d => y(d[yField]))
-    .attr('height', d => innerHeight - y(d[yField]))
+    .attr('y', d => y(Number(d[yField])))
+    .attr('height', d => innerHeight - y(Number(d[yField])))
     .style('fill', colors.primary)
     .style('stroke', colors.border)
     .style('stroke-width', 1)
@@ -482,12 +479,12 @@ function renderPieChart(
     .value(d => d[valueField] as number)
     .sort(null);
 
-  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<any, d3.PieArcDatum<ChartDatum>>()
+  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<d3.BaseType, d3.PieArcDatum<ChartDatum>>()
     .innerRadius(0)
     .outerRadius(radius);
 
   const color = d3.scaleOrdinal<string>()
-    .domain(data.map(d => d[categoryField]))
+    .domain(data.map(d => String(d[categoryField])))
     .range([colors.primary, colors.accent, colors.secondary, '#8b5cf6', '#10b981', '#f59e0b']);
 
   const arcs = g.selectAll('.arc')
@@ -561,7 +558,7 @@ function renderAreaChart(
 
 function renderNetworkGraph(
   g: D3GroupSelection,
-  data: NetworkLinkDatum[],
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
   colors: D3ChartTheme
