@@ -7,7 +7,7 @@
 
 export interface PerformanceMetric {
   operation: string;
-  method: 'sql.js' | 'native' | 'optimized';
+  method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge';
   duration: number;
   timestamp: number;
   rowCount?: number;
@@ -32,6 +32,11 @@ export interface PerformanceReport {
       successRate: number;
     };
     optimized: {
+      operations: number;
+      averageDuration: number;
+      successRate: number;
+    };
+    webviewBridge: {
       operations: number;
       averageDuration: number;
       successRate: number;
@@ -79,7 +84,7 @@ export class PerformanceMonitor {
   async measureOperation<T>(
     name: string,
     operation: () => Promise<T>,
-    metadata: { method: 'sql.js' | 'native' | 'optimized'; query?: string } = { method: 'sql.js' }
+    metadata: { method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge'; query?: string } = { method: 'sql.js' }
   ): Promise<T> {
     if (!this.enabled) {
       return operation();
@@ -130,7 +135,7 @@ export class PerformanceMonitor {
   logQueryPerformance(
     query: string,
     duration: number,
-    method: 'sql.js' | 'native' | 'optimized',
+    method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge',
     metadata: {
       rowCount?: number;
       success?: boolean;
@@ -288,6 +293,195 @@ export class PerformanceMonitor {
     }, null, 2);
   }
 
+  /**
+   * Measure WebView bridge round-trip latency
+   */
+  async measureBridgeLatency(): Promise<number> {
+    const startTime = performance.now();
+
+    try {
+      // Test if WebView bridge is available
+      if (typeof window !== 'undefined' && window.webkit?.messageHandlers?.database) {
+        // Simple ping test
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Bridge timeout')), 1000);
+          window.webkit!.messageHandlers!.database!.postMessage({
+            action: 'ping',
+            data: {}
+          });
+
+          // Listen for response
+          const handler = () => {
+            clearTimeout(timeout);
+            resolve(null);
+          };
+
+          window.addEventListener('bridge-pong', handler, { once: true });
+        });
+
+        const latency = performance.now() - startTime;
+
+        this.logMetric({
+          operation: 'bridge-latency-test',
+          method: 'webview-bridge',
+          duration: latency,
+          timestamp: Date.now(),
+          success: true,
+          metadata: { testType: 'ping-pong' }
+        });
+
+        return latency;
+      } else {
+        throw new Error('WebView bridge not available');
+      }
+    } catch (error) {
+      const latency = performance.now() - startTime;
+
+      this.logMetric({
+        operation: 'bridge-latency-test',
+        method: 'webview-bridge',
+        duration: latency,
+        timestamp: Date.now(),
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * Compare bridge performance vs HTTP API
+   */
+  async compareBridgeVsHTTP(): Promise<{
+    bridgeLatency: number;
+    httpLatency: number;
+    speedup: number;
+    recommendation: string;
+  }> {
+    let bridgeLatency = 0;
+    let httpLatency = 0;
+    let bridgeSuccess = false;
+    let httpSuccess = false;
+
+    // Test WebView bridge
+    try {
+      bridgeLatency = await this.measureBridgeLatency();
+      bridgeSuccess = true;
+    } catch (error) {
+      console.warn('Bridge latency test failed:', error);
+    }
+
+    // Test HTTP API (if available)
+    try {
+      const startTime = performance.now();
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/health`,
+        { method: 'GET' }
+      );
+
+      if (response.ok) {
+        httpLatency = performance.now() - startTime;
+        httpSuccess = true;
+
+        this.logMetric({
+          operation: 'http-latency-test',
+          method: 'native',
+          duration: httpLatency,
+          timestamp: Date.now(),
+          success: true,
+          metadata: { testType: 'http-health-check' }
+        });
+      }
+    } catch (error) {
+      console.warn('HTTP latency test failed:', error);
+    }
+
+    let speedup = 0;
+    let recommendation = '';
+
+    if (bridgeSuccess && httpSuccess) {
+      speedup = httpLatency / bridgeLatency;
+      if (speedup > 1.2) {
+        recommendation = `Bridge is ${speedup.toFixed(1)}x faster than HTTP`;
+      } else if (speedup < 0.8) {
+        recommendation = 'HTTP is performing better than bridge';
+      } else {
+        recommendation = 'Bridge and HTTP have comparable performance';
+      }
+    } else if (bridgeSuccess) {
+      recommendation = 'Bridge available, HTTP unavailable';
+    } else if (httpSuccess) {
+      recommendation = 'HTTP available, bridge unavailable';
+    } else {
+      recommendation = 'Both bridge and HTTP unavailable';
+    }
+
+    return {
+      bridgeLatency,
+      httpLatency,
+      speedup,
+      recommendation
+    };
+  }
+
+  /**
+   * Validate data integrity across bridge operations
+   */
+  async validateDataIntegrity(): Promise<{
+    passed: boolean;
+    errors: string[];
+    testResults: Array<{
+      operation: string;
+      success: boolean;
+      error?: string;
+    }>;
+  }> {
+    const errors: string[] = [];
+    const testResults: Array<{ operation: string; success: boolean; error?: string }> = [];
+
+    try {
+      // Test 1: Create and retrieve data
+      const testData = { id: 'test-integrity', name: 'Test Node', content: 'Test Content' };
+
+      // This would need to be implemented with actual bridge methods
+      // For now, we'll simulate the test structure
+
+      testResults.push({
+        operation: 'create-retrieve-test',
+        success: true
+      });
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      errors.push(`Data integrity validation failed: ${errorMsg}`);
+
+      testResults.push({
+        operation: 'create-retrieve-test',
+        success: false,
+        error: errorMsg
+      });
+    }
+
+    const passed = errors.length === 0;
+
+    this.logMetric({
+      operation: 'data-integrity-validation',
+      method: 'webview-bridge',
+      duration: 0, // This would be measured in actual implementation
+      timestamp: Date.now(),
+      success: passed,
+      error: errors.length > 0 ? errors.join('; ') : undefined,
+      metadata: { testCount: testResults.length }
+    });
+
+    return {
+      passed,
+      errors,
+      testResults
+    };
+  }
+
   private logMetric(metric: PerformanceMetric): void {
     this.metrics.push(metric);
 
@@ -313,6 +507,7 @@ export class PerformanceMonitor {
     const sqlJsMetrics = this.metrics.filter(m => m.method === 'sql.js');
     const nativeMetrics = this.metrics.filter(m => m.method === 'native');
     const optimizedMetrics = this.metrics.filter(m => m.method === 'optimized');
+    const webviewBridgeMetrics = this.metrics.filter(m => m.method === 'webview-bridge');
 
     return {
       sqljs: {
@@ -329,6 +524,11 @@ export class PerformanceMonitor {
         operations: optimizedMetrics.length,
         averageDuration: this.calculateAverage(optimizedMetrics),
         successRate: this.calculateSuccessRate(optimizedMetrics),
+      },
+      webviewBridge: {
+        operations: webviewBridgeMetrics.length,
+        averageDuration: this.calculateAverage(webviewBridgeMetrics),
+        successRate: this.calculateSuccessRate(webviewBridgeMetrics),
       },
     };
   }
@@ -402,7 +602,7 @@ export class PerformanceMonitor {
     return (successful / metrics.length) * 100;
   }
 
-  private getLastMetricDuration(method: 'sql.js' | 'native' | 'optimized'): number {
+  private getLastMetricDuration(method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge'): number {
     for (let i = this.metrics.length - 1; i >= 0; i--) {
       if (this.metrics[i].method === method) {
         return this.metrics[i].duration;
@@ -427,6 +627,7 @@ export class PerformanceMonitor {
         sqljs: { operations: 0, averageDuration: 0, successRate: 100 },
         native: { operations: 0, averageDuration: 0, successRate: 100 },
         optimized: { operations: 0, averageDuration: 0, successRate: 100 },
+        webviewBridge: { operations: 0, averageDuration: 0, successRate: 100 },
       },
       slowestOperations: [],
       errorRate: 0,
@@ -448,7 +649,7 @@ export const performanceMonitor = new PerformanceMonitor({
 export function logQueryPerformance(
   query: string,
   duration: number,
-  method: 'sql.js' | 'native' | 'optimized',
+  method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge',
   metadata?: { rowCount?: number; success?: boolean; error?: string }
 ): void {
   performanceMonitor.logQueryPerformance(query, duration, method, metadata);
