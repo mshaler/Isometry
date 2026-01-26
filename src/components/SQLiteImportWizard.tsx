@@ -1,15 +1,41 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { Database, Upload, FileText, CheckCircle, AlertCircle, X, Settings } from 'lucide-react';
-// Note: SQLiteSyncManager removed in sql.js migration cleanup
+
+// Mock SQLiteSyncManager for type compatibility (replaced in sql.js migration)
+class SQLiteSyncManager {
+  constructor(_options: SQLiteSyncOptions) {
+    // Mock implementation
+  }
+
+  async importSQLiteFile(_file: File): Promise<SQLiteSyncResult> {
+    // Mock implementation - returns empty result
+    return {
+      success: false,
+      message: 'SQLiteSyncManager disabled in migration',
+      imported: 0,
+      failed: 0,
+      errors: [],
+      sources: []
+    };
+  }
+}
+
 interface SQLiteSyncResult {
   success: boolean;
   message: string;
   rowsImported?: number;
+  imported: number;
+  failed: number;
+  errors: string[];
+  sources: string[];
 }
 
 interface SQLiteSyncOptions {
   database?: string;
   preserveData?: boolean;
+  batchSize: number;
+  maxFileSize: number;
+  enabledSources: string[];
 }
 import type { Node } from '../types/node';
 
@@ -53,13 +79,13 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
     e.stopPropagation();
     setDragActive(false);
 
-    const droppedFiles = Array.from(e.dataTransfer.files);
+    const droppedFiles = Array.from(e.dataTransfer.files) as File[];
     addFiles(droppedFiles);
   }, []);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files);
+      const selectedFiles = Array.from(e.target.files) as File[];
       addFiles(selectedFiles);
     }
   }, []);
@@ -89,6 +115,8 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
     const syncManager = new SQLiteSyncManager(syncOptions);
     const allNodes: Node[] = [];
     const totalResult: SQLiteSyncResult = {
+      success: false,
+      message: 'Import process',
       imported: 0,
       failed: 0,
       errors: [],
