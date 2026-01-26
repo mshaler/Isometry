@@ -20,7 +20,6 @@ interface DatabaseContextValue {
 // Union type for unified database context (currently unused but may be needed for future type checking)
 // type UnifiedDatabaseContextValue = DatabaseContextValue | NativeDatabaseContextValue;
 
-const _DatabaseContext = createContext<DatabaseContextValue | null>(null);
 
 // DEPRECATED: SQL.js Database Provider has been completely removed
 // Use NativeDatabaseProvider or WebViewDatabaseProvider instead

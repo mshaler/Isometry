@@ -7,6 +7,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import type { Node } from '@/types/node';
 
 export interface WebKitMessageHandlers {
   database: {
@@ -143,7 +144,7 @@ export class WebViewBridge {
   /**
    * Post message to native handler with retry logic
    */
-  public async postMessage<T = any>(
+  public async postMessage<T = unknown>(
     handler: 'database' | 'filesystem',
     method: string,
     params: Record<string, unknown> = {},
@@ -244,7 +245,7 @@ export class WebViewBridge {
   /**
    * Check if error is retriable
    */
-  private isRetriableError(error: any): boolean {
+  private isRetriableError(error: unknown): boolean {
     if (!error) return false;
 
     const message = error.message?.toLowerCase() || '';
@@ -339,7 +340,7 @@ export class WebViewBridge {
   /**
    * Send message to native handler
    */
-  public async sendMessage(handler: string, method: string, params: any = {}): Promise<any> {
+  public async sendMessage(handler: string, method: string, params: Record<string, unknown> = {}): Promise<unknown> {
     if (!this.isWebViewEnvironment()) {
       throw new Error('WebView bridge not available');
     }
@@ -355,7 +356,7 @@ export class WebViewBridge {
    * Database operations through WebView bridge
    */
   public database = {
-    execute: async (sql: string, params?: any[]): Promise<any[]> => {
+    execute: async (sql: string, params?: unknown[]): Promise<unknown[]> => {
       return this.postMessage('database', 'execute', { sql, params });
     },
 
@@ -363,15 +364,15 @@ export class WebViewBridge {
       limit?: number;
       offset?: number;
       filter?: string;
-    } = {}): Promise<any[]> => {
+    } = {}): Promise<Node[]> => {
       return this.postMessage('database', 'getNodes', options);
     },
 
-    createNode: async (node: any): Promise<any> => {
+    createNode: async (node: Partial<Node>): Promise<Node> => {
       return this.postMessage('database', 'createNode', { node });
     },
 
-    updateNode: async (node: any): Promise<any> => {
+    updateNode: async (node: Partial<Node>): Promise<Node> => {
       return this.postMessage('database', 'updateNode', { node });
     },
 
@@ -380,11 +381,11 @@ export class WebViewBridge {
       return result.success;
     },
 
-    search: async (query: string, options: { limit?: number } = {}): Promise<any[]> => {
+    search: async (query: string, options: { limit?: number } = {}): Promise<Node[]> => {
       return this.postMessage('database', 'search', { query, ...options });
     },
 
-    getGraph: async (options: { nodeId?: string; depth?: number } = {}): Promise<any[]> => {
+    getGraph: async (options: { nodeId?: string; depth?: number } = {}): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
       return this.postMessage('database', 'getGraph', options);
     },
 
@@ -526,7 +527,7 @@ export function isHandlerAvailable(handler: 'database' | 'filesystem'): boolean 
  * @param params - Parameters to send
  * @returns Promise that resolves with the response
  */
-export async function postMessage<T = any>(
+export async function postMessage<T = unknown>(
   handler: 'database' | 'filesystem',
   method: string,
   params: Record<string, unknown> = {}

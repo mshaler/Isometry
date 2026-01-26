@@ -21,7 +21,7 @@ export interface WebViewDatabaseContextValue {
   save: () => Promise<void>;
   reset: () => Promise<void>;
   isConnected: () => boolean;
-  getConnectionStatus: () => any;
+  getConnectionStatus: () => { isConnected: boolean; transport: string; };
 }
 
 const WebViewDatabaseContext = createContext<WebViewDatabaseContextValue | null>(null);
