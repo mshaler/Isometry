@@ -10,8 +10,9 @@
 
 import type { ASTNode, ParseError } from './types';
 
-// TODO: Generate parser from PEG.js grammar
-// npx pegjs src/dsl/grammar/IsometryDSL.pegjs -o src/dsl/grammar/parser.js
+// Import the generated PEG.js parser (CommonJS format)
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pegParser = require('./grammar/parser.cjs');
 
 /**
  * Parse a DSL string into an AST
@@ -22,30 +23,40 @@ import type { ASTNode, ParseError } from './types';
 export function parse(input: string): ASTNode | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  
-  // TODO: Replace with PEG.js generated parser
-  // import { parse as pegParse } from './grammar/parser';
-  // return pegParse(trimmed);
-  
-  // Temporary stub - parse simple field:value
-  const match = trimmed.match(/^(\w+):(.+)$/);
-  if (match) {
-    return {
-      type: 'filter',
-      field: match[1],
-      operator: '=',
-      value: match[2]
-    };
+
+  try {
+    // Use the generated PEG.js parser
+    return pegParser.parse(trimmed);
+  } catch (error: unknown) {
+    // Transform PEG.js error to our ParseError interface
+    if (error && typeof error === 'object' && 'location' in error) {
+      const pegError = error as {
+        message: string;
+        location?: { start?: { line: number; column: number } };
+        expected?: Array<{ description: string }>;
+        found?: string;
+      };
+
+      throw {
+        message: pegError.message,
+        position: pegError.location?.start?.column || 0,
+        line: pegError.location?.start?.line || 1,
+        column: pegError.location?.start?.column || 1,
+        expected: pegError.expected?.map(e => e.description) || [],
+        found: pegError.found || ''
+      } as ParseError;
+    }
+
+    // Fallback for unknown error types
+    throw {
+      message: error instanceof Error ? error.message : 'Parse error',
+      position: 0,
+      line: 1,
+      column: 1,
+      expected: [],
+      found: trimmed
+    } as ParseError;
   }
-  
-  throw {
-    message: 'Parse error',
-    position: 0,
-    line: 1,
-    column: 1,
-    expected: ['field:value'],
-    found: trimmed
-  } as ParseError;
 }
 
 /**

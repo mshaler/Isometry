@@ -72,7 +72,7 @@ Filter
 
 // Field names (alphanumeric + underscore)
 Field
-  = chars:$[a-zA-Z_][a-zA-Z0-9_]* { return chars; }
+  = chars:$([a-zA-Z_][a-zA-Z0-9_]*) { return chars; }
 
 // Operators
 Operator
