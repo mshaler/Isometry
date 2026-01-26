@@ -11,7 +11,7 @@ public struct MarkdownEditor: View {
     @Binding var text: String
     @Binding var isEditing: Bool
 
-    @State private var coordinator: EditorCoordinator?
+    @StateObject private var coordinator = EditorCoordinator()
 
     public init(text: Binding<String>, isEditing: Binding<Bool> = .constant(true)) {
         self._text = text
@@ -19,11 +19,21 @@ public struct MarkdownEditor: View {
     }
 
     public var body: some View {
-        #if canImport(UIKit)
-        iOSTextEditor(text: $text, isEditing: $isEditing)
-        #elseif canImport(AppKit)
-        macOSTextEditor(text: $text, isEditing: $isEditing)
-        #endif
+        ZStack {
+            #if canImport(UIKit)
+            iOSTextEditor(text: $text, isEditing: $isEditing, coordinator: coordinator)
+            #elseif canImport(AppKit)
+            macOSTextEditor(text: $text, isEditing: $isEditing, coordinator: coordinator)
+            #endif
+
+            // Slash command menu overlay
+            SlashCommandMenu(commandManager: coordinator.commandManager) { command in
+                coordinator.executeSelectedCommand()
+            }
+        }
+        .onAppear {
+            coordinator.setup(textBinding: $text, isEditingBinding: $isEditing)
+        }
     }
 }
 
@@ -33,6 +43,7 @@ public struct MarkdownEditor: View {
 private struct iOSTextEditor: UIViewRepresentable {
     @Binding var text: String
     @Binding var isEditing: Bool
+    let coordinator: EditorCoordinator
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -156,6 +167,11 @@ private class EditorCoordinator: NSObject {
     private var textBinding: Binding<String>?
     private var isEditingBinding: Binding<Bool>?
 
+    // Slash command support
+    private let commandManager = SlashCommandManager()
+    private weak var currentTextView: NSTextView?
+    private weak var currentUITextView: UITextView?
+
     private let markdownPatterns: [(pattern: NSRegularExpression, attributes: [NSAttributedString.Key: Any])] = {
         let baseFont = {
             #if canImport(UIKit)
@@ -263,6 +279,134 @@ private class EditorCoordinator: NSObject {
         self.isEditingBinding = isEditingBinding
     }
 
+    // MARK: - Slash Command Support
+
+    private func detectSlashCommand(in textView: NSTextView) {
+        let text = textView.string
+        let cursorPosition = textView.selectedRange().location
+
+        if commandManager.detectSlashCommand(text: text, cursorPosition: cursorPosition) {
+            let cursorRect = textView.firstRect(forCharacterRange: textView.selectedRange(), actualRange: nil)
+            let menuPosition = CGPoint(x: cursorRect.minX, y: cursorRect.maxY + 5)
+            commandManager.showMenu(at: menuPosition)
+        } else {
+            commandManager.hideMenu()
+        }
+    }
+
+    private func detectSlashCommand(in textView: UITextView) {
+        let text = textView.text ?? ""
+        let cursorPosition = textView.selectedRange.location
+
+        if commandManager.detectSlashCommand(text: text, cursorPosition: cursorPosition) {
+            if let cursorPosition = textView.selectedTextRange?.start {
+                let cursorRect = textView.caretRect(for: cursorPosition)
+                let menuPosition = CGPoint(x: cursorRect.minX, y: cursorRect.maxY + 5)
+                commandManager.showMenu(at: menuPosition)
+            }
+        } else {
+            commandManager.hideMenu()
+        }
+    }
+
+    private func executeCommand(_ command: SlashCommand, in textView: NSTextView) {
+        let text = textView.string
+        let cursorPosition = textView.selectedRange().location
+
+        // Find the slash command position
+        guard let slashRange = findSlashCommandRange(text: text, cursorPosition: cursorPosition) else {
+            return
+        }
+
+        // Replace the slash command with the command content
+        let processedContent = command.processedContent
+        let newText = (text as NSString).replacingCharacters(in: slashRange, with: processedContent)
+
+        // Update the text
+        textView.string = newText
+        textBinding?.wrappedValue = newText
+
+        // Position cursor
+        let newCursorPosition = slashRange.location + command.cursorOffset
+        textView.setSelectedRange(NSRange(location: min(newCursorPosition, newText.count), length: 0))
+
+        // Apply highlighting
+        applyMarkdownHighlighting(to: textView)
+    }
+
+    private func executeCommand(_ command: SlashCommand, in textView: UITextView) {
+        let text = textView.text ?? ""
+        let cursorPosition = textView.selectedRange.location
+
+        // Find the slash command position
+        guard let slashRange = findSlashCommandRange(text: text, cursorPosition: cursorPosition) else {
+            return
+        }
+
+        // Replace the slash command with the command content
+        let processedContent = command.processedContent
+        let newText = (text as NSString).replacingCharacters(in: slashRange, with: processedContent)
+
+        // Update the text
+        textView.text = newText
+        textBinding?.wrappedValue = newText
+
+        // Position cursor
+        let newCursorPosition = slashRange.location + command.cursorOffset
+        textView.selectedRange = NSRange(location: min(newCursorPosition, newText.count), length: 0)
+
+        // Apply highlighting
+        applyMarkdownHighlighting(to: textView)
+    }
+
+    private func findSlashCommandRange(text: String, cursorPosition: Int) -> NSRange? {
+        guard cursorPosition > 0 else { return nil }
+
+        let nsString = text as NSString
+        var slashLocation: Int = -1
+
+        // Look backwards from cursor to find the slash
+        for i in (0..<cursorPosition).reversed() {
+            let char = nsString.character(at: i)
+            if char == UnicodeScalar("/")!.value {
+                slashLocation = i
+                break
+            }
+            if char == UnicodeScalar("\n")!.value || char == UnicodeScalar(" ")!.value {
+                break // Stop at line or word boundaries
+            }
+        }
+
+        guard slashLocation >= 0 else { return nil }
+
+        return NSRange(location: slashLocation, length: cursorPosition - slashLocation)
+    }
+
+    #if canImport(AppKit)
+    private func handleKeyDown(_ event: NSEvent, in textView: NSTextView) -> Bool {
+        guard commandManager.isMenuVisible else { return false }
+
+        switch event.keyCode {
+        case 125: // Down arrow
+            commandManager.selectNext()
+            return true
+        case 126: // Up arrow
+            commandManager.selectPrevious()
+            return true
+        case 36: // Enter
+            if let command = commandManager.executeSelectedCommand() {
+                executeCommand(command, in: textView)
+            }
+            return true
+        case 53: // Escape
+            commandManager.hideMenu()
+            return true
+        default:
+            return false
+        }
+    }
+    #endif
+
     #if canImport(UIKit)
     func applyMarkdownHighlighting(to textView: UITextView) {
         let text = textView.text ?? ""
@@ -323,7 +467,11 @@ private class EditorCoordinator: NSObject {
 #if canImport(UIKit)
 extension EditorCoordinator: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
+        currentUITextView = textView
         textBinding?.wrappedValue = textView.text
+
+        // Check for slash commands
+        detectSlashCommand(in: textView)
 
         // Apply highlighting with a small delay to improve performance
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -345,7 +493,11 @@ extension EditorCoordinator: UITextViewDelegate {
 extension EditorCoordinator: NSTextViewDelegate {
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
+        currentTextView = textView
         textBinding?.wrappedValue = textView.string
+
+        // Check for slash commands
+        detectSlashCommand(in: textView)
 
         // Apply highlighting with a small delay to improve performance
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
