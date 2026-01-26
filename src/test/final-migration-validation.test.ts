@@ -58,8 +58,8 @@ class FinalMigrationValidator {
     try {
       // Check package.json dependencies
       const packageJson = await import('../../package.json');
-      const hasSqlJsDependency = packageJson.dependencies?.['sql.js'] ||
-                                packageJson.devDependencies?.['sql.js'];
+      const hasSqlJsDependency = (packageJson.dependencies as any)?.['sql.js'] ||
+                                (packageJson.devDependencies as any)?.['sql.js'];
 
       if (hasSqlJsDependency) {
         console.error('❌ sql.js still present in package.json dependencies');

@@ -21,7 +21,7 @@ export interface PerformanceReport {
   totalOperations: number;
   averageDuration: number;
   methodBreakdown: {
-    sqljs: {
+    'native-api': {
       operations: number;
       averageDuration: number;
       successRate: number;
@@ -468,15 +468,15 @@ export class PerformanceMonitor {
       }
     }
 
-    if (breakdown.sqljs.operations > 0 && breakdown.native.operations > 0) {
-      const speedup = breakdown.sqljs.averageDuration / breakdown.native.averageDuration;
+    if (breakdown['native-api'].operations > 0 && breakdown.webviewBridge.operations > 0) {
+      const speedup = breakdown['native-api'].averageDuration / breakdown.webviewBridge.averageDuration;
       if (speedup > 1.2) {
         recommendations.push(
-          `Native implementation is ${speedup.toFixed(1)}x faster than sql.js. Migration provides significant performance benefits.`
+          `WebView bridge is ${speedup.toFixed(1)}x faster than HTTP API. Consider using WebView bridge for better performance.`
         );
       } else if (speedup < 0.8) {
         recommendations.push(
-          `SQL.js is performing better than native implementation. Check for network latency or optimization opportunities.`
+          `HTTP API is performing better than WebView bridge. Check for message passing overhead.`
         );
       }
     }
@@ -536,7 +536,7 @@ export class PerformanceMonitor {
       totalOperations: 0,
       averageDuration: 0,
       methodBreakdown: {
-        sqljs: { operations: 0, averageDuration: 0, successRate: 100 },
+        'native-api': { operations: 0, averageDuration: 0, successRate: 100 },
         native: { operations: 0, averageDuration: 0, successRate: 100 },
         optimized: { operations: 0, averageDuration: 0, successRate: 100 },
         webviewBridge: { operations: 0, averageDuration: 0, successRate: 100 },

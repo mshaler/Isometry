@@ -605,17 +605,7 @@ export class MigrationSafety {
     return true;
   }
 
-  private async testSchemaInSqlJs(): Promise<{ compatible: boolean; issues: string[]; mitigations: string[] }> {
-    return { compatible: true, issues: [], mitigations: [] };
-  }
-
-  private async testDataTypesInSqlJs(): Promise<{ compatible: boolean; issues: string[] }> {
-    return { compatible: true, issues: [] };
-  }
-
-  private async testFeatureSupportInSqlJs(): Promise<{ fts: boolean; json: boolean; cte: boolean; triggers: boolean }> {
-    return { fts: false, json: true, cte: true, triggers: false };
-  }
+  // SQL.js testing methods removed - no longer supported
 
   private async getCurrentDataSize(): Promise<number> {
     return 0;
