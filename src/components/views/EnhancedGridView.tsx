@@ -17,7 +17,7 @@ import type { ViewComponentProps } from '../../types/view';
 export const EnhancedGridView = React.memo<ViewComponentProps>(({
   data,
   onNodeClick,
-  transitionState
+  transitionState: _transitionState
 }) => {
   const { state: pafvState } = usePAFV();
   const [isLoading, setIsLoading] = useState(false);

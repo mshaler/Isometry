@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ListView } from './ListView';
-import { ViewTransition, SkeletonLoader, ListItemTransition } from './ViewTransitions';
+import { ViewTransition, SkeletonLoader } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
 
 /**
@@ -16,11 +16,10 @@ import type { ViewComponentProps } from '../../types/view';
 export const EnhancedListView = React.memo<ViewComponentProps>(({
   data,
   onNodeClick,
-  transitionState
+  transitionState: _transitionState
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [showStaggered, setShowStaggered] = useState(false);
 
   // Trigger loading state and staggered animation when data changes
   useEffect(() => {
