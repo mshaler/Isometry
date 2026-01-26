@@ -379,9 +379,9 @@ export const fileSystemBridge = new FileSystemBridge();
  * Convenience functions for common operations
  */
 export const readFile = (path: string, binary?: boolean) => fileSystemBridge.readFile(path, binary);
-export const writeFile = (path: string, _content: string | ArrayBuffer) => fileSystemBridge.writeFile(path, content);
+export const writeFile = (path: string, content: string | ArrayBuffer) => fileSystemBridge.writeFile(path, content);
 export const deleteFile = (path: string) => fileSystemBridge.deleteFile(path);
 export const listFiles = (directory?: string) => fileSystemBridge.listFiles(directory);
-export const exportFile = (path: string, _options: ExportOptions) => fileSystemBridge.exportFile(path, options);
+export const exportFile = (path: string, options: ExportOptions) => fileSystemBridge.exportFile(path, options);
 export const createDirectory = (path: string) => fileSystemBridge.createDirectory(path);
 export const fileExists = (path: string) => fileSystemBridge.fileExists(path);
