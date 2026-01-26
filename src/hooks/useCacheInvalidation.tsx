@@ -4,7 +4,7 @@
 // Centralized cache invalidation with dependency tracking and tagging
 // ============================================================================
 
-import React, { useContext, createContext, useCallback, useRef, useEffect, useMemo, ReactNode } from 'react';
+import React, { useContext, createContext, useCallback, useRef, useEffect, ReactNode } from 'react';
 
 // Cache invalidation tags for different data types
 export type CacheTag =

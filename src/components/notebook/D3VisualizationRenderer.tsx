@@ -432,18 +432,25 @@ function renderHistogram(
 
   if (!xField) return;
 
-  const values = data.map(d => d[xField]).filter(v => typeof v === 'number');
+  const values = data.map(d => d[xField]).filter(v => typeof v === 'number') as number[];
 
-  // Create histogram
-  const extent = d3.extent(values);
-  const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+  // Create histogram with safe extent handling (IIFE pattern from 10-03)
+  const { domain, bins } = (() => {
+    const extent = d3.extent(values);
+    const safeDomain = extent[0] != null && extent[1] != null ?
+      extent as [number, number] :
+      [0, Math.max(1, Math.max(...values) || 1)];
 
-  const histogram = d3.histogram()
-    .value(d => d as number)
-    .domain(domain)
-    .thresholds(Math.min(20, Math.sqrt(values.length)));
+    const histogram = d3.histogram<number, number>()
+      .value(d => d)
+      .domain(safeDomain)
+      .thresholds(Math.min(20, Math.sqrt(values.length)));
 
-  const bins = histogram(values);
+    return {
+      domain: safeDomain,
+      bins: histogram(values)
+    };
+  })();
 
   // Scales
   const x = d3.scaleLinear()
@@ -451,7 +458,10 @@ function renderHistogram(
     .range([0, innerWidth]);
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(bins, (d: d3.Bin<number, number>) => d.length) || 0])
+    .domain([0, (() => {
+      const maxLength = d3.max(bins, (d: d3.Bin<number, number>) => d.length);
+      return maxLength !== undefined ? maxLength : 0;
+    })()])
     .range([innerHeight, 0]);
 
   // Axes
@@ -464,13 +474,21 @@ function renderHistogram(
     .call(d3.axisLeft(y))
     .style('color', colors.text);
 
-  // Bars
+  // Bars with safe bin property access
   g.selectAll('.bar')
     .data(bins)
     .enter().append('rect')
     .attr('class', 'bar')
-    .attr('x', (d: d3.Bin<number, number>) => x(d.x0 || 0))
-    .attr('width', (d: d3.Bin<number, number>) => Math.max(0, x(d.x1 || 0) - x(d.x0 || 0) - 1))
+    .attr('x', (d: d3.Bin<number, number>) => {
+      const x0 = d.x0;
+      return x(x0 !== undefined ? x0 : 0);
+    })
+    .attr('width', (d: d3.Bin<number, number>) => {
+      const x0 = d.x0;
+      const x1 = d.x1;
+      if (x0 === undefined || x1 === undefined) return 0;
+      return Math.max(0, x(x1) - x(x0) - 1);
+    })
     .attr('y', (d: d3.Bin<number, number>) => y(d.length))
     .attr('height', (d: d3.Bin<number, number>) => innerHeight - y(d.length))
     .style('fill', colors.primary)
