@@ -52,6 +52,7 @@ public class BetaTestingManager: ObservableObject {
     public init() {
         setupBetaMode()
         loadUserProgress()
+        setupTestingActivities()
     }
 
     private func setupBetaMode() {
@@ -133,6 +134,9 @@ public class BetaTestingManager: ObservableObject {
     public func submitFeedback(_ feedback: BetaFeedback) {
         feedbackItems.append(feedback)
 
+        // Update engagement score for feedback submission
+        updateEngagementScore(action: .submittedFeedback)
+
         Task {
             await sendFeedbackToServer(feedback)
         }
@@ -202,6 +206,163 @@ public class BetaTestingManager: ObservableObject {
         // In production, this would send analytics to a server
         // For now, just log locally for debugging
         print("Beta Analytics: \(event.name) - \(event.properties)")
+    }
+
+    // MARK: - UX Optimization Methods (UX-01, UX-02)
+
+    public func completeOnboarding() {
+        hasCompletedOnboarding = true
+        UserDefaults.standard.set(true, forKey: "beta_onboarding_completed")
+
+        // Track onboarding completion
+        trackBetaEvent(BetaAnalyticsEvent(
+            name: "onboarding_completed",
+            properties: ["completion_time": Date().timeIntervalSince1970]
+        ))
+
+        // Update engagement score
+        updateEngagementScore(action: .completedOnboarding)
+    }
+
+    private func loadUserProgress() {
+        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "beta_onboarding_completed")
+        testingProgress = UserDefaults.standard.double(forKey: "beta_testing_progress")
+        userEngagementScore = UserDefaults.standard.double(forKey: "beta_engagement_score")
+
+        // Load completed activities
+        let completedActivityIds = UserDefaults.standard.stringArray(forKey: "beta_completed_activities") ?? []
+        for activityId in completedActivityIds {
+            if let activity = testingActivities.first(where: { $0.id.uuidString == activityId }) {
+                completeTestingActivity(activity.type)
+            }
+        }
+    }
+
+    private func setupTestingActivities() {
+        testingActivities = [
+            TestingActivity(
+                type: .basicNavigation,
+                title: "Basic App Navigation",
+                description: "Explore the main interface and navigation between sections",
+                estimatedDuration: 300 // 5 minutes
+            ),
+            TestingActivity(
+                type: .dataManagement,
+                title: "Data Management Testing",
+                description: "Create, edit, and organize data items",
+                estimatedDuration: 900 // 15 minutes
+            ),
+            TestingActivity(
+                type: .cloudKitSync,
+                title: "CloudKit Synchronization",
+                description: "Test data sync across devices",
+                estimatedDuration: 600 // 10 minutes
+            ),
+            TestingActivity(
+                type: .performanceTesting,
+                title: "Performance Evaluation",
+                description: "Test app performance with various dataset sizes",
+                estimatedDuration: 600 // 10 minutes
+            ),
+            TestingActivity(
+                type: .filterSearch,
+                title: "Filter and Search Testing",
+                description: "Test filtering capabilities and search functionality",
+                estimatedDuration: 480 // 8 minutes
+            ),
+            TestingActivity(
+                type: .feedbackSubmission,
+                title: "Feedback System Testing",
+                description: "Submit feedback using the in-app feedback system",
+                estimatedDuration: 300 // 5 minutes
+            ),
+            TestingActivity(
+                type: .accessibilityTesting,
+                title: "Accessibility Features",
+                description: "Test with VoiceOver and accessibility features",
+                estimatedDuration: 900 // 15 minutes
+            ),
+            TestingActivity(
+                type: .edgeCaseTesting,
+                title: "Edge Case Testing",
+                description: "Test with large datasets and edge conditions",
+                estimatedDuration: 900 // 15 minutes
+            )
+        ]
+    }
+
+    public func completeTestingActivity(_ activityType: TestingActivity.ActivityType) {
+        guard let index = testingActivities.firstIndex(where: { $0.type == activityType && !$0.isCompleted }) else {
+            return
+        }
+
+        testingActivities[index].isCompleted = true
+        testingActivities[index].completedDate = Date()
+
+        // Update progress
+        updateTestingProgress()
+
+        // Update engagement score
+        updateEngagementScore(action: .completedActivity)
+
+        // Save to UserDefaults
+        let completedActivityIds = testingActivities.filter { $0.isCompleted }.map { $0.id.uuidString }
+        UserDefaults.standard.set(completedActivityIds, forKey: "beta_completed_activities")
+
+        // Track analytics
+        trackBetaEvent(BetaAnalyticsEvent(
+            name: "testing_activity_completed",
+            properties: [
+                "activity_type": activityType.rawValue,
+                "completion_time": Date().timeIntervalSince1970
+            ]
+        ))
+    }
+
+    private func updateTestingProgress() {
+        let completedCount = testingActivities.filter { $0.isCompleted }.count
+        testingProgress = Double(completedCount) / Double(testingActivities.count)
+        UserDefaults.standard.set(testingProgress, forKey: "beta_testing_progress")
+    }
+
+    private func updateEngagementScore(action: EngagementAction) {
+        let previousScore = userEngagementScore
+
+        switch action {
+        case .completedOnboarding:
+            userEngagementScore += 0.2
+        case .completedActivity:
+            userEngagementScore += 0.1
+        case .submittedFeedback:
+            userEngagementScore += 0.15
+        case .viewedInstructions:
+            userEngagementScore += 0.05
+        }
+
+        // Cap at 1.0
+        userEngagementScore = min(userEngagementScore, 1.0)
+
+        // Save to UserDefaults
+        UserDefaults.standard.set(userEngagementScore, forKey: "beta_engagement_score")
+
+        // Track engagement improvement
+        if userEngagementScore > previousScore {
+            trackBetaEvent(BetaAnalyticsEvent(
+                name: "engagement_score_updated",
+                properties: [
+                    "previous_score": previousScore,
+                    "new_score": userEngagementScore,
+                    "action": action.rawValue
+                ]
+            ))
+        }
+    }
+
+    private enum EngagementAction: String {
+        case completedOnboarding = "completed_onboarding"
+        case completedActivity = "completed_activity"
+        case submittedFeedback = "submitted_feedback"
+        case viewedInstructions = "viewed_instructions"
     }
 
     // MARK: - Helper Methods
@@ -390,5 +551,35 @@ public struct BetaAnalyticsEvent {
         self.name = name
         self.properties = properties
         self.timestamp = Date()
+    }
+}
+
+// MARK: - UX Optimization Types
+
+public struct TestingActivity: Identifiable {
+    public let id = UUID()
+    public let type: ActivityType
+    public let title: String
+    public let description: String
+    public let estimatedDuration: TimeInterval
+    public var isCompleted: Bool = false
+    public var completedDate: Date?
+
+    public enum ActivityType: String, CaseIterable {
+        case basicNavigation = "basic_navigation"
+        case dataManagement = "data_management"
+        case cloudKitSync = "cloudkit_sync"
+        case performanceTesting = "performance_testing"
+        case filterSearch = "filter_search"
+        case feedbackSubmission = "feedback_submission"
+        case accessibilityTesting = "accessibility_testing"
+        case edgeCaseTesting = "edge_case_testing"
+    }
+
+    public init(type: ActivityType, title: String, description: String, estimatedDuration: TimeInterval) {
+        self.type = type
+        self.title = title
+        self.description = description
+        self.estimatedDuration = estimatedDuration
     }
 }
