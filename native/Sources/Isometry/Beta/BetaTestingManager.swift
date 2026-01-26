@@ -41,10 +41,17 @@ public class BetaTestingManager: ObservableObject {
     @Published public var isCollectingFeedback = false
     @Published public var analyticsEnabled = true
 
+    // UX-01 & UX-02: User experience optimization properties
+    @Published public var hasCompletedOnboarding = false
+    @Published public var testingProgress: Double = 0.0
+    @Published public var testingActivities: [TestingActivity] = []
+    @Published public var userEngagementScore: Double = 0.0
+
     // MARK: - Initialization
 
     public init() {
         setupBetaMode()
+        loadUserProgress()
     }
 
     private func setupBetaMode() {
