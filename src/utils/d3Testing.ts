@@ -23,7 +23,6 @@ interface Chip {
 export const generateTestNodes = (count: number = 100): Node[] => {
   const folders = ['Projects', 'Research', 'Meetings', 'Development', 'Documentation', 'Planning'];
   const statuses = ['active', 'completed', 'pending', 'draft', 'review'];
-  const priorities = ['high', 'medium', 'low'];
 
   const nodes: Node[] = [];
 
