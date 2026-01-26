@@ -121,6 +121,9 @@ export class SyncManager {
       // Start heartbeat to monitor connection
       this.startHeartbeat();
 
+      // Start sync queue processing
+      this.startQueueProcessor();
+
       // Process any offline queue
       await this.processOfflineQueue();
 
@@ -153,6 +156,13 @@ export class SyncManager {
       clearTimeout(this.syncTimer);
       this.syncTimer = null;
     }
+
+    if (this.queueTimer) {
+      clearInterval(this.queueTimer);
+      this.queueTimer = null;
+    }
+
+    this.processingQueue = false;
 
     console.log('Sync manager stopped');
     this.notifyStateChange();
@@ -188,8 +198,13 @@ export class SyncManager {
     this.pendingChanges.set(change.id, change);
 
     if (this.syncState.isConnected && Environment.isWebView()) {
-      // Real-time sync
-      this.debounceSync(change);
+      // Add to sync queue for background processing
+      this.addToSyncQueue(change);
+
+      // Also do immediate sync for time-sensitive operations
+      if (change.operation === 'delete' || change.table === 'notebook_cards') {
+        this.debounceSync(change);
+      }
     } else {
       // Add to offline queue
       this.offlineQueue.push(change);
@@ -223,17 +238,40 @@ export class SyncManager {
    * Force manual sync
    */
   async forcSync(): Promise<void> {
-    if (this.offlineQueue.length === 0) {
+    if (this.offlineQueue.length === 0 && this._syncQueue.length === 0) {
       return;
     }
 
     try {
       await this.processOfflineQueue();
+      await this.processSyncQueue();
       console.log('Manual sync completed');
     } catch (error) {
       console.error('Manual sync failed:', error);
       throw error;
     }
+  }
+
+  /**
+   * Add change to sync queue for background processing
+   */
+  addToSyncQueue(change: DataChange): void {
+    this._syncQueue.push(change);
+    this.syncState.pendingChanges = this.pendingChanges.size + this._syncQueue.length;
+    this.notifyStateChange();
+  }
+
+  /**
+   * Get sync queue status
+   */
+  getSyncQueueStatus(): QueueStatus {
+    return {
+      pending: this._syncQueue.length,
+      processed: Array.from(this.retryAttempts.values()).reduce((sum, attempts) => sum + attempts, 0),
+      errors: this._syncQueue
+        .filter(change => this.retryAttempts.get(change.id) === this.maxRetries)
+        .map(change => `Failed to sync ${change.operation} on ${change.table}:${change.id}`)
+    };
   }
 
   // Private Methods
@@ -301,6 +339,111 @@ export class SyncManager {
         }
       }
     }, 10000); // 10 second heartbeat
+  }
+
+  private startQueueProcessor(): void {
+    if (this.queueTimer) {
+      clearInterval(this.queueTimer);
+    }
+
+    this.queueTimer = setInterval(() => {
+      if (this.syncState.isConnected && !this.processingQueue) {
+        this.processSyncQueue().catch(error => {
+          console.error('Queue processing failed:', error);
+        });
+      }
+    }, this.queueProcessInterval);
+  }
+
+  private async processSyncQueue(): Promise<void> {
+    if (this.processingQueue || this._syncQueue.length === 0) {
+      return;
+    }
+
+    this.processingQueue = true;
+    console.log(`Processing sync queue: ${this._syncQueue.length} items`);
+
+    try {
+      // Process queue in batches
+      while (this._syncQueue.length > 0 && this.syncState.isConnected) {
+        const batch = this._syncQueue.splice(0, this.batchSize);
+        await this.processBatch(batch);
+      }
+
+      // Notify queue processed
+      this.notifyQueueProcessed();
+    } finally {
+      this.processingQueue = false;
+      this.syncState.pendingChanges = this.pendingChanges.size + this._syncQueue.length;
+      this.notifyStateChange();
+    }
+  }
+
+  private async processBatch(batch: DataChange[]): Promise<void> {
+    const processPromises = batch.map(async (change) => {
+      try {
+        await this.sendChangeWithRetry(change);
+        // Remove from retry tracking on success
+        this.retryAttempts.delete(change.id);
+      } catch (error) {
+        console.error(`Failed to sync change ${change.id}:`, error);
+        await this.handleSyncFailure(change, error as Error);
+      }
+    });
+
+    await Promise.allSettled(processPromises);
+  }
+
+  private async sendChangeWithRetry(change: DataChange): Promise<void> {
+    const currentRetries = this.retryAttempts.get(change.id) || 0;
+
+    if (currentRetries >= this.maxRetries) {
+      throw new Error(`Max retries exceeded for change ${change.id}`);
+    }
+
+    try {
+      await this.sendChange(change);
+    } catch (error) {
+      this.retryAttempts.set(change.id, currentRetries + 1);
+
+      if (currentRetries + 1 < this.maxRetries) {
+        // Exponential backoff
+        const backoffTime = this.retryBackoffBase * Math.pow(2, currentRetries);
+        console.log(`Retrying change ${change.id} in ${backoffTime}ms (attempt ${currentRetries + 1}/${this.maxRetries})`);
+
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+        throw error; // Re-throw to trigger retry
+      } else {
+        throw new Error(`Failed to sync change ${change.id} after ${this.maxRetries} attempts: ${error}`);
+      }
+    }
+  }
+
+  private async handleSyncFailure(change: DataChange, error: Error): Promise<void> {
+    const retries = this.retryAttempts.get(change.id) || 0;
+
+    if (retries >= this.maxRetries) {
+      console.error(`Permanently failed to sync change ${change.id}:`, error);
+      // Move to offline queue for manual retry later
+      this.offlineQueue.push(change);
+    } else {
+      // Re-add to queue for next processing cycle
+      this._syncQueue.push(change);
+    }
+  }
+
+  private notifyQueueProcessed(): void {
+    const queueStatus = this.getSyncQueueStatus();
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('isometry-sync-update', {
+        detail: {
+          type: 'queueProcessed',
+          payload: queueStatus,
+          timestamp: Date.now()
+        }
+      }));
+    }
   }
 
   private debounceSync(change: DataChange): void {
@@ -492,7 +635,8 @@ export function useSyncManager() {
     forceSync: () => syncManager.forcSync(),
     publishChange: (change: DataChange) => syncManager.publishLocalChange(change),
     onDataChange: (table: string, handler: SyncEventHandler) => syncManager.onDataChange(table, handler),
-    onConflict: (handler: ConflictHandler) => syncManager.onConflict(handler)
+    onConflict: (handler: ConflictHandler) => syncManager.onConflict(handler),
+    getQueueStatus: () => syncManager.getSyncQueueStatus()
   };
 }
 
