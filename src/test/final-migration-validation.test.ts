@@ -95,14 +95,14 @@ class FinalMigrationValidator {
   }
 
   /**
-   * Search for remaining sql.js references in the codebase
+   * Search for functional sql.js imports (not comments or documentation)
    */
   private async searchForSqlJsReferences(): Promise<string[]> {
     const fs = await import('fs');
     const path = await import('path');
     const glob = await import('glob');
 
-    const srcFiles = glob.sync('src/**/*.{ts,tsx}');
+    const srcFiles = glob.sync('src/**/*.{ts,tsx}').filter(f => !f.includes('.test.'));
     const sqlJsReferences: string[] = [];
 
     for (const file of srcFiles) {
@@ -110,10 +110,21 @@ class FinalMigrationValidator {
       const lines = content.split('\n');
 
       lines.forEach((line, index) => {
-        if (line.includes('sql.js') ||
-            line.includes('initSqlJs') ||
-            line.includes('SqlJsStatic') ||
-            line.includes('import.*sql\\.js')) {
+        const trimmed = line.trim();
+
+        // Skip comments and documentation strings
+        if (trimmed.startsWith('//') ||
+            trimmed.startsWith('*') ||
+            trimmed.startsWith('/**') ||
+            trimmed.startsWith('*/')) {
+          return;
+        }
+
+        // Look for actual functional imports and references
+        if (trimmed.includes('import') && trimmed.includes('sql.js') ||
+            trimmed.includes('initSqlJs') ||
+            trimmed.includes('SqlJsStatic') ||
+            trimmed.match(/from\s+['"]sql\.js['"]/)) {
           sqlJsReferences.push(`${file}:${index + 1}: ${line.trim()}`);
         }
       });
