@@ -260,13 +260,13 @@ export class WebViewBridge {
     const now = Date.now();
     const timeout = this.DEFAULT_TIMEOUT * 2; // Double timeout for cleanup
 
-    for (const [id, request] of this.pendingRequests.entries()) {
+    this.pendingRequests.forEach((request, id) => {
       if (now - request.timestamp > timeout) {
         clearTimeout(request.timeout);
         this.pendingRequests.delete(id);
         request.reject(new Error('Request expired during cleanup'));
       }
-    }
+    });
   }
 
   /**
@@ -288,10 +288,10 @@ export class WebViewBridge {
    * Clean up pending callbacks (useful for component unmounting)
    */
   public cleanup(): void {
-    for (const [, callback] of this.pendingRequests) {
+    this.pendingRequests.forEach((callback) => {
       clearTimeout(callback.timeout);
       callback.reject(new Error('WebView bridge cleanup - request cancelled'));
-    }
+    });
     this.pendingRequests.clear();
 
     if (process.env.NODE_ENV === 'development') {
