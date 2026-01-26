@@ -15,9 +15,28 @@ export default defineConfig({
   assetsInclude: ['**/*.sql'],
   build: {
     target: 'esnext',
+    minify: 'terser',
+    sourcemap: true,
     rollupOptions: {
       // Ensure tree-shaking of unused sql.js references
       external: ['sql.js'],
+      output: {
+        // Optimize chunk splitting for better caching
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+          d3: ['d3'],
+          radix: ['@radix-ui/react-select', '@radix-ui/react-slider'],
+          icons: ['lucide-react']
+        }
+      }
     },
+    // Performance optimizations
+    chunkSizeWarningLimit: 1000, // 1MB limit
+    cssMinify: true,
   },
+  // Preview server configuration for production testing
+  preview: {
+    port: 4173,
+    host: true,
+  }
 });
