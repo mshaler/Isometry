@@ -84,14 +84,16 @@ function getTimeGroupKey(node: Node, facet: string): string {
     case 'date':
       return date.toISOString().split('T')[0];
 
-    case 'quarter':
+    case 'quarter': {
       const quarter = Math.floor(date.getMonth() / 3) + 1;
       return `${date.getFullYear()} Q${quarter}`;
+    }
 
-    case 'week':
+    case 'week': {
       // Simple week calculation (ISO week would be more complex)
       const weekNum = Math.ceil(date.getDate() / 7);
       return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')} Week ${weekNum}`;
+    }
 
     default:
       return date.getFullYear().toString();

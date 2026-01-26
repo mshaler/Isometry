@@ -34,7 +34,12 @@ export interface WordDocumentData {
   content: string;
   html: string;
   images: { id: string; buffer: ArrayBuffer; contentType: string }[];
-  styles: Record<string, any>;
+  styles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; }>;
+}
+
+interface MammothImage {
+  read(format: string): Promise<string>;
+  contentType: string;
 }
 
 /**
@@ -247,7 +252,7 @@ export class OfficeDocumentProcessor {
     preserveFormatting: boolean
   ): Promise<WordDocumentData> {
     const options = {
-      convertImage: mammoth.images.imgElement((image: any) => {
+      convertImage: mammoth.images.imgElement((image: MammothImage) => {
         return image.read('base64').then((imageBuffer: string) => {
           return {
             src: `data:${image.contentType};base64,${imageBuffer}`
@@ -265,7 +270,7 @@ export class OfficeDocumentProcessor {
     };
 
     const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-    const textResult = await mammoth.extractRawText({ arrayBuffer });
+    const _textResult = await mammoth.extractRawText({ arrayBuffer });
 
     return {
       content: this.convertHtmlToMarkdown(result.value),
@@ -489,7 +494,7 @@ export class OfficeDocumentProcessor {
 
   private addNodeMetadataToWorksheet(worksheet: XLSX.WorkSheet, node: Node): void {
     // Add metadata as comments or in a separate area
-    const metadataRange = 'Z1:Z10'; // Use column Z for metadata
+    const _metadataRange = 'Z1:Z10'; // Use column Z for metadata
 
     const metadata = [
       ['Metadata'],
@@ -539,7 +544,7 @@ export class OfficeDocumentProcessor {
     return wordML;
   }
 
-  private async packageAsDocx(wordXML: string, node: Node): Promise<Blob> {
+  private async packageAsDocx(wordXML: string, _node: Node): Promise<Blob> {
     // For now, return as plain XML - full DOCX packaging would require ZIP library
     // TODO: Implement proper DOCX packaging with relationships, content types, etc.
     const xmlBlob = new Blob([wordXML], {
