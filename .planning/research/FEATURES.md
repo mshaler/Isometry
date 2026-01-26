@@ -1,152 +1,176 @@
 # Feature Landscape
 
-**Domain:** Hybrid note-taking/development tool with Claude Code integration
-**Researched:** January 25, 2026
+**Domain:** Error Elimination in Hybrid React/Swift Applications
+**Researched:** 2026-01-26
+**Confidence:** HIGH
 
-## Table Stakes
+## Feature Landscape
 
-Features users expect from a modern note-taking and development tool. Missing = product feels incomplete.
+### Table Stakes (Users Expect These)
+
+Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Markdown editing with live preview | Industry standard for developer tools | Low | @uiw/react-md-editor provides out-of-box |
-| Basic text formatting | Users expect rich text capabilities | Low | Toolbar included in markdown editor |
-| Auto-save | Prevents data loss, expected in web apps | Medium | IndexedDB integration with Isometry patterns |
-| Syntax highlighting | Code blocks essential for dev workflow | Low | Built into markdown editor |
-| Card properties editing | Core Isometry concept integration | Medium | Leverage existing CardData interface |
-| Terminal access | Expected in development environments | High | Terminal embedding with security considerations |
-| File export | Users need data portability | Low | Markdown export, PDF generation |
+| Zero Build Warnings | Developer productivity standard | MEDIUM | TypeScript strict mode, ESLint rules, clean build output |
+| Type Safety Validation | Modern TypeScript expectation | MEDIUM | Strict mode, null checks, proper error boundaries |
+| Database Error Recovery | Data integrity requirement | HIGH | Robust error handling, rollback mechanisms, sync conflict resolution |
+| Graceful Degradation | User experience standard | MEDIUM | Offline capability, progressive enhancement, fallback UI |
+| Memory Leak Prevention | Performance expectation | HIGH | React cleanup patterns, Swift Actor lifecycle, proper subscription management |
+| Error Boundary Protection | React standard practice | LOW | Component-level error isolation, fallback UI, error reporting |
+| Build Process Reliability | CI/CD requirement | MEDIUM | Deterministic builds, dependency lock, clean exit codes |
+| Cross-Platform Consistency | Hybrid app expectation | HIGH | Shared error handling patterns, unified logging, consistent UX |
 
-## Differentiators
+### Differentiators (Competitive Advantage)
 
-Features that set Isometry Notebook apart. Not expected, but highly valued.
+Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Slash commands for Isometry DSL | Seamless integration with main app data | Medium | Custom parser for DSL syntax |
-| Claude Code conversation turns | AI-assisted development workflow | High | API integration, conversation state management |
-| Live visualization preview | See data visualizations while editing | High | D3.js integration, real-time rendering |
-| Seamless data flow to main app | Notes become part of larger knowledge graph | Medium | SQLite schema extension, shared contexts |
-| Three-pane layout optimization | Capture-Shell-Preview workflow efficiency | Medium | Layout management, responsive design |
-| Context-aware shell commands | Terminal knows about current notebook state | High | Command routing, state synchronization |
-| WKWebView browser integration | Native-quality web preview | Medium | Platform-specific implementation |
+| Real-time Error Analytics | Proactive issue detection | MEDIUM | Performance metrics dashboard, error trend analysis |
+| Predictive Error Prevention | AI-assisted code quality | HIGH | Static analysis integration, pattern recognition for common mistakes |
+| Automated Error Recovery | Minimal user intervention | HIGH | Self-healing database connections, automatic retry with backoff |
+| Developer Error Context | Enhanced debugging experience | MEDIUM | Rich error messages with suggested fixes, stacktrace enhancement |
+| Progressive Type Migration | Incremental modernization | MEDIUM | Gradual strict mode adoption, compatibility layer maintenance |
+| Performance Regression Detection | Quality gates automation | MEDIUM | Benchmark comparison, automated performance testing |
+| Zero-Config Error Elimination | Developer experience optimization | LOW | Sensible defaults, auto-configuration of lint rules and type checking |
 
-## Anti-Features
+### Anti-Features (Commonly Requested, Often Problematic)
 
-Features to explicitly NOT build. Common mistakes in this domain.
+Features that seem good but create problems.
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Complete IDE replacement | Scope creep, complexity explosion | Focus on capture workflow, integrate with existing IDEs |
-| Custom markdown parser | Reinventing wheels, maintenance burden | Use proven libraries like @uiw/react-md-editor |
-| Full browser engine | Bundle size, security, platform restrictions | Use WKWebView/system browser components |
-| Complex plugin system | Over-engineering, maintenance overhead | Start with fixed three-component architecture |
-| Real-time collaboration | Complex conflict resolution, scaling issues | Single-user focused, export for sharing |
-| Advanced terminal features | Terminal apps already exist and excel | Basic embedding, delegate to system terminal for advanced use |
-| Complete note organization | Isometry main app handles this better | Focus on capture, let main app handle organization |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Ignore All Warnings | Quick development wins | Accumulates technical debt, hides real issues | Progressive elimination with prioritization |
+| Automatic Error Suppression | Cleaner build output | Masks underlying problems, reduces code quality | Proper error handling at source |
+| Global Error Handlers | Centralized error management | Obscures error sources, difficult debugging | Component-specific boundaries with centralized reporting |
+| Complete sql.js Removal | Clean architecture | Breaks backward compatibility, migration risks | Gradual migration with compatibility layers |
+| Zero-tolerance Error Policy | Perfect code quality | Blocks development progress, creates workflow friction | Tiered warning system with clear escalation |
 
 ## Feature Dependencies
 
 ```
-Capture Component:
-├── Markdown Editor (base) → Properties Editor → Slash Commands
-├── Card Templates → Isometry Schema Integration
-└── Auto-save → SQLite Extension
+[Type Safety Validation]
+    └──requires──> [Zero Build Warnings]
+                       └──requires──> [Build Process Reliability]
 
-Shell Component:
-├── Terminal Embedding → Claude API Integration
-├── Command Routing → Context Awareness
-└── Security Sandboxing
+[Database Error Recovery] ──requires──> [Error Boundary Protection]
 
-Preview Component:
-├── Browser Embedding → D3 Integration
-├── Visualization Rendering → Data Binding
-└── Export Capabilities
+[Real-time Error Analytics] ──enhances──> [Predictive Error Prevention]
+                           └──requires──> [Developer Error Context]
 
-Cross-Component:
-├── Shared State Management → Context Providers
-├── Data Flow Integration → SQLite Schema
-└── Theme Consistency → Tailwind CSS Variables
+[Progressive Type Migration] ──conflicts──> [Zero-tolerance Error Policy]
+
+[Automated Error Recovery] ──requires──> [Database Error Recovery]
+                          └──requires──> [Memory Leak Prevention]
 ```
 
-## MVP Recommendation
+### Dependency Notes
 
-For MVP, prioritize core workflow over advanced features:
+- **Type Safety Validation requires Zero Build Warnings:** TypeScript strict mode generates warnings that must be addressed for full type safety
+- **Real-time Error Analytics enhances Predictive Error Prevention:** Analytics provide data for AI-assisted prevention
+- **Progressive Type Migration conflicts with Zero-tolerance Error Policy:** Gradual migration requires temporary warning acceptance
+- **Automated Error Recovery requires Database Error Recovery:** Self-healing depends on robust error handling foundation
 
-1. **Capture**: Basic markdown editor with properties
-2. **Shell**: Simple terminal embedding
-3. **Preview**: Basic browser component
-4. **Integration**: Data flows to main Isometry app
+## MVP Definition
 
-Defer to post-MVP:
-- **Slash Commands**: Complex but valuable, needs solid foundation first
-- **Claude Code API**: Start with basic integration, enhance conversation management later
-- **Advanced Visualizations**: Let main app handle complex D3 visualizations initially
-- **Context-aware Commands**: Requires mature shell integration first
+### Launch With (v2.3)
 
-## Component-Specific Features
+Minimum viable product — what's needed to validate the concept.
 
-### Capture Component (Notion + Obsidian + Apple Notes hybrid)
+- [ ] **Zero Build Warnings** — Essential for developer productivity and CI/CD pipeline
+- [ ] **sql.js Cleanup** — Core technical debt elimination for architecture simplification
+- [ ] **TypeScript Strict Mode** — Foundation for type safety and error prevention
+- [ ] **Error Boundary Protection** — Basic user experience protection from component failures
+- [ ] **Build Process Reliability** — Clean CI/CD pipeline without warning noise
 
-**Core Features:**
-- Markdown editor with live preview
-- Title and subtitle editing
-- Collapsible properties panel
-- Basic card templates
+### Add After Validation (v2.x)
 
-**Notion-inspired:**
-- Slash command system for DSL integration
-- Property types (text, date, tags, etc.)
-- Rich data embedding
+Features to add once core is working.
 
-**Obsidian-inspired:**
-- Raw markdown view toggle
-- Link syntax support
-- File-based thinking
+- [ ] **Database Error Recovery** — When sync features are stress-tested in production
+- [ ] **Memory Leak Prevention** — When performance monitoring reveals issues
+- [ ] **Cross-Platform Consistency** — When hybrid architecture patterns are stabilized
 
-**Apple Notes-inspired:**
-- Intuitive key bindings
-- Quick capture workflow
-- Natural editing experience
+### Future Consideration (v3+)
 
-### Shell Component (Terminal + Claude Code)
+Features to defer until product-market fit is established.
 
-**Core Features:**
-- Terminal embedding with xterm.js
-- Basic command execution
-- Claude Code API integration
+- [ ] **Real-time Error Analytics** — Requires user base for meaningful data collection
+- [ ] **Predictive Error Prevention** — Advanced feature requiring ML/AI infrastructure
+- [ ] **Automated Error Recovery** — Complex feature requiring stable foundation
 
-**GSD Developer mode:**
-- Project context awareness
-- Command suggestions
-- Development workflow optimization
+## Feature Prioritization Matrix
 
-**Isometry CoPilot mode:**
-- Adaptive skill suggestions based on current notebook
-- DSL syntax assistance
-- Data query helpers
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Zero Build Warnings | HIGH | LOW | P1 |
+| TypeScript Strict Mode | HIGH | MEDIUM | P1 |
+| sql.js Cleanup | MEDIUM | HIGH | P1 |
+| Error Boundary Protection | MEDIUM | LOW | P1 |
+| Build Process Reliability | HIGH | MEDIUM | P1 |
+| Database Error Recovery | HIGH | HIGH | P2 |
+| Memory Leak Prevention | MEDIUM | HIGH | P2 |
+| Cross-Platform Consistency | MEDIUM | MEDIUM | P2 |
+| Real-time Error Analytics | LOW | MEDIUM | P3 |
+| Predictive Error Prevention | LOW | HIGH | P3 |
 
-### Preview Component (Browser + Visualizations)
+**Priority key:**
+- P1: Must have for v2.3 launch
+- P2: Should have, add in v2.x iterations
+- P3: Nice to have, future consideration
 
-**Core Features:**
-- Web content rendering
-- File preview support
-- Basic export capabilities
+## Error Elimination Workflow Patterns
 
-**Visualization Support:**
-- D3.js chart rendering
-- Mermaid diagram support
-- Live data visualization
+### TypeScript Strict Mode Migration
 
-**Format Support:**
-- Markdown rendering
-- PDF preview
-- Image display
-- Web page embedding
+**Pattern:** Progressive elimination with compatibility layers
+- Enable strict mode incrementally per file/directory
+- Use `// @ts-expect-error` for temporary compatibility
+- Implement type guards for external data
+- Establish null-safety patterns throughout codebase
+
+### sql.js Replacement Strategy
+
+**Pattern:** Bridge-based migration with fallback support
+- Maintain compatibility layer during transition
+- Use environment detection for provider selection
+- Implement data migration validation
+- Remove sql.js dependencies only after full verification
+
+### Error Boundary Implementation
+
+**Pattern:** Component-level isolation with centralized reporting
+- React error boundaries at route and feature levels
+- Swift error handling with user-friendly messages
+- Unified error reporting across platforms
+- Graceful degradation strategies
+
+### Build Warning Elimination
+
+**Pattern:** Categorized warning resolution with automation
+- CRITICAL: Type errors, security issues (block CI/CD)
+- HIGH: Performance issues, deprecated APIs (fail on merge)
+- MEDIUM: Code style, minor issues (warning only)
+- LOW: Informational (silent in CI, visible in IDE)
+
+## Competitor Feature Analysis
+
+| Feature | React Native Apps | Flutter Apps | Native iOS Apps | Our Approach |
+|---------|------------------|--------------|-----------------|--------------|
+| Type Safety | Flow or TypeScript optional | Dart built-in | Swift built-in | TypeScript strict mode with Swift |
+| Error Boundaries | React standard | Widget error handling | do-catch patterns | Unified React/Swift boundaries |
+| Build Warnings | Often ignored | Analyzer rules | Xcode warnings | Zero tolerance with prioritization |
+| Database Errors | Varies by implementation | Drift/Floor patterns | Core Data/GRDB | Actor-based with CloudKit integration |
 
 ## Sources
 
-- [Notion API documentation](https://developers.notion.com/) - Feature reference
-- [Obsidian plugin development](https://docs.obsidian.md/) - Markdown editor patterns
-- [VS Code extension API](https://code.visualstudio.com/api) - Developer tool integration patterns
-- [Apple Notes behavior analysis](https://support.apple.com/notes) - UX patterns
+- [TypeScript Strict Mode Documentation](https://www.typescriptlang.org/tsconfig/strict.html) - HIGH confidence
+- [SQLite WASM Migration Guide](https://developer.chrome.com/blog/from-web-sql-to-sqlite-wasm) - HIGH confidence
+- [React Error Boundaries](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) - HIGH confidence
+- [Swift Error Handling](https://developer.apple.com/documentation/swift/errorhandling) - HIGH confidence
+- Existing codebase analysis - Current error handling patterns and migration state - HIGH confidence
+
+---
+*Feature research for: Error Elimination in Hybrid React/Swift Applications*
+*Researched: 2026-01-26*

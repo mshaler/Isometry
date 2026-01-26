@@ -1,195 +1,212 @@
-# Domain Pitfalls
+# Domain Pitfalls: Error Elimination in Hybrid React/Swift Applications
 
-**Domain:** Hybrid note-taking/development tool with Claude Code integration
-**Researched:** January 25, 2026
+**Domain:** Error elimination in hybrid React/Swift applications
+**Researched:** 2026-01-26
+**Confidence:** HIGH
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major issues.
+### Pitfall 1: TypeScript Migration "Any Virus" Spread
 
-### Pitfall 1: Terminal Security Vulnerabilities
-**What goes wrong:** Terminal embedding allows arbitrary command execution, potential security exploits
-**Why it happens:** Terminal components inherit system privileges, inadequate sandboxing
-**Consequences:** Security breaches, system compromise, user trust loss
-**Prevention:**
-- Implement command filtering and validation
-- Use restricted shell environments
-- Sandbox terminal processes with limited file system access
-- Validate all Claude API responses before terminal execution
-**Detection:** Unusual file system activity, unexpected network connections, privilege escalation attempts
+**What goes wrong:**
+Temporary `any` types spread throughout the codebase during migration cleanup, creating "TypeScript syntax with JavaScript flexibility" - the worst of both worlds. Teams end up with thousands of `any` annotations that make the codebase feel type-safe but provide no actual safety.
 
-### Pitfall 2: Claude API Rate Limiting and Cost Explosion
-**What goes wrong:** Uncontrolled API calls lead to rate limiting or unexpected costs
-**Why it happens:** Poor request management, no caching, excessive conversation context
-**Consequences:** Service interruptions, budget overruns, degraded user experience
-**Prevention:**
-- Implement request queuing and rate limiting
-- Cache responses for repeated queries
-- Truncate conversation history intelligently
-- Add usage monitoring and budget alerts
-**Detection:** Sudden API cost spikes, 429 rate limit errors, degraded response times
+**Why it happens:**
+Developers use `any` as a quick fix during migration pressure, then never return to clean it up. The compiler stops complaining, so the technical debt becomes invisible until refactoring or debugging sessions.
 
-### Pitfall 3: SQLite Schema Migration Hell
-**What goes wrong:** Extensions to existing Isometry schema break backward compatibility
-**Why it happens:** Schema changes without proper migrations, foreign key constraint violations
-**Consequences:** Data loss, main app breakage, migration rollback requirements
-**Prevention:**
-- Use proper SQLite migration patterns with version tracking
-- Test schema changes against existing data
-- Maintain foreign key relationships carefully
-- Implement rollback procedures
-**Detection:** Foreign key constraint failures, missing data after migrations, main app query failures
+**How to avoid:**
+- Use `unknown` instead of `any` for better type safety
+- Implement custom aliases like `$TSFixMe` with clear naming conventions
+- Use `@ts-expect-error` instead of `@ts-ignore` (TypeScript will warn if error no longer exists)
+- Set up ESLint rules to flag new `any` usage in CI
 
-## Moderate Pitfalls
+**Warning signs:**
+- Type coverage dropping below 90%
+- Increasing number of runtime type errors
+- Developers avoiding type annotations in new code
+- IDE autocomplete becoming less helpful
 
-Mistakes that cause delays or technical debt.
+**Phase to address:**
+Error Elimination Phase - Create systematic `any` cleanup sprint with automated detection
 
-### Pitfall 1: Context State Explosion
-**What goes wrong:** NotebookContext becomes overly complex with too many responsibilities
-**Why it happens:** Adding features without clear separation of concerns
-**Consequences:** Performance issues, difficult debugging, tight coupling
-**Prevention:**
-- Keep NotebookContext focused on coordination only
-- Use separate contexts for component-specific state
-- Implement proper memoization for context values
+---
 
-### Pitfall 2: Terminal Component Memory Leaks
-**What goes wrong:** xterm.js instances not properly disposed, memory usage grows over time
-**Why it happens:** Missing cleanup in React useEffect hooks
-**Consequences:** Performance degradation, browser crashes, poor user experience
-**Prevention:**
-- Proper terminal disposal in cleanup functions
-- Monitor memory usage in development
-- Implement terminal instance recycling
+### Pitfall 2: Bridge Invalidation During Cleanup
 
-### Pitfall 3: Three-Component Layout Complexity
-**What goes wrong:** Complex responsive behavior, component sizing conflicts
-**Why it happens:** Insufficient planning for responsive design, CSS grid/flexbox conflicts
-**Consequences:** Poor mobile experience, layout breaks, maintenance burden
-**Prevention:**
-- Start with fixed layout, add responsiveness incrementally
-- Use CSS Grid for main layout structure
-- Test thoroughly on different screen sizes
+**What goes wrong:**
+In hybrid apps with React/Swift bridges, cleanup operations can trigger bridge invalidation while native modules are still being accessed. This causes mysterious crashes with messages like "bridge has been invalidated" during development reloads or app backgrounding.
 
-### Pitfall 4: WKWebView vs React State Synchronization
-**What goes wrong:** Browser component state gets out of sync with React state
-**Why it happens:** Two separate execution contexts, async communication
-**Consequences:** Inconsistent UI, data loss, user confusion
-**Prevention:**
-- Establish clear message passing protocols
-- Use single source of truth for shared state
-- Implement proper error handling for communication failures
+**Why it happens:**
+Legacy native modules that rely on bridge-specific APIs don't properly handle invalidation timing. Components like RCTImageView get deallocated after the bridge is invalidated, causing lookup failures and memory access violations.
 
-## Minor Pitfalls
+**How to avoid:**
+- Implement proper RCTInvalidating protocol conformance in native modules
+- Add nil checks for bridge access in all native module methods
+- Use weak references to bridge instances in native code
+- Test bridge invalidation scenarios explicitly in development
 
-Mistakes that cause annoyance but are fixable.
+**Warning signs:**
+- Random crashes during development reload
+- "React not found" errors in AppDelegate.swift
+- Bridge deadlocks during navigation
+- Native modules returning undefined unexpectedly
 
-### Pitfall 1: Markdown Editor Performance with Large Documents
-**What goes wrong:** Editor becomes sluggish with large markdown files
-**Why it happens:** Lack of virtualization, real-time preview rendering
-**Prevention:**
-- Implement document size limits
-- Use debounced preview updates
-- Consider lazy loading for large documents
+**Phase to address:**
+Native Bridge Stabilization Phase - Audit all native modules for proper invalidation handling
 
-### Pitfall 2: Claude API Response Parsing Errors
-**What goes wrong:** Malformed API responses break the UI
-**Why it happens:** Inadequate response validation, changing API formats
-**Prevention:**
-- Implement robust response parsing with fallbacks
-- Add comprehensive error handling
-- Validate response structure before processing
+---
 
-### Pitfall 3: Terminal Theme Inconsistency
-**What goes wrong:** Terminal theme doesn't match Isometry themes
-**Why it happens:** xterm.js has separate theming system
-**Prevention:**
-- Create theme mapping between Isometry and xterm.js
-- Update terminal theme when main theme changes
-- Test both NeXTSTEP and Modern themes
+### Pitfall 3: Quarantine Strategy Abandonment
 
-## Phase-Specific Warnings
+**What goes wrong:**
+Teams start with a "quarantine strategy" (excluding files with errors from linting/type checking) but never return to clean up quarantined files. The excluded files list grows indefinitely, creating a parallel codebase that's completely unmonitored.
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| Foundation | SQLite schema conflicts | Start with separate notebook_cards table, migrate carefully |
-| Capture | Markdown editor integration complexity | Start simple with @uiw/react-md-editor defaults |
-| Shell | Terminal security issues | Implement command filtering early |
-| Shell | Claude API integration complexity | Start with basic request/response, add features incrementally |
-| Preview | WKWebView communication issues | Use established message passing patterns |
-| Integration | Context provider hierarchy conflicts | Test thoroughly with existing providers |
+**Why it happens:**
+The immediate pain relief from excluding problematic files makes the problem invisible. Without systematic tracking, teams lose sight of technical debt accumulation and the excluded files become "legacy code" that's too risky to touch.
 
-## Technology-Specific Pitfalls
+**How to avoid:**
+- Create separate linting configs: one for development (with exclusions) and one for full auditing
+- Track quarantined files in a visible dashboard with age metrics
+- Set up automated issues for oldest quarantined files
+- Allocate specific sprint capacity for "unquarantining" files
 
-### React + xterm.js Integration
-**Common Issue:** React re-renders destroying terminal state
-**Solution:** Use refs and careful useEffect dependencies
-**Example:**
-```typescript
-// Bad: terminal recreated on every render
-const Terminal = () => {
-  const terminal = new XTerminal();
-  return <div ref={ref} />;
-};
+**Warning signs:**
+- Exclusion list growing faster than it shrinks
+- New team members avoiding certain directories
+- Different linting rules in different parts of codebase
+- "Don't touch that file" becoming common advice
 
-// Good: terminal created once and persisted
-const Terminal = () => {
-  const terminalRef = useRef<XTerminal>();
-  useEffect(() => {
-    if (!terminalRef.current) {
-      terminalRef.current = new XTerminal();
-    }
-    return () => terminalRef.current?.dispose();
-  }, []);
-};
-```
+**Phase to address:**
+Systematic Cleanup Phase - Create debt reduction sprints with quarantine size targets
 
-### SQLite Schema Extension
-**Common Issue:** Foreign key constraint violations when extending schema
-**Solution:** Use proper migration patterns
-**Example:**
-```sql
--- Bad: Direct foreign key to nodes without existence check
-ALTER TABLE notebook_cards ADD COLUMN node_id TEXT REFERENCES nodes(id);
+---
 
--- Good: Proper migration with constraint handling
-PRAGMA foreign_keys = OFF;
--- migration steps
-PRAGMA foreign_keys = ON;
-```
+### Pitfall 4: Database Migration State Leakage
 
-### Claude API Integration
-**Common Issue:** Conversation context grows too large
-**Solution:** Implement context window management
-**Example:**
-```typescript
-// Bad: Accumulating unlimited conversation history
-const conversation = [...previousMessages, newMessage];
+**What goes wrong:**
+SQLite migrations in hybrid apps fail to properly clean up state between development reloads, causing schema version mismatches and data corruption. The database schema gets out of sync with TypeScript types, leading to runtime errors that don't surface until production.
 
-// Good: Managed context window
-const conversation = manageContextWindow(previousMessages, newMessage, MAX_TOKENS);
-```
+**Why it happens:**
+Expo's Metro bundler doesn't recognize .sql files by default, causing inconsistent migration loading. State management doesn't properly invalidate caches after schema changes, and migration rollback strategies are often missing in development.
 
-## Dependencies and Compatibility Risks
+**How to avoid:**
+- Add .sql to sourceExts in Metro configuration
+- Implement PRAGMA user_version tracking for schema consistency
+- Use TanStack Query cache invalidation after migrations
+- Test migration scenarios with cold app starts
 
-### Version Compatibility Matrix
-| Library | Version | Risk Level | Notes |
-|---------|---------|------------|-------|
-| react-xtermjs | ^2.0.2 | Low | New library, active maintenance |
-| @uiw/react-md-editor | ^4.0.4 | Low | Stable, frequent updates |
-| @anthropic-ai/sdk | ^0.24.0 | Medium | API changes possible |
-| xterm.js | ^5.3.0 | Low | Mature, stable API |
+**Warning signs:**
+- "Column doesn't exist" errors in development
+- TypeScript types not matching actual database schema
+- Query results returning undefined unexpectedly
+- Database reset being the only fix for errors
 
-### Breaking Change Monitoring
-- **Claude API**: Monitor for breaking changes in API responses
-- **xterm.js**: Major version updates may require integration changes
-- **React**: Future concurrent features may affect terminal integration
-- **Safari/WKWebView**: iOS updates may change security policies
+**Phase to address:**
+Database Migration Phase - Implement proper migration management and state cleanup
+
+---
+
+## Technical Debt Patterns
+
+Shortcuts that seem reasonable but create long-term problems.
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| Using `any` for quick fixes | Eliminates compiler errors immediately | Loses all type safety benefits, spreads virally | Never for production code |
+| Excluding files from linting | Reduces noise in CI builds | Creates untouchable legacy code zones | Only during initial migration setup |
+| Suppressing warnings globally | Clean build output | Masks real issues, degrades code quality | Never - use targeted suppressions only |
+| Skipping migration tests | Faster development iteration | Data corruption in production | Never for schema-changing migrations |
+| Ignoring bridge invalidation | Simpler native module code | Random crashes in production | Never - always handle invalidation |
+
+## Integration Gotchas
+
+Common mistakes when connecting React and Swift components.
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| Native Module Cleanup | Not implementing RCTInvalidating | Always implement invalidate() method |
+| State Synchronization | Assuming immediate state updates | Use async/await for bridge communications |
+| Type Boundary | Trusting runtime types from bridge | Always validate types at bridge boundaries |
+| Metro Bundle Config | Not including .sql in sourceExts | Configure Metro for all resource types |
+| Error Handling | Swallowing bridge errors silently | Implement proper error propagation |
+
+## Performance Traps
+
+Patterns that work at small scale but fail as usage grows.
+
+| Trap | Symptoms | Prevention | When It Breaks |
+|------|----------|------------|----------------|
+| Lint rule explosion | Build times increase exponentially | Use opt-out rather than opt-in rules | >500 files |
+| Global any types | Autocomplete becomes useless | Incremental typing with unknown | >10% any coverage |
+| Uncontrolled exclusions | CI becomes meaningless | Time-boxed exclusion periods | >50 excluded files |
+| Bridge polling | UI freezes during data sync | Use event-driven bridge communication | >100 bridge calls/second |
+
+## Security Mistakes
+
+Domain-specific security issues beyond general web security.
+
+| Mistake | Risk | Prevention |
+|---------|------|------------|
+| Bridge data validation | Native code trusts JavaScript data | Always validate at native boundaries |
+| Error message exposure | Sensitive data in development errors | Sanitize error messages before logging |
+| Development/production config | Different error handling in environments | Consistent error handling across environments |
+
+## UX Pitfalls
+
+Common user experience mistakes in error elimination.
+
+| Pitfall | User Impact | Better Approach |
+|---------|-------------|-----------------|
+| Overeager error suppression | Silent failures confuse users | Graceful degradation with user feedback |
+| Development-only fixes | Production crashes increase | Test error scenarios in production-like environment |
+| Bridge timeout defaults | App appears frozen during sync | Show loading states for bridge operations |
+| Type coercion failures | Unexpected behavior in forms | Strict validation with clear error messages |
+
+## "Looks Done But Isn't" Checklist
+
+Things that appear complete but are missing critical pieces.
+
+- [ ] **Type Migration:** Often missing runtime validation — verify types are checked at boundaries
+- [ ] **Lint Cleanup:** Often missing CI integration — verify new violations are blocked
+- [ ] **Bridge Cleanup:** Often missing invalidation handling — verify proper cleanup on reload
+- [ ] **Database Migration:** Often missing rollback strategy — verify reverse migrations work
+- [ ] **Error Suppression:** Often missing review schedule — verify suppressions are time-bounded
+- [ ] **Native Integration:** Often missing memory management — verify weak references used properly
+- [ ] **State Synchronization:** Often missing cache invalidation — verify state consistency across reloads
+
+## Recovery Strategies
+
+When pitfalls occur despite prevention, how to recover.
+
+| Pitfall | Recovery Cost | Recovery Steps |
+|---------|---------------|----------------|
+| Any virus spread | HIGH | 1. Audit codebase with type coverage tools 2. Create targeted refactoring sprints 3. Implement strict rules for new code |
+| Bridge invalidation bugs | MEDIUM | 1. Add comprehensive error logging 2. Implement proper RCTInvalidating 3. Add bridge state monitoring |
+| Quarantine abandonment | MEDIUM | 1. Create exclusion dashboard 2. Set up automated debt reduction 3. Allocate sprint capacity |
+| Database state leakage | HIGH | 1. Reset all local databases 2. Implement proper migration management 3. Add schema validation |
+
+## Pitfall-to-Phase Mapping
+
+How roadmap phases should address these pitfalls.
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| TypeScript any spread | Error Elimination Phase | Type coverage >95%, zero new any types in CI |
+| Bridge invalidation | Native Stabilization Phase | Zero bridge-related crashes in testing |
+| Quarantine abandonment | Systematic Cleanup Phase | Quarantine list shrinking week-over-week |
+| Database state leakage | Migration Management Phase | All migrations tested with cold starts |
+| Lint rule explosion | Configuration Optimization Phase | Build times under 30 seconds |
+| Global suppressions | Warning Audit Phase | All suppressions have expiration dates |
 
 ## Sources
 
-- [xterm.js Security Considerations](https://xtermjs.org/docs/guides/security/) - HIGH confidence
-- [React Context Performance](https://kentcdodds.com/blog/how-to-optimize-your-context-value) - HIGH confidence
-- [SQLite Migration Best Practices](https://sqlite.org/lang_altertable.html) - HIGH confidence
-- [WKWebView Security Model](https://developer.apple.com/documentation/webkit/wkwebview) - HIGH confidence
-- [Anthropic Rate Limiting Guide](https://platform.claude.com/docs/en/api-limits) - HIGH confidence
+- [TypeScript Best Practices 2025](https://dev.to/mitu_mariam/typescript-best-practices-in-2025-57hb) - HIGH confidence
+- [React Native New Architecture Migration](https://shopify.engineering/react-native-new-architecture) - MEDIUM confidence
+- [SwiftLint Large Codebase Strategies](https://medium.com/@chapuyj/fixing-thousands-of-swiftlint-violations-over-time-436691001633) - MEDIUM confidence
+- [SQLite Migration Strategies 2025](https://www.sqliteforum.com/p/sqlite-versioning-and-migration-strategies) - MEDIUM confidence
+- [JavaScript to TypeScript Migration Guide](https://shubhojit-mitra-dev.medium.com/lets-migrate-to-typescript-an-incremental-adoption-guide-to-type-safe-codebases-30a90711d13f) - MEDIUM confidence
+- [React Native Bridge Invalidation Issues](https://github.com/facebook/react-native/commit/8ad810717ee1769aa5ff6c73e0c9bfa8c43a3bac) - HIGH confidence
+
+---
+*Pitfalls research for: Error elimination in hybrid React/Swift applications*
+*Researched: 2026-01-26*
