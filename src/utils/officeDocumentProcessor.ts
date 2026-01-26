@@ -55,6 +55,22 @@ interface MammothImage {
   contentType: string;
 }
 
+interface DocumentTransform {
+  styleId?: string;
+  styleName?: string;
+  alignment?: {
+    bold?: boolean;
+    italic?: boolean;
+  };
+  font?: {
+    name?: string;
+    size?: number;
+  };
+  color?: string;
+  type?: string;
+  children?: DocumentTransform[];
+}
+
 /**
  * Comprehensive Office document processor for XLSX and DOCX files
  * Provides high-fidelity import/export for business documents
@@ -307,7 +323,7 @@ export class OfficeDocumentProcessor {
         "i => em",
         "u => u"
       ] : [],
-      transformDocument: preserveFormatting ? ((element: any) => {
+      transformDocument: preserveFormatting ? ((element: DocumentTransform) => {
         // Extract style information from paragraph elements
         if (element.styleId && element.styleName) {
           const styleInfo: DocumentStyle = {
