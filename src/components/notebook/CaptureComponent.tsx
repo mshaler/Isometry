@@ -6,23 +6,13 @@ import { useMarkdownEditor } from '../../hooks/useMarkdownEditor';
 import { useSlashCommands, type SlashCommand } from '../../hooks/useSlashCommands';
 import PropertyEditor from './PropertyEditor';
 
-// Type definitions for global error reporting
+// Type definitions for error handling actions
 interface ErrorReportingAction {
   label: string;
   action: () => void | Promise<void>;
 }
 
-interface GlobalErrorReporting {
-  reportUserError: (title: string, message: string, actions?: ErrorReportingAction[]) => void;
-  reportUserInfo: (title: string, message: string) => void;
-  reportUserWarning: (title: string, message: string) => void;
-}
-
-declare global {
-  interface Window {
-    errorReporting?: GlobalErrorReporting;
-  }
-}
+// Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
 interface CaptureComponentProps {
   className?: string;
@@ -65,35 +55,12 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
 
       // Report error to error reporting service
       if (typeof window !== 'undefined' && window.errorReporting) {
-        window.errorReporting.reportUserError(
-          'Save Failed',
-          'Your changes could not be saved. Please try again or copy your content to prevent data loss.',
-          [
-            {
-              label: 'Try Again',
-              action: async () => {
-                try {
-                  await saveNow();
-                  window.errorReporting?.reportUserInfo('Save Successful', 'Your changes have been saved.');
-                } catch {
-                  window.errorReporting?.reportUserError('Save Failed Again', 'Please copy your content and refresh the page.');
-                }
-              }
-            },
-            {
-              label: 'Copy Content',
-              action: () => {
-                if (navigator.clipboard && content) {
-                  navigator.clipboard.writeText(content).then(() => {
-                    window.errorReporting?.reportUserInfo('Content Copied', 'Your content has been copied to clipboard.');
-                  }).catch(() => {
-                    window.errorReporting?.reportUserWarning('Copy Failed', 'Please manually select and copy your content.');
-                  });
-                }
-              }
-            }
-          ]
-        );
+        window.errorReporting.reportError({
+          error: error instanceof Error ? error : new Error('Save failed'),
+          level: 'feature',
+          name: 'CaptureComponent',
+          retryCount: 0
+        });
       }
     }
   }, [saveNow, content]);

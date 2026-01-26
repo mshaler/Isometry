@@ -11,23 +11,13 @@ import { debounce } from '../../utils/debounce';
 import { PropertyField, CustomFieldAdder, StatusFooter } from './property-editor';
 import type { PropertyEditorProps } from './property-editor';
 
-// Type definitions for global error reporting
+// Type definitions for error handling actions
 interface ErrorReportingAction {
   label: string;
   action: () => void | Promise<void>;
 }
 
-interface GlobalErrorReporting {
-  reportUserError: (title: string, message: string, actions?: ErrorReportingAction[]) => void;
-  reportUserInfo: (title: string, message: string) => void;
-  reportUserWarning: (title: string, message: string) => void;
-}
-
-declare global {
-  interface Window {
-    errorReporting?: GlobalErrorReporting;
-  }
-}
+// Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
 export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
   const { updateCard } = useNotebook();
@@ -44,7 +34,8 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
 
   // Debounced save function
   const debouncedSave = useMemo(
-    () => debounce(async (props: Record<string, unknown>) => {
+    () => debounce(async (...args: unknown[]) => {
+      const props = args[0] as Record<string, unknown>;
       setIsSaving(true);
       try {
         await updateCard(card.id, { properties: props });
@@ -56,29 +47,12 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
 
         // Report error to global error service
         if (typeof window !== 'undefined' && window.errorReporting) {
-          window.errorReporting.reportUserError(
-            'Property Save Failed',
-            'Your property changes could not be saved. Please try again.',
-            [
-              {
-                label: 'Retry',
-                action: async () => {
-                  try {
-                    await updateCard(card.id, { properties: props });
-                    window.errorReporting?.reportUserInfo('Properties Saved', 'Your property changes have been saved.');
-                  } catch {
-                    window.errorReporting?.reportUserError('Save Still Failed', 'Unable to save properties. Please refresh and try again.');
-                  }
-                }
-              },
-              {
-                label: 'Continue',
-                action: () => {
-                  window.errorReporting?.reportUserWarning('Changes Not Saved', 'Your property changes are not saved and may be lost.');
-                }
-              }
-            ]
-          );
+          window.errorReporting.reportError({
+            error: error instanceof Error ? error : new Error('Property save failed'),
+            level: 'component',
+            name: 'PropertyEditor',
+            retryCount: 0
+          });
         }
       } finally {
         setIsSaving(false);
@@ -91,10 +65,10 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
   const updateProperty = useCallback((key: string, value: unknown) => {
     const definition = allDefinitions.find(def => def.name === key);
     if (definition) {
-      const validation = validatePropertyValue(value, definition);
+      const validationErrors = validatePropertyValue(value, definition);
       setErrors(prev => ({
         ...prev,
-        [key]: validation.isValid ? '' : validation.error
+        [key]: validationErrors.length > 0 ? validationErrors[0] : ''
       }));
     }
 
@@ -169,7 +143,7 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
               key={definition.name}
               definition={definition}
               value={value}
-              onChange={(newValue) => updateProperty(definition.name, newValue)}
+              onChange={(newValue: unknown) => updateProperty(definition.name, newValue)}
               onRemove={isCustom ? () => removeCustomField(definition.name) : undefined}
               theme={theme}
               error={error}

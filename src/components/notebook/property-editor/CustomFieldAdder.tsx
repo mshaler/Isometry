@@ -15,6 +15,7 @@ export function CustomFieldAdder({ onAdd, theme }: CustomFieldAdderProps) {
   const handleAdd = () => {
     if (newFieldName.trim()) {
       const definition: PropertyDefinition = {
+        id: crypto.randomUUID(),
         name: newFieldName.trim(),
         type: newFieldType,
         required: false,
