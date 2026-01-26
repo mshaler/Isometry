@@ -89,7 +89,26 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 
 **Status:** ✅ PHASE COMPLETE - Absolute zero ESLint error goal achieved with comprehensive type safety foundation
 
-### Upcoming Phases
+### Phase: DEBUG - Critical Debug Infrastructure Cleanup (SPECIAL EXECUTION)
+**Status:** 25% Complete (1/5 phases - D1 complete)
+**Goal:** Comprehensive debug cleanup across test infrastructure, memory leaks, console logging, code organization, and technical debt
+**Duration Estimate:** 3-5 days
+**Methodology:** GSD plan → test → commit pattern with strict verification requirements
+
+**Progress:** ████░ 20% (D1 complete - test infrastructure foundation established)
+
+**Completed Phases:**
+- DEBUG-D1: Critical Test Infrastructure Cleanup (100% complete - >97% test performance improvement, 86 failing tests eliminated)
+
+**Upcoming DEBUG Phases:**
+- **DEBUG-D2:** Memory & Performance Leaks (high priority - timer/event listener cleanup)
+- **DEBUG-D3:** Debug Logging Cleanup (medium priority - 180+ console statements)
+- **DEBUG-D4:** Code Organization & Bundle Optimization (medium priority - large file cleanup)
+- **DEBUG-D5:** Technical Debt Resolution (low priority - TODO/FIXME cleanup)
+
+**Status:** ✅ D1 COMPLETE - Critical test infrastructure foundation established with stable, fast execution platform
+
+### Planned Phases (Post-DEBUG)
 - **Phase 11:** Type Safety Migration (5 requirements, 4-5 days)
 - **Phase 12:** Cross-Platform Coordination (5 requirements, 5-6 days)
 
@@ -132,13 +151,21 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 - **React Event Typing Standard:** Establish consistent pattern using `React.ChangeEvent<HTMLElement>`, `React.KeyboardEvent<HTMLElement>`, etc.
 - **WebView Bridge Typing:** Create complete WebViewBridge interface matching actual native implementation capabilities
 - **Unused Parameter Pattern:** Use underscore prefix (_paramName) for intentionally unused function parameters maintaining API compliance
+- **Global Test Crypto Mock Strategy:** Implement comprehensive crypto mock globally in test setup for consistent API availability
+- **WebKit Message Event System:** Use MessageEvent dispatching for WebView bridge mock responses mimicking actual behavior
+- **Promise Rejection Filtering:** Intelligent filtering distinguishing test-expected from actual unhandled promise rejections
 
 ### Current TODOs
 - [x] Plan Phase 10 with specific executable tasks (COMPLETE - all 8 plans executed)
 - [x] Establish baseline measurements for build warnings and dependencies (COMPLETE - 205→0 ESLint errors)
 - [x] Eliminate explicit any types from core source files (COMPLETE - 21 any types replaced with proper interfaces)
 - [x] Clean up unused variables in target files (COMPLETE - 13 target files cleaned, zero errors achieved)
-- [ ] Plan Phase 11 Type Safety Migration with 100+ identified TypeScript strict mode errors
+- [x] Execute DEBUG-D1 Critical Test Infrastructure Cleanup (COMPLETE - 86 failing tests eliminated, >97% performance improvement)
+- [ ] Execute DEBUG-D2 Memory & Performance Leaks cleanup (HIGH PRIORITY - timer/event listener cleanup)
+- [ ] Execute DEBUG-D3 Debug Logging Cleanup (MEDIUM PRIORITY - 180+ console statements)
+- [ ] Execute DEBUG-D4 Code Organization & Bundle Optimization (MEDIUM PRIORITY)
+- [ ] Execute DEBUG-D5 Technical Debt Resolution (LOW PRIORITY - TODO/FIXME cleanup)
+- [ ] Plan Phase 11 Type Safety Migration with 100+ identified TypeScript strict mode errors - deferred until after DEBUG phases
 - [ ] Configure automated linting tools (Biome, SwiftLint) - deferred to Phase 11
 - [ ] Set up performance monitoring for error handling overhead - deferred to Phase 11
 
