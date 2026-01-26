@@ -9,18 +9,23 @@ import { renderColumnHeaders } from './GridBlock2_ColumnHeaders';
 import { renderRowHeaders } from './GridBlock3_RowHeaders';
 import { renderDataCells } from './GridBlock4_DataCells';
 
-export interface CoordinateSystem {
+// D3SparsityLayer-specific coordinate system interface with function methods
+export interface D3CoordinateSystem {
   originX: number;
   originY: number;
   cellWidth: number;
   cellHeight: number;
+  pattern?: OriginPattern;
+  scale?: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
   logicalToScreen: (logicalX: number, _logicalY: number) => { x: number; y: number };
   screenToLogical: (screenX: number, _screenY: number) => { x: number; y: number };
 }
 
 export interface D3SparsityLayerProps {
   data: Node[];
-  coordinateSystem: CoordinateSystem;
+  coordinateSystem: D3CoordinateSystem;
   xAxis?: LATCHAxis;
   xAxisFacet?: string;
   yAxis?: LATCHAxis;

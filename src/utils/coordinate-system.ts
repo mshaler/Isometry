@@ -1,4 +1,4 @@
-import type { CoordinateSystem } from '@/components/D3SparsityLayer';
+import type { D3CoordinateSystem } from '@/components/D3SparsityLayer';
 import type { OriginPattern } from '@/types/coordinates';
 
 /**
@@ -48,7 +48,7 @@ export function createCoordinateSystem(
   cellWidth: number = 120,
   cellHeight: number = 60,
   config?: Partial<CoordinateSystemConfig>
-): CoordinateSystem {
+): D3CoordinateSystem {
   const fullConfig: CoordinateSystemConfig = {
     pattern,
     cellWidth,
@@ -79,6 +79,10 @@ export function createCoordinateSystem(
     originY,
     cellWidth,
     cellHeight,
+    pattern,
+    scale: 1,
+    viewportWidth: fullConfig.viewportWidth,
+    viewportHeight: fullConfig.viewportHeight,
 
     /**
      * Convert logical coordinates to screen coordinates
@@ -133,7 +137,7 @@ export function createCoordinateSystem(
  * Useful for determining which cells are visible and need rendering
  */
 export function calculateLogicalBounds(
-  coordinateSystem: CoordinateSystem,
+  coordinateSystem: D3CoordinateSystem,
   viewportBounds: { left: number; top: number; right: number; bottom: number }
 ) {
   const topLeft = coordinateSystem.screenToLogical(viewportBounds.left, viewportBounds.top);
@@ -249,8 +253,8 @@ export const coordinateSystemPresets = {
  */
 export function transformCoordinates(
   logicalPoint: { x: number; y: number },
-  fromSystem: CoordinateSystem,
-  toSystem: CoordinateSystem
+  fromSystem: D3CoordinateSystem,
+  toSystem: D3CoordinateSystem
 ): { x: number; y: number } {
   // Convert to screen coordinates in source system
   const screenPoint = fromSystem.logicalToScreen(logicalPoint.x, logicalPoint.y);

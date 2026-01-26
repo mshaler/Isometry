@@ -46,7 +46,15 @@ export function SuperGridDemo() {
   const yFacet = yMapping?.facet || 'tag';
 
   // Create coordinate system with current origin pattern
-  const coordinateSystem = createCoordinateSystem(originPattern, 120, 60);
+  const d3CoordinateSystem = createCoordinateSystem(originPattern, 120, 60);
+
+  // Extract simple coordinate system properties for MiniNav
+  const coordinateSystem: import('@/types/coordinates').CoordinateSystem = {
+    pattern: d3CoordinateSystem.pattern || originPattern,
+    scale: d3CoordinateSystem.scale || 1,
+    viewportWidth: d3CoordinateSystem.viewportWidth || window.innerWidth,
+    viewportHeight: d3CoordinateSystem.viewportHeight || window.innerHeight,
+  };
 
   // Handle cell clicks - open card overlay
   const handleCellClick = useCallback((node: Node) => {
@@ -171,7 +179,7 @@ export function SuperGridDemo() {
       {/* D3 Sparsity Layer - now driven by PAFV axis mappings */}
       <D3SparsityLayer
         data={nodes}
-        coordinateSystem={coordinateSystem}
+        coordinateSystem={d3CoordinateSystem}
         xAxis={xAxis}
         xAxisFacet={xFacet}
         yAxis={yAxis}
