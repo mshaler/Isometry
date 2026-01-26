@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  };
+}
+
 /**
  * PerformanceMonitor - Component to track and display view switching performance
  *
@@ -14,7 +22,7 @@ export interface PerformanceMetric {
   timestamp: number;
   operation: string;
   duration: number;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
 }
 
 export interface PerformanceStats {
@@ -37,7 +45,7 @@ export class PerformanceTracker {
     this.startTimes.set(operation, performance.now());
   }
 
-  endOperation(operation: string, details?: Record<string, any>): PerformanceMetric | null {
+  endOperation(operation: string, details?: Record<string, unknown>): PerformanceMetric | null {
     const startTime = this.startTimes.get(operation);
     if (!startTime) {
       console.warn(`No start time found for operation: ${operation}`);
@@ -115,7 +123,7 @@ export class PerformanceTracker {
 
   private getMemoryUsage(): number | undefined {
     if ('memory' in performance) {
-      return Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024);
+      return Math.round((performance as PerformanceWithMemory).memory!.usedJSHeapSize / 1024 / 1024);
     }
     return undefined;
   }
@@ -290,7 +298,7 @@ export function PerformanceMonitor({
  * Hook to easily track performance of operations
  */
 export function usePerformanceTracking() {
-  const trackOperation = (operation: string, fn: () => Promise<any> | any) => {
+  const trackOperation = (operation: string, fn: () => Promise<unknown> | unknown) => {
     performanceTracker.startOperation(operation);
 
     try {
@@ -305,7 +313,7 @@ export function usePerformanceTracking() {
         return result;
       }
     } catch (error) {
-      performanceTracker.endOperation(operation, { error: error.message });
+      performanceTracker.endOperation(operation, { error: error instanceof Error ? error.message : String(error) });
       throw error;
     }
   };
