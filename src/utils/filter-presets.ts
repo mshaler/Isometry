@@ -1,11 +1,18 @@
 /**
  * Filter Preset Storage Utilities
  *
- * Manages saving/loading filter presets to/from localStorage.
- * Handles JSON serialization with Date objects.
+ * Manages saving/loading filter presets to/from encrypted localStorage.
+ * Handles JSON serialization with Date objects and provides secure storage.
  */
 
 import type { FilterPreset } from '../types/filter';
+import {
+  setEncryptedItem,
+  getEncryptedItem,
+  removeEncryptedItem,
+  migrateToEncryptedStorage,
+  isEncryptedStorageSupported
+} from './encrypted-storage';
 
 const STORAGE_KEY = 'isometry:filter-presets';
 
@@ -41,9 +48,51 @@ function deserializePreset(data: SerializedFilterPreset): FilterPreset {
 }
 
 /**
- * Load all presets from localStorage
+ * Load all presets from encrypted localStorage
  */
-export function loadPresets(): FilterPreset[] {
+export async function loadPresets(): Promise<FilterPreset[]> {
+  try {
+    // Check if encryption is supported
+    if (!isEncryptedStorageSupported()) {
+      console.warn('Encrypted storage not supported, falling back to plain storage');
+      return loadPresetsPlain();
+    }
+
+    // Try to migrate existing plain storage first
+    const migrationResult = await migrateToEncryptedStorage(STORAGE_KEY);
+    if (!migrationResult.success) {
+      console.warn('Migration failed, using plain storage:', migrationResult.error);
+      return loadPresetsPlain();
+    }
+
+    // Load from encrypted storage
+    const result = await getEncryptedItem<SerializedFilterPreset[]>(STORAGE_KEY);
+
+    if (!result.success) {
+      console.error('Failed to load encrypted presets:', result.error);
+      return loadPresetsPlain(); // Fallback
+    }
+
+    if (!result.data) {
+      return [];
+    }
+
+    if (!Array.isArray(result.data)) {
+      console.warn('Invalid preset data in encrypted storage, resetting');
+      return [];
+    }
+
+    return result.data.map(deserializePreset);
+  } catch (error) {
+    console.error('Failed to load presets from encrypted storage:', error);
+    return loadPresetsPlain(); // Fallback
+  }
+}
+
+/**
+ * Fallback function for loading presets from plain localStorage
+ */
+function loadPresetsPlain(): FilterPreset[] {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) {
@@ -64,11 +113,11 @@ export function loadPresets(): FilterPreset[] {
 }
 
 /**
- * Save preset to localStorage
+ * Save preset to encrypted localStorage
  */
-export function savePreset(preset: FilterPreset): void {
+export async function savePreset(preset: FilterPreset): Promise<void> {
   try {
-    const presets = loadPresets();
+    const presets = await loadPresets();
     const existingIndex = presets.findIndex((p) => p.id === preset.id);
 
     if (existingIndex >= 0) {
@@ -80,38 +129,64 @@ export function savePreset(preset: FilterPreset): void {
     }
 
     const serialized = presets.map(serializePreset);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+
+    // Try encrypted storage first
+    if (isEncryptedStorageSupported()) {
+      const result = await setEncryptedItem(STORAGE_KEY, serialized);
+
+      if (!result.success) {
+        console.warn('Failed to save to encrypted storage:', result.error);
+        // Fallback to plain storage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+      }
+    } else {
+      // Use plain storage as fallback
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+    }
   } catch (error) {
-    console.error('Failed to save preset to localStorage:', error);
+    console.error('Failed to save preset:', error);
     throw new Error('Failed to save preset');
   }
 }
 
 /**
- * Delete preset from localStorage
+ * Delete preset from encrypted localStorage
  */
-export function deletePreset(id: string): void {
+export async function deletePreset(id: string): Promise<void> {
   try {
-    const presets = loadPresets();
+    const presets = await loadPresets();
     const filtered = presets.filter((p) => p.id !== id);
 
     const serialized = filtered.map(serializePreset);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+
+    // Try encrypted storage first
+    if (isEncryptedStorageSupported()) {
+      const result = await setEncryptedItem(STORAGE_KEY, serialized);
+
+      if (!result.success) {
+        console.warn('Failed to delete from encrypted storage:', result.error);
+        // Fallback to plain storage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+      }
+    } else {
+      // Use plain storage as fallback
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+    }
   } catch (error) {
-    console.error('Failed to delete preset from localStorage:', error);
+    console.error('Failed to delete preset:', error);
     throw new Error('Failed to delete preset');
   }
 }
 
 /**
- * Update preset in localStorage
+ * Update preset in encrypted localStorage
  */
-export function updatePreset(
+export async function updatePreset(
   id: string,
   updates: Partial<FilterPreset>
-): void {
+): Promise<void> {
   try {
-    const presets = loadPresets();
+    const presets = await loadPresets();
     const existingIndex = presets.findIndex((p) => p.id === id);
 
     if (existingIndex < 0) {
@@ -127,9 +202,22 @@ export function updatePreset(
     presets[existingIndex] = updated;
 
     const serialized = presets.map(serializePreset);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+
+    // Try encrypted storage first
+    if (isEncryptedStorageSupported()) {
+      const result = await setEncryptedItem(STORAGE_KEY, serialized);
+
+      if (!result.success) {
+        console.warn('Failed to update in encrypted storage:', result.error);
+        // Fallback to plain storage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+      }
+    } else {
+      // Use plain storage as fallback
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
+    }
   } catch (error) {
-    console.error('Failed to update preset in localStorage:', error);
+    console.error('Failed to update preset:', error);
     throw new Error('Failed to update preset');
   }
 }
@@ -137,8 +225,8 @@ export function updatePreset(
 /**
  * Check if preset name already exists
  */
-export function presetNameExists(name: string, excludeId?: string): boolean {
-  const presets = loadPresets();
+export async function presetNameExists(name: string, excludeId?: string): Promise<boolean> {
+  const presets = await loadPresets();
   return presets.some((p) => p.name === name && p.id !== excludeId);
 }
 

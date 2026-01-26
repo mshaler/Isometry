@@ -5,6 +5,7 @@ import { useCommandHistory } from './useCommandHistory';
 import { useTerminalContext } from '../context/TerminalContext';
 import { parseCommand, isClaudeHelp, getClaudeHelpText } from '../utils/commandParsing';
 import type { CommandResponse, CommandType, HistoryEntry } from '../types/shell';
+import { getSecureWorkingDirectory, getEnvironmentConfig } from '../config/environment';
 
 interface UseCommandRouterReturn {
   executeCommand: (input: string) => Promise<CommandResponse>;
@@ -75,7 +76,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
           timestamp: new Date(),
           response: helpResponse,
           duration: Date.now() - startTime,
-          cwd: '/Users/mshaler/Developer/Projects/Isometry',
+          cwd: getSecureWorkingDirectory(),
           context: {
             cardTitle: projectContext.getActiveCardContext()?.title
           }
@@ -194,7 +195,7 @@ Type 'claude help' for AI command documentation.`;
             timestamp: new Date(),
             response,
             duration: Date.now() - startTime,
-            cwd: '/Users/mshaler/Developer/Projects/Isometry'
+            cwd: getSecureWorkingDirectory()
           };
           history.addHistoryEntry(historyEntry);
           resolve(response);
@@ -218,7 +219,7 @@ Type 'claude help' for AI command documentation.`;
         timestamp: new Date(),
         response: errorResponse,
         duration: Date.now() - startTime,
-        cwd: '/Users/mshaler/Developer/Projects/Isometry'
+        cwd: getSecureWorkingDirectory()
       };
       history.addHistoryEntry(errorHistoryEntry);
       return errorResponse;

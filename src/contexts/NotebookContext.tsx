@@ -7,6 +7,12 @@ import { useNotebookPerformance } from '../hooks/useNotebookPerformance';
 import type { NotebookIntegrationState } from '../hooks/useNotebookIntegration';
 import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '../hooks/useNotebookPerformance';
 import { useErrorReporting } from '../services/ErrorReportingService';
+import {
+  setEncryptedItem,
+  getEncryptedItem,
+  migrateToEncryptedStorage,
+  isEncryptedStorageSupported
+} from '../utils/encrypted-storage';
 
 interface NotebookLayoutState {
   capture: LayoutPosition;
