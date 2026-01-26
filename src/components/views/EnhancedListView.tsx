@@ -21,15 +21,13 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Trigger loading state and staggered animation when data changes
+  // Trigger loading state when data changes
   useEffect(() => {
     setIsLoading(true);
     setHasError(false);
-    setShowStaggered(false);
 
     const timeout = setTimeout(() => {
       setIsLoading(false);
-      setShowStaggered(true);
     }, 100); // Brief loading state
 
     return () => clearTimeout(timeout);

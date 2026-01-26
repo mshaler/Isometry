@@ -47,7 +47,6 @@ export function EnhancedViewSwitcher({
   const {
     registry,
     switchToView,
-    getCurrentRenderer,
     getAvailableViews,
     getViewInfo
   } = useViewRegistry();
