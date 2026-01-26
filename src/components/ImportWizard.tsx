@@ -22,7 +22,7 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, folder }: Impo
   const [dragActive, setDragActive] = useState(false);
   const [importOptions, setImportOptions] = useState<OfficeImportOptions>({
     nodeType: 'document',
-    folder: folder || null,
+    folder: folder || undefined,
     source: 'bulk-import',
     preserveFormatting: true,
     extractTables: true
@@ -118,7 +118,7 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, folder }: Impo
     setFiles([]);
     setImportOptions({
       nodeType: 'document',
-      folder: folder || null,
+      folder: folder || undefined,
       source: 'bulk-import',
       preserveFormatting: true,
       extractTables: true
@@ -180,7 +180,7 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, folder }: Impo
                 <input
                   type="text"
                   value={importOptions.folder || ''}
-                  onChange={(e) => setImportOptions(prev => ({ ...prev, folder: e.target.value || null }))}
+                  onChange={(e) => setImportOptions(prev => ({ ...prev, folder: e.target.value || undefined }))}
                   placeholder="Optional folder name"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
                 />
