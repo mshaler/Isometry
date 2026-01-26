@@ -99,7 +99,6 @@ class FinalMigrationValidator {
    */
   private async searchForSqlJsReferences(): Promise<string[]> {
     const fs = await import('fs');
-    const path = await import('path');
     const glob = await import('glob');
 
     const srcFiles = glob.sync('src/**/*.{ts,tsx}').filter(f => !f.includes('.test.'));
@@ -207,7 +206,7 @@ class FinalMigrationValidator {
   async validateComponentCompatibility(): Promise<boolean> {
     try {
       // Test that useDatabase hook works correctly
-      const { useDatabase } = await import('../db/DatabaseContext');
+      const { useDatabase: _useDatabase } = await import('../db/DatabaseContext');
 
       // Mock component test
       let hookResult: unknown;
@@ -230,7 +229,7 @@ class FinalMigrationValidator {
       }
 
       // Validate environment detection works
-      const { useEnvironment } = await import('../contexts/EnvironmentContext');
+      const { useEnvironment: _useEnvironment } = await import('../contexts/EnvironmentContext');
       // Mock environment detection validation
 
       console.log('✅ All React components maintain compatibility');

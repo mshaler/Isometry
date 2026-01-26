@@ -404,7 +404,7 @@ export class MigrationValidator {
   // Private Validation Methods
   // ==========================================================================
 
-  private async validateDataIntegrity(provider: DatabaseMode): Promise<ValidationDetail[]> {
+  private async validateDataIntegrity(_provider: DatabaseMode): Promise<ValidationDetail[]> {
     const checks: ValidationDetail[] = [];
 
     try {
@@ -449,7 +449,7 @@ export class MigrationValidator {
     return checks;
   }
 
-  private async validatePerformanceReadiness(from: DatabaseMode, to: DatabaseMode): Promise<ValidationDetail[]> {
+  private async validatePerformanceReadiness(_from: DatabaseMode, _to: DatabaseMode): Promise<ValidationDetail[]> {
     const checks: ValidationDetail[] = [];
 
     // Performance baseline check
@@ -500,7 +500,7 @@ export class MigrationValidator {
     return checks;
   }
 
-  private async validateCompatibility(from: DatabaseMode, to: DatabaseMode): Promise<ValidationDetail[]> {
+  private async validateCompatibility(_from: DatabaseMode, _to: DatabaseMode): Promise<ValidationDetail[]> {
     const checks: ValidationDetail[] = [];
 
     // Schema compatibility
@@ -524,7 +524,7 @@ export class MigrationValidator {
     return checks;
   }
 
-  private async validateEnvironmentReadiness(provider: DatabaseMode): Promise<ValidationDetail[]> {
+  private async validateEnvironmentReadiness(_provider: DatabaseMode): Promise<ValidationDetail[]> {
     const checks: ValidationDetail[] = [];
 
     // Environment detection
@@ -720,19 +720,19 @@ export class MigrationValidator {
   }
 
   // Mock implementations for complex operations
-  private async switchProvider(scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
+  private async switchProvider(_scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
     return { success: true, errors: [] };
   }
 
-  private async validatePerformanceAfterSwitch(provider: DatabaseMode): Promise<boolean> {
+  private async validatePerformanceAfterSwitch(_provider: DatabaseMode): Promise<boolean> {
     return true;
   }
 
-  private async restoreDataOnly(scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
+  private async restoreDataOnly(_scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
     return { success: true, errors: [] };
   }
 
-  private async resetConfiguration(scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
+  private async resetConfiguration(_scenario: RollbackScenario): Promise<{ success: boolean; errors: string[] }> {
     return { success: true, errors: [] };
   }
 
@@ -740,15 +740,15 @@ export class MigrationValidator {
     return true;
   }
 
-  private async restoreDataFromSnapshot(snapshot: DataSnapshot): Promise<boolean> {
+  private async restoreDataFromSnapshot(_snapshot: DataSnapshot): Promise<boolean> {
     return true;
   }
 
-  private async restoreConfigurationFromSnapshot(snapshot: ConfigurationSnapshot): Promise<boolean> {
+  private async restoreConfigurationFromSnapshot(_snapshot: ConfigurationSnapshot): Promise<boolean> {
     return true;
   }
 
-  private async validateRestoredState(checkpoint: Checkpoint): Promise<{ success: boolean; errors: string[] }> {
+  private async validateRestoredState(_checkpoint: Checkpoint): Promise<{ success: boolean; errors: string[] }> {
     return { success: true, errors: [] };
   }
 }
