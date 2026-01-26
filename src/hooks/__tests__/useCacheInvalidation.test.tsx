@@ -16,7 +16,6 @@ import {
 
 // Test wrapper component
 function createWrapper() {
-  // eslint-disable-next-line react/display-name
   return ({ children }: { children: ReactNode }) => (
     <CacheInvalidationProvider>
       {children}

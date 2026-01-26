@@ -585,7 +585,7 @@ export class MigrationSafety {
         const result = await webViewBridge.database.execute('SELECT * FROM sqlite_master WHERE type="table"', []);
         const tables = result as Array<{ name: string; sql: string }>;
 
-        let exportData = {
+        const exportData = {
           metadata: {
             exportTimestamp: new Date().toISOString(),
             exportVersion: '2.0',
