@@ -367,7 +367,9 @@ export class EnhancedSyncManager {
     if (this.offlineStorage.size >= this.maxOfflineChanges) {
       console.warn('Offline queue full, removing oldest change');
       const oldestKey = this.offlineStorage.keys().next().value;
-      this.offlineStorage.delete(oldestKey);
+      if (oldestKey !== undefined) {
+        this.offlineStorage.delete(oldestKey);
+      }
     }
 
     const offlineChange: OfflineChange = {
