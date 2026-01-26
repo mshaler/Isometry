@@ -1,8 +1,19 @@
-# Isometry Notebook Sidecar
+# Isometry
 
-**Domain:** Hybrid note-taking/development tool with Claude Code integration
-**Type:** React application extension to existing Isometry architecture
-**Timeline:** Strategic development milestone
+**Domain:** Native knowledge management with hybrid PAFV+LATCH+GRAPH visualization
+**Type:** Native iOS/macOS applications with React prototype bridge
+**Timeline:** Production-ready native implementation
+
+## Current Milestone: v2.3 Error Elimination
+
+**Goal:** Achieve zero warnings and complete cleanup of legacy sql.js dependencies from migration
+
+**Target features:**
+- Complete sql.js reference removal from React prototype
+- TypeScript strict mode compliance across all modules
+- Zero build warnings in both React and native applications
+- Clean dependency trees without unused packages
+- Performance validation after cleanup
 
 ## Core Value
 
