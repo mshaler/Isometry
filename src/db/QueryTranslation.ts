@@ -119,7 +119,7 @@ export class QueryOptimizer {
       complexity = 'complex';
     }
 
-    const complexityScore = this.calculateComplexityScore(normalizedSQL);
+    const _complexityScore = this.calculateComplexityScore(normalizedSQL);
     const estimatedRows = this.estimateResultSize(normalizedSQL, params);
 
     return {
@@ -297,7 +297,7 @@ export class QueryOptimizer {
     return score;
   }
 
-  private estimateResultSize(sql: string, params: unknown[]): number {
+  private estimateResultSize(sql: string, _params: unknown[]): number {
     // Simple heuristic estimation
     if (sql.includes('LIMIT')) {
       const limitMatch = sql.match(/LIMIT\s+(\d+)/i);

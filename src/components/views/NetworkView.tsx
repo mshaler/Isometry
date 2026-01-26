@@ -7,7 +7,6 @@ import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
 import type {
-  D3SVGSelection,
   SimulationNodeDatum,
   SimulationLinkDatum,
   D3ForceSimulation
