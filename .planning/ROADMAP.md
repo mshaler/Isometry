@@ -12,6 +12,7 @@
 - ✅ **v1.0 React Prototype** - Phases 1-4 (completed)
 - 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (in progress)
 - 🚧 **v2.1 SQL.js Migration** - Phases 7.1-7.3 (planned)
+- 📋 **v2.2 Database Versioning & ETL Operations** - Phases 8.1-8.4 (retrofitting milestone)
 
 ## Milestone Overview
 
@@ -22,6 +23,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v2.0 Goal (Current):** Integrate React prototype functionality into native iOS/macOS apps that leverage existing infrastructure while providing superior performance and user experience within App Sandbox constraints.
 
 **v2.1 Goal (Migration):** Phase out sql.js dependency by implementing native API bridge, maintaining React prototype functionality while connecting to production GRDB/CloudKit backend.
+
+**v2.2 Goal (Retrofitting):** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
 
 ---
 
@@ -244,6 +247,62 @@ Plans:
 - [ ] 07.3-02: Rollback mechanisms and safety procedures
 - [ ] 07.3-03: Final cleanup and documentation
 
+### 📋 v2.2 Database Versioning & ETL Operations (Retrofitting)
+
+**Milestone Goal:** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
+
+#### Phase 8.1: Requirements & Foundation Verification
+**Goal:** Establish requirements traceability and foundation verification for existing implementations
+**Dependencies:** None (retrofitting existing implementations)
+**Requirements:** All 10 database versioning requirements (DBVER-01 through UI-03)
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. Requirements traceability verification for all 13 Swift files
+2. Foundation architecture validation for existing implementations
+3. Documentation completeness audit and gap analysis
+4. Integration testing framework setup for verification phases
+
+Plans:
+- [ ] 08.1-01-PLAN.md — Requirements Traceability Matrix and architecture verification
+- [ ] 08.1-02-PLAN.md — Verification framework and integration testing setup
+
+#### Phase 8.2: Core Versioning System Verification
+**Goal:** Verify database version control and storage systems functionality
+**Dependencies:** Phase 8.1 (requires foundation verification)
+**Requirements:** DBVER-01, DBVER-02, DBVER-03, STOR-01
+**Plans:** Core system verification
+
+**Success Criteria:**
+1. Git-like database operations (branch, merge, commit, rollback) verified
+2. Parallel analytics support tested and validated
+3. Synthetic data operations isolated and functional
+4. Content-aware storage optimization benchmarked
+
+#### Phase 8.3: ETL Integration Verification
+**Goal:** Verify ETL operations and data lineage systems integration
+**Dependencies:** Phase 8.2 (requires core system verification)
+**Requirements:** ETL-01, ETL-02, ETL-03
+**Plans:** ETL system verification
+
+**Success Criteria:**
+1. GSD executor pattern implementation verified and tested
+2. Seven-phase execution model validated with real workflows
+3. Data lineage tracking (Sources → Streams → Surfaces) confirmed
+4. Data catalog search and discovery functionality validated
+
+#### Phase 8.4: UI & Integration Validation
+**Goal:** Verify user interfaces and complete system integration
+**Dependencies:** Phase 8.3 (requires ETL verification)
+**Requirements:** UI-01, UI-02, UI-03
+**Plans:** UI validation and integration testing
+
+**Success Criteria:**
+1. SwiftUI interfaces tested for functionality and responsiveness
+2. Git-like workflow patterns validated in user interface
+3. Cross-system integration verified for production readiness
+4. End-to-end scenarios confirmed with comprehensive testing
+
 ## Dependencies
 
 ### v2.1 Migration External Dependencies
@@ -263,6 +322,7 @@ Plans:
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
 v2.0: Phase 6.1 → Phase 6.2 → Phase 6.3 → Phase 6.4 (IN PROGRESS)
 v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
+v2.2: Phase 8.1 → Phase 8.2 → Phase 8.3 → Phase 8.4 (RETROFITTING)
 ```
 
 ## Progress
@@ -270,6 +330,7 @@ v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
 **Execution Order:**
 Native: 6.1 → 6.2 → 6.3 → 6.4
 Migration: 7.1 → 7.2 → 7.3
+Retrofitting: 8.1 → 8.2 → 8.3 → 8.4
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -284,6 +345,10 @@ Migration: 7.1 → 7.2 → 7.3
 | 7.1. API Bridge | v2.1 | 0/3 | Not started | - |
 | 7.2. WebView Bridge | v2.1 | 0/4 | Not started | - |
 | 7.3. Migration Complete | v2.1 | 0/3 | Not started | - |
+| 8.1. Requirements Verification | v2.2 | 2/2 | Ready | - |
+| 8.2. Core Versioning | v2.2 | 0/4 | Planned | - |
+| 8.3. ETL Integration | v2.2 | 0/4 | Planned | - |
+| 8.4. UI Validation | v2.2 | 0/4 | Planned | - |
 
 ## Architecture Integration Summary
 
@@ -421,6 +486,6 @@ Production Backend
 
 ---
 
-**Current step:** Phase 6.3 planning complete - Ready for shell integration execution.
+**Current step:** Phase 8.1 planning complete - Ready for requirements and foundation verification.
 
-**Next step:** `/gsd:execute-phase 6.3` to implement native shell integration.
+**Next step:** `/gsd:execute-phase 8.1` to establish requirements traceability and verification framework.
