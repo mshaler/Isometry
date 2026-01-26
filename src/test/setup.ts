@@ -34,10 +34,12 @@ Object.defineProperty(window, 'matchMedia', {
 Object.defineProperty(global, 'crypto', {
   writable: true,
   value: {
-    getRandomValues: (array: any) => {
+    getRandomValues: <T extends ArrayBufferView | null>(array: T): T => {
       // Fill with predictable test values for consistent test results
-      for (let i = 0; i < array.length; i++) {
-        array[i] = Math.floor(Math.random() * 256);
+      if (array && 'length' in array) {
+        for (let i = 0; i < array.length; i++) {
+          (array as Uint8Array)[i] = Math.floor(Math.random() * 256);
+        }
       }
       return array;
     },
@@ -95,13 +97,26 @@ Object.defineProperty(global, 'crypto', {
   },
 });
 
+// Define interfaces for WebKit message handling
+interface WebKitMessage {
+  id: string;
+  method: string;
+  params?: Record<string, unknown>;
+}
+
+interface WebKitResponse {
+  id: string;
+  result: unknown;
+  error: string | null;
+}
+
 // Mock WebKit for WebView bridge testing
 const mockMessageHandlers = {
   database: {
-    postMessage: (message: any) => {
+    postMessage: (message: WebKitMessage) => {
       // Mock database responses immediately
       setTimeout(() => {
-        const event = new MessageEvent('message', {
+        const event = new MessageEvent<WebKitResponse>('message', {
           data: {
             id: message.id,
             result: mockDatabaseResponse(message),
@@ -113,10 +128,10 @@ const mockMessageHandlers = {
     },
   },
   fileSystem: {
-    postMessage: (message: any) => {
+    postMessage: (message: WebKitMessage) => {
       // Mock file system responses
       setTimeout(() => {
-        const event = new MessageEvent('message', {
+        const event = new MessageEvent<WebKitResponse>('message', {
           data: {
             id: message.id,
             result: { success: true },
@@ -128,10 +143,10 @@ const mockMessageHandlers = {
     },
   },
   sync: {
-    postMessage: (message: any) => {
+    postMessage: (message: WebKitMessage) => {
       // Mock sync responses
       setTimeout(() => {
-        const event = new MessageEvent('message', {
+        const event = new MessageEvent<WebKitResponse>('message', {
           data: {
             id: message.id,
             result: { success: true },
@@ -144,8 +159,8 @@ const mockMessageHandlers = {
   },
 };
 
-function mockDatabaseResponse(message: any) {
-  const sql = message.params?.sql || '';
+function mockDatabaseResponse(message: WebKitMessage): unknown {
+  const sql = (message.params?.sql as string) || '';
 
   // Mock database responses based on query
   if (sql.includes('sqlite_master') && sql.includes('type="table"')) {
@@ -240,7 +255,7 @@ process.on('rejectionHandled', (promise) => {
   }
 });
 
-function isTestExpectedError(error: any): boolean {
+function isTestExpectedError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
 
   // Common test-expected error patterns
@@ -252,7 +267,7 @@ function isTestExpectedError(error: any): boolean {
     'WebView request timeout'
   ];
 
-  const errorMessage = error.message || error.toString();
+  const errorMessage = (error as Error).message || String(error);
   return expectedPatterns.some(pattern => errorMessage.includes(pattern));
 }
 
@@ -264,7 +279,11 @@ global.__VITEST_CLEAR_UNHANDLED_REJECTIONS__ = () => {
 
 // Mock addEventListener for WebView events
 const originalAddEventListener = global.addEventListener;
-global.addEventListener = (type: string, listener: any, options?: any) => {
+global.addEventListener = (
+  type: string,
+  listener: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions
+) => {
   if (type === 'message' && typeof listener === 'function') {
     // Mock WebView message events
     return;

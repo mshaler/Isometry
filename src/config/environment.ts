@@ -156,7 +156,12 @@ function getEnvVar(key: string, fallback?: string): string | undefined {
 
   // Try process environment (if available)
   try {
-    const globalThis_process = (globalThis as any).process;
+    interface GlobalWithProcess {
+      process?: {
+        env?: Record<string, string>;
+      };
+    }
+    const globalThis_process = (globalThis as GlobalWithProcess).process;
     if (globalThis_process?.env?.[key]) {
       return globalThis_process.env[key];
     }
@@ -201,7 +206,7 @@ function buildEnvironmentConfig(envType: EnvironmentType): EnvironmentConfig {
     enableDebugLogging: getEnvVar('ENABLE_DEBUG_LOGGING') === 'true' || defaults.enableDebugLogging || false,
     enablePerformanceMonitoring: getEnvVar('ENABLE_PERFORMANCE_MONITORING') !== 'false' && (defaults.enablePerformanceMonitoring ?? true),
     enableErrorReporting: getEnvVar('ENABLE_ERROR_REPORTING') === 'true' || defaults.enableErrorReporting || false,
-    logLevel: (getEnvVar('LOG_LEVEL') as any) || defaults.logLevel || 'error',
+    logLevel: (getEnvVar('LOG_LEVEL') as EnvironmentConfig['logLevel']) || defaults.logLevel || 'error',
 
     // Secure file system paths
     workingDirectory: getEnvVar('WORKING_DIRECTORY'), // No default for security

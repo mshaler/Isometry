@@ -279,7 +279,10 @@ class ErrorReportingService {
     this.listeners = [];
 
     // Remove global reference
-    delete (window as any).errorReporting;
+    interface WindowWithErrorReporting extends Window {
+      errorReporting?: ErrorReportingService;
+    }
+    delete (window as WindowWithErrorReporting).errorReporting;
   }
 
   // User feedback methods
