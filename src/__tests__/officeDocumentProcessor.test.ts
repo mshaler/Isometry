@@ -27,7 +27,6 @@ vi.mock('mammoth', () => ({
   extractRawText: vi.fn(),
   images: {
     imgElement: vi.fn()
-    }
   }
 }));
 

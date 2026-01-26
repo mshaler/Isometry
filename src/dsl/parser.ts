@@ -10,9 +10,33 @@
 
 import type { ASTNode, ParseError } from './types';
 
-// Import the generated PEG.js parser (CommonJS format)
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pegParser = require('./grammar/parser.cjs');
+// Simple fallback parser for browser compatibility
+// TODO: Replace with proper PEG.js generated parser when CommonJS issues resolved
+const pegParser = {
+  parse: (input: string) => {
+    // Simple DSL parser fallback - handles basic queries
+    // Supports: field:value, field:>value, field:<value, AND, OR
+    const tokens = input.split(/\s+(AND|OR)\s+/i);
+    return {
+      type: 'query',
+      operator: tokens.length > 1 ? tokens[1].toUpperCase() : 'AND',
+      expressions: tokens.filter((_, i) => i % 2 === 0).map(parseExpression)
+    };
+  }
+};
+
+function parseExpression(expr: string) {
+  const match = expr.match(/^(\w+):(>|<|>=|<=)?(.+)$/);
+  if (!match) return { type: 'literal', value: expr };
+
+  const [, field, operator = '=', value] = match;
+  return {
+    type: 'comparison',
+    field,
+    operator,
+    value: isNaN(Number(value)) ? value : Number(value)
+  };
+}
 
 /**
  * Parse a DSL string into an AST
