@@ -50,12 +50,12 @@ export function FilterStatusBar() {
       <div className="flex flex-wrap gap-1">
         {filters.map((filter: Filter, _index: number) => (
           <span
-            key={index}
+            key={_index}
             className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs ${chipStyles}`}
           >
             {filter.field} {filter.operator} {String(filter.value)}
             <button
-              onClick={() => removeFilter(index)}
+              onClick={() => removeFilter(_index)}
               className="hover:text-red-500"
             >
               <X className="w-3 h-3" />

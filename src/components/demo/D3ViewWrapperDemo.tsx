@@ -57,7 +57,7 @@ export function D3ViewWrapperDemo() {
           .datum(cardValue);
 
         // Use .call() correctly for d3 components
-        cardGroup.call(card as ViewRenderer);
+        cardGroup.call(card as unknown as ViewRenderer);
       });
 
       // Add connecting lines

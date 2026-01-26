@@ -59,14 +59,14 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
   const updateProperty = useCallback((key: string, _value: unknown) => {
     const definition = allDefinitions.find(def => def.name === key);
     if (definition) {
-      const validationErrors = validatePropertyValue(value, definition);
+      const validationErrors = validatePropertyValue(_value, definition);
       setErrors(prev => ({
         ...prev,
         [key]: validationErrors.length > 0 ? validationErrors[0] : ''
       }));
     }
 
-    const newProperties = { ...properties, [key]: value };
+    const newProperties = { ...properties, [key]: _value };
     setProperties(newProperties);
     debouncedSave(newProperties);
   }, [properties, allDefinitions, debouncedSave]);

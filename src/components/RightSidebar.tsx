@@ -81,7 +81,7 @@ export function RightSidebar() {
   };
 
   const renderSectionContent = (section: string, _isFormats: boolean) => {
-    if (isFormats && section === 'Text') {
+    if (_isFormats && section === 'Text') {
       return <TextFormatContent />;
     }
     return <PlaceholderContent />;
@@ -97,7 +97,7 @@ export function RightSidebar() {
           onToggle={() => toggleSection(section)}
           className="mb-2"
         >
-          {renderSectionContent(section, isFormats)}
+          {renderSectionContent(section, _isFormats)}
         </AccordionSection>
       ))}
     </>

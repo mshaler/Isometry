@@ -13,7 +13,7 @@ import { sampleNodes } from './data/sampleData';
 
 /** Card renderer interface for D3 card component calls */
 interface CardRenderer {
-  (selection: d3.Selection<SVGGElement, CardValue, null, undefined>): void;
+  (selection: d3.Selection<SVGGElement, NodeValue, null, undefined>): void;
 }
 
 export function CbCanvasDemo() {

@@ -81,7 +81,7 @@ export function CategoryColorPicker({
    */
   const handleTagContextMenu = (e: React.MouseEvent, _tag: string) => {
     e.preventDefault();
-    setTagForColorAssignment(tag);
+    setTagForColorAssignment(_tag);
   };
 
   /**

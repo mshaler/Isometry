@@ -74,7 +74,7 @@ export function HierarchyTreeView({
   const handleNodeSelect = useCallback((node: TreeNode, _checked: boolean) => {
     const subtreeIds = getSubtreeIds(node);
 
-    if (checked) {
+    if (_checked) {
       // Add all subtree IDs to selection
       const newSelection = new Set([...selectedIds, ...subtreeIds]);
       onSelectionChange(Array.from(newSelection));

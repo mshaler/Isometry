@@ -132,14 +132,14 @@ export function Sidebar() {
   );
 
   const handleFilterItemClick = (item: string, _isAvailable: boolean) => {
-    if (isAvailable) {
+    if (_isAvailable) {
       setActiveFilterPanel(activeFilterPanel === item ? null : item);
     }
     // Unavailable items are dimmed and not clickable
   };
 
   const handleFacetClick = (field: string, _value: string) => {
-    addFilter({ field, operator: '=', value });
+    addFilter({ field, operator: '=', value: _value });
     setActiveFilterPanel(null);
   };
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMockData } from '../hooks/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { usePAFV } from '../hooks/usePAFV';
