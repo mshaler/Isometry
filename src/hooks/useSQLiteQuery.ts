@@ -4,7 +4,7 @@ import { rowToNode, Node } from '../types/node';
 import { translateQuery, TranslationResult, OptimizedCall, SQLCall } from '../db/QueryTranslation';
 
 // Environment variable detection for API mode
-const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
+const USE_NATIVE_API = import.meta.env.REACT_APP_USE_NATIVE_API === 'true';
 
 export interface QueryState<T> {
   data: T[] | null;
@@ -97,7 +97,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
       setDuration(queryDuration);
 
       // Log performance in development mode
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('Query Performance:', {
           sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
           optimized: wasOptimized,

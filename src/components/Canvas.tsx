@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
-import { useFilteredNodes } from '../hooks/useFilteredNodes';
+// import { useFilteredNodes } from '../hooks/useFilteredNodes';
+import { useMockData } from '../hooks/useMockData';
 import {
   ListView,
   GridView,
@@ -22,8 +23,8 @@ export function Canvas() {
   const { theme } = useTheme();
   const { activeView } = useAppState();
 
-  // Query nodes from SQLite with LATCH filters applied
-  const { data: nodes, loading, error } = useFilteredNodes();
+  // Use mock data for MVP demonstration (bypasses database complexity)
+  const { data: nodes, loading, error } = useMockData();
 
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);

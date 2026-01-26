@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { useTheme, ThemeProvider } from './contexts/ThemeContext';
-import { DatabaseProvider } from './db/DatabaseContext';
+// import { DatabaseProvider } from './db/DatabaseContext'; // TEMPORARILY DISABLED FOR MVP
 import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './contexts/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
@@ -23,6 +23,7 @@ import { Canvas } from './components/Canvas';
 import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { ComponentCatalog } from './pages/ComponentCatalog';
+import MVPDemo from './MVPDemo';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -146,28 +147,34 @@ function AppContent() {
 }
 
 function App() {
+  // GSD: Use minimal MVP demo to prove data visualization works
+  // TODO: Re-enable full app once database issues are resolved
+  return <MVPDemo />;
+}
+
+// Original complex App - disabled for MVP
+function FullApp() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <ThemeProvider>
-          <DatabaseProvider>
-            <NotebookProvider>
-              <AppStateProvider>
-                <FilterProvider>
-                  <PAFVProvider>
-                    <SelectionProvider>
-                      <CardOverlayProvider>
-                        <TagColorProvider>
-                          <AppContent />
-                          <CardOverlay />
-                        </TagColorProvider>
-                      </CardOverlayProvider>
-                    </SelectionProvider>
-                  </PAFVProvider>
-                </FilterProvider>
-              </AppStateProvider>
-            </NotebookProvider>
-          </DatabaseProvider>
+          {/* DatabaseProvider TEMPORARILY DISABLED FOR MVP - using mock data instead */}
+          <NotebookProvider>
+            <AppStateProvider>
+              <FilterProvider>
+                <PAFVProvider>
+                  <SelectionProvider>
+                    <CardOverlayProvider>
+                      <TagColorProvider>
+                        <AppContent />
+                        <CardOverlay />
+                      </TagColorProvider>
+                    </CardOverlayProvider>
+                  </SelectionProvider>
+                </PAFVProvider>
+              </FilterProvider>
+            </AppStateProvider>
+          </NotebookProvider>
         </ThemeProvider>
       </BrowserRouter>
     </ErrorBoundary>
