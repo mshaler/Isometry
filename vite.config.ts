@@ -10,11 +10,14 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // sql.js needs special handling for WASM
-    exclude: ['sql.js'],
+    // Optimized for native-only deployment
   },
-  assetsInclude: ['**/*.sql', '**/*.wasm'],
+  assetsInclude: ['**/*.sql'],
   build: {
     target: 'esnext',
+    rollupOptions: {
+      // Ensure tree-shaking of unused sql.js references
+      external: ['sql.js'],
+    },
   },
 });

@@ -1,6 +1,7 @@
 {
   "name": "isometry",
   "version": "0.1.0",
+  "description": "Isometry React prototype - now with native database integration (sql.js migration completed)",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -43,7 +44,6 @@
     "react-leaflet": "^4.2.1",
     "react-router-dom": "^6.20.0",
     "react-window": "^1.8.10",
-    "sql.js": "^1.9.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "xlsx": "^0.18.5"
