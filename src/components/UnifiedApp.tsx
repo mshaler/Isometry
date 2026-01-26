@@ -4,6 +4,8 @@ import { EnvironmentProvider } from '../contexts/EnvironmentContext';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { PAFVProvider } from '../contexts/PAFVContext';
+import { NativeDatabaseProvider } from '../db/NativeDatabaseContext';
+import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
 
 // Import all Figma components
 import { Toolbar } from './Toolbar';
@@ -38,9 +40,11 @@ export function UnifiedApp() {
     <BrowserRouter>
       <ThemeProvider>
         <EnvironmentProvider>
-          <AppStateProvider>
-            <FilterProvider>
-              <PAFVProvider>
+          <NativeDatabaseProvider>
+            <CacheInvalidationProvider>
+              <AppStateProvider>
+              <FilterProvider>
+                <PAFVProvider>
               <div className="h-screen flex flex-col bg-gray-50">
                 {/* Toolbar: Menu bar + command buttons */}
                 <ErrorBoundary level="component" name="Toolbar">
@@ -52,10 +56,7 @@ export function UnifiedApp() {
                   <Navigator />
                 </ErrorBoundary>
 
-                {/* PAFVNavigator: Drag-drop axis assignment wells */}
-                <ErrorBoundary level="component" name="PAFVNavigator">
-                  <PAFVNavigator />
-                </ErrorBoundary>
+                {/* PAFVNavigator: Already included in Navigator component above */}
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex min-h-0">
@@ -88,9 +89,11 @@ export function UnifiedApp() {
                 </ErrorBoundary>
               </div>
               <NotificationSystem />
-              </PAFVProvider>
-            </FilterProvider>
-          </AppStateProvider>
+                </PAFVProvider>
+              </FilterProvider>
+              </AppStateProvider>
+            </CacheInvalidationProvider>
+          </NativeDatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>
     </BrowserRouter>
