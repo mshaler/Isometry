@@ -1,6 +1,13 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useResizeObserver } from '../hooks/useD3';
 import { useD3Canvas, type D3CanvasState, type Viewport } from '../hooks/useD3Canvas';
+import {
+  performanceMonitor,
+  spatialIndex,
+  transitionManager,
+  measurePerformance,
+  debounce
+} from '../utils/d3Performance';
 import * as d3 from 'd3';
 
 // ============================================================================
@@ -29,18 +36,64 @@ interface InteractionState {
 }
 
 // ============================================================================
-// Performance Overlay Component
+// Enhanced Performance Overlay Component
 // ============================================================================
 
-const PerformanceOverlay: React.FC<{ performance: any; error: string | null }> = ({ performance, error }) => {
+const PerformanceOverlay: React.FC<{
+  performance: any;
+  frameRate: number;
+  error: string | null;
+}> = ({ performance, frameRate, error }) => {
   if (!performance || performance.totalPipeline === 0) return null;
 
-  return (
-    <div className="absolute top-2 right-2 bg-black bg-opacity-75 text-white text-xs p-2 rounded font-mono">
-      <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-        <span>Pipeline:</span>
-        <span>{performance.totalPipeline.toFixed(1)}ms</span>
+  const renderStats = performanceMonitor.getMetricStats('canvas-render');
+  const spatialStats = spatialIndex.getStats();
+  const transitionStats = transitionManager.getStats();
 
+  return (
+    <div className="absolute top-2 right-2 bg-black bg-opacity-85 text-white text-xs p-3 rounded font-mono max-w-xs">
+      <div className="mb-2 pb-2 border-b border-gray-600">
+        <div className="text-yellow-300 font-bold mb-1">Performance Monitor</div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-3">
+        <span>FPS:</span>
+        <span className={frameRate >= 30 ? 'text-green-400' : 'text-red-400'}>
+          {frameRate.toFixed(1)}
+        </span>
+
+        <span>Pipeline:</span>
+        <span className={performance.totalPipeline <= 100 ? 'text-green-400' : 'text-yellow-400'}>
+          {performance.totalPipeline.toFixed(1)}ms
+        </span>
+
+        <span>Render:</span>
+        <span>{renderStats ? renderStats.latest.toFixed(1) : '0.0'}ms</span>
+
+        <span>Memory:</span>
+        <span className={performance.memoryUsage <= 50 ? 'text-green-400' : 'text-yellow-400'}>
+          {performance.memoryUsage.toFixed(1)}MB
+        </span>
+
+        <span>Nodes:</span>
+        <span>{performance.nodeCount}</span>
+
+        <span>Cells:</span>
+        <span>{performance.cellCount}</span>
+      </div>
+
+      <div className="mb-3 pb-2 border-b border-gray-600">
+        <div className="text-blue-300 font-medium mb-1">Optimizations</div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          <span>Spatial:</span>
+          <span className="text-cyan-300">{spatialStats.items} items</span>
+
+          <span>Transitions:</span>
+          <span className="text-purple-300">{transitionStats.active} active</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
         <span>Transform:</span>
         <span>{performance.dataTransform.toFixed(1)}ms</span>
 
@@ -50,22 +103,14 @@ const PerformanceOverlay: React.FC<{ performance: any; error: string | null }> =
         <span>Layout:</span>
         <span>{performance.layoutCalculation.toFixed(1)}ms</span>
 
-        <span>Render:</span>
+        <span>Prep:</span>
         <span>{performance.renderPrep.toFixed(1)}ms</span>
-
-        <span>Memory:</span>
-        <span>{performance.memoryUsage.toFixed(1)}MB</span>
-
-        <span>Nodes:</span>
-        <span>{performance.nodeCount}</span>
-
-        <span>Cells:</span>
-        <span>{performance.cellCount}</span>
       </div>
 
       {error && (
-        <div className="mt-2 pt-2 border-t border-red-400 text-red-300">
-          Error: {error}
+        <div className="mt-3 pt-2 border-t border-red-400 text-red-300">
+          <div className="font-medium mb-1">Error:</div>
+          <div className="text-xs">{error}</div>
         </div>
       )}
     </div>
@@ -267,6 +312,9 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     dragStart: null
   });
 
+  // Performance tracking
+  const [frameRate, setFrameRate] = useState(0);
+
   // Viewport state
   const [viewport, setViewport] = useState<Viewport>({
     x: 0,
@@ -304,34 +352,57 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Use resize observer for responsive sizing
   useResizeObserver(containerRef, handleResize);
 
+  // Optimized canvas rendering with performance monitoring
+  const debouncedRender = useCallback(
+    debounce(async () => {
+      if (!canvasRef.current || !canvasState.renderCommands.cells.length) return;
+
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      await measurePerformance('canvas-render', async () => {
+        const renderer = new CanvasRenderer(ctx);
+
+        // Clear canvas
+        renderer.clear(canvas.width, canvas.height);
+
+        // Update spatial index for hit testing
+        spatialIndex.clear();
+
+        // Render cells with spatial indexing
+        canvasState.renderCommands.cells.forEach(cellCommand => {
+          const { bounds, style, nodes, rowKey, colKey } = cellCommand;
+
+          renderer.drawCell(
+            bounds.x,
+            bounds.y,
+            bounds.width,
+            bounds.height,
+            style,
+            nodes.length
+          );
+
+          // Add to spatial index for hit testing
+          spatialIndex.insert({
+            id: `${colKey}||${rowKey}`,
+            bounds,
+            data: { nodes, rowKey, colKey }
+          });
+        });
+
+        // Update frame rate
+        const fps = performanceMonitor.recordFrameTime();
+        setFrameRate(fps);
+      });
+    }, 16), // 60fps debouncing
+    [canvasState.renderCommands, spatialIndex]
+  );
+
   // Render canvas content when state changes
   useEffect(() => {
-    if (!canvasRef.current || !canvasState.renderCommands.cells.length) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const renderer = new CanvasRenderer(ctx);
-
-    // Clear canvas
-    renderer.clear(canvas.width, canvas.height);
-
-    // Render cells
-    canvasState.renderCommands.cells.forEach(cellCommand => {
-      const { bounds, style, nodes } = cellCommand;
-
-      renderer.drawCell(
-        bounds.x,
-        bounds.y,
-        bounds.width,
-        bounds.height,
-        style,
-        nodes.length
-      );
-    });
-
-  }, [canvasState.renderCommands]);
+    debouncedRender();
+  }, [debouncedRender]);
 
   // Render SVG headers when state changes
   useEffect(() => {
@@ -340,7 +411,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     renderSVGHeaders(svgRef.current, canvasState, viewport);
   }, [canvasState, viewport]);
 
-  // Handle mouse interactions
+  // Optimized mouse interactions with spatial indexing
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
     if (!canvasRef.current) return;
 
@@ -349,17 +420,9 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Simple hit testing - find cell under cursor
-    let hoveredCell: string | null = null;
-
-    canvasState.renderCommands.cells.forEach(cellCommand => {
-      const { bounds, rowKey, colKey } = cellCommand;
-
-      if (x >= bounds.x && x <= bounds.x + bounds.width &&
-          y >= bounds.y && y <= bounds.y + bounds.height) {
-        hoveredCell = `${colKey}||${rowKey}`;
-      }
-    });
+    // Optimized hit testing using spatial index
+    const hitItem = spatialIndex.findAtPoint(x, y);
+    const hoveredCell = hitItem?.id || null;
 
     if (hoveredCell !== interactionState.hoveredCell) {
       setInteractionState(prev => ({
@@ -372,7 +435,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         canvas.style.cursor = hoveredCell ? 'pointer' : 'default';
       }
     }
-  }, [canvasState.renderCommands.cells, interactionState.hoveredCell]);
+  }, [interactionState.hoveredCell]);
 
   const handleClick = useCallback((event: React.MouseEvent) => {
     if (!canvasRef.current) return;
@@ -382,37 +445,34 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Find clicked cell
-    canvasState.renderCommands.cells.forEach(cellCommand => {
-      const { bounds, rowKey, colKey, nodes } = cellCommand;
+    // Optimized click handling using spatial index
+    const hitItem = spatialIndex.findAtPoint(x, y);
+    if (hitItem && hitItem.data) {
+      const { nodes, rowKey, colKey } = hitItem.data;
 
-      if (x >= bounds.x && x <= bounds.x + bounds.width &&
-          y >= bounds.y && y <= bounds.y + bounds.height) {
+      // Call click handler
+      onCellClick?.({
+        nodes,
+        rowKey,
+        colKey
+      });
 
-        // Call click handler
-        onCellClick?.({
-          nodes,
-          rowKey,
-          colKey
-        });
-
-        // Update selection
-        const cellKey = `${colKey}||${rowKey}`;
-        setInteractionState(prev => {
-          const newSelected = new Set(prev.selectedCells);
-          if (newSelected.has(cellKey)) {
-            newSelected.delete(cellKey);
-          } else {
-            newSelected.add(cellKey);
-          }
-          return {
-            ...prev,
-            selectedCells: newSelected
-          };
-        });
-      }
-    });
-  }, [canvasState.renderCommands.cells, onCellClick]);
+      // Update selection with smooth transition
+      const cellKey = hitItem.id;
+      setInteractionState(prev => {
+        const newSelected = new Set(prev.selectedCells);
+        if (newSelected.has(cellKey)) {
+          newSelected.delete(cellKey);
+        } else {
+          newSelected.add(cellKey);
+        }
+        return {
+          ...prev,
+          selectedCells: newSelected
+        };
+      });
+    }
+  }, [onCellClick]);
 
   // Report errors to parent
   useEffect(() => {
@@ -472,9 +532,13 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         className="absolute inset-0 pointer-events-none"
         style={{ zIndex: 3 }}
       >
-        {/* Performance overlay */}
+        {/* Enhanced performance overlay */}
         {showPerformanceOverlay && (
-          <PerformanceOverlay performance={performance} error={error} />
+          <PerformanceOverlay
+            performance={performance}
+            frameRate={frameRate}
+            error={error}
+          />
         )}
 
         {/* Future: Tooltips, accessibility layer, complex controls */}
