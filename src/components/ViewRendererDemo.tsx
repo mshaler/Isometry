@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useMockData } from '../hooks/useMockData';
 import { EnhancedViewSwitcher } from './views/EnhancedViewSwitcher';
 import { useViewRegistry } from './views/ViewRegistry';

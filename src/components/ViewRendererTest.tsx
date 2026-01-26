@@ -1,10 +1,11 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMockData } from '../hooks/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { usePAFV } from '../hooks/usePAFV';
 import { performanceTracker } from './views/PerformanceMonitor';
 import type { Node } from '@/types/node';
 import type { ViewType } from '@/types/view';
+import type { MemoryInfo } from '@/types/performance';
 
 /**
  * ViewRendererTest - Comprehensive testing component for ViewRenderer system
@@ -126,7 +127,7 @@ export function ViewRendererTest() {
 
     try {
       // Perform automated view transitions
-      const viewTypes: ViewType[] = ['grid', 'list'];
+      const viewTypes: ('grid' | 'list')[] = ['grid', 'list'];
 
       for (let i = 0; i < scenario.transitions; i++) {
         const viewType = viewTypes[i % 2];
