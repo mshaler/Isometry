@@ -4,6 +4,12 @@
 # Comprehensive validation for sql.js → native database migration
 # Usage: ./scripts/validate-migration.sh
 
+# Require bash 4.0+ for associative arrays
+if [ "${BASH_VERSION%%.*}" -lt 4 ]; then
+    echo "This script requires bash 4.0 or later for associative arrays"
+    exit 1
+fi
+
 set -e  # Exit on error
 
 # Colors for output
@@ -41,15 +47,15 @@ VALIDATION_FAILED=false
 MIGRATION_START_TIME=$(date +%s)
 REPORT_FILE="migration-validation-report-$(date +%Y%m%d-%H%M%S).md"
 
-# Track validation results
-declare -A validation_results
+# Track validation results using files instead of associative arrays for compatibility
+RESULTS_DIR=$(mktemp -d)
 
 # Function to mark validation as failed
 fail_validation() {
     local test_name="$1"
     local error_message="$2"
 
-    validation_results["$test_name"]="FAIL"
+    echo "FAIL" > "$RESULTS_DIR/$test_name"
     log_error "$test_name: $error_message"
     VALIDATION_FAILED=true
 }
@@ -59,7 +65,7 @@ pass_validation() {
     local test_name="$1"
     local success_message="$2"
 
-    validation_results["$test_name"]="PASS"
+    echo "PASS" > "$RESULTS_DIR/$test_name"
     log_success "$test_name: $success_message"
 }
 
@@ -329,16 +335,19 @@ EOF
     local passed_tests=0
     local failed_tests=0
 
-    for test_name in "${!validation_results[@]}"; do
-        total_tests=$((total_tests + 1))
-        result="${validation_results[$test_name]}"
+    for result_file in "$RESULTS_DIR"/*; do
+        if [ -f "$result_file" ]; then
+            total_tests=$((total_tests + 1))
+            test_name=$(basename "$result_file")
+            result=$(cat "$result_file")
 
-        if [ "$result" = "PASS" ]; then
-            passed_tests=$((passed_tests + 1))
-            echo "- ✅ $test_name: PASSED" >> "$REPORT_FILE"
-        else
-            failed_tests=$((failed_tests + 1))
-            echo "- ❌ $test_name: FAILED" >> "$REPORT_FILE"
+            if [ "$result" = "PASS" ]; then
+                passed_tests=$((passed_tests + 1))
+                echo "- ✅ $test_name: PASSED" >> "$REPORT_FILE"
+            else
+                failed_tests=$((failed_tests + 1))
+                echo "- ❌ $test_name: FAILED" >> "$REPORT_FILE"
+            fi
         fi
     done
 
@@ -371,9 +380,13 @@ EOF
 
 ### Failed Tests:
 EOF
-        for test_name in "${!validation_results[@]}"; do
-            if [ "${validation_results[$test_name]}" = "FAIL" ]; then
-                echo "- $test_name" >> "$REPORT_FILE"
+        for result_file in "$RESULTS_DIR"/*; do
+            if [ -f "$result_file" ]; then
+                test_name=$(basename "$result_file")
+                result=$(cat "$result_file")
+                if [ "$result" = "FAIL" ]; then
+                    echo "- $test_name" >> "$REPORT_FILE"
+                fi
             fi
         done
 
@@ -388,6 +401,9 @@ EOF
     fi
 
     log_success "Report generated: $REPORT_FILE"
+
+    # Cleanup temporary directory
+    rm -rf "$RESULTS_DIR"
 }
 
 # Main execution
