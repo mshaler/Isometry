@@ -18,16 +18,18 @@ export interface DataChange {
   sessionId?: string;
 }
 
-interface SyncEvent {
-  type: 'dataChange' | 'connectionChange' | 'conflictResolved' | 'queueProcessed';
-  payload: DataChange | ConnectionStatus | ConflictResolution | QueueStatus;
-  timestamp: number;
+interface SyncEvent extends CustomEvent {
+  detail: {
+    type: 'dataChange' | 'connectionChange' | 'conflictResolved' | 'queueProcessed';
+    payload: DataChange | ConnectionStatus | ConflictResolution | QueueStatus;
+    timestamp: number;
+  };
 }
 
 interface ConnectionStatus {
   connected: boolean;
   lastActivity: number;
-  environment: Environment;
+  environment: ReturnType<typeof Environment.info>;
 }
 
 interface ConflictResolution {
@@ -69,13 +71,18 @@ export class SyncManager {
   private changeHandlers = new Map<string, SyncEventHandler>();
   private conflictHandlers: ConflictHandler[] = [];
   private pendingChanges = new Map<string, DataChange>();
-  private _syncQueue: DataChange[] = []; // TODO: Implement queue processing
+  private _syncQueue: DataChange[] = [];
   private offlineQueue: DataChange[] = [];
+  private processingQueue = false;
+  private queueTimer: NodeJS.Timeout | null = null;
+  private retryAttempts = new Map<string, number>();
 
   // Configuration
   private readonly debounceTime = 300; // 300ms debounce for changes
   private readonly maxRetries = 3; // Used in retry logic for failed syncs
   private readonly batchSize = 10;
+  private readonly queueProcessInterval = 1000; // Process queue every 1 second
+  private readonly retryBackoffBase = 1000; // 1 second base backoff
 
   // State
   private syncState: SyncState = {
@@ -234,7 +241,7 @@ export class SyncManager {
   private setupEventListeners(): void {
     if (typeof window !== 'undefined') {
       // Listen for WebView sync notifications
-      window.addEventListener('isometry-sync-update', this.handleSyncEvent.bind(this));
+      window.addEventListener('isometry-sync-update', this.handleSyncEvent.bind(this) as EventListener);
 
       // Handle network changes
       window.addEventListener('online', this.handleOnline.bind(this));
@@ -242,9 +249,11 @@ export class SyncManager {
     }
   }
 
-  private async handleSyncEvent(event: SyncEvent): Promise<void> {
-    const change = event.detail as DataChange;
-    await this.handleRemoteChange(change);
+  private async handleSyncEvent(event: Event): Promise<void> {
+    if (event instanceof CustomEvent && event.detail) {
+      const change = event.detail as DataChange;
+      await this.handleRemoteChange(change);
+    }
   }
 
   private handleOnline(): void {
@@ -466,8 +475,10 @@ export function useSyncManager() {
   const [syncState, setSyncState] = useState(syncManager.getSyncState());
 
   useEffect(() => {
-    const handleStateChange = (event: SyncEvent) => {
-      setSyncState(event.detail);
+    const handleStateChange = (event: Event) => {
+      if (event instanceof CustomEvent && event.detail) {
+        setSyncState(event.detail as SyncState);
+      }
     };
 
     window.addEventListener('isometry-sync-state', handleStateChange);
