@@ -4,19 +4,19 @@ import { useD3Visualization } from '../../hooks/useD3Visualization';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useD3 } from '../../hooks/useD3';
 import type { VisualizationConfig } from '../../utils/d3Parsers';
-import type {
-  D3SVGSelection,
-  D3GroupSelection,
-  ChartDatum,
-  D3ChartTheme,
-  D3LineGenerator,
-  D3AreaGenerator,
-  D3PieGenerator,
-  D3ArcGenerator,
-  SimulationNodeDatum,
-  SimulationLinkDatum,
-  D3ForceSimulation
-} from '../../types/d3';
+import type { D3ChartTheme } from '../../types/d3';
+import {
+  renderBarChart,
+  renderLineChart,
+  renderScatterPlot,
+  renderHistogram,
+  renderPieChart,
+  renderAreaChart,
+  renderNetworkGraph,
+  renderDefaultVisualization,
+  renderErrorVisualization,
+  type ChartRendererParams
+} from './renderers';
 
 interface D3VisualizationRendererProps {
   content?: string;
@@ -25,9 +25,6 @@ interface D3VisualizationRendererProps {
   className?: string;
   onDataPointsChange?: (count: number) => void;
 }
-
-// Use the imported D3 types instead of local definitions
-type TooltipSelection = d3.Selection<HTMLDivElement, unknown, null, undefined>;
 
 export function D3VisualizationRenderer({
   content,
@@ -49,6 +46,13 @@ export function D3VisualizationRenderer({
     updateVisualization
   } = useD3Visualization();
 
+  // Track data points count
+  useEffect(() => {
+    if (data && onDataPointsChange) {
+      onDataPointsChange(data.length);
+    }
+  }, [data, onDataPointsChange]);
+
   // Update visualization when content changes
   useEffect(() => {
     if (content) {
@@ -56,46 +60,38 @@ export function D3VisualizationRenderer({
     }
   }, [content, updateVisualization]);
 
-  // Notify parent of data points change
-  useEffect(() => {
-    onDataPointsChange?.(data.length);
-  }, [data.length, onDataPointsChange]);
-
-  // Get theme-appropriate colors
-  const colors = useMemo((): D3ChartTheme => {
+  // Theme-based colors
+  const colors: D3ChartTheme = useMemo(() => {
     if (theme === 'NeXTSTEP') {
       return {
-        primary: '#0066cc',
-        secondary: '#707070',
-        accent: '#ff6600',
-        text: '#000000',
-        background: '#ffffff',
-        border: '#707070',
-        grid: '#d0d0d0'
+        primary: '#4a5568',
+        secondary: '#718096',
+        accent: '#3182ce',
+        background: '#c0c0c0',
+        text: '#404040',
+        border: '#707070'
       };
     } else {
       return {
         primary: '#3b82f6',
         secondary: '#6b7280',
-        accent: '#f59e0b',
-        text: '#111827',
-        background: '#ffffff',
-        border: '#e5e7eb',
-        grid: '#f3f4f6'
+        accent: '#10b981',
+        background: 'white',
+        text: '#1f2937',
+        border: '#e5e7eb'
       };
     }
   }, [theme]);
 
-  // D3 render function based on visualization type
-  const renderVisualization = useCallback((selection: D3SVGSelection) => {
-    if (!canVisualize || data.length === 0) return;
+  // Rendering function
+  const renderVisualization = useCallback((selection: d3.Selection<SVGSVGElement, unknown, null, undefined>) => {
+    if (!canVisualize || !data || !config) return;
 
-    // Clear previous visualization
+    const margin = { top: 40, right: 40, bottom: 60, left: 60 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
     selection.selectAll('*').remove();
-
-    const margin = { top: 20, right: 30, bottom: 40, left: 50 };
-    const innerWidth = Math.max(100, width - margin.left - margin.right);
-    const innerHeight = Math.max(100, height - margin.top - margin.bottom);
 
     const svg = selection
       .attr('width', width)
@@ -105,28 +101,36 @@ export function D3VisualizationRenderer({
     const g = svg.append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
+    const renderParams: ChartRendererParams = {
+      g,
+      data,
+      config,
+      dimensions: { innerWidth, innerHeight },
+      colors
+    };
+
     try {
       switch (vizType) {
         case 'bar-chart':
-          renderBarChart(g, data, config, { innerWidth, innerHeight }, colors);
+          renderBarChart(renderParams);
           break;
         case 'line-chart':
-          renderLineChart(g, data, config, { innerWidth, innerHeight }, colors);
+          renderLineChart(renderParams);
           break;
         case 'scatter-plot':
-          renderScatterPlot(g, data, config, { innerWidth, innerHeight }, colors);
+          renderScatterPlot(renderParams);
           break;
         case 'histogram':
-          renderHistogram(g, data, config, { innerWidth, innerHeight }, colors);
+          renderHistogram(renderParams);
           break;
         case 'pie-chart':
-          renderPieChart(g, data, config, { innerWidth, innerHeight }, colors);
+          renderPieChart(renderParams);
           break;
         case 'area-chart':
-          renderAreaChart(g, data, config, { innerWidth, innerHeight }, colors);
+          renderAreaChart(renderParams);
           break;
         case 'network-graph':
-          renderNetworkGraph(g, data, config, { innerWidth, innerHeight }, colors);
+          renderNetworkGraph(renderParams);
           break;
         default:
           renderDefaultVisualization(g, { innerWidth, innerHeight }, colors);
@@ -150,10 +154,16 @@ export function D3VisualizationRenderer({
 
   if (isLoading) {
     return (
-      <div className={`${className} flex items-center justify-center`} style={{ width, height }}>
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <div className="text-sm text-gray-600">Processing data...</div>
+      <div
+        className={`flex items-center justify-center ${className}`}
+        style={{ width, height }}
+      >
+        <div
+          className={`text-sm ${
+            theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-500'
+          }`}
+        >
+          Parsing visualization...
         </div>
       </div>
     );
@@ -161,11 +171,21 @@ export function D3VisualizationRenderer({
 
   if (error) {
     return (
-      <div className={`${className} flex items-center justify-center`} style={{ width, height }}>
-        <div className="text-center p-4">
-          <div className="text-red-600 mb-2">⚠️</div>
-          <div className="text-sm font-medium text-red-600 mb-1">Visualization Error</div>
-          <div className="text-xs text-gray-500">{error}</div>
+      <div
+        className={`flex items-center justify-center ${className}`}
+        style={{ width, height }}
+      >
+        <div className="text-center">
+          <div className="text-red-500 text-sm font-medium mb-1">
+            Visualization Error
+          </div>
+          <div
+            className={`text-xs ${
+              theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-400'
+            }`}
+          >
+            {error}
+          </div>
         </div>
       </div>
     );
@@ -173,15 +193,28 @@ export function D3VisualizationRenderer({
 
   if (!canVisualize) {
     return (
-      <div className={`${className} flex items-center justify-center border-2 border-dashed ${colors.border} rounded`} style={{ width, height }}>
-        <div className="text-center p-4">
-          <div className="text-2xl mb-2">📊</div>
-          <div className="text-sm font-medium text-gray-700 mb-2">No Visualization Data</div>
-          <div className="text-xs text-gray-500 mb-3">
-            Add JSON data, CSV tables, or markdown tables to your card
+      <div
+        className={`flex items-center justify-center border-2 border-dashed ${
+          theme === 'NeXTSTEP'
+            ? 'border-[#808080] bg-[#d0d0d0]'
+            : 'border-gray-300 bg-gray-50'
+        } ${className}`}
+        style={{ width, height }}
+      >
+        <div className="text-center">
+          <div
+            className={`text-sm mb-2 ${
+              theme === 'NeXTSTEP' ? 'text-[#404040]' : 'text-gray-700'
+            }`}
+          >
+            No Data to Visualize
           </div>
-          <div className="text-xs text-gray-400">
-            Example: ```json<br/>[{`{"category": "A", "value": 10}`}]<br/>```
+          <div
+            className={`text-xs ${
+              theme === 'NeXTSTEP' ? 'text-[#606060]' : 'text-gray-400'
+            }`}
+          >
+            Add data or check your visualization syntax
           </div>
         </div>
       </div>
@@ -190,525 +223,7 @@ export function D3VisualizationRenderer({
 
   return (
     <div ref={containerRef} className={className}>
-      <svg ref={svgRef} style={{ display: 'block', width: '100%' }} />
+      <svg ref={svgRef} className="w-full h-full" />
     </div>
   );
-}
-
-// D3 Rendering Functions
-
-function renderBarChart(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: xField, y: yField } = config.axes;
-
-  if (!xField || !yField) return;
-
-  // Scales
-  const x = d3.scaleBand()
-    .domain(data.map(d => String(d[xField])))
-    .range([0, innerWidth])
-    .padding(0.1);
-
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(data, d => Number(d[yField])) || 0])
-    .range([innerHeight, 0]);
-
-  // Axes
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x))
-    .style('color', colors.text);
-
-  g.append('g')
-    .call(d3.axisLeft(y))
-    .style('color', colors.text);
-
-  // Bars
-  g.selectAll('.bar')
-    .data(data)
-    .enter().append('rect')
-    .attr('class', 'bar')
-    .attr('x', d => x(String(d[xField])) || 0)
-    .attr('width', x.bandwidth())
-    .attr('y', d => y(Number(d[yField])))
-    .attr('height', d => innerHeight - y(Number(d[yField])))
-    .style('fill', colors.primary)
-    .style('stroke', colors.border)
-    .style('stroke-width', 1)
-    .on('mouseover', function(event, d) {
-      d3.select(this).style('fill', colors.accent);
-
-      // Tooltip
-      const tooltip = d3.select('body').append('div')
-        .style('position', 'absolute')
-        .style('background', colors.background)
-        .style('border', `1px solid ${colors.border}`)
-        .style('border-radius', '4px')
-        .style('padding', '8px')
-        .style('font-size', '12px')
-        .style('color', colors.text)
-        .style('pointer-events', 'none')
-        .style('opacity', 0);
-
-      tooltip.html(`${xField}: ${d[xField]}<br/>${yField}: ${d[yField]}`)
-        .style('left', (event.pageX + 10) + 'px')
-        .style('top', (event.pageY - 10) + 'px')
-        .transition()
-        .duration(200)
-        .style('opacity', 1);
-
-      d3.select(this).datum(tooltip);
-    })
-    .on('mouseout', function() {
-      d3.select(this).style('fill', colors.primary);
-      const tooltip = d3.select(this).datum() as TooltipSelection;
-      if (tooltip && typeof (tooltip as TooltipSelection).remove === 'function') {
-        tooltip.transition()
-          .duration(200)
-          .style('opacity', 0)
-          .remove();
-      }
-    });
-}
-
-function renderLineChart(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: xField, y: yField } = config.axes;
-
-  if (!xField || !yField) return;
-
-  // Sort data by x field
-  const sortedData = [...data].sort((a, b) => {
-    const aVal = a[xField];
-    const bVal = b[xField];
-
-    // Handle null/undefined values
-    if (aVal == null && bVal == null) return 0;
-    if (aVal == null) return -1;
-    if (bVal == null) return 1;
-
-    if (aVal instanceof Date && bVal instanceof Date) {
-      return aVal.getTime() - bVal.getTime();
-    }
-    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-  });
-
-  // Scales
-  const x = config.encoding.xType === 'temporal'
-    ? (() => {
-        const extent = d3.extent(sortedData, d => d[xField] as Date);
-        const domain = extent[0] && extent[1] ? extent as [Date, Date] : [new Date(), new Date()];
-        return d3.scaleTime().domain(domain).range([0, innerWidth]);
-      })()
-    : (() => {
-        const extent = d3.extent(sortedData, d => d[xField] as number);
-        const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
-        return d3.scaleLinear().domain(domain).range([0, innerWidth]);
-      })();
-
-  const y = (() => {
-    const extent = d3.extent(sortedData, d => d[yField] as number);
-    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
-    return d3.scaleLinear().domain(domain).range([innerHeight, 0]);
-  })();
-
-  // Line generator
-  const line: D3LineGenerator<ChartDatum> = d3.line<ChartDatum>()
-    .x(d => x(d[xField] as number | Date) as number)
-    .y(d => y(d[yField] as number) as number)
-    .curve(d3.curveMonotoneX);
-
-  // Axes
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(config.encoding.xType === 'temporal'
-      ? d3.axisBottom(x as d3.ScaleTime<number, number>).tickFormat(d3.timeFormat('%m/%d') as (domainValue: Date | { valueOf(): number }) => string)
-      : d3.axisBottom(x as d3.ScaleLinear<number, number>))
-    .style('color', colors.text);
-
-  g.append('g')
-    .call(d3.axisLeft(y))
-    .style('color', colors.text);
-
-  // Line
-  g.append('path')
-    .datum(sortedData)
-    .attr('fill', 'none')
-    .attr('stroke', colors.primary)
-    .attr('stroke-width', 2)
-    .attr('d', line);
-
-  // Data points
-  g.selectAll('.dot')
-    .data(sortedData)
-    .enter().append('circle')
-    .attr('class', 'dot')
-    .attr('cx', d => x(d[xField] as number | Date) as number)
-    .attr('cy', d => y(d[yField] as number) as number)
-    .attr('r', 4)
-    .style('fill', colors.primary)
-    .style('stroke', colors.background)
-    .style('stroke-width', 2);
-}
-
-function renderScatterPlot(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: xField, y: yField, size: sizeField } = config.axes;
-
-  if (!xField || !yField) return;
-
-  // Scales
-  const x = (() => {
-    const extent = d3.extent(data, d => d[xField] as number);
-    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
-    return d3.scaleLinear().domain(domain).range([0, innerWidth]);
-  })();
-
-  const y = (() => {
-    const extent = d3.extent(data, d => d[yField] as number);
-    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
-    return d3.scaleLinear().domain(domain).range([innerHeight, 0]);
-  })();
-
-  const size = sizeField
-    ? (() => {
-        const extent = d3.extent(data, d => d[sizeField] as number);
-        const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [3, 12];
-        return d3.scaleLinear().domain(domain).range([3, 12]);
-      })()
-    : () => 6;
-
-  // Axes
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x))
-    .style('color', colors.text);
-
-  g.append('g')
-    .call(d3.axisLeft(y))
-    .style('color', colors.text);
-
-  // Points
-  g.selectAll('.dot')
-    .data(data)
-    .enter().append('circle')
-    .attr('class', 'dot')
-    .attr('cx', d => x(d[xField] as number))
-    .attr('cy', d => y(d[yField] as number))
-    .attr('r', d => sizeField ? size(d[sizeField] as number) : 6)
-    .style('fill', colors.primary)
-    .style('fill-opacity', 0.7)
-    .style('stroke', colors.border)
-    .style('stroke-width', 1);
-}
-
-function renderHistogram(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: xField } = config.axes;
-
-  if (!xField) return;
-
-  const values = data.map(d => d[xField]).filter(v => typeof v === 'number') as number[];
-
-  // Create histogram with safe extent handling (IIFE pattern from 10-03)
-  const { domain, bins } = (() => {
-    const extent = d3.extent(values);
-    const safeDomain = extent[0] != null && extent[1] != null ?
-      extent as [number, number] :
-      [0, Math.max(1, Math.max(...values) || 1)];
-
-    const histogram = d3.histogram<number, number>()
-      .value(d => d)
-      .domain(safeDomain)
-      .thresholds(Math.min(20, Math.sqrt(values.length)));
-
-    return {
-      domain: safeDomain,
-      bins: histogram(values)
-    };
-  })();
-
-  // Scales
-  const x = d3.scaleLinear()
-    .domain(domain)
-    .range([0, innerWidth]);
-
-  const y = d3.scaleLinear()
-    .domain([0, (() => {
-      const maxLength = d3.max(bins, (d: d3.Bin<number, number>) => d.length);
-      return maxLength !== undefined ? maxLength : 0;
-    })()])
-    .range([innerHeight, 0]);
-
-  // Axes
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x))
-    .style('color', colors.text);
-
-  g.append('g')
-    .call(d3.axisLeft(y))
-    .style('color', colors.text);
-
-  // Bars with safe bin property access
-  g.selectAll('.bar')
-    .data(bins)
-    .enter().append('rect')
-    .attr('class', 'bar')
-    .attr('x', (d: d3.Bin<number, number>) => {
-      const x0 = d.x0;
-      return x(x0 !== undefined ? x0 : 0);
-    })
-    .attr('width', (d: d3.Bin<number, number>) => {
-      const x0 = d.x0;
-      const x1 = d.x1;
-      if (x0 === undefined || x1 === undefined) return 0;
-      return Math.max(0, x(x1) - x(x0) - 1);
-    })
-    .attr('y', (d: d3.Bin<number, number>) => y(d.length))
-    .attr('height', (d: d3.Bin<number, number>) => innerHeight - y(d.length))
-    .style('fill', colors.primary)
-    .style('stroke', colors.background)
-    .style('stroke-width', 1);
-}
-
-function renderPieChart(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: categoryField, y: valueField } = config.axes;
-
-  if (!categoryField || !valueField) return;
-
-  const radius = Math.min(innerWidth, innerHeight) / 2;
-
-  // Center the pie chart
-  g.attr('transform', `translate(${innerWidth / 2}, ${innerHeight / 2})`);
-
-  const pie: D3PieGenerator<ChartDatum> = d3.pie<ChartDatum>()
-    .value(d => d[valueField] as number)
-    .sort(null);
-
-  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<d3.BaseType, d3.PieArcDatum<ChartDatum>>()
-    .innerRadius(0)
-    .outerRadius(radius);
-
-  const color = d3.scaleOrdinal<string>()
-    .domain(data.map(d => String(d[categoryField])))
-    .range([colors.primary, colors.accent, colors.secondary, '#8b5cf6', '#10b981', '#f59e0b']);
-
-  const arcs = g.selectAll('.arc')
-    .data(pie(data))
-    .enter().append('g')
-    .attr('class', 'arc');
-
-  arcs.append('path')
-    .attr('d', arc)
-    .style('fill', d => color(d.data[categoryField]))
-    .style('stroke', colors.background)
-    .style('stroke-width', 2);
-
-  // Labels
-  arcs.append('text')
-    .attr('transform', d => `translate(${arc.centroid(d)})`)
-    .attr('text-anchor', 'middle')
-    .style('fill', colors.text)
-    .style('font-size', '12px')
-    .text(d => d.data[categoryField]);
-}
-
-function renderAreaChart(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  // Similar to line chart but with filled area
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: xField, y: yField } = config.axes;
-
-  if (!xField || !yField) return;
-
-  const sortedData = [...data].sort((a, b) => (a[xField] as number) - (b[xField] as number));
-
-  const x = (() => {
-    const extent = d3.extent(sortedData, d => d[xField] as number);
-    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
-    return d3.scaleLinear().domain(domain).range([0, innerWidth]);
-  })();
-
-  const y = d3.scaleLinear()
-    .domain([0, d3.max(sortedData, d => d[yField]) || 0])
-    .range([innerHeight, 0]);
-
-  const area: D3AreaGenerator<ChartDatum> = d3.area<ChartDatum>()
-    .x(d => x(d[xField] as number))
-    .y0(innerHeight)
-    .y1(d => y(d[yField] as number))
-    .curve(d3.curveMonotoneX);
-
-  // Axes
-  g.append('g')
-    .attr('transform', `translate(0,${innerHeight})`)
-    .call(d3.axisBottom(x))
-    .style('color', colors.text);
-
-  g.append('g')
-    .call(d3.axisLeft(y))
-    .style('color', colors.text);
-
-  // Area
-  g.append('path')
-    .datum(sortedData)
-    .attr('fill', colors.primary)
-    .attr('fill-opacity', 0.3)
-    .attr('stroke', colors.primary)
-    .attr('stroke-width', 2)
-    .attr('d', area);
-}
-
-function renderNetworkGraph(
-  g: D3GroupSelection,
-  data: ChartDatum[],
-  config: VisualizationConfig,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  // Simple network visualization for node-link data
-  const { innerWidth, innerHeight } = dimensions;
-  const { x: sourceField = 'source', y: targetField = 'target' } = config.axes;
-
-  // Create nodes and links
-  const nodeIds = new Set<string>();
-  data.forEach(d => {
-    nodeIds.add(d[sourceField] as string);
-    nodeIds.add(d[targetField] as string);
-  });
-
-  interface NetworkSimulationNode extends SimulationNodeDatum {
-    id: string;
-  }
-
-  interface NetworkSimulationLink extends SimulationLinkDatum<NetworkSimulationNode> {
-    source: string | NetworkSimulationNode;
-    target: string | NetworkSimulationNode;
-  }
-
-  const nodes: NetworkSimulationNode[] = Array.from(nodeIds).map(id => ({ id, x: 0, y: 0 }));
-  const links: NetworkSimulationLink[] = data.map(d => ({
-    source: d[sourceField] as string,
-    target: d[targetField] as string
-  }));
-
-  const simulation: D3ForceSimulation<NetworkSimulationNode> = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink<NetworkSimulationNode, NetworkSimulationLink>(links).id((d: NetworkSimulationNode) => d.id))
-    .force('charge', d3.forceManyBody().strength(-300))
-    .force('center', d3.forceCenter(innerWidth / 2, innerHeight / 2));
-
-  // Links
-  const link = g.selectAll('.link')
-    .data(links)
-    .enter().append('line')
-    .attr('class', 'link')
-    .style('stroke', colors.secondary)
-    .style('stroke-width', 2);
-
-  // Nodes
-  const node = g.selectAll('.node')
-    .data(nodes)
-    .enter().append('circle')
-    .attr('class', 'node')
-    .attr('r', 8)
-    .style('fill', colors.primary)
-    .style('stroke', colors.background)
-    .style('stroke-width', 2);
-
-  // Update positions
-  simulation.on('tick', () => {
-    link
-      .attr('x1', (d: NetworkSimulationLink) => (d.source as NetworkSimulationNode).x || 0)
-      .attr('y1', (d: NetworkSimulationLink) => (d.source as NetworkSimulationNode).y || 0)
-      .attr('x2', (d: NetworkSimulationLink) => (d.target as NetworkSimulationNode).x || 0)
-      .attr('y2', (d: NetworkSimulationLink) => (d.target as NetworkSimulationNode).y || 0);
-
-    node
-      .attr('cx', (d: NetworkSimulationNode) => d.x || 0)
-      .attr('cy', (d: NetworkSimulationNode) => d.y || 0);
-  });
-
-  // Stop simulation after a while to save CPU
-  setTimeout(() => simulation.stop(), 3000);
-}
-
-function renderDefaultVisualization(
-  g: D3GroupSelection,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-
-  g.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight / 2)
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .style('fill', colors.text)
-    .style('font-size', '16px')
-    .text('No visualization available');
-}
-
-function renderErrorVisualization(
-  g: D3GroupSelection,
-  error: string,
-  dimensions: { innerWidth: number; innerHeight: number },
-  colors: D3ChartTheme
-) {
-  const { innerWidth, innerHeight } = dimensions;
-
-  g.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight / 2 - 10)
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .style('fill', '#ef4444')
-    .style('font-size', '14px')
-    .text('Visualization Error');
-
-  g.append('text')
-    .attr('x', innerWidth / 2)
-    .attr('y', innerHeight / 2 + 15)
-    .attr('text-anchor', 'middle')
-    .attr('dominant-baseline', 'middle')
-    .style('fill', colors.secondary)
-    .style('font-size', '12px')
-    .text(error);
 }
