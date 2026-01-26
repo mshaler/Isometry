@@ -7,7 +7,7 @@
 
 export interface PerformanceMetric {
   operation: string;
-  method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge';
+  method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge';
   duration: number;
   timestamp: number;
   rowCount?: number;
@@ -135,7 +135,7 @@ export class PerformanceMonitor {
   logQueryPerformance(
     query: string,
     duration: number,
-    method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge',
+    method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge',
     metadata: {
       rowCount?: number;
       success?: boolean;
@@ -649,7 +649,7 @@ export const performanceMonitor = new PerformanceMonitor({
 export function logQueryPerformance(
   query: string,
   duration: number,
-  method: 'sql.js' | 'native' | 'optimized' | 'webview-bridge',
+  method: 'sql.js' | 'native' | 'native-api' | 'optimized' | 'webview-bridge',
   metadata?: { rowCount?: number; success?: boolean; error?: string }
 ): void {
   performanceMonitor.logQueryPerformance(query, duration, method, metadata);

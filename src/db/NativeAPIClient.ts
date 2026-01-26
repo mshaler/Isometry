@@ -1,229 +1,245 @@
-/**
- * Native API Client for HTTP-based database operations
- *
- * Provides identical interface to sql.js Database for seamless React component compatibility.
- * Routes all operations through HTTP endpoints to native GRDB/CloudKit backend.
- * Includes comprehensive performance monitoring for optimization insights.
- */
-
-import { performanceMonitor, logQueryPerformance } from './PerformanceMonitor';
-
-export interface APIResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  timestamp: string;
-}
-
-export interface SQLExecuteRequest {
-  sql: string;
-  params?: unknown[];
-}
-
-export interface SQLExecuteResponse {
-  columns: string[];
-  values: unknown[][];
-  changes?: number;
-  lastInsertRowid?: number;
-}
+import type { Database, QueryExecResult, Statement } from 'sql.js'
 
 /**
- * HTTP client for native API operations
- * Maintains exact same interface as sql.js Database for drop-in compatibility
+ * Native API client that replaces sql.js with HTTP calls to IsometryAPIServer
+ * Provides drop-in compatibility with existing sql.js interface
  */
 export class NativeAPIClient {
-  private baseURL: string;
-  private timeout: number;
-  private connected: boolean = false;
+  private baseUrl: string
+  private isAvailable: boolean = false
 
-  constructor(baseURL: string = 'http://localhost:8080', timeout: number = 5000) {
-    this.baseURL = baseURL.replace(/\/$/, ''); // Remove trailing slash
-    this.timeout = timeout;
+  constructor(baseUrl: string = 'http://127.0.0.1:8080') {
+    this.baseUrl = baseUrl
   }
 
   /**
-   * Test connection to native API server
+   * Test if native API server is available
    */
-  async connect(): Promise<void> {
+  async checkAvailability(): Promise<boolean> {
     try {
-      const response = await this.fetch('/api/health');
-      if (response.ok) {
-        this.connected = true;
-      } else {
-        throw new Error(`API server responded with ${response.status}`);
-      }
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      })
+      this.isAvailable = response.ok
+      return this.isAvailable
     } catch (error) {
-      this.connected = false;
-      throw new Error(`Failed to connect to native API server: ${error}`);
+      console.log('Native API not available, falling back to sql.js')
+      this.isAvailable = false
+      return false
     }
   }
 
   /**
-   * Check if client is connected to server
+   * Execute SQL query - matches sql.js exec() interface
    */
-  isConnected(): boolean {
-    return this.connected;
-  }
-
-  /**
-   * Execute SQL query with exact same interface as sql.js
-   * @param sql SQL query string
-   * @param params Query parameters
-   * @returns Array of result objects matching sql.js format
-   */
-  async execute<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
-    if (!this.connected) {
-      throw new Error('Native API client not connected. Call connect() first.');
-    }
-
-    return performanceMonitor.measureOperation(
-      `native-api: ${sql.substring(0, 50)}...`,
-      async () => {
-        const request: SQLExecuteRequest = { sql, params };
-        const response = await this.fetch('/api/execute', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(request),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const apiResponse: APIResponse<SQLExecuteResponse> = await response.json();
-
-        if (!apiResponse.success) {
-          throw new Error(apiResponse.error || 'SQL execution failed');
-        }
-
-        const sqlResult = apiResponse.data;
-        if (!sqlResult) {
-          return [];
-        }
-
-        // Convert response to match sql.js format exactly
-        const { columns, values } = sqlResult;
-
-        if (!columns || !values) {
-          return [];
-        }
-
-        const result = values.map((row) => {
-          const obj: Record<string, unknown> = {};
-          columns.forEach((col, i) => {
-            obj[col] = row[i];
-          });
-          return obj as T;
-        });
-
-        return result;
-      },
-      { method: 'native', query: sql }
-    );
-  }
-
-  /**
-   * Save operation - no-op for compatibility (native handles persistence automatically)
-   */
-  async save(): Promise<void> {
-    // Native backend handles persistence automatically
-    // This method exists for sql.js compatibility only
-    return Promise.resolve();
-  }
-
-  /**
-   * Reset database - calls native reset endpoint
-   */
-  async reset(): Promise<void> {
-    if (!this.connected) {
-      throw new Error('Native API client not connected. Call connect() first.');
+  async executeSQL(sql: string, params: any[] = []): Promise<QueryExecResult[]> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
     }
 
     try {
-      const response = await this.fetch('/api/reset', {
+      const response = await fetch(`${this.baseUrl}/api/execute`, {
         method: 'POST',
-      });
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          sql,
+          params: params.map(this.convertParameter)
+        })
+      })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Reset failed: ${response.status}`);
+        throw new Error(`API request failed: ${response.statusText}`)
       }
 
-      const apiResponse: APIResponse = await response.json();
+      const result = await response.json()
 
-      if (!apiResponse.success) {
-        throw new Error(apiResponse.error || 'Database reset failed');
-      }
+      // Convert to sql.js QueryExecResult format
+      return [{
+        columns: result.columns || [],
+        values: result.rows || []
+      }]
     } catch (error) {
-      console.error('Native API Reset Error:', error);
-      throw error;
+      console.error('Native API SQL execution failed:', error)
+      throw error
     }
   }
 
   /**
-   * Internal fetch wrapper with timeout and retry logic
+   * Create sql.js compatible Database interface
    */
-  private async fetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
-    const url = `${this.baseURL}${endpoint}`;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+  createCompatibleDatabase(): Database {
+    const apiClient = this
 
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          ...options.headers,
-        },
-      });
+    return {
+      exec: async (sql: string, params?: any) => {
+        return apiClient.executeSQL(sql, params)
+      },
 
-      clearTimeout(timeoutId);
-      return response;
-    } catch (error: unknown) {
-      clearTimeout(timeoutId);
+      prepare: (sql: string) => {
+        return {
+          step: async () => {
+            const results = await apiClient.executeSQL(sql)
+            return results.length > 0 && results[0].values.length > 0
+          },
 
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error(`Request timeout after ${this.timeout}ms`);
-      }
+          get: async (params?: any) => {
+            const results = await apiClient.executeSQL(sql, params)
+            if (results.length === 0 || results[0].values.length === 0) {
+              return undefined
+            }
 
-      // Handle network errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        this.connected = false;
-        throw new Error('Network error: Unable to connect to native API server');
-      }
+            // Convert first row to object using column names
+            const columns = results[0].columns
+            const firstRow = results[0].values[0]
+            const rowObject: any = {}
 
-      throw error;
+            columns.forEach((column, index) => {
+              rowObject[column] = firstRow[index]
+            })
+
+            return rowObject
+          },
+
+          getAsObject: async (params?: any) => {
+            const results = await apiClient.executeSQL(sql, params)
+            return results[0]?.values.map(row => {
+              const obj: any = {}
+              results[0].columns.forEach((col, i) => {
+                obj[col] = row[i]
+              })
+              return obj
+            }) || []
+          },
+
+          reset: () => {},
+          free: () => {}
+        } as Statement
+      },
+
+      run: async (sql: string, params?: any) => {
+        await apiClient.executeSQL(sql, params)
+      },
+
+      close: () => {},
+      export: () => new Uint8Array(),
+      getRowsModified: () => 0,
+      create_function: () => {},
+      create_aggregate: () => {},
+
+      // Iterator methods for compatibility
+      iterateStatements: function* () {},
+      each: async () => {}
+    } as Database
+  }
+
+  /**
+   * High-level API methods for better performance
+   */
+  async getNodes(folder?: string, nodeType?: string): Promise<any[]> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
+    }
+
+    const params = new URLSearchParams()
+    if (folder) params.append('folder', folder)
+    if (nodeType) params.append('type', nodeType)
+
+    const response = await fetch(`${this.baseUrl}/api/nodes?${params}`)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch nodes: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  async getNotebookCards(folder?: string): Promise<any[]> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
+    }
+
+    const params = folder ? `?folder=${encodeURIComponent(folder)}` : ''
+    const response = await fetch(`${this.baseUrl}/api/notebook-cards${params}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch notebook cards: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  async saveNotebookCard(card: any): Promise<any> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
+    }
+
+    const method = card.id ? 'PUT' : 'POST'
+    const url = card.id
+      ? `${this.baseUrl}/api/notebook-cards/${card.id}`
+      : `${this.baseUrl}/api/notebook-cards`
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(card)
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to save notebook card: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  async deleteNotebookCard(id: string): Promise<void> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/notebook-cards/${id}`, {
+      method: 'DELETE'
+    })
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete notebook card: ${response.statusText}`)
     }
   }
-}
 
-/**
- * Factory function to create and connect a native API client
- * @param baseURL API server base URL
- * @param timeout Request timeout in milliseconds
- * @returns Connected NativeAPIClient instance
- */
-export async function createClient(baseURL?: string, timeout?: number): Promise<NativeAPIClient> {
-  const client = new NativeAPIClient(baseURL, timeout);
-  await client.connect();
-  return client;
-}
+  async searchNodes(query: string): Promise<any[]> {
+    if (!this.isAvailable) {
+      throw new Error('Native API not available')
+    }
 
-/**
- * Utility function to test if native API is available
- * @param baseURL API server base URL
- * @returns Promise resolving to true if API is available
- */
-export async function isNativeAPIAvailable(baseURL: string = 'http://localhost:8080'): Promise<boolean> {
-  try {
-    const client = new NativeAPIClient(baseURL, 3000); // Shorter timeout for availability check
-    await client.connect();
-    return true;
-  } catch {
-    return false;
+    const params = new URLSearchParams({ q: query })
+    const response = await fetch(`${this.baseUrl}/api/search?${params}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to search nodes: ${response.statusText}`)
+    }
+
+    return response.json()
+  }
+
+  /**
+   * Convert JavaScript values to API-compatible parameters
+   */
+  private convertParameter(param: any): any {
+    if (param === null || param === undefined) {
+      return null
+    }
+    if (typeof param === 'string' || typeof param === 'number' || typeof param === 'boolean') {
+      return param
+    }
+    // Convert other types to string representation
+    return String(param)
   }
 }
+
+// Default instance for application use
+export const nativeAPI = new NativeAPIClient()

@@ -5,6 +5,7 @@ import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue }
 import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
 import { performanceMonitor, logPerformanceReport } from './PerformanceMonitor';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';
+import { nativeAPI, NativeAPIClient } from './NativeAPIClient';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -102,6 +103,136 @@ function SQLJSDatabaseProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// Native API Database Provider with sql.js fallback
+function NativeAPIDatabaseProvider({ children }: { children: React.ReactNode }) {
+  const [db, setDb] = useState<Database | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [useNativeAPI, setUseNativeAPI] = useState(false);
+
+  useEffect(() => {
+    const initializeDatabase = async () => {
+      try {
+        // First, try to connect to native API
+        const isNativeAvailable = await nativeAPI.checkAvailability();
+
+        if (isNativeAvailable) {
+          console.log('✅ Connected to native API server');
+          const nativeDb = nativeAPI.createCompatibleDatabase();
+          setDb(nativeDb);
+          setUseNativeAPI(true);
+        } else {
+          console.log('⚡ Falling back to sql.js');
+          const sqlJsDb = await initDatabase();
+          setDb(sqlJsDb);
+          setUseNativeAPI(false);
+        }
+      } catch (err) {
+        console.warn('Native API failed, falling back to sql.js:', err);
+        try {
+          const sqlJsDb = await initDatabase();
+          setDb(sqlJsDb);
+          setUseNativeAPI(false);
+        } catch (sqlErr) {
+          setError(sqlErr as Error);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeDatabase();
+  }, []);
+
+  const execute = useCallback(<T = Record<string, unknown>>(
+    sql: string,
+    params?: unknown[]
+  ): T[] => {
+    if (!db) throw new Error('Database not initialized');
+
+    const startTime = performance.now();
+    const provider = useNativeAPI ? 'native-api' : 'sql.js';
+
+    try {
+      const result = db.exec(sql, params);
+      if (result.length === 0) {
+        const duration = performance.now() - startTime;
+        performanceMonitor.logQueryPerformance(sql, duration, provider, {
+          rowCount: 0,
+          success: true
+        });
+        return [];
+      }
+
+      const { columns, values } = result[0];
+      const resultData = values.map((row) => {
+        const obj: Record<string, unknown> = {};
+        columns.forEach((col, i) => {
+          obj[col] = row[i];
+        });
+        return obj as T;
+      });
+
+      const duration = performance.now() - startTime;
+      performanceMonitor.logQueryPerformance(sql, duration, provider, {
+        rowCount: resultData.length,
+        success: true,
+        nativeAPI: useNativeAPI
+      });
+
+      return resultData;
+    } catch (err) {
+      const duration = performance.now() - startTime;
+      performanceMonitor.logQueryPerformance(sql, duration, provider, {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+        nativeAPI: useNativeAPI
+      });
+      console.error('SQL Error:', sql, params, err);
+      throw err;
+    }
+  }, [db, useNativeAPI]);
+
+  const save = useCallback(async () => {
+    if (useNativeAPI) {
+      // Native API handles persistence automatically
+      console.log('Native API: Auto-saved');
+    } else {
+      await saveDatabase();
+    }
+  }, [useNativeAPI]);
+
+  const reset = useCallback(async () => {
+    setLoading(true);
+    try {
+      if (useNativeAPI) {
+        // For native API, we would need to call a reset endpoint
+        throw new Error('Database reset not yet supported for native API');
+      } else {
+        const newDb = await resetDatabase();
+        setDb(newDb);
+      }
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setLoading(false);
+    }
+  }, [useNativeAPI]);
+
+  return (
+    <DatabaseContext.Provider value={{
+      db,
+      loading,
+      error,
+      execute,
+      save,
+      reset
+    }}>
+      {children}
+    </DatabaseContext.Provider>
+  );
+}
+
 // Original sql.js useDatabase hook for internal use
 function useSQLJSDatabase(): DatabaseContextValue {
   const context = useContext(DatabaseContext);
@@ -161,11 +292,12 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
 
     case DatabaseMode.SQLJS:
     default:
-      console.log('Using SQL.js Database (fallback)');
+      // Default to Native API with sql.js fallback for development
+      console.log('Using Native API with sql.js fallback');
       return (
-        <SQLJSDatabaseProvider>
+        <NativeAPIDatabaseProvider>
           {children}
-        </SQLJSDatabaseProvider>
+        </NativeAPIDatabaseProvider>
       );
   }
 }
