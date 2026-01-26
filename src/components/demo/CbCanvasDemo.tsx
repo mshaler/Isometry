@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { cbCanvas } from '@/d3/components/cb-canvas';
 import { cbCard } from '@/d3/components/cb-card';
 import { nodeToCardValue } from '@/types/lpg';
-import type { BackgroundPattern, CardValue } from '@/types/lpg';
+import type { BackgroundPattern } from '@/types/lpg';
 import { sampleNodes } from './data/sampleData';
 
 // ============================================
