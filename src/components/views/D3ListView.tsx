@@ -331,11 +331,11 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
       .attr('fill', 'white')
       .attr('stroke', theme === 'NeXTSTEP' ? '#c0c0c0' : '#e5e7eb')
       .attr('stroke-width', 0.5)
-      .on('mouseenter', function(event, d) {
+      .on('mouseenter', function(_event, d) {
         d3.select(this).attr('fill', theme === 'NeXTSTEP' ? '#f5f5f5' : '#f9fafb');
         setListState(prev => ({ ...prev, hoveredItem: d.item.id }));
       })
-      .on('mouseleave', function(event, d) {
+      .on('mouseleave', function(_event, _d) {
         d3.select(this).attr('fill', 'white');
         setListState(prev => ({ ...prev, hoveredItem: null }));
       });
@@ -389,7 +389,7 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
 
     // Search highlighting
     if (listState.searchQuery) {
-      regularItems.selectAll('text').each(function(d) {
+      regularItems.selectAll('text').each(function(_d) {
         const element = d3.select(this);
         const text = element.text();
         const query = listState.searchQuery.toLowerCase();

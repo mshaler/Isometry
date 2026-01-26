@@ -1,13 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { BaseViewRenderer } from './BaseViewRenderer';
 import type {
-  ViewType,
   ViewComponentProps,
   ViewTransitionState,
   TransitionConfig,
   Dimensions
 } from '../../types/view';
-import type { Node } from '../../types/node';
 
 /**
  * ReactViewRenderer - Wrapper for React-based view components
@@ -148,8 +146,7 @@ interface ViewRendererWrapperProps extends ViewComponentProps {
 const ViewRendererWrapper = React.memo<ViewRendererWrapperProps>(({
   renderer,
   containerRef,
-  children,
-  ...props
+  children
 }) => {
   useEffect(() => {
     // Initialize renderer with container when mounted

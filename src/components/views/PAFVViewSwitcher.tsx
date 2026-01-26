@@ -47,8 +47,7 @@ export function PAFVViewSwitcher({
 
   const {
     registry,
-    switchToView,
-    getCurrentRenderer
+    switchToView
   } = useViewRegistry();
 
   const { trackOperation } = usePerformanceTracking();

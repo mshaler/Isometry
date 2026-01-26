@@ -1,4 +1,4 @@
-import type { ViewRenderer, ViewType, ViewComponentProps, TransitionConfig } from '../../types/view';
+import type { ViewRenderer, ViewType, TransitionConfig } from '../../types/view';
 import { gridViewRenderer } from './GridViewRenderer';
 import { listViewRenderer } from './ListViewRenderer';
 
