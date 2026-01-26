@@ -1,6 +1,16 @@
 import React, { useState, useCallback } from 'react';
 import { Database, Upload, FileText, CheckCircle, AlertCircle, X, Settings } from 'lucide-react';
-import { SQLiteSyncManager, type SQLiteSyncResult, type SQLiteSyncOptions } from '../utils/sqliteSyncManager';
+// Note: SQLiteSyncManager removed in sql.js migration cleanup
+interface SQLiteSyncResult {
+  success: boolean;
+  message: string;
+  rowsImported?: number;
+}
+
+interface SQLiteSyncOptions {
+  database?: string;
+  preserveData?: boolean;
+}
 import type { Node } from '../types/node';
 
 interface SQLiteImportWizardProps {
@@ -158,7 +168,7 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
     setSyncOptions(prev => ({
       ...prev,
       enabledSources: prev.enabledSources?.includes(source)
-        ? prev.enabledSources.filter(s => s !== source)
+        ? prev.enabledSources.filter((s: string) => s !== source)
         : [...(prev.enabledSources || []), source]
     }));
   }, []);

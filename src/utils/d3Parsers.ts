@@ -65,7 +65,7 @@ export function parseChartData(content: string): ParsedData {
     // Extract JSON data blocks
     const jsonData = extractJSONData(content);
     if (jsonData.length > 0) {
-      return parseJSONData(jsonData[0]);
+      return parseJSONData(jsonData[0] as unknown[]);
     }
 
     // Extract CSV data
@@ -165,7 +165,7 @@ export function detectVisualizationType(data: unknown[]): VisualizationConfig {
 
   // Categorical + numeric - bar chart
   if (catFields.length >= 1 && numFields.length >= 1) {
-    const uniqueCategories = new Set(data.map(d => d[catFields[0].name])).size;
+    const uniqueCategories = new Set(data.map((d: any) => d[catFields[0].name])).size;
 
     // Pie chart for small number of categories
     if (uniqueCategories <= 6 && numFields.length === 1) {
@@ -341,7 +341,7 @@ function parseCSVData(csvText: string): ParsedData {
   const headers = lines[0].split(',').map(h => h.trim());
   const data = lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.trim());
-    const row: unknown = {};
+    const row: any = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -378,7 +378,7 @@ function parseTableData(tableText: string): ParsedData {
   // Extract data rows
   const data = dataLines.slice(1).map(line => {
     const values = line.split('|').map(v => v.trim()).filter(v => v !== '');
-    const row: unknown = {};
+    const row: any = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -404,12 +404,12 @@ function analyzeDataSchema(data: unknown[]): DataSchema {
   const sample = data.slice(0, sampleSize);
   const allKeys = new Set<string>();
 
-  sample.forEach(row => {
+  sample.forEach((row: any) => {
     Object.keys(row).forEach(key => allKeys.add(key));
   });
 
   const fields: FieldSchema[] = Array.from(allKeys).map(key => {
-    const values = sample.map(row => row[key]).filter(v => v != null);
+    const values = sample.map((row: any) => row[key]).filter(v => v != null);
     const uniqueValues = new Set(values);
 
     return {

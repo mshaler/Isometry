@@ -238,11 +238,10 @@ async function testSyncLatency(): Promise<BridgeTestResult> {
     window.addEventListener('isometry-sync-update', handler);
 
     // Trigger a change that should generate sync notification
-    await webViewBridge.database.create('nodes', {
-      name: 'test-sync-node',
-      content: 'testing sync latency',
-      nodeType: 'test'
-    });
+    await webViewBridge.database.execute(
+      'INSERT INTO nodes (name, content, node_type) VALUES (?, ?, ?)',
+      ['test-sync-node', 'testing sync latency', 'test']
+    );
 
     // Wait for notification or timeout
     const timeout = 1000; // 1 second timeout
@@ -285,7 +284,7 @@ async function testSyncLatency(): Promise<BridgeTestResult> {
  */
 async function testMemoryOverhead(): Promise<BridgeTestResult> {
   try {
-    const initialMemory = (performance as unknown)?.memory?.usedJSHeapSize || 0;
+    const initialMemory = (performance as any)?.memory?.usedJSHeapSize || 0;
 
     // Perform memory-intensive operations
     const testData = [];
@@ -297,7 +296,7 @@ async function testMemoryOverhead(): Promise<BridgeTestResult> {
       testData.push(result);
     }
 
-    const finalMemory = (performance as unknown)?.memory?.usedJSHeapSize || 0;
+    const finalMemory = (performance as any)?.memory?.usedJSHeapSize || 0;
     const memoryDelta = (finalMemory - initialMemory) / 1024 / 1024; // MB
 
     return {
@@ -332,11 +331,10 @@ async function testLargeDataTransfer(): Promise<BridgeTestResult> {
     // Create large data payload
     const largeContent = 'x'.repeat(50000); // 50KB content
 
-    await webViewBridge.database.create('nodes', {
-      name: 'large-data-test',
-      content: largeContent,
-      nodeType: 'test'
-    });
+    await webViewBridge.database.execute(
+      'INSERT INTO nodes (name, content, node_type) VALUES (?, ?, ?)',
+      ['large-data-test', largeContent, 'test']
+    );
 
     const duration = performance.now() - startTime;
 
@@ -554,8 +552,8 @@ async function performStressTesting(): Promise<BridgeStressTestResult> {
   const operationResults = await Promise.all(operations);
   const totalDuration = performance.now() - startTime;
 
-  const successfulOperations = operationResults.filter(r => r.success).length;
-  const failedOperations = operationResults.filter(r => !r.success).length;
+  const successfulOperations = operationResults.filter((r: BridgeTestResult) => r.success).length;
+  const failedOperations = operationResults.filter((r: BridgeTestResult) => !r.success).length;
 
   const latencies = operationResults
     .filter(r => r.success)

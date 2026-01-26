@@ -8,7 +8,8 @@ import type { Node } from '@/types/node';
 import type {
   D3SVGSelection,
   D3PieGenerator,
-  D3ArcGenerator
+  D3ArcGenerator,
+  D3ColorScale
 } from '@/types/d3';
 
 interface ChartsViewProps {
@@ -209,11 +210,11 @@ function renderPieChart(
     .value(d => d.count)
     .sort(null);
 
-  const arc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
+  const arc = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 0.4)
     .outerRadius(radius);
 
-  const outerArc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
+  const outerArc = d3.arc<d3.BaseType, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 1.1)
     .outerRadius(radius * 1.1);
 
