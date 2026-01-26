@@ -457,25 +457,31 @@ struct DatabaseDetailView: View {
         Group {
             switch appState.navigation.selectedDatabaseSection {
             case .versionControl:
-                if let database = appState.database {
-                    DatabaseVersionControlView(
-                        database: database,
-                        storageManager: ContentAwareStorageManager(database: database)
+                if appState.database != nil {
+                    DatabaseFeatureWipView(
+                        section: .versionControl,
+                        message: "Database Version Control interface is being integrated. This will provide git-like database versioning with branch management, merging, and rollback capabilities."
                     )
                 } else {
                     DatabaseNotAvailableView()
                 }
 
             case .etlWorkflow:
-                if let database = appState.database {
-                    ETLWorkflowView(database: database)
+                if appState.database != nil {
+                    DatabaseFeatureWipView(
+                        section: .etlWorkflow,
+                        message: "ETL Operations interface is being integrated. This will provide extract, transform, and load workflow management with comprehensive data lineage tracking."
+                    )
                 } else {
                     DatabaseNotAvailableView()
                 }
 
             case .dataCatalog:
-                if let database = appState.database {
-                    ETLDataCatalogView(database: database)
+                if appState.database != nil {
+                    DatabaseFeatureWipView(
+                        section: .dataCatalog,
+                        message: "Data Catalog interface is being integrated. This will provide Sources → Streams → Surfaces navigation with comprehensive search and discovery."
+                    )
                 } else {
                     DatabaseNotAvailableView()
                 }
@@ -558,6 +564,64 @@ struct DatabaseFeatureCard: View {
             .cornerRadius(12)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Database Feature WIP View
+
+struct DatabaseFeatureWipView: View {
+    let section: DatabaseSection
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 24) {
+            VStack(spacing: 16) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 64))
+                    .foregroundColor(.blue)
+
+                Text(section.title)
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+
+                Text("Integration in Progress")
+                    .font(.title3)
+                    .foregroundColor(.orange)
+            }
+
+            VStack(spacing: 16) {
+                Text(message)
+                    .font(.body)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 500)
+
+                HStack(spacing: 16) {
+                    Label("Navigation: Complete", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
+                    Label("UI Integration: In Progress", systemImage: "gear.circle")
+                        .foregroundColor(.orange)
+                }
+                .font(.caption)
+            }
+
+            VStack(spacing: 12) {
+                Text("Component Status")
+                    .font(.headline)
+
+                Text("✅ Navigation structure implemented")
+                Text("✅ Backend components exist")
+                Text("🔄 UI integration being completed")
+                Text("🔄 Component compilation fixes in progress")
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .frame(maxWidth: 400)
+
+            Spacer()
+        }
+        .padding()
+        .navigationTitle(section.title)
     }
 }
 
