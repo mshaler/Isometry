@@ -4,7 +4,7 @@
  * Provides secure file operations through WebView bridge with fallback to browser APIs
  */
 
-import { webViewBridge, Environment, postMessage } from './webview-bridge';
+import { Environment, postMessage } from './webview-bridge';
 
 export interface FileInfo {
   name: string;
@@ -49,7 +49,6 @@ export class FileSystemBridge {
 
         if (binary) {
           // Convert base64 to ArrayBuffer if needed
-          const decoder = new TextDecoder();
           return new ArrayBuffer(result.content.length);
         }
 

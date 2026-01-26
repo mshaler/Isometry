@@ -6,7 +6,6 @@
  */
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
-import { syncManager } from './sync-manager';
 import { Environment } from './webview-bridge';
 
 export interface ValidationResult {

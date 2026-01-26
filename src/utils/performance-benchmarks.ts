@@ -355,7 +355,6 @@ export class PerformanceBenchmarks {
       if (baselineValue === undefined || currentValue === undefined) continue;
 
       const change = ((currentValue - baselineValue) / baselineValue) * 100;
-      const absChange = Math.abs(change);
 
       let severity: RegressionDetail['severity'] = 'minor';
       const threshold = this.regressionThresholds.minor;
@@ -423,7 +422,7 @@ export class PerformanceBenchmarks {
     };
   }
 
-  private getMetricRecommendation(metric: string, severity: RegressionDetail['severity'], change: number): string | undefined {
+  private getMetricRecommendation(metric: string, severity: RegressionDetail['severity'], _change: number): string | undefined {
     if (severity === 'improvement' || severity === 'minor') return undefined;
 
     const recommendations: Record<string, string> = {

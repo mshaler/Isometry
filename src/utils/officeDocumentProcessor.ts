@@ -109,7 +109,7 @@ export class OfficeDocumentProcessor {
   /**
    * Export nodes to Excel format
    */
-  async exportToExcel(nodes: Node[], filename?: string): Promise<Blob> {
+  async exportToExcel(nodes: Node[], _filename?: string): Promise<Blob> {
     const workbook = XLSX.utils.book_new();
 
     for (let i = 0; i < nodes.length; i++) {
@@ -194,7 +194,7 @@ export class OfficeDocumentProcessor {
   private processExcelSheet(
     worksheet: XLSX.WorkSheet,
     sheetName: string,
-    extractTables: boolean
+    _extractTables: boolean
   ): ExcelSheetData {
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
     const data: (string | number | boolean | null)[][] = [];

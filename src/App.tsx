@@ -1,26 +1,6 @@
 import { useState } from 'react';
-import { BrowserRouter } from 'react-router-dom';
-import { useTheme, ThemeProvider } from './contexts/ThemeContext';
-// import { DatabaseProvider } from './db/DatabaseContext'; // TEMPORARILY DISABLED FOR MVP
-import { FilterProvider } from './contexts/FilterContext';
-import { PAFVProvider } from './contexts/PAFVContext';
-import { SelectionProvider } from './state/SelectionContext';
-import { CardOverlayProvider } from './state/CardOverlayContext';
-import { AppStateProvider } from './contexts/AppStateContext';
-import { TagColorProvider } from './state/TagColorContext';
-import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
-import { EnvironmentProvider } from './contexts/EnvironmentContext';
-import { ErrorBoundary } from './components/ui/ErrorBoundary';
-import { CardOverlay } from './components/CardOverlay';
+import { useNotebook } from './contexts/NotebookContext';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
-
-// Layout components
-import { Toolbar } from './components/Toolbar';
-import { Navigator } from './components/Navigator';
-import { Sidebar } from './components/Sidebar';
-import { RightSidebar } from './components/RightSidebar';
-import { CommandBar } from './components/CommandBar';
-import { Canvas } from './components/Canvas';
 import { D3ComponentsDemo } from './components/demo/D3ComponentsDemo';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { ComponentCatalog } from './pages/ComponentCatalog';
@@ -29,8 +9,7 @@ import UnifiedDemo from './UnifiedDemo';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook' | 'unified';
 
-function AppContent() {
-  const { theme } = useTheme();
+function _AppContent() {
   const { toggleNotebookMode } = useNotebook();
   const [viewMode, setViewMode] = useState<ViewMode>('app'); // Start with main app
 
