@@ -1,8 +1,11 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
-/// Beta feedback collection interface
+/// Beta feedback collection interface with enhanced accessibility and screenshot capture
 public struct BetaFeedbackView: View {
-    @StateObject private var betaManager = BetaTestingManager()
+    @StateObject private var betaManager: BetaTestingManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedCategory: FeedbackCategory.CategoryType = .general
@@ -13,8 +16,14 @@ public struct BetaFeedbackView: View {
     @State private var includeDeviceInfo = true
     @State private var isSubmitting = false
     @State private var showingSuccessMessage = false
+    @State private var capturedScreenshot: UIImage?
+    #if os(iOS)
+    @State private var isCapturingScreenshot = false
+    #endif
 
-    public init() {}
+    public init(betaManager: BetaTestingManager) {
+        self._betaManager = StateObject(wrappedValue: betaManager)
+    }
 
     public var body: some View {
         NavigationView {
@@ -125,13 +134,66 @@ public struct BetaFeedbackView: View {
 
     private var attachmentsSection: some View {
         Section("Attachments") {
-            Toggle("Include Screenshot", isOn: $includeScreenshot)
-                .help("Automatically capture a screenshot to help explain the issue")
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("Include Screenshot", isOn: $includeScreenshot)
+                    .help("Capture a screenshot to help explain the issue")
+                    .accessibilityLabel("Include screenshot with feedback")
 
-            if includeScreenshot {
-                Text("A screenshot will be automatically captured when you submit this feedback.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if includeScreenshot {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            if let screenshot = capturedScreenshot {
+                                Text("Screenshot captured ✓")
+                                    .foregroundStyle(.green)
+                                    .font(.caption)
+                                Button("Retake Screenshot") {
+                                    captureScreenshot()
+                                }
+                                .font(.caption)
+                                .buttonStyle(.borderless)
+                            } else {
+                                Text("Screenshot will be captured automatically")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+
+                                #if os(iOS)
+                                Button("Capture Screenshot Now") {
+                                    captureScreenshot()
+                                }
+                                .font(.caption)
+                                .buttonStyle(.borderless)
+                                .disabled(isCapturingScreenshot)
+                                #endif
+                            }
+                        }
+
+                        Spacer()
+
+                        if let screenshot = capturedScreenshot {
+                            #if os(iOS)
+                            Image(uiImage: screenshot)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 60, height: 60)
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                                )
+                            #else
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.3))
+                                .frame(width: 60, height: 60)
+                                .cornerRadius(8)
+                                .overlay(
+                                    Text("Screenshot")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                )
+                            #endif
+                        }
+                    }
+                }
             }
         }
     }
@@ -183,20 +245,71 @@ public struct BetaFeedbackView: View {
 
     // MARK: - Actions
 
+    /// Capture screenshot using system APIs
+    private func captureScreenshot() {
+        #if os(iOS)
+        guard !isCapturingScreenshot else { return }
+        isCapturingScreenshot = true
+
+        DispatchQueue.main.async {
+            // Get the key window
+            guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let window = windowScene.windows.first(where: { $0.isKeyWindow }) else {
+                self.isCapturingScreenshot = false
+                return
+            }
+
+            // Capture screenshot
+            let renderer = UIGraphicsImageRenderer(size: window.bounds.size)
+            let screenshot = renderer.image { context in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+
+            self.capturedScreenshot = screenshot
+            self.isCapturingScreenshot = false
+        }
+        #else
+        // macOS screenshot capture would use different APIs
+        // For now, just set a placeholder
+        capturedScreenshot = nil
+        #endif
+    }
+
     private func submitFeedback() {
         isSubmitting = true
 
         Task {
+            // Capture screenshot if requested and not already captured
+            if includeScreenshot && capturedScreenshot == nil {
+                await MainActor.run {
+                    captureScreenshot()
+                }
+                // Wait for screenshot capture to complete
+                try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+            }
+
             // Create feedback object
             var attachments: [FeedbackAttachment] = []
 
-            if includeScreenshot {
-                // In production, would capture actual screenshot
+            if includeScreenshot, let screenshot = capturedScreenshot {
+                // Convert screenshot to PNG data
+                #if os(iOS)
+                if let imageData = screenshot.pngData() {
+                    attachments.append(FeedbackAttachment(
+                        type: .screenshot,
+                        data: imageData,
+                        filename: "screenshot_\(Date().timeIntervalSince1970).png"
+                    ))
+                }
+                #else
+                // macOS screenshot handling would be different
+                let placeholderData = "macOS screenshot placeholder".data(using: .utf8) ?? Data()
                 attachments.append(FeedbackAttachment(
                     type: .screenshot,
-                    data: Data(),
-                    filename: "screenshot_\(Date().timeIntervalSince1970).png"
+                    data: placeholderData,
+                    filename: "screenshot_\(Date().timeIntervalSince1970).txt"
                 ))
+                #endif
             }
 
             let feedback = BetaFeedback(

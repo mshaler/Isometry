@@ -1,6 +1,8 @@
 import Foundation
 import SwiftUI
 import Combine
+import CloudKit
+import os.log
 
 // MARK: - Beta Configuration
 
@@ -29,7 +31,7 @@ public struct BetaVersion {
     public let newFeatures: [String]
 }
 
-/// Beta testing infrastructure for Isometry TestFlight distribution
+/// Beta testing infrastructure for Isometry TestFlight distribution with enhanced environment detection and feature flag integration
 @MainActor
 public class BetaTestingManager: ObservableObject {
 
@@ -40,25 +42,121 @@ public class BetaTestingManager: ObservableObject {
     @Published public var feedbackItems: [BetaFeedback] = []
     @Published public var isCollectingFeedback = false
     @Published public var analyticsEnabled = true
+    @Published public var environmentStatus: EnvironmentStatus = .unknown
+    @Published public var isExpired = false
+
+    // MARK: - Dependencies
+
+    private let featureFlagManager: FeatureFlagManager?
+    private let cloudKitManager: CloudKitSyncManager?
+    private let logger = Logger(subsystem: "com.isometry.app", category: "BetaTesting")
+
+    // MARK: - Environment Detection
+
+    public enum EnvironmentStatus: String, CaseIterable {
+        case production = "Production"
+        case testFlight = "TestFlight"
+        case debug = "Debug"
+        case simulator = "Simulator"
+        case unknown = "Unknown"
+
+        public var isTestEnvironment: Bool {
+            switch self {
+            case .production:
+                return false
+            case .testFlight, .debug, .simulator:
+                return true
+            case .unknown:
+                return false
+            }
+        }
+    }
 
     // MARK: - Initialization
 
-    public init() {
+    public init(featureFlagManager: FeatureFlagManager? = nil, cloudKitManager: CloudKitSyncManager? = nil) {
+        self.featureFlagManager = featureFlagManager
+        self.cloudKitManager = cloudKitManager
         setupBetaMode()
     }
 
     private func setupBetaMode() {
-        // Check if this is a beta build
-        #if DEBUG
-        isBetaMode = true
-        #else
-        // Check for TestFlight environment
-        isBetaMode = Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt"
-        #endif
+        // Enhanced environment detection
+        environmentStatus = detectEnvironment()
+        isBetaMode = environmentStatus.isTestEnvironment
+
+        logger.info("Environment detected: \(environmentStatus.rawValue), Beta mode: \(isBetaMode)")
 
         if isBetaMode {
             setupBetaVersion()
             setupBetaAnalytics()
+            checkBetaExpiration()
+        }
+    }
+
+    /// Comprehensive environment detection for TestFlight, Debug, and Production builds
+    private func detectEnvironment() -> EnvironmentStatus {
+        // Check for simulator first
+        #if targetEnvironment(simulator)
+        return .simulator
+        #endif
+
+        // Check for debug configuration
+        #if DEBUG
+        return .debug
+        #endif
+
+        // Check for TestFlight environment
+        // Multiple detection methods for reliability
+        if isTestFlightEnvironment() {
+            return .testFlight
+        }
+
+        // Default to production
+        return .production
+    }
+
+    /// Robust TestFlight detection using multiple indicators
+    private func isTestFlightEnvironment() -> Bool {
+        // Method 1: Check App Store receipt URL
+        let receiptUrl = Bundle.main.appStoreReceiptURL
+        let isTestFlightReceipt = receiptUrl?.lastPathComponent == "sandboxReceipt"
+
+        // Method 2: Check bundle provisioning profile (if available)
+        let hasEmbeddedProfile = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") != nil
+
+        // Method 3: Check for TestFlight-specific Info.plist entries
+        let hasTestFlightConfig = Bundle.main.object(forInfoDictionaryKey: "ITSAppUsesNonExemptEncryption") != nil
+
+        // Method 4: Check for beta identifier in bundle
+        let bundleId = Bundle.main.bundleIdentifier ?? ""
+        let hasBetaIdentifier = bundleId.contains(".beta") || bundleId.contains("-beta")
+
+        // TestFlight if any of the strong indicators are present
+        let isTestFlight = isTestFlightReceipt || (hasEmbeddedProfile && hasTestFlightConfig)
+
+        logger.info("TestFlight detection - Receipt: \(isTestFlightReceipt), Profile: \(hasEmbeddedProfile), Config: \(hasTestFlightConfig), BundleId: \(hasBetaIdentifier)")
+
+        return isTestFlight
+    }
+
+    /// Check if beta version has expired
+    private func checkBetaExpiration() {
+        guard let betaVersion = betaVersion else { return }
+
+        let now = Date()
+        isExpired = now > betaVersion.expirationDate
+
+        if isExpired {
+            logger.warning("Beta version expired on \(betaVersion.expirationDate)")
+            // Track expiration event
+            trackBetaEvent(BetaAnalyticsEvent(
+                name: "beta_expired",
+                properties: [
+                    "expiration_date": betaVersion.expirationDate.timeIntervalSince1970,
+                    "days_overdue": now.timeIntervalSince(betaVersion.expirationDate) / 86400
+                ]
+            ))
         }
     }
 
@@ -153,14 +251,28 @@ public class BetaTestingManager: ObservableObject {
         }
     }
 
-    // MARK: - Beta Features Management
+    // MARK: - Beta Features Management with Feature Flag Integration
 
+    /// Check if a beta feature is enabled, integrating with the centralized feature flag system
     public func isBetaFeatureEnabled(_ feature: BetaFeature.FeatureType) -> Bool {
+        // First check centralized feature flag system if available
+        if let featureFlagManager = featureFlagManager {
+            let flagName = "beta_\(feature.rawValue)"
+            if featureFlagManager.getAllFlags()[flagName] != nil {
+                return featureFlagManager.isEnabled(flagName)
+            }
+        }
+
+        // Fallback to local beta configuration
         guard let betaVersion = betaVersion else { return false }
         return betaVersion.configuration.features.first(where: { $0.type == feature })?.isEnabled ?? false
     }
 
+    /// Toggle beta feature with proper analytics tracking
     public func toggleBetaFeature(_ feature: BetaFeature.FeatureType) {
+        let wasEnabled = isBetaFeatureEnabled(feature)
+
+        // Update local beta configuration
         guard let betaVersion = betaVersion else { return }
 
         if let index = betaVersion.configuration.features.firstIndex(where: { $0.type == feature }) {
@@ -184,17 +296,89 @@ public class BetaTestingManager: ObservableObject {
                 knownIssues: betaVersion.knownIssues,
                 newFeatures: betaVersion.newFeatures
             )
+
+            // Track feature toggle analytics
+            trackBetaEvent(BetaAnalyticsEvent(
+                name: "beta_feature_toggled",
+                properties: [
+                    "feature": feature.rawValue,
+                    "enabled": !wasEnabled,
+                    "environment": environmentStatus.rawValue
+                ]
+            ))
+
+            logger.info("Toggled beta feature \(feature.rawValue): \(wasEnabled) -> \(!wasEnabled)")
         }
     }
 
-    // MARK: - Analytics
+    /// Get all available beta features with their current state
+    public func getAllBetaFeatures() -> [BetaFeature] {
+        guard let betaVersion = betaVersion else { return [] }
 
+        return betaVersion.configuration.features.map { feature in
+            BetaFeature(
+                type: feature.type,
+                name: feature.name,
+                description: feature.description,
+                isEnabled: isBetaFeatureEnabled(feature.type),
+                isExperimental: feature.isExperimental
+            )
+        }
+    }
+
+    // MARK: - Analytics with Enhanced Tracking
+
+    /// Track beta events with comprehensive analytics
     public func trackBetaEvent(_ event: BetaAnalyticsEvent) {
         guard analyticsEnabled else { return }
 
+        // Enhanced analytics with environment context
+        let enrichedProperties = event.properties.merging([
+            "environment": environmentStatus.rawValue,
+            "beta_version": betaVersion?.configuration.version ?? "unknown",
+            "build_number": betaVersion?.configuration.build ?? "unknown",
+            "testing_phase": betaVersion?.configuration.testingPhase.rawValue ?? "unknown",
+            "is_expired": isExpired,
+            "timestamp": Date().timeIntervalSince1970
+        ]) { existing, _ in existing }
+
+        let enrichedEvent = BetaAnalyticsEvent(
+            name: event.name,
+            properties: enrichedProperties
+        )
+
+        // Log locally for debugging
+        logger.info("Beta Analytics: \(enrichedEvent.name) - \(enrichedProperties)")
+
         // In production, this would send analytics to a server
-        // For now, just log locally for debugging
-        print("Beta Analytics: \(event.name) - \(event.properties)")
+        // For now, store locally and could sync with CloudKit
+        storeBetaAnalyticsEvent(enrichedEvent)
+    }
+
+    /// Store beta analytics events locally with optional CloudKit sync
+    private func storeBetaAnalyticsEvent(_ event: BetaAnalyticsEvent) {
+        // Store in UserDefaults for persistence
+        var storedEvents = UserDefaults.standard.array(forKey: "betaAnalyticsEvents") as? [Data] ?? []
+
+        if let eventData = try? JSONEncoder().encode(event) {
+            storedEvents.append(eventData)
+
+            // Keep only last 100 events to prevent unbounded growth
+            if storedEvents.count > 100 {
+                storedEvents = Array(storedEvents.suffix(100))
+            }
+
+            UserDefaults.standard.set(storedEvents, forKey: "betaAnalyticsEvents")
+        }
+    }
+
+    /// Get stored beta analytics events for reporting
+    public func getBetaAnalyticsEvents() -> [BetaAnalyticsEvent] {
+        let storedEvents = UserDefaults.standard.array(forKey: "betaAnalyticsEvents") as? [Data] ?? []
+
+        return storedEvents.compactMap { data in
+            try? JSONDecoder().decode(BetaAnalyticsEvent.self, from: data)
+        }
     }
 
     // MARK: - Helper Methods
@@ -374,14 +558,55 @@ public struct BetaDeviceInfo {
     }
 }
 
-public struct BetaAnalyticsEvent {
+public struct BetaAnalyticsEvent: Codable {
     public let name: String
-    public let properties: [String: Any]
+    public let properties: [String: AnyCodable]
     public let timestamp: Date
 
     public init(name: String, properties: [String: Any] = [:]) {
         self.name = name
-        self.properties = properties
+        self.properties = properties.mapValues { AnyCodable($0) }
         self.timestamp = Date()
+    }
+}
+
+/// Helper type to encode/decode Any values in analytics events
+public struct AnyCodable: Codable {
+    public let value: Any
+
+    public init(_ value: Any) {
+        self.value = value
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let value = try? container.decode(Bool.self) {
+            self.value = value
+        } else if let value = try? container.decode(Int.self) {
+            self.value = value
+        } else if let value = try? container.decode(Double.self) {
+            self.value = value
+        } else if let value = try? container.decode(String.self) {
+            self.value = value
+        } else {
+            self.value = NSNull()
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+
+        if let value = value as? Bool {
+            try container.encode(value)
+        } else if let value = value as? Int {
+            try container.encode(value)
+        } else if let value = value as? Double {
+            try container.encode(value)
+        } else if let value = value as? String {
+            try container.encode(value)
+        } else {
+            try container.encodeNil()
+        }
     }
 }
