@@ -490,7 +490,10 @@ enum PermissionStatus {
 
 #Preview {
     ETLOperationBuilderView(
-        etlManager: ETLOperationManager(database: try! IsometryDatabase(path: ":memory:")),
+        etlManager: ETLOperationManager(
+            database: try! IsometryDatabase(path: ":memory:"),
+            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:"))
+        ),
         database: try! IsometryDatabase(path: ":memory:"),
         selectedTemplate: .appleNotesImport
     )

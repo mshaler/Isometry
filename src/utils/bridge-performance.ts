@@ -288,7 +288,7 @@ async function testSyncLatency(): Promise<BridgeTestResult> {
  */
 async function testMemoryOverhead(): Promise<BridgeTestResult> {
   try {
-    const initialMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const initialMemory = (performance as unknown)?.memory?.usedJSHeapSize || 0;
 
     // Perform memory-intensive operations
     const testData = [];
@@ -300,7 +300,7 @@ async function testMemoryOverhead(): Promise<BridgeTestResult> {
       testData.push(result);
     }
 
-    const finalMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const finalMemory = (performance as unknown)?.memory?.usedJSHeapSize || 0;
     const memoryDelta = (finalMemory - initialMemory) / 1024 / 1024; // MB
 
     return {

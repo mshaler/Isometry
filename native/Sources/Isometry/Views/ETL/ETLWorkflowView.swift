@@ -13,7 +13,10 @@ struct ETLWorkflowView: View {
 
     init(database: IsometryDatabase) {
         self.database = database
-        self._etlManager = StateObject(wrappedValue: ETLOperationManager(database: database))
+        self._etlManager = StateObject(wrappedValue: ETLOperationManager(
+            database: database,
+            storageManager: ContentAwareStorageManager(database: database)
+        ))
     }
 
     var body: some View {

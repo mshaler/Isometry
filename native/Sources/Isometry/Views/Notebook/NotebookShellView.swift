@@ -4,6 +4,7 @@ import Foundation
 /// Shell component for the notebook workflow with native terminal interface
 /// App Sandbox-compliant terminal with secure process execution
 public struct NotebookShellView: View {
+    @EnvironmentObject private var appState: AppState
     @State private var sandboxExecutor = SandboxExecutor()
     @StateObject private var shellSession = ShellSession()
     @State private var commandInput: String = ""
@@ -489,7 +490,9 @@ public struct NotebookShellView: View {
         isClaudeConfigured = ClaudeAPIClient.isConfigured()
 
         // Initialize command history manager
-        commandHistoryManager = CommandHistoryManager()
+        if let database = appState.database {
+            commandHistoryManager = CommandHistoryManager(database: database)
+        }
 
         // Start process monitoring
         startProcessMonitoring()
