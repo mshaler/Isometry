@@ -153,7 +153,7 @@ describe('Error Handling System', () => {
         'This is a test error message',
         [
           { label: 'Test Action', action: mockAction },
-          { label: 'Dismiss', _action: () => {} }
+          { label: 'Dismiss', action: () => {} }
         ]
       );
 
