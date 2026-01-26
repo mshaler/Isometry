@@ -432,6 +432,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 /// Handles file operations within App Sandbox constraints
 public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
     private let fileManager = FileManager.default
+    private let sandboxValidator = SandboxValidator()
 
     public override init() {
         super.init()
@@ -511,13 +512,21 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
             throw FileSystemError.invalidPath("Missing file path")
         }
 
-        let safePath = try validateAndSanitizePath(path)
+        // Validate path through sandbox validator
+        let validationResult = sandboxValidator.validatePath(path, for: .read)
+        guard validationResult.isAllowed, let safePath = validationResult.canonicalPath else {
+            sandboxValidator.logSecurityViolation(validationResult.error!, path: path, operation: .read)
+            throw FileSystemError.accessDenied(validationResult.error?.description ?? "Path validation failed")
+        }
+
         guard fileManager.fileExists(atPath: safePath) else {
             throw FileSystemError.fileNotFound(safePath)
         }
 
         let content = try String(contentsOfFile: safePath, encoding: .utf8)
         let attributes = try fileManager.attributesOfItem(atPath: safePath)
+
+        sandboxValidator.logFileAccess(safePath, operation: .read, success: true)
 
         return [
             "content": content,
@@ -532,13 +541,25 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
             throw FileSystemError.invalidPath("Missing path or content")
         }
 
-        let safePath = try validateAndSanitizePath(path)
+        // Validate path and check file size
+        let validationResult = sandboxValidator.validatePath(path, for: .write)
+        guard validationResult.isAllowed, let safePath = validationResult.canonicalPath else {
+            sandboxValidator.logSecurityViolation(validationResult.error!, path: path, operation: .write)
+            throw FileSystemError.accessDenied(validationResult.error?.description ?? "Path validation failed")
+        }
+
+        let contentData = Data(content.utf8)
+        if let sizeError = sandboxValidator.validateFileSize(Int64(contentData.count)) {
+            throw FileSystemError.invalidOperation("File too large: \(sizeError.description)")
+        }
 
         // Ensure directory exists
         let directory = URL(fileURLWithPath: safePath).deletingLastPathComponent()
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
         try content.write(toFile: safePath, atomically: true, encoding: .utf8)
+
+        sandboxValidator.logFileAccess(safePath, operation: .write, success: true)
 
         return ["success": true]
     }
@@ -548,10 +569,15 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
             throw FileSystemError.invalidPath("Missing file path")
         }
 
-        let safePath = try validateAndSanitizePath(path)
+        let validationResult = sandboxValidator.validatePath(path, for: .delete)
+        guard validationResult.isAllowed, let safePath = validationResult.canonicalPath else {
+            sandboxValidator.logSecurityViolation(validationResult.error!, path: path, operation: .delete)
+            throw FileSystemError.accessDenied(validationResult.error?.description ?? "Path validation failed")
+        }
 
         if fileManager.fileExists(atPath: safePath) {
             try fileManager.removeItem(atPath: safePath)
+            sandboxValidator.logFileAccess(safePath, operation: .delete, success: true)
         }
 
         return ["success": true]
@@ -559,7 +585,14 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
 
     private func handleListFiles(params: [String: Any]) async throws -> [[String: Any]] {
         let path = params["path"] as? String ?? ""
-        let safePath = try validateAndSanitizePath(path.isEmpty ? documentsDirectory() : path)
+        let defaultPath = sandboxValidator.getContainerPath(for: .documents)?.path ?? ""
+        let targetPath = path.isEmpty ? defaultPath : path
+
+        let validationResult = sandboxValidator.validatePath(targetPath, for: .list)
+        guard validationResult.isAllowed, let safePath = validationResult.canonicalPath else {
+            sandboxValidator.logSecurityViolation(validationResult.error!, path: targetPath, operation: .list)
+            throw FileSystemError.accessDenied(validationResult.error?.description ?? "Path validation failed")
+        }
 
         guard fileManager.fileExists(atPath: safePath) else {
             throw FileSystemError.directoryNotFound(safePath)
@@ -581,6 +614,8 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
             ])
         }
 
+        sandboxValidator.logFileAccess(safePath, operation: .list, success: true)
+
         return results.sorted { ($0["name"] as? String ?? "") < ($1["name"] as? String ?? "") }
     }
 
@@ -589,49 +624,15 @@ public class FileSystemMessageHandler: NSObject, WKScriptMessageHandler {
             throw FileSystemError.invalidPath("Missing file path")
         }
 
-        let safePath = try validateAndSanitizePath(path)
-        let exists = fileManager.fileExists(atPath: safePath)
+        let validationResult = sandboxValidator.validatePath(path, for: .read)
+        guard validationResult.isAllowed, let safePath = validationResult.canonicalPath else {
+            return ["exists": false] // Don't reveal path validation failures
+        }
 
+        let exists = fileManager.fileExists(atPath: safePath)
         return ["exists": exists]
     }
 
-    // MARK: - Security & Path Validation
-
-    private func validateAndSanitizePath(_ path: String) throws -> String {
-        // Remove any dangerous path components
-        let sanitized = path
-            .replacingOccurrences(of: "../", with: "")
-            .replacingOccurrences(of: "..\\", with: "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Ensure path is within app container
-        let documentsPath = documentsDirectory()
-        let resolvedPath: String
-
-        if sanitized.hasPrefix("/") {
-            // Absolute path - must be within documents or temp directory
-            if !sanitized.hasPrefix(documentsPath) && !sanitized.hasPrefix(NSTemporaryDirectory()) {
-                throw FileSystemError.accessDenied("Path outside app container: \(sanitized)")
-            }
-            resolvedPath = sanitized
-        } else {
-            // Relative path - resolve relative to documents directory
-            resolvedPath = URL(fileURLWithPath: documentsPath)
-                .appendingPathComponent(sanitized)
-                .path
-        }
-
-        // Additional security checks
-        if resolvedPath.contains("..") {
-            throw FileSystemError.accessDenied("Invalid path traversal: \(path)")
-        }
-
-        return resolvedPath
-    }
-
-    private func documentsDirectory() -> String {
-        return fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
-    }
 
     // MARK: - Response Handling
 
