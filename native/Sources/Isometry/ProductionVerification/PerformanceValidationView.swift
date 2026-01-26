@@ -84,8 +84,8 @@ public struct PerformanceValidationView: View {
                 .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
+                GridItem(.adaptive(minimum: 150), spacing: 12),
+                GridItem(.adaptive(minimum: 150), spacing: 12)
             ], spacing: 12) {
                 PerformanceAreaCard(
                     title: "Launch Time",

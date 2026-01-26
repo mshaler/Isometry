@@ -78,8 +78,8 @@ public struct AppStoreComplianceView: View {
                 .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
+                GridItem(.adaptive(minimum: 160), spacing: 12),
+                GridItem(.adaptive(minimum: 160), spacing: 12)
             ], spacing: 12) {
                 ComplianceAreaCard(
                     title: "Privacy",

@@ -1,58 +1,80 @@
 ---
 phase: 10-foundation-cleanup
-verified: 2026-01-26T19:42:46Z
+verified: 2026-01-26T21:05:27Z
 status: gaps_found
-score: 5/7 must-haves verified
+score: 3/7 must-haves verified
 re_verification:
   previous_status: gaps_found
-  previous_score: 4/7
-  gaps_closed:
-    - "ESLint problem count reduced from 52 to 21 (60% improvement)"
-    - "ESLint problem count further reduced from 21 to 5 (76% additional improvement)"
-    - "Explicit any types reduced from 10 to 5 (50% additional improvement)"
+  previous_score: 5/7
+  gaps_closed: []
   gaps_remaining:
     - "npm run lint returns '✖ 0 problems (0 errors, 0 warnings)'"
     - "TypeScript compiler produces no errors with strict mode enabled"
-  regressions: []
+  regressions:
+    - "ESLint warnings increased from 5 to 43 (760% regression)"
+    - "Explicit any types increased from 5 to 20 (300% regression)"
 gaps:
   - truth: "npm run lint returns '✖ 0 problems (0 errors, 0 warnings)'"
     status: failed
-    reason: "ESLint reports 5 warnings - excellent progress from 52→21→5 but not yet absolute zero"
+    reason: "CRITICAL REGRESSION: ESLint warnings increased from 5→43 (760% increase) - massive backslide from previous progress"
     artifacts:
-      - path: "src/components/demo/CbCanvasDemo.tsx"
-        issue: "1 @typescript-eslint/no-explicit-any warning: 'as any' in D3 call"
-      - path: "src/components/demo/D3ViewWrapperDemo.tsx"
-        issue: "1 @typescript-eslint/no-explicit-any warning: 'as any' in D3 call"
-      - path: "src/components/demo/LATCHScalesDemo.tsx"
-        issue: "2 @typescript-eslint/no-explicit-any warnings: 'as any' in D3 scale calls"
-      - path: "src/utils/officeDocumentProcessor.ts"
-        issue: "1 @typescript-eslint/no-explicit-any warning: 'any' in transform function"
+      - path: "src/components/views/"
+        issue: "26 warnings across D3ListView, Enhanced views, PerformanceMonitor, ReactViewRenderer - unused vars, explicit any"
+      - path: "src/hooks/useD3Canvas.ts"
+        issue: "9 warnings including unused imports, explicit any, unused parameters"
+      - path: "src/utils/"
+        issue: "8 warnings in bridge-performance, d3Performance, d3Testing - explicit any and unused vars"
     missing:
-      - "Proper D3 type definitions for card component calls"
-      - "Proper D3 scale type definitions for axis generation"
-      - "Transform function interface in office document processor"
+      - "Restoration of previous warning elimination work"
+      - "Systematic cleanup of 23 unused variable warnings"
+      - "Proper D3 type definitions to eliminate 20 explicit any warnings"
+  - truth: "All lint warnings completely eliminated"
+    status: failed
+    reason: "SEVERE REGRESSION: 43 warnings vs 0 goal - worse than initial state in some modules"
+    artifacts:
+      - path: "Multiple view components"
+        issue: "New unused import/variable patterns introduced"
+      - path: "D3 integration modules" 
+        issue: "Explicit any types proliferated across performance and testing utilities"
+    missing:
+      - "Complete restoration of Phase 10 warning elimination achievements"
+      - "Systematic review of all modified files since last verification"
+  - truth: "Zero no-explicit-any warnings remain in codebase"
+    status: failed
+    reason: "MAJOR REGRESSION: 20 explicit any warnings (300% increase from previous 5)"
+    artifacts:
+      - path: "src/utils/d3Performance.ts"
+        issue: "9 explicit any warnings in performance measurement code"
+      - path: "src/components/views/PerformanceMonitor.tsx"
+        issue: "5 explicit any warnings in D3 visualization code"
+      - path: "src/utils/bridge-performance.ts"
+        issue: "2 explicit any warnings in bridge testing code"
+    missing:
+      - "Proper TypeScript interfaces for D3 performance measurement"
+      - "Type-safe bridge testing method definitions"
+      - "Performance monitor D3 component typing"
   - truth: "TypeScript compiler produces no errors with strict mode enabled"
     status: failed
-    reason: "TypeScript strict mode still fails with ~150+ errors across multiple modules"
+    reason: "CONTINUED FAILURE: 484 TypeScript strict mode errors - no improvement from previous 150+ errors, actually increased"
     artifacts:
-      - path: "src/components/notebook/"
-        issue: "Property type mismatches in CaptureComponent and PropertyEditor"
-      - path: "src/components/views/ChartsView.tsx"
-        issue: "D3 type mismatches with Arc and ColorScale definitions"
-      - path: "src/utils/"
-        issue: "Type errors in bridge-performance, commandHistory, and d3Parsers"
+      - path: "src/components/D3Canvas.tsx"
+        issue: "Performance property type mismatches and undefined access"
+      - path: "src/components/AxisNavigator.tsx"
+        issue: "Undefined variable references (planeId, newFacet)"
+      - path: "src/__tests__/"
+        issue: "Test file type mismatches and unknown property references"
     missing:
-      - "Complete D3 type safety fixes across all components"
-      - "Global error reporting interface consistency"
-      - "Bridge performance typing improvements"
+      - "Complete TypeScript strict mode compilation success"
+      - "Performance property type safety fixes"
+      - "Test file type consistency improvements"
 ---
 
 # Phase 10: Foundation Cleanup Re-Verification Report
 
 **Phase Goal:** Achieve absolute zero lint problems through comprehensive error elimination and type safety
-**Verified:** 2026-01-26T19:42:46Z
-**Status:** Gaps Found - Excellent Progress, Near Completion
-**Re-verification:** Yes — after gap closure plans 10-10, 10-11
+**Verified:** 2026-01-26T21:05:27Z
+**Status:** Critical Regression - Gaps Found
+**Re-verification:** Yes — after gap closure AND significant regression detected
 
 ## Goal Achievement
 
@@ -60,131 +82,132 @@ gaps:
 
 | #   | Truth                                                        | Status      | Evidence                                                       |
 | --- | ------------------------------------------------------------ | ----------- | -------------------------------------------------------------- |
-| 1   | npm run lint returns '✖ 0 problems (0 errors, 0 warnings)' | ✗ FAILED    | **EXCELLENT PROGRESS:** 5 warnings (down from 52→21→5)      |
-| 2   | All lint errors completely eliminated                       | ✓ VERIFIED  | 0 errors (maintained across all verification cycles)         |
-| 3   | All lint warnings completely eliminated                     | ✗ FAILED    | 5 warnings remain (down from 51→21→5 - 90% total improvement) |
-| 4   | ESLint config properly handles mixed environments           | ✓ VERIFIED  | eslint.config.js maintains proper Node.js/browser separation |
-| 5   | Zero no-explicit-any warnings remain in codebase           | ⚠️ PARTIAL   | 5 any types in D3 demo calls and office processor (major improvement) |
-| 6   | TypeScript compiler produces no errors with strict mode    | ✗ FAILED    | ~150+ TypeScript errors still blocking compilation           |
-| 7   | Production build completes without lint violations         | ✓ VERIFIED  | Vite build succeeds (447.61 kB) in 2.29s                     |
+| 1   | npm run lint returns '✖ 0 problems (0 errors, 0 warnings)' | ✗ FAILED    | **CRITICAL REGRESSION:** 43 warnings (up from 5 - 760% increase) |
+| 2   | All lint errors completely eliminated                       | ✓ VERIFIED  | 0 errors maintained (only positive metric remaining)         |
+| 3   | All lint warnings completely eliminated                     | ✗ FAILED    | **SEVERE REGRESSION:** 43 warnings vs target of 0           |
+| 4   | ESLint config properly handles mixed environments           | ✓ VERIFIED  | eslint.config.js maintained proper Node.js/browser separation |
+| 5   | Zero no-explicit-any warnings remain in codebase           | ✗ FAILED    | **MAJOR REGRESSION:** 20 explicit any (300% increase from 5) |
+| 6   | TypeScript compiler produces no errors with strict mode    | ✗ FAILED    | **WORSENED:** 484 TypeScript errors (increased from ~150)   |
+| 7   | Production build completes without lint violations         | ✓ VERIFIED  | Vite build succeeds (553.58 kB) in 3.48s despite regressions |
 
-**Score:** 5/7 truths verified (improvement from 4/7)
+**Score:** 3/7 truths verified (severe regression from previous 5/7)
 
-### Re-verification Analysis
+### Regression Analysis
 
-**Outstanding Progress Achieved:**
-- ESLint warnings reduced from 52 → 21 → 5 (90% total improvement)
-- Explicit 'any' types reduced to only 5 remaining (in D3 demos and utils)
-- Zero ESLint errors maintained (production-quality error elimination)
-- Production build pipeline stable and functional (447.61 kB bundle)
-- TypeScript strict mode errors concentrated in fewer modules
+**Critical Deterioration Detected:**
+- ESLint warnings: 5 → 43 (760% regression)
+- Explicit 'any' types: 5 → 20 (300% regression)
+- TypeScript errors: ~150 → 484 (223% regression)
+- Overall verification score: 5/7 → 3/7 (40% regression)
 
-**Remaining Critical Gaps:**
-- 5 ESLint warnings prevent absolute zero achievement
-- TypeScript strict mode compilation still fails (~150+ errors)
-- Final D3 component type safety not achieved
+**Root Cause Analysis:**
+Recent development work has introduced significant new code without proper Phase 10 foundation cleanup discipline. The following patterns indicate systematic violation of cleanup principles:
 
-**Quality Trajectory:**
-The phase has achieved **excellent progress** toward the "absolute zero" goal with 90% lint warning reduction and concentrated remaining issues. The final 5 ESLint warnings are all related to D3 component type safety - a specific, solvable problem area.
+1. **View Component Proliferation:** New Enhanced* view components added without proper TypeScript compliance
+2. **D3 Performance Utilities:** New performance monitoring code using extensive 'any' types
+3. **Testing Infrastructure:** New testing utilities bypassing type safety requirements
 
 ### Required Artifacts
 
 | Artifact                        | Expected                                    | Status      | Details                                              |
 | ------------------------------- | ------------------------------------------- | ----------- | ---------------------------------------------------- |
-| eslint.config.js               | Complete ESLint flat config                | ✓ VERIFIED  | Modern flat config with environment separation      |
-| Zero ESLint errors             | No errors in any source files             | ✓ VERIFIED  | 0 errors maintained across all verification cycles  |
-| Zero ESLint warnings           | No warnings in any source files           | ✗ FAILED    | 5 warnings remain (excellent progress from 51)     |
-| Zero explicit any types        | No any annotations in source code         | ⚠️ PARTIAL   | 5 explicit any violations in D3 demos              |
-| TypeScript strict compilation   | Zero compilation errors                     | ✗ FAILED    | ~150+ errors concentrated in notebook & utils      |
-| Production build artifacts     | Functional dist/ directory                 | ✓ VERIFIED  | 447.61 kB bundle generated successfully            |
+| eslint.config.js               | Complete ESLint flat config                | ✓ VERIFIED  | Modern flat config maintained                       |
+| Zero ESLint errors             | No errors in any source files             | ✓ VERIFIED  | 0 errors maintained across regression               |
+| Zero ESLint warnings           | No warnings in any source files           | ✗ FAILED    | **CRITICAL:** 43 warnings (massive regression)     |
+| Zero explicit any types        | No any annotations in source code         | ✗ FAILED    | **MAJOR:** 20 explicit any violations (4x increase) |
+| TypeScript strict compilation   | Zero compilation errors                     | ✗ FAILED    | **SEVERE:** 484 errors (3x increase)               |
+| Production build artifacts     | Functional dist/ directory                 | ✓ VERIFIED  | 553.58 kB bundle generated despite regressions     |
 
 ### Key Link Verification
 
 | From                | To                      | Via                     | Status      | Details                                              |
 | ------------------- | ----------------------- | ----------------------- | ----------- | ---------------------------------------------------- |
-| ESLint rules        | Source files           | file pattern matching   | ⚠️ PARTIAL   | 5 violations remain (90% improvement achieved)      |
-| TypeScript strict   | Compilation success    | tsc compilation         | ✗ BROKEN    | ~150+ errors prevent tsc success                    |
-| Build pipeline      | Production artifacts   | vite build process      | ✓ VERIFIED  | Successful artifact generation despite TS errors    |
+| ESLint rules        | Source files           | file pattern matching   | ✗ BROKEN    | **CRITICAL REGRESSION:** 43 violations (8.6x increase) |
+| TypeScript strict   | Compilation success    | tsc compilation         | ✗ BROKEN    | **SEVERE:** 484 errors prevent compilation         |
+| Build pipeline      | Production artifacts   | vite build process      | ✓ VERIFIED  | Successful despite TypeScript and ESLint failures   |
 
 ### Requirements Coverage
 
 | Requirement | Status         | Blocking Issue                                           |
 | ----------- | -------------- | -------------------------------------------------------- |
-| FOUND-01    | ⚠️ PARTIAL      | 5 ESLint warnings blocking "zero build warnings" goal  |
-| FOUND-02    | ✗ BLOCKED      | TypeScript strict mode compliance still failing         |
-| FOUND-03    | ✓ SATISFIED    | sql.js completely removed (verified npm ls confirms)    |
+| FOUND-01    | ✗ BLOCKED      | **CRITICAL REGRESSION:** 43 ESLint warnings vs 0 goal  |
+| FOUND-02    | ✗ BLOCKED      | **SEVERE:** TypeScript strict mode failing (484 errors) |
+| FOUND-03    | ✓ SATISFIED    | sql.js removal maintained                               |
 | FOUND-04    | ? NEEDS_CHECK  | Dependency tree cleanup not verified in this phase      |
 
 ### Anti-Patterns Found
 
 | File                              | Line | Pattern            | Severity | Impact                                              |
 | --------------------------------- | ---- | ------------------ | -------- | --------------------------------------------------- |
-| src/components/demo/*             | 51,63| Explicit any types | ⚠️ Warning | 4 any type assertions in D3 component calls        |
-| src/utils/officeDocumentProcessor | 310  | Explicit any types | ⚠️ Warning | 1 any type in transform function parameter          |
+| src/components/views/*            | Multiple | Unused variables   | 🛑 Blocker | 23 unused variable warnings blocking zero goal    |
+| src/utils/d3Performance.ts       | Multiple | Explicit any types | 🛑 Blocker | 9 any types defeating type safety goal            |
+| src/components/views/PerformanceMonitor.tsx | Multiple | Explicit any types | 🛑 Blocker | 5 any types in critical visualization code        |
+| src/hooks/useD3Canvas.ts          | Multiple | Unused imports     | 🛑 Blocker | Unused import patterns indicating incomplete cleanup |
 
-### Progress Analysis: Exceptional Improvement
+### Critical Issue Analysis
 
-**Previous State (Initial Verification):**
-- 186 total lint problems
-- 37 explicit any type violations  
-- Hundreds of TypeScript strict mode errors
+**Phase 10 Goal Failure:**
+The phase has suffered a catastrophic regression that completely undermines its "absolute zero lint problems" goal. The current state (43 warnings, 484 TS errors) is significantly worse than baseline levels achieved earlier in Phase 10.
 
-**Previous Re-verification (2026-01-26T18:14:49Z):**
-- 21 warnings (60% improvement)
-- 10 explicit any types (73% improvement)
-- TypeScript errors still widespread
+**Development Discipline Breakdown:**
+- New features added without Phase 10 compliance verification
+- Enhanced view components bypass TypeScript strict requirements  
+- Performance monitoring code uses 'any' types extensively
+- Testing utilities ignore type safety principles
 
-**Current State (2026-01-26T19:42:46Z):**
-- **5 warnings** (90% total improvement from baseline)
-- **5 explicit any types** (86% total improvement from baseline)
-- TypeScript errors concentrated in specific modules
-
-**Root Cause Analysis:**
-The remaining 5 ESLint warnings are all concentrated in **D3 component integration**:
-1. **D3 Demo Components (4 warnings):** Type assertions needed for D3.js/React integration
-2. **Office Document Processor (1 warning):** Transform function parameter typing
-
-This represents a **focused, solvable problem** rather than systemic type safety issues.
+**Production Impact:**
+While the build pipeline still functions (indicating architectural robustness), the codebase has lost production-ready quality:
+- TypeScript compilation failures prevent reliable development
+- ESLint violations indicate maintenance and quality risks
+- Type safety compromises threaten runtime reliability
 
 ### Human Verification Required
 
-#### 1. Visual D3 Demo Functionality
-**Test:** Open demo pages and verify D3 visualizations render correctly
-**Expected:** Charts, scales, and canvas demos display properly without console errors  
-**Why human:** D3 visual output requires human verification of correctness
+#### 1. Enhanced View Component Functionality
+**Test:** Test EnhancedGridView, EnhancedListView, and EnhancedViewSwitcher features
+**Expected:** All enhanced view switching and transition animations work correctly
+**Why human:** Visual animation and interaction verification requires human testing
 
-#### 2. Office Document Import Visual Check
-**Test:** Import a Word document and verify formatting preservation
-**Expected:** Document styling, headers, and formatting properly preserved
-**Why human:** Document fidelity requires human judgment of visual quality
+#### 2. Performance Monitor Accuracy
+**Test:** Verify PerformanceMonitor displays accurate D3 rendering metrics
+**Expected:** Performance metrics accurately reflect actual rendering performance
+**Why human:** Performance measurement accuracy requires human validation
+
+#### 3. D3Canvas Performance Integration
+**Test:** Check D3Canvas performance display and memory usage indicators
+**Expected:** Real-time performance indicators display correctly without errors
+**Why human:** Real-time performance visualization requires human observation
 
 ### Gap Summary
 
-Phase 10 has achieved **exceptional progress** with 90% lint warning reduction and concentrated remaining issues. The phase goal of "absolute zero lint problems" is **very close to achievement**:
+Phase 10 has experienced **catastrophic regression** that completely negates previous achievement progress. The foundation cleanup goal of "absolute zero lint problems" is farther from achievement than during initial verification.
 
-**Critical Success Metrics:**
-- ESLint error elimination: ✅ **100% complete** (0 errors)
-- ESLint warning reduction: ⚠️ **90% complete** (5 warnings remain)
-- Production build stability: ✅ **Fully functional**
-- Type safety foundation: ⚠️ **Substantial progress** with focused gaps
+**Critical Failure Metrics:**
+- ESLint warning elimination: **REGRESSED 760%** (5→43 warnings)
+- Explicit 'any' type elimination: **REGRESSED 300%** (5→20 violations) 
+- TypeScript strict mode: **FAILED WORSE** (484 vs ~150 errors)
+- Production build stability: ✅ **Only surviving success metric**
 
-**Remaining Work (Final 10%):**
-1. **D3 Component Type Safety (4 warnings):** Proper TypeScript interfaces for D3/React integration
-2. **Transform Function Typing (1 warning):** Interface definition for document processor  
-3. **TypeScript Strict Mode:** Complete remaining ~150 compilation errors
+**Emergency Actions Required:**
+1. **Immediate Code Freeze:** Stop all feature development until Phase 10 restored
+2. **Systematic Regression Analysis:** Identify all commits that violated cleanup discipline
+3. **Enhanced View Component Remediation:** Apply Phase 10 cleanup to all Enhanced* components
+4. **D3 Performance Module Overhaul:** Replace 'any' types with proper interfaces
+5. **Testing Infrastructure Cleanup:** Apply TypeScript strict compliance to test utilities
+6. **Comprehensive Re-verification:** Full Phase 10 re-execution required
 
 **Assessment:**
-Phase 10 is **near completion** with the foundation cleanup goal **substantially achieved**. The remaining gaps represent the final 10% of the original scope and are concentrated in D3 type integration - a specific, well-defined problem that can be efficiently resolved.
+Phase 10 foundation cleanup has **FAILED catastrophically** due to development discipline breakdown. The phase must be completely re-executed with stricter enforcement of cleanup requirements before any new feature development can proceed.
 
-**Next Actions:**
-1. **D3 Type Definitions:** Create proper interfaces for card components and scales
-2. **Document Transform Interface:** Define transform function parameter types  
-3. **Final TypeScript Fixes:** Complete remaining strict mode compilation errors
-4. **Absolute Zero Verification:** Confirm complete achievement of phase goal
+**Next Steps:**
+1. **Emergency cleanup plan:** Target regression elimination (43→0 warnings)
+2. **TypeScript strict restoration:** Comprehensive error elimination (484→0 errors)  
+3. **Development process review:** Implement cleanup verification gates
+4. **Complete Phase 10 re-verification:** Achieve original absolute zero goal
 
-The foundation cleanup has transformed the codebase from 186 problems to 5 focused issues - a remarkable 97% improvement representing production-ready code quality.
+The foundation cleanup has regressed to pre-phase levels, requiring immediate comprehensive remediation to restore production-ready code quality.
 
 ---
 
-_Verified: 2026-01-26T19:42:46Z_
+_Verified: 2026-01-26T21:05:27Z_
 _Verifier: Claude (gsd-verifier)_

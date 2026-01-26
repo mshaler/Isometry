@@ -111,8 +111,8 @@ public struct CloudKitProductionVerificationView: View {
                 .accessibilityAddTraits(.isHeader)
 
             LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
+                GridItem(.adaptive(minimum: 140), spacing: 12),
+                GridItem(.adaptive(minimum: 140), spacing: 12)
             ], spacing: 12) {
                 VerificationStepCard(
                     title: "Container Access",
