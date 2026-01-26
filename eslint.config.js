@@ -23,17 +23,18 @@ export default tseslint.config(
         console: 'readonly',
         process: 'readonly',
         Buffer: 'readonly',
-        __dirname: 'readonly',
-        __filename: 'readonly',
         global: 'readonly',
         setTimeout: 'readonly',
         clearTimeout: 'readonly',
         setInterval: 'readonly',
-        clearInterval: 'readonly'
+        clearInterval: 'readonly',
+        // ES modules don't have __dirname and __filename
+        // When needed, they must be created from import.meta.url
       }
     },
     rules: {
-      'no-console': 'off'
+      'no-console': 'off',
+      'no-redeclare': 'off' // Allow redeclaration for ES module __dirname/__filename workarounds
     }
   },
   {
