@@ -42,6 +42,17 @@ public class NotebookEditorModel: ObservableObject {
     /// Whether the editor is currently focused/editing
     @Published public var isEditing: Bool = false
 
+    // MARK: - Slash Command Properties
+
+    /// Slash command manager for command detection and execution
+    @Published public var commandManager: SlashCommandManager = SlashCommandManager()
+
+    /// Whether the slash command menu is currently visible
+    @Published public var isCommandMenuVisible: Bool = false
+
+    /// Currently selected command in the menu
+    @Published public var selectedCommand: SlashCommand? = nil
+
     // MARK: - Private Properties
 
     private var database: IsometryDatabase
@@ -121,6 +132,69 @@ public class NotebookEditorModel: ObservableObject {
     /// Update the database reference
     public func updateDatabase(_ newDatabase: IsometryDatabase) {
         database = newDatabase
+    }
+
+    // MARK: - Slash Command Methods
+
+    /// Execute a slash command and insert its content
+    public func executeSlashCommand(_ command: SlashCommand, at cursorPosition: Int) {
+        let processedContent = command.processedContent
+        let newContent = insertCommandContent(processedContent, at: cursorPosition, replacing: findSlashCommandRange(cursorPosition: cursorPosition))
+
+        updateContent(newContent)
+        selectedCommand = nil
+        isCommandMenuVisible = false
+
+        // Trigger auto-save after command insertion
+        scheduleAutoSave()
+    }
+
+    /// Analyze current context for relevant command suggestions
+    public func analyzeCurrentContext(cursorPosition: Int) -> [SlashCommand] {
+        let contextText = getContextText(around: cursorPosition)
+        return commandManager.analyzeContext(text: contextText, cursorPosition: cursorPosition)
+    }
+
+    /// Get contextual suggestions based on current cursor position
+    public func getContextualSuggestions(cursorPosition: Int) -> [SlashCommand] {
+        let suggestions = analyzeCurrentContext(cursorPosition: cursorPosition)
+
+        // Combine with recently used commands
+        let recentCommands = commandManager.recentCommands
+        let popularCommands = commandManager.popularCommands
+
+        // Merge and deduplicate
+        var allSuggestions = Set<SlashCommand>()
+        allSuggestions.formUnion(suggestions)
+        allSuggestions.formUnion(recentCommands.prefix(3))
+        allSuggestions.formUnion(popularCommands.prefix(2))
+
+        return Array(allSuggestions).sorted { lhs, rhs in
+            // Prioritize contextual suggestions, then recent, then popular
+            if suggestions.contains(lhs) && !suggestions.contains(rhs) { return true }
+            if !suggestions.contains(lhs) && suggestions.contains(rhs) { return false }
+            return lhs.label < rhs.label
+        }
+    }
+
+    /// Update command context based on cursor position
+    public func updateCommandContext(text: String, cursorPosition: Int) {
+        // Update the command manager's context
+        isCommandMenuVisible = commandManager.detectSlashCommand(text: text, cursorPosition: cursorPosition)
+
+        // Update selected command
+        if isCommandMenuVisible && !commandManager.filteredCommands.isEmpty {
+            selectedCommand = commandManager.selectedCommand
+        } else {
+            selectedCommand = nil
+        }
+    }
+
+    /// Handle command insertion with proper formatting
+    public func handleCommandContent(_ commandContent: String, at cursorPosition: Int) {
+        let newContent = insertCommandContent(commandContent, at: cursorPosition, replacing: nil)
+        updateContent(newContent)
+        scheduleAutoSave()
     }
 
     // MARK: - Private Methods
@@ -210,6 +284,53 @@ public class NotebookEditorModel: ObservableObject {
         }
     }
 
+    // MARK: - Slash Command Private Methods
+
+    private func insertCommandContent(_ commandContent: String, at cursorPosition: Int, replacing range: NSRange?) -> String {
+        let nsString = content as NSString
+
+        if let replaceRange = range {
+            // Replace the slash command with the content
+            return nsString.replacingCharacters(in: replaceRange, with: commandContent)
+        } else {
+            // Insert at cursor position
+            return nsString.replacingCharacters(in: NSRange(location: cursorPosition, length: 0), with: commandContent)
+        }
+    }
+
+    private func findSlashCommandRange(cursorPosition: Int) -> NSRange? {
+        let nsString = content as NSString
+        guard cursorPosition > 0 && cursorPosition <= nsString.length else { return nil }
+
+        var slashLocation: Int = -1
+
+        // Look backwards from cursor to find the slash
+        for i in (0..<cursorPosition).reversed() {
+            let char = nsString.character(at: i)
+            if char == UnicodeScalar("/")!.value {
+                slashLocation = i
+                break
+            }
+            if char == UnicodeScalar("\n")!.value || char == UnicodeScalar(" ")!.value {
+                break // Stop at line or word boundaries
+            }
+        }
+
+        guard slashLocation >= 0 else { return nil }
+        return NSRange(location: slashLocation, length: cursorPosition - slashLocation)
+    }
+
+    private func getContextText(around cursorPosition: Int) -> String {
+        let nsString = content as NSString
+        let contextRadius = 200 // Characters before and after cursor
+
+        let startIndex = max(0, cursorPosition - contextRadius)
+        let endIndex = min(nsString.length, cursorPosition + contextRadius)
+        let contextRange = NSRange(location: startIndex, length: endIndex - startIndex)
+
+        return nsString.substring(with: contextRange)
+    }
+
     // MARK: - Computed Properties
 
     /// Character count for the current content
@@ -238,6 +359,28 @@ public class NotebookEditorModel: ObservableObject {
     public var timeUntilAutoSave: TimeInterval? {
         guard let timer = autoSaveTimer, timer.isValid else { return nil }
         return timer.fireDate.timeIntervalSinceNow
+    }
+
+    // MARK: - Slash Command Computed Properties
+
+    /// Recently used slash commands
+    public var recentCommands: [SlashCommand] {
+        commandManager.recentCommands
+    }
+
+    /// Most popular slash commands
+    public var popularCommands: [SlashCommand] {
+        commandManager.popularCommands
+    }
+
+    /// Available command categories
+    public var commandCategories: [CommandCategory] {
+        CommandCategory.allCases
+    }
+
+    /// Commands grouped by category for the current query
+    public var commandsByCategory: [CommandCategory: [SlashCommand]] {
+        commandManager.commandsByCategory
     }
 
     // MARK: - Card Management
