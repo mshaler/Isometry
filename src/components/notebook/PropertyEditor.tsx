@@ -313,6 +313,33 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
         setTimeout(() => setSaveSuccess(false), 2000);
       } catch (error) {
         console.error('Failed to save properties:', error);
+
+        // Report error to global error service
+        if (typeof window !== 'undefined' && (window as any).errorReporting) {
+          (window as any).errorReporting.reportUserError(
+            'Property Save Failed',
+            'Your property changes could not be saved. Please try again.',
+            [
+              {
+                label: 'Retry',
+                action: async () => {
+                  try {
+                    await updateCard(card.id, { properties: props });
+                    (window as any).errorReporting.reportUserInfo('Properties Saved', 'Your property changes have been saved.');
+                  } catch {
+                    (window as any).errorReporting.reportUserError('Save Still Failed', 'Unable to save properties. Please refresh and try again.');
+                  }
+                }
+              },
+              {
+                label: 'Continue',
+                action: () => {
+                  (window as any).errorReporting.reportUserWarning('Changes Not Saved', 'Your property changes are not saved and may be lost.');
+                }
+              }
+            ]
+          );
+        }
       } finally {
         setIsSaving(false);
       }

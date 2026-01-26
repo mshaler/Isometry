@@ -3,6 +3,7 @@ import { useNotebook } from '../../contexts/NotebookContext';
 import { CaptureComponent } from './CaptureComponent';
 import { ShellComponent } from './ShellComponent';
 import { PreviewComponent } from './PreviewComponent';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 
 interface ComponentLayout {
   width: number;
@@ -162,15 +163,21 @@ export function NotebookLayout() {
     // Mobile: Stack vertically
     return (
       <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
-        <div className="flex-1 min-h-[300px]">
-          <CaptureComponent className="h-full" />
-        </div>
-        <div className="flex-1 min-h-[200px]">
-          <ShellComponent className="h-full" />
-        </div>
-        <div className="flex-1 min-h-[200px]">
-          <PreviewComponent className="h-full" />
-        </div>
+        <ErrorBoundary level="feature" name="CaptureComponent">
+          <div className="flex-1 min-h-[300px]">
+            <CaptureComponent className="h-full" />
+          </div>
+        </ErrorBoundary>
+        <ErrorBoundary level="feature" name="ShellComponent">
+          <div className="flex-1 min-h-[200px]">
+            <ShellComponent className="h-full" />
+          </div>
+        </ErrorBoundary>
+        <ErrorBoundary level="feature" name="PreviewComponent">
+          <div className="flex-1 min-h-[200px]">
+            <PreviewComponent className="h-full" />
+          </div>
+        </ErrorBoundary>
       </div>
     );
   }
@@ -179,16 +186,22 @@ export function NotebookLayout() {
     // Tablet: Capture on top, Shell and Preview side-by-side below
     return (
       <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
-        <div className="flex-1 min-h-[300px]">
-          <CaptureComponent className="h-full" />
-        </div>
+        <ErrorBoundary level="feature" name="CaptureComponent">
+          <div className="flex-1 min-h-[300px]">
+            <CaptureComponent className="h-full" />
+          </div>
+        </ErrorBoundary>
         <div className="flex-1 flex gap-2 min-h-[300px]">
-          <div className="flex-1 min-w-[300px]">
-            <ShellComponent className="h-full" />
-          </div>
-          <div className="flex-1 min-w-[300px]">
-            <PreviewComponent className="h-full" />
-          </div>
+          <ErrorBoundary level="feature" name="ShellComponent">
+            <div className="flex-1 min-w-[300px]">
+              <ShellComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
+          <ErrorBoundary level="feature" name="PreviewComponent">
+            <div className="flex-1 min-w-[300px]">
+              <PreviewComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
         </div>
       </div>
     );
@@ -202,34 +215,40 @@ export function NotebookLayout() {
       style={{ cursor: isDragging ? 'col-resize' : 'default' }}
     >
       {/* Capture Component */}
-      <div
-        style={{ width: `${componentLayouts.capture.width}%` }}
-        className="min-w-[300px] relative"
-      >
-        <CaptureComponent className="h-full" />
-      </div>
+      <ErrorBoundary level="feature" name="CaptureComponent">
+        <div
+          style={{ width: `${componentLayouts.capture.width}%` }}
+          className="min-w-[300px] relative"
+        >
+          <CaptureComponent className="h-full" />
+        </div>
+      </ErrorBoundary>
 
       {/* Capture-Shell Divider */}
       {renderDivider('capture-shell', 'w-1 h-full')}
 
       {/* Shell Component */}
-      <div
-        style={{ width: `${componentLayouts.shell.width}%` }}
-        className="min-w-[250px] relative"
-      >
-        <ShellComponent className="h-full" />
-      </div>
+      <ErrorBoundary level="feature" name="ShellComponent">
+        <div
+          style={{ width: `${componentLayouts.shell.width}%` }}
+          className="min-w-[250px] relative"
+        >
+          <ShellComponent className="h-full" />
+        </div>
+      </ErrorBoundary>
 
       {/* Shell-Preview Divider */}
       {renderDivider('shell-preview', 'w-1 h-full')}
 
       {/* Preview Component */}
-      <div
-        style={{ width: `${componentLayouts.preview.width}%` }}
-        className="min-w-[250px] relative"
-      >
-        <PreviewComponent className="h-full" />
-      </div>
+      <ErrorBoundary level="feature" name="PreviewComponent">
+        <div
+          style={{ width: `${componentLayouts.preview.width}%` }}
+          className="min-w-[250px] relative"
+        >
+          <PreviewComponent className="h-full" />
+        </div>
+      </ErrorBoundary>
     </div>
   );
 }

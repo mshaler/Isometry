@@ -44,9 +44,41 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       await saveNow();
     } catch (error) {
       console.error('Save failed:', error);
-      // TODO: Show user-friendly error notification
+
+      // Report error to error reporting service
+      if (typeof window !== 'undefined' && (window as any).errorReporting) {
+        (window as any).errorReporting.reportUserError(
+          'Save Failed',
+          'Your changes could not be saved. Please try again or copy your content to prevent data loss.',
+          [
+            {
+              label: 'Try Again',
+              action: async () => {
+                try {
+                  await saveNow();
+                  (window as any).errorReporting.reportUserInfo('Save Successful', 'Your changes have been saved.');
+                } catch {
+                  (window as any).errorReporting.reportUserError('Save Failed Again', 'Please copy your content and refresh the page.');
+                }
+              }
+            },
+            {
+              label: 'Copy Content',
+              action: () => {
+                if (navigator.clipboard && content) {
+                  navigator.clipboard.writeText(content).then(() => {
+                    (window as any).errorReporting.reportUserInfo('Content Copied', 'Your content has been copied to clipboard.');
+                  }).catch(() => {
+                    (window as any).errorReporting.reportUserWarning('Copy Failed', 'Please manually select and copy your content.');
+                  });
+                }
+              }
+            }
+          ]
+        );
+      }
     }
-  }, [saveNow]);
+  }, [saveNow, content]);
 
   // Register text insertion callback for slash commands
   useEffect(() => {

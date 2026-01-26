@@ -6,6 +6,7 @@ import { useNotebookIntegration } from '../hooks/useNotebookIntegration';
 import { useNotebookPerformance } from '../hooks/useNotebookPerformance';
 import type { NotebookIntegrationState } from '../hooks/useNotebookIntegration';
 import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '../hooks/useNotebookPerformance';
+import { useErrorReporting } from '../services/ErrorReportingService';
 
 interface NotebookLayoutState {
   capture: LayoutPosition;
@@ -81,13 +82,17 @@ const DEFAULT_LAYOUT: NotebookLayoutState = {
 
 export function NotebookProvider({ children }: { children: ReactNode }) {
   const { db, execute } = useDatabase();
+  const errorReporting = useErrorReporting();
   const [activeCard, setActiveCard] = useState<NotebookCard | null>(null);
   const [cards, setCards] = useState<NotebookCard[]>([]);
   const [layout, setLayout] = useState<NotebookLayoutState>(() => {
     try {
       const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
       return saved ? JSON.parse(saved) : DEFAULT_LAYOUT;
-    } catch {
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to load layout');
+      errorReporting.reportUserWarning('Layout Loading Failed', 'Using default layout due to corrupted saved state');
+      console.warn('Failed to load notebook layout:', err);
       return DEFAULT_LAYOUT;
     }
   });
@@ -107,10 +112,12 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
-    } catch (err) {
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error('Failed to save layout');
+      errorReporting.reportUserWarning('Layout Save Failed', 'Your layout changes could not be saved and may be lost on refresh');
       console.warn('Failed to save layout to localStorage:', err);
     }
-  }, [layout]);
+  }, [layout, errorReporting]);
 
   // Load templates on mount
   useEffect(() => {
@@ -120,9 +127,22 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   // Load cards on database ready
   useEffect(() => {
     if (db && isNotebookMode) {
-      loadCards().catch(console.error);
+      loadCards().catch((error) => {
+        const err = error instanceof Error ? error : new Error('Failed to load cards');
+        errorReporting.reportUserError('Failed to Load Cards', 'Could not load your notebook cards. Please try refreshing or check your connection.', [
+          {
+            label: 'Retry',
+            action: () => loadCards().catch(() => {}) // Prevent further errors
+          },
+          {
+            label: 'OK',
+            action: () => {} // No-op
+          }
+        ]);
+        console.error('Failed to load cards in useEffect:', err);
+      });
     }
-  }, [db, isNotebookMode]);
+  }, [db, isNotebookMode, errorReporting]);
 
   // Load templates from localStorage and merge with built-in templates
   const loadTemplates = useCallback(() => {
@@ -138,19 +158,39 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
       // Merge built-in and custom templates
       setTemplates([...BUILT_IN_TEMPLATES, ...validCustomTemplates]);
     } catch (error) {
-      console.warn('Failed to load custom templates:', error);
+      const err = error instanceof Error ? error : new Error('Failed to load custom templates');
+      errorReporting.reportUserWarning('Template Loading Failed', 'Using default templates only. Your custom templates could not be loaded.');
+      console.warn('Failed to load custom templates:', err);
       setTemplates(BUILT_IN_TEMPLATES);
     }
-  }, []);
+  }, [errorReporting]);
 
   // Save custom templates to localStorage
   const saveCustomTemplates = useCallback((customTemplates: NotebookTemplate[]) => {
     try {
       localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(customTemplates));
     } catch (error) {
-      console.warn('Failed to save custom templates:', error);
+      const err = error instanceof Error ? error : new Error('Failed to save custom templates');
+      errorReporting.reportUserError('Template Save Failed', 'Your custom template changes could not be saved and may be lost.', [
+        {
+          label: 'Retry',
+          action: () => {
+            try {
+              localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(customTemplates));
+              errorReporting.reportUserInfo('Templates Saved', 'Your templates have been saved successfully.');
+            } catch {
+              errorReporting.reportUserError('Save Failed Again', 'Unable to save templates. Please try again later.');
+            }
+          }
+        },
+        {
+          label: 'OK',
+          action: () => {} // No-op
+        }
+      ]);
+      console.warn('Failed to save custom templates:', err);
     }
-  }, []);
+  }, [errorReporting]);
 
   const loadCards = useCallback(async () => {
     if (!db) return;
@@ -191,11 +231,32 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load cards');
       setError(error);
+
+      errorReporting.reportUserError(
+        'Failed to Load Notebook Cards',
+        'Your notebook cards could not be loaded. This might be due to a database connection issue or corrupted data.',
+        [
+          {
+            label: 'Retry',
+            action: () => {
+              setError(null);
+              loadCards().catch(() => {}); // Prevent recursive errors
+            }
+          },
+          {
+            label: 'Continue Offline',
+            action: () => {
+              setError(null);
+              errorReporting.reportUserInfo('Working Offline', 'You can continue using the notebook, but changes may not be saved.');
+            }
+          }
+        ]
+      );
       console.error('Failed to load notebook cards:', err);
     } finally {
       setLoading(false);
     }
-  }, [db, execute, performanceHook, cardCache, maxCacheSize]);
+  }, [db, execute, performanceHook, cardCache, maxCacheSize, errorReporting]);
 
   // Integration hook (with parameters to avoid circular dependency)
   const integrationHook = useNotebookIntegration({
@@ -275,9 +336,29 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to create card');
       setError(error);
+
+      errorReporting.reportUserError(
+        'Failed to Create Card',
+        `Could not create a new ${type} card. This might be due to a database issue or insufficient permissions.`,
+        [
+          {
+            label: 'Try Again',
+            action: () => {
+              setError(null);
+              // User will need to manually retry the creation
+            }
+          },
+          {
+            label: 'OK',
+            action: () => {
+              setError(null);
+            }
+          }
+        ]
+      );
       throw error;
     }
-  }, [db, execute, templates, saveCustomTemplates]);
+  }, [db, execute, templates, saveCustomTemplates, errorReporting]);
 
   const updateCard = useCallback(async (id: string, updates: Partial<NotebookCard>): Promise<void> => {
     if (!db) throw new Error('Database not initialized');
@@ -311,9 +392,32 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to update card');
       setError(error);
+
+      errorReporting.reportUserError(
+        'Failed to Update Card',
+        'Your changes could not be saved. The card may be locked or there might be a database connection issue.',
+        [
+          {
+            label: 'Retry Save',
+            action: () => {
+              setError(null);
+              updateCard(id, updates).catch(() => {
+                errorReporting.reportUserError('Save Still Failed', 'Unable to save your changes. They may be lost.');
+              });
+            }
+          },
+          {
+            label: 'Continue Editing',
+            action: () => {
+              setError(null);
+              errorReporting.reportUserWarning('Changes Not Saved', 'Continue editing, but remember to save your work elsewhere.');
+            }
+          }
+        ]
+      );
       throw error;
     }
-  }, [db, execute, activeCard]);
+  }, [db, execute, activeCard, errorReporting]);
 
   const deleteCard = useCallback(async (id: string): Promise<void> => {
     if (!db) throw new Error('Database not initialized');
@@ -336,9 +440,31 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to delete card');
       setError(error);
+
+      errorReporting.reportUserError(
+        'Failed to Delete Card',
+        'The card could not be deleted. It may be in use or there might be a database connection issue.',
+        [
+          {
+            label: 'Try Again',
+            action: () => {
+              setError(null);
+              deleteCard(id).catch(() => {
+                errorReporting.reportUserError('Delete Still Failed', 'Unable to delete the card. It will remain in your list.');
+              });
+            }
+          },
+          {
+            label: 'Cancel',
+            action: () => {
+              setError(null);
+            }
+          }
+        ]
+      );
       throw error;
     }
-  }, [db, execute, cards, activeCard]);
+  }, [db, execute, cards, activeCard, errorReporting]);
 
   const updateLayout = useCallback((component: keyof NotebookLayoutState, position: LayoutPosition) => {
     setLayout(prev => ({
@@ -379,15 +505,34 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   }, [templates, saveCustomTemplates]);
 
   const deleteTemplate = useCallback(async (templateId: string): Promise<void> => {
-    const template = templates.find(t => t.id === templateId);
-    if (!template || template.category === 'built-in') {
-      throw new Error('Cannot delete built-in templates');
-    }
+    try {
+      const template = templates.find(t => t.id === templateId);
+      if (!template || template.category === 'built-in') {
+        throw new Error('Cannot delete built-in templates');
+      }
 
-    const customTemplates = templates.filter(t => t.category === 'custom' && t.id !== templateId);
-    saveCustomTemplates(customTemplates);
-    setTemplates([...BUILT_IN_TEMPLATES, ...customTemplates]);
-  }, [templates, saveCustomTemplates]);
+      const customTemplates = templates.filter(t => t.category === 'custom' && t.id !== templateId);
+      saveCustomTemplates(customTemplates);
+      setTemplates([...BUILT_IN_TEMPLATES, ...customTemplates]);
+
+      errorReporting.reportUserInfo('Template Deleted', `Template "${template.name}" has been deleted successfully.`);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to delete template');
+      errorReporting.reportUserError(
+        'Failed to Delete Template',
+        error.message === 'Cannot delete built-in templates'
+          ? 'Built-in templates cannot be deleted.'
+          : 'The template could not be deleted. Please try again.',
+        [
+          {
+            label: 'OK',
+            action: () => {} // No-op
+          }
+        ]
+      );
+      throw error;
+    }
+  }, [templates, saveCustomTemplates, errorReporting]);
 
   const updateTemplate = useCallback(async (templateId: string, updates: Partial<NotebookTemplate>): Promise<void> => {
     const template = templates.find(t => t.id === templateId);
