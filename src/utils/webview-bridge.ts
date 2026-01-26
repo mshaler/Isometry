@@ -627,7 +627,7 @@ export class WebViewBridge {
   /**
    * Send message immediately to native bridge
    */
-  private sendMessageImmediate(message: WebViewMessage, retries: number): void {
+  private sendMessageImmediate(message: WebViewMessage, _retries: number): void {
     const handler = message.handler as keyof WebKitMessageHandlers;
     if (!window.webkit?.messageHandlers?.[handler]) {
       throw new Error(`WebView handler '${message.handler}' not available`);

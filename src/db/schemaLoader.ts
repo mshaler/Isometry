@@ -167,7 +167,7 @@ export async function loadDatabaseSchema(execute: DatabaseFunction): Promise<Sch
 
   const uniqueFields: SchemaField[] = [];
 
-  fieldMap.forEach((fields, name) => {
+  fieldMap.forEach((fields, _name) => {
     if (fields.length === 1) {
       // Unique field name, use as-is
       uniqueFields.push(fields[0]);

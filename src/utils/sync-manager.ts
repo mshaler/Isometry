@@ -18,25 +18,9 @@ export interface DataChange {
   sessionId?: string;
 }
 
-interface SyncEvent extends CustomEvent {
-  detail: {
-    type: 'dataChange' | 'connectionChange' | 'conflictResolved' | 'queueProcessed';
-    payload: DataChange | ConnectionStatus | ConflictResolution | QueueStatus;
-    timestamp: number;
-  };
-}
+// Sync events handled through callbacks and custom event listeners
 
-interface ConnectionStatus {
-  connected: boolean;
-  lastActivity: number;
-  environment: ReturnType<typeof Environment.info>;
-}
-
-interface ConflictResolution {
-  conflictId: string;
-  resolution: 'local' | 'remote' | 'manual';
-  resolvedData: Record<string, unknown>;
-}
+// Conflict resolution handled through SyncConflict interface
 
 interface QueueStatus {
   pending: number;

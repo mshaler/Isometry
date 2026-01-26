@@ -5,9 +5,17 @@
  */
 
 import React from 'react';
-import { performanceBenchmarks, createBaselineFromBridgeResults, type BaselineMetrics } from './performance-benchmarks';
-import { bridgePerformanceTest, type BridgePerformanceTargets } from './bridge-performance';
+import { performanceBenchmarks, type BaselineMetrics } from './performance-benchmarks';
 import { Environment } from './webview-bridge';
+
+// Extension of Performance API to include memory information
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  };
+}
 
 export interface PerformanceAlert {
   id: string;
@@ -401,7 +409,7 @@ export class PerformanceMonitor {
     if (!this.config.enableMemoryProfiling) return;
 
     this.memoryMonitor = setInterval(() => {
-      const memoryInfo = (performance as any).memory;
+      const memoryInfo = (performance as PerformanceWithMemory).memory;
       if (memoryInfo) {
         const usedMB = memoryInfo.usedJSHeapSize / 1024 / 1024;
         this.memoryReadings.push(usedMB);

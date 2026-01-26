@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { getCursorPosition, getMenuPosition, type CursorPosition } from '../utils/cursorPosition';
+import { getCursorPosition, getMenuPosition } from '../utils/cursorPosition';
 
 export interface SlashCommand {
   id: string;

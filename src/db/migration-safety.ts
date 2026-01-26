@@ -1001,10 +1001,9 @@ export class MigrationSafety {
       stepsExecuted.push('Backup validation completed');
 
       // Step 2: Create current state backup as safety net
-      let safetyBackup: DataBackup | null = null;
       if (options.preserveUserData) {
         try {
-          safetyBackup = await this.createDataBackup();
+          await this.createDataBackup();
           stepsExecuted.push('Safety backup created');
         } catch (error) {
           issues.push(`Failed to create safety backup: ${error}`);
