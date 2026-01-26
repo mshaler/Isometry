@@ -37,8 +37,8 @@ export function CommandBar() {
         });
         setCommandText('');
       }
-    } catch (err: any) {
-      setError(err.message || 'Invalid command');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Invalid command');
     }
   };
 

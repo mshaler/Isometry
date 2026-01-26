@@ -11,16 +11,16 @@ import { Canvas } from '../Canvas';
 import { vi } from 'vitest';
 
 vi.mock('../views/GridView', () => ({
-  GridView: ({ data, onNodeClick }: any) => (
+  GridView: ({ data, onNodeClick }: { data?: { id: string; title: string }[]; onNodeClick?: (node: { id: string }) => void }) => (
     <div data-testid="grid-view">
       <div>GridView with {data?.length || 0} nodes</div>
-      {data?.map((node: any) => (
+      {data?.map((node) => (
         <button
           key={node.id}
-          onClick={() => onNodeClick(node)}
+          onClick={() => onNodeClick?.(node)}
           data-testid={`node-${node.id}`}
         >
-          {node.name}
+          {node.title}
         </button>
       ))}
     </div>

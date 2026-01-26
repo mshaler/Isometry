@@ -24,7 +24,7 @@ function DraggableChip({ chip, well, index, moveChip, toggleCheckbox, theme }: D
 
   const [, drop] = useDrop({
     accept: ItemType,
-    hover: (item: any) => {
+    hover: (item: { well: string; index: number }) => {
       if (item.well !== well || item.index !== index) {
         moveChip(item.well, item.index, well, index);
         item.well = well;

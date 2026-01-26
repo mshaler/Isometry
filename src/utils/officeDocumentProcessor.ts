@@ -444,7 +444,7 @@ export class OfficeDocumentProcessor {
 
   private sanitizeSheetName(name: string): string {
     return name
-      .replace(/[:\\\/?*\[\]]/g, '_')
+      .replace(/[:/?*[\]\\]/g, '_')
       .substring(0, 31); // Excel sheet name limit
   }
 

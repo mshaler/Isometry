@@ -10,10 +10,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 export interface WebKitMessageHandlers {
   database: {
-    postMessage(message: any): void;
+    postMessage(message: WebViewMessage): void;
   };
   filesystem: {
-    postMessage(message: any): void;
+    postMessage(message: WebViewMessage): void;
   };
 }
 
@@ -40,10 +40,8 @@ export interface WebViewResponse {
   timestamp?: number;
 }
 
-// Alias for compatibility with existing code
-export interface BridgeResponse extends WebViewResponse {
-  // This interface extends WebViewResponse for backward compatibility
-}
+// Type alias for backward compatibility
+export type BridgeResponse = WebViewResponse;
 
 declare global {
   interface Window {
@@ -51,10 +49,10 @@ declare global {
       messageHandlers: WebKitMessageHandlers;
     };
     _isometryBridge?: {
-      database: any;
-      filesystem: any;
+      database: Record<string, unknown>;
+      filesystem: Record<string, unknown>;
       environment: WebViewEnvironment;
-      sendMessage: (handler: string, method: string, params: any) => Promise<any>;
+      sendMessage: (handler: string, method: string, params: unknown) => Promise<unknown>;
       handleResponse: (response: BridgeResponse) => void;
       debug?: {
         logMessages?: boolean;
@@ -62,8 +60,8 @@ declare global {
       };
     };
     resolveWebViewRequest?: (id: string, result: unknown, error?: string) => void;
-    isometryDatabase?: any;
-    isometryFilesystem?: any;
+    isometryDatabase?: Record<string, unknown>;
+    isometryFilesystem?: Record<string, unknown>;
   }
 }
 
@@ -74,7 +72,7 @@ declare global {
  */
 export class WebViewBridge {
   private pendingRequests = new Map<string, {
-    resolve: (value: any) => void;
+    resolve: (value: unknown) => void;
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
     timestamp: number;

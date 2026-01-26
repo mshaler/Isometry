@@ -8,12 +8,9 @@ import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
 import type {
   D3SVGSelection,
-  D3GroupSelection,
-  D3ColorScale,
   SimulationNodeDatum,
   SimulationLinkDatum,
-  D3ForceSimulation,
-  D3DragBehavior
+  D3ForceSimulation
 } from '@/types/d3';
 
 interface EdgeData {

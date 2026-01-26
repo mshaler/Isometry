@@ -168,35 +168,7 @@ function App() {
   return <MVPDemo />;
 }
 
-// Original complex App - disabled for MVP
-function FullApp() {
-  return (
-    <ErrorBoundary>
-      <BrowserRouter>
-        <ThemeProvider>
-          <EnvironmentProvider>
-            {/* DatabaseProvider TEMPORARILY DISABLED FOR MVP - using mock data instead */}
-            <NotebookProvider>
-              <AppStateProvider>
-                <FilterProvider>
-                  <PAFVProvider>
-                    <SelectionProvider>
-                      <CardOverlayProvider>
-                        <TagColorProvider>
-                          <AppContent />
-                          <CardOverlay />
-                        </TagColorProvider>
-                      </CardOverlayProvider>
-                    </SelectionProvider>
-                  </PAFVProvider>
-                </FilterProvider>
-              </AppStateProvider>
-            </NotebookProvider>
-          </EnvironmentProvider>
-        </ThemeProvider>
-      </BrowserRouter>
-    </ErrorBoundary>
-  );
-}
+// Original complex App implementation moved to separate file for future restoration
+// See docs/specs/app-architecture.md for complete component hierarchy
 
 export default App;

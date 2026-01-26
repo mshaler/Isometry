@@ -3,9 +3,6 @@ import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { Node as DataNode } from '@/types/node';
 import type {
-  D3SVGSelection,
-  D3GroupSelection,
-  D3TreeNode,
   D3ZoomBehavior,
   D3ColorScale
 } from '@/types/d3';

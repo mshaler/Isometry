@@ -17,8 +17,7 @@ interface MenuSection {
 
 export function Toolbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  // TODO: Implement submenus
-  const [_openSubmenu, _setOpenSubmenu] = useState<string | null>(null);
+  // TODO: Implement submenus when needed
   const { theme, setTheme } = useTheme();
 
   const menuSections: MenuSection[] = [

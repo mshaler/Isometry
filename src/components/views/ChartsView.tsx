@@ -7,11 +7,8 @@ import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
 import type {
   D3SVGSelection,
-  D3GroupSelection,
-  D3ColorScale,
   D3PieGenerator,
-  D3ArcGenerator,
-  D3ChartTheme
+  D3ArcGenerator
 } from '@/types/d3';
 
 interface ChartsViewProps {

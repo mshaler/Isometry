@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext } from 'react';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
 import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
-import { performanceMonitor, logPerformanceReport } from './PerformanceMonitor';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';
-import { nativeAPI } from './NativeAPIClient';
 
 // Legacy interface for backward compatibility during migration
 interface LegacyDatabase {
@@ -22,7 +20,7 @@ interface DatabaseContextValue {
 // Union type for unified database context (currently unused but may be needed for future type checking)
 // type UnifiedDatabaseContextValue = DatabaseContextValue | NativeDatabaseContextValue;
 
-const DatabaseContext = createContext<DatabaseContextValue | null>(null);
+const _DatabaseContext = createContext<DatabaseContextValue | null>(null);
 
 // DEPRECATED: SQL.js Database Provider has been completely removed
 // Use NativeDatabaseProvider or WebViewDatabaseProvider instead

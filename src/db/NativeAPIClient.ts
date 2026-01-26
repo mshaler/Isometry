@@ -1,13 +1,13 @@
 // Removed sql.js dependency - now uses native types
 interface QueryExecResult {
   columns: string[]
-  values: any[][]
+  values: unknown[][]
 }
 
 interface Statement {
-  run: (params?: any[]) => { changes: number }
-  get: (params?: any[]) => any
-  all: (params?: any[]) => any[]
+  run: (params?: unknown[]) => { changes: number }
+  get: (params?: unknown[]) => unknown
+  all: (params?: unknown[]) => unknown[]
 }
 
 interface Database {
@@ -50,7 +50,7 @@ export class NativeAPIClient {
   /**
    * Execute SQL query - returns standard query results
    */
-  async executeSQL(sql: string, params: any[] = []): Promise<QueryExecResult[]> {
+  async executeSQL(sql: string, params: unknown[] = []): Promise<QueryExecResult[]> {
     if (!this.isAvailable) {
       throw new Error('Native API not available')
     }
@@ -93,7 +93,7 @@ export class NativeAPIClient {
     const apiClient = this
 
     return {
-      exec: async (sql: string, params?: any) => {
+      exec: async (sql: string, params?: unknown) => {
         return apiClient.executeSQL(sql, params)
       },
 
@@ -104,7 +104,7 @@ export class NativeAPIClient {
             return results.length > 0 && results[0].values.length > 0
           },
 
-          get: async (params?: any) => {
+          get: async (params?: unknown) => {
             const results = await apiClient.executeSQL(sql, params)
             if (results.length === 0 || results[0].values.length === 0) {
               return undefined
@@ -113,7 +113,7 @@ export class NativeAPIClient {
             // Convert first row to object using column names
             const columns = results[0].columns
             const firstRow = results[0].values[0]
-            const rowObject: any = {}
+            const rowObject: Record<string, unknown> = {}
 
             columns.forEach((column, index) => {
               rowObject[column] = firstRow[index]
@@ -122,10 +122,10 @@ export class NativeAPIClient {
             return rowObject
           },
 
-          getAsObject: async (params?: any) => {
+          getAsObject: async (params?: unknown) => {
             const results = await apiClient.executeSQL(sql, params)
             return results[0]?.values.map(row => {
-              const obj: any = {}
+              const obj: Record<string, unknown> = {}
               results[0].columns.forEach((col, i) => {
                 obj[col] = row[i]
               })
@@ -138,7 +138,7 @@ export class NativeAPIClient {
         } as Statement
       },
 
-      run: async (sql: string, params?: any) => {
+      run: async (sql: string, params?: unknown) => {
         await apiClient.executeSQL(sql, params)
       },
 
@@ -157,7 +157,7 @@ export class NativeAPIClient {
   /**
    * High-level API methods for better performance
    */
-  async getNodes(folder?: string, nodeType?: string): Promise<any[]> {
+  async getNodes(folder?: string, nodeType?: string): Promise<unknown[]> {
     if (!this.isAvailable) {
       throw new Error('Native API not available')
     }
@@ -174,7 +174,7 @@ export class NativeAPIClient {
     return response.json()
   }
 
-  async getNotebookCards(folder?: string): Promise<any[]> {
+  async getNotebookCards(folder?: string): Promise<unknown[]> {
     if (!this.isAvailable) {
       throw new Error('Native API not available')
     }
@@ -189,7 +189,7 @@ export class NativeAPIClient {
     return response.json()
   }
 
-  async saveNotebookCard(card: any): Promise<any> {
+  async saveNotebookCard(card: Record<string, unknown>): Promise<unknown> {
     if (!this.isAvailable) {
       throw new Error('Native API not available')
     }
@@ -229,7 +229,7 @@ export class NativeAPIClient {
     }
   }
 
-  async searchNodes(query: string): Promise<any[]> {
+  async searchNodes(query: string): Promise<unknown[]> {
     if (!this.isAvailable) {
       throw new Error('Native API not available')
     }
@@ -247,7 +247,7 @@ export class NativeAPIClient {
   /**
    * Convert JavaScript values to API-compatible parameters
    */
-  private convertParameter(param: any): any {
+  private convertParameter(param: unknown): unknown {
     if (param === null || param === undefined) {
       return null
     }

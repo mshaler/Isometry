@@ -96,7 +96,7 @@ describe('LocationMapWidget', () => {
   });
 
   it('updates radius when slider changes', async () => {
-    const { rerender: _rerender } = render(<LocationMapWidget {...defaultProps} />);
+    render(<LocationMapWidget {...defaultProps} />);
 
     const slider = screen.getByRole('slider');
 

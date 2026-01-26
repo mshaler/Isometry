@@ -16,7 +16,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
   const [previewMode, setPreviewMode] = useState<'edit' | 'split' | 'preview'>('split');
   const [propertyUpdateCount, setPropertyUpdateCount] = useState(0);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
   const {
     content,
@@ -35,9 +35,8 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     registerInsertText,
     handleKeyDown,
     handleTextInput,
-    executeCommand,
-    navigateMenu: _navigateMenu,
-    closeMenu: _closeMenu
+    executeCommand
+    // Note: navigateMenu and closeMenu not currently used in this component
   } = useSlashCommands();
 
   const handleManualSave = useCallback(async () => {
