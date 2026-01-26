@@ -106,7 +106,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   getErrorMessage = (): string => {
     const { error } = this.state;
-    // const { level, name } = this.props; // Level is assigned but not used in current implementation
+    const { name } = this.props;
     const severity = this.getErrorSeverity();
 
     if (severity === 'high') {
