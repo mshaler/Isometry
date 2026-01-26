@@ -54,7 +54,7 @@ export interface VisualizationDirective {
   color?: string;
   size?: string;
   title?: string;
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 /**

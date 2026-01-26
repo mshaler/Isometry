@@ -6,8 +6,6 @@
  */
 
 import { webViewBridge, Environment } from './webview-bridge';
-import { performanceMonitor } from '../db/PerformanceMonitor';
-import { syncManager } from './sync-manager';
 
 export interface BridgePerformanceTargets {
   bridgeLatency: number; // < 50ms for round-trip
@@ -231,7 +229,6 @@ async function testSyncLatency(): Promise<BridgeTestResult> {
 
   try {
     let notificationReceived = false;
-    const startTime = performance.now();
 
     // Listen for sync notification
     const handler = () => {
@@ -372,7 +369,7 @@ async function testConcurrentOperations(): Promise<BridgeTestResult> {
     const concurrentOps = 10;
 
     // Launch concurrent operations
-    const promises = Array.from({ length: concurrentOps }, (_, i) =>
+    const promises = Array.from({ length: concurrentOps }, () =>
       webViewBridge.database.execute('SELECT COUNT(*) FROM nodes', [])
     );
 
@@ -533,8 +530,7 @@ async function performComparisonTesting(): Promise<BridgeComparisonResult[]> {
  */
 async function performStressTesting(): Promise<BridgeStressTestResult> {
   const totalOperations = 200;
-  const operations: Promise<any>[] = [];
-  const results: { success: boolean; duration: number; error?: string }[] = [];
+  const operations: Promise<unknown>[] = [];
   const errors: string[] = [];
 
   console.log(`🔬 Starting stress test with ${totalOperations} operations...`);
@@ -641,7 +637,7 @@ function generateRecommendations(
 /**
  * Generate performance report for bridge operations
  */
-export function generateBridgePerformanceReport(testResults: any): string {
+export function generateBridgePerformanceReport(testResults: BridgePerformanceResult): string {
   const report = `
 # WebView Bridge Performance Report
 

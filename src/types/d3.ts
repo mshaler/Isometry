@@ -117,10 +117,10 @@ export type D3LineGenerator<T = ChartDatum> = d3.Line<T>;
 export type D3AreaGenerator<T = ChartDatum> = d3.Area<T>;
 
 /** Arc generator with proper typing */
-export type D3ArcGenerator<T = d3.DefaultArcObject> = d3.Arc<any, T>;
+export type D3ArcGenerator<T = d3.DefaultArcObject> = d3.Arc<unknown, T>;
 
 /** Pie generator with proper typing */
-export type D3PieGenerator<T = ChartDatum> = d3.Pie<any, T>;
+export type D3PieGenerator<T = ChartDatum> = d3.Pie<unknown, T>;
 
 // ============================================================================
 // Transition Types
@@ -273,7 +273,7 @@ export interface D3AxisConfig {
   scale: D3Scale;
   orientation: 'top' | 'right' | 'bottom' | 'left';
   tickCount?: number;
-  tickFormat?: D3TickFormatter<any>;
+  tickFormat?: D3TickFormatter<unknown>;
   label?: string;
 }
 

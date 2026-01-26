@@ -1,4 +1,4 @@
-import { spawn, ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -224,7 +224,7 @@ export async function findAvailablePort(startPort: number = 8080): Promise<numbe
     const server = net.createServer();
 
     server.listen(startPort, () => {
-      const port = (server.address() as any)?.port;
+      const port = (server.address() as { port?: number })?.port;
       server.close(() => {
         resolve(port);
       });

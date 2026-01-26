@@ -43,7 +43,7 @@ function getAPIKey(): string | undefined {
 
   // Fallback to Node.js environment (if available)
   try {
-    const nodeKey = (globalThis as any).process?.env?.ANTHROPIC_API_KEY;
+    const nodeKey = (globalThis as { process?: { env?: { ANTHROPIC_API_KEY?: string } } }).process?.env?.ANTHROPIC_API_KEY;
     if (nodeKey) {
       return nodeKey;
     }
