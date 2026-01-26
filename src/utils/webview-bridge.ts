@@ -119,7 +119,7 @@ export class WebViewBridge {
    */
   registerCallback(
     id: string,
-    resolve: (value: any) => void,
+    resolve: (value: unknown) => void,
     reject: (error: Error) => void,
     timeout: number = this.DEFAULT_TIMEOUT
   ): void {
