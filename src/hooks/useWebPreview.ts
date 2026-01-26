@@ -21,18 +21,18 @@ interface UseWebPreviewReturn extends WebPreviewState {
   resetZoom: () => void;
 }
 
-const DEFAULT_OPTIONS: UseWebPreviewOptions = {
-  allowJavaScript: true,
-  allowSameOrigin: true,
-  enablePDFViewer: true,
-};
+// const DEFAULT_OPTIONS: UseWebPreviewOptions = {
+//   allowJavaScript: true,
+//   allowSameOrigin: true,
+//   enablePDFViewer: true,
+// };
 
 const DANGEROUS_SCHEMES = ['javascript:', 'data:', 'vbscript:', 'file:', 'about:'];
 
 /**
  * Hook for secure web content preview with iframe sandboxing and PDF support
  */
-export function useWebPreview(options: UseWebPreviewOptions = {}): UseWebPreviewReturn {
+export function useWebPreview(_options: UseWebPreviewOptions = {}): UseWebPreviewReturn {
   // const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
 
   const [state, setState] = useState<WebPreviewState>({

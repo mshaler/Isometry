@@ -103,7 +103,7 @@ export function getAxisLabel(
 // Location Axis Extractors
 // ============================================================================
 
-function extractLocationValue(node: Node, facet: string): number | null {
+function extractLocationValue(_node: Node, _facet: string): number | null {
   // For MVP, we don't have location data on nodes yet
   // Return null to position at origin
   return null;

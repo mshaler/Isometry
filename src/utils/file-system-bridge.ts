@@ -196,7 +196,7 @@ export class FileSystemBridge {
       try {
         const result = await postMessage<{ exists: boolean }>('filesystem', 'fileExists', { path });
         return result.exists;
-      } catch (error) {
+      } catch {
         return false;
       }
     } else {
@@ -221,7 +221,7 @@ export class FileSystemBridge {
 
   // MARK: - Browser Fallbacks
 
-  private async readFileBrowser(path: string, binary: boolean): Promise<string | ArrayBuffer> {
+  private async readFileBrowser(_path: string, _binary: boolean): Promise<string | ArrayBuffer> {
     // In browser, we can only read files that the user explicitly selects
     // This would typically involve file input or drag-drop
     throw new Error('Direct file reading not supported in browser. Use file input instead.');
@@ -245,7 +245,7 @@ export class FileSystemBridge {
     URL.revokeObjectURL(url);
   }
 
-  private async listFilesBrowser(directory: string): Promise<FileInfo[]> {
+  private async listFilesBrowser(_directory: string): Promise<FileInfo[]> {
     // Browser can't list arbitrary directories
     // Return empty list or show file picker
     return [];
@@ -293,7 +293,7 @@ export class FileSystemBridge {
     }
   }
 
-  private async fileExistsBrowser(path: string): Promise<boolean> {
+  private async fileExistsBrowser(_path: string): Promise<boolean> {
     // Browser can't check arbitrary file existence
     return false;
   }

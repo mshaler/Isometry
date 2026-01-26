@@ -8,9 +8,7 @@
 import {
   bridgePerformanceTest,
   PERFORMANCE_TARGETS,
-  BridgeTestResult,
-  BridgeStressTestResult,
-  BridgeComparisonResult
+  BridgeStressTestResult
 } from '../utils/bridge-performance';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from '../utils/webview-bridge';
@@ -197,7 +195,7 @@ export async function benchmarkMigrationPath(scenario: MigrationScenario): Promi
 
     // Perform migration benchmark
     const migrationStart = performance.now();
-    const migrationResults = await performMigrationBenchmark(scenario);
+    await performMigrationBenchmark(scenario);
     const migrationDuration = performance.now() - migrationStart;
 
     // Measure target provider performance
@@ -684,12 +682,12 @@ async function establishPerformanceBaseline(provider: DatabaseMode): Promise<Per
   };
 }
 
-async function performMigrationBenchmark(scenario: MigrationScenario): Promise<void> {
+async function performMigrationBenchmark(_scenario: MigrationScenario): Promise<void> {
   // Mock migration benchmark
   await new Promise(resolve => setTimeout(resolve, 100));
 }
 
-async function measureProviderPerformance(provider: DatabaseMode, scenario: MigrationScenario): Promise<PerformanceMetric[]> {
+async function measureProviderPerformance(_provider: DatabaseMode, _scenario: MigrationScenario): Promise<PerformanceMetric[]> {
   return [
     {
       name: 'migration-latency',
@@ -703,7 +701,7 @@ async function measureProviderPerformance(provider: DatabaseMode, scenario: Migr
   ];
 }
 
-async function measureCurrentPerformance(provider: DatabaseMode): Promise<Record<string, number>> {
+async function measureCurrentPerformance(_provider: DatabaseMode): Promise<Record<string, number>> {
   return {
     latency: 35,
     throughput: 110,
@@ -725,27 +723,27 @@ async function performStressTest(operationCount: number): Promise<BridgeStressTe
   };
 }
 
-async function measureOperationLatency(provider: DatabaseMode): Promise<{ averageLatency: number }> {
+async function measureOperationLatency(_provider: DatabaseMode): Promise<{ averageLatency: number }> {
   return { averageLatency: 40 };
 }
 
-async function measureThroughput(provider: DatabaseMode): Promise<{ opsPerSecond: number }> {
+async function measureThroughput(_provider: DatabaseMode): Promise<{ opsPerSecond: number }> {
   return { opsPerSecond: 110 };
 }
 
-async function measureRenderingPerformance(provider: DatabaseMode): Promise<{ averageFPS: number }> {
+async function measureRenderingPerformance(_provider: DatabaseMode): Promise<{ averageFPS: number }> {
   return { averageFPS: 58 };
 }
 
-async function measureInputLatency(provider: DatabaseMode): Promise<number> {
+async function measureInputLatency(_provider: DatabaseMode): Promise<number> {
   return 14;
 }
 
-async function measureMemoryUsage(provider: DatabaseMode): Promise<{ peakUsage: number }> {
+async function measureMemoryUsage(_provider: DatabaseMode): Promise<{ peakUsage: number }> {
   return { peakUsage: 8 * 1024 * 1024 }; // 8MB
 }
 
-async function detectMemoryLeaks(provider: DatabaseMode): Promise<{ hasLeaks: boolean; growthRate: number }> {
+async function detectMemoryLeaks(_provider: DatabaseMode): Promise<{ hasLeaks: boolean; growthRate: number }> {
   return { hasLeaks: false, growthRate: 0.1 };
 }
 
@@ -763,9 +761,9 @@ function createEmptyBaseline(provider: DatabaseMode): PerformanceBaseline {
 }
 
 function compareMigrationPerformance(
-  baseline: Record<string, number>,
-  current: PerformanceMetric[],
-  migrationDuration: number
+  _baseline: Record<string, number>,
+  _current: PerformanceMetric[],
+  _migrationDuration: number
 ): PerformanceComparison {
   return {
     speedup: 1.1,

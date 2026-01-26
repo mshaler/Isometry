@@ -40,7 +40,7 @@ export class NativeAPIClient {
       })
       this.isAvailable = response.ok
       return this.isAvailable
-    } catch (_error) {
+    } catch {
       console.log('Native API not available')
       this.isAvailable = false
       return false

@@ -564,7 +564,7 @@ export class MigrationSafety {
     return `assessment-${timestamp}`;
   }
 
-  private isCacheValid(assessment: SafetyAssessment): boolean {
+  private isCacheValid(_assessment: SafetyAssessment): boolean {
     // Cache assessments are valid for 5 minutes
     return true; // Simplified for now
   }
@@ -633,7 +633,7 @@ export class MigrationSafety {
     return backups[0];
   }
 
-  private async persistBackupMetadata(backup: DataBackup): Promise<void> {
+  private async persistBackupMetadata(_backup: DataBackup): Promise<void> {
     // Implementation would persist backup metadata
   }
 
@@ -656,7 +656,7 @@ export class MigrationSafety {
     }
   }
 
-  private async assessDataLoss(backup?: DataBackup): Promise<RollbackReport['dataLoss']> {
+  private async assessDataLoss(_backup?: DataBackup): Promise<RollbackReport['dataLoss']> {
     return {
       estimated: 0,
       actual: 0,

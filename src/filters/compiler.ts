@@ -182,7 +182,7 @@ function buildFTS5Query(input: string): string | null {
 
       // Return as-is (user knows what they're doing)
       return query;
-    } catch (_e) {
+    } catch {
       // Invalid syntax - fallback to simple search
       return escapeFTS5Simple(query);
     }

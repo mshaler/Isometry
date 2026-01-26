@@ -403,7 +403,7 @@ export function useSearch(query: string, options: SearchOptions = {}): Optimized
  */
 export function useOptimisticMutation<T>(
   mutationFn: () => Promise<T>,
-  dependencies: string[] = []
+  _dependencies: string[] = []
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
