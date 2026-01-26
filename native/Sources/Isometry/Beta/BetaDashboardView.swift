@@ -13,11 +13,19 @@ public struct BetaDashboardView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     if betaManager.isBetaMode {
-                        headerSection
-                        versionInfoSection
-                        featuresSection
-                        feedbackSection
-                        instructionsSection
+                        // UX-01: Show onboarding if not completed
+                        if !betaManager.hasCompletedOnboarding {
+                            onboardingSection
+                        } else {
+                            headerSection
+
+                            // UX-02: Enhanced dashboard with progress tracking
+                            testingProgressSection
+                            versionInfoSection
+                            featuresSection
+                            feedbackSection
+                            instructionsSection
+                        }
                     } else {
                         notBetaView
                     }
@@ -29,7 +37,7 @@ public struct BetaDashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             #endif
             .sheet(isPresented: $showingFeedback) {
-                BetaFeedbackView()
+                BetaFeedbackView(betaManager: betaManager)
             }
             .sheet(isPresented: $showingInstructions) {
                 BetaInstructionsView(betaVersion: betaManager.betaVersion)
@@ -38,6 +46,158 @@ public struct BetaDashboardView: View {
         .onAppear {
             betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "beta_dashboard_viewed"))
         }
+    }
+
+    // MARK: - Onboarding Section (UX-01)
+
+    private var onboardingSection: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "hand.wave.fill")
+                        .foregroundColor(.orange)
+                        .font(.title2)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Welcome to Beta Testing!")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+
+                        Text("Let's get you started with the Isometry beta program")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 16) {
+                OnboardingStepView(
+                    icon: "info.circle.fill",
+                    title: "Beta Program Overview",
+                    description: "You're part of our exclusive beta testing program. Your feedback helps us build a better experience.",
+                    color: .blue
+                )
+
+                OnboardingStepView(
+                    icon: "target",
+                    title: "What We're Testing",
+                    description: "Focus on SuperGrid visualization, CloudKit sync, and overall performance. We've provided detailed testing scenarios.",
+                    color: .green
+                )
+
+                OnboardingStepView(
+                    icon: "message.circle.fill",
+                    title: "Provide Feedback",
+                    description: "Use the feedback system to report issues, suggest improvements, and share your experience.",
+                    color: .purple
+                )
+
+                OnboardingStepView(
+                    icon: "shield.checkered",
+                    title: "Privacy & Consent",
+                    description: "Your testing data helps improve the app. All feedback is anonymous and secure.",
+                    color: .orange
+                )
+            }
+
+            Button(action: {
+                betaManager.completeOnboarding()
+                betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "onboarding_completed"))
+            }) {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text("Start Beta Testing")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
+        .padding()
+        .background(Color.orange.opacity(0.05))
+        .cornerRadius(16)
+    }
+
+    // MARK: - Testing Progress Section (UX-02)
+
+    private var testingProgressSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Testing Progress")
+                    .font(.headline)
+
+                Spacer()
+
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.pie.fill")
+                        .foregroundColor(.blue)
+                        .font(.caption)
+
+                    Text("\(Int(betaManager.testingProgress * 100))%")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.blue)
+                }
+            }
+
+            // Progress bar
+            ProgressView(value: betaManager.testingProgress)
+                .progressViewStyle(.linear)
+                .accentColor(.blue)
+
+            // Testing activities
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(betaManager.testingActivities.prefix(3)) { activity in
+                    TestingActivityRow(
+                        activity: activity,
+                        onComplete: {
+                            betaManager.completeTestingActivity(activity.type)
+                        }
+                    )
+                }
+
+                if betaManager.testingActivities.count > 3 {
+                    Button(action: {
+                        // Would present detailed activity view
+                        betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "view_all_activities"))
+                    }) {
+                        HStack {
+                            Text("View All Testing Activities")
+                                .font(.subheadline)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.blue)
+                }
+            }
+
+            // Engagement metrics
+            if betaManager.userEngagementScore > 0 {
+                HStack {
+                    Image(systemName: "star.fill")
+                        .foregroundColor(.yellow)
+                    Text("Engagement Score:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Text("\(Int(betaManager.userEngagementScore * 100))%")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.yellow)
+                }
+            }
+        }
+        .padding()
+        .background(Color.blue.opacity(0.05))
+        .cornerRadius(12)
     }
 
     // MARK: - Header Section
@@ -442,5 +602,80 @@ struct RecentFeedbackRow: View {
         case .acknowledged: return .purple
         case .resolved: return .green
         }
+    }
+}
+
+// MARK: - UX Optimization Supporting Views
+
+struct OnboardingStepView: View {
+    let icon: String
+    let title: String
+    let description: String
+    let color: Color
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .font(.title3)
+                .frame(width: 24)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                Text(description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}
+
+struct TestingActivityRow: View {
+    let activity: TestingActivity
+    let onComplete: () -> Void
+
+    var body: some View {
+        HStack {
+            Image(systemName: activity.isCompleted ? "checkmark.circle.fill" : "circle")
+                .foregroundColor(activity.isCompleted ? .green : .gray)
+                .onTapGesture {
+                    if !activity.isCompleted {
+                        onComplete()
+                    }
+                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(activity.title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .strikethrough(activity.isCompleted)
+
+                Text(activity.description)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+
+            if activity.isCompleted, let completedDate = activity.completedDate {
+                Text(completedDate, style: .relative)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            } else {
+                HStack(spacing: 2) {
+                    Image(systemName: "clock")
+                        .font(.caption2)
+                    Text("\(Int(activity.estimatedDuration / 60))min")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
