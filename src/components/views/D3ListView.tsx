@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { Search, X, ArrowUpDown, ChevronDown, ChevronRight } from 'lucide-react';
+import { Search, X, ArrowUpDown } from 'lucide-react';
 import { usePAFV } from '../../contexts/PAFVContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import type { Node } from '../../types/node';

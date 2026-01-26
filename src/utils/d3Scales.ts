@@ -256,7 +256,6 @@ export const createHierarchicalScales = (
 
   // Multi-level hierarchical scales
   const levels: D3Scale[] = [];
-  let currentRange = range;
   const rangeSplit = (range[1] - range[0]) / chips.length;
 
   chips.forEach((chip, index) => {

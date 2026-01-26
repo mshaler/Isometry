@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useResizeObserver } from '../hooks/useD3';
 import { useD3Canvas, type D3CanvasState, type Viewport } from '../hooks/useD3Canvas';
+import { Node } from '../types';
 import {
   performanceMonitor,
   spatialIndex,
@@ -16,16 +17,9 @@ import * as d3 from 'd3';
 
 interface D3CanvasProps {
   className?: string;
-  onCellClick?: (cellData: { nodes: any[]; rowKey: string; colKey: string }) => void;
+  onCellClick?: (cellData: { nodes: Node[]; rowKey: string; colKey: string }) => void;
   onError?: (error: string) => void;
   showPerformanceOverlay?: boolean;
-}
-
-interface LayerRefs {
-  container: HTMLDivElement | null;
-  svg: SVGSVGElement | null;
-  canvas: HTMLCanvasElement | null;
-  overlay: HTMLDivElement | null;
 }
 
 interface InteractionState {
@@ -39,8 +33,20 @@ interface InteractionState {
 // Enhanced Performance Overlay Component
 // ============================================================================
 
+interface D3PerformanceStats {
+  fps?: number;
+  frameHistory?: number;
+  [key: string]: {
+    average: number;
+    min: number;
+    max: number;
+    latest: number;
+    samples: number;
+  } | number | undefined;
+}
+
 const PerformanceOverlay: React.FC<{
-  performance: any;
+  performance: D3PerformanceStats;
   frameRate: number;
   error: string | null;
 }> = ({ performance, frameRate, error }) => {
@@ -202,7 +208,7 @@ class CanvasRenderer {
 const renderSVGHeaders = (
   svg: SVGSVGElement,
   canvasState: D3CanvasState,
-  viewport: Viewport
+  _viewport: Viewport
 ): void => {
   const svgSelection = d3.select(svg);
 
@@ -221,7 +227,7 @@ const renderSVGHeaders = (
     .attr('class', 'column-headers')
     .attr('transform', `translate(0, 0)`);
 
-  scaleSystem.x.composite.domain().forEach((colKey, index) => {
+  scaleSystem.x.composite.domain().forEach((colKey, _index) => {
     const x = scaleSystem.x.composite(colKey) || 0;
     const width = scaleSystem.x.composite.bandwidth();
 
@@ -256,7 +262,7 @@ const renderSVGHeaders = (
     .attr('class', 'row-headers')
     .attr('transform', `translate(0, ${colHeaderHeight})`);
 
-  scaleSystem.y.composite.domain().forEach((rowKey, index) => {
+  scaleSystem.y.composite.domain().forEach((rowKey, _index) => {
     const y = scaleSystem.y.composite(rowKey) || 0;
     const height = scaleSystem.y.composite.bandwidth();
 
