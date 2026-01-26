@@ -365,6 +365,125 @@ public class BetaTestingManager: ObservableObject {
         case viewedInstructions = "viewed_instructions"
     }
 
+    // MARK: - AI-Powered Guidance (UX-03)
+
+    public func getPersonalizedTestingRecommendations() -> [TestingRecommendation] {
+        var recommendations: [TestingRecommendation] = []
+
+        // Analyze user engagement patterns to provide personalized guidance
+        let completedActivities = testingActivities.filter { $0.isCompleted }.count
+        let completionRate = testingProgress
+
+        // Beginner recommendations
+        if completionRate < 0.3 {
+            recommendations.append(TestingRecommendation(
+                title: "Start with Basic Navigation",
+                description: "Begin by exploring the main interface. This builds familiarity before advanced testing.",
+                priority: .high,
+                estimatedTime: 300,
+                activityType: .basicNavigation
+            ))
+        }
+
+        // Intermediate recommendations based on engagement score
+        if userEngagementScore > 0.4 && completionRate > 0.3 {
+            recommendations.append(TestingRecommendation(
+                title: "Test Advanced Features",
+                description: "You're ready for CloudKit sync and performance testing based on your engagement.",
+                priority: .medium,
+                estimatedTime: 600,
+                activityType: .cloudKitSync
+            ))
+        }
+
+        // Advanced recommendations for engaged users
+        if userEngagementScore > 0.7 {
+            recommendations.append(TestingRecommendation(
+                title: "Edge Case Testing",
+                description: "Help us identify edge cases with large datasets and complex scenarios.",
+                priority: .medium,
+                estimatedTime: 900,
+                activityType: .edgeCaseTesting
+            ))
+        }
+
+        // Accessibility focus for inclusive testing
+        if !testingActivities.contains(where: { $0.type == .accessibilityTesting && $0.isCompleted }) {
+            recommendations.append(TestingRecommendation(
+                title: "Accessibility Testing",
+                description: "Test with VoiceOver and accessibility features to ensure inclusive design.",
+                priority: .medium,
+                estimatedTime: 900,
+                activityType: .accessibilityTesting
+            ))
+        }
+
+        return recommendations
+    }
+
+    public func getContextualHelpForActivity(_ activityType: TestingActivity.ActivityType) -> ContextualHelp? {
+        switch activityType {
+        case .basicNavigation:
+            return ContextualHelp(
+                tips: [
+                    "Start by exploring the main navigation tabs",
+                    "Try switching between different view modes",
+                    "Pay attention to loading times and responsiveness"
+                ],
+                expectedOutcomes: [
+                    "Understand the main app structure",
+                    "Identify any navigation issues",
+                    "Get comfortable with the interface"
+                ],
+                commonIssues: [
+                    "Slow loading of certain screens",
+                    "Navigation animation glitches",
+                    "Unclear button purposes"
+                ]
+            )
+        case .cloudKitSync:
+            return ContextualHelp(
+                tips: [
+                    "Make changes on one device first",
+                    "Wait 30-60 seconds for sync",
+                    "Check the other device for changes",
+                    "Test both creating and editing items"
+                ],
+                expectedOutcomes: [
+                    "Changes appear on other devices",
+                    "Sync happens within 2 minutes",
+                    "No data loss during sync"
+                ],
+                commonIssues: [
+                    "Sync takes longer than expected",
+                    "Changes don't appear on other devices",
+                    "Conflicts between device changes"
+                ]
+            )
+        case .performanceTesting:
+            return ContextualHelp(
+                tips: [
+                    "Test with different dataset sizes",
+                    "Monitor battery usage during testing",
+                    "Try rapid interactions to stress test",
+                    "Test while other apps are running"
+                ],
+                expectedOutcomes: [
+                    "Smooth 60fps performance",
+                    "Reasonable battery consumption",
+                    "No crashes under load"
+                ],
+                commonIssues: [
+                    "Frame drops with large datasets",
+                    "High battery consumption",
+                    "App becomes unresponsive"
+                ]
+            )
+        default:
+            return nil
+        }
+    }
+
     // MARK: - Helper Methods
 
     private func createBetaFeatures() -> [BetaFeature] {
@@ -581,5 +700,46 @@ public struct TestingActivity: Identifiable {
         self.title = title
         self.description = description
         self.estimatedDuration = estimatedDuration
+    }
+}
+
+public struct TestingRecommendation: Identifiable {
+    public let id = UUID()
+    public let title: String
+    public let description: String
+    public let priority: Priority
+    public let estimatedTime: TimeInterval
+    public let activityType: TestingActivity.ActivityType
+
+    public enum Priority {
+        case high, medium, low
+
+        var color: Color {
+            switch self {
+            case .high: return .red
+            case .medium: return .orange
+            case .low: return .blue
+            }
+        }
+
+        var text: String {
+            switch self {
+            case .high: return "High Priority"
+            case .medium: return "Medium Priority"
+            case .low: return "Low Priority"
+            }
+        }
+    }
+}
+
+public struct ContextualHelp {
+    public let tips: [String]
+    public let expectedOutcomes: [String]
+    public let commonIssues: [String]
+
+    public init(tips: [String], expectedOutcomes: [String], commonIssues: [String]) {
+        self.tips = tips
+        self.expectedOutcomes = expectedOutcomes
+        self.commonIssues = commonIssues
     }
 }

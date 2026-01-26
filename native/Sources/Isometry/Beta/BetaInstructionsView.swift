@@ -11,6 +11,9 @@ public struct BetaInstructionsView: View {
     @State private var completedSteps: Set<Int> = []
     @State private var showingChecklist = false
     @State private var showingHelp = false
+    @State private var personalizedRecommendations: [TestingRecommendation] = []
+    @State private var selectedActivityHelp: ContextualHelp?
+    @State private var showingContextualHelp = false
 
     public init(betaVersion: BetaVersion?) {
         self.betaVersion = betaVersion
@@ -51,6 +54,21 @@ public struct BetaInstructionsView: View {
                 }
                 .tag(1)
 
+                // UX-03: AI-powered personalized recommendations
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 24) {
+                        personalizedRecommendationsSection
+                        contextualGuidanceSection
+                        adaptiveHelpSection
+                    }
+                    .padding()
+                }
+                .tabItem {
+                    Image(systemName: "brain.head.profile")
+                    Text("AI Guide")
+                }
+                .tag(2)
+
                 // UX-03: Help and support resources
                 ScrollView {
                     VStack(alignment: .leading, spacing: 24) {
@@ -65,7 +83,7 @@ public struct BetaInstructionsView: View {
                     Image(systemName: "questionmark.circle")
                     Text("Help")
                 }
-                .tag(2)
+                .tag(3)
             }
             .navigationTitle("Beta Testing Guide")
             #if os(iOS)
@@ -100,6 +118,12 @@ public struct BetaInstructionsView: View {
         }
         .onAppear {
             loadUserProgress()
+            loadPersonalizedRecommendations()
+        }
+        .sheet(isPresented: $showingContextualHelp) {
+            if let help = selectedActivityHelp {
+                ContextualHelpView(help: help)
+            }
         }
     }
 
@@ -319,6 +343,86 @@ public struct BetaInstructionsView: View {
                     estimatedTime: "15 minutes"
                 )
             }
+        }
+    }
+
+    // MARK: - AI-Powered Guidance Sections (UX-03)
+
+    private var personalizedRecommendationsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Personalized Recommendations")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text("Based on your testing progress and engagement, here are tailored recommendations:")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if personalizedRecommendations.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 40))
+                        .foregroundColor(.blue)
+
+                    Text("AI recommendations will appear based on your testing patterns")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
+                .background(Color.blue.opacity(0.05))
+                .cornerRadius(12)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(personalizedRecommendations) { recommendation in
+                        PersonalizedRecommendationCard(
+                            recommendation: recommendation,
+                            onSelect: {
+                                selectedActivityHelp = betaManager.getContextualHelpForActivity(recommendation.activityType)
+                                showingContextualHelp = true
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    private var contextualGuidanceSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Smart Activity Guidance")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text("Get intelligent guidance for each testing activity based on common patterns and best practices:")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(betaManager.testingActivities.prefix(4), id: \.id) { activity in
+                    SmartGuidanceCard(
+                        activity: activity,
+                        onGetHelp: {
+                            selectedActivityHelp = betaManager.getContextualHelpForActivity(activity.type)
+                            showingContextualHelp = true
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private var adaptiveHelpSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Adaptive Learning")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            AdaptiveLearningCard(
+                engagementScore: betaManager.userEngagementScore,
+                completionRate: betaManager.testingProgress,
+                totalActivities: betaManager.testingActivities.count
+            )
         }
     }
 
@@ -722,6 +826,14 @@ struct FeedbackGuideline: View {
             properties: ["step": step, "total_completed": completedSteps.count]
         ))
     }
+
+    private func loadPersonalizedRecommendations() {
+        personalizedRecommendations = betaManager.getPersonalizedTestingRecommendations()
+        betaManager.trackBetaEvent(BetaAnalyticsEvent(
+            name: "personalized_recommendations_loaded",
+            properties: ["recommendation_count": personalizedRecommendations.count]
+        ))
+    }
 }
 
 // MARK: - Enhanced Supporting Views (UX-03)
@@ -999,6 +1111,239 @@ struct HelpResourceCard: View {
             .cornerRadius(12)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - AI-Powered Guidance Supporting Views (UX-03)
+
+struct PersonalizedRecommendationCard: View {
+    let recommendation: TestingRecommendation
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "brain.head.profile")
+                        .foregroundColor(.blue)
+                        .font(.title3)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(recommendation.title)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+
+                        HStack {
+                            Text("\(Int(recommendation.estimatedTime / 60))min")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            Text("•")
+                                .foregroundStyle(.tertiary)
+
+                            Text(recommendation.priority.text)
+                                .font(.caption)
+                                .foregroundColor(recommendation.priority.color)
+                                .fontWeight(.medium)
+                        }
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+
+                Text(recommendation.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding()
+            .background(Color.blue.opacity(0.05))
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+struct SmartGuidanceCard: View {
+    let activity: TestingActivity
+    let onGetHelp: () -> Void
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(activity.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                Text("Smart tips and guidance available")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button(action: onGetHelp) {
+                HStack(spacing: 4) {
+                    Image(systemName: "brain.head.profile")
+                    Text("Get Help")
+                }
+                .font(.caption)
+                .foregroundColor(.blue)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(8)
+    }
+}
+
+struct AdaptiveLearningCard: View {
+    let engagementScore: Double
+    let completionRate: Double
+    let totalActivities: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundColor(.purple)
+                    .font(.title3)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Learning Progress")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+
+                    Text("AI adapts guidance based on your patterns")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+
+            HStack(spacing: 20) {
+                VStack(spacing: 4) {
+                    Text("\(Int(engagementScore * 100))%")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.purple)
+
+                    Text("Engagement")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(spacing: 4) {
+                    Text("\(Int(completionRate * 100))%")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+
+                    Text("Progress")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(spacing: 4) {
+                    Text("\(totalActivities)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.green)
+
+                    Text("Activities")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(getAdaptiveMessage())
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 4)
+        }
+        .padding()
+        .background(Color.purple.opacity(0.05))
+        .cornerRadius(12)
+    }
+
+    private func getAdaptiveMessage() -> String {
+        if completionRate < 0.3 {
+            return "Getting started! The AI will learn your preferences as you test more features."
+        } else if completionRate < 0.7 {
+            return "Good progress! The AI is starting to personalize recommendations for you."
+        } else {
+            return "Excellent! The AI has learned your testing patterns and provides tailored guidance."
+        }
+    }
+}
+
+struct ContextualHelpView: View {
+    let help: ContextualHelp
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    helpSection(title: "Tips", items: help.tips, icon: "lightbulb", color: .orange)
+                    helpSection(title: "Expected Outcomes", items: help.expectedOutcomes, icon: "checkmark.circle", color: .green)
+                    helpSection(title: "Common Issues", items: help.commonIssues, icon: "exclamationmark.triangle", color: .red)
+                }
+                .padding()
+            }
+            .navigationTitle("Smart Guidance")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func helpSection(title: String, items: [String], icon: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                            .foregroundColor(color)
+                        Text(item)
+                            .font(.subheadline)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(color.opacity(0.05))
+        .cornerRadius(12)
     }
 }
 
