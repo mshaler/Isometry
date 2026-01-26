@@ -22,6 +22,16 @@ export interface WebViewDatabaseContextValue {
   reset: () => Promise<void>;
   isConnected: () => boolean;
   getConnectionStatus: () => { isConnected: boolean; transport: string; };
+  getBridgeHealth: () => {
+    isConnected: boolean;
+    pendingRequests: number;
+    environment: {
+      isNative: boolean;
+      platform: string;
+      version: string;
+      transport: string;
+    };
+  };
 }
 
 const WebViewDatabaseContext = createContext<WebViewDatabaseContextValue | null>(null);
@@ -181,7 +191,39 @@ export function WebViewDatabaseProvider({
    * Get connection status for monitoring
    */
   const getConnectionStatus = useCallback(() => {
-    return db ? db.getConnectionStatus() : { isConnected: false };
+    return db ? db.getConnectionStatus() : { isConnected: false, transport: 'none' };
+  }, [db]);
+
+  /**
+   * Get bridge health information
+   */
+  const getBridgeHealth = useCallback(() => {
+    if (!db) {
+      return {
+        isConnected: false,
+        pendingRequests: 0,
+        environment: { isNative: false, platform: 'browser', version: '1.0', transport: 'http-api' }
+      };
+    }
+
+    // Access the bridge health through the client's getBridgeHealth method
+    const webViewClient = db as unknown as { getBridgeHealth?: () => unknown };
+    if (webViewClient.getBridgeHealth) {
+      return webViewClient.getBridgeHealth();
+    }
+
+    // Fallback to basic connection status
+    const connectionStatus = db.getConnectionStatus();
+    return {
+      isConnected: connectionStatus.isConnected,
+      pendingRequests: connectionStatus.pendingRequests || 0,
+      environment: {
+        isNative: connectionStatus.transport === 'webview',
+        platform: 'unknown',
+        version: '1.0',
+        transport: connectionStatus.transport
+      }
+    };
   }, [db]);
 
   const contextValue: WebViewDatabaseContextValue = {
@@ -193,6 +235,7 @@ export function WebViewDatabaseProvider({
     reset,
     isConnected,
     getConnectionStatus,
+    getBridgeHealth,
   };
 
   return (
@@ -242,7 +285,7 @@ export function useDatabaseCompat(): {
  * Utility component to display connection status for debugging
  */
 export function WebViewDatabaseStatus() {
-  const { db, loading, error } = useWebViewDatabase();
+  const { db, loading, error, getBridgeHealth } = useWebViewDatabase();
 
   if (loading) {
     return <div className="text-sm text-gray-500">Connecting to WebView bridge...</div>;
@@ -256,9 +299,60 @@ export function WebViewDatabaseStatus() {
     );
   }
 
-  if (db?.isConnected()) {
-    return <div className="text-sm text-green-500">WebView Bridge Connected</div>;
+  const health = getBridgeHealth();
+
+  if (health.isConnected) {
+    return (
+      <div className="text-sm text-green-500">
+        WebView Bridge Connected
+        {health.pendingRequests > 0 && (
+          <span className="ml-2 text-gray-400">({health.pendingRequests} pending)</span>
+        )}
+      </div>
+    );
   }
 
-  return <div className="text-sm text-yellow-500">WebView Bridge Status Unknown</div>;
+  return (
+    <div className="text-sm text-yellow-500">
+      WebView Bridge Disconnected
+      {health.pendingRequests > 0 && (
+        <span className="ml-2 text-gray-400">({health.pendingRequests} queued)</span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Advanced bridge status component for debugging and monitoring
+ */
+export function WebViewBridgeHealthStatus() {
+  const { getBridgeHealth } = useWebViewDatabase();
+  const health = getBridgeHealth();
+
+  return (
+    <div className="text-xs text-gray-600 space-y-1">
+      <div className="flex justify-between">
+        <span>Status:</span>
+        <span className={health.isConnected ? 'text-green-600' : 'text-red-600'}>
+          {health.isConnected ? 'Connected' : 'Disconnected'}
+        </span>
+      </div>
+      <div className="flex justify-between">
+        <span>Transport:</span>
+        <span>{health.environment.transport}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Platform:</span>
+        <span>{health.environment.platform}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Pending Requests:</span>
+        <span>{health.pendingRequests}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Version:</span>
+        <span>{health.environment.version}</span>
+      </div>
+    </div>
+  );
 }

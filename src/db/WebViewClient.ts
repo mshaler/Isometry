@@ -22,6 +22,7 @@ export interface ConnectionStatus {
 export class WebViewClient {
   private connected: boolean = false;
   private timeout: number;
+  private bridge: any = null;
 
   constructor(timeout: number = 10000) {
     this.timeout = timeout;
@@ -37,8 +38,8 @@ export class WebViewClient {
 
     try {
       // Test basic connectivity with a ping operation
-      const bridge = getWebViewBridge();
-      await bridge.postMessage('database', 'ping', {});
+      this.bridge = getWebViewBridge();
+      await this.bridge.postMessage('database', 'ping', {});
       this.connected = true;
     } catch (error) {
       this.connected = false;
@@ -58,7 +59,7 @@ export class WebViewClient {
    */
   getConnectionStatus(): ConnectionStatus {
     try {
-      const bridge = getWebViewBridge();
+      const bridge = this.bridge || getWebViewBridge();
       const healthInfo = bridge.getHealthStatus();
 
       return {
@@ -72,6 +73,27 @@ export class WebViewClient {
         isConnected: false,
         pendingRequests: 0,
         transport: 'fallback',
+      };
+    }
+  }
+
+  /**
+   * Get bridge health status for advanced monitoring
+   */
+  getBridgeHealth() {
+    try {
+      const bridge = this.bridge || getWebViewBridge();
+      return bridge.getHealthStatus();
+    } catch {
+      return {
+        isConnected: false,
+        pendingRequests: 0,
+        environment: {
+          isNative: false,
+          platform: 'browser',
+          version: '1.0',
+          transport: 'fallback'
+        }
       };
     }
   }
