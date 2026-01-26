@@ -2,9 +2,9 @@
 
 **Last Updated:** 2026-01-26
 **Current Milestone:** v2.0 Native Integration + v2.1 SQL.js Migration Planning
-**Current Phase:** Phase 6.1 - Foundation & Layout (Native) Complete
-**Current Position:** Phase 6.2 ready to plan + Migration plans created
-**Recent:** Completed Phase 6.1 foundation infrastructure + Created comprehensive sql.js migration plan
+**Current Phase:** Phase 6.2 - Capture Implementation (In Progress)
+**Current Position:** 06.2-01 completed + 3 remaining plans
+**Recent:** Completed native markdown editor with live preview and auto-save functionality
 **Blockers:** None
 
 ---
@@ -50,9 +50,9 @@ Isometry has completed the React prototype milestone (v1.0) and Phase 6.1 of nat
 - [x] Navigation architecture and state management
 - [x] Performance infrastructure and monitoring setup
 
-#### Phase 6.2: Capture Implementation (Ready to Plan)
-**Plans:** 4 plans (0/4 complete)
-- Native markdown editor with NSTextView/UITextView
+#### Phase 6.2: Capture Implementation (IN PROGRESS)
+**Plans:** 4 plans (1/4 complete)
+- [x] Native markdown editor with NSTextView/UITextView
 - Property management interface with CloudKit
 - Template system using native collection views
 - Slash command system with native completion
