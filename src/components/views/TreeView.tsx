@@ -2,6 +2,13 @@ import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { Node as DataNode } from '@/types/node';
+import type {
+  D3SVGSelection,
+  D3GroupSelection,
+  D3TreeNode,
+  D3ZoomBehavior,
+  D3ColorScale
+} from '@/types/d3';
 
 interface TreeViewProps {
   data: DataNode[];
@@ -84,7 +91,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
 
     // Color scale
     const folders = Array.from(new Set(data.map(d => d.folder).filter(Boolean)));
-    const colorScale = d3.scaleOrdinal<string>()
+    const colorScale: D3ColorScale = d3.scaleOrdinal<string>()
       .domain(folders as string[])
       .range(theme === 'NeXTSTEP'
         ? ['#808080', '#606060', '#a0a0a0', '#707070', '#909090']
@@ -99,7 +106,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Add zoom
-    const zoom = d3.zoom<SVGSVGElement, unknown>()
+    const zoom: D3ZoomBehavior<SVGSVGElement> = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 3])
       .on('zoom', (event) => {
         g.attr('transform', event.transform);
@@ -131,7 +138,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
       .attr('class', 'node')
       .attr('transform', d => `translate(${d.y},${d.x})`)
       .style('cursor', 'pointer')
-      .on('click', (event, d) => {
+      .on('click', (event, d: d3.HierarchyPointNode<TreeNode>) => {
         event.stopPropagation();
         onNodeClick?.(d.data._node);
       });

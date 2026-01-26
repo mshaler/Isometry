@@ -5,6 +5,14 @@ import { usePanelTheme, useInputTheme, useTextTheme } from '@/hooks/useComponent
 import { createColorScale, styleAxis, setupHoverEffect } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
+import type {
+  D3SVGSelection,
+  D3GroupSelection,
+  D3ColorScale,
+  D3PieGenerator,
+  D3ArcGenerator,
+  D3ChartTheme
+} from '@/types/d3';
 
 interface ChartsViewProps {
   data: Node[];
@@ -115,12 +123,12 @@ export function ChartsView({ data, onNodeClick }: ChartsViewProps) {
 }
 
 function renderBarChart(
-  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  svg: D3SVGSelection,
   data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
   margin: { top: number; right: number; bottom: number; left: number },
-  colorScale: d3.ScaleOrdinal<string, string>,
+  colorScale: D3ColorScale,
   theme: ThemeName,
   themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
@@ -185,11 +193,11 @@ function renderBarChart(
 }
 
 function renderPieChart(
-  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  svg: D3SVGSelection,
   data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
-  colorScale: d3.ScaleOrdinal<string, string>,
+  colorScale: D3ColorScale,
   theme: ThemeName,
   themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
@@ -198,15 +206,17 @@ function renderPieChart(
   const g = svg.append('g')
     .attr('transform', `translate(${width / 2}, ${height / 2})`);
 
-  const pie = d3.pie<{ name: string; count: number; nodes: Node[] }>()
+  type PieData = { name: string; count: number; nodes: Node[] };
+
+  const pie: D3PieGenerator<PieData> = d3.pie<PieData>()
     .value(d => d.count)
     .sort(null);
 
-  const arc = d3.arc<d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>>()
+  const arc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<any, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 0.4)
     .outerRadius(radius);
 
-  const outerArc = d3.arc<d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>>()
+  const outerArc: D3ArcGenerator<d3.PieArcDatum<PieData>> = d3.arc<any, d3.PieArcDatum<PieData>>()
     .innerRadius(radius * 1.1)
     .outerRadius(radius * 1.1);
 
@@ -225,7 +235,7 @@ function renderPieChart(
         onNodeClick?.(d.data.nodes[0]);
       }
     })
-    .on('mouseenter', function(_event: MouseEvent, d: d3.PieArcDatum<{ name: string; count: number; nodes: Node[] }>) {
+    .on('mouseenter', function(_event: MouseEvent, d: d3.PieArcDatum<PieData>) {
       d3.select(this)
         .transition()
         .duration(100)
@@ -274,36 +284,35 @@ function renderPieChart(
     .text('Total');
 }
 
-// Define proper interfaces for treemap data
-interface TreemapDataItem {
-  name: string;
-  count: number;
-  nodes: Node[];
-}
-
-interface TreemapData {
-  children?: TreemapDataItem[];
-}
-
-// Extend d3.HierarchyRectangularNode to include x0, x1, y0, y1 properties
-interface TreemapNode extends d3.HierarchyRectangularNode<TreemapData> {
-  x0: number;
-  x1: number;
-  y0: number;
-  y1: number;
-  data: TreemapDataItem;
-}
-
 function renderTreemap(
-  svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  svg: D3SVGSelection,
   data: { name: string; count: number; nodes: Node[] }[],
   width: number,
   height: number,
-  colorScale: d3.ScaleOrdinal<string, string>,
+  colorScale: D3ColorScale,
   theme: ThemeName,
   themeValues: ReturnType<typeof getTheme>,
   onNodeClick?: (node: Node) => void
 ) {
+  // Define treemap-specific interfaces
+  interface TreemapDataItem {
+    name: string;
+    count: number;
+    nodes: Node[];
+  }
+
+  interface TreemapData {
+    children?: TreemapDataItem[];
+  }
+
+  // Extend d3.HierarchyRectangularNode to include x0, x1, y0, y1 properties
+  interface TreemapNode extends d3.HierarchyRectangularNode<TreemapData> {
+    x0: number;
+    x1: number;
+    y0: number;
+    y1: number;
+    data: TreemapDataItem;
+  }
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;

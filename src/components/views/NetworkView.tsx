@@ -6,6 +6,15 @@ import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';
+import type {
+  D3SVGSelection,
+  D3GroupSelection,
+  D3ColorScale,
+  SimulationNodeDatum,
+  SimulationLinkDatum,
+  D3ForceSimulation,
+  D3DragBehavior
+} from '@/types/d3';
 
 interface EdgeData {
   id: string;
@@ -21,14 +30,14 @@ interface NetworkViewProps {
   onNodeClick?: (node: Node) => void;
 }
 
-interface SimNode extends d3.SimulationNodeDatum {
+interface SimNode extends SimulationNodeDatum {
   id: string;
   name: string;
   folder: string | null;
   priority: number;
 }
 
-interface SimLink extends d3.SimulationLinkDatum<SimNode> {
+interface SimLink extends SimulationLinkDatum<SimNode> {
   id: string;
   type: string;
   weight: number;
@@ -84,7 +93,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     const colorScale = createColorScale(folders, theme as ThemeName);
 
     // Create simulation
-    const simulation = d3.forceSimulation<SimNode>(nodes)
+    const simulation: D3ForceSimulation<SimNode> = d3.forceSimulation<SimNode>(nodes)
       .force('link', d3.forceLink<SimNode, SimLink>(links)
         .id(d => d.id)
         .distance(100)
@@ -143,16 +152,16 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('class', 'node')
       .style('cursor', 'pointer')
       .call(d3.drag<SVGGElement, SimNode>()
-        .on('start', (event, d) => {
+        .on('start', (event, d: SimNode) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
           d.fx = d.x;
           d.fy = d.y;
         })
-        .on('drag', (event, d) => {
+        .on('drag', (event, d: SimNode) => {
           d.fx = event.x;
           d.fy = event.y;
         })
-        .on('end', (event, d) => {
+        .on('end', (event, d: SimNode) => {
           if (!event.active) simulation.alphaTarget(0);
           d.fx = null;
           d.fy = null;
@@ -178,7 +187,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .text(d => d.name.length > 12 ? d.name.slice(0, 12) + '...' : d.name);
 
     // Node click handler
-    node.on('click', (event, d) => {
+    node.on('click', (event, d: SimNode) => {
       event.stopPropagation();
       setSelectedNode(prev => prev === d.id ? null : d.id);
       const nodeData = data.find(c => c.id === d.id);
