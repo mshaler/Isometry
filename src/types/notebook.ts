@@ -41,7 +41,7 @@ export interface LayoutPosition {
 }
 
 export interface NotebookCardProperties {
-  [key: string]: any; // Flexible JSON object for custom properties
+  [key: string]: unknown; // Flexible JSON object for custom properties
 }
 
 export interface NotebookTemplate {

@@ -210,7 +210,7 @@ class FinalMigrationValidator {
       const { useDatabase } = await import('../db/DatabaseContext');
 
       // Mock component test
-      let hookResult: any;
+      let hookResult: unknown;
       try {
         // This would be wrapped in a proper React test in real implementation
         hookResult = { execute: () => [], loading: false, error: null };

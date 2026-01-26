@@ -431,8 +431,8 @@ export async function exportToExcel(
 ): Promise<void> {
   const {
     filename = Array.isArray(cardOrCards) ? 'notebook-cards.xlsx' : `${sanitizeFilename(cardOrCards.properties?.title || 'notebook-card')}.xlsx`,
-    includeMetadata = true,
-    multipleSheets = true,
+    // includeMetadata = true, // Reserved for future metadata inclusion
+    // multipleSheets = true, // Reserved for multi-sheet functionality
   } = options;
 
   try {

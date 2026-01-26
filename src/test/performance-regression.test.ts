@@ -582,8 +582,6 @@ function getGenericLatencyTarget(provider: DatabaseMode): number {
     // SQL.js mode no longer supported
     default:
       return 25;
-    default:
-      return 100;
   }
 }
 
@@ -596,8 +594,6 @@ function getThroughputTarget(provider: DatabaseMode): number {
     // SQL.js mode no longer supported
     default:
       return 200;
-    default:
-      return 50;
   }
 }
 

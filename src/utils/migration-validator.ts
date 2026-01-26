@@ -54,9 +54,9 @@ export interface Checkpoint {
 }
 
 export interface DataSnapshot {
-  nodes: any[];
-  notebookCards: any[];
-  edges: any[];
+  nodes: Record<string, unknown>[];
+  notebookCards: Record<string, unknown>[];
+  edges: Record<string, unknown>[];
   checksum: string;
   size: number;
 }

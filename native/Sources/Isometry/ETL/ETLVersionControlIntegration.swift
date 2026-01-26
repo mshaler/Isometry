@@ -62,9 +62,11 @@ extension ETLOperationManager {
             analysisType: analysisType,
             targetTables: targetTables,
             timeRange: nil,
-            filters: operation.configuration.customFilters.reduce(into: [:]) { result, filter in
-                result[filter] = true
-            },
+            filters: AnalyticsFilters(
+                booleanFilters: operation.configuration.customFilters.reduce(into: [:]) { result, filter in
+                    result[filter] = true
+                }
+            ),
             aggregations: []
         )
 

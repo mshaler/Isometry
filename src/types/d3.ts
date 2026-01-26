@@ -194,7 +194,8 @@ export interface D3HierarchyNode<T = HierarchyDatum> extends d3.HierarchyNode<T>
 
 /** Tree layout node */
 export interface D3TreeNode<T = HierarchyDatum> extends d3.HierarchyPointNode<T> {
-  // Additional tree-specific properties can be added here
+  // Tree-specific properties
+  collapsed?: boolean;
 }
 
 /** Treemap node */

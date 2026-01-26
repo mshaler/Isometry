@@ -270,7 +270,7 @@ export class OfficeDocumentProcessor {
     };
 
     const result = await mammoth.convertToHtml({ arrayBuffer }, options);
-    const _textResult = await mammoth.extractRawText({ arrayBuffer });
+    // const _textResult = await mammoth.extractRawText({ arrayBuffer }); // Reserved for text extraction
 
     return {
       content: this.convertHtmlToMarkdown(result.value),
@@ -494,7 +494,7 @@ export class OfficeDocumentProcessor {
 
   private addNodeMetadataToWorksheet(worksheet: XLSX.WorkSheet, node: Node): void {
     // Add metadata as comments or in a separate area
-    const _metadataRange = 'Z1:Z10'; // Use column Z for metadata
+    // const _metadataRange = 'Z1:Z10'; // Reserved: Use column Z for metadata
 
     const metadata = [
       ['Metadata'],

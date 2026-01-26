@@ -119,7 +119,7 @@ export class QueryOptimizer {
       complexity = 'complex';
     }
 
-    const _complexityScore = this.calculateComplexityScore(normalizedSQL);
+    // const _complexityScore = this.calculateComplexityScore(normalizedSQL);
     const estimatedRows = this.estimateResultSize(normalizedSQL, params);
 
     return {

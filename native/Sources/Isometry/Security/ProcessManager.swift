@@ -26,7 +26,7 @@ public final class PerformanceMonitor: @unchecked Sendable {
 // MARK: - Process State Models
 
 /// State of a managed process
-public enum ManagedManagedProcessState: String, CaseIterable, Sendable {
+public enum ManagedProcessState: String, CaseIterable, Sendable {
     case idle = "idle"
     case running = "running"
     case suspended = "suspended"

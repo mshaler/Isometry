@@ -33,7 +33,7 @@ const DANGEROUS_SCHEMES = ['javascript:', 'data:', 'vbscript:', 'file:', 'about:
  * Hook for secure web content preview with iframe sandboxing and PDF support
  */
 export function useWebPreview(options: UseWebPreviewOptions = {}): UseWebPreviewReturn {
-  const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
+  // const mergedOptions = { ...DEFAULT_OPTIONS, ...options };
 
   const [state, setState] = useState<WebPreviewState>({
     content: null,

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* eslint-env node */
+/* global console, process */
 
 /**
  * Launch script for native API server

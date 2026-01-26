@@ -5,7 +5,8 @@ import Combine
 /// GSD Executor Pattern ETL Operation Manager
 /// Orchestrates complex data import/export workflows with user control
 public actor ETLOperationManager: ObservableObject {
-    private let database: IsometryDatabase
+    internal let database: IsometryDatabase
+    internal let storageManager: ContentAwareStorageManager
     private var operationQueue: [ETLOperation] = []
     private var activeOperations: [UUID: ETLOperationExecution] = [:]
     private var operationHistory: [ETLOperationResult] = []
@@ -15,8 +16,9 @@ public actor ETLOperationManager: ObservableObject {
     @Published public private(set) var recentResults: [ETLOperationResult] = []
     @Published public private(set) var isExecuting = false
 
-    public init(database: IsometryDatabase) {
+    public init(database: IsometryDatabase, storageManager: ContentAwareStorageManager) {
         self.database = database
+        self.storageManager = storageManager
         // loadOperationHistory is actor-isolated, call asynchronously
         Task {
             await loadOperationHistory()

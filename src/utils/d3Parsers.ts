@@ -1,7 +1,7 @@
 // D3 data parsing utilities for automatic visualization detection and rendering
 
 export interface ParsedData {
-  data: any[];
+  data: unknown[];
   schema: DataSchema;
   isValid: boolean;
   error?: string;
@@ -18,7 +18,7 @@ export interface FieldSchema {
   type: 'string' | 'number' | 'date' | 'boolean' | 'unknown';
   nullable: boolean;
   unique: boolean;
-  sampleValues: any[];
+  sampleValues: unknown[];
 }
 
 export type VisualizationType =
@@ -100,7 +100,7 @@ export function parseChartData(content: string): ParsedData {
 /**
  * Detect optimal visualization type based on data structure
  */
-export function detectVisualizationType(data: any[]): VisualizationConfig {
+export function detectVisualizationType(data: unknown[]): VisualizationConfig {
   if (!data || data.length === 0) {
     return {
       type: 'unknown',
@@ -246,13 +246,13 @@ export function extractVisualizationConfig(content: string): VisualizationDirect
 
 // Helper functions
 
-function extractJSONData(content: string): any[] {
+function extractJSONData(content: string): unknown[] {
   const patterns = [
     /```json\s*\n([\s\S]*?)\n```/g,
     /```data\s*\n([\s\S]*?)\n```/g,
   ];
 
-  const results: any[] = [];
+  const results: unknown[] = [];
 
   for (const pattern of patterns) {
     let match;
@@ -308,7 +308,7 @@ function extractTableData(content: string): string[] {
   return tables;
 }
 
-function parseJSONData(data: any[]): ParsedData {
+function parseJSONData(data: unknown[]): ParsedData {
   if (!Array.isArray(data) || data.length === 0) {
     return {
       data: [],
@@ -341,7 +341,7 @@ function parseCSVData(csvText: string): ParsedData {
   const headers = lines[0].split(',').map(h => h.trim());
   const data = lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.trim());
-    const row: any = {};
+    const row: unknown = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -378,7 +378,7 @@ function parseTableData(tableText: string): ParsedData {
   // Extract data rows
   const data = dataLines.slice(1).map(line => {
     const values = line.split('|').map(v => v.trim()).filter(v => v !== '');
-    const row: any = {};
+    const row: unknown = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -395,7 +395,7 @@ function parseTableData(tableText: string): ParsedData {
   };
 }
 
-function analyzeDataSchema(data: any[]): DataSchema {
+function analyzeDataSchema(data: unknown[]): DataSchema {
   if (data.length === 0) {
     return { fields: [], rowCount: 0, hasHeaders: false };
   }
@@ -428,7 +428,7 @@ function analyzeDataSchema(data: any[]): DataSchema {
   };
 }
 
-function inferDataType(values: any[]): FieldSchema['type'] {
+function inferDataType(values: unknown[]): FieldSchema['type'] {
   if (values.length === 0) return 'unknown';
 
   const types = new Set<string>();
@@ -459,7 +459,7 @@ function inferDataType(values: any[]): FieldSchema['type'] {
   return 'unknown';
 }
 
-function parseValue(value: string): any {
+function parseValue(value: string): unknown {
   if (!value || value === '') return null;
 
   // Try number
@@ -489,7 +489,7 @@ function isDateString(value: string): boolean {
   return !isNaN(date.getTime()) && date.getFullYear() > 1900;
 }
 
-function hasNetworkStructure(data: any[]): boolean {
+function hasNetworkStructure(data: unknown[]): boolean {
   if (data.length === 0) return false;
 
   // Check if data has node-link structure
@@ -529,7 +529,7 @@ function parseDirectiveParams(paramString: string): Record<string, string> {
 function parseYAMLChartConfig(yamlText: string): VisualizationDirective | null {
   // Simple YAML parsing for chart config
   const lines = yamlText.split('\n');
-  const config: any = {};
+  const config: unknown = {};
 
   for (const line of lines) {
     if (line.includes('chart:') || line.includes('visualization:')) {
