@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import { rowToNode, Node } from '../types/node';
 import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
+import { useQueryCacheRegistration, CacheTags, type CacheTag } from './useCacheInvalidation';
 
 // Environment variable detection for API mode
 const USE_NATIVE_API = import.meta.env.REACT_APP_USE_NATIVE_API === 'true';
@@ -18,6 +19,7 @@ export interface QueryState<T> {
 interface QueryOptions<T> {
   enabled?: boolean;
   transform?: (rows: Record<string, unknown>[]) => T[];
+  cacheTags?: CacheTag[];
 }
 
 export function useSQLiteQuery<T = Record<string, unknown>>(
@@ -26,7 +28,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
   options: QueryOptions<T> = {}
 ): QueryState<T> {
   const { execute, loading: dbLoading, error: dbError } = useDatabase();
-  const { enabled = true, transform } = options;
+  const { enabled = true, transform, cacheTags } = options;
 
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,6 +115,10 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
     }
   }, [execute, sql, paramsKey, enabled, dbLoading]);
 
+  // Register for cache invalidation (empty array if no cacheTags provided)
+  const finalCacheTags = useMemo(() => cacheTags || [], [cacheTags]);
+  useQueryCacheRegistration(finalCacheTags, fetchData);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -142,8 +148,15 @@ export function useNodes(
     ORDER BY modified_at DESC
   `, [whereClause]);
 
+  // Add default cache tags for nodes if not provided
+  const cacheTags = useMemo(() =>
+    options.cacheTags || CacheTags.allNodes(),
+    [options.cacheTags]
+  );
+
   return useSQLiteQuery<Node>(sql, params, {
     ...options,
     transform: nodeTransform,
+    cacheTags,
   });
 }

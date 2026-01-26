@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useDatabase } from '../db/DatabaseContext';
 import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
 import { rowToNode, Node } from '../types/node';
+import { useQueryCacheRegistration, useCacheInvalidation, CacheTags, type CacheTag } from './useCacheInvalidation';
 
 // Environment variable detection for API mode
 const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
@@ -143,6 +144,10 @@ export function useNodes(options: NodesQueryOptions = {}): OptimizedQueryState<N
     }
   }, [execute, sql.query, sql.params, enabled, dbLoading]);
 
+  // Register for cache invalidation
+  const cacheTags = useMemo(() => CacheTags.nodesByFolder(folder), [folder]);
+  useQueryCacheRegistration(cacheTags, fetchData);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -258,6 +263,10 @@ export function useNotebookCards(options: NotebookCardsQueryOptions = {}): Optim
       setLoading(false);
     }
   }, [execute, sql.query, sql.params, enabled, dbLoading]);
+
+  // Register for cache invalidation
+  const cacheTags = useMemo(() => CacheTags.allCards(), []);
+  useQueryCacheRegistration(cacheTags, fetchData);
 
   useEffect(() => {
     fetchData();
@@ -385,6 +394,10 @@ export function useSearch(query: string, options: SearchOptions = {}): Optimized
     }
   }, [execute, sql.query, sql.params, enabled, dbLoading, debouncedQuery]);
 
+  // Register for cache invalidation
+  const searchCacheTags = useMemo(() => CacheTags.searchResults(debouncedQuery), [debouncedQuery]);
+  useQueryCacheRegistration(searchCacheTags, fetchData);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -403,10 +416,11 @@ export function useSearch(query: string, options: SearchOptions = {}): Optimized
  */
 export function useOptimisticMutation<T>(
   mutationFn: () => Promise<T>,
-  _dependencies: string[] = []
+  invalidationTags: CacheTag[] = []
 ) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const { invalidate } = useCacheInvalidation();
 
   const mutate = useCallback(async (): Promise<T | null> => {
     setLoading(true);
@@ -415,8 +429,10 @@ export function useOptimisticMutation<T>(
     try {
       const result = await mutationFn();
 
-      // TODO: Integrate with cache invalidation system
-      // For now, we rely on refetch calls from dependent hooks
+      // Invalidate specified cache tags
+      if (invalidationTags.length > 0) {
+        invalidate(invalidationTags);
+      }
 
       return result;
     } catch (err) {
@@ -425,7 +441,7 @@ export function useOptimisticMutation<T>(
     } finally {
       setLoading(false);
     }
-  }, [mutationFn]);
+  }, [mutationFn, invalidationTags, invalidate]);
 
   return {
     mutate,
