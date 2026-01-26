@@ -317,18 +317,20 @@ export class WebViewBridge {
   /**
    * Clean up pending callbacks (useful for component unmounting) - Legacy method
    * @deprecated Use the enhanced cleanup() method instead
+   *
+   * Commented out - not used but kept for reference
    */
-  private legacyCleanup(): void {
-    this.pendingRequests.forEach((callback) => {
-      clearTimeout(callback.timeout);
-      callback.reject(new Error('WebView bridge cleanup - request cancelled'));
-    });
-    this.pendingRequests.clear();
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('WebViewBridge cleaned up all pending callbacks');
-    }
-  }
+  // private legacyCleanup(): void {
+  //   this.pendingRequests.forEach((callback) => {
+  //     clearTimeout(callback.timeout);
+  //     callback.reject(new Error('WebView bridge cleanup - request cancelled'));
+  //   });
+  //   this.pendingRequests.clear();
+  //
+  //   if (process.env.NODE_ENV === 'development') {
+  //     console.log('WebViewBridge cleaned up all pending callbacks');
+  //   }
+  // }
 
   /**
    * Check if WebView environment is available

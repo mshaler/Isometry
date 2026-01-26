@@ -7,6 +7,7 @@
 import React from 'react';
 import { performanceBenchmarks, type BaselineMetrics } from './performance-benchmarks';
 import { Environment } from './webview-bridge';
+import { DatabaseMode } from '../contexts/EnvironmentContext';
 
 // Extension of Performance API to include memory information
 interface PerformanceWithMemory extends Performance {
@@ -105,7 +106,7 @@ export class PerformanceMonitor {
   private isMonitoring = false;
   private currentSession: PerformanceSession | null = null;
   private alerts = new Map<string, PerformanceAlert>();
-  private metricsBuffer: SessionMetrics[] = [];
+  // private metricsBuffer: SessionMetrics[] = [];
 
   // Monitoring intervals
   private frameRateMonitor: number | null = null;
@@ -114,7 +115,7 @@ export class PerformanceMonitor {
 
   // Performance observers
   private performanceObserver: PerformanceObserver | null = null;
-  private intersectionObserver: IntersectionObserver | null = null;
+  // private intersectionObserver: IntersectionObserver | null = null;
 
   // Metrics tracking
   private frameRates: number[] = [];
@@ -315,7 +316,7 @@ export class PerformanceMonitor {
 
       // Compare against stored baselines
       const comparison = await performanceBenchmarks.compareAgainstBaseline(
-        'webview',
+        DatabaseMode.WEBVIEW_BRIDGE,
         baselineMetrics
       );
 
@@ -357,17 +358,17 @@ export class PerformanceMonitor {
         this.performanceObserver.observe({ entryTypes: ['measure', 'navigation'] });
       }
 
-      // Layout shift detection
-      if ('IntersectionObserver' in window) {
-        this.intersectionObserver = new IntersectionObserver((entries) => {
-          // Track layout shifts for stability metrics
-          for (const entry of entries) {
-            if (entry.intersectionRatio !== 1) {
-              // Layout shift detected - would need more sophisticated tracking
-            }
-          }
-        });
-      }
+      // Layout shift detection (commented out - not implemented yet)
+      // if ('IntersectionObserver' in window) {
+      //   this.intersectionObserver = new IntersectionObserver((entries) => {
+      //     // Track layout shifts for stability metrics
+      //     for (const entry of entries) {
+      //       if (entry.intersectionRatio !== 1) {
+      //         // Layout shift detected - would need more sophisticated tracking
+      //       }
+      //     }
+      //   });
+      // }
     } catch (error) {
       console.warn('Failed to setup performance observers:', error);
     }
@@ -559,7 +560,7 @@ export class PerformanceMonitor {
   private async storePerformanceBaseline(metrics: SessionMetrics): Promise<void> {
     try {
       const baselineMetrics = this.createBaselineFromSession(metrics);
-      await performanceBenchmarks.storeBaseline('webview', baselineMetrics, {
+      await performanceBenchmarks.storeBaseline(DatabaseMode.WEBVIEW_BRIDGE, baselineMetrics, {
         testCases: metrics.queryCount + metrics.syncOperations,
         duration: (this.currentSession!.endTime || Date.now()) - this.currentSession!.startTime,
         dataSize: metrics.queryCount,
