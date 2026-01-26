@@ -446,7 +446,7 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
                           <CheckCircle className="w-4 h-4 text-green-600" />
                           <span className="text-sm text-green-600">
                             {fileStatus.result?.imported || 0} imported
-                            {(fileStatus.result?.failed || 0) > 0 && `, ${fileStatus.result.failed} failed`}
+                            {(fileStatus.result?.failed || 0) > 0 && `, ${fileStatus.result?.failed} failed`}
                           </span>
                         </div>
                       )}

@@ -24,7 +24,7 @@ export function Toolbar() {
     {
       label: 'Isometry',
       items: [
-        { label: 'About Isometry', _action: () => console.log('About') },
+        { label: 'About Isometry', action: () => console.log('About') },
         { separator: true },
         { 
           label: 'Settings',
@@ -32,42 +32,42 @@ export function Toolbar() {
             { 
               label: 'Theme', 
               submenu: [
-                { label: 'NeXTSTEP', _action: () => setTheme('NeXTSTEP') },
-                { label: 'Modern', _action: () => setTheme('Modern') },
+                { label: 'NeXTSTEP', action: () => setTheme('NeXTSTEP') },
+                { label: 'Modern', action: () => setTheme('Modern') },
               ]
             },
           ]
         },
         { separator: true },
-        { label: 'Quit Isometry', _action: () => console.log('Quit') },
+        { label: 'Quit Isometry', action: () => console.log('Quit') },
       ]
     },
     {
       label: 'File',
       items: [
-        { label: 'New…', _action: () => console.log('New') },
-        { label: 'Open…', _action: () => console.log('Open') },
+        { label: 'New…', action: () => console.log('New') },
+        { label: 'Open…', action: () => console.log('Open') },
         { separator: true },
-        { label: 'Save As…', _action: () => console.log('Save As') },
+        { label: 'Save As…', action: () => console.log('Save As') },
       ]
     },
     {
       label: 'Edit',
       items: [
-        { label: 'Undo', _action: () => console.log('Undo') },
-        { label: 'Redo', _action: () => console.log('Redo') },
+        { label: 'Undo', action: () => console.log('Undo') },
+        { label: 'Redo', action: () => console.log('Redo') },
         { separator: true },
-        { label: 'Cut', _action: () => console.log('Cut') },
-        { label: 'Copy', _action: () => console.log('Copy') },
-        { label: 'Paste', _action: () => console.log('Paste') },
+        { label: 'Cut', action: () => console.log('Cut') },
+        { label: 'Copy', action: () => console.log('Copy') },
+        { label: 'Paste', action: () => console.log('Paste') },
       ]
     },
     {
       label: 'View',
       items: [
-        { label: 'Workbench', _action: () => console.log('Workbench') },
-        { label: 'Apps', _action: () => console.log('Apps') },
-        { label: 'Datasets', _action: () => console.log('Datasets') },
+        { label: 'Workbench', action: () => console.log('Workbench') },
+        { label: 'Apps', action: () => console.log('Apps') },
+        { label: 'Datasets', action: () => console.log('Datasets') },
       ]
     },
   ];

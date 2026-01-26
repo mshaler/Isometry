@@ -11,10 +11,7 @@ import { sampleNodes } from './data/sampleData';
 // Types for D3 Component Integration
 // ============================================
 
-/** Card renderer interface for D3 card component calls - generic selection type for maximum compatibility */
-interface CardRenderer {
-  <T extends Element>(selection: d3.Selection<T, NodeValue, null, undefined>): void;
-}
+// CardRenderer interface removed - using D3 component type inference instead
 
 export function CbCanvasDemo() {
   const { theme } = useTheme();
