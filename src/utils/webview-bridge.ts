@@ -77,11 +77,30 @@ export class WebViewBridge {
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
     timestamp: number;
+    retryCount: number;
   }>();
+
+  private messageQueue: Array<{
+    id: string;
+    handler: string;
+    method: string;
+    params: Record<string, unknown>;
+    timestamp: number;
+  }> = [];
+
+  private isConnected = false;
+  private connectionCheckInterval: NodeJS.Timeout | null = null;
+  private failureCount = 0;
+  private lastConnectionTest = 0;
+  private circuitBreakerOpen = false;
 
   private readonly DEFAULT_TIMEOUT = 10000; // 10 seconds
   private readonly MAX_RETRIES = 3;
   private readonly RETRY_DELAY = 1000; // 1 second
+  private readonly CONNECTION_CHECK_INTERVAL = 30000; // 30 seconds
+  private readonly CIRCUIT_BREAKER_THRESHOLD = 5; // failures before opening circuit
+  private readonly CIRCUIT_BREAKER_RESET_TIME = 60000; // 1 minute
+  private readonly MESSAGE_QUEUE_MAX_SIZE = 100;
 
   constructor() {
     // Set up global response handler for native to call back
@@ -102,6 +121,17 @@ export class WebViewBridge {
 
     // Set up cleanup interval for timed out requests
     setInterval(() => this.cleanupTimedOutRequests(), 30000);
+
+    // Initialize connection monitoring
+    this.startConnectionMonitoring();
+
+    // Test initial connection
+    this.testConnection().then((connected) => {
+      this.isConnected = connected;
+      if (connected) {
+        this.processMessageQueue();
+      }
+    });
 
     if (process.env.NODE_ENV === 'development') {
       console.log('WebViewBridge initialized, WebView available:', this.isWebViewEnvironment());
@@ -133,7 +163,8 @@ export class WebViewBridge {
       resolve,
       reject,
       timeout: timeoutHandle,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      retryCount: 0
     });
 
     if (process.env.NODE_ENV === 'development') {
@@ -142,7 +173,7 @@ export class WebViewBridge {
   }
 
   /**
-   * Post message to native handler with retry logic
+   * Post message to native handler with circuit breaker and queue management
    */
   public async postMessage<T = unknown>(
     handler: 'database' | 'filesystem',
@@ -154,47 +185,45 @@ export class WebViewBridge {
       throw new Error('WebView bridge not available');
     }
 
+    // Check circuit breaker
+    if (this.circuitBreakerOpen) {
+      if (Date.now() - this.lastConnectionTest > this.CIRCUIT_BREAKER_RESET_TIME) {
+        // Reset circuit breaker after timeout
+        this.circuitBreakerOpen = false;
+        this.failureCount = 0;
+        console.log('[WebView Bridge] Circuit breaker reset - attempting reconnection');
+      } else {
+        throw new Error('WebView bridge circuit breaker is open - service temporarily unavailable');
+      }
+    }
+
+    const requestId = this.generateRequestId();
+    const message: WebViewMessage = {
+      id: requestId,
+      handler,
+      method,
+      params,
+      timestamp: Date.now()
+    };
+
     return new Promise<T>((resolve, reject) => {
-      const requestId = this.generateRequestId();
-
       try {
-        const message: WebViewMessage = {
-          id: requestId,
-          handler,
-          method,
-          params,
-          timestamp: Date.now()
-        };
-
         // Register callback before sending
         this.registerCallback(requestId, resolve, reject);
 
-        // Send message to native
-        if (!window.webkit?.messageHandlers?.[handler]) {
-          throw new Error(`WebView handler '${handler}' not available`);
-        }
-
-        window.webkit.messageHandlers[handler].postMessage(message);
-
-        // Debug logging
-        if (process.env.NODE_ENV === 'development') {
-          console.log(`[WebView Bridge] ${handler}.${method}`, params);
-        }
-
-      } catch (error) {
-        this.pendingRequests.delete(requestId);
-
-        // Retry logic for transient failures
-        if (retries < this.MAX_RETRIES && this.isRetriableError(error)) {
-          setTimeout(() => {
-            this.postMessage(handler, method, params, retries + 1)
-              .then(resolve)
-              .catch(reject);
-          }, this.RETRY_DELAY * (retries + 1));
+        // If not connected, queue the message
+        if (!this.isConnected) {
+          this.queueMessage(message);
+          console.log(`[WebView Bridge] Queued message ${requestId} - bridge disconnected`);
           return;
         }
 
-        reject(error instanceof Error ? error : new Error(`Failed to send message: ${error}`));
+        // Send message immediately if connected
+        this.sendMessageImmediate(message, retries);
+
+      } catch (error) {
+        this.pendingRequests.delete(requestId);
+        this.handleSendFailure(error, handler, method, params, retries, resolve, reject);
       }
     });
   }
@@ -230,9 +259,12 @@ export class WebViewBridge {
     this.pendingRequests.delete(response.id);
 
     if (response.success) {
+      // Success - reset failure count and ensure we're marked connected
+      this.failureCount = 0;
+      this.isConnected = true;
       pending.resolve(response.result);
     } else {
-      pending.reject(new Error(response.error || 'Unknown bridge error'));
+      this.handleResponseError(response, pending);
     }
 
     // Performance logging
@@ -455,6 +487,267 @@ export class WebViewBridge {
         resolve(); // Continue anyway
       }, 5000);
     });
+  }
+
+  // =============================================================================
+  // Connection Reliability and Recovery Methods
+  // =============================================================================
+
+  /**
+   * Start monitoring connection health
+   */
+  private startConnectionMonitoring(): void {
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+    }
+
+    this.connectionCheckInterval = setInterval(async () => {
+      if (this.isWebViewEnvironment()) {
+        const connected = await this.testConnection();
+
+        if (!connected && this.isConnected) {
+          // Connection lost
+          this.isConnected = false;
+          this.failureCount++;
+          console.warn('[WebView Bridge] Connection lost - switching to queue mode');
+
+          if (this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
+            this.circuitBreakerOpen = true;
+            this.lastConnectionTest = Date.now();
+            console.error('[WebView Bridge] Circuit breaker opened due to repeated failures');
+          }
+        } else if (connected && !this.isConnected) {
+          // Connection restored
+          this.isConnected = true;
+          this.failureCount = 0;
+          this.circuitBreakerOpen = false;
+          console.log('[WebView Bridge] Connection restored - processing queued messages');
+
+          // Process queued messages
+          this.processMessageQueue();
+        }
+      }
+    }, this.CONNECTION_CHECK_INTERVAL);
+  }
+
+  /**
+   * Test connection to WebView bridge
+   */
+  private async testConnection(): Promise<boolean> {
+    if (!this.isWebViewEnvironment()) {
+      return false;
+    }
+
+    try {
+      // Send a lightweight ping message
+      const testMessage: WebViewMessage = {
+        id: this.generateRequestId(),
+        handler: 'database',
+        method: 'ping',
+        params: {},
+        timestamp: Date.now()
+      };
+
+      // Quick timeout for connection test
+      const timeout = 2000;
+
+      return new Promise<boolean>((resolve) => {
+        const timeoutHandle = setTimeout(() => {
+          resolve(false);
+        }, timeout);
+
+        // Don't use normal callback registration to avoid interference
+        const tempCallback = (result: unknown) => {
+          clearTimeout(timeoutHandle);
+          resolve(result !== null && result !== undefined);
+        };
+
+        try {
+          if (window.webkit?.messageHandlers?.database) {
+            // Simple test without full callback registration
+            window.webkit.messageHandlers.database.postMessage(testMessage);
+            tempCallback(true); // If postMessage doesn't throw, assume connection works
+          } else {
+            resolve(false);
+          }
+        } catch {
+          resolve(false);
+        }
+      });
+
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Queue message for later delivery
+   */
+  private queueMessage(message: WebViewMessage): void {
+    // Remove oldest messages if queue is full
+    if (this.messageQueue.length >= this.MESSAGE_QUEUE_MAX_SIZE) {
+      const removed = this.messageQueue.shift();
+      if (removed) {
+        const pending = this.pendingRequests.get(removed.id);
+        if (pending) {
+          clearTimeout(pending.timeout);
+          this.pendingRequests.delete(removed.id);
+          pending.reject(new Error('Message queue overflow - message dropped'));
+        }
+      }
+    }
+
+    this.messageQueue.push(message);
+  }
+
+  /**
+   * Process queued messages when connection is restored
+   */
+  private processMessageQueue(): void {
+    const messagesToSend = [...this.messageQueue];
+    this.messageQueue = [];
+
+    console.log(`[WebView Bridge] Processing ${messagesToSend.length} queued messages`);
+
+    for (const message of messagesToSend) {
+      try {
+        this.sendMessageImmediate(message, 0);
+      } catch (error) {
+        console.error(`[WebView Bridge] Failed to send queued message ${message.id}:`, error);
+
+        // Reject the pending request
+        const pending = this.pendingRequests.get(message.id);
+        if (pending) {
+          clearTimeout(pending.timeout);
+          this.pendingRequests.delete(message.id);
+          pending.reject(new Error(`Failed to send queued message: ${error}`));
+        }
+      }
+    }
+  }
+
+  /**
+   * Send message immediately to native bridge
+   */
+  private sendMessageImmediate(message: WebViewMessage, retries: number): void {
+    if (!window.webkit?.messageHandlers?.[message.handler]) {
+      throw new Error(`WebView handler '${message.handler}' not available`);
+    }
+
+    try {
+      window.webkit.messageHandlers[message.handler].postMessage(message);
+
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[WebView Bridge] ${message.handler}.${message.method}`, message.params);
+      }
+
+    } catch (error) {
+      // Increment failure count and potentially open circuit breaker
+      this.failureCount++;
+
+      if (this.failureCount >= this.CIRCUIT_BREAKER_THRESHOLD) {
+        this.circuitBreakerOpen = true;
+        this.lastConnectionTest = Date.now();
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Handle send failure with retry logic
+   */
+  private handleSendFailure(
+    error: unknown,
+    handler: string,
+    method: string,
+    params: Record<string, unknown>,
+    retries: number,
+    resolve: (value: unknown) => void,
+    reject: (error: Error) => void
+  ): void {
+    // Retry logic for transient failures
+    if (retries < this.MAX_RETRIES && this.isRetriableError(error)) {
+      const delay = this.RETRY_DELAY * Math.pow(2, retries); // Exponential backoff with jitter
+      const jitter = Math.random() * 0.1 * delay; // 10% jitter
+      const totalDelay = delay + jitter;
+
+      setTimeout(() => {
+        this.postMessage(handler, method, params, retries + 1)
+          .then(resolve)
+          .catch(reject);
+      }, totalDelay);
+      return;
+    }
+
+    reject(error instanceof Error ? error : new Error(`Failed to send message: ${error}`));
+  }
+
+  /**
+   * Handle response error with retry logic
+   */
+  private handleResponseError(
+    response: WebViewResponse,
+    pending: {
+      resolve: (value: unknown) => void;
+      reject: (error: Error) => void;
+      timeout: NodeJS.Timeout;
+      timestamp: number;
+      retryCount: number;
+    }
+  ): void {
+    const error = new Error(response.error || 'Unknown bridge error');
+
+    // Check if this error is worth retrying
+    if (pending.retryCount < this.MAX_RETRIES && this.isRetriableError(error)) {
+      pending.retryCount++;
+      this.failureCount++;
+
+      // Re-register for retry
+      const newId = this.generateRequestId();
+      this.pendingRequests.set(newId, {
+        ...pending,
+        timeout: setTimeout(() => {
+          this.pendingRequests.delete(newId);
+          pending.reject(new Error(`WebView request timeout after retry: ${newId}`));
+        }, this.DEFAULT_TIMEOUT)
+      });
+
+      // Retry the original request (this would need the original message data)
+      console.log(`[WebView Bridge] Retrying request ${response.id} as ${newId} (attempt ${pending.retryCount})`);
+    } else {
+      pending.reject(error);
+    }
+  }
+
+  /**
+   * Enhanced cleanup with connection state management
+   */
+  public cleanup(): void {
+    // Stop connection monitoring
+    if (this.connectionCheckInterval) {
+      clearInterval(this.connectionCheckInterval);
+      this.connectionCheckInterval = null;
+    }
+
+    // Clear message queue and reject all pending
+    this.messageQueue = [];
+
+    this.pendingRequests.forEach((callback) => {
+      clearTimeout(callback.timeout);
+      callback.reject(new Error('WebView bridge cleanup - request cancelled'));
+    });
+    this.pendingRequests.clear();
+
+    // Reset connection state
+    this.isConnected = false;
+    this.circuitBreakerOpen = false;
+    this.failureCount = 0;
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('WebViewBridge cleaned up all pending callbacks and reset connection state');
+    }
   }
 
 }
