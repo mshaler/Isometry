@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useViewRegistry } from './ViewRegistry';
 import type { ViewType, ViewComponentProps, ViewRenderer } from '../../types/view';
 import type { Node } from '../../types/node';

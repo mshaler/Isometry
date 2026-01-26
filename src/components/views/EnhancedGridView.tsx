@@ -1,8 +1,9 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { GridView } from './GridView';
 import { usePAFV } from '../../hooks/usePAFV';
 import { ViewTransition, SkeletonLoader } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
+import type { Node } from '../../types/node';
 
 /**
  * EnhancedGridView - ViewRenderer-compatible wrapper for GridView
@@ -37,7 +38,7 @@ export const EnhancedGridView = React.memo<ViewComponentProps>(({
 
   const handleNodeClick = useCallback((node: unknown) => {
     try {
-      onNodeClick?.(node);
+      onNodeClick?.(node as Node);
     } catch (error) {
       console.error('Error handling node click:', error);
       setHasError(true);

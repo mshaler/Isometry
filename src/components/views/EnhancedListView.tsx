@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { ListView } from './ListView';
 import { ViewTransition, SkeletonLoader } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
+import type { Node } from '../../types/node';
 
 /**
  * EnhancedListView - ViewRenderer-compatible wrapper for ListView
@@ -35,7 +36,7 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
 
   const handleNodeClick = useCallback((node: unknown) => {
     try {
-      onNodeClick?.(node);
+      onNodeClick?.(node as Node);
     } catch (error) {
       console.error('Error handling node click:', error);
       setHasError(true);

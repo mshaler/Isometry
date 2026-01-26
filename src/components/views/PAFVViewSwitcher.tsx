@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePAFV } from '../../hooks/usePAFV';
 import { useViewRegistry } from './ViewRegistry';
 import { PerformanceMonitor, usePerformanceTracking } from './PerformanceMonitor';
