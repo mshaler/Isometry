@@ -3,7 +3,10 @@
  *
  * Provides identical interface to sql.js Database for seamless React component compatibility.
  * Routes all operations through HTTP endpoints to native GRDB/CloudKit backend.
+ * Includes comprehensive performance monitoring for optimization insights.
  */
+
+import { performanceMonitor, logQueryPerformance } from './PerformanceMonitor';
 
 export interface APIResponse<T = unknown> {
   success: boolean;
@@ -73,50 +76,53 @@ export class NativeAPIClient {
       throw new Error('Native API client not connected. Call connect() first.');
     }
 
-    try {
-      const request: SQLExecuteRequest = { sql, params };
-      const response = await this.fetch('/api/execute', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const apiResponse: APIResponse<SQLExecuteResponse> = await response.json();
-
-      if (!apiResponse.success) {
-        throw new Error(apiResponse.error || 'SQL execution failed');
-      }
-
-      const sqlResult = apiResponse.data;
-      if (!sqlResult) {
-        return [];
-      }
-
-      // Convert response to match sql.js format exactly
-      const { columns, values } = sqlResult;
-
-      if (!columns || !values) {
-        return [];
-      }
-
-      return values.map((row) => {
-        const obj: Record<string, unknown> = {};
-        columns.forEach((col, i) => {
-          obj[col] = row[i];
+    return performanceMonitor.measureOperation(
+      `native-api: ${sql.substring(0, 50)}...`,
+      async () => {
+        const request: SQLExecuteRequest = { sql, params };
+        const response = await this.fetch('/api/execute', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(request),
         });
-        return obj as T;
-      });
-    } catch (error) {
-      console.error('Native API SQL Error:', sql, params, error);
-      throw error;
-    }
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const apiResponse: APIResponse<SQLExecuteResponse> = await response.json();
+
+        if (!apiResponse.success) {
+          throw new Error(apiResponse.error || 'SQL execution failed');
+        }
+
+        const sqlResult = apiResponse.data;
+        if (!sqlResult) {
+          return [];
+        }
+
+        // Convert response to match sql.js format exactly
+        const { columns, values } = sqlResult;
+
+        if (!columns || !values) {
+          return [];
+        }
+
+        const result = values.map((row) => {
+          const obj: Record<string, unknown> = {};
+          columns.forEach((col, i) => {
+            obj[col] = row[i];
+          });
+          return obj as T;
+        });
+
+        return result;
+      },
+      { method: 'native', query: sql }
+    );
   }
 
   /**

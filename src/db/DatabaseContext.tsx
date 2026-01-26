@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { Database } from 'sql.js';
 import { initDatabase, saveDatabase, resetDatabase } from './init';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
+import { performanceMonitor, logPerformanceReport } from './PerformanceMonitor';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -35,20 +36,42 @@ function SQLJSDatabaseProvider({ children }: { children: React.ReactNode }) {
     params?: unknown[]
   ): T[] => {
     if (!db) throw new Error('Database not initialized');
-    
+
+    const startTime = performance.now();
+
     try {
       const result = db.exec(sql, params);
-      if (result.length === 0) return [];
-      
+      if (result.length === 0) {
+        const duration = performance.now() - startTime;
+        performanceMonitor.logQueryPerformance(sql, duration, 'sql.js', {
+          rowCount: 0,
+          success: true
+        });
+        return [];
+      }
+
       const { columns, values } = result[0];
-      return values.map((row) => {
+      const resultData = values.map((row) => {
         const obj: Record<string, unknown> = {};
         columns.forEach((col, i) => {
           obj[col] = row[i];
         });
         return obj as T;
       });
+
+      const duration = performance.now() - startTime;
+      performanceMonitor.logQueryPerformance(sql, duration, 'sql.js', {
+        rowCount: resultData.length,
+        success: true
+      });
+
+      return resultData;
     } catch (err) {
+      const duration = performance.now() - startTime;
+      performanceMonitor.logQueryPerformance(sql, duration, 'sql.js', {
+        success: false,
+        error: err instanceof Error ? err.message : String(err)
+      });
       console.error('SQL Error:', sql, params, err);
       throw err;
     }
@@ -98,6 +121,19 @@ const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
  * Based on REACT_APP_USE_NATIVE_API environment variable
  */
 export function DatabaseProvider({ children }: { children: React.ReactNode }) {
+  // Set up development performance reporting
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      // Log performance reports every 30 seconds
+      const interval = setInterval(() => {
+        logPerformanceReport();
+      }, 30000);
+
+      // Clean up on unmount
+      return () => clearInterval(interval);
+    }
+  }, []);
+
   if (USE_NATIVE_API) {
     console.log('Using Native Database API (REACT_APP_USE_NATIVE_API=true)');
     return (
