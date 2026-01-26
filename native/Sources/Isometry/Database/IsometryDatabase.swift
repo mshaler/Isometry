@@ -36,9 +36,9 @@ public actor IsometryDatabase {
             // GRDB's DatabasePool doesn't support true in-memory databases
             let tempDir = FileManager.default.temporaryDirectory
             let tempPath = tempDir.appendingPathComponent(UUID().uuidString + ".sqlite").path
-            dbPool = try DatabasePool(path: tempPath, configuration: config)
+            self.dbPool = try DatabasePool(path: tempPath, configuration: config)
         } else {
-            dbPool = try DatabasePool(path: path, configuration: config)
+            self.dbPool = try DatabasePool(path: path, configuration: config)
         }
     }
 
