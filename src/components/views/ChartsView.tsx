@@ -8,7 +8,6 @@ import type { Node } from '@/types/node';
 import type {
   D3SVGSelection,
   D3PieGenerator,
-  D3ArcGenerator,
   D3ColorScale
 } from '@/types/d3';
 
@@ -303,14 +302,8 @@ function renderTreemap(
     children?: TreemapDataItem[];
   }
 
-  // Extend d3.HierarchyRectangularNode to include x0, x1, y0, y1 properties
-  interface TreemapNode extends d3.HierarchyRectangularNode<TreemapData> {
-    x0: number;
-    x1: number;
-    y0: number;
-    y1: number;
-    data: TreemapDataItem;
-  }
+  // Use d3.HierarchyRectangularNode directly (already has x0, x1, y0, y1)
+  type TreemapNode = d3.HierarchyRectangularNode<TreemapDataItem>;
   const margin = { top: 20, right: 20, bottom: 20, left: 20 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
@@ -334,7 +327,7 @@ function renderTreemap(
 
   // Cells
   const cells = g.selectAll('g')
-    .data(root.leaves() as TreemapNode[])
+    .data(root.leaves() as unknown as TreemapNode[])
     .join('g')
     .attr('transform', d => `translate(${d.x0},${d.y0})`);
 

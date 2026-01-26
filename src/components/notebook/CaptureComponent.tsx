@@ -6,12 +6,6 @@ import { useMarkdownEditor } from '../../hooks/useMarkdownEditor';
 import { useSlashCommands, type SlashCommand } from '../../hooks/useSlashCommands';
 import PropertyEditor from './PropertyEditor';
 
-// Type definitions for error handling actions
-interface ErrorReportingAction {
-  label: string;
-  action: () => void | Promise<void>;
-}
-
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
 interface CaptureComponentProps {

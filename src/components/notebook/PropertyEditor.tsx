@@ -11,12 +11,6 @@ import { debounce } from '../../utils/debounce';
 import { PropertyField, CustomFieldAdder, StatusFooter } from './property-editor';
 import type { PropertyEditorProps } from './property-editor';
 
-// Type definitions for error handling actions
-interface ErrorReportingAction {
-  label: string;
-  action: () => void | Promise<void>;
-}
-
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
 export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
