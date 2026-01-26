@@ -23,7 +23,7 @@ export function renderPieChart({
     .value(d => d[valueField] as number)
     .sort(null);
 
-  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<d3.BaseType, d3.PieArcDatum<ChartDatum>>()
+  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<d3.PieArcDatum<ChartDatum>>()
     .innerRadius(0)
     .outerRadius(radius);
 
@@ -38,7 +38,7 @@ export function renderPieChart({
 
   arcs.append('path')
     .attr('d', arc)
-    .style('fill', d => color(d.data[categoryField]))
+    .style('fill', d => color(String(d.data[categoryField])))
     .style('stroke', colors.background)
     .style('stroke-width', 2);
 
@@ -48,5 +48,5 @@ export function renderPieChart({
     .attr('text-anchor', 'middle')
     .style('fill', colors.text)
     .style('font-size', '12px')
-    .text(d => d.data[categoryField]);
+    .text(d => String(d.data[categoryField]));
 }

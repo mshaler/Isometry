@@ -69,7 +69,8 @@ export function D3VisualizationRenderer({
         accent: '#3182ce',
         background: '#c0c0c0',
         text: '#404040',
-        border: '#707070'
+        border: '#707070',
+        grid: '#a0a0a0'
       };
     } else {
       return {
@@ -78,7 +79,8 @@ export function D3VisualizationRenderer({
         accent: '#10b981',
         background: 'white',
         text: '#1f2937',
-        border: '#e5e7eb'
+        border: '#e5e7eb',
+        grid: '#f3f4f6'
       };
     }
   }, [theme]);

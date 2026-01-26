@@ -25,7 +25,10 @@ export function renderAreaChart({
   })();
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(sortedData, d => d[yField]) || 0])
+    .domain([0, d3.max(sortedData, d => {
+      const value = d[yField];
+      return typeof value === 'number' ? value : 0;
+    }) || 0])
     .range([innerHeight, 0]);
 
   const area: D3AreaGenerator<ChartDatum> = d3.area<ChartDatum>()

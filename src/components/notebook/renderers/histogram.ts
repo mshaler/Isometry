@@ -39,10 +39,7 @@ export function renderHistogram({
     .range([0, innerWidth]);
 
   const y = d3.scaleLinear()
-    .domain([0, (() => {
-      const maxLength = d3.max(bins, (d: d3.Bin<number, number>) => d.length);
-      return maxLength !== undefined ? maxLength : 0;
-    })()])
+    .domain([0, d3.max(bins, (d: d3.Bin<number, number>) => d.length) || 0])
     .range([innerHeight, 0]);
 
   // Axes
