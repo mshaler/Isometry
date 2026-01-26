@@ -39,6 +39,14 @@ Object.defineProperty(global, 'localStorage', {
   value: localStorageMock,
 });
 
+// Mock encrypted storage utilities to force fallback to localStorage
+vi.mock('../encrypted-storage', () => ({
+  setEncryptedItem: vi.fn(),
+  getEncryptedItem: vi.fn(),
+  migrateToEncryptedStorage: vi.fn().mockResolvedValue({ success: false }),
+  isEncryptedStorageSupported: vi.fn().mockReturnValue(false)
+}));
+
 describe('filter-presets', () => {
   beforeEach(() => {
     // Clear localStorage before each test
@@ -59,34 +67,34 @@ describe('filter-presets', () => {
   });
 
   describe('loadPresets', () => {
-    it('returns empty array when no presets exist', () => {
-      const presets = loadPresets();
+    it('returns empty array when no presets exist', async () => {
+      const presets = await loadPresets();
       expect(presets).toEqual([]);
     });
 
-    it('returns empty array when localStorage contains invalid JSON', () => {
+    it('returns empty array when localStorage contains invalid JSON', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       localStorageMock.setItem('isometry:filter-presets', 'invalid json');
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toEqual([]);
       expect(consoleWarnSpy).toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
     });
 
-    it('returns empty array when localStorage contains non-array data', () => {
+    it('returns empty array when localStorage contains non-array data', async () => {
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       localStorageMock.setItem('isometry:filter-presets', JSON.stringify({ foo: 'bar' }));
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toEqual([]);
       expect(consoleWarnSpy).toHaveBeenCalled();
 
       consoleWarnSpy.mockRestore();
     });
 
-    it('deserializes presets with Date objects', () => {
+    it('deserializes presets with Date objects', async () => {
       const mockPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -97,7 +105,7 @@ describe('filter-presets', () => {
 
       localStorageMock.setItem('isometry:filter-presets', JSON.stringify([mockPreset]));
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toHaveLength(1);
       expect(presets[0].id).toBe('test-1');
       expect(presets[0].name).toBe('Test Preset');
@@ -107,7 +115,7 @@ describe('filter-presets', () => {
   });
 
   describe('savePreset', () => {
-    it('saves a new preset to localStorage', () => {
+    it('saves a new preset to localStorage', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -116,7 +124,7 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
+      await savePreset(preset);
 
       const stored = localStorageMock.getItem('isometry:filter-presets');
       expect(stored).toBeTruthy();
@@ -128,7 +136,7 @@ describe('filter-presets', () => {
       expect(parsed[0].createdAt).toBe('2026-01-24T00:00:00.000Z');
     });
 
-    it('updates existing preset with same ID', () => {
+    it('updates existing preset with same ID', async () => {
       const preset1: FilterPreset = {
         id: 'test-1',
         name: 'Original Name',
@@ -137,7 +145,7 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset1);
+      await savePreset(preset1);
 
       const preset2: FilterPreset = {
         id: 'test-1',
@@ -147,14 +155,14 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-25'),
       };
 
-      savePreset(preset2);
+      await savePreset(preset2);
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toHaveLength(1);
       expect(presets[0].name).toBe('Updated Name');
     });
 
-    it('saves multiple presets', () => {
+    it('saves multiple presets', async () => {
       const preset1: FilterPreset = {
         id: 'test-1',
         name: 'Preset 1',
@@ -171,17 +179,17 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset1);
-      savePreset(preset2);
+      await savePreset(preset1);
+      await savePreset(preset2);
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toHaveLength(2);
       expect(presets.map((p) => p.name)).toEqual(['Preset 1', 'Preset 2']);
     });
   });
 
   describe('deletePreset', () => {
-    it('removes preset from localStorage', () => {
+    it('removes preset from localStorage', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -190,14 +198,14 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
-      expect(loadPresets()).toHaveLength(1);
+      await savePreset(preset);
+      expect(await loadPresets()).toHaveLength(1);
 
-      deletePreset('test-1');
-      expect(loadPresets()).toHaveLength(0);
+      await deletePreset('test-1');
+      expect(await loadPresets()).toHaveLength(0);
     });
 
-    it('handles deleting non-existent preset gracefully', () => {
+    it('handles deleting non-existent preset gracefully', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -206,18 +214,18 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
-      deletePreset('non-existent-id');
+      await savePreset(preset);
+      await deletePreset('non-existent-id');
 
       // Original preset should still exist
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toHaveLength(1);
       expect(presets[0].id).toBe('test-1');
     });
   });
 
   describe('updatePreset', () => {
-    it('updates preset properties', () => {
+    it('updates preset properties', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Original Name',
@@ -226,29 +234,29 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
+      await savePreset(preset);
 
-      updatePreset('test-1', { name: 'Updated Name' });
+      await updatePreset('test-1', { name: 'Updated Name' });
 
-      const presets = loadPresets();
+      const presets = await loadPresets();
       expect(presets).toHaveLength(1);
       expect(presets[0].name).toBe('Updated Name');
       expect(presets[0].updatedAt.getTime()).toBeGreaterThan(preset.updatedAt.getTime());
     });
 
-    it('throws error when updating non-existent preset', () => {
-      expect(() => {
-        updatePreset('non-existent-id', { name: 'New Name' });
-      }).toThrow('Failed to update preset');
+    it('throws error when updating non-existent preset', async () => {
+      await expect(async () => {
+        await updatePreset('non-existent-id', { name: 'New Name' });
+      }).rejects.toThrow('Failed to update preset');
     });
   });
 
   describe('presetNameExists', () => {
-    it('returns false when name does not exist', () => {
-      expect(presetNameExists('Test Preset')).toBe(false);
+    it('returns false when name does not exist', async () => {
+      expect(await presetNameExists('Test Preset')).toBe(false);
     });
 
-    it('returns true when name exists', () => {
+    it('returns true when name exists', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -257,11 +265,11 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
-      expect(presetNameExists('Test Preset')).toBe(true);
+      await savePreset(preset);
+      expect(await presetNameExists('Test Preset')).toBe(true);
     });
 
-    it('excludes preset ID when checking duplicates', () => {
+    it('excludes preset ID when checking duplicates', async () => {
       const preset: FilterPreset = {
         id: 'test-1',
         name: 'Test Preset',
@@ -270,13 +278,13 @@ describe('filter-presets', () => {
         updatedAt: new Date('2026-01-24'),
       };
 
-      savePreset(preset);
+      await savePreset(preset);
 
       // Should return false because we're excluding the preset with this name
-      expect(presetNameExists('Test Preset', 'test-1')).toBe(false);
+      expect(await presetNameExists('Test Preset', 'test-1')).toBe(false);
 
       // Should return true for a different ID
-      expect(presetNameExists('Test Preset', 'test-2')).toBe(true);
+      expect(await presetNameExists('Test Preset', 'test-2')).toBe(true);
     });
   });
 });
