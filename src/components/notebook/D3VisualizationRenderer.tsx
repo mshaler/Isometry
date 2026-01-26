@@ -4,6 +4,23 @@ import { useD3Visualization } from '../../hooks/useD3Visualization';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useD3 } from '../../hooks/useD3';
 import type { VisualizationConfig } from '../../utils/d3Parsers';
+import type {
+  D3SVGSelection,
+  D3GroupSelection,
+  ChartDatum,
+  NetworkNodeDatum,
+  NetworkLinkDatum,
+  HierarchyDatum,
+  D3ChartDimensions,
+  D3ChartTheme,
+  D3LineGenerator,
+  D3AreaGenerator,
+  D3PieGenerator,
+  D3ArcGenerator,
+  SimulationNodeDatum,
+  SimulationLinkDatum,
+  D3ForceSimulation
+} from '../../types/d3';
 
 interface D3VisualizationRendererProps {
   content?: string;
@@ -13,32 +30,7 @@ interface D3VisualizationRendererProps {
   onDataPointsChange?: (count: number) => void;
 }
 
-interface ThemeColors {
-  primary: string;
-  secondary: string;
-  accent: string;
-  text: string;
-  background: string;
-  border: string;
-  grid: string;
-}
-
-// Define proper data types for D3 visualizations
-interface ChartData {
-  [key: string]: number | string | Date;
-}
-
-interface NetworkData {
-  source: string;
-  target: string;
-  [key: string]: number | string | Date;
-}
-
-interface HierarchyData extends ChartData {
-  children?: HierarchyData[];
-}
-
-// Tooltip selection type
+// Use the imported D3 types instead of local definitions
 type TooltipSelection = d3.Selection<HTMLDivElement, unknown, null, undefined>;
 
 export function D3VisualizationRenderer({
@@ -74,7 +66,7 @@ export function D3VisualizationRenderer({
   }, [data.length, onDataPointsChange]);
 
   // Get theme-appropriate colors
-  const colors = useMemo((): ThemeColors => {
+  const colors = useMemo((): D3ChartTheme => {
     if (theme === 'NeXTSTEP') {
       return {
         primary: '#0066cc',
@@ -99,7 +91,7 @@ export function D3VisualizationRenderer({
   }, [theme]);
 
   // D3 render function based on visualization type
-  const renderVisualization = useCallback((selection: d3.Selection<SVGSVGElement, unknown, null, undefined>) => {
+  const renderVisualization = useCallback((selection: D3SVGSelection) => {
     if (!canVisualize || data.length === 0) return;
 
     // Clear previous visualization
@@ -210,11 +202,11 @@ export function D3VisualizationRenderer({
 // D3 Rendering Functions
 
 function renderBarChart(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
   const { x: xField, y: yField } = config.axes;
@@ -290,11 +282,11 @@ function renderBarChart(
 }
 
 function renderLineChart(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
   const { x: xField, y: yField } = config.axes;
@@ -325,7 +317,7 @@ function renderLineChart(
     .range([innerHeight, 0]);
 
   // Line generator
-  const line = d3.line<ChartData>()
+  const line: D3LineGenerator<ChartDatum> = d3.line<ChartDatum>()
     .x(d => x(d[xField] as number | Date) as number)
     .y(d => y(d[yField] as number) as number)
     .curve(d3.curveMonotoneX);
@@ -364,11 +356,11 @@ function renderLineChart(
 }
 
 function renderScatterPlot(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
   const { x: xField, y: yField, size: sizeField } = config.axes;
@@ -415,11 +407,11 @@ function renderScatterPlot(
 }
 
 function renderHistogram(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
   const { x: xField } = config.axes;
@@ -470,11 +462,11 @@ function renderHistogram(
 }
 
 function renderPieChart(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
   const { x: categoryField, y: valueField } = config.axes;
@@ -486,11 +478,11 @@ function renderPieChart(
   // Center the pie chart
   g.attr('transform', `translate(${innerWidth / 2}, ${innerHeight / 2})`);
 
-  const pie = d3.pie<ChartData>()
+  const pie: D3PieGenerator<ChartDatum> = d3.pie<ChartDatum>()
     .value(d => d[valueField] as number)
     .sort(null);
 
-  const arc = d3.arc<d3.PieArcDatum<ChartData>>()
+  const arc: D3ArcGenerator<d3.PieArcDatum<ChartDatum>> = d3.arc<any, d3.PieArcDatum<ChartDatum>>()
     .innerRadius(0)
     .outerRadius(radius);
 
@@ -519,11 +511,11 @@ function renderPieChart(
 }
 
 function renderAreaChart(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: ChartData[],
+  g: D3GroupSelection,
+  data: ChartDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   // Similar to line chart but with filled area
   const { innerWidth, innerHeight } = dimensions;
@@ -541,7 +533,7 @@ function renderAreaChart(
     .domain([0, d3.max(sortedData, d => d[yField]) || 0])
     .range([innerHeight, 0]);
 
-  const area = d3.area<ChartData>()
+  const area: D3AreaGenerator<ChartDatum> = d3.area<ChartDatum>()
     .x(d => x(d[xField] as number))
     .y0(innerHeight)
     .y1(d => y(d[yField] as number))
@@ -568,11 +560,11 @@ function renderAreaChart(
 }
 
 function renderNetworkGraph(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
-  data: NetworkData[],
+  g: D3GroupSelection,
+  data: NetworkLinkDatum[],
   config: VisualizationConfig,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   // Simple network visualization for node-link data
   const { innerWidth, innerHeight } = dimensions;
@@ -581,27 +573,27 @@ function renderNetworkGraph(
   // Create nodes and links
   const nodeIds = new Set<string>();
   data.forEach(d => {
-    nodeIds.add(d[sourceField]);
-    nodeIds.add(d[targetField]);
+    nodeIds.add(d[sourceField] as string);
+    nodeIds.add(d[targetField] as string);
   });
 
-  interface SimulationNode extends d3.SimulationNodeDatum {
+  interface NetworkSimulationNode extends SimulationNodeDatum {
     id: string;
   }
 
-  interface SimulationLink extends d3.SimulationLinkDatum<SimulationNode> {
-    source: string | SimulationNode;
-    target: string | SimulationNode;
+  interface NetworkSimulationLink extends SimulationLinkDatum<NetworkSimulationNode> {
+    source: string | NetworkSimulationNode;
+    target: string | NetworkSimulationNode;
   }
 
-  const nodes: SimulationNode[] = Array.from(nodeIds).map(id => ({ id, x: 0, y: 0 }));
-  const links: SimulationLink[] = data.map(d => ({
+  const nodes: NetworkSimulationNode[] = Array.from(nodeIds).map(id => ({ id, x: 0, y: 0 }));
+  const links: NetworkSimulationLink[] = data.map(d => ({
     source: d[sourceField] as string,
     target: d[targetField] as string
   }));
 
-  const simulation = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink<SimulationNode, SimulationLink>(links).id((d: SimulationNode) => d.id))
+  const simulation: D3ForceSimulation<NetworkSimulationNode> = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink<NetworkSimulationNode, NetworkSimulationLink>(links).id((d: NetworkSimulationNode) => d.id))
     .force('charge', d3.forceManyBody().strength(-300))
     .force('center', d3.forceCenter(innerWidth / 2, innerHeight / 2));
 
@@ -626,14 +618,14 @@ function renderNetworkGraph(
   // Update positions
   simulation.on('tick', () => {
     link
-      .attr('x1', (d: SimulationLink) => (d.source as SimulationNode).x || 0)
-      .attr('y1', (d: SimulationLink) => (d.source as SimulationNode).y || 0)
-      .attr('x2', (d: SimulationLink) => (d.target as SimulationNode).x || 0)
-      .attr('y2', (d: SimulationLink) => (d.target as SimulationNode).y || 0);
+      .attr('x1', (d: NetworkSimulationLink) => (d.source as NetworkSimulationNode).x || 0)
+      .attr('y1', (d: NetworkSimulationLink) => (d.source as NetworkSimulationNode).y || 0)
+      .attr('x2', (d: NetworkSimulationLink) => (d.target as NetworkSimulationNode).x || 0)
+      .attr('y2', (d: NetworkSimulationLink) => (d.target as NetworkSimulationNode).y || 0);
 
     node
-      .attr('cx', (d: SimulationNode) => d.x || 0)
-      .attr('cy', (d: SimulationNode) => d.y || 0);
+      .attr('cx', (d: NetworkSimulationNode) => d.x || 0)
+      .attr('cy', (d: NetworkSimulationNode) => d.y || 0);
   });
 
   // Stop simulation after a while to save CPU
@@ -641,9 +633,9 @@ function renderNetworkGraph(
 }
 
 function renderDefaultVisualization(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  g: D3GroupSelection,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
 
@@ -658,10 +650,10 @@ function renderDefaultVisualization(
 }
 
 function renderErrorVisualization(
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  g: D3GroupSelection,
   error: string,
   dimensions: { innerWidth: number; innerHeight: number },
-  colors: ThemeColors
+  colors: D3ChartTheme
 ) {
   const { innerWidth, innerHeight } = dimensions;
 
