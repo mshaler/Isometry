@@ -165,7 +165,7 @@ export function detectVisualizationType(data: unknown[]): VisualizationConfig {
 
   // Categorical + numeric - bar chart
   if (catFields.length >= 1 && numFields.length >= 1) {
-    const uniqueCategories = new Set(data.map((d: unknown) => d[catFields[0].name])).size;
+    const uniqueCategories = new Set(data.map((d: unknown) => (d as Record<string, unknown>)[catFields[0].name])).size;
 
     // Pie chart for small number of categories
     if (uniqueCategories <= 6 && numFields.length === 1) {
@@ -341,7 +341,7 @@ function parseCSVData(csvText: string): ParsedData {
   const headers = lines[0].split(',').map(h => h.trim());
   const data = lines.slice(1).map(line => {
     const values = line.split(',').map(v => v.trim());
-    const row: unknown = {};
+    const row: Record<string, unknown> = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -378,7 +378,7 @@ function parseTableData(tableText: string): ParsedData {
   // Extract data rows
   const data = dataLines.slice(1).map(line => {
     const values = line.split('|').map(v => v.trim()).filter(v => v !== '');
-    const row: unknown = {};
+    const row: Record<string, unknown> = {};
     headers.forEach((header, index) => {
       const value = values[index];
       row[header] = parseValue(value);
@@ -405,11 +405,13 @@ function analyzeDataSchema(data: unknown[]): DataSchema {
   const allKeys = new Set<string>();
 
   sample.forEach((row: unknown) => {
-    Object.keys(row).forEach(key => allKeys.add(key));
+    if (typeof row === 'object' && row !== null) {
+      Object.keys(row as Record<string, unknown>).forEach(key => allKeys.add(key));
+    }
   });
 
   const fields: FieldSchema[] = Array.from(allKeys).map(key => {
-    const values = sample.map((row: unknown) => row[key]).filter(v => v != null);
+    const values = sample.map((row: unknown) => (row as Record<string, unknown>)[key]).filter(v => v != null);
     const uniqueValues = new Set(values);
 
     return {
@@ -494,7 +496,9 @@ function hasNetworkStructure(data: unknown[]): boolean {
 
   // Check if data has node-link structure
   const firstRow = data[0];
-  const keys = Object.keys(firstRow);
+  const keys = typeof firstRow === 'object' && firstRow !== null
+    ? Object.keys(firstRow as Record<string, unknown>)
+    : [];
 
   // Common network graph patterns
   const networkPatterns = [
@@ -529,7 +533,7 @@ function parseDirectiveParams(paramString: string): Record<string, string> {
 function parseYAMLChartConfig(yamlText: string): VisualizationDirective | null {
   // Simple YAML parsing for chart config
   const lines = yamlText.split('\n');
-  const config: unknown = {};
+  const config: Record<string, unknown> = {};
 
   for (const line of lines) {
     if (line.includes('chart:') || line.includes('visualization:')) {
@@ -545,7 +549,7 @@ function parseYAMLChartConfig(yamlText: string): VisualizationDirective | null {
   }
 
   if (config.type) {
-    return config as VisualizationDirective;
+    return config as unknown as VisualizationDirective;
   }
 
   return null;
