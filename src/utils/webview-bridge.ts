@@ -37,6 +37,9 @@ export interface WebViewResponse {
   timestamp?: number;
 }
 
+// Alias for compatibility
+export interface BridgeResponse extends WebViewResponse {}
+
 declare global {
   interface Window {
     webkit?: {
@@ -406,31 +409,6 @@ export class WebViewBridge {
     });
   }
 
-  /**
-   * Handle response from native bridge
-   */
-  private handleResponse(response: BridgeResponse): void {
-    const pending = this.pendingRequests.get(response.id);
-    if (!pending) {
-      return;
-    }
-
-    clearTimeout(pending.timeout);
-    this.pendingRequests.delete(response.id);
-
-    if (response.success) {
-      pending.resolve(response.result);
-    } else {
-      pending.reject(new Error(response.error || 'Unknown bridge error'));
-    }
-  }
-
-  /**
-   * Generate unique request ID
-   */
-  private generateRequestId(): string {
-    return `bridge_req_${++this.requestId}_${Date.now()}`;
-  }
 }
 
 /**
