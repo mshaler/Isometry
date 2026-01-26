@@ -173,7 +173,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   }, [templates, cardOperations, templateManager, errorReporting]);
 
-  const updateCard = useCallback(async (id: string, updates: Partial<NotebookCard>) => {
+  const updateCard = useCallback(async (id: string, _updates: Partial<NotebookCard>) => {
     try {
       await cardOperations.updateCard(id, updates);
 
@@ -221,7 +221,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   }, [activeCard, cardOperations]);
 
   // Template operations
-  const createTemplate = useCallback(async (name: string, description: string, fromCard: NotebookCard) => {
+  const createTemplate = useCallback(async (name: string, _description: string, fromCard: NotebookCard) => {
     try {
       const template = await templateManager.createTemplate(name, description, fromCard);
       setTemplates(templateManager.loadTemplates());
@@ -244,7 +244,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   }, [templateManager]);
 
-  const updateTemplate = useCallback(async (templateId: string, updates: Partial<NotebookCard>) => {
+  const updateTemplate = useCallback(async (templateId: string, _updates: Partial<NotebookCard>) => {
     try {
       await templateManager.updateTemplate(templateId, updates);
       setTemplates(templateManager.loadTemplates());
@@ -255,7 +255,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   }, [templateManager]);
 
-  const duplicateTemplate = useCallback(async (templateId: string, newName: string) => {
+  const duplicateTemplate = useCallback(async (templateId: string, _newName: string) => {
     try {
       const template = await templateManager.duplicateTemplate(templateId, newName);
       setTemplates(templateManager.loadTemplates());
@@ -268,7 +268,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   }, [templateManager]);
 
   // Layout operations
-  const updateLayout = useCallback((component: keyof typeof layout, position: typeof layout.capture) => {
+  const updateLayout = useCallback((component: keyof typeof layout, _position: typeof layout.capture) => {
     const newLayout = layoutManager.updateLayout(layout, component, position);
     setLayout(newLayout);
   }, [layout, layoutManager]);

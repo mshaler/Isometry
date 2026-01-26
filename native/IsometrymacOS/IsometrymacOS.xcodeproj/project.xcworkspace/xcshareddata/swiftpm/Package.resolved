@@ -261,6 +261,15 @@
         "revision" : "8666c92dbbb3c8eefc8008c9c8dcf50bfd302167",
         "version" : "2.16.1"
       }
+    },
+    {
+      "identity" : "ziparchive",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ZipArchive/ZipArchive.git",
+      "state" : {
+        "revision" : "df35718ea19a94e015b91dc4881dee028ce4cdba",
+        "version" : "2.6.0"
+      }
     }
   ],
   "version" : 3

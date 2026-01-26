@@ -37,7 +37,7 @@ export interface UseDragDropResult {
   handleDragOver: (e: React.DragEvent) => void;
 
   /** Handle drop on a zone */
-  handleDrop: (zoneId: string, onDrop: (itemId: string, zoneId: string) => void) => (e: React.DragEvent) => void;
+  handleDrop: (zoneId: string, _onDrop: (itemId: string, zoneId: string) => void) => (e: React.DragEvent) => void;
 }
 
 /**
@@ -114,7 +114,7 @@ export function useDragDrop(): UseDragDropResult {
 
   // Handle drop
   const handleDrop = useCallback(
-    (zoneId: string, onDrop: (itemId: string, zoneId: string) => void) => {
+    (zoneId: string, _onDrop: (itemId: string, zoneId: string) => void) => {
       return (e: React.DragEvent) => {
         e.preventDefault();
         const itemId = e.dataTransfer.getData('text/plain');

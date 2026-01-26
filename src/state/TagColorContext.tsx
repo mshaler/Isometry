@@ -21,7 +21,7 @@ interface TagColorContextValue {
   tagColors: TagColorMap;
 
   /** Assign a color to a tag */
-  setTagColor: (tag: string, color: string) => void;
+  setTagColor: (tag: string, _color: string) => void;
 
   /** Get color for a tag (with auto-assignment if missing) */
   getTagColor: (tag: string) => string;
@@ -109,7 +109,7 @@ export function TagColorProvider({ children }: { children: React.ReactNode }) {
   /**
    * Assign a color to a tag
    */
-  const setTagColor = useCallback((tag: string, color: string) => {
+  const setTagColor = useCallback((tag: string, _color: string) => {
     setTagColors((prev) => {
       const next = new Map(prev);
       next.set(tag, color);

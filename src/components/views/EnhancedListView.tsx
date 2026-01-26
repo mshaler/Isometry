@@ -36,7 +36,7 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
     return () => clearTimeout(timeout);
   }, [data.length]);
 
-  const handleNodeClick = useCallback((node: any) => {
+  const handleNodeClick = useCallback((node: unknown) => {
     try {
       onNodeClick?.(node);
     } catch (error) {

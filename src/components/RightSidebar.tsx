@@ -80,14 +80,14 @@ export function RightSidebar() {
     setExpandedSections(newExpanded);
   };
 
-  const renderSectionContent = (section: string, isFormats: boolean) => {
+  const renderSectionContent = (section: string, _isFormats: boolean) => {
     if (isFormats && section === 'Text') {
       return <TextFormatContent />;
     }
     return <PlaceholderContent />;
   };
 
-  const renderSections = (sections: string[], isFormats: boolean) => (
+  const renderSections = (sections: string[], _isFormats: boolean) => (
     <>
       {sections.map((section) => (
         <AccordionSection

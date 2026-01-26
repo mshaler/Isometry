@@ -20,19 +20,19 @@ export interface NotebookContextType {
 
   // Card Methods
   createCard: (type: NotebookCardType, templateId?: string) => Promise<NotebookCard>;
-  updateCard: (id: string, updates: Partial<NotebookCard>) => Promise<void>;
+  updateCard: (id: string, _updates: Partial<NotebookCard>) => Promise<void>;
   deleteCard: (id: string) => Promise<void>;
   setActiveCard: (card: NotebookCard | null) => void;
   loadCards: () => Promise<void>;
 
   // Template Methods
-  createTemplate: (name: string, description: string, fromCard: NotebookCard) => Promise<NotebookTemplate>;
+  createTemplate: (name: string, _description: string, fromCard: NotebookCard) => Promise<NotebookTemplate>;
   deleteTemplate: (templateId: string) => Promise<void>;
-  updateTemplate: (templateId: string, updates: Partial<NotebookTemplate>) => Promise<void>;
-  duplicateTemplate: (templateId: string, newName: string) => Promise<NotebookTemplate>;
+  updateTemplate: (templateId: string, _updates: Partial<NotebookTemplate>) => Promise<void>;
+  duplicateTemplate: (templateId: string, _newName: string) => Promise<NotebookTemplate>;
 
   // Layout Methods
-  updateLayout: (component: keyof NotebookLayoutState, position: LayoutPosition) => void;
+  updateLayout: (component: keyof NotebookLayoutState, _position: LayoutPosition) => void;
   toggleNotebookMode: () => void;
 
   // Integration State and Methods

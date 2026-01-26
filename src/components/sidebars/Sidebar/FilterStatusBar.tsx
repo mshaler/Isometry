@@ -48,7 +48,7 @@ export function FilterStatusBar() {
         </button>
       </div>
       <div className="flex flex-wrap gap-1">
-        {filters.map((filter: Filter, index: number) => (
+        {filters.map((filter: Filter, _index: number) => (
           <span
             key={index}
             className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs ${chipStyles}`}

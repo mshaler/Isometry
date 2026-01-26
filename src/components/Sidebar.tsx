@@ -131,14 +131,14 @@ export function Sidebar() {
     { enabled: hasTimeFilter }
   );
 
-  const handleFilterItemClick = (item: string, isAvailable: boolean) => {
+  const handleFilterItemClick = (item: string, _isAvailable: boolean) => {
     if (isAvailable) {
       setActiveFilterPanel(activeFilterPanel === item ? null : item);
     }
     // Unavailable items are dimmed and not clickable
   };
 
-  const handleFacetClick = (field: string, value: string) => {
+  const handleFacetClick = (field: string, _value: string) => {
     addFilter({ field, operator: '=', value });
     setActiveFilterPanel(null);
   };

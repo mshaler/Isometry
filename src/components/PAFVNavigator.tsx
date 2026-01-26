@@ -10,8 +10,8 @@ interface DraggableChipProps {
   chip: Chip;
   well: keyof Wells;
   index: number;
-  moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
-  toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  moveChip: (fromWell: keyof Wells, _fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
+  toggleCheckbox: (well: keyof Wells, _chipId: string) => void;
   theme: 'NeXTSTEP' | 'Modern';
 }
 
@@ -62,8 +62,8 @@ interface DropWellProps {
   title: string;
   well: keyof Wells;
   chips: Chip[];
-  moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
-  toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  moveChip: (fromWell: keyof Wells, _fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
+  toggleCheckbox: (well: keyof Wells, _chipId: string) => void;
   theme: 'NeXTSTEP' | 'Modern';
 }
 

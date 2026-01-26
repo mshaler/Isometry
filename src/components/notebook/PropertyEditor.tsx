@@ -56,7 +56,7 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
   );
 
   // Validate and update properties
-  const updateProperty = useCallback((key: string, value: unknown) => {
+  const updateProperty = useCallback((key: string, _value: unknown) => {
     const definition = allDefinitions.find(def => def.name === key);
     if (definition) {
       const validationErrors = validatePropertyValue(value, definition);

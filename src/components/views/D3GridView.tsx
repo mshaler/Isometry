@@ -36,7 +36,7 @@ interface GridInteractionState {
  * - Pan/zoom functionality for large datasets
  * - Performance optimization with canvas rendering
  */
-export function D3GridView({ data, onNodeClick }: D3GridViewProps) {
+export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
   const { wells } = usePAFV();
   const { theme } = useTheme();
 
@@ -88,34 +88,6 @@ export function D3GridView({ data, onNodeClick }: D3GridViewProps) {
     }
   }, [onNodeClick]);
 
-  // Handle cell hover for preview
-  const handleCellHover = useCallback((cellData: { nodes: Node[]; rowKey: string; colKey: string } | null, mousePosition?: { x: number; y: number }) => {
-    if (cellData && cellData.nodes.length > 0) {
-      const cellKey = `${cellData.colKey}||${cellData.rowKey}`;
-
-      setInteractionState(prev => ({
-        ...prev,
-        hoveredCell: cellKey
-      }));
-
-      // Show preview for cells with multiple nodes
-      if (cellData.nodes.length > 1 && mousePosition) {
-        setCellDetailOverlay({
-          visible: true,
-          nodes: cellData.nodes,
-          position: mousePosition,
-          rowKey: cellData.rowKey,
-          colKey: cellData.colKey
-        });
-      }
-    } else {
-      setInteractionState(prev => ({
-        ...prev,
-        hoveredCell: null
-      }));
-      setCellDetailOverlay(prev => ({ ...prev, visible: false }));
-    }
-  }, []);
 
   const handleError = useCallback((error: string) => {
     console.error('D3GridView error:', error);
@@ -269,7 +241,7 @@ export function D3GridView({ data, onNodeClick }: D3GridViewProps) {
 
             {/* Node List */}
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {cellDetailOverlay.nodes.map((node, index) => (
+              {cellDetailOverlay.nodes.map((node) => (
                 <div
                   key={node.id}
                   className={`p-2 rounded border cursor-pointer transition-colors ${

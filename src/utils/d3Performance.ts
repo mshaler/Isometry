@@ -215,7 +215,7 @@ export const textureCache = new TextureCache();
 interface SpatialItem {
   id: string;
   bounds: { x: number; y: number; width: number; height: number };
-  data: any;
+  data: unknown;
 }
 
 class SpatialIndex {
@@ -532,8 +532,8 @@ export const performanceMonitor = new PerformanceMonitor();
 // ============================================================================
 
 export const createPAFVTransition = (
-  fromState: any,
-  toState: any,
+  fromState: unknown,
+  toState: unknown,
   duration: number = 300
 ): Promise<void> => {
   return new Promise((resolve) => {
@@ -566,7 +566,7 @@ export const createPAFVTransition = (
 // Utility Functions
 // ============================================================================
 
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => any>(
   fn: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
@@ -577,7 +577,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   };
 };
 
-export const throttle = <T extends (...args: any[]) => any>(
+export const throttle = <T extends (...args: unknown[]) => any>(
   fn: T,
   limit: number
 ): ((...args: Parameters<T>) => void) => {

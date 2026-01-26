@@ -37,7 +37,7 @@ export interface OfflineChange {
 
 export interface ConflictResolutionStrategy {
   strategy: 'last_write_wins' | 'first_write_wins' | 'merge_properties' | 'custom';
-  mergeFunction?: (local: Record<string, unknown>, remote: Record<string, unknown>) => Record<string, unknown>;
+  mergeFunction?: (local: Record<string, unknown>, _remote: Record<string, unknown>) => Record<string, unknown>;
   conflictThreshold: number; // Time window in ms for conflict detection
 }
 

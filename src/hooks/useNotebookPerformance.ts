@@ -48,8 +48,8 @@ export interface UseNotebookPerformanceReturn {
   // Actions
   startMonitoring: () => void;
   stopMonitoring: () => void;
-  measureRender: (componentName: string, duration: number) => void;
-  measureQuery: (queryName: string, duration: number) => void;
+  measureRender: (componentName: string, _duration: number) => void;
+  measureQuery: (queryName: string, _duration: number) => void;
   clearMetrics: () => void;
   exportMetrics: () => string;
 
@@ -212,7 +212,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
   }, []);
 
   // Measure render performance
-  const measureRender = useCallback((renderComponentName: string, duration: number) => {
+  const measureRender = useCallback((renderComponentName: string, _duration: number) => {
     const times = renderTimesRef.current.get(renderComponentName) || [];
     times.push(duration);
 
@@ -244,7 +244,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
   }, []);
 
   // Measure query performance
-  const measureQuery = useCallback((queryName: string, duration: number) => {
+  const measureQuery = useCallback((queryName: string, _duration: number) => {
     const times = queryTimesRef.current.get(queryName) || [];
     times.push(duration);
 

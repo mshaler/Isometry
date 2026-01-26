@@ -107,7 +107,7 @@ export function AxisNavigator({ pafvState, onPAFVChange }: AxisNavigatorProps) {
   };
 
   // Handle dropping an axis on a plane
-  const handleAxisDrop = (axisId: string, planeId: string) => {
+  const handleAxisDrop = (axisId: string, _planeId: string) => {
     const axis = axisId as LATCHAxis;
     const plane = planeId as Plane;
 
@@ -128,7 +128,7 @@ export function AxisNavigator({ pafvState, onPAFVChange }: AxisNavigatorProps) {
   };
 
   // Handle facet change for a mapping
-  const handleFacetChange = (plane: Plane, newFacet: string) => {
+  const handleFacetChange = (plane: Plane, _newFacet: string) => {
     const newMappings = pafvState.mappings.map((m) =>
       m.plane === plane ? { ...m, facet: newFacet } : m
     );

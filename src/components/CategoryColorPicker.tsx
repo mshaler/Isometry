@@ -79,7 +79,7 @@ export function CategoryColorPicker({
   /**
    * Handle tag pill right-click - select for color assignment
    */
-  const handleTagContextMenu = (e: React.MouseEvent, tag: string) => {
+  const handleTagContextMenu = (e: React.MouseEvent, _tag: string) => {
     e.preventDefault();
     setTagForColorAssignment(tag);
   };

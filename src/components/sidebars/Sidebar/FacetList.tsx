@@ -20,7 +20,7 @@ export interface FacetListProps {
   data: FacetValue[] | null | undefined;
   field: string;
   emptyMessage?: string;
-  onSelect: (field: string, value: string) => void;
+  onSelect: (field: string, _value: string) => void;
 }
 
 // ============================================

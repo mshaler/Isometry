@@ -15,7 +15,7 @@ L.Icon.Default.mergeOptions({
 export interface LocationMapWidgetProps {
   center: { lat: number; lng: number } | null;
   radiusMeters: number;
-  onChange: (center: { lat: number; lng: number }, radiusMeters: number) => void;
+  onChange: (center: { lat: number; lng: number }, _radiusMeters: number) => void;
   markers?: Array<{ id: string; lat: number; lng: number; title: string }>;
   className?: string;
 }

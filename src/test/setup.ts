@@ -44,7 +44,7 @@ Object.defineProperty(global, 'crypto', {
       return array;
     },
     subtle: {
-      digest: async (algorithm: string, data: BufferSource) => {
+      digest: async (algorithm: string, _data: BufferSource) => {
         // Mock consistent digest for testing
         const mockHash = new ArrayBuffer(algorithm === 'SHA-256' ? 32 : 20);
         const view = new Uint8Array(mockHash);

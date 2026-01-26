@@ -26,7 +26,7 @@ export interface D3ViewProps<D> {
   /** Data to render */
   data: D[];
   /** Render function that receives D3 context */
-  render: (context: D3ViewRenderContext, data: D[]) => void | (() => void);
+  render: (context: D3ViewRenderContext, _data: D[]) => void | (() => void);
   /** Optional margins */
   margin?: Partial<Margins>;
   /** Additional dependencies for the render effect */

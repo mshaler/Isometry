@@ -24,7 +24,7 @@ interface MockTableInfo {
 
 // Mock database function
 const createMockExecute = (mockData: Record<string, MockTableInfo[]>) => {
-  return vi.fn(async (sql: string, _params: unknown[]) => {
+  return vi.fn(async (sql: string, __params: unknown[]) => {
     // Handle PRAGMA table_info queries
     if (sql.includes('PRAGMA table_info')) {
       const tableMatch = sql.match(/PRAGMA table_info\((\w+)\)/);

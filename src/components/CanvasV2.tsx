@@ -7,7 +7,6 @@ import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
 import { usePAFV } from '../hooks/usePAFV';
 import type { Node } from '@/types/node';
-import type { ViewType } from '@/types/view';
 
 /**
  * CanvasV2 - Enhanced Canvas with ViewRenderer integration
@@ -35,9 +34,6 @@ export function CanvasV2() {
     console.log('Node clicked:', node);
   }, []);
 
-  const handleViewChange = useCallback((viewType: ViewType) => {
-    console.log('View switched to:', viewType);
-  }, []);
 
   // Render loading state
   if (loading) {

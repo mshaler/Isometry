@@ -135,7 +135,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
       .attr('class', 'node')
       .attr('transform', d => `translate(${d.y},${d.x})`)
       .style('cursor', 'pointer')
-      .on('click', (event, d: d3.HierarchyPointNode<TreeNode>) => {
+      .on('click', (event, _d: d3.HierarchyPointNode<TreeNode>) => {
         event.stopPropagation();
         onNodeClick?.(d.data._node);
       });

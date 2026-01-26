@@ -39,7 +39,7 @@ export interface UseCoordinatesResult {
   setScale: (scale: number) => void;
 
   /** Update viewport dimensions */
-  setViewportSize: (width: number, height: number) => void;
+  setViewportSize: (width: number, _height: number) => void;
 
   /** Convert screen point to logical coordinates */
   screenToLogical: (screenPoint: Point) => Point;
@@ -139,7 +139,7 @@ export function useCoordinates(
 
   // Set viewport size
   const setViewportSize = useCallback(
-    (width: number, height: number) => {
+    (width: number, _height: number) => {
       setViewportWidth(width);
       setViewportHeight(height);
     },

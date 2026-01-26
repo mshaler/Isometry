@@ -78,7 +78,7 @@ function NotebookLayoutInner() {
   const [isDragging, setIsDragging] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0, startWidth: 0 });
 
-  const handleMouseDown = useCallback((divider: string, event: React.MouseEvent) => {
+  const handleMouseDown = useCallback((divider: string, _event: React.MouseEvent) => {
     event.preventDefault();
     setIsDragging(divider);
     setDragStart({
@@ -155,7 +155,7 @@ function NotebookLayoutInner() {
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // Render divider for desktop mode
-  const renderDivider = (type: string, className: string) => (
+  const renderDivider = (type: string, _className: string) => (
     <div
       className={`${className} group`}
       onMouseDown={(e) => handleMouseDown(type, e)}

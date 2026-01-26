@@ -14,8 +14,8 @@ export interface CoordinateSystem {
   originY: number;
   cellWidth: number;
   cellHeight: number;
-  logicalToScreen: (logicalX: number, logicalY: number) => { x: number; y: number };
-  screenToLogical: (screenX: number, screenY: number) => { x: number; y: number };
+  logicalToScreen: (logicalX: number, _logicalY: number) => { x: number; y: number };
+  screenToLogical: (screenX: number, _screenY: number) => { x: number; y: number };
 }
 
 export interface D3SparsityLayerProps {

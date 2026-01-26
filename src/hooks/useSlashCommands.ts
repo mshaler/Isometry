@@ -198,7 +198,7 @@ export function useSlashCommands() {
   }, [executeCommand]);
 
   // Detect slash command trigger and handle keyboard events
-  const handleKeyDown = useCallback((event: KeyboardEvent, currentContent: string, cursorPosition: number, element?: HTMLTextAreaElement | HTMLInputElement) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent, _currentContent: string, cursorPosition: number, element?: HTMLTextAreaElement | HTMLInputElement) => {
     // If menu is open, handle navigation
     if (menuState.isOpen) {
       switch (event.key) {
@@ -264,7 +264,7 @@ export function useSlashCommands() {
   }, [menuState, navigateMenu, executeCommand, closeMenu, openMenu]);
 
   // Handle text input when menu is open (for updating query)
-  const handleTextInput = useCallback((text: string, cursorPosition: number, fullContent: string) => {
+  const handleTextInput = useCallback((text: string, _cursorPosition: number, fullContent: string) => {
     if (!menuState.isOpen) return false;
 
     // Find the text after the last '/' before cursor

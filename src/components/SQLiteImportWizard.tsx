@@ -16,7 +16,7 @@ import type { Node } from '../types/node';
 interface SQLiteImportWizardProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete?: (result: SQLiteSyncResult, nodes: Node[]) => void;
+  onImportComplete?: (result: SQLiteSyncResult, _nodes: Node[]) => void;
 }
 
 interface ImportStatus {

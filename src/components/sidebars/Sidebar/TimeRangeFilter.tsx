@@ -20,7 +20,7 @@ export interface DateRangeInfo {
 
 export interface TimeRangeFilterProps {
   dateRange: DateRangeInfo[] | null | undefined;
-  onSelect: (field: string, operator: string, value: string) => void;
+  onSelect: (field: string, _operator: string, value: string) => void;
 }
 
 // ============================================

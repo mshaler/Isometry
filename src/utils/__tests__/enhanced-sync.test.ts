@@ -12,7 +12,7 @@ import { type DataChange, type SyncConflict } from '../sync-manager';
 const mockLocalStorage = {
   store: {} as Record<string, string>,
   getItem: jest.fn((key: string) => mockLocalStorage.store[key] || null),
-  setItem: jest.fn((key: string, value: string) => {
+  setItem: jest.fn((key: string, _value: string) => {
     mockLocalStorage.store[key] = value;
   }),
   removeItem: jest.fn((key: string) => {
@@ -371,7 +371,7 @@ describe('EnhancedSyncManager', () => {
     });
 
     it('should use custom merge function when provided', async () => {
-      const customMergeFunction = (local: Record<string, unknown>, remote: Record<string, unknown>) => ({
+      const customMergeFunction = (local: Record<string, unknown>, _remote: Record<string, unknown>) => ({
         ...local,
         ...remote,
         mergedBy: 'custom-function'

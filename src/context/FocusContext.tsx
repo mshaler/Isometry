@@ -5,7 +5,7 @@ export type FocusableComponent = 'capture' | 'shell' | 'preview';
 interface FocusContextValue {
   activeComponent: FocusableComponent | null;
   focusComponent: (component: FocusableComponent) => void;
-  registerComponent: (component: FocusableComponent, element: HTMLElement) => void;
+  registerComponent: (component: FocusableComponent, _element: HTMLElement) => void;
   unregisterComponent: (component: FocusableComponent) => void;
   getComponentElement: (component: FocusableComponent) => HTMLElement | null;
   nextComponent: () => void;
@@ -75,7 +75,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
     }
   }, []);
 
-  const registerComponent = useCallback((component: FocusableComponent, element: HTMLElement) => {
+  const registerComponent = useCallback((component: FocusableComponent, _element: HTMLElement) => {
     // Clean up existing listeners if component is being re-registered
     const existingListeners = componentListeners.current.get(component);
     if (existingListeners) {

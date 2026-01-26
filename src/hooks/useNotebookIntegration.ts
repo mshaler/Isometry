@@ -46,7 +46,7 @@ export interface NotebookIntegrationState {
 
 export interface NotebookIntegrationActions {
   forceSync: () => Promise<void>;
-  resolveConflict: (cardId: string, resolution: 'notebook' | 'main' | 'merge') => Promise<void>;
+  resolveConflict: (cardId: string, _resolution: 'notebook' | 'main' | 'merge') => Promise<void>;
   clearPendingChanges: () => void;
   enableOfflineMode: () => void;
   disableOfflineMode: () => void;

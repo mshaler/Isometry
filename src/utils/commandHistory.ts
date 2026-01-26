@@ -45,7 +45,7 @@ export function loadHistory(): HistoryEntry[] {
     }
 
     // Convert back from storage format (parse dates)
-    const entries = parsed.map((entry: any) => ({
+    const entries = parsed.map((entry: unknown) => ({
       ...entry,
       timestamp: new Date(entry.timestamp)
     } as HistoryEntry)).filter((entry: HistoryEntry) =>

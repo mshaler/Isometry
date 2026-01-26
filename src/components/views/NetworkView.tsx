@@ -148,16 +148,16 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('class', 'node')
       .style('cursor', 'pointer')
       .call(d3.drag<SVGGElement, SimNode>()
-        .on('start', (event, d: SimNode) => {
+        .on('start', (event, _d: SimNode) => {
           if (!event.active) simulation.alphaTarget(0.3).restart();
           d.fx = d.x;
           d.fy = d.y;
         })
-        .on('drag', (event, d: SimNode) => {
+        .on('drag', (event, _d: SimNode) => {
           d.fx = event.x;
           d.fy = event.y;
         })
-        .on('end', (event, d: SimNode) => {
+        .on('end', (event, _d: SimNode) => {
           if (!event.active) simulation.alphaTarget(0);
           d.fx = null;
           d.fy = null;
@@ -183,7 +183,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .text(d => d.name.length > 12 ? d.name.slice(0, 12) + '...' : d.name);
 
     // Node click handler
-    node.on('click', (event, d: SimNode) => {
+    node.on('click', (event, _d: SimNode) => {
       event.stopPropagation();
       setSelectedNode(prev => prev === d.id ? null : d.id);
       const nodeData = data.find(c => c.id === d.id);

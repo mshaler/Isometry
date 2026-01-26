@@ -9,7 +9,7 @@ import { useEffect } from 'react';
  * @param isOpen - Whether the overlay is currently open
  * @param onClose - Callback to close the overlay
  */
-export function useKeyboardClose(isOpen: boolean, onClose: () => void): void {
+export function useKeyboardClose(isOpen: boolean, _onClose: () => void): void {
   useEffect(() => {
     if (!isOpen) return;
 

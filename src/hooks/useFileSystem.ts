@@ -22,10 +22,10 @@ interface UseFileSystemState {
 
 interface UseFileSystemActions {
   readFile: (path: string, binary?: boolean) => Promise<string | ArrayBuffer>;
-  writeFile: (path: string, content: string | ArrayBuffer) => Promise<void>;
+  writeFile: (path: string, _content: string | ArrayBuffer) => Promise<void>;
   deleteFile: (path: string) => Promise<void>;
   listFiles: (directory?: string) => Promise<FileInfo[]>;
-  exportFile: (path: string, options: ExportOptions) => Promise<string>;
+  exportFile: (path: string, _options: ExportOptions) => Promise<string>;
   createDirectory: (path: string) => Promise<void>;
   fileExists: (path: string) => Promise<boolean>;
   getFileInfo: (path: string) => Promise<FileInfo | null>;
@@ -63,7 +63,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
   }, []);
 
   // Error handler
-  const handleError = useCallback((error: unknown, operation: string) => {
+  const handleError = useCallback((error: unknown, _operation: string) => {
     const message = error instanceof Error ? error.message : `${operation} failed`;
     console.error(`File system ${operation} error:`, error);
     updateState({ error: message, isLoading: false });

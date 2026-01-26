@@ -618,7 +618,7 @@ export function useSyncManager() {
     stopSync: () => syncManager.stopSync(),
     forceSync: () => syncManager.forcSync(),
     publishChange: (change: DataChange) => syncManager.publishLocalChange(change),
-    onDataChange: (table: string, handler: SyncEventHandler) => syncManager.onDataChange(table, handler),
+    onDataChange: (table: string, _handler: SyncEventHandler) => syncManager.onDataChange(table, handler),
     onConflict: (handler: ConflictHandler) => syncManager.onConflict(handler),
     getQueueStatus: () => syncManager.getSyncQueueStatus()
   };

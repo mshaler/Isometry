@@ -21,7 +21,7 @@ export type CacheTag =
 type InvalidateFn = (tags: CacheTag[]) => void;
 
 // Function to register a query with specific tags
-type RegisterFn = (tags: CacheTag[], refetch: () => void) => () => void; // Returns cleanup function
+type RegisterFn = (tags: CacheTag[], _refetch: () => void) => () => void; // Returns cleanup function
 
 interface CacheInvalidationContextType {
   invalidate: InvalidateFn;
@@ -111,7 +111,7 @@ export function useCacheInvalidation() {
  * @param tags Array of cache tags this query depends on
  * @param refetch Function to refetch the query data
  */
-export function useQueryCacheRegistration(tags: CacheTag[], refetch: () => void) {
+export function useQueryCacheRegistration(tags: CacheTag[], _refetch: () => void) {
   const { register } = useCacheInvalidation();
 
   const currentRefetch = useRef(refetch);

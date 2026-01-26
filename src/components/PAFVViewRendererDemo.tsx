@@ -25,8 +25,7 @@ export function PAFVViewRendererDemo() {
     setMapping,
     removeMapping,
     resetToDefaults,
-    getAxisForPlane,
-    getPlaneForAxis
+    getAxisForPlane
   } = usePAFV();
 
   const handleNodeClick = (node: Node) => {

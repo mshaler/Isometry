@@ -18,7 +18,7 @@ export interface ConnectionStatus {
 
 // Type definition for WebView bridge
 interface WebViewBridge {
-  postMessage: (namespace: string, method: string, data: unknown) => Promise<unknown>;
+  postMessage: (namespace: string, _method: string, data: unknown) => Promise<unknown>;
   getHealthStatus: () => {
     isConnected: boolean;
     pendingRequests: number;

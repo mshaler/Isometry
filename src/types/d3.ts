@@ -140,19 +140,19 @@ export type TypedTransition<TElement extends d3.BaseType, TDatum> =
 
 /** Mouse event handler for D3 selections */
 export type D3MouseEventHandler<TElement extends d3.BaseType, TDatum> =
-  (this: TElement, event: MouseEvent, d: TDatum) => void;
+  (this: TElement, _event: MouseEvent, d: TDatum) => void;
 
 /** Touch event handler for D3 selections */
 export type D3TouchEventHandler<TElement extends d3.BaseType, TDatum> =
-  (this: TElement, event: TouchEvent, d: TDatum) => void;
+  (this: TElement, _event: TouchEvent, d: TDatum) => void;
 
 /** Drag event handler */
 export type D3DragEventHandler<TElement extends d3.BaseType, TDatum> =
-  (this: TElement, event: d3.D3DragEvent<TElement, TDatum, unknown>, d: TDatum) => void;
+  (this: TElement, _event: d3.D3DragEvent<TElement, TDatum, unknown>, d: TDatum) => void;
 
 /** Zoom event handler */
 export type D3ZoomEventHandler<TElement extends d3.BaseType> =
-  (this: TElement, event: d3.D3ZoomEvent<TElement, unknown>) => void;
+  (this: TElement, _event: d3.D3ZoomEvent<TElement, unknown>) => void;
 
 // ============================================================================
 // Axis and Grid Types
@@ -162,7 +162,7 @@ export type D3ZoomEventHandler<TElement extends d3.BaseType> =
 export type D3AxisGenerator<Domain> = d3.Axis<Domain>;
 
 /** Tick formatter function */
-export type D3TickFormatter<T> = (domainValue: T, index: number) => string;
+export type D3TickFormatter<T> = (domainValue: T, _index: number) => string;
 
 // ============================================================================
 // Data Join Types
@@ -252,7 +252,7 @@ export interface D3ChartTheme {
 export type D3Accessor<T, R> = (d: T, i?: number, data?: T[]) => R;
 
 /** Key function for data joins */
-export type D3KeyFunction<T> = (d: T, i: number) => string | number;
+export type D3KeyFunction<T> = (d: T, _i: number) => string | number;
 
 // ============================================================================
 // Configuration Types

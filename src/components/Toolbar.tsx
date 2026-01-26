@@ -24,7 +24,7 @@ export function Toolbar() {
     {
       label: 'Isometry',
       items: [
-        { label: 'About Isometry', action: () => console.log('About') },
+        { label: 'About Isometry', _action: () => console.log('About') },
         { separator: true },
         { 
           label: 'Settings',
@@ -32,57 +32,57 @@ export function Toolbar() {
             { 
               label: 'Theme', 
               submenu: [
-                { label: 'NeXTSTEP', action: () => setTheme('NeXTSTEP') },
-                { label: 'Modern', action: () => setTheme('Modern') },
+                { label: 'NeXTSTEP', _action: () => setTheme('NeXTSTEP') },
+                { label: 'Modern', _action: () => setTheme('Modern') },
               ]
             },
           ]
         },
         { separator: true },
-        { label: 'Quit Isometry', action: () => console.log('Quit') },
+        { label: 'Quit Isometry', _action: () => console.log('Quit') },
       ]
     },
     {
       label: 'File',
       items: [
-        { label: 'New…', action: () => console.log('New') },
-        { label: 'Open…', action: () => console.log('Open') },
+        { label: 'New…', _action: () => console.log('New') },
+        { label: 'Open…', _action: () => console.log('Open') },
         { separator: true },
-        { label: 'Save As…', action: () => console.log('Save As') },
+        { label: 'Save As…', _action: () => console.log('Save As') },
       ]
     },
     {
       label: 'Edit',
       items: [
-        { label: 'Undo', action: () => console.log('Undo') },
-        { label: 'Redo', action: () => console.log('Redo') },
+        { label: 'Undo', _action: () => console.log('Undo') },
+        { label: 'Redo', _action: () => console.log('Redo') },
         { separator: true },
-        { label: 'Cut', action: () => console.log('Cut') },
-        { label: 'Copy', action: () => console.log('Copy') },
-        { label: 'Paste', action: () => console.log('Paste') },
+        { label: 'Cut', _action: () => console.log('Cut') },
+        { label: 'Copy', _action: () => console.log('Copy') },
+        { label: 'Paste', _action: () => console.log('Paste') },
       ]
     },
     {
       label: 'View',
       items: [
-        { label: 'Workbench', action: () => console.log('Workbench') },
-        { label: 'Apps', action: () => console.log('Apps') },
-        { label: 'Datasets', action: () => console.log('Datasets') },
+        { label: 'Workbench', _action: () => console.log('Workbench') },
+        { label: 'Apps', _action: () => console.log('Apps') },
+        { label: 'Datasets', _action: () => console.log('Datasets') },
       ]
     },
   ];
 
   const commandButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: FileText, label: 'New', action: () => console.log('New') },
-    { icon: FolderOpen, label: 'Open', action: () => console.log('Open') },
-    { icon: Save, label: 'Save', action: () => console.log('Save') },
-    { icon: Download, label: 'Export', action: () => console.log('Export') },
+    { icon: FileText, _label: 'New', action: () => console.log('New') },
+    { icon: FolderOpen, _label: 'Open', action: () => console.log('Open') },
+    { icon: Save, _label: 'Save', action: () => console.log('Save') },
+    { icon: Download, _label: 'Export', action: () => console.log('Export') },
   ];
 
   const appLauncherButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: LayoutGrid, label: 'Grid View', action: () => console.log('Grid View') },
-    { icon: Layers, label: 'Dimensions', action: () => console.log('Dimensions') },
-    { icon: BarChart3, label: 'Charts', action: () => console.log('Charts') },
+    { icon: LayoutGrid, _label: 'Grid View', action: () => console.log('Grid View') },
+    { icon: Layers, _label: 'Dimensions', action: () => console.log('Dimensions') },
+    { icon: BarChart3, _label: 'Charts', action: () => console.log('Charts') },
   ];
 
   return (

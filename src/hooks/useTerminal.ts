@@ -18,7 +18,7 @@ interface UseTerminalReturn {
   showPrompt: () => void;
   attachToProcess: () => void;
   dispose: () => void;
-  resizeTerminal: (cols: number, rows: number) => void;
+  resizeTerminal: (cols: number, _rows: number) => void;
   getCurrentWorkingDirectory: () => string;
   setWorkingDirectory: (path: string) => void;
   terminal: Terminal | null;
@@ -270,7 +270,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     });
   }, [executeCommand, showPrompt, options.onNavigateHistory]);
 
-  const resizeTerminal = useCallback((cols: number, rows: number) => {
+  const resizeTerminal = useCallback((cols: number, _rows: number) => {
     const terminal = terminalRef.current;
     const fitAddon = fitAddonRef.current;
 

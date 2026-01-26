@@ -71,7 +71,7 @@ export function HierarchyTreeView({
   }, []);
 
   // Select node + all descendants
-  const handleNodeSelect = useCallback((node: TreeNode, checked: boolean) => {
+  const handleNodeSelect = useCallback((node: TreeNode, _checked: boolean) => {
     const subtreeIds = getSubtreeIds(node);
 
     if (checked) {
@@ -259,7 +259,7 @@ interface TreeNodeComponentProps {
   expandedIds: Set<string>;
   selectedIds: Set<string>;
   onToggleExpand: (id: string) => void;
-  onSelect: (node: TreeNode, checked: boolean) => void;
+  onSelect: (node: TreeNode, _checked: boolean) => void;
   searchTerm: string;
 }
 

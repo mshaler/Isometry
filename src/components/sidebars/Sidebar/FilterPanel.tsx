@@ -22,8 +22,8 @@ export interface FilterPanelProps {
   tags: FacetValue[] | null | undefined;
   dateRange: DateRangeInfo[] | null | undefined;
   onClose: () => void;
-  onFacetSelect: (field: string, value: string) => void;
-  onTimeSelect: (field: string, operator: string, value: string) => void;
+  onFacetSelect: (field: string, _value: string) => void;
+  onTimeSelect: (field: string, _operator: string, value: string) => void;
 }
 
 // ============================================

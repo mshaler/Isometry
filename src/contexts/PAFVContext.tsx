@@ -16,8 +16,8 @@ export interface Wells {
 
 interface PAFVContextType {
   wells: Wells;
-  moveChip: (fromWell: keyof Wells, fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
-  toggleCheckbox: (well: keyof Wells, chipId: string) => void;
+  moveChip: (fromWell: keyof Wells, _fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
+  toggleCheckbox: (well: keyof Wells, _chipId: string) => void;
   transpose: () => void;
 }
 
@@ -61,7 +61,7 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const toggleCheckbox = useCallback((well: keyof Wells, chipId: string) => {
+  const toggleCheckbox = useCallback((well: keyof Wells, _chipId: string) => {
     setWells(prev => ({
       ...prev,
       [well]: prev[well].map(chip =>

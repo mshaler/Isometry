@@ -54,14 +54,14 @@ declare global {
       database: Record<string, unknown>;
       filesystem: Record<string, unknown>;
       environment: WebViewEnvironment;
-      sendMessage: (handler: string, method: string, params: unknown) => Promise<unknown>;
+      sendMessage: (handler: string, _method: string, params: unknown) => Promise<unknown>;
       handleResponse: (response: BridgeResponse) => void;
       debug?: {
         logMessages?: boolean;
         showPerformance?: boolean;
       };
     };
-    resolveWebViewRequest?: (id: string, result: unknown, error?: string) => void;
+    resolveWebViewRequest?: (id: string, _result: unknown, error?: string) => void;
     isometryDatabase?: Record<string, unknown>;
     isometryFilesystem?: Record<string, unknown>;
   }

@@ -35,7 +35,7 @@ export const EnhancedGridView = React.memo<ViewComponentProps>(({
     return () => clearTimeout(timeout);
   }, [pafvState.mappings]);
 
-  const handleNodeClick = useCallback((node: any) => {
+  const handleNodeClick = useCallback((node: unknown) => {
     try {
       onNodeClick?.(node);
     } catch (error) {

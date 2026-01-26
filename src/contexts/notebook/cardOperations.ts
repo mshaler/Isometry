@@ -6,7 +6,7 @@ import type { ErrorReporting } from '../../services/ErrorReportingService';
 export function createCardOperations(
   execute: (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
   errorReporting: ErrorReporting,
-  performanceHook: { measureQuery: (operation: string, duration: number) => void }
+  performanceHook: { measureQuery: (operation: string, _duration: number) => void }
 ) {
 
   const loadCards = async (): Promise<NotebookCard[]> => {

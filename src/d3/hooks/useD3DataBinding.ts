@@ -17,7 +17,7 @@ export interface DataBindingOptions<TElement extends d3.BaseType, TDatum> {
   /** CSS class for the data elements */
   className: string;
   /** Key function for data join */
-  key?: (d: TDatum, i: number) => string;
+  key?: (d: TDatum, _i: number) => string;
   /** Enter selection handler */
   onEnter?: (
     enter: d3.Selection<d3.EnterElement, TDatum, TElement, unknown>
@@ -75,7 +75,7 @@ export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
     ): d3.Selection<TElement, TDatum, d3.BaseType, unknown> => {
       const selection = container
         .selectAll<TElement, TDatum>(`.${className}`)
-        .data(data, key as (datum: TDatum, index: number, groups: ArrayLike<TElement>) => string)
+        .data(data, key as (datum: TDatum, _index: number, groups: ArrayLike<TElement>) => string)
         .join(
           (enter) => {
             const entered = onEnter

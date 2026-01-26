@@ -481,14 +481,14 @@ export const getScaleCacheStats = () => {
 /**
  * Check if a scale is a band scale (supports bandwidth method)
  */
-export const isBandScale = (scale: any): scale is d3.ScaleBand<string> => {
+export const isBandScale = (scale: unknown): scale is d3.ScaleBand<string> => {
   return typeof scale.bandwidth === 'function';
 };
 
 /**
  * Get the bandwidth of a scale, or default width for non-band scales
  */
-export const getScaleBandwidth = (scale: any, defaultWidth: number = 100): number => {
+export const getScaleBandwidth = (scale: unknown, defaultWidth: number = 100): number => {
   if (isBandScale(scale)) {
     return scale.bandwidth();
   }
@@ -532,7 +532,7 @@ export const formatDomainValue = (value: unknown, scaleType: ScaleType): string 
 /**
  * Get optimal tick count for a scale based on available space
  */
-export const getOptimalTickCount = (scale: any, availableSpace: number, minSpacing: number = 50): number => {
+export const getOptimalTickCount = (scale: unknown, availableSpace: number, minSpacing: number = 50): number => {
   const maxTicks = Math.floor(availableSpace / minSpacing);
 
   if (typeof scale.domain === 'function') {
