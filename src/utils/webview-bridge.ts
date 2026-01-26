@@ -84,6 +84,7 @@ export class WebViewBridge {
 
   private isConnected = false;
   private connectionCheckInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: NodeJS.Timeout | null = null;
   private failureCount = 0;
   private lastConnectionTest = 0;
   private circuitBreakerOpen = false;
@@ -114,7 +115,7 @@ export class WebViewBridge {
     }
 
     // Set up cleanup interval for timed out requests
-    setInterval(() => this.cleanupTimedOutRequests(), 30000);
+    this.cleanupInterval = setInterval(() => this.cleanupTimedOutRequests(), 30000);
 
     // Initialize connection monitoring
     this.startConnectionMonitoring();
@@ -728,6 +729,12 @@ export class WebViewBridge {
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
       this.connectionCheckInterval = null;
+    }
+
+    // Stop cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
 
     // Clear message queue and reject all pending

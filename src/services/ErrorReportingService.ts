@@ -38,6 +38,8 @@ class ErrorReportingService {
   private listeners: Array<(notifications: ErrorNotification[]) => void> = [];
   private sessionId: string;
   private maxReports = 100;
+  private errorHandler: (event: ErrorEvent) => void;
+  private unhandledRejectionHandler: (event: PromiseRejectionEvent) => void;
 
   constructor() {
     this.sessionId = this.generateSessionId();
@@ -49,8 +51,8 @@ class ErrorReportingService {
   }
 
   private setupGlobalErrorHandlers(): void {
-    // Global unhandled errors
-    window.addEventListener('error', (event) => {
+    // Create bound handlers to enable cleanup
+    this.errorHandler = (event: ErrorEvent) => {
       this.reportError({
         error: event.error || new Error(event.message),
         level: 'high',
@@ -61,10 +63,9 @@ class ErrorReportingService {
           type: 'javascript'
         }
       });
-    });
+    };
 
-    // Unhandled promise rejections
-    window.addEventListener('unhandledrejection', (event) => {
+    this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       this.reportError({
         error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
         level: 'medium',
@@ -73,7 +74,13 @@ class ErrorReportingService {
           reason: event.reason
         }
       });
-    });
+    };
+
+    // Global unhandled errors
+    window.addEventListener('error', this.errorHandler);
+
+    // Unhandled promise rejections
+    window.addEventListener('unhandledrejection', this.unhandledRejectionHandler);
 
     // Make service available globally for error boundaries
     (window as unknown as { errorReporting: ErrorReportingService }).errorReporting = this;
@@ -255,6 +262,24 @@ class ErrorReportingService {
       reportCount: this.reports.length,
       highSeverityCount: this.reports.filter(r => r.level === 'high').length
     };
+  }
+
+  public destroy(): void {
+    // Remove global error handlers to prevent memory leaks
+    if (this.errorHandler) {
+      window.removeEventListener('error', this.errorHandler);
+    }
+    if (this.unhandledRejectionHandler) {
+      window.removeEventListener('unhandledrejection', this.unhandledRejectionHandler);
+    }
+
+    // Clear all data and listeners
+    this.reports = [];
+    this.notifications = [];
+    this.listeners = [];
+
+    // Remove global reference
+    delete (window as any).errorReporting;
   }
 
   // User feedback methods

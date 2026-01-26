@@ -12,6 +12,13 @@ interface FocusContextValue {
   previousComponent: () => void;
 }
 
+interface ComponentListeners {
+  element: HTMLElement;
+  focusHandler: () => void;
+  blurHandler: () => void;
+  keydownHandler: (event: KeyboardEvent) => void;
+}
+
 const FocusContext = createContext<FocusContextValue | null>(null);
 
 interface FocusProviderProps {
@@ -25,6 +32,7 @@ interface FocusProviderProps {
 export function FocusProvider({ children }: FocusProviderProps) {
   const activeComponent = useRef<FocusableComponent | null>(null);
   const componentElements = useRef<Map<FocusableComponent, HTMLElement>>(new Map());
+  const componentListeners = useRef<Map<FocusableComponent, ComponentListeners>>(new Map());
   const components: FocusableComponent[] = ['capture', 'shell', 'preview'];
 
   const focusComponent = useCallback((component: FocusableComponent) => {
@@ -68,6 +76,16 @@ export function FocusProvider({ children }: FocusProviderProps) {
   }, []);
 
   const registerComponent = useCallback((component: FocusableComponent, element: HTMLElement) => {
+    // Clean up existing listeners if component is being re-registered
+    const existingListeners = componentListeners.current.get(component);
+    if (existingListeners) {
+      const { element: oldElement, focusHandler, blurHandler, keydownHandler } = existingListeners;
+      oldElement.removeEventListener('focus', focusHandler);
+      oldElement.removeEventListener('blur', blurHandler);
+      oldElement.removeEventListener('keydown', keydownHandler);
+      componentListeners.current.delete(component);
+    }
+
     componentElements.current.set(component, element);
 
     // Make element focusable if not already
@@ -83,20 +101,19 @@ export function FocusProvider({ children }: FocusProviderProps) {
     };
     element.setAttribute('aria-label', componentLabels[component]);
 
-    // Add focus and blur event listeners
-    element.addEventListener('focus', () => {
+    // Create bound event handlers
+    const focusHandler = () => {
       if (activeComponent.current !== component) {
         activeComponent.current = component;
         element.classList.add('notebook-focus-active');
       }
-    });
+    };
 
-    element.addEventListener('blur', () => {
+    const blurHandler = () => {
       element.classList.remove('notebook-focus-active');
-    });
+    };
 
-    // Add keyboard navigation within component
-    element.addEventListener('keydown', (event) => {
+    const keydownHandler = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey)) {
         switch (event.key) {
           case '1':
@@ -121,10 +138,34 @@ export function FocusProvider({ children }: FocusProviderProps) {
             break;
         }
       }
+    };
+
+    // Add event listeners
+    element.addEventListener('focus', focusHandler);
+    element.addEventListener('blur', blurHandler);
+    element.addEventListener('keydown', keydownHandler);
+
+    // Store listeners for cleanup
+    componentListeners.current.set(component, {
+      element,
+      focusHandler,
+      blurHandler,
+      keydownHandler
     });
   }, [focusComponent]);
 
   const unregisterComponent = useCallback((component: FocusableComponent) => {
+    // Clean up event listeners first
+    const listeners = componentListeners.current.get(component);
+    if (listeners) {
+      const { element, focusHandler, blurHandler, keydownHandler } = listeners;
+      element.removeEventListener('focus', focusHandler);
+      element.removeEventListener('blur', blurHandler);
+      element.removeEventListener('keydown', keydownHandler);
+      componentListeners.current.delete(component);
+    }
+
+    // Clean up element tracking
     const element = componentElements.current.get(component);
     if (element) {
       element.classList.remove('notebook-focus-active');
