@@ -73,16 +73,16 @@ export function Toolbar() {
   ];
 
   const commandButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: FileText, _label: 'New', action: () => console.log('New') },
-    { icon: FolderOpen, _label: 'Open', action: () => console.log('Open') },
-    { icon: Save, _label: 'Save', action: () => console.log('Save') },
-    { icon: Download, _label: 'Export', action: () => console.log('Export') },
+    { icon: FileText, label: 'New', action: () => console.log('New') },
+    { icon: FolderOpen, label: 'Open', action: () => console.log('Open') },
+    { icon: Save, label: 'Save', action: () => console.log('Save') },
+    { icon: Download, label: 'Export', action: () => console.log('Export') },
   ];
 
   const appLauncherButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: LayoutGrid, _label: 'Grid View', action: () => console.log('Grid View') },
-    { icon: Layers, _label: 'Dimensions', action: () => console.log('Dimensions') },
-    { icon: BarChart3, _label: 'Charts', action: () => console.log('Charts') },
+    { icon: LayoutGrid, label: 'Grid View', action: () => console.log('Grid View') },
+    { icon: Layers, label: 'Dimensions', action: () => console.log('Dimensions') },
+    { icon: BarChart3, label: 'Charts', action: () => console.log('Charts') },
   ];
 
   return (
