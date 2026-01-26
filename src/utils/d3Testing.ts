@@ -1,4 +1,4 @@
-import { validatePerformanceTargets, performanceMonitor, spatialIndex } from './d3Performance';
+import { validatePerformanceTargets, performanceMonitor } from './d3Performance';
 import type { Node } from '../types/node';
 import type { Wells, Chip } from '../contexts/PAFVContext';
 
@@ -230,7 +230,7 @@ export const benchmarkDataProcessing = async (nodeCount: number): Promise<Perfor
 
   try {
     const startTime = performance.now();
-    const startMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const startMemory = (performance as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
 
     // Generate test data
     const nodes = generateTestNodes(nodeCount);
@@ -245,7 +245,7 @@ export const benchmarkDataProcessing = async (nodeCount: number): Promise<Perfor
     performanceMonitor.endMetric('benchmark-processing');
 
     const endTime = performance.now();
-    const endMemory = (performance as any).memory?.usedJSHeapSize || 0;
+    const endMemory = (performance as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize || 0;
     const duration = endTime - startTime;
     const memoryUsed = (endMemory - startMemory) / 1024 / 1024; // MB
 
@@ -345,7 +345,6 @@ export const runErrorHandlingTests = (): { testName: string; success: boolean; e
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const expectedPattern = typeof test.expectedError === 'string' ? test.expectedError : test.expectedError.source;
 
       return {
         testName: test.testName,
