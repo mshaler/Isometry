@@ -7,6 +7,14 @@
 
 import { webViewBridge, Environment } from './webview-bridge';
 
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  };
+}
+
 export interface BridgePerformanceTargets {
   bridgeLatency: number; // < 50ms for round-trip
   databaseOps: number;   // > 100 ops/second
@@ -284,7 +292,7 @@ async function testSyncLatency(): Promise<BridgeTestResult> {
  */
 async function testMemoryOverhead(): Promise<BridgeTestResult> {
   try {
-    const initialMemory = (performance as any)?.memory?.usedJSHeapSize || 0;
+    const initialMemory = (performance as PerformanceWithMemory)?.memory?.usedJSHeapSize || 0;
 
     // Perform memory-intensive operations
     const testData = [];
@@ -296,7 +304,7 @@ async function testMemoryOverhead(): Promise<BridgeTestResult> {
       testData.push(result);
     }
 
-    const finalMemory = (performance as any)?.memory?.usedJSHeapSize || 0;
+    const finalMemory = (performance as PerformanceWithMemory)?.memory?.usedJSHeapSize || 0;
     const memoryDelta = (finalMemory - initialMemory) / 1024 / 1024; // MB
 
     return {
@@ -630,6 +638,15 @@ function generateRecommendations(
   }
 
   return recommendations;
+}
+
+interface BridgePerformanceResult {
+  targets: BridgePerformanceTargets;
+  results: BridgeTestResult[];
+  comparison?: BridgeComparisonResult[];
+  stress?: BridgeStressTestResult;
+  passed: boolean;
+  recommendations: string[];
 }
 
 /**
