@@ -2,7 +2,9 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import type { Database } from 'sql.js';
 import { initDatabase, saveDatabase, resetDatabase } from './init';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
+import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
 import { performanceMonitor, logPerformanceReport } from './PerformanceMonitor';
+import { Environment } from '../utils/webview-bridge';
 
 interface DatabaseContextValue {
   db: Database | null;
@@ -110,17 +112,31 @@ function useSQLJSDatabase(): DatabaseContextValue {
 }
 
 /**
- * Environment variable detection for API selection
- * REACT_APP_USE_NATIVE_API=true enables native API mode
- * REACT_APP_USE_NATIVE_API=false or undefined uses sql.js mode
+ * Environment detection for database selection
+ * Priority: WebView > Native API (env var) > sql.js (fallback)
  */
-const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
+function detectEnvironment(): 'webview' | 'native' | 'sql.js' {
+  // First priority: WebView environment
+  if (Environment.isWebView()) {
+    return 'webview';
+  }
+
+  // Second priority: Environment variable for native API
+  if (process.env.REACT_APP_USE_NATIVE_API === 'true') {
+    return 'native';
+  }
+
+  // Fallback: sql.js
+  return 'sql.js';
+}
 
 /**
- * Unified Database Provider that conditionally renders sql.js or native provider
- * Based on REACT_APP_USE_NATIVE_API environment variable
+ * Unified Database Provider that automatically selects the appropriate provider
+ * Based on environment detection with WebView taking highest priority
  */
 export function DatabaseProvider({ children }: { children: React.ReactNode }) {
+  const environment = detectEnvironment();
+
   // Set up development performance reporting
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
@@ -134,33 +150,50 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  if (USE_NATIVE_API) {
-    console.log('Using Native Database API (REACT_APP_USE_NATIVE_API=true)');
-    return (
-      <NativeDatabaseProvider>
-        {children}
-      </NativeDatabaseProvider>
-    );
-  } else {
-    console.log('Using SQL.js Database (REACT_APP_USE_NATIVE_API=false or undefined)');
-    return (
-      <SQLJSDatabaseProvider>
-        {children}
-      </SQLJSDatabaseProvider>
-    );
+  switch (environment) {
+    case 'webview':
+      console.log('Using WebView Database Bridge (auto-detected)');
+      return (
+        <WebViewDatabaseProvider>
+          {children}
+        </WebViewDatabaseProvider>
+      );
+
+    case 'native':
+      console.log('Using Native Database API (REACT_APP_USE_NATIVE_API=true)');
+      return (
+        <NativeDatabaseProvider>
+          {children}
+        </NativeDatabaseProvider>
+      );
+
+    case 'sql.js':
+    default:
+      console.log('Using SQL.js Database (fallback)');
+      return (
+        <SQLJSDatabaseProvider>
+          {children}
+        </SQLJSDatabaseProvider>
+      );
   }
 }
 
 /**
- * Unified database hook that works with both sql.js and native contexts
+ * Unified database hook that works with all database contexts
  * Automatically detects current provider and returns appropriate interface
  */
 export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue {
-  if (USE_NATIVE_API) {
-    // When using native API, return the native context
-    return useNativeDatabase();
-  } else {
-    // When using sql.js, return the sql.js context
-    return useSQLJSDatabase();
+  const environment = detectEnvironment();
+
+  switch (environment) {
+    case 'webview':
+      return useWebViewDatabase();
+
+    case 'native':
+      return useNativeDatabase();
+
+    case 'sql.js':
+    default:
+      return useSQLJSDatabase();
   }
 }
