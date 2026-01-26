@@ -293,6 +293,12 @@ function renderLineChart(
   const sortedData = [...data].sort((a, b) => {
     const aVal = a[xField];
     const bVal = b[xField];
+
+    // Handle null/undefined values
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return -1;
+    if (bVal == null) return 1;
+
     if (aVal instanceof Date && bVal instanceof Date) {
       return aVal.getTime() - bVal.getTime();
     }
@@ -301,16 +307,22 @@ function renderLineChart(
 
   // Scales
   const x = config.encoding.xType === 'temporal'
-    ? d3.scaleTime()
-        .domain(d3.extent(sortedData, d => d[xField]) as [Date, Date])
-        .range([0, innerWidth])
-    : d3.scaleLinear()
-        .domain(d3.extent(sortedData, d => d[xField]) as [number, number])
-        .range([0, innerWidth]);
+    ? (() => {
+        const extent = d3.extent(sortedData, d => d[xField] as Date);
+        const domain = extent[0] && extent[1] ? extent as [Date, Date] : [new Date(), new Date()];
+        return d3.scaleTime().domain(domain).range([0, innerWidth]);
+      })()
+    : (() => {
+        const extent = d3.extent(sortedData, d => d[xField] as number);
+        const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+        return d3.scaleLinear().domain(domain).range([0, innerWidth]);
+      })();
 
-  const y = d3.scaleLinear()
-    .domain(d3.extent(sortedData, d => d[yField]) as [number, number])
-    .range([innerHeight, 0]);
+  const y = (() => {
+    const extent = d3.extent(sortedData, d => d[yField] as number);
+    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+    return d3.scaleLinear().domain(domain).range([innerHeight, 0]);
+  })();
 
   // Line generator
   const line: D3LineGenerator<ChartDatum> = d3.line<ChartDatum>()
@@ -343,8 +355,8 @@ function renderLineChart(
     .data(sortedData)
     .enter().append('circle')
     .attr('class', 'dot')
-    .attr('cx', d => x(d[xField]) as number)
-    .attr('cy', d => y(d[yField]) as number)
+    .attr('cx', d => x(d[xField] as number | Date) as number)
+    .attr('cy', d => y(d[yField] as number) as number)
     .attr('r', 4)
     .style('fill', colors.primary)
     .style('stroke', colors.background)
@@ -364,18 +376,24 @@ function renderScatterPlot(
   if (!xField || !yField) return;
 
   // Scales
-  const x = d3.scaleLinear()
-    .domain(d3.extent(data, d => d[xField]) as [number, number])
-    .range([0, innerWidth]);
+  const x = (() => {
+    const extent = d3.extent(data, d => d[xField] as number);
+    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+    return d3.scaleLinear().domain(domain).range([0, innerWidth]);
+  })();
 
-  const y = d3.scaleLinear()
-    .domain(d3.extent(data, d => d[yField]) as [number, number])
-    .range([innerHeight, 0]);
+  const y = (() => {
+    const extent = d3.extent(data, d => d[yField] as number);
+    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+    return d3.scaleLinear().domain(domain).range([innerHeight, 0]);
+  })();
 
   const size = sizeField
-    ? d3.scaleLinear()
-        .domain(d3.extent(data, d => d[sizeField]) as [number, number])
-        .range([3, 12])
+    ? (() => {
+        const extent = d3.extent(data, d => d[sizeField] as number);
+        const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [3, 12];
+        return d3.scaleLinear().domain(domain).range([3, 12]);
+      })()
     : () => 6;
 
   // Axes
@@ -393,9 +411,9 @@ function renderScatterPlot(
     .data(data)
     .enter().append('circle')
     .attr('class', 'dot')
-    .attr('cx', d => x(d[xField]))
-    .attr('cy', d => y(d[yField]))
-    .attr('r', d => sizeField ? size(d[sizeField]) : 6)
+    .attr('cx', d => x(d[xField] as number))
+    .attr('cy', d => y(d[yField] as number))
+    .attr('r', d => sizeField ? size(d[sizeField] as number) : 6)
     .style('fill', colors.primary)
     .style('fill-opacity', 0.7)
     .style('stroke', colors.border)
@@ -417,20 +435,23 @@ function renderHistogram(
   const values = data.map(d => d[xField]).filter(v => typeof v === 'number');
 
   // Create histogram
+  const extent = d3.extent(values);
+  const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+
   const histogram = d3.histogram()
     .value(d => d as number)
-    .domain(d3.extent(values) as [number, number])
+    .domain(domain)
     .thresholds(Math.min(20, Math.sqrt(values.length)));
 
   const bins = histogram(values);
 
   // Scales
   const x = d3.scaleLinear()
-    .domain(d3.extent(values) as [number, number])
+    .domain(domain)
     .range([0, innerWidth]);
 
   const y = d3.scaleLinear()
-    .domain([0, d3.max(bins, d => d.length) || 0])
+    .domain([0, d3.max(bins, (d: d3.Bin<number, number>) => d.length) || 0])
     .range([innerHeight, 0]);
 
   // Axes
@@ -448,10 +469,10 @@ function renderHistogram(
     .data(bins)
     .enter().append('rect')
     .attr('class', 'bar')
-    .attr('x', d => x(d.x0 || 0))
-    .attr('width', d => Math.max(0, x(d.x1 || 0) - x(d.x0 || 0) - 1))
-    .attr('y', d => y(d.length))
-    .attr('height', d => innerHeight - y(d.length))
+    .attr('x', (d: d3.Bin<number, number>) => x(d.x0 || 0))
+    .attr('width', (d: d3.Bin<number, number>) => Math.max(0, x(d.x1 || 0) - x(d.x0 || 0) - 1))
+    .attr('y', (d: d3.Bin<number, number>) => y(d.length))
+    .attr('height', (d: d3.Bin<number, number>) => innerHeight - y(d.length))
     .style('fill', colors.primary)
     .style('stroke', colors.background)
     .style('stroke-width', 1);
@@ -519,11 +540,13 @@ function renderAreaChart(
 
   if (!xField || !yField) return;
 
-  const sortedData = [...data].sort((a, b) => a[xField] - b[xField]);
+  const sortedData = [...data].sort((a, b) => (a[xField] as number) - (b[xField] as number));
 
-  const x = d3.scaleLinear()
-    .domain(d3.extent(sortedData, d => d[xField]) as [number, number])
-    .range([0, innerWidth]);
+  const x = (() => {
+    const extent = d3.extent(sortedData, d => d[xField] as number);
+    const domain = extent[0] != null && extent[1] != null ? extent as [number, number] : [0, 1];
+    return d3.scaleLinear().domain(domain).range([0, innerWidth]);
+  })();
 
   const y = d3.scaleLinear()
     .domain([0, d3.max(sortedData, d => d[yField]) || 0])
