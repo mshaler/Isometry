@@ -115,7 +115,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     const cursorPosition = textarea.selectionStart;
 
     // Let slash command handler process first
-    if (handleKeyDown(event.nativeEvent, content, cursorPosition)) {
+    if (handleKeyDown(event.nativeEvent, content, cursorPosition, textarea)) {
       return; // Event was handled by slash commands
     }
 

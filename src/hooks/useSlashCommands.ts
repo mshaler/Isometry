@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
+import { getCursorPosition, getMenuPosition, type CursorPosition } from '../utils/cursorPosition';
 
 export interface SlashCommand {
   id: string;
@@ -197,7 +198,7 @@ export function useSlashCommands() {
   }, [executeCommand]);
 
   // Detect slash command trigger and handle keyboard events
-  const handleKeyDown = useCallback((event: KeyboardEvent, currentContent: string, cursorPosition: number) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent, currentContent: string, cursorPosition: number, element?: HTMLTextAreaElement | HTMLInputElement) => {
     // If menu is open, handle navigation
     if (menuState.isOpen) {
       switch (event.key) {
@@ -242,8 +243,19 @@ export function useSlashCommands() {
 
       // Only trigger if at start of line or after whitespace
       if (currentLine.length === 0 || /\s$/.test(currentLine)) {
-        // Calculate position for menu (this would need to be provided by the editor)
-        const position = { x: 100, y: 100 }; // Placeholder - real implementation would calculate this
+        // Calculate real cursor position for menu placement
+        let position = { x: 100, y: 100 }; // Fallback position
+
+        if (element) {
+          try {
+            const cursorPos = getCursorPosition(element, cursorPosition);
+            const menuPos = getMenuPosition(cursorPos, 300, 200);
+            position = { x: menuPos.x, y: menuPos.y };
+          } catch (error) {
+            console.warn('Failed to calculate cursor position, using fallback:', error);
+          }
+        }
+
         setTimeout(() => openMenu(position), 0);
       }
     }
