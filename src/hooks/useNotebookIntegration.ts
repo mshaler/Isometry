@@ -226,7 +226,7 @@ export function useNotebookIntegration(params: {
           );
           break;
 
-        case 'main':
+        case 'main': {
           // Keep main app version, update notebook card
           const nodeData = execute<Record<string, any>>(
             `SELECT * FROM nodes WHERE id = ?`,
@@ -242,6 +242,7 @@ export function useNotebookIntegration(params: {
             );
           }
           break;
+        }
 
         case 'merge':
           // Create a merged version (simplified merge strategy)

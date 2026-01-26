@@ -134,16 +134,18 @@ function getCategoryGroupKey(node: Node, facet: string): string {
 function getAlphabetGroupKey(node: Node, facet: string): string {
   switch (facet) {
     case 'first-letter':
-    case 'letter':
+    case 'letter': {
       const firstChar = node.name.charAt(0).toUpperCase();
       return /[A-Z]/.test(firstChar) ? firstChar : '#';
+    }
 
     case 'name':
       return node.name;
 
-    default:
+    default: {
       const char = node.name.charAt(0).toUpperCase();
       return /[A-Z]/.test(char) ? char : '#';
+    }
   }
 }
 

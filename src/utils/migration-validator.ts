@@ -193,7 +193,7 @@ export class MigrationValidator {
       let checkpointRestored: string | undefined;
 
       switch (strategy.type) {
-        case 'checkpoint-restore':
+        case 'checkpoint-restore': {
           const restoreResult = await this.restoreFromCheckpoint(scenario);
           dataPreserved = restoreResult.dataRestored;
           performanceRestored = true; // Checkpoint includes performance state
@@ -202,8 +202,9 @@ export class MigrationValidator {
             errors.push(...restoreResult.errors);
           }
           break;
+        }
 
-        case 'provider-switch':
+        case 'provider-switch': {
           const switchResult = await this.switchProvider(scenario);
           dataPreserved = switchResult.success;
           performanceRestored = await this.validatePerformanceAfterSwitch(scenario.targetProvider);
@@ -211,8 +212,9 @@ export class MigrationValidator {
             errors.push(...switchResult.errors);
           }
           break;
+        }
 
-        case 'data-restore':
+        case 'data-restore': {
           const dataRestoreResult = await this.restoreDataOnly(scenario);
           dataPreserved = dataRestoreResult.success;
           performanceRestored = false; // Performance needs separate validation
@@ -220,8 +222,9 @@ export class MigrationValidator {
             errors.push(...dataRestoreResult.errors);
           }
           break;
+        }
 
-        case 'configuration-reset':
+        case 'configuration-reset': {
           const configResult = await this.resetConfiguration(scenario);
           dataPreserved = true; // Config reset preserves data
           performanceRestored = await this.validatePerformanceAfterReset();
@@ -229,6 +232,7 @@ export class MigrationValidator {
             errors.push(...configResult.errors);
           }
           break;
+        }
       }
 
       // Validate rollback success

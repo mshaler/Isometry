@@ -160,10 +160,11 @@ export function sortHistory(
         return b.timestamp.getTime() - a.timestamp.getTime(); // Most recent first
       case 'type':
         return a.type.localeCompare(b.type);
-      case 'duration':
+      case 'duration': {
         const aDuration = a.duration || 0;
         const bDuration = b.duration || 0;
         return bDuration - aDuration; // Longest first
+      }
       default:
         return 0;
     }
