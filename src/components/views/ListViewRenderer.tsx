@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReactViewRenderer } from './ReactViewRenderer';
-import { ListView } from './ListView';
+import { EnhancedListView } from './EnhancedListView';
 import type { ViewComponentProps, ViewTransitionState } from '../../types/view';
 
 /**
@@ -18,9 +18,9 @@ export class ListViewRenderer extends ReactViewRenderer {
   private sortAscending: boolean = false;
   private groupingEnabled: boolean = true;
 
-  // Return the ListView component
+  // Return the EnhancedListView component
   getComponent(): React.ComponentType<ViewComponentProps> {
-    return ListView as React.ComponentType<ViewComponentProps>;
+    return EnhancedListView;
   }
 
   // Enhanced state management for list view

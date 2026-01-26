@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useMockData } from '../hooks/useMockData';
-import { EnhancedViewSwitcher } from './views/EnhancedViewSwitcher';
+import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { D3GridView } from './views/D3GridView';
 import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
+import { usePAFV } from '../hooks/usePAFV';
 import type { Node } from '@/types/node';
 import type { ViewType } from '@/types/view';
 
@@ -21,10 +22,10 @@ export function CanvasV2() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [useD3Mode, setUseD3Mode] = useState(false);
-  const [currentView, setCurrentView] = useState<ViewType>('grid');
 
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
+  const { state: pafvState } = usePAFV();
 
   // Use mock data for MVP demonstration
   const { data: nodes, loading, error } = useMockData();
@@ -35,7 +36,6 @@ export function CanvasV2() {
   }, []);
 
   const handleViewChange = useCallback((viewType: ViewType) => {
-    setCurrentView(viewType);
     console.log('View switched to:', viewType);
   }, []);
 
@@ -88,7 +88,7 @@ export function CanvasV2() {
   const renderMainView = () => {
     if (useD3Mode) {
       // D3 Mode - Use existing D3 components
-      switch (currentView) {
+      switch (pafvState.viewMode) {
         case 'list':
           return <D3ListView data={nodes} onNodeClick={handleNodeClick} />;
         case 'grid':
@@ -96,14 +96,11 @@ export function CanvasV2() {
           return <D3GridView data={nodes} onNodeClick={handleNodeClick} />;
       }
     } else {
-      // Enhanced Mode - Use ViewRenderer system
+      // Enhanced Mode - Use PAFV-integrated ViewRenderer system
       return (
-        <EnhancedViewSwitcher
-          availableViews={['grid', 'list']}
-          initialView={currentView}
+        <PAFVViewSwitcher
           data={nodes}
           onNodeClick={handleNodeClick}
-          onViewChange={handleViewChange}
           transitionConfig={{
             duration: 300,
             easing: 'ease-out'
@@ -139,9 +136,9 @@ export function CanvasV2() {
                     ? 'bg-[#e8e8e8] text-gray-700 hover:bg-[#d8d8d8]'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
-              title={useD3Mode ? 'Switch to Enhanced ViewRenderer mode' : 'Switch to D3 mode'}
+              title={useD3Mode ? 'Switch to PAFV ViewRenderer mode' : 'Switch to D3 mode'}
             >
-              {useD3Mode ? 'D3 Mode' : 'Enhanced Mode'}
+              {useD3Mode ? 'D3 Mode' : 'PAFV Mode'}
             </button>
           </div>
         )}

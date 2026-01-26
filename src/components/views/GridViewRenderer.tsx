@@ -1,6 +1,6 @@
 import React from 'react';
 import { ReactViewRenderer } from './ReactViewRenderer';
-import { GridView } from './GridView';
+import { EnhancedGridView } from './EnhancedGridView';
 import type { ViewComponentProps, ViewTransitionState } from '../../types/view';
 
 /**
@@ -13,9 +13,9 @@ export class GridViewRenderer extends ReactViewRenderer {
   public readonly type = 'grid' as const;
   public readonly name = 'Grid View';
 
-  // Return the GridView component
+  // Return the EnhancedGridView component
   getComponent(): React.ComponentType<ViewComponentProps> {
-    return GridView as React.ComponentType<ViewComponentProps>;
+    return EnhancedGridView;
   }
 
   // Grid-specific state management
