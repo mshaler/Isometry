@@ -1,6 +1,20 @@
 import { validatePerformanceTargets, performanceMonitor } from './d3Performance';
 import type { Node } from '../types/node';
-import type { Wells, Chip } from '../contexts/PAFVContext';
+
+// Import types to avoid JSX module resolution issues
+interface Wells {
+  available: Chip[];
+  rows: Chip[];
+  columns: Chip[];
+  zLayers: Chip[];
+}
+
+interface Chip {
+  id: string;
+  label: string;
+  hasCheckbox: boolean;
+  checked?: boolean;
+}
 
 // ============================================================================
 // Test Data Generation
@@ -19,14 +33,31 @@ export const generateTestNodes = (count: number = 100): Node[] => {
 
     nodes.push({
       id: `test-node-${i}`,
+      nodeType: 'note' as const,
       name: `Test Node ${i + 1}`,
       content: `This is test content for node ${i + 1}. It contains sample text to test search and filtering functionality.`,
-      folder: folders[Math.floor(Math.random() * folders.length)],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
-      priority: priorities[Math.floor(Math.random() * priorities.length)],
+      summary: null,
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
       createdAt: createdDate.toISOString(),
       modifiedAt: modifiedDate.toISOString(),
-      deletedAt: null
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
+      folder: folders[Math.floor(Math.random() * folders.length)],
+      tags: [],
+      status: statuses[Math.floor(Math.random() * statuses.length)] as Node['status'],
+      priority: Math.floor(Math.random() * 5) + 1, // 1-5 priority scale
+      importance: 0,
+      sortOrder: 0,
+      source: null,
+      sourceId: null,
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     });
   }
 
@@ -365,7 +396,7 @@ export interface TestSuiteResults {
   errorTests: { testName: string; success: boolean; error?: string }[];
   overallPerformance: {
     passed: boolean;
-    targets: Record<string, { target: number; actual: number; passed: boolean }>;
+    results: Record<string, { target: number; actual: number; passed: boolean }>;
   };
   summary: {
     totalTests: number;

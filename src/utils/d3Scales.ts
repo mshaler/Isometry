@@ -1,6 +1,13 @@
 import * as d3 from 'd3';
-import type { Chip } from '../contexts/PAFVContext';
 import type { Node } from '../types/node';
+
+// Import Chip type to avoid JSX module resolution issues
+interface Chip {
+  id: string;
+  label: string;
+  hasCheckbox: boolean;
+  checked?: boolean;
+}
 
 // ============================================================================
 // Scale Type Definitions
@@ -176,9 +183,20 @@ export const createScale = (chip: Chip, domain: unknown[], range: [number, numbe
 
   switch (scaleType) {
     case 'temporal': {
-      const temporalDomain = domain as Date[] | number[];
+      const temporalDomain = domain as (Date | number)[];
+      const extent = (() => {
+        const extentResult = d3.extent(temporalDomain);
+        if (extentResult[0] !== undefined && extentResult[1] !== undefined) {
+          return [extentResult[0], extentResult[1]] as [Date | number, Date | number];
+        }
+        // Fallback domain for empty data
+        const now = new Date();
+        const pastDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); // 1 year ago
+        return [pastDate, now] as [Date | number, Date | number];
+      })();
+
       const scale = d3.scaleTime()
-        .domain(d3.extent(temporalDomain) as [Date | number, Date | number])
+        .domain(extent)
         .range(range)
         .nice();
 
@@ -187,8 +205,17 @@ export const createScale = (chip: Chip, domain: unknown[], range: [number, numbe
 
     case 'numerical': {
       const numericalDomain = domain as number[];
+      const extent = (() => {
+        const extentResult = d3.extent(numericalDomain);
+        if (extentResult[0] !== undefined && extentResult[1] !== undefined) {
+          return [extentResult[0], extentResult[1]] as [number, number];
+        }
+        // Fallback domain for empty data
+        return [0, 100] as [number, number];
+      })();
+
       const scale = d3.scaleLinear()
-        .domain(d3.extent(numericalDomain) as [number, number])
+        .domain(extent)
         .range(range)
         .nice();
 
@@ -440,7 +467,7 @@ export const createScaleSystem = (
   );
 
   // Create supplementary scales
-  const folders = Array.from(new Set(nodes.map(n => n.folder)));
+  const folders = Array.from(new Set(nodes.map(n => n.folder).filter((folder): folder is string => folder !== null)));
   const color = d3.scaleOrdinal<string, string>()
     .domain(folders)
     .range(d3.schemeCategory10);
@@ -482,7 +509,11 @@ export const getScaleCacheStats = () => {
  * Check if a scale is a band scale (supports bandwidth method)
  */
 export const isBandScale = (scale: unknown): scale is d3.ScaleBand<string> => {
-  return typeof scale.bandwidth === 'function';
+  return scale !== null &&
+         scale !== undefined &&
+         typeof scale === 'object' &&
+         'bandwidth' in scale &&
+         typeof (scale as Record<string, unknown>).bandwidth === 'function';
 };
 
 /**
@@ -535,8 +566,13 @@ export const formatDomainValue = (value: unknown, scaleType: ScaleType): string 
 export const getOptimalTickCount = (scale: unknown, availableSpace: number, minSpacing: number = 50): number => {
   const maxTicks = Math.floor(availableSpace / minSpacing);
 
-  if (typeof scale.domain === 'function') {
-    const domainLength = scale.domain().length;
+  if (scale !== null &&
+      scale !== undefined &&
+      typeof scale === 'object' &&
+      'domain' in scale &&
+      typeof (scale as Record<string, unknown>).domain === 'function') {
+    const domain = ((scale as Record<string, unknown>).domain as () => unknown)();
+    const domainLength = Array.isArray(domain) ? domain.length : 10;
     return Math.min(maxTicks, domainLength);
   }
 
