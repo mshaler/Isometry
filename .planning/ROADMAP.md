@@ -1,7 +1,7 @@
 # Isometry Notebook Sidecar Implementation Roadmap
 
 **Project:** Isometry Notebook Sidecar
-**Version:** v2.0 (Extended with Native Integration + SQL.js Migration)
+**Version:** v2.0 (Extended with Native Integration + SQL.js Migration + Error Elimination)
 **Target:** Production-ready native iOS/macOS apps with React prototype foundation and native API bridge
 **Approach:** Multi-milestone incremental delivery
 
@@ -13,6 +13,7 @@
 - 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (in progress)
 - 🚧 **v2.1 SQL.js Migration** - Phases 7.1-7.3 (planned)
 - 📋 **v2.2 Database Versioning & ETL Operations** - Phases 8.1-8.4 (retrofitting milestone)
+- 🆕 **v2.3 Error Elimination** - Phase 9 (codebase cleanup)
 
 ## Milestone Overview
 
@@ -25,6 +26,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v2.1 Goal (Migration):** Phase out sql.js dependency by implementing native API bridge, maintaining React prototype functionality while connecting to production GRDB/CloudKit backend.
 
 **v2.2 Goal (Retrofitting):** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
+
+**v2.3 Goal (Error Elimination):** Achieve zero errors and warnings across all platforms by eliminating sql.js references, fixing TypeScript issues, resolving Swift concurrency warnings, and establishing comprehensive type safety.
 
 ---
 
@@ -251,7 +254,7 @@ Plans:
 
 **Milestone Goal:** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
 
-#### Phase 8.1: Requirements & Foundation Verification
+#### Phase 8.1: Requirements & Foundation Verification (COMPLETED)
 **Goal:** Establish requirements traceability and foundation verification for existing implementations
 **Dependencies:** None (retrofitting existing implementations)
 **Requirements:** All 10 database versioning requirements (DBVER-01 through UI-03)
@@ -264,14 +267,14 @@ Plans:
 4. Integration testing framework setup for verification phases
 
 Plans:
-- [ ] 08.1-01-PLAN.md — Requirements Traceability Matrix and architecture verification
-- [ ] 08.1-02-PLAN.md — Verification framework and integration testing setup
+- [x] 08.1-01-PLAN.md — Requirements Traceability Matrix and architecture verification
+- [x] 08.1-02-PLAN.md — Verification framework and integration testing setup
 
-#### Phase 8.2: Core Versioning System Verification
+#### Phase 8.2: Core Versioning System Verification (COMPLETED)
 **Goal:** Verify database version control and storage systems functionality
 **Dependencies:** Phase 8.1 (requires foundation verification)
 **Requirements:** DBVER-01, DBVER-02, DBVER-03, STOR-01
-**Plans:** Core system verification
+**Plans:** 2 plans
 
 **Success Criteria:**
 1. Git-like database operations (branch, merge, commit, rollback) verified
@@ -279,7 +282,11 @@ Plans:
 3. Synthetic data operations isolated and functional
 4. Content-aware storage optimization benchmarked
 
-#### Phase 8.3: ETL Integration Verification
+Plans:
+- [x] 08.2-01-PLAN.md — Database version control operations verification
+- [x] 08.2-02-PLAN.md — Content-aware storage management verification
+
+#### Phase 8.3: ETL Integration Verification (COMPLETED)
 **Goal:** Verify ETL operations and data lineage systems integration
 **Dependencies:** Phase 8.2 (requires core system verification)
 **Requirements:** ETL-01, ETL-02, ETL-03
@@ -292,10 +299,10 @@ Plans:
 4. Data catalog search and discovery functionality validated
 
 Plans:
-- [ ] 08.3-01-PLAN.md — ETL Operations Management and Data Lineage Verification
-- [ ] 08.3-02-PLAN.md — Data Catalog & Cross-System Integration Verification
+- [x] 08.3-01-PLAN.md — ETL Operations Management and Data Lineage Verification
+- [x] 08.3-02-PLAN.md — Data Catalog & Cross-System Integration Verification
 
-#### Phase 8.4: UI & Integration Validation
+#### Phase 8.4: UI & Integration Validation (Planned)
 **Goal:** Verify user interfaces and complete system integration
 **Dependencies:** Phase 8.3 (requires ETL verification)
 **Requirements:** UI-01, UI-02, UI-03
@@ -306,6 +313,30 @@ Plans:
 2. Git-like workflow patterns validated in user interface
 3. Cross-system integration verified for production readiness
 4. End-to-end scenarios confirmed with comprehensive testing
+
+### 🆕 v2.3 Error Elimination (New)
+
+**Milestone Goal:** Achieve zero errors and warnings across all platforms by eliminating sql.js references, fixing TypeScript issues, resolving Swift concurrency warnings, and establishing comprehensive type safety.
+
+#### Phase 9: Error Elimination
+**Goal:** Complete codebase cleanup to achieve zero errors and warnings
+**Dependencies:** None (cleanup can run independently)
+**Plans:** 5 plans in 4 waves
+
+**Success Criteria:**
+1. Zero sql.js references remain in codebase
+2. All TypeScript compilation errors resolved
+3. Test suite runs without migration-related failures
+4. Swift builds complete with zero warnings
+5. Lint reports zero warnings across all files
+6. D3 operations have comprehensive type safety
+
+Plans:
+- [ ] 09-01-PLAN.md — SQL.js Reference Elimination (Wave 1)
+- [ ] 09-02-PLAN.md — TypeScript Test Configuration (Wave 1)
+- [ ] 09-03-PLAN.md — D3 Type Safety Implementation (Wave 2)
+- [ ] 09-04-PLAN.md — Swift Actor Isolation Fixes (Wave 3)
+- [ ] 09-05-PLAN.md — Final Lint Warning Cleanup (Wave 4)
 
 ## Dependencies
 
@@ -327,6 +358,7 @@ v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
 v2.0: Phase 6.1 → Phase 6.2 → Phase 6.3 → Phase 6.4 (IN PROGRESS)
 v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
 v2.2: Phase 8.1 → Phase 8.2 → Phase 8.3 → Phase 8.4 (RETROFITTING)
+v2.3: Phase 9 (CLEANUP - INDEPENDENT)
 ```
 
 ## Progress
@@ -335,6 +367,7 @@ v2.2: Phase 8.1 → Phase 8.2 → Phase 8.3 → Phase 8.4 (RETROFITTING)
 Native: 6.1 → 6.2 → 6.3 → 6.4
 Migration: 7.1 → 7.2 → 7.3
 Retrofitting: 8.1 → 8.2 → 8.3 → 8.4
+Error Elimination: 9 (independent)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -349,22 +382,23 @@ Retrofitting: 8.1 → 8.2 → 8.3 → 8.4
 | 7.1. API Bridge | v2.1 | 0/3 | Not started | - |
 | 7.2. WebView Bridge | v2.1 | 0/4 | Not started | - |
 | 7.3. Migration Complete | v2.1 | 0/3 | Not started | - |
-| 8.1. Requirements Verification | v2.2 | 2/2 | Ready | - |
+| 8.1. Requirements Verification | v2.2 | 2/2 | Complete | 2026-01-26 |
 | 8.2. Core Versioning | v2.2 | 2/2 | Complete | 2026-01-26 |
-| 8.3. ETL Integration | v2.2 | 2/2 | Ready | - |
+| 8.3. ETL Integration | v2.2 | 2/2 | Complete | 2026-01-26 |
 | 8.4. UI Validation | v2.2 | 0/4 | Planned | - |
+| 9. Error Elimination | v2.3 | 0/5 | Planned | - |
 
 ## Architecture Integration Summary
 
-### v1.0 → v2.0 → v2.1 Evolution
+### v1.0 → v2.0 → v2.1 → v2.3 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete
-====================    =======================    ========================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid
-React Components        SwiftUI Views              React + SwiftUI Hybrid
-Browser Environment     Native iOS/macOS           WebView + Native
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Error-Free
+====================    =======================    ========================    =================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           Zero errors/warnings
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Type-safe D3
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Clean TypeScript
+Browser Environment     Native iOS/macOS           WebView + Native            Swift concurrency-safe
 ```
 
 ### Migration Data Flow
@@ -380,15 +414,16 @@ IsometryDatabase (Swift)
 Production Backend
 ```
 
-### Performance Targets (v2.1 vs v1.0 vs v2.0)
+### Performance Targets (v2.3 vs v1.0 vs v2.0)
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge |
-|--------|-------------|-------------|-------------|
-| **Rendering** | 30-45fps | 60fps | 55-60fps |
-| **Memory** | Baseline | -50% | -40% |
-| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds |
-| **Battery** | Baseline | +25% | +20% |
-| **Data Integrity** | Local only | CloudKit sync | CloudKit sync |
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Clean |
+|--------|-------------|-------------|-------------|------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps+ |
+| **Memory** | Baseline | -50% | -40% | -45% |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds |
+| **Battery** | Baseline | +25% | +20% | +25% |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | CloudKit sync |
+| **Code Quality** | 345 warnings | N/A | 345 warnings | 0 warnings |
 
 ---
 
@@ -488,8 +523,14 @@ Production Backend
 - Regression testing for UI responsiveness
 - Memory usage and battery consumption tracking
 
+### Error Elimination Strategy
+1. **Phase 9.1-9.2**: Eliminate sql.js references and TypeScript errors (Wave 1)
+2. **Phase 9.3**: Establish comprehensive D3 type safety (Wave 2)
+3. **Phase 9.4**: Resolve Swift concurrency warnings (Wave 3)
+4. **Phase 9.5**: Final lint cleanup for zero warnings (Wave 4)
+
 ---
 
-**Current step:** Phase 8.3 planning complete - Ready for ETL integration verification.
+**Current step:** Phase 9 planning complete - Ready for comprehensive error elimination.
 
-**Next step:** `/gsd:execute-phase 8.3` to verify ETL operations management, data lineage tracking, and cross-system integration.
+**Next step:** `/gsd:execute-phase 9` to eliminate all errors and warnings across the codebase.
