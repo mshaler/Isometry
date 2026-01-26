@@ -7,12 +7,14 @@ public struct NotebookCaptureView: View {
 
     // State management
     @StateObject private var editorModel: NotebookEditorModel
+    @StateObject private var propertyModel: NotebookPropertyModel
     @State private var showingProperties = false
     @State private var isMinimized = false
 
     public init() {
         // Initialize with placeholder database that will be updated via environment
         self._editorModel = StateObject(wrappedValue: NotebookEditorModel(database: IsometryDatabase.placeholder))
+        self._propertyModel = StateObject(wrappedValue: NotebookPropertyModel(database: IsometryDatabase.placeholder))
     }
 
     public var body: some View {
@@ -27,6 +29,7 @@ public struct NotebookCaptureView: View {
             // Update editor model with actual database when available
             if let database = appState.database {
                 updateEditorDatabase(database)
+                updatePropertyDatabase(database)
 
                 // Create a default card if none is active
                 if editorModel.activeCard == nil {
@@ -39,6 +42,13 @@ public struct NotebookCaptureView: View {
         .onChange(of: appState.database) { oldValue, newValue in
             if let database = newValue {
                 updateEditorDatabase(database)
+                updatePropertyDatabase(database)
+            }
+        }
+        .onChange(of: editorModel.activeCard) { oldValue, newValue in
+            // Update property model when active card changes
+            if let newCard = newValue {
+                propertyModel.loadCard(newCard)
             }
         }
     }
@@ -181,9 +191,22 @@ public struct NotebookCaptureView: View {
                 Button {
                     showingProperties.toggle()
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(.caption)
-                        .foregroundStyle(showingProperties ? .accent : .secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "slider.horizontal.3")
+                            .font(.caption)
+
+                        if propertyModel.propertyCount > 0 {
+                            Text("\(propertyModel.propertyCount)")
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.accent)
+                                .foregroundStyle(.white)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    .foregroundStyle(showingProperties ? .accent : .secondary)
                 }
                 .buttonStyle(.plain)
 
@@ -244,11 +267,25 @@ public struct NotebookCaptureView: View {
     // MARK: - Properties Panel
 
     private var propertiesPanel: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 0) {
+            // Properties editor
+            PropertyEditor(propertyModel: propertyModel)
+                .frame(maxHeight: 400)
+
+            Divider()
+
+            // System properties
+            systemPropertiesView
+        }
+    }
+
+    private var systemPropertiesView: some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Properties")
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                Text("System Properties")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Text("\(editorModel.wordCount) words • \(editorModel.characterCount) characters")
                     .font(.caption)
@@ -256,45 +293,31 @@ public struct NotebookCaptureView: View {
             }
 
             if let card = editorModel.activeCard {
-                VStack(alignment: .leading, spacing: 8) {
-                    // Basic info
-                    Group {
-                        PropertyRow(label: "Card ID", value: String(card.id.prefix(8)) + "...")
-                        PropertyRow(label: "Created", value: DateFormatter.localizedString(from: card.createdAt, dateStyle: .short, timeStyle: .short))
-                        PropertyRow(label: "Modified", value: DateFormatter.localizedString(from: card.modifiedAt, dateStyle: .short, timeStyle: .short))
-                    }
-
-                    Divider()
-
-                    // Editable properties
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Custom Properties")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.secondary)
-
-                        if card.properties.isEmpty {
-                            Text("No custom properties")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .italic()
-                        } else {
-                            ForEach(Array(card.properties.keys.sorted()), id: \.self) { key in
-                                PropertyRow(label: key, value: card.properties[key] ?? "")
-                            }
-                        }
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], alignment: .leading, spacing: 8) {
+                    PropertyRow(label: "Card ID", value: String(card.id.prefix(8)) + "...")
+                    PropertyRow(label: "Created", value: DateFormatter.localizedString(from: card.createdAt, dateStyle: .short, timeStyle: .short))
+                    PropertyRow(label: "Modified", value: DateFormatter.localizedString(from: card.modifiedAt, dateStyle: .short, timeStyle: .short))
+                    if let templateId = card.templateId {
+                        PropertyRow(label: "Template", value: templateId)
                     }
                 }
             }
         }
         .padding(16)
-        .background(.background.secondary)
+        .background(.background.tertiary)
     }
 
     // MARK: - Helper Methods
 
     private func updateEditorDatabase(_ database: IsometryDatabase) {
         editorModel.updateDatabase(database)
+    }
+
+    private func updatePropertyDatabase(_ database: IsometryDatabase) {
+        propertyModel.updateDatabase(database)
     }
 }
 
