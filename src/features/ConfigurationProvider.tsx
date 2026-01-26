@@ -203,14 +203,16 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
 
   // Get configuration value with type safety and environment awareness
   const getValue = useMemo(() => {
-    return <T>(key: string, defaultValue?: T): T | undefined => {
+    return function<T>(key: string, defaultValue?: T): T | undefined {
       const startTime = performance.now();
-      defer: {
+
+      // Cleanup function to log slow retrievals
+      const logPerformance = () => {
         const retrievalTime = performance.now() - startTime;
         if (retrievalTime > 1) { // Log slow retrievals
           console.debug(`Configuration retrieval for '${key}' took ${retrievalTime.toFixed(2)}ms`);
         }
-      }
+      };
 
       // Check cache first
       const cacheKey = `${key}:${environment}`;
@@ -218,6 +220,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       const now = Date.now();
 
       if (cached && (now - cached.timestamp) < cacheValidityMs) {
+        logPerformance();
         return cached.value as T;
       }
 
@@ -225,9 +228,11 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       if (!configItem) {
         if (defaultValue !== undefined) {
           console.info(`Configuration key '${key}' not found, using default value`);
+          logPerformance();
           return defaultValue;
         }
         console.warn(`Configuration key '${key}' not found and no default provided`);
+        logPerformance();
         return undefined;
       }
 
@@ -243,12 +248,13 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       // Cache the parsed value
       valueCache.set(cacheKey, { value: parsedValue, timestamp: now });
 
+      logPerformance();
       return parsedValue as T;
     };
   }, [configurations, environment, valueCache]);
 
   // Set configuration value
-  const setValue = async <T>(key: string, value: T, targetEnvironment?: ConfigurationEnvironment): Promise<void> => {
+  const setValue = async function<T>(key: string, value: T, targetEnvironment?: ConfigurationEnvironment): Promise<void> {
     try {
       const serializedValue = serializeConfigurationValue(value);
       const env = targetEnvironment || environment;
@@ -289,7 +295,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       setError(err instanceof Error ? err.message : 'Failed to set configuration value');
       throw err;
     }
-  };
+  }
 
   // Set multiple configuration values
   const setBulkValues = async (updates: Record<string, unknown>, targetEnvironment?: ConfigurationEnvironment): Promise<void> => {

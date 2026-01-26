@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePAFV, type Wells, type Chip } from '../contexts/PAFVContext';
 import { useMockData } from './useMockData';
 import type { Node } from '../types/node';
@@ -110,17 +110,6 @@ interface StateChanges {
 // Field Mapping & Extraction
 // ============================================================================
 
-const FIELD_MAP: Record<string, keyof Node> = {
-  folder: 'folder',
-  subfolder: 'status',
-  tags: 'folder',
-  year: 'createdAt',
-  month: 'createdAt',
-  category: 'folder',
-  status: 'status',
-  priority: 'priority',
-};
-
 // Use extractFieldValue from d3Scales utility, but ensure string output for keys
 const extractFieldValueAsString = (node: Node, chip: Chip): string => {
   const value = extractFieldValue(node, chip);
@@ -167,7 +156,7 @@ class PerformanceMonitor {
   }
 
   getMemoryUsage(): number {
-    const memory = (performance as any).memory;
+    const memory = (performance as { memory?: { usedJSHeapSize: number } }).memory;
     return memory ? memory.usedJSHeapSize / 1024 / 1024 : 0; // MB
   }
 }
@@ -266,7 +255,7 @@ const generateScales = (
 const calculateLayout = (groupedData: GroupedData, scaleSystem: D3ScaleSystem): GroupedData => {
   const updatedCells = new Map(groupedData.cells);
 
-  updatedCells.forEach((cell, cellKey) => {
+  updatedCells.forEach((cell) => {
     const x = scaleSystem.x.composite(cell.colKey) || 0;
     const y = scaleSystem.y.composite(cell.rowKey) || 0;
     const width = scaleSystem.x.composite.bandwidth();
@@ -285,7 +274,7 @@ const calculateLayout = (groupedData: GroupedData, scaleSystem: D3ScaleSystem): 
 const prepareRenderCommands = (groupedData: GroupedData): RenderCommands => {
   const cells: CellDrawCommand[] = [];
 
-  groupedData.cells.forEach((cell, cellKey) => {
+  groupedData.cells.forEach((cell) => {
     const nodeCount = cell.nodes.length;
     const style: CellStyle = {
       fill: nodeCount === 0 ? '#f9f9f9' : '#e3f2fd',
@@ -314,7 +303,7 @@ const prepareRenderCommands = (groupedData: GroupedData): RenderCommands => {
 // Main Hook
 // ============================================================================
 
-export function useD3Canvas(containerRef?: React.RefObject<HTMLElement>): {
+export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
   canvasState: D3CanvasState;
   performance: PerformanceMetrics;
   error: string | null;
