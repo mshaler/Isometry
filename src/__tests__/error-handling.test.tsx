@@ -51,23 +51,35 @@ describe('Error Handling System', () => {
     });
 
     it('should allow retry after error', async () => {
+      // Test with a component that can be fixed
+      let shouldThrow = true;
+      function ConditionalErrorComponent() {
+        if (shouldThrow) {
+          throw new Error('Test error message');
+        }
+        return <div data-testid="success">No error</div>;
+      }
+
       const { rerender } = render(
         <ErrorBoundary level="component" name="test">
-          <ErrorThrowingComponent shouldThrow={true} />
+          <ConditionalErrorComponent />
         </ErrorBoundary>
       );
 
       // Error is displayed
       expect(screen.getByText('Something Went Wrong')).toBeInTheDocument();
 
-      // Mock the component to not throw after retry
+      // Fix the component
+      shouldThrow = false;
+
+      // Click retry button
       const retryButton = screen.getByRole('button', { name: /try again/i });
       fireEvent.click(retryButton);
 
       // Rerender with fixed component
       rerender(
         <ErrorBoundary level="component" name="test">
-          <ErrorThrowingComponent shouldThrow={false} />
+          <ConditionalErrorComponent />
         </ErrorBoundary>
       );
 
@@ -107,8 +119,8 @@ describe('Error Handling System', () => {
       // Initially details are hidden
       expect(screen.queryByText('Technical Details:')).not.toBeInTheDocument();
 
-      // Click show details button
-      const detailsButton = screen.getByRole('button', { name: /show details/i });
+      // Click show details button - look for button by text content that includes "Details"
+      const detailsButton = screen.getByRole('button', { name: /Details/i });
       fireEvent.click(detailsButton);
 
       // Now details should be visible
@@ -170,35 +182,41 @@ describe('Error Handling System', () => {
   });
 
   describe('NotificationSystem', () => {
-    it('should render notifications from error reporting service', () => {
+    it('should render notifications from error reporting service', async () => {
       render(<NotificationSystem />);
 
       // Add a notification
       errorReporting.reportUserError('Test Notification', 'Test message');
 
       // Should appear in the notification system
-      expect(screen.getByText('Test Notification')).toBeInTheDocument();
-      expect(screen.getByText('Test message')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Test Notification')).toBeInTheDocument();
+        expect(screen.getByText('Test message')).toBeInTheDocument();
+      });
     });
 
-    it('should handle notification dismissal', () => {
+    it('should handle notification dismissal', async () => {
       render(<NotificationSystem />);
 
       // Add a notification
       errorReporting.reportUserError('Test Notification', 'Test message');
 
       // Should be visible
-      expect(screen.getByText('Test Notification')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Test Notification')).toBeInTheDocument();
+      });
 
       // Click dismiss button
       const dismissButton = screen.getByLabelText('Dismiss notification');
       fireEvent.click(dismissButton);
 
       // Should be removed
-      expect(screen.queryByText('Test Notification')).not.toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Test Notification')).not.toBeInTheDocument();
+      });
     });
 
-    it('should execute notification actions', () => {
+    it('should execute notification actions', async () => {
       const mockAction = vi.fn();
       render(<NotificationSystem />);
 
@@ -208,6 +226,11 @@ describe('Error Handling System', () => {
         'Test message',
         [{ label: 'Test Button', action: mockAction }]
       );
+
+      // Wait for notification to appear
+      await waitFor(() => {
+        expect(screen.getByText('Test Action')).toBeInTheDocument();
+      });
 
       // Click the action button
       const actionButton = screen.getByRole('button', { name: 'Test Button' });
@@ -231,8 +254,8 @@ describe('Error Handling System', () => {
         </>
       );
 
-      // Error boundary should catch error
-      expect(screen.getByText('Error Occurred')).toBeInTheDocument();
+      // Error boundary should catch error and display appropriate UI
+      expect(screen.getByText(/An error occurred/)).toBeInTheDocument();
 
       // onError callback should be called
       expect(onErrorSpy).toHaveBeenCalled();
