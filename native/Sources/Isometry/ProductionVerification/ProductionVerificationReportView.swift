@@ -110,25 +110,25 @@ public struct ProductionVerificationReportView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 12) {
-                StatusCard(
+                VerificationStatusCard(
                     title: "CloudKit Container",
                     status: report.containerStatus.displayStatus,
                     description: containerDescription
                 )
 
-                StatusCard(
+                VerificationStatusCard(
                     title: "Schema Deployment",
                     status: report.schemaStatus.displayStatus,
                     description: schemaDescription
                 )
 
-                StatusCard(
+                VerificationStatusCard(
                     title: "Permissions",
                     status: report.permissionsStatus.displayStatus,
                     description: permissionsDescription
                 )
 
-                StatusCard(
+                VerificationStatusCard(
                     title: "Usage Quota",
                     status: report.quotaStatus.displayStatus,
                     description: quotaDescription
@@ -322,7 +322,7 @@ public struct ProductionVerificationReportView: View {
 
 // MARK: - Supporting Views
 
-struct StatusCard: View {
+struct VerificationStatusCard: View {
     let title: String
     let status: (color: Color, icon: String, text: String)
     let description: String

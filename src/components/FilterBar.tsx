@@ -1,5 +1,5 @@
-import { useFilters, type Filter } from '@/contexts/FilterContext';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useFilters, type Filter } from '../contexts/FilterContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
 
 const FILTER_FIELDS = [

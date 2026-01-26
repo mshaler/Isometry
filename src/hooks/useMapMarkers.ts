@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSQLite } from '@/db/SQLiteContext';
+import { useSQLite } from '../db/SQLiteContext';
 
 export interface MapMarker {
   id: string;

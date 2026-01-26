@@ -1,6 +1,6 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useMemo } from 'react';
-import { compile } from '@/dsl/compiler';
-import type { FilterOperator, CompiledQuery, ASTNode, AndNode, FilterNode } from '@/dsl/types';
+import { compile } from '../dsl/compiler';
+import type { FilterOperator, CompiledQuery, ASTNode, AndNode, FilterNode } from '../dsl/types';
 
 export interface Filter {
   field: string;

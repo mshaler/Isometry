@@ -10,7 +10,7 @@ interface ComponentLayout {
 }
 
 export function NotebookLayout() {
-  const { layout, updateLayout } = useNotebook();
+  const { updateLayout } = useNotebook();
   const containerRef = useRef<HTMLDivElement>(null);
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
   const [componentLayouts, setComponentLayouts] = useState<{

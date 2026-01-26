@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
-import { useFilters } from '../state/FilterContext';
+import { useFilters } from '../contexts/FilterContext';
 import { useNodes, type QueryState } from './useSQLiteQuery';
-import { compileFilters } from '../filters/compiler';
 import type { Node } from '../types/node';
 
 /**
@@ -9,17 +8,52 @@ import type { Node } from '../types/node';
  * Automatically recompiles SQL when filters change.
  */
 export function useFilteredNodes(): QueryState<Node> {
-  const { activeFilters } = useFilters();
+  const { filters: activeFilters } = useFilters();
 
-  // Compile filters to SQL WHERE clause
+  // Compile filters to SQL WHERE clause - simplified for basic Filter[]
   const { whereClause, params } = useMemo(() => {
-    const compiled = compileFilters(activeFilters);
-    // compileFilters always includes 'deleted_at IS NULL',
-    // but useNodes also adds it, so we need to handle this
-    // The compiler output is the full WHERE clause content
+    if (activeFilters.length === 0) {
+      return { whereClause: '1=1', params: [] };
+    }
+
+    const conditions: string[] = [];
+    const filterParams: (string | number | boolean)[] = [];
+
+    activeFilters.forEach(filter => {
+      const field = filter.field;
+      const op = filter.operator;
+      const value = filter.value;
+
+      switch (op) {
+        case '=':
+          conditions.push(`${field} = ?`);
+          filterParams.push(value);
+          break;
+        case '!=':
+          conditions.push(`${field} != ?`);
+          filterParams.push(value);
+          break;
+        case '>':
+          conditions.push(`${field} > ?`);
+          filterParams.push(value);
+          break;
+        case '<':
+          conditions.push(`${field} < ?`);
+          filterParams.push(value);
+          break;
+        case 'contains':
+          conditions.push(`${field} LIKE ?`);
+          filterParams.push(`%${value}%`);
+          break;
+        default:
+          conditions.push(`${field} = ?`);
+          filterParams.push(value);
+      }
+    });
+
     return {
-      whereClause: compiled.sql || '1=1',
-      params: compiled.params,
+      whereClause: conditions.join(' AND '),
+      params: filterParams,
     };
   }, [activeFilters]);
 
@@ -43,28 +77,21 @@ export function useFilterSummary(): {
   activeCount: number;
   description: string;
 } {
-  const { activeFilters, activeCount } = useFilters();
+  const { filters } = useFilters();
+
+  const activeCount = filters.length;
 
   const description = useMemo(() => {
-    const parts: string[] = [];
-
-    if (activeFilters.time?.preset) {
-      parts.push(activeFilters.time.preset.replace(/-/g, ' '));
-    } else if (activeFilters.time?.type === 'range') {
-      parts.push('custom date range');
+    if (filters.length === 0) {
+      return 'no filters';
     }
 
-    if (activeFilters.category?.folders?.length) {
-      const count = activeFilters.category.folders.length;
-      parts.push(`${count} folder${count > 1 ? 's' : ''}`);
-    }
+    const parts = filters.map(filter =>
+      `${filter.field} ${filter.operator} ${filter.value}`
+    );
 
-    if (activeFilters.hierarchy?.minPriority != null || activeFilters.hierarchy?.maxPriority != null) {
-      parts.push('priority filtered');
-    }
-
-    return parts.length > 0 ? parts.join(', ') : 'no filters';
-  }, [activeFilters]);
+    return parts.join(', ');
+  }, [filters]);
 
   return { activeCount, description };
 }

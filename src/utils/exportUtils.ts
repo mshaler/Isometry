@@ -1,5 +1,6 @@
 import html2pdf from 'html2pdf.js';
 import type { NotebookCard } from '../types/notebook';
+import { officeProcessor, downloadBlob } from './officeDocumentProcessor';
 
 export interface PDFOptions {
   pageSize?: 'a4' | 'letter' | 'legal';
@@ -20,6 +21,12 @@ export interface JSONOptions {
   filename?: string;
   includeMetadata?: boolean;
   prettyPrint?: boolean;
+}
+
+export interface OfficeExportOptions {
+  filename?: string;
+  includeMetadata?: boolean;
+  multipleSheets?: boolean; // For Excel: create separate sheets for each card
 }
 
 /**
@@ -413,4 +420,80 @@ function downloadFile(content: string, filename: string, mimeType: string): void
   document.body.removeChild(link);
 
   URL.revokeObjectURL(url);
+}
+
+/**
+ * Export notebook card(s) as Excel XLSX
+ */
+export async function exportToExcel(
+  cardOrCards: NotebookCard | NotebookCard[],
+  options: OfficeExportOptions = {}
+): Promise<void> {
+  const {
+    filename = Array.isArray(cardOrCards) ? 'notebook-cards.xlsx' : `${sanitizeFilename(cardOrCards.properties?.title || 'notebook-card')}.xlsx`,
+    includeMetadata = true,
+    multipleSheets = true,
+  } = options;
+
+  try {
+    const cards = Array.isArray(cardOrCards) ? cardOrCards : [cardOrCards];
+
+    // Convert NotebookCards to Nodes for office processor
+    const nodes = cards.map(card => ({
+      id: card.id,
+      nodeType: card.cardType,
+      name: card.properties?.title || 'Untitled',
+      content: card.markdownContent || '',
+      summary: card.properties?.title || '',
+      createdAt: card.createdAt,
+      modifiedAt: card.modifiedAt,
+      folder: null,
+      tags: [],
+      source: 'notebook-export',
+      sourceId: card.id,
+      sourceUrl: null
+    }));
+
+    const blob = await officeProcessor.exportToExcel(nodes, filename);
+    downloadBlob(blob, filename);
+  } catch (error) {
+    console.error('Excel export failed:', error);
+    throw new Error(`Failed to export Excel: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+/**
+ * Export notebook card as Word DOCX
+ */
+export async function exportToWord(
+  card: NotebookCard,
+  options: OfficeExportOptions = {}
+): Promise<void> {
+  const {
+    filename = `${sanitizeFilename(card.properties?.title || 'notebook-card')}.docx`,
+  } = options;
+
+  try {
+    // Convert NotebookCard to Node for office processor
+    const node = {
+      id: card.id,
+      nodeType: card.cardType,
+      name: card.properties?.title || 'Untitled',
+      content: card.markdownContent || '',
+      summary: card.properties?.title || '',
+      createdAt: card.createdAt,
+      modifiedAt: card.modifiedAt,
+      folder: null,
+      tags: [],
+      source: 'notebook-export',
+      sourceId: card.id,
+      sourceUrl: null
+    };
+
+    const blob = await officeProcessor.exportToWord(node);
+    downloadBlob(blob, filename);
+  } catch (error) {
+    console.error('Word export failed:', error);
+    throw new Error(`Failed to export Word: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 }

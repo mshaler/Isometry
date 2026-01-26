@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useAppState } from '@/contexts/AppStateContext';
-import { useFilteredNodes } from '@/hooks/useFilteredNodes';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAppState } from '../contexts/AppStateContext';
+import { useFilteredNodes } from '../hooks/useFilteredNodes';
 import {
   ListView,
   GridView,

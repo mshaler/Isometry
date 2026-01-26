@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useFilters } from '@/contexts/FilterContext';
-import { parse } from '@/dsl/parser';
-import type { FilterNode } from '@/dsl/types';
+import { useTheme } from '../contexts/ThemeContext';
+import { useFilters } from '../contexts/FilterContext';
+import { parse } from '../dsl/parser';
+import type { FilterNode } from '../dsl/types';
 
 export function CommandBar() {
   const [commandText, setCommandText] = useState('');

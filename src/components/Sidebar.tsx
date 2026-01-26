@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
 import { Filter, FileText, X } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useFilters } from '@/contexts/FilterContext';
-import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
-import { TabPanel, type Tab } from '@/components/ui/TabPanel';
-import { AccordionSection } from '@/components/ui/AccordionSection';
+import { useTheme } from '../contexts/ThemeContext';
+import { useFilters } from '../contexts/FilterContext';
+import { useSQLiteQuery } from '../hooks/useSQLiteQuery';
+import { TabPanel, type Tab } from './ui/TabPanel';
+import { AccordionSection } from './ui/AccordionSection';
 
 type TabType = 'filters' | 'templates';
 
