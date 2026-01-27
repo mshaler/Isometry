@@ -81,39 +81,27 @@ const MOCK_NODES: Node[] = [
     createdAt: '2024-01-08T14:00:00Z',
     modifiedAt: '2024-01-12T11:00:00Z',
   }),
-  {
-    id: '4',
-    name: 'Bug Fix #123',
-    content: 'Critical production issue',
+  createMockNode('4', 'Bug Fix #123', 'Critical production issue', {
     folder: 'Development',
     status: 'active',
     priority: 3,
     createdAt: '2024-01-22T08:00:00Z',
     modifiedAt: '2024-01-22T08:30:00Z',
-    deletedAt: null,
-  },
-  {
-    id: '5',
-    name: 'Feature Spec',
-    content: 'New user dashboard',
+  }),
+  createMockNode('5', 'Feature Spec', 'New user dashboard', {
     folder: 'Projects',
     status: 'pending',
     priority: 2,
     createdAt: '2024-01-05T13:00:00Z',
     modifiedAt: '2024-01-18T10:00:00Z',
-    deletedAt: null,
-  },
-  {
-    id: '6',
-    name: 'Documentation Update',
-    content: 'API reference docs',
+  }),
+  createMockNode('6', 'Documentation Update', 'API reference docs', {
     folder: 'Documentation',
     status: 'completed',
     priority: 1,
     createdAt: '2024-01-12T16:00:00Z',
     modifiedAt: '2024-01-19T14:00:00Z',
-    deletedAt: null,
-  }
+  })
 ];
 
 export interface MockQueryState {

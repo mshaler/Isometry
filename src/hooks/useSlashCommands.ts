@@ -264,7 +264,7 @@ export function useSlashCommands() {
   }, [menuState, navigateMenu, executeCommand, closeMenu, openMenu]);
 
   // Handle text input when menu is open (for updating query)
-  const handleTextInput = useCallback((text: string, _cursorPosition: number, fullContent: string) => {
+  const handleTextInput = useCallback((_text: string, cursorPosition: number, fullContent: string) => {
     if (!menuState.isOpen) return false;
 
     // Find the text after the last '/' before cursor

@@ -270,7 +270,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     });
   }, [executeCommand, showPrompt, options.onNavigateHistory]);
 
-  const resizeTerminal = useCallback((cols: number, _rows: number) => {
+  const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;
     const fitAddon = fitAddonRef.current;
 

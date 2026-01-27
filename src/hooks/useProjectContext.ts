@@ -45,7 +45,7 @@ interface UseProjectContextReturn {
  */
 export function useProjectContext(): UseProjectContextReturn {
   const { activeCard } = useNotebook();
-  const { db, execute } = useDatabase();
+  const { execute } = useDatabase();
 
   const getActiveCardContext = useCallback((): ProjectContext['activeCard'] => {
     if (!activeCard) {
@@ -53,7 +53,7 @@ export function useProjectContext(): UseProjectContextReturn {
     }
 
     return {
-      title: activeCard.properties?.title || activeCard.nodeId || 'Untitled',
+      title: activeCard.properties?.title as string || activeCard.nodeId || 'Untitled',
       content: truncateContent(activeCard.markdownContent || '', MAX_CONTENT_SIZE),
       type: activeCard.cardType,
       createdAt: activeCard.createdAt,
@@ -103,7 +103,7 @@ export function useProjectContext(): UseProjectContextReturn {
 
     try {
       // Get recent cards
-      const recentCardRows = execute<Record<string, unknown>>(
+      const recentCardRows = await execute<Record<string, unknown>>(
         `SELECT nc.id, n.name as title, nc.card_type as type, nc.modified_at as modifiedAt
          FROM notebook_cards nc
          JOIN nodes n ON nc.node_id = n.id
@@ -112,7 +112,7 @@ export function useProjectContext(): UseProjectContextReturn {
          LIMIT 5`
       );
 
-      const recentCards = recentCardRows.map(row => ({
+      const recentCards = recentCardRows.map((row: any) => ({
         id: String(row.id),
         title: String(row.title),
         type: String(row.type),
@@ -120,7 +120,7 @@ export function useProjectContext(): UseProjectContextReturn {
       }));
 
       // Get total node count
-      const countRows = execute<{ count: number }>(
+      const countRows = await execute<{ count: number }>(
         'SELECT COUNT(*) as count FROM nodes WHERE deleted_at IS NULL'
       );
       const nodeCount = countRows[0]?.count || 0;

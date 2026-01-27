@@ -226,7 +226,7 @@ export async function findAvailablePort(startPort: number = 8080): Promise<numbe
     server.listen(startPort, () => {
       const port = (server.address() as { port?: number })?.port;
       server.close(() => {
-        resolve(port);
+        resolve(port || startPort);
       });
     });
 

@@ -66,7 +66,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
   const { filters } = useFilters();
   const { wells } = usePAFV();
   const { theme } = useTheme();
-  const { db, execute } = useDatabase();
+  const { execute } = useDatabase();
 
   const [state, setState] = useState<NotebookIntegrationState>({
     isMainAppConnected: true, // Assume connected in same app
@@ -199,7 +199,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     const conflicts: string[] = [];
 
     // Query for nodes that have been modified in both notebook and main app recently
-    const recentlyModified = execute<ConflictQueryResult>(
+    const recentlyModified = await execute<ConflictQueryResult>(
       `SELECT nc.id as card_id, nc.modified_at as card_modified, n.modified_at as node_modified
        FROM notebook_cards nc
        JOIN nodes n ON nc.node_id = n.id
@@ -253,10 +253,11 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
         case 'main': {
           // Keep main app version, update notebook card
-          const nodeData = execute<NodeQueryResult>(
+          const nodeDataResult = await execute<NodeQueryResult>(
             `SELECT * FROM nodes WHERE id = ?`,
             [card.nodeId]
-          )[0];
+          );
+          const nodeData = nodeDataResult[0];
 
           if (nodeData) {
             // Update notebook card from node data
