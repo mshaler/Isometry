@@ -5,6 +5,7 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { FeatureFlagProvider, useFeatureFlags, useFeatureFlag } from '../FeatureFlagProvider';
 import { ABTestProvider, useABTests, useExperimentVariant } from '../ABTestProvider';
 import { ConfigurationProvider, useConfiguration, useConfigValue } from '../ConfigurationProvider';
@@ -12,13 +13,13 @@ import { ConfigurationProvider, useConfiguration, useConfigValue } from '../Conf
 // Mock native bridge
 const mockNativeBridge = {
   featureFlags: {
-    postMessage: jest.fn()
+    postMessage: vi.fn()
   },
   abTesting: {
-    postMessage: jest.fn()
+    postMessage: vi.fn()
   },
   configuration: {
-    postMessage: jest.fn()
+    postMessage: vi.fn()
   }
 };
 
@@ -33,7 +34,7 @@ Object.defineProperty(window, 'webkit', {
 describe('System Integration Performance Tests', () => {
   beforeEach(() => {
     // Reset mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
 
     // Set up default mock responses

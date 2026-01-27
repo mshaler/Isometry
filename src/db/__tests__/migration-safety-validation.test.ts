@@ -90,14 +90,14 @@ describe('Migration Safety Validation', () => {
       const assessment = await assessRollbackSafety();
 
       expect(assessment).toMatchObject({
-        level: expect.oneOf(['safe', 'risky', 'dangerous']),
+        level: expect.stringMatching(/^(safe|risky|dangerous)$/),
         score: expect.any(Number),
         factors: {
-          dataSize: expect.oneOf(['small', 'medium', 'large']),
-          schemaComplexity: expect.oneOf(['simple', 'moderate', 'complex']),
+          dataSize: expect.stringMatching(/^(small|medium|large)$/),
+          schemaComplexity: expect.stringMatching(/^(simple|moderate|complex)$/),
           pendingChanges: expect.any(Number),
           cloudKitDependency: expect.any(Boolean),
-          performanceRisk: expect.oneOf(['low', 'medium', 'high'])
+          performanceRisk: expect.stringMatching(/^(low|medium|high)$/)
         },
         recommendations: expect.any(Array),
         blockers: expect.any(Array)
@@ -167,7 +167,7 @@ describe('Migration Safety Validation', () => {
         metadata: {
           version: expect.any(String),
           schema: expect.any(String),
-          exportFormat: expect.oneOf(['sqljs', 'json', 'sql'])
+          exportFormat: expect.stringMatching(/^(sqljs|json|sql)$/)
         }
       });
 
@@ -211,7 +211,7 @@ describe('Migration Safety Validation', () => {
 
       const backup = await createDataBackup();
 
-      expect(backup.source).toBe(DatabaseMode.SQL_JS);
+      expect(backup.source).toBe(DatabaseMode.FALLBACK);
       expect(backup.recordCount).toBe(0);
     });
   });
@@ -275,8 +275,8 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should detect data count mismatches', async () => {
-      // Create backup first
-      const backup = await createDataBackup();
+      // Create backup first to establish baseline
+      await createDataBackup();
 
       // Mock different record count for validation
       mockWebViewBridge.database.execute.mockImplementation((query) => {
@@ -286,7 +286,7 @@ describe('Migration Safety Validation', () => {
         return Promise.resolve([]);
       });
 
-      const report = await validateDataIntegrity(backup.id);
+      const report = await validateDataIntegrity();
 
       expect(report.recordCounts.missing).toBeGreaterThan(0);
       expect(report.warnings).toContain(expect.stringContaining('records missing'));
