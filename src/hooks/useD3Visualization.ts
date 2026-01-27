@@ -49,8 +49,8 @@ export function useD3Visualization(): UseD3VisualizationReturn {
 
   // Debounced content processing to avoid excessive re-parsing
   const debouncedProcessContent = useMemo(
-    () => debounce((content: string) => {
-      processContent(content);
+    () => debounce((...args: unknown[]) => {
+      processContent(args[0] as string);
     }, 200),
     []
   );
@@ -108,7 +108,7 @@ export function useD3Visualization(): UseD3VisualizationReturn {
 
       setState(prev => ({
         ...prev,
-        data: parsedData.data,
+        data: parsedData.data as D3DataItem[],
         vizType: finalConfig.type,
         config: finalConfig,
         directive,

@@ -201,12 +201,12 @@ public struct NotebookCaptureView: View {
                                 .fontWeight(.medium)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(.accent)
+                                .background(.blue)
                                 .foregroundStyle(.white)
                                 .clipShape(Capsule())
                         }
                     }
-                    .foregroundStyle(showingProperties ? .accent : .secondary)
+                    .foregroundStyle(showingProperties ? .blue : .secondary)
                 }
                 .buttonStyle(.plain)
 

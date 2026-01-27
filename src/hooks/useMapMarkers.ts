@@ -25,7 +25,7 @@ export function useMapMarkers(): {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    if (!db) {
+    if (!execute) {
       setLoading(false);
       return;
     }
@@ -35,7 +35,7 @@ export function useMapMarkers(): {
         setLoading(true);
 
         // Query nodes with non-null latitude/longitude
-        const result = execute(`
+        const result = await execute(`
           SELECT id, name, latitude, longitude
           FROM nodes
           WHERE latitude IS NOT NULL
@@ -68,7 +68,7 @@ export function useMapMarkers(): {
     };
 
     fetchMarkers();
-  }, [db]);
+  }, [execute]);
 
   return { markers, loading, error };
 }

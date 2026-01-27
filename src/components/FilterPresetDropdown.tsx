@@ -51,7 +51,7 @@ export function FilterPresetDropdown({
   };
 
   // Handle save preset
-  const handleSavePreset = () => {
+  const handleSavePreset = async () => {
     // Validation
     if (!presetName.trim()) {
       setSaveError('Name is required');
@@ -64,7 +64,7 @@ export function FilterPresetDropdown({
     }
 
     // Check for duplicate name
-    if (checkPresetNameExists(presetName.trim())) {
+    if (await checkPresetNameExists(presetName.trim())) {
       setShowOverwriteConfirm(true);
       return;
     }

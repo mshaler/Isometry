@@ -67,28 +67,20 @@ const MOCK_NODES: Node[] = [
     deletedAt: null,
     version: 1,
   },
-  {
-    id: '2',
-    name: 'Meeting Notes',
-    content: 'Weekly team sync',
+  createMockNode('2', 'Meeting Notes', 'Weekly team sync', {
     folder: 'Meetings',
     status: 'completed',
     priority: 2,
     createdAt: '2024-01-10T09:00:00Z',
     modifiedAt: '2024-01-10T16:00:00Z',
-    deletedAt: null,
-  },
-  {
-    id: '3',
-    name: 'Research Task',
-    content: 'Market analysis',
+  }),
+  createMockNode('3', 'Research Task', 'Market analysis', {
     folder: 'Research',
     status: 'pending',
     priority: 1,
     createdAt: '2024-01-08T14:00:00Z',
     modifiedAt: '2024-01-12T11:00:00Z',
-    deletedAt: null,
-  },
+  }),
   {
     id: '4',
     name: 'Bug Fix #123',

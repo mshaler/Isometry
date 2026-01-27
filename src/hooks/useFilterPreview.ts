@@ -62,7 +62,7 @@ export function useFilterPreview(
 
     // Debounce the query
     debounceTimerRef.current = setTimeout(async () => {
-      if (!db) {
+      if (!execute) {
         setError('Database not initialized');
         setIsLoading(false);
         return;
@@ -105,7 +105,7 @@ export function useFilterPreview(
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filters, db, debounceMs]);
+  }, [filters, execute, debounceMs]);
 
   return { count, isLoading, error };
 }

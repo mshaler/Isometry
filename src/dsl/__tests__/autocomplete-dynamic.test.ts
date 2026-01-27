@@ -58,10 +58,10 @@ describe('Dynamic Autocomplete', () => {
 
   describe('initializeAutocomplete', () => {
     it('should load schema fields from database', async () => {
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
       // Test that fields are available for suggestions
-      const suggestions = await getSuggestions('', 0, mockExecute);
+      const suggestions = await getSuggestions('', 0, mockExecute as any);
 
       const fieldSuggestions = suggestions.filter(s => s.type === 'field');
       const fieldNames = fieldSuggestions.map(s => s.label);
@@ -80,7 +80,7 @@ describe('Dynamic Autocomplete', () => {
 
   describe('getSuggestions', () => {
     it('should provide field suggestions with database schema', async () => {
-      const suggestions = await getSuggestions('', 0, mockExecute);
+      const suggestions = await getSuggestions('', 0, mockExecute as any);
 
       const fieldSuggestions = suggestions.filter(s => s.type === 'field');
       expect(fieldSuggestions.length).toBeGreaterThan(0);
@@ -92,24 +92,24 @@ describe('Dynamic Autocomplete', () => {
 
     it('should suggest correct value types for different field types', async () => {
       // Initialize with schema
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
       // Test date field suggestions
-      const dateSuggestions = await getSuggestions('created_at:', 11, mockExecute);
+      const dateSuggestions = await getSuggestions('created_at:', 11, mockExecute as any);
       const dateLabels = dateSuggestions.map(s => s.label);
       expect(dateLabels).toContain('today');
       expect(dateLabels).toContain('yesterday');
       expect(dateLabels).toContain('last-week');
 
       // Test select field suggestions
-      const statusSuggestions = await getSuggestions('status:', 7, mockExecute);
+      const statusSuggestions = await getSuggestions('status:', 7, mockExecute as any);
       const statusLabels = statusSuggestions.map(s => s.label);
       expect(statusLabels).toContain('active');
       expect(statusLabels).toContain('pending');
       expect(statusLabels).toContain('completed');
 
       // Test number field suggestions (operators)
-      const prioritySuggestions = await getSuggestions('priority:', 9, mockExecute);
+      const prioritySuggestions = await getSuggestions('priority:', 9, mockExecute as any);
       const priorityLabels = prioritySuggestions.map(s => s.label);
       expect(priorityLabels).toContain('>');
       expect(priorityLabels).toContain('<');
@@ -118,9 +118,9 @@ describe('Dynamic Autocomplete', () => {
     });
 
     it('should handle partial field name matching', async () => {
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
-      const suggestions = await getSuggestions('na', 2, mockExecute);
+      const suggestions = await getSuggestions('na', 2, mockExecute as any);
       const fieldNames = suggestions.map(s => s.label);
 
       expect(fieldNames).toContain('name');
@@ -128,7 +128,7 @@ describe('Dynamic Autocomplete', () => {
 
     it('should work without execute function if cache is populated', async () => {
       // First initialize with execute function
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
       // Then call without execute function
       const suggestions = await getSuggestions('', 0);
@@ -141,7 +141,7 @@ describe('Dynamic Autocomplete', () => {
   describe('getSuggestionsSync', () => {
     it('should work with cached schema data', async () => {
       // Initialize cache first
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
       // Use sync version
       const suggestions = getSuggestionsSync('', 0);
@@ -167,13 +167,13 @@ describe('Dynamic Autocomplete', () => {
 
   describe('field type mapping', () => {
     it('should map SQL types correctly', async () => {
-      await initializeAutocomplete(mockExecute);
+      await initializeAutocomplete(mockExecute as any);
 
       // Test field type behavior through suggestions
-      const dateSuggestions = await getSuggestions('due_at:', 7, mockExecute);
+      const dateSuggestions = await getSuggestions('due_at:', 7, mockExecute as any);
       expect(dateSuggestions.some(s => s.label === 'today')).toBe(true);
 
-      const numberSuggestions = await getSuggestions('priority:', 9, mockExecute);
+      const numberSuggestions = await getSuggestions('priority:', 9, mockExecute as any);
       expect(numberSuggestions.some(s => s.label === '>')).toBe(true);
     });
   });
