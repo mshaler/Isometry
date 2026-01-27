@@ -588,7 +588,7 @@ public enum SecurityViolation: String, CaseIterable, Codable, Sendable {
         }
     }
 
-    public var severity: SecuritySeverity {
+    public var severity: ShellSecuritySeverity {
         switch self {
         case .commandNotAllowed, .systemDirectoryAccess:
             return .low
@@ -600,8 +600,8 @@ public enum SecurityViolation: String, CaseIterable, Codable, Sendable {
     }
 }
 
-/// Security violation severity levels
-public enum SecuritySeverity: String, CaseIterable, Codable, Sendable {
+/// Security violation severity levels for shell models
+public enum ShellSecuritySeverity: String, CaseIterable, Codable, Sendable {
     case low = "low"
     case medium = "medium"
     case high = "high"

@@ -587,5 +587,5 @@ struct EmptyLineageView: View {
 }
 
 #Preview {
-    ETLVersionHistoryView(database: IsometryDatabase(path: ":memory:")!)
+    ETLVersionHistoryView(database: try! IsometryDatabase(path: ":memory:"))
 }

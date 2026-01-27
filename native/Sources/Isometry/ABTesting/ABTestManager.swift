@@ -82,7 +82,7 @@ public final class ABTestManager: ObservableObject, Sendable {
         experimentId: String,
         userId: String,
         value: Double = 1.0,
-        metadata: [String: Any] = [:]
+        metadata: [String: String] = [:]
     ) {
         guard let experiment = activeExperiments[experimentId],
               let variant = experiment.assignedVariant(for: userId) else {
@@ -619,12 +619,12 @@ public struct UserAssignment: Codable, Sendable {
 /// User criteria for experiment targeting
 public struct UserCriteria: Codable, Sendable {
     public let property: String
-    public let operator: String // equals, notEquals, contains, greaterThan, lessThan
+    public let `operator`: String // equals, notEquals, contains, greaterThan, lessThan
     public let value: String
 
     public init(property: String, operator: String, value: String) {
         self.property = property
-        self.operator = operator
+        self.`operator` = operator
         self.value = value
     }
 }
@@ -657,7 +657,7 @@ public struct ABTestEvent: Codable, Sendable, Identifiable {
     public let variantId: String
     public let eventType: ABTestEventType
     public let value: Double
-    public let metadata: [String: Any]
+    public let metadata: [String: String]
     public let timestamp: Date
 
     public init(
@@ -667,7 +667,7 @@ public struct ABTestEvent: Codable, Sendable, Identifiable {
         variantId: String,
         eventType: ABTestEventType,
         value: Double = 1.0,
-        metadata: [String: Any] = [:],
+        metadata: [String: String] = [:],
         timestamp: Date = Date()
     ) {
         self.id = id

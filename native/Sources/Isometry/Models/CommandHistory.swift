@@ -469,12 +469,12 @@ extension HistoryEntry {
         self.cwd = cwd
         self.context = context
         self.sessionId = sessionId
-        self.success = success ?? response?.success
+        self.success = success ?? response?.success ?? false
     }
 
 
     /// Success status derived from response
-    public var success: Bool? {
+    public var derivedSuccess: Bool? {
         return response?.success
     }
 

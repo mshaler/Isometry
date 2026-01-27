@@ -9,7 +9,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     // MARK: - Published Properties
 
     @Published public private(set) var auditEntries: [AuditEntry] = []
-    @Published public private(set) var complianceStatus: ComplianceStatus = ComplianceStatus()
+    @Published public private(set) var complianceStatus: ConfigurationAudit.ComplianceStatus = ConfigurationAudit.ComplianceStatus()
 
     // MARK: - Private Properties
 
@@ -439,7 +439,7 @@ public enum SecurityEventType: String, Codable, Sendable {
     case auditFailure = "audit_failure"
 }
 
-/// Security severity levels
+/// Security severity levels for configuration audit
 public enum SecuritySeverity: String, Codable, Sendable {
     case low
     case medium

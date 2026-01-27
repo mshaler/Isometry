@@ -501,7 +501,7 @@ public class RollbackCoordinator: ObservableObject {
     }
 
     private func generateBackupId() -> String {
-        let timestamp = Date().formatted(.iso8601.year().month().day().hour().minute().second())
+        let timestamp = Date().formatted(.iso8601)
         let random = String(Int.random(in: 1000...9999))
         return "rollback-\(timestamp)-\(random)"
     }
