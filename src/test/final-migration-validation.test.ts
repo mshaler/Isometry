@@ -24,16 +24,9 @@ interface PerformanceMetrics {
   batteryImpact?: number;
 }
 
-interface SecurityValidation {
-  appSandboxCompliance: boolean;
-  dataEncryption: boolean;
-  messageHandlerSecurity: boolean;
-  fileSystemIsolation: boolean;
-}
 
 class FinalMigrationValidator {
   private performanceBaseline: PerformanceMetrics;
-  private _securityRequirements: SecurityValidation;
 
   constructor() {
     this.performanceBaseline = {
@@ -43,12 +36,6 @@ class FinalMigrationValidator {
       startupTime: 7500  // ms - baseline startup time
     };
 
-    this.securityRequirements = {
-      appSandboxCompliance: true,
-      dataEncryption: true,
-      messageHandlerSecurity: true,
-      fileSystemIsolation: true
-    };
   }
 
   /**

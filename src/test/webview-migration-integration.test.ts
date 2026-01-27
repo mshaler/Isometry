@@ -377,7 +377,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
         const delay = Math.random() * 100; // Variable delay
 
         setTimeout(() => {
-          bridge.handleResponse(String(message.id), { success: true }, Date.now());
+          bridge.handleResponse(String(message.id), { success: true }, undefined);
         }, delay);
       });
 

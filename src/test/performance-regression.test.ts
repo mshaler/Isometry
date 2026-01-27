@@ -235,10 +235,11 @@ export async function benchmarkMigrationPath(scenario: MigrationScenario): Promi
 async function analyzeRegressions(_provider: any, _results: any): Promise<RegressionAnalysis> {
   // Mock implementation - would analyze actual regression data
   return {
+    hasRegression: false,
+    regressionThreshold: 10,
     regressions: [],
     improvements: [],
-    overallScore: 100,
-    passed: true
+    summary: "No performance regressions detected in mock analysis"
   };
 }
 

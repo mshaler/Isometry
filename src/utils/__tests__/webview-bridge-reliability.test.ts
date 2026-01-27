@@ -486,7 +486,7 @@ describe('WebView Bridge Reliability', () => {
 
       mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
         setTimeout(() => {
-          bridge.handleResponse(String(message.id), { success: true }, Date.now());
+          bridge.handleResponse(String(message.id), { success: true }, undefined);
         }, 10);
       });
 
