@@ -1,5 +1,5 @@
 import type { NotebookTemplate, NotebookCard } from '../../types/notebook';
-import { BUILT_IN_TEMPLATES, createNotebookCardTemplate } from '../../types/notebook';
+import { BUILT_IN_TEMPLATES } from '../../types/notebook';
 import { errorReporting } from '../../services/ErrorReportingService';
 
 const TEMPLATES_STORAGE_KEY = 'notebook_custom_templates';
@@ -54,13 +54,20 @@ export function createTemplateManager() {
   };
 
   const createTemplate = async (name: string, description: string, fromCard: NotebookCard): Promise<NotebookTemplate> => {
-    const template = createNotebookCardTemplate(
+    const now = new Date().toISOString();
+    const template: NotebookTemplate = {
+      id: crypto.randomUUID(),
       name,
       description,
-      fromCard.markdownContent,
-      fromCard.properties,
-      fromCard.type
-    );
+      category: 'custom',
+      cardType: fromCard.cardType,
+      markdownContent: fromCard.markdownContent || '',
+      properties: fromCard.properties || {},
+      tags: [],
+      createdAt: now,
+      modifiedAt: now,
+      usageCount: 0
+    };
 
     const currentTemplates = loadTemplates();
     const customTemplates = currentTemplates.filter(t => !BUILT_IN_TEMPLATES.includes(t));
@@ -97,13 +104,20 @@ export function createTemplateManager() {
       throw new Error('Template not found');
     }
 
-    const duplicatedTemplate = createNotebookCardTemplate(
-      newName,
-      `Copy of ${originalTemplate.description}`,
-      originalTemplate.markdownContent,
-      originalTemplate.properties,
-      originalTemplate.type
-    );
+    const now = new Date().toISOString();
+    const duplicatedTemplate: NotebookTemplate = {
+      id: crypto.randomUUID(),
+      name: newName,
+      description: `Copy of ${originalTemplate.description}`,
+      category: 'custom',
+      cardType: originalTemplate.cardType,
+      markdownContent: originalTemplate.markdownContent,
+      properties: { ...originalTemplate.properties },
+      tags: [...originalTemplate.tags],
+      createdAt: now,
+      modifiedAt: now,
+      usageCount: 0
+    };
 
     const customTemplates = currentTemplates.filter(t => !BUILT_IN_TEMPLATES.includes(t));
     const updatedCustomTemplates = [...customTemplates, duplicatedTemplate];
