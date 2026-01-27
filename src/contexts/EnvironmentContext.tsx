@@ -6,7 +6,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { Environment } from '../utils/webview-bridge';
+import { Environment, postMessage } from '../utils/webview-bridge';
 
 export enum DatabaseMode {
   HTTP_API = 'http-api',
@@ -111,7 +111,7 @@ export function EnvironmentProvider({
 
     try {
       // Test if bridge is actually functional with a simple ping
-      const response = await Environment.postMessage('database', 'ping', {});
+      const response = await postMessage('database', 'ping', {});
       return response !== null;
     } catch (error) {
       console.warn('WebView bridge test failed:', error);

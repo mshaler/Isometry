@@ -1,11 +1,10 @@
 import type { NotebookCard, NotebookCardType, NotebookTemplate } from '../../types/notebook';
 import { createNotebookCardTemplate, rowToNotebookCard, notebookCardToRow } from '../../types/notebook';
 import { generateId } from '../../utils/id';
-import type { ErrorReporting } from '../../services/ErrorReportingService';
+import { errorReporting } from '../../services/ErrorReportingService';
 
 export function createCardOperations(
   execute: (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
-  errorReporting: ErrorReporting,
   performanceHook: { measureQuery: (operation: string, _duration: number) => void }
 ) {
 
@@ -13,7 +12,7 @@ export function createCardOperations(
     const queryStart = performance.now();
 
     try {
-      const rowsResult = execute<Record<string, unknown>>(
+      const rowsResult = execute(
         `SELECT nc.*, n.name, n.node_type
          FROM notebook_cards nc
          JOIN nodes n ON nc.node_id = n.id
@@ -27,7 +26,7 @@ export function createCardOperations(
       const queryDuration = performance.now() - queryStart;
       performanceHook.measureQuery('loadCards', queryDuration);
 
-      return rows.map(rowToNotebookCard);
+      return rows.map(row => rowToNotebookCard(row as Record<string, unknown>));
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Failed to load cards');
       throw error;
