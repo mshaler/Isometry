@@ -141,7 +141,7 @@ export function useCoordinates(
   const setViewportSize = useCallback(
     (width: number, _height: number) => {
       setViewportWidth(width);
-      setViewportHeight(height);
+      setViewportHeight(_height);
     },
     []
   );

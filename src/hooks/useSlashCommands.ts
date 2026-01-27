@@ -222,7 +222,7 @@ export function useSlashCommands() {
           return executeCommand();
         case 'Backspace': {
           // If we delete the last character and it was the '/', close menu
-          const beforeCursor = currentContent.substring(0, cursorPosition - 1);
+          const beforeCursor = _currentContent.substring(0, cursorPosition - 1);
           const afterSlash = beforeCursor.split('/').pop() || '';
           if (afterSlash === '' && menuState.query === '') {
             closeMenu();
@@ -237,7 +237,7 @@ export function useSlashCommands() {
 
     // Check for slash command trigger
     if (event.key === '/') {
-      const beforeCursor = currentContent.substring(0, cursorPosition);
+      const beforeCursor = _currentContent.substring(0, cursorPosition);
       const lines = beforeCursor.split('\n');
       const currentLine = lines[lines.length - 1];
 

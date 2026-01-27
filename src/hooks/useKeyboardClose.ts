@@ -16,7 +16,7 @@ export function useKeyboardClose(isOpen: boolean, _onClose: () => void): void {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onClose();
+        _onClose();
       }
     };
 
@@ -25,5 +25,5 @@ export function useKeyboardClose(isOpen: boolean, _onClose: () => void): void {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, _onClose]);
 }
