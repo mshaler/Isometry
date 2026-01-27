@@ -1,5 +1,15 @@
 import type { ErrorInfo } from 'react';
 
+// Import the interfaces from ErrorBoundary to ensure compatibility
+interface ErrorReportingData {
+  error: Error;
+  errorInfo?: ErrorInfo;
+  level?: string;
+  name?: string;
+  retryCount: number;
+}
+
+
 export interface ErrorReport {
   id: string;
   timestamp: string;
@@ -129,6 +139,17 @@ class ErrorReportingService {
     this.createErrorNotification(report);
 
     return reportId;
+  }
+
+  // Adapter method for GlobalErrorReporting compatibility
+  public reportErrorGlobal(data: ErrorReportingData): void {
+    this.reportError({
+      error: data.error,
+      errorInfo: data.errorInfo,
+      level: data.level as 'app' | 'feature' | 'component' | undefined,
+      name: data.name,
+      retryCount: data.retryCount
+    });
   }
 
   private determineSeverity(
@@ -280,7 +301,7 @@ class ErrorReportingService {
 
     // Remove global reference
     interface WindowWithErrorReporting extends Window {
-      errorReporting?: ErrorReportingService;
+      errorReporting?: any; // Use any to avoid interface compatibility issues
     }
     delete (window as WindowWithErrorReporting).errorReporting;
   }

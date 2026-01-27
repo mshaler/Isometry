@@ -61,7 +61,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
     migrationSafety = new MigrationSafety();
 
     // Setup default successful responses
-    mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+    mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
       setTimeout(() => {
         bridge.handleResponse(message.id, mockDatabaseResponse(message.method), undefined);
       }, 10);
@@ -90,7 +90,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
   describe('End-to-End Migration Safety with Bridge Reliability', () => {
     it('should perform complete migration safety assessment through reliable bridge', async () => {
       // Mock comprehensive database responses for safety assessment
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const { method, params } = message;
         let response: unknown = { success: true };
 
@@ -137,7 +137,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       });
 
       // Should have made multiple bridge calls
-      expect(mockWebKit.messageHandlers.database.postMessage).toHaveBeenCalledTimes(
+      expect(mockWebKit.messageHandlers.database!.postMessage).toHaveBeenCalledTimes(
         expect.any(Number)
       );
     });
@@ -145,7 +145,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
     it('should handle bridge connection failures during migration assessment', async () => {
       // Simulate bridge failures
       let failureCount = 0;
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         failureCount++;
         if (failureCount <= 3) {
           throw new Error('Bridge connection failed');
@@ -165,7 +165,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
     it('should create backup through reliable bridge connection', async () => {
       // Mock comprehensive backup data
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const { params } = message;
         const sql = params?.sql as string;
 
@@ -217,7 +217,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const maxFailures = 3;
 
       // Simulate intermittent failures that trigger circuit breaker
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         requestCount++;
 
         if (requestCount <= maxFailures) {
@@ -258,7 +258,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
     it('should queue validation requests during bridge disconnection', async () => {
       // Start with successful connection
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         setTimeout(() => {
           bridge.handleResponse(message.id, [{ integrity_check: 'ok' }], undefined);
         }, 10);
@@ -289,7 +289,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const backup = await migrationSafety.createDataBackup();
 
       // Mock rollback operations
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const sql = message.params?.sql as string;
         let response: unknown = [];
 
@@ -322,7 +322,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const backup = await migrationSafety.createDataBackup();
 
       // Mock rollback failure during data clearing
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const sql = message.params?.sql as string;
 
         if (sql?.includes('DELETE FROM')) {
@@ -351,7 +351,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
       // Mock foreign key violations after restore
       let afterRestore = false;
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const sql = message.params?.sql as string;
 
         if (sql?.includes('DELETE FROM')) {
@@ -391,7 +391,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       });
 
       // Mock database operations with varying response times
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         const delay = Math.random() * 100; // Variable delay
 
         setTimeout(() => {
@@ -413,7 +413,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
     it('should measure migration operation performance impact', async () => {
       // Mock timed queries
       let queryDelay = 50;
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         setTimeout(() => {
           bridge.handleResponse(message.id, [{ count: 100 }], undefined);
         }, queryDelay);
@@ -436,7 +436,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       let failureCount = 0;
 
       // Mock alternating failures and successes
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         failureCount++;
 
         if (failureCount % 2 === 1) {
@@ -466,7 +466,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
       // Simulate bridge interruption during integrity validation
       let callCount = 0;
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         callCount++;
 
         if (callCount === 2) {
@@ -495,7 +495,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const messageOrder: string[] = [];
 
       // Mock ordered message processing
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         messageOrder.push(message.method);
 
         setTimeout(() => {

@@ -26,7 +26,7 @@ interface MockTableInfo {
 type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params: unknown[]) => T[] | Promise<T[]>;
 
 const createMockExecute = (mockData: Record<string, MockTableInfo[]>): DatabaseFunction => {
-  return vi.fn(async (sql: string, __params: unknown[]) => {
+  const mockFn = vi.fn(async (sql: string, __params: unknown[]) => {
     // Handle PRAGMA table_info queries
     if (sql.includes('PRAGMA table_info')) {
       const tableMatch = sql.match(/PRAGMA table_info\((\w+)\)/);
@@ -37,6 +37,8 @@ const createMockExecute = (mockData: Record<string, MockTableInfo[]>): DatabaseF
     }
     return [];
   });
+
+  return mockFn as DatabaseFunction;
 };
 
 describe('Schema Loader', () => {
@@ -183,7 +185,7 @@ describe('Schema Loader', () => {
       expect(mockExecute).toHaveBeenCalled();
 
       // Second call should use cached data
-      mockExecute.mockClear();
+      (mockExecute as any).mockClear();
       const result2 = await getSchemaFields(mockExecute);
       expect(result2).toEqual(result1);
       expect(mockExecute).not.toHaveBeenCalled();
@@ -201,7 +203,7 @@ describe('Schema Loader', () => {
       expect(result1).toHaveLength(1);
 
       // Second call fails but returns cached data
-      mockExecute.mockRejectedValue(new Error('Database error'));
+      (mockExecute as any).mockRejectedValue(new Error('Database error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const result2 = await getSchemaFields(mockExecute);
@@ -239,7 +241,7 @@ describe('Schema Loader', () => {
       clearSchemaCache();
 
       // Next call should query database again
-      mockExecute.mockClear();
+      (mockExecute as any).mockClear();
       await getSchemaFields(mockExecute);
       expect(mockExecute).toHaveBeenCalled();
     });

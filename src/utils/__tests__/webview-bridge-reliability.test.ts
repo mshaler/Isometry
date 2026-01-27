@@ -115,7 +115,7 @@ describe('WebView Bridge Reliability', () => {
   describe('Circuit Breaker Pattern', () => {
     it('should open circuit breaker after repeated failures', async () => {
       // Mock repeated failures
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         throw new Error('Connection failed');
       });
 
@@ -140,7 +140,7 @@ describe('WebView Bridge Reliability', () => {
 
     it('should reset circuit breaker after timeout', async () => {
       // First, trigger circuit breaker
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         throw new Error('Connection failed');
       });
 
@@ -154,7 +154,7 @@ describe('WebView Bridge Reliability', () => {
       }
 
       // Mock successful response after reset timeout
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         setTimeout(() => {
           bridge.handleResponse(message.id, { success: true }, undefined);
         }, 10);
@@ -196,7 +196,7 @@ describe('WebView Bridge Reliability', () => {
       const results: string[] = [];
 
       // Mock handler to track message order
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         results.push(message.method);
         setTimeout(() => {
           bridge.handleResponse(message.id, { success: true, data: message.method }, undefined);
@@ -266,7 +266,7 @@ describe('WebView Bridge Reliability', () => {
         return originalSetTimeout(callback, 10); // Execute quickly for test
       }) as unknown as typeof setTimeout;
 
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         attemptCount++;
         if (attemptCount <= 2) {
           throw new Error('timeout'); // Retriable error
@@ -308,7 +308,7 @@ describe('WebView Bridge Reliability', () => {
         return originalSetTimeout(callback, 10);
       }) as unknown as typeof setTimeout;
 
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         attemptCount++;
         if (attemptCount <= 3) {
           throw new Error('network'); // Retriable error
@@ -336,7 +336,7 @@ describe('WebView Bridge Reliability', () => {
     it('should not retry non-retriable errors', async () => {
       let attemptCount = 0;
 
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         attemptCount++;
         throw new Error('permission denied'); // Non-retriable error
       });
@@ -354,7 +354,7 @@ describe('WebView Bridge Reliability', () => {
       const startTime = Date.now();
 
       // Mock request that never responds
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation(() => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation(() => {
         // Don't call handleResponse - simulate no response
       });
 
@@ -446,7 +446,7 @@ describe('WebView Bridge Reliability', () => {
 
       // Restore connection
       mockWindow.webkit.messageHandlers.database = originalHandler;
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         setTimeout(() => {
           bridge.handleResponse(message.id, { success: true }, undefined);
         }, 10);
@@ -510,7 +510,7 @@ describe('WebView Bridge Reliability', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         setTimeout(() => {
           bridge.handleResponse(String(message.id), { success: true }, undefined);
         }, 10);
@@ -532,7 +532,7 @@ describe('WebView Bridge Reliability', () => {
     it('should track request correlation correctly', async () => {
       const requestIds: string[] = [];
 
-      mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
+      mockWebKit.messageHandlers.database!.postMessage.mockImplementation((message: any) => {
         requestIds.push(message.id);
         setTimeout(() => {
           bridge.handleResponse(message.id, { success: true, data: message.id });

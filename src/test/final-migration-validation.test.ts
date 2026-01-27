@@ -195,16 +195,16 @@ class FinalMigrationValidator {
       // Test that useDatabase hook works correctly
 
       // Mock component test
-      let hookResult: unknown;
+      interface DatabaseHookResult {
+        execute?: () => unknown[];
+        loading: boolean;
+        error: unknown;
+      }
+
+      let hookResult: DatabaseHookResult;
       try {
         // This would be wrapped in a proper React test in real implementation
-        interface DatabaseHookResult {
-          execute?: () => unknown[];
-          loading: boolean;
-          error: unknown;
-        }
-
-        hookResult = { execute: () => [], loading: false, error: null } as DatabaseHookResult;
+        hookResult = { execute: () => [], loading: false, error: null };
 
         if (!hookResult.execute || typeof hookResult.execute !== 'function') {
           console.error('❌ useDatabase hook missing execute function');

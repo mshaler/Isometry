@@ -17,7 +17,7 @@ import { clearSchemaCache } from '../../db/schemaLoader';
 type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params: unknown[]) => T[] | Promise<T[]>;
 
 const createMockExecute = (): DatabaseFunction => {
-  return vi.fn(async (sql: string, __params: unknown[]) => {
+  const mockFn = vi.fn(async (sql: string, __params: unknown[]) => {
     if (sql.includes('PRAGMA table_info(nodes)')) {
       return [
         { cid: 0, name: 'id', type: 'TEXT', notnull: 1, dflt_value: null, pk: 1 },
@@ -47,6 +47,8 @@ const createMockExecute = (): DatabaseFunction => {
 
     return [];
   });
+
+  return mockFn as DatabaseFunction;
 };
 
 describe('Dynamic Autocomplete', () => {

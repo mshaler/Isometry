@@ -105,8 +105,11 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
 
   // Load presets from localStorage on mount
   useEffect(() => {
-    const loadedPresets = loadPresets();
-    setPresets(loadedPresets);
+    const loadPresetsAsync = async () => {
+      const loadedPresets = await loadPresets();
+      setPresets(loadedPresets);
+    };
+    loadPresetsAsync();
   }, []);
 
   // Sync activeFilters to URL with debouncing
@@ -249,7 +252,7 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     };
 
     savePresetToStorage(preset);
-    setPresets(loadPresets());
+    loadPresets().then(setPresets);
     return preset;
   }, [activeFilters]);
 
@@ -262,7 +265,7 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
 
   const deletePresetById = useCallback((id: string) => {
     deletePresetFromStorage(id);
-    setPresets(loadPresets());
+    loadPresets().then(setPresets);
   }, []);
 
   const listPresets = useCallback(() => {
