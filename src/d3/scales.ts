@@ -357,24 +357,24 @@ export function createLATCHScale(
 
   // Forward copy method (required by D3 axis)
   if ('copy' in baseScale) {
-    latchScale.copy = () => createLATCHScale(axis, data, range, options);
+    (latchScale as LATCHScale & { copy(): LATCHScale }).copy = () => createLATCHScale(axis, data, range, options);
   }
 
   // Forward ticks method if available (for continuous scales)
   if ('ticks' in baseScale) {
-    latchScale.ticks = (...args: unknown[]) =>
-      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).ticks(...args);
+    (latchScale as LATCHScale & { ticks(count?: number): number[] }).ticks = (...args: number[]) =>
+      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).ticks(args[0]);
   }
 
   // Forward tickFormat if available
   if ('tickFormat' in baseScale) {
-    latchScale.tickFormat = (...args: unknown[]) =>
-      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).tickFormat(...args);
+    (latchScale as LATCHScale & { tickFormat(count?: number, specifier?: string): (d: unknown) => string }).tickFormat = (...args: number[]) =>
+      (baseScale as d3.ScaleLinear<number, number> | d3.ScaleTime<number, number>).tickFormat(args[0]);
   }
 
   // Add bandwidth if available (band scales)
   if ('bandwidth' in baseScale) {
-    latchScale.bandwidth = () => (baseScale as d3.ScaleBand<string>).bandwidth();
+    (latchScale as LATCHScale & { bandwidth(): number }).bandwidth = () => (baseScale as d3.ScaleBand<string>).bandwidth();
   }
 
   return latchScale as LATCHScale;

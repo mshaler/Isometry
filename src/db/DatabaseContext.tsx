@@ -1,8 +1,9 @@
 import React from 'react';
 import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
-import { WebViewDatabaseProvider, useWebViewDatabase } from './WebViewDatabaseContext';
-import { FallbackDatabaseProvider, useFallbackDatabase } from './FallbackDatabaseContext';
+import { WebViewDatabaseProvider, useWebViewDatabase, WebViewDatabaseContextValue } from './WebViewDatabaseContext';
+import { FallbackDatabaseProvider, useFallbackDatabase, FallbackDatabaseContextValue } from './FallbackDatabaseContext';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';
+import { logPerformanceReport } from './PerformanceMonitor';
 
 // Legacy interface for backward compatibility during migration
 interface LegacyDatabase {
@@ -108,7 +109,7 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
  * Unified database hook that works with all database contexts
  * Uses EnvironmentContext to determine the appropriate provider
  */
-export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue {
+export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue | WebViewDatabaseContextValue | FallbackDatabaseContextValue {
   const { environment } = useEnvironment();
 
   switch (environment.mode) {

@@ -5,7 +5,7 @@
  * Uses static fallback data for development when no backend is available.
  */
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 
 export interface FallbackDatabaseContextValue {
   loading: boolean;

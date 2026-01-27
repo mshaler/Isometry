@@ -20,14 +20,14 @@ export interface DataBindingOptions<TElement extends d3.BaseType, TDatum> {
   key?: (d: TDatum, _i: number) => string;
   /** Enter selection handler */
   onEnter?: (
-    enter: d3.Selection<d3.EnterElement, TDatum, TElement, unknown>
-  ) => d3.Selection<TElement, TDatum, TElement, unknown>;
+    enter: d3.Selection<d3.EnterElement, TDatum, d3.BaseType, unknown>
+  ) => d3.Selection<TElement, TDatum, d3.BaseType, unknown>;
   /** Update selection handler */
   onUpdate?: (
-    update: d3.Selection<TElement, TDatum, TElement, unknown>
-  ) => d3.Selection<TElement, TDatum, TElement, unknown>;
+    update: d3.Selection<TElement, TDatum, d3.BaseType, unknown>
+  ) => d3.Selection<TElement, TDatum, d3.BaseType, unknown>;
   /** Exit selection handler */
-  onExit?: (exit: d3.Selection<TElement, TDatum, TElement, unknown>) => void;
+  onExit?: (exit: d3.Selection<TElement, TDatum, d3.BaseType, unknown>) => void;
   /** Transition duration for enter */
   enterDuration?: number;
   /** Transition duration for update */
@@ -75,12 +75,12 @@ export function useD3DataBinding<TElement extends d3.BaseType, TDatum>(
     ): d3.Selection<TElement, TDatum, d3.BaseType, unknown> => {
       const selection = container
         .selectAll<TElement, TDatum>(`.${className}`)
-        .data(data, key as (datum: TDatum, _index: number, groups: ArrayLike<TElement>) => string)
+        .data(data, key as (datum: TDatum, _index: number, groups: ArrayLike<d3.BaseType>) => string)
         .join(
           (enter) => {
             const entered = onEnter
               ? onEnter(enter)
-              : (enter.append('g').attr('class', className) as d3.Selection<TElement, TDatum, TElement, unknown>);
+              : (enter.append('g').attr('class', className) as unknown as d3.Selection<TElement, TDatum, d3.BaseType, unknown>);
 
             // Apply enter transition
             entered.style('opacity', 0).transition().duration(enterDuration).style('opacity', 1);

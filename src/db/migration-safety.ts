@@ -94,8 +94,8 @@ export class MigrationSafety {
 
   // Configuration
   private readonly maxBackupAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-  private readonly maxBackupSize = 500 * 1024 * 1024; // 500MB
-  private readonly checksumAlgorithm = 'sha256';
+  private readonly _maxBackupSize = 500 * 1024 * 1024; // 500MB
+  private readonly _checksumAlgorithm = 'sha256';
 
   constructor() {
     this.loadExistingBackups();

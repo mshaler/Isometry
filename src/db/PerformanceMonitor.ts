@@ -513,7 +513,7 @@ export class PerformanceMonitor {
     return (successful / metrics.length) * 100;
   }
 
-  private getLastMetricDuration(method: 'native' | 'optimized' | 'webview-bridge'): number {
+  private _getLastMetricDuration(method: 'native' | 'optimized' | 'webview-bridge'): number {
     for (let i = this.metrics.length - 1; i >= 0; i--) {
       if (this.metrics[i].method === method) {
         return this.metrics[i].duration;

@@ -33,13 +33,18 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   // Hooks
-  const { db, execute } = useDatabase();
+  const databaseContext = useDatabase();
+  const db = 'db' in databaseContext ? databaseContext.db : null;
+  const execute = 'execute' in databaseContext ? databaseContext.execute : undefined;
   const errorReporting = useErrorReporting();
   const performanceHook = useNotebookPerformance('NotebookProvider');
 
   // Managers
   const templateManager = createTemplateManager();
-  const cardOperations = createCardOperations(execute, performanceHook);
+  const cardOperations = createCardOperations(
+    execute as (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
+    performanceHook
+  );
   const layoutManager = createLayoutManager(DEFAULT_LAYOUT);
 
   // Card cache for performance optimization
