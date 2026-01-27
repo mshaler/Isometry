@@ -190,6 +190,9 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 - **Interface Separation Pattern:** Create separate interfaces for complex functional types vs simple configuration types to prevent conflicts (D3CoordinateSystem vs CoordinateSystem)
 - **Property Name Consistency:** Systematically correct underscore-prefixed property names to match interface definitions for MenuItem objects
 - **Undefined Guard Pattern:** Properly destructure props to access variables instead of using commented-out references in error boundary implementations
+- **Function Signature Compatibility:** Always provide required parameters to hook calls and match service interface expectations for proper type safety
+- **Variable Reference Safety:** Honor underscore-prefixed parameter naming conventions to avoid undefined variable errors throughout the codebase
+- **Integration Hook Patterns:** Convert between different interface variants appropriately and place hooks after dependency declarations to prevent circular references
 
 ### Current TODOs
 - [x] Plan Phase 10 with specific executable tasks (COMPLETE - all 8 plans executed)
@@ -217,29 +220,29 @@ None currently identified.
 ## Session Continuity
 
 ### Last Session Summary
-Completed Phase 10-26 Complete TypeScript Strict Mode Compliance achieving absolute Foundation Cleanup mastery:
-- Fixed React component prop type compliance (ViewRendererWrapper children prop, containerRef handling)
-- Resolved D3 axis formatter type safety with comprehensive AxisDomain union type handling
-- Fixed service interface integration (WebView bridge postMessage, ErrorReporting singleton imports)
-- Achieved production build success with zero ESLint warnings maintained throughout
-- Completed comprehensive Phase 10 Foundation Cleanup with absolute TypeScript strict mode compliance
-- Ready for Phase 11 Type Safety Migration execution with pristine type safety foundation
+Completed Phase 10-27 Notebook Context Function Signatures & Type Interface Fixes achieving continued Foundation Cleanup progress:
+- Fixed notebook context function signatures (useNotebookPerformance componentName parameter, createCardOperations service type)
+- Resolved hook integration type mismatches (integration hook parameter types, template update function signatures)
+- Eliminated variable reference errors in hooks (useCoordinates _height, useKeyboardClose _onClose, useSlashCommands _currentContent)
+- Reduced TypeScript strict mode errors from 226 to 209 (17 errors eliminated, 7.5% improvement)
+- Established patterns for function signature compatibility and variable reference safety
+- Advanced systematic Phase 10 Foundation Cleanup with notebook context system now type-safe
 
 ### Context for Next Session
-Phase 10-26 Complete TypeScript Strict Mode Compliance COMPLETED achieving absolute Foundation Cleanup mastery:
-1. **TypeScript Strict Mode Compliance:** Zero compilation errors with production build success
-2. **React Component Type Safety:** Proper prop types with interface validation throughout view components
-3. **D3 Visualization Type Safety:** Advanced union type handling for complex library integrations
-4. **Service Integration Patterns:** Consistent singleton patterns for predictable service access
-5. **ESLint Excellence:** Absolute zero problems maintained throughout all strict mode fixes
-6. **Phase 10 Complete:** All Foundation Cleanup objectives accomplished with comprehensive mastery
+Phase 10-27 Notebook Context Function Signatures & Type Interface Fixes COMPLETED achieving continued Foundation Cleanup progress:
+1. **Notebook Context Type Safety:** Function signatures aligned with service interfaces and proper hook integration
+2. **Variable Reference Consistency:** Underscore-prefixed parameter naming patterns enforced across hooks
+3. **Template Management Safety:** Proper type interfaces for template operations (NotebookTemplate vs NotebookCard)
+4. **Hook Integration Patterns:** Established patterns for integration hook placement and type conversion
+5. **Systematic Error Reduction:** 17 TypeScript errors eliminated through targeted function signature and variable fixes
+6. **Foundation Strengthened:** Phase 10 Foundation Cleanup advancing with 209 remaining TypeScript errors (down from 226)
 
 ### Handoff Notes
-- **Foundation Cleanup Complete:** Phase 10 finished with absolute TypeScript strict mode compliance
-- **Production Ready:** Build pipeline functional with zero warnings and optimized bundle generation
-- **Component Architecture:** React components have mature type safety with proper interface validation
-- **Service Patterns:** Consistent singleton imports established for error-free service integration
-- **Type Safety Foundation:** Advanced patterns ready for Phase 11 Type Safety Migration execution
+- **Foundation Cleanup Advancing:** Phase 10-27 completed with significant TypeScript error reduction (226→209)
+- **Notebook Context Safety:** Function signatures aligned and hook integration patterns established
+- **Variable Reference Patterns:** Underscore-prefixed parameter conventions enforced for consistency
+- **Template System Alignment:** Type interfaces properly matched between NotebookCard and NotebookTemplate operations
+- **Systematic Progress:** 17 errors eliminated through targeted function and variable reference fixes, demonstrating effective pattern application
 
 ---
 
