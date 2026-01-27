@@ -214,7 +214,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
   // Measure render performance
   const measureRender = useCallback((renderComponentName: string, _duration: number) => {
     const times = renderTimesRef.current.get(renderComponentName) || [];
-    times.push(duration);
+    times.push(_duration);
 
     // Keep only last 10 measurements
     if (times.length > 10) {
@@ -246,7 +246,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
   // Measure query performance
   const measureQuery = useCallback((queryName: string, _duration: number) => {
     const times = queryTimesRef.current.get(queryName) || [];
-    times.push(duration);
+    times.push(_duration);
 
     // Keep only last 5 measurements
     if (times.length > 5) {
