@@ -1,4 +1,6 @@
 // Database interface for FTS5 maintenance
+import { dbLogger } from '../utils/logger';
+
 interface Database {
   exec: (sql: string) => DatabaseExecResult[]
   run: (sql: string) => void
@@ -28,9 +30,9 @@ export function rebuildFTS5Index(db: Database): void {
   try {
     // FTS5 special command to rebuild the entire index
     db.run("INSERT INTO nodes_fts(nodes_fts) VALUES('rebuild')");
-    console.log('FTS5 index rebuilt successfully');
+    dbLogger.info('FTS5 index rebuilt successfully');
   } catch (error) {
-    console.error('Failed to rebuild FTS5 index:', error);
+    dbLogger.error('Failed to rebuild FTS5 index', {}, error as Error);
     throw error;
   }
 }
@@ -47,9 +49,9 @@ export function optimizeFTS5Index(db: Database): void {
   try {
     // FTS5 special command to merge all index segments
     db.run("INSERT INTO nodes_fts(nodes_fts) VALUES('optimize')");
-    console.log('FTS5 index optimized successfully');
+    dbLogger.info('FTS5 index optimized successfully');
   } catch (error) {
-    console.error('Failed to optimize FTS5 index:', error);
+    dbLogger.error('Failed to optimize FTS5 index', {}, error as Error);
     throw error;
   }
 }
@@ -76,7 +78,7 @@ export function getFTS5Stats(db: Database): {
 
     return { rowCount, indexedColumns };
   } catch (error) {
-    console.error('Failed to get FTS5 stats:', error);
+    dbLogger.error('Failed to get FTS5 stats', {}, error as Error);
     throw error;
   }
 }
@@ -99,7 +101,7 @@ export function verifyFTS5Index(db: Database): boolean {
     `);
 
     if (!tableCheck || tableCheck.length === 0) {
-      console.error('FTS5 table does not exist');
+      dbLogger.error('FTS5 table does not exist');
       return false;
     }
 
@@ -111,19 +113,20 @@ export function verifyFTS5Index(db: Database): boolean {
     const ftsTotal = ftsCount[0]?.values[0]?.[0] as number || 0;
 
     if (nodesTotal !== ftsTotal) {
-      console.warn(
-        `FTS5 index out of sync: nodes=${nodesTotal}, fts=${ftsTotal}`
-      );
+      dbLogger.warn('FTS5 index out of sync', {
+        nodesCount: nodesTotal,
+        ftsCount: ftsTotal
+      });
       return false;
     }
 
     // Try a simple search to ensure index is queryable
     db.exec("SELECT rowid FROM nodes_fts WHERE nodes_fts MATCH 'test' LIMIT 1");
 
-    console.log('FTS5 index verification passed');
+    dbLogger.info('FTS5 index verification passed');
     return true;
   } catch (error) {
-    console.error('FTS5 index verification failed:', error);
+    dbLogger.error('FTS5 index verification failed', {}, error as Error);
     return false;
   }
 }

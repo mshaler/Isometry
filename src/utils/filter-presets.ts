@@ -12,6 +12,7 @@ import {
   migrateToEncryptedStorage,
   isEncryptedStorageSupported
 } from './encrypted-storage';
+import { logger } from './logger';
 
 const STORAGE_KEY = 'isometry:filter-presets';
 
@@ -54,14 +55,14 @@ export async function loadPresets(): Promise<FilterPreset[]> {
   try {
     // Check if encryption is supported
     if (!isEncryptedStorageSupported()) {
-      console.warn('Encrypted storage not supported, falling back to plain storage');
+      logger.warn('storage', 'Encrypted storage not supported, falling back to plain storage');
       return loadPresetsPlain();
     }
 
     // Try to migrate existing plain storage first
     const migrationResult = await migrateToEncryptedStorage(STORAGE_KEY);
     if (!migrationResult.success) {
-      console.warn('Migration failed, using plain storage:', migrationResult.error);
+      logger.warn('storage', 'Migration failed, using plain storage', { error: migrationResult.error });
       return loadPresetsPlain();
     }
 
@@ -69,7 +70,7 @@ export async function loadPresets(): Promise<FilterPreset[]> {
     const result = await getEncryptedItem<SerializedFilterPreset[]>(STORAGE_KEY);
 
     if (!result.success) {
-      console.error('Failed to load encrypted presets:', result.error);
+      logger.error('storage', 'Failed to load encrypted presets', { error: result.error });
       return loadPresetsPlain(); // Fallback
     }
 
@@ -78,13 +79,13 @@ export async function loadPresets(): Promise<FilterPreset[]> {
     }
 
     if (!Array.isArray(result.data)) {
-      console.warn('Invalid preset data in encrypted storage, resetting');
+      logger.warn('storage', 'Invalid preset data in encrypted storage, resetting');
       return [];
     }
 
     return result.data.map(deserializePreset);
   } catch (error) {
-    console.error('Failed to load presets from encrypted storage:', error);
+    logger.error('storage', 'Failed to load presets from encrypted storage', {}, error as Error);
     return loadPresetsPlain(); // Fallback
   }
 }
@@ -101,13 +102,13 @@ function loadPresetsPlain(): FilterPreset[] {
 
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) {
-      console.warn('Invalid preset data in localStorage, resetting');
+      logger.warn('storage', 'Invalid preset data in localStorage, resetting');
       return [];
     }
 
     return parsed.map(deserializePreset);
   } catch (error) {
-    console.error('Failed to load presets from localStorage:', error);
+    logger.error('storage', 'Failed to load presets from localStorage', {}, error as Error);
     return [];
   }
 }
@@ -135,7 +136,7 @@ export async function savePreset(preset: FilterPreset): Promise<void> {
       const result = await setEncryptedItem(STORAGE_KEY, serialized);
 
       if (!result.success) {
-        console.warn('Failed to save to encrypted storage:', result.error);
+        logger.warn('storage', 'Failed to save to encrypted storage', { error: result.error });
         // Fallback to plain storage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
       }
@@ -144,7 +145,7 @@ export async function savePreset(preset: FilterPreset): Promise<void> {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
     }
   } catch (error) {
-    console.error('Failed to save preset:', error);
+    logger.error('storage', 'Failed to save preset', {}, error as Error);
     throw new Error('Failed to save preset');
   }
 }
@@ -164,7 +165,7 @@ export async function deletePreset(id: string): Promise<void> {
       const result = await setEncryptedItem(STORAGE_KEY, serialized);
 
       if (!result.success) {
-        console.warn('Failed to delete from encrypted storage:', result.error);
+        logger.warn('storage', 'Failed to delete from encrypted storage', { error: result.error });
         // Fallback to plain storage
         localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
       }
@@ -173,7 +174,7 @@ export async function deletePreset(id: string): Promise<void> {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(serialized));
     }
   } catch (error) {
-    console.error('Failed to delete preset:', error);
+    logger.error('storage', 'Failed to delete preset', {}, error as Error);
     throw new Error('Failed to delete preset');
   }
 }

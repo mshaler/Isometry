@@ -1,4 +1,6 @@
 // Removed sql.js dependency - now uses native types
+import { dbLogger } from '../utils/logger';
+
 interface QueryExecResult {
   columns: string[]
   values: unknown[][]
@@ -41,7 +43,7 @@ export class NativeAPIClient {
       this.isAvailable = response.ok
       return this.isAvailable
     } catch {
-      console.log('Native API not available')
+      dbLogger.debug('Native API not available');
       this.isAvailable = false
       return false
     }
@@ -80,7 +82,7 @@ export class NativeAPIClient {
         values: result.rows || []
       }]
     } catch (error) {
-      console.error('Native API SQL execution failed:', error)
+      dbLogger.error('Native API SQL execution failed', { sql, params }, error as Error);
       throw error
     }
   }
@@ -119,7 +121,7 @@ export class NativeAPIClient {
         throw new Error(`Reset failed: ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Native API reset failed:', error);
+      dbLogger.error('Native API reset failed', {}, error as Error);
       throw error;
     }
   }
