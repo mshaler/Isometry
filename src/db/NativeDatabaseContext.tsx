@@ -236,7 +236,7 @@ export function NativeDatabaseStatus() {
     );
   }
 
-  if (db?.isConnected()) {
+  if (db?.isConnected) {
     return <div className="text-sm text-green-500">Native API Connected</div>;
   }
 

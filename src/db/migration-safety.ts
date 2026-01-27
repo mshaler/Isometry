@@ -94,8 +94,6 @@ export class MigrationSafety {
 
   // Configuration
   private readonly maxBackupAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-  private readonly _maxBackupSize = 500 * 1024 * 1024; // 500MB
-  private readonly _checksumAlgorithm = 'sha256';
 
   constructor() {
     this.loadExistingBackups();
@@ -535,7 +533,7 @@ export class MigrationSafety {
   private async checkCloudKitDependency(): Promise<boolean> {
     try {
       if (!Environment.isWebView()) return false;
-      const status = await webViewBridge.rollback.checkCloudKitStatus();
+      const status = await webViewBridge.postMessage('database', 'checkCloudKitStatus', {}) as { hasData: boolean };
       return status.hasData;
     } catch {
       return false;
@@ -591,8 +589,8 @@ export class MigrationSafety {
             exportVersion: '2.0',
             sourceProvider: 'webview-bridge'
           },
-          schema: {},
-          data: {}
+          schema: {} as Record<string, string>,
+          data: {} as Record<string, unknown>
         };
 
         let totalRecords = 0;
@@ -644,7 +642,7 @@ export class MigrationSafety {
           data: jsonData,
           size: new Blob([jsonData]).size,
           recordCount: 0,
-          source: DatabaseMode.SQL_JS,
+          source: DatabaseMode.FALLBACK,
           location: `mock-backup-${Date.now()}.json`,
           format: 'json',
           version: '2.0',

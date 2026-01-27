@@ -284,18 +284,6 @@ export class QueryOptimizer {
     return details;
   }
 
-  private calculateComplexityScore(sql: string): number {
-    let score = 0;
-
-    if (/\bJOIN\b/i.test(sql)) score += 3;
-    if (/\bUNION\b/i.test(sql)) score += 2;
-    if (/\(\s*SELECT/i.test(sql)) score += 3;
-    if (/\bWITH\b/i.test(sql)) score += 4;
-    if (/\bOVER\s*\(/i.test(sql)) score += 3;
-    if (/\bCASE\s+WHEN/i.test(sql)) score += 1;
-
-    return score;
-  }
 
   private estimateResultSize(sql: string, _params: unknown[]): number {
     // Simple heuristic estimation
@@ -319,7 +307,7 @@ export class QueryOptimizer {
     return 100; // Default estimate
   }
 
-  private buildNodesEndpoint(analysis: QueryAnalysis, pattern: QueryPattern): OptimizedCall {
+  private buildNodesEndpoint(_analysis: QueryAnalysis, pattern: QueryPattern): OptimizedCall {
     const queryParams = new URLSearchParams();
 
     if (pattern.filters?.folder) {
@@ -344,7 +332,7 @@ export class QueryOptimizer {
     };
   }
 
-  private buildNotebookCardsEndpoint(analysis: QueryAnalysis, pattern: QueryPattern): OptimizedCall {
+  private buildNotebookCardsEndpoint(_analysis: QueryAnalysis, pattern: QueryPattern): OptimizedCall {
     const queryParams = new URLSearchParams();
 
     if (pattern.filters?.folder) {

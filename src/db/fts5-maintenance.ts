@@ -1,6 +1,7 @@
 // Database interface for FTS5 maintenance
 interface Database {
   exec: (sql: string) => DatabaseExecResult[]
+  run: (sql: string) => void
 }
 
 interface DatabaseExecResult {

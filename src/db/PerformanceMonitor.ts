@@ -513,22 +513,6 @@ export class PerformanceMonitor {
     return (successful / metrics.length) * 100;
   }
 
-  private _getLastMetricDuration(method: 'native' | 'optimized' | 'webview-bridge'): number {
-    for (let i = this.metrics.length - 1; i >= 0; i--) {
-      if (this.metrics[i].method === method) {
-        return this.metrics[i].duration;
-      }
-    }
-    return 0;
-  }
-
-  private compareResults(result1: unknown, result2: unknown): boolean {
-    try {
-      return JSON.stringify(result1) === JSON.stringify(result2);
-    } catch {
-      return false; // Can't serialize for comparison
-    }
-  }
 
   private createEmptyReport(): PerformanceReport {
     return {

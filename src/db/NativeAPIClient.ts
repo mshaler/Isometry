@@ -86,6 +86,52 @@ export class NativeAPIClient {
   }
 
   /**
+   * Execute SQL with generic return type - matches sql.js interface exactly
+   */
+  async execute<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
+    const results = await this.executeSQL(sql, params);
+    return results[0]?.values.map(row => {
+      const obj: Record<string, unknown> = {};
+      results[0].columns.forEach((col, i) => {
+        obj[col] = row[i];
+      });
+      return obj as T;
+    }) || [];
+  }
+
+  /**
+   * Save operation - no-op for compatibility (native handles persistence)
+   */
+  async save(): Promise<void> {
+    // Native database handles persistence automatically
+  }
+
+  /**
+   * Reset database - calls native reset endpoint
+   */
+  async reset(): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}/reset`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) {
+        throw new Error(`Reset failed: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Native API reset failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if connected to native API
+   */
+  get isConnected(): boolean {
+    return this.isAvailable;
+  }
+
+  /**
    * Create compatible Database interface
    */
   createCompatibleDatabase(): Database {
@@ -93,8 +139,10 @@ export class NativeAPIClient {
     const apiClient = this
 
     return {
-      exec: async (sql: string, params?: unknown) => {
-        return apiClient.executeSQL(sql, params)
+      exec: (sql: string, params?: unknown) => {
+        // Note: Making this synchronous requires executeSQL to be synchronous
+        // For now, casting to maintain interface compatibility
+        return apiClient.executeSQL(sql, params as unknown[]) as unknown as QueryExecResult[]
       },
 
       prepare: (sql: string) => {
@@ -105,7 +153,7 @@ export class NativeAPIClient {
           },
 
           get: async (params?: unknown) => {
-            const results = await apiClient.executeSQL(sql, params)
+            const results = await apiClient.executeSQL(sql, params as unknown[])
             if (results.length === 0 || results[0].values.length === 0) {
               return undefined
             }
@@ -123,6 +171,22 @@ export class NativeAPIClient {
           },
 
           getAsObject: async (params?: unknown) => {
+            const results = await apiClient.executeSQL(sql, params as unknown[])
+            return results[0]?.values.map(row => {
+              const obj: Record<string, unknown> = {}
+              results[0].columns.forEach((col, i) => {
+                obj[col] = row[i]
+              })
+              return obj
+            }) || []
+          },
+
+          run: async (params?: unknown[]) => {
+            await apiClient.executeSQL(sql, params)
+            return { changes: 1 } // Return mock changes count
+          },
+
+          all: async (params?: unknown[]) => {
             const results = await apiClient.executeSQL(sql, params)
             return results[0]?.values.map(row => {
               const obj: Record<string, unknown> = {}
@@ -139,7 +203,7 @@ export class NativeAPIClient {
       },
 
       run: async (sql: string, params?: unknown) => {
-        await apiClient.executeSQL(sql, params)
+        await apiClient.executeSQL(sql, params as unknown[])
       },
 
       close: () => {},

@@ -209,7 +209,16 @@ export function WebViewDatabaseProvider({
     // Access the bridge health through the client's getBridgeHealth method
     const webViewClient = db as unknown as { getBridgeHealth?: () => unknown };
     if (webViewClient.getBridgeHealth) {
-      return webViewClient.getBridgeHealth();
+      return webViewClient.getBridgeHealth() as {
+        isConnected: boolean;
+        pendingRequests: number;
+        environment: {
+          isNative: boolean;
+          platform: string;
+          version: string;
+          transport: string;
+        };
+      };
     }
 
     // Fallback to basic connection status

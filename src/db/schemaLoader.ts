@@ -4,7 +4,8 @@
 // Dynamically loads schema information from SQLite database for autocomplete
 // ============================================================================
 
-import type { DatabaseFunction } from './DatabaseContext';
+// Database function type for executing queries
+type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params?: unknown[]) => T[] | Promise<T[]>;
 
 export interface SchemaField {
   name: string;

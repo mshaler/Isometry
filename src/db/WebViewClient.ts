@@ -18,7 +18,7 @@ export interface ConnectionStatus {
 
 // Type definition for WebView bridge
 interface WebViewBridge {
-  postMessage: (namespace: string, _method: string, data: unknown) => Promise<unknown>;
+  postMessage: <T = unknown>(handler: 'database' | 'filesystem', method: string, params?: Record<string, unknown>, retries?: number) => Promise<T>;
   getHealthStatus: () => {
     isConnected: boolean;
     pendingRequests: number;
@@ -37,11 +37,10 @@ interface WebViewBridge {
  */
 export class WebViewClient {
   private connected: boolean = false;
-  private timeout: number;
   private bridge: WebViewBridge | null = null;
 
-  constructor(timeout: number = 10000) {
-    this.timeout = timeout;
+  constructor(_timeout: number = 10000) {
+    // timeout parameter accepted for compatibility but not currently used
   }
 
   /**

@@ -77,7 +77,7 @@ export function compile(ast: ASTNode | null): CompiledQuery {
 
     // Handle time presets
     if (typeof safeValue === 'object' && safeValue && 'preset' in safeValue) {
-      return compileTimePreset(safeField, (safeValue as { preset: string }).preset);
+      return compileTimePreset(safeField, (safeValue as { preset: TimePreset }).preset);
     }
 
     // Handle LIKE operator
@@ -109,7 +109,7 @@ export function compile(ast: ASTNode | null): CompiledQuery {
     switch (axis) {
       case 'time':
         if (typeof safeValue === 'object' && safeValue && 'preset' in safeValue) {
-          return compileTimePreset('created', (safeValue as { preset: string }).preset);
+          return compileTimePreset('created', (safeValue as { preset: TimePreset }).preset);
         }
         params.push(safeValue);
         return `created = ?`;

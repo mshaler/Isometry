@@ -7,7 +7,8 @@
 import type { AutocompleteItem } from './types';
 import type { SchemaField } from '../db/schemaLoader';
 import { getSchemaFields } from '../db/schemaLoader';
-import type { DatabaseFunction } from '../db/DatabaseContext';
+// Database function type for executing queries
+type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params?: unknown[]) => T[] | Promise<T[]>;
 
 /** Schema fields loaded from database */
 let cachedSchemaFields: SchemaField[] = [];
