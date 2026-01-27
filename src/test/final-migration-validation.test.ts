@@ -33,7 +33,7 @@ interface SecurityValidation {
 
 class FinalMigrationValidator {
   private performanceBaseline: PerformanceMetrics;
-  private securityRequirements: SecurityValidation;
+  private _securityRequirements: SecurityValidation;
 
   constructor() {
     this.performanceBaseline = {
@@ -80,7 +80,7 @@ class FinalMigrationValidator {
         console.error('❌ Legacy initDatabase should throw error');
         return false;
       } catch (error) {
-        if (!error.message.includes('Legacy sql.js initialization has been removed')) {
+        if (!(error as Error).message.includes('Legacy sql.js initialization has been removed')) {
           console.error('❌ Unexpected error from legacy initDatabase:', error);
           return false;
         }
@@ -213,13 +213,13 @@ class FinalMigrationValidator {
         // This would be wrapped in a proper React test in real implementation
         hookResult = { execute: () => [], loading: false, error: null };
 
-        if (!hookResult.execute || typeof hookResult.execute !== 'function') {
+        if (!(hookResult as any).execute || typeof (hookResult as any).execute !== 'function') {
           console.error('❌ useDatabase hook missing execute function');
           return false;
         }
 
-        if (hookResult.error) {
-          console.error('❌ useDatabase hook has error:', hookResult.error);
+        if ((hookResult as any).error) {
+          console.error('❌ useDatabase hook has error:', (hookResult as any).error);
           return false;
         }
       } catch (error) {

@@ -82,7 +82,7 @@ interface FilterContextValue {
   loadPreset: (id: string) => void;
   deletePreset: (id: string) => void;
   listPresets: () => FilterPreset[];
-  checkPresetNameExists: (name: string, excludeId?: string) => boolean;
+  checkPresetNameExists: (name: string, excludeId?: string) => Promise<boolean>;
 }
 
 const FilterContext = createContext<FilterContextValue | null>(null);

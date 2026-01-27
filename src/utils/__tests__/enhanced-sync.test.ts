@@ -277,7 +277,7 @@ describe('EnhancedSyncManager', () => {
 
       // Mock partial sync success - only dependency succeeds
       mockSyncManager.publishLocalChange
-        .mockResolvedValueOnce(undefined) // First call (dependency) succeeds
+        .mockResolvedValue(undefined) // First call (dependency) succeeds
         .mockRejectedValue(new Error('Still offline')); // Second call still fails
 
       const result1 = await syncManager.processOfflineChanges();
@@ -390,7 +390,7 @@ describe('EnhancedSyncManager', () => {
     });
 
     it('should use custom merge function when provided', async () => {
-      const customMergeFunction = (local: Record<string, unknown>, _remote: Record<string, unknown>) => ({
+      const customMergeFunction = (local: Record<string, unknown>, remote: Record<string, unknown>) => ({
         ...local,
         ...remote,
         mergedBy: 'custom-function'

@@ -405,7 +405,7 @@ async function testNotebookCreationFlow(provider: DatabaseMode): Promise<TestRes
     }
 
     // Validate persistence
-    const retrieveResult = await retrieveNotebookCard(provider, createResult.data.id);
+    const retrieveResult = await retrieveNotebookCard(provider, (createResult.data as any).id);
     if (!retrieveResult.success) {
       errors.push(`Failed to retrieve notebook card: ${retrieveResult.errors.join(', ')}`);
     }
@@ -651,16 +651,16 @@ async function measurePlatformPerformance(_platform: 'ios' | 'macos'): Promise<{
   return { profile: 'fast' };
 }
 
-async function createNotebookCard(provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
+async function createNotebookCard(_provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would create actual notebook card
   return {
     success: true,
-    data: { id: 'test-id-' + Date.now(), ...data },
+    data: { id: 'test-id-' + Date.now(), ...(data as object) },
     errors: []
   };
 }
 
-async function retrieveNotebookCard(provider: DatabaseMode, id: string): Promise<{ success: boolean; data: unknown; errors: string[] }> {
+async function retrieveNotebookCard(_provider: DatabaseMode, id: string): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would retrieve actual notebook card
   return {
     success: true,
@@ -674,11 +674,11 @@ function validateNotebookContent(_expected: unknown, _actual: unknown): boolean 
   return true;
 }
 
-async function createNode(provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
+async function createNode(_provider: DatabaseMode, data: unknown): Promise<{ success: boolean; data: unknown; errors: string[] }> {
   // Implementation would create actual node
   return {
     success: true,
-    data: { id: 'node-' + Date.now(), ...data },
+    data: { id: 'node-' + Date.now(), ...(data as object) },
     errors: []
   };
 }

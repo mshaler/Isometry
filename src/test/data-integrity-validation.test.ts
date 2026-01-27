@@ -5,7 +5,7 @@
  * Ensures zero corruption across migration path with safe rollback procedures
  */
 
-import type { DatabaseMode } from '../contexts/EnvironmentContext';
+import { DatabaseMode } from '../contexts/EnvironmentContext';
 
 export interface ConsistencyReport {
   provider: DatabaseMode;
@@ -650,7 +650,7 @@ async function analyzeDataCorruption(_provider: DatabaseMode, _dataset: TestData
   };
 }
 
-async function validateRelationshipIntegrity(provider: DatabaseMode, dataset: TestDataset): Promise<RelationshipIntegrity> {
+async function validateRelationshipIntegrity(_provider: DatabaseMode, dataset: TestDataset): Promise<RelationshipIntegrity> {
   // Implementation would validate relationship integrity
   return {
     totalRelationships: dataset.edges.length,
@@ -786,10 +786,10 @@ async function calculateChecksum(data: unknown): Promise<string> {
 }
 
 // Mock provider access functions
-async function getNodeFromProvider(provider: DatabaseMode, id: string): Promise<TestNode> {
+async function getNodeFromProvider(_provider: DatabaseMode, id: string): Promise<TestNode> {
   return { id, name: 'Test Node', content: 'Test content', nodeType: 'test', tags: [], folder: 'test' };
 }
 
-async function getEdgeFromProvider(provider: DatabaseMode, id: string): Promise<TestEdge> {
+async function getEdgeFromProvider(_provider: DatabaseMode, id: string): Promise<TestEdge> {
   return { id, sourceId: 'node-1', targetId: 'node-2', edgeType: 'references' };
 }

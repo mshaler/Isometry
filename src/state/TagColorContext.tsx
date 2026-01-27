@@ -109,7 +109,7 @@ export function TagColorProvider({ children }: { children: React.ReactNode }) {
   /**
    * Assign a color to a tag
    */
-  const setTagColor = useCallback((tag: string, _color: string) => {
+  const setTagColor = useCallback((tag: string, color: string) => {
     setTagColors((prev) => {
       const next = new Map(prev);
       next.set(tag, color);

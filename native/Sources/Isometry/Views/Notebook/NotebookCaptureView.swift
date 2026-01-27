@@ -39,8 +39,8 @@ public struct NotebookCaptureView: View {
                 }
             }
         }
-        .onChange(of: appState.database) { oldValue, newValue in
-            if let database = newValue {
+        .onChange(of: appState.database != nil) { _, hasDatabase in
+            if hasDatabase, let database = appState.database {
                 updateEditorDatabase(database)
                 updatePropertyDatabase(database)
             }

@@ -787,7 +787,7 @@ export class OfficeDocumentProcessor {
   }
 
   private async packageAsDocx(wordXML: string, node: Node): Promise<Blob> {
-    const zip = new JSZip();
+    const zip = new (JSZip as any)();
 
     // Add [Content_Types].xml
     const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>

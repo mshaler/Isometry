@@ -397,7 +397,7 @@ function generateComplexDataSet(): TestDataSet {
         priority: ['low', 'normal', 'high', 'critical'][Math.floor(Math.random() * 4)],
         status: ['draft', 'review', 'complete', 'archived'][Math.floor(Math.random() * 4)],
         author: `user-${Math.floor(i / 20)}`,
-        version: Math.floor(Math.random() * 10) + 1,
+        version: String(Math.floor(Math.random() * 10) + 1),
         lastModified: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toISOString()
       },
       tags: generateRandomTags(2 + Math.floor(Math.random() * 5)),
@@ -417,7 +417,7 @@ function generateComplexDataSet(): TestDataSet {
         edgeType: ['references', 'similar-to', 'depends-on', 'part-of', 'blocks', 'implements'][Math.floor(Math.random() * 6)],
         properties: {
           strength: Math.random().toFixed(3),
-          weight: Math.floor(Math.random() * 100),
+          weight: String(Math.floor(Math.random() * 100)),
           context: 'complex-generation',
           bidirectional: Math.random() > 0.5 ? 'true' : 'false'
         }

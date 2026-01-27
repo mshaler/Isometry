@@ -105,14 +105,14 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       const assessment = await migrationSafety.assessRollbackSafety();
 
       expect(assessment).toMatchObject({
-        level: expect.oneOf(['safe', 'risky', 'dangerous']),
+        level: expect.stringMatching(/^(safe|risky|dangerous)$/),
         score: expect.any(Number),
         factors: {
-          dataSize: expect.oneOf(['small', 'medium', 'large']),
-          schemaComplexity: expect.oneOf(['simple', 'moderate', 'complex']),
+          dataSize: expect.stringMatching(/^(small|medium|large)$/),
+          schemaComplexity: expect.stringMatching(/^(simple|moderate|complex)$/),
           pendingChanges: expect.any(Number),
           cloudKitDependency: expect.any(Boolean),
-          performanceRisk: expect.oneOf(['low', 'medium', 'high'])
+          performanceRisk: expect.stringMatching(/^(low|medium|high)$/)
         },
         recommendations: expect.any(Array),
         blockers: expect.any(Array)
@@ -227,7 +227,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
       try {
         await migrationSafety.validateDataIntegrity();
       } catch (error) {
-        expect(error.message).toMatch(/circuit breaker|timeout/i);
+        expect((error as Error).message).toMatch(/circuit breaker|timeout/i);
       }
 
       // After circuit breaker resets (simulated by allowing success)
@@ -248,7 +248,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
       // Simulate connection loss by removing handler
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       // Start validation request (should be queued)
       const validationPromise = migrationSafety.validateDataIntegrity();
@@ -377,7 +377,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
         const delay = Math.random() * 100; // Variable delay
 
         setTimeout(() => {
-          bridge.handleResponse(message.id, { success: true }, Date.now());
+          bridge.handleResponse(String(message.id), { success: true }, Date.now());
         }, delay);
       });
 
@@ -438,7 +438,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
         expect(assessment).toBeDefined();
       } catch (error) {
         // If it fails, should be due to exhausted retries, not immediate failure
-        expect(error.message).toMatch(/timeout|circuit breaker/i);
+        expect((error as Error).message).toMatch(/timeout|circuit breaker/i);
       }
     });
 

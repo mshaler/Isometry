@@ -455,7 +455,7 @@ describe('WebView Bridge Reliability', () => {
       return Promise.all([promise1, promise2]).then(results => {
         results.forEach(result => {
           expect(result).toBeInstanceOf(Error);
-          expect(result.message).toMatch(/cleanup|cancelled/i);
+          expect((result as Error).message).toMatch(/cleanup|cancelled/i);
         });
       });
     });
@@ -486,7 +486,7 @@ describe('WebView Bridge Reliability', () => {
 
       mockWebKit.messageHandlers.database.postMessage.mockImplementation((message) => {
         setTimeout(() => {
-          bridge.handleResponse(message.id, { success: true }, Date.now());
+          bridge.handleResponse(String(message.id), { success: true }, Date.now());
         }, 10);
       });
 
@@ -524,7 +524,7 @@ describe('WebView Bridge Reliability', () => {
 
       // Responses should correlate correctly
       results.forEach((result, index) => {
-        expect(result.data).toBe(requestIds[index]);
+        expect((result as any).data).toBe(requestIds[index]);
       });
     });
   });

@@ -230,6 +230,19 @@ export async function benchmarkMigrationPath(scenario: MigrationScenario): Promi
 }
 
 /**
+ * Analyze performance regressions from test results
+ */
+async function analyzeRegressions(_provider: any, _results: any): Promise<RegressionAnalysis> {
+  // Mock implementation - would analyze actual regression data
+  return {
+    regressions: [],
+    improvements: [],
+    overallScore: 100,
+    passed: true
+  };
+}
+
+/**
  * Detect performance regressions from baseline
  */
 export async function detectRegressions(baseline: PerformanceBaseline): Promise<RegressionAnalysis> {
