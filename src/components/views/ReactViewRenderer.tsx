@@ -40,11 +40,12 @@ export abstract class ReactViewRenderer extends BaseViewRenderer {
     return React.createElement(ViewRendererWrapper, {
       renderer: this,
       containerRef: this.containerRef,
+      children: React.createElement(Component, {
+        ...props,
+        transitionState: this.getTransitionState()
+      }),
       ...props
-    }, React.createElement(Component, {
-      ...props,
-      transitionState: this.getTransitionState()
-    }));
+    });
   }
 
   // Initialize with DOM container
