@@ -49,7 +49,7 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
   performance,
   frameRate,
   error
-}) => {
+}: PerformanceOverlayProps) => {
   if (!performance || performance.totalPipeline === 0) return null;
 
   const renderStats = performanceMonitor.getMetricStats('canvas-render');
@@ -300,7 +300,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   onCellClick,
   onError,
   showPerformanceOverlay = process.env.NODE_ENV === 'development'
-}) => {
+}: D3CanvasProps) => {
   // Refs for the three layers
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
