@@ -23,7 +23,9 @@ interface MockTableInfo {
 }
 
 // Mock database function
-const createMockExecute = (mockData: Record<string, MockTableInfo[]>) => {
+type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params: unknown[]) => T[] | Promise<T[]>;
+
+const createMockExecute = (mockData: Record<string, MockTableInfo[]>): DatabaseFunction => {
   return vi.fn(async (sql: string, __params: unknown[]) => {
     // Handle PRAGMA table_info queries
     if (sql.includes('PRAGMA table_info')) {
@@ -55,7 +57,7 @@ describe('Schema Loader', () => {
         ]
       });
 
-      const result = await loadTableSchema(mockExecute as any, 'nodes');
+      const result = await loadTableSchema(mockExecute, 'nodes');
 
       expect(result).toBeDefined();
       expect(result!.name).toBe('nodes');
@@ -107,7 +109,7 @@ describe('Schema Loader', () => {
     it('should return null for non-existent table', async () => {
       const mockExecute = createMockExecute({});
 
-      const result = await loadTableSchema(mockExecute as any, 'nonexistent');
+      const result = await loadTableSchema(mockExecute, 'nonexistent');
 
       expect(result).toBeNull();
     });
@@ -116,7 +118,7 @@ describe('Schema Loader', () => {
       const mockExecute = vi.fn().mockRejectedValue(new Error('Database error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await loadTableSchema(mockExecute as any, 'nodes');
+      const result = await loadTableSchema(mockExecute, 'nodes');
 
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -141,7 +143,7 @@ describe('Schema Loader', () => {
         ]
       });
 
-      const result = await loadDatabaseSchema(mockExecute as any);
+      const result = await loadDatabaseSchema(mockExecute);
 
       expect(result).toHaveLength(4);
 
@@ -161,7 +163,7 @@ describe('Schema Loader', () => {
     it('should handle empty database', async () => {
       const mockExecute = createMockExecute({});
 
-      const result = await loadDatabaseSchema(mockExecute as any);
+      const result = await loadDatabaseSchema(mockExecute);
 
       expect(result).toEqual([]);
     });
@@ -176,13 +178,13 @@ describe('Schema Loader', () => {
       });
 
       // First call should execute database queries
-      const result1 = await getSchemaFields(mockExecute as any);
+      const result1 = await getSchemaFields(mockExecute);
       expect(result1).toHaveLength(1);
       expect(mockExecute).toHaveBeenCalled();
 
       // Second call should use cached data
       mockExecute.mockClear();
-      const result2 = await getSchemaFields(mockExecute as any);
+      const result2 = await getSchemaFields(mockExecute);
       expect(result2).toEqual(result1);
       expect(mockExecute).not.toHaveBeenCalled();
     });
@@ -195,14 +197,14 @@ describe('Schema Loader', () => {
       });
 
       // First call succeeds
-      const result1 = await getSchemaFields(mockExecute as any);
+      const result1 = await getSchemaFields(mockExecute);
       expect(result1).toHaveLength(1);
 
       // Second call fails but returns cached data
       mockExecute.mockRejectedValue(new Error('Database error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result2 = await getSchemaFields(mockExecute as any);
+      const result2 = await getSchemaFields(mockExecute);
       expect(result2).toEqual(result1);
 
       consoleSpy.mockRestore();
@@ -212,7 +214,7 @@ describe('Schema Loader', () => {
       const mockExecute = vi.fn().mockRejectedValue(new Error('Database error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await getSchemaFields(mockExecute as any);
+      const result = await getSchemaFields(mockExecute);
 
       expect(result).toEqual([]);
       expect(consoleSpy).toHaveBeenCalled();
@@ -230,7 +232,7 @@ describe('Schema Loader', () => {
       });
 
       // Load data into cache
-      await getSchemaFields(mockExecute as any);
+      await getSchemaFields(mockExecute);
       expect(mockExecute).toHaveBeenCalled();
 
       // Clear cache
@@ -238,7 +240,7 @@ describe('Schema Loader', () => {
 
       // Next call should query database again
       mockExecute.mockClear();
-      await getSchemaFields(mockExecute as any);
+      await getSchemaFields(mockExecute);
       expect(mockExecute).toHaveBeenCalled();
     });
   });
