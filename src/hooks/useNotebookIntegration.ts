@@ -95,7 +95,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Main synchronization logic
   const performSync = useCallback(async () => {
-    if (!db || state.syncInProgress) return;
+    if (!execute || state.syncInProgress) return;
 
     setState(prev => ({ ...prev, syncInProgress: true }));
 
@@ -130,11 +130,11 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
         isMainAppConnected: false
       }));
     }
-  }, [db, state.syncInProgress]);
+  }, [execute, state.syncInProgress]);
 
   // Sync notebook cards to main app nodes
   const syncNotebookCardsToNodes = useCallback(async () => {
-    if (!db) return;
+    if (!execute) return;
 
     for (const card of cards) {
       try {
@@ -160,11 +160,11 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
         console.error(`Failed to sync card ${card.id}:`, error);
       }
     }
-  }, [cards, db, execute]);
+  }, [cards, execute]);
 
   // Apply main app filters to notebook cards
   const applyFiltersToNotebook = useCallback(async () => {
-    if (!db) return;
+    if (!execute) return;
 
     // Check if filters have changed
     const filtersChanged = JSON.stringify(filters) !== JSON.stringify(lastFilterStateRef.current);
@@ -176,7 +176,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
       await loadCards();
       lastFilterStateRef.current = filters;
     }
-  }, [filters, loadCards, db]);
+  }, [filters, loadCards, execute]);
 
   // Update PAFV projections to include notebook data
   const updatePAFVProjections = useCallback(async () => {
@@ -194,7 +194,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Detect and handle editing conflicts
   const detectConflicts = useCallback(async () => {
-    if (!db) return;
+    if (!execute) return;
 
     const conflicts: string[] = [];
 
@@ -219,7 +219,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     }
 
     setState(prev => ({ ...prev, conflictedCards: conflicts }));
-  }, [db, execute]);
+  }, [execute]);
 
   // Force immediate synchronization
   const forceSync = useCallback(async () => {
@@ -234,7 +234,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     cardId: string,
     resolution: 'notebook' | 'main' | 'merge'
   ) => {
-    if (!db) return;
+    if (!execute) return;
 
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
@@ -288,7 +288,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     } catch (error) {
       console.error(`Failed to resolve conflict for card ${cardId}:`, error);
     }
-  }, [cards, db, execute]);
+  }, [cards, execute]);
 
   // Clear pending changes
   const clearPendingChanges = useCallback(() => {

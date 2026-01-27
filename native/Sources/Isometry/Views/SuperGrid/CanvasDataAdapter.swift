@@ -314,7 +314,7 @@ public class CanvasDataAdapter: ObservableObject {
         return min(1.0, strength)
     }
 
-    private func calculateNodeRadius(for card: NotebookCard) -> CGFloat {
+    private func calculateNodeRadius(for card: VisualizationNotebookCard) -> CGFloat {
         let baseRadius: CGFloat = 15
         let priorityBonus = CGFloat(card.priority) * 2
         let tagBonus = CGFloat(card.tags.count) * 1.5
@@ -339,7 +339,7 @@ public class CanvasDataAdapter: ObservableObject {
         }
     }
 
-    private func determineEventType(for card: NotebookCard) -> TimelineEventType {
+    private func determineEventType(for card: VisualizationNotebookCard) -> TimelineEventType {
         if card.isCompleted { return .completion }
         if card.priority > 2 { return .deadline }
         if card.modifiedAt != card.createdAt { return .modification }
@@ -406,7 +406,7 @@ public class CanvasDataAdapter: ObservableObject {
         }
     }
 
-    private func calculateHierarchyLevel(for card: NotebookCard) -> Int {
+    private func calculateHierarchyLevel(for card: VisualizationNotebookCard) -> Int {
         // Use priority as hierarchy level
         return max(0, 5 - card.priority)
     }
