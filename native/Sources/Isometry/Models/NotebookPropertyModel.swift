@@ -2,8 +2,9 @@ import Foundation
 import SwiftUI
 import Combine
 
-/// Property types supported in the notebook system
-public enum PropertyType: String, CaseIterable, Codable {
+/// Property types supported in Isometry notebook cards
+/// Matches React prototype PropertyType enum for consistency
+public enum PropertyType: String, CaseIterable, Codable, Sendable {
     case text = "text"
     case number = "number"
     case date = "date"
@@ -38,14 +39,16 @@ public enum PropertyType: String, CaseIterable, Codable {
 }
 
 /// Type-safe property value storage
-public enum PropertyValue: Codable, Equatable {
+/// Uses associated types to ensure type safety while maintaining JSON serialization
+public enum PropertyValue: Codable, Equatable, Sendable {
     case text(String)
     case number(Double)
     case date(Date)
     case boolean(Bool)
     case select(String)
     case tags([String])
-    case reference(String) // Node ID reference
+    case reference([String]) // Multiple node ID references
+    case null
 
     public var type: PropertyType {
         switch self {
@@ -56,6 +59,7 @@ public enum PropertyValue: Codable, Equatable {
         case .select: return .select
         case .tags: return .tags
         case .reference: return .reference
+        case .null: return .text // Default to text for null values
         }
     }
 
@@ -67,7 +71,54 @@ public enum PropertyValue: Codable, Equatable {
         case .boolean(let value): return String(value)
         case .select(let value): return value
         case .tags(let values): return values.joined(separator: ", ")
+        case .reference(let values): return values.joined(separator: ", ")
+        case .null: return ""
+        }
+    }
+
+    /// Convert to JSON-serializable format for database storage
+    public var jsonValue: Any {
+        switch self {
+        case .text(let value): return value
+        case .number(let value): return value
+        case .date(let value): return ISO8601DateFormatter().string(from: value)
+        case .boolean(let value): return value
+        case .select(let value): return value
+        case .tags(let value): return value
         case .reference(let value): return value
+        case .null: return NSNull()
+        }
+    }
+
+    /// Create PropertyValue from JSON-serializable format
+    public static func from(jsonValue: Any, type: PropertyType) -> PropertyValue? {
+        switch type {
+        case .text:
+            guard let string = jsonValue as? String else { return nil }
+            return .text(string)
+        case .number:
+            if let double = jsonValue as? Double {
+                return .number(double)
+            } else if let int = jsonValue as? Int {
+                return .number(Double(int))
+            }
+            return nil
+        case .date:
+            guard let string = jsonValue as? String,
+                  let date = ISO8601DateFormatter().date(from: string) else { return nil }
+            return .date(date)
+        case .boolean:
+            guard let bool = jsonValue as? Bool else { return nil }
+            return .boolean(bool)
+        case .select:
+            guard let string = jsonValue as? String else { return nil }
+            return .select(string)
+        case .tags:
+            guard let array = jsonValue as? [String] else { return nil }
+            return .tags(array)
+        case .reference:
+            guard let array = jsonValue as? [String] else { return nil }
+            return .reference(array)
         }
     }
 
@@ -93,9 +144,12 @@ public enum PropertyValue: Codable, Equatable {
         case .tags(let values):
             try container.encode("tags", forKey: .type)
             try container.encode(values, forKey: .value)
-        case .reference(let value):
+        case .reference(let values):
             try container.encode("reference", forKey: .type)
-            try container.encode(value, forKey: .value)
+            try container.encode(values, forKey: .value)
+        case .null:
+            try container.encode("null", forKey: .type)
+            try container.encodeNil(forKey: .value)
         }
     }
 
@@ -126,8 +180,10 @@ public enum PropertyValue: Codable, Equatable {
             let values = try container.decode([String].self, forKey: .value)
             self = .tags(values)
         case "reference":
-            let value = try container.decode(String.self, forKey: .value)
-            self = .reference(value)
+            let values = try container.decode([String].self, forKey: .value)
+            self = .reference(values)
+        case "null":
+            self = .null
         default:
             throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown property type")
         }
@@ -138,8 +194,9 @@ public enum PropertyValue: Codable, Equatable {
     }
 }
 
-/// Property definition schema
-public struct PropertyDefinition: Codable, Identifiable {
+/// Property definition schema for property configuration
+/// Matches React PropertyDefinition interface
+public struct PropertyDefinition: Codable, Identifiable, Sendable {
     public let id: String
     public let name: String
     public let type: PropertyType
@@ -170,41 +227,54 @@ public struct PropertyDefinition: Codable, Identifiable {
     }
 }
 
-/// Property validation error
-public struct PropertyValidationError: Error, Identifiable {
-    public let id = UUID()
-    public let propertyKey: String
-    public let message: String
+/// Property validation error types
+public enum PropertyValidationError: Error, LocalizedError {
+    case required(String)
+    case invalidType(String, PropertyType)
+    case invalidOption(String, [String])
+    case invalidFormat(String)
+    case custom(String)
 
-    public init(propertyKey: String, message: String) {
-        self.propertyKey = propertyKey
-        self.message = message
+    public var errorDescription: String? {
+        switch self {
+        case .required(let field):
+            return "\(field) is required"
+        case .invalidType(let field, let type):
+            return "\(field) must be a valid \(type.displayName.lowercased())"
+        case .invalidOption(let field, let options):
+            return "\(field) must be one of: \(options.joined(separator: ", "))"
+        case .invalidFormat(let message):
+            return message
+        case .custom(let message):
+            return message
+        }
     }
 }
 
-/// Property management model with validation and CloudKit sync
+/// Main property management model for notebook cards
+/// Provides property editing, validation, and CloudKit synchronization
 @MainActor
 public class NotebookPropertyModel: ObservableObject {
 
     // MARK: - Published Properties
 
-    /// Current property values
+    /// Current property values for the active card
     @Published public var properties: [String: PropertyValue] = [:]
 
-    /// Property definitions for type safety and validation
-    @Published public var definitions: [String: PropertyDefinition] = [:]
+    /// Custom property definitions beyond built-in ones
+    @Published public var customDefinitions: [PropertyDefinition] = []
 
     /// Whether there are unsaved property changes
-    @Published public var isDirty: Bool = false
+    @Published public var isDirty = false
 
-    /// Validation errors by property key
+    /// Validation errors for each property
     @Published public var validationErrors: [String: String] = [:]
 
-    /// Currently active notebook card
-    @Published public var activeCard: NotebookCard? = nil
+    /// Current save state
+    @Published public var isSaving = false
 
-    /// Whether a save operation is in progress
-    @Published public var isSaving: Bool = false
+    /// Success indicator for UI feedback
+    @Published public var saveSuccess = false
 
     // MARK: - Private Properties
 
@@ -214,48 +284,76 @@ public class NotebookPropertyModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var lastSavedProperties: [String: PropertyValue] = [:]
 
+    // MARK: - Computed Properties
+
+    /// All available property definitions (built-in + custom)
+    public var allDefinitions: [PropertyDefinition] {
+        return Array(Self.builtInDefinitions.values) + customDefinitions
+    }
+
+    /// Number of properties with non-empty values
+    public var propertyCount: Int {
+        return properties.values.filter { value in
+            switch value {
+            case .text(let str): return !str.isEmpty
+            case .tags(let arr), .reference(let arr): return !arr.isEmpty
+            case .null: return false
+            default: return true
+            }
+        }.count
+    }
+
     // MARK: - Built-in Property Definitions
 
     public static let builtInDefinitions: [String: PropertyDefinition] = [
-        "priority": PropertyDefinition(
-            name: "Priority",
-            type: .select,
-            options: ["Low", "Medium", "High", "Urgent"],
-            description: "Task or item priority level"
-        ),
-        "status": PropertyDefinition(
-            name: "Status",
-            type: .select,
-            options: ["Todo", "In Progress", "Review", "Done"],
-            description: "Current status of the item"
-        ),
-        "tags": PropertyDefinition(
+        "Tags": PropertyDefinition(
             name: "Tags",
             type: .tags,
-            description: "Categorization tags"
+            placeholder: "Add tags...",
+            description: "Categorization tags for this card"
         ),
-        "due_date": PropertyDefinition(
+        "Priority": PropertyDefinition(
+            name: "Priority",
+            type: .select,
+            defaultValue: .select("medium"),
+            options: ["low", "medium", "high", "urgent"],
+            description: "Task or content priority level"
+        ),
+        "Status": PropertyDefinition(
+            name: "Status",
+            type: .select,
+            defaultValue: .select("draft"),
+            options: ["draft", "in-progress", "review", "complete", "archived"],
+            description: "Current status of the card"
+        ),
+        "Related Nodes": PropertyDefinition(
+            name: "Related Nodes",
+            type: .reference,
+            placeholder: "Link to other nodes...",
+            description: "References to related Isometry nodes"
+        ),
+        "Due Date": PropertyDefinition(
             name: "Due Date",
             type: .date,
-            description: "When this item is due"
+            description: "Target completion date"
         ),
-        "assignee": PropertyDefinition(
+        "Assignee": PropertyDefinition(
             name: "Assignee",
             type: .text,
-            placeholder: "Person responsible",
-            description: "Who is responsible for this item"
+            placeholder: "Who is responsible?",
+            description: "Person responsible for this task"
         ),
-        "effort": PropertyDefinition(
-            name: "Effort",
+        "Effort (hours)": PropertyDefinition(
+            name: "Effort (hours)",
             type: .number,
-            placeholder: "Hours or story points",
-            description: "Estimated effort required"
+            placeholder: "0",
+            description: "Estimated effort in hours"
         ),
-        "completed": PropertyDefinition(
-            name: "Completed",
+        "Archived": PropertyDefinition(
+            name: "Archived",
             type: .boolean,
             defaultValue: .boolean(false),
-            description: "Whether this item is completed"
+            description: "Whether this card is archived"
         )
     ]
 
@@ -263,205 +361,222 @@ public class NotebookPropertyModel: ObservableObject {
 
     public init(database: IsometryDatabase) {
         self.database = database
-        self.definitions = Self.builtInDefinitions
-        setupAutoSave()
+        setupPropertyObservation()
     }
 
     deinit {
-        autoSaveTimer?.invalidate()
+        saveDebounceTimer?.invalidate()
     }
 
     // MARK: - Public Methods
 
-    /// Load properties for a notebook card
-    public func loadCard(_ card: NotebookCard) {
-        // Save current changes before loading new card
-        saveCurrentChanges()
+    /// Update the database reference
+    public func updateDatabase(_ database: IsometryDatabase) {
+        self.database = database
+    }
 
+    /// Load properties for a specific card
+    public func loadCard(_ card: NotebookCard) {
         activeCard = card
 
-        // Convert card properties to PropertyValue format
+        // Convert string properties to PropertyValue objects
         var newProperties: [String: PropertyValue] = [:]
-
-        let cardProperties = card.properties
-        if !cardProperties.isEmpty {
-            for (key, value) in cardProperties {
-                if let propertyValue = convertToPropertyValue(value, forKey: key) {
-                    newProperties[key] = propertyValue
-                }
+        for (key, value) in card.properties {
+            // Try to determine type from built-in definitions
+            if let definition = allDefinitions.first(where: { $0.name == key }) {
+                newProperties[key] = PropertyValue.from(jsonValue: value, type: definition.type) ?? .text(value)
+            } else {
+                // Default to text for unknown properties
+                newProperties[key] = .text(value)
             }
         }
 
         properties = newProperties
-        lastSavedProperties = newProperties
         isDirty = false
         validationErrors.removeAll()
     }
 
-    /// Update a property value
+    /// Update a property value with validation
     public func updateProperty(key: String, value: PropertyValue) {
         properties[key] = value
         isDirty = true
 
-        // Validate the property
-        validateProperty(key: key, value: value)
+        // Validate the new value
+        if let definition = allDefinitions.first(where: { $0.name == key }) {
+            do {
+                try validateProperty(value: value, definition: definition)
+                validationErrors[key] = nil
+            } catch {
+                validationErrors[key] = error.localizedDescription
+            }
+        }
 
-        // Schedule auto-save
+        // Debounce auto-save
         scheduleAutoSave()
     }
 
     /// Remove a property
     public func removeProperty(key: String) {
         properties.removeValue(forKey: key)
-        definitions.removeValue(forKey: key)
         validationErrors.removeValue(forKey: key)
         isDirty = true
-
         scheduleAutoSave()
     }
 
-    /// Add a new property
-    public func addProperty(key: String, definition: PropertyDefinition) {
-        definitions[key] = definition
+    /// Add a new property with default value
+    public func addProperty(key: String, type: PropertyType) -> Bool {
+        // Check if property already exists
+        guard !properties.keys.contains(key) else { return false }
 
-        // Set default value if provided
-        if let defaultValue = definition.defaultValue {
-            updateProperty(key: key, value: defaultValue)
-        } else {
-            // Set empty value based on type
-            let emptyValue: PropertyValue = switch definition.type {
-            case .text: .text("")
-            case .number: .number(0)
-            case .date: .date(Date())
-            case .boolean: .boolean(false)
-            case .select: .select(definition.options?.first ?? "")
-            case .tags: .tags([])
-            case .reference: .reference("")
-            }
-            updateProperty(key: key, value: emptyValue)
+        // Create default value based on type
+        let defaultValue: PropertyValue
+        switch type {
+        case .text: defaultValue = .text("")
+        case .number: defaultValue = .number(0)
+        case .date: defaultValue = .date(Date())
+        case .boolean: defaultValue = .boolean(false)
+        case .select: defaultValue = .select("")
+        case .tags: defaultValue = .tags([])
+        case .reference: defaultValue = .reference([])
         }
+
+        updateProperty(key: key, value: defaultValue)
+        return true
+    }
+
+    /// Add a custom property definition
+    public func addCustomDefinition(_ definition: PropertyDefinition) {
+        // Check if definition already exists
+        guard !allDefinitions.contains(where: { $0.name == definition.name }) else { return }
+
+        customDefinitions.append(definition)
+
+        // Add property with default value if specified
+        if let defaultValue = definition.defaultValue {
+            updateProperty(key: definition.name, value: defaultValue)
+        } else {
+            _ = addProperty(key: definition.name, type: definition.type)
+        }
+    }
+
+    /// Remove a custom property definition
+    public func removeCustomDefinition(name: String) {
+        customDefinitions.removeAll { $0.name == name }
+        removeProperty(key: name)
     }
 
     /// Validate all properties
-    public func validateProperties() -> Bool {
-        validationErrors.removeAll()
+    public func validateProperties() -> [String: String] {
+        var errors: [String: String] = [:]
 
-        for (key, value) in properties {
-            validateProperty(key: key, value: value)
+        for definition in allDefinitions {
+            guard let value = properties[definition.name] else {
+                if definition.required {
+                    errors[definition.name] = PropertyValidationError.required(definition.name).localizedDescription
+                }
+                continue
+            }
+
+            do {
+                try validateProperty(value: value, definition: definition)
+            } catch {
+                errors[definition.name] = error.localizedDescription
+            }
         }
 
-        return validationErrors.isEmpty
+        validationErrors = errors
+        return errors
     }
 
-    /// Save properties now
-    @discardableResult
-    public func saveNow() async -> Bool {
-        return await performSave()
-    }
+    /// Save properties immediately (bypassing debounce)
+    public func saveNow() async throws {
+        guard isDirty, let card = activeCard else { return }
 
-    /// Update the database reference
-    public func updateDatabase(_ newDatabase: IsometryDatabase) {
-        database = newDatabase
+        isSaving = true
+        defer { isSaving = false }
+
+        // Validate all properties first
+        let errors = validateProperties()
+        guard errors.isEmpty else {
+            throw PropertyValidationError.custom("Please fix validation errors before saving")
+        }
+
+        // Convert PropertyValue objects back to strings for storage
+        var stringProperties: [String: String] = [:]
+        for (key, value) in properties {
+            stringProperties[key] = value.stringValue
+        }
+
+        // Update card with new properties
+        let updatedCard = NotebookCard(
+            id: card.id,
+            title: card.title,
+            markdownContent: card.markdownContent,
+            properties: stringProperties,
+            templateId: card.templateId,
+            createdAt: card.createdAt,
+            modifiedAt: Date(),
+            folder: card.folder,
+            tags: card.tags,
+            linkedNodeId: card.linkedNodeId,
+            syncVersion: card.syncVersion + 1,
+            lastSyncedAt: card.lastSyncedAt,
+            conflictResolvedAt: card.conflictResolvedAt,
+            deletedAt: card.deletedAt
+        )
+
+        // Save to database
+        try await database.updateNotebookCard(updatedCard)
+
+        // Update local state
+        activeCard = updatedCard
+        isDirty = false
+
+        // Show success feedback
+        saveSuccess = true
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            await MainActor.run {
+                saveSuccess = false
+            }
+        }
     }
 
     // MARK: - Private Methods
 
-    private func setupAutoSave() {
-        // Monitor property changes for auto-save
+    private func setupPropertyObservation() {
+        // Observe property changes for auto-save
         $properties
+            .dropFirst() // Skip initial value
             .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
             .sink { [weak self] _ in
-                self?.scheduleAutoSave()
+                Task {
+                    try? await self?.saveNow()
+                }
             }
             .store(in: &cancellables)
     }
 
     private func scheduleAutoSave() {
-        // Cancel existing timer
-        autoSaveTimer?.invalidate()
-
-        // Only schedule if there are changes to save
-        guard isDirty, activeCard != nil else { return }
-
-        // Schedule new auto-save
-        autoSaveTimer = Timer.scheduledTimer(withTimeInterval: autoSaveDelay, repeats: false) { [weak self] _ in
-            Task { @MainActor in
-                await self?.performSave()
+        saveDebounceTimer?.invalidate()
+        saveDebounceTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] _ in
+            Task {
+                try? await self?.saveNow()
             }
         }
     }
 
-    @discardableResult
-    private func performSave() async -> Bool {
-        guard isDirty, let activeCard = activeCard else {
-            return false
-        }
-
-        // Prevent concurrent saves
-        guard !isSaving else {
-            return false
-        }
-
-        isSaving = true
-
-        do {
-            // Convert PropertyValue back to card properties format
-            var cardProperties: [String: String] = [:]
-            for (key, value) in properties {
-                cardProperties[key] = value.stringValue
-            }
-
-            // Update card with new properties
-            let updatedCard = NotebookCard(
-                id: activeCard.id,
-                title: activeCard.title,
-                markdownContent: activeCard.markdownContent,
-                properties: cardProperties,
-                templateId: activeCard.templateId,
-                createdAt: activeCard.createdAt,
-                modifiedAt: Date(),
-                folder: activeCard.folder,
-                tags: activeCard.tags,
-                linkedNodeId: activeCard.linkedNodeId,
-                syncVersion: activeCard.syncVersion + 1,
-                lastSyncedAt: activeCard.lastSyncedAt,
-                conflictResolvedAt: activeCard.conflictResolvedAt,
-                deletedAt: activeCard.deletedAt
-            )
-
-            // Save to database
-            try await database.updateNotebookCard(updatedCard)
-
-            // Update local state
-            self.activeCard = updatedCard
-            lastSavedProperties = properties
-            isDirty = false
-
-            isSaving = false
-            return true
-
-        } catch {
-            print("Failed to save properties: \(error)")
-            isSaving = false
-            return false
-        }
-    }
-
-    private func validateProperty(key: String, value: PropertyValue) {
-        guard let definition = definitions[key] else { return }
-
-        // Required field validation
+    private func validateProperty(value: PropertyValue, definition: PropertyDefinition) throws {
+        // Check required fields
         if definition.required {
             switch value {
-            case .text(let text) where text.isEmpty:
-                validationErrors[key] = "\(definition.name) is required"
-                return
-            case .tags(let tags) where tags.isEmpty:
-                validationErrors[key] = "\(definition.name) is required"
-                return
-            case .reference(let ref) where ref.isEmpty:
-                validationErrors[key] = "\(definition.name) is required"
-                return
+            case .text(let str) where str.isEmpty:
+                throw PropertyValidationError.required(definition.name)
+            case .tags(let arr) where arr.isEmpty,
+                 .reference(let arr) where arr.isEmpty:
+                throw PropertyValidationError.required(definition.name)
+            case .null:
+                throw PropertyValidationError.required(definition.name)
             default:
                 break
             }
@@ -469,105 +584,35 @@ public class NotebookPropertyModel: ObservableObject {
 
         // Type-specific validation
         switch (value, definition.type) {
-        case (.number(let num), .number):
-            if num.isNaN || num.isInfinite {
-                validationErrors[key] = "Invalid number"
+        case (.text, .text), (.number, .number), (.date, .date),
+             (.boolean, .boolean), (.tags, .tags), (.reference, .reference):
+            // Types match, continue with specific validation
+            break
+        case (.select(let str), .select):
+            // Check if value is in allowed options
+            if let options = definition.options, !options.contains(str) {
+                throw PropertyValidationError.invalidOption(definition.name, options)
             }
+        default:
+            throw PropertyValidationError.invalidType(definition.name, definition.type)
+        }
 
-        case (.select(let selected), .select):
-            if let options = definition.options, !options.contains(selected) {
-                validationErrors[key] = "Invalid selection"
+        // Additional validation based on type
+        switch value {
+        case .number(let num):
+            guard !num.isNaN && num.isFinite else {
+                throw PropertyValidationError.invalidFormat("\(definition.name) must be a valid number")
             }
-
-        case (.tags(let tags), .tags):
-            if let options = definition.options {
-                let invalidTags = tags.filter { !options.contains($0) }
-                if !invalidTags.isEmpty {
-                    validationErrors[key] = "Invalid tags: \(invalidTags.joined(separator: ", "))"
+        case .reference(let refs):
+            // Validate that references are valid UUIDs
+            for ref in refs {
+                guard UUID(uuidString: ref) != nil else {
+                    throw PropertyValidationError.invalidFormat("\(definition.name) must contain valid node IDs")
                 }
             }
-
         default:
             break
         }
-
-        // Clear error if validation passed
-        validationErrors.removeValue(forKey: key)
     }
 
-    private func convertToPropertyValue(_ value: Any, forKey key: String) -> PropertyValue? {
-        // Try to determine type from built-in definitions
-        let type = definitions[key]?.type ?? .text
-
-        switch type {
-        case .text:
-            if let stringValue = value as? String {
-                return .text(stringValue)
-            }
-        case .number:
-            if let doubleValue = value as? Double {
-                return .number(doubleValue)
-            } else if let intValue = value as? Int {
-                return .number(Double(intValue))
-            } else if let stringValue = value as? String, let doubleValue = Double(stringValue) {
-                return .number(doubleValue)
-            }
-        case .date:
-            if let dateValue = value as? Date {
-                return .date(dateValue)
-            } else if let stringValue = value as? String, let date = ISO8601DateFormatter().date(from: stringValue) {
-                return .date(date)
-            }
-        case .boolean:
-            if let boolValue = value as? Bool {
-                return .boolean(boolValue)
-            } else if let stringValue = value as? String {
-                return .boolean(stringValue.lowercased() == "true")
-            }
-        case .select:
-            if let stringValue = value as? String {
-                return .select(stringValue)
-            }
-        case .tags:
-            if let arrayValue = value as? [String] {
-                return .tags(arrayValue)
-            } else if let stringValue = value as? String {
-                return .tags(stringValue.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) })
-            }
-        case .reference:
-            if let stringValue = value as? String {
-                return .reference(stringValue)
-            }
-        }
-
-        // Fallback to text
-        return .text(String(describing: value))
-    }
-
-    private func saveCurrentChanges() {
-        autoSaveTimer?.invalidate()
-
-        if isDirty {
-            Task {
-                await performSave()
-            }
-        }
-    }
-
-    // MARK: - Computed Properties
-
-    /// Number of properties
-    public var propertyCount: Int {
-        properties.count
-    }
-
-    /// Number of validation errors
-    public var errorCount: Int {
-        validationErrors.count
-    }
-
-    /// Whether all validations pass
-    public var isValid: Bool {
-        validationErrors.isEmpty
-    }
 }

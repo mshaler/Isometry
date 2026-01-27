@@ -50,7 +50,7 @@ export function parse(input: string): ASTNode | null {
 
   try {
     // Use the generated PEG.js parser
-    return pegParser.parse(trimmed);
+    return pegParser.parse(trimmed) as unknown as ASTNode;
   } catch (error: unknown) {
     // Transform PEG.js error to our ParseError interface
     if (error && typeof error === 'object' && 'location' in error) {

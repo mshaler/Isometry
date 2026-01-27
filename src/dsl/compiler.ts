@@ -87,8 +87,13 @@ export function compile(ast: ASTNode | null): CompiledQuery {
     }
 
     // Handle standard operators
-    params.push(safeValue);
-    return `${safeField} ${safeOperator} ?`;
+    if (safeValue !== undefined) {
+      params.push(safeValue);
+      return `${safeField} ${safeOperator} ?`;
+    } else {
+      // Handle undefined value as NULL comparison
+      return `${safeField} IS ${safeOperator === '=' ? '' : 'NOT'} NULL`;
+    }
   }
   
   function compileAxisFilter(axis: string, value: FilterValue): string {
@@ -111,16 +116,28 @@ export function compile(ast: ASTNode | null): CompiledQuery {
         if (typeof safeValue === 'object' && safeValue && 'preset' in safeValue) {
           return compileTimePreset('created', (safeValue as { preset: TimePreset }).preset);
         }
-        params.push(safeValue);
-        return `created = ?`;
+        if (safeValue !== undefined) {
+          params.push(safeValue);
+          return `created = ?`;
+        } else {
+          return `created IS NULL`;
+        }
 
       case 'category':
-        params.push(safeValue);
-        return `category = ?`;
+        if (safeValue !== undefined) {
+          params.push(safeValue);
+          return `category = ?`;
+        } else {
+          return `category IS NULL`;
+        }
 
       case 'hierarchy':
-        params.push(safeValue);
-        return `priority <= ?`;
+        if (safeValue !== undefined) {
+          params.push(safeValue);
+          return `priority <= ?`;
+        } else {
+          return `priority IS NULL`;
+        }
 
       case 'alphabet':
         // Handle ranges like A-M with proper parameterization
@@ -143,12 +160,20 @@ export function compile(ast: ASTNode | null): CompiledQuery {
           return `SUBSTR(name, 1, 1) BETWEEN ? AND ?`;
         }
 
-        params.push(`${safeValue}%`);
-        return `name LIKE ?`;
+        if (safeValue !== undefined) {
+          params.push(`${safeValue}%`);
+          return `name LIKE ?`;
+        } else {
+          return `name IS NULL`;
+        }
 
       case 'location':
-        params.push(safeValue);
-        return `location = ?`;
+        if (safeValue !== undefined) {
+          params.push(safeValue);
+          return `location = ?`;
+        } else {
+          return `location IS NULL`;
+        }
 
       default:
         return '1=1';

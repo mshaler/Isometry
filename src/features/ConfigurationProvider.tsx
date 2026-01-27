@@ -757,16 +757,6 @@ export function withConfiguration<P extends object>(
 }
 
 // Declare global types for native bridge
-declare global {
-  interface Window {
-    webkit?: {
-      messageHandlers?: {
-        configuration?: {
-          postMessage: (message: unknown) => Promise<unknown>;
-        };
-      };
-    };
-  }
-}
+// Window interface extension moved to browser-bridge.d.ts to avoid conflicts
 
 export default ConfigurationProvider;

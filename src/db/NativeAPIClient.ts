@@ -199,7 +199,7 @@ export class NativeAPIClient {
 
           reset: () => {},
           free: () => {}
-        } as Statement
+        } as unknown as Statement
       },
 
       run: async (sql: string, params?: unknown) => {

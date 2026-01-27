@@ -196,11 +196,11 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
   const isEnabled = useMemo(() => {
     return (flagName: string, targetUserId?: string, targetUserSegment?: UserSegment): boolean => {
       const startTime = performance.now();
-      const userId = targetUserId || userId;
-      const userSegment = targetUserSegment || userSegment;
+      const currentUserId = targetUserId || userId;
+      const currentUserSegment = targetUserSegment || userSegment;
 
       // Check cache first
-      const cacheKey = `${flagName}:${userId || 'anonymous'}:${userSegment?.id || 'none'}`;
+      const cacheKey = `${flagName}:${currentUserId || 'anonymous'}:${currentUserSegment?.id || 'none'}`;
       const cached = evaluationCache.get(cacheKey);
       const now = Date.now();
 
@@ -227,10 +227,10 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
 
       try {
         // Hierarchical evaluation: user override → segment → global
-        if (userId && flag.userOverrides[userId]) {
-          result = evaluateConfiguration(flag.userOverrides[userId]);
-        } else if (userSegment && flag.segmentConfigurations[userSegment.id]) {
-          result = evaluateConfiguration(flag.segmentConfigurations[userSegment.id]);
+        if (currentUserId && flag.userOverrides[currentUserId]) {
+          result = evaluateConfiguration(flag.userOverrides[currentUserId]);
+        } else if (currentUserSegment && flag.segmentConfigurations[currentUserSegment.id]) {
+          result = evaluateConfiguration(flag.segmentConfigurations[currentUserSegment.id]);
         } else {
           result = evaluateConfiguration(flag.globalConfiguration);
         }
@@ -533,16 +533,6 @@ export const FeatureFlagWrapper: React.FC<FeatureFlagWrapperProps> = ({
 };
 
 // Declare global types for native bridge
-declare global {
-  interface Window {
-    webkit?: {
-      messageHandlers?: {
-        featureFlags?: {
-          postMessage: (message: unknown) => Promise<unknown>;
-        };
-      };
-    };
-  }
-}
+// Window interface extension moved to browser-bridge.d.ts to avoid conflicts
 
 export default FeatureFlagProvider;

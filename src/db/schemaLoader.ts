@@ -5,7 +5,7 @@
 // ============================================================================
 
 // Database function type for executing queries
-type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params?: unknown[]) => T[] | Promise<T[]>;
+type DatabaseFunction = <T = Record<string, unknown>>(sql: string, params: unknown[]) => T[] | Promise<T[]>;
 
 export interface SchemaField {
   name: string;

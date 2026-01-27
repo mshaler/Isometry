@@ -83,6 +83,21 @@ declare global {
         isometry?: {
           postMessage(message: BridgeMessage): void;
         };
+        abTesting?: {
+          postMessage: (message: unknown) => Promise<unknown>;
+        };
+        configuration?: {
+          postMessage: (message: unknown) => Promise<unknown>;
+        };
+        featureFlags?: {
+          postMessage: (message: unknown) => Promise<unknown>;
+        };
+        database?: {
+          postMessage(message: unknown): void;
+        };
+        filesystem?: {
+          postMessage(message: unknown): void;
+        };
       };
     };
 

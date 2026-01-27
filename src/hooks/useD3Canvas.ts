@@ -226,7 +226,7 @@ const transformPAFVData = (nodes: Node[], wells: Wells): GroupedData => {
 
 // Stage 3: Scale Generation
 const generateScales = (
-  groupedData: GroupedData,
+  _groupedData: GroupedData,
   viewport: Viewport,
   rowChips: Chip[],
   colChips: Chip[],

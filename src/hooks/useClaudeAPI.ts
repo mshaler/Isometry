@@ -170,7 +170,13 @@ export function useClaudeAPI(options: UseClaudeAPIOptions = {}): UseClaudeAPIRet
 
     let client = anthropicRef.current;
     if (!client) {
-      client = initializeClient();
+      const initialized = initializeClient();
+      if (initialized && 'proxy' in initialized) {
+        // Handle proxy client case
+        client = null; // Proxy handling would be implemented here
+      } else {
+        client = initialized as Anthropic | null;
+      }
     }
 
     if (!client) {

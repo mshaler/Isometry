@@ -450,7 +450,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
   };
 
   // Evaluate user criteria
-  const evaluateUserCriteria = (userId: string, criteria: UserCriteria): boolean => {
+  const evaluateUserCriteria = (_userId: string, criteria: UserCriteria): boolean => {
     // This would typically integrate with user profile system
     // For demo purposes, simplified implementation
     switch (criteria.property) {
@@ -757,16 +757,6 @@ export function withABTest<P extends object>(
 }
 
 // Declare global types for native bridge
-declare global {
-  interface Window {
-    webkit?: {
-      messageHandlers?: {
-        abTesting?: {
-          postMessage: (message: unknown) => Promise<unknown>;
-        };
-      };
-    };
-  }
-}
+// Window interface extension moved to browser-bridge.d.ts to avoid conflicts
 
 export default ABTestProvider;
