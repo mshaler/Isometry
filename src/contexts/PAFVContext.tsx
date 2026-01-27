@@ -61,7 +61,7 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const toggleCheckbox = useCallback((well: keyof Wells, _chipId: string) => {
+  const toggleCheckbox = useCallback((well: keyof Wells, chipId: string) => {
     setWells(prev => ({
       ...prev,
       [well]: prev[well].map(chip =>
