@@ -4,7 +4,7 @@
 // Tests for cache invalidation with dependency tracking and tagging
 // ============================================================================
 
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import {
