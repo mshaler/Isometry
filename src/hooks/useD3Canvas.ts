@@ -145,13 +145,12 @@ class PerformanceMonitor {
     return this.durations.get(operation) || 0;
   }
 
-  getMetrics(): Partial<PerformanceMetrics> {
+  getMetrics(): Pick<PerformanceMetrics, 'dataTransform' | 'scaleGeneration' | 'layoutCalculation' | 'renderPrep'> {
     return {
       dataTransform: this.getDuration('dataTransform'),
       scaleGeneration: this.getDuration('scaleGeneration'),
       layoutCalculation: this.getDuration('layoutCalculation'),
       renderPrep: this.getDuration('renderPrep'),
-      totalPipeline: this.getDuration('totalPipeline'),
     };
   }
 
@@ -206,12 +205,12 @@ const transformPAFVData = (nodes: Node[], wells: Wells): GroupedData => {
   const rowDomains = new Map<string, unknown[]>();
   const colDomains = new Map<string, unknown[]>();
 
-  rowChips.forEach((chip, index) => {
+  rowChips.forEach((chip: Chip, index: number) => {
     const values = Array.from(rowKeys).map(key => key.split('|')[index]);
     rowDomains.set(chip.id, Array.from(new Set(values)).sort());
   });
 
-  colChips.forEach((chip, index) => {
+  colChips.forEach((chip: Chip, index: number) => {
     const values = Array.from(colKeys).map(key => key.split('|')[index]);
     colDomains.set(chip.id, Array.from(new Set(values)).sort());
   });
@@ -417,8 +416,12 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
 
       monitor.end('totalPipeline');
 
+      const baseMetrics = monitor.getMetrics();
       const performanceMetrics: PerformanceMetrics = {
-        ...monitor.getMetrics(),
+        dataTransform: baseMetrics.dataTransform,
+        scaleGeneration: baseMetrics.scaleGeneration,
+        layoutCalculation: baseMetrics.layoutCalculation,
+        renderPrep: baseMetrics.renderPrep,
         memoryUsage: monitor.getMemoryUsage(),
         nodeCount: inputNodes.length,
         cellCount: positionedData.cells.size,
@@ -468,7 +471,10 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
         viewport,
         renderCommands: { cells: [], headers: [] },
         performance: {
-          ...monitor.getMetrics(),
+          dataTransform: monitor.getDuration('dataTransform'),
+          scaleGeneration: monitor.getDuration('scaleGeneration'),
+          layoutCalculation: monitor.getDuration('layoutCalculation'),
+          renderPrep: monitor.getDuration('renderPrep'),
           memoryUsage: monitor.getMemoryUsage(),
           nodeCount: inputNodes.length,
           cellCount: 0,

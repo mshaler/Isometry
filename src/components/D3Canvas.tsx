@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useResizeObserver } from '../hooks/useD3';
-import { useD3Canvas, type D3CanvasState, type Viewport } from '../hooks/useD3Canvas';
+import { useD3Canvas, type D3CanvasState, type Viewport, type PerformanceMetrics } from '../hooks/useD3Canvas';
 import { Node } from '../types';
 import {
   performanceMonitor,
@@ -39,21 +39,8 @@ interface InteractionState {
 // Enhanced Performance Overlay Component
 // ============================================================================
 
-interface D3PerformanceStats {
-  fps?: number;
-  frameHistory?: number;
-  totalPipeline?: number;
-  memoryUsage?: number;
-  nodeCount?: number;
-  cellCount?: number;
-  dataTransform?: number;
-  scaleGeneration?: number;
-  layoutCalculation?: number;
-  renderPrep?: number;
-}
-
 interface PerformanceOverlayProps {
-  performance: D3PerformanceStats;
+  performance: PerformanceMetrics;
   frameRate: number;
   error: string | null;
 }
@@ -63,7 +50,7 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
   frameRate,
   error
 }) => {
-  if (!performance || (performance.totalPipeline ?? 0) === 0) return null;
+  if (!performance || performance.totalPipeline === 0) return null;
 
   const renderStats = performanceMonitor.getMetricStats('canvas-render');
   const spatialStats = spatialIndex.getStats();
@@ -82,23 +69,23 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
         </span>
 
         <span>Pipeline:</span>
-        <span className={(performance.totalPipeline ?? 0) <= 100 ? 'text-green-400' : 'text-yellow-400'}>
-          {(performance.totalPipeline ?? 0).toFixed(1)}ms
+        <span className={performance.totalPipeline <= 100 ? 'text-green-400' : 'text-yellow-400'}>
+          {performance.totalPipeline.toFixed(1)}ms
         </span>
 
         <span>Render:</span>
         <span>{renderStats ? renderStats.latest.toFixed(1) : '0.0'}ms</span>
 
         <span>Memory:</span>
-        <span className={(performance.memoryUsage ?? 0) <= 50 ? 'text-green-400' : 'text-yellow-400'}>
-          {(performance.memoryUsage ?? 0).toFixed(1)}MB
+        <span className={performance.memoryUsage <= 50 ? 'text-green-400' : 'text-yellow-400'}>
+          {performance.memoryUsage.toFixed(1)}MB
         </span>
 
         <span>Nodes:</span>
-        <span>{performance.nodeCount ?? 0}</span>
+        <span>{performance.nodeCount}</span>
 
         <span>Cells:</span>
-        <span>{performance.cellCount ?? 0}</span>
+        <span>{performance.cellCount}</span>
       </div>
 
       <div className="mb-3 pb-2 border-b border-gray-600">
@@ -114,16 +101,16 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
         <span>Transform:</span>
-        <span>{(performance.dataTransform ?? 0).toFixed(1)}ms</span>
+        <span>{performance.dataTransform.toFixed(1)}ms</span>
 
         <span>Scales:</span>
-        <span>{(performance.scaleGeneration ?? 0).toFixed(1)}ms</span>
+        <span>{performance.scaleGeneration.toFixed(1)}ms</span>
 
         <span>Layout:</span>
-        <span>{(performance.layoutCalculation ?? 0).toFixed(1)}ms</span>
+        <span>{performance.layoutCalculation.toFixed(1)}ms</span>
 
         <span>Prep:</span>
-        <span>{(performance.renderPrep ?? 0).toFixed(1)}ms</span>
+        <span>{performance.renderPrep.toFixed(1)}ms</span>
       </div>
 
       {error && (
@@ -555,7 +542,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         {/* Enhanced performance overlay */}
         {showPerformanceOverlay && (
           <PerformanceOverlay
-            performance={performance as D3PerformanceStats}
+            performance={performance}
             frameRate={frameRate}
             error={error}
           />
