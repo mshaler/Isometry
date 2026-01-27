@@ -1,10 +1,10 @@
 import type { NotebookTemplate, NotebookCard } from '../../types/notebook';
 import { BUILT_IN_TEMPLATES, createNotebookCardTemplate } from '../../types/notebook';
-import type { ErrorReporting } from '../../services/ErrorReportingService';
+import { errorReporting } from '../../services/ErrorReportingService';
 
 const TEMPLATES_STORAGE_KEY = 'notebook_custom_templates';
 
-export function createTemplateManager(errorReporting: ErrorReporting) {
+export function createTemplateManager() {
   // Load templates from localStorage and merge with built-in templates
   const loadTemplates = (): NotebookTemplate[] => {
     try {

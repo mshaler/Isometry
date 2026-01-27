@@ -1,7 +1,7 @@
 import type { NotebookCard, NotebookCardType, NotebookTemplate } from '../../types/notebook';
 import { createNotebookCardTemplate, rowToNotebookCard, notebookCardToRow } from '../../types/notebook';
 import { generateId } from '../../utils/id';
-import { errorReporting } from '../../services/ErrorReportingService';
+// Import would be used for error handling in future implementation
 
 export function createCardOperations(
   execute: (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
@@ -133,7 +133,7 @@ export function createCardOperations(
       );
 
       // Update node name if markdown content changed
-      if (updates.markdownContent !== undefined) {
+      if (updates.markdownContent !== undefined && updates.markdownContent !== null) {
         const newName = updates.markdownContent.split('\n')[0].replace(/^#\s*/, '') || 'Untitled card';
         execute(
           `UPDATE nodes SET name = ?, modified_at = ?

@@ -70,7 +70,18 @@ export function TimelineView({ data, dateField = 'createdAt', onNodeClick }: Tim
       .on('zoom', (event) => {
         const newXScale = event.transform.rescaleX(xScale);
         const timeFormatter = d3.timeFormat('%b %d');
-        xAxisG.call(d3.axisBottom(newXScale).tickFormat(timeFormatter));
+        const axisFormatter = (domainValue: string | number | Date | { valueOf(): number }, _index: number): string => {
+          if (domainValue instanceof Date) {
+            return timeFormatter(domainValue);
+          } else if (typeof domainValue === 'string' || typeof domainValue === 'number') {
+            return timeFormatter(new Date(domainValue));
+          } else if (domainValue && typeof domainValue.valueOf === 'function') {
+            return timeFormatter(new Date(domainValue.valueOf()));
+          } else {
+            return String(domainValue);
+          }
+        };
+        xAxisG.call(d3.axisBottom(newXScale).tickFormat(axisFormatter));
 
         cards.attr('transform', d => {
           const x = newXScale(d.date!);
@@ -88,10 +99,21 @@ export function TimelineView({ data, dateField = 'createdAt', onNodeClick }: Tim
 
     // X-axis
     const timeFormatter = d3.timeFormat('%b %d');
+    const axisFormatter = (domainValue: string | number | Date | { valueOf(): number }, _index: number): string => {
+      if (domainValue instanceof Date) {
+        return timeFormatter(domainValue);
+      } else if (typeof domainValue === 'string' || typeof domainValue === 'number') {
+        return timeFormatter(new Date(domainValue));
+      } else if (domainValue && typeof domainValue.valueOf === 'function') {
+        return timeFormatter(new Date(domainValue.valueOf()));
+      } else {
+        return String(domainValue);
+      }
+    };
     const xAxisG = g.append('g')
       .attr('class', 'x-axis')
       .attr('transform', `translate(0,${height - margin.bottom})`)
-      .call(d3.axisBottom(xScale).tickFormat(timeFormatter));
+      .call(d3.axisBottom(xScale).tickFormat(axisFormatter));
 
     xAxisG.selectAll('text')
       .attr('fill', theme === 'NeXTSTEP' ? '#404040' : '#6b7280');
