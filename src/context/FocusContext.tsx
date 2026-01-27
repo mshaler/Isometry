@@ -33,6 +33,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
   const activeComponent = useRef<FocusableComponent | null>(null);
   const componentElements = useRef<Map<FocusableComponent, HTMLElement>>(new Map());
   const componentListeners = useRef<Map<FocusableComponent, ComponentListeners>>(new Map());
+  const announcementTimeouts = useRef<Set<NodeJS.Timeout>>(new Set());
   const components: FocusableComponent[] = ['capture', 'shell', 'preview'];
 
   const focusComponent = useCallback((component: FocusableComponent) => {
@@ -68,10 +69,16 @@ export function FocusProvider({ children }: FocusProviderProps) {
       announcement.textContent = `Focused ${componentNames[component]}`;
       document.body.appendChild(announcement);
 
-      // Remove announcement after it's been read
-      setTimeout(() => {
-        document.body.removeChild(announcement);
+      // Remove announcement after it's been read with proper cleanup tracking
+      const timeoutId = setTimeout(() => {
+        if (document.body.contains(announcement)) {
+          document.body.removeChild(announcement);
+        }
+        announcementTimeouts.current.delete(timeoutId);
       }, 1000);
+
+      // Track timeout for cleanup
+      announcementTimeouts.current.add(timeoutId);
     }
   }, []);
 
@@ -214,6 +221,27 @@ export function FocusProvider({ children }: FocusProviderProps) {
       }
     }
   });
+
+  // Cleanup all timeouts and listeners on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all pending announcement timeouts
+      announcementTimeouts.current.forEach(timeoutId => {
+        clearTimeout(timeoutId);
+      });
+      announcementTimeouts.current.clear();
+
+      // Clean up all component listeners
+      componentListeners.current.forEach((listeners, component) => {
+        const { element, focusHandler, blurHandler, keydownHandler } = listeners;
+        element.removeEventListener('focus', focusHandler);
+        element.removeEventListener('blur', blurHandler);
+        element.removeEventListener('keydown', keydownHandler);
+      });
+      componentListeners.current.clear();
+      componentElements.current.clear();
+    };
+  }, []);
 
   return (
     <FocusContext.Provider value={{
