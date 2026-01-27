@@ -279,10 +279,9 @@ public class NotebookPropertyModel: ObservableObject {
     // MARK: - Private Properties
 
     private var database: IsometryDatabase
-    private var autoSaveTimer: Timer?
-    private var autoSaveDelay: TimeInterval = 1.0
+    private var activeCard: NotebookCard?
     private var cancellables = Set<AnyCancellable>()
-    private var lastSavedProperties: [String: PropertyValue] = [:]
+    private var saveDebounceTimer: Timer?
 
     // MARK: - Computed Properties
 
