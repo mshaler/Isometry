@@ -40,6 +40,8 @@ export class PerformanceTracker {
   private frameCounter = 0;
   private frameStartTime = 0;
   private currentFrameRate = 60;
+  private frameTrackingId: number | null = null;
+  private isTracking = false;
 
   startOperation(operation: string): void {
     this.startTimes.set(operation, performance.now());
@@ -71,12 +73,29 @@ export class PerformanceTracker {
   }
 
   startFrameTracking(): void {
+    if (this.isTracking) {
+      return; // Prevent multiple tracking instances
+    }
+
     this.frameCounter = 0;
     this.frameStartTime = performance.now();
+    this.isTracking = true;
     this.trackFrame();
   }
 
+  stopFrameTracking(): void {
+    if (this.frameTrackingId) {
+      cancelAnimationFrame(this.frameTrackingId);
+      this.frameTrackingId = null;
+    }
+    this.isTracking = false;
+  }
+
   private trackFrame = (): void => {
+    if (!this.isTracking) {
+      return;
+    }
+
     this.frameCounter++;
     const elapsed = performance.now() - this.frameStartTime;
 
@@ -86,7 +105,7 @@ export class PerformanceTracker {
       this.frameStartTime = performance.now();
     }
 
-    requestAnimationFrame(this.trackFrame);
+    this.frameTrackingId = requestAnimationFrame(this.trackFrame);
   };
 
   getStats(): PerformanceStats {
@@ -172,8 +191,15 @@ export function PerformanceMonitor({
     }
 
     return () => {
+      // Clean up interval
       if (updateIntervalRef.current) {
         clearInterval(updateIntervalRef.current);
+        updateIntervalRef.current = undefined;
+      }
+
+      // Clean up frame tracking when component unmounts
+      if (autoTrackFrames) {
+        performanceTracker.stopFrameTracking();
       }
     };
   }, [visible, autoTrackFrames]);

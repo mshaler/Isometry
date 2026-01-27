@@ -128,23 +128,29 @@ export function EnvironmentProvider({
       return false;
     }
 
+    let timeoutId: NodeJS.Timeout | undefined;
+
     try {
       const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
-      // Use AbortController for timeout instead of invalid timeout property
+      // Use AbortController for timeout with proper cleanup tracking
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      timeoutId = setTimeout(() => controller.abort(), 2000);
 
       const response = await fetch(`${baseURL}/health`, {
         method: 'GET',
         signal: controller.signal
       });
 
-      clearTimeout(timeoutId);
       return response.ok;
     } catch (error) {
       console.warn('HTTP API test failed:', error);
       return false;
+    } finally {
+      // Ensure timeout is always cleaned up
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     }
   };
 

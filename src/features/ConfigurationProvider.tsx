@@ -642,7 +642,10 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       hotReload().catch(console.error);
     }, hotReloadInterval);
 
-    return () => clearInterval(interval);
+    // Ensure cleanup on component unmount or dependency change
+    return () => {
+      clearInterval(interval);
+    };
   }, [enableHotReload, hotReloadInterval]);
 
   // Set up native bridge listeners
