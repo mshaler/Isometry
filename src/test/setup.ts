@@ -6,6 +6,17 @@
 
 import '@testing-library/jest-dom';
 
+// Global type declarations for test environment
+declare global {
+  var webkit: any;
+  var __VITEST_UNHANDLED_REJECTIONS__: Array<{
+    reason: any;
+    promise: Promise<any>;
+    id: string;
+  }>;
+  var __VITEST_CLEAR_UNHANDLED_REJECTIONS__: () => void;
+}
+
 // Mock ResizeObserver for D3 components
 class ResizeObserverMock {
   observe() {}
@@ -37,8 +48,9 @@ Object.defineProperty(global, 'crypto', {
     getRandomValues: <T extends ArrayBufferView | null>(array: T): T => {
       // Fill with predictable test values for consistent test results
       if (array && 'length' in array) {
-        for (let i = 0; i < array.length; i++) {
-          (array as Uint8Array)[i] = Math.floor(Math.random() * 256);
+        const typedArray = array as Uint8Array;
+        for (let i = 0; i < typedArray.length; i++) {
+          typedArray[i] = Math.floor(Math.random() * 256);
         }
       }
       return array;
@@ -49,8 +61,8 @@ Object.defineProperty(global, 'crypto', {
         const mockHash = new ArrayBuffer(algorithm === 'SHA-256' ? 32 : 20);
         const view = new Uint8Array(mockHash);
         // Fill with deterministic test data based on input length
-        const inputLength = data instanceof ArrayBuffer ? data.byteLength :
-                          data instanceof Uint8Array ? data.length : 0;
+        const inputLength = _data instanceof ArrayBuffer ? _data.byteLength :
+                          _data instanceof Uint8Array ? _data.length : 0;
         for (let i = 0; i < view.length; i++) {
           view[i] = (inputLength + i) % 256;
         }

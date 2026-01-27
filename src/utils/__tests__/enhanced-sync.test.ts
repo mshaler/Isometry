@@ -8,12 +8,15 @@
 import { EnhancedSyncManager, type ConflictResolutionStrategy } from '../enhanced-sync';
 import { type DataChange, type SyncConflict } from '../sync-manager';
 
+// Type declaration for Jest in test environment
+declare const jest: any;
+
 // Mock localStorage
 const mockLocalStorage = {
   store: {} as Record<string, string>,
   getItem: jest.fn((key: string) => mockLocalStorage.store[key] || null),
   setItem: jest.fn((key: string, _value: string) => {
-    mockLocalStorage.store[key] = value;
+    mockLocalStorage.store[key] = _value;
   }),
   removeItem: jest.fn((key: string) => {
     delete mockLocalStorage.store[key];
