@@ -4,6 +4,8 @@
  * Tracks user interactions to understand PAFV spatial projection engagement
  */
 
+import { logger } from './logger';
+
 interface AnalyticsEvent {
   action: string;
   category: string;
@@ -62,7 +64,7 @@ class AnalyticsService {
 
     // In a real deployment, this would send to analytics service
     if (import.meta.env.DEV) {
-      console.log('📊 Analytics:', event);
+      logger.debug('analytics', 'Analytics event', { event });
     }
   }
 
@@ -111,7 +113,7 @@ class AnalyticsService {
 
     // Log comprehensive engagement summary
     if (this.isEnabled) {
-      console.log('📊 PAFV Session Summary:', {
+      logger.info('analytics', 'PAFV Session Summary', {
         ...this.pafvEngagement,
         totalEvents: this.events.length,
         engagementScore: this.calculateEngagementScore()

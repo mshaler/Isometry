@@ -7,6 +7,7 @@
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from './webview-bridge';
+import { performanceLogger } from './logger';
 
 interface BridgePerformanceResults {
   bridgeLatency?: number;
@@ -155,7 +156,7 @@ export class PerformanceBenchmarks {
     this.baselines.set(id, baseline);
     this.saveBaselines();
 
-    console.log(`📊 Performance baseline stored: ${id}`);
+    performanceLogger.info(`Performance baseline stored: ${id}`);
     return id;
   }
 
@@ -269,7 +270,7 @@ export class PerformanceBenchmarks {
       this.baselines.set(baseline.id, baseline);
     }
     this.saveBaselines();
-    console.log(`📥 Imported ${data.baselines.length} performance baselines`);
+    performanceLogger.info(`Imported ${data.baselines.length} performance baselines`);
   }
 
   /**
@@ -278,7 +279,7 @@ export class PerformanceBenchmarks {
   clearBaselines(): void {
     this.baselines.clear();
     this.saveBaselines();
-    console.log('🗑️ All performance baselines cleared');
+    performanceLogger.info('All performance baselines cleared');
   }
 
   /**
@@ -530,7 +531,7 @@ export class PerformanceBenchmarks {
         this.baselines = new Map(data.baselines || []);
       }
     } catch (error) {
-      console.warn('Failed to load performance baselines:', error);
+      performanceLogger.warn('Failed to load performance baselines', {}, error as Error);
       this.baselines = new Map();
     }
   }
@@ -543,7 +544,7 @@ export class PerformanceBenchmarks {
       };
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      console.warn('Failed to save performance baselines:', error);
+      performanceLogger.warn('Failed to save performance baselines', {}, error as Error);
     }
   }
 }
