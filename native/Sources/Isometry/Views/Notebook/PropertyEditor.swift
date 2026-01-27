@@ -83,11 +83,11 @@ public struct PropertyEditor: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
 
-                    if propertyModel.errorCount > 0 {
+                    if !propertyModel.validationErrors.isEmpty {
                         Divider()
                             .frame(height: 12)
 
-                        Text("\(propertyModel.errorCount)")
+                        Text("\(propertyModel.validationErrors.count)")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundStyle(.red)

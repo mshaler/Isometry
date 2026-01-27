@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Node, NodeType, TaskStatus } from '../types/node';
+import type { Node, NodeType } from '../types/node';
 
 // Helper function to create complete Node objects
 const createMockNode = (
