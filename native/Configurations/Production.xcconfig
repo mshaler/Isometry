@@ -1,0 +1,93 @@
+//
+// Production.xcconfig
+// Isometry Production Build Configuration
+//
+// Production environment settings for App Store distribution
+// with CloudKit production environment and enterprise security
+//
+
+#include "Base.xcconfig"
+
+// Build Configuration
+CONFIGURATION_BUILD_DIR = $(PROJECT_TEMP_DIR)/UninstalledProducts/$(CONFIGURATION)
+CONFIGURATION_TEMP_DIR = $(PROJECT_TEMP_DIR)/$(CONFIGURATION)
+
+// Product Bundle Identifiers
+PRODUCT_BUNDLE_IDENTIFIER[sdk=iphoneos*] = com.cardboard.isometry
+PRODUCT_BUNDLE_IDENTIFIER[sdk=iphonesimulator*] = com.cardboard.isometry
+PRODUCT_BUNDLE_IDENTIFIER[sdk=macosx*] = com.cardboard.isometry.macos
+
+// Code Signing Configuration
+CODE_SIGN_STYLE = Manual
+DEVELOPMENT_TEAM = $(APPLE_DEVELOPER_TEAM_ID)
+
+// iOS Distribution Certificate
+CODE_SIGN_IDENTITY[sdk=iphoneos*] = iPhone Distribution
+PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*] = Isometry App Store Distribution
+
+// macOS Developer ID Application Certificate
+CODE_SIGN_IDENTITY[sdk=macosx*] = Developer ID Application
+PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] = Isometry Mac App Store Distribution
+
+// Build Optimization
+SWIFT_OPTIMIZATION_LEVEL = -O
+SWIFT_COMPILATION_MODE = wholemodule
+GCC_OPTIMIZATION_LEVEL = s
+ENABLE_NS_ASSERTIONS = NO
+ENABLE_TESTABILITY = NO
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+DEPLOYMENT_POSTPROCESSING = YES
+
+// App Store Distribution Settings
+SKIP_INSTALL = NO
+INSTALL_PATH = $(LOCAL_APPS_DIR)
+COPY_PHASE_STRIP = NO
+STRIP_INSTALLED_PRODUCT = YES
+STRIP_STYLE = all
+SEPARATE_STRIP = YES
+
+// Runtime Configuration
+ENABLE_HARDENED_RUNTIME = YES
+ENABLE_APP_SANDBOX = YES
+OTHER_CODE_SIGN_FLAGS = --timestamp --strict
+
+// macOS Notarization
+ENABLE_NOTARIZATION = YES
+NOTARIZE_BUNDLE = YES
+OTHER_CODE_SIGN_FLAGS[sdk=macosx*] = --timestamp --strict --options runtime
+
+// CloudKit Production Environment
+CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.cardboard.isometry
+CLOUDKIT_ENVIRONMENT = Production
+CLOUDKIT_ZONE_NAME = IsometryZone
+
+// Performance & Security
+ENABLE_BITCODE = YES
+BITCODE_GENERATION_MODE = bitcode
+VALIDATE_PRODUCT = YES
+ALWAYS_SEARCH_USER_PATHS = NO
+CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION = YES
+CLANG_WARN_EMPTY_BODY = YES
+CLANG_WARN_BOOL_CONVERSION = YES
+CLANG_WARN_CONSTANT_CONVERSION = YES
+
+// Swift Language Version
+SWIFT_VERSION = 5.9
+IPHONEOS_DEPLOYMENT_TARGET = 17.0
+MACOSX_DEPLOYMENT_TARGET = 14.0
+
+// Version and Build Numbers (controlled by CI/CD)
+MARKETING_VERSION = 2.5.0
+CURRENT_PROJECT_VERSION = 250
+
+// Production Feature Flags
+ISOMETRY_PRODUCTION_BUILD = YES
+ISOMETRY_DEBUG_LOGGING = NO
+ISOMETRY_PERFORMANCE_MONITORING = YES
+ISOMETRY_CRASH_REPORTING = YES
+ISOMETRY_ANALYTICS_ENABLED = YES
+
+// CloudKit Sync Configuration
+CLOUDKIT_BATCH_SIZE = 400
+CLOUDKIT_SYNC_INTERVAL = 300
+CLOUDKIT_RETRY_MAX_ATTEMPTS = 5
