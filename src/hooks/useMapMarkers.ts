@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSQLite } from '../db/SQLiteContext';
+import { useDatabase } from '../db/DatabaseContext';
 
 export interface MapMarker {
   id: string;
@@ -19,7 +19,7 @@ export function useMapMarkers(): {
   loading: boolean;
   error: Error | null;
 } {
-  const { db } = useSQLite();
+  const { execute } = useDatabase();
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -35,7 +35,7 @@ export function useMapMarkers(): {
         setLoading(true);
 
         // Query nodes with non-null latitude/longitude
-        const result = await db.exec(`
+        const result = execute(`
           SELECT id, name, latitude, longitude
           FROM nodes
           WHERE latitude IS NOT NULL
@@ -44,17 +44,17 @@ export function useMapMarkers(): {
           LIMIT 1000
         `);
 
-        if (result.length === 0 || result[0].values.length === 0) {
+        if (!result || result.length === 0) {
           setMarkers([]);
           setLoading(false);
           return;
         }
 
-        const markerData: MapMarker[] = result[0].values.map((row) => ({
-          id: String(row[0]),
-          title: String(row[1]),
-          lat: Number(row[2]),
-          lng: Number(row[3]),
+        const markerData: MapMarker[] = result.map((row: Record<string, unknown>) => ({
+          id: String(row.id),
+          title: String(row.name),
+          lat: Number(row.latitude),
+          lng: Number(row.longitude),
         }));
 
         setMarkers(markerData);

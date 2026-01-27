@@ -36,7 +36,7 @@ export function useFilterPreview(
   filters: FilterState | null,
   debounceMs: number = 300
 ): UseFilterPreviewResult {
-  const { db, execute } = useDatabase();
+  const { execute } = useDatabase();
   const [count, setCount] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -63,7 +63,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
   }, []);
 
   // Error handler
-  const handleError = useCallback((error: unknown, _operation: string) => {
+  const handleError = useCallback((error: unknown, operation: string) => {
     const message = error instanceof Error ? error.message : `${operation} failed`;
     console.error(`File system ${operation} error:`, error);
     updateState({ error: message, isLoading: false });

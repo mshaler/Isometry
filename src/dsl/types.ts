@@ -3,7 +3,7 @@
 // ============================================================================
 
 /** Filter comparison operators */
-export type FilterOperator = '=' | '<' | '>' | '<=' | '>=' | '~';
+export type FilterOperator = '=' | '<' | '>' | '<=' | '>=' | '~' | '!=' | 'contains';
 
 /** LATCH axis names */
 export type LATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarchy';

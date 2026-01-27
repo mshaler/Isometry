@@ -334,30 +334,70 @@ private struct ReferencePropertyField: View {
     @Binding var value: PropertyValue
     let definition: PropertyDefinition
 
-    private var referenceValue: String {
-        if case .reference(let ref) = value {
-            return ref
+    @State private var newReference = ""
+
+    private var references: [String] {
+        if case .reference(let refs) = value {
+            return refs
         }
-        return ""
+        return []
     }
 
     var body: some View {
-        HStack {
-            TextField(definition.placeholder ?? "Node ID or reference...", text: Binding(
-                get: { referenceValue },
-                set: { value = .reference($0) }
-            ))
-            .textFieldStyle(.roundedBorder)
-            .font(.system(.body, design: .monospaced))
-
-            Button {
-                // TODO: Open node picker/browser
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.caption)
+        VStack(alignment: .leading, spacing: 8) {
+            // Display existing references
+            if !references.isEmpty {
+                FlowLayout(spacing: 6) {
+                    ForEach(references, id: \.self) { ref in
+                        ReferenceChip(nodeId: ref) {
+                            removeReference(ref)
+                        }
+                    }
+                }
             }
-            .disabled(true) // TODO: Implement node picker
+
+            // Add new reference field
+            HStack {
+                TextField("Node ID...", text: $newReference)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(.body, design: .monospaced))
+                    .onSubmit {
+                        addReference()
+                    }
+
+                Button {
+                    // TODO: Open node picker/browser
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.caption)
+                }
+                .disabled(true) // TODO: Implement node picker
+
+                Button("Add") {
+                    addReference()
+                }
+                .disabled(newReference.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
         }
+    }
+
+    private func addReference() {
+        let trimmed = newReference.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, !references.contains(trimmed) else { return }
+
+        // Validate UUID format
+        guard UUID(uuidString: trimmed) != nil else { return }
+
+        var newReferences = references
+        newReferences.append(trimmed)
+        value = .reference(newReferences)
+        newReference = ""
+    }
+
+    private func removeReference(_ ref: String) {
+        var newReferences = references
+        newReferences.removeAll { $0 == ref }
+        value = .reference(newReferences)
     }
 }
 
@@ -385,6 +425,36 @@ private struct TagChip: View {
         .padding(.vertical, 4)
         .background(.accent.opacity(0.1))
         .foregroundStyle(.accent)
+        .clipShape(Capsule())
+    }
+}
+
+private struct ReferenceChip: View {
+    let nodeId: String
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "link")
+                .font(.caption2)
+
+            Text(nodeId.prefix(8) + "...")
+                .font(.caption)
+                .fontDesign(.monospaced)
+                .lineLimit(1)
+
+            Button {
+                onRemove()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption2)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(.secondary.opacity(0.1))
+        .foregroundStyle(.secondary)
         .clipShape(Capsule())
     }
 }
@@ -492,6 +562,17 @@ private struct FlowResult {
                 definition: PropertyDefinition(name: "Due Date", type: .date),
                 value: .constant(.date(Date())),
                 error: "Date is required"
+            )
+
+            PropertyField(
+                key: "references",
+                definition: PropertyDefinition(
+                    name: "Related Nodes",
+                    type: .reference,
+                    placeholder: "Link to other nodes...",
+                    description: "References to related Isometry nodes"
+                ),
+                value: .constant(.reference(["12345678-1234-1234-1234-123456789012"]))
             )
         }
         .padding()
