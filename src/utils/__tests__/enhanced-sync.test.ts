@@ -8,8 +8,21 @@
 import { EnhancedSyncManager, type ConflictResolutionStrategy } from '../enhanced-sync';
 import { type DataChange, type SyncConflict } from '../sync-manager';
 
-// Type declaration for Jest in test environment
+// Type declarations for test environment
 declare const jest: any;
+declare const describe: any;
+declare const beforeEach: any;
+declare const afterEach: any;
+declare const it: any;
+declare const expect: any;
+
+declare namespace jest {
+  interface Mock {
+    mockResolvedValue: (value: any) => Mock;
+    mockRejectedValue: (value: any) => Mock;
+    mockReturnValue: (value: any) => Mock;
+  }
+}
 
 // Mock localStorage
 const mockLocalStorage = {
@@ -57,6 +70,9 @@ interface MockSyncManager {
   getLastSyncTimestamp: jest.Mock;
   registerChangeHandler: jest.Mock;
   emit: jest.Mock;
+  publishLocalChange: jest.Mock;
+  onConflict: jest.Mock;
+  getSyncState: jest.Mock;
 }
 
 describe('EnhancedSyncManager', () => {

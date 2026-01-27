@@ -147,7 +147,7 @@ describe('WebView Bridge Reliability', () => {
     it('should queue messages when connection is lost', async () => {
       // Simulate connection loss by making handler unavailable
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       const messagePromise = bridge.postMessage('database', 'test', { data: 'queued' });
 
@@ -179,7 +179,7 @@ describe('WebView Bridge Reliability', () => {
 
       // First, simulate connection loss
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       // Queue several messages
       const promises = [
@@ -200,7 +200,7 @@ describe('WebView Bridge Reliability', () => {
 
     it('should drop oldest messages when queue is full', async () => {
       // Simulate connection loss
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       const promises = [];
       const messagePromises = [];
@@ -272,6 +272,7 @@ describe('WebView Bridge Reliability', () => {
 
       // Mock Math.random for consistent jitter testing
       const originalRandom = Math.random;
+      const originalSetTimeout = global.setTimeout;
       Math.random = vi.fn(() => 0.5); // Fixed random value
 
       global.setTimeout = vi.fn((callback, delay) => {
@@ -333,11 +334,11 @@ describe('WebView Bridge Reliability', () => {
 
       try {
         await bridge.postMessage('database', 'test', {});
-        fail('Should have timed out');
+        expect.fail('Should have timed out');
       } catch (error) {
         const duration = Date.now() - startTime;
 
-        expect(error.message).toMatch(/timeout/i);
+        expect((error as Error).message).toMatch(/timeout/i);
         // Should timeout around the default timeout (considering test timing tolerance)
         expect(duration).toBeLessThan(15000); // Some tolerance for test environment
       }
@@ -352,7 +353,7 @@ describe('WebView Bridge Reliability', () => {
       vi.advanceTimersByTime(35000); // Cleanup runs every 30 seconds
 
       const error = await timeoutPromise;
-      expect(error.message).toMatch(/timeout/i);
+      expect((error as Error).message).toMatch(/timeout/i);
 
       // Verify request was cleaned up
       const health = bridge.getHealthStatus();
@@ -402,7 +403,7 @@ describe('WebView Bridge Reliability', () => {
       expect(initialHealth.isConnected).toBe(true);
 
       // Simulate connection loss
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       // Health status should reflect disconnection
       const disconnectedHealth = bridge.getHealthStatus();
@@ -412,7 +413,7 @@ describe('WebView Bridge Reliability', () => {
     it('should automatically reconnect when connection is restored', async () => {
       // Simulate connection loss
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      delete mockWindow.webkit.messageHandlers.database;
+      (mockWindow.webkit.messageHandlers as any).database = undefined;
 
       // Queue a message while disconnected
       const messagePromise = bridge.postMessage('database', 'test', {});

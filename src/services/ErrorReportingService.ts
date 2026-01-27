@@ -38,8 +38,8 @@ class ErrorReportingService {
   private listeners: Array<(notifications: ErrorNotification[]) => void> = [];
   private sessionId: string;
   private maxReports = 100;
-  private errorHandler: (event: ErrorEvent) => void;
-  private unhandledRejectionHandler: (event: PromiseRejectionEvent) => void;
+  private errorHandler!: (event: ErrorEvent) => void;
+  private unhandledRejectionHandler!: (event: PromiseRejectionEvent) => void;
 
   constructor() {
     this.sessionId = this.generateSessionId();
@@ -55,7 +55,7 @@ class ErrorReportingService {
     this.errorHandler = (event: ErrorEvent) => {
       this.reportError({
         error: event.error || new Error(event.message),
-        level: 'high',
+        level: 'app',
         additionalContext: {
           filename: event.filename,
           lineno: event.lineno,
@@ -68,7 +68,7 @@ class ErrorReportingService {
     this.unhandledRejectionHandler = (event: PromiseRejectionEvent) => {
       this.reportError({
         error: event.reason instanceof Error ? event.reason : new Error(String(event.reason)),
-        level: 'medium',
+        level: 'feature',
         additionalContext: {
           type: 'promise_rejection',
           reason: event.reason
@@ -104,7 +104,7 @@ class ErrorReportingService {
       level: severity,
       message: params.error.message,
       stack: params.error.stack,
-      componentStack: params.errorInfo?.componentStack,
+      componentStack: params.errorInfo?.componentStack ?? undefined,
       errorBoundary: params.level ? {
         name: params.name,
         level: params.level,
@@ -291,7 +291,7 @@ class ErrorReportingService {
       id: `user_${Date.now()}`,
       type: 'error',
       title,
-      message,
+      message: _message,
       actions: actions || [{
         label: 'OK',
         action: () => this.removeNotification(`user_${Date.now()}`)

@@ -5,7 +5,7 @@
  * Ensures zero corruption across migration path with safe rollback procedures
  */
 
-import { DatabaseMode } from '../contexts/EnvironmentContext';
+import type { DatabaseMode } from '../contexts/EnvironmentContext';
 
 export interface ConsistencyReport {
   provider: DatabaseMode;
@@ -705,12 +705,13 @@ async function validatePostConcurrencyConsistency(_dataset: TestDataset): Promis
 
 async function checkNodeCorruption(node: unknown): Promise<CorruptionDetail[]> {
   const corruption: CorruptionDetail[] = [];
+  const nodeRecord = node as any; // Type assertion for validation function
 
   // Check for invalid characters
-  if (node.content && node.content.includes('\x00')) {
+  if (nodeRecord.content && nodeRecord.content.includes('\x00')) {
     corruption.push({
       table: 'nodes',
-      recordId: node.id,
+      recordId: nodeRecord.id,
       field: 'content',
       issue: 'Contains null bytes',
       severity: 'major'
@@ -718,10 +719,10 @@ async function checkNodeCorruption(node: unknown): Promise<CorruptionDetail[]> {
   }
 
   // Check for missing required fields
-  if (!node.name || !node.content) {
+  if (!nodeRecord.name || !nodeRecord.content) {
     corruption.push({
       table: 'nodes',
-      recordId: node.id,
+      recordId: nodeRecord.id,
       field: 'required-fields',
       issue: 'Missing required fields',
       severity: 'critical'
@@ -774,7 +775,7 @@ function generateConsistencySummary(score: number, failed: number, _checks: Cons
 
 async function calculateChecksum(data: unknown): Promise<string> {
   // Simple checksum implementation
-  const str = JSON.stringify(data, Object.keys(data).sort());
+  const str = JSON.stringify(data, data && typeof data === 'object' ? Object.keys(data as Record<string, unknown>).sort() : undefined);
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
