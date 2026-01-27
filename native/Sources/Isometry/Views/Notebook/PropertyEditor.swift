@@ -59,7 +59,8 @@ public struct PropertyEditor: View {
             }
         } message: {
             if let key = showingDeleteConfirmation {
-                Text("Are you sure you want to delete the '\(propertyModel.definitions[key]?.name ?? key)' property?")
+                let definition = propertyModel.allDefinitions.first { $0.name == key }
+                Text("Are you sure you want to delete the '\(definition?.name ?? key)' property?")
             }
         }
     }
@@ -137,7 +138,7 @@ public struct PropertyEditor: View {
                 } label: {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
             }
@@ -178,9 +179,12 @@ public struct PropertyEditor: View {
     // MARK: - Property Row
 
     private func propertyRow(key: String, value: PropertyValue) -> some View {
-        PropertyField(
+        let definition = propertyModel.allDefinitions.first { $0.name == key }
+                        ?? PropertyDefinition(name: key, type: value.type)
+
+        return PropertyField(
             key: key,
-            definition: propertyModel.definitions[key] ?? PropertyDefinition(name: key, type: value.type),
+            definition: definition,
             value: Binding(
                 get: { value },
                 set: { propertyModel.updateProperty(key: key, value: $0) }
@@ -230,7 +234,9 @@ public struct PropertyEditor: View {
             Form {
                 Section {
                     TextField("Property Name", text: $newPropertyName)
+                        #if os(iOS)
                         .autocapitalization(.words)
+                        #endif
 
                     Picker("Type", selection: $newPropertyType) {
                         ForEach(PropertyType.allCases, id: \.self) { type in
@@ -254,7 +260,8 @@ public struct PropertyEditor: View {
                             GridItem(.flexible())
                         ], spacing: 12) {
                             ForEach(Array(NotebookPropertyModel.builtInDefinitions), id: \.key) { key, definition in
-                                if !propertyModel.definitions.keys.contains(key) {
+                                let alreadyExists = propertyModel.properties.keys.contains(definition.name)
+                                if !alreadyExists {
                                     builtInPropertyButton(key: key, definition: definition)
                                 }
                             }
@@ -267,8 +274,11 @@ public struct PropertyEditor: View {
                 }
             }
             .navigationTitle("Add Property")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
                         showingAddProperty = false
@@ -282,6 +292,21 @@ public struct PropertyEditor: View {
                     }
                     .disabled(newPropertyName.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+                #else
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        showingAddProperty = false
+                        resetAddPropertyForm()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        addCustomProperty()
+                    }
+                    .disabled(newPropertyName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+                #endif
             }
         }
         .presentationDetents([.medium, .large])
@@ -290,13 +315,13 @@ public struct PropertyEditor: View {
 
     private func builtInPropertyButton(key: String, definition: PropertyDefinition) -> some View {
         Button {
-            propertyModel.addProperty(key: key, definition: definition)
+            propertyModel.addCustomDefinition(definition)
             showingAddProperty = false
         } label: {
             VStack(spacing: 8) {
                 Image(systemName: definition.type.icon)
                     .font(.title2)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(.blue)
 
                 VStack(spacing: 2) {
                     Text(definition.name)
@@ -324,17 +349,17 @@ public struct PropertyEditor: View {
 
         if searchText.isEmpty {
             return allProperties.sorted { first, second in
-                let firstName = propertyModel.definitions[first.key]?.name ?? first.key
-                let secondName = propertyModel.definitions[second.key]?.name ?? second.key
+                let firstName = propertyModel.allDefinitions.first { $0.name == first.key }?.name ?? first.key
+                let secondName = propertyModel.allDefinitions.first { $0.name == second.key }?.name ?? second.key
                 return firstName.localizedCaseInsensitiveCompare(secondName) == .orderedAscending
             }
         } else {
             return allProperties.filter { key, _ in
-                let propertyName = propertyModel.definitions[key]?.name ?? key
+                let propertyName = propertyModel.allDefinitions.first { $0.name == key }?.name ?? key
                 return propertyName.localizedCaseInsensitiveContains(searchText)
             }.sorted { first, second in
-                let firstName = propertyModel.definitions[first.key]?.name ?? first.key
-                let secondName = propertyModel.definitions[second.key]?.name ?? second.key
+                let firstName = propertyModel.allDefinitions.first { $0.name == first.key }?.name ?? first.key
+                let secondName = propertyModel.allDefinitions.first { $0.name == second.key }?.name ?? second.key
                 return firstName.localizedCaseInsensitiveCompare(secondName) == .orderedAscending
             }
         }
@@ -348,22 +373,14 @@ public struct PropertyEditor: View {
         let trimmedName = newPropertyName.trimmingCharacters(in: .whitespaces)
         guard !trimmedName.isEmpty else { return }
 
-        let key = trimmedName.lowercased().replacingOccurrences(of: " ", with: "_")
-
-        // Avoid duplicate keys
-        var finalKey = key
-        var counter = 1
-        while propertyModel.definitions.keys.contains(finalKey) {
-            finalKey = "\(key)_\(counter)"
-            counter += 1
-        }
+        _ = trimmedName.lowercased().replacingOccurrences(of: " ", with: "_")
 
         let definition = PropertyDefinition(
             name: trimmedName,
             type: newPropertyType
         )
 
-        propertyModel.addProperty(key: finalKey, definition: definition)
+        propertyModel.addCustomDefinition(definition)
         showingAddProperty = false
         resetAddPropertyForm()
     }
@@ -380,13 +397,14 @@ public struct PropertyEditor: View {
     let propertyModel = NotebookPropertyModel(database: IsometryDatabase.placeholder)
 
     // Add some sample properties
-    propertyModel.definitions["title"] = PropertyDefinition(name: "Title", type: .text)
-    propertyModel.definitions["priority"] = PropertyDefinition(name: "Priority", type: .select, options: ["Low", "Medium", "High"])
-    propertyModel.definitions["tags"] = PropertyDefinition(name: "Tags", type: .tags)
+    propertyModel.addCustomDefinition(PropertyDefinition(name: "Title", type: .text))
+    propertyModel.addCustomDefinition(PropertyDefinition(name: "Priority", type: .select, options: ["Low", "Medium", "High"]))
+    propertyModel.addCustomDefinition(PropertyDefinition(name: "Tags", type: .tags))
 
-    propertyModel.properties["title"] = .text("Sample Card")
-    propertyModel.properties["priority"] = .select("High")
-    propertyModel.properties["tags"] = .tags(["swift", "ui"])
+    // These will be set via the property definitions above
+    _ = propertyModel.addProperty(key: "Title", type: .text)
+    _ = propertyModel.addProperty(key: "Priority", type: .select)
+    _ = propertyModel.addProperty(key: "Tags", type: .tags)
 
     return PropertyEditor(propertyModel: propertyModel)
         .frame(height: 500)
