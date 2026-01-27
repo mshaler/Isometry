@@ -531,7 +531,7 @@ export class PerformanceBenchmarks {
         this.baselines = new Map(data.baselines || []);
       }
     } catch (error) {
-      performanceLogger.warn('Failed to load performance baselines', {}, error as Error);
+      performanceLogger.warn('Failed to load performance baselines', { error: error as Error });
       this.baselines = new Map();
     }
   }
@@ -544,7 +544,7 @@ export class PerformanceBenchmarks {
       };
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      performanceLogger.warn('Failed to save performance baselines', {}, error as Error);
+      performanceLogger.warn('Failed to save performance baselines', { error: error as Error });
     }
   }
 }

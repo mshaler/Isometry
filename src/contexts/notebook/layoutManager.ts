@@ -9,7 +9,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState) {
     try {
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
     } catch (error) {
-      uiLogger.warn('Failed to save layout', {}, error as Error);
+      uiLogger.warn('Failed to save layout', { error: error as Error });
     }
   };
 
@@ -20,7 +20,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState) {
         return JSON.parse(savedLayout);
       }
     } catch (error) {
-      uiLogger.warn('Failed to load layout', {}, error as Error);
+      uiLogger.warn('Failed to load layout', { error: error as Error });
     }
     return defaultLayout;
   };

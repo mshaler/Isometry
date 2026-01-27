@@ -98,7 +98,7 @@ export function EnvironmentProvider({
       return DatabaseMode.FALLBACK;
 
     } catch (error) {
-      bridgeLogger.warn('Environment detection failed', {}, error as Error);
+      bridgeLogger.warn('Environment detection failed', { error: error as Error });
       return DatabaseMode.FALLBACK;
     }
   };
@@ -116,7 +116,7 @@ export function EnvironmentProvider({
       const response = await postMessage('database', 'ping', {});
       return response !== null;
     } catch (error) {
-      bridgeLogger.debug('WebView bridge test failed', {}, error as Error);
+      bridgeLogger.debug('WebView bridge test failed', { error: error as Error });
       return false;
     }
   };
@@ -146,7 +146,7 @@ export function EnvironmentProvider({
 
       return response.ok;
     } catch (error) {
-      bridgeLogger.debug('HTTP API test failed', {}, error as Error);
+      bridgeLogger.debug('HTTP API test failed', { error: error as Error });
       return false;
     } finally {
       // Ensure timeout is always cleaned up

@@ -232,7 +232,7 @@ export function FocusProvider({ children }: FocusProviderProps) {
       announcementTimeouts.current.clear();
 
       // Clean up all component listeners
-      componentListeners.current.forEach((listeners, component) => {
+      componentListeners.current.forEach((listeners) => {
         const { element, focusHandler, blurHandler, keydownHandler } = listeners;
         element.removeEventListener('focus', focusHandler);
         element.removeEventListener('blur', blurHandler);

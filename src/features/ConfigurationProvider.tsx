@@ -99,7 +99,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           params
         });
       } catch (error) {
-        logger.warn('configuration', 'Native configuration communication failed', {}, error as Error);
+        logger.warn('configuration', 'Native configuration communication failed', { error: error as Error });
         return null;
       }
     }

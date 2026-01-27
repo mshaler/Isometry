@@ -63,7 +63,7 @@ export function initializeLogging(): void {
 
   logger.setLevel(config.level);
   logger.enableConsole(config.enableConsole);
-  logger.setCategories(config.categories);
+  logger.setCategories([...config.categories]);
 }
 
 /**
@@ -145,7 +145,7 @@ export const consoleReplacements = {
    * Replace console.warn with structured warning
    */
   warn: (category: string, message: string, context?: Record<string, unknown>, error?: Error) => {
-    logger.warn(category, message, context, error);
+    logger.warn(category, message, { ...context, error });
   },
 
   /**
