@@ -1,4 +1,5 @@
 import type { ErrorInfo } from 'react';
+import { logger } from '../utils/logger';
 
 // Import the interfaces from ErrorBoundary to ensure compatibility
 interface ErrorReportingData {
@@ -132,8 +133,13 @@ class ErrorReportingService {
       this.reports = this.reports.slice(0, this.maxReports);
     }
 
-    // Log to console
-    console.error('Error reported:', report);
+    // Log to structured logger
+    logger.error('error-reporting', 'Error reported', {
+      reportId: report.id,
+      level: report.level,
+      message: report.message,
+      url: report.url
+    });
 
     // Create user notification if appropriate
     this.createErrorNotification(report);

@@ -1,5 +1,6 @@
 import type { LayoutPosition } from '../../types/notebook';
 import type { NotebookLayoutState } from './types';
+import { uiLogger } from '../../utils/logger';
 
 const LAYOUT_STORAGE_KEY = 'notebook_layout';
 
@@ -8,7 +9,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState) {
     try {
       localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layout));
     } catch (error) {
-      console.warn('Failed to save layout:', error);
+      uiLogger.warn('Failed to save layout', {}, error as Error);
     }
   };
 
@@ -19,7 +20,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState) {
         return JSON.parse(savedLayout);
       }
     } catch (error) {
-      console.warn('Failed to load layout:', error);
+      uiLogger.warn('Failed to load layout', {}, error as Error);
     }
     return defaultLayout;
   };

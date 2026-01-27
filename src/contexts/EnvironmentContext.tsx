@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Environment, postMessage } from '../utils/webview-bridge';
+import { bridgeLogger } from '../utils/logger';
 
 export enum DatabaseMode {
   HTTP_API = 'http-api',
@@ -82,22 +83,22 @@ export function EnvironmentProvider({
 
       // Check for WebView MessageHandlers (highest priority)
       if (await testWebViewBridge()) {
-        console.log('Environment: WebView bridge detected');
+        bridgeLogger.info('WebView bridge detected');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
       // Check for HTTP API availability (medium priority)
       if (await testHTTPAPIConnection()) {
-        console.log('Environment: HTTP API detected');
+        bridgeLogger.info('HTTP API detected');
         return DatabaseMode.HTTP_API;
       }
 
       // Fall back to FALLBACK mode (no backend required)
-      console.log('Environment: No backend available, using fallback mode');
+      bridgeLogger.info('No backend available, using fallback mode');
       return DatabaseMode.FALLBACK;
 
     } catch (error) {
-      console.warn('Environment detection failed:', error);
+      bridgeLogger.warn('Environment detection failed', {}, error as Error);
       return DatabaseMode.FALLBACK;
     }
   };
@@ -115,7 +116,7 @@ export function EnvironmentProvider({
       const response = await postMessage('database', 'ping', {});
       return response !== null;
     } catch (error) {
-      console.warn('WebView bridge test failed:', error);
+      bridgeLogger.debug('WebView bridge test failed', {}, error as Error);
       return false;
     }
   };
@@ -145,7 +146,7 @@ export function EnvironmentProvider({
 
       return response.ok;
     } catch (error) {
-      console.warn('HTTP API test failed:', error);
+      bridgeLogger.debug('HTTP API test failed', {}, error as Error);
       return false;
     } finally {
       // Ensure timeout is always cleaned up
@@ -254,13 +255,18 @@ export function EnvironmentProvider({
       // Check mount status before setting state
       if (isMountedRef.current) {
         setEnvironment(envInfo);
-        console.log(`Environment initialized: ${detectedMode}`, envInfo);
+        bridgeLogger.info('Environment initialized', {
+          mode: detectedMode,
+          platform: envInfo.platform,
+          isNative: envInfo.isNative,
+          capabilities: envInfo.capabilities
+        });
       }
     } catch (err) {
       if (isMountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : 'Environment detection failed';
         setError(errorMessage);
-        console.error('Environment initialization failed:', err);
+        bridgeLogger.error('Environment initialization failed', {}, err as Error);
 
         // Fall back to FALLBACK mode on error
         setEnvironment(createEnvironmentInfo(DatabaseMode.FALLBACK));

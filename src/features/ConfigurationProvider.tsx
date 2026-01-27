@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import { logger } from '../utils/logger';
 
 // Types for configuration management system
 export interface ConfigurationItem {
@@ -98,7 +99,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           params
         });
       } catch (error) {
-        console.warn('Native configuration communication failed:', error);
+        logger.warn('configuration', 'Native configuration communication failed', {}, error as Error);
         return null;
       }
     }
@@ -161,7 +162,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load configurations';
       setError(errorMessage);
-      console.error('Error loading configurations:', err);
+      logger.error('configuration', 'Error loading configurations', {}, err as Error);
 
       // Load cached configurations as fallback
       try {
@@ -171,7 +172,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           setConfigurations(cachedConfigs);
         }
       } catch (cacheError) {
-        console.error('Failed to load cached configurations:', cacheError);
+        logger.error('configuration', 'Failed to load cached configurations', {}, cacheError as Error);
       }
     } finally {
       setIsLoading(false);
@@ -210,7 +211,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       const logPerformance = () => {
         const retrievalTime = performance.now() - startTime;
         if (retrievalTime > 1) { // Log slow retrievals
-          console.debug(`Configuration retrieval for '${key}' took ${retrievalTime.toFixed(2)}ms`);
+          logger.debug('configuration', `Configuration retrieval for '${key}' took ${retrievalTime.toFixed(2)}ms`);
         }
       };
 
@@ -227,11 +228,11 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       const configItem = configurations[key];
       if (!configItem) {
         if (defaultValue !== undefined) {
-          console.info(`Configuration key '${key}' not found, using default value`);
+          logger.info('configuration', `Configuration key '${key}' not found, using default value`);
           logPerformance();
           return defaultValue;
         }
-        console.warn(`Configuration key '${key}' not found and no default provided`);
+        logger.warn('configuration', `Configuration key '${key}' not found and no default provided`);
         logPerformance();
         return undefined;
       }
@@ -290,7 +291,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
         localStorage.setItem('app_configurations', JSON.stringify(configurations));
       }
 
-      console.log(`Configuration '${key}' updated successfully`);
+      logger.info('configuration', `Configuration '${key}' updated successfully`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set configuration value');
       throw err;
@@ -314,7 +315,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       // Reload configurations to get the latest state
       await loadConfigurations();
 
-      console.log(`Bulk configuration update completed for ${Object.keys(updates).length} keys`);
+      logger.info('configuration', `Bulk configuration update completed for ${Object.keys(updates).length} keys`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set bulk configuration values');
       throw err;
@@ -343,7 +344,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     try {
       await communicateWithNative('rollback', { key });
       await loadConfigurations(); // Reload to get updated state
-      console.log(`Configuration '${key}' rolled back successfully`);
+      logger.info('configuration', `Configuration '${key}' rolled back successfully`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to rollback configuration');
       throw err;
@@ -356,7 +357,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
       setIsLoading(true);
       await communicateWithNative('hotReload');
       await loadConfigurations();
-      console.log('Configuration hot reload completed');
+      logger.info('configuration', 'Configuration hot reload completed');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to hot reload configurations');
       throw err;
@@ -400,7 +401,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           return null;
       }
     } catch (err) {
-      console.error('Failed to export configurations:', err);
+      logger.error('configuration', 'Failed to export configurations', {}, err as Error);
       return null;
     }
   };
@@ -431,7 +432,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           format
         });
 
-        console.log(`Configuration import completed - ${Object.keys(processedConfigs).length} keys imported`);
+        logger.info('configuration', `Configuration import completed - ${Object.keys(processedConfigs).length} keys imported`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import configurations');
@@ -639,7 +640,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     if (!enableHotReload || hotReloadInterval <= 0) return;
 
     const interval = setInterval(() => {
-      hotReload().catch(console.error);
+      hotReload().catch(err => logger.error('configuration', 'Hot reload failed', {}, err as Error));
     }, hotReloadInterval);
 
     // Ensure cleanup on component unmount or dependency change
