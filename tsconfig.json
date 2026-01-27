@@ -19,8 +19,27 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["./src/*"] }
+    "paths": { "@/*": ["./src/*"] },
+    // Performance optimizations
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    // Fast error reporting
+    "preserveWatchOutput": true,
+    // Compiler optimizations
+    "importsNotUsedAsValues": "remove",
+    "verbatimModuleSyntax": false
   },
   "include": ["src"],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx",
+    "scripts",
+    ".planning"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

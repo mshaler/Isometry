@@ -6,6 +6,10 @@ coverage/
 .env
 *.log
 
+# Build artifacts
+.tsbuildinfo
+*.tsbuildinfo
+
 # Swift/Xcode
 native/.build/
 native/.swiftpm/xcode/xcuserdata/
