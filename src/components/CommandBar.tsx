@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useFilters } from '../contexts/FilterContext';
-import { parse } from '../dsl/parser';
 import type { FilterNode } from '../dsl/types';
 
 export function CommandBar() {
@@ -10,7 +9,7 @@ export function CommandBar() {
   const { theme } = useTheme();
   const { addFilter, clearFilters } = useFilters();
 
-  const handleCommandSubmit = (e: React.FormEvent) => {
+  const handleCommandSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -25,6 +24,9 @@ export function CommandBar() {
     }
 
     try {
+      // Dynamically import the parser for optimal code splitting
+      const { parse } = await import('../dsl/parser');
+
       // Parse the DSL input
       const ast = parse(trimmed);
 
