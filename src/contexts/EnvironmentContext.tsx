@@ -5,7 +5,7 @@
  * Handles WebView and HTTP API providers
  */
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Environment, postMessage } from '../utils/webview-bridge';
 
 export enum DatabaseMode {
@@ -68,6 +68,7 @@ export function EnvironmentProvider({
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isMountedRef = useRef(true);
 
   /**
    * Detect the optimal database mode based on available features
@@ -238,6 +239,11 @@ export function EnvironmentProvider({
       return;
     }
 
+    // Prevent setState if component unmounted
+    if (!isMountedRef.current) {
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -245,18 +251,24 @@ export function EnvironmentProvider({
       const detectedMode = await detectEnvironment();
       const envInfo = createEnvironmentInfo(detectedMode);
 
-      setEnvironment(envInfo);
-
-      console.log(`Environment initialized: ${detectedMode}`, envInfo);
+      // Check mount status before setting state
+      if (isMountedRef.current) {
+        setEnvironment(envInfo);
+        console.log(`Environment initialized: ${detectedMode}`, envInfo);
+      }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Environment detection failed';
-      setError(errorMessage);
-      console.error('Environment initialization failed:', err);
+      if (isMountedRef.current) {
+        const errorMessage = err instanceof Error ? err.message : 'Environment detection failed';
+        setError(errorMessage);
+        console.error('Environment initialization failed:', err);
 
-      // Fall back to FALLBACK mode on error
-      setEnvironment(createEnvironmentInfo(DatabaseMode.FALLBACK));
+        // Fall back to FALLBACK mode on error
+        setEnvironment(createEnvironmentInfo(DatabaseMode.FALLBACK));
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -297,6 +309,13 @@ export function EnvironmentProvider({
   useEffect(() => {
     initializeEnvironment();
   }, [forcedMode, enableAutoDetection]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const contextValue: EnvironmentContextType = {
     environment,

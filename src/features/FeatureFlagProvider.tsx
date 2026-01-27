@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useMemo } from 'react';
 
 // Types for feature flag system
 export interface FeatureFlag {
@@ -87,6 +87,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
     averageEvaluationTime: 0,
     cacheHitRate: 0
   });
+  const isMountedRef = useRef(true);
 
   // Evaluation cache for performance
   const [evaluationCache, setEvaluationCache] = useState<Map<string, { result: boolean; timestamp: number }>>(new Map());
@@ -192,6 +193,10 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
     );
   };
 
+  // Use ref for cache to avoid dependency array issues
+  const evaluationCacheRef = useRef(evaluationCache);
+  evaluationCacheRef.current = evaluationCache;
+
   // Flag evaluation with caching and analytics
   const isEnabled = useMemo(() => {
     return (flagName: string, targetUserId?: string, targetUserSegment?: UserSegment): boolean => {
@@ -201,7 +206,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
 
       // Check cache first
       const cacheKey = `${flagName}:${currentUserId || 'anonymous'}:${currentUserSegment?.id || 'none'}`;
-      const cached = evaluationCache.get(cacheKey);
+      const cached = evaluationCacheRef.current.get(cacheKey);
       const now = Date.now();
 
       if (cached && (now - cached.timestamp) < cacheValidityMs) {
@@ -236,7 +241,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
         }
 
         // Cache result
-        evaluationCache.set(cacheKey, { result, timestamp: now });
+        evaluationCacheRef.current.set(cacheKey, { result, timestamp: now });
 
         // Update analytics
         if (enableAnalytics) {
@@ -262,7 +267,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
 
       return result;
     };
-  }, [flags, userId, userSegment, evaluationCache, enableAnalytics]);
+  }, [flags, userId, userSegment, enableAnalytics]);
 
   // Evaluate individual flag configuration
   const evaluateConfiguration = (config: FlagConfiguration): boolean => {
@@ -437,6 +442,13 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
     loadFlags();
   }, []);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Set up native bridge listeners
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -460,9 +472,10 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
+      const currentCache = evaluationCacheRef.current;
       const newCache = new Map();
 
-      for (const [key, value] of evaluationCache) {
+      for (const [key, value] of currentCache) {
         if ((now - value.timestamp) < cacheValidityMs) {
           newCache.set(key, value);
         }
@@ -472,7 +485,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
     }, cacheValidityMs);
 
     return () => clearInterval(interval);
-  }, [evaluationCache]);
+  }, []); // Empty dependency array - uses ref for current cache
 
   const contextValue: FeatureFlagContextValue = {
     flags,
