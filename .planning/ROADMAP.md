@@ -16,7 +16,7 @@
 - 🏗️ **v2.3 Production Readiness Infrastructure** - Phases 9.1-9.4 (App Store submission capability)
 - 🚧 **v2.4 Error Elimination** - Phase 10 (absolute zero lint problems - GAP CLOSURE)
 - 🚧 **v2.5 Advanced Import Systems** - Phases 11.1-11.4 (comprehensive import verification)
-- 🆕 **v2.6 TypeScript Error Resolution** - Phase 24 (systematic TypeScript strict mode compliance)
+- 🆕 **v2.6 Graph Analytics Engine** - Phases 12.1-12.4 (intelligent connection discovery and query optimization)
 
 ## Milestone Overview
 
@@ -36,7 +36,7 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 
 **v2.5 Goal (Advanced Import Systems):** Integrate existing advanced import systems (Office documents, SQLite databases, Apple ecosystem) into GSD methodology governance with comprehensive verification and enterprise-grade capability validation.
 
-**v2.6 Goal (TypeScript Error Resolution):** Systematic elimination of all TypeScript compilation errors through focused fixes to core components, D3 visualizations, utility modules, and comprehensive type safety implementation.
+**v2.6 Goal (Graph Analytics Engine):** Integrate sophisticated graph analytics engine with intelligent connection discovery, query optimization, and large-scale graph processing capabilities. Implement CardBoard v1/v2 research-derived algorithms for connection suggestions, cache optimization, and predictive analytics.
 
 ---
 
@@ -474,31 +474,61 @@ Plans:
 **Requirements:** SQLITE-03, IMPORT-01, IMPORT-02, IMPORT-03
 **Plans:** 2 plans
 
-### 🚧 v2.6 Type Safety Migration (PLANNED)
+### 🆕 v2.6 Graph Analytics Engine (READY)
 
-**Milestone Goal:** Systematic elimination of all TypeScript compilation errors through focused fixes to core components, D3 visualizations, utility modules, and comprehensive type safety implementation.
+**Milestone Goal:** Integrate sophisticated graph analytics engine with intelligent connection discovery, query optimization, and large-scale graph processing capabilities derived from CardBoard v1/v2 research.
 
-#### Phase 24: Comprehensive TypeScript Error Resolution
-**Goal:** Fix all remaining TypeScript errors through systematic component-by-component approach
-**Dependencies:** None (independent systematic cleanup)
-**Requirements:** Addresses current ~100+ TypeScript compilation errors
-**Plans:** 6 plans
+#### Phase 12.1: Requirements & Foundation Verification (READY)
+**Goal:** Establish requirements traceability and graph analytics foundation verification
+**Dependencies:** None (retrofitting existing implementations)
+**Requirements:** All 11 graph analytics requirements (CONNECT-01 through PERF-02)
+**Plans:** 2 plans
 
 **Success Criteria:**
-1. Complete elimination of all TypeScript compilation errors (npm run typecheck passes)
-2. All React components render correctly with proper type safety
-3. D3 visualizations maintain functionality with complete type definitions
-4. Utility modules handle all data types safely with proper type guards
-5. Build system produces clean artifacts without type warnings
-6. Developer experience improved with proper IntelliSense and error prevention
+1. Requirements traceability verification for ConnectionSuggestionEngine.swift and QueryCache.swift
+2. Foundation architecture validation for existing graph intelligence implementations
+3. Documentation completeness audit and capability analysis
+4. Integration testing framework setup for verification phases 12.2-12.4
 
 Plans:
-- [ ] 24-01-PLAN.md — Quick Win Fixes (Toolbar properties, ErrorBoundary logic, ViewRenderer imports)
-- [ ] 24-02-PLAN.md — SuperGrid and D3 View Components (CoordinateSystem completion, type comparisons)
-- [ ] 24-03-PLAN.md — View Component Type Safety (NetworkView variables, Enhanced views, imports)
-- [ ] 24-04-PLAN.md — Utility Module Type Guards (Bridge performance, command history, D3 parsers)
-- [ ] 24-05-PLAN.md — Remaining Utility Fixes (Sync, file system, filters, performance monitor)
-- [ ] 24-06-PLAN.md — Final Validation and Testing (Comprehensive verification and human testing)
+- [ ] 12.1-01-PLAN.md — Requirements Traceability Matrix and graph analytics foundation verification
+- [ ] 12.1-02-PLAN.md — Verification framework and integration testing infrastructure setup
+
+#### Phase 12.2: Connection Intelligence Verification (PLANNED)
+**Goal:** Verify connection suggestion engine and graph structural analysis
+**Dependencies:** Phase 12.1 (requires foundation verification)
+**Requirements:** CONNECT-01, CONNECT-02, CONNECT-03, GRAPH-01
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. Content-based connection discovery verified across similarity algorithms
+2. Social and community connection analysis operational with clustering
+3. Temporal and contextual connection discovery functioning with pattern recognition
+4. Graph structural analysis providing density and community metrics
+
+#### Phase 12.3: Performance & Optimization Verification (PLANNED)
+**Goal:** Verify query cache, performance systems, and advanced analytics
+**Dependencies:** Phase 12.2 (requires connection intelligence verification)
+**Requirements:** CONNECT-04, CACHE-01, CACHE-02, GRAPH-02, PERF-01
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. Suggestion quality and personalization achieving 80%+ user acceptance
+2. Intelligent query caching achieving 90%+ cache hit rates
+3. Query optimization supporting 100K+ node graphs with sub-5-second analytics
+4. Relationship pattern discovery operational with machine learning integration
+
+#### Phase 12.4: Analytics & Real-Time Integration Validation (PLANNED)
+**Goal:** Verify advanced analytics, monitoring, and real-time systems
+**Dependencies:** Phase 12.3 (requires performance and optimization verification)
+**Requirements:** CACHE-03, GRAPH-03, PERF-02
+**Plans:** 2 plans
+
+**Success Criteria:**
+1. Cache analytics and monitoring providing performance insights
+2. Predictive analytics and recommendations operational
+3. Real-time analytics maintaining system responsiveness
+4. End-to-end graph intelligence workflow validated for production deployment
 
 ## Dependencies
 
@@ -520,6 +550,12 @@ Plans:
 - TestFlight beta testing approval
 - Performance testing on physical devices
 
+### v2.6 Graph Analytics Dependencies
+- CardBoard v1/v2 research implementations
+- Large-scale graph datasets for testing
+- Machine learning frameworks for suggestion optimization
+- Performance monitoring infrastructure for analytics validation
+
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
@@ -528,8 +564,8 @@ v2.1: Phase 7.1 → Phase 7.2 → Phase 7.3 (PLANNED)
 v2.2: Phase 8.1 → Phase 8.2 → Phase 8.3 → Phase 8.4 (COMPLETED)
 v2.3: Phase 9.1 → Phase 9.2 → Phase 9.3 → Phase 9.4 (PRODUCTION READINESS)
 v2.4: Phase 10 (FOUNDATION CLEANUP - GAP CLOSURE)
- v2.5: Phases 11.1-11.4 (ADVANCED IMPORT SYSTEMS)
-v2.6: Phase 24 (TYPESCRIPT ERROR RESOLUTION - Independent)
+v2.5: Phases 11.1-11.4 (ADVANCED IMPORT SYSTEMS)
+v2.6: Phases 12.1-12.4 (GRAPH ANALYTICS ENGINE)
 ```
 
 ## Progress
@@ -541,7 +577,7 @@ Retrofitting: 8.1 → 8.2 → 8.3 → 8.4 (COMPLETED)
 Production Readiness: 9.1 → 9.2 → 9.3 → 9.4
 Error Elimination: 10 (independent - GAP CLOSURE)
 Advanced Import Systems: 11.1 → 11.2 → 11.3 → 11.4 (IN PROGRESS)
-TypeScript Error Resolution: 24 (independent systematic cleanup)
+Graph Analytics Engine: 12.1 → 12.2 → 12.3 → 12.4 (READY)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -569,19 +605,22 @@ TypeScript Error Resolution: 24 (independent systematic cleanup)
 | 11.2. Office Document Import | v2.5 | 0/3 | Ready | - |
 | 11.3. Database & Apple Ecosystem | v2.5 | 0/3 | Planned | - |
 | 11.4. Import Management | v2.5 | 0/2 | Planned | - |
-| 24. TypeScript Error Resolution | v2.6 | 0/6 | Ready to Execute | - |
+| 12.1. Graph Analytics Foundation | v2.6 | 2/2 | Ready | - |
+| 12.2. Connection Intelligence | v2.6 | 0/3 | Planned | - |
+| 12.3. Performance & Optimization | v2.6 | 0/3 | Planned | - |
+| 12.4. Analytics & Real-Time Integration | v2.6 | 0/2 | Planned | - |
 
 ## Architecture Integration Summary
 
 ### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Strict Compliant
-====================    =======================    ========================    =====================      =================          ================          =====================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Zero TS compilation errors
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Complete type coverage
-React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Perfect IDE integration
-Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Developer productivity
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence
+====================    =======================    ========================    =====================      =================          ================          ===================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization
+Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics
 ```
 
 ### Migration Data Flow
@@ -599,18 +638,18 @@ Production Backend
 
 ### Performance Targets (v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Strict Compliant |
-|--------|-------------|-------------|-------------|-----------------|------------|----------------|------------------------|
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence |
+|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|
 | **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) |
-| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (type-safe) |
+| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) |
 | **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds |
 | **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% |
 | **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
-| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 TS errors + complete types |
-| **Type Safety** | None | Partial | Partial | Runtime validation | Strict compilation | Predictive prevention | Perfect type coverage |
-| **Developer Experience** | Manual debugging | Native tools | Hybrid debugging | Production monitoring | Clean builds | Intelligent tooling | Perfect IntelliSense |
-| **Deployment** | Manual | Manual | Manual | Automated Beta/Prod | Automated | Automated + validated | Automated + type-safe |
-| **Compilation** | ~356 TS errors | N/A | ~356 TS errors | Runtime checking | Improving (356→X) | Advanced type guards | Zero TS errors |
+| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence |
+| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics |
+| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy |
+| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) |
+| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes |
 
 ---
 
@@ -758,19 +797,26 @@ Production Backend
 | IMPORT-02 | Phase 11.4 | ❌ Planned |
 | IMPORT-03 | Phase 11.4 | ❌ Planned |
 
-
 **v2.5 Coverage:** 12/12 requirements mapped ✓
 
-### v2.6 TypeScript Error Resolution Requirements
+### v2.6 Graph Analytics Engine Requirements
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TS-ERROR-01 | Phase 24 | 📋 Ready |
-| TS-ERROR-02 | Phase 24 | 📋 Ready |
-| TS-ERROR-03 | Phase 24 | 📋 Ready |
-| TS-ERROR-04 | Phase 24 | 📋 Ready |
+| CONNECT-01 | Phase 12.2 | 📋 Ready |
+| CONNECT-02 | Phase 12.2 | 📋 Ready |
+| CONNECT-03 | Phase 12.2 | 📋 Ready |
+| CONNECT-04 | Phase 12.3 | 📋 Ready |
+| CACHE-01 | Phase 12.3 | 📋 Ready |
+| CACHE-02 | Phase 12.3 | 📋 Ready |
+| CACHE-03 | Phase 12.4 | 📋 Ready |
+| GRAPH-01 | Phase 12.2 | 📋 Ready |
+| GRAPH-02 | Phase 12.3 | 📋 Ready |
+| GRAPH-03 | Phase 12.4 | 📋 Ready |
+| PERF-01 | Phase 12.3 | 📋 Ready |
+| PERF-02 | Phase 12.4 | 📋 Ready |
 
-**v2.6 Coverage:** 4/4 requirements mapped ✓
+**v2.6 Coverage:** 11/11 requirements mapped ✓
 
 ---
 
@@ -814,16 +860,14 @@ Production Backend
 12. **Phase 10-22 (GAP CLOSURE):** Fix critical TypeScript strict mode errors (SQLite, Sidebar, D3 components)
 13. **Phase 10-23 (GAP CLOSURE):** Complete TypeScript strict mode compliance (415→0 errors, 18→0 explicit any)
 
-### TypeScript Error Resolution Strategy (Phase 24 - NEW)
-1. **Phase 24-01:** Quick win fixes (Toolbar properties, ErrorBoundary logic, ViewRenderer imports, MemoryInfo types)
-2. **Phase 24-02:** SuperGrid and D3 view components (CoordinateSystem completion, type comparison fixes)
-3. **Phase 24-03:** View component type safety (NetworkView variables, Enhanced views, clean imports)
-4. **Phase 24-04:** Utility module type guards (Bridge performance arrays, command history, D3 parsers)
-5. **Phase 24-05:** Remaining utility fixes (Sync undefined handling, file system variables, filters, performance monitor)
-6. **Phase 24-06:** Final validation and testing (Comprehensive verification, human testing, build validation)
+### Graph Analytics Integration Strategy (Phase 12 - NEW)
+1. **Phase 12.1:** Requirements foundation and verification infrastructure (bidirectional traceability, testing setup)
+2. **Phase 12.2:** Connection intelligence verification (content-based, community, temporal, structural analysis)
+3. **Phase 12.3:** Performance optimization and advanced analytics (suggestion quality, cache optimization, pattern discovery)
+4. **Phase 12.4:** Real-time analytics and monitoring integration (cache analytics, predictive analytics, system integration)
 
 ---
 
-**Current step:** Phase 24 TypeScript Error Resolution plans created - targeting complete elimination of ~100+ TypeScript compilation errors through systematic component-by-component approach.
+**Current step:** Phase 12.1 Graph Analytics Foundation plans created - establishing requirements traceability and verification infrastructure for intelligent connection discovery and query optimization systems.
 
-**Next step:** `/gsd:execute-phase 24` to systematically eliminate all TypeScript errors and achieve perfect strict mode compliance.
+**Next step:** `/gsd:execute-phase 12.1` to establish foundation verification for sophisticated graph intelligence capabilities.
