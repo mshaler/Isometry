@@ -405,7 +405,10 @@ async function testNotebookCreationFlow(provider: DatabaseMode): Promise<TestRes
     }
 
     // Validate persistence
-    const retrieveResult = await retrieveNotebookCard(provider, (createResult.data as any).id);
+    interface CreateResultData {
+      id: string;
+    }
+    const retrieveResult = await retrieveNotebookCard(provider, (createResult.data as CreateResultData).id);
     if (!retrieveResult.success) {
       errors.push(`Failed to retrieve notebook card: ${retrieveResult.errors.join(', ')}`);
     }

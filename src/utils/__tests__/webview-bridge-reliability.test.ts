@@ -8,8 +8,32 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { WebViewBridge } from '../webview-bridge';
 
-// Mock WebKit interface
-const mockWebKit = {
+// Mock WebKit interface with proper typing
+interface MockMessageHandler {
+  postMessage: any; // Mock function
+}
+
+interface MockWebKitInterface {
+  messageHandlers: {
+    database?: MockMessageHandler;
+    filesystem?: MockMessageHandler;
+  };
+}
+
+interface MockWindowInterface {
+  webkit: MockWebKitInterface;
+  resolveWebViewRequest: any; // Mock function
+  addEventListener: any; // Mock function
+  removeEventListener: any; // Mock function
+}
+
+interface WebViewResponse {
+  success?: boolean;
+  data?: unknown;
+  error?: string;
+}
+
+const mockWebKit: MockWebKitInterface = {
   messageHandlers: {
     database: {
       postMessage: vi.fn()
@@ -21,7 +45,7 @@ const mockWebKit = {
 };
 
 // Mock window object
-const mockWindow = {
+const mockWindow: MockWindowInterface = {
   webkit: mockWebKit,
   resolveWebViewRequest: vi.fn(),
   addEventListener: vi.fn(),
@@ -49,8 +73,10 @@ describe('WebView Bridge Reliability', () => {
 
     // Reset all mocks
     vi.clearAllMocks();
-    mockWebKit.messageHandlers.database.postMessage.mockClear();
-    mockWebKit.messageHandlers.filesystem.postMessage.mockClear();
+
+    // Restore all handlers to working state
+    mockWebKit.messageHandlers.database = { postMessage: vi.fn() };
+    mockWebKit.messageHandlers.filesystem = { postMessage: vi.fn() };
 
     // Create fresh bridge instance
     bridge = new WebViewBridge();
@@ -147,7 +173,7 @@ describe('WebView Bridge Reliability', () => {
     it('should queue messages when connection is lost', async () => {
       // Simulate connection loss by making handler unavailable
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       const messagePromise = bridge.postMessage('database', 'test', { data: 'queued' });
 
@@ -179,7 +205,7 @@ describe('WebView Bridge Reliability', () => {
 
       // First, simulate connection loss
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       // Queue several messages
       const promises = [
@@ -200,7 +226,7 @@ describe('WebView Bridge Reliability', () => {
 
     it('should drop oldest messages when queue is full', async () => {
       // Simulate connection loss
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       const promises = [];
       const messagePromises = [];
@@ -403,7 +429,7 @@ describe('WebView Bridge Reliability', () => {
       expect(initialHealth.isConnected).toBe(true);
 
       // Simulate connection loss
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       // Health status should reflect disconnection
       const disconnectedHealth = bridge.getHealthStatus();
@@ -413,7 +439,7 @@ describe('WebView Bridge Reliability', () => {
     it('should automatically reconnect when connection is restored', async () => {
       // Simulate connection loss
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       // Queue a message while disconnected
       const messagePromise = bridge.postMessage('database', 'test', {});
@@ -524,7 +550,7 @@ describe('WebView Bridge Reliability', () => {
 
       // Responses should correlate correctly
       results.forEach((result, index) => {
-        expect((result as any).data).toBe(requestIds[index]);
+        expect((result as WebViewResponse).data).toBe(requestIds[index]);
       });
     });
   });

@@ -705,7 +705,15 @@ async function validatePostConcurrencyConsistency(_dataset: TestDataset): Promis
 
 async function checkNodeCorruption(node: unknown): Promise<CorruptionDetail[]> {
   const corruption: CorruptionDetail[] = [];
-  const nodeRecord = node as any; // Type assertion for validation function
+
+  interface ValidationNodeRecord {
+    id: string;
+    content?: string;
+    name?: string;
+    type?: string;
+  }
+
+  const nodeRecord = node as ValidationNodeRecord;
 
   // Check for invalid characters
   if (nodeRecord.content && nodeRecord.content.includes('\x00')) {

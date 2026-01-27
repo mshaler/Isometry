@@ -10,15 +10,33 @@ import { WebViewBridge } from '../utils/webview-bridge';
 import { MigrationSafety } from '../db/migration-safety';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 
-// Mock implementations
-const mockWebKit = {
+// Mock implementations with proper typing
+interface MockMessageHandler {
+  postMessage: any; // Mock function
+}
+
+interface MockWebKitInterface {
+  messageHandlers: {
+    database?: MockMessageHandler;
+    filesystem?: MockMessageHandler;
+  };
+}
+
+interface MockWindowInterface {
+  webkit: MockWebKitInterface;
+  resolveWebViewRequest: any; // Mock function
+  addEventListener: any; // Mock function
+  removeEventListener: any; // Mock function
+}
+
+const mockWebKit: MockWebKitInterface = {
   messageHandlers: {
     database: { postMessage: vi.fn() },
     filesystem: { postMessage: vi.fn() }
   }
 };
 
-const mockWindow = {
+const mockWindow: MockWindowInterface = {
   webkit: mockWebKit,
   resolveWebViewRequest: vi.fn(),
   addEventListener: vi.fn(),
@@ -248,7 +266,7 @@ describe('WebView Bridge & Migration Safety Integration', () => {
 
       // Simulate connection loss by removing handler
       const originalHandler = mockWindow.webkit.messageHandlers.database;
-      (mockWindow.webkit.messageHandlers as any).database = undefined;
+      mockWindow.webkit.messageHandlers.database = undefined;
 
       // Start validation request (should be queued)
       const validationPromise = migrationSafety.validateDataIntegrity();
