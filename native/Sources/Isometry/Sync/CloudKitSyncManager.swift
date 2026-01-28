@@ -957,10 +957,15 @@ public actor CloudKitSyncManager {
             let (records, _) = try await database.records(matching: query, inZoneWith: zone.zoneID)
 
             var flags: [String: Any] = [:]
-            for (_, record) in records {
-                if let flagName = record["name"] as? String,
-                   let flagValue = record["value"] {
-                    flags[flagName] = flagValue
+            for (_, result) in records {
+                switch result {
+                case .success(let record):
+                    if let flagName = record["name"] as? String,
+                       let flagValue = record["value"] {
+                        flags[flagName] = flagValue
+                    }
+                case .failure(let error):
+                    print("Failed to fetch record: \(error)")
                 }
             }
 

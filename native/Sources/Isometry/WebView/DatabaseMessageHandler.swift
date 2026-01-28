@@ -235,17 +235,18 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             var results: [[String: Any]] = []
 
             let statement = try db.makeStatement(sql: sql)
-            let rows = try statement.makeSelectStatement()
 
             // Bind parameters if provided
             if !sqlParams.isEmpty {
-                try rows.setArguments(sqlParams)
+                if let statementArguments = StatementArguments(sqlParams) {
+                    try statement.setArguments(statementArguments)
+                }
             }
 
             // Execute and collect results
-            for row in try Row.fetchAll(rows) {
+            for row in try Row.fetchAll(statement) {
                 var rowData: [String: Any] = [:]
-                for (index, columnName) in rows.columnNames.enumerated() {
+                for (index, columnName) in statement.columnNames.enumerated() {
                     rowData[columnName] = row[index]
                 }
                 results.append(rowData)

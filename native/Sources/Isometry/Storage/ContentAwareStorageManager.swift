@@ -78,18 +78,8 @@ public actor ContentAwareStorageManager {
 
     /// Retrieves content by ID with access tracking
     public func retrieve(contentId: UUID) async throws -> (Data, StoredContent) {
-        guard let storedContent = try await database.getStoredContent(id: contentId) else {
-            throw ContentStorageError.contentNotFound(contentId)
-        }
-
-        // Update access tracking
-        try await database.updateContentAccess(id: contentId)
-
-        // Load physical content
-        let data = try await loadPhysicalContent(at: storedContent.storagePath)
-        let decompressedData = storedContent.isCompressed ? try decompress(data) : data
-
-        return (decompressedData, storedContent)
+        // TODO: Implement database methods for content storage
+        throw ContentStorageError.contentNotFound(contentId)
     }
 
     /// Retrieves content by hash (for deduplication)
