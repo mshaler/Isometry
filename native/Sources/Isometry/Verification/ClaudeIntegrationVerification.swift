@@ -1,14 +1,15 @@
 import Foundation
+import os
 import os.log
 
 /// Verification tests for Claude API integration in Phase 6.3
 /// Tests the complete command routing and API client setup
 public struct ClaudeIntegrationVerification {
-    private let logger = OSLog(subsystem: "com.isometry.app", category: "ClaudeVerification")
+    private let logger = Logger(subsystem: "com.isometry.app", category: "ClaudeVerification")
 
     /// Verify that Claude API client can be instantiated correctly
     public func verifyAPIClientSetup() -> ClaudeVerificationResult {
-        os_log("Starting Claude API client setup verification...", log: logger, type: .info)
+        logger.info("Starting Claude API client setup verification...")
 
         do {
             // Test 1: Verify APIConfiguration creation
@@ -26,7 +27,7 @@ public struct ClaudeIntegrationVerification {
             // Test 2: Verify ClaudeAPIClient instantiation
             let client = ClaudeAPIClient(configuration: config)
 
-            os_log("✅ Claude API client setup verification passed", log: logger, type: .info)
+            logger.info("✅ Claude API client setup verification passed")
             return .success("Claude API client instantiated successfully with valid configuration")
 
         } catch {
@@ -37,7 +38,7 @@ public struct ClaudeIntegrationVerification {
 
     /// Verify command routing logic (without making actual API calls)
     public func verifyCommandRouting() -> ClaudeVerificationResult {
-        os_log("Starting command routing verification...", log: logger, type: .info)
+        logger.info("Starting command routing verification...")
 
         // Test 1: Verify Claude command detection
         let testCommands = [
@@ -70,13 +71,13 @@ public struct ClaudeIntegrationVerification {
             return .failure("ShellContext creation failed")
         }
 
-        os_log("✅ Command routing verification passed", log: logger, type: .info)
+        logger.info("✅ Command routing verification passed")
         return .success("Command routing logic works correctly")
     }
 
     /// Verify SandboxExecutor integration with Claude commands
     public func verifySandboxIntegration() async -> ClaudeVerificationResult {
-        os_log("Starting sandbox integration verification...", log: logger, type: .info)
+        logger.info("Starting sandbox integration verification...")
 
         do {
             // Test 1: Verify SandboxExecutor instantiation
@@ -111,7 +112,7 @@ public struct ClaudeIntegrationVerification {
                 return .failure("Forbidden network command incorrectly allowed")
             }
 
-            os_log("✅ Sandbox integration verification passed", log: logger, type: .info)
+            logger.info("✅ Sandbox integration verification passed")
             return .success("SandboxExecutor properly configured for Claude integration")
 
         } catch {
@@ -122,7 +123,7 @@ public struct ClaudeIntegrationVerification {
 
     /// Run all Claude integration verifications
     public func runFullVerification() async -> VerificationSummary {
-        os_log("🔄 Starting full Claude integration verification...", log: logger, type: .info)
+        logger.info("🔄 Starting full Claude integration verification...")
 
         var results: [ClaudeVerificationResult] = []
 
@@ -147,7 +148,7 @@ public struct ClaudeIntegrationVerification {
         )
 
         if successCount == totalCount {
-            os_log("🎉 All Claude integration verifications passed!", log: logger, type: .info)
+            logger.info("🎉 All Claude integration verifications passed!")
         } else {
             logger.warning("⚠️ Some verifications failed: \(totalCount - successCount)/\(totalCount)")
         }

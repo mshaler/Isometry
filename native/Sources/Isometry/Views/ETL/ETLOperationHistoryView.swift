@@ -534,8 +534,8 @@ struct ETLOperationDetailView: View {
                 .foregroundColor(.red)
 
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(result.errors.enumerated()), id: \.offset) { index, error in
-                    ErrorRow(index: index + 1, error: error)
+                ForEach(Array(result.errors.enumerated()), id: \.offset) { index, errorInfo in
+                    ErrorRowFromInfo(index: index + 1, errorInfo: errorInfo)
                 }
             }
         }
@@ -670,6 +670,30 @@ struct ErrorRow: View {
                 .fontWeight(.medium)
 
             Text(error.localizedDescription)
+                .font(.caption)
+                .foregroundColor(.red)
+
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(6)
+    }
+}
+
+struct ErrorRowFromInfo: View {
+    let index: Int
+    let errorInfo: ETLErrorInfo
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\(index).")
+                .font(.caption)
+                .foregroundColor(.red)
+                .fontWeight(.medium)
+
+            Text(errorInfo.message)
                 .font(.caption)
                 .foregroundColor(.red)
 
