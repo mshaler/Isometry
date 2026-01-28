@@ -261,6 +261,7 @@ public actor SandboxExecutor {
     }
 
     /// Execute the validated process with simplified synchronous approach
+    #if os(macOS)
     private func executeProcess(
         executable: String,
         arguments: [String],
@@ -367,6 +368,29 @@ public actor SandboxExecutor {
             )
         }
     }
+    #else
+    // iOS: Process execution not supported - provide stub implementation
+    private func executeProcess(
+        executable: String,
+        arguments: [String],
+        workingDirectory: String,
+        environment: [String: String],
+        command: String,
+        startTime: CFAbsoluteTime
+    ) async -> ExecutionResult {
+        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        logger.warning("Process execution not supported on iOS: \(executable)")
+        return ExecutionResult(
+            success: false,
+            output: "",
+            error: "Process execution not supported on iOS platform",
+            duration: duration,
+            exitCode: -1,
+            workingDirectory: workingDirectory,
+            command: command
+        )
+    }
+    #endif
 
     /// Test if a command would be allowed without executing it
     public func isCommandAllowed(_ command: String, workingDirectory: String? = nil) -> (allowed: Bool, reason: String?) {

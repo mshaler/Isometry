@@ -224,6 +224,7 @@ public actor OfficeDocumentImporter {
 
     // MARK: - XML Parsing
 
+    #if os(macOS)
     private func parseSharedStrings(at directory: URL) throws -> [String] {
         let sharedStringsPath = directory.appendingPathComponent("xl/sharedStrings.xml")
 
@@ -381,6 +382,32 @@ public actor OfficeDocumentImporter {
         // Simplified relationships parsing - return empty for now
         return [:]
     }
+    #else
+    // iOS: Simplified parsing without XMLDocument
+    private func parseSharedStrings(at directory: URL) throws -> [String] {
+        return [] // Not supported on iOS
+    }
+
+    private func parseWorkbook(at directory: URL) throws -> [(name: String, path: String)] {
+        return [] // Not supported on iOS
+    }
+
+    private func parseWorksheet(name: String, path: String, baseDirectory: URL, sharedStrings: [String]) throws -> SheetData {
+        return SheetData(name: name, content: [[""]], range: "A1:A1", relationships: [:])
+    }
+
+    private func parseWordDocument(at directory: URL) throws -> String {
+        return "" // Not supported on iOS
+    }
+
+    private func parseWordStyles(at directory: URL) throws -> [String: Any] {
+        return [:]
+    }
+
+    private func parseWordRelationships(at directory: URL) throws -> [String: String] {
+        return [:]
+    }
+    #endif
 
     // MARK: - Node Creation
 

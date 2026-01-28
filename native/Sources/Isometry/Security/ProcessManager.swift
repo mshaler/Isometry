@@ -140,6 +140,7 @@ public struct ManagedProcess: Sendable {
 
 // MARK: - Process Manager
 
+#if os(macOS)
 /// Advanced process lifecycle management with background execution support
 public actor ProcessManager {
     private let logger = Logger(subsystem: "com.isometry.app", category: "ProcessManager")
@@ -637,6 +638,50 @@ public actor ProcessManager {
         return activeProcessCount < maxConcurrentProcesses
     }
 }
+#else
+// iOS: Process execution not supported - provide stub implementation
+public actor ProcessManager {
+    private let logger = Logger(subsystem: "com.isometry.app", category: "ProcessManager")
+
+    public init() {}
+
+    public func startProcess(
+        executable: String,
+        arguments: [String] = [],
+        workingDirectory: String? = nil,
+        environment: [String: String]? = nil,
+        priority: ProcessPriority = .normal,
+        backgroundExecution: Bool = false,
+        progressHandler: ProcessProgressHandler? = nil
+    ) async throws -> UUID {
+        logger.warning("Process execution not supported on iOS")
+        throw ProcessManagerError.unsupportedPlatform
+    }
+
+    public func getProcessState(for processId: UUID) -> ManagedProcessState {
+        return .terminated
+    }
+
+    public func terminateProcess(_ processId: UUID) async throws {
+        logger.warning("Process termination not supported on iOS")
+    }
+
+    public func getAllProcesses() -> [UUID: ManagedProcess] {
+        return [:]
+    }
+
+    public func getProcessMetrics() -> ProcessManagerMetrics {
+        return ProcessManagerMetrics(
+            activeProcesses: 0,
+            totalProcessesStarted: 0,
+            totalProcessesCompleted: 0,
+            totalProcessesFailed: 0,
+            averageExecutionTime: 0.0,
+            memoryUsage: 0
+        )
+    }
+}
+#endif
 
 // MARK: - Error Types
 
@@ -645,6 +690,7 @@ public enum ProcessManagerError: Error, LocalizedError {
     case processNotFound(UUID)
     case backgroundExecutionFailed
     case resourceLimitExceeded
+    case unsupportedPlatform
 
     public var errorDescription: String? {
         switch self {
@@ -656,6 +702,8 @@ public enum ProcessManagerError: Error, LocalizedError {
             return "Failed to enable background execution"
         case .resourceLimitExceeded:
             return "Process exceeded resource limits"
+        case .unsupportedPlatform:
+            return "Process execution not supported on this platform"
         }
     }
 }

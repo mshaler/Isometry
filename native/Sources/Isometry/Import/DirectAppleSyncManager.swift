@@ -175,7 +175,12 @@ public class DirectAppleSyncManager: ObservableObject {
     // MARK: - Database Path Detection
 
     private func getNotesDatabase() throws -> String {
+        #if os(macOS)
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        #else
+        // iOS: Use documents directory as fallback
+        let homeDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        #endif
 
         // Try various known locations for Notes database
         let possiblePaths = [
@@ -194,7 +199,12 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func getRemindersDatabase() throws -> String {
+        #if os(macOS)
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        #else
+        // iOS: Use documents directory as fallback
+        let homeDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        #endif
 
         // Try various known locations for Reminders database
         let possiblePaths = [
@@ -213,7 +223,12 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func getCalendarDatabase() throws -> String {
+        #if os(macOS)
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        #else
+        // iOS: Use documents directory as fallback
+        let homeDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        #endif
 
         // Try various known locations for Calendar database
         let possiblePaths = [
@@ -231,7 +246,12 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func getContactsDatabase() throws -> String {
+        #if os(macOS)
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        #else
+        // iOS: Use documents directory as fallback
+        let homeDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        #endif
 
         // Try various known locations for Contacts database
         let possiblePaths = [
@@ -249,7 +269,12 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func getSafariDatabase() throws -> String {
+        #if os(macOS)
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
+        #else
+        // iOS: Use documents directory as fallback
+        let homeDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.path ?? ""
+        #endif
 
         // Safari bookmarks database
         let bookmarksPath = "\(homeDir)/Library/Safari/Bookmarks.plist"
