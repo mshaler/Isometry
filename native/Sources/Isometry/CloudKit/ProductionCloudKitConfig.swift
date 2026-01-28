@@ -239,7 +239,7 @@ public final class ProductionCloudKitManager: ObservableObject {
 
         do {
             // Check node count consistency
-            let localNodeCount = try await database.getNodeCount()
+            let localNodeCount = try await database.countNodes()
             let remoteNodeCount = try await getRemoteNodeCount()
 
             report.localNodeCount = localNodeCount
@@ -271,14 +271,13 @@ public final class ProductionCloudKitManager: ObservableObject {
         let predicate = NSPredicate(format: "TRUEPREDICATE")
         let query = CKQuery(recordType: "Node", predicate: predicate)
 
-        // Use count query for efficiency
-        query.resultsLimit = 1
+        // Use count query for efficiency (CloudKit v6+ API)
 
         do {
             let (records, _) = try await privateDatabase.records(matching: query, inZoneWith: productionZone.zoneID)
             // This is a simplified count - in production, we'd use a proper count query
             // For now, return the local count as CloudKit doesn't support direct count queries
-            return try await database.getNodeCount()
+            return try await database.countNodes()
         } catch {
             throw ProductionCloudKitError.remoteCountFailed(underlying: error)
         }
@@ -398,13 +397,11 @@ public final class ProductionSchemaValidator {
         do {
             // Validate Node record type exists with required fields
             let nodeQuery = CKQuery(recordType: "Node", predicate: NSPredicate(format: "TRUEPREDICATE"))
-            nodeQuery.resultsLimit = 1
 
             _ = try await database.records(matching: nodeQuery)
 
             // Validate NotebookCard record type exists
             let cardQuery = CKQuery(recordType: "NotebookCard", predicate: NSPredicate(format: "TRUEPREDICATE"))
-            cardQuery.resultsLimit = 1
 
             _ = try await database.records(matching: cardQuery)
 
