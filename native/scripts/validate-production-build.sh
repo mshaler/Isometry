@@ -67,17 +67,17 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[PASS]${NC} $*" | tee -a "$VALIDATION_LOG"
-    ((VALIDATION_PASSED++))
+    ((VALIDATION_PASSED++)) || true
 }
 
 log_warning() {
     echo -e "${YELLOW}[WARN]${NC} $*" | tee -a "$VALIDATION_LOG"
-    ((VALIDATION_WARNINGS++))
+    ((VALIDATION_WARNINGS++)) || true
 }
 
 log_error() {
     echo -e "${RED}[FAIL]${NC} $*" | tee -a "$VALIDATION_LOG"
-    ((VALIDATION_ERRORS++))
+    ((VALIDATION_ERRORS++)) || true
 }
 
 verbose_log() {
