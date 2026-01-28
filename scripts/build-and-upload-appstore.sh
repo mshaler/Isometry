@@ -146,8 +146,9 @@ check_prerequisites() {
     fi
 
     # Verify certificates are installed
-    if ! security find-certificate -c "Apple Distribution" >/dev/null 2>&1; then
-        log_error "Apple Distribution certificate not found in keychain"
+    if ! security find-certificate -c "Apple Distribution" >/dev/null 2>&1 \
+        && ! security find-certificate -c "iPhone Distribution" >/dev/null 2>&1; then
+        log_error "Distribution certificate not found in keychain (Apple Distribution or iPhone Distribution)"
         log_error "Install your distribution certificate first"
         exit 1
     fi
