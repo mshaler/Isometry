@@ -129,7 +129,7 @@ public actor SQLiteFileImporter {
         // Then process the data asynchronously
         for noteRow in noteRowsData {
             do {
-                let node = try await createNoteNode(from: noteRow, sourceConnection: nil)
+                let node = try createNoteNode(from: noteRow)
                 try await database.createNode(node)
                 result.imported += 1
             } catch {
@@ -169,9 +169,7 @@ public actor SQLiteFileImporter {
         // Then process the data asynchronously
         for reminderRow in reminderRowsData {
             do {
-                let node = try await sourceDB.read { sourceConn in
-                    try await self.createReminderNode(from: reminderRow, sourceConnection: sourceConn)
-                }
+                let node = try createReminderNode(from: reminderRow)
                 try await database.createNode(node)
                 result.imported += 1
             } catch {
@@ -187,7 +185,7 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        try sourceDB.read { sourceConn in
+        let eventRows = try sourceDB.read { sourceConn in
             let sql = """
                 SELECT
                     e.ROWID as id,
@@ -204,16 +202,17 @@ public actor SQLiteFileImporter {
                 LIMIT 1000
             """
 
-            let eventRows = try Row.fetchAll(sourceConn, sql: sql)
-            for eventRow in eventRows {
-                do {
-                    let node = try createEventNode(from: eventRow)
-                    try await database.insert(node: node)
-                    result.imported += 1
-                } catch {
-                    result.failed += 1
-                    result.errors.append(ImportError.fileFailed("node creation", error))
-                }
+            return try Row.fetchAll(sourceConn, sql: sql)
+        }
+
+        for eventRow in eventRows {
+            do {
+                let node = try createEventNode(from: eventRow)
+                try await database.insert(node: node)
+                result.imported += 1
+            } catch {
+                result.failed += 1
+                result.errors.append(ImportError.fileFailed("node creation", error))
             }
         }
 
@@ -224,7 +223,7 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        try sourceDB.read { sourceConn in
+        let contactRows = try sourceDB.read { sourceConn in
             let sql = """
                 SELECT
                     ROWID as id,
@@ -239,16 +238,17 @@ public actor SQLiteFileImporter {
                 LIMIT 1000
             """
 
-            let contactRows = try Row.fetchAll(sourceConn, sql: sql)
-            for contactRow in contactRows {
-                do {
-                    let node = try createContactNode(from: contactRow)
-                    try await database.insert(node: node)
-                    result.imported += 1
-                } catch {
-                    result.failed += 1
-                    result.errors.append(ImportError.fileFailed("node creation", error))
-                }
+            return try Row.fetchAll(sourceConn, sql: sql)
+        }
+
+        for contactRow in contactRows {
+            do {
+                let node = try createContactNode(from: contactRow)
+                try await database.insert(node: node)
+                result.imported += 1
+            } catch {
+                result.failed += 1
+                result.errors.append(ImportError.fileFailed("node creation", error))
             }
         }
 
@@ -259,9 +259,10 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        try sourceDB.read { sourceConn in
-            // Import bookmarks
-            do {
+        // Extract bookmarks data
+        let bookmarkRows: [Row]
+        do {
+            bookmarkRows = try sourceDB.read { sourceConn in
                 let bookmarkSQL = """
                     SELECT
                         id,
@@ -274,25 +275,18 @@ public actor SQLiteFileImporter {
                     ORDER BY date_modified DESC
                     LIMIT 500
                 """
-
-                let bookmarkRows = try Row.fetchAll(sourceConn, sql: bookmarkSQL)
-                for bookmarkRow in bookmarkRows {
-                    do {
-                        let node = try createBookmarkNode(from: bookmarkRow)
-                        try await database.createNode(node)
-                        result.imported += 1
-                    } catch {
-                        result.failed += 1
-                        result.errors.append(ImportError.fileFailed("node creation", error))
-                    }
-                }
-            } catch {
-                // Bookmarks table might not exist
-                print("Bookmarks table not found or inaccessible: \(error)")
+                return try Row.fetchAll(sourceConn, sql: bookmarkSQL)
             }
+        } catch {
+            // Bookmarks table might not exist
+            print("Bookmarks table not found or inaccessible: \(error)")
+            bookmarkRows = []
+        }
 
-            // Import reading list
-            do {
+        // Extract reading list data
+        let readingListRows: [Row]
+        do {
+            readingListRows = try sourceDB.read { sourceConn in
                 let readingListSQL = """
                     SELECT
                         id,
@@ -304,21 +298,35 @@ public actor SQLiteFileImporter {
                     ORDER BY date_added DESC
                     LIMIT 200
                 """
+                return try Row.fetchAll(sourceConn, sql: readingListSQL)
+            }
+        } catch {
+            // Reading list table might not exist
+            print("Reading list table not found or inaccessible: \(error)")
+            readingListRows = []
+        }
 
-                let readingListRows = try Row.fetchAll(sourceConn, sql: readingListSQL)
-                for readingListRow in readingListRows {
-                    do {
-                        let node = try createReadingListNode(from: readingListRow)
-                        try await database.createNode(node)
-                        result.imported += 1
-                    } catch {
-                        result.failed += 1
-                        result.errors.append(ImportError.fileFailed("node creation", error))
-                    }
-                }
+        // Process bookmarks
+        for bookmarkRow in bookmarkRows {
+            do {
+                let node = try createBookmarkNode(from: bookmarkRow)
+                try await database.createNode(node)
+                result.imported += 1
             } catch {
-                // Reading list table might not exist
-                print("Reading list table not found or inaccessible: \(error)")
+                result.failed += 1
+                result.errors.append(ImportError.fileFailed("node creation", error))
+            }
+        }
+
+        // Process reading list
+        for readingListRow in readingListRows {
+            do {
+                let node = try createReadingListNode(from: readingListRow)
+                try await database.createNode(node)
+                result.imported += 1
+            } catch {
+                result.failed += 1
+                result.errors.append(ImportError.fileFailed("node creation", error))
             }
         }
 
@@ -329,33 +337,37 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        try sourceDB.read { sourceConn in
+        let tableData = try sourceDB.read { sourceConn in
             // Get all tables
             let tableNames = try String.fetchAll(sourceConn, sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
 
-            for tableName in tableNames {
-                do {
-                    // Get table schema
-                    let schemaRows = try Row.fetchAll(sourceConn, sql: "PRAGMA table_info(\(tableName))")
-                    let columnNames = schemaRows.map { $0["name"] as? String ?? "unknown" }
+            return try tableNames.map { tableName in
+                // Get table schema
+                let schemaRows = try Row.fetchAll(sourceConn, sql: "PRAGMA table_info(\(tableName))")
+                let columnNames = schemaRows.map { $0["name"] as? String ?? "unknown" }
 
-                    // Get sample data
-                    let dataRows = try Row.fetchAll(sourceConn, sql: "SELECT * FROM \(tableName) LIMIT 10")
+                // Get sample data
+                let dataRows = try Row.fetchAll(sourceConn, sql: "SELECT * FROM \(tableName) LIMIT 10")
 
-                    let node = try createGenericTableNode(
-                        tableName: tableName,
-                        columns: columnNames,
-                        sampleData: dataRows,
-                        sourceFile: fileURL.lastPathComponent
-                    )
+                return (tableName: tableName, columns: columnNames, data: dataRows)
+            }
+        }
 
-                    try await database.insert(node: node)
-                    result.imported += 1
-                } catch {
-                    result.failed += 1
-                    result.errors.append(ImportError.fileFailed("node creation", error))
-                    print("Failed to process table \(tableName): \(error)")
-                }
+        for tableInfo in tableData {
+            do {
+                let node = try createGenericTableNode(
+                    tableName: tableInfo.tableName,
+                    columns: tableInfo.columns,
+                    sampleData: tableInfo.data,
+                    sourceFile: fileURL.lastPathComponent
+                )
+
+                try await database.insert(node: node)
+                result.imported += 1
+            } catch {
+                result.failed += 1
+                result.errors.append(ImportError.fileFailed("node creation", error))
+                print("Failed to process table \(tableInfo.tableName): \(error)")
             }
         }
 
@@ -364,7 +376,7 @@ public actor SQLiteFileImporter {
 
     // MARK: - Node Creation
 
-    private func createNoteNode(from row: Row, sourceConnection: Database) throws -> Node {
+    private func createNoteNode(from row: Row, sourceConnection: Database? = nil) throws -> Node {
         let id = row["id"] as? Int64 ?? 0
         let title = row["title"] as? String ?? "Untitled Note"
         let snippet = row["snippet"] as? String ?? ""
@@ -391,7 +403,7 @@ public actor SQLiteFileImporter {
         )
     }
 
-    private func createReminderNode(from row: Row, sourceConnection: Database) throws -> Node {
+    private func createReminderNode(from row: Row, sourceConnection: Database? = nil) throws -> Node {
         let id = row["id"] as? Int64 ?? 0
         let title = row["title"] as? String ?? "Untitled Reminder"
         let notes = row["notes"] as? String ?? ""

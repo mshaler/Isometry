@@ -441,7 +441,9 @@ public struct NotebookShellView: View {
                 }
             }
             .navigationTitle("Process Manager")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -454,18 +456,16 @@ public struct NotebookShellView: View {
 
     private func colorForState(_ state: ManagedProcessState) -> Color {
         switch state {
-        case .starting:
-            return .orange
+        case .idle:
+            return .gray
         case .running:
             return .blue
         case .suspended:
             return .yellow
-        case .completed:
-            return .green
-        case .failed:
+        case .terminated:
             return .red
-        case .cancelled:
-            return .gray
+        case .backgrounded:
+            return .orange
         }
     }
 

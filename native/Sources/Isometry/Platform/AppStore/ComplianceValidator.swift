@@ -101,7 +101,7 @@ public final class ComplianceValidator: @unchecked Sendable {
 
     /// Run comprehensive App Store compliance validation
     public func validateCompliance() async -> ValidationResult {
-        logger.info("Starting App Store compliance validation")
+        logger.debug("Starting App Store compliance validation")
 
         var violations: [ComplianceViolation] = []
         var warnings: [ComplianceWarning] = []
@@ -122,7 +122,7 @@ public final class ComplianceValidator: @unchecked Sendable {
             warnings: warnings
         )
 
-        logger.info("Compliance validation completed: \(result.summary)")
+        logger.debug("Compliance validation completed: \(result.summary)")
         return result
     }
 

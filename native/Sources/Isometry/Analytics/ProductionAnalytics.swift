@@ -291,7 +291,7 @@ public final class ProductionAnalytics: ObservableObject {
         loadPrivacySettings()
         setupFlushTimer()
 
-        logger.info("ProductionAnalytics initialized with privacy compliance mode")
+        logger.debug("ProductionAnalytics initialized with privacy compliance mode")
     }
 
     deinit {
@@ -303,7 +303,7 @@ public final class ProductionAnalytics: ObservableObject {
     public func requestAnalyticsConsent() async -> Bool {
         // In a real implementation, this would present a consent UI
         // For now, we'll simulate user consent
-        logger.info("Requesting analytics consent from user")
+        logger.debug("Requesting analytics consent from user")
 
         // Simulate user consent (in real app, this would be actual user interaction)
         let userConsented = true // This would come from actual user input
@@ -341,7 +341,7 @@ public final class ProductionAnalytics: ObservableObject {
         isEnabled = analytics
         savePrivacySettings()
 
-        logger.info("Analytics enabled: analytics=\(analytics), crash=\(crashReporting), performance=\(performanceMonitoring), personalized=\(personalizedAnalytics)")
+        logger.debug("Analytics enabled: analytics=\(analytics), crash=\(crashReporting), performance=\(performanceMonitoring), personalized=\(personalizedAnalytics)")
 
         if analytics {
             await trackEvent(.sessionStart)
@@ -356,7 +356,7 @@ public final class ProductionAnalytics: ObservableObject {
         // Clear any buffered data
         await clearAllData()
 
-        logger.info("All analytics disabled and data cleared")
+        logger.debug("All analytics disabled and data cleared")
     }
 
     public func updateDataRetention(days: Int) {
@@ -375,7 +375,7 @@ public final class ProductionAnalytics: ObservableObject {
         )
 
         savePrivacySettings()
-        logger.info("Data retention updated to \(days) days")
+        logger.debug("Data retention updated to \(days) days")
     }
 
     // MARK: - Event Tracking
@@ -495,7 +495,7 @@ public final class ProductionAnalytics: ObservableObject {
             await trackEvent(.sessionStart)
         }
 
-        logger.info("Analytics session started: \(currentSessionId)")
+        logger.debug("Analytics session started: \(currentSessionId)")
     }
 
     public func endSession() {
@@ -523,7 +523,7 @@ public final class ProductionAnalytics: ObservableObject {
         }
 
         isSessionActive = false
-        logger.info("Analytics session ended: duration=\(abs(sessionDuration))s, actions=\(sessionActionsCount)")
+        logger.debug("Analytics session ended: duration=\(abs(sessionDuration))s, actions=\(sessionActionsCount)")
     }
 
     // MARK: - Funnel Analysis
@@ -640,7 +640,7 @@ public final class ProductionAnalytics: ObservableObject {
             "variant": assignedVariant
         ])
 
-        logger.info("User assigned to experiment '\(experimentName)' variant: \(assignedVariant)")
+        logger.debug("User assigned to experiment '\(experimentName)' variant: \(assignedVariant)")
         return assignedVariant
     }
 
@@ -654,7 +654,7 @@ public final class ProductionAnalytics: ObservableObject {
         featureUsageReports.removeAll()
         currentSessionMetrics = nil
 
-        logger.info("All analytics data cleared")
+        logger.debug("All analytics data cleared")
     }
 
     public func clearExpiredData() async {
@@ -670,7 +670,7 @@ public final class ProductionAnalytics: ObservableObject {
             return stats.lastUsed > cutoffDate ? stats : nil
         }
 
-        logger.info("Expired analytics data cleared (retention: \(privacySettings.dataRetentionDays) days)")
+        logger.debug("Expired analytics data cleared (retention: \(privacySettings.dataRetentionDays) days)")
     }
 
     // MARK: - Private Methods
@@ -756,7 +756,7 @@ public final class ProductionAnalytics: ObservableObject {
     private func updateFeatureUsageStats(
         feature: String,
         event: AnalyticsEvent? = nil,
-        properties: [String: Any] = [],
+        properties: [String: Any] = [:],
         executionTime: TimeInterval? = nil,
         success: Bool = true
     ) async {
@@ -811,12 +811,12 @@ public final class ProductionAnalytics: ObservableObject {
 
     private func loadPrivacySettings() {
         if let data = userDefaults.data(forKey: privacySettingsKey),
-           let decoded = try? JSONDecoder().decode(PrivacySettings.self, data: data) {
+           let decoded = try? JSONDecoder().decode(PrivacySettings.self, from: data) {
             privacySettings = decoded
             isEnabled = decoded.analyticsEnabled
-            logger.info("Loaded privacy settings: analytics=\(decoded.analyticsEnabled)")
+            logger.debug("Loaded privacy settings: analytics=\(decoded.analyticsEnabled)")
         } else {
-            logger.info("No existing privacy settings found, using defaults")
+            logger.debug("No existing privacy settings found, using defaults")
         }
     }
 
@@ -876,12 +876,14 @@ extension ProductionAnalytics: Codable {
         case isSessionActive
     }
 
-    public init(from decoder: Decoder) throws {
+    public convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.privacySettings = try container.decode(PrivacySettings.self, forKey: .privacySettings)
-        self.currentSessionId = try container.decode(String.self, forKey: .currentSessionId)
-        self.isSessionActive = try container.decode(Bool.self, forKey: .isSessionActive)
-        self.isEnabled = privacySettings.analyticsEnabled
+        let privacySettings = try container.decode(PrivacySettings.self, forKey: .privacySettings)
+        let currentSessionId = try container.decode(String.self, forKey: .currentSessionId)
+        let isSessionActive = try container.decode(Bool.self, forKey: .isSessionActive)
+        self.init()
+        self.currentSessionId = currentSessionId
+        self.isSessionActive = isSessionActive
 
         setupFlushTimer()
     }

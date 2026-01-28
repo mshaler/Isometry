@@ -391,7 +391,7 @@ public enum ETLSourceType: String, CaseIterable, Codable, Sendable {
     }
 }
 
-public struct ETLOperationConfiguration: Codable {
+public struct ETLOperationConfiguration: Codable, Hashable, Equatable {
     public var batchSize: Int
     public var enabledSources: [ETLSourceType]
     public var outputFolder: String?

@@ -145,22 +145,21 @@ public struct NotebookWebView: View {
 @MainActor
 class WebViewStore: ObservableObject {
     @Published var webView: WKWebView?
-    @Published var canGoBack = false
-    @Published var canGoForward = false
-    @Published var isLoading = true
+    @Published var isLoading: Bool = false
+    @Published var canGoBack: Bool = false
+    @Published var canGoForward: Bool = false
 
     func configure(with bridge: WebViewBridge) {
+        guard webView == nil else { return }
+
         let configuration = WKWebViewConfiguration()
 
-        // Security settings
-        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
-        configuration.preferences.javaScriptEnabled = true
-        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        // Disable web security for local file access
+        configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        configuration.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
 
-        // Disable unnecessary web features for security
-        configuration.allowsInlineMediaPlayback = false
-        configuration.allowsAirPlayForMediaPlayback = false
-        configuration.allowsPictureInPictureMediaPlayback = false
+        // Enable JavaScript
+        configuration.preferences.javaScriptEnabled = true
 
         // Register message handlers
         let userContentController = WKUserContentController()
@@ -195,10 +194,8 @@ class WebViewStore: ObservableObject {
 
     func loadURL(_ url: URL) {
         guard let webView = webView else { return }
-
-        // Allow loading local files from bundle
-        let allowedURL = url.deletingLastPathComponent()
-        webView.loadFileURL(url, allowingReadAccessTo: allowedURL)
+        let request = URLRequest(url: url)
+        webView.load(request)
     }
 
     func reload() {
@@ -215,6 +212,7 @@ class WebViewStore: ObservableObject {
 }
 
 /// Platform-specific WebView representable
+#if os(iOS)
 struct WebViewRepresentable: UIViewRepresentable {
     let store: WebViewStore
     let bridge: WebViewBridge
@@ -268,81 +266,135 @@ struct WebViewRepresentable: UIViewRepresentable {
     func makeCoordinator() -> Coordinator {
         Coordinator(
             store: store,
+            bridge: bridge,
             onLoadingStateChange: onLoadingStateChange,
             onError: onError,
             onProgressChange: onProgressChange
         )
     }
-
-    class Coordinator: NSObject {
-        let store: WebViewStore
-        let onLoadingStateChange: (Bool) -> Void
-        let onError: (String) -> Void
-        let onProgressChange: (Double) -> Void
-
-        init(
-            store: WebViewStore,
-            onLoadingStateChange: @escaping (Bool) -> Void,
-            onError: @escaping (String) -> Void,
-            onProgressChange: @escaping (Double) -> Void
-        ) {
-            self.store = store
-            self.onLoadingStateChange = onLoadingStateChange
-            self.onError = onError
-            self.onProgressChange = onProgressChange
-        }
-
-        override func observeValue(
-            forKeyPath keyPath: String?,
-            of object: Any?,
-            change: [NSKeyValueChangeKey : Any]?,
-            context: UnsafeMutableRawPointer?
-        ) {
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self, let webView = object as? WKWebView else { return }
-
-                switch keyPath {
-                case #keyPath(WKWebView.isLoading):
-                    let isLoading = webView.isLoading
-                    self.store.isLoading = isLoading
-                    self.onLoadingStateChange(isLoading)
-
-                case #keyPath(WKWebView.estimatedProgress):
-                    let progress = webView.estimatedProgress
-                    self.onProgressChange(progress)
-
-                case #keyPath(WKWebView.canGoBack):
-                    self.store.canGoBack = webView.canGoBack
-
-                case #keyPath(WKWebView.canGoForward):
-                    self.store.canGoForward = webView.canGoForward
-
-                default:
-                    break
-                }
-            }
-        }
-
-        deinit {
-            store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
-            store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
-            store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
-            store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
-        }
-    }
 }
+#elseif os(macOS)
+struct WebViewRepresentable: NSViewRepresentable {
+    let store: WebViewStore
+    let bridge: WebViewBridge
+    let onLoadingStateChange: (Bool) -> Void
+    let onError: (String) -> Void
+    let onProgressChange: (Double) -> Void
 
-#if os(macOS)
-extension WebViewRepresentable: NSViewRepresentable {
     func makeNSView(context: Context) -> WKWebView {
-        return makeUIView(context: context)
+        store.configure(with: bridge)
+
+        guard let webView = store.webView else {
+            fatalError("WebView configuration failed")
+        }
+
+        // Set up KVO for loading state
+        webView.addObserver(
+            context.coordinator,
+            forKeyPath: #keyPath(WKWebView.isLoading),
+            options: [.new],
+            context: nil
+        )
+
+        webView.addObserver(
+            context.coordinator,
+            forKeyPath: #keyPath(WKWebView.estimatedProgress),
+            options: [.new],
+            context: nil
+        )
+
+        webView.addObserver(
+            context.coordinator,
+            forKeyPath: #keyPath(WKWebView.canGoBack),
+            options: [.new],
+            context: nil
+        )
+
+        webView.addObserver(
+            context.coordinator,
+            forKeyPath: #keyPath(WKWebView.canGoForward),
+            options: [.new],
+            context: nil
+        )
+
+        return webView
     }
 
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        updateUIView(nsView, context: context)
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        // Updates are handled through the store
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(
+            store: store,
+            bridge: bridge,
+            onLoadingStateChange: onLoadingStateChange,
+            onError: onError,
+            onProgressChange: onProgressChange
+        )
     }
 }
 #endif
+
+class Coordinator: NSObject {
+    let store: WebViewStore
+    let bridge: WebViewBridge
+    let onLoadingStateChange: (Bool) -> Void
+    let onError: (String) -> Void
+    let onProgressChange: (Double) -> Void
+
+    init(
+        store: WebViewStore,
+        bridge: WebViewBridge,
+        onLoadingStateChange: @escaping (Bool) -> Void,
+        onError: @escaping (String) -> Void,
+        onProgressChange: @escaping (Double) -> Void
+    ) {
+        self.store = store
+        self.bridge = bridge
+        self.onLoadingStateChange = onLoadingStateChange
+        self.onError = onError
+        self.onProgressChange = onProgressChange
+    }
+
+    override func observeValue(
+        forKeyPath keyPath: String?,
+        of object: Any?,
+        change: [NSKeyValueChangeKey : Any]?,
+        context: UnsafeMutableRawPointer?
+    ) {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, let webView = object as? WKWebView else { return }
+
+            switch keyPath {
+            case #keyPath(WKWebView.isLoading):
+                let isLoading = webView.isLoading
+                self.store.isLoading = isLoading
+                self.onLoadingStateChange(isLoading)
+
+            case #keyPath(WKWebView.estimatedProgress):
+                let progress = webView.estimatedProgress
+                self.onProgressChange(progress)
+
+            case #keyPath(WKWebView.canGoBack):
+                self.store.canGoBack = webView.canGoBack
+
+            case #keyPath(WKWebView.canGoForward):
+                self.store.canGoForward = webView.canGoForward
+
+            default:
+                break
+            }
+        }
+    }
+
+    deinit {
+        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
+        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
+        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
+    }
+}
 
 // MARK: - Preview
 

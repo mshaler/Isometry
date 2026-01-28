@@ -221,7 +221,9 @@ struct NewNodeSheet: View {
             }
             .navigationTitle("New Note")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

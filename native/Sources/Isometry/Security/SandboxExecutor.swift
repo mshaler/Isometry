@@ -295,25 +295,25 @@ public actor SandboxExecutor {
 
         // Start execution
         do {
-            logger.info("Executing command: \(command)")
+            logger.debug("Executing command: \(command)")
             try process.run()
 
             // Wait for completion with timeout
-            let timeoutDate = Date().addingTimeInterval(self.maxExecutionTime)
+            let timeoutDate = Date().addingTimeInterval(self.executionLimits.maxExecutionTime)
             while process.isRunning && Date() < timeoutDate {
                 try await Task.sleep(for: .milliseconds(100))
             }
 
             // Force terminate if timeout exceeded
             if process.isRunning {
-                logger.warning("Command '\(command)' timed out after \(self.maxExecutionTime)s")
+                logger.warning("Command '\(command)' timed out after \(self.executionLimits.maxExecutionTime)s")
                 process.terminate()
                 process.waitUntilExit()
 
                 return ExecutionResult(
                     success: false,
                     output: "",
-                    error: "Command timed out after \(self.maxExecutionTime)s",
+                    error: "Command timed out after \(self.executionLimits.maxExecutionTime)s",
                     duration: CFAbsoluteTimeGetCurrent() - startTime,
                     exitCode: nil,
                     workingDirectory: workingDirectory,
@@ -331,13 +331,13 @@ public actor SandboxExecutor {
             let output: String
             let error: String?
 
-            if outputData.count > self.maxOutputSize {
-                output = "Output truncated: exceeded maximum size limit of \(self.maxOutputSize) bytes"
+            if outputData.count > self.executionLimits.maxOutputSize {
+                output = "Output truncated: exceeded maximum size limit of \(self.executionLimits.maxOutputSize) bytes"
             } else {
                 output = String(data: outputData, encoding: .utf8) ?? ""
             }
 
-            if errorData.count > self.maxOutputSize {
+            if errorData.count > self.executionLimits.maxOutputSize {
                 error = "Error output truncated: exceeded maximum size limit"
             } else {
                 error = errorData.isEmpty ? nil : String(data: errorData, encoding: .utf8)
@@ -507,7 +507,7 @@ public actor SandboxExecutor {
             return
         }
 
-        logger.info("Cancelling command: \(command)")
+        logger.debug("Cancelling command: \(command)")
         await processManager.terminate(processId: processId)
         activeProcesses.removeValue(forKey: command)
     }
@@ -662,7 +662,7 @@ public actor SandboxExecutor {
         startTime: CFAbsoluteTime
     ) async -> ExecutionResult {
         // Monitor process state
-        var lastState: ManagedProcessState = .starting
+        var lastState: ManagedProcessState = .idle
 
         while true {
             guard let processInfo = await processManager.getProcessInfo(processId: processId) else {
@@ -682,12 +682,12 @@ public actor SandboxExecutor {
                 activeProcesses.removeValue(forKey: command)
 
                 let duration = CFAbsoluteTimeGetCurrent() - startTime
-                let success = currentState == .completed
+                let success = currentState == .terminated
 
                 return ExecutionResult(
                     success: success,
                     output: success ? "Command completed successfully" : "Command failed",
-                    error: success ? nil : "Process \(currentState.userDescription.lowercased())",
+                    error: success ? nil : "Process \(currentState.description.lowercased())",
                     duration: duration,
                     exitCode: success ? 0 : 1,
                     workingDirectory: workingDirectory,
@@ -715,7 +715,7 @@ public actor SandboxExecutor {
 
             // Check if long-running and should be backgrounded
             if currentDuration > 30.0 && currentState == .running {
-                logger.info("Enabling background execution for long-running process: \(command)")
+                logger.debug("Enabling background execution for long-running process: \(command)")
                 await processManager.enableBackgroundExecution(processId: processId)
             }
 
@@ -750,7 +750,7 @@ public actor SandboxExecutor {
         let startTime = CFAbsoluteTimeGetCurrent()
         let command = "/claude \(prompt)"
 
-        logger.info("Executing Claude command: \(prompt.prefix(50))...")
+        logger.debug("Executing Claude command: \(prompt.prefix(50))...")
 
         do {
             // Performance monitoring
@@ -767,7 +767,7 @@ public actor SandboxExecutor {
             let duration = CFAbsoluteTimeGetCurrent() - startTime
             let formattedOutput = ClaudeAPIClient.formatForShell(response)
 
-            logger.info("Claude command completed successfully in \(Int(duration * 1000))ms")
+            logger.debug("Claude command completed successfully in \(Int(duration * 1000))ms")
 
             return ExecutionResult(
                 success: true,

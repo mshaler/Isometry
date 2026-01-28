@@ -87,7 +87,9 @@ public struct BetaInstructionsView: View {
             }
             .navigationTitle("Beta Testing Guide")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)
@@ -1308,9 +1310,13 @@ struct ContextualHelpView: View {
                 .padding()
             }
             .navigationTitle("Smart Guidance")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -1397,9 +1403,13 @@ struct TestingChecklistView: View {
                 }
             }
             .navigationTitle("Testing Checklist")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
+            #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         dismiss()
                     }

@@ -72,7 +72,9 @@ public struct NotebookContentView: View {
         }
         .navigationTitle("Notebook")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+        #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
         #endif
         .toolbar {
             ToolbarItem(placement: .automatic) {

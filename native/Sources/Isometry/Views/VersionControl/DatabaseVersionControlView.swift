@@ -570,7 +570,9 @@ struct CreateBranchView: View {
                 }
             }
             .navigationTitle("Create Branch")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -654,7 +656,9 @@ struct MergeBranchView: View {
                 }
             }
             .navigationTitle("Merge Branches")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -729,7 +733,9 @@ struct CreateAnalyticsBranchView: View {
                 }
             }
             .navigationTitle("Analytics Branch")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -805,7 +811,9 @@ struct CreateSyntheticBranchView: View {
                 }
             }
             .navigationTitle("Synthetic Branch")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -875,7 +883,9 @@ struct CommitChangesView: View {
                 }
             }
             .navigationTitle("Commit Changes")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -925,7 +935,9 @@ struct DatabaseConflictResolutionView: View {
                 }
             }
             .navigationTitle("Resolve Conflicts")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Resolve") {

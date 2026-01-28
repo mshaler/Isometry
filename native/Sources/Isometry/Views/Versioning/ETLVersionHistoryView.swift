@@ -3,7 +3,7 @@ import Charts
 
 /// Version history and lineage viewer for ETL operations
 struct ETLVersionHistoryView: View {
-    @StateObject private var versionManager: ETLVersionManager
+    @State private var versionManager: ETLVersionManager
     @State private var selectedStream: String = ""
     @State private var versions: [ETLDataVersion] = []
     @State private var selectedVersions: Set<UUID> = []
@@ -15,7 +15,7 @@ struct ETLVersionHistoryView: View {
 
     init(database: IsometryDatabase) {
         self.database = database
-        self._versionManager = StateObject(wrappedValue: ETLVersionManager(database: database))
+        self._versionManager = State(initialValue: ETLVersionManager(database: database))
     }
 
     var body: some View {
@@ -335,7 +335,9 @@ struct VersionComparisonView: View {
                 }
             }
             .navigationTitle("Version Comparison")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .task {
                 await loadVersionDiff()
             }
@@ -527,7 +529,9 @@ struct DataLineageView: View {
                 }
             }
             .navigationTitle("Data Lineage")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .task {
                 await loadLineage()
             }

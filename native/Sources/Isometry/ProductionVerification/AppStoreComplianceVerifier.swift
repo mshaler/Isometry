@@ -7,11 +7,11 @@ public class AppStoreComplianceVerifier: ObservableObject {
 
     // MARK: - Published State
 
-    @Published public var overallStatus: ComplianceStatus = .notStarted
-    @Published public var privacyComplianceStatus: ComplianceStatus = .unknown
-    @Published public var accessibilityComplianceStatus: ComplianceStatus = .unknown
-    @Published public var contentComplianceStatus: ComplianceStatus = .unknown
-    @Published public var technicalComplianceStatus: ComplianceStatus = .unknown
+    @Published public var overallStatus: AppStoreComplianceStatus = .notStarted
+    @Published public var privacyComplianceStatus: AppStoreComplianceStatus = .unknown
+    @Published public var accessibilityComplianceStatus: AppStoreComplianceStatus = .unknown
+    @Published public var contentComplianceStatus: AppStoreComplianceStatus = .unknown
+    @Published public var technicalComplianceStatus: AppStoreComplianceStatus = .unknown
 
     @Published public var complianceResults: [ComplianceResult] = []
     @Published public var violations: [ComplianceViolation] = []
@@ -401,7 +401,7 @@ public class AppStoreComplianceVerifier: ObservableObject {
 
 // MARK: - Supporting Types
 
-public enum ComplianceStatus {
+public enum AppStoreComplianceStatus {
     case notStarted
     case inProgress
     case compliant

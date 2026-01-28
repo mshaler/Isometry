@@ -239,7 +239,9 @@ struct ImportView: View {
             }
             .navigationTitle("Import Notes")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -401,7 +403,7 @@ struct DatabaseSidebarView: View {
     @EnvironmentObject private var appState: AppState
 
     var body: some View {
-        List(selection: appState.navigation.$selectedDatabaseSection) {
+        List(selection: $appState.navigation.selectedDatabaseSection) {
             Section("Database Operations") {
                 ForEach(DatabaseSection.allCases, id: \.self) { section in
                     NavigationLink(value: section) {

@@ -8,7 +8,7 @@ struct ETLOperationHistoryView: View {
 
     @State private var selectedResult: ETLOperationResult?
     @State private var showingDetailSheet = false
-    @State private var selectedTimeRange: TimeRange = .week
+    @State private var selectedTimeRange: ETLTimeRange = .week
     @State private var searchText = ""
 
     init(etlManager: ETLOperationManager) {
@@ -29,7 +29,9 @@ struct ETLOperationHistoryView: View {
                 historyListSection
             }
             .navigationTitle("Operation History")
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -52,7 +54,7 @@ struct ETLOperationHistoryView: View {
         VStack(spacing: 20) {
             // Time Range Picker
             Picker("Time Range", selection: $selectedTimeRange) {
-                ForEach(TimeRange.allCases, id: \.self) { range in
+                ForEach(ETLTimeRange.allCases, id: \.self) { range in
                     Text(range.displayName).tag(range)
                 }
             }
@@ -60,28 +62,28 @@ struct ETLOperationHistoryView: View {
 
             // Quick Stats
             HStack(spacing: 20) {
-                StatCard(
+                ETLStatCard(
                     title: "Total Operations",
                     value: "\(filteredResults.count)",
                     systemImage: "list.bullet",
                     color: .blue
                 )
 
-                StatCard(
+                ETLStatCard(
                     title: "Success Rate",
                     value: "\(Int(successRate * 100))%",
                     systemImage: "checkmark.circle",
                     color: successRate > 0.8 ? .green : .orange
                 )
 
-                StatCard(
+                ETLStatCard(
                     title: "Total Imported",
                     value: "\(totalImportedNodes)",
                     systemImage: "square.and.arrow.down",
                     color: .purple
                 )
 
-                StatCard(
+                ETLStatCard(
                     title: "Avg Duration",
                     value: "\(Int(averageDuration))m",
                     systemImage: "clock",
@@ -197,7 +199,7 @@ struct ETLOperationHistoryView: View {
 
 // MARK: - Supporting Views
 
-struct StatCard: View {
+struct ETLStatCard: View {
     let title: String
     let value: String
     let systemImage: String
@@ -371,7 +373,9 @@ struct ETLOperationDetailView: View {
                 .padding()
             }
             .navigationTitle("Operation Details")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
@@ -725,7 +729,7 @@ struct NodeSummaryRow: View {
 
 // MARK: - Supporting Types
 
-enum TimeRange: CaseIterable {
+enum ETLTimeRange: CaseIterable {
     case day
     case week
     case month

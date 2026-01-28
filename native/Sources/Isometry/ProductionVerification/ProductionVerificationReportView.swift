@@ -19,7 +19,9 @@ public struct ProductionVerificationReportView: View {
             }
             .navigationTitle("Production Verification Report")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)

@@ -28,7 +28,9 @@ public struct BetaFeedbackView: View {
             }
             .navigationTitle("Beta Feedback")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)

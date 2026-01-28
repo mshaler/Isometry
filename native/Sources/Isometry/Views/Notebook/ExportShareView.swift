@@ -57,7 +57,9 @@ public struct ExportShareView: View {
                 }
             }
             .navigationTitle("Export & Share")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 if showCloseButton {
                     ToolbarItem(placement: .cancellationAction) {
@@ -450,12 +452,12 @@ public struct ExportShareView: View {
     }
 
     private func previewExport() {
-        logger.info("Preview export requested for format: \(exportState.selectedFormat.rawValue)")
+        logger.debug("Preview export requested for format: \(exportState.selectedFormat.rawValue)")
         // TODO: Implement preview functionality
     }
 
     private func startExport() {
-        logger.info("Starting export for \(cards.count) cards in format: \(exportState.selectedFormat.rawValue)")
+        logger.debug("Starting export for \(cards.count) cards in format: \(exportState.selectedFormat.rawValue)")
 
         exportState.isExporting = true
         exportState.error = nil
@@ -482,7 +484,7 @@ public struct ExportShareView: View {
                 await MainActor.run {
                     exportState.isExporting = false
                     exportState.exportResult = result
-                    logger.info("Export completed successfully: \(result.fileURL.lastPathComponent)")
+                    logger.debug("Export completed successfully: \(result.fileURL.lastPathComponent)")
                 }
 
             } catch {
@@ -497,11 +499,11 @@ public struct ExportShareView: View {
 
     private func cancelExport() {
         exportState.isExporting = false
-        logger.info("Export cancelled by user")
+        logger.debug("Export cancelled by user")
     }
 
     private func shareExportedFile(_ result: ExportResult) {
-        logger.info("Sharing exported file: \(result.fileURL.lastPathComponent)")
+        logger.debug("Sharing exported file: \(result.fileURL.lastPathComponent)")
 
         #if canImport(UIKit)
         let activityViewController = UIActivityViewController(
@@ -533,7 +535,7 @@ public struct ExportShareView: View {
     }
 
     private func saveToFiles(_ result: ExportResult) {
-        logger.info("Saving to files: \(result.fileURL.lastPathComponent)")
+        logger.debug("Saving to files: \(result.fileURL.lastPathComponent)")
 
         #if canImport(UIKit)
         let documentPicker = UIDocumentPickerViewController(forExporting: [result.fileURL])
@@ -553,7 +555,7 @@ public struct ExportShareView: View {
             if response == .OK, let url = savePanel.url {
                 do {
                     try FileManager.default.copyItem(at: result.fileURL, to: url)
-                    self.logger.info("File saved to: \(url.path)")
+                    self.logger.debug("File saved to: \(url.path)")
                 } catch {
                     self.exportState.error = error
                     self.logger.error("Failed to save file: \(error.localizedDescription)")
@@ -567,7 +569,7 @@ public struct ExportShareView: View {
         exportState.exportResult = nil
         exportState.error = nil
         exportState.isExporting = false
-        logger.info("Export state reset for new export")
+        logger.debug("Export state reset for new export")
     }
 
     // MARK: - Helper Methods

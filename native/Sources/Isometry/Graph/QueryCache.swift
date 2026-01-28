@@ -228,7 +228,7 @@ public actor QueryCache {
                 stringValue = data.base64EncodedString()
             } else if let codable = value as? (any Codable) {
                 // Best effort to serialize Codable types
-                if let jsonData = try? JSONEncoder().encode(AnyCodable(codable)),
+                if let jsonData = try? JSONEncoder().encode(QueryCacheAnyCodable(codable)),
                    let jsonString = String(data: jsonData, encoding: .utf8) {
                     stringValue = jsonString
                 } else {
@@ -343,7 +343,7 @@ public struct CacheStats: Sendable {
 }
 
 /// Helper for encoding arbitrary Codable values
-private struct AnyCodable: Codable {
+private struct QueryCacheAnyCodable: Codable {
     let value: any Codable
 
     init(_ value: any Codable) {

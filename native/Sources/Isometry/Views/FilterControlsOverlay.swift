@@ -444,7 +444,9 @@ struct SavePresetSheet: View {
             }
             .navigationTitle("Save Preset")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

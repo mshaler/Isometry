@@ -294,7 +294,7 @@ public actor ProcessManager {
         }
 
         if managedProcess.process.isRunning {
-            kill(managedProcess.process.processIdentifier, SIGSTOP)
+            _DarwinFoundation3.kill(managedProcess.process.processIdentifier, SIGSTOP)
             managedProcess.state = .suspended
             managedProcesses[processId] = managedProcess
 
@@ -312,7 +312,7 @@ public actor ProcessManager {
         }
 
         if managedProcess.state == .suspended {
-            kill(managedProcess.process.processIdentifier, SIGCONT)
+            _DarwinFoundation3.kill(managedProcess.process.processIdentifier, SIGCONT)
             managedProcess.state = .running
             managedProcesses[processId] = managedProcess
 
@@ -467,7 +467,7 @@ public actor ProcessManager {
         guard let backgroundTask = backgroundTasks[processId] else { return }
 
         // Check if process is still running
-        let isRunning = kill(backgroundTask.processId, 0) == 0
+        let isRunning = _DarwinFoundation3.kill(backgroundTask.processId, 0) == 0
 
         if !isRunning || backgroundTask.isExpired {
             logger.debug("Background process \(processId) completed or expired")

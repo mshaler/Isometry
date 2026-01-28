@@ -78,7 +78,7 @@ public final class FeatureFlagManager: ObservableObject, Sendable {
             let cloudFlags = try await cloudKitManager.fetchFeatureFlags()
             await updateFlags(cloudFlags)
             lastSyncDate = Date()
-            logger.info("Successfully refreshed \\(cloudFlags.count) feature flags")
+            logger.debug("Successfully refreshed \\(cloudFlags.count) feature flags")
         } catch {
             logger.error("Failed to refresh feature flags: \\(error)")
             throw FeatureFlagError.syncFailed(error)
@@ -102,7 +102,7 @@ public final class FeatureFlagManager: ObservableObject, Sendable {
     private func loadCachedFlags() {
         let cachedFlags = cache.loadFlags()
         self.flags = cachedFlags
-        logger.info("Loaded \\(cachedFlags.count) cached feature flags")
+        logger.debug("Loaded \\(cachedFlags.count) cached feature flags")
     }
 
     private func updateFlags(_ cloudFlags: [String: FeatureFlag]) async {
@@ -118,7 +118,7 @@ public final class FeatureFlagManager: ObservableObject, Sendable {
             analytics.trackFlagChange(flagName, change: change)
         }
 
-        logger.info("Updated \\(cloudFlags.count) feature flags (\\(changedFlags.count) changed)")
+        logger.debug("Updated \\(cloudFlags.count) feature flags (\\(changedFlags.count) changed)")
     }
 
     private func findChangedFlags(old: [String: FeatureFlag], new: [String: FeatureFlag]) -> [String: FlagChange] {
@@ -228,10 +228,20 @@ public struct FlagMetadata: Codable, Sendable {
     }
 }
 
+/// Condition operator for flag evaluation
+public enum ConditionOperator: String, Codable, Sendable {
+    case equals
+    case notEquals
+    case greaterThan
+    case lessThan
+    case contains
+    case matches
+}
+
 /// Flag evaluation conditions
 public struct FlagCondition: Codable, Sendable {
     public let type: ConditionType
-    public let operator: ConditionOperator
+    public let `operator`: ConditionOperator
     public let value: String
 
     public enum ConditionType: String, Codable, Sendable {
@@ -240,15 +250,6 @@ public struct FlagCondition: Codable, Sendable {
         case deviceModel
         case userProperty
         case timeWindow
-    }
-
-    public enum ConditionOperator: String, Codable, Sendable {
-        case equals
-        case notEquals
-        case greaterThan
-        case lessThan
-        case contains
-        case matches
     }
 }
 
@@ -268,7 +269,7 @@ public struct UserSegment: Codable, Sendable, Identifiable {
 
     public struct SegmentCriterion: Codable, Sendable {
         public let property: String
-        public let operator: ConditionOperator
+        public let `operator`: ConditionOperator
         public let value: String
     }
 }
@@ -316,7 +317,7 @@ private final class FeatureFlagCache {
             let flags = try JSONDecoder().decode([String: FeatureFlag].self, from: data)
             return flags
         } catch {
-            logger.info("No cached feature flags found or failed to load: \\(error)")
+            logger.debug("No cached feature flags found or failed to load: \\(error)")
             return [:]
         }
     }

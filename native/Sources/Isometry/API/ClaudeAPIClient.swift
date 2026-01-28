@@ -54,7 +54,7 @@ public actor ClaudeAPIClient {
             throw ClaudeError(type: .authentication, message: message)
         }
 
-        logger.info("Sending Claude API request: \(request.debugDescription)")
+        logger.debug("Sending Claude API request: \(request.debugDescription)")
 
         return try await sendRequestWithRetry(request: request)
     }
@@ -68,7 +68,7 @@ public actor ClaudeAPIClient {
                 let response = try await sendSingleRequest(request: request)
 
                 // Log successful request
-                logger.info("Claude API request succeeded on attempt \(attempt + 1)")
+                logger.debug("Claude API request succeeded on attempt \(attempt + 1)")
                 return response
 
             } catch let error as ClaudeError {
@@ -172,7 +172,7 @@ public actor ClaudeAPIClient {
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             let claudeResponse = try decoder.decode(ClaudeResponse.self, from: data)
 
-            logger.info("Claude API response decoded successfully: \(claudeResponse.debugDescription)")
+            logger.debug("Claude API response decoded successfully: \(claudeResponse.debugDescription)")
             return claudeResponse
 
         } catch {
@@ -275,7 +275,7 @@ extension ClaudeAPIClient {
         let duration = CFAbsoluteTimeGetCurrent() - startTime
 
         // Log performance metrics
-        logger.info("Claude API call completed in \(Int(duration * 1000))ms (tokens: \(response.usage.totalTokens))")
+        logger.debug("Claude API call completed in \(Int(duration * 1000))ms (tokens: \(response.usage.totalTokens))")
 
         // Track with performance monitor if available
         #if canImport(Isometry)

@@ -144,7 +144,7 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
         evaluationMetrics = EvaluationMetrics()
         performanceMetrics = PerformanceMetrics()
         storage.clearAllData()
-        logger.info("Cleared all feature flag analytics data")
+        logger.debug("Cleared all feature flag analytics data")
     }
 
     // MARK: - Private Methods
@@ -318,14 +318,14 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
             }
     }
 
-    private func identifyPerformanceIssues() -> [PerformanceIssue] {
-        var issues: [PerformanceIssue] = []
+    private func identifyPerformanceIssues() -> [FeatureFlagPerformanceIssue] {
+        var issues: [FeatureFlagPerformanceIssue] = []
 
         // Check for slow flag evaluations
         for (flagName, stats) in flagUsageStats {
             let report = getAnalyticsReport(for: flagName)
             if let avgTime = report?.averageEvaluationTime, avgTime > 0.001 { // 1ms threshold
-                issues.append(PerformanceIssue(
+                issues.append(FeatureFlagPerformanceIssue(
                     type: .slowEvaluation,
                     flagName: flagName,
                     description: "Flag evaluation taking \(String(format: "%.3f", avgTime * 1000))ms on average",
@@ -336,7 +336,7 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
 
         // Check for high CPU impact
         if performanceMetrics.highestCpuImpact > 0.1 { // 10% CPU threshold
-            issues.append(PerformanceIssue(
+            issues.append(FeatureFlagPerformanceIssue(
                 type: .highCpuUsage,
                 flagName: performanceMetrics.highestCpuFlag ?? "unknown",
                 description: "High CPU usage: \(String(format: "%.1f", performanceMetrics.highestCpuImpact * 100))%",
@@ -520,7 +520,7 @@ public struct AnalyticsDashboard: Sendable {
     public let performanceMetrics: PerformanceMetrics
     public let flagUsageStats: [String: FlagUsageStats]
     public let topFlags: [TopFlag]
-    public let performanceIssues: [PerformanceIssue]
+    public let performanceIssues: [FeatureFlagPerformanceIssue]
     public let recommendations: [AnalyticsRecommendation]
 }
 
@@ -533,7 +533,7 @@ public struct TopFlag: Sendable {
 }
 
 /// Performance issue identification
-public struct PerformanceIssue: Sendable {
+public struct FeatureFlagPerformanceIssue: Sendable {
     public let type: IssueType
     public let flagName: String
     public let description: String

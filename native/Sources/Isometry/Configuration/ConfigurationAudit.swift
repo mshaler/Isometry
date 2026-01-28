@@ -9,7 +9,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     // MARK: - Published Properties
 
     @Published public private(set) var auditEntries: [AuditEntry] = []
-    @Published public private(set) var complianceStatus: ConfigurationAudit.ComplianceStatus = ConfigurationAudit.ComplianceStatus()
+    @Published public private(set) var complianceStatus: ComplianceStatus = ComplianceStatus()
 
     // MARK: - Private Properties
 
@@ -33,7 +33,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     // MARK: - Public API
 
     /// Record a configuration change in the audit trail
-    public func recordChange(_ change: ConfigurationChange) {
+    public func recordChange(_ change: ConfigurationChange) throws {
         let entry = AuditEntry(
             id: UUID(),
             action: .configurationChanged,
@@ -46,12 +46,12 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             metadata: createChangeMetadata(change)
         )
 
-        addAuditEntry(entry)
-        logger.info("Recorded configuration change: \\(change.key)")
+        try addAuditEntry(entry)
+        logger.debug("Recorded configuration change: \(change.key)")
     }
 
     /// Record configuration access (read) event
-    public func recordAccess(_ key: String, environment: String?, source: String = "application") {
+    public func recordAccess(_ key: String, environment: String?, source: String = "application") throws {
         let entry = AuditEntry(
             action: .configurationAccessed,
             configurationKey: key,
@@ -60,7 +60,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             timestamp: Date()
         )
 
-        addAuditEntry(entry)
+        try addAuditEntry(entry)
         logger.debug("Recorded configuration access: \\(key)")
     }
 
@@ -69,7 +69,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         _ key: String,
         result: ValidationResult,
         environment: String? = nil
-    ) {
+    ) throws {
         let action: AuditAction = result.isValid ? .validationPassed : .validationFailed
 
         let entry = AuditEntry(
@@ -81,13 +81,13 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             metadata: [
                 "validation_errors": result.errors.joined(separator: ", "),
                 "validation_warnings": result.warnings.joined(separator: ", "),
-                "error_count": result.errors.count,
-                "warning_count": result.warnings.count
+                "error_count": String(result.errors.count),
+                "warning_count": String(result.warnings.count)
             ]
         )
 
-        addAuditEntry(entry)
-        logger.info("Recorded validation result for \\(key): \\(result.isValid ? "passed" : "failed")")
+        try addAuditEntry(entry)
+        logger.debug("Recorded validation result for \(key): \(result.isValid ? "passed" : "failed")")
     }
 
     /// Record security event related to configuration
@@ -96,7 +96,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         eventType: SecurityEventType,
         details: String,
         severity: SecuritySeverity = .medium
-    ) {
+    ) throws {
         let entry = AuditEntry(
             action: .securityEvent,
             configurationKey: key,
@@ -109,10 +109,10 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             ]
         )
 
-        addAuditEntry(entry)
+        try addAuditEntry(entry)
         updateComplianceStatus(for: eventType, severity: severity)
 
-        logger.warning("Recorded security event for \\(key): \\(eventType.rawValue) (\\(severity.rawValue))")
+        logger.warning("Recorded security event for \(key): \(eventType.rawValue) (\(severity.rawValue))")
     }
 
     /// Record rollback event
@@ -122,7 +122,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         toValue: String?,
         reason: String,
         environment: String? = nil
-    ) {
+    ) throws {
         let entry = AuditEntry(
             action: .configurationRolledBack,
             configurationKey: key,
@@ -136,8 +136,8 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             ]
         )
 
-        addAuditEntry(entry)
-        logger.info("Recorded rollback for \\(key): \\(reason)")
+        try addAuditEntry(entry)
+        logger.debug("Recorded rollback for \(key): \(reason)")
     }
 
     /// Get audit history for a specific configuration key
@@ -238,24 +238,24 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     }
 
     /// Clear old audit entries (compliance retention)
-    public func cleanupOldEntries(olderThan retentionPeriod: TimeInterval) {
+    public func cleanupOldEntries(olderThan retentionPeriod: TimeInterval) throws {
         let cutoffDate = Date().addingTimeInterval(-retentionPeriod)
         let originalCount = auditEntries.count
 
         auditEntries = auditEntries.filter { $0.timestamp >= cutoffDate }
 
         // Update storage
-        storage.saveAuditEntries(auditEntries)
+        try storage.saveAuditEntries(auditEntries)
 
         let removedCount = originalCount - auditEntries.count
         if removedCount > 0 {
-            logger.info("Cleaned up \\(removedCount) old audit entries (older than \\(retentionPeriod / 86400) days)")
+            logger.debug("Cleaned up \(removedCount) old audit entries (older than \(retentionPeriod / 86400) days)")
         }
     }
 
     // MARK: - Private Methods
 
-    private func addAuditEntry(_ entry: AuditEntry) {
+    private func addAuditEntry(_ entry: AuditEntry) throws {
         auditEntries.insert(entry, at: 0)
 
         // Limit memory usage
@@ -264,13 +264,13 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         }
 
         // Store persistently
-        storage.saveAuditEntries(auditEntries)
+        try storage.saveAuditEntries(auditEntries)
     }
 
     private func loadStoredAuditEntries() {
         do {
             auditEntries = try storage.loadAuditEntries()
-            logger.info("Loaded \\(auditEntries.count) audit entries from storage")
+            logger.debug("Loaded \(auditEntries.count) audit entries from storage")
         } catch {
             logger.error("Failed to load audit entries: \\(error)")
             auditEntries = []
@@ -281,12 +281,17 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         // Compress old entries every hour
         compressionTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             Task { @MainActor in
-                self?.compressOldEntries()
+                do {
+                    try self?.compressOldEntries()
+                } catch {
+                    // Log error but don't crash - compression is not critical
+                    print("Failed to compress audit entries: \(error)")
+                }
             }
         }
     }
 
-    private func compressOldEntries() {
+    private func compressOldEntries() throws {
         let thirtyDaysAgo = Date().addingTimeInterval(-30 * 24 * 60 * 60)
         let oldEntries = auditEntries.filter { $0.timestamp < thirtyDaysAgo }
 
@@ -303,10 +308,10 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             let recentEntries = auditEntries.filter { $0.timestamp >= thirtyDaysAgo }
 
             auditEntries = recentEntries + compressedEntries
-            storage.saveAuditEntries(auditEntries)
+            try storage.saveAuditEntries(auditEntries)
 
             let removedCount = oldEntries.count - compressedEntries.count
-            logger.info("Compressed \\(removedCount) old audit entries")
+            logger.debug("Compressed \(removedCount) old audit entries")
         }
     }
 

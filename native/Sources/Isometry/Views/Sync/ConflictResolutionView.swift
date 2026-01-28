@@ -57,7 +57,9 @@ public struct ConflictResolutionView: View {
             }
             .navigationTitle("Sync Conflict")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -341,7 +343,9 @@ public struct ConflictListView: View {
             }
             .navigationTitle("Sync Conflicts")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

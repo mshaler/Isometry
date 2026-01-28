@@ -16,7 +16,9 @@ public struct ComplianceViolationsDetailView: View {
             }
             .navigationTitle("Compliance Issues")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)

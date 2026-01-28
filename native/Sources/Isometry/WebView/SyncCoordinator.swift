@@ -173,7 +173,7 @@ public class SyncCoordinator {
 
     private func startDatabaseObservation() {
         databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
-            .start(in: database.dbPool) { [weak self] db in
+            .start(in: database.getDatabasePool()) { [weak self] db in
                 // This is called on database changes
                 Task { [weak self] in
                     await self?.handleDatabaseChange(db)
@@ -313,7 +313,7 @@ public class SyncCoordinator {
         guard let id = data["id"] as? String,
               let name = data["name"] as? String,
               let content = data["content"] as? String else {
-            throw SyncError.invalidChangeData("Missing required node fields")
+            throw SyncCoordinationError.invalidChangeData("Missing required node fields")
         }
 
         return Node(
@@ -335,7 +335,7 @@ public class SyncCoordinator {
         let data = change.data.mapValues { $0.value }
 
         guard let title = data["title"] as? String else {
-            throw SyncError.invalidChangeData("Missing required notebook card fields")
+            throw SyncCoordinationError.invalidChangeData("Missing required notebook card fields")
         }
 
         let properties = data["properties"] as? [String: String] ?? [:]
@@ -411,16 +411,8 @@ public struct AnyCodable: Codable {
     }
 }
 
-/// Database observation extension
-extension IsometryDatabase {
-    var dbPool: DatabasePool {
-        // This assumes the database has a dbPool property
-        // You may need to adjust this based on your actual implementation
-        return self.dbPool
-    }
-}
 
-public enum SyncError: Error {
+public enum SyncCoordinationError: Error {
     case invalidChangeData(String)
     case conflictResolution(String)
     case databaseError(String)

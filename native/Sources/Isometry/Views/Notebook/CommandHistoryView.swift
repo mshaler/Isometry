@@ -35,7 +35,9 @@ public struct CommandHistoryView: View {
                 searchResults
             }
             .navigationTitle("Command History")
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             .searchable(
                 text: $searchText,
                 prompt: "Search commands and output..."
@@ -684,7 +686,9 @@ private struct FilterOptionsView: View {
                 }
             }
             .navigationTitle("Filter Options")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {

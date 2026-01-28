@@ -48,7 +48,9 @@ struct SQLiteImportView: View {
             }
             .navigationTitle("Database Import")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)
@@ -566,7 +568,9 @@ struct AdvancedSyncSettingsView: View {
                 }
             }
             .navigationTitle("Advanced Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {

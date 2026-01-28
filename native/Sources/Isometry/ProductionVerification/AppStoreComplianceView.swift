@@ -335,7 +335,7 @@ public struct AppStoreComplianceView: View {
 struct ComplianceAreaCard: View {
     let title: String
     let icon: String
-    let status: ComplianceStatus
+    let status: AppStoreComplianceStatus
     let description: String
 
     var body: some View {
@@ -451,7 +451,7 @@ struct ComplianceResultRow: View {
 
 // MARK: - Extensions
 
-extension ComplianceStatus {
+extension AppStoreComplianceStatus {
     var color: Color {
         switch self {
         case .compliant:

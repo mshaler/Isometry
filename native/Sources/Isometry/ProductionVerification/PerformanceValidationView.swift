@@ -22,7 +22,9 @@ public struct PerformanceValidationView: View {
             }
             .navigationTitle("Performance Validation")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             #endif
             .sheet(isPresented: $showingDetailedResults) {
                 PerformanceResultsDetailView(

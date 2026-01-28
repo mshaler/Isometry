@@ -1,11 +1,7 @@
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#elseif canImport(AppKit)
 import AppKit
-#endif
 
-/// Native markdown editor using NSTextView (macOS) or UITextView (iOS)
+/// Native markdown editor using NSTextView (macOS)
 /// Provides platform-native text editing with basic markdown syntax highlighting
 public struct MarkdownEditor: View {
     @Binding var text: String
@@ -20,11 +16,7 @@ public struct MarkdownEditor: View {
 
     public var body: some View {
         ZStack {
-            #if canImport(UIKit)
-            iOSTextEditor(text: $text, isEditing: $isEditing, coordinator: coordinator)
-            #elseif canImport(AppKit)
             macOSTextEditor(text: $text, isEditing: $isEditing, coordinator: coordinator)
-            #endif
 
             // Slash command menu overlay
             SlashCommandMenu(commandManager: coordinator.commandManager) { command in
@@ -170,7 +162,6 @@ private class EditorCoordinator: NSObject {
     // Slash command support
     private let commandManager = SlashCommandManager()
     private weak var currentTextView: NSTextView?
-    private weak var currentUITextView: UITextView?
 
     private let markdownPatterns: [(pattern: NSRegularExpression, attributes: [NSAttributedString.Key: Any])] = {
         let baseFont = {

@@ -35,7 +35,7 @@ public actor ExportManager {
     /// Initialize export manager and load templates
     public func initialize() async throws {
         try await loadTemplates()
-        logger.info("ExportManager initialized successfully")
+        logger.debug("ExportManager initialized successfully")
     }
 
     // MARK: - Export Operations
@@ -61,7 +61,7 @@ public actor ExportManager {
         activeExports.insert(exportId)
         defer { activeExports.remove(exportId) }
 
-        logger.info("Starting export for card \(cardId) in format \(format.rawValue)")
+        logger.debug("Starting export for card \(cardId) in format \(format.rawValue)")
 
         do {
             // Fetch card data
@@ -104,7 +104,7 @@ public actor ExportManager {
         activeExports.insert(exportId)
         defer { activeExports.remove(exportId) }
 
-        logger.info("Starting batch export for \(cardIds.count) cards in format \(format.rawValue)")
+        logger.debug("Starting batch export for \(cardIds.count) cards in format \(format.rawValue)")
 
         do {
             // Fetch all cards
@@ -148,7 +148,7 @@ public actor ExportManager {
         options: ExportOptions = .default
     ) async throws -> ExportResult {
 
-        logger.info("Starting folder export for folder: \(folder ?? "root")")
+        logger.debug("Starting folder export for folder: \(folder ?? "root")")
 
         // Fetch cards in folder
         let cards = try await database.getNotebookCards(inFolder: folder)
@@ -180,7 +180,7 @@ public actor ExportManager {
             }
 
             let duration = Date().timeIntervalSince(startTime)
-            logger.info("Export completed in \(String(format: "%.2f", duration))s for \(request.cards.count) cards")
+            logger.debug("Export completed in \(String(format: "%.2f", duration))s for \(request.cards.count) cards")
 
             return result
 
@@ -639,7 +639,7 @@ public actor ExportManager {
     /// Clean up temporary files and resources
     public func cleanup() async {
         activeExports.removeAll()
-        logger.info("ExportManager cleaned up")
+        logger.debug("ExportManager cleaned up")
     }
 }
 

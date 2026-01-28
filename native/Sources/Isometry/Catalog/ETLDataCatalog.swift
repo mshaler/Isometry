@@ -1,9 +1,11 @@
 import Foundation
 import GRDB
+import Combine
 
 /// GSD-based Data Catalog following Sources → Streams → Surfaces hierarchy
 /// Provides registry and discovery for ETL data assets
-public actor ETLDataCatalog {
+@MainActor
+public final class ETLDataCatalog: ObservableObject {
     private let database: IsometryDatabase
     private let versionManager: ETLVersionManager
 

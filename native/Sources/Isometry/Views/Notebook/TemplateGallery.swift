@@ -42,7 +42,9 @@ public struct TemplateGallery: View {
                 }
             }
             .navigationTitle("Templates")
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -401,7 +403,9 @@ private struct TemplatePreview: View {
                 .padding()
             }
             .navigationTitle(template.title)
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Close") {
@@ -554,7 +558,9 @@ private struct TemplateForm: View {
             }
         }
         .navigationTitle("New Template")
-        .navigationBarTitleDisplayMode(.inline)
+        #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Cancel") {

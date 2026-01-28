@@ -31,7 +31,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
     public init(
         cloudKitManager: CloudKitSyncManager,
         validation: ConfigurationValidation = ConfigurationValidation(),
-        audit: ConfigurationAudit = ConfigurationAudit()
+        audit: ConfigurationAudit
     ) {
         self.cloudKitManager = cloudKitManager
         self.validation = validation
@@ -42,6 +42,12 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         setupCloudKitSync()
         loadCachedConfigurations()
         setupHotReload()
+    }
+
+    /// Convenience initializer with default audit
+    public convenience init(cloudKitManager: CloudKitSyncManager) {
+        let audit = ConfigurationAudit()
+        self.init(cloudKitManager: cloudKitManager, audit: audit)
     }
 
     deinit {
@@ -60,7 +66,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
         guard let item = configurations[key] else {
             if let defaultValue = defaultValue {
-                logger.info("Configuration key '\\(key)' not found, using default value")
+                logger.debug("Configuration key '\\(key)' not found, using default value")
                 return defaultValue
             }
             logger.warning("Configuration key '\\(key)' not found and no default provided")
@@ -98,7 +104,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply the change
         try await applyConfigurationChange(change)
 
-        logger.info("Configuration '\\(key)' updated successfully")
+        logger.debug("Configuration '\\(key)' updated successfully")
     }
 
     /// Bulk update multiple configuration values
@@ -130,7 +136,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply all changes atomically
         try await applyConfigurationChanges(changes)
 
-        logger.info("Bulk configuration update completed for \\(changes.count) keys")
+        logger.debug("Bulk configuration update completed for \\(changes.count) keys")
     }
 
     /// Hot reload configurations from CloudKit without restart
@@ -147,7 +153,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
             // Detect and log changes
             let changedKeys = detectConfigurationChanges(old: previousConfigs, new: configurations)
             if !changedKeys.isEmpty {
-                logger.info("Hot reload completed - \\(changedKeys.count) configuration keys updated: \\(changedKeys.joined(separator: ", "))")
+                logger.debug("Hot reload completed - \\(changedKeys.count) configuration keys updated: \\(changedKeys.joined(separator: ", "))")
 
                 // Audit the hot reload
                 for key in changedKeys {
@@ -208,7 +214,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         )
 
         try await applyConfigurationChange(rollbackChange)
-        logger.info("Configuration '\\(key)' rolled back successfully")
+        logger.debug("Configuration '\\(key)' rolled back successfully")
     }
 
     /// Export configurations for backup or migration
@@ -258,7 +264,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
         // Apply all configurations
         await updateConfigurations(exportData.configurations)
-        logger.info("Configuration import completed - \\(exportData.configurations.count) keys imported")
+        logger.debug("Configuration import completed - \\(exportData.configurations.count) keys imported")
     }
 
     // MARK: - Private Methods
@@ -272,7 +278,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         environment = .production
         #endif
 
-        logger.info("Detected environment: \\(environment.rawValue)")
+        logger.debug("Detected environment: \\(environment.rawValue)")
     }
 
     private func setupCloudKitSync() {
@@ -293,7 +299,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply environment-specific defaults
         applyEnvironmentDefaults()
 
-        logger.info("Loaded \\(cachedConfigs.count) cached configurations")
+        logger.debug("Loaded \\(cachedConfigs.count) cached configurations")
     }
 
     private func applyEnvironmentDefaults() {
@@ -629,7 +635,7 @@ private final class ConfigurationCache {
             let configs = try JSONDecoder().decode([String: ConfigurationItem].self, from: data)
             return configs
         } catch {
-            logger.info("No cached configurations found or failed to load: \\(error)")
+            logger.debug("No cached configurations found or failed to load: \\(error)")
             return [:]
         }
     }

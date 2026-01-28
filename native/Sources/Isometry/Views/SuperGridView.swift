@@ -87,7 +87,9 @@ public struct SuperGridView: View {
         }
         .navigationTitle("SuperGrid")
         #if os(iOS)
-        .navigationBarTitleDisplayMode(.inline)
+        #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
         .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)
         }
@@ -596,11 +598,7 @@ struct OptimizedGridCanvas: View {
 }
 
 // MARK: - Render Quality Enum
-enum RenderQuality {
-    case reduced    // Minimal rendering for performance
-    case full       // Standard rendering
-    case enhanced   // High-quality rendering for HiDPI
-}
+// Using RenderQuality from VisualizationCanvas.swift
 
 // MARK: - Grid Headers Overlay
 /// SwiftUI overlay for column and row headers with header spanning support

@@ -71,6 +71,10 @@ public actor IsometryDatabase {
         return try await dbPool.read(block)
     }
 
+    public func write<T>(_ block: (Database) throws -> T) async throws -> T {
+        return try await dbPool.write(block)
+    }
+
     // MARK: - Node CRUD
 
     /// Creates a new node

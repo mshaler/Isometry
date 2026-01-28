@@ -470,7 +470,7 @@ public struct ContentAnalysis {
     public let contentHash: String
     public let detectedMimeType: String
     public let contentType: ContentType
-    public let extractedMetadata: [String: Any]
+    public let extractedMetadata: [String: AnyCodable]
 }
 
 public enum ContentType: String, Codable, CaseIterable, Sendable {
@@ -527,7 +527,7 @@ public struct StoredContent: Codable, Sendable, Identifiable {
     public let compressedSize: Int
     public let storagePath: String
     public let contentType: ContentType
-    public let extractedMetadata: [String: Any]
+    public let extractedMetadata: [String: AnyCodable]
     public let createdAt: Date
     public let accessedAt: Date
     public let accessCount: Int
@@ -544,7 +544,7 @@ public struct ContentReference: Codable, Sendable, Identifiable {
     public let id: UUID
     public let contentId: UUID
     public let referenceName: String?
-    public let metadata: [String: Any]
+    public let metadata: [String: AnyCodable]
     public let createdAt: Date
 }
 

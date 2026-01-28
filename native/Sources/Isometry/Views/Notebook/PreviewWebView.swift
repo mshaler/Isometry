@@ -164,14 +164,14 @@ public struct PreviewWebView: View {
 
         let request = URLRequest(url: url)
         webView?.load(request)
-        logger.info("Loading URL: \(url.absoluteString)")
+        logger.debug("Loading URL: \(url.absoluteString)")
     }
 
     /// Load HTML content directly
     public func loadHTML(_ html: String, baseURL: URL? = nil) {
         let sanitizedHTML = sanitizeHTML(html)
         webView?.loadHTMLString(sanitizedHTML, baseURL: baseURL)
-        logger.info("Loading HTML content (length: \(html.count))")
+        logger.debug("Loading HTML content (length: \(html.count))")
     }
 
     /// Load local file from app document directory
@@ -190,7 +190,7 @@ public struct PreviewWebView: View {
         }
 
         webView?.loadFileURL(fileURL, allowingReadAccessTo: fileURL.deletingLastPathComponent())
-        logger.info("Loading local file: \(path)")
+        logger.debug("Loading local file: \(path)")
     }
 
     /// Execute JavaScript with security validation
@@ -396,7 +396,7 @@ private class WebViewCoordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         isLoading = false
-        logger.info("Successfully loaded: \(webView.url?.absoluteString ?? "unknown")")
+        logger.debug("Successfully loaded: \(webView.url?.absoluteString ?? "unknown")")
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {

@@ -112,7 +112,7 @@ public struct VisualizationCanvas: View {
             }
         }
         .sheet(item: $selectedCard) { card in
-            CardDetailView(card: card)
+            VisualizationCardDetailView(card: card)
         }
         .task {
             await dataAdapter.initialize()
@@ -432,7 +432,7 @@ public struct VisualizationCanvas: View {
             renderQuality = .full
         }
         #elseif os(macOS)
-        renderQuality = displayScale > 1.5 ? .enhanced : .full
+        renderQuality = displayScale > 1.5 ? RenderQuality.enhanced : RenderQuality.full
         #endif
     }
 
@@ -450,6 +450,20 @@ public struct VisualizationCanvas: View {
             return .red.opacity(0.7)
         default:
             return .gray.opacity(0.7)
+        }
+    }
+
+    private func nodeColor(for node: HierarchyNode) -> Color {
+        // Use a hierarchy-based color scheme
+        switch node.level {
+        case 0:
+            return .blue.opacity(0.8)  // Root level
+        case 1:
+            return .green.opacity(0.7) // First level
+        case 2:
+            return .orange.opacity(0.7) // Second level
+        default:
+            return .gray.opacity(0.6)  // Deeper levels
         }
     }
 
@@ -855,7 +869,7 @@ struct PerformanceIndicator: View {
 
 // MARK: - Card Detail View (Placeholder)
 
-struct CardDetailView: View {
+struct VisualizationCardDetailView: View {
     let card: VisualizationNotebookCard
 
     var body: some View {
@@ -876,7 +890,11 @@ struct CardDetailView: View {
             }
             .padding()
             .navigationTitle("Card Details")
-            .navigationBarTitleDisplayMode(.inline)
+            #if os(iOS)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
+            #endif
         }
     }
 }

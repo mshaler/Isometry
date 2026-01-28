@@ -497,14 +497,3 @@ extension ETLOperationTemplate {
         }
     }
 }
-
-extension ETLResultStatus {
-    var isSuccess: Bool {
-        switch self {
-        case .success, .partialSuccess:
-            return true
-        case .failed:
-            return false
-        }
-    }
-}

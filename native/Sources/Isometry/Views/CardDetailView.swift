@@ -189,7 +189,9 @@ struct CardDetailView: View {
             }
             .navigationTitle("Card Details")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

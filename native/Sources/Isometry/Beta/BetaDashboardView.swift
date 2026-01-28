@@ -34,10 +34,12 @@ public struct BetaDashboardView: View {
             }
             .navigationTitle("Beta Dashboard")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.large)
+#endif
             #endif
             .sheet(isPresented: $showingFeedback) {
-                BetaFeedbackView(betaManager: betaManager)
+                BetaFeedbackView()
             }
             .sheet(isPresented: $showingInstructions) {
                 BetaInstructionsView(betaVersion: betaManager.betaVersion)

@@ -17,7 +17,9 @@ public struct PerformanceResultsDetailView: View {
             }
             .navigationTitle("Performance Details")
             #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            #if canImport(UIKit)
+.navigationBarTitleDisplayMode(.inline)
+#endif
             #endif
             .toolbar {
                 #if os(iOS)
