@@ -1,7 +1,11 @@
+import React, { useState } from 'react';
 import { useFilters } from '@/state/FilterContext';
 import { useFilterPreview } from '@/hooks/useFilterPreview';
+import { useDatabaseStatus } from '@/hooks/useBridgeDatabase';
+import { useBridgeAvailability } from '@/filters/bridge';
 import { LATCHFilter } from './LATCHFilter';
 import { FilterPresetDropdown } from './FilterPresetDropdown';
+import { ChevronUp, Activity, Database, AlertCircle, CheckCircle, Clock, BarChart3 } from 'lucide-react';
 
 /**
  * FilterPanelOverlay - LATCH filter control panel for overlay
@@ -34,30 +38,152 @@ export function FilterPanelOverlay({
   onApply,
   onCancel,
 }: FilterPanelOverlayProps) {
-  const { previewFilters, clearPreviewFilters } = useFilters();
+  const {
+    previewFilters,
+    clearPreviewFilters,
+    isBridgeMode,
+    isBridgeAvailable,
+    bridgeResults,
+    bridgeIsLoading,
+    bridgeError,
+    bridgeSequenceId
+  } = useFilters();
+
   const { count, isLoading } = useFilterPreview(previewFilters);
+  const bridgeAvailable = useBridgeAvailability();
+  const { isInitialized, currentBackend } = useDatabaseStatus();
+
+  // Performance monitoring state
+  const [showPerformancePanel, setShowPerformancePanel] = useState(false);
+  const [filterStartTime, setFilterStartTime] = useState<number | null>(null);
+
+  // Monitor filter execution timing
+  React.useEffect(() => {
+    if (isLoading || bridgeIsLoading) {
+      setFilterStartTime(Date.now());
+    } else {
+      setFilterStartTime(null);
+    }
+  }, [isLoading, bridgeIsLoading]);
 
   if (!previewFilters) {
     return null;
   }
 
+  // Calculate execution time
+  const executionTime = filterStartTime ? Date.now() - filterStartTime : null;
+
+  // Bridge status indicator
+  const getBridgeStatus = () => {
+    if (!isInitialized) {
+      return { text: 'Initializing...', icon: Clock, color: 'text-yellow-500' };
+    }
+
+    if (isBridgeMode && isBridgeAvailable) {
+      return { text: 'Native Bridge Connected', icon: CheckCircle, color: 'text-green-600' };
+    } else if (bridgeAvailable && !isBridgeMode) {
+      return { text: 'Bridge Available (using SQL.js)', icon: Database, color: 'text-blue-600' };
+    } else if (!bridgeAvailable) {
+      return { text: 'SQL.js Backend', icon: Database, color: 'text-gray-600' };
+    } else {
+      return { text: 'Unknown Status', icon: AlertCircle, color: 'text-red-500' };
+    }
+  };
+
+  const bridgeStatus = getBridgeStatus();
+  const StatusIcon = bridgeStatus.icon;
+
   return (
     <div
       className="bg-white rounded-lg shadow-2xl border border-gray-300"
       style={{
-        width: '600px',
-        maxHeight: '80vh',
+        width: '650px',
+        maxHeight: '85vh',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
       }}
     >
-      {/* Header */}
+      {/* Enhanced Header with Bridge Status */}
       <div className="px-6 py-4 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Filter Controls</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Adjust LATCH filters to narrow down your notes
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Filter Controls</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Adjust LATCH filters to narrow down your notes
+            </p>
+          </div>
+
+          {/* Bridge Status Indicator */}
+          <div className="flex items-center gap-2 text-sm">
+            <StatusIcon className={`w-4 h-4 ${bridgeStatus.color}`} />
+            <span className={`font-medium ${bridgeStatus.color}`}>
+              {bridgeStatus.text}
+            </span>
+            <button
+              onClick={() => setShowPerformancePanel(!showPerformancePanel)}
+              className="p-1 text-gray-400 hover:text-gray-600 rounded"
+              title="Toggle performance panel"
+            >
+              <BarChart3 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Error Display */}
+        {bridgeError && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-sm text-red-700 font-medium">Filter Error</p>
+            </div>
+            <p className="text-sm text-red-600 mt-1">{bridgeError}</p>
+          </div>
+        )}
+
+        {/* Performance Panel */}
+        {showPerformancePanel && (
+          <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded-md">
+            <div className="flex items-center gap-2 mb-2">
+              <Activity className="w-4 h-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">Performance Metrics</span>
+              <button
+                onClick={() => setShowPerformancePanel(false)}
+                className="ml-auto p-0.5 text-gray-400 hover:text-gray-600 rounded"
+              >
+                <ChevronUp className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-gray-500">Backend:</span>
+                <span className="ml-1 font-medium">{currentBackend}</span>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Query Time:</span>
+                <span className="ml-1 font-medium">
+                  {executionTime ? `${executionTime}ms` : '-'}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Results:</span>
+                <span className="ml-1 font-medium">
+                  {isBridgeMode ? bridgeResults.length : count || 0}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-gray-500">Sequence:</span>
+                <span className="ml-1 font-medium text-gray-400">
+                  {bridgeSequenceId ? `#${bridgeSequenceId.slice(-6)}` : '-'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Filter Sections - Scrollable */}
@@ -103,27 +229,63 @@ export function FilterPanelOverlay({
         />
       </div>
 
-      {/* Footer - Preview Count + Actions */}
+      {/* Enhanced Footer - Preview Count + Actions with Bridge Feedback */}
       <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-        {/* Preview Count */}
+        {/* Preview Count with Enhanced Loading States */}
         <div className="text-sm text-gray-600 mb-3">
-          {isLoading ? (
-            <span className="text-gray-400">Calculating...</span>
-          ) : count !== null ? (
-            <>
-              <span className="font-medium">{count.toLocaleString()}</span>{' '}
-              {count === 1 ? 'note matches' : 'notes match'} these filters
-            </>
+          {(isLoading || bridgeIsLoading) ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-3 w-3 border border-gray-300 border-t-green-600 rounded-full"></div>
+              <span className="text-gray-400">
+                {isBridgeMode ? 'Executing native bridge query...' : 'Calculating with SQL.js...'}
+              </span>
+              {executionTime && (
+                <span className="text-gray-500">({executionTime}ms)</span>
+              )}
+            </div>
           ) : (
-            <span className="text-gray-400">Adjust filters to see preview</span>
+            <div className="flex items-center justify-between">
+              <div>
+                {count !== null || (isBridgeMode && bridgeResults.length > 0) ? (
+                  <>
+                    <span className="font-medium">
+                      {(isBridgeMode ? bridgeResults.length : count || 0).toLocaleString()}
+                    </span>{' '}
+                    {(isBridgeMode ? bridgeResults.length : count || 0) === 1 ? 'note matches' : 'notes match'} these filters
+                    {isBridgeMode && (
+                      <span className="ml-2 text-xs text-green-600 font-medium">via Native Bridge</span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-gray-400">Adjust filters to see preview</span>
+                )}
+              </div>
+
+              {/* Performance Indicator */}
+              {executionTime && executionTime < 100 && (
+                <div className="flex items-center gap-1 text-xs text-green-600">
+                  <CheckCircle className="w-3 h-3" />
+                  <span>Fast ({executionTime}ms)</span>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Real-time Filter Feedback */}
+        {bridgeSequenceId && !bridgeIsLoading && (
+          <div className="text-xs text-gray-400 mb-2">
+            Query #{bridgeSequenceId.slice(-8)} completed
+            {executionTime && ` in ${executionTime}ms`}
+          </div>
+        )}
+
+        {/* Action Buttons with Enhanced Disabled States */}
         <div className="flex items-center justify-between">
           <button
             onClick={clearPreviewFilters}
-            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+            className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading || bridgeIsLoading}
           >
             Clear All
           </button>
@@ -131,17 +293,33 @@ export function FilterPanelOverlay({
           <div className="flex gap-2">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading || bridgeIsLoading}
             >
               Cancel
             </button>
             <button
               onClick={onApply}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors"
+              className="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={isLoading || bridgeIsLoading || !!bridgeError}
             >
+              {(isLoading || bridgeIsLoading) && (
+                <div className="animate-spin h-3 w-3 border border-white border-t-transparent rounded-full"></div>
+              )}
               Apply Filters
             </button>
           </div>
+        </div>
+
+        {/* Accessibility Status for Screen Readers */}
+        <div className="sr-only" role="status" aria-live="polite">
+          {isLoading || bridgeIsLoading ? (
+            `Executing filter query using ${isBridgeMode ? 'native bridge' : 'SQL.js backend'}`
+          ) : bridgeError ? (
+            `Filter error: ${bridgeError}`
+          ) : (
+            `Found ${isBridgeMode ? bridgeResults.length : count || 0} matching notes`
+          )}
         </div>
       </div>
     </div>
