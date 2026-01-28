@@ -99,7 +99,7 @@ public struct PropertyField: View {
         if error != nil {
             return .red
         } else if isFocused {
-            return .accent
+            return Color.blue
         } else {
             return .separator
         }
@@ -423,8 +423,8 @@ private struct TagChip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(.accent.opacity(0.1))
-        .foregroundStyle(.accent)
+        .background(Color.blue.opacity(0.1))
+        .foregroundStyle(Color.blue)
         .clipShape(Capsule())
     }
 }

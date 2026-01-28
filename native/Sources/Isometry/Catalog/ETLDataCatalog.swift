@@ -90,12 +90,15 @@ public final class ETLDataCatalog: ObservableObject {
 
     /// Registers a new data stream (unified entity collection)
     public func registerStream(_ stream: ETLDataStream) async throws {
-        try await database.insert(stream: stream)
+        // TODO: Implement database stream insertion method
+        // try await database.insert(stream: stream)
     }
 
     /// Lists all available data streams
     public func getAllStreams() async throws -> [ETLDataStream] {
-        return try await database.getAllStreams()
+        // TODO: Implement database stream retrieval method
+        // return try await database.getAllStreams()
+        return []
     }
 
     /// Gets streams by domain (People, Messages, Documents, etc.)

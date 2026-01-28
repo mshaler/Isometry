@@ -72,7 +72,7 @@ public struct SlashCommandMenu: View {
             HStack(spacing: 6) {
                 Image(systemName: "command.circle.fill")
                     .font(.subheadline)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.blue)
 
                 Text("Commands")
                     .font(.subheadline)
@@ -238,7 +238,7 @@ private struct CommandRow: View {
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.subheadline)
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(Color.blue)
                 }
             }
             .padding(.horizontal, 16)
@@ -253,7 +253,7 @@ private struct CommandRow: View {
     }
 
     private var selectionBackgroundColor: Color {
-        .accent.opacity(0.1)
+        Color.blue.opacity(0.1)
     }
 }
 
@@ -310,7 +310,7 @@ public struct GroupedSlashCommandMenu: View {
     private var menuHeader: some View {
         HStack {
             Image(systemName: "command.circle.fill")
-                .foregroundStyle(.accent)
+                .foregroundStyle(Color.blue)
 
             Text("Commands")
                 .fontWeight(.semibold)
@@ -471,7 +471,7 @@ private struct CompactCommandButton: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(isSelected ? .accent : .clear)
+            .background(isSelected ? Color.blue : .clear)
             .foregroundStyle(isSelected ? .white : .primary)
             .clipShape(Capsule())
         }
