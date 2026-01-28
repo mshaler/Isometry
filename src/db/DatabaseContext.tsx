@@ -31,6 +31,17 @@ interface DatabaseContextValue {
  */
 function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
   const { environment, isLoading } = useEnvironment();
+  const [stuckLoading, setStuckLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isLoading) {
+      setStuckLoading(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => setStuckLoading(true), 2500);
+    return () => clearTimeout(timeoutId);
+  }, [isLoading]);
 
   // Set up development performance reporting
   React.useEffect(() => {
@@ -46,7 +57,7 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Show loading state while environment is being detected
-  if (isLoading) {
+  if (isLoading && !stuckLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -54,6 +65,14 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
           <p className="text-gray-600">Detecting database environment...</p>
         </div>
       </div>
+    );
+  }
+  if (isLoading && stuckLoading) {
+    console.warn('Environment detection stuck; falling back to fallback database mode.');
+    return (
+      <FallbackDatabaseProvider>
+        {children}
+      </FallbackDatabaseProvider>
     );
   }
 

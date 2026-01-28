@@ -59,15 +59,22 @@ export function EnvironmentProvider({
   forcedMode,
   enableAutoDetection = true
 }: EnvironmentProviderProps) {
+  const initialMode =
+    forcedMode && forcedMode !== DatabaseMode.AUTO
+      ? forcedMode
+      : DatabaseMode.HTTP_API;
+
   const [environment, setEnvironment] = useState<EnvironmentInfo>({
-    mode: DatabaseMode.HTTP_API,
-    capabilities: getCapabilities(DatabaseMode.HTTP_API),
+    mode: initialMode,
+    capabilities: getCapabilities(initialMode),
     platform: 'browser',
     version: '1.0',
     isNative: false,
     performanceProfile: 'medium'
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(
+    enableAutoDetection && !(forcedMode && forcedMode !== DatabaseMode.AUTO)
+  );
   const [error, setError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
 
@@ -236,6 +243,12 @@ export function EnvironmentProvider({
    * Initialize environment detection
    */
   const initializeEnvironment = async (): Promise<void> => {
+    if (!enableAutoDetection && forcedMode && forcedMode !== DatabaseMode.AUTO) {
+      setEnvironment(createEnvironmentInfo(forcedMode));
+      setIsLoading(false);
+      return;
+    }
+
     if (!enableAutoDetection && !forcedMode) {
       return;
     }

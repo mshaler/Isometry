@@ -41,11 +41,11 @@ export function UnifiedApp() {
       <ThemeProvider>
         <EnvironmentProvider>
           <DatabaseProvider>
-            <NotebookProvider>
-              <CacheInvalidationProvider>
-                <AppStateProvider>
-                  <FilterProvider>
-                    <PAFVProvider>
+            <CacheInvalidationProvider>
+              <AppStateProvider>
+                <FilterProvider>
+                  <PAFVProvider>
+                    <NotebookProvider>
                   <div className="h-screen flex flex-col bg-gray-50">
                     {/* Toolbar: Menu bar + command buttons */}
                     <ErrorBoundary level="component" name="Toolbar">
@@ -90,11 +90,11 @@ export function UnifiedApp() {
                     </ErrorBoundary>
                   </div>
                   <NotificationSystem />
-                    </PAFVProvider>
-                  </FilterProvider>
-                </AppStateProvider>
-              </CacheInvalidationProvider>
-            </NotebookProvider>
+                    </NotebookProvider>
+                  </PAFVProvider>
+                </FilterProvider>
+              </AppStateProvider>
+            </CacheInvalidationProvider>
           </DatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>

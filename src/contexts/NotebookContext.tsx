@@ -37,7 +37,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const db = 'db' in databaseContext ? databaseContext.db : null;
   const execute = 'execute' in databaseContext ? databaseContext.execute : undefined;
   const errorReporting = useErrorReporting();
-  const performanceHook = useNotebookPerformance('NotebookProvider');
+  const performanceHook = useNotebookPerformance('NotebookProvider', cards.length);
 
   // Managers
   const templateManager = createTemplateManager();

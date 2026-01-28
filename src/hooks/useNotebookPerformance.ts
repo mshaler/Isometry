@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useNotebook } from '../contexts/NotebookContext';
 
 interface PerformanceMemory {
   usedJSHeapSize: number;
@@ -73,8 +72,10 @@ const PERFORMANCE_THRESHOLDS = {
 /**
  * Hook for monitoring and optimizing notebook component performance
  */
-export function useNotebookPerformance(componentName: string): UseNotebookPerformanceReturn {
-  const { cards } = useNotebook();
+export function useNotebookPerformance(
+  componentName: string,
+  cardsCount: number = 0
+): UseNotebookPerformanceReturn {
 
   const [metrics, setMetrics] = useState<PerformanceMetrics>({
     renderTime: 0,
@@ -91,16 +92,23 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
   const [isMonitoring, setIsMonitoring] = useState(false);
 
   const frameTimesRef = useRef<number[]>([]);
+  const cardsCountRef = useRef(cardsCount);
+  const isMonitoringRef = useRef(false);
   const renderCountRef = useRef(0);
   const queryTimesRef = useRef<Map<string, number[]>>(new Map());
   const renderTimesRef = useRef<Map<string, number[]>>(new Map());
   const monitoringIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const performanceObserverRef = useRef<PerformanceObserver | null>(null);
 
+  useEffect(() => {
+    cardsCountRef.current = cardsCount;
+  }, [cardsCount]);
+
   // Start performance monitoring
   const startMonitoring = useCallback(() => {
-    if (isMonitoring) return;
+    if (isMonitoringRef.current) return;
 
+    isMonitoringRef.current = true;
     setIsMonitoring(true);
 
     // Monitor frame rate
@@ -126,7 +134,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
         }
       }
 
-      if (isMonitoring) {
+      if (isMonitoringRef.current) {
         requestAnimationFrame(measureFrameRate);
       }
     };
@@ -154,7 +162,7 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
 
       setMetrics(prev => ({
         ...prev,
-        componentCount: cards.length,
+        componentCount: cardsCountRef.current,
         reRenderCount: reRendersPerSecond,
         lastMeasurement: new Date()
       }));
@@ -191,10 +199,11 @@ export function useNotebookPerformance(componentName: string): UseNotebookPerfor
       }
     }
 
-  }, [isMonitoring, componentName, cards.length]);
+  }, [componentName]);
 
   // Stop performance monitoring
   const stopMonitoring = useCallback(() => {
+    isMonitoringRef.current = false;
     setIsMonitoring(false);
 
     if (monitoringIntervalRef.current) {

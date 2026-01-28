@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { EnvironmentProvider } from './contexts/EnvironmentContext';
+import { DatabaseMode, EnvironmentProvider } from './contexts/EnvironmentContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './contexts/PAFVContext';
@@ -119,17 +119,17 @@ function MVPDemo() {
     <ErrorBoundary level="app" name="MVPDemo">
       <BrowserRouter>
         <ThemeProvider>
-          <EnvironmentProvider>
+          <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
             <DatabaseProvider>
-              <NotebookProvider>
-                <AppStateProvider>
-                  <FilterProvider>
-                    <PAFVProvider>
+              <AppStateProvider>
+                <FilterProvider>
+                  <PAFVProvider>
+                    <NotebookProvider>
                       <MVPDemoShell onShowUnified={() => setShowUnified(true)} />
-                    </PAFVProvider>
-                  </FilterProvider>
-                </AppStateProvider>
-              </NotebookProvider>
+                    </NotebookProvider>
+                  </PAFVProvider>
+                </FilterProvider>
+              </AppStateProvider>
             </DatabaseProvider>
           </EnvironmentProvider>
         </ThemeProvider>
