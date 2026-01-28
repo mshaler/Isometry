@@ -18,6 +18,12 @@ public struct DatabaseStorageStats {
     public let lastCleanup: Date
 }
 
+public struct DatabaseSurface {
+    public let id: String
+    public let name: String
+    public let description: String
+}
+
 /// Thread-safe database actor for Isometry
 ///
 /// Provides all CRUD operations, full-text search, and graph traversal
@@ -1039,7 +1045,7 @@ public actor IsometryDatabase {
             sql += " ORDER BY h.timestamp DESC LIMIT ?"
             arguments.append(limit)
 
-            return try HistoryEntry.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: arguments)
         }
     }
 
@@ -1256,7 +1262,7 @@ extension IsometryDatabase {
         // TODO: Implement content deletion
     }
 
-    public func getSurfaces() async throws -> [Surface] {
+    public func getSurfaces() async throws -> [DatabaseSurface] {
         // TODO: Implement surface retrieval
         return []
     }

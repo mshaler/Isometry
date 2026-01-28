@@ -238,7 +238,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
             // Bind parameters if provided
             if !sqlParams.isEmpty {
-                try rows.setArguments(StatementArguments(sqlParams))
+                try rows.setArguments(sqlParams)
             }
 
             // Execute and collect results
@@ -290,7 +290,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
             var results: [[String: Any]] = []
             let rows = try db.makeSelectStatement(sql: sql)
-            try rows.setArguments(StatementArguments(arguments))
+            try rows.setArguments(arguments)
 
             while let row = try rows.next() {
                 var nodeData: [String: Any] = [:]
@@ -460,7 +460,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             var results: [[String: Any]] = []
             let rows = try db.makeSelectStatement(sql: sql)
             if !arguments.isEmpty {
-                try rows.setArguments(StatementArguments(arguments))
+                try rows.setArguments(arguments)
             }
 
             while let row = try rows.next() {

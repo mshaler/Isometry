@@ -679,8 +679,8 @@ public struct ExportOptions: Codable {
     let includeContent: Bool
     let includeMetadata: Bool
     let includeProperties: Bool
-    let includeTableOfContents: Bool
-    let includePageBreaks: Bool
+    var includeTableOfContents: Bool
+    var includePageBreaks: Bool
     let pageWidth: CGFloat
     let pageHeight: CGFloat
 
