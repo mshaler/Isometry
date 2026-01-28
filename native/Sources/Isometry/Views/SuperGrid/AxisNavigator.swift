@@ -236,7 +236,7 @@ public struct AxisDropZone: View {
 
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(Color(NSColor.controlBackgroundColor))
+            .fill(Color(.systemGray6))
             .stroke(
                 isDropTarget ? Color.accentColor : Color.gray.opacity(0.3),
                 lineWidth: 1
@@ -452,7 +452,7 @@ public struct AxisNavigatorView: View {
             }
         }
         .padding()
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

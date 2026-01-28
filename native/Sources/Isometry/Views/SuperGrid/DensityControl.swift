@@ -167,7 +167,7 @@ public struct DensitySliderControl: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(NSColor.controlBackgroundColor))
+                .fill(Color(.systemGray6))
                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
