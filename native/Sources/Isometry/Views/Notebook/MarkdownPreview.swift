@@ -178,35 +178,75 @@ private actor MarkdownRenderer {
 
     private func applyEmphasisStyling(_ attributedString: inout AttributedString, text: String, range: Range<String.Index>) {
         // Bold: **text** or __text__
-        applyPattern(&attributedString, text: text, pattern: "\\*\\*(.+?)\\*\\*|__(.+?)__") { match, attributedRange in
-            attributedString[attributedRange].font = .system(.body, weight: .semibold)
+        let boldPattern = "\\*\\*(.+?)\\*\\*|__(.+?)__"
+        if let regex = try? NSRegularExpression(pattern: boldPattern, options: []) {
+            let nsRange = NSRange(location: 0, length: text.utf16.count)
+            let matches = regex.matches(in: text, options: [], range: nsRange).reversed()
+            for match in matches {
+                if let range = Range(match.range, in: text),
+                   let attributedRange = Range(range, in: attributedString) {
+                    attributedString[attributedRange].font = .system(.body, weight: .semibold)
+                }
+            }
         }
 
         // Italic: *text* or _text_ (but not **text** or __text__)
-        applyPattern(&attributedString, text: text, pattern: "(?<!\\*)\\*([^*]+?)\\*(?!\\*)|(?<!_)_([^_]+?)_(?!_)") { match, attributedRange in
-            attributedString[attributedRange].font = .system(.body).italic()
+        let italicPattern = "(?<!\\*)\\*([^*]+?)\\*(?!\\*)|(?<!_)_([^_]+?)_(?!_)"
+        if let regex = try? NSRegularExpression(pattern: italicPattern, options: []) {
+            let nsRange = NSRange(location: 0, length: text.utf16.count)
+            let matches = regex.matches(in: text, options: [], range: nsRange).reversed()
+            for match in matches {
+                if let range = Range(match.range, in: text),
+                   let attributedRange = Range(range, in: attributedString) {
+                    attributedString[attributedRange].font = .system(.body).italic()
+                }
+            }
         }
     }
 
     private func applyCodeStyling(_ attributedString: inout AttributedString, text: String, range: Range<String.Index>) {
         // Inline code: `code`
-        applyPattern(&attributedString, text: text, pattern: "`([^`]+)`") { match, attributedRange in
-            attributedString[attributedRange].font = .system(.body, design: .monospaced)
-            attributedString[attributedRange].backgroundColor = Color.secondary.opacity(0.1)
+        let inlineCodePattern = "`([^`]+)`"
+        if let regex = try? NSRegularExpression(pattern: inlineCodePattern, options: []) {
+            let nsRange = NSRange(location: 0, length: text.utf16.count)
+            let matches = regex.matches(in: text, options: [], range: nsRange).reversed()
+            for match in matches {
+                if let range = Range(match.range, in: text),
+                   let attributedRange = Range(range, in: attributedString) {
+                    attributedString[attributedRange].font = .system(.body, design: .monospaced)
+                    attributedString[attributedRange].backgroundColor = Color.secondary.opacity(0.1)
+                }
+            }
         }
 
         // Code blocks: ```...```
-        applyPattern(&attributedString, text: text, pattern: "```[\\s\\S]*?```") { match, attributedRange in
-            attributedString[attributedRange].font = .system(.body, design: .monospaced)
-            attributedString[attributedRange].backgroundColor = Color.secondary.opacity(0.1)
+        let codeBlockPattern = "```[\\s\\S]*?```"
+        if let regex = try? NSRegularExpression(pattern: codeBlockPattern, options: []) {
+            let nsRange = NSRange(location: 0, length: text.utf16.count)
+            let matches = regex.matches(in: text, options: [], range: nsRange).reversed()
+            for match in matches {
+                if let range = Range(match.range, in: text),
+                   let attributedRange = Range(range, in: attributedString) {
+                    attributedString[attributedRange].font = .system(.body, design: .monospaced)
+                    attributedString[attributedRange].backgroundColor = Color.secondary.opacity(0.1)
+                }
+            }
         }
     }
 
     private func applyLinkStyling(_ attributedString: inout AttributedString, text: String, range: Range<String.Index>) {
         // Links: [text](url)
-        applyPattern(&attributedString, text: text, pattern: "\\[([^\\]]+)\\]\\(([^\\)]+)\\)") { match, attributedRange in
-            attributedString[attributedRange].foregroundColor = Color.accentColor
-            attributedString[attributedRange].underlineStyle = .single
+        let linkPattern = "\\[([^\\]]+)\\]\\(([^\\)]+)\\)"
+        if let regex = try? NSRegularExpression(pattern: linkPattern, options: []) {
+            let nsRange = NSRange(location: 0, length: text.utf16.count)
+            let matches = regex.matches(in: text, options: [], range: nsRange).reversed()
+            for match in matches {
+                if let range = Range(match.range, in: text),
+                   let attributedRange = Range(range, in: attributedString) {
+                    attributedString[attributedRange].foregroundColor = Color.accentColor
+                    attributedString[attributedRange].underlineStyle = .single
+                }
+            }
         }
     }
 
