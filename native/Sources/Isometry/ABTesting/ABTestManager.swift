@@ -624,12 +624,12 @@ public struct UserAssignment: Codable, Sendable {
 /// User criteria for experiment targeting
 public struct UserCriteria: Codable, Sendable {
     public let property: String
-    public let `operator`: String // equals, notEquals, contains, greaterThan, lessThan
+    public let operatorType: String // equals, notEquals, contains, greaterThan, lessThan
     public let value: String
 
     public init(property: String, operator operatorValue: String, value: String) {
         self.property = property
-        self.`operator` = operatorValue
+        self.operatorType = operatorValue
         self.value = value
     }
 }

@@ -9,7 +9,7 @@ public class ETLOperationManager: ObservableObject {
     internal let database: IsometryDatabase
     internal let storageManager: ContentAwareStorageManager
     internal let versionManager: ETLVersionManager
-    internal let catalog: NodeCatalog
+    internal let catalog: ETLDataCatalog
     private var operationQueue: [ETLOperation] = []
     internal var activeOperations: [UUID: ETLOperationExecution] = [:]
     internal var operationHistory: [ETLOperationResult] = []
@@ -19,11 +19,11 @@ public class ETLOperationManager: ObservableObject {
     @Published public private(set) var recentResults: [ETLOperationResult] = []
     @Published public private(set) var isExecuting = false
 
-    public init(database: IsometryDatabase, storageManager: ContentAwareStorageManager, versionManager: ETLVersionManager, catalog: NodeCatalog) {
+    public init(database: IsometryDatabase, storageManager: ContentAwareStorageManager, versionManager: ETLVersionManager) {
         self.database = database
         self.storageManager = storageManager
         self.versionManager = versionManager
-        self.catalog = catalog
+        self.catalog = ETLDataCatalog(database: database, versionManager: versionManager)
         // loadOperationHistory is actor-isolated, call asynchronously
         Task {
             await loadOperationHistory()
@@ -181,7 +181,7 @@ public class ETLOperationManager: ObservableObject {
         operationHistory = []
     }
 
-    private func saveOperationHistory() async {
+    internal func saveOperationHistory() async {
         // Save to UserDefaults or Core Data
         // Implementation would depend on chosen persistence strategy
     }
@@ -203,11 +203,26 @@ public struct ETLOperation: Identifiable, Codable, Sendable {
 public struct ETLOperationExecution: Identifiable {
     public let operation: ETLOperation
     public let startedAt: Date
-    public let progress: Double // 0.0 to 1.0
-    public let status: ETLExecutionStatus
-    public let currentPhase: ETLPhase
+    public var progress: Double // 0.0 to 1.0
+    public var status: ETLExecutionStatus
+    public var currentPhase: ETLPhase
 
     public var id: UUID { operation.id }
+}
+
+public struct ETLErrorInfo: Codable, Sendable {
+    public let message: String
+    public let code: String?
+
+    public init(error: Error) {
+        self.message = error.localizedDescription
+        self.code = nil
+    }
+
+    public init(message: String, code: String? = nil) {
+        self.message = message
+        self.code = code
+    }
 }
 
 public struct ETLOperationResult: Identifiable, Sendable {
@@ -219,7 +234,7 @@ public struct ETLOperationResult: Identifiable, Sendable {
     public let totalDuration: TimeInterval
     public let processedItems: Int
     public let importedNodes: [Node]
-    public let errors: [Error]
+    public let errors: [ETLErrorInfo]
 
     public var id: UUID { operationId }
     public var successRate: Double {
@@ -228,7 +243,7 @@ public struct ETLOperationResult: Identifiable, Sendable {
     }
 }
 
-public enum ETLOperationStatus: Codable {
+public enum ETLOperationStatus: Codable, Sendable {
     case created
     case queued
     case running
@@ -293,7 +308,7 @@ public enum ETLPhase: CaseIterable, Codable, Sendable {
 
 // MARK: - Operation Templates
 
-public struct ETLOperationTemplate: Identifiable, Codable, Hashable {
+public struct ETLOperationTemplate: Identifiable, Codable, Hashable, Sendable {
     public let id: String
     public let name: String
     public let description: String
@@ -318,7 +333,7 @@ public struct ETLOperationTemplate: Identifiable, Codable, Hashable {
     ]
 }
 
-public enum ETLCategory: String, CaseIterable, Codable {
+public enum ETLCategory: String, CaseIterable, Codable, Sendable {
     case `import` = "Import"
     case export = "Export"
     case sync = "Sync"
@@ -334,7 +349,7 @@ public enum ETLCategory: String, CaseIterable, Codable {
     }
 }
 
-public enum ETLComplexity: String, CaseIterable, Codable {
+public enum ETLComplexity: String, CaseIterable, Codable, Sendable {
     case simple = "Simple"
     case moderate = "Moderate"
     case complex = "Complex"
@@ -350,7 +365,7 @@ public enum ETLComplexity: String, CaseIterable, Codable {
     }
 }
 
-public enum ETLPermission: String, CaseIterable, Codable {
+public enum ETLPermission: String, CaseIterable, Codable, Sendable {
     case notes = "Notes Access"
     case reminders = "Reminders Access"
     case calendar = "Calendar Access"
@@ -396,7 +411,7 @@ public enum ETLSourceType: String, CaseIterable, Codable, Sendable {
     }
 }
 
-public struct ETLOperationConfiguration: Codable, Hashable, Equatable {
+public struct ETLOperationConfiguration: Codable, Hashable, Equatable, Sendable {
     public var batchSize: Int
     public var enabledSources: [ETLSourceType]
     public var outputFolder: String?

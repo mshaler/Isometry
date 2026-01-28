@@ -133,7 +133,7 @@ extension ETLOperationManager {
                 category: sourceType.category,
                 type: sourceType,
                 connectionString: nil,
-                configuration: [:],
+                configuration: ETLSourceConfiguration(),
                 status: .configured,
                 healthMetrics: nil,
                 createdAt: Date(),
@@ -359,13 +359,13 @@ extension ETLOperationManager {
         let failedResult = ETLOperationResult(
             operationId: operationId,
             operation: activeOperations[operationId]?.operation ?? createDummyOperation(),
-            status: .failed(error),
+            status: .failed(error.localizedDescription),
             startedAt: Date(),
             completedAt: Date(),
             totalDuration: 0,
             processedItems: 0,
             importedNodes: [],
-            errors: [error]
+            errors: [ETLErrorInfo(error: error)]
         )
 
         operationHistory.append(failedResult)
@@ -376,7 +376,7 @@ extension ETLOperationManager {
         ETLOperation(
             id: UUID(),
             template: .appleNotesImport,
-            configuration: ETLOperationConfiguration(),
+            configuration: .default,
             createdAt: Date(),
             status: .failed
         )
@@ -484,7 +484,7 @@ extension ETLOperationTemplate {
             return .events
         case .safariDataImport:
             return .documents
-        case .fileSystemImport:
+        case .bulkOfficeImport:
             return .documents
         case .sqliteDatabaseImport:
             return .system
