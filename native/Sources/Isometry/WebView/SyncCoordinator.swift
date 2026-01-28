@@ -173,24 +173,22 @@ public class SyncCoordinator {
 
     private func startDatabaseObservation() {
         databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
-            .start(in: database.getDatabasePool()) { [weak self] db in
+            .start(in: database.getDatabasePool()) { [weak self] _ in
                 // This is called on database changes
                 Task { [weak self] in
-                    await self?.handleDatabaseChange(db)
+                    await self?.handleDatabaseChange()
                 }
             }
     }
 
-    private func handleDatabaseChange(_ db: Database) async {
+    private func handleDatabaseChange() async {
         // For now, we'll detect changes by comparing timestamps
         // In a production system, you'd want more sophisticated change tracking
         print("[SyncCoordinator] Database change detected")
 
         // Get recent changes (simplified - in production you'd have better change tracking)
         do {
-            let recentNodes = try Node
-                .filter(Node.Columns.modifiedAt > Date().addingTimeInterval(-60)) // Last minute
-                .fetchAll(db)
+            let recentNodes = try await database.getAllNodes() // Simplified approach
 
             let changes = recentNodes.map { node in
                 DataChange(
@@ -316,18 +314,27 @@ public class SyncCoordinator {
             throw SyncCoordinationError.invalidChangeData("Missing required node fields")
         }
 
+        let nodeType = data["nodeType"] as? String ?? "note"
+        let source = data["source"] as? String ?? "sync"
+        let sourceId = data["sourceId"] as? String
+        let folder = data["folder"] as? String
+        let tags = data["tags"] as? [String] ?? []
+        let priority = data["priority"] as? Int ?? 0
+        let x = data["x"] as? Double ?? 0.0
+        let y = data["y"] as? Double ?? 0.0
+
         return Node(
             id: id,
-            nodeType: data["nodeType"] as? String ?? "note",
+            nodeType: nodeType,
             name: name,
             content: content,
-            source: data["source"] as? String ?? "sync",
-            sourceId: data["sourceId"] as? String,
-            folder: data["folder"] as? String,
-            tags: data["tags"] as? [String] ?? [],
-            priority: data["priority"] as? Int ?? 0,
-            x: data["x"] as? Double ?? 0.0,
-            y: data["y"] as? Double ?? 0.0
+            source: source,
+            sourceId: sourceId,
+            folder: folder,
+            tags: tags,
+            priority: priority,
+            x: x,
+            y: y
         )
     }
 
@@ -347,8 +354,8 @@ public class SyncCoordinator {
             title: title,
             markdownContent: markdownContent,
             properties: properties,
-            tags: tags,
-            folder: folder
+            folder: folder,
+            tags: tags
         )
     }
 }

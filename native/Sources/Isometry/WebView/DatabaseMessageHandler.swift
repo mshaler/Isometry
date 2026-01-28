@@ -20,7 +20,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
     private let performanceMonitor = MessageHandlerPerformanceMonitor()
     private let securityValidator = MessageHandlerSecurityValidator()
 
-    public init(database: IsometryDatabase? = nil) {
+    nonisolated public init(database: IsometryDatabase? = nil) {
         self.database = database
         super.init()
 
@@ -33,7 +33,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
     /**
      * Set database reference for late binding during app initialization
      */
-    public func setDatabase(_ database: IsometryDatabase) {
+    nonisolated public func setDatabase(_ database: IsometryDatabase) {
         self.database = database
     }
 
