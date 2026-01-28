@@ -84,7 +84,7 @@ public struct BackgroundExecution: Sendable {
 public struct ManagedProcess: Sendable {
     public let id: UUID
     public let process: Process
-    public let state: ManagedProcessState
+    public var state: ManagedProcessState
     public let command: String
     public let startTime: Date
     public let workingDirectory: String
@@ -222,7 +222,7 @@ public actor ProcessManager {
         try process.run()
         managedProcesses[processId]?.state = .running
 
-        logger.info("Started process \(processId): \(command)")
+        logger.debug("Started process \(processId): \(command)")
 
         // Set up monitoring
         await setupProcessMonitoring(processId: processId)
@@ -238,7 +238,7 @@ public actor ProcessManager {
             return
         }
 
-        logger.info("Terminating process \(processId): \(managedProcess.command)")
+        logger.debug("Terminating process \(processId): \(managedProcess.command)")
 
         // Update state
         managedProcess.state = .terminated
@@ -273,7 +273,7 @@ public actor ProcessManager {
             return
         }
 
-        logger.info("Force killing process \(processId): \(managedProcess.command)")
+        logger.debug("Force killing process \(processId): \(managedProcess.command)")
 
         // Immediate termination
         if managedProcess.process.isRunning {
@@ -298,7 +298,7 @@ public actor ProcessManager {
             managedProcess.state = .suspended
             managedProcesses[processId] = managedProcess
 
-            logger.info("Suspended process \(processId)")
+            logger.debug("Suspended process \(processId)")
         }
         #endif
     }
@@ -316,7 +316,7 @@ public actor ProcessManager {
             managedProcess.state = .running
             managedProcesses[processId] = managedProcess
 
-            logger.info("Resumed process \(processId)")
+            logger.debug("Resumed process \(processId)")
         }
         #endif
     }
@@ -344,7 +344,7 @@ public actor ProcessManager {
         managedProcess.state = .backgrounded
         managedProcesses[processId] = managedProcess
 
-        logger.info("Enabled background execution for process \(processId)")
+        logger.debug("Enabled background execution for process \(processId)")
     }
 
     #if canImport(AppKit)
@@ -459,7 +459,7 @@ public actor ProcessManager {
                 workingDirectory: process.workingDirectory
             )
 
-            logger.info("Process \(processId) completed")
+            logger.debug("Process \(processId) completed")
         }
     }
 
@@ -470,7 +470,7 @@ public actor ProcessManager {
         let isRunning = kill(backgroundTask.processId, 0) == 0
 
         if !isRunning || backgroundTask.isExpired {
-            logger.info("Background process \(processId) completed or expired")
+            logger.debug("Background process \(processId) completed or expired")
             await cleanupBackgroundExecution(processId: processId)
             managedProcesses.removeValue(forKey: processId)
         }
@@ -513,7 +513,7 @@ public actor ProcessManager {
     }
 
     private func handleAppBackgrounding() async {
-        logger.info("App backgrounding, managing \(managedProcesses.count) processes")
+        logger.debug("App backgrounding, managing \(managedProcesses.count) processes")
 
         // Enable background execution for any long-running processes
         for processId in managedProcesses.keys {
@@ -568,7 +568,7 @@ public actor ProcessManager {
         }
 
         if cleanedProcesses > 0 {
-            logger.info("Cleaned up \(cleanedProcesses) processes")
+            logger.debug("Cleaned up \(cleanedProcesses) processes")
         }
     }
 
