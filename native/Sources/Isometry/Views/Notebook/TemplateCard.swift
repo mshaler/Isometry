@@ -91,7 +91,7 @@ public struct TemplateCard: View {
                 if template.isBuiltIn {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.caption)
-                        .foregroundStyle(.accent)
+                        .foregroundStyle(Color.accentColor)
                         .accessibilityLabel("Built-in template")
                 }
 
@@ -185,7 +185,7 @@ public struct TemplateCard: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(.accent)
+                .background(Color.accentColor)
                 .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
@@ -253,7 +253,11 @@ public struct TemplateCard: View {
     // MARK: - Computed Properties
 
     private var cardBackgroundColor: Color {
-        .background
+        #if os(macOS)
+        Color(NSColor.controlBackgroundColor)
+        #else
+        Color(UIColor.systemBackground)
+        #endif
     }
 
     private var contentPreview: String {

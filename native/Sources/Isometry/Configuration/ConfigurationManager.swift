@@ -113,7 +113,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
         // Prepare all changes first
         for (key, value) in updates {
-            let serializedValue = try serializeValue(value)
+            let serializedValue = try serializeAnyValue(value)
             let change = ConfigurationChange(
                 key: key,
                 oldValue: configurations[key]?.value,
@@ -457,6 +457,31 @@ public final class ConfigurationManager: ObservableObject, Sendable {
             throw ConfigurationError.serializationFailed("Unable to convert data to string")
         }
         return string
+    }
+
+    private func serializeAnyValue(_ value: Any) throws -> String {
+        // Handle basic types directly
+        if let stringValue = value as? String {
+            return stringValue
+        } else if let boolValue = value as? Bool {
+            return String(boolValue)
+        } else if let intValue = value as? Int {
+            return String(intValue)
+        } else if let doubleValue = value as? Double {
+            return String(doubleValue)
+        }
+
+        // For complex types, try to serialize as JSON
+        do {
+            let data = try JSONSerialization.data(withJSONObject: value)
+            guard let string = String(data: data, encoding: .utf8) else {
+                throw ConfigurationError.serializationFailed("Unable to convert data to string")
+            }
+            return string
+        } catch {
+            // If JSON serialization fails, convert to string representation
+            return String(describing: value)
+        }
     }
 }
 

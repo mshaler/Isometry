@@ -114,7 +114,17 @@ public final class ProductionCloudKitManager: ObservableObject {
             }
 
             // Validate container access
-            let containerInfo = try await container.fetchUserRecordID()
+            let containerInfo = try await withCheckedThrowingContinuation { continuation in
+                container.fetchUserRecordID { recordID, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let recordID = recordID {
+                        continuation.resume(returning: recordID)
+                    } else {
+                        continuation.resume(throwing: ProductionCloudKitError.schemaValidationFailed(reason: "No user record ID"))
+                    }
+                }
+            }
             print("Production CloudKit validated for user: \(containerInfo.recordName)")
 
             // Validate schema if in production
@@ -252,7 +262,7 @@ public final class ProductionCloudKitManager: ObservableObject {
             report.syncStateHealthy = report.lastSyncAge < 3600 // Last sync within 1 hour
 
             // Check for pending conflicts
-            let conflicts = syncManager.getPendingConflicts()
+            let conflicts = await syncManager.getPendingConflicts()
             report.pendingConflicts = conflicts.count
             report.conflictResolutionNeeded = conflicts.count > 0
 

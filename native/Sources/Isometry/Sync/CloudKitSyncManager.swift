@@ -943,6 +943,31 @@ public actor CloudKitSyncManager {
         }
     }
 
+    // MARK: - Feature Flags
+
+    /// Fetch feature flags from CloudKit
+    public func fetchFeatureFlags() async throws -> [String: Any] {
+        let predicate = NSPredicate(format: "recordType == %@", "FeatureFlag")
+        let query = CKQuery(recordType: "FeatureFlag", predicate: predicate)
+
+        do {
+            let (records, _) = try await privateDatabase.records(matching: query, inZoneWith: syncZone.zoneID)
+
+            var flags: [String: Any] = [:]
+            for (_, record) in records {
+                if let flagName = record["name"] as? String,
+                   let flagValue = record["value"] {
+                    flags[flagName] = flagValue
+                }
+            }
+
+            return flags
+        } catch {
+            print("⚠️ Failed to fetch feature flags: \(error)")
+            return [:]
+        }
+    }
+
     // MARK: - Error Handling
 
     private func mapCKError(_ error: CKError) -> SyncError {

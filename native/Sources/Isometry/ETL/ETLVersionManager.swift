@@ -200,6 +200,48 @@ public struct ETLDataVersion: Codable, Sendable {
     }
 }
 
+// MARK: - FetchableRecord conformance
+extension ETLDataVersion: FetchableRecord {
+    public init(row: Row) {
+        self.id = UUID(uuidString: row["id"]) ?? UUID()
+        self.streamId = row["stream_id"]
+        self.versionNumber = row["version_number"]
+        self.description = row["description"]
+        self.createdAt = ISO8601DateFormatter().date(from: row["created_at"]) ?? Date()
+        self.createdBy = UUID(uuidString: row["created_by"] ?? "")
+
+        // Parse JSON metadata
+        if let metadataData = row["metadata"] as? Data,
+           let metadataDict = try? JSONSerialization.jsonObject(with: metadataData) as? [String: Any] {
+            self.metadata = ETLMetadata.from(metadataDict)
+        } else {
+            self.metadata = ETLMetadata()
+        }
+
+        self.status = ETLVersionStatus(rawValue: row["status"]) ?? .active
+    }
+}
+
+extension ETLLineageEntry: FetchableRecord {
+    public init(row: Row) {
+        self.nodeId = row["node_id"]
+        self.operationId = UUID(uuidString: row["operation_id"]) ?? UUID()
+        self.operationType = row["operation_type"]
+        self.sourceSystem = row["source_system"]
+        self.versionId = UUID(uuidString: row["version_id"]) ?? UUID()
+        self.timestamp = ISO8601DateFormatter().date(from: row["timestamp"]) ?? Date()
+
+        // Parse changes JSON
+        if let changesData = row["changes"] as? String,
+           let data = changesData.data(using: .utf8),
+           let changes = try? JSONDecoder().decode(ETLLineageChanges.self, from: data) {
+            self.changes = changes
+        } else {
+            self.changes = ETLLineageChanges()
+        }
+    }
+}
+
 public enum ETLVersionStatus: String, Codable, CaseIterable, Sendable {
     case active = "active"
     case archived = "archived"
@@ -237,7 +279,7 @@ public struct ETLVersionDiff: Sendable {
     }
 
     public var changePercentage: Double {
-        let baseCount = max(1, try! fromVersion.metadata["nodeCount"] as? Int ?? 1)
+        let baseCount = max(1, fromVersion.metadata.numericValues["nodeCount"] ?? 1)
         return Double(totalChanges) / Double(baseCount) * 100
     }
 }
@@ -400,7 +442,7 @@ extension IsometryDatabase {
                 ORDER BY version_number DESC
                 LIMIT 1
                 """
-            return try ETLDataVersion.fetchOne(db, sql: sql, arguments: [streamId])
+            return try Row.fetchOne(db, sql: sql, arguments: [streamId]).map(ETLDataVersion.init)
         }
     }
 
@@ -411,13 +453,14 @@ extension IsometryDatabase {
                 WHERE stream_id = ?
                 ORDER BY version_number DESC
                 """
-            return try ETLDataVersion.fetchAll(db, sql: sql, arguments: [streamId])
+            return try Row.fetchAll(db, sql: sql, arguments: [streamId]).map(ETLDataVersion.init)
         }
     }
 
     func getVersion(id: UUID) async throws -> ETLDataVersion? {
         return try await self.read { db in
-            try ETLDataVersion.fetchOne(db, id: id.uuidString)
+            let sql = "SELECT * FROM etl_versions WHERE id = ?"
+            return try Row.fetchOne(db, sql: sql, arguments: [id.uuidString]).map(ETLDataVersion.init)
         }
     }
 
@@ -469,7 +512,7 @@ extension IsometryDatabase {
                 WHERE n.id = ?
                 ORDER BY vc.created_at DESC
                 """
-            return try ETLLineageEntry.fetchAll(db, sql: sql, arguments: [nodeId])
+            return try Row.fetchAll(db, sql: sql, arguments: [nodeId]).map(ETLLineageEntry.init)
         }
     }
 }
