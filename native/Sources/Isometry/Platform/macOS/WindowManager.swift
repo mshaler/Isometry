@@ -344,9 +344,12 @@ private final class WindowRestorationManager {
     ) async {
         do {
             // Convert to serializable format
+            let stringContexts = contexts.reduce(into: [String: ContextConfigEntry]()) { result, pair in
+                result[pair.key.uuidString] = ContextConfigEntry(pair.value)
+            }
             let config = WindowConfiguration(
                 windows: windows.map(WindowConfigEntry.init),
-                contexts: contexts.mapValues(ContextConfigEntry.init),
+                contexts: stringContexts,
                 activeWindowId: activeWindowId
             )
 
@@ -373,9 +376,13 @@ private final class WindowRestorationManager {
 
         // Convert back from serializable format
         let windows = config.windows.map { $0.toWindowInfo() }
-        let contexts = config.contexts.mapValues { $0.toNotebookWindowContext() }
+        let uuidContexts = config.contexts.reduce(into: [UUID: WindowManager.NotebookWindowContext]()) { result, pair in
+            if let uuid = UUID(uuidString: pair.key) {
+                result[uuid] = pair.value.toNotebookWindowContext()
+            }
+        }
 
-        return (windows: windows, contexts: contexts, activeWindowId: config.activeWindowId)
+        return (windows: windows, contexts: uuidContexts, activeWindowId: config.activeWindowId)
     }
 
     /// Save individual window state
@@ -404,11 +411,8 @@ private final class WindowRestorationManager {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(windows, forKey: .windows)
 
-            // Convert UUID keys to strings
-            let stringContexts = contexts.reduce(into: [String: ContextConfigEntry]()) { result, pair in
-                result[pair.key.uuidString] = pair.value
-            }
-            try container.encode(stringContexts, forKey: .contexts)
+            // contexts is already [String: ContextConfigEntry], no conversion needed
+            try container.encode(contexts, forKey: .contexts)
             try container.encodeIfPresent(activeWindowId, forKey: .activeWindowId)
         }
 
@@ -424,11 +428,9 @@ private final class WindowRestorationManager {
             activeWindowId = try container.decodeIfPresent(UUID.self, forKey: .activeWindowId)
         }
 
-        init(windows: [WindowConfigEntry], contexts: [UUID: ContextConfigEntry], activeWindowId: UUID?) {
+        init(windows: [WindowConfigEntry], contexts: [String: ContextConfigEntry], activeWindowId: UUID?) {
             self.windows = windows
-            self.contexts = contexts.reduce(into: [String: ContextConfigEntry]()) { result, pair in
-                result[pair.key.uuidString] = pair.value
-            }
+            self.contexts = contexts
             self.activeWindowId = activeWindowId
         }
     }

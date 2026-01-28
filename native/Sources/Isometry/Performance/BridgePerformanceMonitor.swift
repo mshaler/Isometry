@@ -126,7 +126,7 @@ public class BridgePerformanceMonitor {
 
         // Log slow operations
         if duration > BridgeLatencyTargets.databaseOperationLatency {
-            logger.warning("Slow bridge operation: \(operation) took \(duration * 1000, specifier: "%.2f")ms")
+            logger.warning("Slow bridge operation: \(operation) took \(String(format: "%.2f", duration * 1000))ms")
         }
     }
 

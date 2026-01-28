@@ -86,7 +86,6 @@ public struct CommandResponse: Identifiable, Codable, Sendable {
 }
 
 /// Additional metadata for command responses
-@MainActor
 public struct ResponseMetadata: Codable, Sendable {
     public let exitCode: Int32?
     public let workingDirectory: String?
@@ -355,7 +354,7 @@ extension HistoryEntry: FetchableRecord, PersistableRecord {
         if let successInt: Int = row["success"] {
             success = successInt == 1
         } else {
-            success = nil
+            success = false
         }
 
         // Reconstruct response if data is available
@@ -397,7 +396,7 @@ extension HistoryEntry: FetchableRecord, PersistableRecord {
         container["command_type"] = type.rawValue
         container["timestamp"] = iso8601Formatter.string(from: timestamp)
         container["duration"] = duration
-        container["success"] = success.map { $0 ? 1 : 0 }
+        container["success"] = success ? 1 : 0
         container["output_preview"] = response?.output.prefix(500).description
         container["error_message"] = response?.error
         container["working_directory"] = cwd

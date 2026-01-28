@@ -344,7 +344,7 @@ struct CheckpointItem: View {
             .buttonStyle(.plain)
             .accessibilityLabel(isChecked ? "Verified: \(text)" : "Not verified: \(text)")
             .accessibilityHint("Tap to toggle verification status")
-            .accessibilityRole(.checkbox)
+            .accessibilityAddTraits(.isButton)
             .accessibilityValue(isChecked ? "checked" : "unchecked")
 
             Text(text)

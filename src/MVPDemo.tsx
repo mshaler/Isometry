@@ -9,6 +9,7 @@ import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
 import { DatabaseProvider } from './db/DatabaseContext';
 import { Canvas } from './components/Canvas';
 import { UnifiedApp } from './components/UnifiedApp';
+import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
 
@@ -75,6 +76,12 @@ function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
           <ErrorBoundary level="feature" name="Canvas">
             <div className="h-full">
               <Canvas />
+            </div>
+          </ErrorBoundary>
+        ) : viewMode === 'notebook' ? (
+          <ErrorBoundary level="feature" name="NotebookLayout">
+            <div className="h-full">
+              <NotebookLayout />
             </div>
           </ErrorBoundary>
         ) : (
