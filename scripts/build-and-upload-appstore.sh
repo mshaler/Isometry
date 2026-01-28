@@ -276,18 +276,22 @@ build_ios_app() {
         return 1
     fi
 
-    # Validate app with App Store
-    log_info "Validating iOS app with App Store..."
-    xcrun altool --validate-app \
-        --file "$ios_app_path" \
-        --type ios \
-        --username "$APPLE_ID" \
-        --password "$APP_SPECIFIC_PASSWORD" \
-        2>&1 | tee -a "$LOG_FILE"
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "Dry run mode - skipping iOS App Store validation"
+    else
+        # Validate app with App Store
+        log_info "Validating iOS app with App Store..."
+        xcrun altool --validate-app \
+            --file "$ios_app_path" \
+            --type ios \
+            --username "$APPLE_ID" \
+            --password "$APP_SPECIFIC_PASSWORD" \
+            2>&1 | tee -a "$LOG_FILE"
 
-    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-        log_error "iOS app validation failed"
-        return 1
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+            log_error "iOS app validation failed"
+            return 1
+        fi
     fi
 
     log_success "iOS app built and validated successfully"
@@ -344,18 +348,22 @@ build_macos_app() {
         return 1
     fi
 
-    # Notarize macOS app
-    log_info "Notarizing macOS app..."
-    xcrun altool --notarize-app \
-        --primary-bundle-id "$BUNDLE_ID_MACOS" \
-        --username "$APPLE_ID" \
-        --password "$APP_SPECIFIC_PASSWORD" \
-        --file "$macos_app_path" \
-        2>&1 | tee -a "$LOG_FILE"
+    if [[ "$DRY_RUN" == true ]]; then
+        log_info "Dry run mode - skipping macOS notarization"
+    else
+        # Notarize macOS app
+        log_info "Notarizing macOS app..."
+        xcrun altool --notarize-app \
+            --primary-bundle-id "$BUNDLE_ID_MACOS" \
+            --username "$APPLE_ID" \
+            --password "$APP_SPECIFIC_PASSWORD" \
+            --file "$macos_app_path" \
+            2>&1 | tee -a "$LOG_FILE"
 
-    if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
-        log_error "macOS notarization failed"
-        return 1
+        if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
+            log_error "macOS notarization failed"
+            return 1
+        fi
     fi
 
     log_success "macOS app built and notarized successfully"
@@ -582,16 +590,18 @@ main() {
         esac
     done
 
-    # Validate environment variables
-    if [[ -z "${APPLE_ID:-}" ]]; then
-        log_error "APPLE_ID environment variable not set"
-        exit 1
-    fi
+    # Validate environment variables (only required when uploading or notarizing)
+    if [[ "$DRY_RUN" != true ]]; then
+        if [[ -z "${APPLE_ID:-}" ]]; then
+            log_error "APPLE_ID environment variable not set"
+            exit 1
+        fi
 
-    if [[ -z "${APP_SPECIFIC_PASSWORD:-}" ]]; then
-        log_error "APP_SPECIFIC_PASSWORD environment variable not set"
-        log_error "Generate an app-specific password at https://appleid.apple.com"
-        exit 1
+        if [[ -z "${APP_SPECIFIC_PASSWORD:-}" ]]; then
+            log_error "APP_SPECIFIC_PASSWORD environment variable not set"
+            log_error "Generate an app-specific password at https://appleid.apple.com"
+            exit 1
+        fi
     fi
 
     # Execute build process
