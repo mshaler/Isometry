@@ -331,7 +331,7 @@ public struct ExportShareView: View {
 
             Spacer()
 
-            Text(formatFileSize(card.markdownContent.count))
+            Text(formatFileSize(card.markdownContent?.count ?? 0))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

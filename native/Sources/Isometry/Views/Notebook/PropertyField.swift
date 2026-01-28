@@ -90,7 +90,7 @@ public struct PropertyField: View {
         .padding(.vertical, 8)
         .background {
             RoundedRectangle(cornerRadius: 6)
-                .fill(isFocused ? .background.secondary : .background)
+                .fill(isFocused ? Color.gray.opacity(0.2) : Color.gray.opacity(0.1))
                 .stroke(borderColor, lineWidth: 1)
         }
     }
@@ -101,7 +101,7 @@ public struct PropertyField: View {
         } else if isFocused {
             return Color.blue
         } else {
-            return .separator
+            return Color.gray
         }
     }
 
@@ -172,7 +172,9 @@ private struct NumberPropertyField: View {
     var body: some View {
         TextField(definition.placeholder ?? "Enter number...", text: $textInput)
             .textFieldStyle(.roundedBorder)
+            #if os(iOS)
             .keyboardType(.decimalPad)
+            #endif
             .onAppear {
                 textInput = String(numberValue)
             }

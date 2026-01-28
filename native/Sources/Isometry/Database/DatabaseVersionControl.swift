@@ -639,7 +639,7 @@ public struct DatabaseBranch: Codable, Sendable {
     public var lastCommit: UUID?
 }
 
-public struct DatabaseCommit: Codable, Sendable {
+public struct DatabaseCommit: Codable, Sendable, Identifiable {
     public let id: UUID
     public let branchName: String
     public let parentCommitId: UUID?

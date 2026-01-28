@@ -248,7 +248,7 @@ struct DatabaseVersionControlView: View {
                 )
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.sidebar)
     }
 
     // MARK: - Actions
@@ -256,7 +256,7 @@ struct DatabaseVersionControlView: View {
     private func switchBranch(_ branchName: String) {
         Task {
             do {
-                try await versionControl.switchToBranch(branchName)
+                try await versionControl.switchBranch(branchName)
                 currentBranch = branchName
                 await refreshCommitHistory()
             } catch {
@@ -401,7 +401,7 @@ struct ActionButton: View {
             .foregroundColor(isDisabled ? .secondary : color)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(isDisabled ? Color(.systemGray5) : color.opacity(0.1))
+            .background(isDisabled ? Color.gray.opacity(0.3) : color.opacity(0.1))
             .cornerRadius(8)
         }
         .disabled(isDisabled)
@@ -762,7 +762,7 @@ struct CreateAnalyticsBranchView: View {
                 analysisType: analysisType,
                 targetTables: targetTables,
                 timeRange: nil,
-                filters: [:],
+                filters: AnalyticsFilters(),
                 aggregations: []
             )
 

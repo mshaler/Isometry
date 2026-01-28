@@ -675,10 +675,10 @@ public enum ExportFormat: String, CaseIterable, Codable {
 
 /// Export options for customization
 public struct ExportOptions: Codable {
-    let includeTitle: Bool
-    let includeContent: Bool
-    let includeMetadata: Bool
-    let includeProperties: Bool
+    var includeTitle: Bool
+    var includeContent: Bool
+    var includeMetadata: Bool
+    var includeProperties: Bool
     var includeTableOfContents: Bool
     var includePageBreaks: Bool
     let pageWidth: CGFloat

@@ -53,7 +53,7 @@ public struct CommandHistoryView: View {
                     ForEach(searchSuggestions) { suggestion in
                         Button(suggestion.command) {
                             searchText = suggestion.command
-                            performSearch()
+                            Task { await performSearch() }
                         }
                         .foregroundStyle(.primary)
                     }
@@ -377,9 +377,9 @@ public struct CommandHistoryView: View {
         // Apply additional filter logic based on selectedFilter
         switch selectedFilter {
         case .successful:
-            filter = HistoryFilter(success: true, searchQuery: filter.searchQuery)
+            filter = HistoryFilter(searchQuery: filter.searchQuery, success: true)
         case .failed:
-            filter = HistoryFilter(success: false, searchQuery: filter.searchQuery)
+            filter = HistoryFilter(searchQuery: filter.searchQuery, success: false)
         case .today:
             filter = HistoryFilter.today()
             filter = HistoryFilter(
@@ -446,11 +446,9 @@ private struct CommandHistoryRow: View {
 
                 // Status indicators
                 HStack(spacing: 4) {
-                    if let success = entry.success {
-                        Image(systemName: success ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(success ? .green : .red)
-                            .font(.caption)
-                    }
+                    Image(systemName: entry.success ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        .foregroundStyle(entry.success ? .green : .red)
+                        .font(.caption)
 
                     if let duration = entry.duration {
                         Text("\(Int(duration * 1000))ms")
@@ -628,7 +626,7 @@ private struct QuickFilterButton: View {
             .font(.caption)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(isSelected ? .blue : .regularMaterial)
+            .background(isSelected ? Color.blue : Color.gray.opacity(0.1))
             .foregroundStyle(isSelected ? .white : .primary)
             .cornerRadius(16)
         }
@@ -696,7 +694,7 @@ private struct FilterOptionsView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
