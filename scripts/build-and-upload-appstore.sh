@@ -257,7 +257,7 @@ build_ios_app() {
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=iOS" \
         -archivePath "$ARCHIVE_PATH_IOS" \
-        "${team_arg[@]}" \
+        ${team_arg:+"${team_arg[@]}"} \
         CODE_SIGN_STYLE="Manual" \
         PROVISIONING_PROFILE_SPECIFIER="Isometry iOS Production" \
         CODE_SIGN_IDENTITY="Apple Distribution" \
@@ -334,7 +334,7 @@ build_macos_app() {
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=macOS" \
         -archivePath "$ARCHIVE_PATH_MACOS" \
-        "${team_arg[@]}" \
+        ${team_arg:+"${team_arg[@]}"} \
         CODE_SIGN_STYLE="Manual" \
         PROVISIONING_PROFILE_SPECIFIER="Isometry macOS Production" \
         CODE_SIGN_IDENTITY="Apple Distribution" \
