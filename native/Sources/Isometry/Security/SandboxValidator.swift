@@ -45,7 +45,7 @@ public class SandboxValidator {
         case write
         case delete
         case export
-        case import
+        case fileImport
         case createDirectory
         case list
 
@@ -53,7 +53,7 @@ public class SandboxValidator {
             switch self {
             case .read, .list, .export:
                 return false
-            case .write, .delete, .import, .createDirectory:
+            case .write, .delete, .fileImport, .createDirectory:
                 return true
             }
         }
@@ -142,7 +142,7 @@ public class SandboxValidator {
 
     /// Validates a file path for the specified operation
     public func validatePath(_ path: String, for operation: FileSystemOperation) -> ValidationResult {
-        logger.debug("Validating path: \(path, privacy: .public) for operation: \(String(describing: operation))")
+        logger.debug("Validating path: \(path) for operation: \(String(describing: operation))")
 
         // Rate limiting check
         if isRateLimited() {
@@ -178,7 +178,7 @@ public class SandboxValidator {
 
         // Check for path traversal
         if containsPathTraversal(canonicalPath) {
-            logger.warning("Path traversal detected: \(canonicalPath, privacy: .public)")
+            logger.warning("Path traversal detected: \(canonicalPath)")
             return ValidationResult(
                 isValid: false,
                 canonicalPath: canonicalPath,
@@ -189,7 +189,7 @@ public class SandboxValidator {
 
         // Check if path is within allowed container
         guard let containerDirectory = getContainerDirectory(for: canonicalPath) else {
-            logger.warning("Path outside container: \(canonicalPath, privacy: .public)")
+            logger.warning("Path outside container: \(canonicalPath)")
             return ValidationResult(
                 isValid: false,
                 canonicalPath: canonicalPath,
@@ -219,7 +219,7 @@ public class SandboxValidator {
         }
 
         // Log successful validation
-        logger.info("Path validation successful: \(canonicalPath, privacy: .public)")
+        logger.debug("Path validation successful: \(canonicalPath)")
         incrementOperationCount()
 
         return ValidationResult(
@@ -326,7 +326,7 @@ public class SandboxValidator {
             return .operationNotAllowed(operation, path)
         case (.read, _), (.list, _), (.export, _):
             return nil // Read operations allowed everywhere
-        case (.import, .documents), (.import, .temporary):
+        case (.fileImport, .documents), (.fileImport, .temporary):
             return nil // Import allowed to safe areas
         default:
             return .operationNotAllowed(operation, path)
@@ -335,23 +335,23 @@ public class SandboxValidator {
 
     private func validateFileExtension(_ path: String, operation: FileSystemOperation) -> ValidationError? {
         let pathURL = URL(fileURLWithPath: path)
-        let extension = pathURL.pathExtension.lowercased()
+        let fileExtension = pathURL.pathExtension.lowercased()
 
         // Skip extension check for directories
-        if extension.isEmpty {
+        if fileExtension.isEmpty {
             return nil
         }
 
         // Block dangerous extensions
-        if restrictedExtensions.contains(extension) {
-            logger.warning("Blocked restricted extension: \(extension, privacy: .public)")
-            return .restrictedExtension(extension)
+        if restrictedExtensions.contains(fileExtension) {
+            logger.warning("Blocked restricted extension: \(fileExtension)")
+            return .restrictedExtension(fileExtension)
         }
 
         // For write operations, only allow safe extensions
-        if operation.requiresWriteAccess && !allowedExtensions.contains(extension) {
-            logger.warning("Extension not in allowed list: \(extension, privacy: .public)")
-            return .restrictedExtension(extension)
+        if operation.requiresWriteAccess && !allowedExtensions.contains(fileExtension) {
+            logger.warning("Extension not in allowed list: \(fileExtension)")
+            return .restrictedExtension(fileExtension)
         }
 
         return nil
@@ -384,9 +384,9 @@ public class SandboxValidator {
                     withIntermediateDirectories: true,
                     attributes: nil
                 )
-                logger.debug("Created container directory: \(url.path, privacy: .public)")
+                logger.debug("Created container directory: \(url.path)")
             } catch {
-                logger.error("Failed to create container directory \(url.path, privacy: .public): \(error)")
+                logger.error("Failed to create container directory \(url.path): \(error)")
             }
         }
     }
@@ -398,21 +398,21 @@ extension SandboxValidator {
 
     /// Logs a security violation for audit purposes
     public func logSecurityViolation(_ error: ValidationError, path: String, operation: FileSystemOperation) {
-        logger.fault("""
+        logger.error("""
             SECURITY VIOLATION:
             Operation: \(String(describing: operation))
-            Path: \(path, privacy: .public)
-            Error: \(error.description, privacy: .public)
-            Timestamp: \(Date(), privacy: .public)
+            Path: \(path)
+            Error: \(error.description)
+            Timestamp: \(Date())
             """)
     }
 
     /// Logs successful file operations for audit trail
     public func logFileAccess(_ path: String, operation: FileSystemOperation, success: Bool) {
         if success {
-            logger.info("File access: \(String(describing: operation)) on \(path, privacy: .public) - SUCCESS")
+            logger.debug("File access: \(String(describing: operation)) on \(path) - SUCCESS")
         } else {
-            logger.warning("File access: \(String(describing: operation)) on \(path, privacy: .public) - FAILED")
+            logger.warning("File access: \(String(describing: operation)) on \(path) - FAILED")
         }
     }
 }

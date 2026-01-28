@@ -55,7 +55,7 @@ public final class ABTestManager: ObservableObject, Sendable {
         }
 
         // Check experiment eligibility
-        guard experiment.isActive && isUserEligible(userId: userId, experiment: experiment) else {
+        guard experiment.status == .running && isUserEligible(userId: userId, experiment: experiment) else {
             return nil
         }
 
@@ -66,13 +66,13 @@ public final class ABTestManager: ObservableObject, Sendable {
         // Track assignment
         trackEvent(.userAssigned, experimentId: experimentId, userId: userId, metadata: [
             "variant": variant.id,
-            "timestamp": Date().timeIntervalSince1970
+            "timestamp": String(Date().timeIntervalSince1970)
         ])
 
         // Update storage
         saveUserAssignments()
 
-        logger.info("User \\(userId) assigned to variant \\(variant.id) in experiment \\(experimentId)")
+        logger.debug("User \\(userId) assigned to variant \\(variant.id) in experiment \\(experimentId)")
         return variant
     }
 
@@ -134,9 +134,10 @@ public final class ABTestManager: ObservableObject, Sendable {
         activeExperiments[experiment.id] = experiment
 
         // Sync to CloudKit
-        try await cloudKitManager.saveABTest(experiment)
+        // TODO: Implement saveABTest method in CloudKitSyncManager
+        // try await cloudKitManager.saveABTest(experiment)
 
-        logger.info("Created experiment: \\(experiment.name) (\\(experiment.id))")
+        logger.debug("Created experiment: \\(experiment.name) (\\(experiment.id))")
         return experiment
     }
 
@@ -157,13 +158,14 @@ public final class ABTestManager: ObservableObject, Sendable {
         // Update feature flags if connected
         if let flagId = experiment.configuration.linkedFeatureFlag {
             // Enable the feature flag for the experiment
-            logger.info("Starting linked feature flag \\(flagId) for experiment \\(experimentId)")
+            logger.debug("Starting linked feature flag \\(flagId) for experiment \\(experimentId)")
         }
 
         // Sync to CloudKit
-        try await cloudKitManager.saveABTest(experiment)
+        // TODO: Implement saveABTest method in CloudKitSyncManager
+        // try await cloudKitManager.saveABTest(experiment)
 
-        logger.info("Started experiment: \\(experiment.name)")
+        logger.debug("Started experiment: \\(experiment.name)")
     }
 
     /// Stop experiment and analyze results
@@ -185,9 +187,10 @@ public final class ABTestManager: ObservableObject, Sendable {
         experimentResults[experimentId] = results
 
         // Sync to CloudKit
-        try await cloudKitManager.saveABTest(experiment)
+        // TODO: Implement saveABTest method in CloudKitSyncManager
+        // try await cloudKitManager.saveABTest(experiment)
 
-        logger.info("Stopped experiment: \\(experiment.name) - \\(reason)")
+        logger.debug("Stopped experiment: \\(experiment.name) - \\(reason)")
         return results
     }
 
@@ -221,6 +224,8 @@ public final class ABTestManager: ObservableObject, Sendable {
 
     private func setupCloudKitSync() {
         // Listen for CloudKit updates
+        // TODO: Implement CloudKit A/B test sync when available
+        /*
         cloudKitManager.abTestUpdates
             .receive(on: DispatchQueue.main)
             .sink { [weak self] experiments in
@@ -229,6 +234,7 @@ public final class ABTestManager: ObservableObject, Sendable {
                 }
             }
             .store(in: &subscriptions)
+        */
     }
 
     private func loadStoredData() {
@@ -237,7 +243,7 @@ public final class ABTestManager: ObservableObject, Sendable {
             self.activeExperiments = experiments
             self.userAssignments = assignments
             self.experimentResults = results
-            logger.info("Loaded \\(experiments.count) experiments and \\(assignments.count) user assignments")
+            logger.debug("Loaded \\(experiments.count) experiments and \\(assignments.count) user assignments")
         } catch {
             logger.error("Failed to load stored A/B test data: \\(error)")
         }
@@ -253,7 +259,7 @@ public final class ABTestManager: ObservableObject, Sendable {
         let modified = Set(cloudExperiments.keys).intersection(Set(oldExperiments.keys))
             .filter { cloudExperiments[$0]?.lastModified != oldExperiments[$0]?.lastModified }
 
-        logger.info("Updated experiments - added: \\(added.count), removed: \\(removed.count), modified: \\(modified.count)")
+        logger.debug("Updated experiments - added: \\(added.count), removed: \\(removed.count), modified: \\(modified.count)")
 
         // Save updated data
         saveStoredData()
@@ -382,7 +388,7 @@ public final class ABTestManager: ObservableObject, Sendable {
 
         // Check if experiment has reached significance
         if analysis.hasStatisticalSignificance {
-            logger.info("Experiment \\(experimentId) has reached statistical significance")
+            logger.debug("Experiment \\(experimentId) has reached statistical significance")
 
             // Auto-stop if configured
             if experiment.configuration.autoStopOnSignificance {
@@ -425,8 +431,7 @@ public final class ABTestManager: ObservableObject, Sendable {
                 winningVariant: analysis.winningVariant,
                 confidence: analysis.confidence,
                 stopReason: stopReason
-            ),
-            lastUpdated: Date()
+            )
         )
 
         return results
@@ -622,9 +627,9 @@ public struct UserCriteria: Codable, Sendable {
     public let `operator`: String // equals, notEquals, contains, greaterThan, lessThan
     public let value: String
 
-    public init(property: String, operator: String, value: String) {
+    public init(property: String, operator operatorValue: String, value: String) {
         self.property = property
-        self.`operator` = operator
+        self.`operator` = operatorValue
         self.value = value
     }
 }
@@ -750,11 +755,11 @@ public enum ExperimentResultsStatus: String, Sendable {
 public struct VariantMetrics: Sendable {
     public let variantId: String
     public let userCount: Int
-    public let eventCount: Int
-    public let totalValue: Double
+    public var eventCount: Int
+    public var totalValue: Double
     public let conversionRate: Double
-    public let eventTypeMetrics: [String: EventTypeMetrics]
-    public let lastEvent: Date?
+    public var eventTypeMetrics: [String: EventTypeMetrics]
+    public var lastEvent: Date?
 
     public init(
         variantId: String,
