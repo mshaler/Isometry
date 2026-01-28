@@ -309,7 +309,7 @@ public enum ETLVersionError: LocalizedError {
 
 extension IsometryDatabase {
     func insert(version: ETLDataVersion) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO etl_versions (
@@ -332,7 +332,7 @@ extension IsometryDatabase {
     }
 
     func insert(versionTag: ETLVersionTag) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO etl_version_tags (
@@ -351,7 +351,7 @@ extension IsometryDatabase {
     }
 
     func insert(checkpoint: ETLVersionCheckpoint) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO etl_version_checkpoints (
@@ -373,7 +373,7 @@ extension IsometryDatabase {
     }
 
     func insert(schemaChange: ETLSchemaChange) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO etl_schema_changes (
@@ -393,7 +393,7 @@ extension IsometryDatabase {
     }
 
     func getCurrentVersion(for streamId: String) async throws -> ETLDataVersion? {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = """
                 SELECT * FROM etl_versions
                 WHERE stream_id = ? AND status = 'active'
@@ -405,7 +405,7 @@ extension IsometryDatabase {
     }
 
     func getVersionHistory(for streamId: String) async throws -> [ETLDataVersion] {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = """
                 SELECT * FROM etl_versions
                 WHERE stream_id = ?
@@ -416,20 +416,20 @@ extension IsometryDatabase {
     }
 
     func getVersion(id: UUID) async throws -> ETLDataVersion? {
-        return try await reader.read { db in
+        return try await self.read { db in
             try ETLDataVersion.fetchOne(db, id: id.uuidString)
         }
     }
 
     func getLastVersionNumber(for streamId: String) async throws -> Int? {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = "SELECT MAX(version_number) FROM etl_versions WHERE stream_id = ?"
             return try Int.fetchOne(db, sql: sql, arguments: [streamId])
         }
     }
 
     func getNodeCount(for streamId: String, at timestamp: Date) async throws -> Int {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = """
                 SELECT COUNT(*) FROM nodes
                 WHERE source = ? AND created_at <= ?
@@ -439,7 +439,7 @@ extension IsometryDatabase {
     }
 
     func getModifiedNodeCount(streamId: String, fromTime: Date, toTime: Date) async throws -> Int {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = """
                 SELECT COUNT(*) FROM nodes
                 WHERE source = ? AND modified_at > ? AND modified_at <= ?
@@ -453,7 +453,7 @@ extension IsometryDatabase {
     }
 
     func getNodeLineage(nodeId: String) async throws -> [ETLLineageEntry] {
-        return try await reader.read { db in
+        return try await self.read { db in
             let sql = """
                 SELECT
                     n.id as node_id,

@@ -594,7 +594,7 @@ extension ETLOperationTemplate {
 
 extension IsometryDatabase {
     func insertBranch(_ branch: DatabaseBranch) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO database_branches (
@@ -618,7 +618,7 @@ extension IsometryDatabase {
     }
 
     func insertSnapshot(_ snapshot: DatabaseSnapshot) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO database_snapshots (
@@ -641,7 +641,7 @@ extension IsometryDatabase {
     }
 
     func insertCommit(_ commit: DatabaseCommit) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     INSERT INTO database_commits (
@@ -665,7 +665,7 @@ extension IsometryDatabase {
     }
 
     func updateBranch(_ branch: DatabaseBranch) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(
                 sql: """
                     UPDATE database_branches
@@ -682,7 +682,7 @@ extension IsometryDatabase {
     }
 
     func getCommit(id: UUID) async throws -> DatabaseCommit? {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would fetch commit by ID
             return nil // Placeholder
         }
@@ -693,68 +693,68 @@ extension IsometryDatabase {
         limit: Int,
         includeArtifacts: Bool
     ) async throws -> [DatabaseCommit] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would fetch commit history
             return [] // Placeholder
         }
     }
 
     func getPendingChanges() async throws -> [DatabaseChange] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would fetch uncommitted changes
             return [] // Placeholder
         }
     }
 
     func getAllTableStates() async throws -> [DatabaseTableState] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would capture current table states
             return [] // Placeholder
         }
     }
 
     func getAllIndexStates() async throws -> [DatabaseIndexState] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would capture current index states
             return [] // Placeholder
         }
     }
 
     func getAllTriggerStates() async throws -> [DatabaseTriggerState] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would capture current trigger states
             return [] // Placeholder
         }
     }
 
     func findCommonAncestor(_ branch1: UUID, _ branch2: UUID) async throws -> UUID? {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would find common ancestor commit
             return nil // Placeholder
         }
     }
 
     func getChangesSince(_ branchId: UUID, _ ancestorCommit: UUID?) async throws -> [DatabaseChange] {
-        return try await reader.read { db in
+        return try await self.read { db in
             // Implementation would get changes since ancestor
             return [] // Placeholder
         }
     }
 
     func deleteRecord(table: String, id: String) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             try db.execute(sql: "DELETE FROM \(table) WHERE id = ?", arguments: [id])
         }
     }
 
     func updateRecord(table: String, id: String, values: [String: Any]) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             // Implementation would update record with values
         }
     }
 
     func insertRecord(table: String, id: String, values: [String: Any]) async throws {
-        try await writer.write { db in
+        try await self.write { db in
             // Implementation would insert record with values
         }
     }
