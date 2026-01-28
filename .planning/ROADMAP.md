@@ -896,6 +896,6 @@ Production Backend
 
 ---
 
-**Current step:** Phase 13.2 Production Infrastructure & CloudKit Deployment plan created in `/.planning/milestones/v3.0-production-deployment/phases/13-02-PLAN.md`.
+**Current step:** Phase 13.2 Production Infrastructure & CloudKit Deployment completed (see `/.planning/milestones/v3.0-production-deployment/phases/13-02-SUMMARY.md`).
 
-**Next step:** `/gsd:execute-phase 13.2` to deploy production infrastructure and unlock Phase 13.3 beta testing.
+**Next step:** `/gsd:plan-phase 13.3` to define beta testing & quality validation.
