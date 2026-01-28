@@ -869,31 +869,9 @@ public let productionAnalytics = ProductionAnalytics()
 
 // MARK: - Analytics Extensions
 
-extension ProductionAnalytics: @unchecked Sendable, Codable {
-    enum CodingKeys: String, CodingKey {
-        case privacySettings
-        case currentSessionId
-        case isSessionActive
-    }
-
-    nonisolated public convenience init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        let privacySettings = try container.decode(PrivacySettings.self, forKey: .privacySettings)
-        let currentSessionId = try container.decode(String.self, forKey: .currentSessionId)
-        let isSessionActive = try container.decode(Bool.self, forKey: .isSessionActive)
-        self.init()
-        self.currentSessionId = currentSessionId
-        self.isSessionActive = isSessionActive
-
-        setupFlushTimer()
-    }
-
-    nonisolated public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(privacySettings, forKey: .privacySettings)
-        try container.encode(currentSessionId, forKey: .currentSessionId)
-        try container.encode(isSessionActive, forKey: .isSessionActive)
-    }
+extension ProductionAnalytics: @unchecked Sendable {
+    // Note: Codable conformance removed due to MainActor isolation conflicts
+    // Use custom serialization methods if needed for persistence
 }
 
 extension ProductionAnalytics.PrivacySettings: Codable {}

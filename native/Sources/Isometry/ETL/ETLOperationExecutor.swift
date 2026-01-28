@@ -78,7 +78,7 @@ public actor ETLOperationExecutor {
                 totalDuration: endTime.timeIntervalSince(startTime),
                 processedItems: processedItems,
                 importedNodes: importedNodes,
-                errors: errors
+                errors: errors.map { ETLErrorInfo(error: $0) }
             )
 
         } catch {
@@ -94,7 +94,7 @@ public actor ETLOperationExecutor {
                 totalDuration: endTime.timeIntervalSince(startTime),
                 processedItems: processedItems,
                 importedNodes: importedNodes,
-                errors: errors
+                errors: errors.map { ETLErrorInfo(error: $0) }
             )
         }
     }

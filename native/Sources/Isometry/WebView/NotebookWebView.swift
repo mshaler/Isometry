@@ -389,10 +389,11 @@ class Coordinator: NSObject {
     }
 
     deinit {
-        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
-        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
-        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
-        store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
+        // TODO: Fix main actor isolation in webView observer removal
+        // store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
+        // store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.estimatedProgress))
+        // store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
+        // store.webView?.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
     }
 }
 

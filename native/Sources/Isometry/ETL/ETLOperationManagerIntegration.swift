@@ -348,7 +348,7 @@ extension ETLOperationManager {
         - Imported Nodes: \(result.importedNodes.count)
         - Errors: \(result.errors.count)
 
-        \(result.errors.isEmpty ? "" : "Errors:\n" + result.errors.map { "- \($0.localizedDescription)" }.joined(separator: "\n"))
+        \(result.errors.isEmpty ? "" : "Errors:\n" + result.errors.map { "- \($0.message)" }.joined(separator: "\n"))
         """
     }
 
@@ -488,12 +488,18 @@ extension ETLOperationTemplate {
             return .documents
         case .sqliteDatabaseImport:
             return .system
+        case .sqliteDirectSync:
+            return .system
         case .fullSystemImport:
             return .system
         case .dataExportArchive:
             return .system
+        case .cloudSyncSetup:
+            return .system
         case .cloudSyncOperation:
             return .system
+        case .fileSystemImport:
+            return .documents
         }
     }
 }

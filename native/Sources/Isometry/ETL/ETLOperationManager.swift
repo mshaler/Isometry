@@ -80,7 +80,7 @@ public class ETLOperationManager: ObservableObject {
                 totalDuration: Date().timeIntervalSince(execution.startedAt),
                 processedItems: 0,
                 importedNodes: [],
-                errors: [error]
+                errors: [ETLErrorInfo(error: error)]
             )
             operationHistory.append(failedResult)
             await updatePublishedState()

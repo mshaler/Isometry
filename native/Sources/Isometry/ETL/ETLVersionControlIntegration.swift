@@ -562,13 +562,13 @@ extension ETLOperationTemplate {
             return .autoMerge  // Standard imports auto-merge
         case .safariDataImport, .fileSystemImport:
             return .manualMerge  // External imports need review
-        case .sqliteDatabaseImport:
+        case .sqliteDatabaseImport, .sqliteDirectSync:
             return .rollbackOnFailure  // Database imports are risky
         case .fullSystemImport:
             return .preserveBranch  // Full imports kept for analysis
         case .dataExportArchive:
             return .autoMerge  // Exports are safe to merge
-        case .cloudSyncOperation:
+        case .cloudSyncSetup, .cloudSyncOperation:
             return .rollbackOnFailure  // Cloud operations can fail
         }
     }
@@ -578,13 +578,13 @@ extension ETLOperationTemplate {
         switch self {
         case .appleNotesImport, .appleRemindersImport, .appleContactsImport, .appleCalendarImport:
             return .temporaryBranch  // Quick operations in temp branches
-        case .safariDataImport, .fileSystemImport, .sqliteDatabaseImport:
+        case .safariDataImport, .fileSystemImport, .sqliteDatabaseImport, .sqliteDirectSync:
             return .isolatedBranch  // Complex operations in isolated branches
         case .fullSystemImport:
             return .isolatedBranch  // System imports need isolation
         case .dataExportArchive:
             return .mainBranch  // Exports can run on main
-        case .cloudSyncOperation:
+        case .cloudSyncSetup, .cloudSyncOperation:
             return .isolatedBranch  // Cloud operations need isolation
         }
     }
