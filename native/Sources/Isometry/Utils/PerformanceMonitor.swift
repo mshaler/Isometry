@@ -1,5 +1,6 @@
 import Foundation
 import os.signpost
+import QuartzCore
 
 /// Performance monitoring for SuperGrid rendering and database queries
 /// Uses os_signpost for integration with Instruments profiling
@@ -17,7 +18,7 @@ public final class PerformanceMonitor: @unchecked Sendable {
     private var notebookRenderTimes: [TimeInterval] = []
     private var notebookCardQueryTimes: [TimeInterval] = []
     private var componentResizeTimes: [TimeInterval] = []
-    private var signpostTimes: [OSSignpostID: TimeInterval] = [:]
+    private var signpostTimes: [UInt64: TimeInterval] = [:]
     private let maxSamples = 100
 
     // MARK: - Performance Thresholds
@@ -82,7 +83,7 @@ public final class PerformanceMonitor: @unchecked Sendable {
         let startTime = CACurrentMediaTime()
 
         lock.lock()
-        signpostTimes[id] = startTime
+        signpostTimes[id.rawValue] = startTime
         lock.unlock()
 
         os_signpost(.begin, log: log, name: "Notebook Render", signpostID: id)
@@ -98,7 +99,7 @@ public final class PerformanceMonitor: @unchecked Sendable {
         defer { lock.unlock() }
 
         let endTime = CACurrentMediaTime()
-        if let startTime = signpostTimes.removeValue(forKey: id) {
+        if let startTime = signpostTimes.removeValue(forKey: id.rawValue) {
             let renderTime = endTime - startTime
             notebookRenderTimes.append(renderTime)
             limitArray(&notebookRenderTimes, to: maxSamples)

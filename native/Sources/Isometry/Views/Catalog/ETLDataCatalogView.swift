@@ -4,9 +4,9 @@ import Charts
 /// Native Dataset Navigator UI following Sources → Streams → Surfaces hierarchy
 /// Provides visual exploration and management of data catalog
 struct ETLDataCatalogView: View {
-    @StateObject private var catalog: ETLDataCatalog
-    @StateObject private var versionManager: ETLVersionManager
-    @StateObject private var storageManager: ContentAwareStorageManager
+    @State private var catalog: ETLDataCatalog
+    @State private var versionManager: ETLVersionManager
+    @State private var storageManager: ContentAwareStorageManager
 
     @State private var selectedHierarchyLevel: HierarchyLevel = .streams
     @State private var searchText = ""
@@ -20,9 +20,9 @@ struct ETLDataCatalogView: View {
     init(database: IsometryDatabase) {
         self.database = database
         let versionManager = ETLVersionManager(database: database)
-        self._catalog = StateObject(wrappedValue: ETLDataCatalog(database: database, versionManager: versionManager))
-        self._versionManager = StateObject(wrappedValue: versionManager)
-        self._storageManager = StateObject(wrappedValue: ContentAwareStorageManager(database: database))
+        self._catalog = State(initialValue: ETLDataCatalog(database: database, versionManager: versionManager))
+        self._versionManager = State(initialValue: versionManager)
+        self._storageManager = State(initialValue: ContentAwareStorageManager(database: database))
     }
 
     var body: some View {
@@ -34,7 +34,7 @@ struct ETLDataCatalogView: View {
             }
             .navigationTitle("Data Catalog")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     HStack {
                         Button {
                             showingLineageGraph = true
@@ -109,7 +109,7 @@ struct ETLDataCatalogView: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color(NSColor.systemGray))
     }
 
     // MARK: - Hierarchy Selector
@@ -296,7 +296,7 @@ struct CategoryFilterChip: View {
                 .fontWeight(isSelected ? .medium : .regular)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? Color.blue : Color(.systemGray5))
+                .background(isSelected ? Color.blue : Color(NSColor.secondarySystemFill))
                 .foregroundColor(isSelected ? .white : .primary)
                 .cornerRadius(12)
         }
@@ -804,7 +804,6 @@ struct DataLineageGraphView: View {
                 }
             }
             .navigationTitle("Data Lineage")
-            .navigationBarTitleDisplayMode(.inline)
             .task {
                 await loadLineageGraph()
             }

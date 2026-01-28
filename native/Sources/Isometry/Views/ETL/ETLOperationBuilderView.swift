@@ -32,15 +32,14 @@ struct ETLOperationBuilderView: View {
                 validationSection
             }
             .navigationTitle("Create Operation")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Create") {
                         Task {
                             await createOperation()
