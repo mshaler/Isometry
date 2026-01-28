@@ -246,13 +246,18 @@ build_ios_app() {
 
     # Archive iOS app
     log_info "Creating iOS archive..."
+    local team_arg=()
+    if [[ -n "$TEAM_ID" ]]; then
+        team_arg=(DEVELOPMENT_TEAM="$TEAM_ID")
+    fi
+
     xcodebuild archive \
         -project "$IOS_PROJECT" \
         -scheme "$IOS_SCHEME" \
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=iOS" \
         -archivePath "$ARCHIVE_PATH_IOS" \
-        DEVELOPMENT_TEAM="$TEAM_ID" \
+        "${team_arg[@]}" \
         CODE_SIGN_STYLE="Manual" \
         PROVISIONING_PROFILE_SPECIFIER="Isometry iOS Production" \
         CODE_SIGN_IDENTITY="Apple Distribution" \
@@ -318,13 +323,18 @@ build_macos_app() {
 
     # Archive macOS app
     log_info "Creating macOS archive..."
+    local team_arg=()
+    if [[ -n "$TEAM_ID" ]]; then
+        team_arg=(DEVELOPMENT_TEAM="$TEAM_ID")
+    fi
+
     xcodebuild archive \
         -project "$MACOS_PROJECT" \
         -scheme "$MACOS_SCHEME" \
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=macOS" \
         -archivePath "$ARCHIVE_PATH_MACOS" \
-        DEVELOPMENT_TEAM="$TEAM_ID" \
+        "${team_arg[@]}" \
         CODE_SIGN_STYLE="Manual" \
         PROVISIONING_PROFILE_SPECIFIER="Isometry macOS Production" \
         CODE_SIGN_IDENTITY="Apple Distribution" \
