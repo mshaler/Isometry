@@ -44,7 +44,7 @@ fi
 
 # CloudKit Configuration (from ProductionCloudKitConfig.swift)
 DEVELOPMENT_CONTAINER="iCloud.com.cardboard.app"
-PRODUCTION_CONTAINER="iCloud.com.isometry.app"
+PRODUCTION_CONTAINER="iCloud.com.mshaler.isometry"
 DEVELOPMENT_ZONE="IsometryZone"
 PRODUCTION_ZONE="IsometryProductionZone"
 

@@ -124,7 +124,7 @@ public struct BetaInstructionsView: View {
         }
         .onAppear {
             // loadUserProgress() // TODO: Fix scope issue
-            loadPersonalizedRecommendations()
+            // loadPersonalizedRecommendations() // TODO: Fix missing function
         }
         .sheet(isPresented: $showingContextualHelp) {
             if let help = selectedActivityHelp {

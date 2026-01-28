@@ -7,6 +7,7 @@
 
 import WebKit
 import Foundation
+import GRDB
 
 /**
  * Enhanced DatabaseMessageHandler for secure database operations from WebView
@@ -289,8 +290,10 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             arguments.append(offset)
 
             var results: [[String: Any]] = []
-            let rows = try db.makeSelectStatement(sql: sql)
-            try rows.setArguments(arguments)
+            let rows = try db.makeStatement(sql: sql)
+            if let statementArguments = StatementArguments(arguments) {
+                try rows.setArguments(statementArguments)
+            }
 
             for row in try Row.fetchAll(rows) {
                 var nodeData: [String: Any] = [:]
@@ -394,7 +397,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             """
 
             var results: [[String: Any]] = []
-            let rows = try db.makeSelectStatement(sql: sql)
+            let rows = try db.makeStatement(sql: sql)
             try rows.setArguments([query, limit])
 
             for row in try Row.fetchAll(rows) {
@@ -458,9 +461,11 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             }
 
             var results: [[String: Any]] = []
-            let rows = try db.makeSelectStatement(sql: sql)
+            let rows = try db.makeStatement(sql: sql)
             if !arguments.isEmpty {
-                try rows.setArguments(arguments)
+                if let statementArguments = StatementArguments(arguments) {
+                try rows.setArguments(statementArguments)
+            }
             }
 
             for row in try Row.fetchAll(rows) {
@@ -593,13 +598,13 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
             let script = "window.resolveWebViewRequest('\(id)', \(result != nil ? "\(responseString)" : "null"), \(error != nil ? "\"\(error!)\"" : "null"))"
 
-            await webView.evaluateJavaScript(script)
+            try await webView.evaluateJavaScript(script)
 
         } catch {
             print("[DatabaseMessageHandler] Failed to send response: \(error)")
             // Attempt fallback response
             let fallbackScript = "window.resolveWebViewRequest('\(id)', null, 'Failed to serialize response')"
-            await webView.evaluateJavaScript(fallbackScript)
+            try? await webView.evaluateJavaScript(fallbackScript)
         }
     }
 }

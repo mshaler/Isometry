@@ -954,7 +954,7 @@ public actor CloudKitSyncManager {
         let query = CKQuery(recordType: "FeatureFlag", predicate: predicate)
 
         do {
-            let (records, _) = try await privateDatabase.records(matching: query, inZoneWith: syncZone.zoneID)
+            let (records, _) = try await database.records(matching: query, inZoneWith: zone.zoneID)
 
             var flags: [String: Any] = [:]
             for (_, record) in records {

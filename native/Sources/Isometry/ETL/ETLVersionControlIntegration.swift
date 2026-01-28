@@ -560,7 +560,7 @@ extension ETLOperationTemplate {
         switch self {
         case .appleNotesImport, .appleRemindersImport, .appleContactsImport, .appleCalendarImport:
             return .autoMerge  // Standard imports auto-merge
-        case .safariDataImport, .fileSystemImport:
+        case .safariDataImport, .fileSystemImport, .bulkOfficeImport:
             return .manualMerge  // External imports need review
         case .sqliteDatabaseImport, .sqliteDirectSync:
             return .rollbackOnFailure  // Database imports are risky
@@ -570,6 +570,8 @@ extension ETLOperationTemplate {
             return .autoMerge  // Exports are safe to merge
         case .cloudSyncSetup, .cloudSyncOperation:
             return .rollbackOnFailure  // Cloud operations can fail
+        @unknown default:
+            return .manualMerge  // Unknown operations require manual review
         }
     }
 
@@ -578,7 +580,7 @@ extension ETLOperationTemplate {
         switch self {
         case .appleNotesImport, .appleRemindersImport, .appleContactsImport, .appleCalendarImport:
             return .temporaryBranch  // Quick operations in temp branches
-        case .safariDataImport, .fileSystemImport, .sqliteDatabaseImport, .sqliteDirectSync:
+        case .safariDataImport, .fileSystemImport, .bulkOfficeImport, .sqliteDatabaseImport, .sqliteDirectSync:
             return .isolatedBranch  // Complex operations in isolated branches
         case .fullSystemImport:
             return .isolatedBranch  // System imports need isolation
@@ -586,6 +588,8 @@ extension ETLOperationTemplate {
             return .mainBranch  // Exports can run on main
         case .cloudSyncSetup, .cloudSyncOperation:
             return .isolatedBranch  // Cloud operations need isolation
+        @unknown default:
+            return .isolatedBranch  // Unknown operations need isolation
         }
     }
 }

@@ -839,7 +839,7 @@ public protocol PrivacyCompliantAnalytics {
     func getDataRetentionPeriod() -> Int
 }
 
-extension ProductionAnalytics: PrivacyCompliantAnalytics {
+@MainActor extension ProductionAnalytics: PrivacyCompliantAnalytics {
     nonisolated public func requestConsent() async -> Bool {
         return await requestAnalyticsConsent()
     }

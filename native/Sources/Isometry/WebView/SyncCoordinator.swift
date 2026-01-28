@@ -173,7 +173,9 @@ public class SyncCoordinator {
 
     private func startDatabaseObservation() {
         databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
-            .start(in: database.getDatabasePool(), onChange: { [weak self] _ in
+            .start(in: database.getDatabasePool(), onError: { error in
+                print("[SyncCoordinator] Database observation error: \(error)")
+            }, onChange: { [weak self] _ in
                 // This is called on database changes
                 Task { [weak self] in
                     await self?.handleDatabaseChange()
@@ -326,11 +328,11 @@ public class SyncCoordinator {
             nodeType: nodeType,
             name: name,
             content: content,
-            source: source,
-            sourceId: sourceId,
             folder: folder,
             tags: tags,
-            priority: priority
+            priority: priority,
+            source: source,
+            sourceId: sourceId
         )
     }
 

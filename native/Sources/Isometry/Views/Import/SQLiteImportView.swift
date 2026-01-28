@@ -249,7 +249,7 @@ struct SQLiteImportView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color(.systemGray5))
+                    .background(Color.gray.opacity(0.1))
                     .foregroundColor(.primary)
                     .cornerRadius(10)
                 }
@@ -427,7 +427,7 @@ struct SQLiteImportView: View {
                 let importResult = ImportResult(
                     imported: result.imported,
                     failed: result.failed,
-                    errors: result.errors
+                    errors: result.errors.compactMap { $0 as? ImportError }
                 )
                 importResults.append(importResult)
             }
@@ -473,7 +473,7 @@ struct SQLiteImportView: View {
             let importResult = ImportResult(
                 imported: totalImported,
                 failed: totalFailed,
-                errors: allErrors
+                errors: allErrors.compactMap { $0 as? ImportError }
             )
             importResults.append(importResult)
 
@@ -591,6 +591,6 @@ struct AdvancedSyncSettingsView: View {
         let database = try IsometryDatabase(path: ":memory:")
         return SQLiteImportView(database: database)
     } catch {
-        return Text("Failed to create database: \(error)")
+        return Text("Failed to create database: \(error.localizedDescription)")
     }
 }

@@ -24,8 +24,6 @@ public struct DatabaseSurface {
     public let description: String
 }
 
-// Temporary typealias to resolve compilation issues
-public typealias ETLDataSurface = DatabaseSurface
 
 /// Thread-safe database actor for Isometry
 ///
