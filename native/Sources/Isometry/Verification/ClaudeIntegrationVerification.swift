@@ -5,11 +5,11 @@ import os.log
 /// Verification tests for Claude API integration in Phase 6.3
 /// Tests the complete command routing and API client setup
 public struct ClaudeIntegrationVerification {
-    private let logger = Logger(subsystem: "com.isometry.app", category: "ClaudeVerification")
+    private let logger = OSLog(subsystem: "com.isometry.app", category: "ClaudeVerification")
 
     /// Verify that Claude API client can be instantiated correctly
     public func verifyAPIClientSetup() -> ClaudeVerificationResult {
-        logger.info("Starting Claude API client setup verification...")
+        os_log("Starting Claude API client setup verification...", log: logger, type: .info)
 
         do {
             // Test 1: Verify APIConfiguration creation
@@ -27,18 +27,18 @@ public struct ClaudeIntegrationVerification {
             // Test 2: Verify ClaudeAPIClient instantiation
             let client = ClaudeAPIClient(configuration: config)
 
-            logger.info("✅ Claude API client setup verification passed")
+            os_log("✅ Claude API client setup verification passed", log: logger, type: .info)
             return .success("Claude API client instantiated successfully with valid configuration")
 
         } catch {
-            logger.error("❌ Claude API client setup failed: \(error.localizedDescription)")
+            os_log("❌ Claude API client setup failed: %@", log: logger, type: .error, error.localizedDescription)
             return .failure("Failed to instantiate Claude API client: \(error.localizedDescription)")
         }
     }
 
     /// Verify command routing logic (without making actual API calls)
     public func verifyCommandRouting() -> ClaudeVerificationResult {
-        logger.info("Starting command routing verification...")
+        os_log("Starting command routing verification...", log: logger, type: .info)
 
         // Test 1: Verify Claude command detection
         let testCommands = [
@@ -54,7 +54,7 @@ public struct ClaudeIntegrationVerification {
             let isClaudeCommand = command.hasPrefix("/claude")
 
             if isClaudeCommand != shouldBeClaudeCommand {
-                logger.error("❌ Command routing failed for: \(command)")
+                os_log("❌ Command routing failed for: %@", log: logger, type: .error, command)
                 return .failure("Command '\(command)' incorrectly classified")
             }
         }
@@ -71,13 +71,13 @@ public struct ClaudeIntegrationVerification {
             return .failure("ShellContext creation failed")
         }
 
-        logger.info("✅ Command routing verification passed")
+        os_log("✅ Command routing verification passed", log: logger, type: .info)
         return .success("Command routing logic works correctly")
     }
 
     /// Verify SandboxExecutor integration with Claude commands
     public func verifySandboxIntegration() async -> ClaudeVerificationResult {
-        logger.info("Starting sandbox integration verification...")
+        os_log("Starting sandbox integration verification...", log: logger, type: .info)
 
         do {
             // Test 1: Verify SandboxExecutor instantiation
@@ -112,18 +112,18 @@ public struct ClaudeIntegrationVerification {
                 return .failure("Forbidden network command incorrectly allowed")
             }
 
-            logger.info("✅ Sandbox integration verification passed")
+            os_log("✅ Sandbox integration verification passed", log: logger, type: .info)
             return .success("SandboxExecutor properly configured for Claude integration")
 
         } catch {
-            logger.error("❌ Sandbox integration verification failed: \(error.localizedDescription)")
+            os_log("❌ Sandbox integration verification failed: %@", log: logger, type: .error, error.localizedDescription)
             return .failure("SandboxExecutor integration error: \(error.localizedDescription)")
         }
     }
 
     /// Run all Claude integration verifications
     public func runFullVerification() async -> VerificationSummary {
-        logger.info("🔄 Starting full Claude integration verification...")
+        os_log("🔄 Starting full Claude integration verification...", log: logger, type: .info)
 
         var results: [ClaudeVerificationResult] = []
 
@@ -148,9 +148,9 @@ public struct ClaudeIntegrationVerification {
         )
 
         if successCount == totalCount {
-            logger.info("🎉 All Claude integration verifications passed!")
+            os_log("🎉 All Claude integration verifications passed!", log: logger, type: .info)
         } else {
-            logger.warning("⚠️ Some verifications failed: \(totalCount - successCount)/\(totalCount)")
+            os_log("⚠️ Some verifications failed: %d/%d", log: logger, type: .default, totalCount - successCount, totalCount)
         }
 
         return summary

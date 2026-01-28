@@ -1,6 +1,23 @@
 import Foundation
 import GRDB
 
+// MARK: - Storage Related Types (TODO: Move to appropriate files)
+
+public struct DatabaseStoredContent {
+    public let id: String
+    public let content: Data
+    public let contentType: String
+    public let size: Int64
+    public let createdAt: Date
+    public let lastAccessedAt: Date
+}
+
+public struct StorageStats {
+    public let totalSize: Int64
+    public let itemCount: Int
+    public let lastCleanup: Date
+}
+
 /// Thread-safe database actor for Isometry
 ///
 /// Provides all CRUD operations, full-text search, and graph traversal
@@ -1208,4 +1225,34 @@ extension IsometryDatabase {
             fatalError("Failed to create preview database: \(error)")
         }
     }()
+
+    // MARK: - Missing Method Stubs (TODO: Implement)
+
+    public func getStoredContent(by id: String) async throws -> DatabaseStoredContent? {
+        // TODO: Implement stored content retrieval
+        return nil
+    }
+
+    public func updateContentAccess(contentId: String, accessTime: Date) async throws {
+        // TODO: Implement content access tracking
+    }
+
+    public func listStoredContent() async throws -> [DatabaseStoredContent] {
+        // TODO: Implement stored content listing
+        return []
+    }
+
+    public func getStorageStats() async throws -> StorageStats {
+        // TODO: Implement storage statistics
+        return StorageStats(totalSize: 0, itemCount: 0, lastCleanup: Date())
+    }
+
+    public func getCleanupCandidates(olderThan: Date) async throws -> [String] {
+        // TODO: Implement cleanup candidate identification
+        return []
+    }
+
+    public func deleteStoredContent(id: String) async throws {
+        // TODO: Implement content deletion
+    }
 }

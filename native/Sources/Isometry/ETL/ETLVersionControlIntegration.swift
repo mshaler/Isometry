@@ -225,9 +225,9 @@ extension ETLOperationManager {
                 "operation_id": operation.id.uuidString,
                 "operation_type": operation.template.name,
                 "checkpoint_type": "post_execution",
-                "processed_items": result.processedItems,
-                "imported_nodes": result.importedNodes.count,
-                "success": result.status.isSuccess
+                "processed_items": String(result.processedItems),
+                "imported_nodes": String(result.importedNodes.count),
+                "success": String(result.status.isSuccess)
             ]
         )
 
@@ -412,7 +412,7 @@ extension ETLOperationManager {
             author: "synthetic_engine",
             metadata: [
                 "data_scale": branch.dataScale.rawValue,
-                "synthetic": true
+                "synthetic": String(true)
             ]
         )
 
