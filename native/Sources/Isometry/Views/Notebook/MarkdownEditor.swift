@@ -16,12 +16,12 @@ public struct MarkdownEditor: View {
 
     public var body: some View {
         ZStack {
-            macOSTextEditor(text: $text, isEditing: $isEditing, coordinator: coordinator)
+            macOSTextEditor(text: $text, isEditing: $isEditing)
 
-            // Slash command menu overlay
-            SlashCommandMenu(commandManager: coordinator.commandManager) { command in
-                coordinator.executeSelectedCommand()
-            }
+            // TODO: Fix SlashCommandMenu integration
+            // SlashCommandMenu(commandManager: coordinator.commandManager) { command in
+            //     coordinator.executeSelectedCommand()
+            // }
         }
         .onAppear {
             coordinator.setup(textBinding: $text, isEditingBinding: $isEditing)
@@ -322,11 +322,11 @@ private class EditorCoordinator: NSObject, ObservableObject {
         // Look backwards from cursor to find the slash
         for i in (0..<cursorPosition).reversed() {
             let char = nsString.character(at: i)
-            if char == UnicodeScalar("/")!.value {
+            if char == UnicodeScalar("/").value {
                 slashLocation = i
                 break
             }
-            if char == UnicodeScalar("\n")!.value || char == UnicodeScalar(" ")!.value {
+            if char == UnicodeScalar("\n").value || char == UnicodeScalar(" ").value {
                 break // Stop at line or word boundaries
             }
         }
