@@ -130,9 +130,13 @@ check_prerequisites() {
 
     # Check for Apple Developer Team ID
     if [[ -z "$TEAM_ID" ]]; then
-        log_error "APPLE_DEVELOPER_TEAM_ID environment variable not set"
-        log_error "Set your Apple Developer Team ID: export APPLE_DEVELOPER_TEAM_ID='YOUR_TEAM_ID'"
-        exit 1
+        if [[ "$DRY_RUN" == true ]]; then
+            log_warning "APPLE_DEVELOPER_TEAM_ID not set - dry run will skip upload, but archives may fail"
+        else
+            log_error "APPLE_DEVELOPER_TEAM_ID environment variable not set"
+            log_error "Set your Apple Developer Team ID: export APPLE_DEVELOPER_TEAM_ID='YOUR_TEAM_ID'"
+            exit 1
+        fi
     fi
 
     # Check for App Store Connect API credentials
