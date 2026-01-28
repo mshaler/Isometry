@@ -155,6 +155,7 @@ private struct macOSTextEditor: NSViewRepresentable {
 
 // MARK: - Editor Coordinator
 
+@MainActor
 private class EditorCoordinator: NSObject {
     private var textBinding: Binding<String>?
     private var isEditingBinding: Binding<Bool>?

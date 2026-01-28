@@ -1,5 +1,6 @@
 import Foundation
 import PDFKit
+import WebKit
 import os.log
 
 #if canImport(UIKit)

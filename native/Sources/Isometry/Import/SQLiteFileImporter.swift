@@ -18,7 +18,7 @@ public actor SQLiteFileImporter {
         }
         defer { fileURL.stopAccessingSecurityScopedResource() }
 
-        let dbType = detectDatabaseType(at: fileURL)
+        let dbType = try await detectDatabaseType(at: fileURL)
         print("Detected database type: \(dbType) for file: \(fileURL.lastPathComponent)")
 
         switch dbType {
@@ -39,11 +39,11 @@ public actor SQLiteFileImporter {
 
     // MARK: - Database Type Detection
 
-    private func detectDatabaseType(at fileURL: URL) -> DatabaseType {
+    private func detectDatabaseType(at fileURL: URL) async throws -> DatabaseType {
         do {
             let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
 
-            return try sourceDB.read { db in
+            return try await sourceDB.read { db in
                 let tables = try String.fetchAll(db, sql: "SELECT name FROM sqlite_master WHERE type='table'")
                 let tableNames = tables.map { $0.lowercased() }
 
@@ -146,7 +146,7 @@ public actor SQLiteFileImporter {
         var result = ImportResult()
 
         // First read all data synchronously
-        let reminderRowsData: [Row] = try sourceDB.read { sourceConn in
+        let reminderRowsData: [Row] = try await sourceDB.read { sourceConn in
             let sql = """
                 SELECT
                     Z_PK as id,
@@ -185,7 +185,7 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        let eventRows = try sourceDB.read { sourceConn in
+        let eventRows = try await sourceDB.read { sourceConn in
             let sql = """
                 SELECT
                     e.ROWID as id,
@@ -208,7 +208,7 @@ public actor SQLiteFileImporter {
         for eventRow in eventRows {
             do {
                 let node = try createEventNode(from: eventRow)
-                try await database.insert(node: node)
+                try await database.createNode(node)
                 result.imported += 1
             } catch {
                 result.failed += 1
@@ -223,7 +223,7 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        let contactRows = try sourceDB.read { sourceConn in
+        let contactRows = try await sourceDB.read { sourceConn in
             let sql = """
                 SELECT
                     ROWID as id,
@@ -244,7 +244,7 @@ public actor SQLiteFileImporter {
         for contactRow in contactRows {
             do {
                 let node = try createContactNode(from: contactRow)
-                try await database.insert(node: node)
+                try await database.createNode(node)
                 result.imported += 1
             } catch {
                 result.failed += 1
@@ -262,7 +262,7 @@ public actor SQLiteFileImporter {
         // Extract bookmarks data
         let bookmarkRows: [Row]
         do {
-            bookmarkRows = try sourceDB.read { sourceConn in
+            bookmarkRows = try await sourceDB.read { sourceConn in
                 let bookmarkSQL = """
                     SELECT
                         id,
@@ -286,7 +286,7 @@ public actor SQLiteFileImporter {
         // Extract reading list data
         let readingListRows: [Row]
         do {
-            readingListRows = try sourceDB.read { sourceConn in
+            readingListRows = try await sourceDB.read { sourceConn in
                 let readingListSQL = """
                     SELECT
                         id,
@@ -337,7 +337,7 @@ public actor SQLiteFileImporter {
         let sourceDB = try DatabaseQueue(path: fileURL.path, configuration: readOnlyConfiguration())
         var result = ImportResult()
 
-        let tableData = try sourceDB.read { sourceConn in
+        let tableData = try await sourceDB.read { sourceConn in
             // Get all tables
             let tableNames = try String.fetchAll(sourceConn, sql: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
 
@@ -362,7 +362,7 @@ public actor SQLiteFileImporter {
                     sourceFile: fileURL.lastPathComponent
                 )
 
-                try await database.insert(node: node)
+                try await database.createNode(node)
                 result.imported += 1
             } catch {
                 result.failed += 1

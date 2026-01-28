@@ -4,21 +4,26 @@ import Combine
 
 /// GSD Executor Pattern ETL Operation Manager
 /// Orchestrates complex data import/export workflows with user control
-public actor ETLOperationManager: ObservableObject {
+@MainActor
+public class ETLOperationManager: ObservableObject {
     internal let database: IsometryDatabase
     internal let storageManager: ContentAwareStorageManager
+    internal let versionManager: ETLVersionManager
+    internal let catalog: NodeCatalog
     private var operationQueue: [ETLOperation] = []
-    private var activeOperations: [UUID: ETLOperationExecution] = [:]
-    private var operationHistory: [ETLOperationResult] = []
+    internal var activeOperations: [UUID: ETLOperationExecution] = [:]
+    internal var operationHistory: [ETLOperationResult] = []
 
     @Published public private(set) var currentOperations: [ETLOperationExecution] = []
     @Published public private(set) var queuedOperations: [ETLOperation] = []
     @Published public private(set) var recentResults: [ETLOperationResult] = []
     @Published public private(set) var isExecuting = false
 
-    public init(database: IsometryDatabase, storageManager: ContentAwareStorageManager) {
+    public init(database: IsometryDatabase, storageManager: ContentAwareStorageManager, versionManager: ETLVersionManager, catalog: NodeCatalog) {
         self.database = database
         self.storageManager = storageManager
+        self.versionManager = versionManager
+        self.catalog = catalog
         // loadOperationHistory is actor-isolated, call asynchronously
         Task {
             await loadOperationHistory()
@@ -69,7 +74,7 @@ public actor ETLOperationManager: ObservableObject {
             let failedResult = ETLOperationResult(
                 operationId: operation.id,
                 operation: operation,
-                status: .failed(error),
+                status: .failed(error.localizedDescription),
                 startedAt: execution.startedAt,
                 completedAt: Date(),
                 totalDuration: Date().timeIntervalSince(execution.startedAt),
@@ -162,7 +167,7 @@ public actor ETLOperationManager: ObservableObject {
     }
 
     @MainActor
-    private func updatePublishedState() {
+    internal func updatePublishedState() {
         currentOperations = Array(activeOperations.values)
         queuedOperations = operationQueue
         recentResults = Array(operationHistory.suffix(10))
