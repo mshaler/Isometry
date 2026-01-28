@@ -31,6 +31,8 @@ public final class PerformanceMonitor: @unchecked Sendable {
 public enum ManagedProcessState: String, CaseIterable, Sendable {
     case idle = "idle"
     case running = "running"
+    case completed = "completed"
+    case failed = "failed"
     case suspended = "suspended"
     case terminated = "terminated"
     case backgrounded = "backgrounded"
@@ -41,10 +43,14 @@ public enum ManagedProcessState: String, CaseIterable, Sendable {
             return "Ready"
         case .running:
             return "Running"
+        case .completed:
+            return "Completed"
+        case .failed:
+            return "Failed"
         case .suspended:
             return "Suspended"
         case .terminated:
-            return "Completed"
+            return "Terminated"
         case .backgrounded:
             return "Background"
         }
@@ -60,10 +66,14 @@ public enum ManagedProcessState: String, CaseIterable, Sendable {
             return "circle"
         case .running:
             return "play.circle.fill"
+        case .completed:
+            return "checkmark.circle"
+        case .failed:
+            return "xmark.circle"
         case .suspended:
             return "pause.circle"
         case .terminated:
-            return "checkmark.circle"
+            return "stop.circle"
         case .backgrounded:
             return "moon.circle"
         }

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 /// Density level configuration for hierarchical data aggregation
 public struct DensityLevel: Identifiable, Hashable {
@@ -167,7 +170,13 @@ public struct DensitySliderControl: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(.systemGray6))
+                .fill({
+                    #if os(iOS)
+                    Color(UIColor.systemGray6)
+                    #else
+                    Color(NSColor.controlBackgroundColor)
+                    #endif
+                }())
                 .stroke(Color.gray.opacity(0.2), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)

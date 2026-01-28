@@ -1,5 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
+#if os(iOS)
+import UIKit
+#endif
 
 /// Axis selection configuration for PAFV (Planes, Axes, Facets, Values)
 public struct AxisSelection: Identifiable, Hashable, Codable {
@@ -236,7 +239,13 @@ public struct AxisDropZone: View {
 
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: 8)
-            .fill(Color(.systemGray6))
+            .fill({
+                #if os(iOS)
+                Color(UIColor.systemGray6)
+                #else
+                Color(NSColor.controlBackgroundColor)
+                #endif
+            }())
             .stroke(
                 isDropTarget ? Color.accentColor : Color.gray.opacity(0.3),
                 lineWidth: 1
@@ -452,7 +461,13 @@ public struct AxisNavigatorView: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background({
+            #if os(iOS)
+            Color(UIColor.systemBackground)
+            #else
+            Color(NSColor.windowBackgroundColor)
+            #endif
+        }())
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
