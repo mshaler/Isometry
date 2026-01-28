@@ -20,6 +20,36 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 NATIVE_DIR="$PROJECT_ROOT/native"
 BUILD_DIR="$PROJECT_ROOT/.build-artifacts"
 
+# Project resolution (prefer native Xcode projects)
+resolve_project() {
+    local candidates=("$@")
+    for candidate in "${candidates[@]}"; do
+        if [[ -d "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+IOS_PROJECT="$(resolve_project \
+    "$NATIVE_DIR/IsometryiOS/IsometryiOS.xcodeproj" \
+    "$PROJECT_ROOT/ios/Isometry.xcodeproj" \
+    "$NATIVE_DIR/Isometry.xcodeproj")"
+MACOS_PROJECT="$(resolve_project \
+    "$NATIVE_DIR/IsometrymacOS/IsometrymacOS.xcodeproj" \
+    "$PROJECT_ROOT/macos/Isometry.xcodeproj" \
+    "$NATIVE_DIR/Isometry.xcodeproj")"
+
+IOS_SCHEME="IsometryiOS"
+MACOS_SCHEME="IsometrymacOS"
+if [[ "$IOS_PROJECT" == *"/ios/Isometry.xcodeproj" ]] || [[ "$IOS_PROJECT" == *"/native/Isometry.xcodeproj" ]]; then
+    IOS_SCHEME="Isometry"
+fi
+if [[ "$MACOS_PROJECT" == *"/macos/Isometry.xcodeproj" ]] || [[ "$MACOS_PROJECT" == *"/native/Isometry.xcodeproj" ]]; then
+    MACOS_SCHEME="Isometry"
+fi
+
 # App Store Connect Configuration
 BUNDLE_ID_IOS="com.isometry.app.ios"
 BUNDLE_ID_MACOS="com.isometry.app.macos"
@@ -121,6 +151,16 @@ check_prerequisites() {
         exit 1
     fi
 
+    if [[ -z "$IOS_PROJECT" ]] && [[ "$MACOS_ONLY" != true ]]; then
+        log_error "No iOS Xcode project found (expected native/IsometryiOS or ios/Isometry.xcodeproj)"
+        exit 1
+    fi
+
+    if [[ -z "$MACOS_PROJECT" ]] && [[ "$IOS_ONLY" != true ]]; then
+        log_error "No macOS Xcode project found (expected native/IsometrymacOS or macos/Isometry.xcodeproj)"
+        exit 1
+    fi
+
     log_success "Prerequisites check completed"
 }
 
@@ -199,8 +239,8 @@ build_ios_app() {
     # Archive iOS app
     log_info "Creating iOS archive..."
     xcodebuild archive \
-        -project "$NATIVE_DIR/Isometry.xcodeproj" \
-        -scheme "Isometry" \
+        -project "$IOS_PROJECT" \
+        -scheme "$IOS_SCHEME" \
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=iOS" \
         -archivePath "$ARCHIVE_PATH_IOS" \
@@ -267,8 +307,8 @@ build_macos_app() {
     # Archive macOS app
     log_info "Creating macOS archive..."
     xcodebuild archive \
-        -project "$NATIVE_DIR/Isometry.xcodeproj" \
-        -scheme "Isometry" \
+        -project "$MACOS_PROJECT" \
+        -scheme "$MACOS_SCHEME" \
         -configuration "$BUILD_CONFIGURATION" \
         -destination "generic/platform=macOS" \
         -archivePath "$ARCHIVE_PATH_MACOS" \

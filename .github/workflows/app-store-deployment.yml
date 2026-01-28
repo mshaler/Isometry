@@ -1,5 +1,7 @@
 name: App Store Deployment
 
+# app-store-upload pipeline
+
 on:
   push:
     tags:
@@ -171,8 +173,8 @@ jobs:
         run: |
           cd native
           xcodebuild archive \
-            -project Isometry.xcodeproj \
-            -scheme Isometry \
+            -project IsometryiOS/IsometryiOS.xcodeproj \
+            -scheme IsometryiOS \
             -configuration ${{ env.BUILD_CONFIGURATION }} \
             -destination "generic/platform=iOS" \
             -archivePath $RUNNER_TEMP/Isometry-iOS.xcarchive \
@@ -291,8 +293,8 @@ jobs:
         run: |
           cd native
           xcodebuild archive \
-            -project Isometry.xcodeproj \
-            -scheme Isometry \
+            -project IsometrymacOS/IsometrymacOS.xcodeproj \
+            -scheme IsometrymacOS \
             -configuration ${{ env.BUILD_CONFIGURATION }} \
             -destination "generic/platform=macOS" \
             -archivePath $RUNNER_TEMP/Isometry-macOS.xcarchive \
