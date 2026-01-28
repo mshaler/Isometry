@@ -21,6 +21,27 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CLOUDKIT_CONFIG_FILE="$PROJECT_ROOT/native/Sources/Isometry/CloudKit/ProductionCloudKitConfig.swift"
 SCHEMA_BACKUP_DIR="$PROJECT_ROOT/.planning/cloudkit-backups"
 
+# Xcode project resolution (prefer native projects)
+resolve_project() {
+    local candidates=("$@")
+    for candidate in "${candidates[@]}"; do
+        if [[ -d "$candidate" ]]; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+IOS_PROJECT="$(resolve_project \
+    "$PROJECT_ROOT/native/IsometryiOS/IsometryiOS.xcodeproj" \
+    "$PROJECT_ROOT/ios/Isometry.xcodeproj" \
+    "$PROJECT_ROOT/native/Isometry.xcodeproj")"
+IOS_SCHEME="IsometryiOS"
+if [[ "$IOS_PROJECT" == *"/ios/Isometry.xcodeproj" ]] || [[ "$IOS_PROJECT" == *"/native/Isometry.xcodeproj" ]]; then
+    IOS_SCHEME="Isometry"
+fi
+
 # CloudKit Configuration (from ProductionCloudKitConfig.swift)
 DEVELOPMENT_CONTAINER="iCloud.com.cardboard.app"
 PRODUCTION_CONTAINER="iCloud.com.isometry.app"
@@ -125,13 +146,18 @@ mkdir -p "$SCHEMA_BACKUP_DIR"
 validate_xcode_environment() {
     log_info "Validating Xcode environment..."
 
+    if [[ -z "$IOS_PROJECT" ]]; then
+        log_error "No iOS Xcode project found. Expected native/IsometryiOS or ios/Isometry.xcodeproj."
+        return 1
+    fi
+
     if ! command -v xcodebuild &> /dev/null; then
         log_error "Xcode command line tools not found. Please install with: xcode-select --install"
         return 1
     fi
 
     # Check if we can build the project (validates certificates and configuration)
-    if ! xcodebuild -project "$PROJECT_ROOT/native/Isometry.xcodeproj" -configuration Production -showBuildSettings &> /dev/null; then
+    if ! xcodebuild -project "$IOS_PROJECT" -scheme "$IOS_SCHEME" -configuration Production -showBuildSettings &> /dev/null; then
         log_error "Cannot access Production build configuration. Ensure certificates are properly installed."
         return 1
     fi
