@@ -418,7 +418,7 @@ public struct VisualizationCanvas: View {
     private var isMemoryConstrained: Bool {
         #if os(iOS)
         // Simple memory pressure check for iOS
-        let memoryInfo = mach_task_basic_info()
+        var memoryInfo = mach_task_basic_info()
         var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
         let kerr: kern_return_t = withUnsafeMutablePointer(to: &memoryInfo) {
             $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
