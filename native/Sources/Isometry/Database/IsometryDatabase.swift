@@ -24,6 +24,9 @@ public struct DatabaseSurface {
     public let description: String
 }
 
+// Temporary typealias to resolve compilation issues
+public typealias ETLDataSurface = DatabaseSurface
+
 /// Thread-safe database actor for Isometry
 ///
 /// Provides all CRUD operations, full-text search, and graph traversal
@@ -1264,6 +1267,16 @@ extension IsometryDatabase {
 
     public func getSurfaces() async throws -> [DatabaseSurface] {
         // TODO: Implement surface retrieval
+        return []
+    }
+
+    public func getSurfaces(for application: String) async throws -> [DatabaseSurface] {
+        // TODO: Implement surface retrieval by application
+        return []
+    }
+
+    public func getSurfaces(using streamId: String) async throws -> [DatabaseSurface] {
+        // TODO: Implement surface retrieval by stream ID
         return []
     }
 }

@@ -129,7 +129,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         for change in changes {
             let validationResult = validation.validateChange(change, currentConfig: configurations)
             guard validationResult.isValid else {
-                throw ConfigurationError.validationFailed("Validation failed for key '\\(change.key)': \\(validationResult.errors.map { "\($0)" }.joined(separator: ", "))")
+                throw ConfigurationError.validationFailed("Validation failed for key '\(change.key)': \(validationResult.errors.map { "\($0)" }.joined(separator: ", "))")
             }
         }
 
