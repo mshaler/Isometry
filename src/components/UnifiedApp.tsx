@@ -4,6 +4,7 @@ import { EnvironmentProvider } from '../contexts/EnvironmentContext';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { FilterProvider } from '../contexts/FilterContext';
 import { PAFVProvider } from '../contexts/PAFVContext';
+import { NotebookProvider } from '../contexts/NotebookContext';
 import { DatabaseProvider } from '../db/DatabaseContext';
 
 // Import all Figma components
@@ -40,10 +41,11 @@ export function UnifiedApp() {
       <ThemeProvider>
         <EnvironmentProvider>
           <DatabaseProvider>
-            <CacheInvalidationProvider>
-              <AppStateProvider>
-                <FilterProvider>
-                  <PAFVProvider>
+            <NotebookProvider>
+              <CacheInvalidationProvider>
+                <AppStateProvider>
+                  <FilterProvider>
+                    <PAFVProvider>
                   <div className="h-screen flex flex-col bg-gray-50">
                     {/* Toolbar: Menu bar + command buttons */}
                     <ErrorBoundary level="component" name="Toolbar">
@@ -88,10 +90,11 @@ export function UnifiedApp() {
                     </ErrorBoundary>
                   </div>
                   <NotificationSystem />
-                  </PAFVProvider>
-                </FilterProvider>
-              </AppStateProvider>
-            </CacheInvalidationProvider>
+                    </PAFVProvider>
+                  </FilterProvider>
+                </AppStateProvider>
+              </CacheInvalidationProvider>
+            </NotebookProvider>
           </DatabaseProvider>
         </EnvironmentProvider>
       </ThemeProvider>

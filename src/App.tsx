@@ -1,8 +1,7 @@
 import MVPDemo from './MVPDemo';
 
 function App() {
-  // GSD: Use working MVP demo with UnifiedApp accessible via "Unified" button
-  // This provides clean testing environment without complex context dependencies
+  // GSD: Use MVPDemo view switcher with notebook mode and UnifiedApp access
   return <MVPDemo />;
 }
 
