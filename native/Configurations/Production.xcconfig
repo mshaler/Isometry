@@ -57,7 +57,7 @@ NOTARIZE_BUNDLE = YES
 OTHER_CODE_SIGN_FLAGS[sdk=macosx*] = --timestamp --strict --options runtime
 
 // CloudKit Production Environment
-CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.cardboard.isometry
+CLOUDKIT_CONTAINER_IDENTIFIER = iCloud.com.mshaler.isometry
 CLOUDKIT_ENVIRONMENT = Production
 CLOUDKIT_ZONE_NAME = IsometryZone
 

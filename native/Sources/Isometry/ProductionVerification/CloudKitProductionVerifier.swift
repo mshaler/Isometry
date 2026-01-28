@@ -27,8 +27,7 @@ public class CloudKitProductionVerifier: ObservableObject {
 
     public init() {
         // IMPORTANT: This should use the production CloudKit container ID
-        // Replace "iCloud.com.yourcompany.isometry" with actual production container
-        self.container = CKContainer(identifier: "iCloud.com.yourcompany.isometry")
+        self.container = CKContainer(identifier: "iCloud.com.mshaler.isometry")
         self.privateDatabase = container.privateCloudDatabase
         self.publicDatabase = container.publicCloudDatabase
     }

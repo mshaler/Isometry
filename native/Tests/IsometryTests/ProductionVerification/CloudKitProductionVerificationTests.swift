@@ -69,7 +69,7 @@ struct CloudKitProductionContainerTests {
 
         // Verify both private and public databases are initialized
         // This is tested through the container initialization
-        let containerIdentifier = "iCloud.com.yourcompany.isometry" // From implementation
+        let containerIdentifier = "iCloud.com.mshaler.isometry"
 
         // Test validates that database setup logic exists
         #expect(!containerIdentifier.isEmpty)
