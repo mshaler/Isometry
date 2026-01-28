@@ -33,7 +33,8 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
 
     deinit {
         flushTimer?.invalidate()
-        flushAnalytics()
+        // Note: Cannot call flushAnalytics() here due to actor isolation.
+        // Analytics will be flushed on next app launch if needed.
     }
 
     // MARK: - Public API

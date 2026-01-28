@@ -14,10 +14,10 @@ public final class ProductionCloudKitManager: ObservableObject {
     // MARK: - Configuration
 
     /// Production CloudKit container identifier
-    public static let productionContainerIdentifier = "iCloud.com.isometry.app"
+    nonisolated public static let productionContainerIdentifier = "iCloud.com.isometry.app"
 
     /// Production zone name
-    public static let productionZoneName = "IsometryProductionZone"
+    nonisolated public static let productionZoneName = "IsometryProductionZone"
 
     /// Production subscription identifier
     public static let productionSubscriptionID = "isometry-production-changes"

@@ -840,11 +840,11 @@ public protocol PrivacyCompliantAnalytics {
 }
 
 extension ProductionAnalytics: PrivacyCompliantAnalytics {
-    public func requestConsent() async -> Bool {
+    nonisolated public func requestConsent() async -> Bool {
         return await requestAnalyticsConsent()
     }
 
-    public func revokeConsent() async {
+    nonisolated public func revokeConsent() async {
         await disableAllAnalytics()
     }
 
@@ -869,14 +869,14 @@ public let productionAnalytics = ProductionAnalytics()
 
 // MARK: - Analytics Extensions
 
-extension ProductionAnalytics: Codable {
+extension ProductionAnalytics: @unchecked Sendable, Codable {
     enum CodingKeys: String, CodingKey {
         case privacySettings
         case currentSessionId
         case isSessionActive
     }
 
-    public convenience init(from decoder: Decoder) throws {
+    nonisolated public convenience init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let privacySettings = try container.decode(PrivacySettings.self, forKey: .privacySettings)
         let currentSessionId = try container.decode(String.self, forKey: .currentSessionId)
@@ -888,7 +888,7 @@ extension ProductionAnalytics: Codable {
         setupFlushTimer()
     }
 
-    public func encode(to encoder: Encoder) throws {
+    nonisolated public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(privacySettings, forKey: .privacySettings)
         try container.encode(currentSessionId, forKey: .currentSessionId)
