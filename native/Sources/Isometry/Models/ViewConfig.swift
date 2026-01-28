@@ -35,6 +35,14 @@ public struct ViewConfig: Codable, Sendable, Identifiable, Hashable {
     public var syncVersion: Int
     public var lastSyncedAt: Date?
 
+    // MARK: - PAFV Bridge Integration
+    /// Sequence ID for bridge message ordering
+    public var sequenceId: UInt64
+    /// Last PAFV update timestamp for conflict resolution
+    public var lastPAFVUpdate: Date?
+    /// Serialized facet mappings (JSON) for React facet names
+    public var facetMappings: String?
+
     // MARK: - Initialization
     public init(
         id: String = UUID().uuidString,
@@ -51,7 +59,10 @@ public struct ViewConfig: Codable, Sendable, Identifiable, Hashable {
         modifiedAt: Date = Date(),
         lastUsedAt: Date? = nil,
         syncVersion: Int = 0,
-        lastSyncedAt: Date? = nil
+        lastSyncedAt: Date? = nil,
+        sequenceId: UInt64 = 0,
+        lastPAFVUpdate: Date? = nil,
+        facetMappings: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -68,6 +79,9 @@ public struct ViewConfig: Codable, Sendable, Identifiable, Hashable {
         self.lastUsedAt = lastUsedAt
         self.syncVersion = syncVersion
         self.lastSyncedAt = lastSyncedAt
+        self.sequenceId = sequenceId
+        self.lastPAFVUpdate = lastPAFVUpdate
+        self.facetMappings = facetMappings
     }
 }
 
@@ -91,6 +105,9 @@ extension ViewConfig: FetchableRecord, PersistableRecord {
         case lastUsedAt = "last_used_at"
         case syncVersion = "sync_version"
         case lastSyncedAt = "last_synced_at"
+        case sequenceId = "sequence_id"
+        case lastPAFVUpdate = "last_pafv_update"
+        case facetMappings = "facet_mappings"
     }
 }
 
@@ -128,4 +145,109 @@ extension ViewConfig {
     public var hasFilters: Bool {
         return filterConfig != nil && filterConfig != "{}"
     }
+}
+
+// MARK: - PAFV Integration
+extension ViewConfig {
+    /// Create ViewConfig from React PAFVState
+    public static func fromPAFVState(
+        _ pafvState: PAFVState,
+        sequenceId: UInt64,
+        baseConfig: ViewConfig
+    ) throws -> ViewConfig {
+        // Map React mappings to native axis strings
+        let xMapping = pafvState.mappings.first(where: { $0.plane == "x" })?.axis ?? "time"
+        let yMapping = pafvState.mappings.first(where: { $0.plane == "y" })?.axis ?? "category"
+
+        // Create facet mappings JSON
+        let facetMappingsDict = pafvState.mappings.reduce(into: [String: String]()) { result, mapping in
+            result[mapping.plane] = mapping.facet
+        }
+
+        let facetMappingsData = try JSONSerialization.data(withJSONObject: facetMappingsDict)
+        let facetMappingsString = String(data: facetMappingsData, encoding: .utf8)
+
+        // Determine origin pattern from view mode
+        let originPattern = pafvState.viewMode == "grid" ? "anchor" : baseConfig.originPattern
+
+        var newConfig = baseConfig
+        newConfig.xAxisMapping = xMapping
+        newConfig.yAxisMapping = yMapping
+        newConfig.originPattern = originPattern
+        newConfig.sequenceId = sequenceId
+        newConfig.lastPAFVUpdate = Date()
+        newConfig.modifiedAt = Date()
+        newConfig.facetMappings = facetMappingsString
+
+        return newConfig
+    }
+
+    /// Export ViewConfig back to React PAFV mapping format
+    public func toPAFVMapping() -> [String: Any] {
+        var mappings: [[String: Any]] = []
+
+        // Add X axis mapping
+        mappings.append([
+            "plane": "x",
+            "axis": xAxisMapping,
+            "facet": extractFacetName(for: "x") ?? "default"
+        ])
+
+        // Add Y axis mapping
+        mappings.append([
+            "plane": "y",
+            "axis": yAxisMapping,
+            "facet": extractFacetName(for: "y") ?? "default"
+        ])
+
+        return [
+            "mappings": mappings,
+            "viewMode": originPattern == "anchor" ? "grid" : "list",
+            "sequenceId": sequenceId
+        ]
+    }
+
+    /// Extract facet name for a plane from stored facetMappings JSON
+    private func extractFacetName(for plane: String) -> String? {
+        guard let facetMappingsString = facetMappings,
+              let data = facetMappingsString.data(using: .utf8),
+              let mappings = try? JSONSerialization.jsonObject(with: data) as? [String: String] else {
+            return nil
+        }
+
+        return mappings[plane]
+    }
+
+    /// Validate ViewConfig consistency for PAFV bridge updates
+    public func validatePAFVConsistency() -> Bool {
+        // Ensure axis mappings are valid LATCH values
+        let validAxes = ["location", "alphabet", "time", "category", "hierarchy"]
+
+        guard validAxes.contains(xAxisMapping),
+              validAxes.contains(yAxisMapping) else {
+            return false
+        }
+
+        // Ensure sequence ID is reasonable (not ancient)
+        if let lastUpdate = lastPAFVUpdate {
+            let timeSinceUpdate = Date().timeIntervalSince(lastUpdate)
+            if timeSinceUpdate > 3600 { // 1 hour
+                return false
+            }
+        }
+
+        return true
+    }
+}
+
+// MARK: - PAFV State Type (for bridge integration)
+struct PAFVState {
+    let mappings: [PAFVAxisMapping]
+    let viewMode: String
+}
+
+struct PAFVAxisMapping {
+    let plane: String
+    let axis: String
+    let facet: String
 }

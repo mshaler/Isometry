@@ -8,8 +8,35 @@ struct IsometryAppMain: App {
     var body: some Scene {
         WindowGroup {
             #if os(macOS)
-            MacOSContentView()
-                .environmentObject(appState)
+            // Temporary simple view to test window appears
+            if appState.isLoading {
+                VStack {
+                    ProgressView()
+                    Text("Loading Isometry...")
+                        .padding()
+                    Text("Initializing database...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(minWidth: 400, minHeight: 300)
+            } else if let error = appState.error {
+                VStack {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.largeTitle)
+                        .foregroundColor(.red)
+                    Text("Startup Error")
+                        .font(.headline)
+                    Text(error.localizedDescription)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                }
+                .frame(minWidth: 400, minHeight: 300)
+            } else {
+                MacOSContentView()
+                    .environmentObject(appState)
+            }
             #else
             ContentView()
                 .environmentObject(appState)

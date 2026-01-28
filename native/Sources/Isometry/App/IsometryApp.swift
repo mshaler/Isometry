@@ -85,6 +85,7 @@ public class AppState: ObservableObject {
     // MARK: - Initialization
 
     public init() {
+        print("🚀 AppState: Starting initialization...")
         Task {
             await initializeDatabase()
         }
@@ -92,6 +93,7 @@ public class AppState: ObservableObject {
 
     private func initializeDatabase() async {
         do {
+            print("📁 AppState: Setting up database directory...")
             // Get database path
             let fileManager = FileManager.default
             let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -100,29 +102,43 @@ public class AppState: ObservableObject {
             try fileManager.createDirectory(at: dbDirectory, withIntermediateDirectories: true)
 
             let dbPath = dbDirectory.appendingPathComponent("isometry.sqlite").path
+            print("📊 AppState: Database path: \(dbPath)")
 
             // Initialize database
+            print("🔨 AppState: Creating IsometryDatabase...")
             let db = try IsometryDatabase(path: dbPath)
+            print("⚡ AppState: Initializing database...")
             try await db.initialize()
             self.database = db
+            print("✅ AppState: Database initialized successfully")
 
             // Auto-import alto-index notes on first launch (if database is empty)
+            print("📝 AppState: Checking for auto-import...")
             await autoImportNotesIfNeeded(database: db)
 
             // Initialize sync manager only if CloudKit entitlements are present
             // CKContainer crashes without proper entitlements, so check first
+            print("☁️ AppState: Checking CloudKit availability...")
             if Self.isCloudKitAvailable() {
+                print("✅ AppState: CloudKit available, initializing sync manager...")
                 let sync = CloudKitSyncManager(database: db)
                 self.syncManager = sync
+                print("✅ AppState: CloudKit sync manager initialized")
             } else {
-                print("CloudKit sync disabled: entitlements not configured")
+                print("⚠️ AppState: CloudKit sync disabled: entitlements not configured")
             }
 
-            isLoading = false
+            print("🎉 AppState: Initialization complete!")
+            await MainActor.run {
+                isLoading = false
+            }
 
         } catch {
-            self.error = error
-            isLoading = false
+            print("❌ AppState: Initialization failed: \(error)")
+            await MainActor.run {
+                self.error = error
+                isLoading = false
+            }
         }
     }
 

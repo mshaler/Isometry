@@ -452,6 +452,81 @@ public class SuperGridViewModel: ObservableObject {
         // Disable non-essential animations
         // Simplify rendering quality
     }
+
+    // MARK: - PAFV Bridge Integration
+
+    /// Update SuperGridViewModel from PAFV bridge message
+    /// Handles debounced ViewConfig updates from React axis mapping changes
+    public func updateFromPAFV(_ config: ViewConfig) async {
+        // Validate configuration before applying
+        guard config.validatePAFVConsistency() else {
+            error = "Invalid PAFV configuration received"
+            return
+        }
+
+        // Update current configuration
+        currentConfig = config
+
+        // Trigger grid data update with new axis mappings
+        await updateGridData()
+    }
+
+    /// Handle coordinate synchronization from React D3 calculations
+    /// Used by PAFVMessageHandler for syncCoordinates bridge messages
+    public func updateFromCoordinateSync(_ transformations: [CoordinateTransformation]) async {
+        // Apply coordinate transformations to existing nodes
+        let transformer = CoordinateTransformer.shared
+
+        var updatedNodes: [GridCellData] = []
+
+        for transformation in transformations {
+            // Find node by ID
+            if let existingNode = nodes.first(where: { $0.node.id == transformation.nodeId }) {
+                // Apply coordinate transformation
+                let newCoordinate = await transformer.applyViewportTransform(
+                    coordinate: GridCoordinate(x: Int(transformation.d3X / 120.0), y: Int(transformation.d3Y / 80.0), nodeId: transformation.nodeId),
+                    zoomLevel: currentConfig.zoomLevel,
+                    panOffsetX: currentConfig.panOffsetX,
+                    panOffsetY: currentConfig.panOffsetY
+                )
+
+                // Create updated grid cell data
+                let updatedCell = GridCellData(
+                    node: existingNode.node,
+                    x: newCoordinate.x,
+                    y: newCoordinate.y
+                )
+
+                updatedNodes.append(updatedCell)
+            }
+        }
+
+        // Update nodes with transformed coordinates
+        await batchedNodeUpdate(updatedNodes)
+    }
+
+    /// Send viewport changes back to React via bridge
+    /// Called by SuperGridView gesture handlers for bidirectional sync
+    public func notifyViewportChange(zoomLevel: Double, panOffsetX: Double, panOffsetY: Double) {
+        // Update current config
+        currentConfig.zoomLevel = zoomLevel
+        currentConfig.panOffsetX = panOffsetX
+        currentConfig.panOffsetY = panOffsetY
+        currentConfig.modifiedAt = Date()
+
+        // Notify bridge about viewport change (if available)
+        // This would be handled by the WebView bridge to send back to React
+        NotificationCenter.default.post(
+            name: .superGridViewportChanged,
+            object: nil,
+            userInfo: [
+                "zoomLevel": zoomLevel,
+                "panOffsetX": panOffsetX,
+                "panOffsetY": panOffsetY,
+                "sequenceId": currentConfig.sequenceId + 1
+            ]
+        )
+    }
 }
 
 // MARK: - Memory Statistics
@@ -459,4 +534,24 @@ public struct MemoryStats {
     public let nodeCount: Int
     public let estimatedMemoryBytes: Int
     public let isMemoryConstrained: Bool
+}
+
+// MARK: - Notifications
+extension Notification.Name {
+    static let superGridViewportChanged = Notification.Name("SuperGridViewportChanged")
+}
+
+// MARK: - Coordinate Transformation (from PAFVMessageHandler)
+public struct CoordinateTransformation {
+    public let nodeId: String
+    public let d3X: Double
+    public let d3Y: Double
+    public let sequenceId: UInt64
+
+    public init(nodeId: String, d3X: Double, d3Y: Double, sequenceId: UInt64) {
+        self.nodeId = nodeId
+        self.d3X = d3X
+        self.d3Y = d3Y
+        self.sequenceId = sequenceId
+    }
 }

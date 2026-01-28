@@ -8,17 +8,21 @@ public class WebViewBridge: NSObject {
 
     public let databaseHandler: DatabaseMessageHandler
     public let fileSystemHandler: FileSystemMessageHandler
+    public let pafvHandler: PAFVMessageHandler
 
     private weak var database: IsometryDatabase?
+    private weak var superGridViewModel: SuperGridViewModel?
     private let logger = Logger(subsystem: "IsometryWebView", category: "Bridge")
 
     // MARK: - Initialization
 
-    public init(database: IsometryDatabase? = nil) {
+    public init(database: IsometryDatabase? = nil, superGridViewModel: SuperGridViewModel? = nil) {
         // Create handlers
         self.databaseHandler = DatabaseMessageHandler(database: database)
         self.fileSystemHandler = FileSystemMessageHandler()
+        self.pafvHandler = PAFVMessageHandler(viewModel: superGridViewModel)
         self.database = database
+        self.superGridViewModel = superGridViewModel
 
         super.init()
     }
@@ -157,6 +161,33 @@ public class WebViewBridge: NSObject {
                         }
                     },
 
+                    // PAFV bridge operations
+                    pafv: {
+                        updateAxisMapping: function(mappings, viewMode, sequenceId) {
+                            return window._isometryBridge.sendMessage('pafv', 'updateAxisMapping', {
+                                mappings,
+                                viewMode,
+                                sequenceId
+                            });
+                        },
+
+                        updateViewport: function(zoomLevel, panOffsetX, panOffsetY, sequenceId) {
+                            return window._isometryBridge.sendMessage('pafv', 'updateViewport', {
+                                zoomLevel,
+                                panOffsetX,
+                                panOffsetY,
+                                sequenceId
+                            });
+                        },
+
+                        syncCoordinates: function(coordinates, sequenceId) {
+                            return window._isometryBridge.sendMessage('pafv', 'syncCoordinates', {
+                                coordinates,
+                                sequenceId
+                            });
+                        }
+                    },
+
                     // Environment detection
                     environment: {
                         isNative: true,
@@ -204,9 +235,12 @@ public class WebViewBridge: NSObject {
         case "filesystem":
             fileSystemHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
 
+        case "pafv":
+            pafvHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+
         default:
             logger.warning("Unknown message handler: \(handlerName)")
-            sendError(
+            await sendError(
                 to: message.webView,
                 error: "Unknown message handler: \(handlerName)",
                 requestId: extractRequestId(from: message)
@@ -222,7 +256,8 @@ public class WebViewBridge: NSObject {
         return requestId
     }
 
-    private func sendError(to webView: WKWebView?, error: String, requestId: String?) {
+    @MainActor
+    private func sendError(to webView: WKWebView?, error: String, requestId: String?) async {
         guard let webView = webView else { return }
 
         let response: [String: Any] = [
@@ -237,11 +272,9 @@ public class WebViewBridge: NSObject {
 
             let script = "window._isometryBridge?.handleResponse(\(responseString))"
 
-            DispatchQueue.main.async {
-                webView.evaluateJavaScript(script) { _, error in
-                    if let error = error {
-                        self.logger.error("Failed to send bridge error: \(error)")
-                    }
+            webView.evaluateJavaScript(script) { [weak self] _, error in
+                if let error = error {
+                    self?.logger.error("Failed to send bridge error: \(error)")
                 }
             }
         } catch {
