@@ -8,6 +8,7 @@ import type {
   HierarchyFilter,
   FilterPreset
 } from '../types/filter';
+import type { Node } from '../types/node';
 import { EMPTY_FILTERS } from '../types/filter';
 import {
   loadPresets,
@@ -18,6 +19,7 @@ import {
 } from '../utils/filter-presets';
 import { useURLState } from '../hooks/useURLState';
 import { serializeFilters, deserializeFilters, validateFilterURLLength } from '../utils/filter-serialization';
+import { useBridgeFilters, isBridgeAvailable } from '../filters/bridge';
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
@@ -27,7 +29,9 @@ type FilterAction =
   | { type: 'SET_HIERARCHY'; payload: HierarchyFilter | null }
   | { type: 'SET_DSL'; payload: string | null }
   | { type: 'CLEAR_ALL' }
-  | { type: 'APPLY_PREVIEW'; payload: FilterState };
+  | { type: 'APPLY_PREVIEW'; payload: FilterState }
+  | { type: 'BRIDGE_RESULTS_RECEIVED'; payload: { nodes: Node[]; sequenceId: string | null } }
+  | { type: 'BRIDGE_MODE_CHANGED'; payload: { isBridge: boolean } };
 
 function filterReducer(state: FilterState, action: FilterAction): FilterState {
   switch (action.type) {
@@ -47,6 +51,12 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
       return EMPTY_FILTERS;
     case 'APPLY_PREVIEW':
       return action.payload;
+    case 'BRIDGE_RESULTS_RECEIVED':
+      // Bridge actions don't modify filter state itself, just trigger effects
+      return state;
+    case 'BRIDGE_MODE_CHANGED':
+      // Bridge mode changes don't modify filter state itself
+      return state;
     default:
       return state;
   }
@@ -83,6 +93,14 @@ interface FilterContextValue {
   deletePreset: (id: string) => void;
   listPresets: () => FilterPreset[];
   checkPresetNameExists: (name: string, excludeId?: string) => Promise<boolean>;
+
+  // Bridge integration
+  isBridgeMode: boolean;
+  isBridgeAvailable: boolean;
+  bridgeResults: Node[];
+  bridgeIsLoading: boolean;
+  bridgeError: string | null;
+  bridgeSequenceId: string | null;
 }
 
 const FilterContext = createContext<FilterContextValue | null>(null);
@@ -100,8 +118,59 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   const [previewFilters, setPreviewFilters] = useState<FilterState | null>(null);
   const [presets, setPresets] = useState<FilterPreset[]>([]);
 
+  // Bridge state management
+  const [bridgeMode, setBridgeMode] = useState<boolean>(false);
+  const [bridgeAvailable, setBridgeAvailable] = useState<boolean>(false);
+
   // Debounce timer for URL updates (300ms)
   const urlUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Initialize bridge filters hook with debounced execution (only when bridge mode is active)
+  const bridgeFilterState = useBridgeFilters(
+    bridgeMode ? activeFilters : { ...EMPTY_FILTERS },
+    300
+  );
+
+  const bridgeResults = bridgeMode ? bridgeFilterState.filteredNodes : [];
+  const bridgeIsLoading = bridgeMode ? bridgeFilterState.isLoading : false;
+  const bridgeError = bridgeMode ? bridgeFilterState.error : null;
+  const bridgeSequenceId = bridgeMode ? bridgeFilterState.lastSequenceId : null;
+
+  // Bridge availability detection and mode management
+  useEffect(() => {
+    const checkBridgeAvailability = () => {
+      const isAvailable = isBridgeAvailable();
+      setBridgeAvailable(isAvailable);
+
+      // Auto-enable bridge mode when available (but allow user override)
+      if (isAvailable && !bridgeMode) {
+        setBridgeMode(true);
+        dispatch({ type: 'BRIDGE_MODE_CHANGED', payload: { isBridge: true } });
+      } else if (!isAvailable && bridgeMode) {
+        // Fall back to sql.js when bridge becomes unavailable
+        setBridgeMode(false);
+        dispatch({ type: 'BRIDGE_MODE_CHANGED', payload: { isBridge: false } });
+      }
+    };
+
+    // Check immediately
+    checkBridgeAvailability();
+
+    // Listen for bridge ready events
+    const handleBridgeReady = () => {
+      checkBridgeAvailability();
+    };
+
+    // Set up periodic check in case bridge becomes available later
+    const intervalId = setInterval(checkBridgeAvailability, 5000);
+
+    window.addEventListener('isometry-bridge-ready', handleBridgeReady);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('isometry-bridge-ready', handleBridgeReady);
+    };
+  }, [bridgeMode]);
 
   // Load presets from localStorage on mount
   useEffect(() => {
@@ -111,6 +180,19 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
     };
     loadPresetsAsync();
   }, []);
+
+  // Handle bridge results and sequence management
+  useEffect(() => {
+    if (bridgeMode && bridgeResults.length > 0 && bridgeSequenceId) {
+      dispatch({
+        type: 'BRIDGE_RESULTS_RECEIVED',
+        payload: {
+          nodes: bridgeResults,
+          sequenceId: bridgeSequenceId
+        }
+      });
+    }
+  }, [bridgeMode, bridgeResults, bridgeSequenceId]);
 
   // Sync activeFilters to URL with debouncing
   useEffect(() => {
@@ -304,6 +386,12 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
         deletePreset: deletePresetById,
         listPresets,
         checkPresetNameExists,
+        isBridgeMode: bridgeMode,
+        isBridgeAvailable: bridgeAvailable,
+        bridgeResults,
+        bridgeIsLoading,
+        bridgeError,
+        bridgeSequenceId,
       }}
     >
       {children}
