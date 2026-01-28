@@ -552,6 +552,11 @@ main() {
     echo "🚀 Isometry App Store Build and Upload Script"
     echo "============================================="
 
+    # Honor dry-run even if parsing is bypassed (e.g., wrappers)
+    if [[ " $* " == *" --dry-run "* ]]; then
+        DRY_RUN=true
+    fi
+
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
         case $1 in
