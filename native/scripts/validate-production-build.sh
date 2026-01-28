@@ -162,8 +162,9 @@ validate_code_signing() {
     log_info "Validating code signing configuration..."
 
     # Check for distribution certificates
-    if ! security find-certificate -c "Apple Distribution" >/dev/null 2>&1; then
-        log_error "Apple Distribution certificate not found in keychain"
+    if ! security find-certificate -c "Apple Distribution" >/dev/null 2>&1 \
+        && ! security find-certificate -c "iPhone Distribution" >/dev/null 2>&1; then
+        log_error "Distribution certificate not found in keychain (Apple Distribution or iPhone Distribution)"
         return 1
     fi
 
