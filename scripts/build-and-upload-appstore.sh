@@ -110,7 +110,10 @@ check_prerequisites() {
     log_info "Checking prerequisites..."
 
     # Check for required tools
-    local required_tools=("xcodebuild" "xcrun" "altool" "security")
+    local required_tools=("xcodebuild" "xcrun" "security")
+    if [[ "$DRY_RUN" != true ]]; then
+        required_tools+=("altool")
+    fi
     for tool in "${required_tools[@]}"; do
         if ! command -v "$tool" >/dev/null 2>&1; then
             log_error "Required tool '$tool' not found"
