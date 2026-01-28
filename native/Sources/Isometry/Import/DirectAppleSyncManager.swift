@@ -410,11 +410,11 @@ public class DirectAppleSyncManager: ObservableObject {
     // MARK: - Node Creation
 
     private func createNodeFromNote(_ note: Row, sourceConnection: Database) async throws -> Node {
-        let id = note["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let title = note["title"]?.databaseValue?.storage.value as? String ?? "Untitled Note"
-        let snippet = note["snippet"]?.databaseValue?.storage.value as? String ?? ""
-        let createdTimestamp = note["created_date"]?.databaseValue?.storage.value as? TimeInterval ?? 0
-        let modifiedTimestamp = note["modified_date"]?.databaseValue?.storage.value as? TimeInterval ?? 0
+        let id = note["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let title = note["title"]?.databaseValue.storage.value as? String ?? "Untitled Note"
+        let snippet = note["snippet"]?.databaseValue.storage.value as? String ?? ""
+        let createdTimestamp = note["created_date"]?.databaseValue.storage.value as? TimeInterval ?? 0
+        let modifiedTimestamp = note["modified_date"]?.databaseValue.storage.value as? TimeInterval ?? 0
 
         // Convert Core Data timestamps (seconds since 2001) to ISO dates
         let createdDate = Date(timeIntervalSinceReferenceDate: createdTimestamp)

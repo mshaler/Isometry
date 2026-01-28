@@ -130,7 +130,7 @@ public actor SQLiteFileImporter {
         for noteRow in noteRowsData {
             do {
                 let node = try await sourceDB.read { sourceConn in
-                    try self.createNoteNode(from: noteRow, sourceConnection: sourceConn)
+                    try await self.createNoteNode(from: noteRow, sourceConnection: sourceConn)
                 }
                 try await database.createNode(node)
                 result.imported += 1
@@ -172,7 +172,7 @@ public actor SQLiteFileImporter {
         for reminderRow in reminderRowsData {
             do {
                 let node = try await sourceDB.read { sourceConn in
-                    try self.createReminderNode(from: reminderRow, sourceConnection: sourceConn)
+                    try await self.createReminderNode(from: reminderRow, sourceConnection: sourceConn)
                 }
                 try await database.createNode(node)
                 result.imported += 1
