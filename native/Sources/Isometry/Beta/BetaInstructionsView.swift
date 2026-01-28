@@ -93,13 +93,13 @@ public struct BetaInstructionsView: View {
             #endif
             .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button(action: { showingChecklist = true }) {
                         Image(systemName: "checkmark.circle")
                     }
                     .help("Testing Checklist")
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         betaManager.trackBetaEvent(BetaAnalyticsEvent(name: "instructions_viewed"))
                         dismiss()

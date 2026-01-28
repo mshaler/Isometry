@@ -60,7 +60,7 @@ public struct CommandHistoryView: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     filterButton
                 }
             }
@@ -702,7 +702,7 @@ private struct FilterOptionsView: View {
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Apply") {
                         onApply()
                         dismiss()

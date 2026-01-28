@@ -447,7 +447,7 @@ public struct NotebookShellView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         showProcessDetails = false
                     }

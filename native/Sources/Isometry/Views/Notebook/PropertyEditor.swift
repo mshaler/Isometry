@@ -281,14 +281,14 @@ public struct PropertyEditor: View {
             #endif
             .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         showingAddProperty = false
                         resetAddPropertyForm()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Add") {
                         addCustomProperty()
                     }

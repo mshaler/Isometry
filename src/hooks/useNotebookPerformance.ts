@@ -473,11 +473,16 @@ export function useNotebookPerformance(
     return bottlenecks;
   }, [metrics]);
 
-  // Auto-start monitoring in development
+  // Auto-start monitoring only when explicitly enabled
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      startMonitoring();
+    const enableAutoStart =
+      typeof import.meta !== 'undefined' &&
+      import.meta.env &&
+      import.meta.env.DEV &&
+      import.meta.env.VITE_ENABLE_NOTEBOOK_PERF === 'true';
 
+    if (enableAutoStart) {
+      startMonitoring();
       return () => {
         stopMonitoring();
       };

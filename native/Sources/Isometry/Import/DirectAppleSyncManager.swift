@@ -117,7 +117,7 @@ public class DirectAppleSyncManager: ObservableObject {
             do {
                 // Create node from row data (no database connection needed for basic fields)
                 let node = try await createNodeFromNoteRow(note)
-                try await database.insert(node: node)
+                try await database.createNode(node)
                 result.imported += 1
             } catch {
                 result.failed += 1
@@ -159,7 +159,7 @@ public class DirectAppleSyncManager: ObservableObject {
             for reminder in reminderRows {
                 do {
                     let node = try await createNodeFromReminder(reminder, sourceConnection: sourceConn)
-                    try await database.insert(node: node)
+                    try await database.createNode(node)
                     result.imported += 1
                 } catch {
                     result.failed += 1
@@ -202,7 +202,7 @@ public class DirectAppleSyncManager: ObservableObject {
             for event in eventRows {
                 do {
                     let node = try await createNodeFromEvent(event)
-                    try await database.insert(node: node)
+                    try await database.createNode(node)
                     result.imported += 1
                 } catch {
                     result.failed += 1
@@ -243,7 +243,7 @@ public class DirectAppleSyncManager: ObservableObject {
             for contact in contactRows {
                 do {
                     let node = try await createNodeFromContact(contact)
-                    try await database.insert(node: node)
+                    try await database.createNode(node)
                     result.imported += 1
                 } catch {
                     result.failed += 1
@@ -285,7 +285,7 @@ public class DirectAppleSyncManager: ObservableObject {
             for bookmark in bookmarkRows {
                 do {
                     let node = try await createNodeFromBookmark(bookmark)
-                    try await database.insert(node: node)
+                    try await database.createNode(node)
                     result.imported += 1
                 } catch {
                     result.failed += 1
@@ -309,7 +309,7 @@ public class DirectAppleSyncManager: ObservableObject {
             for item in readingListRows {
                 do {
                     let node = try await createNodeFromReadingListItem(item)
-                    try await database.insert(node: node)
+                    try await database.createNode(node)
                     result.imported += 1
                 } catch {
                     result.failed += 1
@@ -431,8 +431,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: title,
             content: content,
             summary: snippet,
-            createdAt: ISO8601DateFormatter().string(from: createdDate),
-            modifiedAt: ISO8601DateFormatter().string(from: modifiedDate),
+            createdAt: createdDate,
+            modifiedAt: modifiedDate,
             folder: "notes",
             tags: ["apple-notes", "direct-sync"],
             source: "apple-notes-direct",
@@ -471,8 +471,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: title,
             content: content,
             summary: notes.isEmpty ? "No description" : String(notes.prefix(100)),
-            createdAt: ISO8601DateFormatter().string(from: createdDate),
-            modifiedAt: ISO8601DateFormatter().string(from: modifiedDate),
+            createdAt: createdDate,
+            modifiedAt: modifiedDate,
             folder: "reminders",
             tags: tags,
             source: "apple-reminders-direct",
@@ -499,8 +499,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: title,
             content: content,
             summary: description.isEmpty ? "No description" : String(description.prefix(100)),
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            modifiedAt: ISO8601DateFormatter().string(from: Date()),
+            createdAt: Date(),
+            modifiedAt: Date(),
             folder: "calendar",
             tags: ["apple-calendar", "direct-sync"],
             source: "apple-calendar-direct",
@@ -533,8 +533,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: displayName,
             content: content,
             summary: organization.isEmpty ? "Contact" : organization,
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            modifiedAt: ISO8601DateFormatter().string(from: Date()),
+            createdAt: Date(),
+            modifiedAt: Date(),
             folder: "contacts",
             tags: ["apple-contacts", "direct-sync"],
             source: "apple-contacts-direct",
@@ -556,8 +556,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: title,
             content: content,
             summary: url,
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            modifiedAt: ISO8601DateFormatter().string(from: Date()),
+            createdAt: Date(),
+            modifiedAt: Date(),
             folder: "bookmarks",
             tags: ["apple-safari", "bookmark", "direct-sync"],
             source: "apple-safari-direct",
@@ -584,8 +584,8 @@ public class DirectAppleSyncManager: ObservableObject {
             name: title,
             content: content,
             summary: preview.isEmpty ? "Reading list item" : String(preview.prefix(100)),
-            createdAt: ISO8601DateFormatter().string(from: Date()),
-            modifiedAt: ISO8601DateFormatter().string(from: Date()),
+            createdAt: Date(),
+            modifiedAt: Date(),
             folder: "reading-list",
             tags: ["apple-safari", "reading-list", "direct-sync"],
             source: "apple-safari-direct",

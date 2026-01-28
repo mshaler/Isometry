@@ -220,52 +220,44 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     let currentLine = '';
 
     terminal.onData((data) => {
-      const code = data.charCodeAt(0);
-
-      if (code === 13) { // Enter
+      if (data === '\r') { // Enter
         executeCommand(currentLine);
         currentLine = '';
-      } else if (code === 127) { // Backspace
+        return;
+      }
+
+      if (data === '\u007f') { // Backspace
         if (currentLine.length > 0) {
           currentLine = currentLine.slice(0, -1);
           terminal.write('\b \b');
         }
-      } else if (code === 27) { // Escape sequences (arrows)
-        // Handle arrow keys for history navigation
-        if (options.onNavigateHistory) {
-          terminal.onData((seq) => {
-            if (seq === '[A') { // Up arrow
-              const historyCommand = options.onNavigateHistory!('up');
-              if (historyCommand !== null) {
-                // Clear current line
-                terminal.write('\r\x1b[K');
-                showPrompt();
+        return;
+      }
 
-                // Write history command
-                currentLine = historyCommand;
-                terminal.write(historyCommand);
-              }
-            } else if (seq === '[B') { // Down arrow
-              const historyCommand = options.onNavigateHistory!('down');
-              if (historyCommand !== null) {
-                // Clear current line
-                terminal.write('\r\x1b[K');
-                showPrompt();
-
-                // Write history command
-                currentLine = historyCommand;
-                terminal.write(historyCommand);
-              }
-            }
-          });
-        }
-      } else if (code >= 32 && code <= 126) { // Printable characters
-        currentLine += data;
-        terminal.write(data);
-      } else if (code === 3) { // Ctrl+C
+      if (data === '\u0003') { // Ctrl+C
         terminal.write('^C\r\n');
         showPrompt();
         currentLine = '';
+        return;
+      }
+
+      if (data === '\u001b[A' || data === '\u001b[B') { // Arrow keys
+        if (options.onNavigateHistory) {
+          const historyCommand = options.onNavigateHistory(data === '\u001b[A' ? 'up' : 'down');
+          if (historyCommand !== null) {
+            terminal.write('\r\x1b[K');
+            showPrompt();
+            currentLine = historyCommand;
+            terminal.write(historyCommand);
+          }
+        }
+        return;
+      }
+
+      const code = data.charCodeAt(0);
+      if (code >= 32 && code <= 126) { // Printable characters
+        currentLine += data;
+        terminal.write(data);
       }
     });
   }, [executeCommand, showPrompt, options.onNavigateHistory]);

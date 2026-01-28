@@ -34,7 +34,7 @@ public struct BetaFeedbackView: View {
             #endif
             .toolbar {
                 #if os(iOS)
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }

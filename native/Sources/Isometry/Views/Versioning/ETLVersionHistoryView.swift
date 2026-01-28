@@ -27,7 +27,7 @@ struct ETLVersionHistoryView: View {
             }
             .navigationTitle("Version History")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     HStack {
                         Button {
                             showingLineage = true
@@ -98,7 +98,7 @@ struct ETLVersionHistoryView: View {
             }
         }
         .padding(.vertical)
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
 
     // MARK: - Version Timeline Chart

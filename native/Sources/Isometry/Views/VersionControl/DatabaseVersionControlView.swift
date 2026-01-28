@@ -43,7 +43,7 @@ struct DatabaseVersionControlView: View {
             }
             .navigationTitle("Version Control")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button("Create Branch", systemImage: "plus.branch") {
                             showingCreateBranch = true
@@ -165,7 +165,7 @@ struct DatabaseVersionControlView: View {
             BranchStatsRow(branches: branches, currentBranch: currentBranch)
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
 
     // MARK: - Commit Timeline Section
@@ -232,7 +232,7 @@ struct DatabaseVersionControlView: View {
             )
         }
         .padding()
-        .background(Color(.systemGray6))
+        .background(Color.gray.opacity(0.1))
     }
 
     // MARK: - Commit History List
@@ -476,7 +476,7 @@ struct CommitRowView: View {
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(.systemGray6))
+                    .background(Color.gray.opacity(0.1))
                     .cornerRadius(4)
             }
         }
@@ -574,13 +574,13 @@ struct CreateBranchView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Create") {
                         Task { await createBranch() }
                     }
@@ -660,13 +660,13 @@ struct MergeBranchView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Merge") {
                         Task { await performMerge() }
                     }
@@ -737,13 +737,13 @@ struct CreateAnalyticsBranchView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Create") {
                         Task { await createAnalyticsBranch() }
                     }
@@ -815,13 +815,13 @@ struct CreateSyntheticBranchView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Create") {
                         Task { await createSyntheticBranch() }
                     }
@@ -887,13 +887,13 @@ struct CommitChangesView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Cancel") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Commit") {
                         Task { await commitChanges() }
                     }
@@ -939,7 +939,7 @@ struct DatabaseConflictResolutionView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Resolve") {
                         onResolved(strategy)
                     }

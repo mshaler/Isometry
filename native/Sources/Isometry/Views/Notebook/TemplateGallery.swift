@@ -47,7 +47,7 @@ public struct TemplateGallery: View {
 #endif
             .toolbar {
                 #if canImport(UIKit)
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingTemplateForm = true
                     } label: {
@@ -418,13 +418,13 @@ private struct TemplatePreview: View {
 #endif
             .toolbar {
                 #if canImport(UIKit)
-                ToolbarItem(placement: .navigationBarLeading) {
+                ToolbarItem(placement: .confirmationAction) {
                     Button("Close") {
                         dismiss()
                     }
                 }
 
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Menu {
                         Button {
                             onFavorite()
@@ -611,13 +611,13 @@ private struct TemplateForm: View {
 #endif
         .toolbar {
             #if canImport(UIKit)
-            ToolbarItem(placement: .navigationBarLeading) {
+            ToolbarItem(placement: .confirmationAction) {
                 Button("Cancel") {
                     dismiss()
                 }
             }
 
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .primaryAction) {
                 Button("Save") {
                     let template = NotebookTemplate(
                         title: title,

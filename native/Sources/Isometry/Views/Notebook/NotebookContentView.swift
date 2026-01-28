@@ -505,7 +505,7 @@ extension NotebookContentView {
 
     @ToolbarContentBuilder
     private var iOSToolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .navigationBarTrailing) {
+        ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button("Reset Layout") {
                     layout.resetToDefaults()
@@ -539,7 +539,7 @@ extension NotebookContentView {
         }
 
         // Add multitasking status indicator for debugging/info
-        ToolbarItem(placement: .navigationBarLeading) {
+        ToolbarItem(placement: .confirmationAction) {
             HStack {
                 if multitaskingSupport.isInBackground {
                     Image(systemName: "moon.fill")
