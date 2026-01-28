@@ -954,7 +954,7 @@ public actor IsometryDatabase {
                     entry.type.rawValue,
                     timestamp,
                     entry.duration,
-                    entry.success.map { $0 ? 1 : 0 },
+                    entry.success ? 1 : 0,
                     outputPreview,
                     entry.response?.error,
                     entry.cwd,
@@ -1113,12 +1113,6 @@ public actor IsometryDatabase {
 
     // MARK: - Notebook Cards
 
-    /// Get all notebook cards
-    public func getAllNotebookCards() async throws -> [NotebookCard] {
-        try await dbPool.read { db in
-            try NotebookCard.active.fetchAll(db)
-        }
-    }
 
     /// Insert a new notebook card
     public func insertCard(_ card: NotebookCard) async throws {
@@ -1142,6 +1136,14 @@ public actor IsometryDatabase {
                 .updateAll(db, NotebookCard.Columns.deletedAt.set(to: Date()))
         }
     }
+
+    // MARK: - Database Pool Access
+
+    /// Provides access to the database pool for observation and advanced operations
+    /// This is needed for DatabaseRegionObservation and similar GRDB features
+    public func getDatabasePool() -> DatabasePool {
+        return dbPool
+    }
 }
 
 // MARK: - Preview Support
@@ -1154,7 +1156,7 @@ extension IsometryDatabase {
 
             // Initialize with sample data in a Task for async context
             Task {
-                try await database.initializeDatabase()
+                try await database.initialize()
 
                 // Add some sample notebook cards for previewing
                 let sampleCards = [
@@ -1190,8 +1192,8 @@ extension IsometryDatabase {
                         title: node.name,
                         markdownContent: node.content,
                         properties: ["type": "note", "priority": String(node.priority)],
-                        tags: node.tags,
-                        folder: node.folder
+                        folder: node.folder,
+                        tags: node.tags
                     )
                     try await database.insertCard(notebookCard)
                 }

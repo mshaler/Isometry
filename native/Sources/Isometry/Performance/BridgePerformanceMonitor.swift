@@ -88,7 +88,7 @@ public class BridgePerformanceMonitor {
 
     public init() {
         initialMemoryFootprint = getCurrentMemoryUsage()
-        logger.info("BridgePerformanceMonitor initialized. Initial memory: \(self.initialMemoryFootprint) bytes")
+        logger.debug("BridgePerformanceMonitor initialized. Initial memory: \(self.initialMemoryFootprint) bytes")
     }
 
     // MARK: - Public API
@@ -121,7 +121,7 @@ public class BridgePerformanceMonitor {
         }
 
         if enableDetailedLogging {
-            logger.info("Bridge operation: \(operation), duration: \(duration * 1000, specifier: "%.2f")ms, success: \(success)")
+            logger.debug("Bridge operation: \(operation), duration: \(String(format: "%.2f", duration * 1000))ms, success: \(success)")
         }
 
         // Log slow operations
@@ -196,7 +196,7 @@ public class BridgePerformanceMonitor {
 
             let totalOperations = metrics.count
             let successfulOperations = metrics.filter { $0.success }
-            let failedOperations = metrics.filter { !$0.success }
+            let _ = metrics.filter { !$0.success } // failedOperations - unused but calculated for clarity
 
             let averageDuration = metrics.reduce(0) { $0 + $1.duration } / Double(totalOperations)
             let successRate = Double(successfulOperations.count) / Double(totalOperations) * 100

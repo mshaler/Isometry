@@ -231,7 +231,9 @@ public actor ETLOperationExecutor {
 
     private func scanAppleNotes() async throws -> Int {
         // Use DirectAppleSyncManager to get count
-        let syncManager = DirectAppleSyncManager(database: database)
+        let syncManager = await MainActor.run {
+            DirectAppleSyncManager(database: database)
+        }
         // Implementation would return count without actual import
         return 100 // Placeholder
     }
@@ -328,7 +330,9 @@ public actor ETLOperationExecutor {
     }
 
     private func extractAppleNotes(batchSize: Int) async throws {
-        let syncManager = DirectAppleSyncManager(database: database)
+        let syncManager = await MainActor.run {
+            DirectAppleSyncManager(database: database)
+        }
         let syncConfig = DirectAppleSyncManager.SyncConfiguration(
             notesEnabled: true,
             remindersEnabled: false,
@@ -340,8 +344,10 @@ public actor ETLOperationExecutor {
         )
 
         // Create temporary database for extraction
-        let tempDB = IsometryDatabase(path: ":memory:")!
-        let tempSyncManager = DirectAppleSyncManager(database: tempDB, configuration: syncConfig)
+        let tempDB = try IsometryDatabase(path: ":memory:")
+        let tempSyncManager = await MainActor.run {
+            DirectAppleSyncManager(database: tempDB, configuration: syncConfig)
+        }
 
         let result = try await tempSyncManager.performFullSync()
         processedItems += result.imported
@@ -418,7 +424,7 @@ public actor ETLOperationExecutor {
 
         // Apply date range filtering if specified
         if let dateRange = operation.configuration.dateRange {
-            let nodeDate = ISO8601DateFormatter().date(from: node.createdAt) ?? Date()
+            let nodeDate = node.createdAt
             if !dateRange.contains(nodeDate) {
                 throw ETLExecutionError.filteredOut("Node outside date range")
             }
@@ -501,7 +507,7 @@ public actor ETLOperationExecutor {
     private func loadBatch(_ nodes: [Node]) async throws {
         for node in nodes {
             do {
-                try await database.insert(node: node)
+                try await database.createNode(node)
             } catch {
                 errors.append(ETLExecutionError.databaseError("Failed to insert node \(node.id): \(error)"))
                 // Continue with other nodes in batch
@@ -602,11 +608,3 @@ public enum ETLExecutionError: LocalizedError {
     }
 }
 
-// MARK: - Database Extension for ETL
-
-extension IsometryDatabase {
-    func getAllNodes() async throws -> [Node] {
-        // Implementation to get all nodes from database
-        return [] // Placeholder
-    }
-}

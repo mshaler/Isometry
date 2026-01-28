@@ -87,7 +87,7 @@ public actor SQLiteFileImporter {
         var result = ImportResult()
 
         // First read all data synchronously
-        let noteRowsData: [Row] = try sourceDB.read { sourceConn in
+        let noteRowsData: [Row] = try await sourceDB.read { sourceConn in
             // Try modern Notes schema first
             let modernSQL = """
                 SELECT
@@ -129,9 +129,7 @@ public actor SQLiteFileImporter {
         // Then process the data asynchronously
         for noteRow in noteRowsData {
             do {
-                let node = try await sourceDB.read { sourceConn in
-                    try await self.createNoteNode(from: noteRow, sourceConnection: sourceConn)
-                }
+                let node = try await createNoteNode(from: noteRow, sourceConnection: nil)
                 try await database.createNode(node)
                 result.imported += 1
             } catch {

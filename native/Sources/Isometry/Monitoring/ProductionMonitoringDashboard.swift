@@ -208,7 +208,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
         self.database = database
         self.cloudKitManager = cloudKitManager
 
-        logger.info("ProductionMonitoringDashboard initialized")
+        logger.debug("ProductionMonitoringDashboard initialized")
 
         Task {
             await startMonitoring()
@@ -216,7 +216,9 @@ public final class ProductionMonitoringDashboard: ObservableObject {
     }
 
     deinit {
-        stopMonitoring()
+        Task { @MainActor in
+            stopMonitoring()
+        }
     }
 
     // MARK: - Monitoring Control
@@ -224,7 +226,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
     public func startMonitoring() async {
         guard !isMonitoringActive else { return }
 
-        logger.info("Starting production monitoring with interval: \(monitoringInterval)s")
+        logger.debug("Starting production monitoring with interval: \(monitoringInterval)s")
         isMonitoringActive = true
 
         // Initial metrics collection
@@ -241,7 +243,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
     public func stopMonitoring() {
         guard isMonitoringActive else { return }
 
-        logger.info("Stopping production monitoring")
+        logger.debug("Stopping production monitoring")
         isMonitoringActive = false
 
         monitoringTimer?.invalidate()
@@ -252,7 +254,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
         monitoringTimer?.invalidate()
         monitoringTimer = nil
 
-        logger.info("Production monitoring paused")
+        logger.debug("Production monitoring paused")
     }
 
     public func resumeMonitoring() {
@@ -264,7 +266,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
             }
         }
 
-        logger.info("Production monitoring resumed")
+        logger.debug("Production monitoring resumed")
     }
 
     // MARK: - Metrics Collection
@@ -406,7 +408,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
         healthScore = max(0, score)
 
         if enableDetailedLogging && !factors.isEmpty {
-            logger.info("Health score updated: \(healthScore) (penalties: \(factors))")
+            logger.debug("Health score updated: \(healthScore) (penalties: \(factors))")
         }
     }
 
@@ -665,7 +667,7 @@ public final class ProductionMonitoringDashboard: ObservableObject {
         pafvMetricsHistory.removeAll()
         activeAlerts.removeAll()
 
-        logger.info("Metrics history cleared")
+        logger.debug("Metrics history cleared")
     }
 
     // MARK: - Alert Management
@@ -716,7 +718,7 @@ public actor ProductionMetricsCollector {
         metricsBuffer.removeAll()
         lastFlushTime = Date()
 
-        Logger(subsystem: "Isometry", category: "MetricsCollector").info("Flushed \(count) metrics to analytics service")
+        Logger(subsystem: "Isometry", category: "MetricsCollector").debug("Flushed \(count) metrics to analytics service")
     }
 
     public func getBufferSize() -> Int {
@@ -750,7 +752,7 @@ public class AlertingSystem: ObservableObject {
         case .warning:
             logger.warning("⚠️ WARNING: \(alert.title) - \(alert.message)")
         case .info:
-            logger.info("ℹ️ INFO: \(alert.title) - \(alert.message)")
+            logger.debug("ℹ️ INFO: \(alert.title) - \(alert.message)")
         }
 
         // In a real implementation, this would also send notifications
@@ -759,17 +761,17 @@ public class AlertingSystem: ObservableObject {
 
     public func enable() {
         isEnabled = true
-        logger.info("Alerting system enabled")
+        logger.debug("Alerting system enabled")
     }
 
     public func disable() {
         isEnabled = false
-        logger.info("Alerting system disabled")
+        logger.debug("Alerting system disabled")
     }
 
     public func clearHistory() {
         alertHistory.removeAll()
-        logger.info("Alert history cleared")
+        logger.debug("Alert history cleared")
     }
 }
 
