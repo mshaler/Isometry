@@ -16,7 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "start:native-api": "node src/server/launch-native-server.js",
     "dev:full-native": "concurrently \"npm run start:native-api\" \"npm run dev:native\"",
-    "build:native": "cd native && swift build --target IsometryAPIServer"
+    "build:native": "cd native && swift build --target IsometryAPIServer",
+    "watch:console": "node scripts/console-watch.mjs"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.2.6",
@@ -68,6 +69,7 @@
     "eslint": "^9.39.2",
     "glob": "^10.3.10",
     "jsdom": "^27.4.0",
+    "playwright": "^1.58.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
