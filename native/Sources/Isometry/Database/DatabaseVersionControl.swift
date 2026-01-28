@@ -462,7 +462,7 @@ public actor DatabaseVersionControl {
             metadata: [
                 "merge_source": source.name,
                 "merge_strategy": strategy.rawValue,
-                "conflicts_count": conflicts.count
+                "conflicts_count": String(conflicts.count)
             ]
         )
     }
@@ -526,12 +526,12 @@ public actor DatabaseVersionControl {
         case .update:
             // Restore previous values
             if let previousValues = change.previousValues {
-                try await database.updateRecord(table: change.table, id: change.recordId, values: previousValues)
+                try await database.updateRecord(table: change.table, id: change.recordId, values: previousValues.toDictionary())
             }
         case .delete:
             // Restore deleted record
             if let previousValues = change.previousValues {
-                try await database.insertRecord(table: change.table, id: change.recordId, values: previousValues)
+                try await database.insertRecord(table: change.table, id: change.recordId, values: previousValues.toDictionary())
             }
         }
     }
@@ -664,6 +664,18 @@ public struct DatabaseChangeValues: Codable, Sendable {
         self.numbers = numbers
         self.booleans = booleans
         self.dates = dates
+    }
+
+    /// Converts to [String: Any] format for database operations
+    public func toDictionary() -> [String: Any] {
+        var result: [String: Any] = [:]
+
+        strings?.forEach { result[$0.key] = $0.value }
+        numbers?.forEach { result[$0.key] = $0.value }
+        booleans?.forEach { result[$0.key] = $0.value }
+        dates?.forEach { result[$0.key] = $0.value }
+
+        return result
     }
 }
 
@@ -871,6 +883,143 @@ public enum DatabaseVersionError: LocalizedError {
             return "Cannot modify protected branch: \(name)"
         case .invalidOperation(let description):
             return "Invalid operation: \(description)"
+        }
+    }
+}
+
+// MARK: - SwiftUI Integration
+
+import SwiftUI
+import Combine
+
+/// ObservableObject wrapper for DatabaseVersionControl actor to enable SwiftUI integration
+@MainActor
+public class DatabaseVersionControlStore: ObservableObject {
+    private let versionControl: DatabaseVersionControl
+
+    @Published public var branches: [DatabaseBranch] = []
+    @Published public var commits: [DatabaseCommit] = []
+    @Published public var currentBranch: String = "main"
+    @Published public var pendingChanges: [DatabaseChange] = []
+    @Published public var isLoading: Bool = false
+    @Published public var errorMessage: String?
+
+    public init(versionControl: DatabaseVersionControl) {
+        self.versionControl = versionControl
+    }
+
+    // MARK: - Branch Operations
+
+    public func createBranch(name: String, description: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await versionControl.createBranch(name: name, description: description)
+            await refreshBranches()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    public func switchBranch(to name: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await versionControl.switchBranch(name)
+            currentBranch = name
+            await refreshAll()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    public func deleteBranch(_ name: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            // TODO: Implement deleteBranch in DatabaseVersionControl actor
+            // For now, just refresh the branches list
+            await refreshBranches()
+            // Placeholder: Remove from local state
+            // try await versionControl.deleteBranch(name)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    // MARK: - Commit Operations
+
+    public func commit(message: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            try await versionControl.commit(message: message, author: "User")
+            await refreshAll()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    // MARK: - Merge Operations
+
+    public func merge(branch: String) async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let _ = try await versionControl.mergeBranch(from: branch, into: currentBranch, strategy: .autoResolve)
+            await refreshAll()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isLoading = false
+    }
+
+    // MARK: - Data Refresh
+
+    public func refreshAll() async {
+        await refreshBranches()
+        await refreshCommits()
+        await refreshPendingChanges()
+    }
+
+    private func refreshBranches() async {
+        do {
+            // TODO: Implement getAllBranches in DatabaseVersionControl actor
+            branches = [] // Placeholder: Return empty array
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshCommits() async {
+        do {
+            // TODO: Implement getBranchHistory in DatabaseVersionControl actor
+            commits = [] // Placeholder: Return empty array
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func refreshPendingChanges() async {
+        do {
+            // TODO: Implement getPendingChanges in DatabaseVersionControl actor
+            pendingChanges = [] // Placeholder: Return empty array
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 }

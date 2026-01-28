@@ -4,7 +4,7 @@ import Charts
 /// Native UI for Database Version Control
 /// Provides git-like interface for branch management, merging, and rollback
 struct DatabaseVersionControlView: View {
-    @StateObject private var versionControl: DatabaseVersionControl
+    @State private var versionControl: DatabaseVersionControl
     @State private var branches: [DatabaseBranch] = []
     @State private var currentBranch: String = "main"
     @State private var commitHistory: [DatabaseCommit] = []
@@ -27,7 +27,7 @@ struct DatabaseVersionControlView: View {
 
     init(database: IsometryDatabase, storageManager: ContentAwareStorageManager) {
         self.database = database
-        self._versionControl = StateObject(wrappedValue: DatabaseVersionControl(
+        self._versionControl = State(initialValue: DatabaseVersionControl(
             database: database,
             storageManager: storageManager
         ))
@@ -102,7 +102,7 @@ struct DatabaseVersionControlView: View {
             )
         }
         .sheet(isPresented: $showingConflictResolution) {
-            ConflictResolutionView(
+            DatabaseConflictResolutionView(
                 conflicts: mergeConflicts,
                 strategy: $mergeStrategy,
                 onResolved: { strategy in
@@ -256,7 +256,7 @@ struct DatabaseVersionControlView: View {
     private func switchBranch(_ branchName: String) {
         Task {
             do {
-                try await versionControl.switchBranch(branchName)
+                try await versionControl.switchToBranch(branchName)
                 currentBranch = branchName
                 await refreshCommitHistory()
             } catch {
@@ -472,7 +472,7 @@ struct CommitRowView: View {
 
                 Text(commit.id.uuidString.prefix(8))
                     .font(.caption)
-                    .fontFamily(.monospaced)
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
@@ -537,7 +537,7 @@ struct EmptyCommitTimelineView: View {
 // MARK: - Create Branch View
 
 struct CreateBranchView: View {
-    @ObservedObject var versionControl: DatabaseVersionControl
+    let versionControl: DatabaseVersionControl
     let availableBranches: [String]
     let currentBranch: String
     let onBranchCreated: () async -> Void
@@ -553,7 +553,9 @@ struct CreateBranchView: View {
             Form {
                 Section("Branch Details") {
                     TextField("Branch name", text: $branchName)
+                        #if canImport(UIKit)
                         .textInputAutocapitalization(.never)
+                        #endif
 
                     TextField("Description (optional)", text: $description, axis: .vertical)
                         .lineLimit(2...4)
@@ -611,7 +613,7 @@ struct CreateBranchView: View {
 // MARK: - Merge Branch View
 
 struct MergeBranchView: View {
-    @ObservedObject var versionControl: DatabaseVersionControl
+    let versionControl: DatabaseVersionControl
     let availableBranches: [String]
     let onMergeCompleted: () async -> Void
     let onConflictsDetected: ([DatabaseConflict]) -> Void
@@ -694,7 +696,7 @@ struct MergeBranchView: View {
 // MARK: - Analytics Branch View
 
 struct CreateAnalyticsBranchView: View {
-    @ObservedObject var versionControl: DatabaseVersionControl
+    let versionControl: DatabaseVersionControl
     let baseBranch: String
     let onBranchCreated: () async -> Void
 
@@ -709,7 +711,9 @@ struct CreateAnalyticsBranchView: View {
             Form {
                 Section("Analytics Configuration") {
                     TextField("Branch name", text: $branchName)
+                        #if canImport(UIKit)
                         .textInputAutocapitalization(.never)
+                        #endif
 
                     Picker("Analysis Type", selection: $analysisType) {
                         ForEach(AnalysisType.allCases, id: \.self) { type in
@@ -773,7 +777,7 @@ struct CreateAnalyticsBranchView: View {
 // MARK: - Synthetic Branch View
 
 struct CreateSyntheticBranchView: View {
-    @ObservedObject var versionControl: DatabaseVersionControl
+    let versionControl: DatabaseVersionControl
     let onBranchCreated: () async -> Void
 
     @State private var branchName = ""
@@ -787,7 +791,9 @@ struct CreateSyntheticBranchView: View {
             Form {
                 Section("Synthetic Data Configuration") {
                     TextField("Branch name", text: $branchName)
+                        #if canImport(UIKit)
                         .textInputAutocapitalization(.never)
+                        #endif
 
                     Picker("Data Scale", selection: $dataScale) {
                         ForEach(DataScale.allCases, id: \.self) { scale in
@@ -844,7 +850,7 @@ struct CreateSyntheticBranchView: View {
 // MARK: - Commit Changes View
 
 struct CommitChangesView: View {
-    @ObservedObject var versionControl: DatabaseVersionControl
+    let versionControl: DatabaseVersionControl
     let onCommitCompleted: () async -> Void
 
     @State private var commitMessage = ""
@@ -906,7 +912,7 @@ struct CommitChangesView: View {
 
 // MARK: - Conflict Resolution View
 
-struct ConflictResolutionView: View {
+struct DatabaseConflictResolutionView: View {
     let conflicts: [DatabaseConflict]
     @Binding var strategy: MergeStrategy
     let onResolved: (MergeStrategy) -> Void
