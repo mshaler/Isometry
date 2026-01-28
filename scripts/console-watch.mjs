@@ -51,6 +51,8 @@ if (autoNotebook) {
     await notebookButton.first().waitFor({ timeout: 5000 });
     await notebookButton.first().click();
     log('action:', 'Clicked Notebook button');
+    await page.waitForTimeout(1000);
+    await readDomText('dom+notebook');
   } catch {
     const buttonTexts = await page.locator('button').allTextContents();
     log('action:', `Notebook button not found (after wait). Buttons: ${buttonTexts.join(' | ') || 'none'}`);
