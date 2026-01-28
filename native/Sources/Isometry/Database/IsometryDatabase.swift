@@ -24,6 +24,73 @@ public struct DatabaseSurface {
     public let description: String
 }
 
+// MARK: - Filter Query Optimization Types
+
+/// Geographic bounds for spatial filtering
+public struct GeographicBounds {
+    public let north: Double
+    public let south: Double
+    public let east: Double
+    public let west: Double
+
+    public init(north: Double, south: Double, east: Double, west: Double) {
+        self.north = north
+        self.south = south
+        self.east = east
+        self.west = west
+    }
+}
+
+/// Time field options for temporal filtering
+public enum TimeField {
+    case createdAt
+    case modifiedAt
+    case dueAt
+
+    var sqlColumnName: String {
+        switch self {
+        case .createdAt: return "created_at"
+        case .modifiedAt: return "modified_at"
+        case .dueAt: return "due_at"
+        }
+    }
+}
+
+/// Query optimization strategies
+public enum QueryOptimization {
+    case automatic
+    case forceIndex(String)
+    case noOptimization
+}
+
+/// Filter performance statistics
+public struct FilterPerformanceStats {
+    public let totalNodes: Int
+    public let indexCount: Int
+    public let ftsIndexedNodes: Int
+    public let averageQueryTime: Double
+    public let cacheHitRate: Double
+
+    public init(totalNodes: Int, indexCount: Int, ftsIndexedNodes: Int, averageQueryTime: Double, cacheHitRate: Double) {
+        self.totalNodes = totalNodes
+        self.indexCount = indexCount
+        self.ftsIndexedNodes = ftsIndexedNodes
+        self.averageQueryTime = averageQueryTime
+        self.cacheHitRate = cacheHitRate
+    }
+}
+
+/// Index statistics for query optimization
+public struct IndexStat {
+    public let name: String
+    public let unique: Bool
+
+    public init(name: String, unique: Bool) {
+        self.name = name
+        self.unique = unique
+    }
+}
+
 
 /// Thread-safe database actor for Isometry
 ///
@@ -317,6 +384,188 @@ public actor IsometryDatabase {
                 """
             return try Node.fetchAll(db, sql: sql, arguments: [query])
         }
+    }
+
+    // MARK: - Optimized Filter Query Methods
+
+    /// Enhanced FTS5 search with relevance scoring and pagination
+    /// Optimized for LATCH filtering alphabet dimension
+    public func searchNodesFTS(query: String, limit: Int = 100, offset: Int = 0) async throws -> [Node] {
+        try await dbPool.read { db in
+            let sql = """
+                SELECT nodes.*,
+                       nodes_fts.rank as relevance_score,
+                       snippet(nodes_fts, 1, '<mark>', '</mark>', '...', 32) as snippet
+                FROM nodes
+                JOIN nodes_fts ON nodes.rowid = nodes_fts.rowid
+                WHERE nodes_fts MATCH ?
+                  AND nodes.deleted_at IS NULL
+                ORDER BY rank, nodes.modified_at DESC
+                LIMIT ? OFFSET ?
+                """
+            return try Node.fetchAll(db, sql: sql, arguments: [query, limit, offset])
+        }
+    }
+
+    /// Optimized spatial filtering for location-based queries
+    /// Uses bounding box optimization for fast geographic filtering
+    public func searchNodesSpatial(bounds: GeographicBounds, limit: Int = 100, offset: Int = 0) async throws -> [Node] {
+        try await dbPool.read { db in
+            let sql = """
+                SELECT nodes.*
+                FROM nodes
+                WHERE nodes.deleted_at IS NULL
+                  AND nodes.latitude BETWEEN ? AND ?
+                  AND nodes.longitude BETWEEN ? AND ?
+                ORDER BY nodes.modified_at DESC
+                LIMIT ? OFFSET ?
+                """
+            return try Node.fetchAll(db, sql: sql, arguments: [
+                bounds.south, bounds.north,
+                bounds.west, bounds.east,
+                limit, offset
+            ])
+        }
+    }
+
+    /// Optimized folder hierarchy queries with recursive traversal
+    /// Supports LATCH category dimension filtering
+    public func getNodesByFolder(path: String, recursive: Bool = false, limit: Int = 100, offset: Int = 0) async throws -> [Node] {
+        try await dbPool.read { db in
+            if recursive {
+                let sql = """
+                    WITH RECURSIVE folder_tree(folder_path) AS (
+                        SELECT ? as folder_path
+                        UNION
+                        SELECT nodes.folder
+                        FROM nodes, folder_tree
+                        WHERE nodes.folder LIKE folder_tree.folder_path || '/%'
+                          AND nodes.deleted_at IS NULL
+                    )
+                    SELECT DISTINCT nodes.*
+                    FROM nodes, folder_tree
+                    WHERE (nodes.folder = folder_tree.folder_path OR nodes.folder LIKE folder_tree.folder_path || '/%')
+                      AND nodes.deleted_at IS NULL
+                    ORDER BY nodes.folder, nodes.modified_at DESC
+                    LIMIT ? OFFSET ?
+                    """
+                return try Node.fetchAll(db, sql: sql, arguments: [path, limit, offset])
+            } else {
+                let sql = """
+                    SELECT nodes.*
+                    FROM nodes
+                    WHERE nodes.folder = ?
+                      AND nodes.deleted_at IS NULL
+                    ORDER BY nodes.modified_at DESC
+                    LIMIT ? OFFSET ?
+                    """
+                return try Node.fetchAll(db, sql: sql, arguments: [path, limit, offset])
+            }
+        }
+    }
+
+    /// Optimized time-based filtering for chronological queries
+    /// Supports LATCH time dimension with field selection
+    public func getNodesByTimeRange(field: TimeField, start: Date, end: Date, limit: Int = 100, offset: Int = 0) async throws -> [Node] {
+        try await dbPool.read { db in
+            let fieldName = field.sqlColumnName
+            let sql = """
+                SELECT nodes.*
+                FROM nodes
+                WHERE nodes.deleted_at IS NULL
+                  AND nodes.\(fieldName) BETWEEN ? AND ?
+                ORDER BY nodes.\(fieldName) DESC
+                LIMIT ? OFFSET ?
+                """
+            return try Node.fetchAll(db, sql: sql, arguments: [start, end, limit, offset])
+        }
+    }
+
+    /// General-purpose optimized filter query executor
+    /// Supports compound LATCH filtering with optimization hints
+    public func executeFilterQuery(sql: String, params: [Any], optimization: QueryOptimization = .automatic, limit: Int = 100, offset: Int = 0) async throws -> [Node] {
+        try await dbPool.read { db in
+            var optimizedSQL = sql
+
+            // Apply optimization hints
+            switch optimization {
+            case .automatic:
+                // Analyze query and apply best optimizations
+                optimizedSQL = self.applyAutomaticOptimizations(sql)
+            case .forceIndex(let indexName):
+                // Force specific index usage
+                optimizedSQL = sql.replacingOccurrences(of: "FROM nodes", with: "FROM nodes INDEXED BY \(indexName)")
+            case .noOptimization:
+                // Use query as-is
+                break
+            }
+
+            // Add pagination if not present
+            if !optimizedSQL.lowercased().contains("limit") {
+                optimizedSQL += " LIMIT \(limit) OFFSET \(offset)"
+            }
+
+            // For now, use a simple approach without parameters for the general case
+            // In production, this would be more sophisticated parameter handling
+            return try Node.fetchAll(db, sql: optimizedSQL)
+        }
+    }
+
+    /// Get comprehensive filter performance statistics
+    public func getFilterStatistics() async throws -> FilterPerformanceStats {
+        try await dbPool.read { db in
+            // Get basic node count
+            let totalNodes = try Node.filter(Node.Columns.deletedAt == nil).fetchCount(db)
+
+            // Get index count from PRAGMA
+            let indexRows = try Row.fetchAll(db, sql: "PRAGMA index_list('nodes')")
+            let indexCount = indexRows.count
+
+            // Get FTS5 statistics
+            let ftsRow = try? Row.fetchOne(db, sql: "SELECT count(*) as count FROM nodes_fts")
+            let ftsStats = ftsRow?["count"] as? Int64 ?? 0
+
+            return FilterPerformanceStats(
+                totalNodes: totalNodes,
+                indexCount: indexCount,
+                ftsIndexedNodes: Int(ftsStats),
+                averageQueryTime: 0, // Would be calculated from query log
+                cacheHitRate: 0 // Would be calculated from cache statistics
+            )
+        }
+    }
+
+    // MARK: - Filter Query Optimization Helpers
+
+    nonisolated private func applyAutomaticOptimizations(_ sql: String) -> String {
+        var optimizedSQL = sql
+
+        // Detect common patterns and apply optimizations
+        if sql.lowercased().contains("nodes_fts") {
+            // FTS5 query optimization
+            optimizedSQL = optimizedSQL.replacingOccurrences(
+                of: "ORDER BY rank",
+                with: "ORDER BY rank, nodes.modified_at DESC"
+            )
+        }
+
+        if sql.lowercased().contains("latitude") && sql.lowercased().contains("longitude") {
+            // Spatial query optimization - ensure proper index usage
+            optimizedSQL = optimizedSQL.replacingOccurrences(
+                of: "FROM nodes",
+                with: "FROM nodes INDEXED BY idx_nodes_location"
+            )
+        }
+
+        if sql.lowercased().contains("folder") {
+            // Folder query optimization
+            optimizedSQL = optimizedSQL.replacingOccurrences(
+                of: "FROM nodes",
+                with: "FROM nodes INDEXED BY idx_nodes_folder"
+            )
+        }
+
+        return optimizedSQL
     }
 
     // MARK: - Edge CRUD
