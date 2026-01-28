@@ -9,6 +9,8 @@ import AppKit
 import UIKit
 #endif
 
+#if os(macOS)
+
 // Import PerformanceMonitor
 #if canImport(Isometry)
 // For standalone compilation, define minimal PerformanceMonitor interface
@@ -716,3 +718,97 @@ extension Task where Success == Never, Failure == Never {
         try await Task.sleep(nanoseconds: UInt64(duration.components.seconds * 1_000_000_000))
     }
 }
+
+#else
+// iOS stub implementation
+public final actor ProcessManager {
+    public static let shared = ProcessManager()
+    public init() {}
+
+    public var canStartNewProcess: Bool { false }
+    public var activeProcessCount: Int { 0 }
+
+    public func getProcessMetrics() -> ProcessManagerMetrics {
+        ProcessManagerMetrics(
+            totalProcesses: 0,
+            activeProcesses: 0,
+            totalMemoryUsage: 0,
+            totalCPUUsage: 0.0,
+            averageExecutionTime: 0.0
+        )
+    }
+
+    public func startProcess(executable: String, arguments: [String] = [], workingDirectory: String? = nil, environment: [String: String]? = nil, command: String) async throws -> UUID? {
+        throw SandboxExecutorError.commandNotAllowed("Process execution not supported on iOS")
+    }
+
+    public func terminate(processId: UUID) async {
+        // No-op on iOS
+    }
+
+    public func getProcessInfo(processId: UUID) async -> ManagedProcessInfo? {
+        return ManagedProcessInfo(state: .idle)
+    }
+
+    public func enableBackgroundExecution(processId: UUID) async {
+        // No-op on iOS
+    }
+}
+
+public struct ProcessManagerMetrics: Sendable {
+    public let totalProcesses: Int
+    public let activeProcesses: Int
+    public let totalMemoryUsage: Int64
+    public let totalCPUUsage: Double
+    public let averageExecutionTime: TimeInterval
+
+    public init(totalProcesses: Int, activeProcesses: Int, totalMemoryUsage: Int64, totalCPUUsage: Double, averageExecutionTime: TimeInterval) {
+        self.totalProcesses = totalProcesses
+        self.activeProcesses = activeProcesses
+        self.totalMemoryUsage = totalMemoryUsage
+        self.totalCPUUsage = totalCPUUsage
+        self.averageExecutionTime = averageExecutionTime
+    }
+}
+
+// iOS stub types
+public struct ManagedProcessInfo: Sendable {
+    public let state: ManagedProcessState
+
+    public init(state: ManagedProcessState) {
+        self.state = state
+    }
+}
+
+public enum ManagedProcessState: String, CaseIterable, Sendable {
+    case idle = "idle"
+    case running = "running"
+    case completed = "completed"
+    case failed = "failed"
+    case terminated = "terminated"
+    case suspended = "suspended"
+    case backgrounded = "backgrounded"
+
+    public var isActive: Bool {
+        return self == .running
+    }
+
+    public var icon: String {
+        switch self {
+        case .idle: return "pause.circle"
+        case .running: return "play.circle.fill"
+        case .completed: return "checkmark.circle.fill"
+        case .failed: return "xmark.circle.fill"
+        case .terminated: return "stop.circle.fill"
+        case .suspended: return "pause.circle.fill"
+        case .backgrounded: return "moon.circle"
+        }
+    }
+
+    public var description: String {
+        return self.rawValue.capitalized
+    }
+}
+
+
+#endif

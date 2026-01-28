@@ -61,7 +61,9 @@ public class MultitaskingSupport: ObservableObject {
     }
 
     deinit {
-        endBackgroundTask()
+        Task { @MainActor in
+            endBackgroundTask()
+        }
     }
 
     // MARK: - Scene Management
@@ -74,12 +76,12 @@ public class MultitaskingSupport: ObservableObject {
 
         // Configure scene for multitasking
         windowScene.sizeRestrictions?.minimumSize = CGSize(width: 320, height: 480)
-        windowScene.sizeRestrictions?.maximumSize = CGSize(width: .infinity, height: .infinity)
+        windowScene.sizeRestrictions?.maximumSize = CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
 
         // Monitor scene state changes
-        scene.activationStateDidChangeNotification
-            .publisher(for: UIScene.activationStateDidChangeNotification)
-            .sink { [weak self] notification in
+        NotificationCenter.default
+            .publisher(for: UIScene.didActivateNotification)
+            .sink { [weak self] (notification: Notification) in
                 guard let scene = notification.object as? UIScene else { return }
                 self?.handleSceneStateChange(scene)
             }
@@ -89,7 +91,7 @@ public class MultitaskingSupport: ObservableObject {
         handleSceneStateChange(scene)
     }
 
-    private func handleSceneStateChange(_ scene: UIScene) {
+    func handleSceneStateChange(_ scene: UIScene) {
         sceneActivationState = scene.activationState
 
         switch scene.activationState {
@@ -273,7 +275,7 @@ public class MultitaskingSupport: ObservableObject {
         DragGesture()
             .onEnded { value in
                 // Detect swipe to dismiss gesture
-                if value.translation.x > 100 && abs(value.translation.y) < 50 {
+                if value.translation.width > 100 && abs(value.translation.height) < 50 {
                     // User is trying to dismiss slide-over
                     // We don't control this, but we can prepare for it
                     self.prepareForDismissal()
@@ -358,7 +360,7 @@ extension MultitaskingSupport {
 /// Custom scene delegate for notebook scenes
 public class NotebookSceneDelegate: UIResponder, UIWindowSceneDelegate {
 
-    var window: UIWindow?
+    public var window: UIWindow?
     private var multitaskingSupport: MultitaskingSupport?
 
     public func scene(

@@ -249,7 +249,11 @@ public struct ResizeHandle: View {
                 height: orientation == .horizontal ? 8 : nil
             )
             .contentShape(Rectangle())
+            #if os(macOS)
             .cursor(orientation == .horizontal ? .resizeUpDown : .resizeLeftRight)
+            #else
+            .cursor(orientation == .horizontal ? "row-resize" : "col-resize")
+            #endif
             .gesture(
                 DragGesture()
                     .onChanged(onDrag)
@@ -262,8 +266,8 @@ public struct ResizeHandle: View {
 
 extension View {
     /// Apply cursor style for resize handles
+    #if os(macOS)
     func cursor(_ cursor: NSCursor.CursorType) -> some View {
-        #if os(macOS)
         return self.onHover { hovering in
             if hovering {
                 cursor.cursor.set()
@@ -271,10 +275,12 @@ extension View {
                 NSCursor.arrow.set()
             }
         }
-        #else
-        return self
-        #endif
     }
+    #else
+    func cursor(_ cursor: String) -> some View {
+        return self
+    }
+    #endif
 }
 
 #if os(macOS)

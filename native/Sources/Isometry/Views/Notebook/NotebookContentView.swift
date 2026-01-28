@@ -396,7 +396,7 @@ extension NotebookContentView {
 
     /// Adaptive layout for split view and other multitasking modes
     @ViewBuilder
-    private func adaptiveLayout(for geometry: GeometryReader<some View>.Content) -> some View {
+    private func adaptiveLayout(for geometry: GeometryProxy) -> some View {
         let size = geometry.size
         let layoutComponents = multitaskingSupport.calculateSplitViewLayout(containerWidth: size.width)
 
@@ -461,7 +461,7 @@ extension NotebookContentView {
     }
 
     /// Setup iOS-specific configuration
-    private func setupiOSConfiguration(geometry: GeometryReader<some View>.Content) {
+    private func setupiOSConfiguration(geometry: GeometryProxy) {
         // Configure multitasking based on initial geometry
         updateMultitaskingLayout(width: geometry.size.width)
 

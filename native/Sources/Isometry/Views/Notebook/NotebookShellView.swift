@@ -471,6 +471,10 @@ public struct NotebookShellView: View {
             return .red
         case .backgrounded:
             return .orange
+        case .completed:
+            return .green
+        case .failed:
+            return .red
         }
     }
 

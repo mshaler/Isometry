@@ -109,7 +109,7 @@ struct ETLDataCatalogView: View {
             }
         }
         .padding()
-        .background(Color(NSColor.systemGray))
+        .background(Color.gray)
     }
 
     // MARK: - Hierarchy Selector
@@ -296,7 +296,7 @@ struct CategoryFilterChip: View {
                 .fontWeight(isSelected ? .medium : .regular)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(isSelected ? Color.blue : Color(NSColor.secondarySystemFill))
+                .background(isSelected ? Color.blue : Color.gray.opacity(0.3))
                 .foregroundColor(isSelected ? .white : .primary)
                 .cornerRadius(12)
         }
