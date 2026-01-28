@@ -159,6 +159,9 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             case "searchNodes":
                 result = try await handleSearchNodes(params: params, database: database)
 
+            case "executeFilter":
+                result = try await handleExecuteFilter(params: params, database: database)
+
             case "getGraph":
                 result = try await handleGetGraph(params: params, database: database)
 
@@ -411,6 +414,30 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
 
             return results
         }
+    }
+
+    /**
+     * Handle filter execution for LATCH filtering (delegates to FilterBridgeHandler)
+     * Provides backward compatibility with existing database bridge API
+     */
+    private func handleExecuteFilter(
+        params: [String: Any],
+        database: IsometryDatabase
+    ) async throws -> [String: Any] {
+        // Create temporary filter bridge handler for compatibility
+        let filterHandler = FilterBridgeHandler(database: database)
+
+        // Format parameters to match FilterBridgeHandler expectations
+        let filterParams: [String: Any] = [
+            "sql": params["sql"] ?? "",
+            "params": params["params"] ?? [],
+            "limit": params["limit"] ?? 1000,
+            "offset": params["offset"] ?? 0,
+            "sequenceId": params["sequenceId"] as Any
+        ]
+
+        // Execute filter through dedicated handler
+        return try await filterHandler.executeFilterCompat(params: filterParams, database: database)
     }
 
     /**

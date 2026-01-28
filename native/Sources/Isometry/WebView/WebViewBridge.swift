@@ -1,5 +1,6 @@
 import WebKit
 import Foundation
+import OSLog
 
 /// Coordinates WebView bridge communication between React prototype and native services
 /// Manages MessageHandlers, navigation delegation, and bridge initialization
@@ -9,6 +10,7 @@ public class WebViewBridge: NSObject {
     public let databaseHandler: DatabaseMessageHandler
     public let fileSystemHandler: FileSystemMessageHandler
     public let pafvHandler: PAFVMessageHandler
+    public let filterHandler: FilterBridgeHandler
 
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
@@ -21,6 +23,7 @@ public class WebViewBridge: NSObject {
         self.databaseHandler = DatabaseMessageHandler(database: database)
         self.fileSystemHandler = FileSystemMessageHandler()
         self.pafvHandler = PAFVMessageHandler(viewModel: superGridViewModel)
+        self.filterHandler = FilterBridgeHandler(database: database)
         self.database = database
         self.superGridViewModel = superGridViewModel
 
@@ -30,8 +33,9 @@ public class WebViewBridge: NSObject {
     /// Connect to database after initialization
     public func connectToDatabase(_ database: IsometryDatabase) async {
         self.database = database
-        // Update handler with real database
+        // Update handlers with real database
         await self.databaseHandler.setDatabase(database)
+        await self.filterHandler.setDatabase(database)
     }
 
     // MARK: - Bridge Initialization Script
@@ -237,6 +241,9 @@ public class WebViewBridge: NSObject {
 
         case "pafv":
             pafvHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+
+        case "filters":
+            filterHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
 
         default:
             logger.warning("Unknown message handler: \(handlerName)")
