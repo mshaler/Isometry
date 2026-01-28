@@ -18,6 +18,8 @@
 - 🚧 **v2.5 Advanced Import Systems** - Phases 11.1-11.4 (comprehensive import verification)
 - 🆕 **v2.6 Graph Analytics Engine** - Phases 12.1-12.4 (intelligent connection discovery and query optimization)
 - 🚀 **v3.0 Production Deployment** - Phases 13.1-13.5 (App Store launch and production infrastructure)
+- 🎯 **v2.7 PAFV Integration** - Phase 14.1 (React-native spatial projection bridge)
+- 🎯 **v2.8 LATCH Filter Integration** - Phase 14.2 (React-native filter bridge)
 
 ## Milestone Overview
 
@@ -40,6 +42,10 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v2.6 Goal (Graph Analytics Engine):** Integrate sophisticated graph analytics engine with intelligent connection discovery, query optimization, and large-scale graph processing capabilities. Implement CardBoard v1/v2 research-derived algorithms for connection suggestions, cache optimization, and predictive analytics.
 
 **v3.0 Goal (Production Deployment):** Complete App Store submission and production launch with CloudKit production infrastructure, distribution pipeline, beta testing, marketing systems, and post-launch operations.
+
+**v2.7 Goal (PAFV Integration):** Bridge React PAFV spatial projection system to native SuperGridView with real-time coordinate synchronization, enabling seamless axis mapping changes with 60fps performance and CloudKit persistence.
+
+**v2.8 Goal (LATCH Filter Integration):** Bridge React LATCH filtering system to native database queries with real-time synchronization, enabling instant filter updates from React FilterContext to native SQLite with FTS5 search integration and URL state persistence.
 
 ---
 
@@ -558,6 +564,54 @@ Plans:
 3. Real-time analytics maintaining system responsiveness
 4. End-to-end graph intelligence workflow validated for production deployment
 
+### 🎯 v2.7 PAFV Integration (READY)
+
+**Milestone Goal:** Bridge React PAFV spatial projection system to native SuperGridView with real-time coordinate synchronization, enabling seamless axis mapping changes with 60fps performance and CloudKit persistence.
+
+#### Phase 14.1: PAFV Integration Foundation (READY)
+**Goal:** Bridge React PAFV spatial projection system to native SuperGridView with real-time coordinate synchronization
+**Dependencies:** None (utilizes existing React PAFV and native SuperGrid infrastructure)
+**Requirements:** All PAFV integration requirements
+**Plans:** 1 plan
+
+**Success Criteria:**
+1. React PAFV axis changes instantly reflect in native SuperGridView
+2. Native coordinate transformations correctly position nodes from React D3 calculations
+3. Bridge maintains 60fps performance with 1000+ nodes
+4. ViewConfig persists PAFV state across app restarts via CloudKit
+5. Zoom/pan operations sync between React and native coordinate systems
+6. Coordinate precision maintained across complex hierarchical scales
+7. Memory management handles rapid view switching with large datasets
+8. CloudKit sync coordinates with React URL persistence without conflicts
+
+Plans:
+- [ ] 14.1-01-PLAN.md — PAFV Integration Foundation: React-native spatial projection bridge with real-time coordinate synchronization
+
+### 🎯 v2.8 LATCH Filter Integration (READY)
+
+**Milestone Goal:** Bridge React LATCH filtering system to native SQLite database queries with real-time synchronization and performance optimization, enabling instant filter updates from React FilterContext to native database with FTS5 search integration and URL state persistence.
+
+#### Phase 14.2: LATCH Filter Integration (READY)
+**Goal:** Bridge React LATCH filtering system to native database queries with real-time synchronization
+**Dependencies:** None (utilizes existing React LATCH and native WebView bridge infrastructure)
+**Requirements:** All LATCH filter integration requirements
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. React filter changes trigger native database queries within 100ms latency
+2. FTS5 text search integration provides 10-100x performance improvement for Alphabet filtering
+3. Complex LATCH filter combinations execute without UI blocking
+4. Filter state synchronization maintains consistency between React URL persistence and native query execution
+5. Backend switching between sql.js and native bridge works seamlessly without state loss
+6. User interface provides comprehensive bridge status and performance feedback
+7. Comprehensive test coverage ensures reliability and prevents regressions
+8. Error handling provides user-friendly feedback for all failure scenarios
+
+Plans:
+- [ ] 14.2-01-PLAN.md — LATCH Filter Bridge Foundation: React filter integration with native query execution
+- [ ] 14.2-02-PLAN.md — Filter State Synchronization: Backend switching and race condition prevention
+- [ ] 14.2-03-PLAN.md — Filter Integration Completion: UI feedback, database optimization, and testing
+
 ## Dependencies
 
 ### v2.1 Migration External Dependencies
@@ -584,6 +638,18 @@ Plans:
 - Machine learning frameworks for suggestion optimization
 - Performance monitoring infrastructure for analytics validation
 
+### v2.7 PAFV Integration Dependencies
+- React PAFV context system with URL persistence
+- Native SuperGridView with Canvas rendering infrastructure
+- WebView bridge communication foundation
+- CloudKit ViewConfig persistence system
+
+### v2.8 LATCH Filter Integration Dependencies
+- React LATCH filtering system with SQL compilation
+- Native WebView bridge communication infrastructure
+- QueryTranslator for LATCH pattern optimization
+- FTS5 virtual tables for text search performance
+
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
@@ -594,6 +660,8 @@ v2.3: Phase 9.1 → Phase 9.2 → Phase 9.3 → Phase 9.4 (PRODUCTION READINESS)
 v2.4: Phase 10 (FOUNDATION CLEANUP - GAP CLOSURE)
 v2.5: Phases 11.1-11.4 (ADVANCED IMPORT SYSTEMS)
 v2.6: Phases 12.1-12.4 (GRAPH ANALYTICS ENGINE)
+v2.7: Phase 14.1 (PAFV INTEGRATION)
+v2.8: Phase 14.2 (LATCH FILTER INTEGRATION)
 ```
 
 ## Progress
@@ -606,6 +674,8 @@ Production Readiness: 9.1 → 9.2 → 9.3 → 9.4
 Error Elimination: 10 (independent - GAP CLOSURE)
 Advanced Import Systems: 11.1 → 11.2 → 11.3 → 11.4 (IN PROGRESS)
 Graph Analytics Engine: 12.1 → 12.2 → 12.3 → 12.4 (READY)
+PAFV Integration: 14.1 (independent - READY)
+LATCH Filter Integration: 14.2 (independent - READY)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -637,18 +707,20 @@ Graph Analytics Engine: 12.1 → 12.2 → 12.3 → 12.4 (READY)
 | 12.2. Connection Intelligence | v2.6 | 0/3 | Planned | - |
 | 12.3. Performance & Optimization | v2.6 | 0/3 | Planned | - |
 | 12.4. Analytics & Real-Time Integration | v2.6 | 0/2 | Planned | - |
+| 14.1. PAFV Integration Foundation | v2.7 | 0/1 | Ready | - |
+| 14.2. LATCH Filter Integration | v2.8 | 0/3 | Ready | - |
 
 ## Architecture Integration Summary
 
-### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 Evolution
+### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 → v2.7 → v2.8 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence
-====================    =======================    ========================    =====================      =================          ================          ===================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions
-React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization
-Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence   v2.7 PAFV Integration     v2.8 Filter Integration
+====================    =======================    ========================    =====================      =================          ================          ===================      =================          =================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine    React ↔ Native bridge     React ↔ Native filters
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions     PAFV spatial mapping       LATCH real-time filtering
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization        Coordinate synchronization Filter synchronization
+Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics      Real-time axis updates    Real-time filter updates
 ```
 
 ### Migration Data Flow
@@ -664,20 +736,40 @@ IsometryDatabase (Swift)
 Production Backend
 ```
 
-### Performance Targets (v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+### PAFV Integration Data Flow
+```
+React PAFV Context ←→ WebView Bridge ←→ Native SuperGrid
+├── AxisMapping[]     ├── Message handlers    ├── ViewConfig
+├── URL persistence   ├── Coordinate transform ├── GridCellData[]
+└── D3 coordinates    └── Performance monitor  └── Canvas rendering
+```
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence |
-|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|
-| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) |
-| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) |
-| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds |
-| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% |
-| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
-| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence |
-| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics |
-| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy |
-| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) |
-| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes |
+### LATCH Filter Integration Data Flow
+```
+React FilterContext ←→ WebView Bridge ←→ Native Database
+├── FilterState[]      ├── Filter handlers      ├── QueryTranslator
+├── URL persistence    ├── SQL compilation      ├── FTS5 optimization
+├── Debounced updates  ├── Result correlation   ├── Spatial indexing
+└── Error boundaries   └── Performance monitor  └── Cache management
+```
+
+### Performance Targets (v2.8 vs v2.7 vs v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence | v2.7 PAFV Integration | v2.8 Filter Integration |
+|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|------------------------|-------------------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) | 60fps+ (PAFV-aware) | 60fps+ (filter-aware) |
+| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) | -45% (coordinate cache) | -45% (filter cache) |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds |
+| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% | +25% | +25% |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
+| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence | 0 problems + PAFV bridge | 0 problems + filter bridge |
+| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics | Advanced analytics | Advanced analytics |
+| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy |
+| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) | <1 second (cached) | <100ms (filtered) |
+| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes |
+| **PAFV Integration** | None | None | None | None | None | None | None | Real-time coordination | Real-time coordination |
+| **Filter Performance** | Local filter | Native filter | Native filter | Native filter | Native filter | Native filter | Smart filtering | Smart filtering | Real-time native FTS5 |
+| **Bridge Latency** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | <5ms axis changes | <100ms filter changes |
 
 ---
 
@@ -846,6 +938,30 @@ Production Backend
 
 **v2.6 Coverage:** 11/11 requirements mapped ✓
 
+### v2.7 PAFV Integration Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| PAFV-01 | Phase 14.1 | 📋 Ready |
+| PAFV-02 | Phase 14.1 | 📋 Ready |
+| PAFV-03 | Phase 14.1 | 📋 Ready |
+| PAFV-04 | Phase 14.1 | 📋 Ready |
+| PAFV-05 | Phase 14.1 | 📋 Ready |
+
+**v2.7 Coverage:** 5/5 requirements mapped ✓
+
+### v2.8 LATCH Filter Integration Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FILTER-01 | Phase 14.2 | 📋 Ready |
+| FILTER-02 | Phase 14.2 | 📋 Ready |
+| FILTER-03 | Phase 14.2 | 📋 Ready |
+| FILTER-04 | Phase 14.2 | 📋 Ready |
+| FILTER-05 | Phase 14.2 | 📋 Ready |
+
+**v2.8 Coverage:** 5/5 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -894,8 +1010,24 @@ Production Backend
 3. **Phase 12.3:** Performance optimization and advanced analytics (suggestion quality, cache optimization, pattern discovery)
 4. **Phase 12.4:** Real-time analytics and monitoring integration (cache analytics, predictive analytics, system integration)
 
+### PAFV Integration Strategy (Phase 14.1 - NEW)
+1. **Phase 14.1:** PAFV Integration Foundation (React-native spatial bridge with real-time coordinate synchronization)
+   - Bridge React PAFV axis mappings to native ViewConfig
+   - Coordinate transformation pipeline (D3 → Canvas)
+   - Performance-aware bidirectional communication
+   - CloudKit persistence integration
+
+### LATCH Filter Integration Strategy (Phase 14.2 - NEW)
+1. **Phase 14.2:** LATCH Filter Integration (React-native filter bridge with real-time database synchronization)
+   - Bridge React FilterContext to native database queries
+   - SQL compilation and FTS5 optimization
+   - Performance-aware debounced filtering
+   - Backend switching with state preservation
+
 ---
 
 **Current step:** Phase 13.2 Production Infrastructure & CloudKit Deployment completed (see `/.planning/milestones/v3.0-production-deployment/phases/13-02-SUMMARY.md`).
 
 **Next step:** `/gsd:plan-phase 13.3` to define beta testing & quality validation.
+
+**Available phases:** `/gsd:plan-phase 14.1` for PAFV Integration Foundation, `/gsd:plan-phase 14.2` for LATCH Filter Integration.
