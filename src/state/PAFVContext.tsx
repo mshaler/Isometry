@@ -5,6 +5,7 @@ import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPla
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
 import { useURLState } from '../hooks/useURLState';
 import { PAFVContext, type PAFVContextValue } from '../hooks/usePAFV';
+import { pafvBridge } from '../utils/pafv-bridge';
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
   // Use URL state for persistence
@@ -32,49 +33,76 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     }
   }, [state.mappings, state.viewMode]);
 
+  // Cleanup bridge on unmount
+  useEffect(() => {
+    return () => {
+      pafvBridge.dispose();
+    };
+  }, []);
+
   const setMapping = useCallback((mapping: AxisMapping) => {
-    setState(setMappingUtil(state, mapping));
+    const newState = setMappingUtil(state, mapping);
+    setState(newState);
+
+    // Send to native bridge for real-time SuperGrid updates
+    pafvBridge.sendAxisMappingUpdate(newState);
   }, [state, setState]);
 
   const removeMappingCallback = useCallback((plane: Plane) => {
-    setState(removeMapping(state, plane));
+    const newState = removeMapping(state, plane);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
   }, [state, setState]);
 
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
+    let newState: PAFVState;
+
     // If switching view modes, preserve and restore previous mappings
     if (state.viewMode === mode) {
       // No change, just update viewMode
-      setState({ ...state, viewMode: mode });
+      newState = { ...state, viewMode: mode };
+      setState(newState);
       return;
     }
 
     // When switching to Grid, restore last Grid mappings
     if (mode === 'grid') {
-      setState({
+      newState = {
         viewMode: mode,
         mappings: lastGridMappings.current.length > 0
           ? lastGridMappings.current
           : DEFAULT_PAFV.mappings,
-      });
+      };
+      setState(newState);
+      pafvBridge.sendAxisMappingUpdate(newState);
       return;
     }
 
     // When switching to List, restore last List mappings
     if (mode === 'list') {
-      setState({
+      newState = {
         viewMode: mode,
         mappings: lastListMappings.current.length > 0
           ? lastListMappings.current
           : state.mappings, // Preserve current mappings if no list history
-      });
+      };
+      setState(newState);
+      pafvBridge.sendAxisMappingUpdate(newState);
       return;
     }
 
-    setState({ ...state, viewMode: mode });
+    newState = { ...state, viewMode: mode };
+    setState(newState);
+    pafvBridge.sendAxisMappingUpdate(newState);
   }, [state, setState]);
 
   const resetToDefaults = useCallback(() => {
     setState(DEFAULT_PAFV);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(DEFAULT_PAFV);
   }, [setState]);
 
   const getAxisForPlane = useCallback((plane: Plane): LATCHAxis | null => {
