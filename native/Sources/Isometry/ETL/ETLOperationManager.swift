@@ -272,14 +272,14 @@ public enum ETLResultStatus: Codable, Sendable {
     }
 }
 
-public enum ETLPhase: CaseIterable, Codable, Sendable {
-    case preparing
-    case scanning
-    case extracting
-    case transforming
-    case validating
-    case loading
-    case finalizing
+public enum ETLPhase: String, CaseIterable, Codable, Sendable {
+    case preparing = "preparing"
+    case scanning = "scanning"
+    case extracting = "extracting"
+    case transforming = "transforming"
+    case validating = "validating"
+    case loading = "loading"
+    case finalizing = "finalizing"
 
     public var displayName: String {
         switch self {
@@ -329,7 +329,10 @@ public struct ETLOperationTemplate: Identifiable, Codable, Hashable, Sendable {
         .sqliteDirectSync,
         .fullSystemImport,
         .dataExportArchive,
-        .cloudSyncSetup
+        .cloudSyncSetup,
+        .sqliteDatabaseImport,
+        .fileSystemImport,
+        .cloudSyncOperation
     ]
 }
 
@@ -625,6 +628,66 @@ extension ETLOperationTemplate {
         supportedSources: [.cloudService],
         defaultConfiguration: ETLOperationConfiguration(
             batchSize: 100,
+            enabledSources: [.cloudService],
+            outputFolder: nil,
+            preserveMetadata: true,
+            enableDeduplication: true,
+            customFilters: [],
+            dateRange: nil
+        )
+    )
+
+    public static let sqliteDatabaseImport = ETLOperationTemplate(
+        id: "sqlite-database-import",
+        name: "Import SQLite Database",
+        description: "Import data from external SQLite database files",
+        category: .import,
+        estimatedDuration: 180, // 3 minutes
+        complexity: .moderate,
+        requiredPermissions: [.fileSystem],
+        supportedSources: [.sqliteDatabase],
+        defaultConfiguration: ETLOperationConfiguration(
+            batchSize: 1000,
+            enabledSources: [.sqliteDatabase],
+            outputFolder: "sqlite-import",
+            preserveMetadata: true,
+            enableDeduplication: true,
+            customFilters: [],
+            dateRange: nil
+        )
+    )
+
+    public static let fileSystemImport = ETLOperationTemplate(
+        id: "file-system-import",
+        name: "Import File System",
+        description: "Import documents and files from file system",
+        category: .import,
+        estimatedDuration: 240, // 4 minutes
+        complexity: .moderate,
+        requiredPermissions: [.fileSystem],
+        supportedSources: [.files],
+        defaultConfiguration: ETLOperationConfiguration(
+            batchSize: 500,
+            enabledSources: [.files],
+            outputFolder: "file-import",
+            preserveMetadata: true,
+            enableDeduplication: true,
+            customFilters: [],
+            dateRange: nil
+        )
+    )
+
+    public static let cloudSyncOperation = ETLOperationTemplate(
+        id: "cloud-sync-operation",
+        name: "Cloud Sync Operation",
+        description: "Synchronize data with cloud services",
+        category: .sync,
+        estimatedDuration: 300, // 5 minutes
+        complexity: .complex,
+        requiredPermissions: [.network],
+        supportedSources: [.cloudService],
+        defaultConfiguration: ETLOperationConfiguration(
+            batchSize: 200,
             enabledSources: [.cloudService],
             outputFolder: nil,
             preserveMetadata: true,

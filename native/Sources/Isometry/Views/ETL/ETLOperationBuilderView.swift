@@ -73,7 +73,7 @@ struct ETLOperationBuilderView: View {
                     }
                 }
             }
-            .pickerStyle(.navigationLink)
+            .pickerStyle(.menu)
 
             TemplateInfoCard(template: selectedTemplate)
         } header: {
@@ -114,7 +114,6 @@ struct ETLOperationBuilderView: View {
                 TextField("Batch Size", value: $configuration.batchSize, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 100)
-                    .keyboardType(.numberPad)
             }
 
             // Output Folder
@@ -346,7 +345,7 @@ struct SourceToggle: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isEnabled ? Color.blue : Color(.systemGray5))
+            .background(isEnabled ? Color.blue : Color.gray.opacity(0.3))
             .foregroundColor(isEnabled ? .white : .primary)
             .cornerRadius(8)
         }
@@ -491,7 +490,8 @@ enum PermissionStatus {
     ETLOperationBuilderView(
         etlManager: ETLOperationManager(
             database: try! IsometryDatabase(path: ":memory:"),
-            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:"))
+            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:")),
+            versionManager: ETLVersionManager(database: try! IsometryDatabase(path: ":memory:"))
         ),
         database: try! IsometryDatabase(path: ":memory:"),
         selectedTemplate: .appleNotesImport

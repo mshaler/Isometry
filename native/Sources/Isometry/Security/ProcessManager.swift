@@ -51,6 +51,21 @@ public enum ManagedProcessState: String, CaseIterable, Sendable {
     public var isActive: Bool {
         return self == .running || self == .backgrounded
     }
+
+    public var icon: String {
+        switch self {
+        case .idle:
+            return "circle"
+        case .running:
+            return "play.circle.fill"
+        case .suspended:
+            return "pause.circle"
+        case .terminated:
+            return "checkmark.circle"
+        case .backgrounded:
+            return "moon.circle"
+        }
+    }
 }
 
 /// Background execution task wrapper

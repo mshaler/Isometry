@@ -3,7 +3,8 @@ import Foundation
 
 /// Comprehensive command history search interface with advanced filtering
 public struct CommandHistoryView: View {
-    @StateObject private var commandHistory = CommandHistoryManager()
+    private let database: IsometryDatabase
+    @StateObject private var commandHistory: CommandHistoryManager
     @State private var searchText: String = ""
     @State private var historyEntries: [HistoryEntry] = []
     @State private var isLoading: Bool = false
@@ -18,6 +19,11 @@ public struct CommandHistoryView: View {
 
     // Search suggestions
     @State private var searchSuggestions: [CommandSuggestion] = []
+
+    public init(database: IsometryDatabase) {
+        self.database = database
+        self._commandHistory = StateObject(wrappedValue: CommandHistoryManager(database: database))
+    }
     @State private var showingSuggestions: Bool = false
 
     public init() {}

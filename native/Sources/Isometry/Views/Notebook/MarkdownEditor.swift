@@ -37,8 +37,8 @@ private struct iOSTextEditor: UIViewRepresentable {
     @Binding var isEditing: Bool
     let coordinator: EditorCoordinator
 
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+    func makeUIView(context: Context) -> NSTextView {
+        let textView = NSTextView()
 
         // Configure text view appearance
         textView.font = UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
@@ -68,7 +68,7 @@ private struct iOSTextEditor: UIViewRepresentable {
         return textView
     }
 
-    func updateUIView(_ uiView: UITextView, context: Context) {
+    func updateUIView(_ uiView: NSTextView, context: Context) {
         // Update text if it differs from the view's text
         if uiView.text != text {
             uiView.text = text
@@ -156,7 +156,7 @@ private struct macOSTextEditor: NSViewRepresentable {
 // MARK: - Editor Coordinator
 
 @MainActor
-private class EditorCoordinator: NSObject {
+private class EditorCoordinator: NSObject, ObservableObject {
     private var textBinding: Binding<String>?
     private var isEditingBinding: Binding<Bool>?
 
@@ -286,20 +286,6 @@ private class EditorCoordinator: NSObject {
         }
     }
 
-    private func detectSlashCommand(in textView: UITextView) {
-        let text = textView.text ?? ""
-        let cursorPosition = textView.selectedRange.location
-
-        if commandManager.detectSlashCommand(text: text, cursorPosition: cursorPosition) {
-            if let cursorPosition = textView.selectedTextRange?.start {
-                let cursorRect = textView.caretRect(for: cursorPosition)
-                let menuPosition = CGPoint(x: cursorRect.minX, y: cursorRect.maxY + 5)
-                commandManager.showMenu(at: menuPosition)
-            }
-        } else {
-            commandManager.hideMenu()
-        }
-    }
 
     private func executeCommand(_ command: SlashCommand, in textView: NSTextView) {
         let text = textView.string
@@ -326,30 +312,6 @@ private class EditorCoordinator: NSObject {
         applyMarkdownHighlighting(to: textView)
     }
 
-    private func executeCommand(_ command: SlashCommand, in textView: UITextView) {
-        let text = textView.text ?? ""
-        let cursorPosition = textView.selectedRange.location
-
-        // Find the slash command position
-        guard let slashRange = findSlashCommandRange(text: text, cursorPosition: cursorPosition) else {
-            return
-        }
-
-        // Replace the slash command with the command content
-        let processedContent = command.processedContent
-        let newText = (text as NSString).replacingCharacters(in: slashRange, with: processedContent)
-
-        // Update the text
-        textView.text = newText
-        textBinding?.wrappedValue = newText
-
-        // Position cursor
-        let newCursorPosition = slashRange.location + command.cursorOffset
-        textView.selectedRange = NSRange(location: min(newCursorPosition, newText.count), length: 0)
-
-        // Apply highlighting
-        applyMarkdownHighlighting(to: textView)
-    }
 
     private func findSlashCommandRange(text: String, cursorPosition: Int) -> NSRange? {
         guard cursorPosition > 0 else { return nil }
@@ -400,7 +362,7 @@ private class EditorCoordinator: NSObject {
     #endif
 
     #if canImport(UIKit)
-    func applyMarkdownHighlighting(to textView: UITextView) {
+    func applyMarkdownHighlighting(to textView: NSTextView) {
         let text = textView.text ?? ""
         let attributedString = NSMutableAttributedString(string: text)
         let range = NSRange(location: 0, length: text.count)
@@ -457,9 +419,9 @@ private class EditorCoordinator: NSObject {
 // MARK: - Text View Delegate
 
 #if canImport(UIKit)
-extension EditorCoordinator: UITextViewDelegate {
-    func textViewDidChange(_ textView: UITextView) {
-        currentUITextView = textView
+extension EditorCoordinator: NSTextViewDelegate {
+    func textViewDidChange(_ textView: NSTextView) {
+        currentNSTextView = textView
         textBinding?.wrappedValue = textView.text
 
         // Check for slash commands
@@ -471,11 +433,11 @@ extension EditorCoordinator: UITextViewDelegate {
         }
     }
 
-    func textViewDidBeginEditing(_ textView: UITextView) {
+    func textViewDidBeginEditing(_ textView: NSTextView) {
         isEditingBinding?.wrappedValue = true
     }
 
-    func textViewDidEndEditing(_ textView: UITextView) {
+    func textViewDidEndEditing(_ textView: NSTextView) {
         isEditingBinding?.wrappedValue = false
     }
 }

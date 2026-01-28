@@ -18,12 +18,50 @@ public final class ETLDataCatalog: ObservableObject {
 
     /// Registers a new ETL data source
     public func registerSource(_ source: ETLDataSource) async throws {
-        try await database.insert(source: source)
+        try await database.write { db in
+            try db.execute(sql: """
+                INSERT OR REPLACE INTO etl_sources (
+                    id, name, description, category, type, connection_string,
+                    configuration, status, health_metrics, created_at, last_sync, error_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, arguments: [
+                    source.id,
+                    source.name,
+                    source.description,
+                    source.category.rawValue,
+                    source.type.rawValue,
+                    source.connectionString,
+                    try JSONEncoder().encode(source.configuration),
+                    source.status.rawValue,
+                    try source.healthMetrics.map { try JSONEncoder().encode($0) },
+                    source.createdAt,
+                    source.lastSync,
+                    source.errorCount
+                ])
+        }
     }
 
     /// Lists all available data sources
     public func getAllSources() async throws -> [ETLDataSource] {
-        return try await database.getAllSources()
+        return try await database.read { db in
+            let rows = try Row.fetchAll(db, sql: "SELECT * FROM etl_sources ORDER BY created_at DESC")
+            return try rows.map { row in
+                try ETLDataSource(
+                    id: row["id"],
+                    name: row["name"],
+                    description: row["description"],
+                    category: ETLSourceCategory(rawValue: row["category"]) ?? .appleEcosystem,
+                    type: ETLSourceType(rawValue: row["type"]) ?? .appleNotes,
+                    connectionString: row["connection_string"],
+                    configuration: try JSONDecoder().decode(ETLSourceConfiguration.self, from: row["configuration"]),
+                    status: ETLSourceStatus(rawValue: row["status"]) ?? .active,
+                    healthMetrics: try row["health_metrics"].flatMap { try JSONDecoder().decode(ETLSourceMetrics.self, from: $0) },
+                    createdAt: row["created_at"],
+                    lastSync: row["last_sync"],
+                    errorCount: row["error_count"]
+                )
+            }
+        }
     }
 
     /// Gets sources by category (Apple ecosystem, Web APIs, etc.)

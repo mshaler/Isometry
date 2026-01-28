@@ -21,7 +21,7 @@ struct ETLOperationHistoryView: View {
                 // Analytics Section
                 analyticsSection
                     .padding()
-                    .background(Color(.systemGray6))
+                    .background(Color.gray.opacity(0.1))
 
                 Divider()
 
@@ -33,7 +33,7 @@ struct ETLOperationHistoryView: View {
 .navigationBarTitleDisplayMode(.large)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -377,7 +377,7 @@ struct ETLOperationDetailView: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .primaryAction) {
                     Button("Done") {
                         dismiss()
                     }
@@ -428,7 +428,7 @@ struct ETLOperationDetailView: View {
             case .partialSuccess:
                 Label("Partial Success", systemImage: "exclamationmark.circle.fill")
                     .foregroundColor(.orange)
-            case .failed(let error):
+            case .failed(_):
                 Label("Failed", systemImage: "xmark.circle.fill")
                     .foregroundColor(.red)
             }
@@ -772,7 +772,8 @@ struct ChartDataPoint: Identifiable {
     ETLOperationHistoryView(
         etlManager: ETLOperationManager(
             database: try! IsometryDatabase(path: ":memory:"),
-            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:"))
+            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:")),
+            versionManager: ETLVersionManager(database: try! IsometryDatabase(path: ":memory:"))
         )
     )
 }

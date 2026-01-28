@@ -15,7 +15,8 @@ struct ETLWorkflowView: View {
         self.database = database
         self._etlManager = StateObject(wrappedValue: ETLOperationManager(
             database: database,
-            storageManager: ContentAwareStorageManager(database: database)
+            storageManager: ContentAwareStorageManager(database: database),
+            versionManager: ETLVersionManager(database: database)
         ))
     }
 

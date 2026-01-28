@@ -22,7 +22,8 @@ public actor IsometryDatabase {
 // MARK: - Command History Manager
 
 /// Comprehensive command history management with CloudKit sync and search
-public actor CommandHistoryManager {
+@MainActor
+public class CommandHistoryManager: ObservableObject {
     private let database: IsometryDatabase
     private let maxHistorySize: Int
     private let retentionDays: Int

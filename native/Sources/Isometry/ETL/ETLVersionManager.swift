@@ -26,7 +26,7 @@ public actor ETLVersionManager {
             description: description,
             createdAt: Date(),
             createdBy: operationId,
-            metadata: metadata,
+            metadata: ETLMetadata.from(metadata),
             status: .active
         )
 
@@ -471,5 +471,38 @@ extension IsometryDatabase {
                 """
             return try ETLLineageEntry.fetchAll(db, sql: sql, arguments: [nodeId])
         }
+    }
+}
+
+extension ETLMetadata {
+    static func from(_ dictionary: [String: Any]) -> ETLMetadata {
+        var stringValues: [String: String] = [:]
+        var numericValues: [String: Double] = [:]
+        var booleanValues: [String: Bool] = [:]
+        var dateValues: [String: Date] = [:]
+
+        for (key, value) in dictionary {
+            switch value {
+            case let stringValue as String:
+                stringValues[key] = stringValue
+            case let doubleValue as Double:
+                numericValues[key] = doubleValue
+            case let intValue as Int:
+                numericValues[key] = Double(intValue)
+            case let boolValue as Bool:
+                booleanValues[key] = boolValue
+            case let dateValue as Date:
+                dateValues[key] = dateValue
+            default:
+                stringValues[key] = String(describing: value)
+            }
+        }
+
+        return ETLMetadata(
+            stringValues: stringValues,
+            numericValues: numericValues,
+            booleanValues: booleanValues,
+            dateValues: dateValues
+        )
     }
 }

@@ -348,7 +348,7 @@ public actor ExportManager {
 
         // Content (markdown rendered to HTML)
         if options.includeContent {
-            let renderedContent = try await renderMarkdownToHTML(card.markdownContent)
+            let renderedContent = try await renderMarkdownToHTML(card.markdownContent ?? "")
             cardHTML += "  <div class='card-content'>\n\(renderedContent)\n  </div>\n"
         }
 
@@ -444,8 +444,9 @@ public actor ExportManager {
 
         // Content
         if options.includeContent {
-            markdown += card.markdownContent
-            if !card.markdownContent.hasSuffix("\n") {
+            let content = card.markdownContent ?? ""
+            markdown += content
+            if !content.hasSuffix("\n") {
                 markdown += "\n"
             }
         }
@@ -477,7 +478,7 @@ public actor ExportManager {
                 ExportedCard(
                     id: card.id,
                     title: card.title,
-                    content: card.markdownContent,
+                    content: card.markdownContent ?? "",
                     properties: card.properties,
                     tags: card.tags,
                     folder: card.folder,

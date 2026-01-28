@@ -57,7 +57,7 @@ public actor ContentAwareStorageManager {
             compressedSize: processedContent.count,
             storagePath: storagePath,
             contentType: analysis.contentType,
-            extractedMetadata: analysis.extractedMetadata.merging(metadata) { _, new in new },
+            extractedMetadata: analysis.extractedMetadata.merging(metadata.mapValues { AnyCodable($0) }) { _, new in new },
             createdAt: Date(),
             accessedAt: Date(),
             accessCount: 0,

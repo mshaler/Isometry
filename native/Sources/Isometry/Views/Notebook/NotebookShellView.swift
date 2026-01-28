@@ -60,7 +60,9 @@ public struct NotebookShellView: View {
             processDetailsView
         }
         .sheet(isPresented: $showingHistoryView) {
-            CommandHistoryView()
+            if let database = appState.database {
+                CommandHistoryView(database: database)
+            }
         }
     }
 
@@ -406,7 +408,7 @@ public struct NotebookShellView: View {
                     )
                 } else {
                     ForEach(Array(activeProcesses.keys.enumerated()), id: \.element) { index, command in
-                        let state = activeProcesses[command] ?? .completed
+                        let state = activeProcesses[command] ?? .terminated
 
                         HStack {
                             Image(systemName: state.icon)

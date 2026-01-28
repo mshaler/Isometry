@@ -46,6 +46,7 @@ public struct TemplateGallery: View {
 .navigationBarTitleDisplayMode(.large)
 #endif
             .toolbar {
+                #if canImport(UIKit)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
                         showingTemplateForm = true
@@ -53,6 +54,15 @@ public struct TemplateGallery: View {
                         Image(systemName: "plus")
                     }
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingTemplateForm = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+                #endif
             }
             .sheet(isPresented: $showingTemplateForm) {
                 templateCreationForm
@@ -332,7 +342,7 @@ private struct CategoryFilterButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(isSelected ? .accent : .background.secondary)
+            .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.2))
             .foregroundStyle(isSelected ? .white : .primary)
             .clipShape(Capsule())
         }
@@ -407,6 +417,7 @@ private struct TemplatePreview: View {
 .navigationBarTitleDisplayMode(.large)
 #endif
             .toolbar {
+                #if canImport(UIKit)
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Close") {
                         dismiss()
@@ -442,6 +453,43 @@ private struct TemplatePreview: View {
                         Image(systemName: "ellipsis.circle")
                     }
                 }
+                #else
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            onFavorite()
+                        } label: {
+                            Label(isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                                  systemImage: isFavorite ? "heart.slash" : "heart")
+                        }
+
+                        Button {
+                            duplicateName = "\(template.title) Copy"
+                            showingDuplicateAlert = true
+                        } label: {
+                            Label("Duplicate", systemImage: "doc.on.doc")
+                        }
+
+                        if let onDelete = onDelete {
+                            Divider()
+
+                            Button(role: .destructive) {
+                                onDelete()
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                    }
+                }
+                #endif
             }
             .safeAreaInset(edge: .bottom) {
                 Button {
@@ -451,7 +499,7 @@ private struct TemplatePreview: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(.accent)
+                        .background(Color.accentColor)
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                         .padding(.horizontal)
@@ -481,8 +529,8 @@ private struct TemplatePreview: View {
                         .fontWeight(.medium)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(.accent.opacity(0.1))
-                        .foregroundStyle(.accent)
+                        .background(Color.accentColor.opacity(0.1))
+                        .foregroundStyle(Color.accentColor)
                         .clipShape(Capsule())
                 }
 
@@ -562,6 +610,7 @@ private struct TemplateForm: View {
 .navigationBarTitleDisplayMode(.inline)
 #endif
         .toolbar {
+            #if canImport(UIKit)
             ToolbarItem(placement: .navigationBarLeading) {
                 Button("Cancel") {
                     dismiss()
@@ -582,6 +631,28 @@ private struct TemplateForm: View {
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty ||
                          content.trimmingCharacters(in: .whitespaces).isEmpty)
             }
+            #else
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+
+            ToolbarItem(placement: .primaryAction) {
+                Button("Save") {
+                    let template = NotebookTemplate(
+                        title: title,
+                        description: description,
+                        category: category,
+                        markdownContent: content,
+                        tags: tags.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                    )
+                    onSave(template)
+                }
+                .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty ||
+                         content.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            #endif
         }
     }
 }

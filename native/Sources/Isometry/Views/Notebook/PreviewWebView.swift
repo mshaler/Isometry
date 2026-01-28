@@ -49,7 +49,7 @@ public struct PreviewWebView: View {
             }
 
             // WebView content
-            WebViewRepresentable(
+            PreviewWebViewRepresentable(
                 webView: $webView,
                 isLoading: $isLoading,
                 loadProgress: $loadProgress,
@@ -206,7 +206,7 @@ public struct PreviewWebView: View {
 // MARK: - WebView Representable
 
 #if canImport(UIKit)
-private struct WebViewRepresentable: UIViewRepresentable {
+private struct PreviewWebViewRepresentable: UIViewRepresentable {
     @Binding var webView: WKWebView?
     @Binding var isLoading: Bool
     @Binding var loadProgress: Double
@@ -264,10 +264,12 @@ private struct WebViewRepresentable: UIViewRepresentable {
         // Process pool isolation
         config.processPool = WKProcessPool()
 
-        // Media policies
+        // Media policies (iOS only)
+        #if canImport(UIKit)
         config.allowsInlineMediaPlayback = configuration.allowInlineMedia
         config.allowsAirPlayForMediaPlayback = false
         config.allowsPictureInPictureMediaPlayback = false
+        #endif
 
         // Data store isolation
         if securityPolicy == .restrictive {
@@ -287,7 +289,7 @@ private struct WebViewRepresentable: UIViewRepresentable {
 }
 
 #elseif canImport(AppKit)
-private struct WebViewRepresentable: NSViewRepresentable {
+private struct PreviewWebViewRepresentable: NSViewRepresentable {
     @Binding var webView: WKWebView?
     @Binding var isLoading: Bool
     @Binding var loadProgress: Double
@@ -345,10 +347,12 @@ private struct WebViewRepresentable: NSViewRepresentable {
         // Process pool isolation
         config.processPool = WKProcessPool()
 
-        // Media policies
+        // Media policies (iOS only)
+        #if canImport(UIKit)
         config.allowsInlineMediaPlayback = configuration.allowInlineMedia
         config.allowsAirPlayForMediaPlayback = false
         config.allowsPictureInPictureMediaPlayback = false
+        #endif
 
         // Data store isolation
         if securityPolicy == .restrictive {

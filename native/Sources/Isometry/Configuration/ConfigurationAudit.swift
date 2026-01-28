@@ -87,7 +87,8 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         )
 
         try addAuditEntry(entry)
-        logger.debug("Recorded validation result for \(key): \(result.isValid ? "passed" : "failed")")
+        let status = result.isValid ? "passed" : "failed"
+        logger.debug("Recorded validation result for \(key): \(status)")
     }
 
     /// Record security event related to configuration

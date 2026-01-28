@@ -23,7 +23,7 @@ public final class ProductionCloudKitManager: ObservableObject {
     public static let productionSubscriptionID = "isometry-production-changes"
 
     /// Environment detection
-    public enum Environment: String, CaseIterable {
+    public enum Environment: String, CaseIterable, Sendable {
         case development = "development"
         case production = "production"
 
