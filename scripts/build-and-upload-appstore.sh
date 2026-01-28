@@ -239,6 +239,11 @@ build_ios_app() {
         return 0
     fi
 
+    if [[ "$DRY_RUN" == true ]] && [[ -z "$TEAM_ID" ]]; then
+        log_warning "Skipping iOS archive in dry run (APPLE_DEVELOPER_TEAM_ID not set)"
+        return 0
+    fi
+
     log_info "Building iOS app..."
 
     # Create export options
@@ -313,6 +318,11 @@ build_ios_app() {
 
 build_macos_app() {
     if [[ "$IOS_ONLY" == true ]]; then
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == true ]] && [[ -z "$TEAM_ID" ]]; then
+        log_warning "Skipping macOS archive in dry run (APPLE_DEVELOPER_TEAM_ID not set)"
         return 0
     fi
 
