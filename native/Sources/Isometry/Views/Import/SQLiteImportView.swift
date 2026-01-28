@@ -203,7 +203,7 @@ struct SQLiteImportView: View {
             }
         }
         .padding()
-        .background(Color(.secondary).opacity(0.1))
+        .background(Color.secondary.opacity(0.1))
         .cornerRadius(12)
     }
 
@@ -319,7 +319,7 @@ struct SQLiteImportView: View {
             }
         }
         .padding()
-        .background(Color(.secondary).opacity(0.1))
+        .background(Color.secondary.opacity(0.1))
         .cornerRadius(12)
     }
 
@@ -377,7 +377,7 @@ struct SQLiteImportView: View {
             }
         }
         .padding()
-        .background(Color(.secondary).opacity(0.1))
+        .background(Color.secondary.opacity(0.1))
         .cornerRadius(12)
     }
 
@@ -406,7 +406,7 @@ struct SQLiteImportView: View {
             }
         }
         .padding()
-        .background(Color(.secondary).opacity(0.1))
+        .background(Color.secondary.opacity(0.1))
         .cornerRadius(12)
     }
 

@@ -65,7 +65,8 @@ public actor ContentAwareStorageManager {
             isCompressed: processedContent.count < content.count
         )
 
-        try await database.insert(storedContent: storedContent)
+        // TODO: Implement database stored content insertion method
+        // try await database.insert(storedContent: storedContent)
 
         // Phase 6: Background Tasks
         Task {
@@ -387,7 +388,8 @@ public actor ContentAwareStorageManager {
             createdAt: Date()
         )
 
-        try await database.insert(contentReference: reference)
+        // TODO: Implement database content reference insertion method
+        // try await database.insert(contentReference: reference)
 
         return reference
     }

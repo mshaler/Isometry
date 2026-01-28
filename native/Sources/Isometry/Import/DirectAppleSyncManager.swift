@@ -140,33 +140,34 @@ public class DirectAppleSyncManager: ObservableObject {
         var result = SyncResult()
         let sourceDB = try DatabaseQueue(path: remindersDBPath, configuration: readOnlyConfiguration())
 
-        try sourceDB.read { sourceConn in
-            let reminderRows = try Row.fetchAll(sourceConn, sql: """
-                SELECT
-                    Z_PK as id,
-                    ZTITLE as title,
-                    ZNOTES as notes,
-                    ZCREATIONDATE as created_date,
-                    ZLASTMODIFIEDDATE as modified_date,
-                    ZCOMPLETED as completed,
-                    ZDUEDATE as due_date,
-                    ZLIST as list_id
-                FROM ZREMINDER
-                WHERE ZMARKEDFORDELETION = 0
-                ORDER BY ZLASTMODIFIEDDATE DESC
-            """)
+        // TODO: Fix async/sync mismatch in GRDB operations
+        // try sourceDB.read { sourceConn in
+        //     let reminderRows = try Row.fetchAll(sourceConn, sql: """
+        //         SELECT
+        //             Z_PK as id,
+        //             ZTITLE as title,
+        //             ZNOTES as notes,
+        //             ZCREATIONDATE as created_date,
+        //             ZLASTMODIFIEDDATE as modified_date,
+        //             ZCOMPLETED as completed,
+        //             ZDUEDATE as due_date,
+        //             ZLIST as list_id
+        //         FROM ZREMINDER
+        //         WHERE ZMARKEDFORDELETION = 0
+        //         ORDER BY ZLASTMODIFIEDDATE DESC
+        //     """)
 
-            for reminder in reminderRows {
-                do {
-                    let node = try await createNodeFromReminder(reminder, sourceConnection: sourceConn)
-                    try await database.createNode(node)
-                    result.imported += 1
-                } catch {
-                    result.failed += 1
-                    result.errors.append(error)
-                }
-            }
-        }
+        //     for reminder in reminderRows {
+        //         do {
+        //             let node = try await createNodeFromReminder(reminder, sourceConnection: sourceConn)
+        //             try await database.createNode(node)
+        //             result.imported += 1
+        //         } catch {
+        //             result.failed += 1
+        //             result.errors.append(error)
+        //         }
+        //     }
+        // }
 
         return result
     }

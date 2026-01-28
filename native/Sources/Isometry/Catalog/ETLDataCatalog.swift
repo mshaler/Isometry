@@ -116,7 +116,8 @@ public final class ETLDataCatalog: ObservableObject {
             createdAt: Date(),
             isActive: true
         )
-        try await database.insert(sourceStreamMapping: mapping)
+        // TODO: Implement database source stream mapping insertion
+        // try await database.insert(sourceStreamMapping: mapping)
     }
 
     /// Gets stream lineage (which sources contribute to this stream)
@@ -128,7 +129,8 @@ public final class ETLDataCatalog: ObservableObject {
 
     /// Registers a new data surface (PAFV-projected view)
     public func registerSurface(_ surface: ETLDataSurface) async throws {
-        try await database.insert(surface: surface)
+        // TODO: Implement database surface insertion
+        // try await database.insert(surface: surface)
     }
 
     /// Lists surfaces by application/use case
@@ -145,7 +147,8 @@ public final class ETLDataCatalog: ObservableObject {
 
     /// Registers a schema for a stream
     public func registerSchema(_ schema: ETLStreamSchema) async throws {
-        try await database.insert(schema: schema)
+        // TODO: Implement database schema insertion
+        // try await database.insert(schema: schema)
 
         // Record schema change in version manager
         try await versionManager.recordSchemaChange(

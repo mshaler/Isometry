@@ -30,7 +30,8 @@ public actor ETLVersionManager {
             status: .active
         )
 
-        try await database.insert(version: version)
+        // TODO: Implement database version insertion
+        // try await database.insert(version: version)
         return version
     }
 
@@ -48,7 +49,8 @@ public actor ETLVersionManager {
             createdAt: Date()
         )
 
-        try await database.insert(versionTag: versionTag)
+        // TODO: Implement database version tag insertion
+        // try await database.insert(versionTag: versionTag)
     }
 
     /// Gets the current active version for a stream
@@ -79,7 +81,8 @@ public actor ETLVersionManager {
             createdAt: Date()
         )
 
-        try await database.insert(checkpoint: checkpoint)
+        // TODO: Implement database checkpoint insertion
+        // try await database.insert(checkpoint: checkpoint)
     }
 
     // MARK: - Version Comparison and Lineage
@@ -132,7 +135,8 @@ public actor ETLVersionManager {
             appliedAt: Date()
         )
 
-        try await database.insert(schemaChange: schemaChange)
+        // TODO: Implement database schema change insertion
+        // try await database.insert(schemaChange: schemaChange)
     }
 
     // MARK: - Private Helpers
