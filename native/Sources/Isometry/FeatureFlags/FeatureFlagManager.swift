@@ -75,7 +75,14 @@ public final class FeatureFlagManager: ObservableObject, Sendable {
         defer { isLoading = false }
 
         do {
-            let cloudFlags = try await cloudKitManager.fetchFeatureFlags()
+            let cloudFlagsDict = try await cloudKitManager.fetchFeatureFlags()
+            // Convert [String: Any] to [String: FeatureFlag]
+            var cloudFlags: [String: FeatureFlag] = [:]
+            for (key, value) in cloudFlagsDict {
+                if let flagValue = value as? FeatureFlag {
+                    cloudFlags[key] = flagValue
+                }
+            }
             await updateFlags(cloudFlags)
             lastSyncDate = Date()
             logger.debug("Successfully refreshed \\(cloudFlags.count) feature flags")
@@ -88,15 +95,9 @@ public final class FeatureFlagManager: ObservableObject, Sendable {
     // MARK: - Private Methods
 
     private func setupCloudKitSync() {
-        // Listen for CloudKit changes
-        cloudKitManager.featureFlagUpdates
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] cloudFlags in
-                Task { @MainActor in
-                    await self?.updateFlags(cloudFlags)
-                }
-            }
-            .store(in: &subscriptions)
+        // CloudKit sync is handled manually through refreshFlags()
+        // TODO: Implement proper CloudKit subscription updates
+        logger.debug("CloudKit sync configured to use manual refresh")
     }
 
     private func loadCachedFlags() {

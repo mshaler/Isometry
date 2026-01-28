@@ -1,94 +1,87 @@
+---
+version: 1.0
+last_updated: 2026-01-28
+---
+
 # Technology Stack
 
-**Analysis Date:** 2026-01-25
+**Analysis Date:** 2026-01-28
 
 ## Languages
 
 **Primary:**
-- TypeScript 5.2.2 - React frontend development
-- Swift 5.9+ - Native iOS/macOS application
+- TypeScript/TSX - Web client in `src/`
+- Swift - Native core, API server, and app targets in `native/`, `ios/`, `macos/`
 
 **Secondary:**
-- JavaScript (ES2020) - Build tooling and server scripts
-- SQL - Database schema and queries
+- JavaScript - Tooling and Node scripts (e.g., `vite.config.ts`, `eslint.config.js`, `src/server/launch-native-server.js`)
+- SQL - Schema and migration assets (`src/db/schema.sql`, `native/Sources/Isometry/Resources/schema.sql`)
 
 ## Runtime
 
 **Environment:**
-- Node.js (ES2020 target)
-- Swift runtime (iOS 17+, macOS 14+)
+- Node.js (Vite dev server/build, tooling)
+- Swift 5.9 toolchain (SwiftPM, iOS/macOS targets)
 
 **Package Manager:**
-- npm (with package-lock.json)
-- Swift Package Manager
+- npm - `package-lock.json` present
+- Swift Package Manager - `native/Package.swift`, `ios/Package.swift`
 
 ## Frameworks
 
 **Core:**
-- React 18.2.0 - Frontend UI framework
-- SwiftUI - Native mobile/desktop UI
-- Vite 7.3.1 - Build tool and dev server
-- Vapor 4.89.0+ - Swift HTTP server framework
+- React 18 - Web UI (`src/`)
+- SwiftUI / Swift - Native UI and core (`native/`, `ios/`, `macos/`)
 
 **Testing:**
-- Vitest 4.0.17 - Test runner with coverage
-- @testing-library/react 16.3.1 - React testing utilities
-- jsdom 27.4.0 - DOM environment for tests
+- Vitest - Web tests (`vitest.config.ts`)
+- SwiftPM XCTest - Native tests (`native/Tests/`)
 
 **Build/Dev:**
-- TypeScript 5.2.2 - Type checking and compilation
-- ESLint 9.39.2 - Code linting with flat config
-- typescript-eslint 8.53.0 - TypeScript-specific rules
-- Tailwind CSS 3.3.5 - Utility-first styling
-- PostCSS 8.4.31 - CSS processing
+- Vite 7 - Web build/dev (`vite.config.ts`)
+- TypeScript 5.x - Compilation (`tsconfig.json`)
+- Tailwind CSS 3.x - Styling (`tailwind.config.js`, `postcss.config.js`)
+- ESLint 9 - Linting (`eslint.config.js`)
 
 ## Key Dependencies
 
 **Critical:**
-- GRDB.swift 6.24.0+ - SQLite database wrapper for Swift
-- D3.js 7.8.5 - Data visualization library
-- @anthropic-ai/sdk 0.71.2 - Claude API integration
+- react, react-dom - UI runtime
+- react-router-dom - Client routing
+- d3 - Data visualization
+- leaflet - Map rendering
+- @anthropic-ai/sdk - Claude API client (web)
+- @xterm/xterm + addons - Terminal emulator UI
 
 **Infrastructure:**
-- @radix-ui/* components - Accessible UI primitives
-- react-router-dom 6.20.0 - Client-side routing
-- react-dnd 16.0.1 - Drag-and-drop interactions
-- Leaflet 1.9.4 - Interactive maps
-- ZipArchive 2.5.5+ - Archive handling in Swift
-
-**Document Processing:**
-- mammoth 1.7.2 - Word document parsing
-- xlsx 0.18.5 - Excel file handling
-- html2pdf.js 0.10.2 - PDF generation
+- Vapor 4.x (Swift) - HTTP API server (`native/Sources/IsometryAPI`)
+- GRDB 6.x (Swift) - SQLite access (`native/Sources/Isometry`)
+- ZipArchive 2.x (Swift) - Archive support
 
 ## Configuration
 
 **Environment:**
-- TypeScript with strict mode enabled
-- Path aliases: `@/*` → `./src/*`
-- Vite with React plugin and asset inclusion for .sql files
-- ESNext build target with external sql.js exclusion
+- `.env.production` and runtime env vars (see `src/config/environment.ts`, `src/config/security.ts`)
+- Claude integration via `VITE_ANTHROPIC_API_KEY`, `ANTHROPIC_API_KEY`, `VITE_API_PROXY_ENDPOINT`, `CLAUDE_API_ENDPOINT`
 
 **Build:**
-- `tsconfig.json` - TypeScript configuration with ES2020 target
-- `vite.config.ts` - Build and dev server config
-- `vitest.config.ts` - Test runner configuration
-- `eslint.config.js` - ESLint 9 flat config format
-- `tailwind.config.js` - CSS framework config with custom themes
-- `native/Package.swift` - Swift package dependencies
+- `vite.config.ts`, `tsconfig.json`, `tsconfig.build.json`, `tsconfig.node.json`
+- `tailwind.config.js`, `postcss.config.js`
+- `eslint.config.js`
 
 ## Platform Requirements
 
 **Development:**
-- Node.js with ES2020+ support
-- Swift 5.9+ for native development
-- iOS 17+ / macOS 14+ for native targets
+- Node.js + npm
+- Swift 5.9 toolchain (SwiftPM)
+- Xcode for iOS/macOS targets
 
 **Production:**
-- React SPA deployment target
-- Native iOS/macOS app distribution
-- SQLite with FTS5 and recursive CTE support
+- Web: static build output (`dist/`) via Vite
+- Native: iOS 17+/macOS 14+ via Xcode/SwiftPM
+- Deployment configs present for Netlify (`netlify.toml`) and Vercel (`vercel.json`)
 
 ---
 
-*Stack analysis: 2026-01-25*
+*Stack analysis: 2026-01-28*
+*Update after major dependency changes*

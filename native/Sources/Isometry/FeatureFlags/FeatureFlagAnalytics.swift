@@ -46,8 +46,8 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
             flagName: flagName,
             userId: userId,
             metadata: [
-                "evaluationTime": evaluationTime,
-                "timestamp": Date().timeIntervalSince1970
+                "evaluationTime": String(evaluationTime),
+                "timestamp": String(Date().timeIntervalSince1970)
             ]
         )
 
@@ -63,7 +63,7 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
             flagName: flagName,
             metadata: [
                 "changeType": changeTypeString(change),
-                "timestamp": Date().timeIntervalSince1970
+                "timestamp": String(Date().timeIntervalSince1970)
             ]
         )
 
@@ -77,10 +77,10 @@ public final class FeatureFlagAnalytics: ObservableObject, Sendable {
             type: .performanceImpact,
             flagName: flagName,
             metadata: [
-                "cpuUsage": impact.cpuUsage,
-                "memoryUsage": impact.memoryUsage,
-                "networkRequests": impact.networkRequests,
-                "timestamp": Date().timeIntervalSince1970
+                "cpuUsage": String(impact.cpuUsage),
+                "memoryUsage": String(impact.memoryUsage),
+                "networkRequests": String(impact.networkRequests),
+                "timestamp": String(Date().timeIntervalSince1970)
             ]
         )
 
@@ -407,14 +407,14 @@ public struct AnalyticsEvent: Codable, Sendable {
     public let type: AnalyticsEventType
     public let flagName: String
     public let userId: String?
-    public let metadata: [String: Any]
+    public let metadata: [String: String]
     public let timestamp: Date
 
     public init(
         type: AnalyticsEventType,
         flagName: String,
         userId: String? = nil,
-        metadata: [String: Any] = [:]
+        metadata: [String: String] = [:]
     ) {
         self.id = UUID()
         self.type = type
@@ -540,14 +540,14 @@ public struct FeatureFlagPerformanceIssue: Sendable {
     public let description: String
     public let severity: Severity
 
-    public enum IssueType {
+    public enum IssueType: Sendable {
         case slowEvaluation
         case highCpuUsage
         case highMemoryUsage
         case excessiveNetworkRequests
     }
 
-    public enum Severity {
+    public enum Severity: Sendable {
         case low, medium, high
     }
 }
@@ -559,14 +559,14 @@ public struct AnalyticsRecommendation: Sendable {
     public let description: String
     public let priority: Priority
 
-    public enum RecommendationType {
+    public enum RecommendationType: Sendable {
         case enableCaching
         case removeUnusedFlag
         case optimizeEvaluation
         case splitComplexFlag
     }
 
-    public enum Priority {
+    public enum Priority: Sendable {
         case low, medium, high
     }
 }

@@ -4,6 +4,7 @@ import CloudKit
 /// Errors that can occur during CloudKit sync
 public enum SyncError: LocalizedError, Sendable {
     case notAuthenticated
+    case permissionsNotGranted
     case networkUnavailable
     case serverError(underlying: Error)
     case quotaExceeded
@@ -16,6 +17,8 @@ public enum SyncError: LocalizedError, Sendable {
         switch self {
         case .notAuthenticated:
             return "Not signed in to iCloud"
+        case .permissionsNotGranted:
+            return "Permissions not granted"
         case .networkUnavailable:
             return "Network unavailable"
         case .serverError(let error):
