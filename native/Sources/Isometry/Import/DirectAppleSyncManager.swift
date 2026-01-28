@@ -94,9 +94,9 @@ public class DirectAppleSyncManager: ObservableObject {
         var result = SyncResult()
         let sourceDB = try DatabaseQueue(path: notesDBPath, configuration: readOnlyConfiguration())
 
-        try sourceDB.read { sourceConn in
-            // Query Notes database schema
-            let noteObjects = try Row.fetchAll(sourceConn, sql: """
+        // First, read all the data synchronously
+        let noteObjects: [Row] = try sourceDB.read { sourceConn in
+            try Row.fetchAll(sourceConn, sql: """
                 SELECT
                     z_pk as id,
                     ztitle1 as title,
@@ -110,16 +110,18 @@ public class DirectAppleSyncManager: ObservableObject {
                 AND zmarkedfordeletion = 0
                 ORDER BY zmodificationdate1 DESC
             """)
+        }
 
-            for note in noteObjects {
-                do {
-                    let node = try await createNodeFromNote(note, sourceConnection: sourceConn)
-                    try await database.insert(node: node)
-                    result.imported += 1
-                } catch {
-                    result.failed += 1
-                    result.errors.append(error)
-                }
+        // Then process the data asynchronously
+        for note in noteObjects {
+            do {
+                // Create node from row data (no database connection needed for basic fields)
+                let node = try await createNodeFromNoteRow(note)
+                try await database.insert(node: node)
+                result.imported += 1
+            } catch {
+                result.failed += 1
+                result.errors.append(error)
             }
         }
 
@@ -409,7 +411,7 @@ public class DirectAppleSyncManager: ObservableObject {
 
     // MARK: - Node Creation
 
-    private func createNodeFromNote(_ note: Row, sourceConnection: Database) async throws -> Node {
+    private func createNodeFromNoteRow(_ note: Row) async throws -> Node {
         let id = note["id"]?.databaseValue.storage.value as? Int64 ?? 0
         let title = note["title"]?.databaseValue.storage.value as? String ?? "Untitled Note"
         let snippet = note["snippet"]?.databaseValue.storage.value as? String ?? ""
@@ -420,8 +422,8 @@ public class DirectAppleSyncManager: ObservableObject {
         let createdDate = Date(timeIntervalSinceReferenceDate: createdTimestamp)
         let modifiedDate = Date(timeIntervalSinceReferenceDate: modifiedTimestamp)
 
-        // Extract note content from data blob if available
-        let content = try extractNoteContent(from: note, connection: sourceConnection)
+        // Extract note content from data blob if available (simplified without database connection)
+        let content = extractNoteContentFromRow(note)
 
         return Node(
             id: UUID().uuidString,
@@ -440,12 +442,12 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func createNodeFromReminder(_ reminder: Row) async throws -> Node {
-        let id = reminder["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let title = reminder["title"]?.databaseValue?.storage.value as? String ?? "Untitled Reminder"
-        let notes = reminder["notes"]?.databaseValue?.storage.value as? String ?? ""
-        let completed = (reminder["completed"]?.databaseValue?.storage.value as? Int64 ?? 0) > 0
-        let createdTimestamp = reminder["created_date"]?.databaseValue?.storage.value as? TimeInterval ?? 0
-        let modifiedTimestamp = reminder["modified_date"]?.databaseValue?.storage.value as? TimeInterval ?? 0
+        let id = reminder["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let title = reminder["title"]?.databaseValue.storage.value as? String ?? "Untitled Reminder"
+        let notes = reminder["notes"]?.databaseValue.storage.value as? String ?? ""
+        let completed = (reminder["completed"]?.databaseValue.storage.value as? Int64 ?? 0) > 0
+        let createdTimestamp = reminder["created_date"]?.databaseValue.storage.value as? TimeInterval ?? 0
+        let modifiedTimestamp = reminder["modified_date"]?.databaseValue.storage.value as? TimeInterval ?? 0
 
         let createdDate = Date(timeIntervalSinceReferenceDate: createdTimestamp)
         let modifiedDate = Date(timeIntervalSinceReferenceDate: modifiedTimestamp)
@@ -480,10 +482,10 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func createNodeFromEvent(_ event: Row) async throws -> Node {
-        let id = event["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let title = event["title"]?.databaseValue?.storage.value as? String ?? "Untitled Event"
-        let description = event["description"]?.databaseValue?.storage.value as? String ?? ""
-        let calendarTitle = event["calendar_title"]?.databaseValue?.storage.value as? String ?? "Calendar"
+        let id = event["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let title = event["title"]?.databaseValue.storage.value as? String ?? "Untitled Event"
+        let description = event["description"]?.databaseValue.storage.value as? String ?? ""
+        let calendarTitle = event["calendar_title"]?.databaseValue.storage.value as? String ?? "Calendar"
 
         var content = "# \(title)\n\n"
         if !description.isEmpty {
@@ -508,11 +510,11 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func createNodeFromContact(_ contact: Row) async throws -> Node {
-        let id = contact["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let firstName = contact["first_name"]?.databaseValue?.storage.value as? String ?? ""
-        let lastName = contact["last_name"]?.databaseValue?.storage.value as? String ?? ""
-        let organization = contact["organization"]?.databaseValue?.storage.value as? String ?? ""
-        let notes = contact["notes"]?.databaseValue?.storage.value as? String ?? ""
+        let id = contact["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let firstName = contact["first_name"]?.databaseValue.storage.value as? String ?? ""
+        let lastName = contact["last_name"]?.databaseValue.storage.value as? String ?? ""
+        let organization = contact["organization"]?.databaseValue.storage.value as? String ?? ""
+        let notes = contact["notes"]?.databaseValue.storage.value as? String ?? ""
 
         let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
         let displayName = fullName.isEmpty ? (organization.isEmpty ? "Unknown Contact" : organization) : fullName
@@ -542,9 +544,9 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func createNodeFromBookmark(_ bookmark: Row) async throws -> Node {
-        let id = bookmark["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let title = bookmark["title"]?.databaseValue?.storage.value as? String ?? "Untitled Bookmark"
-        let url = bookmark["url"]?.databaseValue?.storage.value as? String ?? ""
+        let id = bookmark["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let title = bookmark["title"]?.databaseValue.storage.value as? String ?? "Untitled Bookmark"
+        let url = bookmark["url"]?.databaseValue.storage.value as? String ?? ""
 
         let content = "# \(title)\n\n[Visit Link](\(url))"
 
@@ -565,10 +567,10 @@ public class DirectAppleSyncManager: ObservableObject {
     }
 
     private func createNodeFromReadingListItem(_ item: Row) async throws -> Node {
-        let id = item["id"]?.databaseValue?.storage.value as? Int64 ?? 0
-        let title = item["title"]?.databaseValue?.storage.value as? String ?? "Untitled Article"
-        let url = item["url"]?.databaseValue?.storage.value as? String ?? ""
-        let preview = item["preview_text"]?.databaseValue?.storage.value as? String ?? ""
+        let id = item["id"]?.databaseValue.storage.value as? Int64 ?? 0
+        let title = item["title"]?.databaseValue.storage.value as? String ?? "Untitled Article"
+        let url = item["url"]?.databaseValue.storage.value as? String ?? ""
+        let preview = item["preview_text"]?.databaseValue.storage.value as? String ?? ""
 
         var content = "# \(title)\n\n"
         if !preview.isEmpty {
@@ -601,13 +603,18 @@ public class DirectAppleSyncManager: ObservableObject {
         return config
     }
 
-    private func extractNoteContent(from note: Row, connection: Database) throws -> String {
+    private func extractNoteContentFromRow(_ note: Row) -> String {
         // This is a simplified version - actual Notes content extraction
         // requires parsing the protobuf data blob which is complex
-        if let snippet = note["snippet"]?.databaseValue?.storage.value as? String, !snippet.isEmpty {
+        if let snippet = note["snippet"]?.databaseValue.storage.value as? String, !snippet.isEmpty {
             return snippet
         }
         return "Note content (protobuf parsing required for full content)"
+    }
+
+    private func extractNoteContent(from note: Row, connection: Database) throws -> String {
+        // Legacy method for backward compatibility
+        return extractNoteContentFromRow(note)
     }
 
     private func requestPermissions() async -> Bool {
