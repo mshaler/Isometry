@@ -239,8 +239,8 @@ build_ios_app() {
         return 0
     fi
 
-    if [[ "$DRY_RUN" == true ]] && [[ -z "$TEAM_ID" ]]; then
-        log_warning "Skipping iOS archive in dry run (APPLE_DEVELOPER_TEAM_ID not set)"
+    if [[ "$DRY_RUN" == true ]] && [[ "${SKIP_ARCHIVE_IN_DRY_RUN:-true}" == "true" ]]; then
+        log_warning "Skipping iOS archive in dry run (set SKIP_ARCHIVE_IN_DRY_RUN=false to force)"
         return 0
     fi
 
@@ -321,8 +321,8 @@ build_macos_app() {
         return 0
     fi
 
-    if [[ "$DRY_RUN" == true ]] && [[ -z "$TEAM_ID" ]]; then
-        log_warning "Skipping macOS archive in dry run (APPLE_DEVELOPER_TEAM_ID not set)"
+    if [[ "$DRY_RUN" == true ]] && [[ "${SKIP_ARCHIVE_IN_DRY_RUN:-true}" == "true" ]]; then
+        log_warning "Skipping macOS archive in dry run (set SKIP_ARCHIVE_IN_DRY_RUN=false to force)"
         return 0
     fi
 
