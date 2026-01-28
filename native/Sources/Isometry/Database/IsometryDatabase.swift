@@ -12,7 +12,7 @@ public struct DatabaseStoredContent {
     public let lastAccessedAt: Date
 }
 
-public struct StorageStats {
+public struct DatabaseStorageStats {
     public let totalSize: Int64
     public let itemCount: Int
     public let lastCleanup: Date
@@ -1242,9 +1242,9 @@ extension IsometryDatabase {
         return []
     }
 
-    public func getStorageStats() async throws -> StorageStats {
+    public func getStorageStats() async throws -> DatabaseStorageStats {
         // TODO: Implement storage statistics
-        return StorageStats(totalSize: 0, itemCount: 0, lastCleanup: Date())
+        return DatabaseStorageStats(totalSize: 0, itemCount: 0, lastCleanup: Date())
     }
 
     public func getCleanupCandidates(olderThan: Date) async throws -> [String] {
@@ -1254,5 +1254,10 @@ extension IsometryDatabase {
 
     public func deleteStoredContent(id: String) async throws {
         // TODO: Implement content deletion
+    }
+
+    public func getSurfaces() async throws -> [Surface] {
+        // TODO: Implement surface retrieval
+        return []
     }
 }
