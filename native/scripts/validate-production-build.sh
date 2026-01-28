@@ -490,6 +490,8 @@ run_quick_check() {
         log_success "Quick build test passed"
     else
         log_error "Quick build test failed"
+        log_info "Re-running swift build for details..."
+        swift build --configuration release 2>&1 | tee -a "$VALIDATION_LOG"
         return 1
     fi
 
