@@ -66,10 +66,10 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
         guard let item = configurations[key] else {
             if let defaultValue = defaultValue {
-                logger.debug("Configuration key '\\(key)' not found, using default value")
+                logger.debug("Configuration key '\(key)' not found, using default value")
                 return defaultValue
             }
-            logger.warning("Configuration key '\\(key)' not found and no default provided")
+            logger.warning("Configuration key '\(key)' not found and no default provided")
             return nil
         }
 
@@ -104,7 +104,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply the change
         try await applyConfigurationChange(change)
 
-        logger.debug("Configuration '\\(key)' updated successfully")
+        logger.debug("Configuration '\(key)' updated successfully")
     }
 
     /// Bulk update multiple configuration values
@@ -136,7 +136,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply all changes atomically
         try await applyConfigurationChanges(changes)
 
-        logger.debug("Bulk configuration update completed for \\(changes.count) keys")
+        logger.debug("Bulk configuration update completed for \(changes.count) keys")
     }
 
     /// Hot reload configurations from CloudKit without restart
@@ -145,15 +145,17 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         defer { isLoading = false }
 
         do {
-            let cloudConfigs = try await cloudKitManager.fetchConfigurations()
+            // TODO: Implement CloudKit configuration fetching
+            let cloudConfigs: [String: Any] = [:]
             let previousConfigs = configurations
 
-            await updateConfigurations(cloudConfigs)
+            // TODO: Convert [String: Any] to [String: ConfigurationItem]
+            // await updateConfigurations(cloudConfigs)
 
             // Detect and log changes
             let changedKeys = detectConfigurationChanges(old: previousConfigs, new: configurations)
             if !changedKeys.isEmpty {
-                logger.debug("Hot reload completed - \\(changedKeys.count) configuration keys updated: \\(changedKeys.joined(separator: ", "))")
+                logger.debug("Hot reload completed - \(changedKeys.count) configuration keys updated: \(changedKeys.joined(separator: ", "))")
 
                 // Audit the hot reload
                 for key in changedKeys {
@@ -164,13 +166,13 @@ public final class ConfigurationManager: ObservableObject, Sendable {
                         timestamp: Date(),
                         source: .hotReload
                     )
-                    audit.recordChange(change)
+                    try audit.recordChange(change)
                 }
             }
 
             lastSyncDate = Date()
         } catch {
-            logger.error("Hot reload failed: \\(error)")
+            logger.error("Hot reload failed: \(error)")
             throw ConfigurationError.hotReloadFailed(error)
         }
     }
@@ -197,7 +199,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         }
 
         let auditHistory = audit.getAuditHistory(for: key)
-        guard let previousChange = auditHistory.last(where: { $0.key == key }) else {
+        guard let previousChange = auditHistory.last else {
             throw ConfigurationError.noPreviousValue(key)
         }
 
@@ -214,7 +216,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         )
 
         try await applyConfigurationChange(rollbackChange)
-        logger.debug("Configuration '\\(key)' rolled back successfully")
+        logger.debug("Configuration '\(key)' rolled back successfully")
     }
 
     /// Export configurations for backup or migration
@@ -236,15 +238,13 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
     /// Import configurations from backup
     public func importConfigurations(from data: Data, format: ConfigurationExportFormat = .json) async throws {
-        let decoder: any TopLevelDecoder
+        let exportData: ConfigurationExport
         switch format {
         case .json:
-            decoder = JSONDecoder()
+            exportData = try JSONDecoder().decode(ConfigurationExport.self, from: data)
         case .plist:
-            decoder = PropertyListDecoder()
+            exportData = try PropertyListDecoder().decode(ConfigurationExport.self, from: data)
         }
-
-        let exportData = try decoder.decode(ConfigurationExport.self, from: data)
 
         // Validate all configurations before import
         for (key, item) in exportData.configurations {
@@ -258,13 +258,13 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
             let validationResult = validation.validateChange(change, currentConfig: configurations)
             guard validationResult.isValid else {
-                throw ConfigurationError.validationFailed("Import validation failed for key '\\(key)': \\(validationResult.errors.joined(separator: ", "))")
+                throw ConfigurationError.validationFailed("Import validation failed for key '\(key)': \(validationResult.errors.joined(separator: ", "))")
             }
         }
 
         // Apply all configurations
         await updateConfigurations(exportData.configurations)
-        logger.debug("Configuration import completed - \\(exportData.configurations.count) keys imported")
+        logger.debug("Configuration import completed - \(exportData.configurations.count) keys imported")
     }
 
     // MARK: - Private Methods
@@ -278,18 +278,19 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         environment = .production
         #endif
 
-        logger.debug("Detected environment: \\(environment.rawValue)")
+        logger.debug("Detected environment: \(environment.rawValue)")
     }
 
     private func setupCloudKitSync() {
-        cloudKitManager.configurationUpdates
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] cloudConfigs in
-                Task { @MainActor in
-                    await self?.updateConfigurations(cloudConfigs)
-                }
-            }
-            .store(in: &subscriptions)
+        // TODO: Implement CloudKit configuration sync
+        // cloudKitManager.configurationUpdates
+        //     .receive(on: DispatchQueue.main)
+        //     .sink { [weak self] cloudConfigs in
+        //         Task { @MainActor in
+        //             await self?.updateConfigurations(cloudConfigs)
+        //         }
+        //     }
+        //     .store(in: &subscriptions)
     }
 
     private func loadCachedConfigurations() {
@@ -299,7 +300,7 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         // Apply environment-specific defaults
         applyEnvironmentDefaults()
 
-        logger.debug("Loaded \\(cachedConfigs.count) cached configurations")
+        logger.debug("Loaded \(cachedConfigs.count) cached configurations")
     }
 
     private func applyEnvironmentDefaults() {
@@ -343,10 +344,14 @@ public final class ConfigurationManager: ObservableObject, Sendable {
                 timestamp: Date(),
                 source: .cloudSync
             )
-            audit.recordChange(change)
+            do {
+                try audit.recordChange(change)
+            } catch {
+                logger.error("Failed to record audit change for key '\(key)': \(error)")
+            }
         }
 
-        logger.debug("Updated \\(cloudConfigs.count) configurations (\\(changedKeys.count) changed)")
+        logger.debug("Updated \(cloudConfigs.count) configurations (\(changedKeys.count) changed)")
     }
 
     private func applyConfigurationChange(_ change: ConfigurationChange) async throws {
@@ -372,15 +377,15 @@ public final class ConfigurationManager: ObservableObject, Sendable {
         configurations[change.key] = item
 
         // Record audit trail
-        audit.recordChange(change)
+        try audit.recordChange(change)
 
-        // Sync to CloudKit
-        try await cloudKitManager.saveConfiguration(item)
+        // TODO: Implement CloudKit configuration save
+        // try await cloudKitManager.saveConfiguration(item)
 
         // Cache locally
         cache.saveConfigurations(configurations)
 
-        logger.debug("Applied configuration change for key '\\(change.key)'")
+        logger.debug("Applied configuration change for key '\(change.key)'")
     }
 
     private func applyConfigurationChanges(_ changes: [ConfigurationChange]) async throws {
@@ -427,14 +432,14 @@ public final class ConfigurationManager: ObservableObject, Sendable {
 
         // Handle complex types via JSON
         guard let data = value.data(using: .utf8) else {
-            logger.error("Failed to convert configuration value to data for key '\\(key)'")
+            logger.error("Failed to convert configuration value to data for key '\(key)'")
             return nil
         }
 
         do {
             return try JSONDecoder().decode(type, from: data)
         } catch {
-            logger.error("Failed to decode configuration value for key '\\(key)': \\(error)")
+            logger.error("Failed to decode configuration value for key '\(key)': \(error)")
             return nil
         }
     }
@@ -660,7 +665,7 @@ private final class ConfigurationCache {
             let configs = try JSONDecoder().decode([String: ConfigurationItem].self, from: data)
             return configs
         } catch {
-            logger.debug("No cached configurations found or failed to load: \\(error)")
+            logger.debug("No cached configurations found or failed to load: \(error)")
             return [:]
         }
     }
@@ -670,7 +675,7 @@ private final class ConfigurationCache {
             let data = try JSONEncoder().encode(configs)
             try data.write(to: cacheURL)
         } catch {
-            logger.error("Failed to cache configurations: \\(error)")
+            logger.error("Failed to cache configurations: \(error)")
         }
     }
 }

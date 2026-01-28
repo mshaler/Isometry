@@ -361,7 +361,7 @@ public class SyncCoordinator {
 // MARK: - Supporting Types
 
 /// Codable wrapper for any value
-public struct AnyCodable: Codable {
+public struct AnyCodable: Codable, Sendable {
     public let value: Any
 
     public init(_ value: Any) {

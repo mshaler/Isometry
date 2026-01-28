@@ -80,9 +80,8 @@ public struct SlashCommandMenu: View {
 
                 if !commandManager.currentQuery.isEmpty {
                     Text("/ \(commandManager.currentQuery)")
-                        .font(.subheadline)
+                        .font(.system(.subheadline, design: .monospaced))
                         .foregroundStyle(.secondary)
-                        .fontFamily(.monospaced)
                 }
             }
 
@@ -216,8 +215,7 @@ private struct CommandRow: View {
 
                         if let shortcut = command.shortcut {
                             Text("/" + shortcut)
-                                .font(.caption)
-                                .fontFamily(.monospaced)
+                                .font(.system(.caption, design: .monospaced))
                                 .fontWeight(.medium)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -317,8 +315,8 @@ public struct GroupedSlashCommandMenu: View {
 
             if !commandManager.currentQuery.isEmpty {
                 Text("/ \(commandManager.currentQuery)")
+                    .font(.system(.body, design: .monospaced))
                     .foregroundStyle(.secondary)
-                    .fontFamily(.monospaced)
             }
 
             Spacer()

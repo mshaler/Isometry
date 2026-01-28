@@ -1254,13 +1254,18 @@ extension IsometryDatabase {
         return DatabaseStorageStats(totalSize: 0, itemCount: 0, lastCleanup: Date())
     }
 
-    public func getCleanupCandidates(olderThan: Date) async throws -> [String] {
+    public func getCleanupCandidates(
+        olderThan: Date? = nil,
+        unusedOnly: Bool = true
+    ) async throws -> [DatabaseStoredContent] {
         // TODO: Implement cleanup candidate identification
+        _ = (olderThan, unusedOnly)
         return []
     }
 
-    public func deleteStoredContent(id: String) async throws {
+    public func deleteStoredContent(id: UUID) async throws {
         // TODO: Implement content deletion
+        _ = id
     }
 
     public func getSurfaces() async throws -> [DatabaseSurface] {
