@@ -172,15 +172,18 @@ public class SyncCoordinator {
     // MARK: - Database Observation
 
     private func startDatabaseObservation() {
-        databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
-            .start(in: database.getDatabasePool(), onError: { error in
-                print("[SyncCoordinator] Database observation error: \(error)")
-            }, onChange: { [weak self] _ in
-                // This is called on database changes
-                Task { [weak self] in
-                    await self?.handleDatabaseChange()
-                }
-            })
+        Task {
+            let pool = await database.getDatabasePool()
+            databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
+                .start(in: pool, onError: { error in
+                    print("[SyncCoordinator] Database observation error: \(error)")
+                }, onChange: { [weak self] _ in
+                    // This is called on database changes
+                    Task { [weak self] in
+                        await self?.handleDatabaseChange()
+                    }
+                })
+        }
     }
 
     private func handleDatabaseChange() async {

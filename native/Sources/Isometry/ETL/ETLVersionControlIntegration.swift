@@ -570,7 +570,7 @@ extension ETLOperationTemplate {
             return .autoMerge  // Exports are safe to merge
         case .cloudSyncSetup, .cloudSyncOperation:
             return .rollbackOnFailure  // Cloud operations can fail
-        @unknown default:
+        default:
             return .manualMerge  // Unknown operations require manual review
         }
     }
@@ -588,7 +588,7 @@ extension ETLOperationTemplate {
             return .mainBranch  // Exports can run on main
         case .cloudSyncSetup, .cloudSyncOperation:
             return .isolatedBranch  // Cloud operations need isolation
-        @unknown default:
+        default:
             return .isolatedBranch  // Unknown operations need isolation
         }
     }

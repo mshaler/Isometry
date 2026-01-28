@@ -20,13 +20,12 @@ public struct CommandHistoryView: View {
     // Search suggestions
     @State private var searchSuggestions: [CommandSuggestion] = []
 
+    @State private var showingSuggestions: Bool = false
+
     public init(database: IsometryDatabase) {
         self.database = database
         self._commandHistory = StateObject(wrappedValue: CommandHistoryManager(database: database))
     }
-    @State private var showingSuggestions: Bool = false
-
-    public init() {}
 
     public var body: some View {
         NavigationView {
@@ -772,5 +771,10 @@ public enum HistoryFilterType: CaseIterable {
 // MARK: - Preview
 
 #Preview {
-    CommandHistoryView()
+    do {
+        let database = try IsometryDatabase(path: ":memory:")
+        return CommandHistoryView(database: database)
+    } catch {
+        return Text("Failed to create database: \(error.localizedDescription)")
+    }
 }

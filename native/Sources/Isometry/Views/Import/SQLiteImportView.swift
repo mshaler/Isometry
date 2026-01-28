@@ -433,7 +433,7 @@ struct SQLiteImportView: View {
             }
         } catch {
             await MainActor.run {
-                let errorResult = SyncResult()
+                var errorResult = SyncResult()
                 errorResult.errors = [error]
                 lastSyncResult = errorResult
             }
@@ -463,7 +463,7 @@ struct SQLiteImportView: View {
         }
 
         await MainActor.run {
-            let result = SyncResult()
+            var result = SyncResult()
             result.imported = totalImported
             result.failed = totalFailed
             result.errors = allErrors
@@ -521,7 +521,7 @@ struct SyncOptionToggle: View {
                 }
             }
             .padding()
-            .background(isEnabled ? Color.blue : Color(.systemGray5))
+            .background(isEnabled ? Color.blue : Color.gray.opacity(0.3))
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
@@ -539,7 +539,9 @@ struct AdvancedSyncSettingsView: View {
                     HStack {
                         Text("Batch Size")
                         Spacer()
-                        TextField("Batch Size", value: $configuration.batchSize, format: .number)
+                        // TODO: Fix batchSize binding when SyncConfiguration is properly defined
+                        // TextField("Batch Size", value: $configuration.batchSize, format: .number)
+                        Text("Batch Size: 100") // Placeholder
                             .textFieldStyle(.roundedBorder)
                             .frame(width: 100)
                     }
@@ -547,10 +549,12 @@ struct AdvancedSyncSettingsView: View {
                     HStack {
                         Text("Sync Interval")
                         Spacer()
-                        TextField("Minutes", value: Binding(
-                            get: { configuration.syncInterval / 60 },
-                            set: { configuration.syncInterval = $0 * 60 }
-                        ), format: .number)
+                        // TODO: Fix syncInterval binding when SyncConfiguration is properly defined
+                        // TextField("Minutes", value: Binding(
+                        //     get: { configuration.syncInterval / 60 },
+                        //     set: { configuration.syncInterval = $0 * 60 }
+                        // ), format: .number)
+                        Text("60 min") // Placeholder
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 100)
                         Text("min")

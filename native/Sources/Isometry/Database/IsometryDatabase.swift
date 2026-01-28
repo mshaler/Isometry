@@ -1046,7 +1046,7 @@ public actor IsometryDatabase {
             sql += " ORDER BY h.timestamp DESC LIMIT ?"
             arguments.append(limit)
 
-            return try HistoryEntry.fetchAll(db, sql: sql, arguments: arguments)
+            return try HistoryEntry.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
         }
     }
 
@@ -1158,7 +1158,7 @@ public actor IsometryDatabase {
 
     /// Delete a notebook card (soft delete)
     public func deleteCard(id: String) async throws {
-        try await dbPool.write { db in
+        _ = try await dbPool.write { db in
             try NotebookCard
                 .filter(NotebookCard.Columns.id == id)
                 .updateAll(db, NotebookCard.Columns.deletedAt.set(to: Date()))

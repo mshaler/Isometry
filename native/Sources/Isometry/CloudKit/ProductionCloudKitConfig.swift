@@ -74,10 +74,11 @@ public final class ProductionCloudKitManager: ObservableObject {
     public init(database: IsometryDatabase, syncManager: CloudKitSyncManager) {
         self.database = database
         self.syncManager = syncManager
-        self.currentEnvironment = Self.detectEnvironment()
-        self.container = CKContainer(identifier: currentEnvironment.containerIdentifier)
+        let detectedEnvironment = Self.detectEnvironment()
+        self.currentEnvironment = detectedEnvironment
+        self.container = CKContainer(identifier: detectedEnvironment.containerIdentifier)
         self.privateDatabase = container.privateCloudDatabase
-        self.productionZone = CKRecordZone(zoneName: currentEnvironment.zoneName)
+        self.productionZone = CKRecordZone(zoneName: detectedEnvironment.zoneName)
         self.schemaValidator = ProductionSchemaValidator(container: container)
 
         Task {
@@ -114,7 +115,7 @@ public final class ProductionCloudKitManager: ObservableObject {
             }
 
             // Validate container access
-            let containerInfo = try await withCheckedThrowingContinuation { continuation in
+            let containerInfo: CKRecord.ID = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<CKRecord.ID, Error>) in
                 container.fetchUserRecordID { recordID, error in
                     if let error = error {
                         continuation.resume(throwing: error)

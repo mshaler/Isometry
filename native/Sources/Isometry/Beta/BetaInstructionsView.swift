@@ -538,6 +538,14 @@ public struct BetaInstructionsView: View {
             .cornerRadius(8)
         }
     }
+
+    private func loadPersonalizedRecommendations() {
+        personalizedRecommendations = betaManager.getPersonalizedTestingRecommendations()
+        betaManager.trackBetaEvent(BetaAnalyticsEvent(
+            name: "personalized_recommendations_loaded",
+            properties: ["recommendation_count": personalizedRecommendations.count]
+        ))
+    }
 }
 
 // MARK: - Supporting Views
@@ -832,15 +840,8 @@ struct FeedbackGuideline: View {
     //         name: "testing_step_completed",
     //         properties: ["step": step, "total_completed": completedSteps.count]
     //     ))
+    // Function moved inside struct scope above
     // }
-
-    private func loadPersonalizedRecommendations() {
-        personalizedRecommendations = betaManager.getPersonalizedTestingRecommendations()
-        betaManager.trackBetaEvent(BetaAnalyticsEvent(
-            name: "personalized_recommendations_loaded",
-            properties: ["recommendation_count": personalizedRecommendations.count]
-        ))
-    }
 
     // Note: The original computed properties exist elsewhere in the file structure
 }

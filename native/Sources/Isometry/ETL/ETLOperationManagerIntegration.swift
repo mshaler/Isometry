@@ -500,7 +500,7 @@ extension ETLOperationTemplate {
             return .system
         case .fileSystemImport:
             return .documents
-        @unknown default:
+        default:
             return .system
         }
     }

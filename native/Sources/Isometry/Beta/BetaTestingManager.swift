@@ -1068,7 +1068,7 @@ public class BetaTestingManager: ObservableObject {
             completionTime: completionTime,
             overallStatus: passedChecks == totalChecks ? .passed : .failed,
             productionReadiness: calculateProductionReadiness(milestoneChecks),
-            externalBetaCapable: validateExternalBetaCapability().status == .passed,
+            externalBetaCapable: await validateExternalBetaCapability().status == .passed,
             documentation: generateMilestoneDocumentation()
         )
     }
@@ -1258,7 +1258,7 @@ public class BetaTestingManager: ObservableObject {
         }
 
         // Validate feedback system for external users
-        if feedbackCategories.count >= 6 {
+        if betaVersion.configuration.feedbackCategories.count >= 6 {
             capabilities.append("✓ Comprehensive feedback system for external users")
         } else {
             issues.append("Feedback system insufficient for external beta users")

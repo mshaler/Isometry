@@ -159,7 +159,8 @@ private actor MarkdownRenderer {
         var currentIndex = text.startIndex
 
         for line in lines {
-            let lineRange = currentIndex..<text.index(currentIndex, offsetBy: line.count, limitedBy: text.endIndex) ?? text.endIndex
+            let endIndex = text.index(currentIndex, offsetBy: line.count, limitedBy: text.endIndex) ?? text.endIndex
+            let lineRange = currentIndex..<endIndex
 
             if line.hasPrefix("#") {
                 let headerLevel = line.prefix(while: { $0 == "#" }).count

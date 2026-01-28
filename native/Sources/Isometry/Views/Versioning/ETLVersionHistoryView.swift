@@ -110,7 +110,7 @@ struct ETLVersionHistoryView: View {
                 .padding(.horizontal)
 
             if !versions.isEmpty {
-                Chart(versions) { version in
+                Chart(versions, id: \.id) { version in
                     PointMark(
                         x: .value("Date", version.createdAt),
                         y: .value("Version", version.versionNumber)
@@ -135,7 +135,7 @@ struct ETLVersionHistoryView: View {
 
     private var versionListSection: some View {
         List {
-            ForEach(versions) { version in
+            ForEach(versions, id: \.id) { version in
                 VersionRowView(
                     version: version,
                     isSelected: selectedVersions.contains(version.id),
@@ -143,7 +143,7 @@ struct ETLVersionHistoryView: View {
                 )
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.sidebar)
     }
 
     // MARK: - Actions
@@ -222,11 +222,13 @@ struct VersionRowView: View {
 
                     Spacer()
 
-                    if let nodeCount = version.metadata["nodeCount"] as? Int {
-                        Text("\(nodeCount) nodes")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    // TODO: Fix ETLMetadata access when structure is properly defined
+                    // if let nodeCount = version.metadata["nodeCount"] as? Int {
+                    //     Text("\(nodeCount) nodes")
+                    // }
+                    Text("Metadata info") // Placeholder
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
 

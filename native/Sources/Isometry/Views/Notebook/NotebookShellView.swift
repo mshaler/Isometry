@@ -397,6 +397,10 @@ public struct NotebookShellView: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 4))
     }
 
+    private var sortedActiveProcesses: [(String, ManagedProcessState)] {
+        Array(activeProcesses).sorted(by: { $0.0 < $1.0 })
+    }
+
     private var processDetailsView: some View {
         NavigationView {
             List {
@@ -407,9 +411,8 @@ public struct NotebookShellView: View {
                         description: Text("All commands have completed")
                     )
                 } else {
-                    ForEach(Array(activeProcesses.keys.enumerated()), id: \.element) { index, command in
-                        let state = activeProcesses[command] ?? .terminated
-
+                    ForEach(sortedActiveProcesses, id: \.0) { item in
+                        let (command, state) = item
                         HStack {
                             Image(systemName: state.icon)
                                 .foregroundStyle(colorForState(state))
@@ -420,7 +423,7 @@ public struct NotebookShellView: View {
                                     .font(.body)
                                     .fontDesign(.monospaced)
 
-                                Text(state.userDescription)
+                                Text(state.description)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -611,7 +614,7 @@ public struct NotebookShellView: View {
             do {
                 // Create shell context for enrichment
                 let recentCommands = commandHistory.suffix(3).map { $0.command }
-                let shellContext = ShellContext(
+                let _ = ShellContext(
                     workingDirectory: currentWorkingDirectory,
                     recentCommands: Array(recentCommands),
                     environment: ProcessInfo.processInfo.environment
