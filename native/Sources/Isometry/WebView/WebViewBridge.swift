@@ -24,10 +24,10 @@ public class WebViewBridge: NSObject {
     }
 
     /// Connect to database after initialization
-    public func connectToDatabase(_ database: IsometryDatabase) {
+    public func connectToDatabase(_ database: IsometryDatabase) async {
         self.database = database
         // Update handler with real database
-        self.databaseHandler.setDatabase(database)
+        await self.databaseHandler.setDatabase(database)
     }
 
     // MARK: - Bridge Initialization Script

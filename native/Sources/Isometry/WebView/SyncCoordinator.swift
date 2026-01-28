@@ -173,12 +173,12 @@ public class SyncCoordinator {
 
     private func startDatabaseObservation() {
         databaseObserver = DatabaseRegionObservation(tracking: .fullDatabase)
-            .start(in: database.getDatabasePool()) { [weak self] _ in
+            .start(in: database.getDatabasePool(), onChange: { [weak self] _ in
                 // This is called on database changes
                 Task { [weak self] in
                     await self?.handleDatabaseChange()
                 }
-            }
+            })
     }
 
     private func handleDatabaseChange() async {
@@ -320,8 +320,6 @@ public class SyncCoordinator {
         let folder = data["folder"] as? String
         let tags = data["tags"] as? [String] ?? []
         let priority = data["priority"] as? Int ?? 0
-        let x = data["x"] as? Double ?? 0.0
-        let y = data["y"] as? Double ?? 0.0
 
         return Node(
             id: id,
@@ -332,9 +330,7 @@ public class SyncCoordinator {
             sourceId: sourceId,
             folder: folder,
             tags: tags,
-            priority: priority,
-            x: x,
-            y: y
+            priority: priority
         )
     }
 

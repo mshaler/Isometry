@@ -46,7 +46,9 @@ public struct NotebookWebView: View {
         .onAppear {
             loadReactApp()
         }
+        #if os(iOS)
         .navigationBarHidden(false)
+        #endif
         .navigationTitle("Notebook")
     }
 

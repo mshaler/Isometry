@@ -33,7 +33,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
     /**
      * Set database reference for late binding during app initialization
      */
-    nonisolated public func setDatabase(_ database: IsometryDatabase) {
+    public func setDatabase(_ database: IsometryDatabase) {
         self.database = database
     }
 
@@ -242,7 +242,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             }
 
             // Execute and collect results
-            while let row = try rows.next() {
+            for row in try Row.fetchAll(rows) {
                 var rowData: [String: Any] = [:]
                 for (index, columnName) in rows.columnNames.enumerated() {
                     rowData[columnName] = row[index]
@@ -292,7 +292,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             let rows = try db.makeSelectStatement(sql: sql)
             try rows.setArguments(arguments)
 
-            while let row = try rows.next() {
+            for row in try Row.fetchAll(rows) {
                 var nodeData: [String: Any] = [:]
                 for (index, columnName) in rows.columnNames.enumerated() {
                     nodeData[columnName] = row[index]
@@ -397,7 +397,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             let rows = try db.makeSelectStatement(sql: sql)
             try rows.setArguments([query, limit])
 
-            while let row = try rows.next() {
+            for row in try Row.fetchAll(rows) {
                 var nodeData: [String: Any] = [:]
                 for (index, columnName) in rows.columnNames.enumerated() {
                     nodeData[columnName] = row[index]
@@ -463,7 +463,7 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
                 try rows.setArguments(arguments)
             }
 
-            while let row = try rows.next() {
+            for row in try Row.fetchAll(rows) {
                 var nodeData: [String: Any] = [:]
                 for (index, columnName) in rows.columnNames.enumerated() {
                     nodeData[columnName] = row[index]
