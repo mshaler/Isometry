@@ -1,188 +1,146 @@
+---
+version: 1.0
+last_updated: 2026-01-28
+---
+
 # Codebase Structure
 
-**Analysis Date:** 2026-01-25
+**Analysis Date:** 2026-01-28
 
 ## Directory Layout
 
 ```
 Isometry/
-├── src/                    # React web prototype
-├── native/                 # Swift native apps (iOS/macOS)
-├── docs/                   # Foam documentation system
-├── .planning/              # GSD project management
-├── scripts/                # Automation and sync scripts
-├── design/                 # UI handoff and design assets
-├── public/                 # Static web assets
-└── dist/                   # Build output
+├── .planning/            # GSD planning artifacts and docs
+├── src/                  # React web application
+├── native/               # Swift core + API server + shared native code
+├── ios/                  # iOS SwiftPM/Xcode wrapper
+├── macos/                # macOS app project
+├── docs/                 # Documentation and design notes
+├── scripts/              # Dev and automation scripts
+├── public/               # Static assets
+├── assets/               # Images and misc assets
+├── dist/                 # Web build output
+├── specs/                # Feature/spec documents
+├── tests/                # Misc test assets (root-level)
+├── package.json          # Web package manifest
+├── vite.config.ts        # Vite config
+└── tsconfig.json         # TypeScript config
 ```
 
 ## Directory Purposes
 
 **src/**
-- Purpose: React web application and development prototype
-- Contains: Components, contexts, hooks, database clients, types
-- Key files: `App.tsx`, `MVPDemo.tsx`, database contexts
+- Purpose: Web UI, data layer, and client-side logic
+- Contains: React components, hooks, contexts, db access, services
+- Key files: `src/main.tsx`, `src/App.tsx`, `src/index.css`
+- Subdirectories: `components/`, `hooks/`, `db/`, `state/`, `pages/`, `services/`, `utils/`, `types/`
 
 **native/**
-- Purpose: Production iOS and macOS applications
-- Contains: Swift source code, resources, test suites
-- Key files: SwiftUI views, database actors, sync managers
+- Purpose: Swift core logic + API server + app targets
+- Contains: Swift Package targets, server code, resources, tests
+- Key files: `native/Package.swift`, `native/Sources/IsometryAPIServer/main.swift`
+- Subdirectories: `Sources/Isometry/`, `Sources/IsometryAPI/`, `Sources/IsometryAPIServer/`, `Tests/`
 
-**native/Sources/Isometry/**
-- Purpose: Main application module
-- Contains: App logic, views, database, sync, import systems
-- Key files: `App/IsometryApp.swift`, `Database/`, `Views/`
+**ios/**
+- Purpose: iOS app wrapper
+- Contains: SwiftPM target and Xcode project
+- Key files: `ios/Package.swift`, `ios/Isometry.xcodeproj/`
 
-**native/Sources/IsometryCore/**
-- Purpose: Core domain logic and protocols
-- Contains: Shared entities, services, infrastructure abstractions
-- Key files: Domain models, service protocols
-
-**native/Sources/IsometryAPI/**
-- Purpose: HTTP API server for React web integration
-- Contains: Controllers, DTOs, API models
-- Key files: Database controllers, model DTOs
-
-**src/components/**
-- Purpose: React UI components and widgets
-- Contains: Views, UI primitives, demo components
-- Key files: Canvas, navigation, sidebars, visualization components
-
-**src/contexts/**
-- Purpose: React state management and providers
-- Contains: Global state contexts, theme management
-- Key files: FilterContext, PAFVContext, AppStateContext
-
-**src/db/**
-- Purpose: Database abstraction and clients
-- Contains: Environment-aware database providers
-- Key files: DatabaseContext, NativeAPIClient, WebViewClient
-
-**src/hooks/**
-- Purpose: Custom React hooks and utilities
-- Contains: Data fetching, D3 integration, UI utilities
-- Key files: useSQLiteQuery, useD3, navigation hooks
+**macos/**
+- Purpose: macOS app project
+- Contains: Xcode project and app resources
+- Key files: `macos/Isometry/`, `macos/Isometry.xcodeproj/`
 
 **docs/**
-- Purpose: Foam-based knowledge management
-- Contains: Specifications, plans, decisions, notes
-- Key files: Architecture docs, feature specs, Apple Notes import
-
-**.planning/**
-- Purpose: GSD project management and phase tracking
-- Contains: Phase plans, codebase analysis, execution logs
-- Key files: STATE.md, phase directories
+- Purpose: Product and engineering documentation
+- Contains: Implementation notes and guides
 
 **scripts/**
-- Purpose: Development automation and data sync
-- Contains: GitHub sync, Apple Notes import, setup scripts
-- Key files: sync-github-issues.py, import-apple-notes.py
+- Purpose: Development and automation helpers
+- Contains: Shell scripts and utilities
 
 ## Key File Locations
 
 **Entry Points:**
-- `src/App.tsx`: React application root with provider setup
-- `src/MVPDemo.tsx`: Simplified entry point for MVP development
-- `native/Sources/Isometry/App/IsometryApp.swift`: Native app entry point
+- `src/main.tsx` - Web app entry
+- `native/Sources/IsometryAPIServer/main.swift` - Native API server entry
+- `src/server/launch-native-server.js` - Node launcher for native server
 
 **Configuration:**
-- `package.json`: Node.js dependencies and scripts
-- `native/Package.swift`: Swift package configuration
-- `vite.config.ts`: React development server configuration
-- `tsconfig.json`: TypeScript compiler settings
+- `vite.config.ts` - Vite build/dev config
+- `tsconfig.json`, `tsconfig.build.json`, `tsconfig.node.json` - TS config
+- `tailwind.config.js`, `postcss.config.js` - CSS pipeline
+- `eslint.config.js` - Lint rules
+- `.env.production` - Production env defaults
+- `netlify.toml`, `vercel.json` - Hosting configs
 
 **Core Logic:**
-- `src/contexts/`: React state management
-- `src/db/DatabaseContext.tsx`: Environment-aware database provider
-- `native/Sources/Isometry/Database/IsometryDatabase.swift`: Native database actor
-- `native/Sources/Isometry/App/IsometryApp.swift`: Native app state management
+- `src/db/` - Database contexts and native API client
+- `src/hooks/` - App hooks and command routing
+- `native/Sources/Isometry/` - Core Swift models/services
+- `native/Sources/IsometryAPI/` - Vapor API layer
 
 **Testing:**
-- `src/__tests__/`: React component and utility tests
-- `src/**/__tests__/`: Co-located test files
-- `native/Tests/IsometryTests/`: Native Swift test suites
+- `src/**/__tests__/` and `src/**/*.test.tsx` - Web tests
+- `native/Tests/` - Swift tests
+
+**Documentation:**
+- `docs/` - Docs and notes
+- `README.md`, `DEPLOYMENT.md`, `QUICK-SETUP-GUIDE.md`
 
 ## Naming Conventions
 
 **Files:**
-- React components: `PascalCase.tsx` (e.g., `Canvas.tsx`, `FilterContext.tsx`)
-- Hooks: `camelCase.ts` with `use` prefix (e.g., `useD3.ts`, `useEnvironment.ts`)
-- Swift files: `PascalCase.swift` (e.g., `ContentView.swift`, `IsometryDatabase.swift`)
-- Test files: `*.test.ts`, `*.test.tsx`, `*Tests.swift`
+- PascalCase `.tsx` for React components (e.g., `LocationMapWidget.tsx`)
+- camelCase `.ts` for hooks/utilities (e.g., `useClaudeAPI.ts`)
+- `*.test.ts(x)` and `__tests__/` for tests
+- Swift files use PascalCase type names, file name matches type
 
 **Directories:**
-- React: `kebab-case` or `camelCase` (e.g., `components/ui`, `d3/hooks`)
-- Swift: `PascalCase` (e.g., `Sources/Isometry`, `Database/`)
-- Documentation: `kebab-case` (e.g., `docs/specs`, `docs/decisions`)
+- lower-case for broad areas (`components/`, `hooks/`, `services/`)
+- plural names for collections
 
-**Variables:**
-- React: `camelCase` for variables, `PascalCase` for components
-- Swift: `camelCase` for properties, `PascalCase` for types
-- Database: `snake_case` for SQL columns
+**Special Patterns:**
+- `index.ts` for exports (limited use)
+- `__tests__/` used for colocated tests
 
 ## Where to Add New Code
 
-**New React Component:**
-- Primary code: `src/components/{category}/ComponentName.tsx`
-- Tests: `src/components/{category}/__tests__/ComponentName.test.tsx`
-- Export: Add to relevant index file or import directly
+**New Feature:**
+- Primary code: `src/features/` or `src/components/`
+- Tests: `src/**/__tests__/` or `src/**/*.test.tsx`
+- Types: `src/types/`
 
-**New Context/Hook:**
-- Context: `src/contexts/NameContext.tsx`
-- Hook: `src/hooks/useName.ts`
-- Tests: `src/hooks/__tests__/useName.test.ts`
+**New Component/Module:**
+- Implementation: `src/components/`
+- Types: `src/types/`
+- Tests: `src/components/__tests__/`
 
-**New Database Feature:**
-- React client: `src/db/` (add to appropriate client)
-- Native implementation: `native/Sources/Isometry/Database/`
-- Migrations: Native database actor handles schema updates
-
-**New Swift View:**
-- Implementation: `native/Sources/Isometry/Views/{Category}/ViewName.swift`
-- Platform-specific: `native/Sources/Isometry/Views/{iOS|macOS}/`
-
-**New API Endpoint:**
-- Controller: `native/Sources/IsometryAPI/Controllers/`
-- Models: `native/Sources/IsometryAPI/Models/DTOs/`
-- Client: `src/db/NativeAPIClient.ts` (add method)
+**New Route/Command:**
+- Web routing: `src/pages/` and `src/App.tsx`
+- Native API routes: `native/Sources/IsometryAPI/routes.swift`
 
 **Utilities:**
-- React: `src/utils/utility-name.ts`
-- Swift: `native/Sources/Isometry/Utils/`
-- Shared types: `src/types/` for TypeScript, `native/Sources/IsometryCore/Domain/` for Swift
+- Shared helpers: `src/utils/`
+- Hooks: `src/hooks/`
 
 ## Special Directories
 
-**.planning/codebase/**
-- Purpose: Generated codebase analysis documents
-- Generated: Yes (via GSD commands)
-- Committed: Yes (for future reference)
-
-**.planning/phases/**
-- Purpose: Phase-specific implementation plans and logs
-- Generated: Yes (via GSD workflow)
-- Committed: Yes (tracks project progress)
+**dist/**
+- Purpose: Web build output
+- Source: `vite build`
+- Committed: No (generated)
 
 **node_modules/**
-- Purpose: NPM package dependencies
-- Generated: Yes (via npm install)
-- Committed: No (excluded by .gitignore)
+- Purpose: npm dependencies
+- Committed: No
 
-**native/.build/**
-- Purpose: Swift build artifacts and dependencies
-- Generated: Yes (via Swift Package Manager)
-- Committed: No (excluded by .gitignore)
-
-**dist/**
-- Purpose: React production build output
-- Generated: Yes (via npm run build)
-- Committed: No (excluded by .gitignore)
-
-**docs/notes/**
-- Purpose: Imported Apple Notes for knowledge management
-- Generated: Yes (via sync scripts)
-- Committed: Yes (source of truth for project documentation)
+**.planning/**
+- Purpose: GSD planning artifacts
+- Committed: Often yes (depends on project workflow)
 
 ---
 
-*Structure analysis: 2026-01-25*
+*Structure analysis: 2026-01-28*
+*Update when directory structure changes*

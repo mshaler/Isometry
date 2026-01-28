@@ -1,307 +1,118 @@
+---
+version: 1.0
+last_updated: 2026-01-28
+---
+
 # Testing Patterns
 
-**Analysis Date:** 2026-01-25
+**Analysis Date:** 2026-01-28
 
 ## Test Framework
 
 **Runner:**
-- Vitest 4.0.17
-- Config: `vitest.config.ts`
+- Vitest (`vitest.config.ts`) for web/client tests
+- SwiftPM XCTest for native (`native/Tests/`)
 
 **Assertion Library:**
-- Vitest built-in `expect`
-- @testing-library/jest-dom for DOM assertions
-- @testing-library/react for component testing
-- @testing-library/user-event for user interactions
+- Vitest `expect` + @testing-library/jest-dom matchers
+- Swift XCTest assertions
 
 **Run Commands:**
 ```bash
-npm test                              # Run all tests
-npm run test:run                      # Single run mode
-npm run test:coverage                 # With coverage report
-vitest                               # Watch mode (default)
+npm run test              # Vitest watch
+npm run test:run          # Vitest single run
+npm run test:coverage     # Coverage report
+swift test --package-path native  # Native tests
 ```
 
 ## Test File Organization
 
 **Location:**
-- Co-located pattern: `*.test.ts` and `*.spec.ts` alongside source files
-- Some centralized in `src/test/` for integration tests
+- Web: `src/**/__tests__/` and `src/**/*.{test,spec}.{ts,tsx}`
+- Native: `native/Tests/`
 
 **Naming:**
-- Unit tests: `filter-presets.test.ts`
-- Component tests: `LocationMapWidget.test.tsx`, `PAFVContext.test.tsx`
-- Integration tests: `migration-e2e.test.ts`, `data-integrity-validation.test.ts`
+- Web: `*.test.tsx` / `*.test.ts`
+- Swift: XCTest `*Tests.swift`
 
 **Structure:**
 ```
 src/
-├── components/
-│   ├── LocationMapWidget.tsx
-│   └── __tests__/
-│       ├── LocationMapWidget.test.tsx
-│       ├── Canvas.mvp.test.tsx
-│       └── HierarchyTreeView.test.tsx
-├── utils/
-│   └── __tests__/
-│       ├── filter-presets.test.ts
-│       └── geo-utils.test.ts
-├── state/
-│   └── __tests__/
-│       └── PAFVContext.test.tsx
-└── test/
-    ├── setup.ts
-    ├── migration-e2e.test.ts
-    └── performance-regression.test.ts
+  components/
+    __tests__/
+      LocationMapWidget.test.tsx
+  db/
+    __tests__/
+      MigrationSafety.test.ts
 ```
 
 ## Test Structure
 
-**Suite Organization:**
+**Suite Organization (Vitest):**
 ```typescript
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-
-describe('ComponentName', () => {
-  const defaultProps = {
-    // test props
-  };
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
-  describe('rendering', () => {
-    it('renders basic elements', () => {
-      render(<Component {...defaultProps} />);
-      expect(screen.getByText('Expected Text')).toBeInTheDocument();
-    });
-  });
-
-  describe('user interactions', () => {
-    it('handles click events', async () => {
-      const mockOnClick = vi.fn();
-      render(<Component {...defaultProps} onClick={mockOnClick} />);
-
-      screen.getByRole('button').click();
-
-      await waitFor(() => {
-        expect(mockOnClick).toHaveBeenCalledWith(/* expected args */);
-      });
-    });
+describe('ComponentOrModule', () => {
+  it('handles expected case', () => {
+    // arrange
+    // act
+    // assert
   });
 });
 ```
 
 **Patterns:**
-- Setup/teardown: `beforeEach()` and `afterEach()` for mock cleanup
-- Nested `describe` blocks for feature grouping
-- Descriptive test names starting with 'should' or action verbs
+- `beforeEach` used for shared setup where needed
+- Test timeouts configured in `vitest.config.ts`
 
 ## Mocking
 
-**Framework:** Vitest `vi` utilities
+**Framework:**
+- Vitest `vi` for mocks
 
 **Patterns:**
 ```typescript
-// Module mocking
-vi.mock('leaflet', () => ({
-  default: {
-    map: vi.fn(() => mockMap),
-    tileLayer: vi.fn(() => ({ addTo: vi.fn() })),
-    marker: vi.fn(() => mockMarker),
-  },
+vi.mock('../path/to/module', () => ({
+  someFn: vi.fn()
 }));
-
-// Function mocking
-const mockOnChange = vi.fn();
-mockGeolocation.getCurrentPosition.mockImplementation((success) => {
-  success({ coords: { latitude: 37.7749, longitude: -122.4194 } });
-});
-
-// Object mocking
-const mockMarker = {
-  addTo: vi.fn().mockReturnThis(),
-  on: vi.fn().mockReturnThis(),
-  setLatLng: vi.fn().mockReturnThis(),
-  bindPopup: vi.fn().mockReturnThis(),
-};
 ```
 
 **What to Mock:**
-- External libraries: `leaflet`, `d3`, browser APIs
-- Geolocation API: `navigator.geolocation`
-- Database operations for unit tests
-- Time-sensitive functions
+- Network calls, native API bridge, timeouts
 
 **What NOT to Mock:**
-- Pure utility functions
-- Internal business logic
-- Simple data transformations
+- Pure utilities where possible
 
 ## Fixtures and Factories
 
 **Test Data:**
-```typescript
-// Factory pattern for test objects
-function createTestPreset(overrides?: Partial<FilterPreset>): FilterPreset {
-  return {
-    id: 'test-1',
-    name: 'Test Preset',
-    filters: EMPTY_FILTERS,
-    createdAt: new Date('2026-01-24'),
-    updatedAt: new Date('2026-01-24'),
-    ...overrides,
-  };
-}
-
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-  };
-})();
-```
-
-**Location:**
-- Test utilities defined within test files
-- Shared mocks in test setup files
+- Inline objects in tests are common
+- Some shared helpers in `src/test/`
 
 ## Coverage
 
-**Requirements:** No specific target enforced
+**Requirements:**
+- No explicit target enforced
+
+**Configuration:**
+- Coverage via `vitest.config.ts` (V8 provider)
+- Excludes `src/test/**` and `*.d.ts`
 
 **View Coverage:**
 ```bash
 npm run test:coverage
-open coverage/index.html
-```
-
-**Configuration:**
-```typescript
-// vitest.config.ts
-coverage: {
-  provider: 'v8',
-  reporter: ['text', 'json', 'html'],
-  include: ['src/**/*.{ts,tsx}'],
-  exclude: ['src/test/**', 'src/**/*.d.ts'],
-}
 ```
 
 ## Test Types
 
 **Unit Tests:**
-- Pure functions and utilities: `src/utils/__tests__/filter-presets.test.ts`
-- Type guards and converters: `src/types/lpg.test.ts`
-- Individual hooks and contexts: `src/state/__tests__/PAFVContext.test.tsx`
+- React component behavior and utilities
 
 **Integration Tests:**
-- End-to-end data flows: `src/test/migration-e2e.test.ts`
-- Database operations: `src/test/data-integrity-validation.test.ts`
-- Performance validation: `src/test/performance-regression.test.ts`
+- DB layer and bridge logic in `src/db/__tests__/`
 
-**Component Tests:**
-- React component rendering and behavior
-- User interaction testing with Testing Library
-- Mock external dependencies and focus on component logic
-
-## Common Patterns
-
-**Async Testing:**
-```typescript
-it('handles async geolocation', async () => {
-  mockGeolocation.getCurrentPosition.mockImplementation((success) => {
-    success({ coords: { latitude: 37.7749, longitude: -122.4194 } });
-  });
-
-  render(<LocationMapWidget {...defaultProps} />);
-
-  const button = screen.getByText('Use my location');
-  button.click();
-
-  await waitFor(() => {
-    expect(screen.getByText('✓ Location granted')).toBeInTheDocument();
-  });
-});
-```
-
-**Error Testing:**
-```typescript
-it('handles geolocation errors', async () => {
-  mockGeolocation.getCurrentPosition.mockImplementation((_success, error) => {
-    error(new Error('User denied geolocation'));
-  });
-
-  render(<LocationMapWidget {...defaultProps} />);
-
-  const button = screen.getByText('Use my location');
-  button.click();
-
-  await waitFor(() => {
-    expect(screen.getByText('✗ Location denied')).toBeInTheDocument();
-  });
-});
-
-it('throws on invalid preset update', () => {
-  expect(() => {
-    updatePreset('non-existent-id', { name: 'New Name' });
-  }).toThrow('Failed to update preset');
-});
-```
-
-**Context Testing:**
-```typescript
-// Wrapper for provider testing
-function wrapper({ children }: { children: React.ReactNode }) {
-  return (
-    <BrowserRouter>
-      <PAFVProvider>{children}</PAFVProvider>
-    </BrowserRouter>
-  );
-}
-
-it('throws error when used outside provider', () => {
-  expect(() => {
-    renderHook(() => usePAFV());
-  }).toThrow('usePAFV must be used within PAFVProvider');
-});
-```
-
-**Setup File:**
-```typescript
-// src/test/setup.ts
-import '@testing-library/jest-dom';
-
-// Mock ResizeObserver for D3 components
-class ResizeObserverMock {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-}
-global.ResizeObserver = ResizeObserverMock;
-
-// Mock matchMedia for theme detection
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    dispatchEvent: () => true,
-  }),
-});
-```
+**E2E Tests:**
+- None configured (Playwright config directory exists: `.playwright-mcp/`)
 
 ---
 
-*Testing analysis: 2026-01-25*
+*Testing analysis: 2026-01-28*
+*Update when testing approach changes*
