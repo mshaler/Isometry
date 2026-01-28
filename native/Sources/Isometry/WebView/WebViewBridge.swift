@@ -192,6 +192,27 @@ public class WebViewBridge: NSObject {
                         }
                     },
 
+                    // Filter operations for LATCH filtering
+                    filters: {
+                        executeFilter: function(sql, params, limit, offset, sequenceId) {
+                            return window._isometryBridge.sendMessage('filters', 'executeFilter', {
+                                sql,
+                                params: params || [],
+                                limit: limit || 1000,
+                                offset: offset || 0,
+                                sequenceId
+                            });
+                        },
+
+                        getFilterStatistics: function() {
+                            return window._isometryBridge.sendMessage('filters', 'getFilterStatistics', {});
+                        },
+
+                        cancelPendingRequests: function() {
+                            return window._isometryBridge.sendMessage('filters', 'cancelPendingRequests', {});
+                        }
+                    },
+
                     // Environment detection
                     environment: {
                         isNative: true,

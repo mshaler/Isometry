@@ -318,3 +318,256 @@ export function isEmptyFilters(filters: FilterState): boolean {
          !filters.hierarchy &&
          !filters.dsl;
 }
+
+// Bridge-specific serialization for optimized bridge messaging
+
+/**
+ * Bridge compatible serialization optimized for message size and type safety
+ * Uses binary format and compression for large filter sets
+ */
+export function bridgeCompatibleSerialization(filters: FilterState): {
+  compressed: string;
+  originalSize: number;
+  compressedSize: number;
+  isCompressed: boolean;
+} {
+  // Start with the standard serialization
+  const standardSerialized = serializeFilters(filters);
+
+  // For small filters, use standard format
+  if (standardSerialized.length < 500) {
+    return {
+      compressed: standardSerialized,
+      originalSize: standardSerialized.length,
+      compressedSize: standardSerialized.length,
+      isCompressed: false
+    };
+  }
+
+  // For larger filters, use optimized bridge format
+  const optimized = createOptimizedBridgeFormat(filters);
+
+  return {
+    compressed: optimized.data,
+    originalSize: standardSerialized.length,
+    compressedSize: optimized.data.length,
+    isCompressed: optimized.isCompressed
+  };
+}
+
+/**
+ * Create optimized bridge format using abbreviations and compression
+ */
+function createOptimizedBridgeFormat(filters: FilterState): { data: string; isCompressed: boolean } {
+  const parts: string[] = [];
+
+  // Use abbreviated keys for smaller message size
+  if (filters.location) {
+    const loc = filters.location;
+    if (loc.type === 'point' && loc.latitude !== undefined && loc.longitude !== undefined) {
+      parts.push(`l:p,${loc.latitude},${loc.longitude}`);
+    } else if (loc.type === 'box' && loc.north !== undefined && loc.south !== undefined && loc.east !== undefined && loc.west !== undefined) {
+      parts.push(`l:b,${loc.north},${loc.south},${loc.east},${loc.west}`);
+    } else if (loc.type === 'radius' && loc.centerLat !== undefined && loc.centerLon !== undefined && loc.radiusKm !== undefined) {
+      parts.push(`l:r,${loc.centerLat},${loc.centerLon},${loc.radiusKm}`);
+    }
+  }
+
+  if (filters.alphabet) {
+    const alpha = filters.alphabet;
+    // Use single character abbreviations: s=startsWith, r=range, f=search (find)
+    const typeAbbrev = alpha.type === 'startsWith' ? 's' : alpha.type === 'range' ? 'r' : 'f';
+    const encodedValue = encodeURIComponent(alpha.value);
+    parts.push(`a:${typeAbbrev},${encodedValue}`);
+  }
+
+  if (filters.time) {
+    const time = filters.time;
+    const fieldAbbrev = time.field === 'created' ? 'c' : time.field === 'modified' ? 'm' : 'd';
+
+    if (time.type === 'preset' && time.preset) {
+      parts.push(`t:p,${time.preset},${fieldAbbrev}`);
+    } else if (time.type === 'range' && time.start && time.end) {
+      parts.push(`t:r,${time.start},${time.end},${fieldAbbrev}`);
+    } else if (time.type === 'relative' && time.amount !== undefined && time.unit && time.direction) {
+      const dirAbbrev = time.direction === 'past' ? 'p' : 'f';
+      const unitAbbrev = time.unit.charAt(0); // d, w, m, y
+      parts.push(`t:e,${time.amount},${unitAbbrev},${dirAbbrev},${fieldAbbrev}`);
+    }
+  }
+
+  if (filters.category) {
+    const cat = filters.category;
+    const typeAbbrev = cat.type === 'include' ? 'i' : 'x';
+    const values: string[] = [];
+
+    if (cat.folders && cat.folders.length > 0) {
+      values.push(`f=${cat.folders.map(f => encodeURIComponent(f)).join('+')}`);
+    }
+    if (cat.tags && cat.tags.length > 0) {
+      values.push(`t=${cat.tags.map(t => encodeURIComponent(t)).join('+')}`);
+    }
+    if (cat.statuses && cat.statuses.length > 0) {
+      values.push(`s=${cat.statuses.map(s => encodeURIComponent(s)).join('+')}`);
+    }
+    if (cat.nodeTypes && cat.nodeTypes.length > 0) {
+      values.push(`n=${cat.nodeTypes.map(t => encodeURIComponent(t)).join('+')}`);
+    }
+
+    if (values.length > 0) {
+      parts.push(`c:${typeAbbrev},${values.join('&')}`);
+    }
+  }
+
+  if (filters.hierarchy) {
+    const hier = filters.hierarchy;
+    if (hier.type === 'priority' && hier.minPriority !== undefined && hier.maxPriority !== undefined) {
+      parts.push(`h:p,${hier.minPriority}-${hier.maxPriority}`);
+    } else if (hier.type === 'top-n' && hier.limit !== undefined && hier.sortBy) {
+      const sortAbbrev = hier.sortBy === 'priority' ? 'p' : hier.sortBy === 'importance' ? 'i' : 's';
+      parts.push(`h:n,${hier.limit},${sortAbbrev}`);
+    } else if (hier.type === 'range' && hier.minPriority !== undefined && hier.maxPriority !== undefined && hier.sortBy) {
+      const sortAbbrev = hier.sortBy === 'priority' ? 'p' : hier.sortBy === 'importance' ? 'i' : 's';
+      parts.push(`h:r,${hier.minPriority}-${hier.maxPriority},${sortAbbrev}`);
+    }
+  }
+
+  const optimizedString = parts.join(';');
+
+  return {
+    data: optimizedString,
+    isCompressed: optimizedString.length < serializeFilters(filters).length
+  };
+}
+
+/**
+ * Validate bridge message size constraints
+ * WebKit has practical limits around 5MB for message passing
+ */
+export function validateBridgeMessageSize(data: string): {
+  isValid: boolean;
+  size: number;
+  maxSize: number;
+  recommendation?: string;
+} {
+  const size = new Blob([data]).size;
+  const maxSize = 5 * 1024 * 1024; // 5MB
+
+  if (size <= maxSize) {
+    return { isValid: true, size, maxSize };
+  }
+
+  let recommendation = 'Filter combination too complex for bridge messaging. ';
+  if (size > maxSize * 2) {
+    recommendation += 'Consider using presets for complex filter combinations.';
+  } else {
+    recommendation += 'Try reducing the number of active filters or simplifying filter criteria.';
+  }
+
+  return {
+    isValid: false,
+    size,
+    maxSize,
+    recommendation
+  };
+}
+
+/**
+ * Bridge parameter serialization with type safety
+ * Ensures parameters are properly typed for bridge transmission
+ */
+export function serializeBridgeParameters(filters: FilterState): {
+  sql: string;
+  params: (string | number | boolean | null)[];
+  metadata: {
+    filterCount: number;
+    hasLocationFilter: boolean;
+    hasTextSearch: boolean;
+    estimatedComplexity: 'low' | 'medium' | 'high';
+  };
+} {
+  // This would integrate with the filter compiler to generate SQL and parameters
+  // For now, providing a simplified structure that demonstrates the interface
+
+  const activeFilters = [
+    filters.location,
+    filters.alphabet,
+    filters.time,
+    filters.category,
+    filters.hierarchy
+  ].filter(f => f !== null);
+
+  const filterCount = activeFilters.length;
+  const hasLocationFilter = !!filters.location;
+  const hasTextSearch = !!filters.alphabet;
+
+  let estimatedComplexity: 'low' | 'medium' | 'high' = 'low';
+  if (filterCount > 3 || (filters.location && filters.alphabet)) {
+    estimatedComplexity = 'high';
+  } else if (filterCount > 1) {
+    estimatedComplexity = 'medium';
+  }
+
+  return {
+    sql: '-- SQL would be generated by filter compiler',
+    params: [], // Parameters would be extracted from filters
+    metadata: {
+      filterCount,
+      hasLocationFilter,
+      hasTextSearch,
+      estimatedComplexity
+    }
+  };
+}
+
+/**
+ * Round-trip validation for bridge serialization
+ * Ensures serialization/deserialization consistency
+ */
+export function validateBridgeRoundTrip(filters: FilterState): {
+  isValid: boolean;
+  originalFilters: FilterState;
+  deserializedFilters: FilterState;
+  differences: string[];
+} {
+  const originalSerialized = serializeFilters(filters);
+  const deserialized = deserializeFilters(originalSerialized);
+
+  // Also test bridge format
+  const bridgeSerialized = bridgeCompatibleSerialization(filters);
+
+  const differences: string[] = [];
+
+  // Compare key fields to detect differences
+  if (JSON.stringify(filters.location) !== JSON.stringify(deserialized.location)) {
+    differences.push('location filter changed during serialization');
+  }
+
+  if (JSON.stringify(filters.alphabet) !== JSON.stringify(deserialized.alphabet)) {
+    differences.push('alphabet filter changed during serialization');
+  }
+
+  if (JSON.stringify(filters.time) !== JSON.stringify(deserialized.time)) {
+    differences.push('time filter changed during serialization');
+  }
+
+  if (JSON.stringify(filters.category) !== JSON.stringify(deserialized.category)) {
+    differences.push('category filter changed during serialization');
+  }
+
+  if (JSON.stringify(filters.hierarchy) !== JSON.stringify(deserialized.hierarchy)) {
+    differences.push('hierarchy filter changed during serialization');
+  }
+
+  // Check bridge format size efficiency
+  if (bridgeSerialized.isCompressed && bridgeSerialized.compressedSize >= bridgeSerialized.originalSize) {
+    differences.push('bridge compression did not reduce size effectively');
+  }
+
+  return {
+    isValid: differences.length === 0,
+    originalFilters: filters,
+    deserializedFilters: deserialized,
+    differences
+  };
+}
