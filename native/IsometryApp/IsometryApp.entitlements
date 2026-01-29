@@ -12,9 +12,9 @@
         <string>CloudKit</string>
     </array>
 
-    <!-- App Sandbox (for macOS) -->
+    <!-- App Sandbox (for macOS) - Temporarily disabled for development -->
     <key>com.apple.security.app-sandbox</key>
-    <true/>
+    <false/>
 
     <!-- Network access for CloudKit -->
     <key>com.apple.security.network.client</key>

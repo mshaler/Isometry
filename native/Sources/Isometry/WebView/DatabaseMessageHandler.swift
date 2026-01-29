@@ -46,6 +46,8 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         _ userContentController: WKUserContentController,
         didReceive message: WKScriptMessage
     ) {
+        print("🔔 DatabaseMessageHandler received message from: \(message.name)")
+        print("🔔 Message body: \(message.body)")
         Task {
             await handleMessage(message)
         }

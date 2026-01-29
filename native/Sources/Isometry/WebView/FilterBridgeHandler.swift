@@ -26,7 +26,7 @@ public class FilterBridgeHandler: NSObject, WKScriptMessageHandler {
     // Request correlation for async operations
     private var activeRequests: Set<String> = []
 
-    public init(database: IsometryDatabase? = nil) {
+    nonisolated public init(database: IsometryDatabase? = nil) {
         self.database = database
         super.init()
 
@@ -182,6 +182,16 @@ public class FilterBridgeHandler: NSObject, WKScriptMessageHandler {
     }
 
     // MARK: - Filter Operation Handlers
+
+    /**
+     * Compatibility method for backward compatibility with DatabaseMessageHandler
+     */
+    func executeFilterCompat(
+        params: [String: Any],
+        database: IsometryDatabase
+    ) async throws -> [String: Any] {
+        return try await executeFilter(params: params, database: database)
+    }
 
     /**
      * Execute LATCH filter with pattern optimization and caching

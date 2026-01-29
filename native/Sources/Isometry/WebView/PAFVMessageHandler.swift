@@ -167,7 +167,7 @@ public class PAFVMessageHandler: NSObject, WKScriptMessageHandler {
             updatedConfig.lastPAFVUpdate = Date()
 
             // Apply to view model immediately (viewport changes should be real-time)
-            viewModel?.updateFromPAFV(updatedConfig)
+            await viewModel?.updateFromPAFV(updatedConfig)
 
             // Send success response
             sendSuccess(to: webView, requestId: messageData.id, result: [
@@ -378,11 +378,7 @@ struct PAFVUpdate {
     let timestamp: Date
 }
 
-// MARK: - PAFVState Types (compatible with ViewConfig extension)
-struct PAFVState {
-    let mappings: [PAFVAxisMapping]
-    let viewMode: String
-}
+// MARK: - Additional Bridge Types
 
 struct AxisMapping {
     let plane: String
@@ -492,7 +488,7 @@ class PAFVPerformanceMonitor {
     }
 }
 
-struct PAFVPerformanceStats {
+public struct PAFVPerformanceStats {
     let messageCount: Int64
     let averageMessageTime: TimeInterval
     let axisMappingUpdates: Int64

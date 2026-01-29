@@ -109,8 +109,24 @@ function MVPDemo() {
   if (showUnified) {
     return (
       <ErrorBoundary level="app" name="UnifiedApp">
-        <UnifiedApp />
-        <NotificationSystem />
+        <BrowserRouter>
+          <ThemeProvider>
+            <EnvironmentProvider>
+              <DatabaseProvider>
+                <AppStateProvider>
+                  <FilterProvider>
+                    <PAFVProvider>
+                      <NotebookProvider>
+                        <UnifiedApp />
+                        <NotificationSystem />
+                      </NotebookProvider>
+                    </PAFVProvider>
+                  </FilterProvider>
+                </AppStateProvider>
+              </DatabaseProvider>
+            </EnvironmentProvider>
+          </ThemeProvider>
+        </BrowserRouter>
       </ErrorBoundary>
     );
   }

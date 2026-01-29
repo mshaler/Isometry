@@ -85,22 +85,51 @@ export function EnvironmentProvider({
     try {
       // If forced mode is specified, use it
       if (forcedMode && forcedMode !== DatabaseMode.AUTO) {
+        console.log('🔧 Environment: Using forced mode:', forcedMode);
         return forcedMode;
       }
 
-      // Check for WebView MessageHandlers (highest priority)
-      if (await testWebViewBridge()) {
-        bridgeLogger.info('WebView bridge detected');
+      // Debug environment detection
+      console.log('🔍 Environment: Starting detection...');
+      console.log('🔍 Environment: window.webkit available:', typeof window !== 'undefined' && typeof window.webkit !== 'undefined');
+      console.log('🔍 Environment: messageHandlers available:', typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined');
+
+      // If we have webkit object, we're likely in WebView - proceed with bridge testing
+      if (typeof window !== 'undefined' && typeof window.webkit !== 'undefined') {
+        console.log('🔍 Environment: WebKit detected, testing bridge with retries...');
+
+        // Try bridge test with retries to handle initialization timing
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          console.log(`🧪 Environment: Bridge test attempt ${attempt}/3...`);
+
+          if (await testWebViewBridge()) {
+            console.log('✅ Environment: WebView bridge detected and working');
+            bridgeLogger.info('WebView bridge detected');
+            return DatabaseMode.WEBVIEW_BRIDGE;
+          }
+
+          if (attempt < 3) {
+            console.log(`⏰ Environment: Bridge test failed, waiting 500ms before retry ${attempt + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
+
+        // If all bridge tests failed but we have webkit, still try WebView mode
+        // The bridge might initialize later
+        console.log('⚠️ Environment: Bridge tests failed but WebKit present, forcing WebView mode');
+        bridgeLogger.info('WebKit available but bridge test failed, using WebView mode anyway');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
       // Check for HTTP API availability (medium priority)
       if (await testHTTPAPIConnection()) {
+        console.log('✅ Environment: HTTP API detected');
         bridgeLogger.info('HTTP API detected');
         return DatabaseMode.HTTP_API;
       }
 
       // Fall back to FALLBACK mode (no backend required)
+      console.log('⚠️ Environment: No backend available, using fallback mode');
       bridgeLogger.info('No backend available, using fallback mode');
       return DatabaseMode.FALLBACK;
 
@@ -114,15 +143,40 @@ export function EnvironmentProvider({
    * Test WebView bridge availability
    */
   const testWebViewBridge = async (): Promise<boolean> => {
-    if (!Environment.isWebView()) {
+    console.log('🧪 Testing WebView bridge...');
+
+    // First check if we have webkit object
+    if (typeof window.webkit === 'undefined') {
+      console.log('❌ WebView bridge: window.webkit not available');
       return false;
     }
+
+    console.log('✅ WebView bridge: window.webkit available');
+
+    // Check if messageHandlers is available
+    if (typeof window.webkit.messageHandlers === 'undefined') {
+      console.log('❌ WebView bridge: messageHandlers not available');
+      return false;
+    }
+
+    console.log('✅ WebView bridge: messageHandlers available');
+    console.log('🔍 WebView bridge: Available handlers:', Object.keys(window.webkit.messageHandlers));
+
+    // Check if database handler exists
+    if (typeof window.webkit.messageHandlers.database === 'undefined') {
+      console.log('❌ WebView bridge: database handler not available');
+      return false;
+    }
+
+    console.log('✅ WebView bridge: database handler available, testing ping...');
 
     try {
       // Test if bridge is actually functional with a simple ping
       const response = await postMessage('database', 'ping', {});
+      console.log('✅ WebView bridge: Ping successful, response:', response);
       return response !== null;
     } catch (error) {
+      console.log('❌ WebView bridge: Ping failed:', error);
       bridgeLogger.debug('WebView bridge test failed', { error: error as Error });
       return false;
     }

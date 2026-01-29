@@ -7,7 +7,7 @@ public typealias Node = IsometryCore.Node
 
 // MARK: - GRDB Record Conformance
 
-extension IsometryCore.Node: FetchableRecord, PersistableRecord {
+extension IsometryCore.Node {
     public static let databaseTableName = "nodes"
 
     // Custom column mapping for snake_case database columns

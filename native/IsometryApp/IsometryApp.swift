@@ -6,9 +6,8 @@ struct IsometryAppMain: App {
     @StateObject private var appState = AppState()
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup("Isometry") {
             #if os(macOS)
-            // Temporary simple view to test window appears
             if appState.isLoading {
                 VStack {
                     ProgressView()
@@ -43,8 +42,6 @@ struct IsometryAppMain: App {
             #endif
         }
         #if os(macOS)
-        .windowStyle(.hiddenTitleBar)
-        .windowToolbarStyle(.unified(showsTitle: false))
         .defaultSize(width: 1200, height: 800)
         .commands {
             CommandGroup(replacing: .newItem) {

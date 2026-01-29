@@ -18,6 +18,7 @@ import { CommandBar } from './CommandBar';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { NotificationSystem } from './ui/NotificationSystem';
 import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
+import { EnvironmentDebug } from './debug/EnvironmentDebug';
 
 /**
  * Unified App Component
@@ -37,16 +38,11 @@ import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
  */
 export function UnifiedApp() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <EnvironmentProvider>
-          <DatabaseProvider>
-            <CacheInvalidationProvider>
-              <AppStateProvider>
-                <FilterProvider>
-                  <PAFVProvider>
-                    <NotebookProvider>
-                  <div className="h-screen flex flex-col bg-gray-50">
+    <CacheInvalidationProvider>
+      <div className="h-screen flex flex-col bg-gray-50">
+                    {/* Environment Debug Info */}
+                    <EnvironmentDebug />
+
                     {/* Toolbar: Menu bar + command buttons */}
                     <ErrorBoundary level="component" name="Toolbar">
                       <Toolbar />
@@ -88,16 +84,7 @@ export function UnifiedApp() {
                     <ErrorBoundary level="feature" name="CommandBar">
                       <CommandBar />
                     </ErrorBoundary>
-                  </div>
-                  <NotificationSystem />
-                    </NotebookProvider>
-                  </PAFVProvider>
-                </FilterProvider>
-              </AppStateProvider>
-            </CacheInvalidationProvider>
-          </DatabaseProvider>
-        </EnvironmentProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+      </div>
+    </CacheInvalidationProvider>
   );
 }

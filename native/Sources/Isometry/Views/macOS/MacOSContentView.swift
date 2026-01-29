@@ -8,43 +8,68 @@ public struct MacOSContentView: View {
     @State private var selectedNode: Node?
     @State private var searchText = ""
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
+    @State private var showReactNotebook = false
 
     public init() {}
 
     public var body: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
-            // Sidebar: Folders
-            MacOSSidebarView(selectedFolder: $selectedFolder)
-                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
-        } content: {
-            // Content: Node list
-            if appState.isLoading {
-                LoadingView()
-            } else if let error = appState.error {
-                MacOSErrorView(error: error)
-            } else {
-                MacOSNodeListView(
-                    folder: selectedFolder,
-                    searchText: searchText,
-                    selectedNode: $selectedNode
-                )
-                .navigationSplitViewColumnWidth(min: 250, ideal: 350, max: 500)
+        if showReactNotebook {
+            // React Notebook WebView with database connection
+            NotebookWebView(database: appState.database)
+                .navigationTitle("React Notebook Prototype")
+                .toolbar {
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        // Toggle between native and React notebook views
+                        Button(action: { showReactNotebook.toggle() }) {
+                            Label("Native View", systemImage: "swift")
+                        }
+                        .help("Switch to native SwiftUI view")
+                    }
+                }
+        } else {
+            // Native SwiftUI View
+            NavigationSplitView(columnVisibility: $columnVisibility) {
+                // Sidebar: Folders
+                MacOSSidebarView(selectedFolder: $selectedFolder)
+                    .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
+            } content: {
+                // Content: Node list
+                if appState.isLoading {
+                    LoadingView()
+                } else if let error = appState.error {
+                    MacOSErrorView(error: error)
+                } else {
+                    MacOSNodeListView(
+                        folder: selectedFolder,
+                        searchText: searchText,
+                        selectedNode: $selectedNode
+                    )
+                    .navigationSplitViewColumnWidth(min: 250, ideal: 350, max: 500)
+                }
+            } detail: {
+                // Detail: Node editor
+                if let node = selectedNode {
+                    MacOSNodeDetailView(node: node)
+                } else {
+                    MacOSEmptyDetailView()
+                }
             }
-        } detail: {
-            // Detail: Node editor
-            if let node = selectedNode {
-                MacOSNodeDetailView(node: node)
-            } else {
-                MacOSEmptyDetailView()
+            .searchable(text: $searchText, placement: .sidebar, prompt: "Search nodes...")
+            .toolbar {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    // Toggle between native and React notebook views
+                    Button(action: {
+                        print("🔘 React Notebook button clicked, toggling to: \(!showReactNotebook)")
+                        showReactNotebook.toggle()
+                    }) {
+                        Label("React Notebook", systemImage: "globe")
+                    }
+                    .help("Switch to React notebook prototype")
+
+                    MacOSToolbarItems()
+                }
             }
         }
-        .searchable(text: $searchText, placement: .sidebar, prompt: "Search nodes...")
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                MacOSToolbarItems()
-            }
-        }
-        .navigationTitle("")
     }
 }
 

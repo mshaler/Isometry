@@ -10,9 +10,12 @@ public struct NotebookWebView: View {
     @State private var progress: Double = 0.0
 
     private let bridge: WebViewBridge
+    private let database: IsometryDatabase?
 
-    public init() {
-        self.bridge = WebViewBridge()
+    public init(database: IsometryDatabase? = nil) {
+        print("🚀 NotebookWebView initializing with database: \(database != nil ? "connected" : "nil")")
+        self.database = database
+        self.bridge = WebViewBridge(database: database)
     }
 
     public var body: some View {
@@ -45,6 +48,12 @@ public struct NotebookWebView: View {
         }
         .onAppear {
             loadReactApp()
+            // Connect database to bridge if available
+            if let database = database {
+                Task {
+                    await bridge.connectToDatabase(database)
+                }
+            }
         }
         #if os(iOS)
         .navigationBarHidden(false)
@@ -98,8 +107,18 @@ public struct NotebookWebView: View {
     }
 
     private func loadReactApp() {
+        print("🔄 Starting React app load process...")
+        // First try development server (preferred for bridge testing)
+        if let devServerURL = findDevelopmentServer() {
+            print("✅ Found development server at: \(devServerURL)")
+            print("🌐 Loading React app from development server: \(devServerURL)")
+            webViewStore.loadURL(devServerURL)
+            return
+        }
+
+        // Fall back to built artifacts
         guard let reactBundlePath = findReactBundlePath() else {
-            loadingError = "React build artifacts not found. Run 'npm run build' in project root."
+            loadingError = "React build artifacts not found. Run 'npm run dev' for development server or 'npm run build' for production build."
             isLoading = false
             return
         }
@@ -112,7 +131,49 @@ public struct NotebookWebView: View {
             return
         }
 
+        print("📁 Loading React app from built artifacts: \(indexURL)")
         webViewStore.loadURL(indexURL)
+    }
+
+    /// Find running React development server on common Vite ports
+    private func findDevelopmentServer() -> URL? {
+        print("🔍 Checking for development servers on common ports...")
+        let ports = [5174, 5173, 5175, 3000] // Common Vite and React dev server ports
+
+        for port in ports {
+            print("🔍 Testing port \(port)...")
+            if isServerRunning(port: port) {
+                print("✅ Server found on port \(port)")
+                return URL(string: "http://localhost:\(port)")
+            } else {
+                print("❌ No server on port \(port)")
+            }
+        }
+
+        print("⚠️ No development server found on any port")
+        return nil
+    }
+
+    /// Check if a server is running on the specified port
+    private func isServerRunning(port: Int) -> Bool {
+        let semaphore = DispatchSemaphore(value: 0)
+        var isRunning = false
+
+        guard let url = URL(string: "http://localhost:\(port)") else {
+            return false
+        }
+
+        let task = URLSession.shared.dataTask(with: url) { _, response, _ in
+            if let httpResponse = response as? HTTPURLResponse {
+                isRunning = httpResponse.statusCode == 200
+            }
+            semaphore.signal()
+        }
+
+        task.resume()
+        _ = semaphore.wait(timeout: .now() + 0.5) // 500ms timeout per port
+
+        return isRunning
     }
 
     /// Find React build artifacts in project bundle or development location
@@ -154,6 +215,7 @@ class WebViewStore: ObservableObject {
     func configure(with bridge: WebViewBridge) {
         guard webView == nil else { return }
 
+        print("🔧 Configuring WebView...")
         let configuration = WKWebViewConfiguration()
 
         // Disable web security for local file access
@@ -167,31 +229,60 @@ class WebViewStore: ObservableObject {
         let userContentController = WKUserContentController()
         userContentController.add(bridge.databaseHandler, name: "database")
         userContentController.add(bridge.fileSystemHandler, name: "filesystem")
+        userContentController.add(bridge.pafvHandler, name: "pafv")
+        userContentController.add(bridge.filterHandler, name: "filters")
+        print("🔧 Registered message handlers: database, filesystem, pafv, filters")
         configuration.userContentController = userContentController
 
-        // Inject bridge initialization script
+        // Inject bridge initialization script at document end to ensure webkit is ready
         let bridgeScript = WKUserScript(
             source: bridge.bridgeInitializationScript,
-            injectionTime: .atDocumentStart,
+            injectionTime: .atDocumentEnd,
             forMainFrameOnly: true
         )
         userContentController.addUserScript(bridgeScript)
+        print("🔧 Added bridge initialization script")
+
+        // Add a verification script that runs after page load
+        let verificationScript = WKUserScript(
+            source: """
+                setTimeout(() => {
+                    console.log('🔍 Post-load verification:');
+                    console.log('🔍 window.webkit exists:', !!window.webkit);
+                    console.log('🔍 messageHandlers exists:', !!window.webkit?.messageHandlers);
+                    if (window.webkit?.messageHandlers) {
+                        console.log('🔍 Available handlers:', Object.keys(window.webkit.messageHandlers));
+                    }
+                }, 1000);
+            """,
+            injectionTime: .atDocumentEnd,
+            forMainFrameOnly: true
+        )
+        userContentController.addUserScript(verificationScript)
+        print("🔧 Added verification script")
 
         // Custom User-Agent for identification
         configuration.applicationNameForUserAgent = "IsometryNative/1.0"
 
+        // Create WebView synchronously on main thread
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = bridge
         webView.uiDelegate = bridge
 
-        // Enable debugging in development
-        #if DEBUG
+        // Enable debugging in development - always enable for testing
         if #available(iOS 16.4, macOS 13.3, *) {
             webView.isInspectable = true
+            print("🔧 WebView inspector enabled")
+        } else {
+            print("⚠️ WebView inspector not available on this OS version")
         }
-        #endif
+
+        // Add more debugging
+        webView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        print("🔧 Developer extras enabled")
 
         self.webView = webView
+        print("✅ WebView configured and ready")
     }
 
     func loadURL(_ url: URL) {

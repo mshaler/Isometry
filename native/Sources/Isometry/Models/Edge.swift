@@ -8,7 +8,7 @@ public typealias Edge = IsometryCore.Edge
 
 // MARK: - GRDB Record Conformance
 
-extension IsometryCore.Edge: FetchableRecord, PersistableRecord {
+extension IsometryCore.Edge {
     public static let databaseTableName = "edges"
 
     enum Columns {

@@ -241,13 +241,24 @@ extension ViewConfig {
 }
 
 // MARK: - PAFV State Type (for bridge integration)
-struct PAFVState {
-    let mappings: [PAFVAxisMapping]
-    let viewMode: String
+public struct PAFVState {
+    public let mappings: [PAFVAxisMapping]
+    public let viewMode: String
+
+    public init(mappings: [PAFVAxisMapping], viewMode: String) {
+        self.mappings = mappings
+        self.viewMode = viewMode
+    }
 }
 
-struct PAFVAxisMapping {
-    let plane: String
-    let axis: String
-    let facet: String
+public struct PAFVAxisMapping {
+    public let plane: String
+    public let axis: String
+    public let facet: String
+
+    public init(plane: String, axis: String, facet: String) {
+        self.plane = plane
+        self.axis = axis
+        self.facet = facet
+    }
 }

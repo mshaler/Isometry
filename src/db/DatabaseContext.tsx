@@ -78,7 +78,8 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
 
   switch (environment.mode) {
     case DatabaseMode.WEBVIEW_BRIDGE:
-      console.log('Using WebView Database Bridge (auto-detected)');
+      console.log('✅ DatabaseContext: Using WebView Database Bridge (auto-detected)');
+      console.log('🔧 DatabaseContext: Environment mode =', environment.mode);
       return (
         <WebViewDatabaseProvider>
           {children}
@@ -86,7 +87,8 @@ function SmartDatabaseProvider({ children }: { children: React.ReactNode }) {
       );
 
     case DatabaseMode.HTTP_API:
-      console.log('Using Native Database API (auto-detected)');
+      console.log('❌ DatabaseContext: Using Native Database API (auto-detected) - THIS SHOULD NOT HAPPEN IN WEBVIEW!');
+      console.log('🔧 DatabaseContext: Environment mode =', environment.mode);
       return (
         <NativeDatabaseProvider>
           {children}

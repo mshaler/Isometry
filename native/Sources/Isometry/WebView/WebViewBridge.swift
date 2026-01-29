@@ -44,6 +44,16 @@ public class WebViewBridge: NSObject {
     public var bridgeInitializationScript: String {
         return """
             (function() {
+                console.log('Initializing Isometry WebView Bridge...');
+
+                // Verify webkit messageHandlers are available
+                if (!window.webkit || !window.webkit.messageHandlers) {
+                    console.error('WebKit messageHandlers not available - bridge setup failed');
+                    return;
+                }
+
+                console.log('WebKit messageHandlers available:', Object.keys(window.webkit.messageHandlers));
+
                 // Create bridge namespace
                 window._isometryBridge = {
                     pendingRequests: new Map(),
@@ -229,7 +239,143 @@ public class WebViewBridge: NSObject {
                 // Signal that bridge is ready
                 window.dispatchEvent(new CustomEvent('isometry-bridge-ready'));
 
-                console.log('Isometry WebView Bridge initialized');
+                console.log('✅ Isometry WebView Bridge initialized successfully');
+                console.log('✅ Available message handlers:', Object.keys(window.webkit.messageHandlers));
+                console.log('✅ Bridge environment:', window._isometryBridge.environment);
+
+                // Automated diagnostic system - writes results to file for Claude to monitor
+                setTimeout(() => {
+                    const diagnostic = {
+                        timestamp: new Date().toISOString(),
+                        tests: {},
+                        summary: { passed: 0, failed: 0, errors: [] }
+                    };
+
+                    console.log('🔬 STARTING AUTOMATED DIAGNOSTIC...');
+
+                    // Test 1: WebKit availability
+                    diagnostic.tests.webkit_exists = !!window.webkit;
+                    diagnostic.tests.messageHandlers_exists = !!(window.webkit?.messageHandlers);
+                    diagnostic.tests.available_handlers = Object.keys(window.webkit?.messageHandlers || {});
+
+                    // Test 2: Direct message handler test
+                    if (window.webkit?.messageHandlers?.database) {
+                        try {
+                            window.webkit.messageHandlers.database.postMessage({
+                                id: 'auto-diagnostic-' + Date.now(),
+                                method: 'ping',
+                                params: {}
+                            });
+                            diagnostic.tests.direct_message_sent = true;
+                            diagnostic.summary.passed++;
+                        } catch (error) {
+                            diagnostic.tests.direct_message_sent = false;
+                            diagnostic.tests.direct_message_error = error.toString();
+                            diagnostic.summary.failed++;
+                            diagnostic.summary.errors.push('Direct message failed: ' + error.toString());
+                        }
+                    } else {
+                        diagnostic.tests.direct_message_sent = false;
+                        diagnostic.tests.direct_message_error = 'Database handler not available';
+                        diagnostic.summary.failed++;
+                        diagnostic.summary.errors.push('Database handler not available');
+                    }
+
+                    // Test 3: Bridge wrapper test
+                    if (window._isometryBridge) {
+                        diagnostic.tests.bridge_wrapper_exists = true;
+                        try {
+                            window._isometryBridge.sendMessage('database', 'ping', {})
+                                .then(result => {
+                                    diagnostic.tests.bridge_wrapper_success = true;
+                                    diagnostic.tests.bridge_wrapper_result = result;
+                                    diagnostic.summary.passed++;
+                                    writeDiagnosticResults(diagnostic);
+                                })
+                                .catch(error => {
+                                    diagnostic.tests.bridge_wrapper_success = false;
+                                    diagnostic.tests.bridge_wrapper_error = error.toString();
+                                    diagnostic.summary.failed++;
+                                    diagnostic.summary.errors.push('Bridge wrapper failed: ' + error.toString());
+                                    writeDiagnosticResults(diagnostic);
+                                });
+                        } catch (error) {
+                            diagnostic.tests.bridge_wrapper_success = false;
+                            diagnostic.tests.bridge_wrapper_error = error.toString();
+                            diagnostic.summary.failed++;
+                            diagnostic.summary.errors.push('Bridge wrapper exception: ' + error.toString());
+                            writeDiagnosticResults(diagnostic);
+                        }
+                    } else {
+                        diagnostic.tests.bridge_wrapper_exists = false;
+                        diagnostic.summary.failed++;
+                        diagnostic.summary.errors.push('Bridge wrapper not available');
+                        writeDiagnosticResults(diagnostic);
+                    }
+
+                    function writeDiagnosticResults(results) {
+                        // Try to write diagnostic results using filesystem bridge
+                        const diagnosticData = JSON.stringify(results, null, 2);
+                        const filePath = '/tmp/isometry_bridge_diagnostic.json';
+
+                        if (window._isometryBridge?.filesystem) {
+                            window._isometryBridge.filesystem.writeFile(filePath, diagnosticData)
+                                .then(() => console.log('✅ Diagnostic written to:', filePath))
+                                .catch(error => console.log('❌ Failed to write diagnostic:', error));
+                        }
+
+                        // Also try to send diagnostic via database bridge
+                        if (window._isometryBridge?.database) {
+                            window._isometryBridge.database.execute(
+                                'CREATE TABLE IF NOT EXISTS diagnostic_log (id INTEGER PRIMARY KEY, timestamp TEXT, data TEXT)',
+                                []
+                            ).then(() => {
+                                return window._isometryBridge.database.execute(
+                                    'INSERT INTO diagnostic_log (timestamp, data) VALUES (?, ?)',
+                                    [results.timestamp, diagnosticData]
+                                );
+                            }).then(() => {
+                                console.log('✅ Diagnostic logged to database');
+                            }).catch(error => {
+                                console.log('❌ Failed to log diagnostic to database:', error);
+                            });
+                        }
+
+                        console.log('🔬 DIAGNOSTIC COMPLETE:', results);
+                    }
+
+                    // Initial write for sync tests
+                    setTimeout(() => writeDiagnosticResults(diagnostic), 100);
+                }, 3000);
+
+                // Add global test function for debugging
+                window.testBridge = function() {
+                    console.log('🧪 Testing bridge communication...');
+                    console.log('🧪 Message handlers available:', Object.keys(window.webkit.messageHandlers));
+
+                    // Test direct message handler call
+                    try {
+                        window.webkit.messageHandlers.database.postMessage({
+                            id: 'test-' + Date.now(),
+                            method: 'ping',
+                            params: {}
+                        });
+                        console.log('✅ Direct message sent to database handler');
+                    } catch (error) {
+                        console.error('❌ Direct message failed:', error);
+                    }
+
+                    // Test bridge wrapper
+                    try {
+                        window._isometryBridge.sendMessage('database', 'ping', {}).then(result => {
+                            console.log('✅ Bridge wrapper success:', result);
+                        }).catch(error => {
+                            console.error('❌ Bridge wrapper failed:', error);
+                        });
+                    } catch (error) {
+                        console.error('❌ Bridge wrapper exception:', error);
+                    }
+                };
             })();
         """
     }
@@ -384,6 +530,13 @@ extension WebViewBridge: WKNavigationDelegate {
 
         // Allow file:// URLs for local React app
         if url.isFileURL {
+            decisionHandler(.allow)
+            return
+        }
+
+        // Allow localhost for development server
+        if url.host == "localhost" || url.host == "127.0.0.1" {
+            logger.debug("Allowing localhost navigation to: \(url)")
             decisionHandler(.allow)
             return
         }

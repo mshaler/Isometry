@@ -336,9 +336,26 @@ export class WebViewBridge {
    * Check if WebView environment is available
    */
   public isWebViewEnvironment(): boolean {
-    return typeof window !== 'undefined' &&
-           typeof window.webkit !== 'undefined' &&
-           typeof window.webkit.messageHandlers !== 'undefined';
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    // More thorough WebView detection
+    const hasWebkit = typeof window.webkit !== 'undefined';
+    const hasMessageHandlers = typeof window.webkit?.messageHandlers !== 'undefined';
+    const hasUserAgent = navigator.userAgent.includes('IsometryNative');
+
+    console.log('🔍 WebView Environment Check:');
+    console.log('  - window.webkit exists:', hasWebkit);
+    console.log('  - messageHandlers exists:', hasMessageHandlers);
+    console.log('  - IsometryNative user agent:', hasUserAgent);
+    console.log('  - Available handlers:', Object.keys(window.webkit?.messageHandlers || {}));
+
+    // Return true if we have webkit AND messageHandlers
+    const isWebView = hasWebkit && hasMessageHandlers;
+    console.log('  - Final result: isWebView =', isWebView);
+
+    return isWebView;
   }
 
   /**
