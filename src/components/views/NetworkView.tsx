@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCanvasTheme } from '@/hooks/useComponentTheme';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
+import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
 import type { Node } from '@/types/node';
 import type {
   SimulationNodeDatum,
@@ -47,8 +48,71 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   const canvasTheme = useCanvasTheme();
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
+  // Graph analytics state
+  const [connectionSuggestions, setConnectionSuggestions] = useState<ConnectionSuggestion[]>([]);
+  const [graphMetrics, setGraphMetrics] = useState<GraphMetrics | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.3);
+
   // Fetch edges
   const { data: edges } = useSQLiteQuery<EdgeData>('SELECT * FROM edges');
+
+  // Analytics functions
+  const fetchConnectionSuggestions = useCallback(async (nodeId: string) => {
+    if (!nodeId) return;
+
+    setAnalyticsLoading(true);
+    try {
+      const suggestions = await graphAnalytics.suggestConnections(nodeId, {
+        maxSuggestions: 10,
+        minConfidence: confidenceThreshold,
+        excludeExistingConnections: true
+      });
+      setConnectionSuggestions(suggestions);
+      setShowSuggestions(true);
+    } catch (error) {
+      console.warn('Failed to fetch connection suggestions:', error);
+      setConnectionSuggestions([]);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [confidenceThreshold]);
+
+  const fetchGraphMetrics = useCallback(async () => {
+    try {
+      const metrics = await graphAnalytics.getGraphMetrics();
+      setGraphMetrics(metrics);
+    } catch (error) {
+      console.warn('Failed to fetch graph metrics:', error);
+    }
+  }, []);
+
+  const applySuggestion = useCallback(async (suggestion: ConnectionSuggestion) => {
+    if (!selectedNode) return;
+
+    // Here you would implement the logic to create the connection
+    // This would typically involve adding a new edge to the database
+    console.info('Applying suggestion:', suggestion);
+
+    // Refresh suggestions after applying
+    await fetchConnectionSuggestions(selectedNode);
+  }, [selectedNode, fetchConnectionSuggestions]);
+
+  // Effect to fetch suggestions when node is selected
+  useEffect(() => {
+    if (selectedNode) {
+      fetchConnectionSuggestions(selectedNode);
+    } else {
+      setConnectionSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [selectedNode, fetchConnectionSuggestions]);
+
+  // Effect to fetch graph metrics on mount
+  useEffect(() => {
+    fetchGraphMetrics();
+  }, [fetchGraphMetrics]);
 
   useEffect(() => {
     if (!svgRef.current || !containerRef.current || !data.length) return;
@@ -139,6 +203,62 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('text-anchor', 'middle')
       .text(d => d.label || '');
 
+    // Suggestion links (dashed lines for suggested connections)
+    const suggestionLinks = g.append('g')
+      .attr('class', 'suggestion-links');
+
+    const updateSuggestionLinks = () => {
+      const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null;
+
+      if (selectedNodeData && connectionSuggestions.length > 0) {
+        const suggestionLinkData = connectionSuggestions
+          .filter(s => s.confidence >= confidenceThreshold)
+          .map(suggestion => {
+            const targetNode = nodes.find(n => n.id === suggestion.nodeId);
+            return targetNode ? {
+              source: selectedNodeData,
+              target: targetNode,
+              suggestion
+            } : null;
+          })
+          .filter(Boolean) as Array<{
+            source: SimNode;
+            target: SimNode;
+            suggestion: ConnectionSuggestion;
+          }>;
+
+        suggestionLinks
+          .selectAll('line')
+          .data(suggestionLinkData)
+          .join('line')
+          .attr('stroke', theme === 'NeXTSTEP' ? '#ff6b35' : '#3b82f6')
+          .attr('stroke-width', 2)
+          .attr('stroke-dasharray', '5,5')
+          .attr('stroke-opacity', d => d.suggestion.confidence)
+          .attr('marker-end', 'url(#suggestion-arrow)')
+          .style('cursor', 'pointer')
+          .on('click', (event, d) => {
+            event.stopPropagation();
+            applySuggestion(d.suggestion);
+          });
+      } else {
+        suggestionLinks.selectAll('line').remove();
+      }
+    };
+
+    // Suggestion arrow marker
+    svg.select('defs').append('marker')
+      .attr('id', 'suggestion-arrow')
+      .attr('viewBox', '0 -5 10 10')
+      .attr('refX', 25)
+      .attr('refY', 0)
+      .attr('markerWidth', 6)
+      .attr('markerHeight', 6)
+      .attr('orient', 'auto')
+      .append('path')
+      .attr('fill', theme === 'NeXTSTEP' ? '#ff6b35' : '#3b82f6')
+      .attr('d', 'M0,-5L10,0L0,5');
+
     // Nodes
     const node = g.append('g')
       .attr('class', 'nodes')
@@ -205,18 +325,99 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
         .attr('x', d => ((d.source as SimNode).x! + (d.target as SimNode).x!) / 2)
         .attr('y', d => ((d.source as SimNode).y! + (d.target as SimNode).y!) / 2);
 
+      // Update suggestion link positions
+      suggestionLinks.selectAll('line')
+        .attr('x1', d => d.source.x!)
+        .attr('y1', d => d.source.y!)
+        .attr('x2', d => d.target.x!)
+        .attr('y2', d => d.target.y!);
+
       node.attr('transform', d => `translate(${d.x},${d.y})`);
     });
+
+    // Update suggestion links when suggestions change
+    updateSuggestionLinks();
 
     // Cleanup
     return () => {
       simulation.stop();
     };
-  }, [data, edges, theme, selectedNode, onNodeClick]);
+  }, [data, edges, theme, selectedNode, onNodeClick, connectionSuggestions, confidenceThreshold, applySuggestion]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
       <svg ref={svgRef} className="w-full h-full" />
+
+      {/* Graph Analytics Overlay */}
+      {graphMetrics && (
+        <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-800/90 p-3 rounded-lg shadow-lg text-xs">
+          <h4 className="font-semibold mb-2">Graph Metrics</h4>
+          <div className="space-y-1">
+            <div>Nodes: {graphMetrics.totalNodes}</div>
+            <div>Edges: {graphMetrics.totalEdges}</div>
+            <div>Density: {(graphMetrics.graphDensity * 100).toFixed(1)}%</div>
+            <div>Avg Tags: {graphMetrics.averageTagsPerNode.toFixed(1)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Connection Suggestions Panel */}
+      {selectedNode && showSuggestions && (
+        <div className="absolute top-4 right-4 bg-white/90 dark:bg-gray-800/90 p-3 rounded-lg shadow-lg text-xs max-w-xs">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-semibold">Connection Suggestions</h4>
+            <button
+              onClick={() => setShowSuggestions(false)}
+              className="text-gray-500 hover:text-gray-700 p-1"
+            >
+              ×
+            </button>
+          </div>
+
+          {analyticsLoading ? (
+            <div className="text-gray-500">Loading suggestions...</div>
+          ) : connectionSuggestions.length > 0 ? (
+            <>
+              {/* Confidence Threshold Slider */}
+              <div className="mb-3">
+                <label className="block text-xs font-medium mb-1">
+                  Min Confidence: {(confidenceThreshold * 100).toFixed(0)}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={confidenceThreshold}
+                  onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              {/* Suggestions List */}
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {connectionSuggestions
+                  .filter(s => s.confidence >= confidenceThreshold)
+                  .map((suggestion) => (
+                    <div
+                      key={suggestion.id}
+                      className="p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                      onClick={() => applySuggestion(suggestion)}
+                    >
+                      <div className="font-medium text-xs">{suggestion.reason}</div>
+                      <div className="text-xs text-gray-500">
+                        {suggestion.type} • {(suggestion.confidence * 100).toFixed(0)}% confidence
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </>
+          ) : (
+            <div className="text-gray-500">No suggestions available</div>
+          )}
+        </div>
+      )}
+
       {(!edges || edges.length === 0) && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className={`text-sm ${canvasTheme.emptyState}`}>
