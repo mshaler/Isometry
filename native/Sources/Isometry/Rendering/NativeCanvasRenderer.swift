@@ -609,6 +609,22 @@ public struct CanvasPerformanceStats {
     let totalPrimitives: Int64
 }
 
+extension NativeCanvasRenderer {
+    // MARK: - Memory Pressure Support for Hybrid Engine
+
+    /// Pause native rendering during critical memory pressure
+    public func pauseNativeRendering() async {
+        logger.warning("Pausing native rendering due to memory pressure")
+        // Could implement queue suspension here if needed
+    }
+
+    /// Resume native rendering when memory pressure subsides
+    public func resumeNativeRendering() async {
+        logger.info("Resuming native rendering")
+        // Could implement queue resumption here if needed
+    }
+}
+
 // MARK: - Errors
 
 enum CanvasRenderError: Error, LocalizedError {

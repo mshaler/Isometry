@@ -537,3 +537,50 @@ extension RenderingPerformanceMonitor.OptimizationRecommendation {
         ]
     }
 }
+
+// MARK: - Additional Methods for Hybrid Rendering Engine
+
+extension RenderingPerformanceMonitor {
+    /// Record native rendering metrics for performance learning
+    public func recordNativeRenderingMetrics(commandCount: Int, renderTime: TimeInterval, memoryUsage: Int, primitiveCount: Int) async {
+        let metrics = D3RenderingMetrics(
+            renderTime: renderTime,
+            commandCount: commandCount,
+            memoryUsage: Int64(memoryUsage),
+            cacheHitRate: calculateCacheHitRate(),
+            frameRate: calculateFrameRate(currentTime: CACurrentMediaTime(), renderTime: renderTime),
+            droppedFrames: 0,
+            complexity: RenderComplexity(
+                pathCommandCount: 0,
+                simpleShapeCount: commandCount,
+                textCommandCount: 0,
+                transformCount: 0,
+                complexityScore: Double(commandCount) / 10.0
+            )
+        )
+
+        performanceTracker.recordMetrics(metrics)
+    }
+
+    /// Record hybrid analysis performance metrics
+    public func recordHybridAnalysisMetrics(commandCount: Int, analysisDuration: TimeInterval, cacheHitRate: Double) async {
+        // Record analysis performance as a special metric type
+        let analysisMetrics = D3RenderingMetrics(
+            renderTime: analysisDuration,
+            commandCount: commandCount,
+            memoryUsage: getCurrentMemoryUsage(),
+            cacheHitRate: cacheHitRate,
+            frameRate: 1.0 / analysisDuration,
+            droppedFrames: 0,
+            complexity: RenderComplexity(
+                pathCommandCount: 0,
+                simpleShapeCount: 0,
+                textCommandCount: 0,
+                transformCount: 0,
+                complexityScore: 1.0 // Analysis has low complexity
+            )
+        )
+
+        performanceTracker.recordMetrics(analysisMetrics)
+    }
+}
