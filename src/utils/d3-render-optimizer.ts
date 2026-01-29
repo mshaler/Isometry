@@ -483,6 +483,3 @@ export class RenderOptimizer {
 
 // Export singleton instance
 export const renderOptimizer = new RenderOptimizer();
-
-// Export individual components for advanced usage
-export { ViewportCuller, LODManager, CommandBatcher, CommandPool };

@@ -20,6 +20,7 @@
 - 🚀 **v3.0 Production Deployment** - Phases 13.1-13.5 (App Store launch and production infrastructure)
 - 🎯 **v2.7 PAFV Integration** - Phase 14.1 (React-native spatial projection bridge)
 - 🎯 **v2.8 LATCH Filter Integration** - Phase 14.2 (React-native filter bridge)
+- 🎯 **v2.9 D3-Canvas Integration** - Phase 14.3 (Native rendering optimization for D3 visualizations)
 
 ## Milestone Overview
 
@@ -46,6 +47,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v2.7 Goal (PAFV Integration):** Bridge React PAFV spatial projection system to native SuperGridView with real-time coordinate synchronization, enabling seamless axis mapping changes with 60fps performance and CloudKit persistence.
 
 **v2.8 Goal (LATCH Filter Integration):** Bridge React LATCH filtering system to native database queries with real-time synchronization, enabling instant filter updates from React FilterContext to native SQLite with FTS5 search integration and URL state persistence.
+
+**v2.9 Goal (D3-Canvas Integration):** Enhance D3 visualizations with native Canvas/Core Graphics rendering optimizations, enabling hybrid rendering pipeline with 2x performance improvements for large datasets while maintaining React development workflow and visual consistency.
 
 ---
 
@@ -612,6 +615,31 @@ Plans:
 - [ ] 14.2-02-PLAN.md — Filter State Synchronization: Backend switching and race condition prevention
 - [ ] 14.2-03-PLAN.md — Filter Integration Completion: UI feedback, database optimization, and testing
 
+### 🎯 v2.9 D3-Canvas Integration (READY)
+
+**Milestone Goal:** Enhance D3 visualizations with native Canvas/Core Graphics rendering optimizations, enabling hybrid rendering pipeline with 2x performance improvements for large datasets while maintaining React development workflow and visual consistency.
+
+#### Phase 14.3: D3-Canvas Integration Enhancement (READY)
+**Goal:** Enhance existing D3 visualizations with native rendering optimizations and performance improvements
+**Dependencies:** Phase 14.1, 14.2 (utilizes PAFV and LATCH bridge infrastructure)
+**Requirements:** All D3 canvas integration requirements
+**Plans:** 3 plans
+
+**Success Criteria:**
+1. Enhanced D3 views (GridView, ListView) leverage native rendering for large datasets (1000+ nodes)
+2. Hybrid rendering system intelligently chooses optimal renderer per element type
+3. Performance improvements validated with target 2x faster rendering for large datasets
+4. Memory usage optimized with stable performance across rapid view switching
+5. Native gesture handling (pan/zoom) syncs seamlessly with React D3 state
+6. Performance monitoring provides actionable insights for optimization decisions
+7. User experience remains seamless regardless of rendering backend choice
+8. Zero breaking changes to existing D3 component APIs and development workflow
+
+Plans:
+- [ ] 14.3-01-PLAN.md — Native Canvas Renderer Integration: WebView bridge and Core Graphics engine
+- [ ] 14.3-02-PLAN.md — D3-Native Performance Pipeline: Optimization, gestures, and performance monitoring
+- [ ] 14.3-03-PLAN.md — Hybrid Rendering System & Validation: Intelligent routing and production validation
+
 ## Dependencies
 
 ### v2.1 Migration External Dependencies
@@ -650,6 +678,12 @@ Plans:
 - QueryTranslator for LATCH pattern optimization
 - FTS5 virtual tables for text search performance
 
+### v2.9 D3-Canvas Integration Dependencies
+- Existing D3Canvas.tsx and useD3Canvas infrastructure
+- Native WebView bridge with PAFVMessageHandler patterns
+- Core Graphics/Canvas rendering capabilities
+- Performance monitoring systems (React + Native)
+
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
@@ -662,6 +696,7 @@ v2.5: Phases 11.1-11.4 (ADVANCED IMPORT SYSTEMS)
 v2.6: Phases 12.1-12.4 (GRAPH ANALYTICS ENGINE)
 v2.7: Phase 14.1 (PAFV INTEGRATION)
 v2.8: Phase 14.2 (LATCH FILTER INTEGRATION)
+v2.9: Phase 14.3 (D3-CANVAS INTEGRATION)
 ```
 
 ## Progress
@@ -676,6 +711,7 @@ Advanced Import Systems: 11.1 → 11.2 → 11.3 → 11.4 (IN PROGRESS)
 Graph Analytics Engine: 12.1 → 12.2 → 12.3 → 12.4 (READY)
 PAFV Integration: 14.1 (independent - READY)
 LATCH Filter Integration: 14.2 (independent - READY)
+D3-Canvas Integration: 14.3 (independent - READY)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -709,18 +745,19 @@ LATCH Filter Integration: 14.2 (independent - READY)
 | 12.4. Analytics & Real-Time Integration | v2.6 | 0/2 | Planned | - |
 | 14.1. PAFV Integration Foundation | v2.7 | 0/1 | Ready | - |
 | 14.2. LATCH Filter Integration | v2.8 | 0/3 | Ready | - |
+| 14.3. D3-Canvas Integration Enhancement | v2.9 | 0/3 | Ready | - |
 
 ## Architecture Integration Summary
 
-### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 → v2.7 → v2.8 Evolution
+### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 → v2.7 → v2.8 → v2.9 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence   v2.7 PAFV Integration     v2.8 Filter Integration
-====================    =======================    ========================    =====================      =================          ================          ===================      =================          =================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine    React ↔ Native bridge     React ↔ Native filters
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions     PAFV spatial mapping       LATCH real-time filtering
-React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization        Coordinate synchronization Filter synchronization
-Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics      Real-time axis updates    Real-time filter updates
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence   v2.7 PAFV Integration     v2.8 Filter Integration   v2.9 D3-Canvas Integration
+====================    =======================    ========================    =====================      =================          ================          ===================      =================          =================          ==========================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine    React ↔ Native bridge     React ↔ Native filters   React ↔ Native rendering
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions     PAFV spatial mapping       LATCH real-time filtering  Hybrid D3 rendering
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization        Coordinate synchronization Filter synchronization     Native Canvas optimization
+Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics      Real-time axis updates    Real-time filter updates  Performance-optimized D3
 ```
 
 ### Migration Data Flow
@@ -753,23 +790,33 @@ React FilterContext ←→ WebView Bridge ←→ Native Database
 └── Error boundaries   └── Performance monitor  └── Cache management
 ```
 
-### Performance Targets (v2.8 vs v2.7 vs v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+### D3-Canvas Integration Data Flow
+```
+React D3 Components ←→ WebView Bridge ←→ Native Canvas Renderer
+├── D3 render commands ├── D3Canvas handlers    ├── Core Graphics engine
+├── Performance metrics├── Render optimization  ├── GPU acceleration
+├── Viewport state     ├── Gesture coordination ├── Memory management
+└── Fallback to DOM    └── Hybrid routing       └── LOD optimization
+```
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence | v2.7 PAFV Integration | v2.8 Filter Integration |
-|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|------------------------|-------------------------|
-| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) | 60fps+ (PAFV-aware) | 60fps+ (filter-aware) |
-| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) | -45% (coordinate cache) | -45% (filter cache) |
-| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds |
-| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% | +25% | +25% |
-| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
-| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence | 0 problems + PAFV bridge | 0 problems + filter bridge |
-| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics | Advanced analytics | Advanced analytics |
-| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy |
-| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) | <1 second (cached) | <100ms (filtered) |
-| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes |
-| **PAFV Integration** | None | None | None | None | None | None | None | Real-time coordination | Real-time coordination |
-| **Filter Performance** | Local filter | Native filter | Native filter | Native filter | Native filter | Native filter | Smart filtering | Smart filtering | Real-time native FTS5 |
-| **Bridge Latency** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | <5ms axis changes | <100ms filter changes |
+### Performance Targets (v2.9 vs v2.8 vs v2.7 vs v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence | v2.7 PAFV Integration | v2.8 Filter Integration | v2.9 D3-Canvas Integration |
+|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|------------------------|-------------------------|----------------------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) | 60fps+ (PAFV-aware) | 60fps+ (filter-aware) | 120fps+ (native optimized) |
+| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) | -45% (coordinate cache) | -45% (filter cache) | -50% (hybrid optimization) |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds |
+| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% | +25% | +25% | +30% (GPU efficiency) |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
+| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence | 0 problems + PAFV bridge | 0 problems + filter bridge | 0 problems + D3 bridge |
+| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics | Advanced analytics | Advanced analytics | Advanced analytics |
+| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy |
+| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) | <1 second (cached) | <100ms (filtered) | <100ms (filtered) |
+| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes |
+| **PAFV Integration** | None | None | None | None | None | None | None | Real-time coordination | Real-time coordination | Real-time coordination |
+| **Filter Performance** | Local filter | Native filter | Native filter | Native filter | Native filter | Native filter | Smart filtering | Smart filtering | Real-time native FTS5 | Real-time native FTS5 |
+| **Bridge Latency** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | <5ms axis changes | <100ms filter changes | <16ms render updates |
+| **Rendering Performance** | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM + coordinate sync | Canvas/DOM + filter sync | Hybrid Canvas/Native (2x boost) |
 
 ---
 
@@ -962,6 +1009,18 @@ React FilterContext ←→ WebView Bridge ←→ Native Database
 
 **v2.8 Coverage:** 5/5 requirements mapped ✓
 
+### v2.9 D3-Canvas Integration Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| D3CANVAS-01 | Phase 14.3 | 📋 Ready |
+| D3CANVAS-02 | Phase 14.3 | 📋 Ready |
+| D3CANVAS-03 | Phase 14.3 | 📋 Ready |
+| D3CANVAS-04 | Phase 14.3 | 📋 Ready |
+| D3CANVAS-05 | Phase 14.3 | 📋 Ready |
+
+**v2.9 Coverage:** 5/5 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -1024,10 +1083,17 @@ React FilterContext ←→ WebView Bridge ←→ Native Database
    - Performance-aware debounced filtering
    - Backend switching with state preservation
 
+### D3-Canvas Integration Strategy (Phase 14.3 - NEW)
+1. **Phase 14.3:** D3-Canvas Integration Enhancement (Native rendering optimization for D3 visualizations)
+   - Native Canvas/Core Graphics renderer integration via WebView bridge
+   - Performance optimization pipeline with viewport culling and LOD management
+   - Hybrid rendering system with intelligent per-element renderer selection
+   - Bidirectional gesture coordination and comprehensive performance validation
+
 ---
 
 **Current step:** Phase 13.2 Production Infrastructure & CloudKit Deployment completed (see `/.planning/milestones/v3.0-production-deployment/phases/13-02-SUMMARY.md`).
 
 **Next step:** `/gsd:plan-phase 13.3` to define beta testing & quality validation.
 
-**Available phases:** `/gsd:plan-phase 14.1` for PAFV Integration Foundation, `/gsd:plan-phase 14.2` for LATCH Filter Integration.
+**Available phases:** `/gsd:plan-phase 14.1` for PAFV Integration Foundation, `/gsd:plan-phase 14.2` for LATCH Filter Integration, `/gsd:plan-phase 14.3` for D3-Canvas Integration Enhancement.

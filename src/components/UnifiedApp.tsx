@@ -17,7 +17,6 @@ import { NavigatorFooter } from './NavigatorFooter';
 import { CommandBar } from './CommandBar';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { NotificationSystem } from './ui/NotificationSystem';
-import { CacheInvalidationProvider } from '../hooks/useCacheInvalidation';
 import { EnvironmentDebug } from './debug/EnvironmentDebug';
 
 /**
@@ -38,7 +37,6 @@ import { EnvironmentDebug } from './debug/EnvironmentDebug';
  */
 export function UnifiedApp() {
   return (
-    <CacheInvalidationProvider>
       <div className="h-screen flex flex-col bg-gray-50">
                     {/* Environment Debug Info */}
                     <EnvironmentDebug />
@@ -85,6 +83,5 @@ export function UnifiedApp() {
                       <CommandBar />
                     </ErrorBoundary>
       </div>
-    </CacheInvalidationProvider>
   );
 }

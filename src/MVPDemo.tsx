@@ -12,6 +12,7 @@ import { UnifiedApp } from './components/UnifiedApp';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
+import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -109,24 +110,26 @@ function MVPDemo() {
   if (showUnified) {
     return (
       <ErrorBoundary level="app" name="UnifiedApp">
-        <BrowserRouter>
-          <ThemeProvider>
-            <EnvironmentProvider>
-              <DatabaseProvider>
-                <AppStateProvider>
-                  <FilterProvider>
-                    <PAFVProvider>
-                      <NotebookProvider>
-                        <UnifiedApp />
-                        <NotificationSystem />
-                      </NotebookProvider>
-                    </PAFVProvider>
-                  </FilterProvider>
-                </AppStateProvider>
-              </DatabaseProvider>
-            </EnvironmentProvider>
-          </ThemeProvider>
-        </BrowserRouter>
+        <CacheInvalidationProvider>
+          <BrowserRouter>
+            <ThemeProvider>
+              <EnvironmentProvider>
+                <DatabaseProvider>
+                  <AppStateProvider>
+                    <FilterProvider>
+                      <PAFVProvider>
+                        <NotebookProvider>
+                          <UnifiedApp />
+                          <NotificationSystem />
+                        </NotebookProvider>
+                      </PAFVProvider>
+                    </FilterProvider>
+                  </AppStateProvider>
+                </DatabaseProvider>
+              </EnvironmentProvider>
+            </ThemeProvider>
+          </BrowserRouter>
+        </CacheInvalidationProvider>
       </ErrorBoundary>
     );
   }

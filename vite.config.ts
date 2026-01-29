@@ -73,6 +73,13 @@ export default defineConfig({
   server: {
     fs: {
       strict: true,
+      // Deny access to Swift build files to prevent performance issues
+      deny: [
+        '**/native/build/**',
+        '**/native/.build/**',
+        '**/SourcePackages/**',
+        '**/.swiftpm/**'
+      ],
     },
     hmr: {
       overlay: true,
