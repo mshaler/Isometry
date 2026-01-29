@@ -11,6 +11,7 @@ public class WebViewBridge: NSObject {
     public let fileSystemHandler: FileSystemMessageHandler
     public let pafvHandler: PAFVMessageHandler
     public let filterHandler: FilterBridgeHandler
+    public let d3canvasHandler: D3CanvasMessageHandler
 
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
@@ -24,6 +25,7 @@ public class WebViewBridge: NSObject {
         self.fileSystemHandler = FileSystemMessageHandler()
         self.pafvHandler = PAFVMessageHandler(viewModel: superGridViewModel)
         self.filterHandler = FilterBridgeHandler(database: database)
+        self.d3canvasHandler = D3CanvasMessageHandler()
         self.database = database
         self.superGridViewModel = superGridViewModel
 
@@ -223,6 +225,21 @@ public class WebViewBridge: NSObject {
                         }
                     },
 
+                    // D3 Canvas operations for native rendering
+                    d3canvas: {
+                        renderCommands: function(params) {
+                            return window._isometryBridge.sendMessage('d3canvas', 'renderCommands', params);
+                        },
+
+                        canvasUpdate: function(params) {
+                            return window._isometryBridge.sendMessage('d3canvas', 'canvasUpdate', params);
+                        },
+
+                        getCapabilities: function() {
+                            return window._isometryBridge.sendMessage('d3canvas', 'getCapabilities', {});
+                        }
+                    },
+
                     // Environment detection
                     environment: {
                         isNative: true,
@@ -411,6 +428,9 @@ public class WebViewBridge: NSObject {
 
         case "filters":
             filterHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+
+        case "d3canvas":
+            d3canvasHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
 
         default:
             logger.warning("Unknown message handler: \(handlerName)")

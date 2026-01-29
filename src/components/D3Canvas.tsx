@@ -9,6 +9,7 @@ import {
   measurePerformance,
   debounce
 } from '../utils/d3Performance';
+import { d3NativeBridge, createRectangleCommand, type RenderCommand, type CanvasCapabilities } from '../utils/d3-native-bridge';
 import * as d3 from 'd3';
 
 // ============================================================================
@@ -20,6 +21,7 @@ interface D3CanvasProps {
   onCellClick?: (cellData: { nodes: Node[]; rowKey: string; colKey: string }) => void;
   onError?: (error: string) => void;
   showPerformanceOverlay?: boolean;
+  useNativeRendering?: boolean;
 }
 
 interface CellData {
@@ -43,12 +45,18 @@ interface PerformanceOverlayProps {
   performance: PerformanceMetrics;
   frameRate: number;
   error: string | null;
+  nativeRenderingEnabled?: boolean;
+  nativeCapabilities?: CanvasCapabilities | null;
+  nativeRenderingError?: string | null;
 }
 
 const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
   performance,
   frameRate,
-  error
+  error,
+  nativeRenderingEnabled = false,
+  nativeCapabilities = null,
+  nativeRenderingError = null
 }: PerformanceOverlayProps) => {
   if (!performance || performance.totalPipeline === 0) return null;
 
@@ -89,6 +97,26 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
       </div>
 
       <div className="mb-3 pb-2 border-b border-gray-600">
+        <div className="text-blue-300 font-medium mb-1">Rendering</div>
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+          <span>Mode:</span>
+          <span className={nativeRenderingEnabled ? 'text-green-400' : 'text-yellow-400'}>
+            {nativeRenderingEnabled ? 'Native' : 'DOM'}
+          </span>
+
+          <span>Platform:</span>
+          <span className="text-cyan-300">{nativeCapabilities?.platform || 'Browser'}</span>
+
+          {nativeCapabilities && (
+            <>
+              <span>Max Cmds:</span>
+              <span className="text-purple-300">{nativeCapabilities.maxRenderCommands}</span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3 pb-2 border-b border-gray-600">
         <div className="text-blue-300 font-medium mb-1">Optimizations</div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1">
           <span>Spatial:</span>
@@ -113,10 +141,11 @@ const PerformanceOverlay: React.FC<PerformanceOverlayProps> = ({
         <span>{performance.renderPrep.toFixed(1)}ms</span>
       </div>
 
-      {error && (
+      {(error || nativeRenderingError) && (
         <div className="mt-3 pt-2 border-t border-red-400 text-red-300">
-          <div className="font-medium mb-1">Error:</div>
-          <div className="text-xs">{error}</div>
+          <div className="font-medium mb-1">Errors:</div>
+          {error && <div className="text-xs mb-1">Canvas: {error}</div>}
+          {nativeRenderingError && <div className="text-xs">Native: {nativeRenderingError}</div>}
         </div>
       )}
     </div>
@@ -299,7 +328,8 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   className = '',
   onCellClick,
   onError,
-  showPerformanceOverlay = process.env.NODE_ENV === 'development'
+  showPerformanceOverlay = process.env.NODE_ENV === 'development',
+  useNativeRendering = false
 }: D3CanvasProps) => {
   // Refs for the three layers
   const containerRef = useRef<HTMLDivElement>(null);
@@ -308,7 +338,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // D3 Canvas state
-  const { canvasState, performance, error, updateViewport } = useD3Canvas(containerRef);
+  const { canvasState, performance, error, updateViewport, nativeRenderingCapable } = useD3Canvas(containerRef);
 
   // Interaction state
   const [interactionState, setInteractionState] = useState<InteractionState>({
@@ -320,6 +350,11 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
 
   // Performance tracking
   const [frameRate, setFrameRate] = useState(0);
+
+  // Native rendering state
+  const [nativeCapabilities, setNativeCapabilities] = useState<CanvasCapabilities | null>(null);
+  const [isNativeRenderingEnabled, setIsNativeRenderingEnabled] = useState(false);
+  const [nativeRenderingError, setNativeRenderingError] = useState<string | null>(null);
 
   // Viewport state
   const [viewport, setViewport] = useState<Viewport>({
@@ -358,16 +393,101 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Use resize observer for responsive sizing
   useResizeObserver(containerRef, handleResize);
 
-  // Optimized canvas rendering with performance monitoring
+  // Native rendering capability detection
+  useEffect(() => {
+    if (useNativeRendering) {
+      d3NativeBridge.getCapabilities()
+        .then(capabilities => {
+          setNativeCapabilities(capabilities);
+          setIsNativeRenderingEnabled(capabilities.nativeRenderingAvailable);
+          setNativeRenderingError(null);
+        })
+        .catch(error => {
+          setNativeRenderingError(error.message);
+          setIsNativeRenderingEnabled(false);
+          console.warn('D3Canvas: Native rendering capability detection failed:', error);
+        });
+    }
+  }, [useNativeRendering]);
+
+  // Convert D3 cell commands to native render commands
+  const convertToNativeRenderCommands = useCallback((cellCommands: typeof canvasState.renderCommands.cells): RenderCommand[] => {
+    return cellCommands.map(cellCommand => {
+      const { bounds, style, nodes } = cellCommand;
+
+      return createRectangleCommand(
+        {
+          x: bounds.x,
+          y: bounds.y,
+          width: bounds.width,
+          height: bounds.height
+        },
+        {
+          fill: style.fill,
+          stroke: style.stroke,
+          strokeWidth: style.strokeWidth,
+          opacity: style.opacity
+        }
+      );
+    });
+  }, []);
+
+  // Optimized canvas rendering with native/DOM fallback
   const debouncedRender = useCallback(
     debounce(async () => {
       if (!canvasRef.current || !canvasState.renderCommands.cells.length) return;
 
       const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
 
       await measurePerformance('canvas-render', async () => {
+        // Try native rendering first if enabled
+        if (isNativeRenderingEnabled && nativeCapabilities?.nativeRenderingAvailable) {
+          try {
+            // Convert to native render commands
+            const nativeCommands = convertToNativeRenderCommands(canvasState.renderCommands.cells);
+
+            // Send viewport update
+            await d3NativeBridge.sendCanvasUpdate({
+              x: viewport.x,
+              y: viewport.y,
+              width: viewport.width,
+              height: viewport.height,
+              scale: viewport.scale
+            });
+
+            // Send render commands
+            const renderResult = await d3NativeBridge.sendRenderCommands(nativeCommands);
+
+            if (renderResult) {
+              console.log('Native render result:', renderResult);
+            }
+
+            // Update spatial index for hit testing (still needed for interactions)
+            spatialIndex.clear();
+            canvasState.renderCommands.cells.forEach(cellCommand => {
+              const { bounds, nodes, rowKey, colKey } = cellCommand;
+              spatialIndex.insert({
+                id: `${colKey}||${rowKey}`,
+                bounds,
+                data: { nodes, rowKey, colKey }
+              });
+            });
+
+            // Update frame rate
+            const fps = performanceMonitor.recordFrameTime();
+            setFrameRate(fps);
+            return;
+
+          } catch (error) {
+            console.warn('Native rendering failed, falling back to DOM:', error);
+            setNativeRenderingError(error instanceof Error ? error.message : 'Native rendering failed');
+          }
+        }
+
+        // DOM fallback rendering
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
         const renderer = new CanvasRenderer(ctx);
 
         // Clear canvas
@@ -402,7 +522,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         setFrameRate(fps);
       });
     }, 16), // 60fps debouncing
-    [canvasState.renderCommands, spatialIndex]
+    [canvasState.renderCommands, spatialIndex, isNativeRenderingEnabled, nativeCapabilities, viewport, convertToNativeRenderCommands]
   );
 
   // Render canvas content when state changes
@@ -545,6 +665,9 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
             performance={performance}
             frameRate={frameRate}
             error={error}
+            nativeRenderingEnabled={isNativeRenderingEnabled}
+            nativeCapabilities={nativeCapabilities}
+            nativeRenderingError={nativeRenderingError}
           />
         )}
 

@@ -307,10 +307,29 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
   performance: PerformanceMetrics;
   error: string | null;
   updateViewport: (viewport: Partial<Viewport>) => void;
+  nativeRenderingCapable: boolean;
 } {
   const { data: nodes, loading, error: dataError } = useMockData();
   const { wells } = usePAFV();
   const monitorRef = useRef(new PerformanceMonitor());
+
+  // Native rendering capability state
+  const [nativeRenderingCapable, setNativeRenderingCapable] = useState(false);
+
+  // Check for native rendering capability
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any)._isometryBridge?.d3canvas) {
+      setNativeRenderingCapable(true);
+    }
+
+    // Listen for bridge ready event
+    const handleBridgeReady = () => {
+      setNativeRenderingCapable(!!(window as any)._isometryBridge?.d3canvas);
+    };
+
+    window.addEventListener('isometry-bridge-ready', handleBridgeReady);
+    return () => window.removeEventListener('isometry-bridge-ready', handleBridgeReady);
+  }, []);
 
   // Canvas state
   const [canvasState, setCanvasState] = useState<D3CanvasState>(() => ({
@@ -542,6 +561,7 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
     canvasState,
     performance: canvasState.performance,
     error: canvasState.error || dataError?.message || null,
-    updateViewport
+    updateViewport,
+    nativeRenderingCapable
   };
 }
