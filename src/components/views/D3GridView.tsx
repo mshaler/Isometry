@@ -3,6 +3,8 @@ import { D3Canvas } from '../D3Canvas';
 import { usePAFV } from '../../contexts/PAFVContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import type { Node } from '../../types/node';
+import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3Performance';
+import { renderOptimizer } from '../../utils/d3-render-optimizer';
 import * as d3 from 'd3';
 
 interface D3GridViewProps {
@@ -23,6 +25,16 @@ interface GridInteractionState {
   selectedCells: Set<string>;
   zoomTransform: d3.ZoomTransform | null;
   isDragging: boolean;
+  gestureSource: 'native' | 'react' | null;
+  performanceMode: 'auto' | 'dom' | 'native';
+}
+
+interface GestureState {
+  scale: number;
+  translation: { x: number; y: number };
+  velocity: { x: number; y: number };
+  isActive: boolean;
+  timestamp: number;
 }
 
 /**
@@ -53,10 +65,18 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
     hoveredCell: null,
     selectedCells: new Set(),
     zoomTransform: null,
-    isDragging: false
+    isDragging: false,
+    gestureSource: null,
+    performanceMode: 'auto'
   });
 
+  // Bridge state for gesture coordination
+  const [nativeGestureState, setNativeGestureState] = useState<GestureState | null>(null);
+  const [performanceMetrics, setPerformanceMetrics] = useState<{ native?: NativeRenderingMetrics; comparison?: any }>({});
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastViewportRef = useRef<any>(null);
+  const gestureDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
   // Handle cell interactions
   const handleCellClick = useCallback((cellData: { nodes: Node[]; rowKey: string; colKey: string }) => {
@@ -93,6 +113,81 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
     console.error('D3GridView error:', error);
   }, []);
 
+  // Bridge integration for gesture coordination
+  const handleNativeGestureUpdate = useCallback((gestureState: GestureState) => {
+    setNativeGestureState(gestureState);
+
+    // Update D3 zoom transform to match native gesture
+    if (containerRef.current && gestureState.isActive) {
+      setInteractionState(prev => ({
+        ...prev,
+        gestureSource: 'native',
+        zoomTransform: d3.zoomIdentity
+          .translate(gestureState.translation.x, gestureState.translation.y)
+          .scale(gestureState.scale)
+      }));
+    }
+  }, []);
+
+  // Bridge integration for native performance metrics
+  const handleNativePerformanceUpdate = useCallback((metrics: NativeRenderingMetrics) => {
+    performanceMonitor.updateNativeMetrics(metrics);
+
+    // Get performance comparison
+    const datasetSize = _data.length;
+    const complexity = calculateDatasetComplexity(_data);
+    const comparison = performanceMonitor.getPerformanceComparison(datasetSize, complexity);
+
+    setPerformanceMetrics({ native: metrics, comparison });
+
+    // Auto-adjust performance mode based on comparison
+    if (interactionState.performanceMode === 'auto' && comparison) {
+      setInteractionState(prev => ({
+        ...prev,
+        performanceMode: comparison.recommendation === 'dom' ? 'dom' : 'native'
+      }));
+
+      // Apply render optimizer settings
+      if (comparison.recommendation === 'native') {
+        renderOptimizer.updateSettings({
+          enableViewportCulling: true,
+          enableLOD: true,
+          maxCommandsPerFrame: Math.min(500, datasetSize * 0.5)
+        });
+      }
+    }
+  }, [_data, interactionState.performanceMode]);
+
+  // Calculate dataset complexity for optimization decisions
+  const calculateDatasetComplexity = useCallback((data: Node[]) => {
+    // Simple complexity calculation based on data characteristics
+    const baseComplexity = Math.min(data.length / 100, 5); // 0-5 based on size
+    const contentComplexity = data.filter(node => node.content).length / data.length * 2; // 0-2 based on content
+    const priorityComplexity = data.reduce((sum, node) => sum + node.priority, 0) / data.length / 10 * 3; // 0-3 based on priority
+
+    return Math.min(baseComplexity + contentComplexity + priorityComplexity, 10);
+  }, []);
+
+  // Debounced gesture bridge update
+  const sendGestureToBridge = useCallback((transform: d3.ZoomTransform) => {
+    if (gestureDebounceRef.current) {
+      clearTimeout(gestureDebounceRef.current);
+    }
+
+    gestureDebounceRef.current = setTimeout(() => {
+      if (interactionState.gestureSource !== 'native') {
+        // Send to native bridge (would be implemented via WebView bridge)
+        // window._isometryBridge?.sendCanvasUpdate({
+        //   viewport: {
+        //     x: -transform.x / transform.k,
+        //     y: -transform.y / transform.k,
+        //     scale: transform.k
+        //   }
+        // });
+      }
+    }, 16); // ~60fps debouncing
+  }, [interactionState.gestureSource]);
+
   // Close overlay when clicking outside
   const handleOverlayClick = useCallback((e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -100,26 +195,63 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
     }
   }, []);
 
-  // Pan/zoom setup
+  // Enhanced pan/zoom setup with gesture coordination
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = d3.select(containerRef.current);
     const zoom = d3.zoom<HTMLDivElement, unknown>()
-      .scaleExtent([0.5, 5])
+      .scaleExtent([0.1, 5])
       .on('zoom', (event) => {
+        const transform = event.transform;
+
+        // Update state based on gesture source
         setInteractionState(prev => ({
           ...prev,
-          zoomTransform: event.transform
+          zoomTransform: transform,
+          gestureSource: prev.gestureSource === 'native' ? 'native' : 'react',
+          isDragging: event.sourceEvent?.type === 'mousemove' || event.sourceEvent?.type === 'touchmove'
         }));
+
+        // Apply viewport optimization if throttling is needed
+        const viewport = {
+          x: -transform.x / transform.k,
+          y: -transform.y / transform.k,
+          width: containerRef.current!.clientWidth / transform.k,
+          height: containerRef.current!.clientHeight / transform.k,
+          scale: transform.k
+        };
+
+        if (renderOptimizer.shouldThrottleRendering(viewport, lastViewportRef.current)) {
+          // Skip expensive operations during rapid gestures
+          return;
+        }
+
+        lastViewportRef.current = viewport;
+
+        // Send gesture update to bridge for native coordination
+        sendGestureToBridge(transform);
       });
 
     container.call(zoom);
 
+    // Set up bridge listener for native gesture updates (conceptual)
+    const bridgeListener = (event: CustomEvent) => {
+      if (event.detail?.gestureState) {
+        handleNativeGestureUpdate(event.detail.gestureState);
+      }
+      if (event.detail?.performanceMetrics) {
+        handleNativePerformanceUpdate(event.detail.performanceMetrics);
+      }
+    };
+
+    window.addEventListener('nativeGestureUpdate', bridgeListener as EventListener);
+
     return () => {
       container.on('.zoom', null);
+      window.removeEventListener('nativeGestureUpdate', bridgeListener as EventListener);
     };
-  }, []);
+  }, [sendGestureToBridge, handleNativeGestureUpdate, handleNativePerformanceUpdate]);
 
   // Calculate axis summary for display
   const axisSummary = `${wells.rows.map(chip => chip.label).join(' × ')} vs ${wells.columns.map(chip => chip.label).join(' × ')}`;
@@ -279,11 +411,27 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
 
       {/* Development Info */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-2 right-2 z-10 bg-black bg-opacity-75 text-white text-xs p-2 rounded">
+        <div className="absolute top-2 right-2 z-10 bg-black bg-opacity-75 text-white text-xs p-2 rounded max-w-xs">
           <div>Selected: {interactionState.selectedCells.size}</div>
           <div>Hovered: {interactionState.hoveredCell || 'none'}</div>
           {interactionState.zoomTransform && (
             <div>Zoom: {interactionState.zoomTransform.k.toFixed(2)}x</div>
+          )}
+          <div>Gesture: {interactionState.gestureSource || 'none'}</div>
+          <div>Mode: {interactionState.performanceMode}</div>
+          {performanceMetrics.native && (
+            <div className="mt-1 pt-1 border-t border-gray-600">
+              <div>Native FPS: {performanceMetrics.native.frameRate.toFixed(1)}</div>
+              <div>Render: {(performanceMetrics.native.renderTime * 1000).toFixed(1)}ms</div>
+              <div>Commands: {performanceMetrics.native.commandCount}</div>
+              <div>Cache: {(performanceMetrics.native.cacheHitRate * 100).toFixed(1)}%</div>
+            </div>
+          )}
+          {performanceMetrics.comparison && (
+            <div className="mt-1 pt-1 border-t border-gray-600">
+              <div>Recommendation: {performanceMetrics.comparison.recommendation}</div>
+              <div>Improvement: {performanceMetrics.comparison.expectedImprovement.toFixed(1)}%</div>
+            </div>
           )}
         </div>
       )}
