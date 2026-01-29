@@ -415,7 +415,95 @@ class TransitionManager {
 export const transitionManager = new TransitionManager();
 
 // ============================================================================
-// Performance Monitoring
+// Native Rendering Integration
+// ============================================================================
+
+export interface NativeRenderingMetrics {
+  timestamp: number;
+  renderTime: number;
+  commandCount: number;
+  memoryUsage: number; // bytes
+  cacheHitRate: number; // 0.0 to 1.0
+  frameRate: number;
+  droppedFrames: number;
+  complexity: {
+    pathCommandCount: number;
+    simpleShapeCount: number;
+    textCommandCount: number;
+    transformCount: number;
+    complexityScore: number; // 0.0 to 10.0
+  };
+}
+
+export interface PerformanceComparison {
+  domRendering: {
+    avgRenderTime: number;
+    avgFrameRate: number;
+    memoryUsage: number;
+  };
+  nativeRendering: NativeRenderingMetrics | null;
+  recommendation: 'dom' | 'native' | 'hybrid';
+  reasoning: string;
+  expectedImprovement: number; // percentage
+}
+
+export function performanceComparison(
+  domMetrics: { renderTime: number; frameRate: number; memoryUsage: number },
+  nativeMetrics: NativeRenderingMetrics | null,
+  datasetSize: number,
+  complexity: number
+): PerformanceComparison {
+  // Base comparison data
+  const comparison: PerformanceComparison = {
+    domRendering: {
+      avgRenderTime: domMetrics.renderTime,
+      avgFrameRate: domMetrics.frameRate,
+      memoryUsage: domMetrics.memoryUsage
+    },
+    nativeRendering: nativeMetrics,
+    recommendation: 'dom',
+    reasoning: 'Default DOM rendering',
+    expectedImprovement: 0
+  };
+
+  // If no native metrics available, stick with DOM
+  if (!nativeMetrics) {
+    comparison.reasoning = 'Native rendering not available';
+    return comparison;
+  }
+
+  // Performance analysis factors
+  const domSlow = domMetrics.renderTime > 0.0167; // > 16ms (60fps)
+  const nativeFaster = nativeMetrics.renderTime < domMetrics.renderTime;
+  const largeDataset = datasetSize > 1000;
+  const highComplexity = complexity > 5.0;
+
+  // Decision logic
+  if (largeDataset && highComplexity && nativeFaster) {
+    comparison.recommendation = 'native';
+    comparison.reasoning = 'Large dataset with high complexity benefits from native rendering';
+    comparison.expectedImprovement = Math.min(
+      ((domMetrics.renderTime - nativeMetrics.renderTime) / domMetrics.renderTime) * 100,
+      200 // Cap at 200% improvement
+    );
+  } else if (domSlow && nativeFaster) {
+    comparison.recommendation = 'native';
+    comparison.reasoning = 'DOM rendering performance below target, native faster';
+    comparison.expectedImprovement = ((domMetrics.renderTime - nativeMetrics.renderTime) / domMetrics.renderTime) * 100;
+  } else if (largeDataset && !nativeFaster) {
+    comparison.recommendation = 'hybrid';
+    comparison.reasoning = 'Large dataset with mixed performance - use viewport culling with DOM';
+    comparison.expectedImprovement = 25;
+  } else {
+    comparison.recommendation = 'dom';
+    comparison.reasoning = 'DOM rendering sufficient for current dataset and complexity';
+  }
+
+  return comparison;
+}
+
+// ============================================================================
+// Performance Monitoring (Enhanced)
 // ============================================================================
 
 interface PerformanceMetric {
@@ -426,11 +514,22 @@ interface PerformanceMetric {
   lastUpdated: number;
 }
 
+interface ExtendedPerformanceMetrics {
+  basic: PerformanceMetric;
+  nativeRendering?: NativeRenderingMetrics;
+  comparison?: PerformanceComparison;
+}
+
 class PerformanceMonitor {
   private metrics = new Map<string, PerformanceMetric>();
   private frameTimeHistory: number[] = [];
   private lastFrameTime = 0;
   private maxHistorySize = 60; // Keep 60 samples for FPS calculation
+
+  // Native rendering metrics integration
+  private nativeMetrics: NativeRenderingMetrics | null = null;
+  private lastNativeUpdate = 0;
+  private nativeUpdateInterval = 1000; // Update every second
 
   startMetric(name: string): void {
     this.metrics.set(name, {
@@ -439,6 +538,42 @@ class PerformanceMonitor {
       samples: [],
       lastUpdated: Date.now()
     });
+  }
+
+  // Bridge integration for native metrics
+  updateNativeMetrics(metrics: NativeRenderingMetrics): void {
+    this.nativeMetrics = metrics;
+    this.lastNativeUpdate = Date.now();
+  }
+
+  getNativeMetrics(): NativeRenderingMetrics | null {
+    // Return null if metrics are stale (older than 5 seconds)
+    if (!this.nativeMetrics || Date.now() - this.lastNativeUpdate > 5000) {
+      return null;
+    }
+    return this.nativeMetrics;
+  }
+
+  // Enhanced performance comparison
+  getPerformanceComparison(datasetSize: number, complexity: number): PerformanceComparison | null {
+    const domMetrics = {
+      renderTime: this.getAverageFrameTime() / 1000, // Convert to seconds
+      frameRate: this.getFPS(),
+      memoryUsage: this.getMemoryUsage().used * 1024 * 1024 // Convert to bytes
+    };
+
+    const nativeMetrics = this.getNativeMetrics();
+
+    if (!nativeMetrics) {
+      return null;
+    }
+
+    return performanceComparison(domMetrics, nativeMetrics, datasetSize, complexity);
+  }
+
+  private getAverageFrameTime(): number {
+    if (this.frameTimeHistory.length === 0) return 16; // Default 16ms
+    return this.frameTimeHistory.reduce((sum, time) => sum + time, 0) / this.frameTimeHistory.length;
   }
 
   endMetric(name: string): number {
@@ -496,7 +631,9 @@ class PerformanceMonitor {
   getAllStats(): Record<string, unknown> {
     const stats: Record<string, unknown> = {
       fps: this.getFPS(),
-      frameHistory: this.frameTimeHistory.length
+      frameHistory: this.frameTimeHistory.length,
+      nativeMetrics: this.getNativeMetrics(),
+      hasNativeRendering: this.getNativeMetrics() !== null
     };
 
     for (const [name] of Array.from(this.metrics)) {
@@ -664,5 +801,7 @@ export default {
   debounce,
   throttle,
   measurePerformance,
-  validatePerformanceTargets
+  validatePerformanceTargets,
+  // Native rendering integration
+  performanceComparison
 };
