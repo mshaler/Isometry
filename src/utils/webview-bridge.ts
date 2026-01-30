@@ -41,7 +41,7 @@ export interface WebViewEnvironment {
 
 export interface WebViewMessage {
   id: string;
-  handler: 'database' | 'filesystem' | 'd3rendering';
+  handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData';
   method: string;
   params: Record<string, unknown>;
   timestamp: number;
@@ -183,7 +183,7 @@ export class WebViewBridge {
    * Post message to native handler with circuit breaker and queue management
    */
   public async postMessage<T = unknown>(
-    handler: 'database' | 'filesystem',
+    handler: 'database' | 'filesystem' | 'liveData',
     method: string,
     params: Record<string, unknown> = {},
     retries: number = 0
@@ -374,7 +374,7 @@ export class WebViewBridge {
   /**
    * Check if specific handler is available
    */
-  public isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering'): boolean {
+  public isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData'): boolean {
     if (!this.isWebViewEnvironment()) {
       return false;
     }
@@ -453,6 +453,31 @@ export class WebViewBridge {
 
     reset: async (): Promise<void> => {
       return this.postMessage('database', 'reset', {});
+    }
+  };
+
+  /**
+   * Live data operations through WebView bridge for real-time notifications
+   */
+  public liveData = {
+    startObservation: async (observationId: string, sql: string, params: unknown[] = []): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('liveData', 'startObservation', {
+        observationId,
+        sql,
+        params
+      });
+      return result.success;
+    },
+
+    stopObservation: async (observationId: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('liveData', 'stopObservation', {
+        observationId
+      });
+      return result.success;
+    },
+
+    getObservationStatistics: async (): Promise<Record<string, unknown>> => {
+      return this.postMessage('liveData', 'getStatistics', {});
     }
   };
 
@@ -782,7 +807,7 @@ export class WebViewBridge {
    */
   private handleSendFailure<T = unknown>(
     error: unknown,
-    handler: 'database' | 'filesystem',
+    handler: 'database' | 'filesystem' | 'liveData',
     method: string,
     params: Record<string, unknown>,
     retries: number,
@@ -948,7 +973,7 @@ export class OptimizedBridge {
    * Enhanced message posting with optimization layer
    */
   public async postMessage<T = unknown>(
-    handler: 'database' | 'filesystem' | 'd3rendering',
+    handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
     method: string,
     params: Record<string, unknown> = {}
   ): Promise<T> {
@@ -1161,7 +1186,7 @@ export class OptimizedBridge {
    * Execute operation with optimization layer
    */
   private async executeOptimized<T>(
-    handler: 'database' | 'filesystem' | 'd3rendering',
+    handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
     method: string,
     params: Record<string, unknown>
   ): Promise<T> {
@@ -1186,7 +1211,7 @@ export class OptimizedBridge {
    * Execute query with pagination
    */
   private async executeWithPagination<T>(
-    handler: 'database' | 'filesystem' | 'd3rendering',
+    handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
     method: string,
     params: Record<string, unknown>
   ): Promise<T> {
@@ -1265,8 +1290,27 @@ export const webViewBridge = new WebViewBridge();
 
 /**
  * Optimized bridge instance (enhanced with optimization layer)
+ * Note: Currently using feature flag to gradually enable optimizations
  */
-export const optimizedBridge = new OptimizedBridge(webViewBridge);
+let optimizedBridge: OptimizedBridge;
+
+try {
+  optimizedBridge = new OptimizedBridge(webViewBridge);
+  // Temporarily disable optimizations for compatibility testing
+  optimizedBridge.configureOptimizations({
+    messageBatching: false,
+    binaryCompression: false,
+    queryPagination: false,
+    circuitBreaker: false,
+    performanceMonitoring: true // Keep monitoring enabled
+  });
+} catch (error) {
+  console.warn('[OptimizedBridge] Failed to initialize optimization layer, falling back to standard bridge:', error);
+  // Fallback: export webViewBridge as optimizedBridge
+  optimizedBridge = webViewBridge as any;
+}
+
+export { optimizedBridge };
 
 /**
  * Environment detection utilities
@@ -1320,7 +1364,7 @@ export function isWebViewEnvironment(): boolean {
 /**
  * Check if specific handler is available
  */
-export function isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering'): boolean {
+export function isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData'): boolean {
   return webViewBridge.isHandlerAvailable(handler);
 }
 
@@ -1332,7 +1376,7 @@ export function isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rende
  * @returns Promise that resolves with the response
  */
 export async function postMessage<T = unknown>(
-  handler: 'database' | 'filesystem' | 'd3rendering',
+  handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
   method: string,
   params: Record<string, unknown> = {}
 ): Promise<T> {
@@ -1347,6 +1391,7 @@ export async function testBridge(): Promise<{
   database: boolean;
   filesystem: boolean;
   d3rendering: boolean;
+  liveData: boolean;
   healthInfo: ReturnType<WebViewBridge['getHealthStatus']>;
 }> {
   const bridge = webViewBridge;
@@ -1355,6 +1400,7 @@ export async function testBridge(): Promise<{
   let databaseConnected = false;
   let filesystemConnected = false;
   let d3renderingConnected = false;
+  let liveDataConnected = false;
 
   if (isWebView) {
     try {
@@ -1377,6 +1423,13 @@ export async function testBridge(): Promise<{
     } catch {
       d3renderingConnected = false;
     }
+
+    try {
+      await bridge.postMessage('liveData', 'getStatistics', {});
+      liveDataConnected = true;
+    } catch {
+      liveDataConnected = false;
+    }
   }
 
   return {
@@ -1384,6 +1437,7 @@ export async function testBridge(): Promise<{
     database: databaseConnected,
     filesystem: filesystemConnected,
     d3rendering: d3renderingConnected,
+    liveData: liveDataConnected,
     healthInfo: bridge.getHealthStatus(),
   };
 }
@@ -1397,6 +1451,7 @@ export function detectEnvironment(): {
     database: boolean;
     filesystem: boolean;
     d3rendering: boolean;
+    liveData: boolean;
     webkit: boolean;
   };
   recommendedTransport: 'webview' | 'http' | 'sqljs';
@@ -1405,6 +1460,7 @@ export function detectEnvironment(): {
   const hasDatabase = isHandlerAvailable('database');
   const hasFilesystem = isHandlerAvailable('filesystem');
   const hasD3Rendering = isHandlerAvailable('d3rendering');
+  const hasLiveData = isHandlerAvailable('liveData');
 
   let type: 'webview' | 'browser' | 'unknown' = 'unknown';
   let recommendedTransport: 'webview' | 'http' | 'sqljs' = 'sqljs';
@@ -1424,6 +1480,7 @@ export function detectEnvironment(): {
       database: hasDatabase,
       filesystem: hasFilesystem,
       d3rendering: hasD3Rendering,
+      liveData: hasLiveData,
       webkit: isWebView,
     },
     recommendedTransport,
