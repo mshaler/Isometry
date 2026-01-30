@@ -17,7 +17,7 @@ import { D3ListView } from '../components/views/D3ListView';
 import { EnhancedNetworkView } from '../components/views/EnhancedNetworkView';
 import { EnhancedGridView } from '../components/views/EnhancedGridView';
 import { EnhancedListView } from '../components/views/EnhancedListView';
-import { DataFlowMonitor } from '../components/DataFlowMonitor';
+import DataFlowMonitor from '../components/DataFlowMonitor';
 import { PerformanceBaseline } from '../components/performance/PerformanceBaseline';
 import { PAFVProvider } from '../contexts/PAFVContext';
 import { PAFVDropZone } from '../components/pafv/PAFVDropZone';
