@@ -17,6 +17,9 @@ export interface WebKitMessageHandlers {
   filesystem: {
     postMessage(message: WebViewMessage): void;
   };
+  d3rendering: {
+    postMessage(message: WebViewMessage): void;
+  };
 }
 
 export interface WebViewEnvironment {
@@ -28,7 +31,7 @@ export interface WebViewEnvironment {
 
 export interface WebViewMessage {
   id: string;
-  handler: 'database' | 'filesystem';
+  handler: 'database' | 'filesystem' | 'd3rendering';
   method: string;
   params: Record<string, unknown>;
   timestamp: number;
@@ -361,7 +364,7 @@ export class WebViewBridge {
   /**
    * Check if specific handler is available
    */
-  public isHandlerAvailable(handler: 'database' | 'filesystem'): boolean {
+  public isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering'): boolean {
     if (!this.isWebViewEnvironment()) {
       return false;
     }
@@ -474,6 +477,97 @@ export class WebViewBridge {
     fileExists: async (path: string): Promise<boolean> => {
       const result = await this.postMessage<{ exists: boolean }>('filesystem', 'fileExists', { path });
       return result.exists;
+    }
+  };
+
+  /**
+   * D3 Rendering optimization operations through WebView bridge
+   */
+  public d3rendering = {
+    optimizeViewport: async (params: {
+      viewport: { x: number; y: number; width: number; height: number; scale: number };
+      nodeCount: number;
+      targetFPS: number;
+    }): Promise<{
+      success: boolean;
+      optimizationSettings: {
+        cullingEnabled: boolean;
+        lodLevel: number;
+        batchSize: number;
+        memoryStrategy: string;
+        targetFPS: number;
+        gpuAcceleration: boolean;
+      };
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'optimizeViewport', params);
+    },
+
+    updateLOD: async (params: {
+      zoomLevel: number;
+      nodeCount: number;
+    }): Promise<{
+      success: boolean;
+      lodConfiguration: {
+        level: number;
+        simplificationRatio: number;
+        renderDistance: number;
+        elementThreshold: number;
+      };
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'updateLOD', params);
+    },
+
+    manageMemory: async (params: {
+      memoryUsage: number;
+      leakDetected: boolean;
+    }): Promise<{
+      success: boolean;
+      memoryStrategy: string;
+      recommendations: string[];
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'manageMemory', params);
+    },
+
+    getBenchmarkResults: async (params: {}): Promise<{
+      success: boolean;
+      performanceReport: {
+        frameRate: number;
+        renderTime: number;
+        memoryUsage: number;
+        culledElements: number;
+        renderedElements: number;
+        optimizationsActive: string[];
+        recommendations: string[];
+        timestamp: number;
+        performance60FPS: boolean;
+      };
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'getBenchmarkResults', params);
+    },
+
+    recordFramePerformance: async (params: {
+      renderTime: number;
+    }): Promise<{
+      success: boolean;
+      averageFPS: number;
+      averageRenderTime: number;
+      performance60FPS: boolean;
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'recordFramePerformance', params);
+    },
+
+    getOptimizationRecommendations: async (params: {}): Promise<{
+      success: boolean;
+      recommendations: string[];
+      priority: string;
+      timestamp: number;
+    }> => {
+      return this.postMessage('d3rendering', 'getOptimizationRecommendations', params);
     }
   };
 
@@ -833,7 +927,7 @@ export function isWebViewEnvironment(): boolean {
 /**
  * Check if specific handler is available
  */
-export function isHandlerAvailable(handler: 'database' | 'filesystem'): boolean {
+export function isHandlerAvailable(handler: 'database' | 'filesystem' | 'd3rendering'): boolean {
   return webViewBridge.isHandlerAvailable(handler);
 }
 
@@ -845,7 +939,7 @@ export function isHandlerAvailable(handler: 'database' | 'filesystem'): boolean 
  * @returns Promise that resolves with the response
  */
 export async function postMessage<T = unknown>(
-  handler: 'database' | 'filesystem',
+  handler: 'database' | 'filesystem' | 'd3rendering',
   method: string,
   params: Record<string, unknown> = {}
 ): Promise<T> {
@@ -859,6 +953,7 @@ export async function testBridge(): Promise<{
   isWebView: boolean;
   database: boolean;
   filesystem: boolean;
+  d3rendering: boolean;
   healthInfo: ReturnType<WebViewBridge['getHealthStatus']>;
 }> {
   const bridge = webViewBridge;
@@ -866,6 +961,7 @@ export async function testBridge(): Promise<{
 
   let databaseConnected = false;
   let filesystemConnected = false;
+  let d3renderingConnected = false;
 
   if (isWebView) {
     try {
@@ -881,12 +977,20 @@ export async function testBridge(): Promise<{
     } catch {
       filesystemConnected = false;
     }
+
+    try {
+      await bridge.postMessage('d3rendering', 'getBenchmarkResults', {});
+      d3renderingConnected = true;
+    } catch {
+      d3renderingConnected = false;
+    }
   }
 
   return {
     isWebView,
     database: databaseConnected,
     filesystem: filesystemConnected,
+    d3rendering: d3renderingConnected,
     healthInfo: bridge.getHealthStatus(),
   };
 }
@@ -899,6 +1003,7 @@ export function detectEnvironment(): {
   capabilities: {
     database: boolean;
     filesystem: boolean;
+    d3rendering: boolean;
     webkit: boolean;
   };
   recommendedTransport: 'webview' | 'http' | 'sqljs';
@@ -906,6 +1011,7 @@ export function detectEnvironment(): {
   const isWebView = isWebViewEnvironment();
   const hasDatabase = isHandlerAvailable('database');
   const hasFilesystem = isHandlerAvailable('filesystem');
+  const hasD3Rendering = isHandlerAvailable('d3rendering');
 
   let type: 'webview' | 'browser' | 'unknown' = 'unknown';
   let recommendedTransport: 'webview' | 'http' | 'sqljs' = 'sqljs';
@@ -924,6 +1030,7 @@ export function detectEnvironment(): {
     capabilities: {
       database: hasDatabase,
       filesystem: hasFilesystem,
+      d3rendering: hasD3Rendering,
       webkit: isWebView,
     },
     recommendedTransport,
