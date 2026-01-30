@@ -100,35 +100,88 @@ function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: DropW
 
 function PAFVNavigatorContent() {
   const { theme } = useTheme();
-  const { wells, moveChip, toggleCheckbox, transpose } = usePAFV();
+  const {
+    wells,
+    moveChip,
+    toggleCheckbox,
+    transpose,
+    filteredData,
+    isLoading,
+    error,
+    currentQuery,
+    queryMetrics
+  } = usePAFV();
 
   return (
-    <div className={`p-3 ${
+    <div className={`${
       theme === 'NeXTSTEP'
         ? 'bg-[#b8b8b8] border-b-2 border-[#505050]'
         : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
     }`}>
-      <div className="flex gap-3">
-        <DropWell title="Available" well="available" chips={wells.available} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-        <DropWell title="Rows" well="rows" chips={wells.rows} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+      {/* Main PAFV Controls */}
+      <div className="p-3">
+        <div className="flex gap-3">
+          <DropWell title="Available" well="available" chips={wells.available} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+          <DropWell title="Rows" well="rows" chips={wells.rows} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
 
-        {/* Transpose button between Rows and Columns */}
-        <div className="flex items-center">
-          <button
-            onClick={transpose}
-            className={`p-2 rounded transition-colors ${
-              theme === 'NeXTSTEP'
-                ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#c0c0c0] active:border-t-[#707070] active:border-l-[#707070] active:border-b-[#ffffff] active:border-r-[#ffffff]'
-                : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
-            }`}
-            title="Transpose rows and columns"
-          >
-            <ArrowRightLeft className="w-4 h-4" />
-          </button>
+          {/* Transpose button between Rows and Columns */}
+          <div className="flex items-center">
+            <button
+              onClick={transpose}
+              className={`p-2 rounded transition-colors ${
+                theme === 'NeXTSTEP'
+                  ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#c0c0c0] active:border-t-[#707070] active:border-l-[#707070] active:border-b-[#ffffff] active:border-r-[#ffffff]'
+                  : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
+              }`}
+              title="Transpose rows and columns"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+            </button>
+          </div>
+
+          <DropWell title="Columns" well="columns" chips={wells.columns} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+          <DropWell title="Layers" well="zLayers" chips={wells.zLayers} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
         </div>
+      </div>
 
-        <DropWell title="Columns" well="columns" chips={wells.columns} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-        <DropWell title="Layers" well="zLayers" chips={wells.zLayers} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+      {/* Live Data Status Bar */}
+      <div className={`px-3 pb-2 text-xs ${
+        theme === 'NeXTSTEP'
+          ? 'text-[#404040]'
+          : 'text-gray-600'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1">
+              {isLoading && (
+                <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+              )}
+              <strong>{filteredData.length}</strong> nodes
+            </span>
+
+            {queryMetrics && (
+              <span>
+                {queryMetrics.latency.toFixed(0)}ms
+                {queryMetrics.cacheHit && (
+                  <span className="ml-1 px-1 py-0.5 bg-green-100 text-green-600 rounded text-[10px]">
+                    CACHE
+                  </span>
+                )}
+              </span>
+            )}
+
+            {error && (
+              <span className="text-red-600">Error: {error}</span>
+            )}
+          </div>
+
+          <div className="text-[10px] opacity-75">
+            {currentQuery && currentQuery.length > 60 ?
+              `${currentQuery.slice(0, 60)}...` :
+              currentQuery || 'No active filter'
+            }
+          </div>
+        </div>
       </div>
     </div>
   );
