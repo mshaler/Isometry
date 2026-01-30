@@ -4,6 +4,7 @@ import OSLog
 
 /// Coordinates WebView bridge communication between React prototype and native services
 /// Manages MessageHandlers, navigation delegation, and bridge initialization
+/// Enhanced with optimization layer integration for performance monitoring and reliability
 public class WebViewBridge: NSObject {
     // MARK: - Properties
 
@@ -18,6 +19,30 @@ public class WebViewBridge: NSObject {
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
     private let logger = Logger(subsystem: "IsometryWebView", category: "Bridge")
+
+    // Optimization layer components
+    private let performanceMonitor: BridgeOptimizationMonitor
+    private let messageBatcher: MessageBatcher?
+    private let binarySerializer: BinarySerializer?
+    private let queryPaginator: QueryPaginator?
+    private let circuitBreaker: CircuitBreaker?
+
+    // Feature flags for optimization layer
+    private var optimizationsEnabled = OptimizationConfig(
+        messageBatching: true,
+        binaryCompression: true,
+        queryPagination: true,
+        circuitBreaker: true,
+        performanceMonitoring: true
+    )
+
+    private struct OptimizationConfig {
+        let messageBatching: Bool
+        let binaryCompression: Bool
+        let queryPagination: Bool
+        let circuitBreaker: Bool
+        let performanceMonitoring: Bool
+    }
 
     // MARK: - Initialization
 
@@ -37,7 +62,49 @@ public class WebViewBridge: NSObject {
         self.database = database
         self.superGridViewModel = superGridViewModel
 
+        // Initialize optimization layer components
+        self.performanceMonitor = BridgeOptimizationMonitor()
+
+        // Initialize optimization components if enabled
+        if optimizationsEnabled.messageBatching {
+            self.messageBatcher = MessageBatcher()
+        } else {
+            self.messageBatcher = nil
+        }
+
+        if optimizationsEnabled.binaryCompression {
+            self.binarySerializer = BinarySerializer()
+        } else {
+            self.binarySerializer = nil
+        }
+
+        if optimizationsEnabled.queryPagination {
+            self.queryPaginator = QueryPaginator()
+        } else {
+            self.queryPaginator = nil
+        }
+
+        if optimizationsEnabled.circuitBreaker {
+            self.circuitBreaker = CircuitBreaker()
+        } else {
+            self.circuitBreaker = nil
+        }
+
         super.init()
+
+        // Configure performance monitoring
+        if optimizationsEnabled.performanceMonitoring {
+            Task { @MainActor in
+                self.performanceMonitor.updateComponentMetrics(
+                    messageBatcher: self.messageBatcher,
+                    binarySerializer: self.binarySerializer,
+                    queryPaginator: self.queryPaginator,
+                    circuitBreaker: self.circuitBreaker
+                )
+            }
+        }
+
+        logger.info("WebViewBridge initialized with optimization layer")
     }
 
     /// Connect to database after initialization
@@ -52,6 +119,60 @@ public class WebViewBridge: NSObject {
     @MainActor
     public func connectToAppState(_ appState: AppState) {
         cloudKitHandler.setAppState(appState)
+    }
+
+    // MARK: - Optimization Layer API
+
+    /// Get performance metrics from monitoring
+    @MainActor
+    public func getPerformanceMetrics() -> BridgeOptimizationMonitor.BridgeMetrics {
+        return performanceMonitor.metrics
+    }
+
+    /// Get performance monitor instance
+    public func getPerformanceMonitor() -> BridgeOptimizationMonitor {
+        return performanceMonitor
+    }
+
+    /// Record bridge operation for performance monitoring
+    public func recordBridgeOperation(
+        operation: String,
+        latency: Double? = nil,
+        success: Bool? = nil,
+        payloadSize: Double? = nil,
+        compressionRatio: Double? = nil,
+        queueSize: Int? = nil
+    ) {
+        Task { @MainActor in
+            performanceMonitor.recordBridgeOperation(
+                operation: operation,
+                latency: latency,
+                success: success,
+                payloadSize: payloadSize,
+                compressionRatio: compressionRatio,
+                queueSize: queueSize
+            )
+        }
+    }
+
+    /// Configure optimization features (for testing/gradual rollout)
+    public func configureOptimizations(
+        messageBatching: Bool? = nil,
+        binaryCompression: Bool? = nil,
+        queryPagination: Bool? = nil,
+        circuitBreaker: Bool? = nil,
+        performanceMonitoring: Bool? = nil
+    ) {
+        let newConfig = OptimizationConfig(
+            messageBatching: messageBatching ?? optimizationsEnabled.messageBatching,
+            binaryCompression: binaryCompression ?? optimizationsEnabled.binaryCompression,
+            queryPagination: queryPagination ?? optimizationsEnabled.queryPagination,
+            circuitBreaker: circuitBreaker ?? optimizationsEnabled.circuitBreaker,
+            performanceMonitoring: performanceMonitoring ?? optimizationsEnabled.performanceMonitoring
+        )
+
+        optimizationsEnabled = newConfig
+        logger.info("Optimization configuration updated: batching=\(newConfig.messageBatching), compression=\(newConfig.binaryCompression), pagination=\(newConfig.queryPagination), circuitBreaker=\(newConfig.circuitBreaker), monitoring=\(newConfig.performanceMonitoring)")
     }
 
     // MARK: - Bridge Initialization Script
@@ -466,32 +587,89 @@ public class WebViewBridge: NSObject {
 
     /// Handle incoming message from WebView
     public func handleMessage(_ message: WKScriptMessage) async {
+        let startTime = DispatchTime.now()
         let handlerName = message.name
         logger.debug("Received WebView message for handler: \(handlerName)")
 
+        // Extract operation details for performance monitoring
+        let operationName = extractOperationName(from: message)
+        let payloadSize = calculatePayloadSize(from: message)
+
+        var success = true
+        defer {
+            // Record performance metrics after message handling
+            if optimizationsEnabled.performanceMonitoring {
+                let endTime = DispatchTime.now()
+                let latencyMs = Double(endTime.uptimeNanoseconds - startTime.uptimeNanoseconds) / 1_000_000
+
+                recordBridgeOperation(
+                    operation: "\(handlerName).\(operationName)",
+                    latency: latencyMs,
+                    success: success,
+                    payloadSize: payloadSize
+                )
+            }
+        }
+
         switch handlerName {
         case "database":
-            databaseHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                databaseHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "filesystem":
-            fileSystemHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                fileSystemHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "pafv":
-            pafvHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                pafvHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "filters":
-            filterHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                filterHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "d3canvas":
-            d3canvasHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                d3canvasHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "d3rendering":
-            d3renderingHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                d3renderingHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         case "cloudkit":
-            cloudKitHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            do {
+                cloudKitHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+            } catch {
+                success = false
+                throw error
+            }
 
         default:
+            success = false
             logger.warning("Unknown message handler: \(handlerName)")
             await sendError(
                 to: message.webView,
@@ -507,6 +685,23 @@ public class WebViewBridge: NSObject {
             return nil
         }
         return requestId
+    }
+
+    private func extractOperationName(from message: WKScriptMessage) -> String {
+        guard let messageBody = message.body as? [String: Any],
+              let method = messageBody["method"] as? String else {
+            return "unknown"
+        }
+        return method
+    }
+
+    private func calculatePayloadSize(from message: WKScriptMessage) -> Double {
+        do {
+            let data = try JSONSerialization.data(withJSONObject: message.body)
+            return Double(data.count)
+        } catch {
+            return 0.0
+        }
     }
 
     @MainActor

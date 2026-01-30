@@ -4,11 +4,21 @@
  * Provides secure React-to-native communication through WebKit MessageHandler bridge.
  * Handles request/response correlation, environment detection, and promise-based async operations.
  * Replaces HTTP transport with direct native messaging for better security and performance.
+ *
+ * Enhanced with optimization layer integration for MessageBatcher, BinarySerializer,
+ * QueryPaginator, and CircuitBreaker components.
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '../types/node';
 import { bridgeLogger } from './logger';
+
+// Import optimization components
+import { MessageBatcher } from './bridge-optimization/message-batcher';
+import { BinarySerializer } from './bridge-optimization/binary-serializer';
+import { QueryPaginator } from './bridge-optimization/query-paginator';
+import { CircuitBreaker } from './bridge-optimization/circuit-breaker';
+import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
 
 export interface WebKitMessageHandlers {
   database: {
@@ -871,9 +881,392 @@ export class WebViewBridge {
 }
 
 /**
- * Singleton bridge instance
+ * Optimized Bridge Wrapper
+ *
+ * Enhances the existing WebViewBridge with optimization components for improved
+ * performance and reliability. Provides seamless integration without breaking
+ * existing API contracts.
+ */
+export class OptimizedBridge {
+  private bridge: WebViewBridge;
+  private messageBatcher: MessageBatcher;
+  private binarySerializer: BinarySerializer;
+  private queryPaginator: QueryPaginator;
+  private circuitBreaker: CircuitBreaker;
+  private performanceMonitor: PerformanceMonitor;
+
+  // Feature flags for gradual rollout
+  private optimizationsEnabled = {
+    messageBatching: true,
+    binaryCompression: true,
+    queryPagination: true,
+    circuitBreaker: true,
+    performanceMonitoring: true
+  };
+
+  constructor(bridge: WebViewBridge) {
+    this.bridge = bridge;
+
+    // Initialize optimization components
+    this.binarySerializer = new BinarySerializer();
+
+    this.messageBatcher = new MessageBatcher({
+      batchInterval: 16, // 60fps target
+      maxBatchSize: 50,
+      sendBatch: this.sendBatchToNative.bind(this),
+      serialize: this.binarySerializer.serialize.bind(this.binarySerializer)
+    });
+
+    this.queryPaginator = new QueryPaginator({
+      maxRecordsPerPage: 50,
+      sendBatch: this.messageBatcher.addMessage.bind(this.messageBatcher)
+    });
+
+    this.circuitBreaker = new CircuitBreaker({
+      failureThreshold: 5,
+      resetTimeoutMs: 60000,
+      execute: this.executeWithBridge.bind(this)
+    });
+
+    this.performanceMonitor = new PerformanceMonitor();
+
+    // Initialize performance monitoring
+    if (this.optimizationsEnabled.performanceMonitoring) {
+      this.performanceMonitor.init({
+        messageBatcher: this.messageBatcher,
+        binarySerializer: this.binarySerializer,
+        queryPaginator: this.queryPaginator,
+        circuitBreaker: this.circuitBreaker
+      });
+      this.performanceMonitor.startCollection();
+    }
+
+    console.log('[OptimizedBridge] Initialized with all optimization components');
+  }
+
+  /**
+   * Enhanced message posting with optimization layer
+   */
+  public async postMessage<T = unknown>(
+    handler: 'database' | 'filesystem' | 'd3rendering',
+    method: string,
+    params: Record<string, unknown> = {}
+  ): Promise<T> {
+    const startTime = performance.now();
+
+    try {
+      // Check if optimizations are enabled
+      if (!this.optimizationsEnabled.messageBatching ||
+          !this.optimizationsEnabled.circuitBreaker) {
+        // Fallback to original bridge
+        const result = await this.bridge.postMessage<T>(handler, method, params);
+        this.recordOperation(handler, method, performance.now() - startTime, true, params);
+        return result;
+      }
+
+      // Use circuit breaker for reliability
+      const result = await this.circuitBreaker.execute(async () => {
+        // For query operations, use pagination
+        if (this.isQueryOperation(method) && this.optimizationsEnabled.queryPagination) {
+          return await this.executeWithPagination<T>(handler, method, params);
+        }
+
+        // Regular optimized execution
+        return await this.executeOptimized<T>(handler, method, params);
+      });
+
+      this.recordOperation(handler, method, performance.now() - startTime, true, params);
+      return result;
+
+    } catch (error) {
+      this.recordOperation(handler, method, performance.now() - startTime, false, params);
+      throw error;
+    }
+  }
+
+  /**
+   * Get performance metrics
+   */
+  public getPerformanceMetrics() {
+    return this.performanceMonitor.getMetrics();
+  }
+
+  /**
+   * Get performance monitor for dashboard
+   */
+  public getPerformanceMonitor(): PerformanceMonitor {
+    return this.performanceMonitor;
+  }
+
+  /**
+   * Database operations with optimization
+   */
+  public database = {
+    execute: async (sql: string, params?: unknown[]): Promise<unknown[]> => {
+      return this.postMessage('database', 'execute', { sql, params });
+    },
+
+    getNodes: async (options: {
+      limit?: number;
+      offset?: number;
+      filter?: string;
+    } = {}): Promise<Node[]> => {
+      return this.postMessage('database', 'getNodes', options);
+    },
+
+    createNode: async (node: Partial<Node>): Promise<Node> => {
+      return this.postMessage('database', 'createNode', { node });
+    },
+
+    updateNode: async (node: Partial<Node>): Promise<Node> => {
+      return this.postMessage('database', 'updateNode', { node });
+    },
+
+    deleteNode: async (id: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('database', 'deleteNode', { id });
+      return result.success;
+    },
+
+    search: async (query: string, options: { limit?: number } = {}): Promise<Node[]> => {
+      return this.postMessage('database', 'search', { query, ...options });
+    },
+
+    getGraph: async (options: { nodeId?: string; depth?: number } = {}): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
+      return this.postMessage('database', 'getGraph', options);
+    },
+
+    reset: async (): Promise<void> => {
+      return this.postMessage('database', 'reset', {});
+    }
+  };
+
+  /**
+   * File system operations with optimization
+   */
+  public filesystem = {
+    readFile: async (path: string): Promise<{ content: string; size: number; modified: number }> => {
+      return this.postMessage('filesystem', 'readFile', { path });
+    },
+
+    writeFile: async (path: string, content: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('filesystem', 'writeFile', { path, content });
+      return result.success;
+    },
+
+    deleteFile: async (path: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('filesystem', 'deleteFile', { path });
+      return result.success;
+    },
+
+    listFiles: async (path?: string): Promise<Array<{
+      name: string;
+      path: string;
+      isDirectory: boolean;
+      size: number;
+      modified: number;
+    }>> => {
+      return this.postMessage('filesystem', 'listFiles', { path });
+    },
+
+    fileExists: async (path: string): Promise<boolean> => {
+      const result = await this.postMessage<{ exists: boolean }>('filesystem', 'fileExists', { path });
+      return result.exists;
+    }
+  };
+
+  /**
+   * D3 Rendering operations with optimization
+   */
+  public d3rendering = {
+    optimizeViewport: async (params: {
+      viewport: { x: number; y: number; width: number; height: number; scale: number };
+      nodeCount: number;
+      targetFPS: number;
+    }) => {
+      return this.postMessage('d3rendering', 'optimizeViewport', params);
+    },
+
+    updateLOD: async (params: {
+      zoomLevel: number;
+      nodeCount: number;
+    }) => {
+      return this.postMessage('d3rendering', 'updateLOD', params);
+    },
+
+    manageMemory: async (params: {
+      memoryUsage: number;
+      leakDetected: boolean;
+    }) => {
+      return this.postMessage('d3rendering', 'manageMemory', params);
+    },
+
+    getBenchmarkResults: async (params: {}) => {
+      return this.postMessage('d3rendering', 'getBenchmarkResults', params);
+    },
+
+    recordFramePerformance: async (params: {
+      renderTime: number;
+    }) => {
+      return this.postMessage('d3rendering', 'recordFramePerformance', params);
+    },
+
+    getOptimizationRecommendations: async (params: {}) => {
+      return this.postMessage('d3rendering', 'getOptimizationRecommendations', params);
+    }
+  };
+
+  /**
+   * Configure optimization features
+   */
+  public configureOptimizations(config: Partial<typeof this.optimizationsEnabled>): void {
+    this.optimizationsEnabled = { ...this.optimizationsEnabled, ...config };
+    console.log('[OptimizedBridge] Optimization configuration updated:', this.optimizationsEnabled);
+  }
+
+  /**
+   * Get bridge health status including optimization metrics
+   */
+  public getHealthStatus() {
+    const bridgeHealth = this.bridge.getHealthStatus();
+    const perfMetrics = this.performanceMonitor.getMetrics();
+
+    return {
+      ...bridgeHealth,
+      optimization: {
+        enabled: this.optimizationsEnabled,
+        metrics: {
+          latency: perfMetrics.batchLatency,
+          compression: perfMetrics.serialization,
+          reliability: perfMetrics.reliability,
+          health: perfMetrics.health
+        }
+      }
+    };
+  }
+
+  /**
+   * Cleanup optimization components
+   */
+  public cleanup(): void {
+    this.performanceMonitor.stopCollection();
+    this.messageBatcher.stop();
+    this.bridge.cleanup();
+  }
+
+  // ============================================================================
+  // Private Methods
+  // ============================================================================
+
+  /**
+   * Execute operation with optimization layer
+   */
+  private async executeOptimized<T>(
+    handler: 'database' | 'filesystem' | 'd3rendering',
+    method: string,
+    params: Record<string, unknown>
+  ): Promise<T> {
+    if (this.optimizationsEnabled.messageBatching) {
+      // Use message batching for optimized transport
+      return new Promise<T>((resolve, reject) => {
+        this.messageBatcher.addMessage({
+          id: uuidv4(),
+          handler,
+          method,
+          params,
+          timestamp: Date.now()
+        }, resolve, reject);
+      });
+    } else {
+      // Fallback to direct bridge communication
+      return this.bridge.postMessage<T>(handler, method, params);
+    }
+  }
+
+  /**
+   * Execute query with pagination
+   */
+  private async executeWithPagination<T>(
+    handler: 'database' | 'filesystem' | 'd3rendering',
+    method: string,
+    params: Record<string, unknown>
+  ): Promise<T> {
+    return this.queryPaginator.executePaginatedQuery({
+      handler,
+      method,
+      params,
+      limit: (params.limit as number) || 50
+    }) as Promise<T>;
+  }
+
+  /**
+   * Execute with bridge (for circuit breaker)
+   */
+  private async executeWithBridge<T>(operation: () => Promise<T>): Promise<T> {
+    return operation();
+  }
+
+  /**
+   * Send batch to native bridge
+   */
+  private async sendBatchToNative(messages: any[]): Promise<void> {
+    // For each message in batch, send to native bridge
+    for (const message of messages) {
+      try {
+        await this.bridge.postMessage(message.handler, message.method, message.params);
+      } catch (error) {
+        console.error('[OptimizedBridge] Batch message failed:', error);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Check if operation is a query that should use pagination
+   */
+  private isQueryOperation(method: string): boolean {
+    const queryMethods = [
+      'getNodes', 'search', 'getGraph', 'listFiles',
+      'execute', // SQL queries
+      'getBenchmarkResults' // Large result sets
+    ];
+    return queryMethods.includes(method);
+  }
+
+  /**
+   * Record operation performance
+   */
+  private recordOperation(
+    handler: string,
+    method: string,
+    latency: number,
+    success: boolean,
+    params: Record<string, unknown>
+  ): void {
+    if (this.optimizationsEnabled.performanceMonitoring) {
+      // Calculate approximate payload size
+      const payloadSize = JSON.stringify(params).length;
+
+      this.performanceMonitor.recordBridgeOperation({
+        latency,
+        success,
+        payloadSize,
+        operation: `${handler}.${method}`,
+        compressionRatio: this.binarySerializer.getMetrics().compressionRatio,
+        queueSize: this.messageBatcher.getQueueSize()
+      });
+    }
+  }
+}
+
+/**
+ * Singleton bridge instance (original)
  */
 export const webViewBridge = new WebViewBridge();
+
+/**
+ * Optimized bridge instance (enhanced with optimization layer)
+ */
+export const optimizedBridge = new OptimizedBridge(webViewBridge);
 
 /**
  * Environment detection utilities
