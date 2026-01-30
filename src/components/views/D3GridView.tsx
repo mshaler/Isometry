@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { D3Canvas } from '../D3Canvas';
 import { usePAFV } from '../../contexts/PAFVContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLiveData } from '../../hooks/useLiveData';
 import type { Node } from '../../types/node';
 import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3Performance';
 import { renderOptimizer } from '../../utils/d3-render-optimizer';
@@ -48,9 +49,25 @@ interface GestureState {
  * - Pan/zoom functionality for large datasets
  * - Performance optimization with canvas rendering
  */
-export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
+export function D3GridView({ data: staticData, onNodeClick }: D3GridViewProps) {
   const { wells } = usePAFV();
   const { theme } = useTheme();
+
+  // Live data subscription for real-time updates
+  const { data: liveData, isLoading, error } = useLiveData<Node[]>(
+    'SELECT * FROM nodes ORDER BY modifiedAt DESC',
+    [],
+    {
+      trackPerformance: true,
+      throttleMs: 100,
+      onPerformanceUpdate: (metrics) => {
+        console.debug('D3GridView performance:', metrics);
+      }
+    }
+  );
+
+  // Use live data when available, fallback to static data
+  const data = liveData || staticData;
 
   // Component state
   const [cellDetailOverlay, setCellDetailOverlay] = useState<CellDetailOverlay>({
@@ -134,8 +151,8 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
     performanceMonitor.updateNativeMetrics(metrics);
 
     // Get performance comparison
-    const datasetSize = _data.length;
-    const complexity = calculateDatasetComplexity(_data);
+    const datasetSize = data.length;
+    const complexity = calculateDatasetComplexity(data);
     const comparison = performanceMonitor.getPerformanceComparison(datasetSize, complexity);
 
     setPerformanceMetrics({ native: metrics, comparison });
@@ -156,7 +173,7 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
         });
       }
     }
-  }, [_data, interactionState.performanceMode]);
+  }, [data, interactionState.performanceMode]);
 
   // Calculate dataset complexity for optimization decisions
   const calculateDatasetComplexity = useCallback((data: Node[]) => {
@@ -255,6 +272,23 @@ export function D3GridView({ data: _data, onNodeClick }: D3GridViewProps) {
 
   // Calculate axis summary for display
   const axisSummary = `${wells.rows.map(chip => chip.label).join(' × ')} vs ${wells.columns.map(chip => chip.label).join(' × ')}`;
+
+  // Handle loading and error states
+  if (isLoading && !data.length) {
+    return (
+      <div className="d3-grid-view w-full h-full relative flex items-center justify-center">
+        <div className="text-gray-500">Loading grid data...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="d3-grid-view w-full h-full relative flex items-center justify-center">
+        <div className="text-red-500">Error loading grid data: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="d3-grid-view w-full h-full relative">

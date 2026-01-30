@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { Search, X, ArrowUpDown } from 'lucide-react';
 import { usePAFV } from '../../contexts/PAFVContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useLiveData } from '../../hooks/useLiveData';
 import type { Node } from '../../types/node';
 import * as d3 from 'd3';
 
@@ -52,7 +53,7 @@ const SEARCH_BAR_HEIGHT = 60;
  * - Performance optimized for large datasets
  * - Smooth transitions and visual feedback
  */
-export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
+export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
   const { wells } = usePAFV();
   const { theme } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -67,6 +68,26 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
     selectedItems: new Set(),
     hoveredItem: null
   });
+
+  // Live data subscription for nodes and search results
+  const { data: liveData, isLoading, error } = useLiveData<Node[]>(
+    listState.searchQuery
+      ? `SELECT * FROM nodes WHERE name LIKE ? OR content LIKE ? OR tags LIKE ? ORDER BY modifiedAt DESC`
+      : 'SELECT * FROM nodes ORDER BY modifiedAt DESC',
+    listState.searchQuery
+      ? [`%${listState.searchQuery}%`, `%${listState.searchQuery}%`, `%${listState.searchQuery}%`]
+      : [],
+    {
+      trackPerformance: true,
+      throttleMs: 100,
+      onPerformanceUpdate: (metrics) => {
+        console.debug('D3ListView performance:', metrics);
+      }
+    }
+  );
+
+  // Use live data when available, fallback to static data
+  const data = liveData || staticData;
 
   // Virtual scrolling state
   const [scrollTop, setScrollTop] = useState(0);
@@ -417,6 +438,17 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
     return sum + (item.isGroupHeader ? GROUP_HEADER_HEIGHT : ITEM_HEIGHT);
   }, 0);
 
+  // Handle loading and error states
+  if (error) {
+    return (
+      <div className="d3-list-view w-full h-full flex flex-col bg-white">
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-red-500">Error loading list data: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="d3-list-view w-full h-full flex flex-col bg-white">
       {/* Search and Controls Bar */}
@@ -429,7 +461,11 @@ export function D3ListView({ data, onNodeClick }: D3ListViewProps) {
         {/* Search Input */}
         <div className="flex-1 relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={16} className="text-gray-400" />
+            {isLoading && listState.searchQuery ? (
+              <div className="animate-spin h-4 w-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+            ) : (
+              <Search size={16} className="text-gray-400" />
+            )}
           </div>
           <input
             type="text"
