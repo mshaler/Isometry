@@ -31,7 +31,14 @@ export interface QueryOptimizationResult {
 /**
  * Map PAFV chip IDs to their corresponding database columns and conditions
  */
-const CHIP_MAPPING = {
+interface ChipMapping {
+  column: string;
+  condition: (active: boolean) => string;
+  groupBy?: string;
+  orderBy?: string;
+}
+
+const CHIP_MAPPING: Record<string, ChipMapping> = {
   // Row groupings (data classification)
   folder: {
     column: 'folder',
@@ -65,7 +72,7 @@ const CHIP_MAPPING = {
     column: 'modified_at',
     condition: (active: boolean) => active ? 'modified_at != created_at' : '1=1'
   }
-} as const;
+};
 
 /**
  * Build optimized SQL query from PAFV wells configuration
@@ -86,7 +93,7 @@ export function buildPAFVQuery(wells: Wells, options: PAFVQueryOptions = {}): st
   if (wells.rows.length > 0) {
     const rowConditions = wells.rows
       .map(chip => {
-        const mapping = CHIP_MAPPING[chip.id as keyof typeof CHIP_MAPPING];
+        const mapping = CHIP_MAPPING[chip.id];
         if (!mapping) return '1=1';
 
         if (mapping.groupBy) {
@@ -109,7 +116,7 @@ export function buildPAFVQuery(wells: Wells, options: PAFVQueryOptions = {}): st
   if (wells.columns.length > 0) {
     const columnConditions = wells.columns
       .map(chip => {
-        const mapping = CHIP_MAPPING[chip.id as keyof typeof CHIP_MAPPING];
+        const mapping = CHIP_MAPPING[chip.id];
         if (!mapping) return '1=1';
 
         if (mapping.groupBy) {
@@ -133,7 +140,7 @@ export function buildPAFVQuery(wells: Wells, options: PAFVQueryOptions = {}): st
   if (activeZLayers.length > 0) {
     const zConditions = activeZLayers
       .map(chip => {
-        const mapping = CHIP_MAPPING[chip.id as keyof typeof CHIP_MAPPING];
+        const mapping = CHIP_MAPPING[chip.id];
         if (!mapping) return '1=1';
         return mapping.condition(true);
       })
@@ -312,7 +319,7 @@ export function combineFilters(conditions: string[]): string {
   // Optimize conditions for the same column
   const optimizedConditions: string[] = [];
 
-  for (const [column, columnConditions] of Object.entries(conditionsByColumn)) {
+  for (const [, columnConditions] of Object.entries(conditionsByColumn)) {
     if (columnConditions.length === 1) {
       optimizedConditions.push(columnConditions[0]);
     } else {
