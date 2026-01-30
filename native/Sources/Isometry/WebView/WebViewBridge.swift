@@ -49,6 +49,7 @@ public class WebViewBridge: NSObject {
     }
 
     /// Connect AppState for CloudKit sync operations after initialization
+    @MainActor
     public func connectToAppState(_ appState: AppState) {
         cloudKitHandler.setAppState(appState)
     }

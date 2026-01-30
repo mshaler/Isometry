@@ -57,7 +57,9 @@ public struct NotebookWebView: View {
                 }
             }
             if let appState = appState {
-                bridge.connectToAppState(appState)
+                Task { @MainActor in
+                    bridge.connectToAppState(appState)
+                }
             }
         }
         #if os(iOS)
