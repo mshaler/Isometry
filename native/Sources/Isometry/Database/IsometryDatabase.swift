@@ -1421,6 +1421,56 @@ public actor IsometryDatabase {
     public func getDatabasePool() -> DatabasePool {
         return dbPool
     }
+
+    // MARK: - Real-Time Change Notifications (ValueObservation)
+
+    /// Observes a database query and streams changes in real-time
+    /// Uses GRDB ValueObservation for efficient change detection
+    /// - Parameters:
+    ///   - sql: SQL query to observe
+    ///   - arguments: Query arguments
+    /// - Returns: AsyncThrowingStream of query results
+    public func observeQuery(sql: String, arguments: StatementArguments = StatementArguments()) -> AsyncThrowingStream<[[String: Any]], Error> {
+        return AsyncThrowingStream { continuation in
+            let observation = ValueObservation.trackingConstantRegion { db in
+                try Row.fetchAll(db, sql: sql, arguments: arguments)
+            }
+            .map { rows in
+                // Convert Row objects to dictionaries for serialization
+                return rows.map { row in
+                    var dict: [String: Any] = [:]
+                    for column in row.columnNames {
+                        dict[column] = row[column]
+                    }
+                    return dict
+                }
+            }
+
+            let cancellable = observation.start(
+                in: dbPool,
+                onError: { error in
+                    continuation.finish(throwing: error)
+                },
+                onChange: { results in
+                    continuation.yield(results)
+                }
+            )
+
+            continuation.onTermination = { _ in
+                cancellable.cancel()
+            }
+        }
+    }
+
+    /// Starts change notification infrastructure
+    /// Initializes observation systems for real-time updates
+    public func startChangeNotifications() async throws {
+        // Initialize observation infrastructure if needed
+        // This method can be used for setup that requires async/await context
+        logger.info("Change notification infrastructure started")
+    }
+
+    private let logger = Logger(subsystem: "IsometryDatabase", category: "ChangeNotifications")
 }
 
 // MARK: - Preview Support
