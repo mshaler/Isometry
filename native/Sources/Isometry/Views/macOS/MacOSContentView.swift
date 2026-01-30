@@ -15,7 +15,7 @@ public struct MacOSContentView: View {
     public var body: some View {
         if showReactNotebook {
             // React Notebook WebView with database connection
-            NotebookWebView(database: appState.database)
+            NotebookWebView(database: appState.database, appState: appState)
                 .navigationTitle("React Notebook Prototype")
                 .toolbar {
                     ToolbarItemGroup(placement: .primaryAction) {

@@ -11,11 +11,13 @@ public struct NotebookWebView: View {
 
     private let bridge: WebViewBridge
     private let database: IsometryDatabase?
+    private let appState: AppState?
 
-    public init(database: IsometryDatabase? = nil) {
+    public init(database: IsometryDatabase? = nil, appState: AppState? = nil) {
         print("🚀 NotebookWebView initializing with database: \(database != nil ? "connected" : "nil")")
         self.database = database
-        self.bridge = WebViewBridge(database: database)
+        self.appState = appState
+        self.bridge = WebViewBridge(database: database, appState: appState)
     }
 
     public var body: some View {
@@ -53,6 +55,9 @@ public struct NotebookWebView: View {
                 Task {
                     await bridge.connectToDatabase(database)
                 }
+            }
+            if let appState = appState {
+                bridge.connectToAppState(appState)
             }
         }
         #if os(iOS)
@@ -231,7 +236,10 @@ class WebViewStore: ObservableObject {
         userContentController.add(bridge.fileSystemHandler, name: "filesystem")
         userContentController.add(bridge.pafvHandler, name: "pafv")
         userContentController.add(bridge.filterHandler, name: "filters")
-        print("🔧 Registered message handlers: database, filesystem, pafv, filters")
+        userContentController.add(bridge.d3canvasHandler, name: "d3canvas")
+        userContentController.add(bridge.d3renderingHandler, name: "d3rendering")
+        userContentController.add(bridge.cloudKitHandler, name: "cloudkit")
+        print("🔧 Registered message handlers: database, filesystem, pafv, filters, d3canvas, d3rendering, cloudkit")
         configuration.userContentController = userContentController
 
         // Inject bridge initialization script at document end to ensure webkit is ready

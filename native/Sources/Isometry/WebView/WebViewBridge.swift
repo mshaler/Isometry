@@ -12,6 +12,8 @@ public class WebViewBridge: NSObject {
     public let pafvHandler: PAFVMessageHandler
     public let filterHandler: FilterBridgeHandler
     public let d3canvasHandler: D3CanvasMessageHandler
+    public let d3renderingHandler: D3RenderingMessageHandler
+    public let cloudKitHandler: CloudKitMessageHandler
 
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
@@ -19,13 +21,19 @@ public class WebViewBridge: NSObject {
 
     // MARK: - Initialization
 
-    public init(database: IsometryDatabase? = nil, superGridViewModel: SuperGridViewModel? = nil) {
+    public init(
+        database: IsometryDatabase? = nil,
+        superGridViewModel: SuperGridViewModel? = nil,
+        appState: AppState? = nil
+    ) {
         // Create handlers
         self.databaseHandler = DatabaseMessageHandler(database: database)
         self.fileSystemHandler = FileSystemMessageHandler()
         self.pafvHandler = PAFVMessageHandler(viewModel: superGridViewModel)
         self.filterHandler = FilterBridgeHandler(database: database)
         self.d3canvasHandler = D3CanvasMessageHandler()
+        self.d3renderingHandler = D3RenderingMessageHandler()
+        self.cloudKitHandler = CloudKitMessageHandler(appState: appState)
         self.database = database
         self.superGridViewModel = superGridViewModel
 
@@ -38,6 +46,11 @@ public class WebViewBridge: NSObject {
         // Update handlers with real database
         await self.databaseHandler.setDatabase(database)
         await self.filterHandler.setDatabase(database)
+    }
+
+    /// Connect AppState for CloudKit sync operations after initialization
+    public func connectToAppState(_ appState: AppState) {
+        cloudKitHandler.setAppState(appState)
     }
 
     // MARK: - Bridge Initialization Script
@@ -431,6 +444,12 @@ public class WebViewBridge: NSObject {
 
         case "d3canvas":
             d3canvasHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+
+        case "d3rendering":
+            d3renderingHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
+
+        case "cloudkit":
+            cloudKitHandler.userContentController(message.webView?.configuration.userContentController ?? WKUserContentController(), didReceive: message)
 
         default:
             logger.warning("Unknown message handler: \(handlerName)")
