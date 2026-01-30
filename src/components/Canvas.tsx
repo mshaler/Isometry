@@ -1,8 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
 // import { useFilteredNodes } from '../hooks/useFilteredNodes';
 import { useMockData } from '../hooks/useMockData';
+import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
+import { RealTimeRenderer } from './performance/RealTimeRenderer';
+import { DataFlowMonitor } from './DataFlowMonitor';
 import {
   ListView,
   GridView,
@@ -22,6 +25,8 @@ export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [useD3Mode, setUseD3Mode] = useState(false); // Toggle for D3 vs CSS rendering
+  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
+  const [performanceQualityMode, setPerformanceQualityMode] = useState<'high' | 'medium' | 'low'>('high');
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
@@ -29,10 +34,62 @@ export function Canvas() {
   // Use mock data for MVP demonstration (bypasses database complexity)
   const { data: nodes, loading, error } = useMockData();
 
+  // Performance monitoring
+  const {
+    metrics,
+    isMonitoring,
+    startMonitoring,
+    stopMonitoring,
+    recordRender,
+    getOptimizationRecommendations,
+    getPerformanceSummary
+  } = useCanvasPerformance({
+    targetFps: 60,
+    enableAutoOptimize: true,
+    onPerformanceWarning: (issue, severity) => {
+      console.warn(`[Canvas Performance] ${severity.toUpperCase()}: ${issue}`);
+
+      // Auto-adjust quality mode based on performance
+      if (severity === 'critical' && performanceQualityMode === 'high') {
+        setPerformanceQualityMode('medium');
+        console.log('[Canvas] Automatically reduced quality to medium');
+      } else if (severity === 'critical' && performanceQualityMode === 'medium') {
+        setPerformanceQualityMode('low');
+        console.log('[Canvas] Automatically reduced quality to low');
+      }
+    }
+  });
+
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);
     console.log('Node clicked:', node);
   }, []);
+
+  // Start/stop performance monitoring based on D3 mode
+  useEffect(() => {
+    if (useD3Mode && nodes && nodes.length > 0) {
+      startMonitoring();
+    } else {
+      stopMonitoring();
+    }
+
+    return () => {
+      stopMonitoring();
+    };
+  }, [useD3Mode, nodes, startMonitoring, stopMonitoring]);
+
+  // Record render performance when nodes change
+  useEffect(() => {
+    if (useD3Mode && nodes) {
+      const renderStartTime = performance.now();
+
+      // Simulate render completion in next tick
+      requestAnimationFrame(() => {
+        const renderTime = performance.now() - renderStartTime;
+        recordRender(renderTime, nodes.length);
+      });
+    }
+  }, [useD3Mode, nodes, recordRender]);
 
   // Render the appropriate view based on activeView
   const renderView = () => {
@@ -60,17 +117,38 @@ export function Canvas() {
       );
     }
 
-    // D3 Mode - Use D3 Canvas rendering
+    // D3 Mode - Use D3 Canvas rendering with performance optimization
     if (useD3Mode) {
-      switch (activeView) {
-        case 'List':
-          return <D3ListView data={nodes} onNodeClick={handleNodeClick} />;
+      const d3View = (() => {
+        switch (activeView) {
+          case 'List':
+            return <D3ListView data={nodes} onNodeClick={handleNodeClick} />;
 
-        case 'Gallery':
-        case 'Grid':
-        default:
-          return <D3GridView data={nodes} onNodeClick={handleNodeClick} />;
-      }
+          case 'Gallery':
+          case 'Grid':
+          default:
+            return <D3GridView data={nodes} onNodeClick={handleNodeClick} />;
+        }
+      })();
+
+      return (
+        <RealTimeRenderer
+          maxNodes={performanceQualityMode === 'high' ? 10000 : performanceQualityMode === 'medium' ? 5000 : 2500}
+          targetFps={60}
+          enableLOD={true}
+          enableProgressiveRendering={true}
+          onPerformanceChange={(perfMetrics) => {
+            // Update performance monitoring from RealTimeRenderer
+            if (isMonitoring) {
+              recordRender(perfMetrics.renderTime, perfMetrics.nodeCount);
+            }
+          }}
+          debug={process.env.NODE_ENV === 'development'}
+          className="h-full"
+        >
+          {d3View}
+        </RealTimeRenderer>
+      );
     }
 
     // CSS Mode - Use existing CSS-based components
@@ -118,9 +196,10 @@ export function Canvas() {
           <FilterBar />
         </div>
 
-        {/* D3 Mode Toggle */}
+        {/* Performance and Mode Controls */}
         {process.env.NODE_ENV === 'development' && (
-          <div className="px-3 py-2">
+          <div className="flex items-center gap-2 px-3 py-2">
+            {/* D3 Mode Toggle */}
             <button
               onClick={() => setUseD3Mode(!useD3Mode)}
               className={`px-3 py-1 text-xs font-medium rounded ${
@@ -134,8 +213,59 @@ export function Canvas() {
               }`}
               title={useD3Mode ? 'Switch to CSS rendering' : 'Switch to D3 rendering'}
             >
-              {useD3Mode ? 'D3 Mode' : 'CSS Mode'}
+              {useD3Mode ? 'D3' : 'CSS'}
             </button>
+
+            {/* Performance Quality Mode */}
+            {useD3Mode && (
+              <select
+                value={performanceQualityMode}
+                onChange={(e) => setPerformanceQualityMode(e.target.value as 'high' | 'medium' | 'low')}
+                className={`px-2 py-1 text-xs rounded border ${
+                  theme === 'NeXTSTEP'
+                    ? 'bg-white border-[#808080]'
+                    : 'bg-white border-gray-300'
+                }`}
+                title="Performance quality mode"
+              >
+                <option value="high">High Quality</option>
+                <option value="medium">Medium Quality</option>
+                <option value="low">Low Quality</option>
+              </select>
+            )}
+
+            {/* Performance Monitor Toggle */}
+            {useD3Mode && (
+              <button
+                onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
+                className={`px-2 py-1 text-xs rounded ${
+                  showPerformanceMonitor
+                    ? 'bg-green-100 text-green-700 border border-green-300'
+                    : 'bg-gray-100 text-gray-600 border border-gray-300'
+                }`}
+                title="Toggle performance monitor"
+              >
+                📊 {metrics?.fps ? Math.round(metrics.fps) + ' FPS' : 'Monitor'}
+              </button>
+            )}
+
+            {/* Performance Summary */}
+            {useD3Mode && metrics && (
+              <div className={`flex items-center gap-1 px-2 py-1 text-xs rounded ${
+                metrics.qualityLevel === 'high' ? 'bg-green-100 text-green-700' :
+                metrics.qualityLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                metrics.qualityLevel === 'low' ? 'bg-orange-100 text-orange-700' :
+                'bg-red-100 text-red-700'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${
+                  metrics.qualityLevel === 'high' ? 'bg-green-500' :
+                  metrics.qualityLevel === 'medium' ? 'bg-yellow-500' :
+                  metrics.qualityLevel === 'low' ? 'bg-orange-500' :
+                  'bg-red-500'
+                }`} />
+                <span>{Math.round(metrics.performanceScore)}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -191,6 +321,17 @@ export function Canvas() {
           </button>
         ))}
       </div>
+
+      {/* Performance Monitor Overlay */}
+      {useD3Mode && showPerformanceMonitor && (
+        <DataFlowMonitor
+          isVisible={showPerformanceMonitor}
+          position="bottom-right"
+          compact={false}
+          realTime={true}
+          enableConsoleLogging={false}
+        />
+      )}
     </div>
   );
 }
