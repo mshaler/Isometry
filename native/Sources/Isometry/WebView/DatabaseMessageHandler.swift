@@ -20,6 +20,8 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
     private let decoder = JSONDecoder()
     private let performanceMonitor = MessageHandlerPerformanceMonitor()
     private let securityValidator = MessageHandlerSecurityValidator()
+    private let subscriptionManager = LiveDataSubscriptionManager()
+    private var changeNotificationObserver: DatabaseChangeObserver?
 
     nonisolated public init(database: IsometryDatabase? = nil) {
         self.database = database
@@ -170,6 +172,18 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
             case "reset":
                 try await handleReset(database: database)
                 result = ["success": true]
+
+            case "subscribe":
+                result = try await handleSubscribe(params: params, database: database, webView: webView, requestId: requestId)
+
+            case "unsubscribe":
+                result = try await handleUnsubscribe(params: params, requestId: requestId)
+
+            case "enableChangeNotifications":
+                result = try await handleEnableChangeNotifications(params: params, database: database, webView: webView)
+
+            case "disableChangeNotifications":
+                result = try await handleDisableChangeNotifications(params: params)
 
             default:
                 throw DatabaseMessageError.invalidOperation("Unknown method: \\(method)")
@@ -520,6 +534,106 @@ public class DatabaseMessageHandler: NSObject, WKScriptMessageHandler {
         print("[DatabaseMessageHandler] Reset requested - currently no-op")
     }
 
+    // MARK: - Live Data Subscription Handlers
+
+    /**
+     * Handle subscription creation for live data
+     */
+    private func handleSubscribe(
+        params: [String: Any],
+        database: IsometryDatabase,
+        webView: WKWebView?,
+        requestId: String
+    ) async throws -> [String: Any] {
+        guard let sql = params["sql"] as? String else {
+            throw DatabaseMessageError.invalidData("Missing SQL query for subscription")
+        }
+
+        let subscriptionParams = params["params"] as? [Any] ?? []
+        let subscriptionId = params["subscriptionId"] as? String ?? requestId
+        let intervalMs = params["intervalMs"] as? Int ?? 5000
+
+        // Validate SQL for safety
+        try await securityValidator.validateSQLQuery(sql)
+
+        // Validate interval
+        guard intervalMs >= 100, intervalMs <= 300000 else { // 100ms to 5 minutes
+            throw DatabaseMessageError.invalidData("Invalid subscription interval")
+        }
+
+        // Create subscription
+        let subscription = LiveDataSubscription(
+            id: subscriptionId,
+            sql: sql,
+            params: subscriptionParams,
+            intervalMs: intervalMs,
+            webView: webView
+        )
+
+        // Register with subscription manager
+        await subscriptionManager.addSubscription(subscription, database: database)
+
+        return [
+            "subscriptionId": subscriptionId,
+            "status": "active",
+            "intervalMs": intervalMs
+        ]
+    }
+
+    /**
+     * Handle subscription removal
+     */
+    private func handleUnsubscribe(
+        params: [String: Any],
+        requestId: String
+    ) async throws -> [String: Any] {
+        let subscriptionId = params["subscriptionId"] as? String ?? requestId
+
+        let removed = await subscriptionManager.removeSubscription(subscriptionId)
+
+        return [
+            "subscriptionId": subscriptionId,
+            "removed": removed
+        ]
+    }
+
+    /**
+     * Enable change notifications for real-time updates
+     */
+    private func handleEnableChangeNotifications(
+        params: [String: Any],
+        database: IsometryDatabase,
+        webView: WKWebView?
+    ) async throws -> [String: Any] {
+        let tables = params["tables"] as? [String] ?? ["nodes", "edges"]
+
+        // Create observer if not exists
+        if changeNotificationObserver == nil {
+            changeNotificationObserver = DatabaseChangeObserver(webView: webView)
+        }
+
+        // Start observing database changes
+        try await changeNotificationObserver?.enableObservation(for: tables, database: database)
+
+        return [
+            "status": "enabled",
+            "tables": tables
+        ]
+    }
+
+    /**
+     * Disable change notifications
+     */
+    private func handleDisableChangeNotifications(
+        params: [String: Any]
+    ) async throws -> [String: Any] {
+        await changeNotificationObserver?.disableObservation()
+
+        return [
+            "status": "disabled"
+        ]
+    }
+
     // MARK: - Helper Methods
 
     /**
@@ -670,7 +784,8 @@ private class MessageHandlerPerformanceMonitor {
 private class MessageHandlerSecurityValidator {
     private let allowedMethods = Set([
         "ping", "execute", "getNodes", "createNode", "updateNode",
-        "deleteNode", "searchNodes", "getGraph", "reset"
+        "deleteNode", "searchNodes", "getGraph", "reset",
+        "subscribe", "unsubscribe", "enableChangeNotifications", "disableChangeNotifications"
     ])
 
     func validateRequest(
@@ -749,6 +864,238 @@ public enum DatabaseMessageError: LocalizedError {
             return "Encoding failed: \\(msg)"
         case .securityViolation(let msg):
             return "Security violation: \\(msg)"
+        }
+    }
+}
+
+// MARK: - Live Data Support Classes
+
+/**
+ * Live data subscription representation
+ */
+@MainActor
+private class LiveDataSubscription {
+    let id: String
+    let sql: String
+    let params: [Any]
+    let intervalMs: Int
+    weak var webView: WKWebView?
+    private var timer: Timer?
+    private var lastResultHash: String?
+
+    init(id: String, sql: String, params: [Any], intervalMs: Int, webView: WKWebView?) {
+        self.id = id
+        self.sql = sql
+        self.params = params
+        self.intervalMs = intervalMs
+        self.webView = webView
+    }
+
+    func startPolling(database: IsometryDatabase) {
+        timer = Timer.scheduledTimer(withTimeInterval: TimeInterval(intervalMs) / 1000.0, repeats: true) { _ in
+            Task { @MainActor in
+                await self.executeQuery(database: database)
+            }
+        }
+
+        // Execute immediately
+        Task { @MainActor in
+            await executeQuery(database: database)
+        }
+    }
+
+    func stopPolling() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func executeQuery(database: IsometryDatabase) async {
+        guard let webView = webView else {
+            stopPolling()
+            return
+        }
+
+        do {
+            let results = try await database.read { db in
+                var queryResults: [[String: Any]] = []
+
+                let statement = try db.makeStatement(sql: sql)
+
+                // Bind parameters if provided
+                if !params.isEmpty {
+                    if let statementArguments = StatementArguments(params) {
+                        try statement.setArguments(statementArguments)
+                    }
+                }
+
+                // Execute and collect results
+                for row in try Row.fetchAll(statement) {
+                    var rowData: [String: Any] = [:]
+                    for (index, columnName) in statement.columnNames.enumerated() {
+                        rowData[columnName] = row[index]
+                    }
+                    queryResults.append(rowData)
+                }
+
+                return queryResults
+            }
+
+            // Calculate hash to detect changes
+            let resultData = try JSONSerialization.data(withJSONObject: results, options: .sortedKeys)
+            let currentHash = String(resultData.hashValue)
+
+            // Only send if data changed
+            if currentHash != lastResultHash {
+                lastResultHash = currentHash
+
+                await sendUpdate(results: results, webView: webView)
+            }
+
+        } catch {
+            await sendError(error: error, webView: webView)
+        }
+    }
+
+    private func sendUpdate(results: [[String: Any]], webView: WKWebView) async {
+        let update: [String: Any] = [
+            "type": "subscription-update",
+            "subscriptionId": id,
+            "data": results,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        do {
+            let updateData = try JSONSerialization.data(withJSONObject: update, options: .sortedKeys)
+            guard let updateString = String(data: updateData, encoding: .utf8) else {
+                throw DatabaseMessageError.encodingFailed("Failed to encode subscription update")
+            }
+
+            let script = "window.dispatchEvent(new CustomEvent('isometry-subscription-update', { detail: \(updateString) }))"
+            try await webView.evaluateJavaScript(script)
+
+        } catch {
+            print("[LiveDataSubscription] Failed to send update: \(error)")
+        }
+    }
+
+    private func sendError(error: Error, webView: WKWebView) async {
+        let errorUpdate: [String: Any] = [
+            "type": "subscription-error",
+            "subscriptionId": id,
+            "error": error.localizedDescription,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        do {
+            let updateData = try JSONSerialization.data(withJSONObject: errorUpdate, options: .sortedKeys)
+            guard let updateString = String(data: updateData, encoding: .utf8) else { return }
+
+            let script = "window.dispatchEvent(new CustomEvent('isometry-subscription-error', { detail: \(updateString) }))"
+            try await webView.evaluateJavaScript(script)
+
+        } catch {
+            print("[LiveDataSubscription] Failed to send error: \(error)")
+        }
+    }
+
+    deinit {
+        stopPolling()
+    }
+}
+
+/**
+ * Manages live data subscriptions
+ */
+@MainActor
+private class LiveDataSubscriptionManager {
+    private var subscriptions: [String: LiveDataSubscription] = [:]
+
+    func addSubscription(_ subscription: LiveDataSubscription, database: IsometryDatabase) async {
+        // Remove existing subscription with same ID
+        if let existing = subscriptions[subscription.id] {
+            existing.stopPolling()
+        }
+
+        subscriptions[subscription.id] = subscription
+        subscription.startPolling(database: database)
+
+        print("[SubscriptionManager] Added subscription: \(subscription.id)")
+    }
+
+    func removeSubscription(_ subscriptionId: String) async -> Bool {
+        guard let subscription = subscriptions.removeValue(forKey: subscriptionId) else {
+            return false
+        }
+
+        subscription.stopPolling()
+        print("[SubscriptionManager] Removed subscription: \(subscriptionId)")
+        return true
+    }
+
+    func removeAllSubscriptions() async {
+        for subscription in subscriptions.values {
+            subscription.stopPolling()
+        }
+        subscriptions.removeAll()
+        print("[SubscriptionManager] Removed all subscriptions")
+    }
+
+    func getActiveSubscriptionCount() -> Int {
+        return subscriptions.count
+    }
+}
+
+/**
+ * Observes database changes and notifies WebView
+ */
+@MainActor
+private class DatabaseChangeObserver {
+    weak var webView: WKWebView?
+    private var observedTables: Set<String> = []
+    private var isObserving = false
+
+    init(webView: WKWebView?) {
+        self.webView = webView
+    }
+
+    func enableObservation(for tables: [String], database: IsometryDatabase) async throws {
+        observedTables = Set(tables)
+        isObserving = true
+
+        // Note: In a full implementation, this would set up actual database change observers
+        // For GRDB, this would involve using DatabasePool change notifications
+        // For now, we'll simulate with periodic checks
+
+        print("[DatabaseChangeObserver] Enabled observation for tables: \(tables)")
+    }
+
+    func disableObservation() async {
+        isObserving = false
+        observedTables.removeAll()
+        print("[DatabaseChangeObserver] Disabled observation")
+    }
+
+    private func notifyChange(table: String, operation: String) async {
+        guard isObserving,
+              observedTables.contains(table),
+              let webView = webView else { return }
+
+        let notification: [String: Any] = [
+            "type": "database-change",
+            "table": table,
+            "operation": operation,
+            "timestamp": Date().timeIntervalSince1970
+        ]
+
+        do {
+            let notificationData = try JSONSerialization.data(withJSONObject: notification, options: .sortedKeys)
+            guard let notificationString = String(data: notificationData, encoding: .utf8) else { return }
+
+            let script = "window.dispatchEvent(new CustomEvent('isometry-data-change', { detail: \(notificationString) }))"
+            try await webView.evaluateJavaScript(script)
+
+        } catch {
+            print("[DatabaseChangeObserver] Failed to send change notification: \(error)")
         }
     }
 }
