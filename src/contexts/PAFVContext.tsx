@@ -1,4 +1,6 @@
-import { createContext, useContext, ReactNode, useState, useCallback } from 'react';
+import { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
+import { useLiveData, type LiveDataPerformanceMetrics } from '@/hooks/useLiveData';
+import type { Node } from '@/types/node';
 
 export interface Chip {
   id: string;
@@ -14,11 +16,29 @@ export interface Wells {
   zLayers: Chip[];
 }
 
+export interface QueryPerformanceMetrics {
+  latency: number;
+  rowCount: number;
+  cacheHit: boolean;
+  queryComplexity: number;
+  lastUpdated: Date;
+}
+
 interface PAFVContextType {
+  // Existing wells management
   wells: Wells;
   moveChip: (fromWell: keyof Wells, _fromIndex: number, toWell: keyof Wells, toIndex: number) => void;
   toggleCheckbox: (well: keyof Wells, _chipId: string) => void;
   transpose: () => void;
+
+  // New live data integration
+  currentQuery: string;
+  filteredData: Node[];
+  isLoading: boolean;
+  error: string | null;
+  queryMetrics: QueryPerformanceMetrics | null;
+  refreshData: () => void;
+  subscriptionId: string | null;
 }
 
 const PAFVContext = createContext<PAFVContextType | undefined>(undefined);
@@ -41,6 +61,100 @@ const DEFAULT_WELLS: Wells = {
 
 export function PAFVProvider({ children }: { children: ReactNode }) {
   const [wells, setWells] = useState<Wells>(DEFAULT_WELLS);
+  const [currentQuery, setCurrentQuery] = useState<string>('');
+  const [queryMetrics, setQueryMetrics] = useState<QueryPerformanceMetrics | null>(null);
+
+  // Generate query from current wells configuration
+  const generatePAFVQuery = useCallback((wellsConfig: Wells): string => {
+    // Start with base query
+    let query = 'SELECT * FROM nodes WHERE deleted_at IS NULL';
+    const conditions: string[] = [];
+
+    // Add row-based grouping conditions
+    if (wellsConfig.rows.length > 0) {
+      const rowConditions = wellsConfig.rows.map(chip => {
+        switch (chip.id) {
+          case 'folder':
+            return 'folder IS NOT NULL';
+          case 'subfolder':
+            return 'folder LIKE "%/%"';  // Has subfolder structure
+          case 'tags':
+            return 'tags != "[]" AND tags IS NOT NULL';
+          default:
+            return '1=1';
+        }
+      });
+      conditions.push(`(${rowConditions.join(' OR ')})`);
+    }
+
+    // Add column-based grouping conditions
+    if (wellsConfig.columns.length > 0) {
+      const colConditions = wellsConfig.columns.map(chip => {
+        switch (chip.id) {
+          case 'year':
+            return 'created_at >= datetime("now", "-1 year")';
+          case 'month':
+            return 'created_at >= datetime("now", "-1 month")';
+          default:
+            return '1=1';
+        }
+      });
+      conditions.push(`(${colConditions.join(' OR ')})`);
+    }
+
+    // Add z-layer filters
+    const activeZLayers = wellsConfig.zLayers.filter(chip => chip.checked);
+    if (activeZLayers.length > 0) {
+      const zConditions = activeZLayers.map(chip => {
+        switch (chip.id) {
+          case 'auditview':
+            return 'modified_at != created_at';  // Show modified items
+          default:
+            return '1=1';
+        }
+      });
+      conditions.push(`(${zConditions.join(' AND ')})`);
+    }
+
+    // Combine all conditions
+    if (conditions.length > 0) {
+      query += ' AND ' + conditions.join(' AND ');
+    }
+
+    // Add reasonable ordering and limit for performance
+    query += ' ORDER BY modified_at DESC LIMIT 1000';
+
+    return query;
+  }, []);
+
+  // Update query when wells change (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const newQuery = generatePAFVQuery(wells);
+      setCurrentQuery(newQuery);
+    }, 200); // 200ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [wells, generatePAFVQuery]);
+
+  // Live data subscription with performance tracking
+  const liveDataSubscription = useLiveData<Node[]>(
+    currentQuery,
+    [],
+    {
+      throttleMs: 100,
+      trackPerformance: true,
+      onPerformanceUpdate: (metrics: LiveDataPerformanceMetrics) => {
+        setQueryMetrics({
+          latency: metrics.lastLatency,
+          rowCount: Array.isArray(liveDataSubscription.data) ? liveDataSubscription.data.length : 0,
+          cacheHit: metrics.cacheHitRate > 0,
+          queryComplexity: currentQuery.length, // Simple complexity metric
+          lastUpdated: new Date()
+        });
+      }
+    }
+  );
 
   const moveChip = useCallback((
     fromWell: keyof Wells,
@@ -78,8 +192,28 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const refreshData = useCallback(() => {
+    // Force refresh by regenerating the query
+    const newQuery = generatePAFVQuery(wells);
+    setCurrentQuery(`${newQuery} /* refresh:${Date.now()} */`);
+  }, [wells, generatePAFVQuery]);
+
   return (
-    <PAFVContext.Provider value={{ wells, moveChip, toggleCheckbox, transpose }}>
+    <PAFVContext.Provider
+      value={{
+        wells,
+        moveChip,
+        toggleCheckbox,
+        transpose,
+        currentQuery,
+        filteredData: liveDataSubscription.data || [],
+        isLoading: liveDataSubscription.isLoading,
+        error: liveDataSubscription.error,
+        queryMetrics,
+        refreshData,
+        subscriptionId: liveDataSubscription.id
+      }}
+    >
       {children}
     </PAFVContext.Provider>
   );
