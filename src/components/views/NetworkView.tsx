@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useCanvasTheme } from '@/hooks/useComponentTheme';
-import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { useLiveData } from '@/hooks/useLiveData';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
@@ -55,8 +55,18 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.3);
 
-  // Fetch edges
-  const { data: edges } = useSQLiteQuery<EdgeData>('SELECT * FROM edges');
+  // Fetch edges with live data subscription
+  const { data: edges, isLoading: edgesLoading, error: edgesError } = useLiveData<EdgeData[]>(
+    'SELECT * FROM edges',
+    [],
+    {
+      trackPerformance: true,
+      throttleMs: 100,
+      onPerformanceUpdate: (metrics) => {
+        console.debug('NetworkView edges performance:', metrics);
+      }
+    }
+  );
 
   // Analytics functions
   const fetchConnectionSuggestions = useCallback(async (nodeId: string) => {
@@ -115,7 +125,13 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   }, [fetchGraphMetrics]);
 
   useEffect(() => {
-    if (!svgRef.current || !containerRef.current || !data.length) return;
+    if (!svgRef.current || !containerRef.current || !data.length || edgesLoading) return;
+
+    // Handle loading states and errors
+    if (edgesError) {
+      console.error('NetworkView edges error:', edgesError);
+      return;
+    }
 
     const container = containerRef.current;
     const width = container.clientWidth;
@@ -123,8 +139,14 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     const themeValues = getTheme(theme as ThemeName);
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll('*').remove();
-    svg.attr('width', width).attr('height', height);
+
+    // Use smooth transitions instead of clearing everything
+    const isInitialRender = svg.select('.network-container').empty();
+
+    if (isInitialRender) {
+      svg.selectAll('*').remove();
+      svg.attr('width', width).attr('height', height);
+    }
 
     // Convert data to simulation format
     const nodes: SimNode[] = data.map(d => ({
@@ -162,11 +184,13 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .force('center', d3.forceCenter(width / 2, height / 2))
       .force('collision', d3.forceCollide().radius(30));
 
-    // Main group
-    const g = svg.append('g');
-
-    // Setup zoom using utility
-    setupZoom(svg, g, { scaleExtent: [0.2, 4] });
+    // Main group with consistent naming for transitions
+    let g = svg.select('.network-container');
+    if (g.empty()) {
+      g = svg.append('g').attr('class', 'network-container');
+      // Setup zoom only on initial render
+      setupZoom(svg, g, { scaleExtent: [0.2, 4] });
+    }
 
     // Arrow marker for directed edges
     svg.append('defs').append('marker')
@@ -181,27 +205,78 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('fill', themeValues.chart.axis)
       .attr('d', 'M0,-5L10,0L0,5');
 
-    // Links
-    const link = g.append('g')
-      .attr('class', 'links')
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      .attr('stroke', themeValues.chart.grid)
-      .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
-      .attr('stroke-opacity', 0.6)
-      .attr('marker-end', 'url(#arrow)');
+    // Links with smooth transitions
+    let linksGroup = g.select('.links');
+    if (linksGroup.empty()) {
+      linksGroup = g.append('g').attr('class', 'links');
+    }
 
-    // Link labels
-    const linkLabels = g.append('g')
-      .attr('class', 'link-labels')
+    const link = linksGroup
+      .selectAll('line')
+      .data(links, (d: any) => d.id)
+      .join(
+        enter => enter
+          .append('line')
+          .attr('stroke', themeValues.chart.grid)
+          .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
+          .attr('stroke-opacity', 0)
+          .attr('marker-end', 'url(#arrow)')
+          .call(enter => enter
+            .transition()
+            .duration(300)
+            .attr('stroke-opacity', 0.6)
+          ),
+        update => update
+          .call(update => update
+            .transition()
+            .duration(200)
+            .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
+          ),
+        exit => exit
+          .call(exit => exit
+            .transition()
+            .duration(200)
+            .attr('stroke-opacity', 0)
+            .remove()
+          )
+      );
+
+    // Link labels with smooth transitions
+    let linkLabelsGroup = g.select('.link-labels');
+    if (linkLabelsGroup.empty()) {
+      linkLabelsGroup = g.append('g').attr('class', 'link-labels');
+    }
+
+    const linkLabels = linkLabelsGroup
       .selectAll('text')
-      .data(links.filter(l => l.label))
-      .join('text')
-      .attr('class', 'text-xs')
-      .attr('fill', themeValues.text.secondary)
-      .attr('text-anchor', 'middle')
-      .text(d => d.label || '');
+      .data(links.filter(l => l.label), (d: any) => d.id)
+      .join(
+        enter => enter
+          .append('text')
+          .attr('class', 'text-xs')
+          .attr('fill', themeValues.text.secondary)
+          .attr('text-anchor', 'middle')
+          .attr('opacity', 0)
+          .text(d => d.label || '')
+          .call(enter => enter
+            .transition()
+            .duration(300)
+            .attr('opacity', 1)
+          ),
+        update => update
+          .call(update => update
+            .transition()
+            .duration(200)
+            .text(d => d.label || '')
+          ),
+        exit => exit
+          .call(exit => exit
+            .transition()
+            .duration(200)
+            .attr('opacity', 0)
+            .remove()
+          )
+      );
 
     // Suggestion links (dashed lines for suggested connections)
     const suggestionLinks = g.append('g')
@@ -259,29 +334,55 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('fill', theme === 'NeXTSTEP' ? '#ff6b35' : '#3b82f6')
       .attr('d', 'M0,-5L10,0L0,5');
 
-    // Nodes
-    const node = g.append('g')
-      .attr('class', 'nodes')
+    // Nodes with smooth transitions
+    let nodesGroup = g.select('.nodes');
+    if (nodesGroup.empty()) {
+      nodesGroup = g.append('g').attr('class', 'nodes');
+    }
+
+    const node = nodesGroup
       .selectAll<SVGGElement, SimNode>('g')
-      .data(nodes)
-      .join('g')
-      .attr('class', 'node')
-      .style('cursor', 'pointer')
-      .call(d3.drag<SVGGElement, SimNode>()
-        .on('start', (event, d: SimNode) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on('drag', (event, d: SimNode) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on('end', (event, d: SimNode) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        })
+      .data(nodes, (d: SimNode) => d.id)
+      .join(
+        enter => enter
+          .append('g')
+          .attr('class', 'node')
+          .style('cursor', 'pointer')
+          .style('opacity', 0)
+          .call(enter => enter
+            .transition()
+            .duration(300)
+            .style('opacity', 1)
+          )
+          .call(d3.drag<SVGGElement, SimNode>()
+            .on('start', (event, d: SimNode) => {
+              if (!event.active) simulation.alphaTarget(0.3).restart();
+              d.fx = d.x;
+              d.fy = d.y;
+            })
+            .on('drag', (event, d: SimNode) => {
+              d.fx = event.x;
+              d.fy = event.y;
+            })
+            .on('end', (event, d: SimNode) => {
+              if (!event.active) simulation.alphaTarget(0);
+              d.fx = null;
+              d.fy = null;
+            })
+          ),
+        update => update
+          .call(update => update
+            .transition()
+            .duration(200)
+            .style('opacity', 1)
+          ),
+        exit => exit
+          .call(exit => exit
+            .transition()
+            .duration(200)
+            .style('opacity', 0)
+            .remove()
+          )
       );
 
     // Node circles
@@ -342,7 +443,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     return () => {
       simulation.stop();
     };
-  }, [data, edges, theme, selectedNode, onNodeClick, connectionSuggestions, confidenceThreshold, applySuggestion]);
+  }, [data, edges, edgesLoading, edgesError, theme, selectedNode, onNodeClick, connectionSuggestions, confidenceThreshold, applySuggestion]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">
