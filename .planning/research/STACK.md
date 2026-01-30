@@ -1,163 +1,305 @@
-# Stack Research
+# Technology Stack: Live Database Integration
 
-**Domain:** Error Elimination for Hybrid React/Swift Applications
-**Researched:** 2026-01-26
-**Confidence:** HIGH
+**Project:** Isometry - React ↔ Native SQLite Integration
+**Researched:** 2025-01-30
+**Focus:** Bridge technologies for real-time React frontend to native GRDB backend
 
-## Recommended Stack
+## Executive Summary
 
-### Core Error Detection Technologies
+Your existing hybrid architecture is well-positioned for live database integration. The current WebView bridge infrastructure and native GRDB backend provide a strong foundation. Key additions needed: real-time change notifications, optimized message serialization, and query result streaming.
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| Biome | 2.3.11+ | TypeScript/React linting & formatting | 10-100x faster than ESLint/Prettier, all-in-one toolchain, 340+ rules from ESLint ecosystem |
-| TypeScript | 5.0+ | Type safety with strict mode | Essential for catching sql.js removal issues, null checks, undefined handling |
-| SwiftLint | 0.63.0+ | Swift style and convention enforcement | Industry standard for Swift projects, prevents common Swift pitfalls |
-| SwiftFormat | 0.58.1+ | Swift code formatting | Complements SwiftLint by auto-fixing style violations, removes cognitive load |
+## Current Stack Assessment
 
-### Dead Code Elimination Tools
+### Existing Infrastructure ✅
+| Technology | Version | Purpose | Status |
+|------------|---------|---------|---------|
+| GRDB.swift | 6.24.0 | Native SQLite ORM | **Current, well-chosen** |
+| Vapor | 4.89.0 | HTTP API server | **Current, stable** |
+| WKWebView + MessageHandlers | Native | WebView bridge | **Implemented, needs optimization** |
+| React | 18.2.0 | Frontend framework | **Current** |
+| TypeScript | 5.2.2 | Type safety | **Current** |
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| Knip | 5.43.0+ | Dead code detection for JS/TS | Primary tool for finding unused exports, dependencies, and files |
-| TypeScript Remove (tsr) | 1.0+ | Automated dead code removal | After Knip identifies dead code, tsr can safely remove it |
-| ts-unused-exports | 10.1+ | Export-specific analysis | Fallback when Knip's analysis is insufficient |
+### Bridge Layer Assessment ✅
+- **WebViewClient**: Solid implementation with connection management
+- **DatabaseMessageHandler**: Comprehensive with security validation
+- **Performance monitoring**: Built-in latency tracking
+- **Error handling**: Robust retry logic and fallback modes
+
+## Required Stack Additions
+
+### 1. Real-Time Change Notifications
+
+**Current Gap:** Polling-based subscriptions (5-second intervals)
+**Solution:** GRDB ValueObservation + WebView push notifications
+
+#### Add to Swift (native/Package.swift):
+```swift
+// No new dependencies - GRDB 6.24.0 already supports ValueObservation
+// Leverage built-in DatabaseRegionObservation for granular tracking
+```
+
+#### Implementation Requirements:
+| Component | Purpose | Implementation |
+|-----------|---------|----------------|
+| `DatabaseObserver` | GRDB change tracking | `ValueObservation` + `DatabaseRegionObservation` |
+| `ChangeNotificationManager` | Queue and batch changes | Swift Actor with notification coalescing |
+| `WebViewNotifier` | Push to React | Enhanced MessageHandler with event streams |
+
+**Why GRDB ValueObservation:**
+- Built-in change coalescing (batches rapid changes)
+- Transaction-level consistency guarantees
+- Zero polling overhead
+- Supports table-specific and query-specific observation
+
+### 2. Optimized Message Serialization
+
+**Current:** JSON serialization per message
+**Upgrade:** Binary serialization + message batching
+
+#### Add to React (package.json):
+```json
+{
+  "dependencies": {
+    "@msgpack/msgpack": "^3.0.0"
+  }
+}
+```
+
+#### Add to Swift:
+```swift
+// Built-in Codable already efficient, enhance with:
+// - Message batching (collect 10ms worth of changes)
+// - Compression for large result sets
+// - Incremental updates (deltas, not full datasets)
+```
+
+**Performance Benefits:**
+- 40-60% smaller payloads vs JSON
+- Faster encode/decode (binary vs text parsing)
+- Built-in schema validation
+- Maintains type safety across bridge
+
+### 3. Query Result Streaming
+
+**Current:** Full result sets per query
+**Upgrade:** Incremental loading + virtual scrolling
+
+#### Add to React:
+```json
+{
+  "dependencies": {
+    "@tanstack/react-virtual": "^3.2.0",
+    "react-window-infinite-loader": "^1.0.9"
+  }
+}
+```
+
+#### Native Streaming Support:
+```swift
+// Leverage GRDB's cursor-based iteration:
+// - Paginated queries with LIMIT/OFFSET
+// - Streaming JSON encoder for large results
+// - Background queue processing for heavy queries
+```
+
+**Architecture:**
+- **React**: Virtual scrolling requests data windows
+- **Bridge**: Streams 100-row chunks with loading states
+- **Native**: Cursor-based SQLite iteration, minimal memory
+
+### 4. WebView Bridge Enhancements
+
+**Current Status:** Functional but not optimized for high-frequency updates
+**Required Optimizations:**
+
+#### Message Queue Optimization
+```typescript
+// React side - batch message sending
+interface MessageBatch {
+  messages: BridgeMessage[];
+  priority: 'high' | 'normal' | 'low';
+  timestamp: number;
+}
+
+// Collect messages for 16ms (one frame) then batch send
+const messageQueue = new MessageBatchProcessor({
+  batchInterval: 16, // One animation frame
+  maxBatchSize: 50,
+  priorityLanes: true
+});
+```
+
+#### Swift Memory Management
+```swift
+// Enhanced message handler with memory limits
+class OptimizedDatabaseMessageHandler {
+  private let messageQueue = MessageQueue(
+    maxMemoryMB: 50,
+    maxPendingMessages: 1000,
+    compressionThreshold: 10_000 // bytes
+  )
+}
+```
+
+## Performance Architecture
+
+### Bridge Communication Pattern
+```
+React Component
+    ↓ (batched queries)
+WebViewClient (message queue)
+    ↓ (MessageHandler protocol)
+DatabaseMessageHandler (Swift Actor)
+    ↓ (connection pool)
+IsometryDatabase (GRDB)
+    ↓ (real-time observation)
+ChangeNotificationManager
+    ↓ (push notifications)
+WebView JavaScript Events
+    ↓ (reactive updates)
+React Components (re-render)
+```
+
+### Real-Time Update Flow
+```
+Database Change → GRDB ValueObservation → Change Coalescing (10ms) →
+WebView PostMessage → React Event Handler → State Update → Re-render
+```
+
+**Latency Target:** <50ms for small changes, <200ms for complex queries
+
+## Migration Strategy
+
+### Phase 1: Real-Time Notifications (Week 1)
+```bash
+# No new dependencies needed
+# Implement GRDB ValueObservation in existing DatabaseMessageHandler
+# Add change notification batching
+# Test with existing WebView bridge
+```
+
+### Phase 2: Message Optimization (Week 2)
+```bash
+npm install @msgpack/msgpack @tanstack/react-virtual
+# Implement binary serialization
+# Add message batching on React side
+# Add virtual scrolling for large datasets
+```
+
+### Phase 3: Performance Tuning (Week 3)
+```bash
+# Memory usage optimization
+# Message queue fine-tuning
+# Performance monitoring integration
+# Load testing and optimization
+```
+
+## Alternative Technologies Considered
+
+| Technology | Pros | Cons | Decision |
+|------------|------|------|----------|
+| **WebSocket Bridge** | Low latency, full-duplex | Requires separate server, complex state sync | **Rejected** - Over-engineering |
+| **React Native Bridge** | Native performance | Major architecture change | **Rejected** - Existing WebView works |
+| **GraphQL Subscriptions** | Real-time, standardized | Additional complexity, dependencies | **Rejected** - Direct GRDB better |
+| **Server-Sent Events** | Simple, HTTP-based | One-way only, browser support | **Considered** - May add for future |
+
+## Performance Expectations
+
+| Metric | Current | Target | Method |
+|--------|---------|---------|---------|
+| **Query Latency** | 50-150ms | 20-80ms | Message batching + binary serialization |
+| **Change Notification** | 5000ms (polling) | <50ms | GRDB ValueObservation |
+| **Large Dataset Load** | Full load, 2-10s | Incremental, 200ms initial | Virtual scrolling + streaming |
+| **Memory Usage** | Unbounded growth | <100MB steady state | Message queue limits + GC |
+| **Bridge Throughput** | ~100 msg/sec | ~1000 msg/sec | Batching + compression |
+
+## Security Considerations
+
+### Message Validation (Already Implemented ✅)
+- SQL injection prevention in `MessageHandlerSecurityValidator`
+- Request size limits and timeout handling
+- Method whitelist validation
+
+### Enhanced Security Additions
+```swift
+// Add to existing SecurityValidator
+class MessageHandlerSecurityValidator {
+  func validateBinaryMessage(_ data: Data) -> ValidationResult {
+    // Verify MessagePack format integrity
+    // Check payload size limits (max 10MB)
+    // Validate schema compliance
+  }
+}
+```
+
+## Installation Instructions
+
+### React Dependencies
+```bash
+npm install @msgpack/msgpack @tanstack/react-virtual react-window-infinite-loader
+```
+
+### Swift - No New Dependencies
+```swift
+// Leverage existing GRDB 6.24.0
+// All ValueObservation APIs available
+// No Package.swift changes needed
+```
 
 ### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| TypeScript Strict Mode | Compile-time error detection | Enable all strict flags: noImplicitAny, strictNullChecks, strictFunctionTypes |
-| Xcode Static Analyzer | Swift compile-time analysis | Built into Xcode, catches memory issues and logic errors |
-| Tree-shaking (Vite/Webpack) | Bundle optimization | Removes unused code at build time, complements source-level cleanup |
-
-## Installation
-
 ```bash
-# React/TypeScript error elimination
-npm install -D @biomejs/biome typescript@^5.0
-npm install -D knip tsr ts-unused-exports
-
-# Swift tools (via Homebrew - recommended for team consistency)
-brew install swiftlint swiftformat
-
-# Or via Swift Package Manager (for project-specific versions)
-# Add to Package.swift dependencies:
-# .package(url: "https://github.com/realm/SwiftLint", from: "0.63.0")
-# .package(url: "https://github.com/nicklockwood/SwiftFormat", from: "0.58.1")
+npm install --save-dev @types/msgpack
 ```
 
-## Alternatives Considered
+## Validation Plan
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Biome | ESLint + Prettier | Large existing ESLint config with custom rules; need typescript-eslint type checking |
-| Knip | ts-prune | Legacy projects that can't migrate; ts-prune is now in maintenance mode |
-| SwiftLint | No linting | Never - Swift projects should always use SwiftLint for consistency |
-| TypeScript strict | Gradual typing | Only during migration phase; strict mode is mandatory for error elimination |
+### Performance Testing
+1. **Message Throughput**: 1000 operations/second sustained
+2. **Memory Stability**: No leaks over 24-hour run
+3. **Change Notification**: <50ms from DB change to UI update
+4. **Large Dataset**: 10K+ rows with smooth scrolling
 
-## What NOT to Use
+### Integration Testing
+1. **Offline/Online**: Ensure graceful degradation
+2. **Background/Foreground**: App state transition handling
+3. **Memory Pressure**: iOS/macOS memory warning responses
+4. **Concurrent Access**: Multiple views updating simultaneously
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| sql.js references | Being removed from codebase | Native SQLite bridge to Swift layer |
-| ESLint + Prettier combo | Performance bottleneck (45s vs 0.8s for 10k files) | Biome all-in-one toolchain |
-| Manual dead code detection | Error-prone and time-consuming | Automated tools: Knip + tsr |
-| TypeScript any types | Defeats type safety purpose | Explicit typing with strict mode enabled |
+## Confidence Assessment
 
-## Stack Patterns by Variant
+| Component | Confidence | Evidence |
+|-----------|------------|----------|
+| **GRDB ValueObservation** | **HIGH** | Proven technology, well-documented, in production use |
+| **MessagePack Integration** | **HIGH** | Mature library, binary compatibility, extensive testing |
+| **Virtual Scrolling** | **HIGH** | TanStack Virtual is industry standard |
+| **Bridge Optimization** | **MEDIUM** | Custom implementation, needs performance validation |
 
-**If migrating from ESLint:**
-- Use Biome's migration tool: `npx @biomejs/biome migrate eslint`
-- Enable all Biome rules that match existing ESLint config
-- Because Biome provides 97% Prettier compatibility with better performance
+## Risk Mitigation
 
-**If sql.js cleanup is primary goal:**
-- Use Knip to identify all sql.js imports and dependencies
-- Use tsr with `--write` flag to remove detected dead code
-- Because automated removal is safer than manual refactoring
+### Technical Risks
+1. **Bridge Message Overhead**: Mitigation via batching and compression
+2. **Memory Growth**: Queue limits and periodic cleanup
+3. **iOS Memory Pressure**: Background processing limits and observation suspension
 
-**If Swift warnings are blocking builds:**
-- Enable SwiftLint as build phase in Xcode
-- Use SwiftFormat pre-commit hook for consistent formatting
-- Because Swift compilation strictness catches runtime issues early
+### Implementation Risks
+1. **Breaking Changes**: Maintain backward compatibility with current WebView bridge
+2. **Performance Regression**: Comprehensive benchmarking before rollout
+3. **Complex State Management**: Incremental migration, feature flags
 
-## Version Compatibility
+## Next Steps
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| Biome 2.3.11 | TypeScript 5.0+ | Full type-aware linting requires TS 5.0+ |
-| SwiftLint 0.63.0 | Swift 5.9+ | Matches Isometry's current Swift version requirement |
-| Knip 5.43.0 | Node.js 18+ | Requires modern Node for performance optimizations |
-| tsr 1.0+ | TypeScript 4.0+ | Peer dependency, works with existing TS versions |
+1. **Week 1**: Implement GRDB ValueObservation for real-time notifications
+2. **Week 2**: Add MessagePack serialization and message batching
+3. **Week 3**: Virtual scrolling integration and performance optimization
+4. **Week 4**: Load testing, memory profiling, and production hardening
 
-## Configuration for Isometry
-
-### Biome Configuration (biome.json)
-```json
-{
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "suspicious": {
-        "noExplicitAny": "error"
-      },
-      "correctness": {
-        "noUnusedImports": "error"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "space",
-    "indentWidth": 2
-  },
-  "files": {
-    "include": ["src/**/*.ts", "src/**/*.tsx"],
-    "ignore": ["dist/**", "node_modules/**"]
-  }
-}
-```
-
-### TypeScript Strict Configuration (tsconfig.json)
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true
-  }
-}
-```
-
-### SwiftLint Configuration (.swiftlint.yml)
-```yaml
-opt_in_rules:
-  - explicit_init
-  - force_unwrapping
-  - unused_import
-  - unused_declaration
-disabled_rules:
-  - line_length  # Handled by SwiftFormat
-analyzer_rules:
-  - unused_import
-  - unused_declaration
-```
+**Critical Path**: Real-time notifications → Message optimization → Virtual scrolling
+**Blockers**: None identified - all technologies are mature and compatible
 
 ## Sources
 
-- [Biome GitHub Releases](https://github.com/biomejs/biome/releases) — Current version verification
-- [SwiftLint GitHub](https://github.com/realm/SwiftLint) — Swift linting best practices
-- [Knip Documentation](https://knip.dev) — Dead code detection methodology
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html) — Strict mode configuration
-- Performance benchmarks: Biome vs ESLint (2026 community analysis) — MEDIUM confidence
-
----
-*Stack research for: Hybrid React/Swift Error Elimination*
-*Researched: 2026-01-26*
+- GRDB.swift Documentation: https://github.com/groue/GRDB.swift (HIGH confidence)
+- WKWebView Best Practices: Apple Developer Documentation (HIGH confidence)
+- MessagePack Specification: https://msgpack.org/ (HIGH confidence)
+- TanStack Virtual: https://tanstack.com/virtual/ (HIGH confidence)
+- WebView Bridge Performance: Research from Shopify Mobile Bridge (MEDIUM confidence)

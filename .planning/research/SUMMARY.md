@@ -1,153 +1,154 @@
 # Project Research Summary
 
-**Project:** Error Elimination for Hybrid React/Swift Applications
-**Domain:** Code Quality & Technical Debt Reduction
-**Researched:** 2026-01-26
+**Project:** Isometry - Live Database Integration
+**Domain:** React-to-Native SQLite Bridge with Real-Time Synchronization
+**Researched:** 2026-01-30
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project focuses on systematic error elimination in the Isometry hybrid React/Swift knowledge management application. Expert teams approach this domain with automated tooling (ESLint/Biome, SwiftLint), structured cleanup phases, and careful coordination between platforms to avoid bridge invalidation issues. The research reveals a well-established toolchain ecosystem with clear best practices for cross-platform error handling.
+This project involves integrating a React frontend with a native GRDB-based SQLite backend via WebView bridge for a knowledge management application. Research shows that the existing hybrid architecture provides a strong foundation with WebView bridge infrastructure and native GRDB backend already implemented. The key technical challenge is adding real-time database synchronization without introducing performance bottlenecks or race conditions.
 
-The recommended approach centers on Biome for TypeScript error elimination (10-100x faster than ESLint), SwiftLint for Swift code quality, and structured error transport across the WebView bridge. The architecture integrates error detection into existing Actor-based database patterns while maintaining the current PAFV/LATCH data model. Critical risks include TypeScript "any virus" spread during migration, bridge invalidation during cleanup operations, and quarantine strategy abandonment where excluded files accumulate indefinitely.
+The recommended approach leverages GRDB's ValueObservation for change notifications, implements message batching and binary serialization for bridge optimization, and uses virtual scrolling for large datasets. Critical risks center around bridge message serialization becoming a bottleneck, real-time update race conditions causing data inconsistency, and memory management violations across bridge boundaries.
 
-The roadmap should prioritize quick wins (automated linting fixes) before complex migrations (sql.js removal), with dedicated phases for cross-platform coordination and systematic debt reduction. Each phase must include bridge stability validation and rollback capabilities to prevent production issues.
+The technology stack is well-chosen and mature, with no major dependencies requiring replacement. Success depends on implementing proper change notification patterns, transaction coordination, and bridge optimization rather than architectural overhauls. The existing codebase positions the project well for incremental enhancement rather than fundamental rebuilding.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The research identifies a modern, performance-focused stack centered on next-generation tooling. Biome emerges as the clear TypeScript solution with 10-100x performance improvements over ESLint/Prettier combinations, while SwiftLint provides industry-standard Swift code quality enforcement.
+The current technology stack is well-positioned for live database integration with minimal additions required. The foundation of GRDB.swift, WKWebView bridge, and React provides a solid architecture that needs optimization rather than replacement.
 
 **Core technologies:**
-- **Biome 2.3.11+**: TypeScript linting & formatting — 340+ ESLint rules with vastly superior performance
-- **TypeScript 5.0+ strict mode**: Type safety enforcement — essential for catching sql.js removal issues and null handling
-- **SwiftLint 0.63.0+**: Swift convention enforcement — industry standard for preventing common Swift pitfalls
-- **Knip 5.43.0+**: Dead code detection — primary tool for finding unused exports and dependencies safely
-- **Actor-based coordination**: Cross-platform state management — leverages existing Swift concurrency patterns
+- GRDB.swift 6.24.0: Native SQLite ORM — proven technology with built-in ValueObservation for real-time changes
+- WKWebView + MessageHandlers: WebView bridge — existing implementation needs optimization for high-frequency updates
+- @msgpack/msgpack 3.0.0: Binary serialization — 40-60% smaller payloads vs JSON for bridge communication
+- @tanstack/react-virtual 3.2.0: Virtual scrolling — industry standard for large dataset rendering performance
+- Vapor 4.89.0: HTTP API server — current and stable for any additional endpoints needed
 
 ### Expected Features
 
-The feature landscape divides cleanly into immediate requirements versus competitive differentiators, with clear MVP boundaries defined.
+Research identifies a clear distinction between table stakes features users expect versus differentiators that provide competitive advantage.
 
 **Must have (table stakes):**
-- **Zero Build Warnings** — Developer productivity standard, essential for CI/CD pipeline health
-- **Type Safety Validation** — Modern TypeScript expectation with strict mode and null checks
-- **sql.js Cleanup** — Core technical debt elimination for architecture simplification
-- **Error Boundary Protection** — React standard practice for component-level error isolation
-- **Build Process Reliability** — Clean CI/CD pipeline without warning noise
+- Offline-First Operation — knowledge work requires reliable connectivity-independent operation
+- Real-Time Query Results — users expect immediate response to database changes in 2026
+- Optimistic Updates — UI must respond instantly to user actions to prevent frustration
+- Transaction Safety — database integrity must be maintained across all operations
+- Connection State Awareness — users need clear feedback about sync status
 
 **Should have (competitive):**
-- **Real-time Error Analytics** — Proactive issue detection with performance metrics dashboard
-- **Developer Error Context** — Enhanced debugging with rich messages and suggested fixes
-- **Progressive Type Migration** — Incremental modernization with compatibility layers
+- Automatic Background Sync — changes propagate without manual intervention using outbox pattern
+- Conflict Resolution — multi-device editing requires CRDT or user-controlled merge strategies
+- Intelligent Caching Strategy — predictive data loading based on usage patterns
+- Bandwidth-Aware Sync — optimize data transfer based on connection quality
 
 **Defer (v2+):**
-- **Predictive Error Prevention** — AI-assisted code quality requiring ML infrastructure
-- **Automated Error Recovery** — Complex self-healing features requiring stable foundation
+- Live Collaborative Cursors — advanced real-time collaboration after core adoption
+- Granular Change Tracking — field-level change management for complex conflict resolution
+- Multi-User Workspace Isolation — enterprise team features after individual validation
 
 ### Architecture Approach
 
-The architecture integrates error elimination into Isometry's existing hybrid structure through minimal disruption patterns. New error coordination components layer onto the current React UI → WebView Bridge → Swift Backend flow, using structured error transport and Actor-safe cleanup coordination.
+The standard architecture for React-to-native SQLite integration follows a layered approach with clear separation between React hooks, bridge communication, and native database operations. The pattern emphasizes environment detection for development vs production, message correlation for reliability, and actor-based concurrency for thread safety.
 
 **Major components:**
-1. **TypeScript Lint Coordinator** — ESLint/Knip integration with warning aggregation in React layer
-2. **Swift Lint Coordinator** — SwiftLint integration with rule validation in native backend
-3. **Cross-Platform Error Detector** — Bridge message validation ensuring type safety across boundaries
-4. **Cleanup Progress Tracker** — Unified progress state with rollback capability via CloudKit sync
+1. Query Hooks (useSQLiteQuery, useLiveData) — abstract bridge complexity with environment detection and fallback patterns
+2. WebView Bridge Layer — handles message correlation, circuit breaker patterns, and performance monitoring with async message passing
+3. Native Database Actor (IsometryDatabase) — provides thread-safe GRDB operations with ValueObservation for change tracking
 
 ### Critical Pitfalls
 
-Research identified four critical failure modes that can derail error elimination projects, each requiring specific prevention strategies.
+Research identified five critical pitfalls that consistently derail similar integrations, with specific prevention strategies.
 
-1. **TypeScript "Any Virus" Spread** — Temporary `any` types become permanent, eliminating type safety benefits. Prevent with `unknown` usage, `@ts-expect-error` over `@ts-ignore`, and ESLint rules blocking new `any` types.
-
-2. **Bridge Invalidation During Cleanup** — WebView bridge invalidation during cleanup causes mysterious crashes. Prevent with proper RCTInvalidating protocol implementation, nil checks, and weak bridge references.
-
-3. **Quarantine Strategy Abandonment** — Excluded files list grows indefinitely, creating unmonitored legacy zones. Prevent with visible debt dashboards, automated alerts for old exclusions, and dedicated cleanup sprint capacity.
-
-4. **Database Migration State Leakage** — SQLite migrations fail during development reloads, causing schema/type mismatches. Prevent with Metro .sql configuration, PRAGMA user_version tracking, and cold start testing.
+1. **Bridge Message Serialization Bottleneck** — JSON serialization of large result sets blocks main thread; prevent with pagination (≤50 records), streaming parsers, and compression
+2. **Real-time Update Race Conditions** — concurrent updates arrive out of order causing stale data; prevent with operation sequencing, correlation IDs, and proper invalidation timing
+3. **Query Translation Complexity Explosion** — dynamic SQL generation becomes unmaintainable; prevent with predefined query templates and parameter substitution only
+4. **Memory Management Across Bridge Boundaries** — Swift ARC and React GC create reference cycles; prevent with weak references and explicit cleanup protocols
+5. **Transaction Boundary Violations** — bridge communications don't respect SQLite ACID properties; prevent with explicit transaction control exposed to React layer
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on research, suggested phase structure prioritizes foundation establishment before advanced features:
 
-### Phase 1: Automated Lint Cleanup
-**Rationale:** Low-risk, high-impact wins build momentum and establish tooling foundation
-**Delivers:** Clean build output, modern lint configuration, basic error boundaries
-**Addresses:** Zero Build Warnings, Build Process Reliability from feature priorities
-**Avoids:** TypeScript "any virus" spread by establishing strict patterns early
+### Phase 1: Bridge Optimization Foundation
+**Rationale:** Must establish reliable, performant bridge communication before adding real-time features
+**Delivers:** Message batching, binary serialization, pagination, performance monitoring, circuit breaker patterns
+**Addresses:** Bridge message serialization bottleneck, basic connection reliability
+**Avoids:** Performance degradation that would impact all subsequent features
 
-### Phase 2: Type Safety Migration
-**Rationale:** Type foundation required before complex sql.js cleanup can proceed safely
-**Delivers:** TypeScript strict mode, null safety patterns, bridge type validation
-**Uses:** Biome for performance, TypeScript 5.0+ for advanced type checking
-**Implements:** Cross-Platform Error Detector architecture component
+### Phase 2: Real-Time Change Notifications
+**Rationale:** Core value proposition requires live updates; depends on optimized bridge from Phase 1
+**Delivers:** GRDB ValueObservation integration, change event batching, push notifications to React
+**Uses:** Existing GRDB 6.24.0 capabilities, no new dependencies required
+**Implements:** Live update notification system from native to React via bridge events
 
-### Phase 3: sql.js Elimination
-**Rationale:** Major architectural change requires stable lint/type foundation
-**Delivers:** Native SQLite bridge, sql.js dependency removal, data migration validation
-**Addresses:** Core technical debt elimination priority
-**Avoids:** Database Migration State Leakage through proper Metro config and testing
+### Phase 3: Transaction and Sync Management
+**Rationale:** Multi-device usage requires proper transaction control and conflict resolution
+**Delivers:** Bridge-level transaction control, optimistic updates with rollback, basic conflict resolution
+**Addresses:** Transaction boundary violations, race condition prevention
+**Avoids:** Data corruption from uncoordinated updates across components
 
-### Phase 4: Cross-Platform Coordination
-**Rationale:** Advanced error handling builds on stabilized individual platforms
-**Delivers:** Unified error analytics, cleanup progress sync, advanced recovery patterns
-**Uses:** Swift Actors for coordination, CloudKit for multi-device state
-**Implements:** Complete Cleanup Progress Tracker with rollback capabilities
+### Phase 4: Advanced Query and Caching
+**Rationale:** Performance optimization phase after core functionality is stable
+**Delivers:** Virtual scrolling integration, intelligent caching, query optimization, memory management
+**Uses:** TanStack Virtual, enhanced message queue limits, cleanup protocols
+**Implements:** Scalable data loading patterns for large datasets
 
 ### Phase Ordering Rationale
 
-- **Automated before manual:** Establish tooling and quick wins before complex human-judgment tasks
-- **Individual before cross-platform:** Stabilize TypeScript and Swift separately before bridge coordination
-- **Foundation before features:** Type safety and sql.js cleanup enable advanced error handling features
-- **This ordering avoids:** Bridge invalidation issues by stabilizing platforms individually first
+- Foundation-first approach prevents technical debt accumulation that becomes expensive to fix later
+- Bridge optimization must precede real-time features to avoid performance bottlenecks under load
+- Transaction management requires understanding of bridge communication patterns before implementation
+- Advanced features like collaborative editing depend on stable real-time and sync infrastructure
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (sql.js elimination):** Complex database migration patterns, need specific GRDB integration research
-- **Phase 4 (cross-platform coordination):** Custom WebView bridge patterns, limited documentation for Actor-based coordination
+- **Phase 3:** Transaction coordination across WebView bridge is complex domain with limited documentation
+- **Phase 4:** Memory management patterns specific to React-GRDB integration need validation
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1 (lint cleanup):** Well-documented ESLint/Biome patterns, established best practices
-- **Phase 2 (type migration):** Standard TypeScript strict mode adoption, extensive documentation
+- **Phase 1:** Message optimization and serialization are well-documented with established libraries
+- **Phase 2:** GRDB ValueObservation is mature feature with extensive documentation and examples
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All tools actively maintained with extensive documentation, performance claims verified |
-| Features | HIGH | Clear user expectations based on modern development standards, well-defined MVP |
-| Architecture | HIGH | Builds on existing Isometry patterns, minimal disruption approach validated |
-| Pitfalls | HIGH | Based on documented failure cases and established prevention strategies |
+| Stack | HIGH | All technologies mature with proven track record; GRDB and MessagePack extensively documented |
+| Features | MEDIUM | Feature expectations clear but implementation complexity varies significantly by feature |
+| Architecture | HIGH | Bridge patterns well-established; existing codebase provides solid foundation |
+| Pitfalls | HIGH | Specific pitfalls backed by community experience and detailed prevention strategies |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-Research was comprehensive, but two areas need validation during implementation:
+Several areas require validation during implementation due to project-specific constraints:
 
-- **Bridge performance impact:** Need to validate error message transport doesn't degrade WebView bridge performance under load
-- **CloudKit sync patterns:** Cleanup progress state modeling for CloudKit may need iteration based on actual sync behavior
+- Memory management patterns: Specific to React-GRDB-WebView combination, needs testing under load
+- Transaction boundary design: Optimal abstraction level for exposing ACID guarantees to React hooks
+- Change notification granularity: Balance between update frequency and performance for different query types
+- Bridge message queue sizing: Optimal batching parameters for typical knowledge management workloads
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Biome GitHub Releases](https://github.com/biomejs/biome/releases) — Current version verification and performance benchmarks
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/handbook/2/everyday-types.html) — Strict mode configuration and migration patterns
-- [SwiftLint GitHub](https://github.com/realm/SwiftLint) — Swift linting best practices and team integration
-- Existing Isometry codebase — WebView bridge patterns, database Actor architecture, error handling approaches
+- GRDB.swift Documentation — ValueObservation patterns, memory management, transaction handling
+- Apple WKScriptMessageHandler Documentation — bridge communication patterns and security considerations
+- MessagePack Specification — binary serialization performance characteristics and implementation patterns
+- TanStack Virtual Documentation — virtual scrolling integration patterns for React applications
 
 ### Secondary (MEDIUM confidence)
-- [Knip Documentation](https://knip.dev) — Dead code detection methodology and safety practices
-- [React Native Bridge Migration Patterns](https://shopify.engineering/react-native-new-architecture) — Cross-platform coordination strategies
-- Community performance analysis (2026) — Biome vs ESLint benchmarks and migration experiences
+- Shopify Mobile Bridge Architecture — performance optimization strategies for WebView bridge communication
+- WebView Bridge Performance Studies — latency characteristics and optimization approaches for mobile hybrid apps
+- React Query Cache Invalidation — patterns for coordinating client-side cache with real-time updates
 
 ### Tertiary (LOW confidence)
-- SQLite migration strategies — Some patterns need validation with GRDB.swift specifically
-- Actor-based error coordination — Limited examples for this specific use case
+- Community discussions on React Native SQLite — bridge integration challenges need validation in WebView context
+- Performance benchmarks for hybrid apps — specific to different domains, needs validation for knowledge management use case
 
 ---
-*Research completed: 2026-01-26*
+*Research completed: 2026-01-30*
 *Ready for roadmap: yes*

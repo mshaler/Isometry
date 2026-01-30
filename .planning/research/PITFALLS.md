@@ -1,108 +1,138 @@
-# Domain Pitfalls: Error Elimination in Hybrid React/Swift Applications
+# Domain Pitfalls: React-to-Native SQLite Bridge Integration
 
-**Domain:** Error elimination in hybrid React/Swift applications
-**Researched:** 2026-01-26
+**Domain:** React WebView to native SQLite (GRDB) bridge integration
+**Researched:** 2026-01-30
 **Confidence:** HIGH
 
 ## Critical Pitfalls
 
-### Pitfall 1: TypeScript Migration "Any Virus" Spread
+### Pitfall 1: Bridge Message Serialization Bottleneck
 
 **What goes wrong:**
-Temporary `any` types spread throughout the codebase during migration cleanup, creating "TypeScript syntax with JavaScript flexibility" - the worst of both worlds. Teams end up with thousands of `any` annotations that make the codebase feel type-safe but provide no actual safety.
+JSON serialization becomes a performance bottleneck when transferring large query results between React and native layers. Teams unknowingly serialize entire result sets through postMessage, causing UI freezes and memory spikes. With 1000+ records, serialization can take 100-500ms, blocking the main thread.
 
 **Why it happens:**
-Developers use `any` as a quick fix during migration pressure, then never return to clean it up. The compiler stops complaining, so the technical debt becomes invisible until refactoring or debugging sessions.
+Developers treat WebView bridge like a simple function call, not realizing the JSON serialization overhead. Large objects with nested properties (common in graph databases) create exponentially expensive serialization cycles. The bridge appears to work fine with small datasets during development.
 
 **How to avoid:**
-- Use `unknown` instead of `any` for better type safety
-- Implement custom aliases like `$TSFixMe` with clear naming conventions
-- Use `@ts-expect-error` instead of `@ts-ignore` (TypeScript will warn if error no longer exists)
-- Set up ESLint rules to flag new `any` usage in CI
+- Implement pagination at the bridge level, never transfer more than 50 records per message
+- Use streaming JSON parsers for large result sets
+- Compress repeated data structures before serialization
+- Implement result caching with incremental updates instead of full refreshes
+- Monitor serialization time and set hard limits (>50ms should trigger warnings)
 
 **Warning signs:**
-- Type coverage dropping below 90%
-- Increasing number of runtime type errors
-- Developers avoiding type annotations in new code
-- IDE autocomplete becoming less helpful
+- Bridge calls taking >100ms in performance profiling
+- Memory usage spikes during data loading
+- UI becoming unresponsive during query execution
+- Users reporting "app freezing" when viewing large datasets
 
 **Phase to address:**
-Error Elimination Phase - Create systematic `any` cleanup sprint with automated detection
+Live Database Integration Phase - Implement bridge optimization layer before connecting to real data
 
 ---
 
-### Pitfall 2: Bridge Invalidation During Cleanup
+### Pitfall 2: Real-time Update Race Conditions
 
 **What goes wrong:**
-In hybrid apps with React/Swift bridges, cleanup operations can trigger bridge invalidation while native modules are still being accessed. This causes mysterious crashes with messages like "bridge has been invalidated" during development reloads or app backgrounding.
+Multiple concurrent database updates from different React components create race conditions in the bridge layer. Updates arrive out of order, causing stale data to overwrite fresh data. State synchronization between native SQLite and React hooks becomes inconsistent, leading to phantom data updates and user confusion.
 
 **Why it happens:**
-Legacy native modules that rely on bridge-specific APIs don't properly handle invalidation timing. Components like RCTImageView get deallocated after the bridge is invalidated, causing lookup failures and memory access violations.
+React's concurrent features and WebView bridge's asynchronous nature don't provide ordering guarantees. Teams assume database updates are atomic at the UI level, but bridge latency introduces timing gaps. Query invalidation happens before updates complete, triggering stale data fetches.
 
 **How to avoid:**
-- Implement proper RCTInvalidating protocol conformance in native modules
-- Add nil checks for bridge access in all native module methods
-- Use weak references to bridge instances in native code
-- Test bridge invalidation scenarios explicitly in development
+- Implement operation sequencing with correlation IDs for all bridge messages
+- Use optimistic updates with rollback capabilities for immediate UI feedback
+- Batch multiple updates into single bridge transactions
+- Implement proper query invalidation timing (wait for update confirmation)
+- Add version timestamps to all data to detect stale updates
 
 **Warning signs:**
-- Random crashes during development reload
-- "React not found" errors in AppDelegate.swift
-- Bridge deadlocks during navigation
-- Native modules returning undefined unexpectedly
+- Data appearing to "flicker" between old and new values
+- Users reporting their changes "disappeared"
+- Database queries returning inconsistent results across components
+- React DevTools showing components re-rendering with old data
 
 **Phase to address:**
-Native Bridge Stabilization Phase - Audit all native modules for proper invalidation handling
+Real-time Synchronization Phase - Implement transaction coordination and conflict resolution
 
 ---
 
-### Pitfall 3: Quarantine Strategy Abandonment
+### Pitfall 3: Query Translation Complexity Explosion
 
 **What goes wrong:**
-Teams start with a "quarantine strategy" (excluding files with errors from linting/type checking) but never return to clean up quarantined files. The excluded files list grows indefinitely, creating a parallel codebase that's completely unmonitored.
+Translating complex React query patterns (filters, sorts, pagination) into native GRDB queries becomes unmaintainable. Teams build increasingly complex translation layers that don't properly handle edge cases, leading to SQL injection vulnerabilities or query generation failures. The abstraction leaks when advanced features are needed.
 
 **Why it happens:**
-The immediate pain relief from excluding problematic files makes the problem invisible. Without systematic tracking, teams lose sight of technical debt accumulation and the excluded files become "legacy code" that's too risky to touch.
+Developers try to create a universal query translation layer that handles all possible React query patterns. They underestimate the complexity of maintaining SQL generation logic and proper parameterization. Type safety is lost at the translation boundary.
 
 **How to avoid:**
-- Create separate linting configs: one for development (with exclusions) and one for full auditing
-- Track quarantined files in a visible dashboard with age metrics
-- Set up automated issues for oldest quarantined files
-- Allocate specific sprint capacity for "unquarantining" files
+- Use predefined query templates with parameter substitution instead of dynamic SQL generation
+- Implement a finite set of supported query patterns rather than universal translation
+- Validate all query parameters at the bridge boundary with strict type checking
+- Use GRDB's prepared statement caching for common query patterns
+- Create a query builder DSL that maps directly to safe GRDB operations
 
 **Warning signs:**
-- Exclusion list growing faster than it shrinks
-- New team members avoiding certain directories
-- Different linting rules in different parts of codebase
-- "Don't touch that file" becoming common advice
+- Bridge layer having hundreds of lines of SQL generation code
+- Query failures that only happen with certain data combinations
+- Developers avoiding complex queries because the bridge doesn't support them
+- Security scanner flagging potential SQL injection vulnerabilities
 
 **Phase to address:**
-Systematic Cleanup Phase - Create debt reduction sprints with quarantine size targets
+Query Optimization Phase - Design constrained but safe query translation layer
 
 ---
 
-### Pitfall 4: Database Migration State Leakage
+### Pitfall 4: Memory Management Across Bridge Boundaries
 
 **What goes wrong:**
-SQLite migrations in hybrid apps fail to properly clean up state between development reloads, causing schema version mismatches and data corruption. The database schema gets out of sync with TypeScript types, leading to runtime errors that don't surface until production.
+Swift objects referenced from React contexts don't get properly released, causing memory leaks that grow over app usage. Database connections accumulate without proper cleanup. React components hold references to Swift objects that survive longer than the native objects themselves, causing crashes on access.
 
 **Why it happens:**
-Expo's Metro bundler doesn't recognize .sql files by default, causing inconsistent migration loading. State management doesn't properly invalidate caches after schema changes, and migration rollback strategies are often missing in development.
+React's garbage collection and Swift's ARC operate independently across the bridge. Developers create two-way references without understanding the lifecycle implications. Bridge invalidation doesn't properly clean up cross-references, leaving dangling pointers.
 
 **How to avoid:**
-- Add .sql to sourceExts in Metro configuration
-- Implement PRAGMA user_version tracking for schema consistency
-- Use TanStack Query cache invalidation after migrations
-- Test migration scenarios with cold app starts
+- Use weak references for all cross-bridge object relationships
+- Implement explicit cleanup protocols for Swift objects exposed to React
+- Set up automatic bridge reference cleanup on app backgrounding/foregrounding
+- Monitor memory usage trends during development with automatic leak detection
+- Design value-based APIs instead of reference-based APIs across the bridge
 
 **Warning signs:**
-- "Column doesn't exist" errors in development
-- TypeScript types not matching actual database schema
-- Query results returning undefined unexpectedly
-- Database reset being the only fix for errors
+- Memory usage increasing monotonically during app usage
+- Crashes with "deallocated object" messages when accessing bridge objects
+- Database connection count growing without bound
+- App performance degrading after extended usage periods
 
 **Phase to address:**
-Database Migration Phase - Implement proper migration management and state cleanup
+Memory Management Phase - Audit all cross-bridge references and implement proper cleanup
+
+---
+
+### Pitfall 5: Transaction Boundary Violations
+
+**What goes wrong:**
+React components assume database operations are atomic, but bridge communications don't respect SQLite transaction boundaries. Multiple components make interdependent database updates that should be atomic, but bridge latency causes partial updates to be visible. Transaction rollbacks in native code don't properly notify React components.
+
+**Why it happens:**
+Web developers aren't familiar with database transaction concepts and assume ACID properties apply automatically. The asynchronous bridge makes it unclear when transactions begin/end. React hooks don't provide transaction boundary abstractions.
+
+**How to avoid:**
+- Expose transaction control explicitly to React layer with begin/commit/rollback bridge commands
+- Implement higher-level "operation" abstractions that guarantee atomicity
+- Use database-level constraints to prevent invalid partial state
+- Design React hooks that respect transaction boundaries (`useTransactionalUpdate`)
+- Provide transaction status feedback to UI layer
+
+**Warning signs:**
+- Users seeing partially updated data states
+- Data validation errors about inconsistent relationships
+- Race conditions between dependent updates
+- Undo operations not working correctly
+
+**Phase to address:**
+Transaction Management Phase - Implement proper ACID guarantees across bridge
 
 ---
 
@@ -112,23 +142,23 @@ Shortcuts that seem reasonable but create long-term problems.
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Using `any` for quick fixes | Eliminates compiler errors immediately | Loses all type safety benefits, spreads virally | Never for production code |
-| Excluding files from linting | Reduces noise in CI builds | Creates untouchable legacy code zones | Only during initial migration setup |
-| Suppressing warnings globally | Clean build output | Masks real issues, degrades code quality | Never - use targeted suppressions only |
-| Skipping migration tests | Faster development iteration | Data corruption in production | Never for schema-changing migrations |
-| Ignoring bridge invalidation | Simpler native module code | Random crashes in production | Never - always handle invalidation |
+| Direct JSON serialization of query results | Simple implementation | Performance bottlenecks at scale | Only for <10 record result sets |
+| Global bridge instance shared across components | Easy component access | Memory leaks and state conflicts | Never - use proper DI patterns |
+| Skipping bridge message validation | Faster development iteration | Runtime crashes from type mismatches | Never - validation prevents crashes |
+| Optimistic updates without rollback | Immediate UI feedback | Data corruption on failure | Only for non-critical operations |
+| Using setTimeout for bridge synchronization | Quick fix for timing issues | Unreliable timing-dependent behavior | Never - use proper event coordination |
 
 ## Integration Gotchas
 
-Common mistakes when connecting React and Swift components.
+Common mistakes when connecting React frontends to native database backends.
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Native Module Cleanup | Not implementing RCTInvalidating | Always implement invalidate() method |
-| State Synchronization | Assuming immediate state updates | Use async/await for bridge communications |
-| Type Boundary | Trusting runtime types from bridge | Always validate types at bridge boundaries |
-| Metro Bundle Config | Not including .sql in sourceExts | Configure Metro for all resource types |
-| Error Handling | Swallowing bridge errors silently | Implement proper error propagation |
+| Bridge Message Validation | Trusting message data types from JavaScript | Always validate and coerce types at Swift boundary |
+| Query Result Caching | Caching at React level only | Implement caching at bridge level for better performance |
+| Error Propagation | Swallowing database errors in bridge layer | Always propagate errors with context to React error boundaries |
+| State Synchronization | Polling for changes from React | Use push-based notifications from native to React |
+| Transaction Coordination | Each component managing its own updates | Coordinate updates through bridge transaction manager |
 
 ## Performance Traps
 
@@ -136,10 +166,11 @@ Patterns that work at small scale but fail as usage grows.
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Lint rule explosion | Build times increase exponentially | Use opt-out rather than opt-in rules | >500 files |
-| Global any types | Autocomplete becomes useless | Incremental typing with unknown | >10% any coverage |
-| Uncontrolled exclusions | CI becomes meaningless | Time-boxed exclusion periods | >50 excluded files |
-| Bridge polling | UI freezes during data sync | Use event-driven bridge communication | >100 bridge calls/second |
+| Large result set serialization | UI freezes during data loading | Implement pagination at bridge level | >50 records per query |
+| Frequent bridge polling | Battery drain and performance loss | Use event-driven updates with push notifications | >10 polls/second |
+| Unbatched database operations | Poor transaction performance | Batch related operations into single transactions | >100 operations/minute |
+| Cache invalidation storms | Excessive re-queries after updates | Implement granular cache invalidation by data type | >1000 cached queries |
+| Synchronous bridge blocking | Main thread freezes | Use async bridge with promise-based APIs | Any synchronous database operation |
 
 ## Security Mistakes
 
@@ -147,32 +178,35 @@ Domain-specific security issues beyond general web security.
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Bridge data validation | Native code trusts JavaScript data | Always validate at native boundaries |
-| Error message exposure | Sensitive data in development errors | Sanitize error messages before logging |
-| Development/production config | Different error handling in environments | Consistent error handling across environments |
+| SQL injection in query parameters | Database compromise | Always use parameterized queries with GRDB prepared statements |
+| Exposing raw SQL to React layer | Information disclosure | Provide high-level operations only, hide SQL implementation |
+| Unvalidated bridge input | Code injection via bridge | Validate all message types and parameters at Swift boundary |
+| Database credentials in JavaScript | Credential exposure | Keep all database access confined to native layer |
+| Error message information leakage | Data structure exposure | Sanitize error messages before sending to React layer |
 
 ## UX Pitfalls
 
-Common user experience mistakes in error elimination.
+Common user experience mistakes in database integration.
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Overeager error suppression | Silent failures confuse users | Graceful degradation with user feedback |
-| Development-only fixes | Production crashes increase | Test error scenarios in production-like environment |
-| Bridge timeout defaults | App appears frozen during sync | Show loading states for bridge operations |
-| Type coercion failures | Unexpected behavior in forms | Strict validation with clear error messages |
+| No loading states during bridge operations | App appears frozen | Show skeleton loading for all async database operations |
+| Optimistic updates without error handling | User data appears to save but is lost | Implement rollback with user notification on failure |
+| Inconsistent data between views | User confusion about "which data is real" | Ensure cache invalidation propagates to all affected components |
+| No offline capability feedback | Users don't know if data will save | Clearly indicate online/offline status and sync state |
+| Bridge timeout without feedback | Silent failures confuse users | Show clear error messages for bridge communication failures |
 
 ## "Looks Done But Isn't" Checklist
 
 Things that appear complete but are missing critical pieces.
 
-- [ ] **Type Migration:** Often missing runtime validation — verify types are checked at boundaries
-- [ ] **Lint Cleanup:** Often missing CI integration — verify new violations are blocked
-- [ ] **Bridge Cleanup:** Often missing invalidation handling — verify proper cleanup on reload
-- [ ] **Database Migration:** Often missing rollback strategy — verify reverse migrations work
-- [ ] **Error Suppression:** Often missing review schedule — verify suppressions are time-bounded
-- [ ] **Native Integration:** Often missing memory management — verify weak references used properly
-- [ ] **State Synchronization:** Often missing cache invalidation — verify state consistency across reloads
+- [ ] **Bridge Communication:** Often missing error boundaries — verify React error boundaries catch bridge failures
+- [ ] **Query Performance:** Often missing pagination — verify large result sets don't block UI
+- [ ] **Memory Management:** Often missing cleanup — verify Swift objects don't leak across bridge references
+- [ ] **Transaction Safety:** Often missing rollback — verify failed operations don't leave partial state
+- [ ] **Cache Invalidation:** Often missing granular updates — verify changes propagate to all affected queries
+- [ ] **Bridge Security:** Often missing input validation — verify all React data is validated in Swift
+- [ ] **Error Propagation:** Often missing context — verify bridge errors include sufficient debugging information
 
 ## Recovery Strategies
 
@@ -180,10 +214,11 @@ When pitfalls occur despite prevention, how to recover.
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Any virus spread | HIGH | 1. Audit codebase with type coverage tools 2. Create targeted refactoring sprints 3. Implement strict rules for new code |
-| Bridge invalidation bugs | MEDIUM | 1. Add comprehensive error logging 2. Implement proper RCTInvalidating 3. Add bridge state monitoring |
-| Quarantine abandonment | MEDIUM | 1. Create exclusion dashboard 2. Set up automated debt reduction 3. Allocate sprint capacity |
-| Database state leakage | HIGH | 1. Reset all local databases 2. Implement proper migration management 3. Add schema validation |
+| Bridge serialization bottleneck | MEDIUM | 1. Profile all bridge messages 2. Implement pagination layer 3. Add performance monitoring |
+| Real-time update race conditions | HIGH | 1. Add operation sequencing 2. Implement conflict resolution 3. Design proper state machine |
+| Query translation complexity | HIGH | 1. Simplify to predefined patterns 2. Remove dynamic SQL generation 3. Add query validation layer |
+| Memory leaks across bridge | MEDIUM | 1. Audit all cross-bridge references 2. Add weak reference patterns 3. Implement cleanup protocols |
+| Transaction boundary violations | HIGH | 1. Design transaction-aware hooks 2. Add transaction status tracking 3. Implement rollback mechanisms |
 
 ## Pitfall-to-Phase Mapping
 
@@ -191,22 +226,22 @@ How roadmap phases should address these pitfalls.
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| TypeScript any spread | Error Elimination Phase | Type coverage >95%, zero new any types in CI |
-| Bridge invalidation | Native Stabilization Phase | Zero bridge-related crashes in testing |
-| Quarantine abandonment | Systematic Cleanup Phase | Quarantine list shrinking week-over-week |
-| Database state leakage | Migration Management Phase | All migrations tested with cold starts |
-| Lint rule explosion | Configuration Optimization Phase | Build times under 30 seconds |
-| Global suppressions | Warning Audit Phase | All suppressions have expiration dates |
+| Bridge message serialization | Bridge Optimization Phase | All bridge calls <50ms, pagination implemented |
+| Real-time update race conditions | Synchronization Phase | Zero data inconsistency in testing, proper operation ordering |
+| Query translation complexity | Query Layer Phase | <100 lines SQL generation code, predefined patterns only |
+| Memory management violations | Memory Cleanup Phase | No memory growth over 8-hour usage, proper reference cleanup |
+| Transaction boundary violations | Transaction Control Phase | All multi-step operations atomic, proper rollback handling |
+| Bridge security vulnerabilities | Security Audit Phase | All inputs validated, no dynamic SQL generation |
 
 ## Sources
 
-- [TypeScript Best Practices 2025](https://dev.to/mitu_mariam/typescript-best-practices-in-2025-57hb) - HIGH confidence
-- [React Native New Architecture Migration](https://shopify.engineering/react-native-new-architecture) - MEDIUM confidence
-- [SwiftLint Large Codebase Strategies](https://medium.com/@chapuyj/fixing-thousands-of-swiftlint-violations-over-time-436691001633) - MEDIUM confidence
-- [SQLite Migration Strategies 2025](https://www.sqliteforum.com/p/sqlite-versioning-and-migration-strategies) - MEDIUM confidence
-- [JavaScript to TypeScript Migration Guide](https://shubhojit-mitra-dev.medium.com/lets-migrate-to-typescript-an-incremental-adoption-guide-to-type-safe-codebases-30a90711d13f) - MEDIUM confidence
-- [React Native Bridge Invalidation Issues](https://github.com/facebook/react-native/commit/8ad810717ee1769aa5ff6c73e0c9bfa8c43a3bac) - HIGH confidence
+- [WebView Bridge Performance 2025](https://medium.com/soluto-engineering/webview-bridge-communication-is-it-really-that-smooth-81dba4bf339e) - HIGH confidence
+- [React Native SQLite Memory Leaks](https://github.com/drizzle-team/drizzle-orm/issues/4068) - MEDIUM confidence
+- [GRDB Memory Management](https://github.com/groue/GRDB.swift/issues/107) - HIGH confidence
+- [WebView Security Pitfalls 2025](https://www.zellic.io/blog/webview-security/) - HIGH confidence
+- [React Query Cache Invalidation](https://tanstack.com/query/v5/docs/framework/react/guides/query-invalidation) - HIGH confidence
+- [SQLite Transaction Isolation](https://sqlite.org/forum/info/b4796ea1061493d7dc5c2dea922047aac2cb6b708f274f0a32e000b3ba5ddaf5) - MEDIUM confidence
 
 ---
-*Pitfalls research for: Error elimination in hybrid React/Swift applications*
-*Researched: 2026-01-26*
+*Pitfalls research for: React WebView to native SQLite bridge integration*
+*Researched: 2026-01-30*
