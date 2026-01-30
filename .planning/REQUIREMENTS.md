@@ -72,11 +72,11 @@ Requirements mapped to phases in ROADMAP.md:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRIDGE-01 | Phase 18 | Pending |
-| BRIDGE-02 | Phase 18 | Pending |
-| BRIDGE-03 | Phase 18 | Pending |
-| BRIDGE-04 | Phase 18 | Pending |
-| BRIDGE-05 | Phase 18 | Pending |
+| BRIDGE-01 | Phase 18 | Complete |
+| BRIDGE-02 | Phase 18 | Complete |
+| BRIDGE-03 | Phase 18 | Complete |
+| BRIDGE-04 | Phase 18 | Complete |
+| BRIDGE-05 | Phase 18 | Complete |
 | SYNC-01 | Phase 19 | Pending |
 | SYNC-02 | Phase 19 | Pending |
 | SYNC-03 | Phase 19 | Pending |
