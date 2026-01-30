@@ -1,52 +1,68 @@
-# Isometry v2.3 Requirements
+# Isometry v3.1 Requirements
 
-**Milestone:** v2.3 Error Elimination
-**Goal:** Achieve zero warnings and complete cleanup of legacy sql.js dependencies
-**Last Updated:** 2026-01-26
+**Milestone:** v3.1 Live Database Integration
+**Goal:** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring
+**Last Updated:** 2026-01-30
 
-## v2.3 Requirements for THIS Milestone
+## v3.1 Requirements for THIS Milestone
 
-### Foundation Cleanup
-- [ ] **FOUND-01**: Zero build warnings across TypeScript and Swift codebases
-- [ ] **FOUND-02**: TypeScript strict mode compliance without `any` escape hatches
-- [ ] **FOUND-03**: Complete sql.js reference removal from React prototype
-- [ ] **FOUND-04**: Dependency tree cleanup removing unused packages
+### Bridge Optimization
+- [ ] **BRIDGE-01**: Message batching with configurable intervals (≤16ms for 60fps)
+- [ ] **BRIDGE-02**: Binary serialization using MessagePack for 40-60% payload reduction
+- [ ] **BRIDGE-03**: Query result pagination with maximum 50 records per message
+- [ ] **BRIDGE-04**: Circuit breaker patterns for bridge reliability and failure recovery
+- [ ] **BRIDGE-05**: Performance monitoring dashboard for bridge operation metrics
 
-### Type Safety
-- [ ] **TYPE-01**: Strict null checking with elimination of `any` types
-- [ ] **TYPE-02**: Type guard implementation for legacy code migration
-- [ ] **TYPE-03**: Interface consistency across React/Swift bridge
-- [ ] **TYPE-04**: Predictive type error prevention with IDE integration
-- [ ] **TYPE-05**: Automated type inference improvements
+### Real-Time Synchronization
+- [ ] **SYNC-01**: Live query results using GRDB ValueObservation for change detection
+- [ ] **SYNC-02**: Optimistic updates with rollback capability for failed operations
+- [ ] **SYNC-03**: Real-time change notifications from native database to React components
+- [ ] **SYNC-04**: Connection state awareness with offline/online operation modes
+- [ ] **SYNC-05**: Change event correlation and proper sequencing to prevent race conditions
 
-### Cross-Platform Coordination
-- [ ] **COORD-01**: Bridge message validation and error handling
-- [ ] **COORD-02**: Unified error reporting across platforms
-- [ ] **COORD-03**: Proper cleanup state synchronization
-- [ ] **COORD-04**: Advanced cross-platform error recovery
-- [ ] **COORD-05**: Performance-aware error handling
+### Transaction Management
+- [ ] **TRANS-01**: Bridge-level transaction control with ACID guarantee exposure
+- [ ] **TRANS-02**: Multi-operation transaction support across bridge boundaries
+- [ ] **TRANS-03**: Conflict resolution framework for multi-device editing scenarios
+- [ ] **TRANS-04**: Transaction rollback mechanisms with proper state cleanup
+- [ ] **TRANS-05**: Operation correlation IDs for tracking and debugging
+
+### Performance & Scalability
+- [ ] **PERF-01**: Virtual scrolling integration using TanStack Virtual for large datasets
+- [ ] **PERF-02**: Intelligent query result caching with TTL and invalidation strategies
+- [ ] **PERF-03**: Memory management patterns preventing cross-bridge reference cycles
+- [ ] **PERF-04**: Background sync queue with retry logic and exponential backoff
+- [ ] **PERF-05**: Bandwidth-aware sync optimization based on connection quality
 
 ---
 
 ## Future Requirements (Deferred to Later Milestones)
 
-### Advanced Analytics
-- Real-time error analytics dashboard
-- Performance regression detection systems
-- Error prevention automation
+### Advanced Collaboration
+- Live collaborative cursors and real-time multi-user editing
+- Granular change tracking with field-level conflict resolution
+- Multi-user workspace isolation for team environments
+
+### Enterprise Features
+- Advanced security audit trails for database operations
+- Role-based access control integration with CloudKit
+- Enterprise deployment and management tools
 
 ---
 
 ## Out of Scope (Explicit Exclusions)
 
-### Global Error Suppression
-**Reason:** Goes against zero warnings principle - all errors must be fixed, not hidden
+### Complex ORM Layer
+**Reason:** Research shows query translation complexity explosion - use direct SQL with parameter substitution only
 
-### Legacy Code Quarantine Expansion
-**Reason:** Research shows quarantine abandonment is a critical pitfall - must reduce, not expand exclusions
+### Real-Time Everything
+**Reason:** Not all data needs real-time updates - selective real-time based on user interaction patterns prevents performance degradation
 
-### Runtime Error Recovery for Build Warnings
-**Reason:** Build-time warnings should be fixed at build-time, not masked at runtime
+### Automatic Conflict Merging
+**Reason:** Knowledge management requires user control over conflict resolution to preserve data integrity and user intent
+
+### Advanced Query Builder UI
+**Reason:** Direct SQL provides better performance and control - defer complex query building to future milestones
 
 ---
 
@@ -56,41 +72,74 @@ Requirements mapped to phases in ROADMAP.md:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 10 | Pending |
-| FOUND-02 | Phase 10 | Pending |
-| FOUND-03 | Phase 10 | Pending |
-| FOUND-04 | Phase 10 | Pending |
-| TYPE-01 | Phase 11 | Pending |
-| TYPE-02 | Phase 11 | Pending |
-| TYPE-03 | Phase 11 | Pending |
-| TYPE-04 | Phase 11 | Pending |
-| TYPE-05 | Phase 11 | Pending |
-| COORD-01 | Phase 12 | Pending |
-| COORD-02 | Phase 12 | Pending |
-| COORD-03 | Phase 12 | Pending |
-| COORD-04 | Phase 12 | Pending |
-| COORD-05 | Phase 12 | Pending |
+| BRIDGE-01 | Phase 18 | Pending |
+| BRIDGE-02 | Phase 18 | Pending |
+| BRIDGE-03 | Phase 18 | Pending |
+| BRIDGE-04 | Phase 18 | Pending |
+| BRIDGE-05 | Phase 18 | Pending |
+| SYNC-01 | Phase 19 | Pending |
+| SYNC-02 | Phase 19 | Pending |
+| SYNC-03 | Phase 19 | Pending |
+| SYNC-04 | Phase 19 | Pending |
+| SYNC-05 | Phase 19 | Pending |
+| TRANS-01 | Phase 20 | Pending |
+| TRANS-02 | Phase 20 | Pending |
+| TRANS-03 | Phase 20 | Pending |
+| TRANS-04 | Phase 20 | Pending |
+| TRANS-05 | Phase 20 | Pending |
+| PERF-01 | Phase 21 | Pending |
+| PERF-02 | Phase 21 | Pending |
+| PERF-03 | Phase 21 | Pending |
+| PERF-04 | Phase 21 | Pending |
+| PERF-05 | Phase 21 | Pending |
 
-**Coverage:** 14/14 requirements mapped (100%)
+**Coverage:** 20/20 requirements mapped (100%)
 
 ---
 
 ## Acceptance Criteria
 
 Each requirement must satisfy:
-1. **Measurable**: Clear success/failure criteria
-2. **Testable**: Automated verification possible
-3. **Cross-platform**: Works on both React and Swift layers
-4. **Non-regressive**: Does not break existing functionality
-5. **Performance-neutral**: No significant performance degradation
+1. **Measurable**: Clear success/failure criteria with performance benchmarks
+2. **Testable**: Automated verification possible with unit and integration tests
+3. **Cross-platform**: Works seamlessly across React and Swift layers
+4. **Non-regressive**: Does not break existing sql.js fallback or native functionality
+5. **Performance-neutral**: No significant degradation from current sql.js baseline
 
 ---
 
 ## Quality Gates
 
-- [ ] All TypeScript files compile with `strict: true`
-- [ ] All Swift files build with zero warnings
-- [ ] No `any` types in new or modified code
-- [ ] Bridge interface types match exactly between platforms
-- [ ] All unused dependencies removed from package.json and Package.swift
-- [ ] No sql.js imports or references remain in codebase
+- [ ] All React components migrate from sql.js to bridge without functional changes
+- [ ] Bridge communication achieves <16ms response time for typical queries
+- [ ] Real-time updates maintain data consistency under concurrent access
+- [ ] Transaction boundaries properly isolate multi-step operations
+- [ ] Memory usage remains stable during extended operation
+- [ ] Offline operation maintains full functionality with sync upon reconnection
+- [ ] Performance monitoring provides actionable insights for optimization
+
+---
+
+## Research-Based Success Metrics
+
+Based on research findings, success is measured by:
+
+**Bridge Performance:**
+- Message latency <16ms for 60fps UI responsiveness
+- Payload size reduction of 40-60% vs JSON baseline
+- Zero bridge communication failures under normal operation
+
+**Real-Time Synchronization:**
+- Change notification latency <100ms from database to UI update
+- Conflict resolution success rate >95% with user involvement
+- Offline queue processing with <5% data loss on network recovery
+
+**Transaction Safety:**
+- 100% ACID compliance for multi-operation sequences
+- Transaction rollback completion <50ms for user experience
+- Zero data corruption incidents during concurrent access
+
+---
+
+*Requirements defined: 2026-01-30*
+*Last updated: 2026-01-30 after research synthesis and roadmap creation*
