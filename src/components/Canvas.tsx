@@ -5,7 +5,7 @@ import { useAppState } from '../contexts/AppStateContext';
 import { useMockData } from '../hooks/useMockData';
 import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
 import { RealTimeRenderer } from './performance/RealTimeRenderer';
-import { DataFlowMonitor } from './DataFlowMonitor';
+import DataFlowMonitor from './DataFlowMonitor';
 import {
   ListView,
   GridView,

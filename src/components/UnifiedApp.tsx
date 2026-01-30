@@ -18,6 +18,7 @@ import { CommandBar } from './CommandBar';
 import { ErrorBoundary } from './ui/ErrorBoundary';
 import { NotificationSystem } from './ui/NotificationSystem';
 import { EnvironmentDebug } from './debug/EnvironmentDebug';
+import { WebViewDiagnostic } from './debug/WebViewDiagnostic';
 
 /**
  * Unified App Component
@@ -40,6 +41,7 @@ export function UnifiedApp() {
       <div className="h-screen flex flex-col bg-gray-50">
                     {/* Environment Debug Info */}
                     <EnvironmentDebug />
+                    <WebViewDiagnostic />
 
                     {/* Toolbar: Menu bar + command buttons */}
                     <ErrorBoundary level="component" name="Toolbar">

@@ -8,6 +8,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Environment, postMessage } from '../utils/webview-bridge';
 import { bridgeLogger } from '../utils/logger';
+import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../utils/webview-bridge-waiter';
 
 export enum DatabaseMode {
   HTTP_API = 'http-api',
@@ -93,35 +94,39 @@ export function EnvironmentProvider({
       console.log('🔍 Environment: Starting detection...');
       console.log('🔍 Environment: window.webkit available:', typeof window !== 'undefined' && typeof window.webkit !== 'undefined');
       console.log('🔍 Environment: messageHandlers available:', typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined');
+      console.log('🔍 Environment: UserAgent:', navigator.userAgent);
 
-      // If we have webkit object, we're likely in WebView - proceed with bridge testing
-      if (typeof window !== 'undefined' && typeof window.webkit !== 'undefined') {
-        console.log('🔍 Environment: WebKit detected, testing bridge with retries...');
+      // Check for immediate WebView indicators
+      const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
+      const isIsometryNative = userAgent.includes('IsometryNative');
 
-        // Try bridge test with retries to handle initialization timing
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          console.log(`🧪 Environment: Bridge test attempt ${attempt}/3...`);
-
-          if (await testWebViewBridge()) {
-            console.log('✅ Environment: WebView bridge detected and working');
-            bridgeLogger.info('WebView bridge detected');
-            return DatabaseMode.WEBVIEW_BRIDGE;
-          }
-
-          if (attempt < 3) {
-            console.log(`⏰ Environment: Bridge test failed, waiting 500ms before retry ${attempt + 1}...`);
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-        }
-
-        // If all bridge tests failed but we have webkit, still try WebView mode
-        // The bridge might initialize later
-        console.log('⚠️ Environment: Bridge tests failed but WebKit present, forcing WebView mode');
-        bridgeLogger.info('WebKit available but bridge test failed, using WebView mode anyway');
+      if (isIsometryNative) {
+        console.log('✅ Environment: IsometryNative user agent detected - forcing WebView mode');
+        console.log(`🔍 Environment: Full user agent: ${userAgent}`);
+        bridgeLogger.info('IsometryNative user agent detected, using WebView mode');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
-      // Check for HTTP API availability (medium priority)
+      // ROBUST BRIDGE DETECTION: Wait for WebView bridge to be fully ready
+      console.log('🔍 Environment: Waiting for WebView bridge initialization...');
+      const bridgeReady = await waitForWebViewBridge(3000); // 3 second timeout
+
+      if (bridgeReady) {
+        console.log('✅ Environment: WebView bridge detected after waiting');
+        bridgeLogger.info('WebView bridge detected');
+        return DatabaseMode.WEBVIEW_BRIDGE;
+      }
+
+      // Fallback: Check for any WebKit indicators immediately
+      if (typeof window !== 'undefined' && typeof window.webkit !== 'undefined') {
+        console.log('⚠️ Environment: WebKit detected but bridge not ready, forcing WebView mode');
+        bridgeLogger.info('WebKit available but bridge not ready, using WebView mode anyway');
+        return DatabaseMode.WEBVIEW_BRIDGE;
+      }
+
+      // PRIORITY 3: Check for HTTP API availability (lowest priority)
+      // Only test if we're definitely NOT in a WebView environment
+      console.log('🔍 Environment: No WebKit or IsometryNative detected, testing HTTP API...');
       if (await testHTTPAPIConnection()) {
         console.log('✅ Environment: HTTP API detected');
         bridgeLogger.info('HTTP API detected');
@@ -186,10 +191,22 @@ export function EnvironmentProvider({
    * Test HTTP API connection
    */
   const testHTTPAPIConnection = async (): Promise<boolean> => {
-    // Only test HTTP API if not in WebView
-    if (Environment.isWebView()) {
+    // Only test HTTP API if we're definitely NOT in a WebView environment
+    // Check both the user agent and webkit object
+    const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
+    const isNativeUserAgent = userAgent.includes('IsometryNative');
+    const hasWebKit = typeof window !== 'undefined' && typeof window.webkit !== 'undefined';
+    const envIsWebView = Environment.isWebView();
+
+    if (isNativeUserAgent || hasWebKit || envIsWebView) {
+      console.log('⏭️ HTTP API test skipped: WebView environment detected');
+      console.log(`  - IsometryNative user agent: ${isNativeUserAgent}`);
+      console.log(`  - Has WebKit: ${hasWebKit}`);
+      console.log(`  - Environment.isWebView(): ${envIsWebView}`);
       return false;
     }
+
+    console.log('🧪 HTTP API test starting (no WebView indicators found)...');
 
     let timeoutId: NodeJS.Timeout | undefined;
 
