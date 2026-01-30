@@ -22,6 +22,7 @@
 - 🎯 **v2.8 LATCH Filter Integration** - Phase 14.2 (React-native filter bridge)
 - 🎯 **v2.9 D3-Canvas Integration** - Phase 14.3 (Native rendering optimization for D3 visualizations)
 - 🎯 **v2.10 GRAPH Integration** - Phase 14.4 (React-native graph analytics bridge)
+- 🔄 **v2.11 CloudKit Sync** - Phase 14.5 (Real-time data synchronization bridge)
 
 ## Milestone Overview
 
@@ -52,6 +53,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v2.9 Goal (D3-Canvas Integration):** Enhance D3 visualizations with native Canvas/Core Graphics rendering optimizations, enabling hybrid rendering pipeline with 2x performance improvements for large datasets while maintaining React development workflow and visual consistency.
 
 **v2.10 Goal (GRAPH Integration):** Bridge React NetworkView and TreeView components to native graph analytics engine, enabling real-time connection suggestions, centrality analysis, and query optimization with intelligent caching and performance monitoring for enhanced user experience.
+
+**v2.11 Goal (CloudKit Sync):** Bridge React components to native CloudKit sync infrastructure, enabling real-time data synchronization, conflict resolution, offline queue management, and multi-device sync coordination with comprehensive progress tracking and error handling.
 
 ---
 
@@ -643,30 +646,53 @@ Plans:
 - [ ] 14.3-02-PLAN.md — D3-Native Performance Pipeline: Optimization, gestures, and performance monitoring
 - [ ] 14.3-03-PLAN.md — Hybrid Rendering System & Validation: Intelligent routing and production validation
 
-### 🎯 v2.10 GRAPH Integration (READY)
+### 🎯 v2.10 GRAPH Integration (COMPLETED)
 
 **Milestone Goal:** Bridge React NetworkView and TreeView components to native graph analytics engine, enabling real-time connection suggestions, centrality analysis, and query optimization with intelligent caching and performance monitoring for enhanced user experience.
 
-#### Phase 14.4: GRAPH Integration Foundation (READY)
+#### Phase 14.4: GRAPH Integration Foundation (COMPLETED)
 **Goal:** Bridge React graph visualization components to native Swift graph analytics engine with real-time intelligence capabilities
 **Dependencies:** None (utilizes existing React graph views and native graph analytics infrastructure)
 **Requirements:** All GRAPH integration requirements
 **Plans:** 3 plans
 
 **Success Criteria:**
-1. React NetworkView displays real-time connection suggestions from native ConnectionSuggestionEngine
-2. TreeView integration provides hierarchical analytics and recursive query optimization
-3. Bridge communication delivers graph intelligence with <5ms latency matching Phase 14.3 standards
-4. Connection suggestion accuracy leverages native algorithms (80%+ confidence suggestions)
-5. Performance monitoring tracks graph analytics effectiveness and optimization opportunities
-6. User interface seamlessly integrates native analytics without breaking existing functionality
-7. Query cache provides 90%+ hit rates for frequently accessed graph analytics
-8. Enhanced NetworkView demonstrates production-ready graph analytics with visual connection suggestions
+1. React NetworkView displays real-time connection suggestions from native ConnectionSuggestionEngine ✅
+2. TreeView integration provides hierarchical analytics and recursive query optimization ✅
+3. Bridge communication delivers graph intelligence with <5ms latency matching Phase 14.3 standards ✅
+4. Connection suggestion accuracy leverages native algorithms (80%+ confidence suggestions) ✅
+5. Performance monitoring tracks graph analytics effectiveness and optimization opportunities ✅
+6. User interface seamlessly integrates native analytics without breaking existing functionality ✅
+7. Query cache provides 90%+ hit rates for frequently accessed graph analytics ✅
+8. Enhanced NetworkView demonstrates production-ready graph analytics with visual connection suggestions ✅
 
 Plans:
-- [ ] 14.4-01-PLAN.md — Native Graph Analytics Bridge Foundation: WebView bridge and React service integration
-- [ ] 14.4-02-PLAN.md — Real-Time Graph Intelligence Integration: Service layer, caching, and React hooks
-- [ ] 14.4-03-PLAN.md — Graph Integration Validation & Production Enhancement: Enhanced NetworkView and debug panel
+- [x] 14.4-01-PLAN.md — Native Graph Analytics Bridge Foundation: WebView bridge and React service integration
+- [x] 14.4-02-PLAN.md — Real-Time Graph Intelligence Integration: Service layer, caching, and React hooks
+- [x] 14.4-03-PLAN.md — Graph Integration Validation & Production Enhancement: Enhanced NetworkView and debug panel
+
+### 🔄 v2.11 CloudKit Sync (READY)
+
+**Milestone Goal:** Bridge React components to native CloudKit sync infrastructure, enabling real-time data synchronization, conflict resolution, offline queue management, and multi-device sync coordination with comprehensive progress tracking and error handling.
+
+#### Phase 14.5: CloudKit Sync Foundation (READY)
+**Goal:** Bridge React components to native CloudKit sync infrastructure with real-time synchronization and conflict resolution
+**Dependencies:** None (utilizes existing React infrastructure and native CloudKit infrastructure)
+**Requirements:** All CloudKit sync integration requirements
+**Plans:** 1 plan
+
+**Success Criteria:**
+1. React components trigger CloudKit sync operations through WebView bridge with <100ms latency
+2. Real-time sync status updates appear in React UI with progress indicators and connection status
+3. Conflict resolution prompts appear when data conflicts are detected with user choice options
+4. Offline sync queue accumulates changes for later sync when connection returns with retry logic
+5. Multi-device sync maintains data consistency across iOS/macOS apps via CloudKit infrastructure
+6. Progress tracking provides detailed sync operation feedback with completion percentages
+7. Error handling categorizes sync failures with user-friendly messages and retry suggestions
+8. Performance monitoring tracks sync operation latency and success rates for optimization
+
+Plans:
+- [ ] 14.5-01-PLAN.md — CloudKit Sync Foundation: React-native sync bridge with real-time status and conflict resolution
 
 ## Dependencies
 
@@ -718,6 +744,12 @@ Plans:
 - WebView bridge infrastructure from Phases 14.1-14.3
 - Graph analytics and performance monitoring systems
 
+### v2.11 CloudKit Sync Integration Dependencies
+- Existing React sync infrastructure (SyncManager, webViewBridge)
+- Native CloudKit sync infrastructure (CloudKitSyncManager actor)
+- WebView bridge communication patterns from Phases 14.1-14.4
+- Conflict resolution UI components and error handling systems
+
 ### Phase Dependencies
 ```
 v1.0: Phase 1 → Phase 2 → Phase 3 → Phase 4 (COMPLETED)
@@ -732,6 +764,7 @@ v2.7: Phase 14.1 (PAFV INTEGRATION)
 v2.8: Phase 14.2 (LATCH FILTER INTEGRATION)
 v2.9: Phase 14.3 (D3-CANVAS INTEGRATION)
 v2.10: Phase 14.4 (GRAPH INTEGRATION)
+v2.11: Phase 14.5 (CLOUDKIT SYNC)
 ```
 
 ## Progress
@@ -747,7 +780,8 @@ Graph Analytics Engine: 12.1 → 12.2 → 12.3 → 12.4 (READY)
 PAFV Integration: 14.1 (independent - READY)
 LATCH Filter Integration: 14.2 (independent - READY)
 D3-Canvas Integration: 14.3 (independent - READY)
-GRAPH Integration: 14.4 (independent - READY)
+GRAPH Integration: 14.4 (independent - COMPLETED)
+CloudKit Sync: 14.5 (independent - READY)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -782,19 +816,20 @@ GRAPH Integration: 14.4 (independent - READY)
 | 14.1. PAFV Integration Foundation | v2.7 | 0/1 | Ready | - |
 | 14.2. LATCH Filter Integration | v2.8 | 0/3 | Ready | - |
 | 14.3. D3-Canvas Integration Enhancement | v2.9 | 0/3 | Ready | - |
-| 14.4. GRAPH Integration Foundation | v2.10 | 0/3 | Ready | - |
+| 14.4. GRAPH Integration Foundation | v2.10 | 3/3 | Complete | 2026-01-29 |
+| 14.5. CloudKit Sync Foundation | v2.11 | 0/1 | Ready | - |
 
 ## Architecture Integration Summary
 
-### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 → v2.7 → v2.8 → v2.9 → v2.10 Evolution
+### v1.0 → v2.0 → v2.1 → v2.3 → v2.4 → v2.5 → v2.6 → v2.7 → v2.8 → v2.9 → v2.10 → v2.11 Evolution
 
 ```
-v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence   v2.7 PAFV Integration     v2.8 Filter Integration   v2.9 D3-Canvas Integration  v2.10 GRAPH Integration
-====================    =======================    ========================    =====================      =================          ================          ===================      =================          =================          ==========================  ========================
-sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine    React ↔ Native bridge     React ↔ Native filters   React ↔ Native rendering   React ↔ Native analytics
-D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions     PAFV spatial mapping       LATCH real-time filtering  Hybrid D3 rendering        Graph intelligence UI
-React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization        Coordinate synchronization Filter synchronization     Native Canvas optimization  Connection visualization
-Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics      Real-time axis updates    Real-time filter updates  Performance-optimized D3   Real-time suggestions
+v1.0 React Prototype    v2.0 Native Integration    v2.1 Migration Complete    v2.3 Production Ready      v2.4 Error-Free           v2.5 Import Systems       v2.6 Graph Intelligence   v2.7 PAFV Integration     v2.8 Filter Integration   v2.9 D3-Canvas Integration  v2.10 GRAPH Integration   v2.11 CloudKit Sync
+====================    =======================    ========================    =====================      =================          ================          ===================      =================          =================          ==========================  ========================  ====================
+sql.js → IndexedDB      GRDB → CloudKit            Native API Bridge           App Store Compliant       Zero errors/warnings      Import capability         Graph analytics engine    React ↔ Native bridge     React ↔ Native filters   React ↔ Native rendering   React ↔ Native analytics  React ↔ CloudKit Sync
+D3.js → Canvas          Canvas + SuperGrid         Canvas + SuperGrid          Production Monitoring      Type-safe D3               Office/SQLite/Apple      Connection suggestions     PAFV spatial mapping       LATCH real-time filtering  Hybrid D3 rendering        Graph intelligence UI     Real-time sync bridge
+React Components        SwiftUI Views              React + SwiftUI Hybrid      Beta Testing Ready         Clean TypeScript           Enterprise imports        Query optimization        Coordinate synchronization Filter synchronization     Native Canvas optimization  Connection visualization   Multi-device sync
+Browser Environment     Native iOS/macOS           WebView + Native            CloudKit Production        Swift concurrency-safe    Intelligent inference     Predictive analytics      Real-time axis updates    Real-time filter updates  Performance-optimized D3   Real-time suggestions      Conflict resolution
 ```
 
 ### Migration Data Flow
@@ -845,25 +880,37 @@ React Graph Views ←→ WebView Bridge ←→ Native Graph Analytics
 └── Suggestion state  └── Cache coordination    └── Real-time suggestions
 ```
 
-### Performance Targets (v2.10 vs v2.9 vs v2.8 vs v2.7 vs v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+### CloudKit Sync Integration Data Flow
+```
+React Components ←→ WebView Bridge ←→ Native CloudKit Sync
+├── Sync triggers     ├── CloudKitMessageHandler ├── CloudKitSyncManager
+├── Progress updates  ├── Status coordination    ├── Conflict resolution
+├── Conflict UI       ├── Performance monitor    ├── Offline queue
+└── Error boundaries  └── Event coordination     └── Multi-device sync
+```
 
-| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence | v2.7 PAFV Integration | v2.8 Filter Integration | v2.9 D3-Canvas Integration | v2.10 GRAPH Integration |
-|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|------------------------|-------------------------|----------------------------|-------------------------|
-| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) | 60fps+ (PAFV-aware) | 60fps+ (filter-aware) | 120fps+ (native optimized) | 120fps+ (analytics-aware) |
-| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) | -45% (coordinate cache) | -45% (filter cache) | -50% (hybrid optimization) | -50% (analytics cache) |
-| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds |
-| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% | +25% | +25% | +30% (GPU efficiency) | +30% (smart analytics) |
-| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit |
-| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence | 0 problems + PAFV bridge | 0 problems + filter bridge | 0 problems + D3 bridge | 0 problems + graph bridge |
-| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics | Advanced analytics | Advanced analytics | Advanced analytics | Real-time suggestions |
-| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy | Real-time UI integration |
-| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) | <1 second (cached) | <100ms (filtered) | <100ms (filtered) | <100ms (analytics) |
-| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes (intelligent) |
-| **PAFV Integration** | None | None | None | None | None | None | None | Real-time coordination | Real-time coordination | Real-time coordination | Real-time coordination |
-| **Filter Performance** | Local filter | Native filter | Native filter | Native filter | Native filter | Native filter | Smart filtering | Smart filtering | Real-time native FTS5 | Real-time native FTS5 | Real-time native FTS5 |
-| **Bridge Latency** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | <5ms axis changes | <100ms filter changes | <16ms render updates | <5ms analytics updates |
-| **Rendering Performance** | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM + coordinate sync | Canvas/DOM + filter sync | Hybrid Canvas/Native (2x boost) | Hybrid + Intelligence |
-| **Graph Analytics** | None | None | None | None | None | None | Backend only | Backend only | Backend only | Backend only | Real-time React integration |
+### Performance Targets (v2.11 vs v2.10 vs v2.9 vs v2.8 vs v2.7 vs v2.6 vs v2.5 vs v2.4 vs v1.0 vs v2.0)
+
+| Metric | v1.0 sql.js | v2.0 Native | v2.1 Bridge | v2.3 Production | v2.4 Clean | v2.5 Type-Safe | v2.6 Graph Intelligence | v2.7 PAFV Integration | v2.8 Filter Integration | v2.9 D3-Canvas Integration | v2.10 GRAPH Integration | v2.11 CloudKit Sync |
+|--------|-------------|-------------|-------------|-----------------|------------|----------------|-------------------------|------------------------|-------------------------|----------------------------|-------------------------|----------------------|
+| **Rendering** | 30-45fps | 60fps | 55-60fps | 60fps (verified) | 60fps+ | 60fps+ (validated) | 60fps+ (optimized) | 60fps+ (PAFV-aware) | 60fps+ (filter-aware) | 120fps+ (native optimized) | 120fps+ (analytics-aware) | 120fps+ (sync-aware) |
+| **Memory** | Baseline | -50% | -40% | -45% (optimized) | -45% | -45% (maintained) | -45% (efficient caching) | -45% (coordinate cache) | -45% (filter cache) | -50% (hybrid optimization) | -50% (analytics cache) | -50% (sync queue opt) |
+| **Launch Time** | 5-8 seconds | <3 seconds | <4 seconds | <3 seconds (validated) | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds | <3 seconds |
+| **Battery** | Baseline | +25% | +20% | +25% (measured) | +25% | +25% | +25% | +25% | +25% | +30% (GPU efficiency) | +30% (smart analytics) | +30% (efficient sync) |
+| **Data Integrity** | Local only | CloudKit sync | CloudKit sync | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Production CloudKit | Real-time CloudKit |
+| **Code Quality** | 205 problems | N/A | 205 problems | App Store Ready | 0 problems | 0 problems + type safety | 0 problems + intelligence | 0 problems + PAFV bridge | 0 problems + filter bridge | 0 problems + D3 bridge | 0 problems + graph bridge | 0 problems + sync bridge |
+| **Graph Intelligence** | None | Basic | Basic | Basic | Basic | Basic | Advanced analytics | Advanced analytics | Advanced analytics | Advanced analytics | Real-time suggestions | Real-time suggestions |
+| **Connection Suggestions** | None | None | None | None | None | None | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy | 80%+ accuracy | Real-time UI integration | Real-time UI integration |
+| **Query Performance** | 2-5 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | 0.5-2 seconds | <1 second (cached) | <1 second (cached) | <100ms (filtered) | <100ms (filtered) | <100ms (analytics) | <100ms (sync-aware) |
+| **Graph Scale** | 1K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 10K nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes | 100K+ nodes (intelligent) | 100K+ nodes (synced) |
+| **PAFV Integration** | None | None | None | None | None | None | None | Real-time coordination | Real-time coordination | Real-time coordination | Real-time coordination | Real-time coordination |
+| **Filter Performance** | Local filter | Native filter | Native filter | Native filter | Native filter | Native filter | Smart filtering | Smart filtering | Real-time native FTS5 | Real-time native FTS5 | Real-time native FTS5 | Real-time native FTS5 |
+| **Bridge Latency** | N/A | N/A | N/A | N/A | N/A | N/A | N/A | <5ms axis changes | <100ms filter changes | <16ms render updates | <5ms analytics updates | <100ms sync triggers |
+| **Rendering Performance** | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM | Canvas/DOM + coordinate sync | Canvas/DOM + filter sync | Hybrid Canvas/Native (2x boost) | Hybrid + Intelligence | Hybrid + Real-time Sync |
+| **Graph Analytics** | None | None | None | None | None | None | Backend only | Backend only | Backend only | Backend only | Real-time React integration | Real-time React integration |
+| **Sync Performance** | None | None | None | None | None | None | None | None | None | None | None | Real-time multi-device |
+| **Conflict Resolution** | None | None | None | None | None | None | None | None | None | None | None | Intelligent merge strategies |
+| **Offline Support** | None | None | None | None | None | None | None | None | None | None | None | Queue with auto-retry |
 
 ---
 
@@ -1072,13 +1119,25 @@ React Graph Views ←→ WebView Bridge ←→ Native Graph Analytics
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GRAPH-01 | Phase 14.4 | 📋 Ready |
-| GRAPH-02 | Phase 14.4 | 📋 Ready |
-| GRAPH-03 | Phase 14.4 | 📋 Ready |
-| GRAPH-04 | Phase 14.4 | 📋 Ready |
-| GRAPH-05 | Phase 14.4 | 📋 Ready |
+| GRAPH-01 | Phase 14.4 | ✅ Complete |
+| GRAPH-02 | Phase 14.4 | ✅ Complete |
+| GRAPH-03 | Phase 14.4 | ✅ Complete |
+| GRAPH-04 | Phase 14.4 | ✅ Complete |
+| GRAPH-05 | Phase 14.4 | ✅ Complete |
 
-**v2.10 Coverage:** 5/5 requirements mapped ✓
+**v2.10 Coverage:** 5/5 requirements completed ✅
+
+### v2.11 CloudKit Sync Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SYNC-01 | Phase 14.5 | 📋 Ready |
+| SYNC-02 | Phase 14.5 | 📋 Ready |
+| SYNC-03 | Phase 14.5 | 📋 Ready |
+| SYNC-04 | Phase 14.5 | 📋 Ready |
+| SYNC-05 | Phase 14.5 | 📋 Ready |
+
+**v2.11 Coverage:** 5/5 requirements mapped ✓
 
 ---
 
@@ -1149,17 +1208,25 @@ React Graph Views ←→ WebView Bridge ←→ Native Graph Analytics
    - Hybrid rendering system with intelligent per-element renderer selection
    - Bidirectional gesture coordination and comprehensive performance validation
 
-### GRAPH Integration Strategy (Phase 14.4 - NEW)
+### GRAPH Integration Strategy (Phase 14.4 - COMPLETED)
 1. **Phase 14.4:** GRAPH Integration Foundation (React-native graph analytics bridge with real-time intelligence capabilities)
    - Bridge React NetworkView/TreeView to native graph analytics engine
    - Real-time connection suggestion integration with visual confidence indicators
    - Query cache optimization and performance monitoring
    - Enhanced user interface with production-ready graph intelligence demonstration
 
+### CloudKit Sync Integration Strategy (Phase 14.5 - NEW)
+1. **Phase 14.5:** CloudKit Sync Foundation (React-native sync bridge with real-time status and conflict resolution)
+   - Bridge React components to native CloudKit sync infrastructure
+   - Real-time sync status updates with progress indicators and connection monitoring
+   - Conflict resolution UI with user choice options and intelligent merge strategies
+   - Offline queue management with automatic retry and error categorization
+   - Multi-device synchronization with comprehensive progress tracking
+
 ---
 
-**Current step:** Phase 13.2 Production Infrastructure & CloudKit Deployment completed (see `/.planning/milestones/v3.0-production-deployment/phases/13-02-SUMMARY.md`).
+**Current step:** Phase 14.4 GRAPH Integration completed (see `/.planning/phases/14.4-graph-integration/14.4-03-SUMMARY.md`).
 
-**Next step:** `/gsd:plan-phase 13.3` to define beta testing & quality validation.
+**Next step:** `/gsd:plan-phase 14.5` to define CloudKit Sync foundation or continue with other Phase 14.x integrations.
 
-**Available phases:** `/gsd:plan-phase 14.1` for PAFV Integration Foundation, `/gsd:plan-phase 14.2` for LATCH Filter Integration, `/gsd:plan-phase 14.3` for D3-Canvas Integration Enhancement, `/gsd:plan-phase 14.4` for GRAPH Integration Foundation.
+**Available phases:** `/gsd:plan-phase 14.1` for PAFV Integration Foundation, `/gsd:plan-phase 14.2` for LATCH Filter Integration, `/gsd:plan-phase 14.3` for D3-Canvas Integration Enhancement, `/gsd:plan-phase 14.5` for CloudKit Sync Foundation.
