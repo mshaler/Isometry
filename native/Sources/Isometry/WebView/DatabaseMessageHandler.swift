@@ -999,7 +999,8 @@ private class LiveDataSubscription {
     }
 
     deinit {
-        stopPolling()
+        timer?.invalidate()
+        timer = nil
     }
 }
 
