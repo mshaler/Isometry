@@ -33,6 +33,7 @@ let package = Package(
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.24.0"),
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
         .package(url: "https://github.com/ZipArchive/ZipArchive.git", from: "2.5.5"),
+        .package(url: "https://github.com/fumoboy007/msgpack-swift", from: "2.0.0"),
     ],
     targets: [
         .target(
@@ -47,6 +48,7 @@ let package = Package(
                 "IsometryCore",
                 .product(name: "GRDB", package: "GRDB.swift"),
                 .product(name: "ZipArchive", package: "ZipArchive"),
+                .product(name: "DMMessagePack", package: "msgpack-swift"),
             ],
             resources: [
                 .process("Resources")
