@@ -190,6 +190,42 @@ public class WebViewBridge: NSObject {
                         }
                     },
 
+                    // D3 Canvas rendering bridge
+                    d3canvas: {
+                        renderCommands: function(commands) {
+                            return window._isometryBridge.sendMessage('d3canvas', 'renderCommands', { commands });
+                        },
+                        updateViewport: function(viewport) {
+                            return window._isometryBridge.sendMessage('d3canvas', 'updateViewport', { viewport });
+                        }
+                    },
+
+                    // D3 rendering optimization bridge
+                    d3rendering: {
+                        optimizeViewport: function(params) {
+                            return window._isometryBridge.sendMessage('d3rendering', 'optimizeViewport', params);
+                        },
+                        updateLOD: function(params) {
+                            return window._isometryBridge.sendMessage('d3rendering', 'updateLOD', params);
+                        },
+                        manageMemory: function(params) {
+                            return window._isometryBridge.sendMessage('d3rendering', 'manageMemory', params);
+                        },
+                        getBenchmarkResults: function(params) {
+                            return window._isometryBridge.sendMessage('d3rendering', 'getBenchmarkResults', params);
+                        }
+                    },
+
+                    // CloudKit sync bridge
+                    cloudkit: {
+                        sync: function(params) {
+                            return window._isometryBridge.sendMessage('cloudkit', 'sync', params);
+                        },
+                        getStatus: function(params) {
+                            return window._isometryBridge.sendMessage('cloudkit', 'getStatus', params);
+                        }
+                    },
+
                     // PAFV bridge operations
                     pafv: {
                         updateAxisMapping: function(mappings, viewMode, sequenceId) {
@@ -287,6 +323,9 @@ public class WebViewBridge: NSObject {
                     diagnostic.tests.webkit_exists = !!window.webkit;
                     diagnostic.tests.messageHandlers_exists = !!(window.webkit?.messageHandlers);
                     diagnostic.tests.available_handlers = Object.keys(window.webkit?.messageHandlers || {});
+                    diagnostic.tests.has_d3canvas = !!window.webkit?.messageHandlers?.d3canvas;
+                    diagnostic.tests.has_d3rendering = !!window.webkit?.messageHandlers?.d3rendering;
+                    diagnostic.tests.has_cloudkit = !!window.webkit?.messageHandlers?.cloudkit;
 
                     // Test 2: Direct message handler test
                     if (window.webkit?.messageHandlers?.database) {
