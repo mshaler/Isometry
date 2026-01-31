@@ -82,11 +82,11 @@ Requirements mapped to phases in ROADMAP.md:
 | SYNC-03 | Phase 19 | Complete |
 | SYNC-04 | Phase 19 | Complete |
 | SYNC-05 | Phase 19 | Complete |
-| TRANS-01 | Phase 20 | Pending |
-| TRANS-02 | Phase 20 | Pending |
-| TRANS-03 | Phase 20 | Pending |
-| TRANS-04 | Phase 20 | Pending |
-| TRANS-05 | Phase 20 | Pending |
+| TRANS-01 | Phase 20 | Complete |
+| TRANS-02 | Phase 20 | Complete |
+| TRANS-03 | Phase 20 | Complete |
+| TRANS-04 | Phase 20 | Complete |
+| TRANS-05 | Phase 20 | Complete |
 | PERF-01 | Phase 21 | Pending |
 | PERF-02 | Phase 21 | Pending |
 | PERF-03 | Phase 21 | Pending |
