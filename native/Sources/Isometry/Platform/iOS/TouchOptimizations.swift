@@ -304,12 +304,31 @@ public class TouchOptimizations: ObservableObject {
             if currentSize.width < minimumTouchTarget || currentSize.height < minimumTouchTarget {
                 let widthInset = max(0, (minimumTouchTarget - currentSize.width) / 2)
                 let heightInset = max(0, (minimumTouchTarget - currentSize.height) / 2)
-                button.contentEdgeInsets = UIEdgeInsets(
-                    top: heightInset,
-                    left: widthInset,
-                    bottom: heightInset,
-                    right: widthInset
-                )
+                if #available(iOS 15.0, *) {
+                    if var configuration = button.configuration {
+                        configuration.contentInsets = NSDirectionalEdgeInsets(
+                            top: heightInset,
+                            leading: widthInset,
+                            bottom: heightInset,
+                            trailing: widthInset
+                        )
+                        button.configuration = configuration
+                    } else {
+                        button.contentEdgeInsets = UIEdgeInsets(
+                            top: heightInset,
+                            left: widthInset,
+                            bottom: heightInset,
+                            right: widthInset
+                        )
+                    }
+                } else {
+                    button.contentEdgeInsets = UIEdgeInsets(
+                        top: heightInset,
+                        left: widthInset,
+                        bottom: heightInset,
+                        right: widthInset
+                    )
+                }
             }
 
             // Configure for Dynamic Type
@@ -442,7 +461,7 @@ public class TextCanvasDisambiguator: NSObject, UIGestureRecognizerDelegate {
 
         // Check if this is a text selection gesture
         if gestureRecognizer is UITapGestureRecognizer {
-            let location = touch.location(in: gestureRecognizer.view)
+            _ = touch.location(in: gestureRecognizer.view)
             // Determine if this should be text selection or Canvas interaction
             // This could be enhanced with more sophisticated logic
         }
@@ -502,7 +521,7 @@ private struct TouchOptimizationsModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onReceive(NotificationCenter.default.publisher(for: .textFormattingRequested)) { notification in
-                if let action = notification.object as? TouchOptimizations.TextFormattingAction {
+                if notification.object is TouchOptimizations.TextFormattingAction {
                     touchOptimizations.triggerHaptic(.selection)
                 }
             }

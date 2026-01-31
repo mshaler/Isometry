@@ -44,7 +44,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     if (options.workingDirectory) {
       terminalContext.setWorkingDirectory(options.workingDirectory);
     }
-  }, [options.workingDirectory, terminalContext]);
+  }, [options.workingDirectory, terminalContext.setWorkingDirectory]);
 
   // Local reference to working directory (updated via context)
   const currentDirRef = terminalContext.currentWorkingDirectory;
@@ -134,7 +134,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
     const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
     terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
-  }, []);
+  }, [currentDirRef]);
 
   const executeCommand = useCallback((command: string) => {
     const terminal = terminalRef.current;
@@ -200,7 +200,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
       showPrompt();
     }, 100);
-  }, [options.onCommand, writeOutput, showPrompt]);
+  }, [options.onCommand, writeOutput, showPrompt, terminalContext]);
 
   const attachToProcess = useCallback(() => {
     const terminal = terminalRef.current;
@@ -277,11 +277,11 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
   const getCurrentWorkingDirectory = useCallback(() => {
     return terminalContext.getWorkingDirectory();
-  }, [terminalContext]);
+  }, [terminalContext.getWorkingDirectory]);
 
   const setWorkingDirectory = useCallback((path: string) => {
     terminalContext.setWorkingDirectory(path);
-  }, [terminalContext]);
+  }, [terminalContext.setWorkingDirectory]);
 
   const dispose = useCallback(() => {
     const terminal = terminalRef.current;

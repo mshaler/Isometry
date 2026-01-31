@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useTheme } from '../state/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 /**
  * Information about a detected conflict for UI display

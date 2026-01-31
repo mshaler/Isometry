@@ -86,7 +86,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
         window.removeEventListener('resize', handleResize);
       };
     }
-  }, [isMinimized, createTerminal, attachToProcess, resizeTerminal]);
+  }, [isMinimized]);
 
   // Update connection status based on terminal state
   useEffect(() => {

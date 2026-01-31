@@ -22,6 +22,11 @@ export default defineConfig({
       '@radix-ui/react-select',
       '@radix-ui/react-slider'
     ],
+    // Exclude Swift build artifacts and dependencies
+    exclude: [
+      'tester1.mjs',
+      'GRDB.swift'
+    ],
     // Enable aggressive dependency pre-bundling
     force: false,
   },
@@ -78,7 +83,10 @@ export default defineConfig({
         '**/native/build/**',
         '**/native/.build/**',
         '**/SourcePackages/**',
-        '**/.swiftpm/**'
+        '**/.swiftpm/**',
+        '**/GRDB.swift/**',
+        '**/*.c-pp.html',
+        '**/tester1.*'
       ],
     },
     hmr: {

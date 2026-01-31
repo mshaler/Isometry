@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useRef, MutableRefObject } from 'react';
+import { createContext, useContext, ReactNode, useRef, MutableRefObject, useCallback } from 'react';
 
 interface TerminalContextValue {
   currentWorkingDirectory: MutableRefObject<string>;
@@ -20,13 +20,13 @@ interface TerminalProviderProps {
 export function TerminalProvider({ children, initialDirectory = '/Users/mshaler/Developer/Projects/Isometry' }: TerminalProviderProps) {
   const currentWorkingDirectory = useRef(initialDirectory);
 
-  const setWorkingDirectory = (path: string) => {
+  const setWorkingDirectory = useCallback((path: string) => {
     currentWorkingDirectory.current = path;
-  };
+  }, []);
 
-  const getWorkingDirectory = () => {
+  const getWorkingDirectory = useCallback(() => {
     return currentWorkingDirectory.current;
-  };
+  }, []);
 
   return (
     <TerminalContext.Provider value={{

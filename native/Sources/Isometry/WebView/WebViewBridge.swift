@@ -668,6 +668,14 @@ public class WebViewBridge: NSObject {
                 throw error
             }
 
+        case "transaction":
+            do {
+                await handleTransactionMessage(message)
+            } catch {
+                success = false
+                throw error
+            }
+
         default:
             success = false
             logger.warning("Unknown message handler: \(handlerName)")
@@ -727,6 +735,112 @@ public class WebViewBridge: NSObject {
             }
         } catch {
             logger.error("Failed to serialize bridge error response: \(error)")
+        }
+    }
+
+    // MARK: - Transaction Message Handling
+
+    /// Handle transaction-specific messages
+    private func handleTransactionMessage(_ message: WKScriptMessage) async {
+        guard let messageBody = message.body as? [String: Any],
+              let method = messageBody["method"] as? String,
+              let params = messageBody["params"] as? [String: Any],
+              let requestId = messageBody["id"] as? String else {
+            await sendError(
+                to: message.webView,
+                error: "Invalid transaction message format",
+                requestId: extractRequestId(from: message)
+            )
+            return
+        }
+
+        let correlationId = params["correlationId"] as? String
+        os_log("Handling transaction message: %@ (correlation: %@)", log: logger.osLog, type: .info, method, correlationId ?? "none")
+
+        do {
+            switch method {
+            case "beginTransaction":
+                guard let correlationId = correlationId else {
+                    throw TransactionBridgeError.missingCorrelationId
+                }
+
+                let transactionId = try await getTransactionBridge().beginTransaction(correlationId: correlationId)
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: ["transactionId": transactionId, "success": true]
+                )
+
+            case "commitTransaction":
+                guard let transactionId = params["transactionId"] as? String else {
+                    throw TransactionBridgeError.missingTransactionId
+                }
+
+                try await getTransactionBridge().commitTransaction(transactionId: transactionId)
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: ["success": true]
+                )
+
+            case "rollbackTransaction":
+                guard let transactionId = params["transactionId"] as? String else {
+                    throw TransactionBridgeError.missingTransactionId
+                }
+
+                try await getTransactionBridge().rollbackTransaction(transactionId: transactionId)
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: ["success": true]
+                )
+
+            default:
+                throw TransactionBridgeError.unknownMethod(method)
+            }
+
+        } catch {
+            await sendError(
+                to: message.webView,
+                error: "Transaction error: \(error.localizedDescription)",
+                requestId: requestId
+            )
+        }
+    }
+
+    /// Get or create transaction bridge instance
+    private func getTransactionBridge() async -> TransactionBridge {
+        // This would be injected in production, but for now create a new instance
+        guard let database = self.database else {
+            fatalError("Database not available for transaction bridge")
+        }
+        return TransactionBridge(database: database)
+    }
+
+    /// Send successful response back to WebView
+    @MainActor
+    private func sendResponse(to webView: WKWebView?, requestId: String, result: [String: Any]) async {
+        guard let webView = webView else { return }
+
+        let response: [String: Any] = [
+            "id": requestId,
+            "success": true,
+            "result": result
+        ]
+
+        do {
+            let responseData = try JSONSerialization.data(withJSONObject: response)
+            let responseString = String(data: responseData, encoding: .utf8) ?? "{}"
+
+            let script = "window._isometryBridge?.handleResponse(\(responseString))"
+
+            webView.evaluateJavaScript(script) { [weak self] _, error in
+                if let error = error {
+                    os_log("Failed to send response: %@", log: self?.logger.osLog ?? OSLog.default, type: .error, error.localizedDescription)
+                }
+            }
+        } catch {
+            os_log("Failed to serialize response: %@", log: logger.osLog, type: .error, error.localizedDescription)
         }
     }
 
@@ -835,6 +949,24 @@ extension WebViewBridge: WKUIDelegate {
     }
 }
 
+// MARK: - Transaction Bridge Errors
+
+public enum TransactionBridgeError: Error, LocalizedError {
+    case missingCorrelationId
+    case missingTransactionId
+    case unknownMethod(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingCorrelationId:
+            return "Missing correlation ID in transaction request"
+        case .missingTransactionId:
+            return "Missing transaction ID in transaction request"
+        case .unknownMethod(let method):
+            return "Unknown transaction method: \(method)"
+        }
+    }
+}
 
 // MARK: - Logger
 
@@ -842,6 +974,10 @@ extension WebViewBridge: WKUIDelegate {
 struct Logger {
     let subsystem: String
     let category: String
+
+    var osLog: OSLog {
+        return OSLog(subsystem: subsystem, category: category)
+    }
 
     func debug(_ message: String) {
         #if DEBUG

@@ -145,68 +145,76 @@ export function DatabaseProvider({ children }: { children: React.ReactNode }) {
  * Unified database hook that works with all database contexts
  * Uses EnvironmentContext to determine the appropriate provider
  */
+// Cache to prevent excessive logging
+let lastLoggedMode: string | null = null;
+let loggedCount = 0;
+
 export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue | WebViewDatabaseContextValue | FallbackDatabaseContextValue {
   const { environment } = useEnvironment();
 
-  console.log('🔍 useDatabase called with environment mode:', environment.mode);
+  // Only log when mode changes or first few times
+  if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+    console.log('🔍 useDatabase called with environment mode:', environment.mode);
+    lastLoggedMode = environment.mode;
+    loggedCount++;
+  }
 
   // TEMPORARY NUCLEAR OPTION: For debugging, always use FallbackDatabase in any error case
   // This prevents the "useNativeDatabase must be used within NativeDatabaseProvider" crash
   try {
-    // EMERGENCY FIX: Direct runtime check for WebView environment
-    // If we detect webkit.messageHandlers or IsometryNative user agent, force WebView mode
-    React.useEffect(() => {
-      const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
-      const hasWebKit = typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined';
-      const isIsometryNative = userAgent.includes('IsometryNative');
-
-      if ((hasWebKit || isIsometryNative) && environment.mode !== DatabaseMode.WEBVIEW_BRIDGE) {
-        console.log('🚨 EMERGENCY FIX: WebView detected but wrong mode - forcing WebView');
-        console.log(`  - User Agent: ${userAgent}`);
-        console.log(`  - Has WebKit: ${hasWebKit}`);
-        console.log(`  - Current Mode: ${environment.mode}`);
-        console.log(`  - Available Handlers:`, Object.keys(window.webkit?.messageHandlers || {}));
-      }
-    }, [environment.mode]);
-
     // AGGRESSIVE RUNTIME CHECK: Force WebView provider if ANY WebView indicators are present
     const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
     const hasWebKit = typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined';
     const isIsometryNative = userAgent.includes('IsometryNative');
     const hasWebKitAny = typeof window !== 'undefined' && typeof window.webkit !== 'undefined';
 
-    console.log('🔍 AGGRESSIVE CHECK in useDatabase:');
-    console.log(`  - User Agent: "${userAgent}"`);
-    console.log(`  - Has WebKit Object: ${hasWebKitAny}`);
-    console.log(`  - Has WebKit MessageHandlers: ${hasWebKit}`);
-    console.log(`  - IsometryNative in UA: ${isIsometryNative}`);
-    console.log(`  - Environment Mode: ${environment.mode}`);
+    // Only log detailed checks when mode changes or first few times
+    if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+      console.log('🔍 AGGRESSIVE CHECK in useDatabase:');
+      console.log(`  - User Agent: "${userAgent}"`);
+      console.log(`  - Has WebKit Object: ${hasWebKitAny}`);
+      console.log(`  - Has WebKit MessageHandlers: ${hasWebKit}`);
+      console.log(`  - IsometryNative in UA: ${isIsometryNative}`);
+      console.log(`  - Environment Mode: ${environment.mode}`);
+    }
 
     // If ANY WebView indicator is present, force WebView mode regardless of environment detection
     if (hasWebKit || isIsometryNative || hasWebKitAny) {
-      console.log('🚨 FORCING WebView database provider due to WebView indicators');
+      if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+        console.log('🚨 FORCING WebView database provider due to WebView indicators');
+      }
       return useWebViewDatabase();
     }
 
     switch (environment.mode) {
       case DatabaseMode.WEBVIEW_BRIDGE:
-        console.log('✅ Using WebView database provider');
+        if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+          console.log('✅ Using WebView database provider');
+        }
         return useWebViewDatabase();
 
       case DatabaseMode.HTTP_API:
-        console.log('⚠️ HTTP_API mode - this might cause the error, using fallback instead');
+        if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+          console.log('⚠️ HTTP_API mode - this might cause the error, using fallback instead');
+        }
         return useFallbackDatabase(); // TEMPORARY: Use fallback instead of native to prevent crash
 
       case DatabaseMode.FALLBACK:
-        console.log('✅ Using Fallback database provider');
+        if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+          console.log('✅ Using Fallback database provider');
+        }
         return useFallbackDatabase();
 
       default:
-        console.log('❓ Unknown mode - using fallback database provider');
+        if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+          console.log('❓ Unknown mode - using fallback database provider');
+        }
         return useFallbackDatabase();
     }
   } catch (error) {
-    console.error('🚨 Error in useDatabase, falling back to fallback provider:', error);
+    if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+      console.error('🚨 Error in useDatabase, falling back to fallback provider:', error);
+    }
     return useFallbackDatabase();
   }
 }

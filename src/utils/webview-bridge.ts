@@ -39,12 +39,15 @@ export interface WebViewEnvironment {
   transport: 'webview-bridge' | 'http-api';
 }
 
+export type BridgeMessageType = 'database' | 'filesystem' | 'd3rendering' | 'liveData' | 'transaction';
+
 export interface WebViewMessage {
   id: string;
-  handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData';
+  handler: BridgeMessageType;
   method: string;
   params: Record<string, unknown>;
   timestamp: number;
+  correlationId?: string; // For transaction tracking
 }
 
 export interface WebViewResponse {
@@ -183,7 +186,7 @@ export class WebViewBridge {
    * Post message to native handler with circuit breaker and queue management
    */
   public async postMessage<T = unknown>(
-    handler: 'database' | 'filesystem' | 'liveData',
+    handler: BridgeMessageType,
     method: string,
     params: Record<string, unknown> = {},
     retries: number = 0
@@ -215,6 +218,11 @@ export class WebViewBridge {
 
     return new Promise<T>((resolve, reject) => {
       try {
+        // Add correlation ID to message if provided in params
+        if (params.correlationId) {
+          message.correlationId = params.correlationId as string;
+        }
+
         // Register callback before sending
         this.registerCallback<T>(requestId, resolve, reject);
 
@@ -454,6 +462,53 @@ export class WebViewBridge {
     reset: async (): Promise<void> => {
       return this.postMessage('database', 'reset', {});
     }
+  };
+
+  /**
+   * Transaction operations through WebView bridge
+   */
+  public transaction = {
+    beginTransaction: async (correlationId: string): Promise<string> => {
+      const result = await this.postMessage<{ transactionId: string }>('transaction', 'beginTransaction', {
+        correlationId
+      });
+      return result.transactionId;
+    },
+
+    commitTransaction: async (transactionId: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('transaction', 'commitTransaction', {
+        transactionId
+      });
+      return result.success;
+    },
+
+    rollbackTransaction: async (transactionId: string): Promise<boolean> => {
+      const result = await this.postMessage<{ success: boolean }>('transaction', 'rollbackTransaction', {
+        transactionId
+      });
+      return result.success;
+    },
+
+    executeInTransaction: async <T>(
+      correlationId: string,
+      operation: () => Promise<T>
+    ): Promise<T> => {
+      return this.postMessage<T>('transaction', 'executeInTransaction', {
+        correlationId,
+        operation: operation.toString() // Note: This won't work across bridge, just for typing
+      });
+    }
+  };
+
+  /**
+   * Send transaction message with correlation ID tracking
+   */
+  public sendTransactionMessage = async (
+    method: string,
+    params: Record<string, unknown>,
+    correlationId: string
+  ): Promise<unknown> => {
+    return this.postMessage('transaction', method, { ...params, correlationId });
   };
 
   /**
@@ -807,7 +862,7 @@ export class WebViewBridge {
    */
   private handleSendFailure<T = unknown>(
     error: unknown,
-    handler: 'database' | 'filesystem' | 'liveData',
+    handler: BridgeMessageType,
     method: string,
     params: Record<string, unknown>,
     retries: number,

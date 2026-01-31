@@ -4,10 +4,15 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>Associations (Playground).xcscheme</key>
+		<key>Associations (Playground) 1.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>7</integer>
+		</dict>
+		<key>Associations (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>8</integer>
 		</dict>
 		<key>Isometry-Package.xcscheme_^#shared#^_</key>
 		<dict>
@@ -39,25 +44,50 @@
 			<key>orderHint</key>
 			<integer>3</integer>
 		</dict>
-		<key>MyPlayground (Playground).xcscheme</key>
+		<key>MyPlayground (Playground) 1.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>8</integer>
+			<integer>12</integer>
 		</dict>
-		<key>Tour (Playground).xcscheme</key>
+		<key>MyPlayground (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>9</integer>
 		</dict>
-		<key>TransactionObserver (Playground).xcscheme</key>
+		<key>Tour (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>13</integer>
+		</dict>
+		<key>Tour (Playground).xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>10</integer>
+		</dict>
+		<key>TransactionObserver (Playground) 1.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>14</integer>
+		</dict>
+		<key>TransactionObserver (Playground).xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>11</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>Isometry</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>IsometryAPI</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>IsometryAPIServer</key>
 		<dict>
 			<key>primary</key>
 			<true/>
