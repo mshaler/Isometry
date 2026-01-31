@@ -33,6 +33,7 @@ export interface ConflictToast {
   type: 'auto-resolved' | 'manual-resolved' | 'error';
   duration: number;
   timestamp: Date;
+  timeoutId?: NodeJS.Timeout;
 }
 
 /**
@@ -60,19 +61,34 @@ export function useConflictResolution() {
       timestamp: new Date(),
     };
 
-    setToasts(prev => [...prev, newToast]);
+    setToasts(prev => {
+      // Prevent duplicate toasts with same message
+      const exists = prev.some(t => t.message === toast.message && t.type === toast.type);
+      if (exists) return prev;
 
-    // Auto-remove after duration
-    setTimeout(() => {
+      return [...prev, newToast];
+    });
+
+    // Auto-remove after duration using ref to avoid stale closures
+    const timeoutId = setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== newToast.id));
     }, toast.duration);
+
+    // Store timeout for potential cleanup
+    newToast.timeoutId = timeoutId;
 
     return newToast.id;
   }, []);
 
   // Remove specific toast
   const removeToast = useCallback((toastId: string) => {
-    setToasts(prev => prev.filter(t => t.id !== toastId));
+    setToasts(prev => {
+      const toastToRemove = prev.find(t => t.id === toastId);
+      if (toastToRemove?.timeoutId) {
+        clearTimeout(toastToRemove.timeoutId);
+      }
+      return prev.filter(t => t.id !== toastId);
+    });
   }, []);
 
   // Load conflicts from native side
@@ -92,14 +108,10 @@ export function useConflictResolution() {
 
     } catch (error) {
       console.error('Failed to load conflicts:', error);
-      addToast({
-        message: 'Failed to load conflict information',
-        type: 'error',
-        duration: 5000,
-      });
+      // Don't add toast during initial load to prevent loops
       return [];
     }
-  }, [addToast]);
+  }, []); // Remove addToast dependency to prevent loops
 
   // Auto-resolve simple conflicts
   const autoResolveSimple = useCallback(async (conflictsToResolve: ConflictInfo[]): Promise<AutoResolutionResult> => {
@@ -233,7 +245,15 @@ export function useConflictResolution() {
 
   // Clear all toasts
   const clearToasts = useCallback(() => {
-    setToasts([]);
+    setToasts(prev => {
+      // Clean up all timeouts
+      prev.forEach(toast => {
+        if (toast.timeoutId) {
+          clearTimeout(toast.timeoutId);
+        }
+      });
+      return [];
+    });
   }, []);
 
   // Get conflicts by type
@@ -266,23 +286,24 @@ export function useConflictResolution() {
 
         return [...prev, newConflict];
       });
-
-      // Show notification for new conflict
-      addToast({
-        message: `New conflict detected in ${newConflict.nodeId}`,
-        type: 'error',
-        duration: 5000,
-      });
     };
 
     // Listen for conflict detection events from bridge
     window.addEventListener('conflict-detected', handleConflictDetected as EventListener);
 
-    // Initial load
-    loadConflicts();
+    // Initial load - only on mount, not on every render
+    loadConflicts().catch(error => {
+      console.error('Initial conflict load failed:', error);
+    });
 
-    // Development testing function
-    if (typeof window !== 'undefined') {
+    return () => {
+      window.removeEventListener('conflict-detected', handleConflictDetected as EventListener);
+    };
+  }, []); // Empty dependencies - only run on mount
+
+  // Development testing function setup (separate useEffect)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
       (window as any).testConflictResolution = (conflictData: Partial<ConflictInfo>) => {
         const testConflict: ConflictInfo = {
           nodeId: conflictData.recordId || 'test_node_001',
@@ -326,22 +347,17 @@ export function useConflictResolution() {
         setConflicts(prev => [...prev, testConflict]);
         setPendingConflictDiff(testDiff);
 
-        // Trigger custom event
-        const event = new CustomEvent('test-conflict-ready', { detail: { conflict: testConflict, diff: testDiff } });
-        window.dispatchEvent(event);
-
         console.log('Test conflict created:', testConflict);
         console.log('Test diff prepared:', testDiff);
       };
     }
 
     return () => {
-      window.removeEventListener('conflict-detected', handleConflictDetected as EventListener);
       if (typeof window !== 'undefined') {
         delete (window as any).testConflictResolution;
       }
     };
-  }, [loadConflicts, addToast]);
+  }, []); // Only setup once on mount
 
   return {
     // State

@@ -1,11 +1,6 @@
-import { BrowserRouter } from 'react-router-dom';
-import { ThemeProvider } from '../contexts/ThemeContext';
-import { EnvironmentProvider } from '../contexts/EnvironmentContext';
-import { AppStateProvider } from '../contexts/AppStateContext';
-import { FilterProvider } from '../contexts/FilterContext';
-import { PAFVProvider } from '../contexts/PAFVContext';
-import { NotebookProvider } from '../contexts/NotebookContext';
-import { DatabaseProvider } from '../db/DatabaseContext';
+import React from 'react';
+
+// Router and providers are handled by parent MVPDemo component
 
 // Import all Figma components
 import { Toolbar } from './Toolbar';
@@ -19,6 +14,8 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 import { NotificationSystem } from './ui/NotificationSystem';
 import { EnvironmentDebug } from './debug/EnvironmentDebug';
 import { WebViewDiagnostic } from './debug/WebViewDiagnostic';
+import { ConflictResolutionModal, type ResolutionDecision } from './ConflictResolutionModal';
+import { useConflictResolution } from '../hooks/useConflictResolution';
 
 /**
  * Unified App Component
@@ -37,70 +34,111 @@ import { WebViewDiagnostic } from './debug/WebViewDiagnostic';
  * - CommandBar (DSL input)
  */
 export function UnifiedApp() {
+  // Initialize conflict resolution (will not show modal unless conflicts exist)
+  const {
+    conflicts,
+    pendingConflictDiff,
+    resolveConflict,
+    prepareManualResolution,
+    toasts,
+    hasUnresolvedConflicts,
+    isResolving,
+  } = useConflictResolution();
+
+  // Development: Log conflict resolution state changes only
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Conflict Resolution State Changed:', {
+        conflictCount: conflicts.length,
+        hasUnresolvedConflicts,
+        pendingConflictDiff: !!pendingConflictDiff,
+        toastCount: toasts.length,
+        isResolving,
+      });
+    }
+  }, [conflicts.length, hasUnresolvedConflicts, !!pendingConflictDiff, toasts.length, isResolving]);
+
+  const handleResolve = async (decision: ResolutionDecision) => {
+    if (conflicts[0]) {
+      await resolveConflict(conflicts[0].nodeId, decision);
+    }
+  };
+
+  const handleCancel = () => {
+    // Just close modal by not showing it
+  };
+
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <EnvironmentProvider>
-          <DatabaseProvider>
-            <AppStateProvider>
-              <FilterProvider>
-                <PAFVProvider>
-                  <NotebookProvider>
-                    <div className="h-screen flex flex-col bg-gray-50">
-                      {/* Environment Debug Info */}
-                      <EnvironmentDebug />
-                      <WebViewDiagnostic />
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Environment Debug Info */}
+      <EnvironmentDebug />
+      <WebViewDiagnostic />
 
-                      {/* Toolbar: Menu bar + command buttons */}
-                      <ErrorBoundary level="component" name="Toolbar">
-                        <Toolbar />
-                      </ErrorBoundary>
+      {/* Toolbar: Menu bar + command buttons */}
+      <ErrorBoundary level="component" name="Toolbar">
+        <Toolbar />
+      </ErrorBoundary>
 
-                      {/* Navigator: App/View/Dataset selectors */}
-                      <ErrorBoundary level="component" name="Navigator">
-                        <Navigator />
-                      </ErrorBoundary>
+      {/* Navigator: App/View/Dataset selectors */}
+      <ErrorBoundary level="component" name="Navigator">
+        <Navigator />
+      </ErrorBoundary>
 
-                      {/* PAFVNavigator: Already included in Navigator component above */}
+      {/* PAFVNavigator: Already included in Navigator component above */}
 
-                      {/* Main Content Area */}
-                      <div className="flex-1 flex min-h-0">
-                        {/* Left Sidebar: LATCH filters + Templates */}
-                        <ErrorBoundary level="feature" name="Sidebar">
-                          <Sidebar />
-                        </ErrorBoundary>
+      {/* Main Content Area */}
+      <div className="flex-1 flex min-h-0">
+        {/* Left Sidebar: LATCH filters + Templates */}
+        <ErrorBoundary level="feature" name="Sidebar">
+          <Sidebar />
+        </ErrorBoundary>
 
-                        {/* Central Canvas: Main data visualization */}
-                        <div className="flex-1 flex flex-col">
-                          <ErrorBoundary level="feature" name="Canvas">
-                            <Canvas />
-                          </ErrorBoundary>
-                        </div>
+        {/* Central Canvas: Main data visualization */}
+        <div className="flex-1 flex flex-col">
+          <ErrorBoundary level="feature" name="Canvas">
+            <Canvas />
+          </ErrorBoundary>
+        </div>
 
-                        {/* Right Sidebar: Formats + Settings */}
-                        <ErrorBoundary level="feature" name="RightSidebar">
-                          <RightSidebar />
-                        </ErrorBoundary>
-                      </div>
+        {/* Right Sidebar: Formats + Settings */}
+        <ErrorBoundary level="feature" name="RightSidebar">
+          <RightSidebar />
+        </ErrorBoundary>
+      </div>
 
-                      {/* Navigator Footer: Location map + Time slider */}
-                      <ErrorBoundary level="component" name="NavigatorFooter">
-                        <NavigatorFooter />
-                      </ErrorBoundary>
+      {/* Navigator Footer: Location map + Time slider */}
+      <ErrorBoundary level="component" name="NavigatorFooter">
+        <NavigatorFooter />
+      </ErrorBoundary>
 
-                      {/* Command Bar: DSL command input */}
-                      <ErrorBoundary level="feature" name="CommandBar">
-                        <CommandBar />
-                      </ErrorBoundary>
-                    </div>
-                    <NotificationSystem />
-                  </NotebookProvider>
-                </PAFVProvider>
-              </FilterProvider>
-            </AppStateProvider>
-          </DatabaseProvider>
-        </EnvironmentProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+      {/* Command Bar: DSL command input */}
+      <ErrorBoundary level="feature" name="CommandBar">
+        <CommandBar />
+      </ErrorBoundary>
+
+      {/* Conflict Resolution Modal - only shows when conflicts exist */}
+      <ConflictResolutionModal
+        conflict={conflicts[0] || null}
+        conflictDiff={pendingConflictDiff}
+        isVisible={hasUnresolvedConflicts && !!pendingConflictDiff}
+        onResolve={handleResolve}
+        onCancel={handleCancel}
+        isResolving={isResolving}
+      />
+
+      {/* Toast notifications for conflict resolution */}
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          className={`fixed top-4 right-4 p-3 rounded shadow-lg text-white text-sm z-50 ${
+            toast.type === 'error' ? 'bg-red-500' :
+            toast.type === 'auto-resolved' ? 'bg-green-500' :
+            'bg-blue-500'
+          }`}
+        >
+          {toast.message}
+        </div>
+      ))}
+    </div>
   );
 }

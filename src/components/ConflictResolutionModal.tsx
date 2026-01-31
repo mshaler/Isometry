@@ -97,7 +97,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
       // Use auto-resolution if possible
       setResolutionStrategy(conflictDiff.canAutoResolve ? 'field_level_merge' : 'manual_resolution');
     }
-  }, [conflict, conflictDiff]);
+  }, [conflict?.nodeId, conflictDiff?.nodeId]); // Only depend on IDs to prevent object re-render loops
 
   // Handle field choice changes
   const handleFieldChoice = useCallback((fieldName: string, choice: string) => {
