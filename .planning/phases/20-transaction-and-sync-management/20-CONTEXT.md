@@ -13,41 +13,47 @@ Provide ACID transaction safety across the React-to-Native bridge with multi-dev
 <decisions>
 ## Implementation Decisions
 
-### Transaction boundaries
-- Hybrid approach: both explicit control and automatic batching available
-- Promise-based API for React components: `withTransaction(async () => { ... })`
-- Smart batching: system detects patterns and batches related operations intelligently
-- Multi-factor relatedness: same data entity + causal relationships + user interaction context
+### Transaction coordination
+- Hook-based API with Promise support: `useTransaction().execute(async () => { ... })`
+- Flat transaction nesting: nested calls join existing transaction (no savepoints)
+- Hybrid approach: explicit transactions + smart batching for common patterns
+- Multi-factor batching relatedness: user interaction context + data relationships + time window
 
-### Conflict detection
-- Smart detection: monitor high-conflict areas more frequently, low-conflict areas less often
-- Content type patterns determine high-conflict areas: titles, key properties are more conflict-prone
-- Core metadata gets baseline monitoring: title, status, priority, dates, tags, links, parent/child connections, headings, list ordering
+### Conflict detection granularity
+- Adaptive granularity: smart detection based on content type and conflict patterns
+- Combination approach: content type patterns as baseline, adjust based on actual conflict history
+- Smart frequency with event-driven backup: higher monitoring for active editing, lower for stable areas
+- Session-aware detection: real-time monitoring for active sessions, periodic checks for idle devices
 
-### Resolution strategies
-- Auto-resolve non-overlapping changes (different fields) and additive changes (both devices added content)
-- Manual conflicts use background notification + inline diff view
-- Show merged safe parts while conflicts pending: auto-merged portions visible, conflicted sections highlighted
+### Multi-device resolution flow
+- Smart hybrid conflict resolution: auto-resolve simple conflicts, manual review for complex ones
+- Subtle notification for auto-resolved conflicts: brief toast indicating resolution occurred
+- Side-by-side diff interface for manual conflicts with visual highlighting
+- Show merged content while conflicts pending: auto-merged portions visible, conflicted sections highlighted
 
-### Rollback behavior
+### Failure recovery patterns
 - Toast notification for rollback communication: brief message explaining what was rolled back and why
-- Preserve user's local input: save what user typed/changed, just don't sync it
-- User can recover their work after rollback failures
+- Smart preservation: save valid portions of failed transactions, discard problematic parts
+- Draft state recovery: preserved work saved as draft for user review and resubmission
+- Smart cleanup: drafts removed after successful resubmission, failed drafts retained longer
 
-### Operation tracking
-- Full audit trail with smart sampling to manage performance overhead
-- Sampling criteria: operation type, error patterns, user impact, and system state
-- Transaction starts/commits get full tracking, simple reads get lightweight tracking
+### Correlation and debugging
+- Smart sampling: detailed logging for transaction operations and errors, lightweight for routine reads
+- Operation type criteria: transaction starts/commits get full tracking, simple operations get lightweight
+- Hierarchical correlation IDs: parent transaction with child operation sequences (tx_abc123.001)
+- Configurable logging: runtime toggle between debug levels for production troubleshooting
 
 </decisions>
 
 <specifics>
 ## Specific Ideas
 
-- Promise-based transaction API works better for event handlers and async operations outside render cycle
-- Smart batching learns from patterns rather than fixed time windows
-- Background conflict resolution doesn't interrupt user workflow
-- Toast notifications strike balance between informative and non-disruptive
+- Promise-based transaction API integrates naturally with React async patterns and event handlers
+- Multi-factor batching prevents both over-batching (unrelated operations) and under-batching (split logical operations)
+- Session-aware conflict detection focuses monitoring where actual editing is happening
+- Side-by-side diff provides familiar pattern similar to git merge tools and code review interfaces
+- Smart preservation minimizes user frustration by protecting valid work when unrelated operations fail
+- Hierarchical correlation IDs enable tracing complex transaction flows: tx_abc123 → tx_abc123.001, tx_abc123.002
 
 </specifics>
 
