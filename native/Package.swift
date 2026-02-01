@@ -34,6 +34,8 @@ let package = Package(
         .package(url: "https://github.com/vapor/vapor.git", from: "4.89.0"),
         .package(url: "https://github.com/ZipArchive/ZipArchive.git", from: "2.5.5"),
         .package(url: "https://github.com/fumoboy007/msgpack-swift", from: "2.0.0"),
+        .package(url: "https://github.com/apple/swift-markdown", from: "0.4.0"),
+        .package(url: "https://github.com/LebJe/TOMLKit", from: "0.5.0"),
     ],
     targets: [
         .target(
@@ -49,6 +51,8 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift"),
                 .product(name: "ZipArchive", package: "ZipArchive"),
                 .product(name: "DMMessagePack", package: "msgpack-swift"),
+                .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "TOMLKit", package: "TOMLKit"),
             ],
             resources: [
                 .process("Resources")
