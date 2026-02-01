@@ -1,305 +1,366 @@
-# Technology Stack: Live Database Integration
+# Technology Stack: Live Apple Notes Integration
 
-**Project:** Isometry - React ↔ Native SQLite Integration
-**Researched:** 2025-01-30
-**Focus:** Bridge technologies for real-time React frontend to native GRDB backend
+**Project:** Isometry - Enhanced Apple Notes Integration
+**Researched:** 2026-02-01
+**Focus:** Stack additions for live Apple Notes sync with conflict resolution
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Your existing hybrid architecture is well-positioned for live database integration. The current WebView bridge infrastructure and native GRDB backend provide a strong foundation. Key additions needed: real-time change notifications, optimized message serialization, and query result streaming.
+Building on proven AltoIndexImporter foundation (6,891 notes successfully imported), this milestone adds real-time Apple Notes monitoring and bidirectional sync. Key stack additions: FSEvents for filesystem monitoring, SwiftProtobuf for direct protobuf parsing, Foundation Compression for gzip handling, and enhanced TCC permission management.
 
 ## Current Stack Assessment
 
 ### Existing Infrastructure ✅
 | Technology | Version | Purpose | Status |
 |------------|---------|---------|---------|
-| GRDB.swift | 6.24.0 | Native SQLite ORM | **Current, well-chosen** |
-| Vapor | 4.89.0 | HTTP API server | **Current, stable** |
-| WKWebView + MessageHandlers | Native | WebView bridge | **Implemented, needs optimization** |
-| React | 18.2.0 | Frontend framework | **Current** |
-| TypeScript | 5.2.2 | Type safety | **Current** |
-
-### Bridge Layer Assessment ✅
-- **WebViewClient**: Solid implementation with connection management
-- **DatabaseMessageHandler**: Comprehensive with security validation
-- **Performance monitoring**: Built-in latency tracking
-- **Error handling**: Robust retry logic and fallback modes
+| GRDB.swift | 6.24.0 | Native SQLite ORM | **Proven with AltoIndexImporter** |
+| AltoIndexImporter | Current | Apple Notes import | **6,891 notes imported successfully** |
+| CloudKitSyncManager | Current | Conflict resolution | **Handles bidirectional sync patterns** |
+| Swift Actor pattern | Native | Concurrent database access | **Thread-safe, proven architecture** |
 
 ## Required Stack Additions
 
-### 1. Real-Time Change Notifications
+### 1. Real-Time File System Monitoring
 
-**Current Gap:** Polling-based subscriptions (5-second intervals)
-**Solution:** GRDB ValueObservation + WebView push notifications
+**Current Gap:** Manual import via alto-index export
+**Solution:** FSEvents API for live Notes database monitoring
 
-#### Add to Swift (native/Package.swift):
-```swift
-// No new dependencies - GRDB 6.24.0 already supports ValueObservation
-// Leverage built-in DatabaseRegionObservation for granular tracking
-```
+#### Core Monitoring Technology
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| FSEvents API | Native macOS | Directory tree change notifications | Apple's official low-level API; handles large Notes libraries without polling overhead |
+| FileManager.DirectoryMonitor | iOS 17+/macOS 14+ | Modern monitoring API | Higher-level API for simple use cases, but FSEvents preferred for granular control |
 
-#### Implementation Requirements:
+#### Implementation Requirements
 | Component | Purpose | Implementation |
 |-----------|---------|----------------|
-| `DatabaseObserver` | GRDB change tracking | `ValueObservation` + `DatabaseRegionObservation` |
-| `ChangeNotificationManager` | Queue and batch changes | Swift Actor with notification coalescing |
-| `WebViewNotifier` | Push to React | Enhanced MessageHandler with event streams |
+| `NotesFileWatcher` | Monitor ~/Library/Group Containers/group.com.apple.notes/ | FSEvents stream with kFSEventStreamCreateFlagFileEvents |
+| `ChangeEventProcessor` | Filter and batch filesystem events | Swift Actor with event coalescing (100ms batches) |
+| `TriggerImportManager` | Coordinate import pipeline | Integration with existing AltoIndexImporter |
 
-**Why GRDB ValueObservation:**
-- Built-in change coalescing (batches rapid changes)
-- Transaction-level consistency guarantees
-- Zero polling overhead
-- Supports table-specific and query-specific observation
+```swift
+// Package.swift - no new dependencies needed
+// FSEvents is part of CoreServices framework (already available)
+```
 
-### 2. Optimized Message Serialization
+**Why FSEvents over alternatives:**
+- Native Apple API with zero dependencies
+- Efficient for monitoring entire directory trees
+- Battle-tested for years in spotlight indexing, backup tools
+- Supports both legacy and modern file events
 
-**Current:** JSON serialization per message
-**Upgrade:** Binary serialization + message batching
+### 2. Direct Protobuf Parsing
 
-#### Add to React (package.json):
-```json
-{
-  "dependencies": {
-    "@msgpack/msgpack": "^3.0.0"
-  }
+**Current:** Alto-index exports to markdown, parse YAML frontmatter
+**Enhancement:** Direct ZDATA protobuf parsing for reduced latency
+
+#### Add to Swift Package.swift
+```swift
+dependencies: [
+    .package(url: "https://github.com/groue/GRDB.swift.git", from: "6.24.0"), // Already included
+    .package(url: "https://github.com/apple/swift-protobuf", from: "2.0.0"),
+]
+
+targets: [
+    .target(
+        name: "Isometry",
+        dependencies: [
+            .product(name: "GRDB", package: "GRDB.swift"),
+            .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+        ]
+    )
+]
+```
+
+#### Core Protobuf Technology
+| Library | Version | Purpose | Why Recommended |
+|---------|---------|---------|-----------------|
+| SwiftProtobuf | 2.0.0+ | Parse gzipped protobuf blobs | Apple's official implementation; requires Swift 5.10+ for current SPM plugin support |
+| Foundation Compression | Native | Gzip decompression | Zero external dependencies; handles ZICNOTEDATA.ZDATA gzipped blobs |
+
+#### Implementation Architecture
+```swift
+struct ProtobufNotesParser {
+    // Foundation.Compression for gzip decompression
+    // SwiftProtobuf for protobuf parsing
+    // Integration with existing AltoIndexImporter.ParsedNote
 }
 ```
 
-#### Add to Swift:
+**Why SwiftProtobuf:**
+- Official Apple library with active maintenance
+- Handles Apple Notes' complex nested protobuf structures
+- Type-safe code generation from .proto definitions
+- Seamless integration with Swift's native types
+
+### 3. TCC Permission Management
+
+**Requirement:** Full Disk Access for ~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite
+**Strategy:** Graceful degradation with user education
+
+#### Permission Strategy
+| Permission | Purpose | Fallback |
+|------------|---------|----------|
+| Full Disk Access | Direct Notes database access | Manual alto-index import |
+| File System Events | Real-time monitoring | Periodic manual scans |
+
+#### Implementation Approach
 ```swift
-// Built-in Codable already efficient, enhance with:
-// - Message batching (collect 10ms worth of changes)
-// - Compression for large result sets
-// - Incremental updates (deltas, not full datasets)
-```
+// No additional dependencies - use native TCC checking
+import Security
 
-**Performance Benefits:**
-- 40-60% smaller payloads vs JSON
-- Faster encode/decode (binary vs text parsing)
-- Built-in schema validation
-- Maintains type safety across bridge
-
-### 3. Query Result Streaming
-
-**Current:** Full result sets per query
-**Upgrade:** Incremental loading + virtual scrolling
-
-#### Add to React:
-```json
-{
-  "dependencies": {
-    "@tanstack/react-virtual": "^3.2.0",
-    "react-window-infinite-loader": "^1.0.9"
-  }
+class TCCPermissionManager {
+    // Check current permissions without requesting
+    // Provide clear user education about benefits
+    // Graceful degradation if denied
 }
 ```
 
-#### Native Streaming Support:
+**Why This Approach:**
+- No third-party TCC libraries (security risk)
+- User maintains control over permissions
+- Clear value proposition: real-time sync vs manual import
+- Preserves existing manual import workflow
+
+### 4. Enhanced AltoIndexImporter
+
+**Current:** File-based markdown import
+**Enhancement:** Direct SQLite + protobuf parsing
+
+#### Integration Points
+| Enhancement | Purpose | Integration |
+|-------------|---------|-------------|
+| Live protobuf parsing | Reduce import latency | Extend existing `parseMarkdown()` with protobuf branch |
+| SQLite direct access | Skip alto-index export step | New `importFromSQLite()` method alongside existing file import |
+| Change detection | Avoid redundant imports | Enhanced sourceId tracking with Notes UUID correlation |
+
 ```swift
-// Leverage GRDB's cursor-based iteration:
-// - Paginated queries with LIMIT/OFFSET
-// - Streaming JSON encoder for large results
-// - Background queue processing for heavy queries
+// Enhanced AltoIndexImporter - backwards compatible
+public actor AltoIndexImporter {
+    // Existing file-based import methods preserved
+
+    // New direct SQLite methods
+    public func importFromNotesDatabase() async throws -> ImportResult
+    public func parseProtobufNote(_ data: Data) throws -> ParsedNote
+    public func watchForChanges() async throws -> AsyncStream<NotesChange>
+}
 ```
 
-**Architecture:**
-- **React**: Virtual scrolling requests data windows
-- **Bridge**: Streams 100-row chunks with loading states
-- **Native**: Cursor-based SQLite iteration, minimal memory
+**Backwards Compatibility:**
+- All existing AltoIndexImporter APIs preserved
+- File-based import remains primary for bulk operations
+- Direct parsing supplements for real-time updates
 
-### 4. WebView Bridge Enhancements
+### 5. Compression and Performance
 
-**Current Status:** Functional but not optimized for high-frequency updates
-**Required Optimizations:**
+#### Add fallback compression library
+```swift
+dependencies: [
+    .package(url: "https://github.com/mw99/DataCompression", from: "3.8.0"), // Fallback only
+]
+```
 
-#### Message Queue Optimization
-```typescript
-// React side - batch message sending
-interface MessageBatch {
-  messages: BridgeMessage[];
-  priority: 'high' | 'normal' | 'low';
-  timestamp: number;
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| Foundation Compression | Native | Primary gzip handling | Default for Apple Notes ZDATA blobs |
+| DataCompression | 3.8.0+ | Fallback compression | If Foundation Compression insufficient for corrupted/partial data |
+
+**Performance Optimizations:**
+- Background queue processing for protobuf parsing
+- Batch change notifications (100ms windows)
+- Incremental imports (changed notes only)
+- Memory-efficient streaming for large Notes libraries
+
+## Alternative Technologies Considered
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| FSEvents API | Polling via FileManager | Never for production - too slow for real-time sync |
+| SwiftProtobuf | Manual protobuf parsing | Never - Apple Notes format is undocumented and changes |
+| Foundation Compression | Third-party gzip libraries | Only if Foundation proves insufficient |
+| Direct SQLite access | AppleScript automation | Only for legacy systems without TCC support |
+
+## What NOT to Use
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Witness FSEvents wrapper | Unmaintained since 2017, compatibility issues | Custom FSEvents implementation or updated fork |
+| Third-party TCC libraries | Security risk, frequent breaking changes | Native Security framework |
+| Alto-index Ruby dependency | Eliminates real-time capabilities | Direct Swift protobuf parsing |
+| Continuous polling | Battery drain, poor performance | FSEvents + change batching |
+
+## Integration with Existing Isometry Stack
+
+### Seamless Integration Points
+
+**Enhanced AltoIndexImporter:**
+```swift
+// Current file-based import preserved
+public func importNotes(from directoryURL: URL) async throws -> ImportResult
+
+// New live import capabilities added
+public func startLiveSync() async throws -> AsyncStream<ImportResult>
+public func importFromProtobuf(_ data: Data) async throws -> Node
+```
+
+**GRDB Database Compatibility:**
+- Existing `IsometryDatabase` actor handles all new operations
+- Same `Node` model with enhanced `sourceId` correlation
+- Current CloudKit sync pipeline handles Apple Notes changes
+
+**CloudKit Conflict Resolution:**
+- Existing `SyncConflictManager` handles Notes conflicts
+- Enhanced with Notes-specific conflict detection
+- Read-mostly strategy: Notes app wins, Isometry adapts
+
+### New Components Architecture
+
+```swift
+// New: Real-time monitoring
+public actor NotesFileWatcher {
+    private let database: IsometryDatabase
+    private let importer: AltoIndexImporter
+    // FSEvents-based change monitoring
 }
 
-// Collect messages for 16ms (one frame) then batch send
-const messageQueue = new MessageBatchProcessor({
-  batchInterval: 16, // One animation frame
-  maxBatchSize: 50,
-  priorityLanes: true
-});
-```
+// Enhanced: Direct protobuf support
+public struct ProtobufNotesParser {
+    // SwiftProtobuf + Foundation Compression
+    // Produces AltoIndexImporter.ParsedNote
+}
 
-#### Swift Memory Management
-```swift
-// Enhanced message handler with memory limits
-class OptimizedDatabaseMessageHandler {
-  private let messageQueue = MessageQueue(
-    maxMemoryMB: 50,
-    maxPendingMessages: 1000,
-    compressionThreshold: 10_000 // bytes
-  )
+// Enhanced: Permission management
+public class NotesPermissionManager {
+    // TCC status checking and user guidance
+    // Graceful degradation strategies
 }
 ```
 
 ## Performance Architecture
 
-### Bridge Communication Pattern
+### Real-Time Sync Flow
 ```
-React Component
-    ↓ (batched queries)
-WebViewClient (message queue)
-    ↓ (MessageHandler protocol)
-DatabaseMessageHandler (Swift Actor)
-    ↓ (connection pool)
-IsometryDatabase (GRDB)
-    ↓ (real-time observation)
-ChangeNotificationManager
-    ↓ (push notifications)
-WebView JavaScript Events
-    ↓ (reactive updates)
-React Components (re-render)
+Notes App Change → FSEvents Notification → Change Event Filter →
+Protobuf Parse → AltoIndexImporter → GRDB → CloudKit Sync
 ```
 
-### Real-Time Update Flow
+### Conflict Resolution Flow
 ```
-Database Change → GRDB ValueObservation → Change Coalescing (10ms) →
-WebView PostMessage → React Event Handler → State Update → Re-render
-```
-
-**Latency Target:** <50ms for small changes, <200ms for complex queries
-
-## Migration Strategy
-
-### Phase 1: Real-Time Notifications (Week 1)
-```bash
-# No new dependencies needed
-# Implement GRDB ValueObservation in existing DatabaseMessageHandler
-# Add change notification batching
-# Test with existing WebView bridge
+Notes App Conflict → Detect via sourceId → CloudKit Conflict Resolution →
+User Notification → Manual Resolution UI → Update Both Systems
 ```
 
-### Phase 2: Message Optimization (Week 2)
-```bash
-npm install @msgpack/msgpack @tanstack/react-virtual
-# Implement binary serialization
-# Add message batching on React side
-# Add virtual scrolling for large datasets
-```
-
-### Phase 3: Performance Tuning (Week 3)
-```bash
-# Memory usage optimization
-# Message queue fine-tuning
-# Performance monitoring integration
-# Load testing and optimization
-```
-
-## Alternative Technologies Considered
-
-| Technology | Pros | Cons | Decision |
-|------------|------|------|----------|
-| **WebSocket Bridge** | Low latency, full-duplex | Requires separate server, complex state sync | **Rejected** - Over-engineering |
-| **React Native Bridge** | Native performance | Major architecture change | **Rejected** - Existing WebView works |
-| **GraphQL Subscriptions** | Real-time, standardized | Additional complexity, dependencies | **Rejected** - Direct GRDB better |
-| **Server-Sent Events** | Simple, HTTP-based | One-way only, browser support | **Considered** - May add for future |
-
-## Performance Expectations
-
-| Metric | Current | Target | Method |
-|--------|---------|---------|---------|
-| **Query Latency** | 50-150ms | 20-80ms | Message batching + binary serialization |
-| **Change Notification** | 5000ms (polling) | <50ms | GRDB ValueObservation |
-| **Large Dataset Load** | Full load, 2-10s | Incremental, 200ms initial | Virtual scrolling + streaming |
-| **Memory Usage** | Unbounded growth | <100MB steady state | Message queue limits + GC |
-| **Bridge Throughput** | ~100 msg/sec | ~1000 msg/sec | Batching + compression |
-
-## Security Considerations
-
-### Message Validation (Already Implemented ✅)
-- SQL injection prevention in `MessageHandlerSecurityValidator`
-- Request size limits and timeout handling
-- Method whitelist validation
-
-### Enhanced Security Additions
-```swift
-// Add to existing SecurityValidator
-class MessageHandlerSecurityValidator {
-  func validateBinaryMessage(_ data: Data) -> ValidationResult {
-    // Verify MessagePack format integrity
-    // Check payload size limits (max 10MB)
-    // Validate schema compliance
-  }
-}
-```
+**Performance Targets:**
+- Change detection: <100ms from Notes save to import trigger
+- Protobuf parsing: <10ms per note (vs 100ms+ for alto-index export)
+- Import pipeline: <1s for single note changes
+- Bulk import: Maintains current ~6,891 notes in reasonable time
 
 ## Installation Instructions
 
-### React Dependencies
-```bash
-npm install @msgpack/msgpack @tanstack/react-virtual react-window-infinite-loader
-```
-
-### Swift - No New Dependencies
+### Swift Package Dependencies
 ```swift
-// Leverage existing GRDB 6.24.0
-// All ValueObservation APIs available
-// No Package.swift changes needed
+// Add to Package.swift
+dependencies: [
+    .package(url: "https://github.com/apple/swift-protobuf", from: "2.0.0"),
+    .package(url: "https://github.com/mw99/DataCompression", from: "3.8.0"), // Fallback
+]
+
+targets: [
+    .target(
+        name: "Isometry",
+        dependencies: [
+            // Existing dependencies preserved
+            .product(name: "GRDB", package: "GRDB.swift"),
+            // New additions
+            .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            .product(name: "DataCompression", package: "DataCompression"),
+        ]
+    )
+]
 ```
 
 ### Development Tools
 ```bash
-npm install --save-dev @types/msgpack
+# Required for protobuf development (if defining custom .proto files)
+brew install protobuf
+
+# For testing Notes database access
+brew install sqlite3
 ```
 
-## Validation Plan
+### Runtime Requirements
+- macOS 14.0+ or iOS 17.0+ (existing requirements)
+- Full Disk Access permission (user-granted)
+- Apple Notes app installed and used
 
-### Performance Testing
-1. **Message Throughput**: 1000 operations/second sustained
-2. **Memory Stability**: No leaks over 24-hour run
-3. **Change Notification**: <50ms from DB change to UI update
-4. **Large Dataset**: 10K+ rows with smooth scrolling
+## Migration Strategy
 
-### Integration Testing
-1. **Offline/Online**: Ensure graceful degradation
-2. **Background/Foreground**: App state transition handling
-3. **Memory Pressure**: iOS/macOS memory warning responses
-4. **Concurrent Access**: Multiple views updating simultaneously
+### Phase 1: Add protobuf parsing (Week 1)
+```swift
+// Add SwiftProtobuf dependency
+// Implement ProtobufNotesParser
+// Test with existing Notes database
+// Maintain file-based import as primary
+```
 
-## Confidence Assessment
+### Phase 2: Add FSEvents monitoring (Week 2)
+```swift
+// Implement NotesFileWatcher
+// Add change event batching
+// Test real-time import pipeline
+// Add TCC permission checking
+```
 
-| Component | Confidence | Evidence |
-|-----------|------------|----------|
-| **GRDB ValueObservation** | **HIGH** | Proven technology, well-documented, in production use |
-| **MessagePack Integration** | **HIGH** | Mature library, binary compatibility, extensive testing |
-| **Virtual Scrolling** | **HIGH** | TanStack Virtual is industry standard |
-| **Bridge Optimization** | **MEDIUM** | Custom implementation, needs performance validation |
+### Phase 3: Enhanced conflict resolution (Week 3)
+```swift
+// Enhance CloudKit sync for Notes-specific conflicts
+// Add user conflict resolution UI
+// Implement read-mostly bidirectional strategy
+// Performance optimization and testing
+```
 
-## Risk Mitigation
+## Version Compatibility
 
-### Technical Risks
-1. **Bridge Message Overhead**: Mitigation via batching and compression
-2. **Memory Growth**: Queue limits and periodic cleanup
-3. **iOS Memory Pressure**: Background processing limits and observation suspension
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| SwiftProtobuf 2.0.0+ | Swift 5.10+, Xcode 15.3+ | Required for current SPM plugin support |
+| GRDB.swift 6.24.0+ | iOS 13+, macOS 10.15+ | Already validated in existing codebase |
+| DataCompression 3.8.0+ | iOS 9+, macOS 10.11+ | Broader compatibility than Foundation Compression |
+| FSEvents API | macOS 10.5+ | Native API, no version constraints |
 
-### Implementation Risks
-1. **Breaking Changes**: Maintain backward compatibility with current WebView bridge
-2. **Performance Regression**: Comprehensive benchmarking before rollout
-3. **Complex State Management**: Incremental migration, feature flags
+## Security Considerations
 
-## Next Steps
+### TCC Compliance
+- Request minimal permissions (Full Disk Access only)
+- Clear user education about permission benefits
+- Graceful degradation if permissions denied
+- No programmatic TCC database manipulation
 
-1. **Week 1**: Implement GRDB ValueObservation for real-time notifications
-2. **Week 2**: Add MessagePack serialization and message batching
-3. **Week 3**: Virtual scrolling integration and performance optimization
-4. **Week 4**: Load testing, memory profiling, and production hardening
+### Data Protection
+- Notes content encrypted at rest in SQLite
+- Existing CloudKit encryption maintains security
+- No plaintext Notes storage outside approved containers
+- Audit trail for all Notes access attempts
 
-**Critical Path**: Real-time notifications → Message optimization → Virtual scrolling
-**Blockers**: None identified - all technologies are mature and compatible
+## Risk Assessment
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|---------|------------|
+| Apple Notes format changes | Medium | High | Monitor Ruby parser updates, fallback to file import |
+| TCC permission denial | High | Medium | Graceful degradation to manual import |
+| FSEvents performance issues | Low | Medium | Configurable batching, fallback to polling |
+| SwiftProtobuf compatibility | Low | High | Pin to stable versions, test across iOS releases |
 
 ## Sources
 
-- GRDB.swift Documentation: https://github.com/groue/GRDB.swift (HIGH confidence)
-- WKWebView Best Practices: Apple Developer Documentation (HIGH confidence)
-- MessagePack Specification: https://msgpack.org/ (HIGH confidence)
-- TanStack Virtual: https://tanstack.com/virtual/ (HIGH confidence)
-- WebView Bridge Performance: Research from Shopify Mobile Bridge (MEDIUM confidence)
+- **FSEvents API** — Apple Developer Documentation, Core Services (HIGH confidence)
+- **SwiftProtobuf** — GitHub apple/swift-protobuf, official releases (HIGH confidence)
+- **Apple Notes database format** — threeplanetssoftware/apple_cloud_notes_parser research (MEDIUM confidence)
+- **TCC permissions** — macOS security documentation, developer forums (HIGH confidence)
+- **Alto-index compatibility** — Existing AltoIndexImporter validation with 6,891 notes (HIGH confidence)
+
+---
+*Stack research for: Live Apple Notes Integration*
+*Researched: 2026-02-01*

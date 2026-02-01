@@ -1,7 +1,7 @@
 # Architecture Research
 
-**Domain:** Live Database Integration via WebView Bridge
-**Researched:** 2026-01-30
+**Domain:** Live Apple Notes Integration with Swift Actor + GRDB + CloudKit
+**Researched:** 2026-02-01
 **Confidence:** HIGH
 
 ## Standard Architecture
@@ -10,27 +10,27 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     React Components                        │
+│                     User Interface Layer                     │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐        │
-│  │ useSQLQuery │  │ useLiveData │  │ Context APIs│        │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘        │
-│         │                 │                │                │
-├─────────┴─────────────────┴────────────────┴────────────────┤
-│                    Bridge Communication Layer               │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
+│  │  SwiftUI │  │ WebView │  │  TCC    │  │ Progress│        │
+│  │  Views   │  │ Bridge  │  │Manager  │  │  UI     │        │
+│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘        │
+│       │            │            │            │              │
+├───────┴────────────┴────────────┴────────────┴──────────────┤
+│                  Actor Coordination Layer                    │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              WKWebView Bridge Protocol              │    │
-│  │  - Request/Response Correlation                     │    │
-│  │  - Message Queue + Circuit Breaker                 │    │
-│  │  - Live Update Notifications                       │    │
-│  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                     Native Database Layer                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ IsometryDB   │  │ CloudKit     │  │ Query Cache  │      │
-│  │ (GRDB Actor) │  │ Sync Manager │  │ & Observers  │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  │              NotesIntegrationActor                   │    │
+│  │  (FSEvents monitoring, conflict resolution)          │    │
+│  └─────┬────────────────────────┬─────────────────────┘     │
+│        │                        │                           │
+├────────┴────────────────────────┴───────────────────────────┤
+│                     Data Layer                               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                   │
+│  │AltoIndex │  │Isometry  │  │CloudKit  │                   │
+│  │Importer  │  │Database  │  │Sync Mgr  │                   │
+│  └──────────┘  └──────────┘  └──────────┘                   │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -38,217 +38,183 @@
 
 | Component | Responsibility | Typical Implementation |
 |-----------|----------------|------------------------|
-| useSQLiteQuery | Query execution with fallback | Hook with database context + local sql.js fallback |
-| useLiveData | Real-time subscriptions | WebSocket-style updates via bridge notifications |
-| WebView Bridge | Secure message transport | WKMessageHandler with UUID correlation + error handling |
-| IsometryDatabase | Thread-safe DB operations | Swift Actor with GRDB for SQLite + FTS5 |
-| Query Cache | Performance optimization | In-memory results cache + invalidation patterns |
-| CloudKit Sync | Data synchronization | Background actor for remote state management |
+| NotesIntegrationActor | Live sync coordination, FSEvents monitoring, conflict resolution | Swift Actor with FileSystemEventStream |
+| TCCManager | Privacy permissions management | Actor wrapping TCC database queries |
+| ConflictResolver | Bidirectional sync conflict handling | Actor with strategy pattern for resolution |
+| ChangeMonitor | Real-time Notes database monitoring | FSEvents wrapper with debouncing |
+| AltoIndexImporter | Batch Notes import from exported data | Enhanced existing actor with live sync capability |
+| IsometryDatabase | Local SQLite storage with GRDB | Existing Actor with additional Notes sync tables |
+| CloudKitSyncManager | Bidirectional CloudKit synchronization | Enhanced existing actor with Notes record types |
 
 ## Recommended Project Structure
 
 ```
-src/
-├── hooks/                 # Database integration hooks
-│   ├── useSQLiteQuery.ts  # Main query hook with bridge integration
-│   ├── useLiveData.tsx    # Real-time subscription management
-│   └── useBridgeDatabase.ts # Bridge communication abstraction
-├── utils/                 # Bridge infrastructure
-│   ├── webview-bridge.ts  # Core bridge communication
-│   ├── bridge-performance.ts # Monitoring & circuit breaker
-│   └── bridge-waiter.ts   # Connection management
-├── types/                 # Type definitions
-│   ├── bridge.d.ts        # Bridge message types
-│   └── database.d.ts      # Database result types
-└── context/               # Shared state
-    ├── DatabaseContext.tsx # Database provider + environment detection
-    └── LiveDataContext.tsx # Real-time update coordination
-
-native/Sources/Isometry/
-├── Database/              # Core database layer
-│   ├── IsometryDatabase.swift # Main actor with CRUD + graph operations
-│   └── DatabaseMigrator.swift # Schema versioning
-├── Bridge/                # WebView communication
-│   ├── BridgeMessageHandler.swift # WKMessageHandler implementation
-│   ├── DatabaseBridgeAPI.swift   # Query execution endpoint
-│   └── LiveUpdateNotifier.swift  # Push updates to React
-└── Sync/                  # Data synchronization
-    └── CloudKitSyncManager.swift # Background sync coordination
+Sources/Isometry/
+├── Integration/          # Live Notes integration components
+│   ├── NotesIntegrationActor.swift    # Main coordination actor
+│   ├── ChangeMonitor.swift           # FSEvents monitoring
+│   ├── ConflictResolver.swift        # Conflict resolution strategies
+│   ├── TCCManager.swift              # Privacy permissions management
+│   └── NotesWatcher.swift            # File system change detection
+├── Import/              # Enhanced import functionality
+│   ├── AltoIndexImporter.swift       # Existing (enhanced for live sync)
+│   └── LiveNotesImporter.swift       # New live import capability
+├── Database/            # Enhanced database layer
+│   ├── IsometryDatabase.swift        # Existing (add Notes sync tables)
+│   ├── NotesChangeLog.swift          # Change tracking for sync
+│   └── SyncConflict.swift            # Conflict metadata storage
+├── Sync/                # Enhanced sync management
+│   ├── CloudKitSyncManager.swift     # Existing (add Notes record types)
+│   ├── NotesRecordTransformer.swift  # CloudKit ↔ Notes conversion
+│   └── SyncCoordinator.swift         # Multi-source sync coordination
+└── Resources/
+    ├── schema.sql                    # Enhanced with Notes sync tables
+    └── migrations/                   # Database migration scripts
+        └── 002_add_notes_sync.sql
 ```
 
 ### Structure Rationale
 
-- **hooks/:** Abstracts bridge complexity from React components, provides consistent API regardless of environment
-- **Bridge layer:** Handles environment detection, fallback strategies, and maintains connection reliability
-- **Native Database/:** Actor-based concurrency for thread safety, leverages SQLite native features (FTS5, CTEs)
+- **Integration/:** Isolates live Notes-specific logic from existing import patterns, follows Actor model
+- **Enhanced Import/:** Builds on proven AltoIndexImporter pattern, adds live sync without breaking batch import
+- **Database/:** Extends existing GRDB Actor pattern, maintains transaction safety and CloudKit sync compatibility
+- **Sync/:** Enhances existing CloudKit patterns, adds Notes-specific conflict resolution and record transformation
 
 ## Architectural Patterns
 
-### Pattern 1: Query Hook with Bridge Fallback
+### Pattern 1: Actor-Based Isolation
 
-**What:** React hook that transparently switches between native bridge and browser sql.js based on environment
-**When to use:** When same React components need to work in both browser dev and native production
-**Trade-offs:** Complexity of dual execution paths vs. unified development experience
+**What:** Each major subsystem (monitoring, sync, conflict resolution) runs in its own Actor to maintain thread safety
+**When to use:** Required for Swift concurrency with shared mutable state and external resource access
+**Trade-offs:** Excellent safety and concurrency, but requires careful message passing design
 
 **Example:**
-```typescript
-export function useSQLiteQuery<T>(sql: string, params: unknown[] = []) {
-  const { execute } = useDatabase(); // Environment-aware database context
+```swift
+public actor NotesIntegrationActor {
+    private let changeMonitor: ChangeMonitor
+    private let conflictResolver: ConflictResolver
+    private let database: IsometryDatabase
 
-  const [data, setData] = useState<T[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    if (Environment.isWebView()) {
-      // Use bridge for native environment
-      const rows = await webViewBridge.database.execute(sql, params);
-      setData(transformRows<T>(rows));
-    } else {
-      // Use sql.js for browser environment
-      const rows = execute(sql, params);
-      setData(rows as T[]);
+    public func startLiveSync() async throws {
+        try await changeMonitor.startWatching { [weak self] changes in
+            await self?.processChanges(changes)
+        }
     }
-  }, [sql, params, execute]);
-
-  return { data, loading, refetch: fetchData };
 }
 ```
 
-### Pattern 2: Live Data Subscription with Change Notifications
+### Pattern 2: FSEvents + Debouncing
 
-**What:** Real-time updates pushed from native database to React via custom events
-**When to use:** When React components need to react to data changes from other sources (sync, background operations)
-**Trade-offs:** Event-driven complexity vs. stale data from manual polling
+**What:** Monitor Notes database directory with FSEvents, debounce rapid changes to avoid sync storms
+**When to use:** Real-time file system monitoring where changes come in bursts
+**Trade-offs:** Near real-time responsiveness vs avoiding excessive processing
 
 **Example:**
-```typescript
-export function useLiveData<T>(query: string, params?: unknown[]) {
-  const [subscription, setSubscription] = useState<LiveDataSubscription<T>>();
+```swift
+public actor ChangeMonitor {
+    private var debounceTimer: Task<Void, Never>?
+    private let debounceInterval: TimeInterval = 0.5
 
-  useEffect(() => {
-    const handleDataChange = (event: CustomEvent) => {
-      const { table, operation } = event.detail;
-
-      // Invalidate cache and refresh query if relevant table changed
-      if (queryAffectedByTable(query, table)) {
-        executeQueryThrottled(true); // Force refresh
-      }
-    };
-
-    // Listen for native change notifications
-    window.addEventListener('isometry-data-change', handleDataChange);
-
-    return () => window.removeEventListener('isometry-data-change', handleDataChange);
-  }, [query]);
-
-  return subscription;
+    private func handleFileSystemEvent() {
+        debounceTimer?.cancel()
+        debounceTimer = Task {
+            await Task.sleep(nanoseconds: UInt64(debounceInterval * 1_000_000_000))
+            await processQueuedChanges()
+        }
+    }
 }
 ```
 
-### Pattern 3: Bridge Circuit Breaker with Message Queue
+### Pattern 3: Bidirectional Conflict Resolution
 
-**What:** Reliability pattern that queues requests when bridge is down and prevents cascade failures
-**When to use:** When bridge communication is critical but network/native issues can cause downtime
-**Trade-offs:** Added complexity vs. graceful degradation and better user experience
+**What:** Handle conflicts when both Notes.app and Isometry modify the same note simultaneously
+**When to use:** Any bidirectional sync system with concurrent modification capability
+**Trade-offs:** Preserves data integrity but requires careful timestamp tracking and user notification
 
 **Example:**
-```typescript
-class WebViewBridge {
-  private messageQueue: WebViewMessage[] = [];
-  private circuitBreakerOpen = false;
-  private failureCount = 0;
-
-  async postMessage<T>(handler: string, method: string, params: Record<string, unknown>): Promise<T> {
-    // Check circuit breaker
-    if (this.circuitBreakerOpen) {
-      if (Date.now() - this.lastConnectionTest > this.CIRCUIT_BREAKER_RESET_TIME) {
-        this.circuitBreakerOpen = false;
-        this.failureCount = 0;
-      } else {
-        throw new Error('Bridge circuit breaker open - service temporarily unavailable');
-      }
+```swift
+public actor ConflictResolver {
+    public enum Strategy {
+        case notesWins, isometryWins, manualResolution, timestampBased
     }
 
-    // Queue message if not connected
-    if (!this.isConnected) {
-      this.queueMessage(message);
-      return;
+    public func resolve(conflict: SyncConflict, strategy: Strategy) async throws -> Node {
+        switch strategy {
+        case .timestampBased:
+            return conflict.notesVersion.modifiedAt > conflict.isometryVersion.modifiedAt
+                ? conflict.notesVersion : conflict.isometryVersion
+        case .manualResolution:
+            // Queue for user decision
+            try await database.queueConflictForResolution(conflict)
+        }
     }
-
-    return this.sendMessageImmediate(message);
-  }
 }
 ```
 
 ## Data Flow
 
-### Request Flow
+### Live Sync Flow
 
 ```
-[React Component]
-    ↓ useSQLiteQuery(sql, params)
-[Hook] → [Environment Detection] → [Bridge or sql.js]
-    ↓          ↓                        ↓
-[Loading State] → [WKMessageHandler] → [IsometryDatabase Actor]
-    ↓              ↓                        ↓
-[Result] ← [Transform] ← [Response Correlation] ← [SQLite + FTS5]
+[Notes.app modification]
+    ↓
+[FSEvents notification] → [ChangeMonitor] → [NotesIntegrationActor]
+    ↓                                               ↓
+[Protobuf parsing] → [AltoIndexImporter] → [IsometryDatabase]
+    ↓                                               ↓
+[CloudKitSyncManager] → [Conflict detection] → [ConflictResolver]
+    ↓                                               ↓
+[CloudKit push] ← [Resolved Node] ← [Strategy application]
 ```
 
-### Live Update Flow
+### Conflict Resolution Flow
 
 ```
-[Database Mutation] → [IsometryDatabase] → [LiveUpdateNotifier]
-        ↓                    ↓                    ↓
-[CloudKit Sync] → [Change Detection] → [Bridge Notification]
-        ↓                    ↓                    ↓
-[Background Updates] → [Cache Invalidation] → [React Re-render]
+[Concurrent modification detected]
+    ↓
+[ConflictResolver] → [Strategy selection] → [Resolution method]
+    ↓                        ↓                      ↓
+[Database update] ← [User notification] ← [Manual resolution queue]
 ```
 
 ### Key Data Flows
 
-1. **Query Execution:** React hook → Environment detection → Bridge message → Native database → Response correlation → Result transformation
-2. **Live Updates:** Database change → Change detection → Bridge notification → Event listener → Cache invalidation → Component refresh
-3. **Sync Integration:** CloudKit change → Database update → Live update notification → React state update
+1. **Live Change Detection:** FSEvents → ChangeMonitor → debounced processing → database sync
+2. **Conflict Resolution:** Concurrent modification detection → strategy application → user notification if needed
+3. **Bidirectional Sync:** Notes ↔ Isometry ↔ CloudKit with conflict detection at each boundary
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 0-100 nodes | Simple bridge, direct SQL queries, minimal caching |
-| 100-10k nodes | Query optimization, result caching, connection pooling |
-| 10k+ nodes | Query batching, lazy loading, pagination, background processing |
+| 0-1k notes | Direct Actor communication, single FSEvents monitor |
+| 1k-10k notes | Batched change processing, selective sync by folder |
+| 10k+ notes | Incremental sync with change tokens, background processing priority |
 
 ### Scaling Priorities
 
-1. **First bottleneck:** Bridge message volume - implement query batching and result caching at bridge level
-2. **Second bottleneck:** UI responsiveness - add virtual scrolling and progressive data loading
-3. **Third bottleneck:** Memory usage - implement LRU cache for query results and lazy node loading
+1. **First bottleneck:** FSEvents notification rate - solve with debouncing and batch processing
+2. **Second bottleneck:** Protobuf parsing performance - solve with background processing and selective parsing
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Direct Bridge Access from Components
+### Anti-Pattern 1: Synchronous FSEvents Processing
 
-**What people do:** Call webViewBridge.database.execute() directly from React components
-**Why it's wrong:** Breaks abstraction, makes testing harder, couples components to bridge implementation
-**Do this instead:** Always use hooks like useSQLiteQuery that handle environment detection and fallbacks
+**What people do:** Process every FSEvents notification immediately in blocking manner
+**Why it's wrong:** Causes UI freezing and sync storms during rapid Notes modifications
+**Do this instead:** Use debouncing in ChangeMonitor Actor with async processing
 
-### Anti-Pattern 2: Synchronous Bridge Expectations
+### Anti-Pattern 2: Direct Notes Database Access
 
-**What people do:** Assume bridge messages are instantaneous like sql.js calls
-**Why it's wrong:** Bridge is async with potential failures, timeouts, and queuing
-**Do this instead:** Design UI with loading states, error boundaries, and graceful degradation
+**What people do:** Directly read from NoteStore.sqlite bypassing Notes.app's locking
+**Why it's wrong:** Can corrupt Notes database and violate SIP/TCC constraints
+**Do this instead:** Use alto-index export pattern or monitor changes through FSEvents only
 
-### Anti-Pattern 3: Ignoring Change Notifications
+### Anti-Pattern 3: Aggressive CloudKit Sync
 
-**What people do:** Manually refresh queries on a timer or user action only
-**Why it's wrong:** Results in stale data when background sync or other sources modify database
-**Do this instead:** Subscribe to data change events and invalidate relevant queries automatically
-
-### Anti-Pattern 4: Oversized Query Results
-
-**What people do:** Fetch large result sets through bridge without pagination
-**Why it's wrong:** Bridge has message size limits, causes memory issues, poor performance
-**Do this instead:** Implement server-side pagination with limit/offset, stream large results
+**What people do:** Push every local change immediately to CloudKit
+**Why it's wrong:** Hits rate limits and creates excessive conflict scenarios
+**Do this instead:** Batch changes and implement exponential backoff in CloudKitSyncManager
 
 ## Integration Points
 
@@ -256,66 +222,86 @@ class WebViewBridge {
 
 | Service | Integration Pattern | Notes |
 |---------|---------------------|-------|
-| CloudKit | Background Actor Sync | Handles conflicts, retry logic, maps to local schema |
-| sql.js | Direct execution | Browser fallback, same SQL interface as native |
-| Apple Notes | Import Actor | Background processing, maps alto-index format to nodes |
+| Notes.app | FSEvents monitoring + alto-index export | Requires TCC permissions, respects app boundaries |
+| CloudKit | Enhanced existing sync patterns | Add Notes record types, handle larger attachment sizes |
+| File System | FSEvents with proper debouncing | Monitor ~/Library/Group\ Containers/group.com.apple.notes/ |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| React ↔ Bridge | Async message passing | Request/response correlation, timeout handling |
-| Bridge ↔ Database | Swift Actor calls | Thread-safe, leverages async/await concurrency |
-| Database ↔ CloudKit | Change observation | GRDB observers trigger sync operations |
-| Components ↔ Hooks | State management | Context providers for database access, live data |
+| UI ↔ NotesIntegrationActor | async/await with progress callbacks | Progress updates for long-running sync operations |
+| Database ↔ Sync actors | GRDB transaction isolation | Maintain existing transaction patterns |
+| Conflict resolution ↔ UI | Publisher/subscriber pattern | User notification for manual conflict resolution |
 
-### Bridge Message Protocols
+### Existing Architecture Integration
 
-**Database Operations:**
-```typescript
-// Query execution
-{
-  handler: 'database',
-  method: 'execute',
-  params: { sql: string, params: unknown[] }
-} → { success: boolean, data: Row[], error?: string }
+**AltoIndexImporter Enhancement:**
+- Keep existing batch import functionality intact
+- Add live sync capability through new `startLiveImport()` method
+- Share protobuf parsing logic between batch and live modes
 
-// Live data subscription
-{
-  handler: 'database',
-  method: 'subscribe',
-  params: { query: string, params: unknown[], throttleMs: number }
-} → { subscriptionId: string }
+**IsometryDatabase Extension:**
+- Add Notes-specific sync tables (notes_changes, sync_conflicts)
+- Maintain existing CloudKit sync patterns
+- Extend transaction methods for multi-source conflict detection
+
+**CloudKitSyncManager Integration:**
+- Add Notes record type alongside existing Node records
+- Implement Notes-specific conflict resolution strategies
+- Maintain existing chunked upload and retry patterns
+
+## Apple Notes Technical Constraints
+
+### Database Location & Access
+- Notes stored at: `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
+- WAL mode active while Notes.app running (-wal, -shm files)
+- TCC permissions required for `kTCCServiceAppleEvents` access
+- SIP protection prevents direct database modification
+
+### Data Format Challenges
+- Note content stored as gzipped protobuf in ZICNOTEDATA.ZDATA column
+- Protobuf structure changes between iOS versions (7 new columns in iOS 18)
+- Embedded objects (tables, attachments) require separate parsing
+- Tags stored as hashtag attachment types in protobuf structure
+
+### Sync Limitations
+- Notes.app sync timing unpredictable (can take hours)
+- No official real-time sync API from Apple
+- FSEvents monitoring adds ~0.5s latency for responsiveness
+- Conflict resolution must handle Apple's eventual consistency model
+
+## Performance Optimization
+
+### FSEvents Monitoring
+```swift
+// Optimized FSEvents configuration
+let streamRef = FSEventStreamCreate(
+    nil, callback, &context,
+    [notesContainerPath] as CFArray,
+    FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
+    0.5, // 500ms latency for responsiveness
+    UInt32(kFSEventStreamCreateFlagUseCFTypes |
+           kFSEventStreamCreateFlagNoDefer |
+           kFSEventStreamCreateFlagFileEvents)
+)
 ```
 
-**Update Notifications:**
-```typescript
-// Pushed from native to React
-window.dispatchEvent(new CustomEvent('isometry-data-change', {
-  detail: {
-    table: 'nodes',
-    operation: 'update',
-    affectedIds: ['node1', 'node2'],
-    subscriptionIds: ['sub1', 'sub2']
-  }
-}));
-```
-
-### Performance Considerations
-
-**Message Batching:** Group multiple queries into single bridge message to reduce overhead
-**Result Caching:** Cache query results with TTL and table-based invalidation
-**Connection Management:** Circuit breaker pattern prevents cascade failures
-**Background Processing:** Use native actors for heavy operations (sync, graph analysis)
+### Protobuf Parsing Strategy
+- Parse only modified notes (timestamp comparison)
+- Cache parsed protobuf structures
+- Background parsing with priority queue
+- Selective field extraction based on Isometry's needs
 
 ## Sources
 
-- [Shopify Mobile Bridge Architecture (2025)](https://shopify.engineering/mobilebridge-native-webviews)
-- [Apple WKScriptMessageHandler Documentation](https://developer.apple.com/documentation/webkit/wkscriptmessagehandler)
-- [gronxb/webview-bridge - Type-Safe WebView Communication](https://github.com/gronxb/webview-bridge)
-- [Firebase Real-Time Database iOS Integration Patterns](https://firebase.google.com/docs/database/ios/read-and-write)
-- Existing Isometry codebase: WebView bridge implementation + Swift database actor patterns
+- [Apple Notes Database Structure Research](https://github.com/threeplanetssoftware/apple_cloud_notes_parser)
+- [FSEvents Documentation](https://developer.apple.com/documentation/coreservices/file_system_events)
+- [TCC Framework Guidelines (macOS Sequoia)](https://atlasgondal.com/macos/priavcy-and-security/app-permissions-priavcy-and-security/a-guide-to-tcc-services-on-macos-sequoia-15-0/)
+- [GRDB CloudKit Sync Patterns](https://github.com/groue/GRDB.swift/discussions/1569)
+- [Swift Actor Concurrency Patterns](https://developer.apple.com/documentation/swift/actor)
+- [Apple Notes iOS 18 Analysis (2024)](https://www.ciofecaforensics.com/2024/12/10/ios18-notes/)
 
 ---
-*Architecture research for: Live Database Integration via WebView Bridge*
-*Researched: 2026-01-30*
+*Architecture research for: Live Apple Notes Integration*
+*Researched: 2026-02-01*

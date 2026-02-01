@@ -1,154 +1,172 @@
 # Project Research Summary
 
-**Project:** Isometry - Live Database Integration
-**Domain:** React-to-Native SQLite Bridge with Real-Time Synchronization
-**Researched:** 2026-01-30
+**Project:** Isometry - Live Apple Notes Integration
+**Domain:** Knowledge Management App Enhancement (Adding Real-Time Apple Notes Sync)
+**Researched:** 2026-02-01
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This project involves integrating a React frontend with a native GRDB-based SQLite backend via WebView bridge for a knowledge management application. Research shows that the existing hybrid architecture provides a strong foundation with WebView bridge infrastructure and native GRDB backend already implemented. The key technical challenge is adding real-time database synchronization without introducing performance bottlenecks or race conditions.
+Isometry has proven Apple Notes integration foundation through AltoIndexImporter (6,891 notes imported successfully). Adding live sync requires careful security architecture around macOS TCC permissions, robust concurrent database access patterns, and sophisticated protobuf parsing resilience. The research reveals this is a technically mature domain with established patterns, but significant user trust and data safety considerations.
 
-The recommended approach leverages GRDB's ValueObservation for change notifications, implements message batching and binary serialization for bridge optimization, and uses virtual scrolling for large datasets. Critical risks center around bridge message serialization becoming a bottleneck, real-time update race conditions causing data inconsistency, and memory management violations across bridge boundaries.
+The recommended approach builds incrementally on existing batch import infrastructure, adding FSEvents monitoring, SwiftProtobuf parsing, and enhanced CloudKit conflict resolution. Critical success factors include transparent TCC permission education, read-only Notes access philosophy, and graceful degradation when permissions are denied. Primary risk is database corruption from concurrent access, mitigated through WAL-mode SQLite connections with proper timeout handling.
 
-The technology stack is well-chosen and mature, with no major dependencies requiring replacement. Success depends on implementing proper change notification patterns, transaction coordination, and bridge optimization rather than architectural overhauls. The existing codebase positions the project well for incremental enhancement rather than fundamental rebuilding.
+Key strategic decision: Position live sync as enhancement to existing batch workflow rather than replacement, maintaining backward compatibility and user choice between manual and automatic synchronization modes.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The current technology stack is well-positioned for live database integration with minimal additions required. The foundation of GRDB.swift, WKWebView bridge, and React provides a solid architecture that needs optimization rather than replacement.
+Building on proven GRDB.swift + CloudKit foundation, live sync adds minimal new dependencies while leveraging native Apple APIs for security compliance. The enhancement preserves existing AltoIndexImporter architecture while adding real-time capabilities.
 
 **Core technologies:**
-- GRDB.swift 6.24.0: Native SQLite ORM — proven technology with built-in ValueObservation for real-time changes
-- WKWebView + MessageHandlers: WebView bridge — existing implementation needs optimization for high-frequency updates
-- @msgpack/msgpack 3.0.0: Binary serialization — 40-60% smaller payloads vs JSON for bridge communication
-- @tanstack/react-virtual 3.2.0: Virtual scrolling — industry standard for large dataset rendering performance
-- Vapor 4.89.0: HTTP API server — current and stable for any additional endpoints needed
+- **FSEvents API**: Real-time Notes database monitoring — native macOS API with zero dependencies, battle-tested for directory tree changes
+- **SwiftProtobuf 2.0.0+**: Direct Notes protobuf parsing — official Apple library, handles complex nested structures safely
+- **Foundation Compression**: Gzip decompression for Notes content — native implementation, no external dependencies
+- **Enhanced GRDB Actor pattern**: Concurrent database access — proven with existing 6,891 notes, maintains thread safety
+- **Extended CloudKitSyncManager**: Bidirectional conflict resolution — builds on existing sync patterns with Notes-specific strategies
 
 ### Expected Features
 
-Research identifies a clear distinction between table stakes features users expect versus differentiators that provide competitive advantage.
+Research identifies clear user expectations around live sync, with emphasis on security transparency and graceful degradation.
 
 **Must have (table stakes):**
-- Offline-First Operation — knowledge work requires reliable connectivity-independent operation
-- Real-Time Query Results — users expect immediate response to database changes in 2026
-- Optimistic Updates — UI must respond instantly to user actions to prevent frustration
-- Transaction Safety — database integrity must be maintained across all operations
-- Connection State Awareness — users need clear feedback about sync status
+- Real-Time Change Detection — users expect Siri → Notes captures to automatically appear in Isometry
+- Read-Only Apple Notes Access — users expect safe access without corruption risk
+- Graceful TCC Permission Handling — users need clear prompts and fallback options
+- Sync Status Visibility — users need monitoring indicators and error states
+- Incremental Updates Only — users expect only changed notes to trigger updates
 
 **Should have (competitive):**
-- Automatic Background Sync — changes propagate without manual intervention using outbox pattern
-- Conflict Resolution — multi-device editing requires CRDT or user-controlled merge strategies
-- Intelligent Caching Strategy — predictive data loading based on usage patterns
-- Bandwidth-Aware Sync — optimize data transfer based on connection quality
+- Intelligent Note Categorization — auto-organize Notes into PAFV dimensional structure
+- Cross-Note Reference Detection — automatically create graph connections between related Notes
+- Selective Folder Monitoring — monitor only specific Notes folders to reduce noise
+- Smart Conflict Resolution UI — visual diff interface for programmatic change conflicts
 
 **Defer (v2+):**
-- Live Collaborative Cursors — advanced real-time collaboration after core adoption
-- Granular Change Tracking — field-level change management for complex conflict resolution
-- Multi-User Workspace Isolation — enterprise team features after individual validation
+- Rich Media Preservation — complex attachment handling conflicts with incremental updates
+- Bidirectional Editing — extremely risky for data corruption, read-only approach safer
+- Real-Time Collaborative Editing — Apple Notes collaboration is iCloud-only
 
 ### Architecture Approach
 
-The standard architecture for React-to-native SQLite integration follows a layered approach with clear separation between React hooks, bridge communication, and native database operations. The pattern emphasizes environment detection for development vs production, message correlation for reliability, and actor-based concurrency for thread safety.
+The architecture extends existing Swift Actor patterns with careful isolation of live sync concerns. FSEvents monitoring feeds into enhanced AltoIndexImporter through debounced change processing, maintaining existing CloudKit sync patterns while adding Notes-specific conflict resolution.
 
 **Major components:**
-1. Query Hooks (useSQLiteQuery, useLiveData) — abstract bridge complexity with environment detection and fallback patterns
-2. WebView Bridge Layer — handles message correlation, circuit breaker patterns, and performance monitoring with async message passing
-3. Native Database Actor (IsometryDatabase) — provides thread-safe GRDB operations with ValueObservation for change tracking
+1. **NotesIntegrationActor** — coordination layer for live sync with FSEvents monitoring and conflict resolution
+2. **Enhanced AltoIndexImporter** — adds live protobuf parsing while preserving batch import functionality
+3. **Extended CloudKitSyncManager** — adds Notes record types and Notes-specific conflict resolution strategies
+4. **ChangeMonitor** — FSEvents wrapper with intelligent debouncing (500ms) and resource management
+5. **ConflictResolver** — bidirectional sync conflict handling with user notification and manual resolution UI
 
 ### Critical Pitfalls
 
-Research identified five critical pitfalls that consistently derail similar integrations, with specific prevention strategies.
+Research reveals six critical failure modes, with TCC permissions and database corruption representing highest impact risks.
 
-1. **Bridge Message Serialization Bottleneck** — JSON serialization of large result sets blocks main thread; prevent with pagination (≤50 records), streaming parsers, and compression
-2. **Real-time Update Race Conditions** — concurrent updates arrive out of order causing stale data; prevent with operation sequencing, correlation IDs, and proper invalidation timing
-3. **Query Translation Complexity Explosion** — dynamic SQL generation becomes unmaintainable; prevent with predefined query templates and parameter substitution only
-4. **Memory Management Across Bridge Boundaries** — Swift ARC and React GC create reference cycles; prevent with weak references and explicit cleanup protocols
-5. **Transaction Boundary Violations** — bridge communications don't respect SQLite ACID properties; prevent with explicit transaction control exposed to React layer
+1. **TCC Permission Escalation Without User Understanding** — Full Disk Access required but users don't understand scope; provide clear consent flow and alternative batch import mode
+2. **Database Corruption from Concurrent Access** — SQLite contention between app and Notes.app; use read-only WAL mode with timeout/retry logic
+3. **Protobuf Version Incompatibility Cascading Failures** — Apple schema changes break parsing loops; implement version detection and supervised actor recovery
+4. **File System Event Flood Creating Resource Exhaustion** — hundreds of events per minute during editing; require intelligent debouncing and circuit breaker patterns
+5. **Sync State Inconsistency from Failed Transaction Rollbacks** — partial failures across multiple systems; design idempotent operations with saga pattern
+6. **Apple Notes App Integration Breaking Existing Workflows** — live sync disrupts proven batch import users; maintain hybrid approach with clear migration path
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure prioritizes foundation establishment before advanced features:
+Based on research, suggested phase structure prioritizes security and data safety while building incrementally on proven foundation:
 
-### Phase 1: Bridge Optimization Foundation
-**Rationale:** Must establish reliable, performant bridge communication before adding real-time features
-**Delivers:** Message batching, binary serialization, pagination, performance monitoring, circuit breaker patterns
-**Addresses:** Bridge message serialization bottleneck, basic connection reliability
-**Avoids:** Performance degradation that would impact all subsequent features
+### Phase 1: TCC Permission Strategy & User Consent Design
+**Rationale:** Foundation for all live sync features; must establish user trust and security compliance before technical implementation
+**Delivers:** Clear permission flow, graceful degradation, user education about Full Disk Access scope
+**Addresses:** TCC Permission Escalation pitfall, Graceful TCC Permission Handling feature requirement
+**Avoids:** User trust issues and security audit failures by establishing transparent consent patterns
 
-### Phase 2: Real-Time Change Notifications
-**Rationale:** Core value proposition requires live updates; depends on optimized bridge from Phase 1
-**Delivers:** GRDB ValueObservation integration, change event batching, push notifications to React
-**Uses:** Existing GRDB 6.24.0 capabilities, no new dependencies required
-**Implements:** Live update notification system from native to React via bridge events
+### Phase 2: Database Concurrency & Locking Strategy
+**Rationale:** Prevents data corruption risk; must be bulletproof before adding real-time monitoring
+**Delivers:** Read-only SQLite access patterns, WAL mode handling, concurrent access protection
+**Uses:** Enhanced GRDB Actor patterns with Notes-specific timeout and retry logic
+**Implements:** Safe database access foundation for all live sync operations
+**Avoids:** Database Corruption from Concurrent Access pitfall
 
-### Phase 3: Transaction and Sync Management
-**Rationale:** Multi-device usage requires proper transaction control and conflict resolution
-**Delivers:** Bridge-level transaction control, optimistic updates with rollback, basic conflict resolution
-**Addresses:** Transaction boundary violations, race condition prevention
-**Avoids:** Data corruption from uncoordinated updates across components
+### Phase 3: FSEvents Monitoring & Change Detection
+**Rationale:** Core live sync capability; requires robust resource management to avoid performance issues
+**Delivers:** Real-time change detection with intelligent debouncing and circuit breaker protection
+**Uses:** FSEvents API with Foundation frameworks, ChangeMonitor actor architecture
+**Implements:** NotesIntegrationActor coordination layer with resource management
+**Avoids:** File System Event Flood pitfall through proper debouncing and rate limiting
 
-### Phase 4: Advanced Query and Caching
-**Rationale:** Performance optimization phase after core functionality is stable
-**Delivers:** Virtual scrolling integration, intelligent caching, query optimization, memory management
-**Uses:** TanStack Virtual, enhanced message queue limits, cleanup protocols
-**Implements:** Scalable data loading patterns for large datasets
+### Phase 4: Protobuf Schema Resilience & Version Handling
+**Rationale:** Enables direct Notes parsing; must handle Apple's undocumented schema changes gracefully
+**Delivers:** SwiftProtobuf parsing with version detection and fallback strategies
+**Uses:** SwiftProtobuf 2.0.0+ with Foundation Compression for gzip handling
+**Implements:** Enhanced AltoIndexImporter with supervised protobuf parsing actors
+**Avoids:** Protobuf Version Incompatibility pitfall through robust error handling and recovery
+
+### Phase 5: Distributed Sync State Management & Consistency
+**Rationale:** Ensures data consistency across Notes/Isometry/CloudKit; prevents sync state corruption
+**Delivers:** Saga pattern for multi-step sync, event sourcing for state tracking, periodic reconciliation
+**Uses:** Enhanced CloudKitSyncManager with Notes-specific conflict resolution
+**Implements:** ConflictResolver with user notification and manual resolution UI
+**Avoids:** Sync State Inconsistency pitfall through idempotent operations and transaction boundaries
+
+### Phase 6: Import Method Integration & User Migration
+**Rationale:** Preserves existing user workflows while adding live sync; maintains backward compatibility
+**Delivers:** Hybrid import detection, conflict resolution for batch/live data, user migration path
+**Uses:** Enhanced AltoIndexImporter with unified conflict detection across import methods
+**Implements:** Smooth transition from batch-only to live sync without workflow disruption
+**Avoids:** Apple Notes App Integration Breaking Existing Workflows pitfall
 
 ### Phase Ordering Rationale
 
-- Foundation-first approach prevents technical debt accumulation that becomes expensive to fix later
-- Bridge optimization must precede real-time features to avoid performance bottlenecks under load
-- Transaction management requires understanding of bridge communication patterns before implementation
-- Advanced features like collaborative editing depend on stable real-time and sync infrastructure
+- **Security-first progression:** TCC permissions and database safety must be established before adding complexity
+- **Incremental risk introduction:** Each phase adds one major risk factor while building on proven foundation
+- **User-centric validation:** Each phase delivers user-visible value while maintaining existing functionality
+- **Architectural isolation:** Live sync concerns are contained in new components without modifying existing patterns
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3:** Transaction coordination across WebView bridge is complex domain with limited documentation
-- **Phase 4:** Memory management patterns specific to React-GRDB integration need validation
+- **Phase 1:** User experience design for TCC permission flows requires UX research and A/B testing
+- **Phase 4:** Protobuf schema analysis across iOS versions needs reverse engineering research
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** Message optimization and serialization are well-documented with established libraries
-- **Phase 2:** GRDB ValueObservation is mature feature with extensive documentation and examples
+- **Phase 2:** Database concurrency is well-documented GRDB pattern
+- **Phase 3:** FSEvents monitoring follows established Apple documentation
+- **Phase 5:** CloudKit conflict resolution extends existing proven patterns
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All technologies mature with proven track record; GRDB and MessagePack extensively documented |
-| Features | MEDIUM | Feature expectations clear but implementation complexity varies significantly by feature |
-| Architecture | HIGH | Bridge patterns well-established; existing codebase provides solid foundation |
-| Pitfalls | HIGH | Specific pitfalls backed by community experience and detailed prevention strategies |
+| Stack | HIGH | Building on proven AltoIndexImporter (6,891 notes) with minimal new dependencies, native Apple APIs |
+| Features | MEDIUM | User expectations clear from research but TCC permission adoption rates uncertain |
+| Architecture | HIGH | Extends existing Swift Actor + GRDB + CloudKit patterns with minimal new complexity |
+| Pitfalls | HIGH | Six critical pitfalls identified with clear prevention strategies and phase-specific addressing |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-Several areas require validation during implementation due to project-specific constraints:
+Research was comprehensive but some areas need validation during implementation:
 
-- Memory management patterns: Specific to React-GRDB-WebView combination, needs testing under load
-- Transaction boundary design: Optimal abstraction level for exposing ACID guarantees to React hooks
-- Change notification granularity: Balance between update frequency and performance for different query types
-- Bridge message queue sizing: Optimal batching parameters for typical knowledge management workloads
+- **TCC permission adoption rates:** Real user acceptance of Full Disk Access for Notes sync needs A/B testing during Phase 1
+- **Apple Notes protobuf schema stability:** Future iOS releases may change protobuf structure; requires ongoing monitoring and compatibility testing
+- **Performance scaling:** Resource consumption patterns for large Notes libraries (>10k notes) need load testing during Phase 3
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- GRDB.swift Documentation — ValueObservation patterns, memory management, transaction handling
-- Apple WKScriptMessageHandler Documentation — bridge communication patterns and security considerations
-- MessagePack Specification — binary serialization performance characteristics and implementation patterns
-- TanStack Virtual Documentation — virtual scrolling integration patterns for React applications
+- Apple Developer Documentation (FSEvents, TCC, CloudKit) — official APIs and patterns
+- Existing Isometry AltoIndexImporter implementation — 6,891 notes successfully imported
+- Apple Notes protobuf research: github.com/threeplanetssoftware/apple_cloud_notes_parser — reverse engineering analysis
+- GRDB.swift CloudKit sync patterns — established concurrency and conflict resolution approaches
 
 ### Secondary (MEDIUM confidence)
-- Shopify Mobile Bridge Architecture — performance optimization strategies for WebView bridge communication
-- WebView Bridge Performance Studies — latency characteristics and optimization approaches for mobile hybrid apps
-- React Query Cache Invalidation — patterns for coordinating client-side cache with real-time updates
+- Apple Community developer reports — TCC permission challenges and user adoption patterns
+- iOS 18 Notes format analysis — ciofecaforensics.com protobuf structure documentation
 
 ### Tertiary (LOW confidence)
-- Community discussions on React Native SQLite — bridge integration challenges need validation in WebView context
-- Performance benchmarks for hybrid apps — specific to different domains, needs validation for knowledge management use case
+- User experience patterns for permission flows — needs validation through user research
 
 ---
-*Research completed: 2026-01-30*
+*Research completed: 2026-02-01*
 *Ready for roadmap: yes*
