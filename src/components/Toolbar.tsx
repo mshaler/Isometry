@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, type LucideIcon } from 'lucide-react';
+import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, FileUp, type LucideIcon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { IconButton } from '@/components/ui/buttons/IconButton';
+import { ImportModal } from './ImportModal';
 
 interface MenuItem {
   label?: string;
@@ -17,6 +18,7 @@ interface MenuSection {
 
 export function Toolbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   // TODO: Implement submenus when needed
   const { theme, setTheme } = useTheme();
 
@@ -48,6 +50,8 @@ export function Toolbar() {
         { label: 'New…', action: () => console.log('New') },
         { label: 'Open…', action: () => console.log('Open') },
         { separator: true },
+        { label: 'Import Markdown…', action: () => setIsImportModalOpen(true) },
+        { separator: true },
         { label: 'Save As…', action: () => console.log('Save As') },
       ]
     },
@@ -75,6 +79,7 @@ export function Toolbar() {
   const commandButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
     { icon: FileText, label: 'New', action: () => console.log('New') },
     { icon: FolderOpen, label: 'Open', action: () => console.log('Open') },
+    { icon: FileUp, label: 'Import', action: () => setIsImportModalOpen(true) },
     { icon: Save, label: 'Save', action: () => console.log('Save') },
     { icon: Download, label: 'Export', action: () => console.log('Export') },
   ];
@@ -187,6 +192,12 @@ export function Toolbar() {
 
         <div className="flex-1" />
       </div>
+
+      {/* Import Modal */}
+      <ImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
     </div>
   );
 }
