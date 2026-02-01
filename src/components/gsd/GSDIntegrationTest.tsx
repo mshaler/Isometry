@@ -7,6 +7,8 @@
 
 import React, { useCallback, useState } from 'react';
 import { useGSDShellTestHelpers } from '../../hooks/gsd/useGSDShellIntegration';
+import { useGSDCardCreation } from '../../hooks/gsd/useGSDCardCreation';
+import { createMockCardData } from '../../utils/createTestGSDCard';
 import type { GSDExecutionResult } from '../../types/gsd';
 
 export function GSDIntegrationTest() {
@@ -70,11 +72,31 @@ export function GSDIntegrationTest() {
     }
   }, [isRunning, addResult, runQuickTest, testCardCreation, getIntegrationStatus, gsd.activeSession]);
 
+  const { createCardFromSession } = useGSDCardCreation();
+
   const testMockCardCreation = useCallback(async () => {
-    // This would test the card creation hooks directly
-    // For now, just log that we would create a mock card
-    addResult('📝 Mock card creation test completed (placeholder)');
-  }, [addResult]);
+    try {
+      addResult('📝 Creating real test card with mock data...');
+
+      const { session, execution } = createMockCardData();
+
+      const cardId = await createCardFromSession({
+        session,
+        executionResult: execution,
+        additionalTags: ['integration-test', 'mock-card']
+      });
+
+      if (cardId) {
+        addResult(`✅ Successfully created test card: ${cardId}`);
+        addResult(`📍 Card should now be visible in main ListView/GridView!`);
+        addResult(`🔍 Use Source filter = 'gsd' to find it easily`);
+      } else {
+        addResult('❌ Card creation returned null');
+      }
+    } catch (error) {
+      addResult(`❌ Mock card creation failed: ${error}`);
+    }
+  }, [addResult, createCardFromSession]);
 
   const clearResults = useCallback(() => {
     setTestResults([]);
@@ -106,13 +128,20 @@ export function GSDIntegrationTest() {
         </div>
 
         {/* Test Controls */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={runFullIntegrationTest}
             disabled={isRunning}
             className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:opacity-50"
           >
             {isRunning ? '⏳ Running...' : '🚀 Run Full Test'}
+          </button>
+          <button
+            onClick={testMockCardCreation}
+            disabled={isRunning}
+            className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 disabled:opacity-50"
+          >
+            📝 Create Test Card
           </button>
           <button
             onClick={clearResults}

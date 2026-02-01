@@ -254,7 +254,7 @@ export function createCleanupManager() {
 
       // Clear collections
       cleanupTasks.clear();
-      bridgeCallbacks = new WeakMap();
+      // Note: WeakMap doesn't have clear() method, but entries will be garbage collected
     }
   };
 }

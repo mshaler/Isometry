@@ -129,7 +129,8 @@ INSERT OR IGNORE INTO facets (id, name, facet_type, axis, source_column) VALUES
     ('modified', 'Modified', 'date', 'T', 'modified_at'),
     ('due', 'Due Date', 'date', 'T', 'due_at'),
     ('name', 'Name', 'text', 'A', 'name'),
-    ('location', 'Location', 'location', 'L', 'location_name');
+    ('location', 'Location', 'location', 'L', 'location_name'),
+    ('source', 'Source', 'select', 'C', 'source');
 
 -- Settings: User preferences
 CREATE TABLE IF NOT EXISTS settings (
