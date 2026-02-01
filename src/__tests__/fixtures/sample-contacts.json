@@ -1,0 +1,77 @@
+[
+  {
+    "id": 1,
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "phone": "+1-555-0123",
+    "company": "Tech Innovations Inc",
+    "position": "Senior Software Engineer",
+    "address": {
+      "street": "123 Main Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "zipCode": "94102",
+      "country": "USA"
+    },
+    "location": {
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    },
+    "notes": "Expert in React and Node.js. Available for consulting.",
+    "tags": ["software", "consulting", "react", "nodejs"],
+    "status": "active",
+    "priority": 3,
+    "createdAt": "2024-01-15T09:30:00Z",
+    "modifiedAt": "2024-01-20T14:45:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Bob Chen",
+    "email": "bob.chen@design.co",
+    "phone": "+1-555-0456",
+    "company": "Creative Design Studio",
+    "position": "UX Designer",
+    "address": {
+      "street": "456 Oak Avenue",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "location": {
+      "latitude": 40.7128,
+      "longitude": -74.0060
+    },
+    "notes": "Specializes in mobile app design and user research.",
+    "tags": ["design", "ux", "mobile", "research"],
+    "status": "active",
+    "priority": 2,
+    "createdAt": "2024-01-10T11:00:00Z",
+    "modifiedAt": "2024-01-18T16:20:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Carol Williams",
+    "email": "carol.williams@marketing.com",
+    "phone": "+1-555-0789",
+    "company": "Global Marketing Solutions",
+    "position": "Marketing Director",
+    "address": {
+      "street": "789 Pine Road",
+      "city": "Chicago",
+      "state": "IL",
+      "zipCode": "60601",
+      "country": "USA"
+    },
+    "location": {
+      "latitude": 41.8781,
+      "longitude": -87.6298
+    },
+    "notes": "15 years experience in digital marketing and brand strategy.",
+    "tags": ["marketing", "strategy", "digital", "branding"],
+    "status": "pending",
+    "priority": 1,
+    "createdAt": "2024-01-05T08:15:00Z",
+    "modifiedAt": "2024-01-22T10:30:00Z"
+  }
+]

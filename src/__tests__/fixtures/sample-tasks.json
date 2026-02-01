@@ -1,0 +1,130 @@
+[
+  {
+    "task_id": "TASK-001",
+    "title": "Implement user authentication system",
+    "description": "Create a secure user authentication system with JWT tokens, password hashing, and session management.",
+    "assignee": "Alice Johnson",
+    "reporter": "Project Manager",
+    "project": "Web Application Redesign",
+    "status": "in-progress",
+    "priority": "high",
+    "importance": 8,
+    "story_points": 13,
+    "tags": ["authentication", "security", "backend", "jwt"],
+    "created_date": "2024-01-15T09:00:00Z",
+    "updated_date": "2024-01-22T14:30:00Z",
+    "due_date": "2024-02-01T17:00:00Z",
+    "estimated_hours": 40,
+    "logged_hours": 15,
+    "comments": [
+      {
+        "author": "Alice Johnson",
+        "date": "2024-01-16T10:00:00Z",
+        "text": "Started implementing JWT token generation and validation"
+      },
+      {
+        "author": "Bob Chen",
+        "date": "2024-01-18T14:00:00Z",
+        "text": "Need to coordinate with frontend team for token handling"
+      }
+    ],
+    "labels": ["backend", "security"],
+    "epic": "User Management",
+    "sprint": "Sprint 3"
+  },
+  {
+    "task_id": "TASK-002",
+    "title": "Design mobile app onboarding flow",
+    "description": "Create wireframes and prototypes for new user onboarding experience in the mobile application.",
+    "assignee": "Bob Chen",
+    "reporter": "Product Owner",
+    "project": "Mobile App Enhancement",
+    "status": "todo",
+    "priority": "medium",
+    "importance": 6,
+    "story_points": 8,
+    "tags": ["design", "mobile", "onboarding", "ux"],
+    "created_date": "2024-01-12T11:30:00Z",
+    "updated_date": "2024-01-20T09:15:00Z",
+    "due_date": "2024-01-30T17:00:00Z",
+    "estimated_hours": 24,
+    "logged_hours": 0,
+    "comments": [
+      {
+        "author": "Product Owner",
+        "date": "2024-01-13T09:00:00Z",
+        "text": "Please include user research findings from last quarter"
+      }
+    ],
+    "labels": ["design", "mobile"],
+    "epic": "User Experience",
+    "sprint": "Sprint 4"
+  },
+  {
+    "task_id": "TASK-003",
+    "title": "Optimize database query performance",
+    "description": "Analyze and optimize slow-running database queries. Focus on user data retrieval and search functionality.",
+    "assignee": "Carol Williams",
+    "reporter": "Tech Lead",
+    "project": "Performance Optimization",
+    "status": "completed",
+    "priority": "critical",
+    "importance": 9,
+    "story_points": 5,
+    "tags": ["database", "performance", "optimization", "sql"],
+    "created_date": "2024-01-08T08:00:00Z",
+    "updated_date": "2024-01-19T16:45:00Z",
+    "due_date": "2024-01-20T17:00:00Z",
+    "completed_date": "2024-01-19T16:45:00Z",
+    "estimated_hours": 16,
+    "logged_hours": 14,
+    "comments": [
+      {
+        "author": "Carol Williams",
+        "date": "2024-01-10T14:00:00Z",
+        "text": "Identified 3 slow queries affecting user search"
+      },
+      {
+        "author": "Carol Williams",
+        "date": "2024-01-15T11:00:00Z",
+        "text": "Added indexes and optimized JOIN operations"
+      },
+      {
+        "author": "Tech Lead",
+        "date": "2024-01-19T16:30:00Z",
+        "text": "Query performance improved by 70%. Great work!"
+      }
+    ],
+    "labels": ["performance", "database"],
+    "epic": "System Optimization",
+    "sprint": "Sprint 2"
+  },
+  {
+    "task_id": "TASK-004",
+    "title": "Write API documentation",
+    "description": "Create comprehensive API documentation for all REST endpoints including examples and error codes.",
+    "assignee": "David Kumar",
+    "reporter": "Tech Writer",
+    "project": "Documentation Update",
+    "status": "review",
+    "priority": "low",
+    "importance": 4,
+    "story_points": 3,
+    "tags": ["documentation", "api", "rest", "examples"],
+    "created_date": "2024-01-20T10:00:00Z",
+    "updated_date": "2024-01-23T13:20:00Z",
+    "due_date": "2024-02-05T17:00:00Z",
+    "estimated_hours": 20,
+    "logged_hours": 12,
+    "comments": [
+      {
+        "author": "David Kumar",
+        "date": "2024-01-21T15:00:00Z",
+        "text": "Documented authentication endpoints and user management"
+      }
+    ],
+    "labels": ["documentation"],
+    "epic": "Knowledge Base",
+    "sprint": "Sprint 3"
+  }
+]

@@ -1,0 +1,147 @@
+{
+  "calendar_name": "Tech Conference Schedule",
+  "year": 2024,
+  "timezone": "America/Los_Angeles",
+  "events": [
+    {
+      "event_id": "conf-2024-001",
+      "title": "JavaScript Frameworks Summit",
+      "description": "Annual conference covering the latest in React, Vue, Angular, and emerging JavaScript frameworks.",
+      "location": {
+        "venue": "Moscone Center",
+        "address": "747 Howard St, San Francisco, CA 94103",
+        "latitude": 37.7840,
+        "longitude": -122.4016,
+        "capacity": 2500
+      },
+      "organizer": {
+        "name": "TechEvents Inc",
+        "email": "events@techevents.com",
+        "phone": "+1-555-0100"
+      },
+      "schedule": {
+        "start_date": "2024-03-15T09:00:00Z",
+        "end_date": "2024-03-16T17:00:00Z",
+        "registration_deadline": "2024-03-01T23:59:59Z",
+        "early_bird_deadline": "2024-02-15T23:59:59Z"
+      },
+      "pricing": {
+        "early_bird": 299,
+        "regular": 399,
+        "student": 99,
+        "currency": "USD"
+      },
+      "tags": ["javascript", "react", "vue", "angular", "frontend"],
+      "category": "technology",
+      "status": "confirmed",
+      "priority": 5,
+      "attendee_count": 1847,
+      "speakers": [
+        {
+          "name": "Sarah Chen",
+          "title": "Principal Engineer at Meta",
+          "topic": "The Future of React"
+        },
+        {
+          "name": "Miguel Rodriguez",
+          "title": "Vue.js Core Team",
+          "topic": "Vue 4 and Beyond"
+        }
+      ]
+    },
+    {
+      "event_id": "conf-2024-002",
+      "title": "AI and Machine Learning Workshop",
+      "description": "Hands-on workshop covering practical applications of AI and ML in modern web development.",
+      "location": {
+        "venue": "Google Developer Space",
+        "address": "345 Spear St, San Francisco, CA 94105",
+        "latitude": 37.7925,
+        "longitude": -122.3932,
+        "capacity": 150
+      },
+      "organizer": {
+        "name": "AI Dev Community",
+        "email": "workshops@aidev.org",
+        "phone": "+1-555-0200"
+      },
+      "schedule": {
+        "start_date": "2024-04-10T10:00:00Z",
+        "end_date": "2024-04-10T16:00:00Z",
+        "registration_deadline": "2024-04-05T23:59:59Z",
+        "early_bird_deadline": "2024-03-25T23:59:59Z"
+      },
+      "pricing": {
+        "early_bird": 149,
+        "regular": 199,
+        "student": 49,
+        "currency": "USD"
+      },
+      "tags": ["ai", "machine-learning", "workshop", "tensorflow", "python"],
+      "category": "workshop",
+      "status": "confirmed",
+      "priority": 4,
+      "attendee_count": 89,
+      "speakers": [
+        {
+          "name": "Dr. Amanda Foster",
+          "title": "ML Research Scientist",
+          "topic": "TensorFlow.js for Web Developers"
+        }
+      ]
+    },
+    {
+      "event_id": "conf-2024-003",
+      "title": "DevOps and Cloud Infrastructure Meetup",
+      "description": "Monthly meetup discussing latest trends in DevOps, containerization, and cloud platforms.",
+      "location": {
+        "venue": "AWS Loft",
+        "address": "925 Battery St, San Francisco, CA 94111",
+        "latitude": 37.7983,
+        "longitude": -122.4014,
+        "capacity": 75
+      },
+      "organizer": {
+        "name": "SF DevOps Meetup",
+        "email": "organizers@sfdevops.org",
+        "phone": "+1-555-0300"
+      },
+      "schedule": {
+        "start_date": "2024-02-28T18:30:00Z",
+        "end_date": "2024-02-28T21:00:00Z",
+        "registration_deadline": "2024-02-26T12:00:00Z",
+        "early_bird_deadline": null
+      },
+      "pricing": {
+        "early_bird": 0,
+        "regular": 0,
+        "student": 0,
+        "currency": "USD"
+      },
+      "tags": ["devops", "cloud", "aws", "docker", "kubernetes"],
+      "category": "meetup",
+      "status": "confirmed",
+      "priority": 3,
+      "attendee_count": 52,
+      "speakers": [
+        {
+          "name": "Chris Taylor",
+          "title": "Senior DevOps Engineer",
+          "topic": "Kubernetes Best Practices"
+        },
+        {
+          "name": "Lisa Park",
+          "title": "Cloud Architect",
+          "topic": "Serverless Architecture Patterns"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created_by": "Event Management System",
+    "created_date": "2024-01-25T12:00:00Z",
+    "last_updated": "2024-01-25T15:30:00Z",
+    "version": "2.1",
+    "export_format": "json-v2"
+  }
+}
