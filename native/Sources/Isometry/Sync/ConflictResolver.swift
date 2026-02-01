@@ -1,5 +1,6 @@
 import Foundation
 import CloudKit
+import GRDB
 
 /// Result of conflict resolution
 public struct ResolvedConflict: Sendable {
@@ -459,6 +460,167 @@ public actor ConflictResolver {
             lastSyncedAt: Date(),
             conflictResolvedAt: record["conflictResolvedAt"] as? Date
         )
+    }
+
+    // MARK: - CRDT Integration (Phase 20-02)
+
+    /// Resolves conflicts using CRDT metadata for deterministic resolution
+    /// Integrates with existing CloudKit conflict resolution but uses CRDT timestamps
+    public func resolveCRDTConflict(
+        local: Node,
+        remote: Node,
+        localCRDT: CRDTNode,
+        remoteCRDT: CRDTNode
+    ) async throws -> ResolvedConflict {
+
+        // Use CRDT comparison for deterministic resolution
+        let comparison = localCRDT.compare(with: remoteCRDT)
+
+        var resolvedNode: Node
+        let strategy: ResolutionStrategy
+
+        switch comparison {
+        case .happensBefore:
+            // Local is newer
+            resolvedNode = local
+            strategy = .lastWriteWins
+
+        case .happensAfter:
+            // Remote is newer
+            resolvedNode = remote
+            strategy = .lastWriteWins
+
+        case .concurrent:
+            // Simultaneous edits - check if field-level merge is possible
+            let conflictType = localCRDT.conflictType(with: remoteCRDT)
+
+            switch conflictType {
+            case .noConflict:
+                // Use newer timestamp
+                resolvedNode = localCRDT.lastWriteWins > remoteCRDT.lastWriteWins ? local : remote
+                strategy = .lastWriteWins
+
+            case .fieldLevelMergeable:
+                // Merge non-conflicting fields
+                resolvedNode = try await mergeCRDTFields(local: local, remote: remote, localCRDT: localCRDT, remoteCRDT: remoteCRDT)
+                strategy = .fieldLevelMerge
+
+            case .contentConflict:
+                // True conflict - use last-write-wins with site ID tiebreaker
+                if localCRDT.lastWriteWins == remoteCRDT.lastWriteWins {
+                    // Site ID tiebreaker for deterministic resolution
+                    resolvedNode = localCRDT.siteId > remoteCRDT.siteId ? local : remote
+                } else {
+                    resolvedNode = localCRDT.lastWriteWins > remoteCRDT.lastWriteWins ? local : remote
+                }
+                strategy = .lastWriteWins
+            }
+        }
+
+        // Update sync metadata
+        resolvedNode.syncVersion = max(local.syncVersion, remote.syncVersion) + 1
+        resolvedNode.conflictResolvedAt = Date()
+
+        // Convert to CloudKit record for existing infrastructure
+        let resolvedRecord = nodeToCloudKitRecord(resolvedNode)
+
+        return ResolvedConflict(
+            nodeId: resolvedNode.id,
+            resolvedRecord: resolvedRecord,
+            strategy: strategy,
+            resolvedAt: Date(),
+            wasAutomatic: true
+        )
+    }
+
+    /// Merges CRDT fields for field-level mergeable conflicts
+    private func mergeCRDTFields(
+        local: Node,
+        remote: Node,
+        localCRDT: CRDTNode,
+        remoteCRDT: CRDTNode
+    ) async throws -> Node {
+
+        var merged = local
+        let localFields = Set(localCRDT.modifiedFields)
+        let remoteFields = Set(remoteCRDT.modifiedFields)
+
+        // Apply changes from non-overlapping fields
+        for field in localFields.union(remoteFields) {
+            if localFields.contains(field) && !remoteFields.contains(field) {
+                // Only local modified - keep local value
+                continue
+            } else if remoteFields.contains(field) && !localFields.contains(field) {
+                // Only remote modified - use remote value
+                applyCRDTFieldChange(to: &merged, from: remote, field: field)
+            } else if localFields.contains(field) && remoteFields.contains(field) {
+                // Both modified - use timestamp with site ID tiebreaker
+                if localCRDT.lastWriteWins > remoteCRDT.lastWriteWins ||
+                   (localCRDT.lastWriteWins == remoteCRDT.lastWriteWins && localCRDT.siteId > remoteCRDT.siteId) {
+                    // Keep local value
+                    continue
+                } else {
+                    // Use remote value
+                    applyCRDTFieldChange(to: &merged, from: remote, field: field)
+                }
+            }
+        }
+
+        // Special handling for array fields (tags) - use union
+        if localFields.contains("tags") || remoteFields.contains("tags") {
+            let mergedTags = Set(local.tags).union(Set(remote.tags))
+            merged.tags = Array(mergedTags).sorted()
+        }
+
+        return merged
+    }
+
+    /// Applies a single field change from source to target node
+    private func applyCRDTFieldChange(to target: inout Node, from source: Node, field: String) {
+        switch field {
+        case "name":
+            target.name = source.name
+        case "content":
+            target.content = source.content
+        case "summary":
+            target.summary = source.summary
+        case "folder":
+            target.folder = source.folder
+        case "tags":
+            target.tags = source.tags
+        case "status":
+            target.status = source.status
+        case "priority":
+            target.priority = source.priority
+        case "importance":
+            target.importance = source.importance
+        default:
+            break // Unknown field
+        }
+    }
+
+    /// Converts Node to CloudKit record for compatibility with existing infrastructure
+    private func nodeToCloudKitRecord(_ node: Node) -> CKRecord {
+        let recordID = CKRecord.ID(recordName: node.id)
+        let record = CKRecord(recordType: "Node", recordID: recordID)
+
+        record["name"] = node.name
+        record["content"] = node.content
+        record["summary"] = node.summary
+        record["folder"] = node.folder
+        record["status"] = node.status
+        record["priority"] = node.priority
+        record["importance"] = node.importance
+        record["syncVersion"] = node.syncVersion
+        record["modifiedAt"] = node.modifiedAt
+        record["conflictResolvedAt"] = node.conflictResolvedAt
+
+        // Encode tags as JSON for CloudKit
+        if !node.tags.isEmpty {
+            record["tags"] = node.tags
+        }
+
+        return record
     }
 }
 

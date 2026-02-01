@@ -312,7 +312,104 @@ CREATE TRIGGER IF NOT EXISTS command_history_fts_update AFTER UPDATE ON command_
     VALUES (NEW.rowid, NEW.command_text, NEW.output_preview);
 END;
 
--- Record initial schema version
+-- ============================================================================
+-- CRDT Conflict Resolution Tables (Phase 20-02)
+-- ============================================================================
+
+-- CRDT metadata for distributed conflict resolution
+CREATE TABLE IF NOT EXISTS crdt_metadata (
+    node_id TEXT PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
+    site_id TEXT NOT NULL,  -- Device identifier for tiebreaker resolution
+    column_version INTEGER NOT NULL DEFAULT 1,  -- Per-column CRDT version
+    db_version INTEGER NOT NULL DEFAULT 1,  -- Global logical clock
+    last_write_wins TEXT NOT NULL DEFAULT (datetime('now')),  -- LWW timestamp
+    content_hash TEXT NOT NULL DEFAULT '',  -- For efficient conflict detection
+    modified_fields TEXT DEFAULT '[]',  -- JSON array of changed field names
+    last_synced_at TEXT,
+    conflict_resolved_at TEXT
+);
+
+-- CRDT sync metadata for tracking device versions
+CREATE TABLE IF NOT EXISTS crdt_sync_metadata (
+    node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    device_id TEXT NOT NULL,
+    device_version INTEGER NOT NULL DEFAULT 0,
+    last_seen_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (node_id, device_id)
+);
+
+-- Conflict resolution history for audit and debugging
+CREATE TABLE IF NOT EXISTS conflict_history (
+    id TEXT PRIMARY KEY,
+    node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    strategy TEXT NOT NULL,  -- 'auto_lww', 'manual', 'field_merge'
+    winner_site_id TEXT NOT NULL,
+    local_version INTEGER NOT NULL,
+    server_version INTEGER NOT NULL,
+    resolved_at TEXT NOT NULL DEFAULT (datetime('now')),
+    resolution_details TEXT  -- JSON with additional resolution info
+);
+
+-- Unresolved conflicts queue for manual resolution
+CREATE TABLE IF NOT EXISTS pending_conflicts (
+    id TEXT PRIMARY KEY,
+    node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    conflict_type TEXT NOT NULL,  -- 'content', 'field_level', 'version_mismatch'
+    local_data TEXT NOT NULL,  -- JSON serialized local node
+    server_data TEXT NOT NULL,  -- JSON serialized server node
+    detected_at TEXT NOT NULL DEFAULT (datetime('now')),
+    conflicted_fields TEXT DEFAULT '[]'  -- JSON array of field names in conflict
+);
+
+-- Indexes for CRDT performance
+CREATE INDEX IF NOT EXISTS idx_crdt_metadata_site ON crdt_metadata(site_id);
+CREATE INDEX IF NOT EXISTS idx_crdt_metadata_version ON crdt_metadata(db_version, column_version);
+CREATE INDEX IF NOT EXISTS idx_crdt_metadata_hash ON crdt_metadata(content_hash);
+CREATE INDEX IF NOT EXISTS idx_crdt_sync_device ON crdt_sync_metadata(device_id);
+CREATE INDEX IF NOT EXISTS idx_conflict_history_node ON conflict_history(node_id, resolved_at);
+CREATE INDEX IF NOT EXISTS idx_pending_conflicts_node ON pending_conflicts(node_id, detected_at);
+CREATE INDEX IF NOT EXISTS idx_pending_conflicts_type ON pending_conflicts(conflict_type);
+
+-- Extend nodes table with CRDT columns (migration approach)
+-- These will be populated by triggers from crdt_metadata table
+ALTER TABLE nodes ADD COLUMN site_id TEXT DEFAULT NULL;
+ALTER TABLE nodes ADD COLUMN column_version INTEGER DEFAULT 1;
+ALTER TABLE nodes ADD COLUMN db_version INTEGER DEFAULT 1;
+
+-- Triggers to maintain CRDT metadata consistency
+CREATE TRIGGER IF NOT EXISTS nodes_crdt_insert AFTER INSERT ON nodes BEGIN
+    INSERT INTO crdt_metadata (
+        node_id, site_id, column_version, db_version,
+        content_hash, modified_fields
+    ) VALUES (
+        NEW.id,
+        COALESCE(NEW.site_id, 'device_default'),
+        COALESCE(NEW.column_version, 1),
+        COALESCE(NEW.db_version, 1),
+        '',  -- Will be updated by application logic
+        '[]'  -- Will be updated by application logic
+    );
+END;
+
+CREATE TRIGGER IF NOT EXISTS nodes_crdt_update AFTER UPDATE ON nodes BEGIN
+    UPDATE crdt_metadata SET
+        column_version = COALESCE(NEW.column_version, column_version + 1),
+        db_version = COALESCE(NEW.db_version, db_version),
+        last_write_wins = datetime('now'),
+        content_hash = '',  -- Will be updated by application logic
+        modified_fields = '[]'  -- Will be updated by application logic
+    WHERE node_id = NEW.id;
+END;
+
+CREATE TRIGGER IF NOT EXISTS nodes_crdt_delete AFTER DELETE ON nodes BEGIN
+    DELETE FROM crdt_metadata WHERE node_id = OLD.id;
+    DELETE FROM crdt_sync_metadata WHERE node_id = OLD.id;
+    DELETE FROM conflict_history WHERE node_id = OLD.id;
+    DELETE FROM pending_conflicts WHERE node_id = OLD.id;
+END;
+
+-- Record schema migrations
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (1, 'Initial schema with sync support');
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (2, 'Added notebook_cards table with FTS support');
 INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (3, 'Added command_history and notebook_context tables with FTS support');
+INSERT OR IGNORE INTO schema_migrations (version, description) VALUES (4, 'Added CRDT metadata and conflict resolution tables');
