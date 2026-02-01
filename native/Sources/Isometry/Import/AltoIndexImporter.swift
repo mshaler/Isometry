@@ -21,7 +21,7 @@ public actor AltoIndexImporter {
             includingPropertiesForKeys: [.isRegularFileKey],
             options: [.skipsHiddenFiles]
         ) else {
-            throw ImportError.directoryNotFound(directoryURL.path)
+            throw ImportError.appleNotesDirectoryNotFound(directoryURL.path)
         }
 
         // Collect all markdown file URLs first to avoid async iteration issues
@@ -39,7 +39,7 @@ public actor AltoIndexImporter {
                 result.nodes.append(node)
             } catch {
                 result.failed += 1
-                result.errors.append(ImportError.fileFailed(fileURL.lastPathComponent, error))
+                result.errors.append(ImportError.appleNotesFileFailed(fileURL.lastPathComponent, error))
                 print("Import failed for \(fileURL.path): \(error)")
             }
         }
@@ -301,34 +301,3 @@ public actor AltoIndexImporter {
     }
 }
 
-// MARK: - Import Result
-
-public struct ImportResult: Sendable {
-    public var imported: Int = 0
-    public var failed: Int = 0
-    public var nodes: [Node] = []
-    public var errors: [ImportError] = []
-
-    public var total: Int { imported + failed }
-}
-
-// MARK: - Import Error
-
-public enum ImportError: Error, Sendable {
-    case directoryNotFound(String)
-    case fileFailed(String, Error)
-    case invalidFormat(String)
-}
-
-extension ImportError: LocalizedError {
-    public var errorDescription: String? {
-        switch self {
-        case .directoryNotFound(let path):
-            return "Directory not found: \(path)"
-        case .fileFailed(let filename, let error):
-            return "Failed to import \(filename): \(error.localizedDescription)"
-        case .invalidFormat(let details):
-            return "Invalid format: \(details)"
-        }
-    }
-}
