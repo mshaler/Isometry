@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { SelectedFile, FieldMapping } from '../components/import/ImportWizard';
 import type { ImportProgress, ImportResult } from '../components/import/ImportProgress';
+import { webViewBridge } from '../utils/webview-bridge';
 
 interface UseMarkdownImportReturn {
   importMarkdownFiles: (files: SelectedFile[], mappings: FieldMapping) => Promise<void>;
@@ -482,18 +483,32 @@ function parseToml(tomlContent: string): Record<string, any> {
   }
 }
 
-// Mock bridge communication (replace with actual bridge implementation)
+// Bridge communication using the webview bridge
 async function sendToNativeBridge(method: string, payload: any): Promise<any> {
-  // This is a mock implementation
-  // In the real app, this would communicate with the native Swift bridge
+  try {
+    // Use the actual webview bridge to communicate with native Swift
+    if (method === 'importMarkdown') {
+      return await webViewBridge.database.importMarkdown(payload);
+    } else {
+      throw new Error(`Unknown bridge method: ${method}`);
+    }
+  } catch (error) {
+    console.error('Bridge communication failed:', error);
 
-  console.log(`Bridge call: ${method}`, payload);
+    // Fallback: simulate successful import for development/browser mode
+    if (!webViewBridge.isWebViewEnvironment()) {
+      console.log('Browser mode - simulating import:', payload);
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-  // Simulate successful import with a generated node ID
-  await new Promise(resolve => setTimeout(resolve, 100));
+      return {
+        success: true,
+        nodeId: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        relationshipCount: payload.relationships?.length || 0,
+        tableCount: payload.tables?.length || 0,
+        attachmentCount: payload.attachments?.length || 0,
+      };
+    }
 
-  return {
-    nodeId: `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    success: true,
-  };
+    throw error;
+  }
 }

@@ -462,6 +462,36 @@ export class WebViewBridge {
 
     reset: async (): Promise<void> => {
       return this.postMessage('database', 'reset', {});
+    },
+
+    // Universal markdown import operations
+    importMarkdown: async (payload: {
+      fileName: string;
+      content: string;
+      frontmatter: Record<string, any>;
+      properties: Record<string, any>;
+      relationships: Array<{
+        type: string;
+        target: string;
+        displayText?: string;
+      }>;
+      tables: Array<{
+        headers: string[];
+        rows: string[][];
+      }>;
+      attachments: Array<{
+        path: string;
+        type: string;
+        displayText?: string;
+      }>;
+    }): Promise<{
+      success: boolean;
+      nodeId: string;
+      relationshipCount: number;
+      tableCount: number;
+      attachmentCount: number;
+    }> => {
+      return this.postMessage('database', 'importMarkdown', { payload });
     }
   };
 
@@ -1147,6 +1177,36 @@ export class OptimizedBridge {
 
     reset: async (): Promise<void> => {
       return this.postMessage('database', 'reset', {});
+    },
+
+    // Universal markdown import operations
+    importMarkdown: async (payload: {
+      fileName: string;
+      content: string;
+      frontmatter: Record<string, any>;
+      properties: Record<string, any>;
+      relationships: Array<{
+        type: string;
+        target: string;
+        displayText?: string;
+      }>;
+      tables: Array<{
+        headers: string[];
+        rows: string[][];
+      }>;
+      attachments: Array<{
+        path: string;
+        type: string;
+        displayText?: string;
+      }>;
+    }): Promise<{
+      success: boolean;
+      nodeId: string;
+      relationshipCount: number;
+      tableCount: number;
+      attachmentCount: number;
+    }> => {
+      return this.postMessage('database', 'importMarkdown', { payload });
     }
   };
 
