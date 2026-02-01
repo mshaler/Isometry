@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, type LucideIcon } from 'lucide-react';
+import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, FileUp, type LucideIcon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { IconButton } from '@/components/ui/buttons/IconButton';
+import { ImportWizard } from './ImportWizard';
 
 interface MenuItem {
   label?: string;
@@ -17,6 +18,7 @@ interface MenuSection {
 
 export function Toolbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [importWizardOpen, setImportWizardOpen] = useState(false);
   // TODO: Implement submenus when needed
   const { theme, setTheme } = useTheme();
 
@@ -47,6 +49,11 @@ export function Toolbar() {
       items: [
         { label: 'New…', action: () => console.log('New') },
         { label: 'Open…', action: () => console.log('Open') },
+        { separator: true },
+        { label: 'Import JSON…', action: () => setImportWizardOpen(true) },
+        { label: 'Import Markdown…', action: () => setImportWizardOpen(true) },
+        { label: 'Import Office Docs…', action: () => setImportWizardOpen(true) },
+        { label: 'Import Web Page…', action: () => setImportWizardOpen(true) },
         { separator: true },
         { label: 'Save As…', action: () => console.log('Save As') },
       ]
@@ -187,6 +194,17 @@ export function Toolbar() {
 
         <div className="flex-1" />
       </div>
+
+      {/* Import Wizard Modal */}
+      <ImportWizard
+        isOpen={importWizardOpen}
+        onClose={() => setImportWizardOpen(false)}
+        onImportComplete={(nodes) => {
+          console.log('Import completed:', { count: nodes.length, nodes });
+          // TODO: Integrate with database context to persist imported nodes
+          setImportWizardOpen(false);
+        }}
+      />
     </div>
   );
 }
