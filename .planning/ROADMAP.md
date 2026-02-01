@@ -226,6 +226,58 @@ Plans:
 - [ ] 21-02-PLAN.md — Install dependencies and integrate providers (gap closure)
 - [ ] 21-03-PLAN.md — Wire components and implement missing systems (gap closure)
 
+#### Phase 22: Bridge Integration Wiring
+**Goal:** Wire missing bridge communication handlers and resolve integration gaps from infrastructure phases
+**Depends on:** Phase 21
+**Gap Closure:** Closes integration gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. React components receive live database updates within 100ms through WebView bridge
+  2. liveData message handler processes change notifications correctly
+  3. Memory management bridge callbacks properly clean up on component unmount
+  4. Bridge communication remains stable under concurrent real-time operations
+  5. Integration points between Phase 18/19 infrastructure function as designed
+**Plans:** 3 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Add liveData message handler to WebViewBridge
+- [ ] 22-02-PLAN.md — Integrate memory management bridge callback cleanup
+- [ ] 22-03-PLAN.md — Verify Phase 18/19 integration points function end-to-end
+
+#### Phase 23: UI Layer Migration
+**Goal:** Migrate React components from legacy sql.js hooks to advanced live query and hybrid caching system
+**Depends on:** Phase 22
+**Gap Closure:** Closes component layer integration gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. GridView and ListView components use useHybridQuery instead of legacy useSQLiteQuery
+  2. Large dataset rendering flows complete successfully with virtual scrolling
+  3. Components automatically receive live updates when database changes
+  4. TanStack Query hybrid system properly caches and invalidates data
+  5. User experience shows real-time updates and optimistic UI feedback
+**Plans:** 4 plans
+
+Plans:
+- [ ] 23-01-PLAN.md — Replace useSQLiteQuery with useHybridQuery in data views
+- [ ] 23-02-PLAN.md — Integrate useLiveQuery in GridView and ListView components
+- [ ] 23-03-PLAN.md — Wire TanStack Query hybrid system to live queries
+- [ ] 23-04-PLAN.md — Restore large dataset rendering flow with virtual scrolling
+
+#### Phase 24: Production Polish
+**Goal:** Resolve transaction coordination issues, clean up tech debt, and integrate performance monitoring
+**Depends on:** Phase 23
+**Gap Closure:** Closes remaining tech debt and coordination gaps from audit
+**Success Criteria** (what must be TRUE):
+  1. TransactionBridge coordinates state properly instead of creating new instances
+  2. Performance dashboard renders in development interface for operational visibility
+  3. Console.log debugging statements removed from production code
+  4. Placeholder comments replaced with proper integration documentation
+  5. All tech debt items from audit are resolved
+**Plans:** 3 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — Fix TransactionBridge state coordination issues
+- [ ] 24-02-PLAN.md — Integrate PerformanceDashboard in debug interface
+- [ ] 24-03-PLAN.md — Clean up tech debt (console.log, placeholders, documentation)
+
 ## Dependencies
 
 ### v3.1 Live Database Integration External Dependencies
@@ -243,7 +295,7 @@ Plans:
 
 ### Phase Dependencies
 ```
-v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21
+v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 22 → Phase 23 → Phase 24
 ```
 
 **Phase Ordering Rationale (Research-Based):**
@@ -257,7 +309,7 @@ v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21
+Phases execute in numeric order: 18 → 19 → 20 → 21 → 22 → 23 → 24
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -265,6 +317,9 @@ Phases execute in numeric order: 18 → 19 → 20 → 21
 | 19. Real-Time Change Notifications | 2/2 | ✓ Complete | 2026-01-30 |
 | 20. Transaction and Sync Management | 2/2 | ✓ Complete | 2026-01-31 |
 | 21. Advanced Query and Caching | 3/3 | ✓ Complete | 2026-01-31 |
+| 22. Bridge Integration Wiring | 0/3 | ⭕ Pending | - |
+| 23. UI Layer Migration | 0/4 | ⭕ Pending | - |
+| 24. Production Polish | 0/3 | ⭕ Pending | - |
 
 ## Architecture Integration Summary
 
