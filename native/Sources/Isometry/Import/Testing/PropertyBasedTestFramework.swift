@@ -508,6 +508,122 @@ public enum PropertyTestError: Error, LocalizedError {
     }
 }
 
+// MARK: - Round-Trip Testing Framework
+
+extension PropertyBasedTestFramework {
+
+    /// Specialized round-trip testing for data lifecycle validation
+    public static func buildRoundTripTest<TInput, TIntermediate>(
+        name: String,
+        generator: @escaping () async throws -> TInput,
+        transform: @escaping (TInput) async throws -> TIntermediate,
+        inverseTransform: @escaping (TIntermediate) async throws -> TInput,
+        equivalenceCheck: @escaping (TInput, TInput) async throws -> Bool,
+        iterations: Int = 100
+    ) -> PropertyTest<TInput> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { originalInput in
+                let transformed = try await transform(originalInput)
+                let roundTripInput = try await inverseTransform(transformed)
+                return try await equivalenceCheck(originalInput, roundTripInput)
+            },
+            iterations: iterations
+        )
+    }
+
+    /// Build data preservation test for import/export cycles
+    public static func buildDataPreservationTest<TData>(
+        name: String,
+        generator: @escaping () async throws -> TData,
+        importer: @escaping (TData) async throws -> [Node],
+        exporter: @escaping ([Node]) async throws -> TData,
+        preservationCheck: @escaping (TData, TData) async throws -> Double,
+        threshold: Double = 0.999
+    ) -> PropertyTest<TData> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { originalData in
+                let importedNodes = try await importer(originalData)
+                let exportedData = try await exporter(importedNodes)
+                let preservationScore = try await preservationCheck(originalData, exportedData)
+                return preservationScore >= threshold
+            },
+            iterations: iterations
+        )
+    }
+
+    /// Build mathematical invariant test
+    public static func buildInvariantTest<T>(
+        name: String,
+        generator: @escaping () async throws -> T,
+        operation: @escaping (T) async throws -> T,
+        invariant: @escaping (T, T) async throws -> Bool
+    ) -> PropertyTest<T> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { input in
+                let result = try await operation(input)
+                return try await invariant(input, result)
+            }
+        )
+    }
+}
+
+// MARK: - Enhanced Error Types
+
+extension PropertyTestError {
+    case timeout(TimeInterval)
+    case memoryLimitExceeded(Int64, Int64)
+    case executionFailed(String)
+
+    public var enhancedErrorDescription: String? {
+        switch self {
+        case .timeout(let duration):
+            return "Operation timed out after \(duration) seconds"
+        case .memoryLimitExceeded(let current, let limit):
+            return "Memory limit exceeded: \(current) bytes > \(limit) bytes"
+        case .executionFailed(let reason):
+            return "Execution failed: \(reason)"
+        default:
+            return errorDescription
+        }
+    }
+}
+
+// MARK: - Utility Extensions
+
+extension PropertyBasedTestFramework.TestExecutionEngine {
+
+    /// Execute tests with timeout protection
+    public func executeWithTimeout<T>(
+        test: PropertyTest<T>,
+        timeout: TimeInterval,
+        strategy: TestStrategy = .random(seed: 42)
+    ) async throws -> TestResult {
+        return try await withThrowingTaskGroup(of: TestResult.self) { group in
+            group.addTask {
+                return try await self.execute(test: test, strategy: strategy)
+            }
+
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                throw PropertyTestError.timeout(timeout)
+            }
+
+            guard let result = try await group.next() else {
+                throw PropertyTestError.executionFailed("No result returned")
+            }
+
+            group.cancelAll()
+            return result
+        }
+    }
+}
+
 // MARK: - Swift Testing Integration
 
 extension PropertyBasedTestFramework.TestResult {
