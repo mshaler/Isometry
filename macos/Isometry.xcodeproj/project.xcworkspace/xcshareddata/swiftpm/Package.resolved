@@ -1,5 +1,4 @@
 {
-  "originHash" : "ec1274ca540441b8fdaff8046ec36d6ec29d1c60e8948e46bb240b022cd18f84",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -35,6 +34,15 @@
       "state" : {
         "revision" : "2cf6c756e1e5ef6901ebae16576a7e4e4b834622",
         "version" : "6.29.3"
+      }
+    },
+    {
+      "identity" : "msgpack-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/fumoboy007/msgpack-swift",
+      "state" : {
+        "revision" : "fe3101819f4f82b086da5279a9df81f6754798e9",
+        "version" : "2.0.6"
       }
     },
     {
@@ -272,5 +280,5 @@
       }
     }
   ],
-  "version" : 3
+  "version" : 2
 }

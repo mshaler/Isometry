@@ -20,6 +20,7 @@
 - 🚀 **v3.0 Production Deployment** - Phases 13.1-17 (App Store launch and production infrastructure) - ✅ COMPLETED
 - ✅ **v3.1 Live Database Integration** - Phases 18-21, 25-27 (shipped 2026-02-01) - [Details](milestones/v3.1-ROADMAP.md)
 - 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
+- 🆕 **v3.3 Complete Apple Notes Data Lifecycle** - Phase 30 (Native access, CAS storage, verification pipeline, database operations) - 📋 PLANNED
 
 ## Milestone Overview
 
@@ -46,6 +47,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v3.1 Goal (Live Database Integration - GAP CLOSURE):** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring, establishing foundational bridge communication infrastructure before advanced real-time features. **Critical:** Infrastructure complete but requires application integration gap closure.
 
 **v3.2 Goal (Enhanced Apple Integration):** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Leverage existing AltoIndexImporter foundation to provide production-ready live Notes integration.
+
+**v3.3 Goal (Complete Apple Notes Data Lifecycle):** Establish enterprise-grade Apple Notes data lifecycle management with native database access, Content-Addressable Storage for attachments, comprehensive verification pipeline, complete database operations (dump, restore, export, purge, rehydrate), and property-based testing framework ensuring >99.9% data integrity.
 
 ---
 
@@ -193,6 +196,30 @@ Plans:
 - [ ] 29-02-PLAN.md — FSEvents monitoring and CRDT conflict resolution infrastructure
 - [ ] 29-03-PLAN.md — User interface integration and performance optimization for large libraries
 
+### 🆕 v3.3 Complete Apple Notes Data Lifecycle
+
+**Milestone Goal:** Establish enterprise-grade Apple Notes data lifecycle management with native database access beyond alto-index exports, Content-Addressable Storage for efficient attachment handling, comprehensive verification pipeline ensuring >99.9% data integrity, complete database operations suite, and property-based testing framework for production-grade reliability.
+
+#### Phase 30: Apple Notes Data Lifecycle Management
+**Goal:** Implement comprehensive Apple Notes data lifecycle with native access, CAS storage, verification pipeline, and database operations
+**Depends on:** Phase 29 (Enhanced Apple Notes Live Integration)
+**Success Criteria** (what must be TRUE):
+  1. Native Apple Notes importer accesses Notes.app database directly with TCC permissions and graceful fallback
+  2. Content-Addressable Storage efficiently manages attachments with deduplication and metadata preservation
+  3. Data verification pipeline compares native vs alto-index data achieving >99.9% accuracy validation
+  4. Database lifecycle operations (dump, restore, export, purge, rehydrate) execute reliably with versioning
+  5. Property-based testing framework validates data integrity invariants with comprehensive round-trip validation
+**Plans:** 5 plans
+
+**Foundation:** AltoIndexImporter proven capability enhanced with native database access, comprehensive attachment management, enterprise-grade verification, complete operations suite, and sophisticated testing framework.
+
+Plans:
+- [ ] 30-01-PLAN.md — Native Apple Notes importer with TCC permission management and direct database access
+- [ ] 30-02-PLAN.md — Content-Addressable Storage system for attachments with deduplication and metadata preservation
+- [ ] 30-03-PLAN.md — Data verification pipeline with >99.9% accuracy validation and automated comparison
+- [ ] 30-04-PLAN.md — Database lifecycle operations (dump, restore, export, purge, rehydrate) with versioning
+- [ ] 30-05-PLAN.md — Comprehensive property-based test framework with round-trip validation
+
 ## Dependencies
 
 ### v3.1 Live Database Integration External Dependencies
@@ -209,6 +236,13 @@ Plans:
 - **Swift-protobuf** for Notes content format parsing
 - **Swift Concurrency (Actor)** for background processing and thread safety
 
+### v3.3 Complete Apple Notes Data Lifecycle External Dependencies
+- **EventKit Framework** for TCC permission management and Notes access authorization
+- **SQLite Direct Access** for native Notes database parsing (~/Library/Group Containers/group.com.apple.notes/)
+- **Swift-protobuf** for Notes content format parsing and gzipped content decompression
+- **CryptoKit** for SHA-256 content hashing in Content-Addressable Storage
+- **Swift Testing** for property-based testing framework and advanced validation
+
 ### v3.1 Live Database Integration Internal Dependencies
 - **Existing React prototype** providing UI patterns and component architecture
 - **Native GRDB database** with complete schema and CloudKit sync operations
@@ -221,10 +255,18 @@ Plans:
 - **WebView bridge infrastructure** for React-native communication
 - **Existing conflict resolution patterns** from bridge infrastructure
 
+### v3.3 Complete Apple Notes Data Lifecycle Internal Dependencies
+- **AltoIndexImporter foundation** with comprehensive import/export capability and round-trip validation
+- **DatabaseVersionControl system** with git-like branching, merging, and rollback operations
+- **ContentAwareStorageManager** enhanced for attachment handling and Content-Addressable Storage
+- **IsometryDatabase actor** with complete GRDB integration and transaction coordination
+- **Existing verification patterns** from AltoIndexImporter.validateRoundTripData for baseline accuracy measurement
+
 ### Phase Dependencies
 ```
 v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 25 → Phase 26 → Phase 27 (Gap Closure)
 v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
+v3.3: Phase 30 (Complete Apple Notes Data Lifecycle Management)
 ```
 
 **Phase Ordering Rationale (Research-Based):**
@@ -234,13 +276,14 @@ v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
 - **Advanced features** like virtual scrolling depend on stable real-time and sync infrastructure
 - **Application integration** requires complete infrastructure before connecting main app components
 - **Enhanced Apple integration** builds upon proven foundation with sophisticated live sync capabilities
+- **Complete data lifecycle** extends enhanced integration with enterprise-grade operations and verification
 
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29
+Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -252,6 +295,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 26. Virtual Scrolling Performance Integration | 2/2 | ✅ v3.1 Shipped | 2026-01-31 |
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 0/3 | 📋 Planned | - |
+| 30. Apple Notes Data Lifecycle Management | 0/5 | 📋 Planned | - |
 
 ## Architecture Integration Summary
 
@@ -269,6 +313,14 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ IsometryDatabase ←→ WebView Bridge ←→ React UI
                 ↗                    ↗                        ↗
          TCC Permissions      CRDT Conflict Resolution    Performance Optimization
+```
+
+### v3.3 Complete Apple Notes Data Lifecycle Flow
+```
+Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification Pipeline ←→ Database Operations ←→ Property Testing
+     (Direct TCC)         (Permission)     (Attachments)     (>99.9% accuracy)      (Lifecycle Ops)      (Round-trip)
+         ↓                     ↓                ↓                   ↓                      ↓                   ↓
+   Notes.app SQLite    AppleNotesNativeImporter → AttachmentManager → DataVerificationPipeline → DatabaseLifecycleManager → PropertyBasedTestFramework
 ```
 
 ### Performance Targets (v3.1 vs Baseline)
@@ -291,6 +343,16 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 | **Content Parsing** | <100ms/note | N/A | Background processing |
 | **Conflict Resolution** | <200ms | N/A | CRDT algorithms |
 | **Library Scale** | 10k+ notes | 6,891 notes | Incremental processing |
+
+### Performance Targets (v3.3 Complete Apple Notes Data Lifecycle)
+
+| Metric | Target | Baseline | Approach |
+|--------|--------|----------|----------|
+| **Native Import Speed** | <50ms/note | Alto-index baseline | Direct database access |
+| **Attachment Processing** | <100ms/file | N/A | CAS with deduplication |
+| **Verification Accuracy** | >99.9% | 95% (current) | Comprehensive comparison |
+| **Database Operations** | <5min (100k records) | N/A | Optimized lifecycle ops |
+| **Property Test Coverage** | 100+ scenarios/property | N/A | Automated invariant validation |
 
 ---
 
@@ -320,11 +382,11 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 | PERF-03 | Phase 21 | Complete |
 | PERF-04 | Phase 21 | Complete |
 | PERF-05 | Phase 21 | Complete |
-| APP-INT-01 | Phase 27 | Pending |
-| APP-INT-02 | Phase 27 | Pending |
-| APP-INT-03 | Phase 27 | Pending |
-| APP-INT-04 | Phase 27 | Pending |
-| APP-INT-05 | Phase 27 | Pending |
+| APP-INT-01 | Phase 27 | Complete |
+| APP-INT-02 | Phase 27 | Complete |
+| APP-INT-03 | Phase 27 | Complete |
+| APP-INT-04 | Phase 27 | Complete |
+| APP-INT-05 | Phase 27 | Complete |
 
 **v3.1 Coverage:** 25/25 requirements mapped ✓
 
@@ -340,6 +402,23 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 
 **v3.2 Coverage:** 5/5 requirements mapped ✓
 
+### v3.3 Complete Apple Notes Data Lifecycle Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| NATIVE-ACCESS-01 | Phase 30 | Planned |
+| NATIVE-ACCESS-02 | Phase 30 | Planned |
+| CAS-STORAGE-01 | Phase 30 | Planned |
+| CAS-STORAGE-02 | Phase 30 | Planned |
+| VERIFICATION-01 | Phase 30 | Planned |
+| VERIFICATION-02 | Phase 30 | Planned |
+| LIFECYCLE-OPS-01 | Phase 30 | Planned |
+| LIFECYCLE-OPS-02 | Phase 30 | Planned |
+| PROPERTY-TEST-01 | Phase 30 | Planned |
+| PROPERTY-TEST-02 | Phase 30 | Planned |
+
+**v3.3 Coverage:** 10/10 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -351,6 +430,7 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 4. **Phase 21**: Optimize performance once core functionality is stable
 5. **Phase 27**: Connect complete infrastructure to main application components
 6. **Phase 29**: Enhance proven AltoIndexImporter with sophisticated live sync capabilities
+7. **Phase 30**: Extend to enterprise-grade data lifecycle with native access and verification
 
 ### Data Integrity Protection
 - Bridge-level transaction control with ACID guarantees
@@ -358,6 +438,8 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 - Change event correlation and proper sequencing
 - Comprehensive conflict resolution for multi-device scenarios
 - CRDT algorithms for Notes collaborative editing
+- Property-based testing for invariant validation
+- >99.9% accuracy verification pipeline
 
 ### Performance Validation
 - Bridge latency monitoring with 16ms targets for 60fps
@@ -365,6 +447,8 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 - Query performance optimization through intelligent caching
 - Background sync with bandwidth-aware optimization
 - Notes library scaling for 10k+ notes with efficient processing
+- Native database access optimization vs alto-index baseline
+- Content-Addressable Storage for efficient attachment handling
 
 ### Gap Closure Strategy
 - **Critical Issue:** Infrastructure complete but inaccessible to users
@@ -378,6 +462,13 @@ Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ Is
 - **Permission-aware design:** TCC authorization with graceful fallbacks
 - **User-centric conflict resolution:** Clear UI for manual conflict handling
 
+### Complete Data Lifecycle Strategy
+- **Enterprise-grade operations:** Native access beyond alto-index limitations
+- **Data integrity first:** >99.9% accuracy with comprehensive verification
+- **Performance optimization:** CAS storage for efficient attachment handling
+- **Testing excellence:** Property-based validation with invariant checking
+- **Operations completeness:** Full database lifecycle (dump, restore, export, purge, rehydrate)
+
 ---
 
-*Last updated: 2026-02-01 after Phase 29 Enhanced Apple Notes Live Integration planning*
+*Last updated: 2026-02-01 after Phase 30 Apple Notes Data Lifecycle Management planning*

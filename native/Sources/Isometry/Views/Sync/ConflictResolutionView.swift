@@ -5,15 +5,15 @@ public struct ConflictResolutionView: View {
     // MARK: - Properties
 
     let conflict: SyncConflict
-    let onResolve: (ConflictResolution) -> Void
+    let onResolve: (CloudKitSyncManager.ConflictResolution) -> Void
     let onDismiss: () -> Void
 
-    @State private var selectedResolution: ConflictResolutionChoice?
+    @State private var selectedResolution: CloudKitSyncManager.ConflictResolutionChoice?
     @State private var isResolving = false
 
     // MARK: - Resolution Choice
 
-    enum ConflictResolutionChoice: String, CaseIterable {
+    enum CloudKitSyncManager.ConflictResolutionChoice: String, CaseIterable {
         case keepLocal = "Keep Local"
         case keepRemote = "Keep Remote"
         case merge = "Merge Both"
@@ -182,13 +182,13 @@ public struct ConflictResolutionView: View {
             Text("Choose Resolution")
                 .font(.headline)
 
-            ForEach(ConflictResolutionChoice.allCases, id: \.self) { choice in
+            ForEach(CloudKitSyncManager.ConflictResolutionChoice.allCases, id: \.self) { choice in
                 resolutionOption(choice)
             }
         }
     }
 
-    private func resolutionOption(_ choice: ConflictResolutionChoice) -> some View {
+    private func resolutionOption(_ choice: CloudKitSyncManager.ConflictResolutionChoice) -> some View {
         Button {
             selectedResolution = choice
         } label: {
@@ -228,7 +228,7 @@ public struct ConflictResolutionView: View {
         isResolving = true
 
         let resolvedNode: Node
-        let strategy: ConflictResolutionStrategy
+        let strategy: CloudKitSyncManager.ConflictResolutionStrategy
 
         switch choice {
         case .keepLocal:
@@ -244,7 +244,7 @@ public struct ConflictResolutionView: View {
             strategy = .fieldLevelMerge
         }
 
-        let resolution = ConflictResolution(
+        let resolution = CloudKitSyncManager.ConflictResolution(
             nodeId: conflict.nodeId,
             resolvedNode: resolvedNode,
             strategy: strategy,
@@ -292,16 +292,16 @@ public struct ConflictResolutionView: View {
 /// View for displaying and resolving multiple conflicts
 public struct ConflictListView: View {
     let conflicts: [SyncConflict]
-    let onResolve: (ConflictResolution) -> Void
-    let onResolveAll: (ConflictResolutionStrategy) -> Void
+    let onResolve: (CloudKitSyncManager.ConflictResolution) -> Void
+    let onResolveAll: (CloudKitSyncManager.ConflictResolutionStrategy) -> Void
     let onDismiss: () -> Void
 
     @State private var selectedConflict: SyncConflict?
 
     public init(
         conflicts: [SyncConflict],
-        onResolve: @escaping (ConflictResolution) -> Void,
-        onResolveAll: @escaping (ConflictResolutionStrategy) -> Void,
+        onResolve: @escaping (CloudKitSyncManager.ConflictResolution) -> Void,
+        onResolveAll: @escaping (CloudKitSyncManager.ConflictResolutionStrategy) -> Void,
         onDismiss: @escaping () -> Void
     ) {
         self.conflicts = conflicts
@@ -355,7 +355,7 @@ public struct ConflictListView: View {
                 }
             }
             .sheet(item: $selectedConflict) { conflict in
-                ConflictResolutionView(
+                CloudKitSyncManager.ConflictResolutionView(
                     conflict: conflict,
                     onResolve: { resolution in
                         onResolve(resolution)
@@ -433,7 +433,7 @@ extension SyncConflict: Identifiable {
         conflictType: .bothModified
     )
 
-    return ConflictResolutionView(
+    ConflictResolutionView(
         conflict: conflict,
         onResolve: { _ in },
         onDismiss: { }

@@ -375,8 +375,8 @@ public struct RehydrateResult: Codable {
     }
 }
 
-/// Export operation result
-public struct ExportResult: Codable {
+/// Database export operation result
+public struct DatabaseExportResult: Codable {
     public let exportPath: URL
     public let format: DatabaseExportFormat
     public let recordsExported: Int

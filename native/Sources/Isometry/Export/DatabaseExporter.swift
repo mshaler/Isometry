@@ -45,7 +45,7 @@ public actor DatabaseExporter {
     public func exportToJSON(
         configuration: ExportConfiguration = ExportConfiguration.default,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -95,7 +95,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration = ExportConfiguration.default,
         fieldSelection: CSVFieldConfiguration? = nil,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -147,7 +147,7 @@ public actor DatabaseExporter {
         includeSchemaScript: Bool = true,
         includeDataScript: Bool = true,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -199,7 +199,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration = ExportConfiguration.default,
         schemaDefinition: XMLSchemaDefinition? = nil,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -250,7 +250,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration = ExportConfiguration.default,
         schemaDefinition: ProtobufSchemaDefinition,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -303,7 +303,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration,
         batchSize: Int = 10000,
         progressCallback: ((ExportProgress) -> Void)? = nil
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let operationId = UUID()
         let startTime = Date()
@@ -353,7 +353,7 @@ public actor DatabaseExporter {
 
     /// Validate export completeness with source verification
     public func validateExport(
-        exportResult: ExportResult,
+        exportResult: DatabaseExportResult,
         sourceConfiguration: ExportConfiguration
     ) async throws -> ExportValidationResult {
 
@@ -449,7 +449,7 @@ public actor DatabaseExporter {
         operationId: UUID,
         configuration: ExportConfiguration,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let exportPath = basePath
             .appendingPathComponent("exports")
@@ -511,7 +511,7 @@ public actor DatabaseExporter {
         let fileAttributes = try FileManager.default.attributesOfItem(atPath: exportPath.path)
         let fileSize = fileAttributes[.size] as? Int64 ?? 0
 
-        return ExportResult(
+        return DatabaseExportResult(
             exportPath: exportPath,
             format: .json,
             recordsExported: recordsExported,
@@ -530,7 +530,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration,
         fieldSelection: CSVFieldConfiguration?,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let exportPath = basePath
             .appendingPathComponent("exports")
@@ -583,7 +583,7 @@ public actor DatabaseExporter {
         let fileAttributes = try FileManager.default.attributesOfItem(atPath: exportPath.path)
         let fileSize = fileAttributes[.size] as? Int64 ?? 0
 
-        return ExportResult(
+        return DatabaseExportResult(
             exportPath: exportPath,
             format: .csv,
             recordsExported: recordsExported,
@@ -603,7 +603,7 @@ public actor DatabaseExporter {
         includeSchemaScript: Bool,
         includeDataScript: Bool,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let exportPath = basePath
             .appendingPathComponent("exports")
@@ -654,7 +654,7 @@ public actor DatabaseExporter {
         let fileAttributes = try FileManager.default.attributesOfItem(atPath: exportPath.path)
         let fileSize = fileAttributes[.size] as? Int64 ?? 0
 
-        return ExportResult(
+        return DatabaseExportResult(
             exportPath: exportPath,
             format: .sql,
             recordsExported: recordsExported,
@@ -673,7 +673,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration,
         schemaDefinition: XMLSchemaDefinition?,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let exportPath = basePath
             .appendingPathComponent("exports")
@@ -735,7 +735,7 @@ public actor DatabaseExporter {
         let fileAttributes = try FileManager.default.attributesOfItem(atPath: exportPath.path)
         let fileSize = fileAttributes[.size] as? Int64 ?? 0
 
-        return ExportResult(
+        return DatabaseExportResult(
             exportPath: exportPath,
             format: .xml,
             recordsExported: recordsExported,
@@ -753,7 +753,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration,
         schemaDefinition: ProtobufSchemaDefinition,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         let exportPath = basePath
             .appendingPathComponent("exports")
@@ -803,7 +803,7 @@ public actor DatabaseExporter {
         // Get file size
         let fileSize = Int64(binaryData.count)
 
-        return ExportResult(
+        return DatabaseExportResult(
             exportPath: exportPath,
             format: .protobuf,
             recordsExported: recordsExported,
@@ -822,7 +822,7 @@ public actor DatabaseExporter {
         configuration: ExportConfiguration,
         batchSize: Int,
         progressCallback: ((ExportProgress) -> Void)?
-    ) async throws -> ExportResult {
+    ) async throws -> DatabaseExportResult {
 
         // Delegate to format-specific method based on configuration
         switch configuration.format {

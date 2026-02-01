@@ -574,6 +574,6 @@ struct PermissionHelpView: View {
 
 #Preview {
     NavigationView {
-        NotesIntegrationView(database: try! IsometryDatabase(url: URL(fileURLWithPath: ":memory:")))
+        NotesIntegrationView(database: try! IsometryDatabase(path: ":memory:"))
     }
 }

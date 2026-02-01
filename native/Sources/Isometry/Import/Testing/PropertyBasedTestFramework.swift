@@ -38,6 +38,8 @@ public actor PropertyBasedTestFramework {
         case random(seed: UInt64)   // Randomized testing with seed
         case edgeCases              // Focus on boundary conditions
         case performance            // Large-scale performance validation
+        case lifecycle              // Full data lifecycle testing
+        case concurrency(threads: Int) // Multi-threaded testing
 
         public var iterationCount: Int {
             switch self {
@@ -45,6 +47,8 @@ public actor PropertyBasedTestFramework {
             case .random: return 100
             case .edgeCases: return 50
             case .performance: return 10
+            case .lifecycle: return 25
+            case .concurrency(let threads): return threads * 5
             }
         }
 
@@ -571,6 +575,120 @@ extension PropertyBasedTestFramework {
             }
         )
     }
+
+    /// Build mutation testing property to validate property correctness
+    public static func buildMutationTest<T>(
+        name: String,
+        generator: @escaping () async throws -> T,
+        property: @escaping (T) async throws -> Bool,
+        mutations: [@escaping (T) -> T]
+    ) -> PropertyTest<T> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { input in
+                // Original property should pass
+                let originalResult = try await property(input)
+                guard originalResult else { return false }
+
+                // At least one mutation should fail the property
+                var anyMutationFailed = false
+                for mutation in mutations {
+                    let mutatedInput = mutation(input)
+                    let mutatedResult = try await property(mutatedInput)
+                    if !mutatedResult {
+                        anyMutationFailed = true
+                        break
+                    }
+                }
+
+                return anyMutationFailed
+            }
+        )
+    }
+
+    /// Build performance invariant test
+    public static func buildPerformanceInvariantTest<T>(
+        name: String,
+        generator: @escaping () async throws -> T,
+        operation: @escaping (T) async throws -> T,
+        maxExecutionTime: TimeInterval,
+        maxMemoryIncrease: Int64 = 10_000_000 // 10MB default
+    ) -> PropertyTest<T> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { input in
+                let startTime = Date()
+                let startMemory = getCurrentMemoryUsage()
+
+                _ = try await operation(input)
+
+                let executionTime = Date().timeIntervalSince(startTime)
+                let memoryIncrease = getCurrentMemoryUsage() - startMemory
+
+                return executionTime <= maxExecutionTime &&
+                       memoryIncrease <= maxMemoryIncrease
+            }
+        )
+    }
+
+    /// Build comprehensive data validation test
+    public static func buildDataValidationTest<TInput, TOutput>(
+        name: String,
+        generator: @escaping () async throws -> TInput,
+        processor: @escaping (TInput) async throws -> TOutput,
+        validators: [DataValidator<TInput, TOutput>]
+    ) -> PropertyTest<TInput> {
+        return PropertyTest(
+            name: name,
+            generator: generator,
+            property: { input in
+                let output = try await processor(input)
+
+                for validator in validators {
+                    if !(try await validator.validate(input: input, output: output)) {
+                        return false
+                    }
+                }
+
+                return true
+            }
+        )
+    }
+
+    /// Get current memory usage for performance testing
+    private static func getCurrentMemoryUsage() -> Int64 {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_,
+                         task_flavor_t(MACH_TASK_BASIC_INFO),
+                         $0,
+                         &count)
+            }
+        }
+
+        if kerr == KERN_SUCCESS {
+            return Int64(info.resident_size)
+        } else {
+            return 0
+        }
+    }
+}
+
+// MARK: - Data Validation Framework
+
+/// Protocol for custom data validators
+public protocol DataValidator<Input, Output> {
+    associatedtype Input
+    associatedtype Output
+
+    func validate(input: Input, output: Output) async throws -> Bool
+    var description: String { get }
+}
 }
 
 // MARK: - Enhanced Error Types

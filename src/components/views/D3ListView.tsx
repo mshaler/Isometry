@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Search, X, ArrowUpDown } from 'lucide-react';
-import { usePAFV } from '../../contexts/PAFVContext';
+import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';

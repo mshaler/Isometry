@@ -374,24 +374,7 @@ public struct NotesPermissionHandler {
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
-                        VStack(alignment: .leading, spacing: 16) {
-                            ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
-                                HStack(alignment: .top, spacing: 12) {
-                                    Text("\(index + 1)")
-                                        .font(.subheadline)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                        .frame(width: 24, height: 24)
-                                        .background(Color.blue)
-                                        .clipShape(Circle())
-
-                                    Text(instruction)
-                                        .font(.subheadline)
-
-                                    Spacer()
-                                }
-                            }
-                        }
+                        instructionsListView
 
                         if instructions.contains(where: { $0.contains("Alternative") }) {
                             Divider()
@@ -419,6 +402,27 @@ public struct NotesPermissionHandler {
             }
             .task {
                 await loadInstructions()
+            }
+        }
+
+        private var instructionsListView: some View {
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(Array(instructions.enumerated()), id: \.offset) { index, instruction in
+                    HStack(alignment: .top, spacing: 12) {
+                        Text("\(index + 1)")
+                            .font(.subheadline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(width: 24, height: 24)
+                            .background(Color.blue)
+                            .clipShape(Circle())
+
+                        Text(instruction)
+                            .font(.subheadline)
+
+                        Spacer()
+                    }
+                }
             }
         }
 

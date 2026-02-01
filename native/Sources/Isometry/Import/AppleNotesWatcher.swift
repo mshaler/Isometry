@@ -83,7 +83,7 @@ public actor AppleNotesWatcher {
 
     // MARK: - Performance Metrics
 
-    private struct WatcherMetrics {
+    public struct WatcherMetrics {
         var totalEventsProcessed: Int = 0
         var eventsPerSecond: Double = 0
         var lastEventTime: Date = .distantPast
@@ -108,7 +108,7 @@ public actor AppleNotesWatcher {
         }
 
         mutating func updateMemoryUsage() {
-            let memoryInfo = mach_task_basic_info()
+            var memoryInfo = mach_task_basic_info()
             var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
 
             let result = withUnsafeMutablePointer(to: &memoryInfo) {
@@ -292,7 +292,7 @@ public actor AppleNotesWatcher {
     }
 
     /// Process incoming FSEvents
-    private func handleFSEvent(path: String, flags: FSEventStreamEventFlags) async {
+    internal func handleFSEvent(path: String, flags: FSEventStreamEventFlags) async {
         let startTime = Date()
 
         // Filter for Notes-related files

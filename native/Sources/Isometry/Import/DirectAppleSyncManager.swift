@@ -44,7 +44,7 @@ public class DirectAppleSyncManager: ObservableObject {
         }
 
         // Perform initial sync
-        try await performFullSync()
+        _ = try await performFullSync()
 
         // Schedule periodic syncs
         schedulePeriodicSync()
@@ -100,8 +100,8 @@ public class DirectAppleSyncManager: ObservableObject {
             throw AppleSyncError.databaseNotFound("Reminders database not found")
         }
 
-        var result = SyncResult()
-        let sourceDB = try DatabaseQueue(path: remindersDBPath, configuration: readOnlyConfiguration())
+        let result = SyncResult()
+        _ = try DatabaseQueue(path: remindersDBPath, configuration: readOnlyConfiguration())
 
         // TODO: Fix async/sync mismatch in GRDB operations
         // try sourceDB.read { sourceConn in
@@ -162,8 +162,8 @@ public class DirectAppleSyncManager: ObservableObject {
             throw AppleSyncError.databaseNotFound("Safari database not found")
         }
 
-        var result = SyncResult()
-        let sourceDB = try DatabaseQueue(path: safariDBPath, configuration: readOnlyConfiguration())
+        let result = SyncResult()
+        _ = try DatabaseQueue(path: safariDBPath, configuration: readOnlyConfiguration())
 
         // TODO: Fix async/sync mismatch - this needs to be restructured
         // to avoid await calls inside synchronous GRDB read blocks

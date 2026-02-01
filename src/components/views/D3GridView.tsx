@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { D3Canvas } from '../D3Canvas';
-import { usePAFV } from '../../contexts/PAFVContext';
+import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';

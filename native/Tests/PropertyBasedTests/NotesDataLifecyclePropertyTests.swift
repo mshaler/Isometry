@@ -75,10 +75,18 @@ final class NotesDataLifecyclePropertyTests {
             iterations: 100
         )
 
-        let result = try await PropertyTestFramework.TestExecutionEngine().execute(test: test)
+        let engine = PropertyBasedTestFramework.TestExecutionEngine()
+        let result = try await engine.execute(test: test, strategy: .lifecycle)
 
-        // This will fail initially because the implementation doesn't exist yet
+        // Enhanced validation with statistical analysis
         #expect(result.success, "Round-trip property failed: \(result.errors)")
+        #expect(result.successRate >= 0.99, "Success rate too low: \(result.successRate)")
+
+        // Performance validation
+        if result.iterations > 0 {
+            let avgTime = result.executionTime / Double(result.iterations)
+            #expect(avgTime < 5.0, "Average round-trip time too slow: \(avgTime)s")
+        }
     }
 
     @Test("Dump/Restore property: Database consistency")

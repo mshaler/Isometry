@@ -952,7 +952,7 @@ public enum LifecycleOperationResultData: Codable {
     case restore(RestoreResult)
     case purge(PurgeResult)
     case rehydrate(RehydrateResult)
-    case export(ExportResult)
+    case export(DatabaseExportResult)
 
     public init(from decoder: Decoder) throws {
         // Simplified decoding
