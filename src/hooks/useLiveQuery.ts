@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { webViewBridge } from '../utils/webview-bridge';
 import { useLiveDataContext } from '../context/LiveDataContext';
+import { useCleanupManager, useUnmountDetection, useMemoryProfiler } from '../utils/memory-management';
 
 export interface LiveQueryOptions {
   /** Initial query parameters */
@@ -71,10 +72,14 @@ export function useLiveQuery<T = unknown>(
   // Context
   const { subscribe, unsubscribe, isConnected } = useLiveDataContext();
 
+  // Memory management and cleanup
+  const cleanupManager = useCleanupManager();
+  const isMounted = useUnmountDetection();
+  const { renderCount } = useMemoryProfiler('useLiveQuery');
+
   // Refs for cleanup and debouncing
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSequenceNumber = useRef<number>(0);
-  const mountedRef = useRef(true);
 
   // Handle live data updates with sequence tracking
   const handleLiveUpdate = useCallback((updateData: {
@@ -82,7 +87,7 @@ export function useLiveQuery<T = unknown>(
     results: T[];
     observationId: string;
   }) => {
-    if (!mountedRef.current) return;
+    if (!isMounted()) return;
 
     // Sequence number validation for race condition prevention
     if (updateData.sequenceNumber <= lastSequenceNumber.current) {
@@ -102,7 +107,7 @@ export function useLiveQuery<T = unknown>(
     }
 
     debounceTimer.current = setTimeout(() => {
-      if (!mountedRef.current) return;
+      if (!isMounted()) return;
 
       const results = updateData.results as T[];
 
@@ -114,14 +119,22 @@ export function useLiveQuery<T = unknown>(
       setLoading(false);
       setError(null);
     }, debounceMs);
-  }, [sql, debounceMs, onChange]);
+
+    // Register timeout cleanup
+    cleanupManager.register(() => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+    });
+  }, [sql, debounceMs, onChange, isMounted, cleanupManager]);
 
   // Handle live data errors
   const handleLiveError = useCallback((errorData: {
     error: string;
     observationId: string;
   }) => {
-    if (!mountedRef.current) return;
+    if (!isMounted()) return;
 
     const errorMessage = `Live query error: ${errorData.error}`;
     setError(errorMessage);
@@ -129,7 +142,7 @@ export function useLiveQuery<T = unknown>(
 
     // Call custom error handler
     onError?.(new Error(errorMessage));
-  }, [onError]);
+  }, [onError, isMounted]);
 
   // Execute initial query
   const executeQuery = useCallback(async (): Promise<T[]> => {
@@ -139,23 +152,23 @@ export function useLiveQuery<T = unknown>(
 
       const results = await webViewBridge.database.execute(sql, params) as T[];
 
-      if (!mountedRef.current) return [];
+      if (!isMounted()) return [];
 
       setData(results);
       return results;
     } catch (err) {
-      if (!mountedRef.current) return [];
+      if (!isMounted()) return [];
 
       const errorMessage = err instanceof Error ? err.message : String(err);
       setError(errorMessage);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
       return [];
     } finally {
-      if (mountedRef.current) {
+      if (isMounted()) {
         setLoading(false);
       }
     }
-  }, [sql, params, onError]);
+  }, [sql, params, onError, isMounted]);
 
   // Start live observation
   const startLive = useCallback(async () => {
@@ -173,6 +186,16 @@ export function useLiveQuery<T = unknown>(
         handleLiveError
       );
 
+      // Register bridge callback cleanup
+      cleanupManager.registerBridgeCallback(
+        { subscriptionId, sql },
+        () => {
+          if (subscriptionId) {
+            unsubscribe(subscriptionId);
+          }
+        }
+      );
+
       setObservationId(subscriptionId);
       setIsLive(true);
 
@@ -186,7 +209,7 @@ export function useLiveQuery<T = unknown>(
       setError(errorMessage);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
     }
-  }, [sql, params, isLive, isConnected, subscribe, executeQuery, handleLiveUpdate, handleLiveError, onError]);
+  }, [sql, params, isLive, isConnected, subscribe, unsubscribe, executeQuery, handleLiveUpdate, handleLiveError, onError, cleanupManager]);
 
   // Stop live observation
   const stopLive = useCallback(() => {
@@ -228,13 +251,16 @@ export function useLiveQuery<T = unknown>(
     }
   }, [isConnected, isLive, autoStart, startLive, stopLive]);
 
-  // Cleanup effect
+  // Register cleanup with cleanup manager
   useEffect(() => {
-    return () => {
-      mountedRef.current = false;
+    cleanupManager.register(() => {
       stopLive();
-    };
-  }, [stopLive]);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+        debounceTimer.current = null;
+      }
+    });
+  }, [cleanupManager, stopLive]);
 
   return {
     data,
