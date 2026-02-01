@@ -14,6 +14,7 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
 import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
 import { LiveDataProvider } from './context/LiveDataContext';
+import { SuperGridDemo } from './components/SuperGridDemo';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -84,6 +85,12 @@ function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
           <ErrorBoundary level="feature" name="NotebookLayout">
             <div className="h-full">
               <NotebookLayout />
+            </div>
+          </ErrorBoundary>
+        ) : viewMode === 'supergrid' ? (
+          <ErrorBoundary level="feature" name="SuperGridDemo">
+            <div className="h-full">
+              <SuperGridDemo />
             </div>
           </ErrorBoundary>
         ) : (
