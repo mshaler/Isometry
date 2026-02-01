@@ -237,7 +237,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
       .endAngle(Math.PI / 2);
 
     g.append('path')
-      .attr('d', backgroundArc(null))
+      .attr('d', backgroundArc({} as any))
       .attr('fill', '#f3f4f6');
 
     // Health score arc
@@ -256,7 +256,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
     else if (healthScore < 75) color = '#f59e0b'; // Yellow
 
     g.append('path')
-      .attr('d', scoreArc(null))
+      .attr('d', scoreArc({} as any))
       .attr('fill', color);
 
     // Health score text

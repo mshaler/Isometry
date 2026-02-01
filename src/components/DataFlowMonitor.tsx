@@ -207,7 +207,7 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = ({
   const [logs, setLogs] = useState<Array<{ time: Date; level: string; message: string }>>([]);
 
   // Get live data context and metrics
-  const { state, metrics } = useLiveDataContext();
+  const { metrics } = useLiveDataContext();
   const globalState = useLiveDataGlobalState();
   const { cacheSize } = useLiveDataMetrics();
 
@@ -487,11 +487,20 @@ export const DataFlowStatusIndicator: React.FC<{
     globalState.isConnected
   );
 
+  const getStatusIndicatorColor = (status: PerformanceStatus): string => {
+    switch (status) {
+      case 'excellent': return 'bg-green-500';
+      case 'good': return 'bg-green-400';
+      case 'warning': return 'bg-yellow-500';
+      case 'critical': return 'bg-red-500';
+      case 'disconnected': return 'bg-gray-400';
+      default: return 'bg-gray-400';
+    }
+  };
+
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <div className={`w-2 h-2 rounded-full ${
-        globalState.isConnected ? 'bg-green-500' : 'bg-red-500'
-      }`} />
+      <div className={`w-2 h-2 rounded-full ${getStatusIndicatorColor(status)}`} />
       {showLatency && (
         <span className="text-xs font-mono text-gray-600">
           {formatLatency(globalState.averageLatency)}

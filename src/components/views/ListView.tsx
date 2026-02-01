@@ -1,10 +1,12 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { VariableSizeList as List } from 'react-window';
-import { Search, X, ArrowUpDown } from 'lucide-react';
-import { useListData } from '../../hooks/useListData';
+import { Search, X, ArrowUpDown, Wifi, WifiOff, Loader } from 'lucide-react';
+import { VirtualizedList } from '../VirtualizedList';
 import { useSelection } from '../../state/SelectionContext';
 import { ListItem } from '../ListItem';
+import { useNetworkAwareSync } from '../../hooks/useNetworkAwareSync';
+import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';
+import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 
 // Item heights for virtualization
 const ITEM_HEIGHT = 100; // Regular list item height
@@ -12,7 +14,13 @@ const GROUP_HEADER_HEIGHT = 44; // Group header height
 const SEARCH_BAR_HEIGHT = 60; // Search controls height
 
 interface ListViewProps {
-  data?: Node[]; // Optional: if provided, bypasses useListData hook
+  /** SQL query to execute and observe for live data */
+  sql: string;
+  /** Parameters for the SQL query */
+  queryParams?: unknown[];
+  /** Live query options for virtual scrolling */
+  liveOptions?: VirtualLiveQueryOptions;
+  /** Callback when node is clicked */
   onNodeClick?: (node: Node) => void;
 }
 
@@ -27,103 +35,76 @@ interface ListViewProps {
  * - Sort direction toggle
  * - Integrates with SelectionContext for Card Overlay
  */
-export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
+export function ListView({ sql, queryParams = [], liveOptions = { containerHeight: 600 }, onNodeClick }: ListViewProps) {
   const { selection, select } = useSelection();
-  const listRef = useRef<List>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAscending, setSortAscending] = useState(false);
 
-  // Grouping enabled by default (can be toggled in MiniNav in Wave 4)
-  const [groupingEnabled, setGroupingEnabled] = useState(true);
+  // Augment SQL query with search and sort criteria
+  const enhancedSql = useMemo(() => {
+    let query = sql;
 
-  // Get list data from hook (unless external data provided)
-  const hookData = useListData(groupingEnabled);
-  const listData = externalData
-    ? {
-        groups: null,
-        flatNodes: externalData,
-        sortAxis: null,
-        sortFacet: null,
-        isGrouped: false,
-        loading: false,
-        error: null,
-      }
-    : hookData;
-
-  // Filter nodes by search query (debounced in the future, but immediate for now)
-  const filteredNodes = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return listData.flatNodes;
+    // Add search filtering if query exists
+    if (searchQuery.trim()) {
+      const searchTerm = searchQuery.trim().toLowerCase();
+      query += ` AND (
+        LOWER(name) LIKE '%${searchTerm}%' OR
+        LOWER(content) LIKE '%${searchTerm}%' OR
+        LOWER(summary) LIKE '%${searchTerm}%' OR
+        id IN (SELECT node_id FROM node_tags nt JOIN tags t ON nt.tag_id = t.id WHERE LOWER(t.name) LIKE '%${searchTerm}%')
+      )`;
     }
 
-    const query = searchQuery.toLowerCase();
-    return listData.flatNodes.filter(
-      (node) =>
-        node.name.toLowerCase().includes(query) ||
-        node.content?.toLowerCase().includes(query) ||
-        node.summary?.toLowerCase().includes(query) ||
-        node.tags.some((tag) => tag.toLowerCase().includes(query))
-    );
-  }, [listData.flatNodes, searchQuery]);
+    // Add sorting
+    const sortOrder = sortAscending ? 'ASC' : 'DESC';
+    query += ` ORDER BY modified_at ${sortOrder}, created_at ${sortOrder}`;
 
-  // Sort filtered nodes
-  const sortedNodes = useMemo(() => {
-    const sorted = [...filteredNodes];
-    if (sortAscending) {
-      sorted.reverse();
+    return query;
+  }, [sql, searchQuery, sortAscending]);
+
+  // Live query for real-time data updates
+  const {
+    data: nodes,
+    loading,
+    error,
+    isLive,
+    connectionState
+  } = useLiveQuery<Node>(enhancedSql, {
+    params: queryParams,
+    autoStart: true,
+    enableCache: true,
+    debounceMs: 100, // Moderate debounce for list
+    onError: (err) => {
+      console.error('[ListView] Live query error:', err);
     }
-    return sorted;
-  }, [filteredNodes, sortAscending]);
+  });
 
-  // Build virtualized list items (groups + nodes)
-  const listItems = useMemo(() => {
-    if (!listData.isGrouped || !listData.groups) {
-      // Flat list (no grouping)
-      return sortedNodes.map((node) => ({
-        type: 'node' as const,
-        node,
-        groupKey: null,
-      }));
-    }
+  // Network-aware sync for adaptive performance - now using connection state from useLiveQuery
+  const networkQuality = connectionState?.quality === 'fast' ? 'high' :
+                         connectionState?.quality === 'slow' ? 'medium' : 'low';
+  const isOnline = connectionState?.quality !== 'offline';
 
-    // Grouped list
-    const items: Array<
-      | { type: 'group'; groupKey: string; label: string; count: number }
-      | { type: 'node'; node: Node; groupKey: string }
-    > = [];
-
-    listData.groups.forEach((group) => {
-      // Filter group nodes by search
-      const groupNodes = group.nodes.filter((node) =>
-        filteredNodes.includes(node)
-      );
-
-      if (groupNodes.length === 0) {
-        return; // Skip empty groups
-      }
-
-      // Add group header
-      items.push({
-        type: 'group',
-        groupKey: group.key,
-        label: group.label,
-        count: groupNodes.length,
-      });
-
-      // Add group nodes
-      groupNodes.forEach((node) => {
-        items.push({
-          type: 'node',
-          node,
-          groupKey: group.key,
-        });
-      });
-    });
-
-    return items;
-  }, [listData, sortedNodes, filteredNodes]);
+  const {
+    adaptationMetrics,
+    queueOptimizedSync,
+    isProcessing
+  } = useNetworkAwareSync({
+    enableRealTimeSync: {
+      high: true,
+      medium: true,
+      low: false
+    },
+    syncFrequency: {
+      high: 5000, // 5 seconds
+      medium: 15000, // 15 seconds
+      low: 60000 // 1 minute
+    },
+    autoAdjustPriority: true,
+    degradeOnSlowConnection: true
+  });
 
   // Handle item click
   const handleItemClick = useCallback(
@@ -134,50 +115,45 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
     [select, onNodeClick]
   );
 
-  // Get item height for virtualization
-  const getItemSize = (index: number) => {
-    const item = listItems[index];
-    return item.type === 'group' ? GROUP_HEADER_HEIGHT : ITEM_HEIGHT;
-  };
-
-  // Render individual list item
-  const renderItem = ({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const item = listItems[index];
-
-    if (item.type === 'group') {
-      return (
-        <div style={style}>
-          <div className="px-4 py-3 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                {item.label}
-              </h2>
-              <span className="px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-200 dark:bg-gray-700 rounded">
-                {item.count}
-              </span>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
+  // Render individual list item for VirtualizedList
+  const renderItem = useCallback((node: Node, index: number) => {
     return (
-      <div style={style}>
-        <ListItem
-          node={item.node}
-          onClick={handleItemClick}
-          isSelected={selection.selectedIds.has(item.node.id)}
-        />
-      </div>
+      <ListItem
+        node={node}
+        onClick={handleItemClick}
+        isSelected={selection.selectedIds.has(node.id)}
+      />
     );
+  }, [handleItemClick, selection.selectedIds]);
+
+  // Network-aware live options
+  const networkAwareLiveOptions = useMemo(() => ({
+    estimateItemSize: ITEM_HEIGHT,
+    overscan: networkQuality === 'high' ? 15 : networkQuality === 'medium' ? 10 : 5,
+    enableDynamicSizing: networkQuality !== 'low',
+    performanceMonitoring: true,
+    enableVirtualCaching: true,
+    updateBatchingMs: networkQuality === 'high' ? 50 : networkQuality === 'medium' ? 100 : 300,
+    ...liveOptions
+  }), [networkQuality, liveOptions]);
+
+  // Network status indicator
+  const getNetworkIcon = () => {
+    if (!isOnline) return <WifiOff size={14} className="text-red-500" />;
+    if (isProcessing) return <Loader size={14} className="text-blue-500 animate-spin" />;
+    return <Wifi size={14} className={
+      networkQuality === 'high' ? 'text-green-500' :
+      networkQuality === 'medium' ? 'text-yellow-500' :
+      'text-red-500'
+    } />;
   };
 
-  // Scroll to top when search changes
-  useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollToItem(0, 'start');
-    }
-  }, [searchQuery]);
+  const getNetworkTooltip = () => {
+    if (!isOnline) return 'Offline';
+    const qualityText = networkQuality.charAt(0).toUpperCase() + networkQuality.slice(1);
+    const adaptedText = adaptationMetrics ? ` (${adaptationMetrics.adaptedSyncFrequency / 1000}s refresh)` : '';
+    return `Network: ${qualityText}${adaptedText}`;
+  };
 
   // Clear search
   const clearSearch = () => {
@@ -188,27 +164,6 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
   const toggleSort = () => {
     setSortAscending(!sortAscending);
   };
-
-  // Show loading state
-  if (listData.loading) {
-    return (
-      <div className="list-view flex items-center justify-center h-full w-full bg-white dark:bg-gray-900">
-        <div className="text-gray-500 dark:text-gray-400">Loading filtered notes...</div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (listData.error) {
-    return (
-      <div className="list-view flex items-center justify-center h-full w-full bg-white dark:bg-gray-900">
-        <div className="text-center">
-          <div className="text-red-600 dark:text-red-400 font-medium mb-2">Error loading notes</div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">{listData.error.message}</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="list-view flex flex-col h-full w-full bg-white dark:bg-gray-900">
@@ -250,38 +205,64 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
           <span>{sortAscending ? '↑' : '↓'}</span>
         </button>
 
-        {/* Grouping Toggle */}
-        <button
-          onClick={() => setGroupingEnabled(!groupingEnabled)}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            groupingEnabled
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-          }`}
-          aria-label={`${groupingEnabled ? 'Disable' : 'Enable'} grouping`}
+        {/* Live Data Indicator */}
+        <div className={`flex items-center gap-1 px-2 py-1 text-xs rounded border ${
+          isLive
+            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+        }`}>
+          <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></div>
+          <span className="font-medium">{isLive ? 'LIVE' : 'OFFLINE'}</span>
+        </div>
+
+        {/* Network Status Indicator */}
+        <div
+          className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded border"
+          title={getNetworkTooltip()}
         >
-          {groupingEnabled ? 'Grouped' : 'Flat'}
-        </button>
+          {getNetworkIcon()}
+          <span className="uppercase font-medium">{networkQuality}</span>
+          {connectionState && (
+            <span className="text-xs">({connectionState.latency}ms)</span>
+          )}
+        </div>
       </div>
 
-      {/* Virtualized List */}
+      {/* Virtualized List with Live Data */}
       <div className="flex-1">
-        {listItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
-            <p className="text-lg font-medium mb-2">No notes match these filters</p>
-            <p className="text-sm">Try adjusting your filter criteria or clearing all filters</p>
+        {loading && !nodes ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="text-sm text-gray-500">Loading live data...</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-2 p-4">
+              <p className="text-red-600">Live data error: {error}</p>
+              <p className="text-xs text-gray-500">Check console for details</p>
+            </div>
+          </div>
+        ) : !nodes || nodes.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <p className="text-gray-500">No nodes found</p>
+              {searchQuery && (
+                <p className="text-xs text-gray-400">Try adjusting your search</p>
+              )}
+            </div>
           </div>
         ) : (
-          <List
+          <VirtualizedList<Node>
             ref={listRef}
+            data={nodes}
             height={window.innerHeight - SEARCH_BAR_HEIGHT - 100} // Adjust for header/footer
-            itemCount={listItems.length}
-            itemSize={getItemSize}
-            width="100%"
-            overscanCount={5} // Render 5 items above/below viewport for smooth scrolling
-          >
-            {renderItem}
-          </List>
+            renderItem={renderItem}
+            estimateItemSize={ITEM_HEIGHT}
+            onItemClick={(node, index) => handleItemClick(node)}
+            className="h-full"
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useGraphMetrics, useGraphAnalyticsDebug } from '@/hooks/useGraphAnalytics';
-import { graphPerformanceMonitor, AnalyticsMetrics, OptimizationSuggestion } from '@/utils/GraphPerformanceMonitor';
+import { AnalyticsMetrics, OptimizationSuggestion } from '@/utils/GraphPerformanceMonitor';
 import { queryCacheService } from '@/services/QueryCacheService';
 import { connectionSuggestionService } from '@/services/ConnectionSuggestionService';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -463,7 +462,7 @@ export function GraphAnalyticsDebugPanel({
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Total Queries:</span>
-                    <span className="font-medium ml-1">{graphMetrics.cache.totalQueries}</span>
+                    <span className="font-medium ml-1">{graphMetrics.cache.totalRequests}</span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Hit Rate:</span>
@@ -471,11 +470,11 @@ export function GraphAnalyticsDebugPanel({
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Avg Latency:</span>
-                    <span className="font-medium ml-1">{graphMetrics.cache.averageLatency.toFixed(1)}ms</span>
+                    <span className="font-medium ml-1">{graphMetrics.cache.averageResponseTime.toFixed(1)}ms</span>
                   </div>
                   <div>
                     <span className="text-gray-500 dark:text-gray-400">Memory:</span>
-                    <span className="font-medium ml-1">{graphMetrics.cache.memorySizeMB.toFixed(1)}MB</span>
+                    <span className="font-medium ml-1">{graphMetrics.cache.memoryUsageMB.toFixed(1)}MB</span>
                   </div>
                 </div>
               </div>

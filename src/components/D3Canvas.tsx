@@ -338,7 +338,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   const overlayRef = useRef<HTMLDivElement>(null);
 
   // D3 Canvas state
-  const { canvasState, performance, error, updateViewport, nativeRenderingCapable } = useD3Canvas(containerRef);
+  const { canvasState, performance, error, updateViewport } = useD3Canvas(containerRef);
 
   // Interaction state
   const [interactionState, setInteractionState] = useState<InteractionState>({
@@ -413,7 +413,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Convert D3 cell commands to native render commands
   const convertToNativeRenderCommands = useCallback((cellCommands: typeof canvasState.renderCommands.cells): RenderCommand[] => {
     return cellCommands.map(cellCommand => {
-      const { bounds, style, nodes } = cellCommand;
+      const { bounds, style } = cellCommand;
 
       return createRectangleCommand(
         {

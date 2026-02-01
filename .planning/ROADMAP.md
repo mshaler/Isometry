@@ -18,7 +18,8 @@
 - 🚧 **v2.5 Advanced Import Systems** - Phases 11.1-11.4 (comprehensive import verification)
 - 🆕 **v2.6 Graph Analytics Engine** - Phases 12.1-12.4 (intelligent connection discovery and query optimization)
 - 🚀 **v3.0 Production Deployment** - Phases 13.1-17 (App Store launch and production infrastructure) - ✅ COMPLETED
-- 🔄 **v3.1 Live Database Integration** - Phases 18-21 (React-native SQLite bridge with real-time synchronization) - 🚧 IN PROGRESS (Phase 19/21 complete)
+- 🔄 **v3.1 Live Database Integration** - Phases 18-21, 25-27 (React-native SQLite bridge with real-time synchronization) - 🔧 GAP CLOSURE IN PROGRESS
+- 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
 
 ## Milestone Overview
 
@@ -42,7 +43,9 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 
 **v3.0 Goal (Production Deployment - COMPLETED):** Complete App Store submission and production launch with CloudKit production infrastructure, distribution pipeline, beta testing, marketing systems, and post-launch operations.
 
-**v3.1 Goal (Live Database Integration - NEW):** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring, establishing foundational bridge communication infrastructure before advanced real-time features.
+**v3.1 Goal (Live Database Integration - GAP CLOSURE):** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring, establishing foundational bridge communication infrastructure before advanced real-time features. **Critical:** Infrastructure complete but requires application integration gap closure.
+
+**v3.2 Goal (Enhanced Apple Integration):** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Leverage existing AltoIndexImporter foundation to provide production-ready live Notes integration.
 
 ---
 
@@ -155,9 +158,11 @@ Plans:
 
 </details>
 
-### 🚧 v3.1 Live Database Integration (NEW MILESTONE)
+### 🔧 v3.1 Live Database Integration (GAP CLOSURE REQUIRED)
 
 **Milestone Goal:** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring. This milestone establishes foundational bridge communication infrastructure before advanced real-time features, following research-recommended foundation-first approach to prevent technical debt accumulation.
+
+**Current Status:** Infrastructure complete but application integration gaps require closure.
 
 #### Phase 18: Bridge Optimization Foundation
 **Goal:** Establish reliable, performant bridge communication infrastructure
@@ -205,8 +210,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Transaction coordination infrastructure (TRANS-01, TRANS-02, TRANS-05)
-- [ ] 20-02-PLAN.md — Conflict resolution and rollback management (TRANS-03, TRANS-04)
+- [x] 20-01-PLAN.md — Transaction coordination infrastructure (TRANS-01, TRANS-02, TRANS-05)
+- [x] 20-02-PLAN.md — Conflict resolution and rollback management (TRANS-03, TRANS-04)
 
 #### Phase 21: Advanced Query and Caching
 **Goal:** Optimize performance for large datasets with intelligent caching and virtual scrolling
@@ -218,11 +223,89 @@ Plans:
   3. Memory usage remains stable during extended operation without reference cycle leaks
   4. Database changes sync automatically in background with retry logic for failed operations
   5. Sync behavior adapts to connection quality for optimal bandwidth usage
-**Plans:** TBD
+**Plans:** 5 plans
 
 Plans:
-- [ ] 21-01: TBD
-- [ ] 21-02: TBD
+- [x] 21-01-PLAN.md — Virtual scrolling & query caching infrastructure (PERF-01, PERF-02)
+- [x] 21-02-PLAN.md — Advanced performance optimization (PERF-03, PERF-04, PERF-05)
+- [x] 21-03-PLAN.md — Query provider and cache integration (gap closure)
+- [x] 21-04-PLAN.md — Virtual scrolling integration (gap closure)
+- [x] 21-05-PLAN.md — Performance utilities integration (gap closure)
+
+#### Phase 25: Live Query Integration (Gap Closure)
+**Goal:** Connect useLiveQuery hook to real-time change notifications for automatic React updates
+**Depends on:** Phase 21
+**Gap Closure:** Closes critical integration gaps from v3.1 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. useLiveQuery automatically starts ValueObservation when components mount
+  2. React components receive live database change notifications within 100ms
+  3. Change notifications properly trigger React re-renders with updated data
+  4. Live query subscriptions cleanup properly when components unmount
+  5. Integration maintains existing useLiveQuery API without breaking changes
+**Plans:** 1 plan
+
+Plans:
+- [x] 25-01-PLAN.md — Connect useLiveQuery to ChangeNotificationBridge.startObservation()
+
+#### Phase 26: Virtual Scrolling Performance Integration (Gap Closure)
+**Goal:** Integrate VirtualizedGrid/List components with useLiveQuery for live data and caching benefits
+**Depends on:** Phase 25
+**Gap Closure:** Closes virtual scrolling performance flow gaps from v3.1 milestone audit
+**Success Criteria** (what must be TRUE):
+  1. VirtualizedGrid and VirtualizedList render live data instead of static datasets
+  2. Virtual scrolling components benefit from intelligent caching layer
+  3. Large datasets (10k+ items) scroll smoothly with real-time updates
+  4. Cache invalidation properly updates virtual scrolling rendered items
+  5. Performance gains are measurable: cache hits >80%, scroll frame rate 60fps
+**Plans:** 2 plans
+
+Plans:
+- [x] 26-01-PLAN.md — Replace static data with useLiveQuery integration in virtual components
+- [x] 26-02-PLAN.md — Wire performance monitoring integration and large dataset optimization
+
+#### Phase 27: Application Integration Gap Closure (NEW - CRITICAL)
+**Goal:** Close critical application integration gaps to enable user access to live database features
+**Depends on:** Phase 26
+**Gap Closure:** Addresses critical gaps identified in v3.1 milestone audit
+**Requirements:** APP-INT-01, APP-INT-02, APP-INT-03, APP-INT-04, APP-INT-05
+**Success Criteria** (what must be TRUE):
+  1. LiveDataProvider is properly installed in main application provider tree
+  2. Canvas component migrated from old `data` props to SQL query API
+  3. Main application components successfully connect to live database infrastructure
+  4. End-to-end live database functionality verified and accessible to users
+  5. TypeScript compilation errors resolved and type safety maintained
+**Plans:** 5 plans
+
+**Critical Issue:** Complete infrastructure exists but is disconnected from main application, preventing user access to sophisticated live database functionality.
+
+Plans:
+- [ ] 27-01-PLAN.md — Install LiveDataProvider in main application tree and fix provider wiring
+- [ ] 27-02-PLAN.md — Migrate Canvas component API and fix component integration
+- [ ] 27-03-PLAN.md — End-to-end integration verification and TypeScript error resolution
+- [ ] 27-04-PLAN.md — Component usage verification and live query functionality testing
+- [ ] 27-05-PLAN.md — Final integration polish and production readiness validation
+
+### 🆕 v3.2 Enhanced Apple Integration
+
+**Milestone Goal:** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Build upon the existing AltoIndexImporter foundation (6,891 notes successfully imported) to provide production-ready live Notes integration with CRDT conflict resolution and comprehensive user experience.
+
+#### Phase 29: Enhanced Apple Notes Live Integration
+**Goal:** Implement live Apple Notes synchronization with CRDT conflict resolution and comprehensive user experience
+**Depends on:** Phase 27 (Application Integration Gap Closure)
+**Success Criteria** (what must be TRUE):
+  1. Real-time Notes synchronization with <1s change detection via FSEvents monitoring
+  2. TCC permission management with graceful degradation and clear user communication
+  3. CRDT conflict resolution maintains data integrity during multi-device collaborative editing
+  4. User interface provides intuitive configuration and manual conflict resolution controls
+  5. Performance optimized for large Notes libraries (10k+ notes capability) with efficient background processing
+**Plans:** 3 plans
+
+**Foundation:** AltoIndexImporter with proven import capability, enhanced with live sync infrastructure, FSEvents monitoring, CRDT conflict resolution, and comprehensive UI integration.
+
+Plans:
+- [ ] 29-01-PLAN.md — Enhanced AltoIndexImporter with live sync and TCC permission management
+- [ ] 29-02-PLAN.md — FSEvents monitoring and CRDT conflict resolution infrastructure
+- [ ] 29-03-PLAN.md — User interface integration and performance optimization for large libraries
 
 ## Dependencies
 
@@ -233,15 +316,29 @@ Plans:
 - **WKWebView MessageHandler** API for secure bridge communication
 - **Native SQLite with FTS5** for text search performance optimization
 
+### v3.2 Enhanced Apple Integration External Dependencies
+- **FSEvents Framework** for real-time file system monitoring
+- **EventKit Framework** for Notes access with TCC permission management
+- **Notes Framework** for direct Notes app integration (limited by sandbox)
+- **Swift-protobuf** for Notes content format parsing
+- **Swift Concurrency (Actor)** for background processing and thread safety
+
 ### v3.1 Live Database Integration Internal Dependencies
 - **Existing React prototype** providing UI patterns and component architecture
 - **Native GRDB database** with complete schema and CloudKit sync operations
 - **WebView bridge infrastructure** from previous milestone implementations
 - **Performance monitoring** systems for bridge optimization validation
 
+### v3.2 Enhanced Apple Integration Internal Dependencies
+- **AltoIndexImporter foundation** with proven 6,891 note import capability
+- **GRDB database integration** for seamless data persistence
+- **WebView bridge infrastructure** for React-native communication
+- **Existing conflict resolution patterns** from bridge infrastructure
+
 ### Phase Dependencies
 ```
-v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21
+v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 25 → Phase 26 → Phase 27 (Gap Closure)
+v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
 ```
 
 **Phase Ordering Rationale (Research-Based):**
@@ -249,20 +346,26 @@ v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21
 - **Bridge optimization** must precede real-time features to avoid performance bottlenecks under load
 - **Transaction management** requires understanding of bridge communication patterns before implementation
 - **Advanced features** like virtual scrolling depend on stable real-time and sync infrastructure
+- **Application integration** requires complete infrastructure before connecting main app components
+- **Enhanced Apple integration** builds upon proven foundation with sophisticated live sync capabilities
 
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21
+Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 18. Bridge Optimization Foundation | 3/3 | ✓ Complete | 2026-01-30 |
 | 19. Real-Time Change Notifications | 2/2 | ✓ Complete | 2026-01-30 |
 | 20. Transaction and Sync Management | 2/2 | ✓ Complete | 2026-01-31 |
-| 21. Advanced Query and Caching | 0/2 | Not started | - |
+| 21. Advanced Query and Caching | 5/5 | ✓ Complete | 2026-01-31 |
+| 25. Live Query Integration | 1/1 | ✓ Complete | 2026-01-31 |
+| 26. Virtual Scrolling Performance Integration | 2/2 | ✓ Complete | 2026-01-31 |
+| 27. Application Integration Gap Closure | 3/5 | 🔧 In Progress | - |
+| 29. Enhanced Apple Notes Live Integration | 0/3 | 📋 Planned | - |
 
 ## Architecture Integration Summary
 
@@ -273,6 +376,13 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 ├── Optimistic updates   ├── Circuit breaker patterns   ├── ValueObservation (GRDB)
 ├── Virtual scrolling    ├── Performance monitoring     ├── Transaction coordination
 └── Cache invalidation   └── Bridge correlation IDs     └── CloudKit sync integration
+```
+
+### v3.2 Enhanced Apple Integration Data Flow
+```
+Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ IsometryDatabase ←→ WebView Bridge ←→ React UI
+                ↗                    ↗                        ↗
+         TCC Permissions      CRDT Conflict Resolution    Performance Optimization
 ```
 
 ### Performance Targets (v3.1 vs Baseline)
@@ -286,6 +396,15 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 | **Query Performance** | 2-5 seconds | <50ms cached | Intelligent caching + pagination |
 | **Memory Usage** | Baseline | Stable | Reference cycle prevention |
 | **Reliability** | Browser dependent | 99%+ uptime | Circuit breaker patterns |
+
+### Performance Targets (v3.2 Enhanced Apple Integration)
+
+| Metric | Target | Baseline | Approach |
+|--------|--------|----------|----------|
+| **Change Detection** | <1s | N/A | FSEvents monitoring |
+| **Content Parsing** | <100ms/note | N/A | Background processing |
+| **Conflict Resolution** | <200ms | N/A | CRDT algorithms |
+| **Library Scale** | 10k+ notes | 6,891 notes | Incremental processing |
 
 ---
 
@@ -305,18 +424,35 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 | SYNC-03 | Phase 19 | Complete |
 | SYNC-04 | Phase 19 | Complete |
 | SYNC-05 | Phase 19 | Complete |
-| TRANS-01 | Phase 20 | Pending |
-| TRANS-02 | Phase 20 | Pending |
-| TRANS-03 | Phase 20 | Pending |
-| TRANS-04 | Phase 20 | Pending |
-| TRANS-05 | Phase 20 | Pending |
-| PERF-01 | Phase 21 | Pending |
-| PERF-02 | Phase 21 | Pending |
-| PERF-03 | Phase 21 | Pending |
-| PERF-04 | Phase 21 | Pending |
-| PERF-05 | Phase 21 | Pending |
+| TRANS-01 | Phase 20 | Complete |
+| TRANS-02 | Phase 20 | Complete |
+| TRANS-03 | Phase 20 | Complete |
+| TRANS-04 | Phase 20 | Complete |
+| TRANS-05 | Phase 20 | Complete |
+| PERF-01 | Phase 21 | Complete |
+| PERF-02 | Phase 21 | Complete |
+| PERF-03 | Phase 21 | Complete |
+| PERF-04 | Phase 21 | Complete |
+| PERF-05 | Phase 21 | Complete |
+| APP-INT-01 | Phase 27 | Pending |
+| APP-INT-02 | Phase 27 | Pending |
+| APP-INT-03 | Phase 27 | Pending |
+| APP-INT-04 | Phase 27 | Pending |
+| APP-INT-05 | Phase 27 | Pending |
 
-**v3.1 Coverage:** 20/20 requirements mapped ✓
+**v3.1 Coverage:** 25/25 requirements mapped ✓
+
+### v3.2 Enhanced Apple Integration Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| NOTES-LIVE-01 | Phase 29 | Planned |
+| NOTES-LIVE-02 | Phase 29 | Planned |
+| NOTES-LIVE-03 | Phase 29 | Planned |
+| NOTES-LIVE-04 | Phase 29 | Planned |
+| NOTES-LIVE-05 | Phase 29 | Planned |
+
+**v3.2 Coverage:** 5/5 requirements mapped ✓
 
 ---
 
@@ -327,19 +463,35 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 2. **Phase 19**: Add real-time capabilities on optimized foundation
 3. **Phase 20**: Layer transaction safety on proven real-time infrastructure
 4. **Phase 21**: Optimize performance once core functionality is stable
+5. **Phase 27**: Connect complete infrastructure to main application components
+6. **Phase 29**: Enhance proven AltoIndexImporter with sophisticated live sync capabilities
 
 ### Data Integrity Protection
 - Bridge-level transaction control with ACID guarantees
 - Optimistic updates with automatic rollback on failure
 - Change event correlation and proper sequencing
 - Comprehensive conflict resolution for multi-device scenarios
+- CRDT algorithms for Notes collaborative editing
 
 ### Performance Validation
 - Bridge latency monitoring with 16ms targets for 60fps
 - Memory usage tracking to prevent reference cycles
 - Query performance optimization through intelligent caching
 - Background sync with bandwidth-aware optimization
+- Notes library scaling for 10k+ notes with efficient processing
+
+### Gap Closure Strategy
+- **Critical Issue:** Infrastructure complete but inaccessible to users
+- **Phase 27**: Simple wiring changes, no new components needed
+- **Low effort, high impact:** Application-level integration only
+- **Success metric:** Users can access live database features through main UI
+
+### Enhanced Apple Integration Strategy
+- **Build on proven foundation:** AltoIndexImporter with 6,891 notes imported
+- **Hybrid architecture:** FSEvents + EventKit + enhanced alto-index processing
+- **Permission-aware design:** TCC authorization with graceful fallbacks
+- **User-centric conflict resolution:** Clear UI for manual conflict handling
 
 ---
 
-*Last updated: 2026-01-30 after phase 20 planning completion*
+*Last updated: 2026-02-01 after Phase 29 Enhanced Apple Notes Live Integration planning*

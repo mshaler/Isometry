@@ -143,7 +143,7 @@ export function PerformanceBaseline({
 
   // Calculate current performance quality
   const currentQuality = useMemo(() => {
-    const fps = d3Performance.currentFPS;
+    const fps = d3Performance.currentFps;
     const latency = systemLatency;
     const memory = d3Performance.memoryUsage;
 
@@ -162,7 +162,7 @@ export function PerformanceBaseline({
     } else {
       return 'critical';
     }
-  }, [d3Performance.currentFPS, systemLatency, d3Performance.memoryUsage]);
+  }, [d3Performance.currentFps, systemLatency, d3Performance.memoryUsage]);
 
   // Performance measurement functions
   const startBaselining = useCallback(() => {
@@ -185,10 +185,10 @@ export function PerformanceBaseline({
       const totalErrors = liveDataMetrics.reduce((sum, m) => sum + m.errorCount, 0);
 
       setCurrentMeasurements(prev => ({
-        fps: [...prev.fps, d3Performance.currentFPS],
+        fps: [...prev.fps, d3Performance.currentFps],
         latency: [...prev.latency, systemLatency],
         memory: [...prev.memory, d3Performance.memoryUsage],
-        renderTimes: [...prev.renderTimes, d3Performance.lastRenderTime],
+        renderTimes: [...prev.renderTimes, d3Performance.renderTime],
         cacheHits: [...prev.cacheHits, avgCacheHit],
         errors: totalErrors
       }));

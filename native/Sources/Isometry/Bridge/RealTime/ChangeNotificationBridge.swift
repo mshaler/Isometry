@@ -35,6 +35,7 @@ public actor ChangeNotificationBridge {
         let sequenceNumber: UInt64
         let timestamp: Date
         let observationId: String
+        let correlationId: String // For correlation tracking (SYNC-05)
         let sql: String
         let results: [[String: Any]]
     }
@@ -153,11 +154,13 @@ public actor ChangeNotificationBridge {
             activeObservations[observationId] = info
         }
 
-        // Create change event
+        // Create change event with correlation ID
+        let correlationId = "change-\(currentSequence)-\(observationId)"
         let changeEvent = ChangeEvent(
             sequenceNumber: currentSequence,
             timestamp: Date(),
             observationId: observationId,
+            correlationId: correlationId,
             sql: sql,
             results: results
         )
@@ -193,13 +196,14 @@ public actor ChangeNotificationBridge {
             return
         }
 
-        // Prepare message payload
+        // Prepare message payload with correlation ID
         let payload: [String: Any] = [
             "type": "liveData",
             "event": "change",
             "sequenceNumber": changeEvent.sequenceNumber,
             "timestamp": ISO8601DateFormatter().string(from: changeEvent.timestamp),
             "observationId": changeEvent.observationId,
+            "correlationId": changeEvent.correlationId,
             "sql": changeEvent.sql,
             "results": changeEvent.results
         ]
@@ -219,12 +223,16 @@ public actor ChangeNotificationBridge {
     private func sendErrorNotification(observationId: String, error: Error) async {
         guard let webView = webView else { return }
 
+        // Generate correlation ID for error tracking
+        let correlationId = "error-\(sequenceNumber + 1)-\(observationId)"
+
         let payload: [String: Any] = [
             "type": "liveData",
             "event": "error",
             "sequenceNumber": sequenceNumber + 1,
             "timestamp": ISO8601DateFormatter().string(from: Date()),
             "observationId": observationId,
+            "correlationId": correlationId,
             "error": error.localizedDescription
         ]
 
@@ -296,16 +304,5 @@ public actor ChangeNotificationBridge {
     }
 }
 
-// MARK: - Phase 18 Integration Components (Placeholder Types)
-
-/// Message batching for 16ms intervals (from Phase 18)
-public class MessageBatcher {
-    // Placeholder - would integrate with actual Phase 18 MessageBatcher
-    public init() {}
-}
-
-/// Binary serialization using MessagePack (from Phase 18)
-public class BinarySerializer {
-    // Placeholder - would integrate with actual Phase 18 BinarySerializer
-    public init() {}
-}
+// MARK: - Phase 18 Integration Components
+// MessageBatcher and BinarySerializer are now available from Bridge/Optimization module

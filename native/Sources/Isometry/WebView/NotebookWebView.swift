@@ -241,7 +241,8 @@ class WebViewStore: ObservableObject {
         userContentController.add(bridge.d3canvasHandler, name: "d3canvas")
         userContentController.add(bridge.d3renderingHandler, name: "d3rendering")
         userContentController.add(bridge.cloudKitHandler, name: "cloudkit")
-        print("🔧 Registered message handlers: database, filesystem, pafv, filters, d3canvas, d3rendering, cloudkit")
+        userContentController.add(bridge.liveDataHandler, name: "liveData")
+        print("🔧 Registered message handlers: database, filesystem, pafv, filters, d3canvas, d3rendering, cloudkit, liveData")
         configuration.userContentController = userContentController
 
         // Inject bridge initialization script at document end to ensure webkit is ready

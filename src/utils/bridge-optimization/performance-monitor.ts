@@ -11,6 +11,26 @@
  * and alert thresholds for performance monitoring dashboard.
  */
 
+export interface VirtualScrollingMetrics {
+  frameRate: number;
+  viewportUtilization: number;
+  cacheEfficiency: {
+    virtualItemHitRate: number;
+    queryHitRate: number;
+    combinedEfficiency: number;
+  };
+  updateLatency: {
+    queryToVirtual: number;
+    renderToScreen: number;
+    totalPipeline: number;
+  };
+  memoryUsage: {
+    virtualItemCount: number;
+    renderedItemCount: number;
+    memoryEfficiency: number;
+  };
+}
+
 export interface BridgeMetrics {
   // Message Batching Metrics
   batchLatency: {
@@ -51,6 +71,9 @@ export interface BridgeMetrics {
     stateTransitions: number; // Number of state changes
     lastFailureTime?: number; // Timestamp of last failure
   };
+
+  // Virtual Scrolling Metrics
+  virtualScrolling: VirtualScrollingMetrics;
 
   // System Health Indicators
   health: {
@@ -105,6 +128,14 @@ interface MetricsSample {
   queueSize: number;
   payloadSize: number;
   responseTime: number;
+  // Virtual scrolling sample data
+  frameRate?: number;
+  virtualItemHits?: number;
+  virtualItemTotal?: number;
+  queryLatency?: number;
+  renderLatency?: number;
+  virtualItemCount?: number;
+  renderedItemCount?: number;
 }
 
 /**
@@ -290,6 +321,123 @@ export class PerformanceMonitor {
   }
 
   /**
+   * Track virtual scrolling frame rate performance
+   */
+  public trackVirtualScrollingFrame(frameTime: number): void {
+    const frameRate = frameTime > 0 ? 1000 / frameTime : 60;
+    const now = performance.now();
+
+    const sample: MetricsSample = {
+      timestamp: now,
+      latency: 0,
+      compressionRatio: 0,
+      failureCount: 0,
+      successCount: 0,
+      queueSize: 0,
+      payloadSize: 0,
+      responseTime: 0,
+      frameRate
+    };
+
+    this.addSample(sample);
+    this.updateMetrics();
+  }
+
+  /**
+   * Track cache efficiency for virtual scrolling
+   */
+  public trackCacheEfficiency(virtualHits: number, queryHits: number, total: number): void {
+    const now = performance.now();
+
+    const sample: MetricsSample = {
+      timestamp: now,
+      latency: 0,
+      compressionRatio: 0,
+      failureCount: 0,
+      successCount: 0,
+      queueSize: 0,
+      payloadSize: 0,
+      responseTime: 0,
+      virtualItemHits: virtualHits,
+      virtualItemTotal: total
+    };
+
+    this.addSample(sample);
+    this.updateMetrics();
+  }
+
+  /**
+   * Track update latency pipeline: query → virtual → render
+   */
+  public trackUpdateLatency(queryTime: number, virtualTime: number, renderTime: number): void {
+    const now = performance.now();
+
+    const sample: MetricsSample = {
+      timestamp: now,
+      latency: 0,
+      compressionRatio: 0,
+      failureCount: 0,
+      successCount: 0,
+      queueSize: 0,
+      payloadSize: 0,
+      responseTime: 0,
+      queryLatency: queryTime,
+      renderLatency: renderTime
+    };
+
+    this.addSample(sample);
+    this.updateMetrics();
+  }
+
+  /**
+   * Get virtual scrolling metrics
+   */
+  public getVirtualScrollingMetrics(): VirtualScrollingMetrics {
+    return this.metrics.virtualScrolling;
+  }
+
+  /**
+   * Get integrated performance score combining live query + virtual scrolling
+   */
+  public getIntegratedPerformanceScore(): number {
+    const bridgeScore = this.metrics.health.overallScore;
+    const virtualScore = this.calculateVirtualScrollingScore();
+
+    // Weighted combination: 60% bridge performance, 40% virtual performance
+    return Math.round(bridgeScore * 0.6 + virtualScore * 0.4);
+  }
+
+  /**
+   * Calculate virtual scrolling performance score (0-100)
+   */
+  private calculateVirtualScrollingScore(): number {
+    const virtual = this.metrics.virtualScrolling;
+    let score = 100;
+
+    // Frame rate impact (target: 60fps)
+    if (virtual.frameRate < 60) {
+      score -= Math.min(30, (60 - virtual.frameRate) * 2);
+    }
+
+    // Cache efficiency impact (target: >80%)
+    if (virtual.cacheEfficiency.combinedEfficiency < 80) {
+      score -= Math.min(25, (80 - virtual.cacheEfficiency.combinedEfficiency) * 0.8);
+    }
+
+    // Update latency impact (target: <100ms)
+    if (virtual.updateLatency.totalPipeline > 100) {
+      score -= Math.min(25, (virtual.updateLatency.totalPipeline - 100) * 0.2);
+    }
+
+    // Memory efficiency impact (target: <20% items rendered)
+    if (virtual.memoryUsage.memoryEfficiency < 20) {
+      score -= Math.min(20, (20 - virtual.memoryUsage.memoryEfficiency) * 1);
+    }
+
+    return Math.max(0, Math.round(score));
+  }
+
+  /**
    * Get performance trends over time
    */
   public getTrends(timeRangeMs: number = 60000): {
@@ -445,6 +593,9 @@ export class PerformanceMonitor {
       pageResponseTime: this.calculateAverage(all.map(s => s.responseTime).filter(r => r > 0)),
       cursorCacheHitRate: this.getCursorCacheHitRate()
     };
+
+    // Update virtual scrolling metrics
+    this.updateVirtualScrollingMetrics();
 
     // Update health score and timestamp
     this.metrics.health = {
@@ -705,6 +856,157 @@ export class PerformanceMonitor {
     return Math.max(0, Math.round(score));
   }
 
+  /**
+   * Update virtual scrolling metrics from samples
+   */
+  private updateVirtualScrollingMetrics(): void {
+    const all = this.samples;
+    const recent = this.samples.slice(-10);
+
+    // Frame rate metrics
+    const frameRates = all.map(s => s.frameRate).filter(f => f && f > 0);
+    const currentFrameRate = frameRates.length > 0 ? frameRates[frameRates.length - 1] : 60;
+
+    // Cache efficiency metrics
+    const virtualHits = all.map(s => s.virtualItemHits || 0).reduce((a, b) => a + b, 0);
+    const virtualTotal = all.map(s => s.virtualItemTotal || 0).reduce((a, b) => a + b, 0);
+    const virtualHitRate = virtualTotal > 0 ? (virtualHits / virtualTotal) * 100 : 100;
+
+    // Get query cache hit rate from live query metrics (if available)
+    const queryHitRate = this.getQueryCacheHitRate();
+
+    // Update latency metrics
+    const queryLatencies = all.map(s => s.queryLatency).filter(l => l && l > 0);
+    const renderLatencies = all.map(s => s.renderLatency).filter(l => l && l > 0);
+    const avgQueryLatency = this.calculateAverage(queryLatencies);
+    const avgRenderLatency = this.calculateAverage(renderLatencies);
+
+    // Memory usage metrics
+    const virtualItemCounts = all.map(s => s.virtualItemCount || 0);
+    const renderedItemCounts = all.map(s => s.renderedItemCount || 0);
+    const avgVirtualItems = this.calculateAverage(virtualItemCounts);
+    const avgRenderedItems = this.calculateAverage(renderedItemCounts);
+    const memoryEfficiency = avgVirtualItems > 0 ? (avgRenderedItems / avgVirtualItems) * 100 : 100;
+
+    // Viewport utilization (estimate based on rendered vs total items)
+    const viewportUtilization = avgVirtualItems > 0 ? Math.min(100, (avgRenderedItems / avgVirtualItems) * 100) : 100;
+
+    this.metrics.virtualScrolling = {
+      frameRate: currentFrameRate,
+      viewportUtilization,
+      cacheEfficiency: {
+        virtualItemHitRate: virtualHitRate,
+        queryHitRate,
+        combinedEfficiency: (virtualHitRate + queryHitRate) / 2
+      },
+      updateLatency: {
+        queryToVirtual: avgQueryLatency,
+        renderToScreen: avgRenderLatency,
+        totalPipeline: avgQueryLatency + avgRenderLatency
+      },
+      memoryUsage: {
+        virtualItemCount: avgVirtualItems,
+        renderedItemCount: avgRenderedItems,
+        memoryEfficiency
+      }
+    };
+  }
+
+  /**
+   * Get query cache hit rate from live query system
+   */
+  private getQueryCacheHitRate(): number {
+    // This would integrate with the live query system
+    // For now, return a placeholder value
+    return 85; // Default to 85% cache hit rate
+  }
+
+  /**
+   * Track real-time update propagation performance
+   */
+  public trackRealTimeUpdatePropagation(metrics: {
+    databaseChangeTime: number;
+    cacheUpdateTime: number;
+    virtualUpdateTime: number;
+    renderTime: number;
+    totalPipelineTime: number;
+  }): void {
+    const now = performance.now();
+
+    // Performance assertion: total pipeline should be < 100ms
+    if (metrics.totalPipelineTime > 100) {
+      console.warn('[PerformanceMonitor] Real-time update exceeded 100ms target:', {
+        total: metrics.totalPipelineTime,
+        breakdown: {
+          database: metrics.databaseChangeTime,
+          cache: metrics.cacheUpdateTime,
+          virtual: metrics.virtualUpdateTime,
+          render: metrics.renderTime
+        }
+      });
+
+      // Add alert for slow updates
+      this.addAlert({
+        id: 'slow-realtime-updates',
+        severity: 'warning',
+        title: 'Slow Real-Time Updates',
+        message: `Update pipeline (${metrics.totalPipelineTime.toFixed(1)}ms) exceeds 100ms target`,
+        timestamp: Date.now(),
+        acknowledged: false,
+        category: 'latency'
+      });
+    } else {
+      // Clear alert if performance is good
+      this.clearAlert('slow-realtime-updates');
+    }
+
+    // Record sample for tracking
+    const sample: MetricsSample = {
+      timestamp: now,
+      latency: 0,
+      compressionRatio: 0,
+      failureCount: 0,
+      successCount: 1,
+      queueSize: 0,
+      payloadSize: 0,
+      responseTime: metrics.totalPipelineTime,
+      queryLatency: metrics.cacheUpdateTime,
+      renderLatency: metrics.renderTime
+    };
+
+    this.addSample(sample);
+    this.updateMetrics();
+  }
+
+  /**
+   * Implement circuit breaker pattern for slow update propagation
+   */
+  public checkUpdatePropagationHealth(): {
+    isHealthy: boolean;
+    failureRate: number;
+    recommendation: 'continue' | 'fallback-static' | 'reduce-frequency';
+  } {
+    const recentSamples = this.samples.slice(-20); // Last 20 updates
+    const slowUpdates = recentSamples.filter(s => (s.responseTime || 0) > 100).length;
+    const failureRate = recentSamples.length > 0 ? (slowUpdates / recentSamples.length) * 100 : 0;
+
+    let recommendation: 'continue' | 'fallback-static' | 'reduce-frequency';
+
+    if (failureRate > 50) {
+      recommendation = 'fallback-static'; // Too many slow updates, use static mode
+    } else if (failureRate > 20) {
+      recommendation = 'reduce-frequency'; // Some slow updates, reduce frequency
+    } else {
+      recommendation = 'continue'; // Performance is good
+    }
+
+    return {
+      isHealthy: failureRate < 20,
+      failureRate,
+      recommendation
+    };
+  }
+
   private createDefaultMetrics(): BridgeMetrics {
     return {
       batchLatency: {
@@ -736,6 +1038,25 @@ export class PerformanceMonitor {
         successRate: 100,
         state: 'closed',
         stateTransitions: 0
+      },
+      virtualScrolling: {
+        frameRate: 60,
+        viewportUtilization: 100,
+        cacheEfficiency: {
+          virtualItemHitRate: 100,
+          queryHitRate: 100,
+          combinedEfficiency: 100
+        },
+        updateLatency: {
+          queryToVirtual: 0,
+          renderToScreen: 0,
+          totalPipeline: 0
+        },
+        memoryUsage: {
+          virtualItemCount: 0,
+          renderedItemCount: 0,
+          memoryEfficiency: 100
+        }
       },
       health: {
         overallScore: 100,

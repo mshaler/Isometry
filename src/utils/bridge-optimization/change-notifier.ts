@@ -23,6 +23,7 @@ export interface LiveDataEvent {
   sequenceNumber: number;
   timestamp: string;
   observationId: string;
+  correlationId?: string; // For correlation tracking (SYNC-05)
   sql?: string;
   results?: unknown[];
   error?: string;
@@ -106,8 +107,12 @@ export class ChangeNotifier {
 
     this.subscriptions.set(subscriptionId, subscription);
 
-    // Start observation via WebView bridge
-    this.startNativeObservation(subscriptionId, sql, params);
+    // Start observation via WebView bridge asynchronously
+    this.startNativeObservation(subscriptionId, sql, params).catch(error => {
+      console.error('[ChangeNotifier] Failed to start observation during subscription:', error);
+      // Remove failed subscription
+      this.subscriptions.delete(subscriptionId);
+    });
 
     if (this.options.enableDebugLogging) {
       console.log('[ChangeNotifier] Subscription created:', {
@@ -312,33 +317,54 @@ export class ChangeNotifier {
     return this.subscriptions.get(observationId);
   }
 
-  private startNativeObservation(subscriptionId: string, sql: string, params: unknown[]): void {
-    if (typeof window !== 'undefined' && window._isometryBridge) {
-      // Send message to native bridge to start observation
-      window._isometryBridge.sendMessage('database', 'startObservation', {
-        observationId: subscriptionId,
-        sql,
-        params
-      }).catch(error => {
-        console.error('[ChangeNotifier] Failed to start native observation:', error);
-        const subscription = this.subscriptions.get(subscriptionId);
-        if (subscription) {
-          subscription.onError({
-            error: `Failed to start observation: ${error}`,
-            observationId: subscriptionId
-          });
-        }
-      });
+  private async startNativeObservation(subscriptionId: string, sql: string, params: unknown[]): Promise<void> {
+    // Import webViewBridge dynamically to avoid circular dependencies
+    const { webViewBridge } = await import('../webview-bridge');
+
+    try {
+      // Use webViewBridge.liveData.startObservation instead of direct window._isometryBridge call
+      const success = await webViewBridge.liveData.startObservation(subscriptionId, sql, params);
+
+      if (!success) {
+        throw new Error('Native observation start returned false');
+      }
+
+      if (this.options.enableDebugLogging) {
+        console.log('[ChangeNotifier] Native observation started successfully:', {
+          observationId: subscriptionId,
+          sql: sql.slice(0, 50)
+        });
+      }
+
+    } catch (error) {
+      console.error('[ChangeNotifier] Failed to start native observation:', error);
+      const subscription = this.subscriptions.get(subscriptionId);
+      if (subscription) {
+        subscription.onError({
+          error: `Failed to start observation: ${error}`,
+          observationId: subscriptionId
+        });
+      }
+      throw error;
     }
   }
 
-  private stopNativeObservation(subscriptionId: string): void {
-    if (typeof window !== 'undefined' && window._isometryBridge) {
-      window._isometryBridge.sendMessage('database', 'stopObservation', {
-        observationId: subscriptionId
-      }).catch(error => {
-        console.error('[ChangeNotifier] Failed to stop native observation:', error);
-      });
+  private async stopNativeObservation(subscriptionId: string): Promise<void> {
+    try {
+      // Import webViewBridge dynamically to avoid circular dependencies
+      const { webViewBridge } = await import('../webview-bridge');
+
+      // Use webViewBridge.liveData.stopObservation with correlation tracking
+      const success = await webViewBridge.liveData.stopObservation(subscriptionId);
+
+      if (this.options.enableDebugLogging) {
+        console.log('[ChangeNotifier] Native observation stopped:', {
+          observationId: subscriptionId,
+          success
+        });
+      }
+    } catch (error) {
+      console.error('[ChangeNotifier] Failed to stop native observation:', error);
     }
   }
 

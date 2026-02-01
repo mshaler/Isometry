@@ -13,6 +13,7 @@ import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
 import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
+import { LiveDataProvider } from './context/LiveDataContext';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -112,22 +113,27 @@ function MVPDemo() {
       <ErrorBoundary level="app" name="UnifiedApp">
         <CacheInvalidationProvider>
           <BrowserRouter>
-            <ThemeProvider>
-              <EnvironmentProvider>
-                <DatabaseProvider>
-                  <AppStateProvider>
-                    <FilterProvider>
-                      <PAFVProvider>
-                        <NotebookProvider>
-                          <UnifiedApp />
-                          <NotificationSystem />
-                        </NotebookProvider>
-                      </PAFVProvider>
-                    </FilterProvider>
-                  </AppStateProvider>
-                </DatabaseProvider>
-              </EnvironmentProvider>
-            </ThemeProvider>
+            <LiveDataProvider
+              connectionCheckInterval={30000}
+              enableMetrics={true}
+            >
+              <ThemeProvider>
+                <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
+                  <DatabaseProvider>
+                    <AppStateProvider>
+                      <FilterProvider>
+                        <PAFVProvider>
+                          <NotebookProvider>
+                            <UnifiedApp />
+                            <NotificationSystem />
+                          </NotebookProvider>
+                        </PAFVProvider>
+                      </FilterProvider>
+                    </AppStateProvider>
+                  </DatabaseProvider>
+                </EnvironmentProvider>
+              </ThemeProvider>
+            </LiveDataProvider>
           </BrowserRouter>
         </CacheInvalidationProvider>
       </ErrorBoundary>
@@ -137,21 +143,26 @@ function MVPDemo() {
   return (
     <ErrorBoundary level="app" name="MVPDemo">
       <BrowserRouter>
-        <ThemeProvider>
-          <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
-            <DatabaseProvider>
-              <AppStateProvider>
-                <FilterProvider>
-                  <PAFVProvider>
-                    <NotebookProvider>
-                      <MVPDemoShell onShowUnified={() => setShowUnified(true)} />
-                    </NotebookProvider>
-                  </PAFVProvider>
-                </FilterProvider>
-              </AppStateProvider>
-            </DatabaseProvider>
-          </EnvironmentProvider>
-        </ThemeProvider>
+        <LiveDataProvider
+          connectionCheckInterval={30000}
+          enableMetrics={true}
+        >
+          <ThemeProvider>
+            <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
+              <DatabaseProvider>
+                <AppStateProvider>
+                  <FilterProvider>
+                    <PAFVProvider>
+                      <NotebookProvider>
+                        <MVPDemoShell onShowUnified={() => setShowUnified(true)} />
+                      </NotebookProvider>
+                    </PAFVProvider>
+                  </FilterProvider>
+                </AppStateProvider>
+              </DatabaseProvider>
+            </EnvironmentProvider>
+          </ThemeProvider>
+        </LiveDataProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

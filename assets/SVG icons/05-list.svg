@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <title>List</title>
+  <desc>Single column list of items</desc>
+  
+  <!-- Background -->
+  <rect width="200" height="120" fill="white"/>
+  
+  <!-- List items -->
+  <rect x="10" y="8" width="180" height="22" fill="#f8f8f8" stroke="#333" stroke-width="1" rx="2"/>
+  <rect x="10" y="34" width="180" height="22" fill="white" stroke="#333" stroke-width="1" rx="2"/>
+  <rect x="10" y="60" width="180" height="22" fill="#f8f8f8" stroke="#333" stroke-width="1" rx="2"/>
+  <rect x="10" y="86" width="180" height="22" fill="white" stroke="#333" stroke-width="1" rx="2"/>
+  
+  <!-- Content hints (text placeholders) -->
+  <!-- Item 1 -->
+  <rect x="18" y="15" width="80" height="4" fill="#ccc" rx="1"/>
+  <rect x="18" y="22" width="50" height="3" fill="#ddd" rx="1"/>
+  
+  <!-- Item 2 -->
+  <rect x="18" y="41" width="90" height="4" fill="#ccc" rx="1"/>
+  <rect x="18" y="48" width="60" height="3" fill="#ddd" rx="1"/>
+  
+  <!-- Item 3 -->
+  <rect x="18" y="67" width="70" height="4" fill="#ccc" rx="1"/>
+  <rect x="18" y="74" width="45" height="3" fill="#ddd" rx="1"/>
+  
+  <!-- Item 4 -->
+  <rect x="18" y="93" width="85" height="4" fill="#ccc" rx="1"/>
+  <rect x="18" y="100" width="55" height="3" fill="#ddd" rx="1"/>
+</svg>

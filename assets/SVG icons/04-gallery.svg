@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <title>Gallery</title>
+  <desc>Flowing card layout without grid structure</desc>
+  
+  <!-- Background -->
+  <rect width="200" height="120" fill="#fafafa"/>
+  
+  <!-- Cards in a flowing layout - varying sizes suggest flexibility -->
+  
+  <!-- Row 1 -->
+  <rect x="8" y="8" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="54" y="8" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="100" y="8" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="146" y="8" width="46" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  
+  <!-- Row 2 -->
+  <rect x="8" y="62" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="54" y="62" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="100" y="62" width="42" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  <rect x="146" y="62" width="46" height="50" fill="white" stroke="#333" stroke-width="1" rx="4"/>
+  
+  <!-- Content hints (small bars inside cards) -->
+  <!-- Card 1 -->
+  <rect x="12" y="14" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="12" y="22" width="24" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 2 -->
+  <rect x="58" y="14" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="58" y="22" width="28" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 3 -->
+  <rect x="104" y="14" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="104" y="22" width="20" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 4 -->
+  <rect x="150" y="14" width="38" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="150" y="22" width="30" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 5 -->
+  <rect x="12" y="68" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="12" y="76" width="26" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 6 -->
+  <rect x="58" y="68" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="58" y="76" width="32" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 7 -->
+  <rect x="104" y="68" width="34" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="104" y="76" width="22" height="3" fill="#eee" rx="1"/>
+  
+  <!-- Card 8 -->
+  <rect x="150" y="68" width="38" height="4" fill="#e0e0e0" rx="1"/>
+  <rect x="150" y="76" width="28" height="3" fill="#eee" rx="1"/>
+</svg>

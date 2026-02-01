@@ -384,9 +384,4 @@ public enum BinarySerializationError: LocalizedError, Sendable {
 }
 
 // MARK: - Logger Extension
-
-extension Logger {
-    var osLog: OSLog {
-        return OSLog(subsystem: subsystem, category: category)
-    }
-}
+// OSLog extension moved to avoid duplicate declarations

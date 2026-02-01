@@ -163,7 +163,7 @@ public struct ConflictResolverOptions: Sendable {
 }
 
 /// ConflictResolver Actor for thread-safe conflict management
-public actor ConflictResolver {
+public actor RealTimeConflictResolver {
     // MARK: - Properties
 
     private let database: IsometryDatabase

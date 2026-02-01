@@ -990,21 +990,24 @@ export class OptimizedBridge {
     // Initialize optimization components
     this.binarySerializer = new BinarySerializer();
 
-    this.messageBatcher = new MessageBatcher({
-      batchInterval: 16, // 60fps target
-      maxBatchSize: 50,
-      sendBatch: this.sendBatchToNative.bind(this),
-      serialize: this.binarySerializer.serialize.bind(this.binarySerializer)
-    });
+    this.messageBatcher = new MessageBatcher(
+      this.sendBatchToNative.bind(this),
+      {
+        batchInterval: 16, // 60fps target
+        maxBatchSize: 50
+      }
+    );
 
-    this.queryPaginator = new QueryPaginator({
-      maxRecordsPerPage: 50,
-      sendBatch: this.messageBatcher.addMessage.bind(this.messageBatcher)
-    });
+    this.queryPaginator = new QueryPaginator(
+      this.executeQueryInternal.bind(this),
+      {
+        maxPageSize: 50
+      }
+    );
 
     this.circuitBreaker = new CircuitBreaker({
       failureThreshold: 5,
-      resetTimeoutMs: 60000,
+      resetTimeout: 60000,
       execute: this.executeWithBridge.bind(this)
     });
 
@@ -1045,7 +1048,7 @@ export class OptimizedBridge {
       }
 
       // Use circuit breaker for reliability
-      const result = await this.circuitBreaker.execute(async () => {
+      const executionResult = await this.circuitBreaker.execute(async () => {
         // For query operations, use pagination
         if (this.isQueryOperation(method) && this.optimizationsEnabled.queryPagination) {
           return await this.executeWithPagination<T>(handler, method, params);
@@ -1055,8 +1058,13 @@ export class OptimizedBridge {
         return await this.executeOptimized<T>(handler, method, params);
       });
 
-      this.recordOperation(handler, method, performance.now() - startTime, true, params);
-      return result;
+      this.recordOperation(handler, method, performance.now() - startTime, executionResult.success, params);
+
+      if (!executionResult.success) {
+        throw new Error(`Circuit breaker execution failed: ${JSON.stringify(executionResult)}`);
+      }
+
+      return executionResult.result as T;
 
     } catch (error) {
       this.recordOperation(handler, method, performance.now() - startTime, false, params);
@@ -1229,7 +1237,7 @@ export class OptimizedBridge {
    */
   public cleanup(): void {
     this.performanceMonitor.stopCollection();
-    this.messageBatcher.stop();
+    this.messageBatcher.clear();
     this.bridge.cleanup();
   }
 
@@ -1247,15 +1255,13 @@ export class OptimizedBridge {
   ): Promise<T> {
     if (this.optimizationsEnabled.messageBatching) {
       // Use message batching for optimized transport
-      return new Promise<T>((resolve, reject) => {
-        this.messageBatcher.addMessage({
-          id: uuidv4(),
-          handler,
-          method,
-          params,
-          timestamp: Date.now()
-        }, resolve, reject);
-      });
+      const messageId = uuidv4();
+      return this.messageBatcher.queueMessage(
+        messageId,
+        handler,
+        method,
+        params
+      ) as Promise<T>;
     } else {
       // Fallback to direct bridge communication
       return this.bridge.postMessage<T>(handler, method, params);
@@ -1270,12 +1276,19 @@ export class OptimizedBridge {
     method: string,
     params: Record<string, unknown>
   ): Promise<T> {
-    return this.queryPaginator.executePaginatedQuery({
-      handler,
-      method,
-      params,
-      limit: (params.limit as number) || 50
-    }) as Promise<T>;
+    // Convert to SQL query format for paginator
+    const sql = params.sql as string || '';
+    const sqlParams = params.params as unknown[] || [];
+    const limit = (params.limit as number) || 50;
+
+    const result = await this.queryPaginator.executePaginatedQuery<T>({
+      sql,
+      params: sqlParams,
+      limit,
+      orderBy: params.orderBy as string || 'id'
+    });
+
+    return result.data as unknown as T;
   }
 
   /**
@@ -1331,7 +1344,7 @@ export class OptimizedBridge {
         success,
         payloadSize,
         operation: `${handler}.${method}`,
-        compressionRatio: this.binarySerializer.getMetrics().compressionRatio,
+        compressionRatio: this.binarySerializer.getMetrics().averageCompressionRatio,
         queueSize: this.messageBatcher.getQueueSize()
       });
     }

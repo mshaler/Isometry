@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <title>SuperGrid</title>
+  <desc>Polymorphic view with nested row and column headers, uniform cell sizes</desc>
+  
+  <!-- Background -->
+  <rect width="200" height="120" fill="white"/>
+  
+  <!-- Cell size: 28w × 20h (uniform for all cells)
+       Layout: 2 row header cols + 4 data cols = 6 cols × 28 = 168
+       Layout: 2 col header rows + 4 data rows = 6 rows × 20 = 120
+       Start x=16 to center -->
+  
+  <!-- === NESTED COLUMN HEADERS (2+2 split) === -->
+  <!-- Level 1: Two parent groups, each spanning 2 sub-columns -->
+  <rect x="72" y="0" width="56" height="20" fill="#c8c8c8" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="0" width="56" height="20" fill="#c8c8c8" stroke="#333" stroke-width="1"/>
+  
+  <!-- Level 2: Four sub-headers (28w each, same as data cells) -->
+  <rect x="72" y="20" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="100" y="20" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="20" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="156" y="20" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  
+  <!-- === NESTED ROW HEADERS === -->
+  <!-- Level 1: Single parent group spanning all 4 data rows -->
+  <rect x="16" y="40" width="28" height="80" fill="#c8c8c8" stroke="#333" stroke-width="1"/>
+  
+  <!-- Level 2: Four sub-headers (20h each, same as data cells) -->
+  <rect x="44" y="40" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="44" y="60" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="44" y="80" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  <rect x="44" y="100" width="28" height="20" fill="#e0e0e0" stroke="#333" stroke-width="1"/>
+  
+  <!-- === DATA GRID (4×4, contiguous with headers) === -->
+  <!-- Row 1 -->
+  <rect x="72" y="40" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="100" y="40" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="40" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="156" y="40" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 2 -->
+  <rect x="72" y="60" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="100" y="60" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="60" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="156" y="60" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 3 -->
+  <rect x="72" y="80" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="100" y="80" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="80" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="156" y="80" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 4 -->
+  <rect x="72" y="100" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="100" y="100" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="128" y="100" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="156" y="100" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+</svg>

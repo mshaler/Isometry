@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <title>2D Grid</title>
+  <desc>Simple grid with single-level row and column headers, uniform cell sizes</desc>
+  
+  <!-- Background -->
+  <rect width="200" height="120" fill="white"/>
+  
+  <!-- Cell size: 28w × 20h (uniform, matching SuperGrid)
+       Layout: 1 row header col + 4 data cols = 5 cols × 28 = 140
+       Layout: 1 col header row + 4 data rows = 5 rows × 20 = 100
+       Start x=30, y=10 to center -->
+  
+  <!-- === SINGLE-LEVEL COLUMN HEADERS === -->
+  <rect x="58" y="10" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="86" y="10" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="114" y="10" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="142" y="10" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  
+  <!-- === SINGLE-LEVEL ROW HEADERS === -->
+  <rect x="30" y="30" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="30" y="50" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="30" y="70" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  <rect x="30" y="90" width="28" height="20" fill="#d0d0d0" stroke="#333" stroke-width="1"/>
+  
+  <!-- === DATA GRID (4×4, contiguous with headers) === -->
+  <!-- Row 1 -->
+  <rect x="58" y="30" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="86" y="30" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="114" y="30" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="142" y="30" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 2 -->
+  <rect x="58" y="50" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="86" y="50" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="114" y="50" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="142" y="50" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 3 -->
+  <rect x="58" y="70" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="86" y="70" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="114" y="70" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="142" y="70" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  
+  <!-- Row 4 -->
+  <rect x="58" y="90" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="86" y="90" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="114" y="90" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="142" y="90" width="28" height="20" fill="white" stroke="#333" stroke-width="1"/>
+</svg>

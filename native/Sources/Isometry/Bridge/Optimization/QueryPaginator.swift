@@ -9,6 +9,7 @@
 import Foundation
 import GRDB
 import OSLog
+import QuartzCore
 
 /// Represents a pagination cursor for stable pagination
 public struct PaginationCursor: Sendable, Codable {
@@ -353,7 +354,7 @@ public actor QueryPaginator {
                 sql += " WHERE \(cursorCondition)"
             }
 
-            parameters.append(DatabaseValue.text(cursor.value))
+            parameters.append(DatabaseValue(cursor.value))
         }
 
         // Add ordering (ensure consistent ordering for stable pagination)

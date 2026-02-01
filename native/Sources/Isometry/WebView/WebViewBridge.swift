@@ -15,6 +15,10 @@ public class WebViewBridge: NSObject {
     public let d3canvasHandler: D3CanvasMessageHandler
     public let d3renderingHandler: D3RenderingMessageHandler
     public let cloudKitHandler: CloudKitMessageHandler
+    public let liveDataHandler: LiveDataMessageHandler
+
+    // Live data notification bridge
+    private var changeNotificationBridge: ChangeNotificationBridge?
 
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
@@ -59,6 +63,7 @@ public class WebViewBridge: NSObject {
         self.d3canvasHandler = D3CanvasMessageHandler()
         self.d3renderingHandler = D3RenderingMessageHandler()
         self.cloudKitHandler = CloudKitMessageHandler(appState: appState)
+        self.liveDataHandler = LiveDataMessageHandler(database: database)
         self.database = database
         self.superGridViewModel = superGridViewModel
 
@@ -107,12 +112,31 @@ public class WebViewBridge: NSObject {
         logger.info("WebViewBridge initialized with optimization layer")
     }
 
+    /// Set up ChangeNotificationBridge with WebView for live data notifications
+    @MainActor
+    public func setupLiveDataBridge(with webView: WKWebView) {
+        guard let database = database else {
+            logger.warning("Cannot setup live data bridge without database")
+            return
+        }
+
+        changeNotificationBridge = ChangeNotificationBridge(
+            database: database,
+            webView: webView,
+            messageBatcher: messageBatcher,
+            binarySerializer: binarySerializer
+        )
+
+        logger.info("Live data bridge configured for real-time change notifications")
+    }
+
     /// Connect to database after initialization
     public func connectToDatabase(_ database: IsometryDatabase) async {
         self.database = database
         // Update handlers with real database
         await self.databaseHandler.setDatabase(database)
         await self.filterHandler.setDatabase(database)
+        await self.liveDataHandler.setDatabase(database)
     }
 
     /// Connect AppState for CloudKit sync operations after initialization
@@ -345,6 +369,27 @@ public class WebViewBridge: NSObject {
                         },
                         getStatus: function(params) {
                             return window._isometryBridge.sendMessage('cloudkit', 'getStatus', params);
+                        }
+                    },
+
+                    // Live data notifications bridge
+                    liveData: {
+                        startObservation: function(observationId, sql, params, correlationId) {
+                            return window._isometryBridge.sendMessage('liveData', 'startObservation', {
+                                observationId: observationId,
+                                sql: sql,
+                                params: params || [],
+                                correlationId: correlationId
+                            });
+                        },
+                        stopObservation: function(observationId, correlationId) {
+                            return window._isometryBridge.sendMessage('liveData', 'stopObservation', {
+                                observationId: observationId,
+                                correlationId: correlationId
+                            });
+                        },
+                        getStatistics: function() {
+                            return window._isometryBridge.sendMessage('liveData', 'getStatistics', {});
                         }
                     },
 
@@ -676,6 +721,14 @@ public class WebViewBridge: NSObject {
                 throw error
             }
 
+        case "liveData":
+            do {
+                await handleLiveDataMessage(message)
+            } catch {
+                success = false
+                throw error
+            }
+
         default:
             success = false
             logger.warning("Unknown message handler: \(handlerName)")
@@ -735,6 +788,101 @@ public class WebViewBridge: NSObject {
             }
         } catch {
             logger.error("Failed to serialize bridge error response: \(error)")
+        }
+    }
+
+    // MARK: - Live Data Message Handling
+
+    /// Handle liveData-specific messages with correlation tracking
+    private func handleLiveDataMessage(_ message: WKScriptMessage) async {
+        guard let messageBody = message.body as? [String: Any],
+              let method = messageBody["method"] as? String,
+              let params = messageBody["params"] as? [String: Any],
+              let requestId = messageBody["id"] as? String else {
+            await sendError(
+                to: message.webView,
+                error: "Invalid liveData message format",
+                requestId: extractRequestId(from: message)
+            )
+            return
+        }
+
+        // Extract correlation ID for tracking (SYNC-05)
+        let correlationId = params["correlationId"] as? String ?? UUID().uuidString
+        logger.info("Handling liveData message: \(method) (correlation: \(correlationId))")
+
+        // Ensure ChangeNotificationBridge is available
+        guard let changeNotificationBridge = changeNotificationBridge else {
+            await sendError(
+                to: message.webView,
+                error: "Live data bridge not initialized",
+                requestId: requestId
+            )
+            return
+        }
+
+        do {
+            switch method {
+            case "startObservation":
+                guard let observationId = params["observationId"] as? String,
+                      let sql = params["sql"] as? String else {
+                    throw LiveDataBridgeError.missingParameters("observationId and sql required")
+                }
+
+                let paramsArray = params["params"] as? [Any] ?? []
+                let actualObservationId = await changeNotificationBridge.startObservation(
+                    sql: sql,
+                    arguments: paramsArray
+                )
+
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: [
+                        "success": true,
+                        "observationId": actualObservationId,
+                        "correlationId": correlationId
+                    ]
+                )
+
+            case "stopObservation":
+                guard let observationId = params["observationId"] as? String else {
+                    throw LiveDataBridgeError.missingParameters("observationId required")
+                }
+
+                await changeNotificationBridge.stopObservation(observationId: observationId)
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: [
+                        "success": true,
+                        "observationId": observationId,
+                        "correlationId": correlationId
+                    ]
+                )
+
+            case "getStatistics":
+                let statistics = await changeNotificationBridge.getObservationStatistics()
+                await sendResponse(
+                    to: message.webView,
+                    requestId: requestId,
+                    result: [
+                        "success": true,
+                        "statistics": statistics,
+                        "correlationId": correlationId
+                    ]
+                )
+
+            default:
+                throw LiveDataBridgeError.unknownMethod(method)
+            }
+
+        } catch {
+            await sendError(
+                to: message.webView,
+                error: "LiveData error: \(error.localizedDescription)",
+                requestId: requestId
+            )
         }
     }
 
@@ -964,6 +1112,25 @@ public enum TransactionBridgeError: Error, LocalizedError {
             return "Missing transaction ID in transaction request"
         case .unknownMethod(let method):
             return "Unknown transaction method: \(method)"
+        }
+    }
+}
+
+// MARK: - Live Data Bridge Errors
+
+public enum LiveDataBridgeError: Error, LocalizedError {
+    case missingParameters(String)
+    case bridgeNotInitialized
+    case unknownMethod(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingParameters(let details):
+            return "Missing required parameters: \(details)"
+        case .bridgeNotInitialized:
+            return "Live data bridge not initialized"
+        case .unknownMethod(let method):
+            return "Unknown live data method: \(method)"
         }
     }
 }

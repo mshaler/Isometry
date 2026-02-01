@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
-// import { useFilteredNodes } from '../hooks/useFilteredNodes';
-import { useMockData } from '../hooks/useMockData';
 import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
 import { RealTimeRenderer } from './performance/RealTimeRenderer';
 import DataFlowMonitor from './DataFlowMonitor';
@@ -19,6 +17,7 @@ import {
 import { D3GridView } from './views/D3GridView';
 import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
+import { useLiveQuery } from '../hooks/useLiveQuery';
 import type { Node } from '@/types/node';
 
 export function Canvas() {
@@ -31,8 +30,20 @@ export function Canvas() {
   const { theme } = useTheme();
   const { activeView } = useAppState();
 
-  // Use mock data for MVP demonstration (bypasses database complexity)
-  const { data: nodes, loading, error } = useMockData();
+  // Base SQL query for database access
+  const baseNodeSql = "SELECT * FROM nodes WHERE deleted_at IS NULL";
+
+  // Fetch data using live query for components that need data props
+  const {
+    data: nodes
+  } = useLiveQuery<Node>(baseNodeSql, {
+    autoStart: true,
+    enableCache: true,
+    debounceMs: 100,
+    onError: (err) => {
+      console.error('[Canvas] Live query error:', err);
+    }
+  });
 
   // Performance monitoring
   const {
@@ -40,9 +51,7 @@ export function Canvas() {
     isMonitoring,
     startMonitoring,
     stopMonitoring,
-    recordRender,
-    getOptimizationRecommendations,
-    getPerformanceSummary
+    recordRender
   } = useCanvasPerformance({
     targetFps: 60,
     enableAutoOptimize: true,
@@ -67,7 +76,7 @@ export function Canvas() {
 
   // Start/stop performance monitoring based on D3 mode
   useEffect(() => {
-    if (useD3Mode && nodes && nodes.length > 0) {
+    if (useD3Mode) {
       startMonitoring();
     } else {
       stopMonitoring();
@@ -76,58 +85,35 @@ export function Canvas() {
     return () => {
       stopMonitoring();
     };
-  }, [useD3Mode, nodes, startMonitoring, stopMonitoring]);
+  }, [useD3Mode, startMonitoring, stopMonitoring]);
 
-  // Record render performance when nodes change
+  // Record render performance for D3 mode
   useEffect(() => {
-    if (useD3Mode && nodes) {
+    if (useD3Mode) {
       const renderStartTime = performance.now();
 
       // Simulate render completion in next tick
       requestAnimationFrame(() => {
         const renderTime = performance.now() - renderStartTime;
-        recordRender(renderTime, nodes.length);
+        recordRender(renderTime, 0); // Node count will be tracked by individual components
       });
     }
-  }, [useD3Mode, nodes, recordRender]);
+  }, [useD3Mode, recordRender]);
 
   // Render the appropriate view based on activeView
   const renderView = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-full text-gray-500">
-          Loading notes...
-        </div>
-      );
-    }
-
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-full text-red-500">
-          Error: {error.message}
-        </div>
-      );
-    }
-
-    if (!nodes || nodes.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-full text-gray-400">
-          No notes found
-        </div>
-      );
-    }
 
     // D3 Mode - Use D3 Canvas rendering with performance optimization
     if (useD3Mode) {
       const d3View = (() => {
         switch (activeView) {
           case 'List':
-            return <D3ListView data={nodes} onNodeClick={handleNodeClick} />;
+            return <D3ListView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
 
           case 'Gallery':
           case 'Grid':
           default:
-            return <D3GridView data={nodes} onNodeClick={handleNodeClick} />;
+            return <D3GridView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
         }
       })();
 
@@ -154,33 +140,33 @@ export function Canvas() {
     // CSS Mode - Use existing CSS-based components
     switch (activeView) {
       case 'List':
-        return <ListView data={nodes} onNodeClick={handleNodeClick} />;
+        return <ListView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
 
       case 'Gallery':
       case 'Grid':
-        return <GridView data={nodes} onNodeClick={handleNodeClick} />;
+        return <GridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
 
       case 'Kanban':
-        return <KanbanView data={nodes} onNodeClick={handleNodeClick} />;
+        return <KanbanView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       case 'Timeline':
-        return <TimelineView data={nodes} onNodeClick={handleNodeClick} />;
+        return <TimelineView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       case 'Calendar':
-        return <CalendarView data={nodes} onNodeClick={handleNodeClick} />;
+        return <CalendarView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       case 'Charts':
-        return <ChartsView data={nodes} onNodeClick={handleNodeClick} />;
+        return <ChartsView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       case 'Graphs':
-        return <NetworkView data={nodes} onNodeClick={handleNodeClick} />;
+        return <NetworkView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       case 'Tree':
-        return <TreeView data={nodes} onNodeClick={handleNodeClick} />;
+        return <TreeView data={nodes || []} onNodeClick={handleNodeClick} />;
 
       default:
         // Default to Grid view for MVP
-        return <GridView data={nodes} onNodeClick={handleNodeClick} />;
+        return <GridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
     }
   };
 

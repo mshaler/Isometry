@@ -2,12 +2,16 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { Search, X, ArrowUpDown } from 'lucide-react';
 import { usePAFV } from '../../contexts/PAFVContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useLiveData } from '../../hooks/useLiveData';
+import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';
 import * as d3 from 'd3';
 
 interface D3ListViewProps {
-  data: Node[];
+  /** SQL query to execute and observe for live data */
+  sql: string;
+  /** Parameters for the SQL query */
+  queryParams?: unknown[];
+  /** Callback when node is clicked */
   onNodeClick?: (node: Node) => void;
 }
 
@@ -53,7 +57,7 @@ const SEARCH_BAR_HEIGHT = 60;
  * - Performance optimized for large datasets
  * - Smooth transitions and visual feedback
  */
-export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
+export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewProps) {
   const { wells } = usePAFV();
   const { theme } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -69,25 +73,44 @@ export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
     hoveredItem: null
   });
 
-  // Live data subscription for nodes and search results
-  const { data: liveData, isLoading, error } = useLiveData<Node[]>(
-    listState.searchQuery
-      ? `SELECT * FROM nodes WHERE name LIKE ? OR content LIKE ? OR tags LIKE ? ORDER BY modifiedAt DESC`
-      : 'SELECT * FROM nodes ORDER BY modifiedAt DESC',
-    listState.searchQuery
-      ? [`%${listState.searchQuery}%`, `%${listState.searchQuery}%`, `%${listState.searchQuery}%`]
-      : [],
-    {
-      trackPerformance: true,
-      throttleMs: 100,
-      onPerformanceUpdate: (metrics) => {
-        console.debug('D3ListView performance:', metrics);
-      }
-    }
-  );
+  // Augment SQL query with search and sort criteria
+  const enhancedSql = useMemo(() => {
+    let query = sql;
 
-  // Use live data when available, fallback to static data
-  const data = liveData || staticData;
+    // Add search filtering if query exists
+    if (listState.searchQuery.trim()) {
+      const searchTerm = listState.searchQuery.trim().toLowerCase();
+      query += ` AND (
+        LOWER(name) LIKE '%${searchTerm}%' OR
+        LOWER(content) LIKE '%${searchTerm}%' OR
+        LOWER(summary) LIKE '%${searchTerm}%' OR
+        id IN (SELECT node_id FROM node_tags nt JOIN tags t ON nt.tag_id = t.id WHERE LOWER(t.name) LIKE '%${searchTerm}%')
+      )`;
+    }
+
+    // Add sorting
+    const sortOrder = listState.sortDirection === 'desc' ? 'DESC' : 'ASC';
+    query += ` ORDER BY modified_at ${sortOrder}, created_at ${sortOrder}`;
+
+    return query;
+  }, [sql, listState.searchQuery, listState.sortDirection]);
+
+  // Live query for real-time data updates
+  const {
+    data,
+    loading: isLoading,
+    error,
+    isLive,
+    connectionState
+  } = useLiveQuery<Node>(enhancedSql, {
+    params: queryParams,
+    autoStart: true,
+    enableCache: true,
+    debounceMs: 100, // Moderate debounce for D3 list
+    onError: (err) => {
+      console.error('[D3ListView] Live query error:', err);
+    }
+  });
 
   // Virtual scrolling state
   const [scrollTop, setScrollTop] = useState(0);
@@ -96,11 +119,11 @@ export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
 
   // Create groups based on PAFV Y-axis
   const groups = useMemo((): ListGroup[] => {
-    if (!listState.groupingEnabled || wells.rows.length === 0) {
+    if (!data || !listState.groupingEnabled || wells.rows.length === 0) {
       return [{
         key: 'all',
         label: 'All Items',
-        nodes: data,
+        nodes: data || [],
         collapsed: false
       }];
     }
@@ -108,7 +131,7 @@ export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
     const groupMap = new Map<string, Node[]>();
     const firstRowChip = wells.rows[0];
 
-    data.forEach(node => {
+    (data || []).forEach(node => {
       const groupValue = getFieldValue(node, firstRowChip.id);
       const groupKey = String(groupValue);
 
@@ -544,11 +567,11 @@ export function D3ListView({ data: staticData, onNodeClick }: D3ListViewProps) {
       }`}>
         {listState.searchQuery ? (
           <span>
-            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {data.length} items match "{listState.searchQuery}"
+            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {(data || []).length} items match "{listState.searchQuery}"
           </span>
         ) : (
           <span>
-            {data.length} items {listState.groupingEnabled ? `in ${groups.length} groups` : ''}
+            {(data || []).length} items {listState.groupingEnabled ? `in ${groups.length} groups` : ''}
           </span>
         )}
       </div>

@@ -165,7 +165,7 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
     return null;
   }
 
-  const isNextstep = theme === 'nextstep';
+  const isNextstep = theme === 'NeXTSTEP';
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${

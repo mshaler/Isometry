@@ -19,3 +19,6 @@ xcuserdata/
 # ChunkHound database
 .chunkhound/
 dotfiles.txt
+native/build/
+native/build/
+native/.build/

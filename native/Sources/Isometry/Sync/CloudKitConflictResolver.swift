@@ -80,7 +80,7 @@ public struct FieldDiff: Sendable {
 ///
 /// Implements CRDT-style automatic resolution for simple conflicts and provides manual resolution
 /// preparation for complex cases. Uses field-level analysis and smart merging strategies.
-public actor ConflictResolver {
+public actor CloudKitConflictResolver {
 
     // MARK: - Configuration
 
