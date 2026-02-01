@@ -99,6 +99,14 @@ export function EnvironmentProvider({
       // Check for immediate WebView indicators
       const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
       const isIsometryNative = userAgent.includes('IsometryNative');
+      const hasWebKit = typeof window !== 'undefined' && typeof window.webkit !== 'undefined';
+
+      // Quick browser check - if no WebKit and not IsometryNative, skip bridge detection
+      if (!isIsometryNative && !hasWebKit) {
+        console.log('🔍 Environment: Standard browser detected - skipping WebView bridge detection');
+        console.log(`🔍 Environment: UserAgent: ${userAgent.substring(0, 60)}...`);
+        return DatabaseMode.FALLBACK;
+      }
 
       if (isIsometryNative) {
         console.log('✅ Environment: IsometryNative user agent detected - forcing WebView mode');
@@ -109,7 +117,7 @@ export function EnvironmentProvider({
 
       // ROBUST BRIDGE DETECTION: Wait for WebView bridge to be fully ready
       console.log('🔍 Environment: Waiting for WebView bridge initialization...');
-      const bridgeReady = await waitForWebViewBridge(3000); // 3 second timeout
+      const bridgeReady = await waitForWebViewBridge(1000); // 1 second timeout for faster browser fallback
 
       if (bridgeReady) {
         console.log('✅ Environment: WebView bridge detected after waiting');
