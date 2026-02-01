@@ -1,3 +1,4 @@
+---
 # Isometry Notebook Sidecar Implementation Roadmap
 
 **Project:** Isometry Notebook Sidecar
@@ -205,8 +206,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 20-01-PLAN.md — Transaction coordination infrastructure (TRANS-01, TRANS-02, TRANS-05)
-- [ ] 20-02-PLAN.md — Conflict resolution and rollback management (TRANS-03, TRANS-04)
+- [x] 20-01-PLAN.md — Transaction coordination infrastructure (TRANS-01, TRANS-02, TRANS-05)
+- [x] 20-02-PLAN.md — Conflict resolution and rollback management (TRANS-03, TRANS-04)
 
 #### Phase 21: Advanced Query and Caching
 **Goal:** Optimize performance for large datasets with intelligent caching and virtual scrolling
@@ -218,11 +219,12 @@ Plans:
   3. Memory usage remains stable during extended operation without reference cycle leaks
   4. Database changes sync automatically in background with retry logic for failed operations
   5. Sync behavior adapts to connection quality for optimal bandwidth usage
-**Plans:** TBD
+**Plans:** 3 plans
 
 Plans:
-- [ ] 21-01: TBD
-- [ ] 21-02: TBD
+- [x] 21-01-PLAN.md — TanStack Query integration and performance infrastructure
+- [ ] 21-02-PLAN.md — Install dependencies and integrate providers (gap closure)
+- [ ] 21-03-PLAN.md — Wire components and implement missing systems (gap closure)
 
 ## Dependencies
 
@@ -262,7 +264,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21
 | 18. Bridge Optimization Foundation | 3/3 | ✓ Complete | 2026-01-30 |
 | 19. Real-Time Change Notifications | 2/2 | ✓ Complete | 2026-01-30 |
 | 20. Transaction and Sync Management | 2/2 | ✓ Complete | 2026-01-31 |
-| 21. Advanced Query and Caching | 0/2 | Not started | - |
+| 21. Advanced Query and Caching | 1/3 | Gap closure | 1 complete, 2 gap closure |
 
 ## Architecture Integration Summary
 
@@ -305,11 +307,11 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 | SYNC-03 | Phase 19 | Complete |
 | SYNC-04 | Phase 19 | Complete |
 | SYNC-05 | Phase 19 | Complete |
-| TRANS-01 | Phase 20 | Pending |
-| TRANS-02 | Phase 20 | Pending |
-| TRANS-03 | Phase 20 | Pending |
-| TRANS-04 | Phase 20 | Pending |
-| TRANS-05 | Phase 20 | Pending |
+| TRANS-01 | Phase 20 | Complete |
+| TRANS-02 | Phase 20 | Complete |
+| TRANS-03 | Phase 20 | Complete |
+| TRANS-04 | Phase 20 | Complete |
+| TRANS-05 | Phase 20 | Complete |
 | PERF-01 | Phase 21 | Pending |
 | PERF-02 | Phase 21 | Pending |
 | PERF-03 | Phase 21 | Pending |
@@ -342,4 +344,4 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 
 ---
 
-*Last updated: 2026-01-30 after phase 20 planning completion*
+*Last updated: 2026-01-31 after phase 21 gap closure planning*
