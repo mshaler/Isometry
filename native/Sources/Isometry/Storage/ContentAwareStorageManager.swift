@@ -1,590 +1,329 @@
 import Foundation
-import CryptoKit
 import UniformTypeIdentifiers
+import GRDB
 
-/// GSD-based Content Aware Storage for attachments and blobs
-/// Provides deduplication, compression, and intelligent content management
+/// Enhanced storage manager with Content-Addressable Storage and attachment support
+/// Builds upon existing storage capabilities with CAS integration for efficient file management
 public actor ContentAwareStorageManager {
+
+    // Core storage components
+    private let casIntegration: CASIntegration
+    private let basePath: URL
     private let database: IsometryDatabase
-    private let storageConfiguration: StorageConfiguration
-    private let fileManager = FileManager.default
 
-    public init(database: IsometryDatabase, configuration: StorageConfiguration = .default) {
+    // Configuration
+    private let maxCacheSize: Int64
+    private let cleanupInterval: TimeInterval
+    private var isCleanupEnabled: Bool = true
+
+    // Performance tracking
+    private var performanceMetrics = StoragePerformanceMetrics()
+    private var cachingEnabled: Bool
+
+    // Background cleanup
+    private var cleanupTask: Task<Void, Error>?
+
+    public init(
+        basePath: URL,
+        database: IsometryDatabase,
+        maxCacheSize: Int64 = 500_000_000, // 500MB default
+        cleanupInterval: TimeInterval = 3600, // 1 hour
+        cachingEnabled: Bool = true
+    ) {
+        self.basePath = basePath
         self.database = database
-        self.storageConfiguration = configuration
-    }
+        self.maxCacheSize = maxCacheSize
+        self.cleanupInterval = cleanupInterval
+        self.cachingEnabled = cachingEnabled
 
-    // MARK: - Content Storage (GSD Pattern)
-
-    /// Stores content with automatic deduplication and analysis
-    public func store(
-        content: Data,
-        filename: String? = nil,
-        mimeType: String? = nil,
-        metadata: [String: Any] = [:]
-    ) async throws -> StoredContent {
-
-        // Phase 1: Content Analysis
-        let analysis = try await analyzeContent(content, filename: filename, mimeType: mimeType)
-
-        // Phase 2: Deduplication Check
-        if let existingContent = try await findExistingContent(hash: analysis.contentHash) {
-            // Content already exists, create new reference
-            let reference = try await createContentReference(
-                to: existingContent.id,
-                filename: filename,
-                metadata: metadata
-            )
-            return existingContent.withNewReference(reference)
-        }
-
-        // Phase 3: Content Processing
-        let processedContent = try await processContent(content, analysis: analysis)
-
-        // Phase 4: Physical Storage
-        let storagePath = try await storePhysicalContent(
-            processedContent,
-            analysis: analysis
+        // Initialize CAS with storage-specific configuration
+        let casBasePath = basePath.appendingPathComponent("attachments")
+        self.casIntegration = CASIntegration(
+            basePath: casBasePath,
+            maxFileSize: 200_000_000, // 200MB max file size
+            compressionThreshold: 5_000_000 // Compress files > 5MB
         )
 
-        // Phase 5: Database Registration
-        let storedContent = StoredContent(
-            id: UUID(),
-            contentHash: analysis.contentHash,
-            originalFilename: filename,
-            mimeType: analysis.detectedMimeType,
-            fileSize: content.count,
-            compressedSize: processedContent.count,
-            storagePath: storagePath,
-            contentType: analysis.contentType,
-            extractedMetadata: [:], // TODO: Fix metadata merging with proper types
-            createdAt: Date(),
-            accessedAt: Date(),
-            accessCount: 0,
-            compressionRatio: Double(processedContent.count) / Double(content.count),
-            isCompressed: processedContent.count < content.count
-        )
-
-        // TODO: Implement database stored content insertion method
-        // try await database.insert(storedContent: storedContent)
-
-        // Phase 6: Background Tasks
         Task {
-            await performBackgroundTasks(for: storedContent, originalContent: content)
+            await initializeStorage()
+            if isCleanupEnabled {
+                await startBackgroundCleanup()
+            }
         }
-
-        return storedContent
     }
 
-    /// Retrieves content by ID with access tracking
-    public func retrieve(contentId: UUID) async throws -> (Data, StoredContent) {
-        // TODO: Implement database methods for content storage
-        throw ContentStorageError.contentNotFound(contentId)
+    deinit {
+        cleanupTask?.cancel()
     }
 
-    /// Retrieves content by hash (for deduplication)
-    public func retrieve(contentHash: String) async throws -> (Data, StoredContent)? {
-        // TODO: Implement getStoredContent(hash:) method in database
-        _ = contentHash
-        return nil
-    }
+    // MARK: - Attachment Storage Operations
 
-    // MARK: - Content Analysis
+    /// Store attachment content with metadata
+    public func storeAttachment(
+        content: Data,
+        originalFilename: String,
+        mimeType: String,
+        noteId: String,
+        attachmentId: String
+    ) async throws -> AttachmentStorageResult {
+        let startTime = Date()
 
-    private func analyzeContent(
-        _ content: Data,
-        filename: String?,
-        mimeType: String?
-    ) async throws -> ContentAnalysis {
+        // Validate file type and size
+        try validateAttachment(content: content, mimeType: mimeType, filename: originalFilename)
 
-        // Generate content hash for deduplication
-        let hash = SHA256.hash(data: content)
-        let contentHash = hash.compactMap { String(format: "%02x", $0) }.joined()
-
-        // Detect MIME type
-        let detectedMimeType = mimeType ?? detectMimeType(data: content, filename: filename)
-
-        // Determine content type category
-        let contentType = ContentType.from(mimeType: detectedMimeType)
-
-        // Extract metadata based on content type
-        let extractedMetadata = try await extractMetadata(
-            from: content,
-            contentType: contentType,
-            filename: filename
+        // Store in CAS
+        let casResult = try await casIntegration.store(
+            content: content,
+            originalFilename: originalFilename,
+            mimeType: mimeType
         )
 
-        return ContentAnalysis(
-            contentHash: contentHash,
-            detectedMimeType: detectedMimeType,
-            contentType: contentType,
-            extractedMetadata: extractedMetadata.mapValues { AnyCodable($0) }
+        // Create attachment metadata
+        let attachmentMetadata = AttachmentMetadata(
+            id: attachmentId,
+            contentHash: casResult.contentHash,
+            originalFilename: originalFilename,
+            mimeType: mimeType,
+            fileSize: content.count,
+            noteId: noteId,
+            createdAt: Date(),
+            lastAccessedAt: Date()
         )
-    }
 
-    private func detectMimeType(data: Data, filename: String?) -> String {
-        // Use filename extension first
-        if let filename = filename,
-           let utType = UTType(filenameExtension: URL(fileURLWithPath: filename).pathExtension) {
-            if let mimeType = utType.preferredMIMEType {
-                return mimeType
-            }
-        }
+        // Store metadata in database
+        try await storeAttachmentMetadata(attachmentMetadata)
 
-        // Fallback to magic number detection
-        if data.count >= 4 {
-            let bytes = data.prefix(4)
+        // Update performance metrics
+        let duration = Date().timeIntervalSince(startTime)
+        performanceMetrics.recordStorage(
+            duration: duration,
+            fileSize: content.count,
+            wasDeduplication: !casResult.wasStored
+        )
 
-            // PDF
-            if bytes.starts(with: Data([0x25, 0x50, 0x44, 0x46])) {
-                return "application/pdf"
-            }
+        print("ContentAwareStorage: Stored attachment \(attachmentId) (\(originalFilename)) with hash \(casResult.contentHash)")
 
-            // PNG
-            if bytes.starts(with: Data([0x89, 0x50, 0x4E, 0x47])) {
-                return "image/png"
-            }
-
-            // JPEG
-            if bytes.starts(with: Data([0xFF, 0xD8, 0xFF])) {
-                return "image/jpeg"
-            }
-
-            // ZIP
-            if bytes.starts(with: Data([0x50, 0x4B, 0x03, 0x04])) {
-                return "application/zip"
-            }
-        }
-
-        return "application/octet-stream"
-    }
-
-    private func extractMetadata(
-        from content: Data,
-        contentType: ContentType,
-        filename: String?
-    ) async throws -> [String: Any] {
-        var metadata: [String: Any] = [:]
-
-        metadata["contentLength"] = content.count
-        if let filename = filename {
-            metadata["originalFilename"] = filename
-            metadata["fileExtension"] = URL(fileURLWithPath: filename).pathExtension
-        }
-
-        switch contentType {
-        case .image:
-            metadata.merge(try await extractImageMetadata(from: content)) { _, new in new }
-        case .document:
-            metadata.merge(try await extractDocumentMetadata(from: content)) { _, new in new }
-        case .text:
-            metadata.merge(try await extractTextMetadata(from: content)) { _, new in new }
-        case .audio:
-            metadata.merge(try await extractAudioMetadata(from: content)) { _, new in new }
-        case .video:
-            metadata.merge(try await extractVideoMetadata(from: content)) { _, new in new }
-        case .archive:
-            metadata.merge(try await extractArchiveMetadata(from: content)) { _, new in new }
-        case .other:
-            break
-        }
-
-        return metadata
-    }
-
-    // MARK: - Content Processing
-
-    private func processContent(
-        _ content: Data,
-        analysis: ContentAnalysis
-    ) async throws -> Data {
-
-        // Apply compression if beneficial
-        if shouldCompress(contentType: analysis.contentType, size: content.count) {
-            return try compress(content)
-        }
-
-        return content
-    }
-
-    private func shouldCompress(contentType: ContentType, size: Int) -> Bool {
-        // Don't compress already compressed formats
-        switch contentType {
-        case .image, .audio, .video, .archive:
-            return false
-        case .text, .document:
-            return size > storageConfiguration.compressionThreshold
-        case .other:
-            return size > storageConfiguration.compressionThreshold
-        }
-    }
-
-    private func compress(_ data: Data) throws -> Data {
-        return try (data as NSData).compressed(using: .lzfse) as Data
-    }
-
-    private func decompress(_ data: Data) throws -> Data {
-        return try (data as NSData).decompressed(using: .lzfse) as Data
-    }
-
-    // MARK: - Physical Storage
-
-    private func storePhysicalContent(
-        _ content: Data,
-        analysis: ContentAnalysis
-    ) async throws -> String {
-
-        let storageDirectory = try getStorageDirectory(for: analysis.contentType)
-        let filename = generateStorageFilename(hash: analysis.contentHash, contentType: analysis.contentType)
-        let fullPath = storageDirectory.appendingPathComponent(filename)
-
-        try content.write(to: fullPath)
-
-        return fullPath.path
-    }
-
-    private func loadPhysicalContent(at path: String) async throws -> Data {
-        let url = URL(fileURLWithPath: path)
-
-        guard fileManager.fileExists(atPath: path) else {
-            throw ContentStorageError.physicalFileNotFound(path)
-        }
-
-        return try Data(contentsOf: url)
-    }
-
-    private func getStorageDirectory(for contentType: ContentType) throws -> URL {
-        let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let contentDirectory = documentsDirectory
-            .appendingPathComponent("Isometry")
-            .appendingPathComponent("ContentStorage")
-            .appendingPathComponent(contentType.directoryName)
-
-        try fileManager.createDirectory(at: contentDirectory, withIntermediateDirectories: true)
-
-        return contentDirectory
-    }
-
-    private func generateStorageFilename(hash: String, contentType: ContentType) -> String {
-        let prefix = String(hash.prefix(2))
-        let suffix = String(hash.suffix(hash.count - 2))
-        return "\(prefix)/\(suffix).\(contentType.fileExtension)"
-    }
-
-    // MARK: - Background Tasks
-
-    private func performBackgroundTasks(
-        for content: StoredContent,
-        originalContent: Data
-    ) async {
-
-        // Generate thumbnails for images
-        if content.contentType == .image {
-            await generateThumbnails(for: content, originalContent: originalContent)
-        }
-
-        // Extract full-text for documents
-        if content.contentType == .document || content.contentType == .text {
-            await extractFullText(for: content, originalContent: originalContent)
-        }
-
-        // Update search index
-        await updateSearchIndex(for: content)
-    }
-
-    // MARK: - Content Management
-
-    /// Lists all stored content with filtering options
-    public func listContent(
-        contentType: ContentType? = nil,
-        minSize: Int? = nil,
-        maxSize: Int? = nil,
-        since: Date? = nil,
-        limit: Int = 100
-    ) async throws -> [StoredContent] {
-        // TODO: Implement listStoredContent method in database
-        _ = (contentType, minSize, maxSize, since, limit)
-        return []
-    }
-
-    /// Gets storage statistics
-    public func getStorageStats() async throws -> StorageStats {
-        // TODO: Implement getStorageStats method in database
-        return StorageStats(
-            totalFiles: 0,
-            totalSize: 0,
-            compressedSize: 0,
-            deduplicationSavings: 0,
-            compressionSavings: 0,
-            contentTypeBreakdown: [:]
+        return AttachmentStorageResult(
+            attachmentId: attachmentId,
+            contentHash: casResult.contentHash,
+            storedSize: casResult.storedSize,
+            originalSize: casResult.originalSize,
+            wasDeduplication: !casResult.wasStored
         )
     }
 
-    /// Performs cleanup of unused content
-    public func performCleanup(
-        olderThan: Date? = nil,
-        unusedOnly: Bool = true
-    ) async throws -> CleanupResult {
+    /// Retrieve attachment content by ID
+    public func retrieveAttachment(attachmentId: String) async throws -> AttachmentRetrievalResult {
+        let startTime = Date()
 
-        let candidates = try await database.getCleanupCandidates(
-            olderThan: olderThan,
-            unusedOnly: unusedOnly
+        // Get attachment metadata
+        guard let metadata = try await getAttachmentMetadata(attachmentId: attachmentId) else {
+            throw StorageError.attachmentNotFound(attachmentId)
+        }
+
+        // Update last accessed time
+        try await updateLastAccessed(attachmentId: attachmentId)
+
+        // Retrieve content from CAS
+        let content = try await casIntegration.retrieve(contentHash: metadata.contentHash)
+
+        // Update performance metrics
+        let duration = Date().timeIntervalSince(startTime)
+        performanceMetrics.recordRetrieval(duration: duration, fileSize: content.count)
+
+        return AttachmentRetrievalResult(
+            content: content,
+            metadata: metadata
         )
+    }
 
-        var deletedCount = 0
-        var freedSpace = 0
+    // MARK: - Private Implementation
 
-        for _ in candidates {
-            do {
-                // Convert DatabaseStoredContent to StoredContent for deletion
-                // TODO: Implement proper conversion method
-                try await database.deleteStoredContent(id: UUID()) // Placeholder
-                deletedCount += 1
-                freedSpace += 0 // TODO: Get size from DatabaseStoredContent
-            } catch {
-                // Log error but continue
-                print("Failed to delete content: \(error)")
+    /// Initialize storage directories and database tables
+    private func initializeStorage() async {
+        do {
+            // Ensure base directories exist
+            try FileManager.default.createDirectory(at: basePath, withIntermediateDirectories: true)
+
+            // Initialize database table for attachment metadata
+            try await database.write { db in
+                try db.execute(sql: """
+                    CREATE TABLE IF NOT EXISTS attachment_metadata (
+                        id TEXT PRIMARY KEY,
+                        content_hash TEXT NOT NULL,
+                        original_filename TEXT NOT NULL,
+                        mime_type TEXT NOT NULL,
+                        file_size INTEGER NOT NULL,
+                        note_id TEXT NOT NULL,
+                        created_at REAL NOT NULL,
+                        last_accessed_at REAL NOT NULL,
+                        FOREIGN KEY (note_id) REFERENCES nodes(id) ON DELETE CASCADE
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_attachment_note_id ON attachment_metadata(note_id);
+                    CREATE INDEX IF NOT EXISTS idx_attachment_hash ON attachment_metadata(content_hash);
+                    """)
+            }
+
+            print("ContentAwareStorage: Initialized storage at \(basePath.path)")
+        } catch {
+            print("ContentAwareStorage: Failed to initialize storage: \(error)")
+        }
+    }
+
+    /// Store attachment metadata in database
+    private func storeAttachmentMetadata(_ metadata: AttachmentMetadata) async throws {
+        try await database.write { db in
+            try db.execute(sql: """
+                INSERT OR REPLACE INTO attachment_metadata
+                (id, content_hash, original_filename, mime_type, file_size, note_id, created_at, last_accessed_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, arguments: [
+                metadata.id,
+                metadata.contentHash,
+                metadata.originalFilename,
+                metadata.mimeType,
+                metadata.fileSize,
+                metadata.noteId,
+                metadata.createdAt.timeIntervalSince1970,
+                metadata.lastAccessedAt.timeIntervalSince1970
+            ])
+        }
+    }
+
+    /// Get attachment metadata from database
+    private func getAttachmentMetadata(attachmentId: String) async throws -> AttachmentMetadata? {
+        return try await database.read { db in
+            try AttachmentMetadata.fetchOne(db, sql: """
+                SELECT * FROM attachment_metadata WHERE id = ?
+                """, arguments: [attachmentId])
+        }
+    }
+
+    /// Update last accessed time for attachment
+    private func updateLastAccessed(attachmentId: String) async throws {
+        try await database.write { db in
+            try db.execute(sql: """
+                UPDATE attachment_metadata
+                SET last_accessed_at = ?
+                WHERE id = ?
+                """, arguments: [Date().timeIntervalSince1970, attachmentId])
+        }
+    }
+
+    /// Validate attachment content and metadata
+    private func validateAttachment(content: Data, mimeType: String, filename: String) throws {
+        // Check file size limits
+        guard content.count <= 200_000_000 else { // 200MB
+            throw StorageError.fileTooLarge(content.count, 200_000_000)
+        }
+
+        // Basic filename validation
+        let invalidChars = CharacterSet(charactersIn: "<>:\"/\\|?*\0")
+        guard filename.rangeOfCharacter(from: invalidChars) == nil else {
+            throw StorageError.invalidFilename(filename)
+        }
+    }
+
+    /// Start background cleanup task
+    private func startBackgroundCleanup() async {
+        cleanupTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try await Task.sleep(for: .seconds(cleanupInterval))
+
+                do {
+                    _ = try await self?.performMaintenanceTasks()
+                } catch {
+                    print("ContentAwareStorage: Background cleanup failed: \(error)")
+                }
             }
         }
-
-        return CleanupResult(
-            deletedFiles: deletedCount,
-            freedSpace: freedSpace
-        )
     }
 
-    // TODO: Implement deleteContent method with proper type conversion
-    // private func deleteContent(_ content: StoredContent) async throws {
-    //     // Remove physical file
-    //     try fileManager.removeItem(atPath: content.storagePath)
-    //
-    //     // Remove database record
-    //     try await database.deleteStoredContent(id: content.id)
-    // }
-
-    // MARK: - Deduplication Support
-
-    private func findExistingContent(hash: String) async throws -> StoredContent? {
-        if try await database.getStoredContent(by: hash) != nil {
-            // Convert DatabaseStoredContent to StoredContent
-            // TODO: Implement proper conversion from DatabaseStoredContent to StoredContent
-            return nil
-        }
-        return nil
-    }
-
-    private func createContentReference(
-        to contentId: UUID,
-        filename: String?,
-        metadata: [String: Any]
-    ) async throws -> ContentReference {
-
-        let reference = ContentReference(
-            id: UUID(),
-            contentId: contentId,
-            referenceName: filename,
-            metadata: metadata.mapValues { AnyCodable($0) },
-            createdAt: Date()
-        )
-
-        // TODO: Implement database content reference insertion method
-        // try await database.insert(contentReference: reference)
-
-        return reference
-    }
-
-    // MARK: - Metadata Extraction Helpers
-
-    private func extractImageMetadata(from content: Data) async throws -> [String: Any] {
-        // Placeholder for image metadata extraction
-        // Would use ImageIO or similar framework
-        return [:]
-    }
-
-    private func extractDocumentMetadata(from content: Data) async throws -> [String: Any] {
-        // Placeholder for document metadata extraction
-        // Would use PDFKit or similar framework
-        return [:]
-    }
-
-    private func extractTextMetadata(from content: Data) async throws -> [String: Any] {
-        var metadata: [String: Any] = [:]
-
-        if let text = String(data: content, encoding: .utf8) {
-            metadata["characterCount"] = text.count
-            metadata["wordCount"] = text.components(separatedBy: .whitespacesAndNewlines).count
-            metadata["lineCount"] = text.components(separatedBy: .newlines).count
-        }
-
-        return metadata
-    }
-
-    private func extractAudioMetadata(from content: Data) async throws -> [String: Any] {
-        // Placeholder for audio metadata extraction
-        // Would use AVFoundation
-        return [:]
-    }
-
-    private func extractVideoMetadata(from content: Data) async throws -> [String: Any] {
-        // Placeholder for video metadata extraction
-        // Would use AVFoundation
-        return [:]
-    }
-
-    private func extractArchiveMetadata(from content: Data) async throws -> [String: Any] {
-        // Placeholder for archive metadata extraction
-        return [:]
-    }
-
-    private func generateThumbnails(for content: StoredContent, originalContent: Data) async {
-        // Generate thumbnails for images
-    }
-
-    private func extractFullText(for content: StoredContent, originalContent: Data) async {
-        // Extract text content for search indexing
-    }
-
-    private func updateSearchIndex(for content: StoredContent) async {
-        // Update search index with content metadata
+    private func performMaintenanceTasks() async throws -> Int {
+        // Simplified maintenance for now
+        return 0
     }
 }
 
-// MARK: - Supporting Types
+// MARK: - Data Types
 
-public struct StorageConfiguration {
-    public let compressionThreshold: Int
-    public let maxFileSize: Int
-    public let thumbnailSizes: [Int]
-    public let enableDeduplication: Bool
-    public let enableCompression: Bool
-
-    public static let `default` = StorageConfiguration(
-        compressionThreshold: 1024, // 1KB
-        maxFileSize: 100 * 1024 * 1024, // 100MB
-        thumbnailSizes: [64, 128, 256, 512],
-        enableDeduplication: true,
-        enableCompression: true
-    )
-}
-
-public struct ContentAnalysis {
+/// Attachment metadata structure
+public struct AttachmentMetadata: Codable {
+    public let id: String
     public let contentHash: String
-    public let detectedMimeType: String
-    public let contentType: ContentType
-    public let extractedMetadata: [String: AnyCodable]
-}
-
-public enum ContentType: String, Codable, CaseIterable, Sendable {
-    case image = "image"
-    case document = "document"
-    case text = "text"
-    case audio = "audio"
-    case video = "video"
-    case archive = "archive"
-    case other = "other"
-
-    public static func from(mimeType: String) -> ContentType {
-        switch mimeType {
-        case let type where type.starts(with: "image/"):
-            return .image
-        case let type where type.starts(with: "audio/"):
-            return .audio
-        case let type where type.starts(with: "video/"):
-            return .video
-        case let type where type.starts(with: "text/"):
-            return .text
-        case "application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-            return .document
-        case "application/zip", "application/x-tar", "application/gzip":
-            return .archive
-        default:
-            return .other
-        }
-    }
-
-    public var directoryName: String {
-        return rawValue
-    }
-
-    public var fileExtension: String {
-        switch self {
-        case .image: return "img"
-        case .document: return "doc"
-        case .text: return "txt"
-        case .audio: return "aud"
-        case .video: return "vid"
-        case .archive: return "arc"
-        case .other: return "bin"
-        }
-    }
-}
-
-public struct StoredContent: Codable, Sendable, Identifiable {
-    public let id: UUID
-    public let contentHash: String
-    public let originalFilename: String?
+    public let originalFilename: String
     public let mimeType: String
     public let fileSize: Int
-    public let compressedSize: Int
-    public let storagePath: String
-    public let contentType: ContentType
-    public let extractedMetadata: [String: AnyCodable]
+    public let noteId: String
     public let createdAt: Date
-    public let accessedAt: Date
-    public let accessCount: Int
-    public let compressionRatio: Double
-    public let isCompressed: Bool
+    public let lastAccessedAt: Date
+}
 
-    public func withNewReference(_ reference: ContentReference) -> StoredContent {
-        // Return updated content with new reference
-        return self
+// Conform to GRDB FetchableRecord for database queries
+extension AttachmentMetadata: FetchableRecord {
+    public init(row: Row) {
+        id = row["id"]
+        contentHash = row["content_hash"]
+        originalFilename = row["original_filename"]
+        mimeType = row["mime_type"]
+        fileSize = row["file_size"]
+        noteId = row["note_id"]
+        createdAt = Date(timeIntervalSince1970: row["created_at"])
+        lastAccessedAt = Date(timeIntervalSince1970: row["last_accessed_at"])
     }
 }
 
-public struct ContentReference: Codable, Sendable, Identifiable {
-    public let id: UUID
-    public let contentId: UUID
-    public let referenceName: String?
-    public let metadata: [String: AnyCodable]
-    public let createdAt: Date
+/// Attachment storage result
+public struct AttachmentStorageResult {
+    public let attachmentId: String
+    public let contentHash: String
+    public let storedSize: Int
+    public let originalSize: Int
+    public let wasDeduplication: Bool
 }
 
-public struct StorageStats: Sendable {
-    public let totalFiles: Int
-    public let totalSize: Int
-    public let compressedSize: Int
-    public let deduplicationSavings: Int
-    public let compressionSavings: Int
-    public let contentTypeBreakdown: [ContentType: Int]
+/// Attachment retrieval result
+public struct AttachmentRetrievalResult {
+    public let content: Data
+    public let metadata: AttachmentMetadata
 }
 
-public struct CleanupResult: Sendable {
-    public let deletedFiles: Int
-    public let freedSpace: Int
+/// Performance metrics for storage operations
+public struct StoragePerformanceMetrics: Codable {
+    public var totalOperations: Int = 0
+    public var totalStorageTime: TimeInterval = 0
+    public var totalRetrievalTime: TimeInterval = 0
+    public var deduplicationHits: Int = 0
+
+    mutating func recordStorage(duration: TimeInterval, fileSize: Int, wasDeduplication: Bool) {
+        totalOperations += 1
+        totalStorageTime += duration
+
+        if wasDeduplication {
+            deduplicationHits += 1
+        }
+    }
+
+    mutating func recordRetrieval(duration: TimeInterval, fileSize: Int) {
+        totalRetrievalTime += duration
+    }
 }
 
-public enum ContentStorageError: LocalizedError {
-    case contentNotFound(UUID)
-    case physicalFileNotFound(String)
-    case compressionFailed
-    case decompressionFailed
-    case invalidContentType
-    case storageLimitExceeded
+/// Storage error types
+public enum StorageError: Error, LocalizedError {
+    case attachmentNotFound(String)
+    case fileTooLarge(Int, Int)
+    case invalidFilename(String)
 
     public var errorDescription: String? {
         switch self {
-        case .contentNotFound(let id):
-            return "Content not found: \(id)"
-        case .physicalFileNotFound(let path):
-            return "Physical file not found: \(path)"
-        case .compressionFailed:
-            return "Failed to compress content"
-        case .decompressionFailed:
-            return "Failed to decompress content"
-        case .invalidContentType:
-            return "Invalid content type"
-        case .storageLimitExceeded:
-            return "Storage limit exceeded"
+        case .attachmentNotFound(let id):
+            return "Attachment not found: \(id)"
+        case .fileTooLarge(let size, let maxSize):
+            return "File size \(size) exceeds maximum \(maxSize)"
+        case .invalidFilename(let filename):
+            return "Invalid filename: \(filename)"
         }
     }
 }

@@ -796,7 +796,10 @@ struct ChartDataPoint: Identifiable {
     ETLOperationHistoryView(
         etlManager: ETLOperationManager(
             database: try! IsometryDatabase(path: ":memory:"),
-            storageManager: ContentAwareStorageManager(database: try! IsometryDatabase(path: ":memory:")),
+            storageManager: ContentAwareStorageManager(
+                basePath: URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("test-storage"),
+                database: try! IsometryDatabase(path: ":memory:")
+            ),
             versionManager: ETLVersionManager(database: try! IsometryDatabase(path: ":memory:"))
         )
     )
