@@ -20,6 +20,7 @@ import type {
   GSDError,
 } from '../../types/gsd';
 import { useNotebook } from '../../contexts/NotebookContext';
+import { GSDIntegrationTest } from './GSDIntegrationTest';
 
 interface EnhancedShellComponentV2Props {
   className?: string;
@@ -453,6 +454,9 @@ export function EnhancedShellComponentV2({
                   </div>
                 </div>
               )}
+
+              {/* GSD Integration Test Component */}
+              <GSDIntegrationTest />
 
               <div className="text-center text-gray-500 text-sm">
                 Press <kbd className="px-2 py-1 bg-gray-200 rounded text-xs">Cmd+K</kbd> to open command palette

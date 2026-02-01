@@ -201,3 +201,29 @@ END;
 CREATE TRIGGER IF NOT EXISTS notebook_cards_update_modified AFTER UPDATE ON notebook_cards BEGIN
     UPDATE notebook_cards SET modified_at = datetime('now') WHERE id = NEW.id;
 END;
+
+-- ============================================================================
+-- GSD Card Metadata: Integration between GSD sessions and Isometry cards
+-- ============================================================================
+
+-- GSD Card Metadata: Extended tracking for cards created from GSD executions
+CREATE TABLE IF NOT EXISTS gsd_card_metadata (
+  card_id TEXT PRIMARY KEY,
+  gsd_session_id TEXT NOT NULL,
+  gsd_project_id TEXT,
+  gsd_phase TEXT,
+  gsd_command TEXT,
+  execution_success BOOLEAN,
+  files_changed TEXT, -- JSON array
+  tests_run INTEGER,
+  tests_passed INTEGER,
+  commit_hash TEXT,
+  duration_seconds REAL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (card_id) REFERENCES nodes(id) ON DELETE CASCADE
+);
+
+-- Indexes for GSD metadata queries
+CREATE INDEX IF NOT EXISTS idx_gsd_metadata_session ON gsd_card_metadata(gsd_session_id);
+CREATE INDEX IF NOT EXISTS idx_gsd_metadata_project ON gsd_card_metadata(gsd_project_id);
+CREATE INDEX IF NOT EXISTS idx_gsd_metadata_success ON gsd_card_metadata(execution_success);
