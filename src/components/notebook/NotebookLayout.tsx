@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { CaptureComponent } from './CaptureComponent';
-import { EnhancedShellComponent } from '../gsd/EnhancedShellComponent';
+import { EnhancedShellComponentV2 } from '../gsd/EnhancedShellComponentV2';
 import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
@@ -177,7 +177,7 @@ function NotebookLayoutInner() {
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="ShellComponent">
           <div ref={shellRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
-            <EnhancedShellComponent className="h-full" />
+            <EnhancedShellComponentV2 className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="PreviewComponent">
@@ -201,7 +201,7 @@ function NotebookLayoutInner() {
         <div className="flex-1 flex gap-2 min-h-[300px]">
           <ErrorBoundary level="feature" name="ShellComponent">
             <div ref={shellRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
-              <EnhancedShellComponent className="h-full" />
+              <EnhancedShellComponentV2 className="h-full" />
             </div>
           </ErrorBoundary>
           <ErrorBoundary level="feature" name="PreviewComponent">
