@@ -12,6 +12,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Node } from '../types/node';
 import { bridgeLogger } from './logger';
+import { queueBridgeOperation } from '../services/backgroundSync';
 
 // Import optimization components
 import { MessageBatcher } from './bridge-optimization/message-batcher';
@@ -858,7 +859,7 @@ export class WebViewBridge {
   }
 
   /**
-   * Handle send failure with retry logic
+   * Handle send failure with retry logic and background sync fallback
    */
   private handleSendFailure<T = unknown>(
     error: unknown,
@@ -883,7 +884,36 @@ export class WebViewBridge {
       return;
     }
 
-    reject(error instanceof Error ? error : new Error(`Failed to send message: ${error}`));
+    // Max retries reached - queue for background sync as last resort
+    const correlationId = params.correlationId as string || uuidv4();
+    const errorObj = error instanceof Error ? error : new Error(`Failed to send message: ${error}`);
+
+    console.warn('[WebViewBridge] Max retries reached, queuing for background sync:', {
+      handler,
+      method,
+      retries,
+      correlationId,
+      error: errorObj.message
+    });
+
+    try {
+      queueBridgeOperation(`${handler}.${method}`, { params, handler, method }, {
+        priority: 'high',
+        correlationId,
+        onSuccess: (result) => {
+          console.log('[WebViewBridge] Background sync succeeded:', { handler, method, correlationId });
+          resolve(result as T);
+        },
+        onFailure: (bgError) => {
+          console.error('[WebViewBridge] Background sync failed:', { handler, method, correlationId, error: bgError.message });
+          reject(new Error(`Bridge operation failed after retries and background sync: ${bgError.message}`));
+        }
+      });
+    } catch (bgQueueError) {
+      // Background sync queueing failed - reject with original error
+      console.error('[WebViewBridge] Failed to queue for background sync:', bgQueueError);
+      reject(errorObj);
+    }
   }
 
   /**

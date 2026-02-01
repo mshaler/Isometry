@@ -10,6 +10,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { webViewBridge } from '../utils/webview-bridge';
 import { useLiveDataContext } from '../context/LiveDataContext';
 import { useCleanupManager, useUnmountDetection, useMemoryProfiler } from '../utils/memory-management';
+import { useFailedOperationHandler } from './useBackgroundSync';
+import { useConnectionQuality } from '../services/connectionQuality';
 
 export interface LiveQueryOptions {
   /** Initial query parameters */
@@ -82,6 +84,10 @@ export function useLiveQuery<T = unknown>(
     enableLogging: true
   });
 
+  // Background sync and connection quality
+  const { handleFailedOperation, queueBridge } = useFailedOperationHandler();
+  const { metrics: connectionMetrics, strategy } = useConnectionQuality();
+
   // Refs for cleanup and debouncing
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
   const lastSequenceNumber = useRef<number>(0);
@@ -149,7 +155,7 @@ export function useLiveQuery<T = unknown>(
     onError?.(new Error(errorMessage));
   }, [onError, isMounted]);
 
-  // Execute initial query
+  // Execute initial query with background sync fallback
   const executeQuery = useCallback(async (): Promise<T[]> => {
     try {
       setLoading(true);
@@ -165,6 +171,33 @@ export function useLiveQuery<T = unknown>(
       if (!isMounted()) return [];
 
       const errorMessage = err instanceof Error ? err.message : String(err);
+
+      // Queue failed operation for background retry if connection allows
+      if (connectionMetrics.isOnline && strategy.enableBackgroundSync) {
+        const correlationId = `query-${Date.now()}`;
+        console.warn('[useLiveQuery] Query failed, queuing for background retry:', {
+          sql: sql.slice(0, 50),
+          error: errorMessage,
+          correlationId
+        });
+
+        queueBridge('database.execute', { sql, params }, {
+          priority: 'high',
+          onSuccess: (results) => {
+            if (isMounted()) {
+              setData(results as T[]);
+              setError(null);
+              setLoading(false);
+            }
+          },
+          onFailure: (retryError) => {
+            if (isMounted()) {
+              setError(`Query failed after retries: ${retryError.message}`);
+            }
+          }
+        });
+      }
+
       setError(errorMessage);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
       return [];
@@ -173,7 +206,7 @@ export function useLiveQuery<T = unknown>(
         setLoading(false);
       }
     }
-  }, [sql, params, onError, isMounted]);
+  }, [sql, params, onError, isMounted, connectionMetrics.isOnline, strategy.enableBackgroundSync, queueBridge]);
 
   // Start live observation
   const startLive = useCallback(async () => {
@@ -211,10 +244,26 @@ export function useLiveQuery<T = unknown>(
     } catch (err) {
       console.error('[useLiveQuery] Failed to start live observation:', err);
       const errorMessage = err instanceof Error ? err.message : String(err);
+
+      // Queue subscription failure for background retry
+      if (connectionMetrics.isOnline && strategy.enableBackgroundSync) {
+        const correlationId = `subscription-${Date.now()}`;
+        handleFailedOperation('bridge', 'subscribe', { sql, params }, err as Error, {
+          priority: 'high',
+          correlationId,
+          onSuccess: (result) => {
+            console.log('[useLiveQuery] Background subscription retry succeeded:', result);
+          },
+          onRetryFailure: (retryError) => {
+            console.error('[useLiveQuery] Background subscription retry failed:', retryError);
+          }
+        });
+      }
+
       setError(errorMessage);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
     }
-  }, [sql, params, isLive, isConnected, subscribe, unsubscribe, executeQuery, handleLiveUpdate, handleLiveError, onError, cleanupManager]);
+  }, [sql, params, isLive, isConnected, subscribe, unsubscribe, executeQuery, handleLiveUpdate, handleLiveError, onError, cleanupManager, connectionMetrics.isOnline, strategy.enableBackgroundSync, handleFailedOperation]);
 
   // Stop live observation
   const stopLive = useCallback(() => {
