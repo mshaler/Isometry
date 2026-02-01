@@ -73,22 +73,71 @@ export function EnhancedShellComponentV2({
 
   const gsdCommands = useGSDCommandsv2();
 
-  // Initialize GSD schema when component mounts
+  // Initialize GSD schema when component mounts and database is available
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 3;
+
     const initialize = async () => {
       try {
         setGSDStatus('initializing');
+
+        if (!gsd.hasDatabaseConnection) {
+          addTerminalOutput('⏳ Waiting for database connection...');
+
+          // Wait up to 5 seconds for database to become available
+          const waitForDatabase = new Promise((resolve, reject) => {
+            let attempts = 0;
+            const checkDatabase = () => {
+              attempts++;
+              if (gsd.hasDatabaseConnection) {
+                resolve(true);
+              } else if (attempts >= 10) { // 5 seconds total (500ms * 10)
+                reject(new Error('Database connection timeout'));
+              } else {
+                setTimeout(checkDatabase, 500);
+              }
+            };
+            checkDatabase();
+          });
+
+          try {
+            await waitForDatabase;
+            addTerminalOutput('📡 Database connection established');
+          } catch (timeoutError) {
+            // Continue anyway in demo/development mode
+            addTerminalOutput('⚠️ Database not available - running in demo mode');
+            setGSDStatus('offline');
+            return;
+          }
+        }
+
+        addTerminalOutput('🔄 Initializing GSD database...');
         await initializeSchema();
         setGSDStatus('ready');
-        addTerminalOutput('📊 GSD database initialized');
+        addTerminalOutput('📊 GSD database initialized successfully');
+
       } catch (error) {
-        setGSDStatus('error');
-        addTerminalOutput(`❌ Database initialization failed: ${error}`);
+        console.error('GSD initialization error:', error);
+
+        if (retryCount < maxRetries) {
+          retryCount++;
+          addTerminalOutput(`❌ Initialization failed (attempt ${retryCount}/${maxRetries}): ${error}`);
+          addTerminalOutput(`🔄 Retrying in ${retryCount * 2} seconds...`);
+
+          setTimeout(() => {
+            initialize();
+          }, retryCount * 2000);
+        } else {
+          setGSDStatus('offline');
+          addTerminalOutput('❌ Database initialization failed - running in offline mode');
+          addTerminalOutput('💡 Some features may be limited. Try refreshing the page.');
+        }
       }
     };
 
     initialize();
-  }, [initializeSchema]);
+  }, []); // Remove dependencies to prevent infinite re-runs
 
   // Handle mode changes
   useEffect(() => {
@@ -290,6 +339,7 @@ export function EnhancedShellComponentV2({
         case 'connected': return 'text-green-500';
         case 'connecting': case 'initializing': return 'text-yellow-500';
         case 'error': return 'text-red-500';
+        case 'offline': return 'text-orange-500';
         default: return 'text-gray-500';
       }
     };
@@ -299,6 +349,7 @@ export function EnhancedShellComponentV2({
         case 'connected': return '🟢';
         case 'connecting': case 'initializing': return '🟡';
         case 'error': return '🔴';
+        case 'offline': return '🟠';
         default: return '⚪';
       }
     };

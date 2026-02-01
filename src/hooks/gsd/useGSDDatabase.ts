@@ -266,7 +266,9 @@ export function useGSDSchemaInitialization() {
   const gsdDb = useGSDDatabase();
 
   const initializeSchema = useCallback(async (): Promise<void> => {
-    if (!gsdDb) throw new Error('GSD Database not available');
+    if (!gsdDb) {
+      throw new Error('GSD Database not available - waiting for database connection');
+    }
     await gsdDb.initializeGSDSchema();
   }, [gsdDb]);
 
