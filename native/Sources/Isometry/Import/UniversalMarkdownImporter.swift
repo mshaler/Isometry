@@ -9,11 +9,13 @@ public actor UniversalMarkdownImporter {
     private let database: IsometryDatabase
     private let relationshipExtractor: RelationshipExtractor
     private let tableProcessor: TableProcessor
+    private let attachmentProcessor: AttachmentProcessor
 
     public init(database: IsometryDatabase) {
         self.database = database
         self.relationshipExtractor = RelationshipExtractor(database: database)
         self.tableProcessor = TableProcessor(database: database)
+        self.attachmentProcessor = AttachmentProcessor(database: database)
     }
 
     // MARK: - Public API (matching AltoIndexImporter)
@@ -66,6 +68,7 @@ public actor UniversalMarkdownImporter {
 
     /// Imports a single markdown note with comprehensive validation and error handling
     public func importNote(from fileURL: URL, relativeTo baseURL: URL? = nil) async throws -> Node {
+        let basePath = baseURL ?? fileURL.deletingLastPathComponent()
         do {
             let content = try String(contentsOf: fileURL, encoding: .utf8)
 
@@ -108,7 +111,14 @@ public actor UniversalMarkdownImporter {
                     // Process tables and update structured data nodes
                     let tables = try await tableProcessor.processTables(in: parsed.body, sourceNode: updated)
 
-                    print("Updated \(relationships.count) relationships and \(tables.count) tables for node: \(updated.name)")
+                    // Process attachments and images
+                    let attachments = try await attachmentProcessor.processAttachments(
+                        in: parsed.body,
+                        sourceNode: updated,
+                        basePath: basePath
+                    )
+
+                    print("Updated \(relationships.count) relationships, \(tables.count) tables, and \(attachments.count) attachments for node: \(updated.name)")
                     return updated
                 } catch {
                     throw UniversalImportError.databaseOperationFailed("update node: \(error.localizedDescription)")
@@ -144,7 +154,14 @@ public actor UniversalMarkdownImporter {
                 // Process tables and create structured data nodes
                 let tables = try await tableProcessor.processTables(in: parsed.body, sourceNode: node)
 
-                print("Created \(relationships.count) relationships and \(tables.count) tables for node: \(node.name)")
+                // Process attachments and images
+                let attachments = try await attachmentProcessor.processAttachments(
+                    in: parsed.body,
+                    sourceNode: node,
+                    basePath: basePath
+                )
+
+                print("Created \(relationships.count) relationships, \(tables.count) tables, and \(attachments.count) attachments for node: \(node.name)")
                 return node
             } catch {
                 throw UniversalImportError.databaseOperationFailed("create node: \(error.localizedDescription)")
