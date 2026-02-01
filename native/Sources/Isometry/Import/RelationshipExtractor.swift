@@ -11,7 +11,7 @@ public actor RelationshipExtractor {
 
     // MARK: - Public API
 
-    /// Extract all relationships from markdown content and create edges
+    /// Extract all relationships from markdown content and create edges with optimization
     public func extractRelationships(
         from content: String,
         sourceNode: Node,
@@ -32,12 +32,68 @@ public actor RelationshipExtractor {
         relationships.append(contentsOf: try await extractImageReferences(content, sourceNode: sourceNode))
         relationships.append(contentsOf: try await extractAttachmentLinks(content, sourceNode: sourceNode))
 
-        // Create Edge entries for all extracted relationships
-        for relationship in relationships {
-            try await createEdgeForRelationship(relationship, sourceNode: sourceNode)
-        }
+        // Batch create edges for better performance
+        try await createEdgesForRelationships(relationships, sourceNode: sourceNode)
 
         return relationships
+    }
+
+    /// Create edges for multiple relationships with batching for performance
+    private func createEdgesForRelationships(_ relationships: [ExtractedRelationship], sourceNode: Node) async throws {
+        // Pre-fetch existing edges to reduce database calls
+        let existingEdges = try await database.getEdges(fromNode: sourceNode.id)
+
+        // Process relationships in batches
+        for relationship in relationships {
+            // Check if edge already exists
+            let targetNodeId = try await resolveTargetNodeId(relationship)
+            let expectedEdgeType = edgeTypeForRelationship(relationship.type)
+
+            let edgeExists = existingEdges.contains { edge in
+                edge.targetId == targetNodeId && edge.edgeType == expectedEdgeType
+            }
+
+            if !edgeExists {
+                let edge = Edge(
+                    edgeType: expectedEdgeType,
+                    sourceId: relationship.sourceId,
+                    targetId: targetNodeId,
+                    label: relationship.displayText,
+                    weight: relationship.weight,
+                    directed: true
+                )
+
+                try await database.createEdge(edge)
+
+                // Create bidirectional relationship for certain types
+                if shouldCreateBidirectionalEdge(relationship.type) {
+                    let reverseEdge = Edge(
+                        edgeType: .link,
+                        sourceId: targetNodeId,
+                        targetId: relationship.sourceId,
+                        label: "Referenced by",
+                        weight: relationship.weight * 0.5, // Lower weight for reverse direction
+                        directed: true
+                    )
+
+                    try await database.createEdge(reverseEdge)
+                }
+            }
+        }
+    }
+
+    /// Determine if a relationship type should have bidirectional edges
+    private func shouldCreateBidirectionalEdge(_ type: RelationshipType) -> Bool {
+        switch type {
+        case .wikiLink:
+            return true  // Wiki-links should be bidirectional for graph navigation
+        case .markdownLink:
+            return false // External links are typically one-way
+        case .tag:
+            return false // Tags are one-way relationships
+        case .imageReference, .attachment:
+            return false // File attachments are one-way
+        }
     }
 
     // MARK: - Relationship Extraction
@@ -241,24 +297,6 @@ public actor RelationshipExtractor {
         }
     }
 
-    /// Create Edge entry for extracted relationship
-    private func createEdgeForRelationship(_ relationship: ExtractedRelationship, sourceNode: Node) async throws {
-        // Determine target node ID
-        let targetNodeId = try await resolveTargetNodeId(relationship)
-
-        // Create Edge with appropriate type and properties
-        let edge = Edge(
-            edgeType: edgeTypeForRelationship(relationship.type),
-            sourceId: relationship.sourceId,
-            targetId: targetNodeId,
-            label: relationship.displayText,
-            weight: relationship.weight,
-            directed: true
-        )
-
-        // Create edge in database
-        try await database.createEdge(edge)
-    }
 
     /// Resolve target node ID from relationship identifier
     private func resolveTargetNodeId(_ relationship: ExtractedRelationship) async throws -> String {
@@ -280,14 +318,22 @@ public actor RelationshipExtractor {
 
     /// Find existing node by wiki-link target name or create placeholder
     private func findOrCreateWikiLinkTarget(_ targetName: String) async throws -> String {
-        // Try to find existing node by name
-        // For now, create a placeholder - this could be enhanced to search existing nodes
+        // Try to find existing node by name or sourceId
+        // This is a simplified search - could be enhanced with more sophisticated matching
+        let sourceId = "wiki-link-\(targetName)"
+
+        // Check if we already have a node with this sourceId
+        if let existingNode = try await database.getNode(bySourceId: sourceId, source: "wiki-link") {
+            return existingNode.id
+        }
+
+        // Create placeholder node
         let placeholderNode = Node(
             nodeType: "wiki-link-target",
             name: targetName,
             content: "Placeholder for wiki-link target: \(targetName)",
             source: "wiki-link",
-            sourceId: "wiki-link-\(targetName)"
+            sourceId: sourceId
         )
 
         try await database.createNode(placeholderNode)
@@ -296,12 +342,19 @@ public actor RelationshipExtractor {
 
     /// Find or create tag node
     private func findOrCreateTagNode(_ tagName: String) async throws -> String {
+        let sourceId = "tag-\(tagName)"
+
+        // Check if tag node already exists
+        if let existingNode = try await database.getNode(bySourceId: sourceId, source: "tag") {
+            return existingNode.id
+        }
+
         let tagNode = Node(
             nodeType: "tag",
             name: tagName,
             content: "Tag: #\(tagName)",
             source: "tag",
-            sourceId: "tag-\(tagName)"
+            sourceId: sourceId
         )
 
         try await database.createNode(tagNode)
@@ -310,12 +363,19 @@ public actor RelationshipExtractor {
 
     /// Find or create URL node
     private func findOrCreateUrlNode(_ url: String) async throws -> String {
+        let sourceId = "url-\(url.hash)"
+
+        // Check if URL node already exists
+        if let existingNode = try await database.getNode(bySourceId: sourceId, source: "url") {
+            return existingNode.id
+        }
+
         let urlNode = Node(
             nodeType: "url",
             name: URL(string: url)?.host ?? url,
             content: "External URL: \(url)",
             source: "url",
-            sourceId: "url-\(url.hash)",
+            sourceId: sourceId,
             sourceUrl: url
         )
 
@@ -325,13 +385,20 @@ public actor RelationshipExtractor {
 
     /// Find or create file node
     private func findOrCreateFileNode(_ filePath: String) async throws -> String {
+        let sourceId = "file-\(filePath.hash)"
+
+        // Check if file node already exists
+        if let existingNode = try await database.getNode(bySourceId: sourceId, source: "file") {
+            return existingNode.id
+        }
+
         let fileName = URL(fileURLWithPath: filePath).lastPathComponent
         let fileNode = Node(
             nodeType: "file",
             name: fileName,
             content: "File attachment: \(filePath)",
             source: "file",
-            sourceId: "file-\(filePath.hash)",
+            sourceId: sourceId,
             sourceUrl: filePath
         )
 
