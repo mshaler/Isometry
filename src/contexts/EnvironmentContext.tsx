@@ -5,7 +5,7 @@
  * Handles WebView and HTTP API providers
  */
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode, useMemo, useCallback } from 'react';
 import { Environment, postMessage } from '../utils/webview-bridge';
 import { bridgeLogger } from '../utils/logger';
 import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../utils/webview-bridge-waiter';
@@ -65,14 +65,17 @@ export function EnvironmentProvider({
       ? forcedMode
       : DatabaseMode.HTTP_API;
 
-  const [environment, setEnvironment] = useState<EnvironmentInfo>({
+  // Memoize initial environment to prevent unnecessary re-renders
+  const initialEnvironment = useMemo(() => ({
     mode: initialMode,
     capabilities: getCapabilities(initialMode),
-    platform: 'browser',
+    platform: 'browser' as const,
     version: '1.0',
     isNative: false,
-    performanceProfile: 'medium'
-  });
+    performanceProfile: 'medium' as const
+  }), [initialMode]);
+
+  const [environment, setEnvironment] = useState<EnvironmentInfo>(initialEnvironment);
   const [isLoading, setIsLoading] = useState(
     enableAutoDetection && !(forcedMode && forcedMode !== DatabaseMode.AUTO)
   );
@@ -192,17 +195,20 @@ export function EnvironmentProvider({
    */
   const testHTTPAPIConnection = async (): Promise<boolean> => {
     // Only test HTTP API if we're definitely NOT in a WebView environment
-    // Check both the user agent and webkit object
+    // Check both the user agent and webkit object directly to avoid circular dependency
     const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
     const isNativeUserAgent = userAgent.includes('IsometryNative');
     const hasWebKit = typeof window !== 'undefined' && typeof window.webkit !== 'undefined';
-    const envIsWebView = Environment.isWebView();
+    const hasMessageHandlers = typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined';
 
-    if (isNativeUserAgent || hasWebKit || envIsWebView) {
+    // Direct WebView check without calling Environment.isWebView() to prevent circular dependency
+    const isWebViewDirect = (hasWebKit && hasMessageHandlers) || isNativeUserAgent;
+
+    if (isWebViewDirect) {
       console.log('⏭️ HTTP API test skipped: WebView environment detected');
       console.log(`  - IsometryNative user agent: ${isNativeUserAgent}`);
       console.log(`  - Has WebKit: ${hasWebKit}`);
-      console.log(`  - Environment.isWebView(): ${envIsWebView}`);
+      console.log(`  - Has messageHandlers: ${hasMessageHandlers}`);
       return false;
     }
 
@@ -365,25 +371,25 @@ export function EnvironmentProvider({
   /**
    * Force a specific database mode
    */
-  const forceMode = (mode: DatabaseMode): void => {
+  const forceMode = useCallback((mode: DatabaseMode): void => {
     if (mode === DatabaseMode.AUTO) {
       initializeEnvironment();
     } else {
       setEnvironment(createEnvironmentInfo(mode));
     }
-  };
+  }, []);
 
   /**
    * Refresh environment detection
    */
-  const refreshEnvironment = async (): Promise<void> => {
+  const refreshEnvironment = useCallback(async (): Promise<void> => {
     await initializeEnvironment();
-  };
+  }, []);
 
   /**
    * Test current connection
    */
-  const testConnection = async (): Promise<boolean> => {
+  const testConnection = useCallback(async (): Promise<boolean> => {
     switch (environment.mode) {
       case DatabaseMode.WEBVIEW_BRIDGE:
         return testWebViewBridge();
@@ -393,7 +399,7 @@ export function EnvironmentProvider({
       default:
         return Promise.resolve(true); // Fallback mode always "works"
     }
-  };
+  }, [environment.mode]);
 
   // Initialize on mount and when forced mode changes
   useEffect(() => {
@@ -407,14 +413,14 @@ export function EnvironmentProvider({
     };
   }, []);
 
-  const contextValue: EnvironmentContextType = {
+  const contextValue: EnvironmentContextType = useMemo(() => ({
     environment,
     isLoading,
     error,
     forceMode,
     refreshEnvironment,
     testConnection
-  };
+  }), [environment, isLoading, error, forceMode, refreshEnvironment, testConnection]);
 
   return (
     <EnvironmentContext.Provider value={contextValue}>
