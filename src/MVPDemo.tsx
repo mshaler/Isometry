@@ -38,11 +38,7 @@ function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
     }
   }, [viewMode, isNotebookMode, toggleNotebookMode]);
 
-  useEffect(() => {
-    if (isNotebookMode && viewMode !== 'notebook') {
-      setViewMode('notebook');
-    }
-  }, [isNotebookMode, viewMode]);
+  // Removed auto-force to notebook mode to allow user switching to SuperGrid
 
   return (
     <div className="h-screen bg-gray-50 flex flex-col">
