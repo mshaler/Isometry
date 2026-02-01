@@ -4,7 +4,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { DatabaseMode, EnvironmentProvider } from './contexts/EnvironmentContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { FilterProvider } from './contexts/FilterContext';
-import { PAFVProvider } from './contexts/PAFVContext';
+import { PAFVProvider } from './state/PAFVContext';
 import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
 import { DatabaseProvider } from './db/DatabaseContext';
 import { Canvas } from './components/Canvas';
@@ -15,6 +15,7 @@ import { NotificationSystem } from './components/ui/NotificationSystem';
 import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
 import { LiveDataProvider } from './context/LiveDataContext';
 import { SuperGridDemo } from './components/SuperGridDemo';
+import { CardOverlayProvider } from './state/CardOverlayContext';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -131,8 +132,10 @@ function MVPDemo() {
                       <FilterProvider>
                         <PAFVProvider>
                           <NotebookProvider>
-                            <UnifiedApp />
-                            <NotificationSystem />
+                            <CardOverlayProvider>
+                              <UnifiedApp />
+                              <NotificationSystem />
+                            </CardOverlayProvider>
                           </NotebookProvider>
                         </PAFVProvider>
                       </FilterProvider>
@@ -161,7 +164,9 @@ function MVPDemo() {
                   <FilterProvider>
                     <PAFVProvider>
                       <NotebookProvider>
-                        <MVPDemoShell onShowUnified={() => setShowUnified(true)} />
+                        <CardOverlayProvider>
+                          <MVPDemoShell onShowUnified={() => setShowUnified(true)} />
+                        </CardOverlayProvider>
                       </NotebookProvider>
                     </PAFVProvider>
                   </FilterProvider>
