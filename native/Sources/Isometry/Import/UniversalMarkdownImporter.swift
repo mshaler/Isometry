@@ -35,15 +35,24 @@ public actor UniversalMarkdownImporter {
             return fileURL
         }
 
-        // Process them asynchronously
-        for fileURL in markdownFiles {
+        // Process them asynchronously with progress reporting
+        for (index, fileURL) in markdownFiles.enumerated() {
             do {
                 let node = try await importNote(from: fileURL, relativeTo: directoryURL)
                 result.imported += 1
                 result.nodes.append(node)
+
+                // Report progress every 10 files or on completion
+                if (index + 1) % 10 == 0 || index == markdownFiles.count - 1 {
+                    reportProgress(index + 1, total: markdownFiles.count, filename: fileURL.lastPathComponent)
+                }
             } catch {
                 result.failed += 1
-                result.errors.append(UniversalImportError.fileFailed(fileURL.lastPathComponent, error))
+                if let universalError = error as? UniversalImportError {
+                    result.errors.append(universalError)
+                } else {
+                    result.errors.append(UniversalImportError.fileFailed(fileURL.lastPathComponent, error))
+                }
                 print("Import failed for \(fileURL.path): \(error)")
             }
         }
@@ -51,51 +60,77 @@ public actor UniversalMarkdownImporter {
         return result
     }
 
-    /// Imports a single markdown note
+    /// Imports a single markdown note with comprehensive validation and error handling
     public func importNote(from fileURL: URL, relativeTo baseURL: URL? = nil) async throws -> Node {
-        let content = try String(contentsOf: fileURL, encoding: .utf8)
+        do {
+            let content = try String(contentsOf: fileURL, encoding: .utf8)
 
-        // Use relative path for sourceId to handle duplicate filenames in different folders
-        let relativeId: String
-        if let base = baseURL {
-            relativeId = fileURL.path.replacingOccurrences(of: base.path + "/", with: "")
-        } else {
-            relativeId = fileURL.lastPathComponent
+            // Use relative path for sourceId to handle duplicate filenames in different folders
+            let relativeId: String
+            if let base = baseURL {
+                relativeId = fileURL.path.replacingOccurrences(of: base.path + "/", with: "")
+            } else {
+                relativeId = fileURL.lastPathComponent
+            }
+
+            // Validate content before processing
+            try validateMarkdownContent(content, filename: fileURL.lastPathComponent)
+
+            let parsed = try parseUniversalMarkdown(content, filename: fileURL.lastPathComponent, fallbackSourceId: relativeId)
+
+            // Additional validation of parsed data
+            try validateParsedData(parsed)
+
+            // Check if already imported (by sourceId)
+            if let existingNode = try await database.getNode(bySourceId: parsed.sourceId, source: parsed.detectedSource) {
+                // Update existing node if modified
+                var updated = existingNode
+                updated.name = parsed.title
+                updated.content = parsed.sanitizedBody
+                updated.folder = parsed.folder
+                updated.modifiedAt = parsed.modified ?? Date()
+                updated.sourceUrl = parsed.sourceUrl
+
+                do {
+                    try await database.updateNode(updated)
+                    return updated
+                } catch {
+                    throw UniversalImportError.databaseOperationFailed("update node: \(error.localizedDescription)")
+                }
+            }
+
+            // Create new node
+            let node = Node(
+                id: UUID().uuidString,
+                nodeType: "note",
+                name: parsed.title,
+                content: parsed.sanitizedBody,
+                summary: extractSummary(from: parsed.sanitizedBody),
+                createdAt: parsed.created ?? Date(),
+                modifiedAt: parsed.modified ?? Date(),
+                folder: parsed.folder,
+                tags: parsed.tags,
+                source: parsed.detectedSource,
+                sourceId: parsed.sourceId,
+                sourceUrl: parsed.sourceUrl
+            )
+
+            do {
+                try await database.createNode(node)
+                return node
+            } catch {
+                throw UniversalImportError.databaseOperationFailed("create node: \(error.localizedDescription)")
+            }
+
+        } catch let error as UniversalImportError {
+            throw error
+        } catch {
+            if error.localizedDescription.contains("encoding") {
+                throw UniversalImportError.encodingError("Failed to read file \(fileURL.lastPathComponent): \(error.localizedDescription)")
+            } else {
+                throw UniversalImportError.fileFailed(fileURL.lastPathComponent, error)
+            }
         }
-
-        let parsed = try parseUniversalMarkdown(content, filename: fileURL.lastPathComponent, fallbackSourceId: relativeId)
-
-        // Check if already imported (by sourceId)
-        if let existingNode = try await database.getNode(bySourceId: parsed.sourceId, source: parsed.detectedSource) {
-            // Update existing node if modified
-            var updated = existingNode
-            updated.name = parsed.title
-            updated.content = parsed.body
-            updated.folder = parsed.folder
-            updated.modifiedAt = parsed.modified ?? Date()
-            updated.sourceUrl = parsed.sourceUrl
-            try await database.updateNode(updated)
-            return updated
-        }
-
-        // Create new node
-        let node = Node(
-            id: UUID().uuidString,
-            nodeType: "note",
-            name: parsed.title,
-            content: parsed.body,
-            summary: extractSummary(from: parsed.body),
-            createdAt: parsed.created ?? Date(),
-            modifiedAt: parsed.modified ?? Date(),
-            folder: parsed.folder,
-            tags: parsed.tags,
-            source: parsed.detectedSource,
-            sourceId: parsed.sourceId,
-            sourceUrl: parsed.sourceUrl
-        )
-
-        try await database.createNode(node)
-        return node
     }
 
     // MARK: - Parsing Implementation
@@ -109,6 +144,7 @@ public actor UniversalMarkdownImporter {
         let tags: [String]
         let sourceUrl: String?
         let body: String
+        let sanitizedBody: String
         let detectedDialect: MarkdownDialect
         let detectedFrontmatter: FrontmatterFormat
         let detectedSource: String
@@ -149,6 +185,9 @@ public actor UniversalMarkdownImporter {
         // Step 4: Process body content based on dialect
         let processedBody = processBodyForDialect(bodyContent, dialect: detectedDialect)
 
+        // Step 5: Sanitize content for security
+        let sanitizedBody = sanitizeContent(processedBody)
+
         return ParsedUniversalMarkdown(
             title: metadata.title,
             sourceId: metadata.sourceId,
@@ -158,6 +197,7 @@ public actor UniversalMarkdownImporter {
             tags: metadata.tags,
             sourceUrl: metadata.sourceUrl,
             body: processedBody,
+            sanitizedBody: sanitizedBody,
             detectedDialect: detectedDialect,
             detectedFrontmatter: frontmatterFormat,
             detectedSource: detectedDialect.sourcePrefix
@@ -328,6 +368,9 @@ public actor UniversalMarkdownImporter {
             metadata = try parseJSONMetadata(frontmatterData)
         }
 
+        // Validate frontmatter fields for security
+        try validateFrontmatterFields(metadata)
+
         // Apply intelligent field mapping
         let mappedFields = applyFieldMapping(metadata)
 
@@ -341,6 +384,43 @@ public actor UniversalMarkdownImporter {
         tags = mappedFields.tags
 
         return (title, sourceId, created, modified, folder, tags, sourceUrl)
+    }
+
+    /// Validate parsed data for consistency and security
+    private func validateParsedData(_ parsed: ParsedUniversalMarkdown) throws {
+        // Validate required fields
+        if parsed.title.isEmpty {
+            throw UniversalImportError.fieldValidationFailed("title", "Title cannot be empty")
+        }
+
+        if parsed.sourceId.isEmpty {
+            throw UniversalImportError.fieldValidationFailed("sourceId", "Source ID cannot be empty")
+        }
+
+        // Validate dates
+        if let created = parsed.created, let modified = parsed.modified {
+            if created > modified {
+                throw UniversalImportError.fieldValidationFailed("dates", "Created date cannot be after modified date")
+            }
+        }
+
+        // Validate URL format
+        if let sourceUrl = parsed.sourceUrl, !sourceUrl.isEmpty {
+            if !isValidURL(sourceUrl) {
+                throw UniversalImportError.fieldValidationFailed("sourceUrl", "Invalid URL format")
+            }
+        }
+
+        // Validate dialect detection
+        if !validateDialectDetection(parsed.body, detectedDialect: parsed.detectedDialect) {
+            print("Warning: Dialect detection may be inaccurate for \(parsed.sourceId)")
+        }
+    }
+
+    /// Check if URL format is valid
+    private func isValidURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString) else { return false }
+        return url.scheme != nil && url.host != nil
     }
 
     /// Parse YAML frontmatter with enhanced array and object support
@@ -595,6 +675,167 @@ public actor UniversalMarkdownImporter {
         return processed
     }
 
+    // MARK: - Validation and Security
+
+    /// Comprehensive validation of markdown content before processing
+    private func validateMarkdownContent(_ content: String, filename: String) throws {
+        var validationIssues: [String] = []
+
+        // Check file size limits (10MB max for security)
+        let maxSize = 10 * 1024 * 1024 // 10MB
+        let contentSize = content.utf8.count
+        if contentSize > maxSize {
+            throw UniversalImportError.resourceLimitExceeded("File size", maxSize, contentSize)
+        }
+
+        // Check for malicious patterns
+        let suspiciousPatterns = [
+            "<script[^>]*>": "Embedded JavaScript",
+            "<iframe[^>]*>": "Embedded iframe",
+            "javascript:": "JavaScript protocol",
+            "data:text/html": "Data URI HTML",
+            "vbscript:": "VBScript protocol"
+        ]
+
+        for (pattern, description) in suspiciousPatterns {
+            if content.range(of: pattern, options: .regularExpression) != nil {
+                validationIssues.append(description)
+            }
+        }
+
+        // Check content structure
+        if content.isEmpty {
+            validationIssues.append("Empty content")
+        }
+
+        // Check for excessive nesting (potential DoS)
+        let maxNesting = 10
+        let nestingLevel = calculateMaxNestingLevel(content)
+        if nestingLevel > maxNesting {
+            validationIssues.append("Excessive nesting level: \(nestingLevel)")
+        }
+
+        if !validationIssues.isEmpty {
+            throw UniversalImportError.contentValidationFailed(filename, validationIssues)
+        }
+    }
+
+    /// Validate frontmatter fields for security and data integrity
+    private func validateFrontmatterFields(_ metadata: [String: Any]) throws {
+        for (key, value) in metadata {
+            // Validate field names (prevent injection)
+            if !isValidFieldName(key) {
+                throw UniversalImportError.fieldValidationFailed(key, "Invalid characters in field name")
+            }
+
+            // Validate value content
+            if let stringValue = value as? String {
+                try validateStringValue(stringValue, fieldName: key)
+            } else if let arrayValue = value as? [Any] {
+                for item in arrayValue {
+                    if let stringItem = item as? String {
+                        try validateStringValue(stringItem, fieldName: key)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Sanitize content to prevent XSS and other security issues
+    private func sanitizeContent(_ content: String) -> String {
+        var sanitized = content
+
+        // Remove potentially dangerous HTML elements
+        let dangerousElements = [
+            "<script[^>]*>.*?</script>",
+            "<iframe[^>]*>.*?</iframe>",
+            "<object[^>]*>.*?</object>",
+            "<embed[^>]*>.*?</embed>",
+            "<link[^>]*>",
+            "<meta[^>]*>"
+        ]
+
+        for pattern in dangerousElements {
+            sanitized = sanitized.replacingOccurrences(
+                of: pattern,
+                with: "",
+                options: .regularExpression
+            )
+        }
+
+        // Sanitize dangerous protocols
+        sanitized = sanitized.replacingOccurrences(
+            of: "javascript:",
+            with: "",
+            options: .caseInsensitive
+        )
+        sanitized = sanitized.replacingOccurrences(
+            of: "vbscript:",
+            with: "",
+            options: .caseInsensitive
+        )
+
+        return sanitized
+    }
+
+    // MARK: - Helper Validation Functions
+
+    /// Check if field name contains only safe characters
+    private func isValidFieldName(_ name: String) -> Bool {
+        let validPattern = "^[a-zA-Z][a-zA-Z0-9_-]*$"
+        return name.range(of: validPattern, options: .regularExpression) != nil
+    }
+
+    /// Validate string values for length and content
+    private func validateStringValue(_ value: String, fieldName: String) throws {
+        // Check maximum length
+        let maxLength = fieldName == "content" ? 1_000_000 : 1000
+        if value.count > maxLength {
+            throw UniversalImportError.resourceLimitExceeded(
+                "Field '\(fieldName)' length",
+                maxLength,
+                value.count
+            )
+        }
+
+        // Check for suspicious content in URL fields
+        if fieldName.lowercased().contains("url") || fieldName.lowercased().contains("link") {
+            let suspiciousSchemes = ["javascript:", "vbscript:", "data:text/html"]
+            for scheme in suspiciousSchemes {
+                if value.lowercased().hasPrefix(scheme) {
+                    throw UniversalImportError.securityValidationFailed(fieldName, "Suspicious URL scheme")
+                }
+            }
+        }
+    }
+
+    /// Calculate maximum nesting level in markdown content
+    private func calculateMaxNestingLevel(_ content: String) -> Int {
+        let lines = content.components(separatedBy: .newlines)
+        var maxLevel = 0
+
+        for line in lines {
+            // Check blockquote nesting (> > > ...)
+            let blockquoteLevel = line.prefix(while: { $0 == ">" || $0 == " " }).filter { $0 == ">" }.count
+
+            // Check list nesting (indentation)
+            let leadingSpaces = line.prefix(while: { $0 == " " }).count
+            let listLevel = leadingSpaces / 2 // Assuming 2 spaces per level
+
+            maxLevel = max(maxLevel, blockquoteLevel, listLevel)
+        }
+
+        return maxLevel
+    }
+
+    /// Progress reporting for batch operations
+    private func reportProgress(_ processed: Int, total: Int, filename: String? = nil) {
+        let percentage = Double(processed) / Double(total) * 100
+        let message = filename.map { "Processing \($0) (\(processed)/\(total), \(Int(percentage))%)" }
+                     ?? "Progress: \(processed)/\(total) (\(Int(percentage))%)"
+        print(message)
+    }
+
     // MARK: - Validation and Testing
 
     /// Validate dialect detection results for accuracy
@@ -677,6 +918,13 @@ public enum UniversalImportError: Error, Sendable {
     case invalidFormat(String)
     case invalidFrontmatter(String, String)
     case dialectDetectionFailed(String)
+    case contentValidationFailed(String, [String])
+    case fieldValidationFailed(String, String)
+    case securityValidationFailed(String, String)
+    case databaseOperationFailed(String)
+    case encodingError(String)
+    case parseError(String, String)
+    case resourceLimitExceeded(String, Int, Int)
 }
 
 extension UniversalImportError: LocalizedError {
@@ -692,6 +940,20 @@ extension UniversalImportError: LocalizedError {
             return "Invalid \(format) frontmatter: \(details)"
         case .dialectDetectionFailed(let details):
             return "Failed to detect markdown dialect: \(details)"
+        case .contentValidationFailed(let filename, let issues):
+            return "Content validation failed for \(filename): \(issues.joined(separator: ", "))"
+        case .fieldValidationFailed(let field, let reason):
+            return "Field validation failed for '\(field)': \(reason)"
+        case .securityValidationFailed(let type, let reason):
+            return "Security validation failed for \(type): \(reason)"
+        case .databaseOperationFailed(let operation):
+            return "Database operation failed: \(operation)"
+        case .encodingError(let details):
+            return "Text encoding error: \(details)"
+        case .parseError(let type, let details):
+            return "Parse error in \(type): \(details)"
+        case .resourceLimitExceeded(let resource, let limit, let actual):
+            return "\(resource) limit exceeded: \(actual) > \(limit)"
         }
     }
 }
