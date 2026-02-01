@@ -15,16 +15,22 @@
 - ✅ Virtual scrolling optimization with intelligent caching for large datasets (10k+ items)
 - ✅ End-to-end application integration with full user access to live database features
 
-## Next Milestone Goals: v3.2 Enhanced Apple Integration
+## Current Milestone: v3.2 Enhanced Apple Integration
 
-**Focus:** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync
+**Goal:** Transform Apple Notes into a powerful capture interface that feeds Isometry's organizational capabilities, enabling seamless Notes → Isometry workflow with live synchronization and intelligent conflict handling.
 
-**Key capabilities to deliver:**
-- Real-time Notes synchronization with <1s change detection via FSEvents monitoring
+**Target features:**
+- Real-time Notes change detection and import pipeline building on AltoIndexImporter foundation
+- Read-mostly sync strategy with careful bidirectional updates to handle Notes' finicky external modification behavior
+- User interface for conflict resolution when Notes rejects or mangles programmatic changes
 - TCC permission management with graceful degradation and clear user communication
-- CRDT conflict resolution maintaining data integrity during multi-device collaborative editing
-- User interface providing intuitive configuration and manual conflict resolution controls
-- Performance optimization for large Notes libraries (10k+ notes capability) with efficient background processing
+- Performance optimization for large Notes libraries scaling beyond current 6,891 note capacity
+
+**Core workflow enablement:**
+1. User captures ideas in Apple Notes (via Siri, quick entry)
+2. Isometry detects changes in real-time and imports as cards with full PAFV+LATCH+GRAPH capabilities
+3. User organizes, connects, and analyzes in Isometry's rich semantic interface
+4. Bidirectional sync ensures changes don't get lost despite Notes' resistance to external modifications
 
 ## Core Value
 
@@ -157,11 +163,11 @@ Three-component React sidecar application:
 
 ### Active
 
-- [ ] Real-time Notes synchronization with <1s change detection via FSEvents monitoring
+- [ ] Real-time Notes change detection and import pipeline building on AltoIndexImporter foundation
+- [ ] Read-mostly sync strategy with careful bidirectional updates handling Notes' finicky behavior
+- [ ] User interface for conflict resolution when Notes rejects or mangles programmatic changes
 - [ ] TCC permission management with graceful degradation and clear user communication
-- [ ] CRDT conflict resolution maintaining data integrity during multi-device collaborative editing
-- [ ] User interface providing intuitive configuration and manual conflict resolution controls
-- [ ] Performance optimization for large Notes libraries (10k+ notes) with efficient background processing
+- [ ] Performance optimization for large Notes libraries scaling beyond current 6,891 note capacity
 
 ### Out of Scope
 
@@ -184,4 +190,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-01 after v3.1 milestone completion*
+*Last updated: 2026-02-01 after v3.2 milestone definition*

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-30)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** ✅ v3.1 Live Database Integration COMPLETE - Users can access sophisticated live database features
+**Current focus:** v3.2 Enhanced Apple Integration - Transform Notes into powerful Isometry capture interface
 
 ## Current Position
 
-Phase: 30 (Apple Notes Data Lifecycle Management)
-Plan: 4 of 5 (Wave 4 - Database Lifecycle Operations) - ✓ COMPLETE
-Status: Wave 4 complete, Wave 5 ready
-Last activity: 2026-02-01 — Completed 30-04-PLAN.md Database Lifecycle Operations
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-01 — Milestone v3.2 started
 
-Progress: [████████████████] Wave 4/5 complete - Database lifecycle management implemented
+Progress: [░░░░░░░░░░] 0% - Starting milestone definition
 
 ## Performance Metrics
 
