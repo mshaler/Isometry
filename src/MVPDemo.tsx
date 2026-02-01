@@ -152,11 +152,12 @@ function MVPDemo() {
 
   return (
     <ErrorBoundary level="app" name="MVPDemo">
-      <BrowserRouter>
-        <LiveDataProvider
-          connectionCheckInterval={30000}
-          enableMetrics={true}
-        >
+      <CacheInvalidationProvider>
+        <BrowserRouter>
+          <LiveDataProvider
+            connectionCheckInterval={30000}
+            enableMetrics={true}
+          >
           <ThemeProvider>
             <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
               <DatabaseProvider>
@@ -176,7 +177,8 @@ function MVPDemo() {
           </ThemeProvider>
         </LiveDataProvider>
       </BrowserRouter>
-    </ErrorBoundary>
+    </CacheInvalidationProvider>
+  </ErrorBoundary>
   );
 }
 
