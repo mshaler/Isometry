@@ -8,10 +8,12 @@ import IsometryCore
 public actor UniversalMarkdownImporter {
     private let database: IsometryDatabase
     private let relationshipExtractor: RelationshipExtractor
+    private let tableProcessor: TableProcessor
 
     public init(database: IsometryDatabase) {
         self.database = database
         self.relationshipExtractor = RelationshipExtractor(database: database)
+        self.tableProcessor = TableProcessor(database: database)
     }
 
     // MARK: - Public API (matching AltoIndexImporter)
@@ -103,7 +105,10 @@ public actor UniversalMarkdownImporter {
                         dialect: parsed.detectedDialect
                     )
 
-                    print("Updated \(relationships.count) relationships for node: \(updated.name)")
+                    // Process tables and update structured data nodes
+                    let tables = try await tableProcessor.processTables(in: parsed.body, sourceNode: updated)
+
+                    print("Updated \(relationships.count) relationships and \(tables.count) tables for node: \(updated.name)")
                     return updated
                 } catch {
                     throw UniversalImportError.databaseOperationFailed("update node: \(error.localizedDescription)")
@@ -136,7 +141,10 @@ public actor UniversalMarkdownImporter {
                     dialect: parsed.detectedDialect
                 )
 
-                print("Created \(relationships.count) relationships for node: \(node.name)")
+                // Process tables and create structured data nodes
+                let tables = try await tableProcessor.processTables(in: parsed.body, sourceNode: node)
+
+                print("Created \(relationships.count) relationships and \(tables.count) tables for node: \(node.name)")
                 return node
             } catch {
                 throw UniversalImportError.databaseOperationFailed("create node: \(error.localizedDescription)")
