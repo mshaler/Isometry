@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV, type Chip } from '@/contexts/PAFVContext';
 import type { Node } from '@/types/node';
+import { VirtualizedNodeList, NodeCard } from '../VirtualizedNodeList';
+import { useMemoryMonitor } from '../../utils/memory-management';
 
 interface GridViewProps {
   data: Node[];
@@ -155,6 +157,23 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
   const { theme } = useTheme();
   const { wells } = usePAFV();
 
+  // Memory management and monitoring
+  const { getMemoryMetrics, setWarningCallback } = useMemoryMonitor({
+    warningThreshold: 50,
+    criticalThreshold: 100
+  });
+
+  // Set up memory warning callback
+  useMemo(() => {
+    setWarningCallback((metrics) => {
+      console.warn('[GridView] Memory pressure detected:', {
+        usage: `${metrics.usedJSHeapSize.toFixed(1)}MB`,
+        pressure: metrics.pressureLevel,
+        dataSize: data.length
+      });
+    });
+  }, [setWarningCallback, data.length]);
+
   // Get axis chips from PAFV wells
   const colChips = wells.columns.length > 0 ? wells.columns : [{ id: 'year', label: 'Year', hasCheckbox: false }];
   const rowChips = wells.rows.length > 0 ? wells.rows : [{ id: 'folder', label: 'Folder', hasCheckbox: false }];
@@ -202,6 +221,33 @@ export function GridView({ data, onNodeClick }: GridViewProps) {
   const minCellWidth = 100;
   const rowHeaderWidth = 80;
   const totalRowHeaderWidth = numColHeaders * rowHeaderWidth;
+
+  // Use VirtualizedNodeList for large datasets
+  if (data.length > 100) {
+    const renderItem = ({ node, style }: { node: Node; index: number; style: React.CSSProperties }) => (
+      <NodeCard node={node} style={style} />
+    );
+
+    return (
+      <div className="w-full h-full">
+        <VirtualizedNodeList
+          nodes={data}
+          renderItem={renderItem}
+          height={600}
+          onPerformanceMetric={(metric) => {
+            if (metric.frameTime > 16.67) {
+              console.warn('[GridView] Performance warning:', {
+                frameTime: `${metric.frameTime.toFixed(2)}ms`,
+                scrolling: metric.scrolling,
+                target: '<16.67ms (60fps)'
+              });
+            }
+          }}
+          scrollRestorationKey="grid-view"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full overflow-auto">

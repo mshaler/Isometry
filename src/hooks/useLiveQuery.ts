@@ -76,6 +76,11 @@ export function useLiveQuery<T = unknown>(
   const cleanupManager = useCleanupManager();
   const isMounted = useUnmountDetection();
   const { renderCount } = useMemoryProfiler('useLiveQuery');
+  const { getMemoryMetrics } = useMemoryMonitor({
+    warningThreshold: 50,
+    criticalThreshold: 100,
+    enableLogging: true
+  });
 
   // Refs for cleanup and debouncing
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);

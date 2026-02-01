@@ -5,6 +5,8 @@ import { useListData } from '../../hooks/useListData';
 import { useSelection } from '../../state/SelectionContext';
 import { ListItem } from '../ListItem';
 import type { Node } from '../../types/node';
+import { VirtualizedNodeList, NodeCard } from '../VirtualizedNodeList';
+import { useMemoryMonitor } from '../../utils/memory-management';
 
 // Item heights for virtualization
 const ITEM_HEIGHT = 100; // Regular list item height
@@ -31,6 +33,12 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
   const { selection, select } = useSelection();
   const listRef = useRef<List>(null);
 
+  // Memory management and monitoring
+  const { getMemoryMetrics, setWarningCallback } = useMemoryMonitor({
+    warningThreshold: 50,
+    criticalThreshold: 100
+  });
+
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAscending, setSortAscending] = useState(false);
@@ -51,6 +59,17 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
         error: null,
       }
     : hookData;
+
+  // Set up memory warning callback
+  useMemo(() => {
+    setWarningCallback((metrics) => {
+      console.warn('[ListView] Memory pressure detected:', {
+        usage: `${metrics.usedJSHeapSize.toFixed(1)}MB`,
+        pressure: metrics.pressureLevel,
+        dataSize: listData.flatNodes.length
+      });
+    });
+  }, [setWarningCallback, listData.flatNodes.length]);
 
   // Filter nodes by search query (debounced in the future, but immediate for now)
   const filteredNodes = useMemo(() => {
@@ -271,6 +290,31 @@ export function ListView({ data: externalData, onNodeClick }: ListViewProps) {
             <p className="text-lg font-medium mb-2">No notes match these filters</p>
             <p className="text-sm">Try adjusting your filter criteria or clearing all filters</p>
           </div>
+        ) : sortedNodes.length > 100 && !listData.isGrouped ? (
+          // Use VirtualizedNodeList for large datasets without grouping
+          <VirtualizedNodeList
+            nodes={sortedNodes}
+            renderItem={({ node, style }) => (
+              <div style={style}>
+                <ListItem
+                  node={node}
+                  onClick={handleItemClick}
+                  isSelected={selection.selectedIds.has(node.id)}
+                />
+              </div>
+            )}
+            height={window.innerHeight - SEARCH_BAR_HEIGHT - 100}
+            onPerformanceMetric={(metric) => {
+              if (metric.frameTime > 16.67) {
+                console.warn('[ListView] Performance warning:', {
+                  frameTime: `${metric.frameTime.toFixed(2)}ms`,
+                  scrolling: metric.scrolling,
+                  target: '<16.67ms (60fps)'
+                });
+              }
+            }}
+            scrollRestorationKey="list-view"
+          />
         ) : (
           <List
             ref={listRef}

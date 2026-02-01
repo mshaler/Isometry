@@ -164,36 +164,90 @@ public actor UniversalMarkdownImporter {
         )
     }
 
-    /// Detect markdown dialect based on content features
+    /// Detect markdown dialect based on content features with scoring system
     private func detectMarkdownDialect(_ content: String) -> MarkdownDialect {
-        // Check for Obsidian-style features
+        var scores: [MarkdownDialect: Int] = [
+            .commonMark: 1, // Base score for all markdown
+            .githubFlavored: 0,
+            .obsidian: 0
+        ]
+
+        let lines = content.components(separatedBy: .newlines)
+
+        // Obsidian-style features (high confidence indicators)
         if content.contains("[[") && content.contains("]]") {
-            return .obsidian
+            scores[.obsidian, default: 0] += 10
         }
 
-        // Check for GitHub Flavored Markdown features
-        if content.contains("|") && content.contains("---") && content.contains("\n") {
-            // Look for table patterns
-            let lines = content.components(separatedBy: .newlines)
-            for i in 0..<lines.count-1 {
-                if lines[i].contains("|") && lines[i+1].contains("---") {
-                    return .githubFlavored
+        // Check for Obsidian tags (#tag format in content)
+        let obsidianTagPattern = "(?:^|\\s)#[a-zA-Z][a-zA-Z0-9-_]*(?:\\s|$)"
+        if content.range(of: obsidianTagPattern, options: .regularExpression) != nil {
+            scores[.obsidian, default: 0] += 5
+        }
+
+        // Check for Obsidian callouts (> [!note], > [!warning], etc.)
+        let calloutPattern = ">\\s*\\[![a-zA-Z]+\\]"
+        if content.range(of: calloutPattern, options: .regularExpression) != nil {
+            scores[.obsidian, default: 0] += 8
+        }
+
+        // GitHub Flavored Markdown features
+
+        // Tables (high confidence indicator)
+        var hasTable = false
+        for i in 0..<lines.count-1 {
+            let line = lines[i].trimmingCharacters(in: .whitespaces)
+            let nextLine = lines[i+1].trimmingCharacters(in: .whitespaces)
+
+            // Check for table header pattern: | Header | Header |
+            // Followed by separator: |--------|--------|
+            if line.hasPrefix("|") && line.hasSuffix("|") && line.filter({ $0 == "|" }).count > 2 {
+                if nextLine.hasPrefix("|") && nextLine.contains("-") && nextLine.hasSuffix("|") {
+                    hasTable = true
+                    break
                 }
             }
         }
-
-        // Check for strikethrough
-        if content.contains("~~") {
-            return .githubFlavored
+        if hasTable {
+            scores[.githubFlavored, default: 0] += 10
         }
 
-        // Check for task lists
-        if content.contains("- [ ]") || content.contains("- [x]") {
-            return .githubFlavored
+        // Task lists
+        let taskListPattern = "^\\s*[-*+]\\s+\\[[x ]\\]\\s+"
+        let taskListMatches = lines.filter { line in
+            line.range(of: taskListPattern, options: .regularExpression) != nil
+        }
+        if !taskListMatches.isEmpty {
+            scores[.githubFlavored, default: 0] += 5 + taskListMatches.count
         }
 
-        // Default to CommonMark
-        return .commonMark
+        // Strikethrough
+        let strikethroughPattern = "~~[^~]+~~"
+        if content.range(of: strikethroughPattern, options: .regularExpression) != nil {
+            scores[.githubFlavored, default: 0] += 3
+        }
+
+        // Fenced code blocks with language (GitHub feature)
+        let fencedCodePattern = "```[a-zA-Z][a-zA-Z0-9-+]*"
+        let fencedCodeMatches = content.components(separatedBy: .newlines).filter { line in
+            line.range(of: fencedCodePattern, options: .regularExpression) != nil
+        }
+        if !fencedCodeMatches.isEmpty {
+            scores[.githubFlavored, default: 0] += 2 + fencedCodeMatches.count
+        }
+
+        // Autolinks (GitHub enhancement)
+        let autolinkPattern = "https?://[^\\s)]+"
+        let autolinkMatches = content.components(separatedBy: .whitespaces).filter { word in
+            word.range(of: autolinkPattern, options: .regularExpression) != nil
+        }
+        if autolinkMatches.count > 2 {
+            scores[.githubFlavored, default: 0] += 2
+        }
+
+        // Return dialect with highest score
+        let maxScore = scores.values.max() ?? 1
+        return scores.first { $0.value == maxScore }?.key ?? .commonMark
     }
 
     /// Parse frontmatter section and detect format
@@ -464,18 +518,116 @@ public actor UniversalMarkdownImporter {
         return []
     }
 
-    /// Process body content based on detected dialect
+    /// Process body content based on detected dialect with feature preservation
     private func processBodyForDialect(_ body: String, dialect: MarkdownDialect) -> String {
         switch dialect {
         case .commonMark:
-            return body
+            return processCommonMarkContent(body)
         case .githubFlavored:
-            // Preserve GitHub-specific features
-            return body
+            return processGitHubFlavoredContent(body)
         case .obsidian:
-            // Preserve Obsidian-specific features but could normalize wiki-links in future
-            return body
+            return processObsidianContent(body)
         }
+    }
+
+    /// Process CommonMark content with standard formatting
+    private func processCommonMarkContent(_ content: String) -> String {
+        // For CommonMark, just ensure proper line ending normalization
+        return content.replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+    }
+
+    /// Process GitHub Flavored Markdown content preserving tables and task lists
+    private func processGitHubFlavoredContent(_ content: String) -> String {
+        var processed = processCommonMarkContent(content)
+
+        // Ensure task lists are properly formatted
+        let taskListPattern = "(^\\s*[-*+]\\s+)\\[([ x])\\](\\s*)"
+        processed = processed.replacingOccurrences(
+            of: taskListPattern,
+            with: "$1[$2]$3",
+            options: [.regularExpression, .anchorsMatchLines]
+        )
+
+        // Preserve table formatting by ensuring proper spacing
+        let lines = processed.components(separatedBy: .newlines)
+        var processedLines: [String] = []
+
+        for line in lines {
+            if line.contains("|") && (line.hasPrefix("|") || line.hasSuffix("|")) {
+                // This looks like a table row, preserve it carefully
+                let trimmed = line.trimmingCharacters(in: .whitespaces)
+                processedLines.append(trimmed)
+            } else {
+                processedLines.append(line)
+            }
+        }
+
+        return processedLines.joined(separator: "\n")
+    }
+
+    /// Process Obsidian content preserving wiki-links and special features
+    private func processObsidianContent(_ content: String) -> String {
+        var processed = processCommonMarkContent(content)
+
+        // Normalize wiki-links but preserve their structure
+        // Pattern: [[link]] or [[display text|actual link]]
+        let wikiLinkPattern = "\\[\\[([^\\]|]+)(\\|([^\\]]+))?\\]\\]"
+        processed = processed.replacingOccurrences(
+            of: wikiLinkPattern,
+            with: { match in
+                let nsString = match as NSString
+                let fullMatch = nsString.substring(with: NSRange(location: 0, length: nsString.length))
+                // For now, preserve the original format - could enhance later
+                return fullMatch
+            },
+            options: .regularExpression
+        )
+
+        // Preserve Obsidian callouts formatting
+        let calloutPattern = "(^>\\s*\\[![a-zA-Z]+\\].*$)"
+        processed = processed.replacingOccurrences(
+            of: calloutPattern,
+            with: "$1",
+            options: [.regularExpression, .anchorsMatchLines]
+        )
+
+        return processed
+    }
+
+    // MARK: - Validation and Testing
+
+    /// Validate dialect detection results for accuracy
+    private func validateDialectDetection(_ content: String, detectedDialect: MarkdownDialect) -> Bool {
+        switch detectedDialect {
+        case .commonMark:
+            // CommonMark should not have advanced features
+            return !content.contains("[[") && !content.contains("- [x]") && !hasMarkdownTable(content)
+        case .githubFlavored:
+            // GitHub should have at least one GFM feature
+            return content.contains("- [x]") || content.contains("- [ ]") ||
+                   content.contains("~~") || hasMarkdownTable(content) ||
+                   content.contains("```")
+        case .obsidian:
+            // Obsidian should have wiki-links or other Obsidian features
+            return content.contains("[[") && content.contains("]]")
+        }
+    }
+
+    /// Check if content contains markdown table
+    private func hasMarkdownTable(_ content: String) -> Bool {
+        let lines = content.components(separatedBy: .newlines)
+        for i in 0..<lines.count-1 {
+            let line = lines[i].trimmingCharacters(in: .whitespaces)
+            let nextLine = lines[i+1].trimmingCharacters(in: .whitespaces)
+
+            if line.hasPrefix("|") && line.hasSuffix("|") && line.filter({ $0 == "|" }).count > 2 {
+                if nextLine.hasPrefix("|") && nextLine.contains("-") && nextLine.hasSuffix("|") {
+                    return true
+                }
+            }
+        }
+        return false
     }
 
     /// Parse date string using multiple formats (reusing AltoIndexImporter logic)
