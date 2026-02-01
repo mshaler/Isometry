@@ -4,25 +4,27 @@
 **Type:** Native iOS/macOS applications with React prototype bridge
 **Timeline:** Production-ready native implementation
 
-## Current Milestone: v3.1 Live Database Integration
+## Current State: v3.1 Live Database Integration (SHIPPED)
 
-**Goal:** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring
+**Successfully delivered:** React frontend connected to native SQLite backend with real-time data synchronization and performance monitoring
 
-**Target features:**
-- Live data flow between React components and native SQLite via WebView bridge
-- Real-time synchronization with bidirectional updates and conflict resolution
-- Performance monitoring dashboard for database operations and UI responsiveness
-- Query optimization layer with intelligent caching and prefetching
-- Error handling and recovery mechanisms for bridge failures
-- Production-ready data persistence with CloudKit sync integration
+**Infrastructure achievements:**
+- ✅ High-performance bridge communication with <16ms latency for 60fps UI responsiveness
+- ✅ Real-time database synchronization using GRDB ValueObservation with <100ms change notifications
+- ✅ ACID transaction safety across React-native bridge boundaries with automatic rollback
+- ✅ Virtual scrolling optimization with intelligent caching for large datasets (10k+ items)
+- ✅ End-to-end application integration with full user access to live database features
 
-## Previous Milestone: v3.0 Production Deployment (COMPLETED)
+## Next Milestone Goals: v3.2 Enhanced Apple Integration
 
-**Goal:** Complete App Store submission and production launch with enterprise-grade infrastructure
-- ✅ CloudKit production environment with real user data handling
-- ✅ Distribution certificates and automated App Store submission pipeline
-- ✅ Production monitoring and analytics systems
-- ✅ Real-time visualization performance optimization (Phase 16)
+**Focus:** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync
+
+**Key capabilities to deliver:**
+- Real-time Notes synchronization with <1s change detection via FSEvents monitoring
+- TCC permission management with graceful degradation and clear user communication
+- CRDT conflict resolution maintaining data integrity during multi-device collaborative editing
+- User interface providing intuitive configuration and manual conflict resolution controls
+- Performance optimization for large Notes libraries (10k+ notes capability) with efficient background processing
 
 ## Core Value
 
@@ -123,6 +125,51 @@ Three-component React sidecar application:
 - React component architecture (established patterns)
 - Theme and styling consistency (existing CSS variables)
 
+## Requirements
+
+### Validated
+
+- ✓ Bridge message batching with <16ms latency for 60fps responsiveness — v3.1
+- ✓ Binary serialization with 40-60% payload reduction via MessagePack — v3.1
+- ✓ Query result pagination with maximum 50 records per message — v3.1
+- ✓ Circuit breaker patterns for bridge reliability and failure recovery — v3.1
+- ✓ Performance monitoring dashboard for real-time bridge operation metrics — v3.1
+- ✓ Live query results using GRDB ValueObservation with <100ms change detection — v3.1
+- ✓ Optimistic updates with rollback capability for failed operations — v3.1
+- ✓ Real-time change notifications from native database to React components — v3.1
+- ✓ Connection state awareness with offline/online operation modes — v3.1
+- ✓ Change event correlation and sequencing to prevent race conditions — v3.1
+- ✓ Bridge-level transaction control with ACID guarantees — v3.1
+- ✓ Multi-operation transaction support across bridge boundaries — v3.1
+- ✓ Conflict resolution framework for multi-device editing scenarios — v3.1
+- ✓ Transaction rollback mechanisms with <50ms state cleanup — v3.1
+- ✓ Operation correlation IDs for tracking and debugging — v3.1
+- ✓ Virtual scrolling integration using TanStack Virtual for large datasets — v3.1
+- ✓ Intelligent query result caching with TTL and invalidation strategies — v3.1
+- ✓ Memory management patterns preventing cross-bridge reference cycles — v3.1
+- ✓ Background sync queue with retry logic and exponential backoff — v3.1
+- ✓ Bandwidth-aware sync optimization based on connection quality — v3.1
+- ✓ LiveDataProvider installed in main application provider tree — v3.1
+- ✓ Canvas component migrated from data props to SQL query API — v3.1
+- ✓ Main application components connected to live database infrastructure — v3.1
+- ✓ End-to-end live data flow verified and accessible to users — v3.1
+- ✓ TypeScript compilation succeeding with live database integration — v3.1
+
+### Active
+
+- [ ] Real-time Notes synchronization with <1s change detection via FSEvents monitoring
+- [ ] TCC permission management with graceful degradation and clear user communication
+- [ ] CRDT conflict resolution maintaining data integrity during multi-device collaborative editing
+- [ ] User interface providing intuitive configuration and manual conflict resolution controls
+- [ ] Performance optimization for large Notes libraries (10k+ notes) with efficient background processing
+
+### Out of Scope
+
+- Complex ORM layer — Direct SQL provides better performance and control
+- Real-time everything — Selective real-time based on user interaction patterns prevents performance degradation
+- Automatic conflict merging — Knowledge management requires user control over conflict resolution to preserve data integrity
+- Advanced query builder UI — Defer complex query building to future milestones
+
 ## Dependencies
 
 **External:**
@@ -135,3 +182,6 @@ Three-component React sidecar application:
 - Established provider hierarchy and context patterns
 - SQLite schema and TypeScript interface definitions
 - D3.js visualization components and themes
+
+---
+*Last updated: 2026-02-01 after v3.1 milestone completion*
