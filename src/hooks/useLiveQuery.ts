@@ -13,6 +13,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { webViewBridge } from '../utils/webview-bridge';
 import { useLiveDataContext } from '../context/LiveDataContext';
+import { useDatabase } from '../db/DatabaseContext';
 import { queryKeys } from '../services/queryClient';
 import {
   createCacheInvalidationManager,
@@ -207,6 +208,7 @@ export function useLiveQuery<T = unknown>(
 
   // Context
   const { subscribe, unsubscribe, isConnected } = useLiveDataContext();
+  const database = useDatabase();
 
   // Refs for cleanup and debouncing
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -222,7 +224,7 @@ export function useLiveQuery<T = unknown>(
     setTotalQueries(prev => prev + 1);
 
     try {
-      const results = await webViewBridge.database.execute(sql, params) as T[];
+      const results = database.execute(sql, params) as T[];
 
       // Call custom change handler
       onChange?.(results);
@@ -233,7 +235,7 @@ export function useLiveQuery<T = unknown>(
       onError?.(err instanceof Error ? err : new Error(errorMessage));
       throw err;
     }
-  }, [sql, params, onChange, onError]);
+  }, [sql, params, onChange, onError, database]);
 
   // TanStack Query for intelligent caching
   const tanstackQuery = useQuery({
