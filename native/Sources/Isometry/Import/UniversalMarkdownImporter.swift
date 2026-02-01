@@ -7,9 +7,11 @@ import IsometryCore
 /// Extends AltoIndexImporter patterns for consistent API design
 public actor UniversalMarkdownImporter {
     private let database: IsometryDatabase
+    private let relationshipExtractor: RelationshipExtractor
 
     public init(database: IsometryDatabase) {
         self.database = database
+        self.relationshipExtractor = RelationshipExtractor(database: database)
     }
 
     // MARK: - Public API (matching AltoIndexImporter)
@@ -93,6 +95,15 @@ public actor UniversalMarkdownImporter {
 
                 do {
                     try await database.updateNode(updated)
+
+                    // Extract and update relationships
+                    let relationships = try await relationshipExtractor.extractRelationships(
+                        from: parsed.body,
+                        sourceNode: updated,
+                        dialect: parsed.detectedDialect
+                    )
+
+                    print("Updated \(relationships.count) relationships for node: \(updated.name)")
                     return updated
                 } catch {
                     throw UniversalImportError.databaseOperationFailed("update node: \(error.localizedDescription)")
@@ -117,6 +128,15 @@ public actor UniversalMarkdownImporter {
 
             do {
                 try await database.createNode(node)
+
+                // Extract and create relationships
+                let relationships = try await relationshipExtractor.extractRelationships(
+                    from: parsed.body,
+                    sourceNode: node,
+                    dialect: parsed.detectedDialect
+                )
+
+                print("Created \(relationships.count) relationships for node: \(node.name)")
                 return node
             } catch {
                 throw UniversalImportError.databaseOperationFailed("create node: \(error.localizedDescription)")
@@ -150,7 +170,7 @@ public actor UniversalMarkdownImporter {
         let detectedSource: String
     }
 
-    private enum MarkdownDialect {
+    public enum MarkdownDialect {
         case commonMark
         case githubFlavored
         case obsidian
