@@ -98,4 +98,44 @@ final class WebClipperTests: XCTestCase {
         XCTAssertEqual(combined.failed, 1)
         XCTAssertEqual(combined.total, 6)
     }
+
+    func testRobotsTxtParser() throws {
+        let parser = RobotsTxtParser(userAgent: "TestBot")
+
+        let robotsTxt = """
+        User-agent: *
+        Disallow: /admin/
+        Disallow: /private/
+
+        User-agent: TestBot
+        Allow: /api/
+        Disallow: /secret/
+        Crawl-delay: 2
+
+        Sitemap: https://example.com/sitemap.xml
+        """
+
+        let rules = parser.parseRobotsTxt(robotsTxt)
+
+        XCTAssertTrue(parser.isPathAllowed("/api/test", rules: rules))
+        XCTAssertFalse(parser.isPathAllowed("/secret/file", rules: rules))
+        XCTAssertFalse(parser.isPathAllowed("/admin/panel", rules: rules))
+        XCTAssertEqual(rules.crawlDelay, 2.0)
+        XCTAssertEqual(rules.sitemaps, ["https://example.com/sitemap.xml"])
+    }
+
+    func testTrackingParameterStripping() throws {
+        let trackingURL = "https://example.com/article?utm_source=twitter&utm_campaign=test&fbclid=123&normal_param=value"
+        let cleanedURL = TrackingProtection.cleanTrackingParameters(from: trackingURL)
+
+        XCTAssertEqual(cleanedURL, "https://example.com/article?normal_param=value")
+    }
+
+    func testTrackingDomainDetection() throws {
+        let trackingURL = URL(string: "https://google-analytics.com/collect")!
+        let normalURL = URL(string: "https://example.com/page")!
+
+        XCTAssertTrue(TrackingProtection.isTrackingDomain(trackingURL))
+        XCTAssertFalse(TrackingProtection.isTrackingDomain(normalURL))
+    }
 }

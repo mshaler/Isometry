@@ -9,13 +9,19 @@ public actor WebClipperActor {
     private let database: IsometryDatabase
     private let readabilityEngine: ReadabilityEngine
     private let metadataExtractor: MetadataExtractor
+    private let ethicalCrawler: EthicalCrawler
+    private let privacyEngine: PrivacyEngine
+    private let imageCacheActor: ImageCacheActor
     private let monitor: NWPathMonitor
     private var isNetworkConnected = false
 
-    public init(database: IsometryDatabase) {
+    public init(database: IsometryDatabase) throws {
         self.database = database
         self.readabilityEngine = ReadabilityEngine()
         self.metadataExtractor = MetadataExtractor()
+        self.ethicalCrawler = EthicalCrawler()
+        self.privacyEngine = PrivacyEngine()
+        self.imageCacheActor = try ImageCacheActor()
         self.monitor = NWPathMonitor()
 
         // Monitor network connectivity
@@ -100,54 +106,44 @@ public actor WebClipperActor {
     }
 
     private func extractContent(from url: URL) async throws -> ExtractedWebContent {
-        // Create ephemeral web view configuration for privacy
-        let config = WKWebViewConfiguration()
-        let dataStore = WKWebsiteDataStore.nonPersistent()
-        config.websiteDataStore = dataStore
+        // Clean URL of tracking parameters
+        let cleanedURL = await privacyEngine.stripTrackingParameters(from: url)
 
-        // Disable JavaScript for security and privacy
-        config.preferences.javaScriptEnabled = false
-
-        let webView = WKWebView(frame: .zero, configuration: config)
-
-        // Load the URL
-        let request = URLRequest(url: url, timeoutInterval: 30.0)
-
-        return try await withCheckedThrowingContinuation { continuation in
-            webView.navigationDelegate = WebClipperNavigationDelegate { result in
-                switch result {
-                case .success(let html):
-                    Task {
-                        do {
-                            // Extract clean content using Readability
-                            let cleanContent = await self.readabilityEngine.extractContent(from: html, url: url)
-
-                            // Extract metadata
-                            let metadata = await self.metadataExtractor.extractMetadata(from: html, url: url)
-
-                            // Generate summary
-                            let summary = self.generateSummary(from: cleanContent)
-
-                            let extractedData = ExtractedWebContent(
-                                url: url,
-                                title: metadata.title ?? url.host ?? "Web Page",
-                                content: cleanContent,
-                                summary: summary,
-                                metadata: metadata
-                            )
-
-                            continuation.resume(returning: extractedData)
-                        } catch {
-                            continuation.resume(throwing: error)
-                        }
-                    }
-                case .failure(let error):
-                    continuation.resume(throwing: error)
-                }
-            }
-
-            webView.load(request)
+        // Check if crawling is allowed and apply ethical delays
+        let crawlPermission = try await ethicalCrawler.canCrawl(cleanedURL)
+        guard crawlPermission.allowed else {
+            throw WebClipperError.robotsBlocked(cleanedURL.absoluteString)
         }
+
+        // Perform ethical request with rate limiting
+        let (data, response) = try await ethicalCrawler.ethicalRequest(to: cleanedURL)
+
+        guard let htmlString = String(data: data, encoding: .utf8) else {
+            throw WebClipperError.contentExtractionFailed
+        }
+
+        // Strip tracking from HTML
+        let privacyCleanedHTML = await privacyEngine.stripTrackingFromHTML(htmlString, baseURL: cleanedURL)
+
+        // Cache images and update HTML references
+        let htmlWithCachedImages = try await imageCacheActor.cacheImagesInHTML(privacyCleanedHTML, baseURL: cleanedURL)
+
+        // Extract clean content using Readability
+        let cleanContent = await readabilityEngine.extractContent(from: htmlWithCachedImages, url: cleanedURL)
+
+        // Extract metadata
+        let metadata = await metadataExtractor.extractMetadata(from: privacyCleanedHTML, url: cleanedURL)
+
+        // Generate summary
+        let summary = generateSummary(from: cleanContent)
+
+        return ExtractedWebContent(
+            url: cleanedURL,
+            title: metadata.title ?? cleanedURL.host ?? "Web Page",
+            content: cleanContent,
+            summary: summary,
+            metadata: metadata
+        )
     }
 
     private func createWebClipNode(from extractedData: ExtractedWebContent) async throws -> Node {
@@ -191,11 +187,77 @@ public actor WebClipperActor {
 
         return content
     }
+
+    // MARK: - Advanced Content Extraction (Task 4)
+
+    /// Handles dynamic websites and JavaScript-rendered content when needed
+    public func extractDynamicContent(from url: URL) async throws -> ExtractedWebContent {
+        // First try standard extraction
+        do {
+            return try await extractContent(from: url)
+        } catch {
+            // If standard extraction fails, try with JavaScript enabled
+            return try await extractWithJavaScript(from: url)
+        }
+    }
+
+    private func extractWithJavaScript(from url: URL) async throws -> ExtractedWebContent {
+        let cleanedURL = await privacyEngine.stripTrackingParameters(from: url)
+
+        // Create privacy WebView with JavaScript enabled for dynamic content
+        let webView = await privacyEngine.createPrivacyWebView()
+
+        // Enable JavaScript for dynamic content extraction
+        webView.configuration.preferences.javaScriptEnabled = true
+
+        let request = await privacyEngine.createPrivacyRequest(for: cleanedURL, userAgent: "IsometryWebClipper/1.0")
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let delegate = DynamicContentDelegate { result in
+                switch result {
+                case .success(let html):
+                    Task {
+                        do {
+                            // Process the dynamic content
+                            let privacyCleanedHTML = await self.privacyEngine.stripTrackingFromHTML(html, baseURL: cleanedURL)
+                            let htmlWithCachedImages = try await self.imageCacheActor.cacheImagesInHTML(privacyCleanedHTML, baseURL: cleanedURL)
+                            let cleanContent = await self.readabilityEngine.extractContent(from: htmlWithCachedImages, url: cleanedURL)
+                            let metadata = await self.metadataExtractor.extractMetadata(from: privacyCleanedHTML, url: cleanedURL)
+                            let summary = self.generateSummary(from: cleanContent)
+
+                            let extractedData = ExtractedWebContent(
+                                url: cleanedURL,
+                                title: metadata.title ?? cleanedURL.host ?? "Web Page",
+                                content: cleanContent,
+                                summary: summary,
+                                metadata: metadata
+                            )
+
+                            continuation.resume(returning: extractedData)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                case .failure(let error):
+                    continuation.resume(throwing: error)
+                }
+            }
+
+            webView.navigationDelegate = delegate
+            webView.load(request)
+
+            // Timeout after 30 seconds
+            Task {
+                try await Task.sleep(nanoseconds: 30_000_000_000)
+                continuation.resume(throwing: WebClipperError.contentExtractionFailed)
+            }
+        }
+    }
 }
 
-// MARK: - Navigation Delegate
+// MARK: - Dynamic Content Navigation Delegate
 
-private class WebClipperNavigationDelegate: NSObject, WKNavigationDelegate {
+private class DynamicContentDelegate: NSObject, WKNavigationDelegate {
     private let completion: (Result<String, Error>) -> Void
 
     init(completion: @escaping (Result<String, Error>) -> Void) {
@@ -204,13 +266,16 @@ private class WebClipperNavigationDelegate: NSObject, WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        webView.evaluateJavaScript("document.documentElement.outerHTML") { result, error in
-            if let error = error {
-                self.completion(.failure(error))
-            } else if let html = result as? String {
-                self.completion(.success(html))
-            } else {
-                self.completion(.failure(WebClipperError.contentExtractionFailed))
+        // Wait for dynamic content to load
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            webView.evaluateJavaScript("document.documentElement.outerHTML") { result, error in
+                if let error = error {
+                    self.completion(.failure(error))
+                } else if let html = result as? String {
+                    self.completion(.success(html))
+                } else {
+                    self.completion(.failure(WebClipperError.contentExtractionFailed))
+                }
             }
         }
     }
