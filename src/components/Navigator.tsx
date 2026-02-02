@@ -83,11 +83,12 @@ export function Navigator() {
       </div>
 
       {/* PAFVNavigator at z-10, below Navigator dropdowns (z-20) */}
-      {isExpanded && (
+      {/* TODO: Re-enable PAFVNavigator once PAFV context compatibility is fixed */}
+      {/* {isExpanded && (
         <div className="relative z-10">
           <PAFVNavigator />
         </div>
-      )}
+      )} */}
     </>
   );
 }

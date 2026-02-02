@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 // Note: Cannot import from NotebookContext due to circular dependency
 // Will pass notebook data as parameters instead
 import { useFilters } from '../contexts/FilterContext';
-import { usePAFV } from '../contexts/PAFVContext';
+import { usePAFV } from '../hooks/usePAFV';
 import { useTheme } from '../contexts/ThemeContext';
 import { useDatabase } from '../db/DatabaseContext';
 
@@ -64,7 +64,7 @@ export interface UseNotebookIntegrationReturn extends NotebookIntegrationState, 
 export function useNotebookIntegration(params: NotebookHookParams): UseNotebookIntegrationReturn {
   const { activeCard, cards, loadCards } = params;
   const { filters } = useFilters();
-  const { wells } = usePAFV();
+  const { state: pafvState } = usePAFV();
   const { theme } = useTheme();
   const { execute } = useDatabase();
 
@@ -80,7 +80,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
   const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const changeQueueRef = useRef<Set<string>>(new Set());
   const lastFilterStateRef = useRef(filters);
-  const lastProjectionRef = useRef(wells);
+  const lastProjectionRef = useRef(pafvState);
 
   // Debounced sync to avoid excessive database operations
   const debouncedSync = useCallback(() => {
@@ -180,17 +180,17 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Update PAFV projections to include notebook data
   const updatePAFVProjections = useCallback(async () => {
-    if (!wells) return;
+    if (!pafvState) return;
 
     // Check if projection has changed
-    const projectionChanged = JSON.stringify(wells) !== JSON.stringify(lastProjectionRef.current);
+    const projectionChanged = JSON.stringify(pafvState) !== JSON.stringify(lastProjectionRef.current);
 
     if (projectionChanged) {
       // Notebook cards are automatically included in projections via the nodes table
       // No additional work needed here since cards are linked to nodes
-      lastProjectionRef.current = wells;
+      lastProjectionRef.current = pafvState;
     }
-  }, [wells]);
+  }, [pafvState]);
 
   // Detect and handle editing conflicts
   const detectConflicts = useCallback(async () => {
@@ -325,10 +325,10 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Monitor projection changes
   useEffect(() => {
-    if (JSON.stringify(wells) !== JSON.stringify(lastProjectionRef.current)) {
+    if (JSON.stringify(pafvState) !== JSON.stringify(lastProjectionRef.current)) {
       debouncedSync();
     }
-  }, [wells, debouncedSync]);
+  }, [pafvState, debouncedSync]);
 
   // Monitor theme changes (immediate update)
   useEffect(() => {

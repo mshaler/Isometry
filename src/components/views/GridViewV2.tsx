@@ -14,7 +14,7 @@
 import { useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { usePAFV } from '@/contexts/PAFVContext';
+import { usePAFV } from '@/hooks/usePAFV';
 import { D3ViewWrapper } from '@/d3/components/D3ViewWrapper';
 import { nodeToCardValue } from '@/types/lpg';
 import type { Node } from '@/types/node';
@@ -77,12 +77,13 @@ function getFieldValue(node: Node, chipId: string): string {
 
 export function GridViewV2({ data, onNodeClick }: GridViewV2Props) {
   const { theme } = useTheme();
-  const { wells } = usePAFV();
+  const { state: pafvState } = usePAFV();
 
-  // Get axis assignments from PAFV wells
-  // columns = horizontal (x-axis), rows = vertical (y-axis)
-  const xAxis = wells.columns[0]?.id || 'year';
-  const yAxis = wells.rows[0]?.id || 'folder';
+  // Get axis assignments from PAFV mappings
+  const xAxisMapping = pafvState.mappings.find(m => m.plane === 'x');
+  const yAxisMapping = pafvState.mappings.find(m => m.plane === 'y');
+  const xAxis = xAxisMapping?.facet || 'year';
+  const yAxis = yAxisMapping?.facet || 'folder';
 
   // Convert Node[] to NodeValue[] for Isometry D3 components
   const cardData = useMemo(() => data.map(nodeToCardValue), [data]);

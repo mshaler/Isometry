@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePAFV, type Wells, type Chip } from '../contexts/PAFVContext';
+import { usePAFV } from '../hooks/usePAFV';
+import type { Chip } from '../types/pafv';
 import { useMockData } from './useMockData';
 import type { Node } from '../types/node';
 import * as d3 from 'd3';

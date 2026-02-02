@@ -1,9 +1,12 @@
 import * as d3 from 'd3';
 import type { Node } from '../types/node';
-import type { Chip as PAFVChip } from '../contexts/PAFVContext';
-
-// Use the PAFV Chip type instead of defining our own
-type Chip = PAFVChip;
+// Define a simple Chip interface compatible with d3 usage
+interface Chip {
+  id: string;
+  label: string;
+  hasCheckbox?: boolean;
+  checked?: boolean;
+}
 
 // ============================================================================
 // Scale Type Definitions
