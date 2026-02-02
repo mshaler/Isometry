@@ -181,6 +181,7 @@ Plans:
 #### Phase 29: Enhanced Apple Notes Live Integration
 **Goal:** Implement live Apple Notes synchronization with CRDT conflict resolution and comprehensive user experience
 **Depends on:** Phase 27 (Application Integration Gap Closure)
+**Requirements:** NOTES-LIVE-01 through NOTES-LIVE-05, TCC-01 through TCC-04, CRDT-01 through CRDT-04, PERF-NOTES-01 through PERF-NOTES-04
 **Success Criteria** (what must be TRUE):
   1. Real-time Notes synchronization with <1s change detection via FSEvents monitoring
   2. TCC permission management with graceful degradation and clear user communication
@@ -399,8 +400,20 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 | NOTES-LIVE-03 | Phase 29 | Planned |
 | NOTES-LIVE-04 | Phase 29 | Planned |
 | NOTES-LIVE-05 | Phase 29 | Planned |
+| TCC-01 | Phase 29 | Planned |
+| TCC-02 | Phase 29 | Planned |
+| TCC-03 | Phase 29 | Planned |
+| TCC-04 | Phase 29 | Planned |
+| CRDT-01 | Phase 29 | Planned |
+| CRDT-02 | Phase 29 | Planned |
+| CRDT-03 | Phase 29 | Planned |
+| CRDT-04 | Phase 29 | Planned |
+| PERF-NOTES-01 | Phase 29 | Planned |
+| PERF-NOTES-02 | Phase 29 | Planned |
+| PERF-NOTES-03 | Phase 29 | Planned |
+| PERF-NOTES-04 | Phase 29 | Planned |
 
-**v3.2 Coverage:** 5/5 requirements mapped ✓
+**v3.2 Coverage:** 17/17 requirements mapped ✓
 
 ### v3.3 Complete Apple Notes Data Lifecycle Requirements
 
