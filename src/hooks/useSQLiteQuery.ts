@@ -113,7 +113,13 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
       const queryDuration = endTime - startTime;
 
       const result = transformRef.current ? transformRef.current(rows) : (rows as unknown as T[]);
-      setData(result);
+
+      // Use fallback data if query returns empty results and fallback is available
+      if (result.length === 0 && fallbackData && fallbackData.length > 0) {
+        setData(fallbackData);
+      } else {
+        setData(result);
+      }
       setOptimized(wasOptimized);
       setDuration(queryDuration);
 
@@ -165,7 +171,8 @@ const nodeTransform = (rows: Record<string, unknown>[]) => rows.map(rowToNode);
 export function useNodes(
   whereClause: string = '1=1',
   params: unknown[] = [],
-  options: Omit<QueryOptions<Node>, 'transform'> = {}
+  options: Omit<QueryOptions<Node>, 'transform'> = {},
+  fallbackNodes?: Node[]
 ): QueryState<Node> {
   const sql = useMemo(() => `
     SELECT * FROM nodes
@@ -179,9 +186,5 @@ export function useNodes(
     [options.cacheTags]
   );
 
-  return useSQLiteQuery<Node>(sql, params, {
-    ...options,
-    transform: nodeTransform,
-    cacheTags,
-  });
+  return useSQLiteQuery<Node>(sql, params, fallbackNodes || []);
 }

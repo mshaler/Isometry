@@ -1,13 +1,16 @@
 import { useMemo } from 'react';
 import { useFilters } from '../contexts/FilterContext';
 import { useNodes, type QueryState } from './useSQLiteQuery';
+import { useAllDemoNodes } from './useDemoData';
 import type { Node } from '../types/node';
 
 /**
  * Hook that combines FilterContext with useNodes to return filtered data.
  * Automatically recompiles SQL when filters change.
+ * Falls back to demo data when database is unavailable.
  */
 export function useFilteredNodes(): QueryState<Node> {
+  const demoNodes = useAllDemoNodes();
   const { filters: activeFilters } = useFilters();
 
   // Compile filters to SQL WHERE clause - simplified for basic Filter[]
@@ -67,7 +70,7 @@ export function useFilteredNodes(): QueryState<Node> {
       .trim() || '1=1';
   }, [whereClause]);
 
-  return useNodes(adjustedWhereClause, params);
+  return useNodes(adjustedWhereClause, params, {}, demoNodes);
 }
 
 /**

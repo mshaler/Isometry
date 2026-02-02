@@ -30,6 +30,7 @@ export function Navigator() {
     { value: 'Grid', label: 'Grid' },
     { value: 'Charts', label: 'Charts' },
     { value: 'Graphs', label: 'Graphs' },
+    { value: 'SuperGrid', label: 'SuperGrid' },
   ], []);
 
   const datasetOptions: DropdownOption<DatasetName>[] = useMemo(() => [

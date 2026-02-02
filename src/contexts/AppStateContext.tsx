@@ -2,7 +2,7 @@ import { createContext, useContext, ReactNode } from 'react';
 import { useURLState } from '@/hooks/useURLState';
 
 export type AppName = 'Demo' | 'Inbox' | 'Projects' | 'LinkedIn' | 'MTGs' | 'ReadWatch';
-export type ViewName = 'List' | 'Gallery' | 'Timeline' | 'Calendar' | 'Tree' | 'Kanban' | 'Grid' | 'Charts' | 'Graphs';
+export type ViewName = 'List' | 'Gallery' | 'Timeline' | 'Calendar' | 'Tree' | 'Kanban' | 'Grid' | 'Charts' | 'Graphs' | 'SuperGrid';
 export type DatasetName = 'ETL' | 'CAS' | 'Catalog' | 'Taxonomy' | 'Notes' | 'Projects' | 'Contacts' | 'Messages';
 
 interface AppStateContextType {

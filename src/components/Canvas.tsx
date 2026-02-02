@@ -4,6 +4,7 @@ import { useAppState } from '../contexts/AppStateContext';
 import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
 import { RealTimeRenderer } from './performance/RealTimeRenderer';
 import DataFlowMonitor from './DataFlowMonitor';
+import { SuperGridView } from './SuperGridView';
 import {
   ListView,
   GridView,
@@ -110,6 +111,9 @@ export function Canvas() {
           case 'List':
             return <D3ListView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
 
+          case 'SuperGrid':
+            return <SuperGridView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
+
           case 'Gallery':
           case 'Grid':
           default:
@@ -141,6 +145,9 @@ export function Canvas() {
     switch (activeView) {
       case 'List':
         return <ListView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
+
+      case 'SuperGrid':
+        return <SuperGridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
 
       case 'Gallery':
       case 'Grid':
