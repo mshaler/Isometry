@@ -503,7 +503,7 @@ public actor AppleNotesLiveImporter {
 
 // MARK: - ExportableImporterProtocol Conformance
 
-extension AppleNotesLiveImporter: ExportableImporterProtocol {
+extension AppleNotesLiveImporter: ImportTestHarness.ExportableImporterProtocol {
 
     public func importData(_ content: Data, filename: String, folder: String?) async throws -> ImportResult {
         // Delegate to AltoIndexImporter for testing
@@ -519,11 +519,11 @@ extension AppleNotesLiveImporter: ExportableImporterProtocol {
         return result
     }
 
-    public var supportedExtensions: [String] {
+    nonisolated public var supportedExtensions: [String] {
         return ["md", "markdown"] // Match AltoIndexImporter without actor isolation issues
     }
 
-    public var importerName: String {
+    nonisolated public var importerName: String {
         return "AppleNotesLiveImporter"
     }
 
@@ -531,7 +531,7 @@ extension AppleNotesLiveImporter: ExportableImporterProtocol {
         return try await altoIndexImporter.exportNodes(nodes, to: url)
     }
 
-    public func validateRoundTripData(original: Data, exported: Data) async throws -> RoundTripValidationResult {
+    public func validateRoundTripData(original: Data, exported: Data) async throws -> ImportTestHarness.RoundTripValidationResult {
         return try await altoIndexImporter.validateRoundTripData(original: original, exported: exported)
     }
 }
