@@ -29,7 +29,7 @@ const VIEW_MODES: Array<{ value: ViewMode; label: string }> = [
 
 function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
   const { isNotebookMode, toggleNotebookMode } = useNotebook();
-  const [viewMode, setViewMode] = useState<ViewMode>(() => (isNotebookMode ? 'notebook' : 'app'));
+  const [viewMode, setViewMode] = useState<ViewMode>(() => (isNotebookMode ? 'notebook' : 'supergrid'));
 
   useEffect(() => {
     const shouldEnableNotebook = viewMode === 'notebook';

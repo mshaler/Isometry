@@ -34,8 +34,8 @@ function generateAppleNotesData(): Node[] {
     folder: folders[i % folders.length],
     tags: [tags[i % tags.length], tags[(i + 1) % tags.length]],
     priority: priorities[i % priorities.length],
-    createdAt: new Date(2024, 0, 1 + i * 3).toISOString(),
-    modifiedAt: new Date(2024, 0, 1 + i * 3 + Math.floor(Math.random() * 10)).toISOString(),
+    createdAt: new Date(2020 + (i % 5), 0, 1 + i * 3).toISOString(),
+    modifiedAt: new Date(2020 + (i % 5), 0, 1 + i * 3 + Math.floor(Math.random() * 10)).toISOString(),
   }));
 }
 
@@ -55,8 +55,8 @@ function generateProjectData(): Node[] {
     folder: teams[i % teams.length],
     tags: [statuses[i % statuses.length]],
     priority: priorities[i % priorities.length],
-    createdAt: new Date(2024, 1, 1 + i * 2).toISOString(),
-    modifiedAt: new Date(2024, 1, 1 + i * 2 + Math.floor(Math.random() * 5)).toISOString(),
+    createdAt: new Date(2020 + (i % 5), 1, 1 + i * 2).toISOString(),
+    modifiedAt: new Date(2020 + (i % 5), 1, 1 + i * 2 + Math.floor(Math.random() * 5)).toISOString(),
   }));
 }
 
@@ -76,8 +76,8 @@ function generateCustomerData(): Node[] {
     folder: regions[i % regions.length],
     tags: [segments[i % segments.length]],
     priority: priorities[i % priorities.length],
-    createdAt: new Date(2024, 2, 1 + i * 4).toISOString(),
-    modifiedAt: new Date(2024, 2, 1 + i * 4 + Math.floor(Math.random() * 7)).toISOString(),
+    createdAt: new Date(2020 + (i % 5), 2, 1 + i * 4).toISOString(),
+    modifiedAt: new Date(2020 + (i % 5), 2, 1 + i * 4 + Math.floor(Math.random() * 7)).toISOString(),
   }));
 }
 
@@ -97,8 +97,8 @@ function generateContentData(): Node[] {
     folder: categories[i % categories.length],
     tags: [statuses[i % statuses.length]],
     priority: priorities[i % priorities.length],
-    createdAt: new Date(2024, 3, 1 + i).toISOString(),
-    modifiedAt: new Date(2024, 3, 1 + i + Math.floor(Math.random() * 3)).toISOString(),
+    createdAt: new Date(2020 + (i % 5), 3, 1 + i).toISOString(),
+    modifiedAt: new Date(2020 + (i % 5), 3, 1 + i + Math.floor(Math.random() * 3)).toISOString(),
   }));
 }
 

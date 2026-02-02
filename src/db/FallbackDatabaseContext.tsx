@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { SAMPLE_NOTES as ALL_NOTES } from './sample-data';
 
 export interface FallbackDatabaseContextValue {
   loading: boolean;
@@ -35,10 +36,47 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
     sql: string,
     params?: unknown[]
   ): T[] => {
-    console.log('[FallbackDB] Query executed with fallback data:', { sql: sql.substring(0, 50) + '...', params });
+    console.log('[FallbackDB] Query executed:', {
+      sql: sql.substring(0, 50) + '...',
+      returning: sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes') ? `${ALL_NOTES.length} real nodes` : 'other data'
+    });
 
-    // Return empty arrays for all queries
-    // Components should use fallback data patterns from useSQLiteQuery
+    // Return sample data for nodes queries
+    if (sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes')) {
+      const sampleNodes = ALL_NOTES.map(note => ({
+        id: note.id,
+        node_type: 'note',
+        name: note.name,
+        content: note.content,
+        folder: note.folder,
+        tags: JSON.stringify(note.tags),
+        priority: note.priority,
+        created_at: new Date(Date.now() - note.createdDaysAgo * 24 * 60 * 60 * 1000).toISOString(),
+        modified_at: new Date(Date.now() - Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3)) * 24 * 60 * 60 * 1000).toISOString(),
+        deleted_at: null,
+        latitude: null,
+        longitude: null,
+        location_name: null,
+        location_address: null,
+        due_at: null,
+        completed_at: null,
+        event_start: null,
+        event_end: null,
+        status: null,
+        importance: 0,
+        sort_order: 0,
+        source: null,
+        source_id: null,
+        source_url: null,
+        version: 1,
+        summary: null
+      })) as T[];
+
+      console.log(`[FallbackDB] Returning ${sampleNodes.length} sample nodes`);
+      return sampleNodes;
+    }
+
+    // Return empty arrays for other queries
     return [];
   }, []);
 

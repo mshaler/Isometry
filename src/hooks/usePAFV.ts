@@ -27,7 +27,9 @@ export function usePAFV(): PAFVContextValue {
   const context = useContext(PAFVContext);
 
   if (!context) {
-    console.error('❌ usePAFV: Context not found. Ensure SuperGrid is clicked after app fully loads.');
+    console.error('❌ usePAFV: Context not found. This will cause a blank screen. Ensure PAFVProvider wraps the component tree.');
+    console.error('❌ Current component tree may be missing PAFVProvider from state/PAFVContext.tsx');
+    console.error('❌ Stack trace for debugging:', new Error().stack);
     throw new Error('usePAFV must be used within PAFVProvider');
   }
 

@@ -20,6 +20,7 @@ interface QueryOptions<T> {
   enabled?: boolean;
   transform?: (rows: Record<string, unknown>[]) => T[];
   cacheTags?: CacheTag[];
+  fallbackData?: T[];
 }
 
 export function useSQLiteQuery<T = Record<string, unknown>>(
@@ -35,6 +36,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
     fallbackData = fallbackDataOrOptions;
   } else if (fallbackDataOrOptions) {
     options = fallbackDataOrOptions;
+    fallbackData = options.fallbackData || null;
   }
   const { execute, loading: dbLoading, error: dbError } = useDatabase();
   const { enabled = true, transform, cacheTags } = options;
@@ -135,7 +137,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
     } catch (err) {
       setError(err as Error);
       // Use fallback data if available when query fails
-      if (fallbackData) {
+      if (fallbackData && fallbackData.length > 0) {
         setData(fallbackData);
         setError(null); // Clear error since we have fallback data
       } else {
@@ -186,5 +188,13 @@ export function useNodes(
     [options.cacheTags]
   );
 
-  return useSQLiteQuery<Node>(sql, params, fallbackNodes || []);
+  // Use options approach to include transform, cacheTags, and fallbackData
+  const queryOptions: QueryOptions<Node> = {
+    ...options,
+    transform: nodeTransform,
+    cacheTags,
+    fallbackData: fallbackNodes,
+  };
+
+  return useSQLiteQuery<Node>(sql, params, queryOptions);
 }

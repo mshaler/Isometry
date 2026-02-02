@@ -201,9 +201,13 @@ export function useDatabase(): DatabaseContextValue | NativeDatabaseContextValue
 
       case DatabaseMode.FALLBACK:
         if (lastLoggedMode !== environment.mode || loggedCount < 3) {
-          console.log('✅ Using Fallback database provider');
+          console.log('✅ Using Fallback database provider (should return 100 nodes)');
         }
-        return useFallbackDatabase();
+        const fallbackDb = useFallbackDatabase();
+        if (lastLoggedMode !== environment.mode || loggedCount < 3) {
+          console.log('[DatabaseContext] Fallback DB execute type:', typeof fallbackDb.execute);
+        }
+        return fallbackDb;
 
       default:
         if (lastLoggedMode !== environment.mode || loggedCount < 3) {

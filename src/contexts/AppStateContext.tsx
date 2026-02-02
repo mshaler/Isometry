@@ -26,7 +26,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   );
   const [activeView, setActiveView] = useURLState<ViewName>(
     'view',
-    'Grid',
+    'SuperGrid',
     (v) => v,
     (s) => s as ViewName
   );

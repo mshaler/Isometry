@@ -29,6 +29,8 @@ export function SuperGridDemo() {
   const [originPattern, setOriginPattern] = useState<OriginPattern>('anchor');
   const { selectedNode, setSelectedNode } = useCardOverlay();
 
+  // SuperGrid rendering - debug logs removed after successful fix
+
   // Get PAFV context for axis mappings
   const pafv = usePAFV();
   const pafvState = pafv.state;
