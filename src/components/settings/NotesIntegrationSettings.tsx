@@ -51,7 +51,8 @@ interface SyncStatistics {
 
 export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSettingsProps) {
   const { theme } = useTheme();
-  const { executeQuery: bridgeExecuteQuery } = useLiveDataContext();
+  const liveDataContext = useLiveDataContext();
+  const bridgeExecuteQuery = liveDataContext?.executeQuery;
 
   // Bridge communication with error handling and timeouts
   const executeQuery = useCallback(async (method: string, params?: unknown): Promise<any> => {
@@ -167,49 +168,6 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
     ? 'bg-[#c8c8c8] border-2 border-t-[#e0e0e0] border-l-[#e0e0e0] border-b-[#808080] border-r-[#808080] hover:bg-[#d0d0d0]'
     : 'bg-blue-600 hover:bg-blue-700 text-white rounded-lg';
 
-  // Load initial data with connection monitoring
-  useEffect(() => {
-    if (isOpen) {
-      loadPermissionStatus();
-      loadLiveSyncStatus();
-      loadStatistics();
-
-      // Set up bridge event subscriptions for real-time updates
-      const subscriptions = [
-        'notes.permissionChanged',
-        'notes.syncStatusChanged',
-        'notes.syncProgress',
-        'notes.conflictDetected',
-        'notes.errorOccurred'
-      ];
-
-      // TODO: Subscribe to bridge events when bridge supports it
-      // subscriptions.forEach(event => bridgeExecuteQuery('subscribe', { event }));
-    }
-  }, [isOpen, loadPermissionStatus, loadLiveSyncStatus, loadStatistics]);
-
-  // Bridge health monitoring
-  useEffect(() => {
-    if (isOpen) {
-      const healthCheck = setInterval(async () => {
-        try {
-          // Simple ping to check bridge connectivity
-          await executeQuery('ping', {});
-          if (bridgeConnectionStatus !== 'connected') {
-            setBridgeConnectionStatus('connected');
-            setLastError(null);
-          }
-        } catch {
-          if (bridgeConnectionStatus === 'connected') {
-            setBridgeConnectionStatus('disconnected');
-          }
-        }
-      }, 10000); // Check every 10 seconds
-
-      return () => clearInterval(healthCheck);
-    }
-  }, [isOpen, bridgeConnectionStatus, executeQuery]);
-
   // Permission management with retry logic
   const loadPermissionStatus = useCallback(async () => {
     try {
@@ -260,6 +218,22 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
       setIsRequestingPermission(false);
     }
   }, [executeQuery, liveSyncStatus.enabled]);
+
+  // Statistics with bridge status integration
+  const loadStatistics = useCallback(async () => {
+    try {
+      const result = await executeQuery('notes.getStatistics', {});
+      setStatistics(result);
+      setBridgeConnectionStatus('connected');
+    } catch (error) {
+      console.error('Failed to load statistics:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Failed to load statistics');
+
+      // Set error count to indicate bridge issues
+      setStatistics(prev => ({ ...prev, errorCount: prev.errorCount + 1 }));
+    }
+  }, [executeQuery]);
 
   // Live sync management with bridge error handling
   const loadLiveSyncStatus = useCallback(async () => {
@@ -334,22 +308,50 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
     }
   }, [executeQuery, liveSyncStatus.enabled, liveSyncStatus.performanceMode, liveSyncStatus.autoResolveConflicts]);
 
+  // Load initial data with connection monitoring
+  useEffect(() => {
+    if (isOpen) {
+      loadPermissionStatus();
+      loadLiveSyncStatus();
+      loadStatistics();
 
-  // Statistics with bridge status integration
-  const loadStatistics = useCallback(async () => {
-    try {
-      const result = await executeQuery('notes.getStatistics', {});
-      setStatistics(result);
-      setBridgeConnectionStatus('connected');
-    } catch (error) {
-      console.error('Failed to load statistics:', error);
-      setBridgeConnectionStatus('disconnected');
-      setLastError(error instanceof Error ? error.message : 'Failed to load statistics');
+      // Set up bridge event subscriptions for real-time updates
+      // TODO: Setup subscriptions when bridge supports it
+      const subscriptions = [
+        'notes.permissionChanged',
+        'notes.syncStatusChanged',
+        'notes.syncProgress',
+        'notes.conflictDetected',
+        'notes.errorOccurred'
+      ];
 
-      // Set error count to indicate bridge issues
-      setStatistics(prev => ({ ...prev, errorCount: prev.errorCount + 1 }));
+      // TODO: Subscribe to bridge events when bridge supports it
+      console.log('Future bridge subscriptions:', subscriptions);
+      // subscriptions.forEach(event => bridgeExecuteQuery('subscribe', { event }));
     }
-  }, [executeQuery]);
+  }, [isOpen, loadPermissionStatus, loadLiveSyncStatus, loadStatistics]);
+
+  // Bridge health monitoring
+  useEffect(() => {
+    if (isOpen) {
+      const healthCheck = setInterval(async () => {
+        try {
+          // Simple ping to check bridge connectivity
+          await executeQuery('ping', {});
+          if (bridgeConnectionStatus !== 'connected') {
+            setBridgeConnectionStatus('connected');
+            setLastError(null);
+          }
+        } catch {
+          if (bridgeConnectionStatus === 'connected') {
+            setBridgeConnectionStatus('disconnected');
+          }
+        }
+      }, 10000); // Check every 10 seconds
+
+      return () => clearInterval(healthCheck);
+    }
+  }, [isOpen, bridgeConnectionStatus, executeQuery]);
 
   // Helper functions
   const getPermissionStatusColor = () => {
