@@ -57,7 +57,7 @@ public struct RestoreConfiguration: Codable {
     public let validateIntegrity: Bool
     public let createBackup: Bool
     public let targetPointInTime: Date?
-    public let conflictResolution: ConflictResolution
+    public let conflictResolution: ConflictResolutionStrategy
 
     public static let `default` = RestoreConfiguration(
         dryRun: false,
@@ -76,7 +76,7 @@ public struct RestoreConfiguration: Codable {
         validateIntegrity: Bool = true,
         createBackup: Bool = true,
         targetPointInTime: Date? = nil,
-        conflictResolution: ConflictResolution = .abort
+        conflictResolution: ConflictResolutionStrategy = .abort
     ) {
         self.dryRun = dryRun
         self.restoreAttachments = restoreAttachments
@@ -121,7 +121,7 @@ public struct PurgeConfiguration: Codable {
 public struct RehydrateConfiguration: Codable {
     public let dataSources: [DataSource]
     public let timeRange: DateInterval?
-    public let conflictResolution: ConflictResolution
+    public let conflictResolution: ConflictResolutionStrategy
     public let includeSyntheticData: Bool
     public let syntheticDataScale: DataScale
     public let preserveExisting: Bool
@@ -129,7 +129,7 @@ public struct RehydrateConfiguration: Codable {
     public init(
         dataSources: [DataSource],
         timeRange: DateInterval? = nil,
-        conflictResolution: ConflictResolution = .merge,
+        conflictResolution: ConflictResolutionStrategy = .merge,
         includeSyntheticData: Bool = false,
         syntheticDataScale: DataScale = .medium,
         preserveExisting: Bool = true
@@ -208,7 +208,7 @@ public enum CompressionLevel: String, Codable, CaseIterable {
 }
 
 /// Conflict resolution strategies
-public enum ConflictResolution: String, Codable, CaseIterable {
+public enum ConflictResolutionStrategy: String, Codable, CaseIterable {
     case abort = "abort"
     case merge = "merge"
     case overwrite = "overwrite"
