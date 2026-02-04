@@ -35,7 +35,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   enableZoom = true,
   enableBrush = false,
   renderMode: _renderMode = 'svg',
-  maxNodes = 1000,
+  maxNodes: _maxNodes = 1000,
   debounceMs = 100
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -280,7 +280,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         <div className="text-center">
           <div className="text-red-600 font-medium">D3 Canvas Error</div>
           <div className="text-red-500 text-sm mt-1">
-            {(queryError && typeof queryError === 'string' ? queryError : queryError instanceof Error ? queryError.message : 'Unknown error') || error}
+            {(typeof queryError === 'string' ? queryError : (queryError as any)?.message || 'Unknown error') || error}
           </div>
         </div>
       </div>
