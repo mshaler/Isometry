@@ -1025,6 +1025,7 @@ extension DataScale {
     DatabaseVersionControlView(
         database: try! IsometryDatabase(path: ":memory:"),
         storageManager: ContentAwareStorageManager(
+            basePath: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appendingPathComponent("Isometry"),
             database: try! IsometryDatabase(path: ":memory:")
         )
     )

@@ -22,7 +22,10 @@ struct ETLDataCatalogView: View {
         let versionManager = ETLVersionManager(database: database)
         self._catalog = State(initialValue: ETLDataCatalog(database: database, versionManager: versionManager))
         self._versionManager = State(initialValue: versionManager)
-        self._storageManager = State(initialValue: ContentAwareStorageManager(database: database))
+        self._storageManager = State(initialValue: ContentAwareStorageManager(
+            basePath: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appendingPathComponent("Isometry"),
+            database: database
+        ))
     }
 
     var body: some View {

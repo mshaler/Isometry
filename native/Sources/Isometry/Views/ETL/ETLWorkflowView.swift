@@ -15,7 +15,10 @@ struct ETLWorkflowView: View {
         self.database = database
         self._etlManager = StateObject(wrappedValue: ETLOperationManager(
             database: database,
-            storageManager: ContentAwareStorageManager(database: database),
+            storageManager: ContentAwareStorageManager(
+                basePath: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appendingPathComponent("Isometry"),
+                database: database
+            ),
             versionManager: ETLVersionManager(database: database)
         ))
     }
