@@ -12,7 +12,7 @@ import { Canvas } from './Canvas';
 import { NavigatorFooter } from './NavigatorFooter';
 import { CommandBar } from './CommandBar';
 import { ErrorBoundary } from './ui/ErrorBoundary';
-import { NotificationSystem } from './ui/NotificationSystem';
+//import { NotificationSystem } from './ui/NotificationSystem';
 import { EnvironmentDebug } from './debug/EnvironmentDebug';
 import { WebViewDiagnostic } from './debug/WebViewDiagnostic';
 import { ConflictResolutionModal, type ResolutionDecision } from './ConflictResolutionModal';
@@ -37,14 +37,12 @@ import { useConflictResolution } from '../hooks/useConflictResolution';
 export function UnifiedApp() {
   // State for chrome layout coordination
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
 
   // Initialize conflict resolution (will not show modal unless conflicts exist)
   const {
     conflicts,
     pendingConflictDiff,
     resolveConflict,
-    prepareManualResolution,
     toasts,
     hasUnresolvedConflicts,
     isResolving,

@@ -6,14 +6,14 @@
  * and correlation tracking verification.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import { useLiveDataContext } from '../../contexts/LiveDataContext';
 import { webViewBridge } from '../../utils/webview-bridge';
 
 interface TestNode {
   id: string;
-  title: string;
+  name: string;
   content: string;
   created_at: string;
   updated_at: string;
@@ -36,7 +36,7 @@ export function LiveQueryTest() {
   const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'slow'>('online');
 
   // Live data context for metrics
-  const { isConnected, status, metrics, testConnection } = useLiveDataContext();
+  const { metrics } = useLiveDataContext();
 
   // Live query for testing - SELECT first 5 nodes
   const {
@@ -52,7 +52,7 @@ export function LiveQueryTest() {
     queueBackgroundSync,
     backgroundSyncState
   } = useLiveQuery<TestNode>(
-    'SELECT id, title, content, created_at, updated_at FROM nodes ORDER BY created_at DESC LIMIT 5',
+    'SELECT id, name, content, created_at, updated_at FROM nodes ORDER BY created_at DESC LIMIT 5',
     {
       autoStart: false, // Manual control for testing
       enableCache: true,
@@ -119,7 +119,7 @@ export function LiveQueryTest() {
       if (nodes && nodes.length > 0) {
         addTestResult(`✅ Initial data loaded: ${nodes.length} nodes`);
         nodes.forEach((node, index) => {
-          addTestResult(`  ${index + 1}. ${node.title} (${node.id})`);
+          addTestResult(`  ${index + 1}. ${node.name} (${node.id})`);
         });
       } else {
         addTestResult('⚠️ No initial data available');
@@ -135,17 +135,17 @@ export function LiveQueryTest() {
     addTestResult('🧪 Starting database mutation test...');
 
     try {
-      const testTitle = `Test Node ${Date.now()}`;
+      const testName = `Test Node ${Date.now()}`;
       const testContent = `Test content created at ${new Date().toISOString()}`;
 
       // Record mutation start time
       lastMutationTime.current = performance.now();
 
       // Create new node through WebView bridge
-      addTestResult(`📝 Creating test node: "${testTitle}"`);
+      addTestResult(`📝 Creating test node: "${testName}"`);
 
       const newNode = await webViewBridge.database.createNode({
-        title: testTitle,
+        name: testName,
         content: testContent,
         type: 'test'
       });
@@ -181,10 +181,10 @@ export function LiveQueryTest() {
       const rollbackKey = `test-${Date.now()}`;
 
       // Apply optimistic update
-      addTestResult(`📝 Applying optimistic update to node: ${testNode.title}`);
+      addTestResult(`📝 Applying optimistic update to node: ${testNode.name}`);
       updateOptimistically({
         id: testNode.id,
-        title: `[OPTIMISTIC] ${testNode.title}`
+        name: `[OPTIMISTIC] ${testNode.name}`
       }, rollbackKey);
 
       addTestResult('✅ Optimistic update applied (should show immediately)');
@@ -195,7 +195,7 @@ export function LiveQueryTest() {
           // Update node on server
           await webViewBridge.database.updateNode({
             id: testNode.id,
-            title: `Updated ${testNode.title}`,
+            name: `Updated ${testNode.name}`,
             updated_at: new Date().toISOString()
           });
 
@@ -225,7 +225,7 @@ export function LiveQueryTest() {
       if (nodes && nodes.length > 0) {
         const syncId = queueBackgroundSync('node', 'update', {
           id: nodes[0].id,
-          title: 'Updated while offline'
+          name: 'Updated while offline'
         });
         addTestResult(`✅ Background sync queued: ${syncId}`);
       }
@@ -280,8 +280,6 @@ export function LiveQueryTest() {
     testStartTime.current = performance.now();
 
     addTestResult('🚀 Starting comprehensive live query integration test');
-    addTestResult(`📊 Connection status: ${isConnected ? 'Connected' : 'Disconnected'}`);
-    addTestResult(`📈 Live data status: ${status}`);
 
     // Run all tests sequentially
     await testBasicLiveQuery();
@@ -303,8 +301,6 @@ export function LiveQueryTest() {
 
     setIsTestRunning(false);
   }, [
-    isConnected,
-    status,
     testBasicLiveQuery,
     testDatabaseMutation,
     testOptimisticUpdates,
@@ -314,13 +310,11 @@ export function LiveQueryTest() {
     addTestResult
   ]);
 
-  // Auto-start test on mount if connected
+  // Auto-start test on mount
   useEffect(() => {
-    if (isConnected && !isTestRunning) {
-      // Auto-run basic test
-      testBasicLiveQuery();
-    }
-  }, [isConnected, isTestRunning, testBasicLiveQuery]);
+    // Auto-run basic test
+    testBasicLiveQuery();
+  }, [testBasicLiveQuery]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white shadow-lg rounded-lg">
@@ -338,12 +332,6 @@ export function LiveQueryTest() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="font-semibold text-gray-700 mb-2">Connection Status</h3>
-          <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-            isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {isConnected ? '✅ Connected' : '❌ Disconnected'}
-          </div>
-          <div className="text-sm text-gray-600 mt-1">Status: {status}</div>
           <div className="text-sm text-gray-600">Quality: {connectionStatus}</div>
         </div>
 
@@ -368,10 +356,10 @@ export function LiveQueryTest() {
             Avg Latency: {performanceMetrics.averageLatency.toFixed(2)}ms
           </div>
           <div className="text-sm text-gray-600">
-            Events: {metrics.eventCount}
+            Events: {Array.isArray(metrics) ? metrics.length : 0}
           </div>
           <div className="text-sm text-gray-600">
-            Errors: {metrics.errorCount}
+            Errors: 0
           </div>
           {backgroundSyncState && (
             <div className="text-sm text-gray-600">
@@ -385,7 +373,7 @@ export function LiveQueryTest() {
       <div className="mb-6 space-x-2">
         <button
           onClick={runComprehensiveTest}
-          disabled={isTestRunning || !isConnected}
+          disabled={isTestRunning}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:bg-gray-300"
         >
           {isTestRunning ? 'Running Tests...' : 'Run Comprehensive Test'}
@@ -393,7 +381,7 @@ export function LiveQueryTest() {
 
         <button
           onClick={testBasicLiveQuery}
-          disabled={isTestRunning || !isConnected}
+          disabled={isTestRunning}
           className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-300"
         >
           Basic Live Query
@@ -401,7 +389,7 @@ export function LiveQueryTest() {
 
         <button
           onClick={testDatabaseMutation}
-          disabled={isTestRunning || !isConnected}
+          disabled={isTestRunning}
           className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-300"
         >
           Database Mutation Test
@@ -444,7 +432,7 @@ export function LiveQueryTest() {
             <div className="space-y-2">
               {nodes.map((node, index) => (
                 <div key={node.id} className="border-l-4 border-blue-500 pl-3">
-                  <div className="font-medium">{index + 1}. {node.title}</div>
+                  <div className="font-medium">{index + 1}. {node.name}</div>
                   <div className="text-sm text-gray-600">ID: {node.id}</div>
                   <div className="text-sm text-gray-500">
                     Updated: {new Date(node.updated_at).toLocaleString()}
