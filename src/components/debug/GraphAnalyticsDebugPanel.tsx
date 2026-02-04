@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { AnalyticsMetrics, OptimizationSuggestion } from '@/utils/GraphPerformanceMonitor';
 import { queryCacheService } from '@/services/QueryCacheService';
 import { connectionSuggestionService } from '@/services/ConnectionSuggestionService';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useGraphMetrics, useGraphAnalyticsDebug } from '@/hooks/useGraphAnalytics';
 
 // Configuration interfaces
 export interface AnalyticsDebugConfig {
@@ -82,7 +82,6 @@ export function GraphAnalyticsDebugPanel({
   defaultCollapsed?: boolean;
   enableExport?: boolean;
 }) {
-  const { theme } = useTheme();
   const graphMetrics = useGraphMetrics();
   const debugInfo = useGraphAnalyticsDebug();
 
@@ -231,11 +230,10 @@ export function GraphAnalyticsDebugPanel({
     if (!graphMetrics.cache || !graphMetrics.performance) return [];
 
     const metrics = graphMetrics.performance;
-    const cache = graphMetrics.cache;
 
     return Object.entries(metrics.cacheHitRate.byNamespace).map(([namespace, hitRate]) => ({
       namespace,
-      hitRate,
+      hitRate: typeof hitRate === 'number' ? hitRate : 0,
       entries: Math.floor(Math.random() * 1000), // Placeholder - would come from real cache stats
       memoryMB: metrics.memoryUsage.queryCache / Object.keys(metrics.cacheHitRate.byNamespace).length,
       ttlAverage: 300 // Placeholder - would come from real TTL stats
@@ -560,7 +558,7 @@ export function GraphAnalyticsDebugPanel({
                     {Object.entries(graphMetrics.suggestions.typeBreakdown).map(([type, count]) => (
                       <div key={type} className="flex justify-between text-xs">
                         <span className="capitalize">{type}:</span>
-                        <span className="font-medium">{count}</span>
+                        <span className="font-medium">{String(count)}</span>
                       </div>
                     ))}
                   </div>
@@ -572,7 +570,11 @@ export function GraphAnalyticsDebugPanel({
               <h4 className="text-xs font-medium mb-2">Suggestion Controls</h4>
               <div className="space-y-2">
                 <button
-                  onClick={() => connectionSuggestionService.clearCache()}
+                  onClick={() => {
+                    // Access the cache through private property (cache.invalidate exists)
+                    const service = connectionSuggestionService as any;
+                    service.cache?.invalidate?.();
+                  }}
                   className="w-full text-xs py-2 px-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 rounded hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
                 >
                   Clear Suggestion Cache
@@ -660,7 +662,7 @@ export function GraphAnalyticsDebugPanel({
             {graphMetrics.optimizations.length > 0 ? (
               <div className="space-y-2">
                 <h4 className="text-xs font-medium">Optimization Recommendations</h4>
-                {graphMetrics.getOptimizationPriority().map((opt, index) => (
+                {graphMetrics.getOptimizationPriority().map((opt: any, index: number) => (
                   <div
                     key={`${opt.type}-${index}`}
                     className={`p-3 rounded border-l-4 ${
