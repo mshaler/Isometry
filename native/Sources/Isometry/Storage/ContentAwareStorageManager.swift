@@ -200,6 +200,65 @@ public actor ContentAwareStorageManager {
         }
     }
 
+    /// Get attachment info without loading content (public interface)
+    public func getAttachmentInfo(attachmentId: String) async throws -> AttachmentMetadata? {
+        return try await getAttachmentMetadata(attachmentId: attachmentId)
+    }
+
+    /// Detect MIME type from content and filename
+    public func detectMimeType(content: Data, filename: String) async -> String {
+        // First try by file extension
+        let pathExtension = URL(fileURLWithPath: filename).pathExtension.lowercased()
+
+        switch pathExtension {
+        case "png": return "image/png"
+        case "jpg", "jpeg": return "image/jpeg"
+        case "gif": return "image/gif"
+        case "pdf": return "application/pdf"
+        case "txt": return "text/plain"
+        case "md": return "text/markdown"
+        case "json": return "application/json"
+        case "zip": return "application/zip"
+        case "mp3": return "audio/mpeg"
+        case "mp4": return "video/mp4"
+        case "mov": return "video/quicktime"
+        case "wav": return "audio/wav"
+        default: break
+        }
+
+        // Then try by content magic bytes
+        if content.count >= 8 {
+            let header = Array(content.prefix(8))
+
+            // PNG signature
+            if header.starts(with: [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+                return "image/png"
+            }
+
+            // JPEG signature
+            if header.starts(with: [0xFF, 0xD8, 0xFF]) {
+                return "image/jpeg"
+            }
+
+            // PDF signature
+            if content.prefix(4) == Data([0x25, 0x50, 0x44, 0x46]) { // %PDF
+                return "application/pdf"
+            }
+
+            // ZIP signature
+            if header.starts(with: [0x50, 0x4B, 0x03, 0x04]) || header.starts(with: [0x50, 0x4B, 0x05, 0x06]) {
+                return "application/zip"
+            }
+        }
+
+        // Check for text content
+        if let _ = String(data: content.prefix(1024), encoding: .utf8) {
+            return "text/plain"
+        }
+
+        return "application/octet-stream"
+    }
+
     /// Update last accessed time for attachment
     private func updateLastAccessed(attachmentId: String) async throws {
         try await database.write { db in
