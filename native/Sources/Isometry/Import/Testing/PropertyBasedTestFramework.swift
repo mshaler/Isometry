@@ -689,7 +689,6 @@ public protocol DataValidator<Input, Output> {
     func validate(input: Input, output: Output) async throws -> Bool
     var description: String { get }
 }
-}
 
 // MARK: - Enhanced Error Types
 

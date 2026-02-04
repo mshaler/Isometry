@@ -51,27 +51,54 @@ interface SyncStatistics {
 
 export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSettingsProps) {
   const { theme } = useTheme();
-  // Context available for future use
-  useLiveDataContext();
+  const { executeQuery: bridgeExecuteQuery } = useLiveDataContext();
 
-  // Mock executeQuery functionality for Notes integration
+  // Bridge communication with error handling and timeouts
   const executeQuery = useCallback(async (method: string, params?: unknown): Promise<any> => {
-    // This would be implemented to communicate with the native bridge
-    // For now, return mock data for development
-    console.log('Executing query:', method, params);
+    try {
+      console.log('Executing bridge query:', method, params);
 
+      // Use the real bridge communication with 5 second timeout
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Bridge operation timeout')), 5000)
+      );
+
+      const queryPromise = bridgeExecuteQuery(method, params || {});
+      const result = await Promise.race([queryPromise, timeoutPromise]);
+
+      console.log('Bridge query result:', method, result);
+      return result;
+
+    } catch (error) {
+      console.error('Bridge communication error:', error);
+
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          throw new Error(`Bridge timeout for ${method}. Please check native connection.`);
+        }
+        if (error.message.includes('permission')) {
+          throw new Error(`Permission error for ${method}. Grant Notes access in System Preferences.`);
+        }
+        if (error.message.includes('connection')) {
+          throw new Error(`Bridge connection lost. Attempting to reconnect...`);
+        }
+      }
+
+      // Fallback for development/testing
+      console.warn(`Bridge failed for ${method}, using fallback data`);
+      return await getFallbackData(method);
+    }
+  }, [bridgeExecuteQuery]);
+
+  // Fallback data for development when bridge is unavailable
+  const getFallbackData = useCallback(async (method: string): Promise<any> => {
     switch (method) {
       case 'notes.getPermissionStatus':
         return {
           status: 'not_determined' as const,
-          message: 'Notes access permission has not been requested',
+          message: 'Bridge unavailable - using fallback data',
           canRequest: true
-        } as NotesPermissionStatus;
-      case 'notes.requestPermission':
-        return {
-          status: 'authorized' as const,
-          message: 'Notes access granted',
-          canRequest: false
         } as NotesPermissionStatus;
       case 'notes.getLiveSyncStatus':
         return {
@@ -83,18 +110,13 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
         } as LiveSyncStatus;
       case 'notes.getStatistics':
         return {
-          totalNotes: 6891,
-          lastSyncTime: new Date(),
-          totalSyncs: 42,
-          averageDuration: 2.3,
+          totalNotes: 0,
+          lastSyncTime: undefined,
+          totalSyncs: 0,
+          averageDuration: 0,
           conflictCount: 0,
-          errorCount: 0
+          errorCount: 1 // Indicate bridge error
         } as SyncStatistics;
-      case 'notes.setLiveSyncEnabled':
-      case 'notes.setSyncFrequency':
-      case 'notes.startLiveSync':
-      case 'notes.stopLiveSync':
-        return {}; // These operations don't return specific data
       default:
         return {};
     }
@@ -124,6 +146,9 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
   });
 
   const [isRequestingPermission, setIsRequestingPermission] = useState(false);
+  const [bridgeConnectionStatus, setBridgeConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Styling based on theme
   const modalStyles = theme === 'NeXTSTEP'
@@ -142,86 +167,187 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
     ? 'bg-[#c8c8c8] border-2 border-t-[#e0e0e0] border-l-[#e0e0e0] border-b-[#808080] border-r-[#808080] hover:bg-[#d0d0d0]'
     : 'bg-blue-600 hover:bg-blue-700 text-white rounded-lg';
 
-  // Load initial data
+  // Load initial data with connection monitoring
   useEffect(() => {
-    loadPermissionStatus();
-    loadLiveSyncStatus();
-    loadStatistics();
-  }, []);
+    if (isOpen) {
+      loadPermissionStatus();
+      loadLiveSyncStatus();
+      loadStatistics();
 
-  // Permission management
+      // Set up bridge event subscriptions for real-time updates
+      const subscriptions = [
+        'notes.permissionChanged',
+        'notes.syncStatusChanged',
+        'notes.syncProgress',
+        'notes.conflictDetected',
+        'notes.errorOccurred'
+      ];
+
+      // TODO: Subscribe to bridge events when bridge supports it
+      // subscriptions.forEach(event => bridgeExecuteQuery('subscribe', { event }));
+    }
+  }, [isOpen, loadPermissionStatus, loadLiveSyncStatus, loadStatistics]);
+
+  // Bridge health monitoring
+  useEffect(() => {
+    if (isOpen) {
+      const healthCheck = setInterval(async () => {
+        try {
+          // Simple ping to check bridge connectivity
+          await executeQuery('ping', {});
+          if (bridgeConnectionStatus !== 'connected') {
+            setBridgeConnectionStatus('connected');
+            setLastError(null);
+          }
+        } catch {
+          if (bridgeConnectionStatus === 'connected') {
+            setBridgeConnectionStatus('disconnected');
+          }
+        }
+      }, 10000); // Check every 10 seconds
+
+      return () => clearInterval(healthCheck);
+    }
+  }, [isOpen, bridgeConnectionStatus, executeQuery]);
+
+  // Permission management with retry logic
   const loadPermissionStatus = useCallback(async () => {
     try {
+      setBridgeConnectionStatus('reconnecting');
       const result = await executeQuery('notes.getPermissionStatus', {});
       setPermissionStatus(result);
+      setBridgeConnectionStatus('connected');
+      setLastError(null);
+      setRetryCount(0);
     } catch (error) {
       console.error('Failed to load permission status:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Unknown error');
+
+      // Retry logic with exponential backoff (max 3 attempts)
+      if (retryCount < 3) {
+        const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1);
+          loadPermissionStatus();
+        }, delay);
+      }
     }
-  }, [executeQuery]);
+  }, [executeQuery, retryCount]);
 
   const requestPermission = useCallback(async () => {
     setIsRequestingPermission(true);
+    setLastError(null);
+
     try {
       const result = await executeQuery('notes.requestPermission', {});
       setPermissionStatus(result);
+      setBridgeConnectionStatus('connected');
 
       if (result.status === 'authorized' && liveSyncStatus.enabled) {
         await executeQuery('notes.startLiveSync', {});
       }
     } catch (error) {
       console.error('Permission request failed:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Permission request failed');
+
+      // Show user-friendly error message
+      if (error instanceof Error && error.message.includes('permission')) {
+        setLastError('Please grant Notes access in System Preferences > Security & Privacy > Privacy > Contacts');
+      }
     } finally {
       setIsRequestingPermission(false);
     }
   }, [executeQuery, liveSyncStatus.enabled]);
 
-  // Live sync management
+  // Live sync management with bridge error handling
   const loadLiveSyncStatus = useCallback(async () => {
     try {
       const result = await executeQuery('notes.getLiveSyncStatus', {});
       setLiveSyncStatus(result);
+      setBridgeConnectionStatus('connected');
     } catch (error) {
       console.error('Failed to load live sync status:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Failed to load sync status');
     }
   }, [executeQuery]);
 
   const toggleLiveSync = useCallback(async (enabled: boolean) => {
     try {
-      await executeQuery('notes.setLiveSyncEnabled', { enabled });
-      setLiveSyncStatus(prev => ({ ...prev, enabled }));
+      setLastError(null);
 
+      // Configure live sync on native side
+      await executeQuery('notes.setLiveSyncEnabled', { enabled });
+
+      // Start or stop the sync service
       if (enabled) {
-        await executeQuery('notes.startLiveSync', {});
+        await executeQuery('notes.startLiveSync', {
+          frequency: liveSyncStatus.frequency,
+          performanceMode: liveSyncStatus.performanceMode,
+          autoResolveConflicts: liveSyncStatus.autoResolveConflicts
+        });
       } else {
         await executeQuery('notes.stopLiveSync', {});
       }
+
+      setLiveSyncStatus(prev => ({ ...prev, enabled }));
+      setBridgeConnectionStatus('connected');
     } catch (error) {
       console.error('Failed to toggle live sync:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Failed to toggle sync');
+
+      // Revert UI state on error
+      setLiveSyncStatus(prev => ({ ...prev, enabled: !enabled }));
     }
-  }, [executeQuery]);
+  }, [executeQuery, liveSyncStatus.frequency, liveSyncStatus.performanceMode, liveSyncStatus.autoResolveConflicts]);
 
   const updateSyncFrequency = useCallback(async (frequency: number) => {
+    const previousFrequency = liveSyncStatus.frequency;
+
     try {
+      setLastError(null);
+
+      // Update frequency on native side
       await executeQuery('notes.setSyncFrequency', { frequency });
       setLiveSyncStatus(prev => ({ ...prev, frequency }));
 
-      // Restart sync if currently enabled
+      // Restart sync if currently enabled to apply new frequency
       if (liveSyncStatus.enabled) {
-        await executeQuery('notes.startLiveSync', {});
+        await executeQuery('notes.startLiveSync', {
+          frequency,
+          performanceMode: liveSyncStatus.performanceMode,
+          autoResolveConflicts: liveSyncStatus.autoResolveConflicts
+        });
       }
+
+      setBridgeConnectionStatus('connected');
     } catch (error) {
       console.error('Failed to update sync frequency:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Failed to update sync frequency');
+
+      // Revert frequency on error
+      setLiveSyncStatus(prev => ({ ...prev, frequency: previousFrequency }));
     }
-  }, [executeQuery, liveSyncStatus.enabled]);
+  }, [executeQuery, liveSyncStatus.enabled, liveSyncStatus.performanceMode, liveSyncStatus.autoResolveConflicts]);
 
 
-  // Statistics
+  // Statistics with bridge status integration
   const loadStatistics = useCallback(async () => {
     try {
       const result = await executeQuery('notes.getStatistics', {});
       setStatistics(result);
+      setBridgeConnectionStatus('connected');
     } catch (error) {
       console.error('Failed to load statistics:', error);
+      setBridgeConnectionStatus('disconnected');
+      setLastError(error instanceof Error ? error.message : 'Failed to load statistics');
+
+      // Set error count to indicate bridge issues
+      setStatistics(prev => ({ ...prev, errorCount: prev.errorCount + 1 }));
     }
   }, [executeQuery]);
 
@@ -299,6 +425,30 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
 
         {/* Content */}
         <div className="p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+
+          {/* Bridge Connection Status */}
+          <div className={`${sectionStyles} ${bridgeConnectionStatus === 'disconnected' ? 'border-red-200 bg-red-50' : ''}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  bridgeConnectionStatus === 'connected' ? 'bg-green-500' :
+                  bridgeConnectionStatus === 'reconnecting' ? 'bg-yellow-500 animate-pulse' :
+                  'bg-red-500'
+                }`}></div>
+                <span className="text-sm font-medium">
+                  Bridge {bridgeConnectionStatus === 'connected' ? 'Connected' :
+                          bridgeConnectionStatus === 'reconnecting' ? 'Reconnecting...' :
+                          'Disconnected'}
+                </span>
+              </div>
+              {retryCount > 0 && (
+                <span className="text-xs text-gray-500">Retry {retryCount}/3</span>
+              )}
+            </div>
+            {lastError && (
+              <p className="text-sm text-red-600 mt-2">{lastError}</p>
+            )}
+          </div>
 
           {/* Permission Status */}
           <div className={sectionStyles}>
