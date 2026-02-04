@@ -19,7 +19,7 @@ public actor DataVerificationPipeline {
 
     // State management
     private var activeVerifications: Set<String> = []
-    private var verificationResults: [String: VerificationResult] = [:]
+    private var verificationResults: [String: ComprehensiveVerificationResult] = [:]
     private var globalMetrics = GlobalVerificationMetrics()
 
     public init(
@@ -85,13 +85,7 @@ public actor DataVerificationPipeline {
         )
 
         // Store results
-        verificationResults[verificationId] = VerificationResult(
-            id: verificationId,
-            timestamp: startTime,
-            sourceType: .comprehensiveComparison,
-            accuracy: accuracyResults.overallAccuracy,
-            details: comprehensiveResult
-        )
+        verificationResults[verificationId] = comprehensiveResult
 
         // Update global metrics
         globalMetrics.recordVerification(result: comprehensiveResult)
@@ -103,8 +97,8 @@ public actor DataVerificationPipeline {
 
     /// Compare specific data sources for accuracy validation
     public func compareDataSources(
-        sourceA: DataSource,
-        sourceB: DataSource,
+        sourceA: (type: DataSourceType, path: String?, query: String?, noteIds: [String]?),
+        sourceB: (type: DataSourceType, path: String?, query: String?, noteIds: [String]?),
         comparisonType: ComparisonType = .fullComparison
     ) async throws -> DataSourceComparisonResult {
         let comparisonId = UUID().uuidString
@@ -137,14 +131,14 @@ public actor DataVerificationPipeline {
         }
 
         // Calculate comparison accuracy
-        let accuracy = accuracyMetrics.calculateComparisonAccuracy(comparisonResults: comparisonResults)
+        let accuracy = await accuracyMetrics.calculateComparisonAccuracy(comparisonResults: comparisonResults)
 
         let duration = Date().timeIntervalSince(startTime)
 
         let result = DataSourceComparisonResult(
             comparisonId: comparisonId,
-            sourceA: sourceA,
-            sourceB: sourceB,
+            sourceAType: sourceA.type,
+            sourceBType: sourceB.type,
             comparisonType: comparisonType,
             duration: duration,
             nodeComparisons: comparisonResults,
@@ -318,7 +312,7 @@ public actor DataVerificationPipeline {
     // MARK: - Results and Reporting
 
     /// Get verification result by ID
-    public func getVerificationResult(verificationId: String) async -> VerificationResult? {
+    public func getVerificationResult(verificationId: String) async -> ComprehensiveVerificationResult? {
         return verificationResults[verificationId]
     }
 
@@ -333,10 +327,17 @@ public actor DataVerificationPipeline {
             throw VerificationError.verificationNotFound(verificationId)
         }
 
-        return try await accuracyMetrics.generateDetailedReport(
-            verificationResult: result,
-            format: format
-        )
+        // Create a basic report using the comprehensive result data
+        let reportString = """
+        Verification Report
+        ID: \(result.verificationId)
+        Duration: \(result.duration)s
+        Accuracy: \(String(format: "%.3f", result.overallAccuracy * 100))%
+        Native Nodes: \(result.nativeNodeCount)
+        Alto-index Nodes: \(result.altoNodeCount)
+        Acceptable: \(result.isAcceptable ? "Yes" : "No")
+        """
+        return reportString.data(using: .utf8) ?? Data()
     }
 
     /// Get active verification status
@@ -419,7 +420,7 @@ public actor DataVerificationPipeline {
     }
 
     /// Load data from a specific source
-    private func loadDataFromSource(_ source: DataSource) async throws -> [Node] {
+    private func loadDataFromSource(_ source: (type: DataSourceType, path: String?, query: String?, noteIds: [String]?)) async throws -> [Node] {
         switch source.type {
         case .nativeImport:
             if let path = source.path {
@@ -561,7 +562,7 @@ public actor DataVerificationPipeline {
 
     /// Verify specific data lifecycle properties for property-based testing
     public func verifyProperty(
-        property: PropertyType,
+        property: VerificationPropertyType,
         originalData: Any,
         importedNodes: [Node]
     ) async throws -> PropertyVerificationResult {
@@ -700,8 +701,8 @@ public struct ComprehensiveVerificationResult {
 /// Data source comparison result
 public struct DataSourceComparisonResult {
     public let comparisonId: String
-    public let sourceA: DataSource
-    public let sourceB: DataSource
+    public let sourceAType: DataSourceType
+    public let sourceBType: DataSourceType
     public let comparisonType: ComparisonType
     public let duration: TimeInterval
     public let nodeComparisons: [NodeComparisonResult]
@@ -751,14 +752,7 @@ public struct VerificationProgress {
     }
 }
 
-/// Verification result storage
-public struct VerificationResult {
-    public let id: String
-    public let timestamp: Date
-    public let sourceType: VerificationSourceType
-    public let accuracy: Double
-    public let details: Any?
-}
+// VerificationResult moved to CloudKitProductionVerifier.swift to avoid duplication
 
 /// Global verification metrics
 public struct GlobalVerificationMetrics {
@@ -782,20 +776,7 @@ public struct GlobalVerificationMetrics {
     }
 }
 
-/// Data source definition
-public struct DataSource {
-    public let type: DataSourceType
-    public let path: String?
-    public let query: String?
-    public let noteIds: [String]?
-
-    public init(type: DataSourceType, path: String? = nil, query: String? = nil, noteIds: [String]? = nil) {
-        self.type = type
-        self.path = path
-        self.query = query
-        self.noteIds = noteIds
-    }
-}
+// DataSource moved to avoid duplication - using DataSourceType enum directly
 
 /// Data loss tracking
 public struct DataLoss {
@@ -899,18 +880,12 @@ public enum VerificationError: Error, LocalizedError {
 
 // MARK: - Helper Extensions
 
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
-}
+// Array.chunked extension moved to RenderingOptimizer.swift to avoid duplication
 
 // MARK: - Property Testing Types
 
 /// Property type for verification
-public enum PropertyType {
+public enum VerificationPropertyType {
     case dataIntegrity
     case latchMapping
 }
