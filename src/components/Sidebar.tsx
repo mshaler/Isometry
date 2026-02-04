@@ -32,23 +32,21 @@ export function Sidebar() {
 
   const templateBuilders = ['Apps Builder', 'Views Builder', 'Buttons Builder', 'Charts Builder'];
 
-  // Query table schema to discover available columns
-  // Fallback to mock data for MVP demo when database isn't available
+  // Query table schema to discover available columns from nodes table
   const { data: columns } = useSQLiteQuery<ColumnInfo>(
-    `PRAGMA table_info(cards)`,
+    `PRAGMA table_info(nodes)`,
     [],
-    // Fallback data for demo
+    // Fallback data for demo - nodes table schema
     [
       { name: 'id' },
-      { name: 'title' },
-      { name: 'category' },
-      { name: 'status' },
-      { name: 'priority' },
+      { name: 'name' },
+      { name: 'node_type' },
       { name: 'folder' },
-      { name: 'sub_folder' },
       { name: 'tags' },
-      { name: 'year' },
-      { name: 'month' }
+      { name: 'priority' },
+      { name: 'created_at' },
+      { name: 'modified_at' },
+      { name: 'content' }
     ]
   );
 
@@ -62,12 +60,12 @@ export function Sidebar() {
     const columnNames = new Set(columns.map(c => c.name));
     const available = new Set<string>();
 
-    // Map LATCH axes to available columns
-    if (columnNames.has('location') || columnNames.has('lat') || columnNames.has('lng')) available.add('Location');
-    if (columnNames.has('name') || columnNames.has('title')) available.add('Alphabet');
-    if (columnNames.has('created') || columnNames.has('due') || columnNames.has('createdAt')) available.add('Time');
-    if (columnNames.has('category') || columnNames.has('status') || columnNames.has('priority') || columnNames.has('tags') || columnNames.has('folder')) available.add('Category');
-    if (columnNames.has('parent') || columnNames.has('parent_id') || columnNames.has('folder')) available.add('Hierarchy');
+    // Map LATCH axes to available columns in nodes table
+    if (columnNames.has('location_name') || columnNames.has('latitude') || columnNames.has('longitude')) available.add('Location');
+    if (columnNames.has('name')) available.add('Alphabet');
+    if (columnNames.has('created_at') || columnNames.has('modified_at') || columnNames.has('due_at')) available.add('Time');
+    if (columnNames.has('node_type') || columnNames.has('folder') || columnNames.has('tags') || columnNames.has('priority')) available.add('Category');
+    if (columnNames.has('folder') || columnNames.has('parent_id')) available.add('Hierarchy');
 
     return available;
   }, [columns]);

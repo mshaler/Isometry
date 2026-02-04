@@ -9,10 +9,10 @@
  * - Node click handling
  */
 
-import { useMemo, useState, useCallback, useEffect } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
-import { useDatabase } from '@/db/DatabaseContext';
+import { useFilteredNodes } from '@/hooks/useFilteredNodes';
 import { usePAFV } from '@/hooks/usePAFV';
 import type { Node } from '@/types/node';
 import type { LATCHAxis } from '@/types/pafv';
@@ -20,9 +20,9 @@ import type { OriginPattern } from '@/types/coordinates';
 import type { ZoomTransform } from '@/hooks/useD3Zoom';
 
 interface SuperGridViewProps {
-  /** SQL query to execute for live data */
-  sql: string;
-  /** Parameters for the SQL query */
+  /** SQL query to execute for live data (currently unused - using FilterContext instead) */
+  sql?: string;
+  /** Parameters for the SQL query (currently unused - using FilterContext instead) */
   queryParams?: unknown[];
   /** Callback when node is clicked */
   onNodeClick?: (node: Node) => void;
@@ -49,36 +49,8 @@ export function SuperGridView({
   const pafv = usePAFV();
   const pafvState = pafv.state;
 
-  // Direct database query for SuperGrid (bypasses complex live query system)
-  // TODO: Revert to useLiveQuery once live data bridge is working properly
-  const { execute } = useDatabase();
-  const [nodes, setNodes] = useState<Node[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isLive] = useState(false);
-  const [connectionState] = useState({ quality: 'static' as const });
-
-  // Execute query directly
-  useEffect(() => {
-    try {
-      setLoading(true);
-      setError(null);
-      console.log('[SuperGridView] Executing direct SQL query:', sql);
-      const results = execute<Node>(sql, queryParams);
-      setNodes(results);
-      console.log('[SuperGridView] Direct query results:', {
-        count: Array.isArray(results) ? results.length : 0,
-        firstId: Array.isArray(results) ? results[0]?.id : undefined,
-        source: Array.isArray(results) ? (results.length === 100 ? 'FallbackDB (sample-data.ts)' : results.length === 110 ? 'DemoData (useDemoData.ts)' : 'Unknown') : 'Promise or other type'
-      });
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMsg);
-      console.error('[SuperGridView] Direct query error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [sql, JSON.stringify(queryParams), execute]);
+  // Use FilterContext for LATCH-based filtering instead of direct database calls
+  const { data: nodes, loading, error } = useFilteredNodes();
 
   // Extract X and Y axis mappings from PAFV state
   const xMapping = pafvState.mappings.find(m => m.plane === 'x');
@@ -106,20 +78,23 @@ export function SuperGridView({
     setZoomLevel(transform.k);
   }, []);
 
-  // Debug live data integration
+  // Debug LATCH filter integration
   if (process.env.NODE_ENV === 'development') {
-    console.log('🎯 SuperGridView Live Debug:', {
-      nodesCount: nodes?.length || 0,
-      isLive,
-      connectionQuality: connectionState?.quality,
+    const nodeTypeCounts = nodes ? {
+      notes: nodes.filter(n => n.id.startsWith('n')).length,
+      contacts: nodes.filter(n => n.id.startsWith('c')).length,
+      bookmarks: nodes.filter(n => n.id.startsWith('b')).length,
+    } : { notes: 0, contacts: 0, bookmarks: 0 };
+
+    console.log('🎯 SuperGridView LATCH Debug:', {
+      totalNodes: nodes?.length || 0,
+      nodeTypes: nodeTypeCounts,
       loading,
-      error: error,
+      error: error?.message,
       xAxis: `${xAxis}/${xFacet}`,
       yAxis: `${yAxis}/${yFacet}`,
       firstNode: nodes?.[0]?.name,
-      firstNodeId: nodes?.[0]?.id,
-      dataSource: nodes?.length === 110 ? 'DEMO_DATA (useDemoData.ts)' : nodes?.length === 100 ? 'REAL_DATA (sample-data.ts)' : 'UNKNOWN',
-      sql: sql
+      dataSource: 'FilterContext + useFilteredNodes'
     });
   }
 
@@ -157,13 +132,13 @@ export function SuperGridView({
 
   return (
     <div className="w-full h-full relative">
-      {/* Status indicator for live connection */}
+      {/* Status indicator for LATCH filtering */}
       <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-sm p-2 text-xs">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-green-500' : 'bg-gray-400'}`} />
-          <span>{nodes.length} nodes</span>
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          <span>{nodes?.length || 0} nodes</span>
           <span className="text-gray-500">|</span>
-          <span>{connectionState?.quality || 'static'}</span>
+          <span>LATCH filtered</span>
         </div>
       </div>
 

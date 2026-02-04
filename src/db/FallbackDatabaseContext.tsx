@@ -43,36 +43,49 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
 
     // Return sample data for nodes queries
     if (sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes')) {
-      const sampleNodes = ALL_NOTES.map(note => ({
-        id: note.id,
-        node_type: 'note',
-        name: note.name,
-        content: note.content,
-        folder: note.folder,
-        tags: JSON.stringify(note.tags),
-        priority: note.priority,
-        created_at: new Date(Date.now() - note.createdDaysAgo * 24 * 60 * 60 * 1000).toISOString(),
-        modified_at: new Date(Date.now() - Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3)) * 24 * 60 * 60 * 1000).toISOString(),
-        deleted_at: null,
-        latitude: null,
-        longitude: null,
-        location_name: null,
-        location_address: null,
-        due_at: null,
-        completed_at: null,
-        event_start: null,
-        event_end: null,
-        status: null,
-        importance: 0,
-        sort_order: 0,
-        source: null,
-        source_id: null,
-        source_url: null,
-        version: 1,
-        summary: null
-      })) as T[];
+      const sampleNodes = ALL_NOTES.map(note => {
+        // Determine node type based on ID prefix
+        let nodeType = 'note';
+        if (note.id.startsWith('c')) nodeType = 'contact';
+        if (note.id.startsWith('b')) nodeType = 'bookmark';
 
-      console.log(`[FallbackDB] Returning ${sampleNodes.length} sample nodes`);
+        return {
+          id: note.id,
+          node_type: nodeType,
+          name: note.name,
+          content: note.content,
+          folder: note.folder,
+          tags: JSON.stringify(note.tags),
+          priority: note.priority,
+          created_at: new Date(Date.now() - note.createdDaysAgo * 24 * 60 * 60 * 1000).toISOString(),
+          modified_at: new Date(Date.now() - Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3)) * 24 * 60 * 60 * 1000).toISOString(),
+          deleted_at: null,
+          latitude: null,
+          longitude: null,
+          location_name: null,
+          location_address: null,
+          due_at: null,
+          completed_at: null,
+          event_start: null,
+          event_end: null,
+          status: null,
+          importance: 0,
+          sort_order: 0,
+          source: null,
+          source_id: null,
+          source_url: null,
+          version: 1,
+          summary: null
+        };
+      }) as T[];
+
+      const nodeTypeCounts = {
+        notes: sampleNodes.filter(n => (n as any).node_type === 'note').length,
+        contacts: sampleNodes.filter(n => (n as any).node_type === 'contact').length,
+        bookmarks: sampleNodes.filter(n => (n as any).node_type === 'bookmark').length,
+      };
+
+      console.log(`[FallbackDB] Returning ${sampleNodes.length} total nodes:`, nodeTypeCounts);
       return sampleNodes;
     }
 

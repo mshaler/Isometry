@@ -153,20 +153,57 @@ const SAMPLE_BOOKMARKS: SampleBookmark[] = [
   { id: 'b014', name: 'Netflix - Continue Watching', content: 'Streaming service\nhttps://netflix.com/browse\nEvening entertainment', folder: 'Entertainment', tags: ['streaming', 'movies'], priority: 1, createdDaysAgo: 3, url: 'https://netflix.com/browse', domain: 'netflix.com' },
 ];
 
-const ALL_NOTES = generateAllNotes();
+// Combine all data types into a unified dataset
+function generateAllData(): SampleNote[] {
+  const notes = generateAllNotes();
 
-export const SAMPLE_DATA_SQL = ALL_NOTES.map(note => `
+  // Convert contacts to note format for unified interface
+  const contactsAsNotes = SAMPLE_CONTACTS.map(contact => ({
+    id: contact.id,
+    name: contact.name,
+    content: contact.content,
+    folder: contact.folder,
+    tags: contact.tags,
+    priority: contact.priority,
+    createdDaysAgo: contact.createdDaysAgo
+  }));
+
+  // Convert bookmarks to note format for unified interface
+  const bookmarksAsNotes = SAMPLE_BOOKMARKS.map(bookmark => ({
+    id: bookmark.id,
+    name: bookmark.name,
+    content: bookmark.content,
+    folder: bookmark.folder,
+    tags: bookmark.tags,
+    priority: bookmark.priority,
+    createdDaysAgo: bookmark.createdDaysAgo
+  }));
+
+  // Combine all types: 100 notes + 12 contacts + 14 bookmarks = 126 total
+  return [...notes, ...contactsAsNotes, ...bookmarksAsNotes];
+}
+
+const ALL_NODES = generateAllData();
+
+export const SAMPLE_DATA_SQL = ALL_NODES.map(node => {
+  // Determine node type from ID prefix
+  let nodeType = 'note';
+  if (node.id.startsWith('c')) nodeType = 'contact';
+  if (node.id.startsWith('b')) nodeType = 'bookmark';
+
+  return `
 INSERT INTO nodes (id, node_type, name, content, folder, tags, priority, created_at, modified_at)
 VALUES (
-  '${note.id}',
-  'note',
-  '${escapeSql(note.name)}',
-  '${escapeSql(note.content)}',
-  '${note.folder}',
-  '${JSON.stringify(note.tags)}',
-  ${note.priority},
-  '${generateDate(note.createdDaysAgo)}',
-  '${generateDate(Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3)))}'
-);`).join('\n');
+  '${node.id}',
+  '${nodeType}',
+  '${escapeSql(node.name)}',
+  '${escapeSql(node.content)}',
+  '${node.folder}',
+  '${JSON.stringify(node.tags)}',
+  ${node.priority},
+  '${generateDate(node.createdDaysAgo)}',
+  '${generateDate(Math.max(0, node.createdDaysAgo - Math.floor(Math.random() * 3)))}'
+);`;
+}).join('\n');
 
-export { ALL_NOTES as SAMPLE_NOTES };
+export { ALL_NODES as SAMPLE_NOTES };
