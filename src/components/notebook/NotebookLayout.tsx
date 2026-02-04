@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { CaptureComponent } from './CaptureComponent';
-// import { ShellComponent } from './ShellComponent'; // TEMPORARILY DISABLED - INFINITE LOOP
+import { Terminal } from '../shell/Terminal';
 import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
+import { TerminalProvider } from '../../context/TerminalContext';
 
 interface ComponentLayout {
   width: number;
@@ -175,9 +176,9 @@ function NotebookLayoutInner() {
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
-        <ErrorBoundary level="feature" name="ShellComponent">
+        <ErrorBoundary level="feature" name="Terminal">
           <div ref={shellRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
-            <div className="h-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg"><div className="text-center"><div className="text-gray-500 text-sm">🔧 Shell Component</div><div className="text-gray-400 text-xs mt-1">Temporarily disabled</div><div className="text-gray-400 text-xs">(fixes infinite loop)</div></div></div>
+            <Terminal className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="PreviewComponent">
@@ -199,9 +200,9 @@ function NotebookLayoutInner() {
           </div>
         </ErrorBoundary>
         <div className="flex-1 flex gap-2 min-h-[300px]">
-          <ErrorBoundary level="feature" name="ShellComponent">
+          <ErrorBoundary level="feature" name="Terminal">
             <div ref={shellRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
-              <div className="h-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg"><div className="text-center"><div className="text-gray-500 text-sm">🔧 Shell Component</div><div className="text-gray-400 text-xs mt-1">Temporarily disabled</div><div className="text-gray-400 text-xs">(fixes infinite loop)</div></div></div>
+              <Terminal className="h-full" />
             </div>
           </ErrorBoundary>
           <ErrorBoundary level="feature" name="PreviewComponent">
@@ -236,15 +237,15 @@ function NotebookLayoutInner() {
       {/* Capture-Shell Divider */}
       {renderDivider('capture-shell', 'w-1 h-full')}
 
-      {/* Shell Component */}
-      <ErrorBoundary level="feature" name="ShellComponent">
+      {/* Terminal Component */}
+      <ErrorBoundary level="feature" name="Terminal">
         <div
           ref={shellRef}
           style={{ width: `${componentLayouts.shell.width}%` }}
           className="min-w-[250px] relative focusable-component"
           tabIndex={0}
         >
-          <div className="h-full flex items-center justify-center bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg"><div className="text-center"><div className="text-gray-500 text-sm">🔧 Shell Component</div><div className="text-gray-400 text-xs mt-1">Temporarily disabled</div><div className="text-gray-400 text-xs">(fixes infinite loop)</div></div></div>
+          <Terminal className="h-full" />
         </div>
       </ErrorBoundary>
 
@@ -268,8 +269,10 @@ function NotebookLayoutInner() {
 
 export function NotebookLayout() {
   return (
-    <FocusProvider>
-      <NotebookLayoutInner />
-    </FocusProvider>
+    <TerminalProvider initialDirectory="/Users/mshaler/Developer/Projects/Isometry">
+      <FocusProvider>
+        <NotebookLayoutInner />
+      </FocusProvider>
+    </TerminalProvider>
   );
 }
