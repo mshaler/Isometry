@@ -85,11 +85,17 @@ class LiveDataPerformanceMonitor {
         errorCount: isError ? 1 : 0,
         lastError: errorMessage || null,
         cacheHitRate: 0,
-        totalDataTransferred: dataSize
+        totalDataTransferred: dataSize,
+        eventCount: 1,
+        outOfOrderPercentage: 0
       });
     } else {
       const newUpdateCount = existing.updateCount + 1;
       const newAverage = ((existing.averageLatency * existing.updateCount) + latency) / newUpdateCount;
+      const newEventCount = existing.eventCount + 1;
+      // Simple placeholder calculation for out-of-order percentage
+      const outOfOrderEvents = Math.max(0, existing.errorCount - existing.updateCount * 0.1);
+      const newOutOfOrderPercentage = (outOfOrderEvents / newEventCount) * 100;
 
       this.metrics.set(subscriptionId, {
         ...existing,
@@ -98,7 +104,9 @@ class LiveDataPerformanceMonitor {
         lastLatency: latency,
         errorCount: isError ? existing.errorCount + 1 : existing.errorCount,
         lastError: isError ? (errorMessage || existing.lastError) : existing.lastError,
-        totalDataTransferred: existing.totalDataTransferred + dataSize
+        totalDataTransferred: existing.totalDataTransferred + dataSize,
+        eventCount: newEventCount,
+        outOfOrderPercentage: newOutOfOrderPercentage
       });
     }
   }
