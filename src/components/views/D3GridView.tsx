@@ -4,18 +4,12 @@ import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';
+import type { D3GridViewProps } from '../../types/d3-types';
+
+export type { D3GridViewProps };
 import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3Performance';
 import { renderOptimizer } from '../../utils/d3-render-optimizer';
 import * as d3 from 'd3';
-
-interface D3GridViewProps {
-  /** SQL query to execute and observe for live data */
-  sql: string;
-  /** Parameters for the SQL query */
-  queryParams?: unknown[];
-  /** Callback when node is clicked */
-  onNodeClick?: (node: Node) => void;
-}
 
 interface CellDetailOverlay {
   visible: boolean;
@@ -53,24 +47,27 @@ interface GestureState {
  * - Pan/zoom functionality for large datasets
  * - Performance optimization with canvas rendering
  */
-export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewProps) {
+export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3GridViewProps) {
   const pafvContext = usePAFV();
   const { theme } = useTheme();
 
-  // Live query for real-time data updates
+  // Live query for real-time data updates (only if no direct data provided)
   const {
-    data,
+    data: queryData,
     loading: isLoading,
     error
-  } = useLiveQuery<Node>(sql, {
+  } = useLiveQuery<Node>(data ? '' : sql, {
     params: queryParams,
-    autoStart: true,
+    autoStart: !data, // Don't start query if direct data provided
     enableCache: true,
     debounceMs: 100, // Moderate debounce for D3 grid
     onError: (err) => {
       console.error('[D3GridView] Live query error:', err);
     }
   });
+
+  // Use either direct data prop or query result
+  const nodes = data || queryData || [];
 
   // Component state
   const [cellDetailOverlay, setCellDetailOverlay] = useState<CellDetailOverlay>({
@@ -151,8 +148,8 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
     performanceMonitor.updateNativeMetrics(metrics);
 
     // Get performance comparison
-    const datasetSize = (data || []).length;
-    const complexity = calculateDatasetComplexity(data || []);
+    const datasetSize = nodes.length;
+    const complexity = calculateDatasetComplexity(nodes);
     const comparison = performanceMonitor.getPerformanceComparison(datasetSize, complexity);
 
     setPerformanceMetrics({ native: metrics, comparison });
@@ -173,7 +170,7 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
         });
       }
     }
-  }, [data, interactionState.performanceMode]);
+  }, [nodes, interactionState.performanceMode]);
 
   // Calculate dataset complexity for optimization decisions
   const calculateDatasetComplexity = useCallback((data: Node[]) => {
@@ -276,7 +273,7 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
     : 'No axes configured';
 
   // Handle loading and error states
-  if (isLoading && (!data || !data.length)) {
+  if (isLoading && !nodes.length) {
     return (
       <div className="d3-grid-view w-full h-full relative flex items-center justify-center">
         <div className="text-gray-500">Loading grid data...</div>

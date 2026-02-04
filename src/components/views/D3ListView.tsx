@@ -4,16 +4,10 @@ import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
 import type { Node } from '../../types/node';
-import * as d3 from 'd3';
+import type { D3ListViewProps } from '../../types/d3-types';
 
-interface D3ListViewProps {
-  /** SQL query to execute and observe for live data */
-  sql: string;
-  /** Parameters for the SQL query */
-  queryParams?: unknown[];
-  /** Callback when node is clicked */
-  onNodeClick?: (node: Node) => void;
-}
+export type { D3ListViewProps };
+import * as d3 from 'd3';
 
 interface ListItem {
   id: string;
@@ -57,7 +51,7 @@ const SEARCH_BAR_HEIGHT = 60;
  * - Performance optimized for large datasets
  * - Smooth transitions and visual feedback
  */
-export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewProps) {
+export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3ListViewProps) {
   const pafvContext = usePAFV();
   const { theme } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -95,20 +89,23 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
     return query;
   }, [sql, listState.searchQuery, listState.sortDirection]);
 
-  // Live query for real-time data updates
+  // Live query for real-time data updates (only if no direct data provided)
   const {
-    data,
+    data: queryData,
     loading: isLoading,
     error
-  } = useLiveQuery<Node>(enhancedSql, {
+  } = useLiveQuery<Node>(data ? '' : enhancedSql, {
     params: queryParams,
-    autoStart: true,
+    autoStart: !data, // Don't start query if direct data provided
     enableCache: true,
     debounceMs: 100, // Moderate debounce for D3 list
     onError: (err) => {
       console.error('[D3ListView] Live query error:', err);
     }
   });
+
+  // Use either direct data prop or query result
+  const nodes = data || queryData || [];
 
   // Virtual scrolling state
   const [scrollTop, setScrollTop] = useState(0);
@@ -117,11 +114,11 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
 
   // Create groups based on PAFV Y-axis
   const groups = useMemo((): ListGroup[] => {
-    if (!data || !listState.groupingEnabled || pafvContext.state.mappings.length === 0) {
+    if (!nodes || !listState.groupingEnabled || pafvContext.state.mappings.length === 0) {
       return [{
         key: 'all',
         label: 'All Items',
-        nodes: data || [],
+        nodes: nodes || [],
         collapsed: false
       }];
     }
@@ -130,7 +127,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
     const yAxisMapping = pafvContext.state.mappings.find(m => m.plane === 'y');
     const groupField = yAxisMapping?.facet || 'folder';
 
-    (data || []).forEach(node => {
+    nodes.forEach(node => {
       const groupValue = getFieldValue(node, groupField);
       const groupKey = String(groupValue);
 
@@ -150,7 +147,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       }),
       collapsed: listState.collapsedGroups.has(key)
     }));
-  }, [data, pafvContext.state.mappings, listState.groupingEnabled, listState.collapsedGroups, listState.sortDirection]);
+  }, [nodes, pafvContext.state.mappings, listState.groupingEnabled, listState.collapsedGroups, listState.sortDirection]);
 
   // Filter nodes by search query
   const filteredGroups = useMemo((): ListGroup[] => {
@@ -566,11 +563,11 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       }`}>
         {listState.searchQuery ? (
           <span>
-            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {(data || []).length} items match "{listState.searchQuery}"
+            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {nodes.length} items match "{listState.searchQuery}"
           </span>
         ) : (
           <span>
-            {(data || []).length} items {listState.groupingEnabled ? `in ${groups.length} groups` : ''}
+            {nodes.length} items {listState.groupingEnabled ? `in ${groups.length} groups` : ''}
           </span>
         )}
       </div>

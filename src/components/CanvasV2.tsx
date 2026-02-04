@@ -4,6 +4,7 @@ import { useMockData } from '../hooks/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { D3GridView } from './views/D3GridView';
 import { D3ListView } from './views/D3ListView';
+// Updated to support data prop
 import { FilterBar } from './FilterBar';
 import { usePAFV } from '../hooks/usePAFV';
 import type { Node } from '@/types/node';
