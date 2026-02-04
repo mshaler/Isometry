@@ -9,7 +9,7 @@
  * for performance reports and benchmarking documentation.
  */
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLiveDataMetrics } from '../../hooks/useLiveData';
 import { useD3PerformanceWithMonitor } from '../../hooks/useD3Performance';
 import { useDataFlowMonitor } from '../DataFlowMonitor';
@@ -58,8 +58,6 @@ interface PerformanceBaselineProps {
   maxLatency?: number;
   /** Current data size being processed */
   dataSize?: number;
-  /** Active stress test scenario */
-  stressTest?: any;
   /** Measurement duration in seconds (default: 60) */
   measurementDuration?: number;
   /** Whether to auto-start measurements */
@@ -97,7 +95,6 @@ export function PerformanceBaseline({
   targetFPS = 60,
   maxLatency = 100,
   dataSize = 0,
-  stressTest,
   measurementDuration = 60,
   autoStart = true,
   onBaselineEstablished,
@@ -134,7 +131,7 @@ export function PerformanceBaseline({
 
   // Mock D3 performance hook for baseline component
   const d3PerformanceRef = useRef<HTMLDivElement>(null);
-  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current, {
+  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current || undefined, {
     targetFPS,
     enableMemoryTracking: true,
     reportInterval: 1000

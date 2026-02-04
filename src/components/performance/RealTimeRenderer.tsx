@@ -14,7 +14,7 @@ import React, {
   createContext,
   useContext
 } from 'react';
-import * as d3 from 'd3';
+// d3 is used for type definitions in the utility hook
 
 // Performance metrics and configuration
 export interface PerformanceMetrics {

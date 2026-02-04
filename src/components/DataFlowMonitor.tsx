@@ -514,7 +514,6 @@ export const DataFlowStatusIndicator: React.FC<{
  * Hook for programmatic monitoring
  */
 export function useDataFlowMonitor() {
-  const { state } = useLiveDataContext();
   const globalState = useLiveDataGlobalState();
 
   const getHealthScore = useCallback(() => {

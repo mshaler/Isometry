@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { queryCacheService } from '@/services/QueryCacheService';
 import { connectionSuggestionService } from '@/services/ConnectionSuggestionService';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useGraphMetrics, useGraphAnalyticsDebug } from '@/hooks/useGraphAnalytics';
 
 // Configuration interfaces
@@ -534,33 +533,35 @@ export function GraphAnalyticsDebugPanel({
                   <h4 className="text-xs font-medium mb-2">Suggestion Performance</h4>
                   <div className="space-y-2 text-xs">
                     <div className="flex justify-between">
-                      <span>Total Suggestions:</span>
-                      <span className="font-medium">{graphMetrics.suggestions.totalSuggestions}</span>
+                      <span>Cache Hit Rate:</span>
+                      <span className="font-medium">{(graphMetrics.suggestions.cacheHitRate * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Accepted:</span>
-                      <span className="font-medium">{graphMetrics.suggestions.acceptedSuggestions}</span>
+                      <span>Avg Compute Time:</span>
+                      <span className="font-medium">{graphMetrics.suggestions.avgComputeTime.toFixed(1)}ms</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Accuracy:</span>
-                      <span className="font-medium">{(graphMetrics.suggestions.accuracy * 100).toFixed(1)}%</span>
+                      <span className="font-medium">{(graphMetrics.suggestions.suggestionAccuracy * 100).toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Avg Computation:</span>
-                      <span className="font-medium">{graphMetrics.suggestions.averageComputationTimeMs.toFixed(1)}ms</span>
+                      <span>Requests/sec:</span>
+                      <span className="font-medium">{graphMetrics.suggestions.requestsPerSecond.toFixed(1)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
-                  <h4 className="text-xs font-medium mb-2">Suggestion Types</h4>
+                  <h4 className="text-xs font-medium mb-2">Memory Usage</h4>
                   <div className="space-y-1">
-                    {Object.entries(graphMetrics.suggestions.typeBreakdown).map(([type, count]) => (
-                      <div key={type} className="flex justify-between text-xs">
-                        <span className="capitalize">{type}:</span>
-                        <span className="font-medium">{String(count)}</span>
-                      </div>
-                    ))}
+                    <div className="flex justify-between text-xs">
+                      <span>Memory Usage:</span>
+                      <span className="font-medium">{(graphMetrics.suggestions.memoryUsageBytes / (1024 * 1024)).toFixed(1)}MB</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Last Updated:</span>
+                      <span className="font-medium">{new Date(graphMetrics.suggestions.lastUpdated).toLocaleTimeString()}</span>
+                    </div>
                   </div>
                 </div>
               </>

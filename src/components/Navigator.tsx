@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
-import { PAFVNavigator } from './PAFVNavigator';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState, type AppName, type ViewName, type DatasetName } from '@/contexts/AppStateContext';
 import { Dropdown, type DropdownOption } from '@/components/ui/Dropdown';

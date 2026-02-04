@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useEnvironment } from '../../contexts/EnvironmentContext';
 import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../../utils/webview-bridge-waiter';
 
