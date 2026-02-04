@@ -91,21 +91,6 @@ export function Terminal({
     };
   }, [isReady, terminal, resizeTerminal]);
 
-  // Command execution interface
-  const _executeTerminalCommand = (cmd: string) => {
-    if (terminal && isConnected) {
-      executeCommand(cmd);
-    } else {
-      console.warn('Terminal not ready for command execution');
-    }
-  };
-
-  // Output writing interface
-  const _writeTerminalOutput = (output: string, isError = false) => {
-    if (terminal && isConnected) {
-      writeOutput(output, isError);
-    }
-  };
 
   return (
     <ErrorBoundary level="component" name="Terminal">

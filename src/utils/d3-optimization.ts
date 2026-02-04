@@ -102,7 +102,7 @@ export class VirtualScrollRenderer<T> {
       .style('position', 'absolute')
       .style('width', '100%');
 
-    const itemsUpdate = itemsEnter.merge(items as d3.Selection<HTMLDivElement, T, any, any>);
+    const itemsUpdate = itemsEnter.merge(items as unknown as d3.Selection<HTMLDivElement, T, any, any>);
 
     itemsUpdate
       .style('top', (d, i) => `${(this.visibleIndices.start + i) * this.config.itemHeight}px`)
