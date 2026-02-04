@@ -102,13 +102,13 @@ export class VirtualScrollRenderer<T> {
       .style('position', 'absolute')
       .style('width', '100%');
 
-    const itemsUpdate = itemsEnter.merge(items);
+    const itemsUpdate = itemsEnter.merge(items as d3.Selection<HTMLDivElement, T, any, any>);
 
     itemsUpdate
       .style('top', (d, i) => `${(this.visibleIndices.start + i) * this.config.itemHeight}px`)
       .style('height', `${this.config.itemHeight}px`)
-      .each(function(d, i) {
-        renderFn(d3.select(this), this.visibleIndices.start + i);
+      .each((d, i, nodes) => {
+        renderFn(d3.select(nodes[i]), this.visibleIndices.start + i);
       });
   }
 
@@ -223,11 +223,11 @@ export class ViewportCuller {
     selection: d3.Selection<any, T, any, any>,
     margin: number = 0
   ): d3.Selection<any, T, any, any> {
-    return selection.style('display', function() {
-      const element = this as Element;
+    return selection.style('display', (d, i, nodes) => {
+      const element = nodes[i] as Element;
       const bounds = element.getBoundingClientRect();
       return this.isInViewport(bounds, margin) ? null : 'none';
-    }.bind(this));
+    });
   }
 }
 
@@ -245,7 +245,7 @@ export class ProgressiveRenderer<T> {
 
   render(
     data: T[],
-    container: d3.Selection<any, any, any, any>,
+    _container: d3.Selection<any, any, any, any>,
     renderFn: (chunk: T[], chunkIndex: number) => void
   ): Promise<void> {
     return new Promise((resolve) => {
@@ -292,7 +292,7 @@ export class ProgressiveRenderer<T> {
 export function optimizeForLargeDatasets<T>(
   selection: d3.Selection<any, T, any, any>,
   dataSize: number,
-  viewport: { width: number; height: number },
+  _viewport: { width: number; height: number },
   config: Partial<OptimizationConfig> = {}
 ): {
   selection: d3.Selection<any, T, any, any>;
@@ -357,7 +357,7 @@ export function enableVirtualScrolling<T>(
     ...config
   };
 
-  const renderer = new VirtualScrollRenderer(container, fullConfig);
+  const renderer = new VirtualScrollRenderer<T>(container, fullConfig);
   renderer.setData(data);
 
   return renderer;
@@ -366,7 +366,7 @@ export function enableVirtualScrolling<T>(
 /**
  * Batch D3 updates to minimize DOM manipulation
  */
-export function batchD3Updates<T>(
+export function batchD3Updates(
   updates: Array<() => void>,
   batchSize: number = 10
 ): Promise<void> {
@@ -436,7 +436,7 @@ export function debounceDataUpdates<T extends (...args: any[]) => any>(
 
   return ((...args: Parameters<T>) => {
     clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => func.apply(this, args), delay);
+    timeoutId = setTimeout(() => func(...args), delay);
   }) as T;
 }
 
@@ -530,9 +530,9 @@ export function setupMemoryPooling(
 
   // Monkey patch selection methods to use pool
   const originalAppend = selection.append;
-  selection.append = function(type: string) {
+  (selection as any).append = function(type: string) {
     return originalAppend.call(this, () => {
-      const namespace = this.namespaceURI;
+      const namespace = (this as any).namespaceURI;
       return pool.acquire(type, namespace || undefined);
     });
   };
