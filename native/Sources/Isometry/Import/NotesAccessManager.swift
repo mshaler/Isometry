@@ -62,7 +62,7 @@ public actor NotesAccessManager {
         print("Requesting Notes access permission...")
 
         return try await withCheckedThrowingContinuation { continuation in
-            // Use EventKit to request Notes access
+            // Request access for Notes (which maps to Reminders in EventKit)
             eventStore.requestFullAccessToReminders { [weak self] granted, error in
                 Task {
                     await self?.handlePermissionResponse(granted: granted, error: error, continuation: continuation)
