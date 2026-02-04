@@ -110,6 +110,39 @@ public actor ContentAwareStorageManager {
         )
     }
 
+    /// Store generic content with metadata
+    public func store(
+        content: Data,
+        filename: String,
+        mimeType: String,
+        metadata: [String: String] = [:]
+    ) async throws -> StoredContent {
+        let startTime = Date()
+
+        // Store in CAS
+        let casResult = try await casIntegration.store(
+            content: content,
+            originalFilename: filename,
+            mimeType: mimeType
+        )
+
+        // Update performance metrics
+        let duration = Date().timeIntervalSince(startTime)
+        await updatePerformanceMetrics(operation: "store", duration: duration, fileSize: content.count)
+
+        print("ContentAwareStorage: Stored content \(filename) with hash \(casResult.contentHash)")
+
+        return StoredContent(
+            contentHash: casResult.contentHash,
+            storedSize: casResult.storedSize,
+            originalSize: casResult.originalSize,
+            filename: filename,
+            mimeType: mimeType,
+            metadata: metadata,
+            wasDeduplication: !casResult.wasStored
+        )
+    }
+
     /// Retrieve attachment content by ID
     public func retrieveAttachment(attachmentId: String) async throws -> AttachmentRetrievalResult {
         let startTime = Date()
@@ -336,6 +369,17 @@ extension AttachmentMetadata: FetchableRecord {
         createdAt = Date(timeIntervalSince1970: row["created_at"])
         lastAccessedAt = Date(timeIntervalSince1970: row["last_accessed_at"])
     }
+}
+
+/// Generic storage result for content
+public struct StoredContent {
+    public let contentHash: String
+    public let storedSize: Int
+    public let originalSize: Int
+    public let filename: String
+    public let mimeType: String
+    public let metadata: [String: String]
+    public let wasDeduplication: Bool
 }
 
 /// Attachment storage result

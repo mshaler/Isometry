@@ -421,7 +421,7 @@ public actor DataIntegrityValidator {
         /// Perform validation checks on round-trip result
         func performChecks(
             original: Data,
-            roundTripResult: ImportTestHarness.RoundTripValidationResult,
+            roundTripResult: RoundTripValidationResult,
             importedNodes: [Node]
         ) async throws -> [ValidationFinding]
     }
@@ -455,7 +455,7 @@ public actor DataIntegrityValidator {
     }
 
     /// Perform comprehensive data integrity validation
-    public func validateIntegrity<T: ImportTestHarness.ExportableImporterProtocol>(
+    public func validateIntegrity<T: ExportableImporterProtocol>(
         importer: T,
         sampleSize: Int = 100,
         confidenceLevel: Double = 0.95
@@ -545,7 +545,7 @@ public actor DataIntegrityValidator {
     }
 
     /// Establish accuracy baseline for an importer
-    public func establishBaseline<T: ImportTestHarness.ExportableImporterProtocol>(
+    public func establishBaseline<T: ExportableImporterProtocol>(
         importer: T,
         sampleSize: Int = 200
     ) async throws -> AccuracyMetrics {
@@ -566,7 +566,7 @@ public actor DataIntegrityValidator {
     }
 
     /// Quick regression check against baseline
-    public func checkForRegression<T: ImportTestHarness.ExportableImporterProtocol>(
+    public func checkForRegression<T: ExportableImporterProtocol>(
         importer: T,
         sampleSize: Int = 50
     ) async throws -> (hasRegression: Bool, report: ValidationReport) {
@@ -601,7 +601,7 @@ public actor DataIntegrityValidator {
         registeredCheckSuites.append(SecurityIntegrityCheckSuite())
     }
 
-    private func generateTestDatasets<T: ImportTestHarness.ExportableImporterProtocol>(
+    private func generateTestDatasets<T: ExportableImporterProtocol>(
         count: Int,
         for importer: T
     ) async throws -> [Data] {
@@ -635,7 +635,7 @@ public actor DataIntegrityValidator {
         return datasets
     }
 
-    private func validateSingleDataset<T: ImportTestHarness.ExportableImporterProtocol>(
+    private func validateSingleDataset<T: ExportableImporterProtocol>(
         importer: T,
         testData: Data
     ) async throws -> ValidationAccuracyResult {
@@ -871,7 +871,7 @@ public struct CoreIntegrityCheckSuite: DataIntegrityValidator.IntegrityCheckSuit
 
     public func performChecks(
         original: Data,
-        roundTripResult: ImportTestHarness.RoundTripValidationResult,
+        roundTripResult: RoundTripValidationResult,
         importedNodes: [Node]
     ) async throws -> [DataIntegrityValidator.ValidationFinding] {
         var findings: [DataIntegrityValidator.ValidationFinding] = []
@@ -924,7 +924,7 @@ public struct PerformanceIntegrityCheckSuite: DataIntegrityValidator.IntegrityCh
 
     public func performChecks(
         original: Data,
-        roundTripResult: ImportTestHarness.RoundTripValidationResult,
+        roundTripResult: RoundTripValidationResult,
         importedNodes: [Node]
     ) async throws -> [DataIntegrityValidator.ValidationFinding] {
         var findings: [DataIntegrityValidator.ValidationFinding] = []
@@ -958,7 +958,7 @@ public struct SecurityIntegrityCheckSuite: DataIntegrityValidator.IntegrityCheck
 
     public func performChecks(
         original: Data,
-        roundTripResult: ImportTestHarness.RoundTripValidationResult,
+        roundTripResult: RoundTripValidationResult,
         importedNodes: [Node]
     ) async throws -> [DataIntegrityValidator.ValidationFinding] {
         var findings: [DataIntegrityValidator.ValidationFinding] = []

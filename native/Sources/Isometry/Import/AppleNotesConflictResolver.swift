@@ -129,12 +129,14 @@ public actor AppleNotesConflictResolver {
 
     // MARK: - Performance Metrics
 
-    private struct ConflictMetrics {
-        var totalConflictsDetected: Int = 0
-        var automaticallyResolved: Int = 0
-        var userResolvedCount: Int = 0
-        var averageResolutionTime: TimeInterval = 0
-        var conflictsByType: [NotesConflictType: Int] = [:]
+    public struct ConflictMetrics {
+        public var totalConflictsDetected: Int = 0
+        public var automaticallyResolved: Int = 0
+        public var userResolvedCount: Int = 0
+        public var averageResolutionTime: TimeInterval = 0
+        public var conflictsByType: [NotesConflictType: Int] = [:]
+
+        public init() {}
 
         mutating func recordConflict(_ conflict: NoteConflict, resolutionTime: TimeInterval, wasAutomatic: Bool) {
             totalConflictsDetected += 1
@@ -529,8 +531,8 @@ public actor AppleNotesConflictResolver {
     }
 
     /// Get resolution history
-    public var resolutionHistory: [ConflictResolution] {
-        return self.resolutionHistory
+    public var resolutionHistoryList: [ConflictResolution] {
+        return resolutionHistory
     }
 
     /// Check if a specific conflict requires user input

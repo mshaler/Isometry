@@ -1,5 +1,6 @@
 import Foundation
 import GRDB
+import os.log
 
 // MARK: - Storage Related Types (TODO: Move to appropriate files)
 

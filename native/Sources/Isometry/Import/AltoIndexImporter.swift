@@ -358,11 +358,21 @@ extension AltoIndexImporter: ExportableImporterProtocol {
         return result
     }
 
-    public var supportedExtensions: [String] {
+    public func importFromFile(_ url: URL, folder: String?) async throws -> ImportResult {
+        let node = try await importNote(from: url, relativeTo: url.deletingLastPathComponent())
+
+        var result = ImportResult()
+        result.imported = 1
+        result.nodes.append(node)
+
+        return result
+    }
+
+    nonisolated public var supportedExtensions: [String] {
         return ["md", "markdown"]
     }
 
-    public var importerName: String {
+    nonisolated public var importerName: String {
         return "AltoIndexImporter"
     }
 

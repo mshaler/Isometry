@@ -17,10 +17,10 @@ public actor TransactionCoordinator {
     private var transactionStack: [TransactionScope] = []
 
     /// Integration with Phase 19 change notifications
-    private weak var changeNotificationBridge: ChangeNotificationBridge?
+    private var changeNotificationBridge: ChangeNotificationBridge?
 
     // Forward declarations for placeholder types
-    typealias ChangeNotificationBridge = NSObject // Placeholder - to be replaced with actual ChangeNotificationBridge
+    // ChangeNotificationBridge is defined in Bridge/RealTime/ChangeNotificationBridge.swift
 
     // MARK: - Transaction Scope
 

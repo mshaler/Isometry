@@ -410,7 +410,7 @@ public struct ReferentialImpact: Codable {
 }
 
 /// Audit entry for compliance tracking
-public struct DatabaseDatabaseAuditEntry: Codable, Identifiable {
+public struct DatabaseAuditEntry: Codable, Identifiable {
     public let id: UUID
     public let operationType: LifecycleOperationType
     public let recordId: String
