@@ -2,44 +2,7 @@ import Foundation
 import GRDB
 import CryptoKit
 
-// MARK: - Missing Type Definitions for CAS Integration
-
-/// CAS Integration placeholder for lifecycle operations
-public struct CASIntegration {
-    private let basePath: URL
-    private let maxFileSize: Int64
-    private let compressionThreshold: Int64
-
-    public init(basePath: URL, maxFileSize: Int64, compressionThreshold: Int64) {
-        self.basePath = basePath
-        self.maxFileSize = maxFileSize
-        self.compressionThreshold = compressionThreshold
-    }
-
-    public func store(content: Data, originalFilename: String, mimeType: String) async throws -> CASStoreResult {
-        // Simplified implementation for compilation
-        let contentHash = SHA256.hash(data: content).compactMap { String(format: "%02x", $0) }.joined()
-        return CASStoreResult(
-            contentHash: contentHash,
-            storedSize: content.count,
-            originalSize: content.count,
-            wasStored: true
-        )
-    }
-
-    public func retrieve(contentHash: String) async throws -> Data {
-        // Simplified implementation
-        return Data()
-    }
-}
-
-/// CAS store result
-public struct CASStoreResult {
-    public let contentHash: String
-    public let storedSize: Int
-    public let originalSize: Int
-    public let wasStored: Bool
-}
+// CAS Integration types moved to dedicated CASIntegration.swift file
 
 // MARK: - Configuration Types
 

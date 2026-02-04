@@ -931,14 +931,7 @@ public struct AttachmentRecord {
 }
 
 // MARK: - Helper Extensions
-
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
-}
+// chunked extension already defined in DataVerificationPipeline.swift
 
 extension Result {
     var success: Success? {
