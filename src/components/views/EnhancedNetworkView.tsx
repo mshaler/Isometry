@@ -1,17 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import * as d3 from 'd3';
-import { useTheme } from '@/contexts/ThemeContext';
-import { useCanvasTheme } from '@/hooks/useComponentTheme';
 import type { Node } from '@/types/node';
-
-interface EdgeData {
-  id: string;
-  source_id: string;
-  target_id: string;
-  type: string;
-  weight: number;
-  label: string | null;
-}
 
 interface EnhancedNetworkViewProps {
   data: Node[];
