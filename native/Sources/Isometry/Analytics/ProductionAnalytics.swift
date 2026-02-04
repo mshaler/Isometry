@@ -848,15 +848,15 @@ extension ProductionAnalytics: PrivacyCompliantAnalytics {
         await disableAllAnalytics()
     }
 
-    public func exportUserData() -> Data? {
+    nonisolated public func exportUserData() -> Data? {
         return exportAnalyticsData()
     }
 
-    public func deleteUserData() async {
+    nonisolated public func deleteUserData() async {
         await clearAllData()
     }
 
-    public func getDataRetentionPeriod() -> Int {
+    nonisolated public func getDataRetentionPeriod() -> Int {
         return privacySettings.dataRetentionDays
     }
 }
