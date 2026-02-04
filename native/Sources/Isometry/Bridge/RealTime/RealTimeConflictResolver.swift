@@ -109,13 +109,10 @@ public struct ConflictResolution: Sendable, Codable {
 /// Full conflict context for user resolution
 public struct ConflictContext: Sendable, Codable {
     public let conflict: ConflictData
-    public let fullRecord: [String: Any]?
-    public let relatedRecords: [[String: Any]]?
     public let changeHistory: [ConflictData]?
     public let userSessions: [String]?
 
-    // Note: This would need custom Codable implementation for [String: Any]
-    // Simplified for now with String representations
+    // JSON representations for complex data that can't be Codable
     public let fullRecordJson: String?
     public let relatedRecordsJson: String?
 
@@ -127,12 +124,24 @@ public struct ConflictContext: Sendable, Codable {
         userSessions: [String]? = nil
     ) {
         self.conflict = conflict
-        self.fullRecord = nil // Would parse from JSON
-        self.relatedRecords = nil // Would parse from JSON
         self.changeHistory = changeHistory
         self.userSessions = userSessions
         self.fullRecordJson = fullRecordJson
         self.relatedRecordsJson = relatedRecordsJson
+    }
+
+    /// Parse full record from JSON
+    public var fullRecord: [String: Any]? {
+        guard let json = fullRecordJson,
+              let data = json.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
+    /// Parse related records from JSON
+    public var relatedRecords: [[String: Any]]? {
+        guard let json = relatedRecordsJson,
+              let data = json.data(using: .utf8) else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
     }
 }
 

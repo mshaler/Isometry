@@ -5,11 +5,11 @@ import CloudKit
 public struct ResolvedConflict: Sendable {
     public let nodeId: String
     public let resolvedRecord: CKRecord
-    public let strategy: ResolutionStrategy
+    public let strategy: CloudKitResolutionStrategy
     public let resolvedAt: Date
     public let wasAutomatic: Bool
 
-    public init(nodeId: String, resolvedRecord: CKRecord, strategy: ResolutionStrategy, resolvedAt: Date = Date(), wasAutomatic: Bool = true) {
+    public init(nodeId: String, resolvedRecord: CKRecord, strategy: CloudKitResolutionStrategy, resolvedAt: Date = Date(), wasAutomatic: Bool = true) {
         self.nodeId = nodeId
         self.resolvedRecord = resolvedRecord
         self.strategy = strategy
@@ -29,12 +29,12 @@ public enum CloudKitResolutionStrategy: String, Sendable {
 
 /// User decision for manual conflict resolution
 public struct ResolutionDecision: Sendable {
-    public let strategy: ResolutionStrategy
+    public let strategy: CloudKitResolutionStrategy
     public let selectedRecord: CKRecord? // For manual selection
     public let fieldChoices: [String: String] // field name -> chosen value
     public let customMerge: CKRecord? // Fully custom merged record
 
-    public init(strategy: ResolutionStrategy, selectedRecord: CKRecord? = nil, fieldChoices: [String: String] = [:], customMerge: CKRecord? = nil) {
+    public init(strategy: CloudKitResolutionStrategy, selectedRecord: CKRecord? = nil, fieldChoices: [String: String] = [:], customMerge: CKRecord? = nil) {
         self.strategy = strategy
         self.selectedRecord = selectedRecord
         self.fieldChoices = fieldChoices
@@ -46,10 +46,10 @@ public struct ResolutionDecision: Sendable {
 public struct ConflictDiff: Sendable {
     public let nodeId: String
     public let fieldDiffs: [FieldDiff]
-    public let conflictType: ConflictInfo.ConflictType
+    public let conflictType: ConflictInfo.DetectionConflictType
     public let canAutoResolve: Bool
 
-    public init(nodeId: String, fieldDiffs: [FieldDiff], conflictType: ConflictInfo.ConflictType, canAutoResolve: Bool) {
+    public init(nodeId: String, fieldDiffs: [FieldDiff], conflictType: ConflictInfo.DetectionConflictType, canAutoResolve: Bool) {
         self.nodeId = nodeId
         self.fieldDiffs = fieldDiffs
         self.conflictType = conflictType
@@ -408,7 +408,7 @@ public actor CloudKitConflictResolver {
     }
 
     /// Applies resolved record to both CloudKit and local database
-    private func applyResolution(conflict: ConflictInfo, resolvedRecord: CKRecord, strategy: ResolutionStrategy) async throws {
+    private func applyResolution(conflict: ConflictInfo, resolvedRecord: CKRecord, strategy: CloudKitResolutionStrategy) async throws {
         // Update CloudKit record
         let (savedRecord, _) = try await database.modifyRecords(
             saving: [resolvedRecord],

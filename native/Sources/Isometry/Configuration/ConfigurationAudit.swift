@@ -8,7 +8,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
 
     // MARK: - Published Properties
 
-    @Published public private(set) var auditEntries: [AuditEntry] = []
+    @Published public private(set) var auditEntries: [ConfigurationAuditEntry] = []
     @Published public private(set) var complianceStatus: ComplianceStatus = ComplianceStatus()
 
     // MARK: - Private Properties
@@ -34,7 +34,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
 
     /// Record a configuration change in the audit trail
     public func recordChange(_ change: ConfigurationChange) throws {
-        let entry = AuditEntry(
+        let entry = ConfigurationAuditEntry(
             id: UUID(),
             action: .configurationChanged,
             configurationKey: change.key,
@@ -46,13 +46,13 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             metadata: createChangeMetadata(change)
         )
 
-        try addAuditEntry(entry)
+        try addConfigurationAuditEntry(entry)
         logger.debug("Recorded configuration change: \(change.key)")
     }
 
     /// Record configuration access (read) event
     public func recordAccess(_ key: String, environment: String?, source: String = "application") throws {
-        let entry = AuditEntry(
+        let entry = ConfigurationAuditEntry(
             action: .configurationAccessed,
             configurationKey: key,
             environment: environment,
@@ -60,7 +60,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             timestamp: Date()
         )
 
-        try addAuditEntry(entry)
+        try addConfigurationAuditEntry(entry)
         logger.debug("Recorded configuration access: \\(key)")
     }
 
@@ -72,7 +72,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     ) throws {
         let action: AuditAction = result.isValid ? .validationPassed : .validationFailed
 
-        let entry = AuditEntry(
+        let entry = ConfigurationAuditEntry(
             action: action,
             configurationKey: key,
             environment: environment,
@@ -86,7 +86,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             ]
         )
 
-        try addAuditEntry(entry)
+        try addConfigurationAuditEntry(entry)
         let status = result.isValid ? "passed" : "failed"
         logger.debug("Recorded validation result for \(key): \(status)")
     }
@@ -98,7 +98,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         details: String,
         severity: SecuritySeverity = .medium
     ) throws {
-        let entry = AuditEntry(
+        let entry = ConfigurationAuditEntry(
             action: .securityEvent,
             configurationKey: key,
             source: "security_system",
@@ -110,7 +110,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             ]
         )
 
-        try addAuditEntry(entry)
+        try addConfigurationAuditEntry(entry)
         updateComplianceStatus(for: eventType, severity: severity)
 
         logger.warning("Recorded security event for \(key): \(eventType.rawValue) (\(severity.rawValue))")
@@ -124,7 +124,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         reason: String,
         environment: String? = nil
     ) throws {
-        let entry = AuditEntry(
+        let entry = ConfigurationAuditEntry(
             action: .configurationRolledBack,
             configurationKey: key,
             oldValue: fromValue,
@@ -137,12 +137,12 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             ]
         )
 
-        try addAuditEntry(entry)
+        try addConfigurationAuditEntry(entry)
         logger.debug("Recorded rollback for \(key): \(reason)")
     }
 
     /// Get audit history for a specific configuration key
-    public func getAuditHistory(for key: String, limit: Int = 100) -> [AuditEntry] {
+    public func getAuditHistory(for key: String, limit: Int = 100) -> [ConfigurationAuditEntry] {
         return auditEntries
             .filter { $0.configurationKey == key }
             .sorted { $0.timestamp > $1.timestamp }
@@ -155,7 +155,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         from startDate: Date,
         to endDate: Date,
         actions: [AuditAction]? = nil
-    ) -> [AuditEntry] {
+    ) -> [ConfigurationAuditEntry] {
         return auditEntries
             .filter { entry in
                 entry.timestamp >= startDate &&
@@ -166,7 +166,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
     }
 
     /// Get recent security events
-    public func getSecurityEvents(limit: Int = 50) -> [AuditEntry] {
+    public func getSecurityEvents(limit: Int = 50) -> [ConfigurationAuditEntry] {
         return auditEntries
             .filter { $0.action == .securityEvent }
             .sorted { $0.timestamp > $1.timestamp }
@@ -256,7 +256,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
 
     // MARK: - Private Methods
 
-    private func addAuditEntry(_ entry: AuditEntry) throws {
+    private func addConfigurationAuditEntry(_ entry: ConfigurationAuditEntry) throws {
         auditEntries.insert(entry, at: 0)
 
         // Limit memory usage
@@ -372,7 +372,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         complianceStatus.complianceScore = max(0.0, baseScore - violationPenalty - criticalPenalty)
     }
 
-    private func exportToCSV(_ entries: [AuditEntry]) -> Data? {
+    private func exportToCSV(_ entries: [ConfigurationAuditEntry]) -> Data? {
         var csv = "Timestamp,Action,ConfigurationKey,OldValue,NewValue,Environment,Source\\n"
 
         for entry in entries {
@@ -391,7 +391,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
 // MARK: - Supporting Types
 
 /// Audit trail entry
-public struct AuditEntry: Codable, Sendable, Identifiable {
+public struct ConfigurationAuditEntry: Codable, Sendable, Identifiable {
     public let id: UUID
     public let action: AuditAction
     public let configurationKey: String
@@ -518,7 +518,7 @@ public enum AuditReportFormat {
 
 /// Audit export
 public struct AuditExport: Codable, Sendable {
-    public let entries: [AuditEntry]
+    public let entries: [ConfigurationAuditEntry]
     public let exportDate: Date
     public let totalEntries: Int
 }
@@ -533,8 +533,8 @@ public enum AuditExportFormat {
 
 /// Audit storage protocol
 public protocol AuditStorage {
-    func saveAuditEntries(_ entries: [AuditEntry]) throws
-    func loadAuditEntries() throws -> [AuditEntry]
+    func saveAuditEntries(_ entries: [ConfigurationAuditEntry]) throws
+    func loadAuditEntries() throws -> [ConfigurationAuditEntry]
     func clearAuditEntries()
 }
 
@@ -544,16 +544,16 @@ public final class UserDefaultsAuditStorage: AuditStorage {
 
     public init() {}
 
-    public func saveAuditEntries(_ entries: [AuditEntry]) throws {
+    public func saveAuditEntries(_ entries: [ConfigurationAuditEntry]) throws {
         let data = try JSONEncoder().encode(entries)
         UserDefaults.standard.set(data, forKey: key)
     }
 
-    public func loadAuditEntries() throws -> [AuditEntry] {
+    public func loadAuditEntries() throws -> [ConfigurationAuditEntry] {
         guard let data = UserDefaults.standard.data(forKey: key) else {
             return []
         }
-        return try JSONDecoder().decode([AuditEntry].self, from: data)
+        return try JSONDecoder().decode([ConfigurationAuditEntry].self, from: data)
     }
 
     public func clearAuditEntries() {

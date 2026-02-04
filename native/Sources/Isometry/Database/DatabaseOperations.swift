@@ -297,14 +297,14 @@ public struct PurgeResult: Codable {
     public let purgedRecords: Int
     public let attachmentsPurged: Int
     public let freeSpaceReclaimed: Int64
-    public let auditTrail: [AuditEntry]
+    public let auditTrail: [DatabaseAuditEntry]
     public let impactAnalysis: PurgeImpactAnalysis
 
     public init(
         purgedRecords: Int,
         attachmentsPurged: Int,
         freeSpaceReclaimed: Int64,
-        auditTrail: [AuditEntry],
+        auditTrail: [DatabaseAuditEntry],
         impactAnalysis: PurgeImpactAnalysis
     ) {
         self.purgedRecords = purgedRecords
@@ -371,7 +371,7 @@ public struct PurgeImpactAnalysis: Codable {
     public let candidateRecords: Int
     public let estimatedSpaceReclamation: Int64
     public let affectedTables: [String]
-    public let auditEntries: [AuditEntry]
+    public let auditEntries: [DatabaseAuditEntry]
     public let referentialImpact: ReferentialImpact
     public let recommendations: [String]
 
@@ -379,7 +379,7 @@ public struct PurgeImpactAnalysis: Codable {
         candidateRecords: Int,
         estimatedSpaceReclamation: Int64,
         affectedTables: [String],
-        auditEntries: [AuditEntry],
+        auditEntries: [DatabaseAuditEntry],
         referentialImpact: ReferentialImpact = ReferentialImpact(),
         recommendations: [String] = []
     ) {
@@ -410,7 +410,7 @@ public struct ReferentialImpact: Codable {
 }
 
 /// Audit entry for compliance tracking
-public struct AuditEntry: Codable, Identifiable {
+public struct DatabaseDatabaseAuditEntry: Codable, Identifiable {
     public let id: UUID
     public let operationType: LifecycleOperationType
     public let recordId: String

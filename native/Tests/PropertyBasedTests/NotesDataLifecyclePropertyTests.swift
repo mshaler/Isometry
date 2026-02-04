@@ -714,7 +714,7 @@ struct PurgeResult {
     let purgedRecords: Int
     let attachmentsPurged: Int
     let freeSpaceReclaimed: Int64
-    let auditTrail: [AuditEntry]
+    let auditTrail: [TestAuditEntry]
     let impactAnalysis: PurgeImpactAnalysis
 }
 
@@ -722,10 +722,10 @@ struct PurgeImpactAnalysis {
     let candidateRecords: Int
     let estimatedSpaceReclamation: Int64
     let affectedTables: [String]
-    let auditEntries: [AuditEntry]
+    let auditEntries: [TestAuditEntry]
 }
 
-struct AuditEntry {
+struct TestAuditEntry {
     let id: UUID
     let operationType: OperationType
     let recordId: String

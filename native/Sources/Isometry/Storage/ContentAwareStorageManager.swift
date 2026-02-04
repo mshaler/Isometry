@@ -46,9 +46,7 @@ public actor ContentAwareStorageManager {
 
         Task {
             await initializeStorage()
-            if isCleanupEnabled {
-                await startBackgroundCleanup()
-            }
+            await startBackgroundCleanupIfEnabled()
         }
     }
 
@@ -281,6 +279,13 @@ public actor ContentAwareStorageManager {
         let invalidChars = CharacterSet(charactersIn: "<>:\"/\\|?*\0")
         guard filename.rangeOfCharacter(from: invalidChars) == nil else {
             throw StorageError.invalidFilename(filename)
+        }
+    }
+
+    /// Start background cleanup if enabled
+    private func startBackgroundCleanupIfEnabled() async {
+        if isCleanupEnabled {
+            await startBackgroundCleanup()
         }
     }
 

@@ -174,7 +174,7 @@ public actor ConflictDetectionService {
 
             return conflicts
 
-        } catch let error as CKError where error.code == .recordNotFound {
+        } catch let error as CKError where error.code == .unknownItem {
             // Record was deleted on server - this is a deletion conflict
             return [] // Handle in sync manager
         }

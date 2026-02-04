@@ -86,7 +86,7 @@ public actor DataGenerators {
         let purgeStartDate = baseDate.addingTimeInterval(TimeInterval(totalNodes * 1800)) // Midpoint
         let purgeEndDate = Date().addingTimeInterval(-TimeInterval(3600)) // 1 hour ago
 
-        let purgeConfig = PurgeConfiguration(
+        let purgeConfig = TestPurgeConfiguration(
             dateRange: DateRange(start: purgeStartDate, end: purgeEndDate),
             includeAttachments: generator.nextBool(),
             dryRun: false
@@ -580,7 +580,7 @@ extension DataGenerators {
 
 // MARK: - Missing Configuration Types
 
-public struct PurgeConfiguration {
+public struct TestPurgeConfiguration {
     public let dateRange: DateRange?
     public let includeAttachments: Bool
     public let dryRun: Bool
@@ -599,5 +599,19 @@ public struct DateRange {
     public init(start: Date, end: Date) {
         self.start = start
         self.end = end
+    }
+}
+
+public struct AppleNotesTestData {
+    public let data: Data
+    public let filename: String
+    public let expectedNodeCount: Int
+    public let expectedUnicodeChars: Set<Unicode.Scalar>
+
+    public init(data: Data, filename: String, expectedNodeCount: Int, expectedUnicodeChars: Set<Unicode.Scalar>) {
+        self.data = data
+        self.filename = filename
+        self.expectedNodeCount = expectedNodeCount
+        self.expectedUnicodeChars = expectedUnicodeChars
     }
 }

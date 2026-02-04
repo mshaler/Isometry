@@ -370,7 +370,7 @@ public actor AppleNotesConflictResolver {
             return try await resolveKeepBoth(conflict: conflict)
 
         case .userChoice:
-            throw ConflictResolutionError.requiresUserInput(conflict)
+            throw NotesConflictResolutionError.requiresUserInput(conflict)
         }
     }
 
@@ -415,7 +415,7 @@ public actor AppleNotesConflictResolver {
     private func resolveAutomaticMerge(conflict: NoteConflict) async throws -> Node {
         guard let localContent = conflict.localNode.content,
               let remoteContent = conflict.remoteNode.content else {
-            throw ConflictResolutionError.cannotAutoMerge("Missing content for auto-merge")
+            throw NotesConflictResolutionError.cannotAutoMerge("Missing content for auto-merge")
         }
 
         // Perform simple three-way merge
@@ -541,7 +541,7 @@ public actor AppleNotesConflictResolver {
 
 // MARK: - Error Types
 
-public enum ConflictResolutionError: Error, LocalizedError {
+public enum NotesConflictResolutionError: Error, LocalizedError {
     case requiresUserInput(AppleNotesConflictResolver.NoteConflict)
     case cannotAutoMerge(String)
     case databaseTransactionFailed

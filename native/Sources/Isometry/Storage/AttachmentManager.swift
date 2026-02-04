@@ -701,32 +701,34 @@ public actor AttachmentManager {
     ) async throws -> [AttachmentInfo] {
         return try await database.read { db in
             var sql = "SELECT * FROM attachment_metadata WHERE 1=1"
-            var arguments: [Any] = []
+            var argumentsArray: [Any] = []
 
             if let pattern = filenamePattern {
                 sql += " AND original_filename LIKE ?"
-                arguments.append("%\(pattern)%")
+                argumentsArray.append("%\(pattern)%")
             }
 
             if let mimePattern = mimeTypePattern {
                 sql += " AND mime_type LIKE ?"
-                arguments.append("%\(mimePattern)%")
+                argumentsArray.append("%\(mimePattern)%")
             }
 
             if let sizeRange = sizeRange {
                 sql += " AND file_size >= ? AND file_size < ?"
-                arguments.append(sizeRange.lowerBound)
-                arguments.append(sizeRange.upperBound)
+                argumentsArray.append(sizeRange.lowerBound)
+                argumentsArray.append(sizeRange.upperBound)
             }
 
             if let dateRange = dateRange {
                 sql += " AND created_at >= ? AND created_at <= ?"
-                arguments.append(dateRange.lowerBound.timeIntervalSince1970)
-                arguments.append(dateRange.upperBound.timeIntervalSince1970)
+                argumentsArray.append(dateRange.lowerBound.timeIntervalSince1970)
+                argumentsArray.append(dateRange.upperBound.timeIntervalSince1970)
             }
 
             sql += " ORDER BY last_accessed_at DESC LIMIT ?"
-            arguments.append(limit)
+            argumentsArray.append(limit)
+
+            let arguments = StatementArguments(argumentsArray) ?? StatementArguments()
 
             let metadataList = try AttachmentMetadata.fetchAll(db, sql: sql, arguments: arguments)
 
