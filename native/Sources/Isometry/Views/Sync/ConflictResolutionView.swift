@@ -1,10 +1,10 @@
 import SwiftUI
 
+/// Type alias to disambiguate ConflictResolution
+public typealias SyncConflictResolution = CloudKitSyncManager.ConflictResolution
+
 /// View for resolving sync conflicts between local and remote versions
 public struct ConflictResolutionView: View {
-
-    /// Type alias to disambiguate ConflictResolution
-    typealias SyncConflictResolution = CloudKitSyncManager.ConflictResolution
     // MARK: - Properties
 
     let conflict: SyncConflict
@@ -247,7 +247,7 @@ public struct ConflictResolutionView: View {
             strategy = .fieldLevelMerge
         }
 
-        let resolution = ConflictResolution(
+        let resolution = SyncConflictResolution(
             nodeId: conflict.nodeId,
             resolvedNode: resolvedNode,
             strategy: strategy,
@@ -295,7 +295,7 @@ public struct ConflictResolutionView: View {
 /// View for displaying and resolving multiple conflicts
 public struct ConflictListView: View {
     let conflicts: [SyncConflict]
-    let onResolve: (ConflictResolution) -> Void
+    let onResolve: (SyncConflictResolution) -> Void
     let onResolveAll: (ConflictResolutionStrategy) -> Void
     let onDismiss: () -> Void
 
@@ -303,7 +303,7 @@ public struct ConflictListView: View {
 
     public init(
         conflicts: [SyncConflict],
-        onResolve: @escaping (ConflictResolution) -> Void,
+        onResolve: @escaping (SyncConflictResolution) -> Void,
         onResolveAll: @escaping (ConflictResolutionStrategy) -> Void,
         onDismiss: @escaping () -> Void
     ) {
