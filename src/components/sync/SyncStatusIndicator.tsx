@@ -54,7 +54,7 @@ export function SyncStatusIndicator({
   });
 
   const [showDetails, setShowDetails] = useState(false);
-  const [selectedConflict, setSelectedConflict] = useState<string | null>(null);
+  const [_selectedConflict, setSelectedConflict] = useState<string | null>(null);
 
   /**
    * Format relative time for last sync

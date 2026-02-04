@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTerminal } from '../../hooks/useTerminal';
-import { useTerminalContext } from '../../context/TerminalContext';
+// import { useTerminalContext } from '../../context/TerminalContext';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 
 interface TerminalProps {
@@ -32,7 +32,6 @@ export function Terminal({
     dispose,
     resizeTerminal,
     getCurrentWorkingDirectory,
-    setWorkingDirectory,
     terminal,
     isConnected
   } = useTerminal({
@@ -93,7 +92,7 @@ export function Terminal({
   }, [isReady, terminal, resizeTerminal]);
 
   // Command execution interface
-  const executeTerminalCommand = (cmd: string) => {
+  const _executeTerminalCommand = (cmd: string) => {
     if (terminal && isConnected) {
       executeCommand(cmd);
     } else {
@@ -102,7 +101,7 @@ export function Terminal({
   };
 
   // Output writing interface
-  const writeTerminalOutput = (output: string, isError = false) => {
+  const _writeTerminalOutput = (output: string, isError = false) => {
     if (terminal && isConnected) {
       writeOutput(output, isError);
     }

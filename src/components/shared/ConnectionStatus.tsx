@@ -6,7 +6,7 @@
  * messaging, progress display for background sync, and theme system compatibility.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useConnection, useConnectionQuality, useOfflineQueue } from '../../context/ConnectionContext';
 import { useLiveDataMetrics } from '../../contexts/LiveDataContext';
 
@@ -27,14 +27,14 @@ export function ConnectionStatus({
   compact = false,
   showMetrics = false
 }: ConnectionStatusProps) {
-  const { isConnected, status, quality, uptime, testConnection, forceReconnection } = useConnection();
+  const { isConnected, status, quality, uptime, forceReconnection } = useConnection();
   const { isDegraded, isHealthy } = useConnectionQuality();
   const { hasQueuedOperations, queueStatus, pendingOperations } = useOfflineQueue();
   const { metrics: liveDataMetrics } = useLiveDataMetrics();
 
   // Local state
   const [isVisible, setIsVisible] = useState(alwaysVisible);
-  const [lastStatusChange, setLastStatusChange] = useState(Date.now());
+  const [_lastStatusChange, setLastStatusChange] = useState(Date.now());
   const [showDetails, setShowDetails] = useState(false);
   const [animateSync, setAnimateSync] = useState(false);
 
@@ -204,7 +204,7 @@ export function ConnectionStatus({
             <div
               className="connection-status__progress-fill"
               style={{
-                width: `${Math.min(100, (liveDataMetrics.eventCount / Math.max(1, pendingOperations)) * 100)}%`
+                width: `${Math.min(100, ((liveDataMetrics?.[0]?.eventCount || 0) / Math.max(1, pendingOperations)) * 100)}%`
               }}
             />
           </div>
@@ -249,9 +249,9 @@ export function ConnectionStatus({
             )}
           </div>
 
-          {liveDataMetrics.outOfOrderPercentage > 0 && (
+          {(liveDataMetrics?.[0]?.outOfOrderPercentage || 0) > 0 && (
             <div className="connection-status__warning">
-              Out-of-order events: {liveDataMetrics.outOfOrderPercentage.toFixed(1)}%
+              Out-of-order events: {(liveDataMetrics?.[0]?.outOfOrderPercentage || 0).toFixed(1)}%
             </div>
           )}
         </div>
@@ -263,7 +263,7 @@ export function ConnectionStatus({
 /**
  * Status icon component with animations
  */
-function StatusIcon({ status, theme }: { status: string; theme: string }) {
+function StatusIcon({ status, theme: _theme }: { status: string; theme: string }) {
   switch (status) {
     case 'connected':
       return (

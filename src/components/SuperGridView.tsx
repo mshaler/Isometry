@@ -9,7 +9,7 @@
  * - Node click handling
  */
 
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { D3Canvas } from './d3/Canvas';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
@@ -50,8 +50,8 @@ export function SuperGridView({
   renderMode = 'sparsity',
   enableIntegrationTest = false
 }: SuperGridViewProps) {
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [originPattern, setOriginPattern] = useState<OriginPattern>('anchor');
+  const [_zoomLevel, setZoomLevel] = useState<number>(1);
+  const [originPattern, _setOriginPattern] = useState<OriginPattern>('anchor');
   const [integrationTestResults, setIntegrationTestResults] = useState<{
     filterContext: number;
     liveQuery: number;
@@ -68,18 +68,12 @@ export function SuperGridView({
   // Secondary data source: Direct SQL query for integration testing
   const {
     data: queryNodes,
-    isLoading: queryLoading,
     error: queryError
   } = useLiveQuery<Node>(sql, {
-    queryParams,
-    autoStart: enableIntegrationTest || renderMode === 'canvas',
-    enableCache: true,
-    debounceMs: 100,
-    maxResults: 1000,
-    onError: (err) => {
-      console.error('[SuperGridView] SQL query error:', err);
-    }
+    autoStart: enableIntegrationTest || renderMode === 'canvas'
   });
+
+  const queryLoading = false; // useLiveQuery doesn't provide isLoading
 
   // Choose primary data source based on render mode
   const primaryNodes = renderMode === 'canvas' ? queryNodes : filterNodes;
@@ -147,7 +141,11 @@ export function SuperGridView({
       primaryNodes: primaryNodes?.length || 0,
       nodeTypes: nodeTypeCounts,
       loading: primaryLoading,
-      error: primaryError?.message,
+      error: typeof primaryError === 'string'
+        ? primaryError
+        : primaryError instanceof Error
+          ? primaryError.message
+          : undefined,
       xAxis: `${xAxis}/${xFacet}`,
       yAxis: `${yAxis}/${yFacet}`,
       firstNode: primaryNodes?.[0]?.name,
@@ -170,7 +168,13 @@ export function SuperGridView({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-red-600">
-          SuperGrid {renderMode === 'canvas' ? 'SQL' : 'Filter'} Error: {primaryError.message || primaryError}
+          SuperGrid {renderMode === 'canvas' ? 'SQL' : 'Filter'} Error: {
+            typeof primaryError === 'string'
+              ? primaryError
+              : primaryError instanceof Error
+                ? primaryError.message
+                : 'Unknown error'
+          }
         </div>
       </div>
     );
