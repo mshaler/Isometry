@@ -108,6 +108,8 @@ Recent decisions affecting current work:
 - **Type-safe error handling patterns:** Defensive type checking before property access to prevent instanceof union type issues in React components
 - **Swift actor isolation compliance:** Nonisolated protocol conformance methods ensure thread-safe cross-actor access for analytics and protocol implementations
 - **D3 Canvas null safety patterns:** Comprehensive null checking throughout component lifecycle with defensive `nodes || []` patterns for safe D3 operations
+- **Actor-nested types pattern:** Swift actors can contain nested types accessible via ActorName.NestedType syntax for namespacing and actor boundary maintenance
+- **Type alias disambiguation strategy:** File-level typealiases provide clean disambiguation when multiple types with same name exist in codebase
 
 ### Pending Todos
 
