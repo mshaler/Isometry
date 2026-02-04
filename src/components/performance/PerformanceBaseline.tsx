@@ -131,11 +131,7 @@ export function PerformanceBaseline({
 
   // Mock D3 performance hook for baseline component
   const d3PerformanceRef = useRef<HTMLDivElement>(null);
-  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current || undefined, {
-    targetFPS,
-    enableMemoryTracking: true,
-    reportInterval: 1000
-  });
+  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current || undefined, 'performance-baseline');
 
   // Calculate current performance quality
   const currentQuality = useMemo(() => {
