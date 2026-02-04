@@ -535,6 +535,183 @@ extension AppleNotesNativeImporter {
     public func getPermissionInstructions() async -> [String] {
         return await notesAccessManager.getPermissionInstructions()
     }
+
+    // MARK: - Attachment Support
+
+    /// Get attachment records for a specific note
+    public func getAttachmentRecordsForNote(noteId: String) async throws -> [AttachmentRecord] {
+        guard isNotesDBOpen else {
+            try openNotesDatabase()
+        }
+
+        let query = """
+        SELECT
+            ZICCLOUDSYNCINGOBJECT.Z_PK,
+            ZICCLOUDSYNCINGOBJECT.ZTITLE,
+            ZICCLOUDSYNCINGOBJECT.ZTYPEUTI,
+            ZICCLOUDSYNCINGOBJECT.ZFILENAME,
+            ZICCLOUDSYNCINGOBJECT.ZFILESIZE,
+            ZICCLOUDSYNCINGOBJECT.ZNOTE
+        FROM ZICCLOUDSYNCINGOBJECT
+        WHERE ZICCLOUDSYNCINGOBJECT.ZNOTE = ?
+            AND ZICCLOUDSYNCINGOBJECT.ZTYPEUTI IS NOT NULL
+            AND ZICCLOUDSYNCINGOBJECT.ZMARKEDFORDELETION = 0
+        ORDER BY ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE ASC
+        """
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(notesDatabase, query, -1, &statement, nil) == SQLITE_OK else {
+            throw NativeImportError.queryPreparationFailed(String(cString: sqlite3_errmsg(notesDatabase)))
+        }
+
+        defer {
+            sqlite3_finalize(statement)
+        }
+
+        // Convert noteId to Notes database primary key
+        guard let notePK = try await getNotesPrimaryKey(for: noteId) else {
+            return [] // Note not found in Notes database
+        }
+
+        sqlite3_bind_int64(statement, 1, notePK)
+
+        var attachmentRecords: [AttachmentRecord] = []
+
+        while sqlite3_step(statement) == SQLITE_ROW {
+            let pkValue = sqlite3_column_int64(statement, 0)
+            let id = String(pkValue)
+
+            // Get attachment properties
+            let title = sqlite3_column_text(statement, 1).flatMap { String(cString: $0) }
+            let typeUTI = sqlite3_column_text(statement, 2).flatMap { String(cString: $0) }
+            let filename = sqlite3_column_text(statement, 3).flatMap { String(cString: $0) }
+            let filesize = sqlite3_column_type(statement, 4) != SQLITE_NULL ?
+                sqlite3_column_int64(statement, 4) : nil
+
+            let record = AttachmentRecord(
+                id: id,
+                filename: filename ?? title ?? "attachment_\(id)",
+                mimeType: nil, // Will be derived from UTI
+                uti: typeUTI,
+                size: filesize,
+                noteId: noteId
+            )
+
+            attachmentRecords.append(record)
+        }
+
+        print("Found \(attachmentRecords.count) attachment records for note \(noteId)")
+        return attachmentRecords
+    }
+
+    /// Extract attachment data from Notes storage
+    public func extractAttachmentData(record: AttachmentRecord) async throws -> Data {
+        guard isNotesDBOpen else {
+            try openNotesDatabase()
+        }
+
+        // Query for attachment data
+        let query = """
+        SELECT ZDATA
+        FROM ZICCLOUDSYNCINGOBJECT
+        WHERE Z_PK = ?
+        """
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(notesDatabase, query, -1, &statement, nil) == SQLITE_OK else {
+            throw NativeImportError.queryPreparationFailed(String(cString: sqlite3_errmsg(notesDatabase)))
+        }
+
+        defer {
+            sqlite3_finalize(statement)
+        }
+
+        guard let recordPK = Int64(record.id) else {
+            throw NativeImportError.contentParsingFailed("Invalid attachment ID: \(record.id)")
+        }
+
+        sqlite3_bind_int64(statement, 1, recordPK)
+
+        guard sqlite3_step(statement) == SQLITE_ROW else {
+            throw NativeImportError.contentParsingFailed("Attachment data not found for ID: \(record.id)")
+        }
+
+        // Get attachment data blob
+        if sqlite3_column_type(statement, 0) == SQLITE_BLOB {
+            let dataPtr = sqlite3_column_blob(statement, 0)
+            let dataSize = sqlite3_column_bytes(statement, 0)
+
+            guard let dataPtr = dataPtr else {
+                throw NativeImportError.contentParsingFailed("Null attachment data for ID: \(record.id)")
+            }
+
+            let attachmentData = Data(bytes: dataPtr, count: Int(dataSize))
+
+            // Try to decompress if it's gzipped (Notes often compresses attachment data)
+            if let decompressedData = try? decompressAttachmentData(attachmentData) {
+                return decompressedData
+            } else {
+                return attachmentData
+            }
+
+        } else {
+            throw NativeImportError.contentParsingFailed("No attachment data found for ID: \(record.id)")
+        }
+    }
+
+    /// Get Notes primary key for a given note ID
+    private func getNotesPrimaryKey(for noteId: String) async throws -> Int64? {
+        guard isNotesDBOpen else {
+            try openNotesDatabase()
+        }
+
+        let query = """
+        SELECT Z_PK
+        FROM ZICCLOUDSYNCINGOBJECT
+        WHERE ZIDENTIFIER = ? OR Z_PK = ?
+        LIMIT 1
+        """
+
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(notesDatabase, query, -1, &statement, nil) == SQLITE_OK else {
+            throw NativeImportError.queryPreparationFailed(String(cString: sqlite3_errmsg(notesDatabase)))
+        }
+
+        defer {
+            sqlite3_finalize(statement)
+        }
+
+        sqlite3_bind_text(statement, 1, noteId, -1, nil)
+
+        // Also try treating noteId as primary key directly
+        if let pkValue = Int64(noteId) {
+            sqlite3_bind_int64(statement, 2, pkValue)
+        } else {
+            sqlite3_bind_null(statement, 2)
+        }
+
+        if sqlite3_step(statement) == SQLITE_ROW {
+            return sqlite3_column_int64(statement, 0)
+        }
+
+        return nil
+    }
+
+    /// Decompress attachment data if it's compressed
+    private func decompressAttachmentData(_ data: Data) throws -> Data {
+        // Check if data is gzip compressed (starts with 1F 8B)
+        if data.count >= 2 && data[0] == 0x1F && data[1] == 0x8B {
+            return try (data as NSData).decompressed(using: .zlib) as Data
+        }
+
+        // Check if it's zlib compressed (starts with 78 XX)
+        if data.count >= 2 && data[0] == 0x78 {
+            return try (data as NSData).decompressed(using: .zlib) as Data
+        }
+
+        // Not compressed, return as-is
+        return data
+    }
 }
 
 // MARK: - Error Types

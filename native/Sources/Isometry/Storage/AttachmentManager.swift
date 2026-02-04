@@ -352,16 +352,213 @@ public actor AttachmentManager {
     private func extractAttachmentsFromNote(noteId: String, noteContent: Data?) async throws -> [ExtractedAttachment] {
         var attachments: [ExtractedAttachment] = []
 
-        // TODO: This is a simplified implementation
-        // In reality, we would need to:
-        // 1. Query the Notes database for attachment records linked to this note
-        // 2. Parse the protobuf content to find embedded attachments
-        // 3. Extract attachment data from the Notes attachment storage
+        // Step 1: Query the Notes database for attachment records linked to this note
+        let attachmentRecords = try await nativeImporter.getAttachmentRecordsForNote(noteId: noteId)
 
-        // For now, return empty array as this requires deeper Notes database integration
-        print("AttachmentManager: Attachment extraction from Notes database not yet implemented")
+        for record in attachmentRecords {
+            do {
+                // Step 2: Extract attachment data from Notes storage
+                let attachmentData = try await nativeImporter.extractAttachmentData(record: record)
 
+                let extractedAttachment = ExtractedAttachment(
+                    filename: record.filename ?? "attachment_\(record.id)",
+                    mimeType: record.mimeType ?? detectMimeTypeFromUTI(record.uti),
+                    content: attachmentData,
+                    originalId: record.id
+                )
+
+                attachments.append(extractedAttachment)
+
+                print("AttachmentManager: Extracted attachment \(record.filename ?? record.id) (\(attachmentData.count) bytes)")
+
+            } catch {
+                print("AttachmentManager: Failed to extract attachment \(record.id): \(error)")
+                // Continue with other attachments rather than failing entirely
+            }
+        }
+
+        // Step 3: Parse protobuf content for embedded attachments (if available)
+        if let noteContent = noteContent {
+            let embeddedAttachments = try await extractEmbeddedAttachments(from: noteContent)
+            attachments.append(contentsOf: embeddedAttachments)
+        }
+
+        print("AttachmentManager: Extracted \(attachments.count) total attachments for note \(noteId)")
         return attachments
+    }
+
+    /// Extract embedded attachments from Notes protobuf content
+    private func extractEmbeddedAttachments(from noteContent: Data) async throws -> [ExtractedAttachment] {
+        var embeddedAttachments: [ExtractedAttachment] = []
+
+        // Parse protobuf content to find embedded media
+        // This is a simplified implementation that looks for common patterns
+
+        // Look for embedded image data (JPEG, PNG signatures)
+        let jpegMarkers = findDataPatterns(in: noteContent, pattern: Data([0xFF, 0xD8, 0xFF]))
+        for (index, marker) in jpegMarkers.enumerated() {
+            if let imageData = extractImageData(from: noteContent, startingAt: marker, format: .jpeg) {
+                let attachment = ExtractedAttachment(
+                    filename: "embedded_image_\(index).jpg",
+                    mimeType: "image/jpeg",
+                    content: imageData,
+                    originalId: "embedded_\(marker)"
+                )
+                embeddedAttachments.append(attachment)
+            }
+        }
+
+        let pngMarkers = findDataPatterns(in: noteContent, pattern: Data([0x89, 0x50, 0x4E, 0x47]))
+        for (index, marker) in pngMarkers.enumerated() {
+            if let imageData = extractImageData(from: noteContent, startingAt: marker, format: .png) {
+                let attachment = ExtractedAttachment(
+                    filename: "embedded_image_\(index).png",
+                    mimeType: "image/png",
+                    content: imageData,
+                    originalId: "embedded_png_\(marker)"
+                )
+                embeddedAttachments.append(attachment)
+            }
+        }
+
+        // Look for PDF signatures
+        let pdfMarkers = findDataPatterns(in: noteContent, pattern: "%PDF".data(using: .utf8)!)
+        for (index, marker) in pdfMarkers.enumerated() {
+            if let pdfData = extractPDFData(from: noteContent, startingAt: marker) {
+                let attachment = ExtractedAttachment(
+                    filename: "embedded_document_\(index).pdf",
+                    mimeType: "application/pdf",
+                    content: pdfData,
+                    originalId: "embedded_pdf_\(marker)"
+                )
+                embeddedAttachments.append(attachment)
+            }
+        }
+
+        return embeddedAttachments
+    }
+
+    /// Find data patterns within larger data blob
+    private func findDataPatterns(in data: Data, pattern: Data) -> [Int] {
+        var positions: [Int] = []
+        let patternLength = pattern.count
+
+        guard patternLength > 0 && data.count >= patternLength else { return positions }
+
+        for i in 0...(data.count - patternLength) {
+            let range = i..<(i + patternLength)
+            let subset = data.subdata(in: range)
+            if subset == pattern {
+                positions.append(i)
+            }
+        }
+
+        return positions
+    }
+
+    /// Extract image data from protobuf content
+    private func extractImageData(from data: Data, startingAt position: Int, format: ImageFormat) -> Data? {
+        guard position < data.count else { return nil }
+
+        switch format {
+        case .jpeg:
+            return extractJPEGData(from: data, startingAt: position)
+        case .png:
+            return extractPNGData(from: data, startingAt: position)
+        }
+    }
+
+    /// Extract JPEG data by finding start and end markers
+    private func extractJPEGData(from data: Data, startingAt position: Int) -> Data? {
+        // Look for JPEG end marker (0xFF, 0xD9)
+        let endMarker = Data([0xFF, 0xD9])
+
+        for i in (position + 4)..<data.count {
+            if i + 1 < data.count && data[i] == 0xFF && data[i + 1] == 0xD9 {
+                let range = position..<(i + 2)
+                return data.subdata(in: range)
+            }
+        }
+
+        return nil
+    }
+
+    /// Extract PNG data by finding IEND chunk
+    private func extractPNGData(from data: Data, startingAt position: Int) -> Data? {
+        // Look for PNG IEND chunk signature
+        let iendSignature = "IEND".data(using: .utf8)!
+
+        for i in (position + 8)..<(data.count - 8) {
+            let range = i..<(i + 4)
+            if data.subdata(in: range) == iendSignature {
+                // PNG ends 8 bytes after IEND signature (4 bytes CRC + 4 bytes chunk length)
+                let endPos = i + 8
+                let range = position..<endPos
+                return data.subdata(in: range)
+            }
+        }
+
+        return nil
+    }
+
+    /// Extract PDF data by finding EOF marker
+    private func extractPDFData(from data: Data, startingAt position: Int) -> Data? {
+        // Look for PDF EOF marker
+        let eofMarker = "%%EOF".data(using: .utf8)!
+
+        for i in (position + 5)..<(data.count - 5) {
+            let range = i..<(i + 5)
+            if data.subdata(in: range) == eofMarker {
+                let endPos = i + 5
+                let range = position..<endPos
+                return data.subdata(in: range)
+            }
+        }
+
+        return nil
+    }
+
+    /// Detect MIME type from UTI string
+    private func detectMimeTypeFromUTI(_ uti: String?) -> String {
+        guard let uti = uti else { return "application/octet-stream" }
+
+        switch uti {
+        case "public.jpeg", "public.jpeg-2000":
+            return "image/jpeg"
+        case "public.png":
+            return "image/png"
+        case "public.tiff":
+            return "image/tiff"
+        case "com.adobe.pdf":
+            return "application/pdf"
+        case "public.mp3":
+            return "audio/mpeg"
+        case "public.mpeg-4":
+            return "video/mp4"
+        case "com.apple.quicktime-movie":
+            return "video/quicktime"
+        case "public.plain-text":
+            return "text/plain"
+        case "public.html":
+            return "text/html"
+        case "public.rtf":
+            return "application/rtf"
+        case "org.openxmlformats.wordprocessingml.document":
+            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        case "com.microsoft.word.doc":
+            return "application/msword"
+        case "org.openxmlformats.spreadsheetml.sheet":
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        case "com.microsoft.excel.xls":
+            return "application/vnd.ms-excel"
+        default:
+            return "application/octet-stream"
+        }
+    }
+
+    // Helper enum for image format detection
+    private enum ImageFormat {
+        case jpeg, png
     }
 
     /// Process a batch of attachments concurrently
@@ -403,9 +600,149 @@ public actor AttachmentManager {
 
     /// Add attachment reference to node model
     private func addAttachmentReferenceToNode(noteId: String, attachmentId: String) async throws {
-        // TODO: Update Node model to include attachment references
-        // This would involve extending the Node model with attachment IDs
-        print("AttachmentManager: Node model attachment reference not yet implemented")
+        // Update Node model to include attachment references in metadata
+        try await database.write { db in
+            // Get current node
+            guard let node = try Node.fetchOne(db, sql: "SELECT * FROM nodes WHERE id = ?", arguments: [noteId]) else {
+                throw AttachmentError.processingFailed("Node not found", DatabaseError.notFound)
+            }
+
+            // Get current attachment references from node metadata
+            var attachmentIds: [String] = []
+            if let existingContent = node.content,
+               let existingData = existingContent.data(using: .utf8),
+               let existingMetadata = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any],
+               let existingAttachments = existingMetadata["attachments"] as? [String] {
+                attachmentIds = existingAttachments
+            }
+
+            // Add new attachment ID if not already present
+            if !attachmentIds.contains(attachmentId) {
+                attachmentIds.append(attachmentId)
+            }
+
+            // Create updated metadata
+            var updatedMetadata: [String: Any] = [:]
+            if let existingContent = node.content,
+               let existingData = existingContent.data(using: .utf8),
+               let existingDict = try? JSONSerialization.jsonObject(with: existingData) as? [String: Any] {
+                updatedMetadata = existingDict
+            }
+            updatedMetadata["attachments"] = attachmentIds
+            updatedMetadata["attachment_count"] = attachmentIds.count
+
+            // Serialize updated metadata
+            let updatedData = try JSONSerialization.data(withJSONObject: updatedMetadata)
+            let updatedContent = String(data: updatedData, encoding: .utf8)
+
+            // Update node in database
+            try db.execute(sql: """
+                UPDATE nodes
+                SET content = ?, modified_at = ?
+                WHERE id = ?
+                """, arguments: [updatedContent, Date(), noteId])
+        }
+
+        print("AttachmentManager: Added attachment reference \(attachmentId) to node \(noteId)")
+    }
+
+    /// Get attachment count and total size for a node
+    public func getAttachmentSummaryForNode(noteId: String) async throws -> AttachmentSummary {
+        let attachments = try await getAttachmentsForNote(noteId: noteId)
+
+        let totalSize = attachments.reduce(0) { $0 + $1.fileSize }
+        let typeBreakdown = Dictionary(grouping: attachments, by: { $0.mimeType })
+            .mapValues { $0.count }
+
+        return AttachmentSummary(
+            attachmentCount: attachments.count,
+            totalSize: Int64(totalSize),
+            typeBreakdown: typeBreakdown,
+            attachments: attachments
+        )
+    }
+
+    /// Export attachment for round-trip testing
+    public func exportAttachment(attachmentId: String, to destinationURL: URL) async throws {
+        let retrieved = try await retrieveAttachment(attachmentId: attachmentId)
+
+        // Ensure destination directory exists
+        let destinationDirectory = destinationURL.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+
+        // Write attachment content to destination
+        try retrieved.content.write(to: destinationURL)
+
+        // Create metadata sidecar file
+        let metadataURL = destinationURL.appendingPathExtension("meta")
+        let metadata: [String: Any] = [
+            "original_filename": retrieved.metadata.originalFilename,
+            "mime_type": retrieved.metadata.mimeType,
+            "file_size": retrieved.metadata.fileSize,
+            "note_id": retrieved.metadata.noteId,
+            "content_hash": retrieved.metadata.contentHash,
+            "created_at": ISO8601DateFormatter().string(from: retrieved.metadata.createdAt),
+            "last_accessed_at": ISO8601DateFormatter().string(from: retrieved.metadata.lastAccessedAt)
+        ]
+
+        let metadataData = try JSONSerialization.data(withJSONObject: metadata, options: .prettyPrinted)
+        try metadataData.write(to: metadataURL)
+
+        print("AttachmentManager: Exported attachment \(attachmentId) to \(destinationURL.path)")
+    }
+
+    /// Support attachment search with advanced filtering
+    public func searchAttachmentsAdvanced(
+        filenamePattern: String? = nil,
+        mimeTypePattern: String? = nil,
+        sizeRange: Range<Int>? = nil,
+        dateRange: ClosedRange<Date>? = nil,
+        limit: Int = 100
+    ) async throws -> [AttachmentInfo] {
+        return try await database.read { db in
+            var sql = "SELECT * FROM attachment_metadata WHERE 1=1"
+            var arguments: [Any] = []
+
+            if let pattern = filenamePattern {
+                sql += " AND original_filename LIKE ?"
+                arguments.append("%\(pattern)%")
+            }
+
+            if let mimePattern = mimeTypePattern {
+                sql += " AND mime_type LIKE ?"
+                arguments.append("%\(mimePattern)%")
+            }
+
+            if let sizeRange = sizeRange {
+                sql += " AND file_size >= ? AND file_size < ?"
+                arguments.append(sizeRange.lowerBound)
+                arguments.append(sizeRange.upperBound)
+            }
+
+            if let dateRange = dateRange {
+                sql += " AND created_at >= ? AND created_at <= ?"
+                arguments.append(dateRange.lowerBound.timeIntervalSince1970)
+                arguments.append(dateRange.upperBound.timeIntervalSince1970)
+            }
+
+            sql += " ORDER BY last_accessed_at DESC LIMIT ?"
+            arguments.append(limit)
+
+            let metadataList = try AttachmentMetadata.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+
+            return metadataList.map { metadata in
+                AttachmentInfo(
+                    id: metadata.id,
+                    contentHash: metadata.contentHash,
+                    originalFilename: metadata.originalFilename,
+                    mimeType: metadata.mimeType,
+                    fileSize: metadata.fileSize,
+                    noteId: metadata.noteId,
+                    createdAt: metadata.createdAt,
+                    lastAccessedAt: metadata.lastAccessedAt
+                )
+            }
+        }
     }
 }
 
@@ -563,6 +900,33 @@ public enum AttachmentError: Error, LocalizedError {
         case .corruptedData(let filename):
             return "Corrupted attachment data: \(filename)"
         }
+    }
+}
+
+/// Attachment summary for a node
+public struct AttachmentSummary {
+    public let attachmentCount: Int
+    public let totalSize: Int64
+    public let typeBreakdown: [String: Int]
+    public let attachments: [AttachmentInfo]
+}
+
+/// Attachment record from Notes database
+public struct AttachmentRecord {
+    public let id: String
+    public let filename: String?
+    public let mimeType: String?
+    public let uti: String?
+    public let size: Int64?
+    public let noteId: String
+
+    public init(id: String, filename: String? = nil, mimeType: String? = nil, uti: String? = nil, size: Int64? = nil, noteId: String) {
+        self.id = id
+        self.filename = filename
+        self.mimeType = mimeType
+        self.uti = uti
+        self.size = size
+        self.noteId = noteId
     }
 }
 
