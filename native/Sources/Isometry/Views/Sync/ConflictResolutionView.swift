@@ -2,10 +2,13 @@ import SwiftUI
 
 /// View for resolving sync conflicts between local and remote versions
 public struct ConflictResolutionView: View {
+
+    /// Type alias to disambiguate ConflictResolution
+    typealias SyncConflictResolution = CloudKitSyncManager.ConflictResolution
     // MARK: - Properties
 
     let conflict: SyncConflict
-    let onResolve: (ConflictResolution) -> Void
+    let onResolve: (SyncConflictResolution) -> Void
     let onDismiss: () -> Void
 
     @State private var selectedResolution: ConflictResolutionChoice?

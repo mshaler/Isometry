@@ -499,6 +499,9 @@ public enum PropertyTestError: Error, LocalizedError {
     case propertyViolation(String)
     case generationFailed(Error)
     case shrinkingFailed(Error)
+    case timeout(TimeInterval)
+    case memoryLimitExceeded(Int64, Int64)
+    case executionFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -508,6 +511,12 @@ public enum PropertyTestError: Error, LocalizedError {
             return "Test data generation failed: \(error.localizedDescription)"
         case .shrinkingFailed(let error):
             return "Shrinking failed: \(error.localizedDescription)"
+        case .timeout(let duration):
+            return "Operation timed out after \(duration) seconds"
+        case .memoryLimitExceeded(let current, let limit):
+            return "Memory limit exceeded: \(current) bytes used, limit was \(limit) bytes"
+        case .executionFailed(let message):
+            return "Execution failed: \(message)"
         }
     }
 }
@@ -693,9 +702,6 @@ public protocol DataValidator<Input, Output> {
 // MARK: - Enhanced Error Types
 
 extension PropertyTestError {
-    case timeout(TimeInterval)
-    case memoryLimitExceeded(Int64, Int64)
-    case executionFailed(String)
 
     public var enhancedErrorDescription: String? {
         switch self {

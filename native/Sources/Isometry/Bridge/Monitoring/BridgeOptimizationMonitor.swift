@@ -14,7 +14,7 @@ public class BridgeOptimizationMonitor: ObservableObject {
 
     // MARK: - OSLog and Signpost Setup
 
-    private static let logger = Logger(subsystem: "com.isometry.bridge", category: "Performance")
+    private static let logger = os.Logger(subsystem: "com.isometry.bridge", category: "Performance")
     private static let signposter = OSSignposter(logger: logger)
 
     // Signpost categories for different metrics

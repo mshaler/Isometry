@@ -211,8 +211,8 @@ public actor ProcessManager {
     ) async throws -> UUID? {
         // Check process limits
         let activeProcesses = managedProcesses.values.filter { $0.state.isActive }
-        if activeProcesses.count >= maxConcurrentProcesses {
-            logger.warning("Process limit reached (\(maxConcurrentProcesses)), queuing request")
+        if activeProcesses.count >= self.maxConcurrentProcesses {
+            logger.warning("Process limit reached (\(self.maxConcurrentProcesses)), queuing request")
             throw ProcessManagerError.processLimitExceeded
         }
 
@@ -461,8 +461,8 @@ public actor ProcessManager {
             managedProcesses[processId] = managedProcess
 
             // Check memory limits
-            if memory > maxMemoryPerProcess {
-                logger.warning("Process \(processId) exceeded memory limit (\(memory / 1024 / 1024)MB > \(maxMemoryPerProcess / 1024 / 1024)MB)")
+            if memory > self.maxMemoryPerProcess {
+                logger.warning("Process \(processId) exceeded memory limit (\(memory / 1024 / 1024)MB > \(self.maxMemoryPerProcess / 1024 / 1024)MB)")
                 await terminate(processId: processId)
                 break
             }
@@ -541,7 +541,7 @@ public actor ProcessManager {
     }
 
     private func handleAppBackgrounding() async {
-        logger.debug("App backgrounding, managing \(managedProcesses.count) processes")
+        logger.debug("App backgrounding, managing \(self.managedProcesses.count) processes")
 
         // Enable background execution for any long-running processes
         for processId in managedProcesses.keys {

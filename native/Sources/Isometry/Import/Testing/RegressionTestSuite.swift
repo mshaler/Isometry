@@ -1097,7 +1097,8 @@ public actor FileSystemTestDataRepository: RegressionTestSuite.TestDataRepositor
     }
 
     public func updateMetadata(datasetId: String, metadata: RegressionTestSuite.DatasetMetadata) async throws {
-        let (var dataset, _, _) = try await retrieve(datasetId: datasetId)
+        let (dataset, _, _) = try await retrieve(datasetId: datasetId)
+        var dataset = dataset
         dataset = RegressionTestSuite.KnownGoodDataset(
             id: dataset.id,
             name: dataset.name,

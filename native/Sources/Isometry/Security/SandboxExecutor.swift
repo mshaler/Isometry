@@ -721,8 +721,8 @@ public actor SandboxExecutor {
 
             // Check for timeout
             let currentDuration = CFAbsoluteTimeGetCurrent() - startTime
-            if currentDuration > executionLimits.maxExecutionTime {
-                logger.warning("Process \(processId) timed out after \(executionLimits.maxExecutionTime)s")
+            if currentDuration > self.executionLimits.maxExecutionTime {
+                logger.warning("Process \(processId) timed out after \(self.executionLimits.maxExecutionTime)s")
                 await processManager.terminate(processId: processId)
                 activeProcesses.removeValue(forKey: command)
 

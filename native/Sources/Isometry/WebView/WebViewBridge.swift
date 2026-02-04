@@ -22,7 +22,7 @@ public class WebViewBridge: NSObject {
 
     private weak var database: IsometryDatabase?
     private weak var superGridViewModel: SuperGridViewModel?
-    private let logger = Logger(subsystem: "IsometryWebView", category: "Bridge")
+    private let logger = BridgeLogger(subsystem: "IsometryWebView", category: "Bridge")
 
     // Optimization layer components
     private let performanceMonitor: BridgeOptimizationMonitor
@@ -1138,7 +1138,7 @@ public enum LiveDataBridgeError: Error, LocalizedError {
 // MARK: - Logger
 
 /// Simple logging utility for WebView bridge
-struct Logger {
+struct BridgeLogger {
     let subsystem: String
     let category: String
 

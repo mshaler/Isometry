@@ -1,5 +1,25 @@
 import Foundation
 
+// MARK: - RandomNumberGenerator Extensions
+
+extension RandomNumberGenerator {
+    mutating func nextInt(in range: ClosedRange<Int>) -> Int {
+        return Int.random(in: range, using: &self)
+    }
+
+    mutating func nextInt(in range: Range<Int>) -> Int {
+        return Int.random(in: range, using: &self)
+    }
+
+    mutating func nextDouble() -> Double {
+        return Double.random(in: 0...1, using: &self)
+    }
+
+    mutating func nextBool() -> Bool {
+        return Bool.random(using: &self)
+    }
+}
+
 // MARK: - Test Data Generator Framework
 
 /// Comprehensive test data generators for all supported import formats
@@ -156,7 +176,7 @@ public actor TestDataGenerator {
         var expectedNodes: [ExpectedNode] = []
         var charactersUsed: Set<String> = []
 
-        if context.includeErrorCases && generator.nextDouble() < 0.3 {
+        if context.includeErrorCases && Double.random(in: 0...1, using: &generator) < 0.3 {
             // Generate invalid JSON
             let invalidContent = generateInvalidJSON(context: context)
             return GeneratedTestData(
