@@ -13,7 +13,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useLiveDataMetrics } from '../../hooks/useLiveData';
 import { useD3PerformanceWithMonitor } from '../../hooks/useD3Performance';
 import { useDataFlowMonitor } from '../DataFlowMonitor';
-import type { LiveDataPerformanceMetrics } from '../../hooks/useLiveData';
 
 // Baseline measurement interfaces
 interface PerformanceBaseline {
@@ -131,11 +130,11 @@ export function PerformanceBaseline({
 
   // Performance hooks
   const { metrics: liveDataMetrics } = useLiveDataMetrics();
-  const { healthScore, isHealthy, latency: systemLatency, errorRate } = useDataFlowMonitor();
+  const { latency: systemLatency } = useDataFlowMonitor();
 
   // Mock D3 performance hook for baseline component
   const d3PerformanceRef = useRef<HTMLDivElement>(null);
-  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef, {
+  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current, {
     targetFPS,
     enableMemoryTracking: true,
     reportInterval: 1000

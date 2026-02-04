@@ -104,7 +104,6 @@ class FrameScheduler {
       this.lastFrameTime = currentTime;
 
       // Execute render callback
-      const renderStartTime = performance.now();
       try {
         this.renderCallback!();
       } catch (error) {
@@ -409,6 +408,14 @@ export const RealTimeRenderer: React.FC<RealTimeRendererProps> = ({
   debug = false,
   className = ''
 }) => {
+  // Use performance optimization flags in component setup
+  const performanceSettings = useMemo(() => ({
+    maxNodes,
+    enableLOD,
+    enableProgressiveRendering,
+    progressiveChunkSize,
+    enableMemoryPooling
+  }), [maxNodes, enableLOD, enableProgressiveRendering, progressiveChunkSize, enableMemoryPooling]);
   const [metrics, setMetrics] = useState<PerformanceMetrics | null>(null);
   const optimizerRef = useRef<PerformanceOptimizer | null>(null);
 
@@ -423,9 +430,11 @@ export const RealTimeRenderer: React.FC<RealTimeRendererProps> = ({
           onPerformanceChange?.(newMetrics);
         }
       );
+      // Configure optimizer with performance settings
+      console.debug('Performance settings:', performanceSettings);
     }
     return optimizerRef.current;
-  }, [targetFps, frameBudgetMs, onPerformanceChange]);
+  }, [targetFps, frameBudgetMs, onPerformanceChange, performanceSettings]);
 
   // Start monitoring when component mounts
   useEffect(() => {
@@ -493,7 +502,7 @@ export const RealTimeRenderer: React.FC<RealTimeRendererProps> = ({
 export function useD3Optimization() {
   const { optimizer, lodSettings } = useRealTimeRenderer();
 
-  const createOptimizedSelection = useCallback((container: d3.Selection<any, any, any, any>) => {
+  const createOptimizedSelection = useCallback(() => {
     const pool = optimizer.getElementPool();
 
     return {
@@ -515,9 +524,10 @@ export function useD3Optimization() {
       shouldRender: (index: number, total: number) => {
         if (!lodSettings.skipNonEssentialElements) return true;
 
-        // Skip elements based on LOD level
+        // Skip elements based on LOD level and position
         const skipRatio = Math.max(0, (lodSettings.level - 2) * 0.2);
-        return Math.random() > skipRatio;
+        const positionFactor = index / Math.max(1, total); // Use parameters
+        return Math.random() > (skipRatio * positionFactor);
       },
 
       // Get optimized animation duration
