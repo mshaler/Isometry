@@ -21,6 +21,7 @@
 - ✅ **v3.1 Live Database Integration** - Phases 18-21, 25-27 (shipped 2026-02-01) - [Details](milestones/v3.1-ROADMAP.md)
 - 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
 - 🆕 **v3.3 Complete Apple Notes Data Lifecycle** - Phase 30 (Native access, CAS storage, verification pipeline, database operations) - 📋 PLANNED
+- 🆕 **v3.4 Multi-Environment Debugging** - Phase 32 (Swift/TypeScript/D3/React debugging and stabilization) - 📋 CURRENT
 
 ## Milestone Overview
 
@@ -49,6 +50,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v3.2 Goal (Enhanced Apple Integration):** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Leverage existing AltoIndexImporter foundation to provide production-ready live Notes integration.
 
 **v3.3 Goal (Complete Apple Notes Data Lifecycle):** Establish enterprise-grade Apple Notes data lifecycle management with native database access, Content-Addressable Storage for attachments, comprehensive verification pipeline, complete database operations (dump, restore, export, purge, rehydrate), and property-based testing framework ensuring >99.9% data integrity.
+
+**v3.4 Goal (Multi-Environment Debugging):** Establish stable development environment across Swift/iOS, TypeScript/React, D3.js integration, and React UI chrome components. Resolve compilation errors, fix broken integrations, and ensure parallel development capability across both native and prototype environments.
 
 ---
 
@@ -224,6 +227,29 @@ Plans:
 - [x] 30-04-PLAN.md — Database lifecycle operations (dump, restore, export, purge, rehydrate) with versioning
 - [x] 30-05-PLAN.md — Comprehensive property-based test framework with round-trip validation
 
+### 🆕 v3.4 Multi-Environment Debugging
+
+**Milestone Goal:** Establish stable development environment across Swift/iOS, TypeScript/React, D3.js integration, and React UI chrome components. Resolve compilation errors, type conflicts, broken file integrations, and layout issues to enable parallel development across native and prototype environments.
+
+#### Phase 32: Multi-Environment Debugging
+**Goal:** Fix critical compilation errors and integration issues across Swift, TypeScript, D3.js, and React environments
+**Depends on:** Phase 30 (Complete Apple Notes Data Lifecycle)
+**Success Criteria** (what must be TRUE):
+  1. Swift/iOS/macOS native project compiles without errors and builds successfully
+  2. TypeScript/React prototype builds cleanly with proper type checking enforced
+  3. D3.js visualizations render properly and integrate seamlessly with React components
+  4. React UI chrome components provide functional development interface with working layouts
+  5. Both environments support parallel development without blocking compilation issues
+**Plans:** 4 plans
+
+**Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
+
+Plans:
+- [ ] 32-01-PLAN.md — Fix Swift compilation errors and type conflicts
+- [ ] 32-02-PLAN.md — Resolve TypeScript compilation issues and improve type safety
+- [ ] 32-03-PLAN.md — Restore broken Swift files and fix D3.js integration
+- [ ] 32-04-PLAN.md — Fix React UI chrome components and layout coordination
+
 ## Dependencies
 
 ### v3.1 Live Database Integration External Dependencies
@@ -247,6 +273,13 @@ Plans:
 - **CryptoKit** for SHA-256 content hashing in Content-Addressable Storage
 - **Swift Testing** for property-based testing framework and advanced validation
 
+### v3.4 Multi-Environment Debugging External Dependencies
+- **Swift Compiler** with proper type resolution and actor isolation
+- **TypeScript 5.x** with strict type checking and modern ES modules
+- **D3.js 7.x** with React integration patterns and TypeScript definitions
+- **Vite 7.x** for development server and build tooling
+- **ESLint/Prettier** for code quality and formatting consistency
+
 ### v3.1 Live Database Integration Internal Dependencies
 - **Existing React prototype** providing UI patterns and component architecture
 - **Native GRDB database** with complete schema and CloudKit sync operations
@@ -266,11 +299,19 @@ Plans:
 - **IsometryDatabase actor** with complete GRDB integration and transaction coordination
 - **Existing verification patterns** from AltoIndexImporter.validateRoundTripData for baseline accuracy measurement
 
+### v3.4 Multi-Environment Debugging Internal Dependencies
+- **Existing Swift codebase** with actor patterns and GRDB integration
+- **React prototype infrastructure** with component architecture and state management
+- **D3.js visualization components** requiring integration with React lifecycle
+- **WebView bridge** for cross-environment communication and data flow
+- **Development toolchain** with consistent build and testing infrastructure
+
 ### Phase Dependencies
 ```
 v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 25 → Phase 26 → Phase 27 (Gap Closure)
 v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
 v3.3: Phase 30 (Complete Apple Notes Data Lifecycle Management)
+v3.4: Phase 32 (Multi-Environment Debugging)
 ```
 
 **Phase Ordering Rationale (Research-Based):**
@@ -281,13 +322,14 @@ v3.3: Phase 30 (Complete Apple Notes Data Lifecycle Management)
 - **Application integration** requires complete infrastructure before connecting main app components
 - **Enhanced Apple integration** builds upon proven foundation with sophisticated live sync capabilities
 - **Complete data lifecycle** extends enhanced integration with enterprise-grade operations and verification
+- **Multi-environment debugging** addresses accumulated technical debt across environments before advanced feature development
 
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30
+Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30 → 32
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -300,6 +342,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
 | 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
+| 32. Multi-Environment Debugging | 4/4 | 🔧 Current Phase | - |
 
 ## Architecture Integration Summary
 
@@ -325,6 +368,17 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
      (Direct TCC)         (Permission)     (Attachments)     (>99.9% accuracy)      (Lifecycle Ops)      (Round-trip)
          ↓                     ↓                ↓                   ↓                      ↓                   ↓
    Notes.app SQLite    AppleNotesNativeImporter → AttachmentManager → DataVerificationPipeline → DatabaseLifecycleManager → PropertyBasedTestFramework
+```
+
+### v3.4 Multi-Environment Debugging Flow
+```
+Swift/iOS Environment ←→ Development Toolchain ←→ TypeScript/React Environment
+        ↓                         ↓                          ↓
+Native Compilation      Build System Integration      Frontend Compilation
+        ↓                         ↓                          ↓
+GRDB/CloudKit Database ←→ WebView Bridge ←→ D3.js Visualizations
+        ↓                         ↓                          ↓
+Actor Patterns          Message Serialization        React Component Tree
 ```
 
 ### Performance Targets (v3.1 vs Baseline)
@@ -357,6 +411,16 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 | **Verification Accuracy** | >99.9% | 95% (current) | Comprehensive comparison |
 | **Database Operations** | <5min (100k records) | N/A | Optimized lifecycle ops |
 | **Property Test Coverage** | 100+ scenarios/property | N/A | Automated invariant validation |
+
+### Performance Targets (v3.4 Multi-Environment Debugging)
+
+| Metric | Target | Current | Approach |
+|--------|--------|----------|----------|
+| **Swift Compilation** | <30s clean build | Errors preventing build | Type conflict resolution |
+| **TypeScript Compilation** | <10s full check | ~50 errors | Type safety improvement |
+| **Development Server Start** | <5s | Timeout/errors | Dependency optimization |
+| **D3 Render Performance** | 60fps | Broken integration | React lifecycle integration |
+| **Multi-environment Workflow** | Parallel development | Blocked by compilation | Environment stabilization |
 
 ---
 
@@ -435,6 +499,21 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 
 **v3.3 Coverage:** 10/10 requirements mapped ✓
 
+### v3.4 Multi-Environment Debugging Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SWIFT-COMPILE-01 | Phase 32 | Planned |
+| SWIFT-COMPILE-02 | Phase 32 | Planned |
+| TYPESCRIPT-01 | Phase 32 | Planned |
+| TYPESCRIPT-02 | Phase 32 | Planned |
+| D3-INTEGRATION-01 | Phase 32 | Planned |
+| D3-INTEGRATION-02 | Phase 32 | Planned |
+| REACT-CHROME-01 | Phase 32 | Planned |
+| REACT-CHROME-02 | Phase 32 | Planned |
+
+**v3.4 Coverage:** 8/8 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -447,6 +526,7 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 5. **Phase 27**: Connect complete infrastructure to main application components
 6. **Phase 29**: Enhance proven AltoIndexImporter with sophisticated live sync capabilities
 7. **Phase 30**: Extend to enterprise-grade data lifecycle with native access and verification
+8. **Phase 32**: Stabilize development environment across all technical stacks before advanced features
 
 ### Data Integrity Protection
 - Bridge-level transaction control with ACID guarantees
@@ -465,6 +545,7 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 - Notes library scaling for 10k+ notes with efficient processing
 - Native database access optimization vs alto-index baseline
 - Content-Addressable Storage for efficient attachment handling
+- Multi-environment compilation and development workflow optimization
 
 ### Gap Closure Strategy
 - **Critical Issue:** Infrastructure complete but inaccessible to users
@@ -485,6 +566,13 @@ Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification
 - **Testing excellence:** Property-based validation with invariant checking
 - **Operations completeness:** Full database lifecycle (dump, restore, export, purge, rehydrate)
 
+### Multi-Environment Debugging Strategy
+- **Systematic error resolution:** Address compilation blockers in dependency order
+- **Type safety enforcement:** Consistent TypeScript and Swift type checking
+- **Integration stability:** Ensure D3-React patterns work reliably
+- **Development workflow:** Enable parallel native and prototype development
+- **Quality baseline:** Establish clean compilation as foundation for advanced features
+
 ---
 
-*Last updated: 2026-02-03 after Phase 29 gap closure planning*
+*Last updated: 2026-02-04 after Phase 32 debugging plan creation*
