@@ -246,9 +246,9 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
             ref={listRef}
             data={nodes}
             height={window.innerHeight - SEARCH_BAR_HEIGHT - 100} // Adjust for header/footer
-            renderItem={renderItem}
+            renderItem={(item: unknown, index: number) => renderItem(item as Node, index)}
             estimateItemSize={ITEM_HEIGHT}
-            onItemClick={(node, index) => handleItemClick(node)}
+            onItemClick={(item: unknown, index: number) => handleItemClick(item as Node)}
             className="h-full"
           />
         )}

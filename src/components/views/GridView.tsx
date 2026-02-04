@@ -303,9 +303,9 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
         columnCount={gridConfig.columnCount}
         estimateRowHeight={gridConfig.itemHeight}
         estimateColumnWidth={containerWidth / gridConfig.columnCount - 16}
-        renderItem={renderGridItem}
+        renderItem={(item: unknown, index: number) => renderGridItem(item as Node, index)}
         gap={networkQuality === 'low' ? 8 : 16} // Smaller gap on slow connections
-        onItemClick={(node, index) => onNodeClick?.(node)}
+        onItemClick={(item: unknown, index: number) => onNodeClick?.(item as Node)}
         enableDynamicSizing={networkQuality !== 'low'} // Disable dynamic sizing on slow connections
         className="w-full h-full"
       />
