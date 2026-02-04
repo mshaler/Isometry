@@ -1,0 +1,403 @@
+src/components/performance/RenderingMetricsPanel.tsx(10,39): error TS6133: 'memoryUsageTracker' is declared but its value is never read.
+src/components/performance/RenderingMetricsPanel.tsx(11,43): error TS2305: Module '"../../utils/rendering-performance"' has no exported member 'OptimizationPlan'.
+src/components/settings/NotesIntegrationSettings.tsx(54,11): error TS2339: Property 'executeQuery' does not exist on type 'LiveDataContextValue'.
+src/components/settings/NotesIntegrationSettings.tsx(178,13): error TS6133: 'subscriptions' is declared but its value is never read.
+src/components/settings/NotesIntegrationSettings.tsx(189,15): error TS2448: Block-scoped variable 'loadPermissionStatus' used before its declaration.
+src/components/settings/NotesIntegrationSettings.tsx(189,15): error TS2454: Variable 'loadPermissionStatus' is used before being assigned.
+src/components/settings/NotesIntegrationSettings.tsx(189,37): error TS2448: Block-scoped variable 'loadLiveSyncStatus' used before its declaration.
+src/components/settings/NotesIntegrationSettings.tsx(189,37): error TS2454: Variable 'loadLiveSyncStatus' is used before being assigned.
+src/components/settings/NotesIntegrationSettings.tsx(189,57): error TS2448: Block-scoped variable 'loadStatistics' used before its declaration.
+src/components/settings/NotesIntegrationSettings.tsx(189,57): error TS2454: Variable 'loadStatistics' is used before being assigned.
+src/components/shared/ConnectionStatus.tsx(9,8): error TS6133: 'React' is declared but its value is never read.
+src/components/shared/ConnectionStatus.tsx(30,49): error TS6133: 'testConnection' is declared but its value is never read.
+src/components/shared/ConnectionStatus.tsx(37,10): error TS6133: 'lastStatusChange' is declared but its value is never read.
+src/components/shared/ConnectionStatus.tsx(266,31): error TS6133: 'theme' is declared but its value is never read.
+src/components/SuperGridView.tsx(42,3): error TS6133: 'queryParams' is declared but its value is never read.
+src/components/SuperGridView.tsx(45,10): error TS6133: 'zoomLevel' is declared but its value is never read.
+src/components/SuperGridView.tsx(46,25): error TS6133: 'setOriginPattern' is declared but its value is never read.
+src/components/SuperGridView.tsx(113,37): error TS2322: Type 'Error' is not assignable to type 'ReactNode'.
+src/components/SuperGridView.tsx(125,26): error TS18048: 'sql' is possibly 'undefined'.
+src/components/SuperGridView.tsx(127,31): error TS2304: Cannot find name 'connectionState'.
+src/components/sync/SyncStatusIndicator.tsx(57,10): error TS6133: 'selectedConflict' is declared but its value is never read.
+src/components/test/LiveQueryTest.tsx(9,8): error TS6133: 'React' is declared but its value is never read.
+src/components/test/LiveQueryTest.tsx(39,41): error TS6133: 'testConnection' is declared but its value is never read.
+src/components/test/LiveQueryTest.tsx(148,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'Partial<Node>'.
+src/components/test/LiveQueryTest.tsx(198,13): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'Partial<Node>'.
+src/components/Toolbar.tsx(2,79): error TS6133: 'FileUp' is declared but its value is never read.
+src/components/UnifiedApp.tsx(14,1): error TS6133: 'NotificationSystem' is declared but its value is never read.
+src/components/UnifiedApp.tsx(42,5): error TS6133: 'prepareManualResolution' is declared but its value is never read.
+src/components/views/D3GridView.tsx(57,11): error TS2339: Property 'wells' does not exist on type 'PAFVContextValue'.
+src/components/views/D3GridView.tsx(65,5): error TS6133: 'isLive' is declared but its value is never read.
+src/components/views/D3GridView.tsx(66,5): error TS6133: 'connectionState' is declared but its value is never read.
+src/components/views/D3GridView.tsx(96,10): error TS6133: 'nativeGestureState' is declared but its value is never read.
+src/components/views/D3GridView.tsx(194,44): error TS6133: 'transform' is declared but its value is never read.
+src/components/views/D3GridView.tsx(279,41): error TS7006: Parameter 'chip' implicitly has an 'any' type.
+src/components/views/D3GridView.tsx(279,97): error TS7006: Parameter 'chip' implicitly has an 'any' type.
+src/components/views/D3ListView.tsx(61,11): error TS2339: Property 'wells' does not exist on type 'PAFVContextValue'.
+src/components/views/D3ListView.tsx(103,5): error TS6133: 'isLive' is declared but its value is never read.
+src/components/views/D3ListView.tsx(104,5): error TS6133: 'connectionState' is declared but its value is never read.
+src/components/views/EnhancedGridView.tsx(62,11): error TS2322: Type '{ data: Node[]; onNodeClick: (node: unknown) => void; }' is not assignable to type 'IntrinsicAttributes & GridViewProps'.
+  Property 'data' does not exist on type 'IntrinsicAttributes & GridViewProps'.
+src/components/views/EnhancedListView.tsx(60,11): error TS2322: Type '{ data: Node[]; onNodeClick: (node: unknown) => void; }' is not assignable to type 'IntrinsicAttributes & ListViewProps'.
+  Property 'data' does not exist on type 'IntrinsicAttributes & ListViewProps'.
+src/components/views/EnhancedNetworkView.tsx(9,10): error TS6133: 'connectionSuggestionService' is declared but its value is never read.
+src/components/views/EnhancedNetworkView.tsx(9,44): error TS2459: Module '"@/services/ConnectionSuggestionService"' declares 'ConnectionSuggestion' locally, but it is not exported.
+src/components/views/EnhancedNetworkView.tsx(99,3): error TS6133: 'showDebugPanel' is declared but its value is never read.
+src/components/views/EnhancedNetworkView.tsx(159,24): error TS2339: Property 'isLoading' does not exist on type 'QueryState<EdgeData>'.
+src/components/views/EnhancedNetworkView.tsx(190,22): error TS6133: 'node' is declared but its value is never read.
+src/components/views/EnhancedNetworkView.tsx(228,19): error TS2352: Conversion of type 'Node' to type 'SimNode' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Node'.
+src/components/views/EnhancedNetworkView.tsx(229,19): error TS2352: Conversion of type 'Node' to type 'SimNode' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Index signature for type 'string' is missing in type 'Node'.
+src/components/views/EnhancedNetworkView.tsx(321,47): error TS2339: Property 'getLastRenderTime' does not exist on type 'PerformanceMonitor'.
+src/components/views/EnhancedNetworkView.tsx(396,34): error TS2339: Property 'importance' does not exist on type 'SimulationNodeDatum'.
+src/components/views/EnhancedNetworkView.tsx(400,30): error TS2339: Property 'importance' does not exist on type 'SimulationNodeDatum'.
+src/components/views/EnhancedNetworkView.tsx(409,7): error TS2353: Object literal may only specify known properties, and 'on' does not exist in type 'ZoomOptions'.
+src/components/views/EnhancedNetworkView.tsx(490,40): error TS18046: 'd' is of type 'unknown'.
+src/components/views/EnhancedNetworkView.tsx(503,19): error TS2345: Argument of type 'Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown>' is not assignable to parameter of type 'Selection<BaseType, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<BaseType, SuggestionVisualization>'.
+  Type 'Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown>' is not assignable to type 'Selection<BaseType, SuggestionVisualization, SVGGElement, unknown>'.
+    Types of property 'merge' are incompatible.
+      Type '(other: Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<SVGLineElement, SuggestionVisualization>) => Selection<...>' is not assignable to type '(other: Selection<BaseType, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<BaseType, SuggestionVisualization>) => Selection<...>'.
+        Types of parameters 'other' and 'other' are incompatible.
+          Type 'Selection<BaseType, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<BaseType, SuggestionVisualization>' is not assignable to type 'Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<SVGLineElement, SuggestionVisualization>'.
+            Type 'Selection<BaseType, SuggestionVisualization, SVGGElement, unknown>' is not assignable to type 'Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown> | TransitionLike<SVGLineElement, SuggestionVisualization>'.
+              Type 'Selection<BaseType, SuggestionVisualization, SVGGElement, unknown>' is not assignable to type 'Selection<SVGLineElement, SuggestionVisualization, SVGGElement, unknown>'.
+                Types of property 'select' are incompatible.
+                  Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, SuggestionVisualization, SVGGElement, unknown>; <DescElement extends BaseType>(selector: null): d3.Selection<...>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, SuggestionVisualization, SVGGElement, unknown>; <DescElement extends BaseType>(selector: null): d3.Selection<...>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+                    Types of parameters 'selector' and 'selector' are incompatible.
+                      Types of parameters 'groups' and 'groups' are incompatible.
+                        Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGLineElement[] | ArrayLike<SVGLineElement>'.
+                          Type 'BaseType[]' is not assignable to type 'SVGLineElement[] | ArrayLike<SVGLineElement>'.
+                            Type 'BaseType[]' is not assignable to type 'SVGLineElement[]'.
+                              Type 'BaseType' is not assignable to type 'SVGLineElement'.
+                                Type 'null' is not assignable to type 'SVGLineElement'.
+src/components/views/EnhancedNetworkView.tsx(509,27): error TS6133: 'event' is declared but its value is never read.
+src/components/views/EnhancedNetworkView.tsx(623,21): error TS2345: Argument of type '(d: SuggestionVisualization) => number' is not assignable to parameter of type 'string | number | boolean | readonly (string | number)[] | ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null> | null'.
+  Type '(d: SuggestionVisualization) => number' is not assignable to type 'ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null>'.
+    Types of parameters 'd' and 'datum' are incompatible.
+      Type 'unknown' is not assignable to type 'SuggestionVisualization'.
+src/components/views/EnhancedNetworkView.tsx(624,21): error TS2345: Argument of type '(d: SuggestionVisualization) => number' is not assignable to parameter of type 'string | number | boolean | readonly (string | number)[] | ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null> | null'.
+  Type '(d: SuggestionVisualization) => number' is not assignable to type 'ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null>'.
+    Types of parameters 'd' and 'datum' are incompatible.
+      Type 'unknown' is not assignable to type 'SuggestionVisualization'.
+src/components/views/EnhancedNetworkView.tsx(625,21): error TS2345: Argument of type '(d: SuggestionVisualization) => number' is not assignable to parameter of type 'string | number | boolean | readonly (string | number)[] | ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null> | null'.
+  Type '(d: SuggestionVisualization) => number' is not assignable to type 'ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null>'.
+    Types of parameters 'd' and 'datum' are incompatible.
+      Type 'unknown' is not assignable to type 'SuggestionVisualization'.
+src/components/views/EnhancedNetworkView.tsx(626,21): error TS2345: Argument of type '(d: SuggestionVisualization) => number' is not assignable to parameter of type 'string | number | boolean | readonly (string | number)[] | ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null> | null'.
+  Type '(d: SuggestionVisualization) => number' is not assignable to type 'ValueFn<BaseType, unknown, string | number | boolean | readonly (string | number)[] | null>'.
+    Types of parameters 'd' and 'datum' are incompatible.
+      Type 'unknown' is not assignable to type 'SuggestionVisualization'.
+src/components/views/EnhancedNetworkView.tsx(677,21): error TS2339: Property 'graphMetrics' does not exist on type 'GraphMetricsState & { refreshMetrics: () => Promise<void>; exportMetrics: () => Promise<Record<string, unknown>>; getOptimizationPriority: () => OptimizationSuggestion[]; enableRealTimeMonitoring: () => () => void; }'.
+src/components/views/EnhancedNetworkView.tsx(686,39): error TS2339: Property 'graphMetrics' does not exist on type 'GraphMetricsState & { refreshMetrics: () => Promise<void>; exportMetrics: () => Promise<Record<string, unknown>>; getOptimizationPriority: () => OptimizationSuggestion[]; enableRealTimeMonitoring: () => () => void; }'.
+src/components/views/EnhancedNetworkView.tsx(688,39): error TS2339: Property 'graphMetrics' does not exist on type 'GraphMetricsState & { refreshMetrics: () => Promise<void>; exportMetrics: () => Promise<Record<string, unknown>>; getOptimizationPriority: () => OptimizationSuggestion[]; enableRealTimeMonitoring: () => () => void; }'.
+src/components/views/EnhancedNetworkView.tsx(690,42): error TS2339: Property 'graphMetrics' does not exist on type 'GraphMetricsState & { refreshMetrics: () => Promise<void>; exportMetrics: () => Promise<Record<string, unknown>>; getOptimizationPriority: () => OptimizationSuggestion[]; enableRealTimeMonitoring: () => () => void; }'.
+src/components/views/EnhancedNetworkView.tsx(691,42): error TS2339: Property 'graphMetrics' does not exist on type 'GraphMetricsState & { refreshMetrics: () => Promise<void>; exportMetrics: () => Promise<Record<string, unknown>>; getOptimizationPriority: () => OptimizationSuggestion[]; enableRealTimeMonitoring: () => () => void; }'.
+src/components/views/GridView.tsx(45,9): error TS6133: 'isOnline' is declared but its value is never read.
+src/components/views/GridView.tsx(47,9): error TS6198: All destructured elements are unused.
+src/components/views/GridView.tsx(109,9): error TS6133: 'containerWidth' is declared but its value is never read.
+src/components/views/GridView.tsx(114,9): error TS6133: 'containerHeight' is declared but its value is never read.
+src/components/views/GridView.tsx(166,9): error TS6133: 'renderGridItem' is declared but its value is never read.
+src/components/views/GridView.tsx(246,9): error TS6133: 'networkAwareLiveOptions' is declared but its value is never read.
+src/components/views/GridView.tsx(314,24): error TS2558: Expected 0 type arguments, but got 1.
+src/components/views/ListView.tsx(1,50): error TS6133: 'useEffect' is declared but its value is never read.
+src/components/views/ListView.tsx(13,7): error TS6133: 'GROUP_HEADER_HEIGHT' is declared but its value is never read.
+src/components/views/ListView.tsx(40,9): error TS6133: 'listRef' is declared but its value is never read.
+src/components/views/ListView.tsx(92,5): error TS6133: 'queueOptimizedSync' is declared but its value is never read.
+src/components/views/ListView.tsx(119,9): error TS6133: 'renderItem' is declared but its value is never read.
+src/components/views/ListView.tsx(119,47): error TS6133: 'index' is declared but its value is never read.
+src/components/views/ListView.tsx(130,9): error TS6133: 'networkAwareLiveOptions' is declared but its value is never read.
+src/components/views/ListView.tsx(257,28): error TS2558: Expected 0 type arguments, but got 1.
+src/components/views/NetworkView.tsx(190,7): error TS2322: Type 'Selection<SVGGElement, unknown, null, undefined>' is not assignable to type 'Selection<BaseType, unknown, null, undefined>'.
+  Types of property 'merge' are incompatible.
+    Type '(other: Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>) => Selection<SVGGElement, unknown, null, undefined>' is not assignable to type '(other: Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>) => Selection<BaseType, unknown, null, undefined>'.
+      Types of parameters 'other' and 'other' are incompatible.
+        Type 'Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+          Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+            Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined>'.
+              Types of property 'select' are incompatible.
+                Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+                  Types of parameters 'selector' and 'selector' are incompatible.
+                    Types of parameters 'groups' and 'groups' are incompatible.
+                      Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                        Type 'BaseType[]' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                          Type 'BaseType[]' is not assignable to type 'SVGGElement[]'.
+                            Type 'BaseType' is not assignable to type 'SVGGElement'.
+                              Type 'null' is not assignable to type 'SVGGElement'.
+src/components/views/NetworkView.tsx(192,22): error TS2345: Argument of type 'Selection<BaseType, unknown, null, undefined>' is not assignable to parameter of type 'Selection<SVGGElement, unknown, null, undefined>'.
+  Types of property 'select' are incompatible.
+    Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+      Types of parameters 'selector' and 'selector' are incompatible.
+        Types of parameters 'groups' and 'groups' are incompatible.
+          Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+            Type 'BaseType[]' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+              Type 'BaseType[]' is not assignable to type 'SVGGElement[]'.
+                Type 'BaseType' is not assignable to type 'SVGGElement'.
+                  Type 'null' is not assignable to type 'SVGGElement'.
+src/components/views/NetworkView.tsx(211,7): error TS2322: Type 'Selection<SVGGElement, unknown, null, undefined>' is not assignable to type 'Selection<BaseType, unknown, null, undefined>'.
+  Types of property 'merge' are incompatible.
+    Type '(other: Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>) => Selection<SVGGElement, unknown, null, undefined>' is not assignable to type '(other: Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>) => Selection<BaseType, unknown, null, undefined>'.
+      Types of parameters 'other' and 'other' are incompatible.
+        Type 'Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+          Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+            Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined>'.
+              Types of property 'select' are incompatible.
+                Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+                  Types of parameters 'selector' and 'selector' are incompatible.
+                    Types of parameters 'groups' and 'groups' are incompatible.
+                      Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                        Type 'BaseType[]' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                          Type 'BaseType[]' is not assignable to type 'SVGGElement[]'.
+                            Type 'BaseType' is not assignable to type 'SVGGElement'.
+                              Type 'null' is not assignable to type 'SVGGElement'.
+src/components/views/NetworkView.tsx(247,7): error TS2322: Type 'Selection<SVGGElement, unknown, null, undefined>' is not assignable to type 'Selection<BaseType, unknown, null, undefined>'.
+  Types of property 'merge' are incompatible.
+    Type '(other: Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>) => Selection<SVGGElement, unknown, null, undefined>' is not assignable to type '(other: Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>) => Selection<BaseType, unknown, null, undefined>'.
+      Types of parameters 'other' and 'other' are incompatible.
+        Type 'Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+          Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+            Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined>'.
+              Types of property 'select' are incompatible.
+                Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+                  Types of parameters 'selector' and 'selector' are incompatible.
+                    Types of parameters 'groups' and 'groups' are incompatible.
+                      Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                        Type 'BaseType[]' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                          Type 'BaseType[]' is not assignable to type 'SVGGElement[]'.
+                            Type 'BaseType' is not assignable to type 'SVGGElement'.
+                              Type 'null' is not assignable to type 'SVGGElement'.
+src/components/views/NetworkView.tsx(340,7): error TS2322: Type 'Selection<SVGGElement, unknown, null, undefined>' is not assignable to type 'Selection<BaseType, unknown, null, undefined>'.
+  Types of property 'merge' are incompatible.
+    Type '(other: Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>) => Selection<SVGGElement, unknown, null, undefined>' is not assignable to type '(other: Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>) => Selection<BaseType, unknown, null, undefined>'.
+      Types of parameters 'other' and 'other' are incompatible.
+        Type 'Selection<BaseType, unknown, null, undefined> | TransitionLike<BaseType, unknown>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+          Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined> | TransitionLike<SVGGElement, unknown>'.
+            Type 'Selection<BaseType, unknown, null, undefined>' is not assignable to type 'Selection<SVGGElement, unknown, null, undefined>'.
+              Types of property 'select' are incompatible.
+                Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, unknown, null, undefined>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, null, undefined>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+                  Types of parameters 'selector' and 'selector' are incompatible.
+                    Types of parameters 'groups' and 'groups' are incompatible.
+                      Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                        Type 'BaseType[]' is not assignable to type 'SVGGElement[] | ArrayLike<SVGGElement>'.
+                          Type 'BaseType[]' is not assignable to type 'SVGGElement[]'.
+                            Type 'BaseType' is not assignable to type 'SVGGElement'.
+                              Type 'null' is not assignable to type 'SVGGElement'.
+src/components/views/NetworkView.tsx(431,26): error TS18046: 'd' is of type 'unknown'.
+src/components/views/NetworkView.tsx(432,26): error TS18046: 'd' is of type 'unknown'.
+src/components/views/NetworkView.tsx(433,26): error TS18046: 'd' is of type 'unknown'.
+src/components/views/NetworkView.tsx(434,26): error TS18046: 'd' is of type 'unknown'.
+src/components/views/TreeView.tsx(4,31): error TS6133: 'GraphMetrics' is declared but its value is never read.
+src/components/views/TreeView.tsx(74,10): error TS6133: 'selectedPath' is declared but its value is never read.
+src/components/views/TreeView.tsx(74,24): error TS6133: 'setSelectedPath' is declared but its value is never read.
+src/components/views/TreeView.tsx(119,9): error TS6133: 'runPathAnalysis' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(129,53): error TS6133: 'i' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(284,6): error TS6133: 'props' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(286,9): error TS6133: 'defaultRenderNode' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(339,22): error TS2558: Expected 0 type arguments, but got 1.
+src/components/VirtualizedGrid/index.tsx(361,6): error TS6133: 'props' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(363,9): error TS6133: 'defaultRenderEdge' is declared but its value is never read.
+src/components/VirtualizedGrid/index.tsx(412,22): error TS2558: Expected 0 type arguments, but got 1.
+src/components/VirtualizedList/index.tsx(9,17): error TS6133: 'useMemo' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(123,9): error TS6133: 'scrollToItem' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(286,6): error TS6133: 'props' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(288,9): error TS6133: 'defaultRenderNode' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(366,22): error TS2558: Expected 0 type arguments, but got 1.
+src/components/VirtualizedList/index.tsx(392,6): error TS6133: 'props' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(394,9): error TS6133: 'defaultRenderEdge' is declared but its value is never read.
+src/components/VirtualizedList/index.tsx(467,22): error TS2558: Expected 0 type arguments, but got 1.
+src/context/LiveDataContext.tsx(73,29): error TS6133: 'setConnectionQuality' is declared but its value is never read.
+src/context/LiveDataContext.tsx(82,10): error TS6133: 'memoryPressureActive' is declared but its value is never read.
+src/context/LiveDataContext.tsx(85,73): error TS6133: 'optimisticData' is declared but its value is never read.
+src/contexts/EnvironmentContext.tsx(11,32): error TS6133: 'isWebViewEnvironmentImmediate' is declared but its value is never read.
+src/contexts/LiveDataContext.tsx(9,10): error TS6133: 'useLiveData' is declared but its value is never read.
+src/contexts/LiveDataContext.tsx(318,13): error TS6133: 'recentNodesQuery' is declared but its value is never read.
+src/contexts/LiveDataContext.tsx(326,13): error TS6133: 'countQuery' is declared but its value is never read.
+src/contexts/LiveDataContext.tsx(480,11): error TS6133: 'state' is declared but its value is never read.
+src/db/DatabaseContext.tsx(2,34): error TS6133: 'useNativeDatabase' is declared but its value is never read.
+src/db/FallbackDatabaseContext.tsx(37,5): error TS6133: 'params' is declared but its value is never read.
+src/examples/LiveDataIntegrationExample.tsx(61,61): error TS2339: Property 'title' does not exist on type 'Node'.
+src/examples/LiveDataIntegrationExample.tsx(63,44): error TS2551: Property 'modified_at' does not exist on type 'Node'. Did you mean 'modifiedAt'?
+src/examples/LiveDataIntegrationExample.tsx(130,59): error TS2339: Property 'title' does not exist on type 'Node'.
+src/examples/LiveVisualizationExample.tsx(8,8): error TS6133: 'React' is declared but its value is never read.
+src/examples/LiveVisualizationExample.tsx(9,21): error TS2307: Cannot find module '@headlessui/react' or its corresponding type declarations.
+src/examples/LiveVisualizationExample.tsx(90,20): error TS18047: 'nodes' is possibly 'null'.
+src/examples/LiveVisualizationExample.tsx(95,45): error TS18047: 'nodes' is possibly 'null'.
+src/examples/LiveVisualizationExample.tsx(122,31): error TS6133: 'index' is declared but its value is never read.
+src/examples/LiveVisualizationExample.tsx(125,33): error TS7031: Binding element 'selected' implicitly has an 'any' type.
+src/examples/LiveVisualizationExample.tsx(224,23): error TS18047: 'nodes' is possibly 'null'.
+src/examples/LiveVisualizationExample.tsx(235,29): error TS6133: 'index' is declared but its value is never read.
+src/examples/LiveVisualizationExample.tsx(237,31): error TS18047: 'nodes' is possibly 'null'.
+src/examples/LiveVisualizationExample.tsx(246,34): error TS2322: Type 'Node[] | null' is not assignable to type 'Node[]'.
+  Type 'null' is not assignable to type 'Node[]'.
+src/examples/LiveVisualizationExample.tsx(258,15): error TS2322: Type '{ position: "floating"; mode: string; className: string; }' is not assignable to type 'IntrinsicAttributes & DataFlowMonitorProps'.
+  Property 'mode' does not exist on type 'IntrinsicAttributes & DataFlowMonitorProps'.
+src/examples/ProductionVisualizationDemo.tsx(13,21): error TS2307: Cannot find module '@headlessui/react' or its corresponding type declarations.
+src/examples/ProductionVisualizationDemo.tsx(23,30): error TS2307: Cannot find module '../components/pafv/PAFVDropZone' or its corresponding type declarations.
+src/examples/ProductionVisualizationDemo.tsx(24,35): error TS2307: Cannot find module '../components/pafv/PAFVActiveFilters' or its corresponding type declarations.
+src/examples/ProductionVisualizationDemo.tsx(180,28): error TS6133: 'setCustomStressTest' is declared but its value is never read.
+src/examples/ProductionVisualizationDemo.tsx(195,10): error TS6133: 'demoStartTime' is declared but its value is never read.
+src/examples/ProductionVisualizationDemo.tsx(231,55): error TS2345: Argument of type 'RefObject<HTMLDivElement>' is not assignable to parameter of type 'HTMLElement | SVGElement | undefined'.
+src/examples/ProductionVisualizationDemo.tsx(237,37): error TS6133: 'cacheSize' is declared but its value is never read.
+src/examples/ProductionVisualizationDemo.tsx(243,14): error TS18047: 'allNodes' is possibly 'null'.
+src/examples/ProductionVisualizationDemo.tsx(244,14): error TS18047: 'allEdges' is possibly 'null'.
+src/examples/ProductionVisualizationDemo.tsx(244,55): error TS18047: 'allEdges' is possibly 'null'.
+src/examples/ProductionVisualizationDemo.tsx(256,28): error TS2551: Property 'currentFPS' does not exist on type 'D3PerformanceMetrics & { reportToMonitor: (additionalData?: Record<string, any> | undefined) => void; }'. Did you mean 'currentFps'?
+src/examples/ProductionVisualizationDemo.tsx(259,35): error TS2551: Property 'lastRenderTime' does not exist on type 'D3PerformanceMetrics & { reportToMonitor: (additionalData?: Record<string, any> | undefined) => void; }'. Did you mean 'renderTime'?
+src/examples/ProductionVisualizationDemo.tsx(391,39): error TS2367: This comparison appears to be unintentional because the types 'Theme' and '"nextstep"' have no overlap.
+src/examples/ProductionVisualizationDemo.tsx(455,106): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/examples/ProductionVisualizationDemo.tsx(460,35): error TS7031: Binding element 'selected' implicitly has an 'any' type.
+src/examples/ProductionVisualizationDemo.tsx(634,56): error TS2339: Property 'title' does not exist on type 'Node'.
+src/examples/ProductionVisualizationDemo.tsx(638,56): error TS2339: Property 'type' does not exist on type 'Node'.
+src/hooks/useCanvasPerformance.ts(9,1): error TS6133: 'PerformanceMetrics' is declared but its value is never read.
+src/hooks/useCanvasPerformance.ts(384,5): error TS6133: 'targetFps' is declared but its value is never read.
+src/hooks/useCanvasPerformance.ts(387,5): error TS6133: 'enableAutoOptimize' is declared but its value is never read.
+src/hooks/useConflictResolution.ts(309,32): error TS2339: Property 'recordId' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useConflictResolution.ts(310,38): error TS2339: Property 'type' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useConflictResolution.ts(312,33): error TS2339: Property 'fieldName' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useConflictResolution.ts(322,39): error TS2339: Property 'fieldName' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useConflictResolution.ts(323,40): error TS2339: Property 'clientValue' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useConflictResolution.ts(324,41): error TS2339: Property 'serverValue' does not exist on type 'Partial<ConflictInfo>'.
+src/hooks/useD3Canvas.ts(3,15): error TS2305: Module '"../types/pafv"' has no exported member 'Chip'.
+src/hooks/useD3Canvas.ts(171,50): error TS2304: Cannot find name 'Wells'.
+src/hooks/useD3Canvas.ts(314,11): error TS2339: Property 'wells' does not exist on type 'PAFVContextValue'.
+src/hooks/useD3Canvas.ts(387,66): error TS2304: Cannot find name 'Wells'.
+src/hooks/useD3Canvas.ts(407,17): error TS2304: Cannot find name 'Wells'.
+src/hooks/useDemoData.ts(29,3): error TS2322: Type '{ id: string; name: string; content: string; nodeType: "note"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }[]' is not assignable to type 'Node[]'.
+  Type '{ id: string; name: string; content: string; nodeType: "note"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }' is missing the following properties from type 'Node': summary, latitude, longitude, locationName, and 13 more.
+src/hooks/useDemoData.ts(50,3): error TS2322: Type '{ id: string; name: string; content: string; nodeType: "task"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }[]' is not assignable to type 'Node[]'.
+  Type '{ id: string; name: string; content: string; nodeType: "task"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }' is missing the following properties from type 'Node': summary, latitude, longitude, locationName, and 13 more.
+src/hooks/useDemoData.ts(71,3): error TS2322: Type '{ id: string; name: string; content: string; nodeType: "customer"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }[]' is not assignable to type 'Node[]'.
+  Type '{ id: string; name: string; content: string; nodeType: "customer"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }' is missing the following properties from type 'Node': summary, latitude, longitude, locationName, and 13 more.
+src/hooks/useDemoData.ts(92,3): error TS2322: Type '{ id: string; name: string; content: string; nodeType: "document"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }[]' is not assignable to type 'Node[]'.
+  Type '{ id: string; name: string; content: string; nodeType: "document"; folder: string; tags: string[]; priority: number; createdAt: string; modifiedAt: string; }' is missing the following properties from type 'Node': summary, latitude, longitude, locationName, and 13 more.
+src/hooks/useGraphAnalytics.ts(2,39): error TS2459: Module '"../services/ConnectionSuggestionService"' declares 'ConnectionSuggestion' locally, but it is not exported.
+src/hooks/useGraphAnalytics.ts(73,10): error TS6133: 'errorBoundary' is declared but its value is never read.
+src/hooks/useGraphAnalytics.ts(254,11): error TS6133: 'handleGraphChange' is declared but its value is never read.
+src/hooks/useGraphAnalytics.ts(522,22): error TS2345: Argument of type '(prev: { cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }) => { cacheStats: { entries: number; memoryUsageMB: number; hitRate: number; averageResponseTime: number; operationsInFlight: number; }; performanceHistory: { ...; }; operationsInFlight: number; errorLogs: never[]...' is not assignable to parameter of type 'SetStateAction<{ cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }>'.
+  Type '(prev: { cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }) => { cacheStats: { entries: number; memoryUsageMB: number; hitRate: number; averageResponseTime: number; operationsInFlight: number; }; performanceHistory: { ...; }; operationsInFlight: number; errorLogs: never[]...' is not assignable to type '(prevState: { cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }) => { cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }'.
+    Call signature return types '{ cacheStats: { entries: number; memoryUsageMB: number; hitRate: number; averageResponseTime: number; operationsInFlight: number; }; performanceHistory: { suggestionLatencyTrend: number[]; cacheHitRateTrend: number[]; memoryUsageTrend: number[]; throughputTrend: number[]; }; operationsInFlight: number; errorLogs: ne...' and '{ cacheStats: {}; performanceHistory: never[]; errorLogs: never[]; operationsInFlight: number; }' are incompatible.
+      The types of 'performanceHistory' are incompatible between these types.
+        Type '{ suggestionLatencyTrend: number[]; cacheHitRateTrend: number[]; memoryUsageTrend: number[]; throughputTrend: number[]; }' is missing the following properties from type 'never[]': length, pop, push, concat, and 29 more.
+src/hooks/useLiveData.tsx(107,40): error TS2339: Property 'cacheHits' does not exist on type 'LiveDataPerformanceMetrics'.
+src/hooks/useLiveData.tsx(110,9): error TS2353: Object literal may only specify known properties, and 'cacheHits' does not exist in type 'LiveDataPerformanceMetrics'.
+src/hooks/useLiveData.tsx(110,29): error TS2339: Property 'cacheHits' does not exist on type 'LiveDataPerformanceMetrics'.
+src/hooks/useLiveData.tsx(267,37): error TS2551: Property 'aborted' does not exist on type 'AbortController'. Did you mean 'abort'?
+src/hooks/useLiveData.tsx(304,29): error TS2551: Property 'aborted' does not exist on type 'AbortController'. Did you mean 'abort'?
+src/hooks/useLiveData.tsx(350,29): error TS2551: Property 'aborted' does not exist on type 'AbortController'. Did you mean 'abort'?
+src/hooks/useLiveData.tsx(372,34): error TS2551: Property 'aborted' does not exist on type 'AbortController'. Did you mean 'abort'?
+src/hooks/useLiveData.tsx(403,22): error TS6133: 'operation' is declared but its value is never read.
+src/hooks/useLiveQuery.ts(14,1): error TS6133: 'webViewBridge' is declared but its value is never read.
+src/hooks/useLiveQuery.ts(21,3): error TS6133: 'invalidationPatterns' is declared but its value is never read.
+src/hooks/useLiveQuery.ts(25,28): error TS6133: 'CleanupStack' is declared but its value is never read.
+src/hooks/useLiveQuery.ts(179,9): error TS6133: 'queryHash' is declared but its value is never read.
+src/hooks/useLiveQuery.ts(205,31): error TS6133: 'setAdaptiveSyncEnabled' is declared but its value is never read.
+src/hooks/useOptimisticUpdates.ts(156,24): error TS6133: 'batchItem' is declared but its value is never read.
+src/hooks/usePAFVLiveData.ts(8,31): error TS6133: 'useCallback' is declared but its value is never read.
+src/hooks/useRenderingOptimization.ts(371,9): error TS2739: Type '{ frameRate: number; renderTime: number; memoryUsage: number; culledElements: number; renderedElements: number; optimizationsActive: string[]; recommendations: string[]; timestamp: number; performance60FPS: boolean; }' is missing the following properties from type 'RenderingMetrics': lodLevel, gpuUtilization
+src/hooks/useTransaction.ts(11,10): error TS6133: 'generateCorrelationId' is declared but its value is never read.
+src/hooks/useVirtualizedList.ts(63,5): error TS6133: 'containerHeight' is declared but its value is never read.
+src/hooks/useVirtualizedList.ts(144,5): error TS6133: 'containerHeight' is declared but its value is never read.
+src/hooks/useVirtualizedList.ts(145,5): error TS6133: 'containerWidth' is declared but its value is never read.
+src/hooks/useVirtualLiveQuery.ts(210,15): error TS6133: 'frameStart' is declared but its value is never read.
+src/hooks/useVirtualLiveQuery.ts(274,100): error TS2448: Block-scoped variable 'virtualItems' used before its declaration.
+src/hooks/useVirtualLiveQuery.ts(274,100): error TS2454: Variable 'virtualItems' is used before being assigned.
+src/hooks/useVirtualLiveQuery.ts(297,26): error TS6133: 'index' is declared but its value is never read.
+src/services/CloudKitSyncAdapter.ts(73,5): error TS2717: Subsequent property declarations must have the same type.  Property 'webkit' must be of type '{ messageHandlers: WebKitMessageHandlers; } | undefined', but here has type 'CloudKitWebKit | undefined'.
+src/services/ConnectionSuggestionService.ts(414,43): error TS6133: 'suggestionId' is declared but its value is never read.
+src/services/GraphAnalyticsAdapter.ts(1,47): error TS2307: Cannot find module '@/types/bridge' or its corresponding type declarations.
+src/services/GraphAnalyticsAdapter.ts(62,5): error TS2717: Subsequent property declarations must have the same type.  Property 'webkit' must be of type '{ messageHandlers: WebKitMessageHandlers; } | undefined', but here has type 'GraphWebKit | undefined'.
+src/services/GraphAnalyticsAdapter.ts(395,5): error TS6133: 'nodeId' is declared but its value is never read.
+src/services/GraphAnalyticsAdapter.ts(396,5): error TS6133: 'options' is declared but its value is never read.
+src/utils/bridge-optimization/binary-serializer.ts(158,22): error TS6133: 'T' is declared but its value is never read.
+src/utils/bridge-optimization/change-notifier.ts(207,30): error TS2339: Property 'handleLiveDataEvent' does not exist on type '{ database: Record<string, unknown>; filesystem: Record<string, unknown>; environment: WebViewEnvironment; sendMessage: (handler: string, _method: string, params: unknown) => Promise<...>; handleResponse: (response: WebViewResponse) => void; debug?: { ...; } | undefined; }'.
+src/utils/bridge-optimization/change-notifier.ts(394,5): error TS2717: Subsequent property declarations must have the same type.  Property '_isometryBridge' must be of type '{ database: Record<string, unknown>; filesystem: Record<string, unknown>; environment: WebViewEnvironment; sendMessage: (handler: string, _method: string, params: unknown) => Promise<...>; handleResponse: (response: WebViewResponse) => void; debug?: { ...; } | undefined; } | undefined', but here has type '{ sendMessage: (handler: string, method: string, params: Record<string, unknown>) => Promise<unknown>; handleLiveDataEvent?: ((event: LiveDataEvent) => void) | undefined; } | undefined'.
+src/utils/bridge-optimization/circuit-breaker.ts(371,5): error TS6133: 'operationName' is declared but its value is never read.
+src/utils/bridge-optimization/memory-manager.ts(12,8): error TS6133: 'React' is declared but its value is never read.
+src/utils/bridge-optimization/memory-manager.ts(12,36): error TS6133: 'useCallback' is declared but its value is never read.
+src/utils/bridge-optimization/memory-manager.ts(13,1): error TS6133: 'createCleanupStack' is declared but its value is never read.
+src/utils/bridge-optimization/memory-manager.ts(80,20): error TS6133: 'WARNING_THRESHOLD_MB' is declared but its value is never read.
+src/utils/bridge-optimization/memory-manager.ts(81,20): error TS6133: 'CRITICAL_THRESHOLD_MB' is declared but its value is never read.
+src/utils/bridge-optimization/performance-monitor.ts(349,52): error TS6133: 'queryHits' is declared but its value is never read.
+src/utils/bridge-optimization/performance-monitor.ts(372,48): error TS6133: 'virtualTime' is declared but its value is never read.
+src/utils/bridge-optimization/performance-monitor.ts(864,11): error TS6133: 'recent' is declared but its value is never read.
+src/utils/bridge-optimization/performance-monitor.ts(881,51): error TS2345: Argument of type '(number | undefined)[]' is not assignable to parameter of type 'number[]'.
+  Type 'number | undefined' is not assignable to type 'number'.
+    Type 'undefined' is not assignable to type 'number'.
+src/utils/bridge-optimization/performance-monitor.ts(882,52): error TS2345: Argument of type '(number | undefined)[]' is not assignable to parameter of type 'number[]'.
+  Type 'number | undefined' is not assignable to type 'number'.
+    Type 'undefined' is not assignable to type 'number'.
+src/utils/bridge-optimization/performance-monitor.ts(895,7): error TS2322: Type 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+src/utils/bridge-optimization/query-paginator.ts(60,20): error TS6133: 'enableEstimation' is declared but its value is never read.
+src/utils/bridge-optimization/query-paginator.ts(332,32): error TS6133: 'sql' is declared but its value is never read.
+src/utils/bridge-optimization/query-paginator.ts(332,63): error TS6133: 'cursorValue' is declared but its value is never read.
+src/utils/connection-manager.ts(12,10): error TS2724: '"./bridge-optimization/performance-monitor"' has no exported member named 'performanceMonitor'. Did you mean 'PerformanceMonitor'?
+src/utils/connection-manager.ts(154,13): error TS6133: 'result' is declared but its value is never read.
+src/utils/connection-manager.ts(361,62): error TS2307: Cannot find module '../../native/Sources/Isometry/Bridge/Reliability/CircuitBreaker.swift' or its corresponding type declarations.
+src/utils/connection-manager.ts(680,9): error TS2322: Type 'unknown[]' is not assignable to type 'void'.
+src/utils/d3-native-bridge.ts(138,11): error TS6133: 'pendingViewport' is declared but its value is never read.
+src/utils/d3-native-bridge.ts(365,73): error TS6133: 'result' is declared but its value is never read.
+src/utils/d3-native-bridge.ts(416,11): error TS6133: 'resetErrorCount' is declared but its value is never read.
+src/utils/d3-optimization.ts(95,27): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(105,42): error TS2345: Argument of type 'Selection<BaseType, T, any, any>' is not assignable to parameter of type 'Selection<HTMLDivElement, T, any, any> | TransitionLike<HTMLDivElement, T>'.
+  Type 'Selection<BaseType, T, any, any>' is not assignable to type 'Selection<HTMLDivElement, T, any, any>'.
+    Types of property 'select' are incompatible.
+      Type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, T, any, any>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, any, any>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }' is not assignable to type '{ <DescElement extends BaseType>(selector: string): d3.Selection<DescElement, T, any, any>; <DescElement extends BaseType>(selector: null): d3.Selection<null, undefined, any, any>; <DescElement extends BaseType>(selector: d3.ValueFn<...>): d3.Selection<...>; }'. Two different types with this name exist, but they are unrelated.
+        Types of parameters 'selector' and 'selector' are incompatible.
+          Types of parameters 'groups' and 'groups' are incompatible.
+            Type 'BaseType[] | ArrayLike<BaseType>' is not assignable to type 'HTMLDivElement[] | ArrayLike<HTMLDivElement>'.
+              Type 'BaseType[]' is not assignable to type 'HTMLDivElement[] | ArrayLike<HTMLDivElement>'.
+                Type 'BaseType[]' is not assignable to type 'HTMLDivElement[]'.
+                  Type 'BaseType' is not assignable to type 'HTMLDivElement'.
+                    Type 'null' is not assignable to type 'HTMLDivElement'.
+src/utils/d3-optimization.ts(108,22): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(110,22): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(111,40): error TS2339: Property 'visibleIndices' does not exist on type 'HTMLDivElement'.
+src/utils/d3-optimization.ts(162,27): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(170,27): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(179,27): error TS6133: 'd' is declared but its value is never read.
+src/utils/d3-optimization.ts(191,21): error TS6133: 'index' is declared but its value is never read.
+src/utils/d3-optimization.ts(191,36): error TS6133: 'total' is declared but its value is never read.
+src/utils/d3-optimization.ts(227,23): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/utils/d3-optimization.ts(229,14): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/utils/d3-optimization.ts(248,5): error TS6133: 'container' is declared but its value is never read.
+src/utils/d3-optimization.ts(295,3): error TS6133: 'viewport' is declared but its value is never read.
+src/utils/d3-optimization.ts(363,3): error TS2322: Type 'VirtualScrollRenderer<unknown>' is not assignable to type 'VirtualScrollRenderer<T>'.
+  Types of property 'data' are incompatible.
+    Type 'unknown[]' is not assignable to type 'T[]'.
+      Type 'unknown' is not assignable to type 'T'.
+        'T' could be instantiated with an arbitrary type which could be unrelated to 'unknown'.
+src/utils/d3-optimization.ts(369,31): error TS6133: 'T' is declared but its value is never read.
+src/utils/d3-optimization.ts(439,45): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/utils/d3-optimization.ts(533,3): error TS2322: Type '(type: string) => Selection<BaseType, any, any, any>' is not assignable to type '{ <K extends keyof ElementTagNameMap>(type: K): Selection<ElementTagNameMap[K], any, any, any>; <ChildElement extends BaseType>(type: string): Selection<ChildElement, any, any, any>; <ChildElement extends BaseType>(type: ValueFn<...>): Selection<...>; }'.
+  Types of parameters 'type' and 'type' are incompatible.
+    Type 'ValueFn<any, any, any>' is not assignable to type 'string'.
+src/utils/d3-optimization.ts(535,30): error TS2339: Property 'namespaceURI' does not exist on type 'Selection<any, any, any, any>'.
+src/utils/d3-render-optimizer.ts(1,1): error TS6133: 'd3' is declared but its value is never read.
+src/utils/d3-render-optimizer.ts(78,11): error TS6133: 'cullRatio' is declared but its value is never read.
+src/utils/d3-render-optimizer.ts(207,43): error TS6133: 'targetComplexity' is declared but its value is never read.
+src/utils/d3-render-optimizer.ts(214,43): error TS6133: 'targetComplexity' is declared but its value is never read.
+src/utils/d3-render-optimizer.ts(259,27): error TS6133: 'data' is declared but its value is never read.
+src/utils/d3Performance.ts(517,11): error TS6196: 'ExtendedPerformanceMetrics' is declared but never used.
+src/utils/d3Performance.ts(532,11): error TS6133: 'nativeUpdateInterval' is declared but its value is never read.
+src/utils/GraphPerformanceMonitor.ts(2,26): error TS6133: 'CacheStats' is declared but its value is never read.
+src/utils/GraphPerformanceMonitor.ts(3,1): error TS6192: All imports in import declaration are unused.
+src/utils/GraphPerformanceMonitor.ts(3,10): error TS2459: Module '"../services/ConnectionSuggestionService"' declares 'ConnectionSuggestion' locally, but it is not exported.
+src/utils/GraphPerformanceMonitor.ts(4,1): error TS6133: 'CacheEffectiveness' is declared but its value is never read.
+src/utils/GraphPerformanceMonitor.ts(443,35): error TS6133: 'latency' is declared but its value is never read.
+src/utils/GraphPerformanceMonitor.ts(457,30): error TS6133: 'operation' is declared but its value is never read.
+src/utils/performance-validation.ts(9,25): error TS6196: 'RenderingMetrics' is declared but never used.
+src/utils/performance-validation.ts(9,43): error TS2305: Module '"./rendering-performance"' has no exported member 'OptimizationPlan'.
+src/utils/performance-validation.ts(10,23): error TS6133: 'webViewBridge' is declared but its value is never read.
+src/utils/performance-validation.ts(193,11): error TS6133: 'currentTest' is declared but its value is never read.
+src/utils/performance-validation.ts(466,5): error TS6133: 'optimizationPlan' is declared but its value is never read.
+src/utils/performance-validation.ts(640,11): error TS6133: 'cullingBounds' is declared but its value is never read.
+src/utils/rendering-performance.ts(236,28): error TS6133: 'currentUsage' is declared but its value is never read.
+src/utils/rendering-performance.ts(357,11): error TS2322: Type 'string' is not assignable to type '"normal" | "aggressive" | "balanced" | "conservative"'.
+src/utils/transaction/rollback-manager.ts(2,1): error TS6133: 'generateCorrelationId' is declared but its value is never read.
+src/utils/transaction/rollback-manager.ts(102,13): error TS6133: 'startTime' is declared but its value is never read.
+src/utils/transaction/rollback-manager.ts(185,11): error TS6133: 'totalOperations' is declared but its value is never read.
+src/utils/webview-bridge.ts(1002,12): error TS2339: Property 'executeQueryInternal' does not exist on type 'OptimizedBridge'.
+src/utils/webview-bridge.ts(1011,7): error TS2353: Object literal may only specify known properties, and 'execute' does not exist in type 'CircuitBreakerOptions'.
+src/utils/webview-bridge.ts(1275,5): error TS6133: 'handler' is declared but its value is never read.
+src/utils/webview-bridge.ts(1276,5): error TS6133: 'method' is declared but its value is never read.

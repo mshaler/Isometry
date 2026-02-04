@@ -9,6 +9,39 @@ import UIKit
 import AppKit
 #endif
 
+/// Export-specific errors
+public enum ExportError: Error, LocalizedError {
+    case cardNotFound(String)
+    case noValidCards
+    case emptyFolder(String)
+    case tooManyActiveExports
+    case templateLoadFailed(String)
+    case renderTimeout
+    case fileSystemError(String)
+    case encodingError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .cardNotFound(let id):
+            return "Card with ID '\(id)' not found"
+        case .noValidCards:
+            return "No valid cards found for export"
+        case .emptyFolder(let folder):
+            return "Folder '\(folder)' contains no cards"
+        case .tooManyActiveExports:
+            return "Too many active exports. Please wait for current exports to complete."
+        case .templateLoadFailed(let template):
+            return "Failed to load export template: \(template)"
+        case .renderTimeout:
+            return "Export rendering timed out"
+        case .fileSystemError(let message):
+            return "File system error: \(message)"
+        case .encodingError(let message):
+            return "Content encoding error: \(message)"
+        }
+    }
+}
+
 /// Actor-based export manager for multi-format notebook content export
 /// Provides thread-safe export operations for PDF, HTML, Markdown, and JSON formats
 public actor ExportManager {
@@ -648,7 +681,7 @@ public actor ExportManager {
 // MARK: - Supporting Types
 
 /// Export format enumeration
-public enum ExportFormat: String, CaseIterable, Codable {
+public enum ExportFormat: String, CaseIterable, Codable, Sendable {
     case pdf = "PDF"
     case html = "HTML"
     case markdown = "Markdown"
@@ -674,7 +707,7 @@ public enum ExportFormat: String, CaseIterable, Codable {
 }
 
 /// Export options for customization
-public struct ExportOptions: Codable {
+public struct ExportOptions: Codable, Sendable {
     var includeTitle: Bool
     var includeContent: Bool
     var includeMetadata: Bool
@@ -775,39 +808,6 @@ public struct ExportedCard: Codable {
 public struct ExportData: Codable {
     let metadata: ExportMetadata
     let cards: [ExportedCard]
-}
-
-/// Export-specific errors
-public enum ExportError: Error, LocalizedError {
-    case cardNotFound(String)
-    case noValidCards
-    case emptyFolder(String)
-    case tooManyActiveExports
-    case templateLoadFailed(String)
-    case renderTimeout
-    case fileSystemError(String)
-    case encodingError(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .cardNotFound(let id):
-            return "Card with ID '\(id)' not found"
-        case .noValidCards:
-            return "No valid cards found for export"
-        case .emptyFolder(let folder):
-            return "Folder '\(folder)' contains no cards"
-        case .tooManyActiveExports:
-            return "Too many active exports. Please wait for current exports to complete."
-        case .templateLoadFailed(let template):
-            return "Failed to load export template: \(template)"
-        case .renderTimeout:
-            return "Export rendering timed out"
-        case .fileSystemError(let message):
-            return "File system error: \(message)"
-        case .encodingError(let message):
-            return "Content encoding error: \(message)"
-        }
-    }
 }
 
 // MARK: - Default Templates
