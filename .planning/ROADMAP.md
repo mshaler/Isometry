@@ -240,15 +240,19 @@ Plans:
   3. D3.js visualizations render properly and integrate seamlessly with React components
   4. React UI chrome components provide functional development interface with working layouts
   5. Both environments support parallel development without blocking compilation issues
-**Plans:** 4 plans
+**Plans:** 8 plans
 
 **Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
 
 Plans:
-- [ ] 32-01-PLAN.md — Fix Swift compilation errors and type conflicts
-- [ ] 32-02-PLAN.md — Resolve TypeScript compilation issues and improve type safety
-- [ ] 32-03-PLAN.md — Restore broken Swift files and fix D3.js integration
-- [ ] 32-04-PLAN.md — Fix React UI chrome components and layout coordination
+- [x] 32-01-PLAN.md — Fix Swift compilation errors and type conflicts
+- [x] 32-02-PLAN.md — Resolve TypeScript compilation issues and improve type safety
+- [x] 32-03-PLAN.md — Restore broken Swift files and fix D3.js integration
+- [x] 32-04-PLAN.md — Fix React UI chrome components and layout coordination
+- [x] 32-05-PLAN.md — Compilation gap closure for D3 Canvas component
+- [ ] 32-06-PLAN.md — Fix critical interface gaps in LiveDataContext and useLiveQuery
+- [ ] 32-07-PLAN.md — Complete TypeScript cleanup with d3-optimization fixes
+- [ ] 32-08-PLAN.md — Fix view component TypeScript errors and prop interfaces
 
 ## Dependencies
 
