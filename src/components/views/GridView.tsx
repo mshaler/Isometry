@@ -42,11 +42,9 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
   // Network-aware sync for adaptive performance - now using connection state from useLiveQuery
   const networkQuality = connectionState?.quality === 'fast' ? 'high' :
                          connectionState?.quality === 'slow' ? 'medium' : 'low';
-  const isOnline = connectionState?.quality !== 'offline';
 
   const {
     adaptationMetrics,
-    queueOptimizedSync,
     isProcessing
   } = useNetworkAwareSync({
     enableRealTimeSync: {
@@ -242,16 +240,6 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
     };
   }, [cleanupStack], 'GridView:MemoryCleanup');
 
-  // Network-aware live options
-  const networkAwareLiveOptions = useMemo(() => ({
-    estimateItemSize: gridConfig.itemHeight,
-    enableDynamicSizing: gridConfig.enableImageLoading && networkQuality !== 'low',
-    overscan: networkQuality === 'high' ? 15 : networkQuality === 'medium' ? 10 : 5,
-    performanceMonitoring: true,
-    enableVirtualCaching: true,
-    updateBatchingMs: gridConfig.updateInterval,
-    ...liveOptions
-  }), [gridConfig, networkQuality, liveOptions]);
 
   // Show loading state while fetching initial data
   if (loading && !nodes) {
@@ -311,7 +299,7 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
         )}
       </div>
 
-      <VirtualizedGrid<Node>
+      <VirtualizedGrid
         data={nodes}
         height={containerHeight}
         width={containerWidth}
