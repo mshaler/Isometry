@@ -1028,6 +1028,37 @@ export class OptimizedBridge {
   }
 
   /**
+   * Internal query execution method for QueryPaginator integration
+   */
+  private async executeQueryInternal(
+    query: string,
+    params: unknown[] = []
+  ): Promise<{ rows: unknown[]; totalCount: number }> {
+    try {
+      // Execute query through circuit breaker for reliability
+      const result = await this.circuitBreaker.execute(async () => {
+        return this.bridge.database.execute(query, params);
+      });
+
+      if (!result.success || !result.result) {
+        throw new Error('Query execution failed through circuit breaker');
+      }
+
+      const rows = result.result as unknown[];
+
+      // For compatibility with QueryPaginator, return format with rows and totalCount
+      return {
+        rows,
+        totalCount: rows.length
+      };
+
+    } catch (error) {
+      console.error('[OptimizedBridge] executeQueryInternal failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Enhanced message posting with optimization layer
    */
   public async postMessage<T = unknown>(

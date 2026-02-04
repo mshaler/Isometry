@@ -18,6 +18,7 @@ export interface CircuitBreakerOptions {
   halfOpenMaxCalls?: number;
   resetTimeout?: number;
   enableMetrics?: boolean;
+  execute?: <T>(operation: () => Promise<T>) => Promise<T>;
 }
 
 export interface CircuitBreakerMetrics {
