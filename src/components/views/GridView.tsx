@@ -19,7 +19,7 @@ interface GridViewProps {
 }
 
 
-export function GridView({ sql, queryParams = [], liveOptions = { containerHeight: 600 }, onNodeClick }: GridViewProps) {
+export function GridView({ sql, queryParams = [], liveOptions: _liveOptions = { containerHeight: 600 }, onNodeClick }: GridViewProps) {
   const { theme } = useTheme();
 
   // Live query for real-time data updates
@@ -297,7 +297,7 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
       </div>
 
       <VirtualizedGrid
-        data={nodes}
+        items={nodes}
         height={containerHeight}
         width={containerWidth}
         columnCount={gridConfig.columnCount}
@@ -305,7 +305,7 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
         estimateColumnWidth={containerWidth / gridConfig.columnCount - 16}
         renderItem={(item: unknown, index: number) => renderGridItem(item as Node, index)}
         gap={networkQuality === 'low' ? 8 : 16} // Smaller gap on slow connections
-        onItemClick={(item: unknown, index: number) => onNodeClick?.(item as Node)}
+        onItemClick={(item: unknown, _index: number) => onNodeClick?.(item as Node)}
         enableDynamicSizing={networkQuality !== 'low'} // Disable dynamic sizing on slow connections
         className="w-full h-full"
       />

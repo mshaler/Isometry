@@ -189,7 +189,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     if (g.empty()) {
       g = svg.append('g').attr('class', 'network-container');
       // Setup zoom only on initial render
-      setupZoom(svg, g, { scaleExtent: [0.2, 4] });
+      setupZoom(svg, g as d3.Selection<SVGGElement, unknown, null, undefined>, { scaleExtent: [0.2, 4] });
     }
 
     // Arrow marker for directed edges

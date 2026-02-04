@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef } from 'react';
 import { Search, X, ArrowUpDown, Wifi, WifiOff, Loader } from 'lucide-react';
 import { VirtualizedList } from '../VirtualizedList';
 import { useSelection } from '../../state/SelectionContext';
@@ -34,7 +34,7 @@ interface ListViewProps {
  * - Sort direction toggle
  * - Integrates with SelectionContext for Card Overlay
  */
-export function ListView({ sql, queryParams = [], liveOptions = { containerHeight: 600 }, onNodeClick }: ListViewProps) {
+export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { containerHeight: 600 }, onNodeClick }: ListViewProps) {
   const { selection, select } = useSelection();
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -114,7 +114,7 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
   );
 
   // Render individual list item for VirtualizedList
-  const renderItem = useCallback((node: Node, index: number) => {
+  const renderItem = useCallback((node: Node, _index: number) => {
     return (
       <ListItem
         node={node}
@@ -244,11 +244,11 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
         ) : (
           <VirtualizedList
             ref={listRef}
-            data={nodes}
+            items={nodes}
             height={window.innerHeight - SEARCH_BAR_HEIGHT - 100} // Adjust for header/footer
             renderItem={(item: unknown, index: number) => renderItem(item as Node, index)}
             estimateItemSize={ITEM_HEIGHT}
-            onItemClick={(item: unknown, index: number) => handleItemClick(item as Node)}
+            onItemClick={(item: unknown, _index: number) => handleItemClick(item as Node)}
             className="h-full"
           />
         )}

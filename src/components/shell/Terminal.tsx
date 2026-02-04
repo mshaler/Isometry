@@ -26,8 +26,8 @@ export function Terminal({
 
   const {
     createTerminal,
-    executeCommand,
-    writeOutput,
+    // executeCommand, // Unused
+    // writeOutput, // Unused
     attachToProcess,
     dispose,
     resizeTerminal,
