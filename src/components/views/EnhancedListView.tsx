@@ -22,7 +22,7 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
 
-  // Trigger loading state when data changes
+  // Trigger loading state when component mounts
   useEffect(() => {
     setIsLoading(true);
     setHasError(false);
@@ -32,7 +32,7 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
     }, 100); // Brief loading state
 
     return () => clearTimeout(timeout);
-  }, [data.length]);
+  }, []);
 
   const handleNodeClick = useCallback((node: unknown) => {
     try {
@@ -46,7 +46,7 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
 
   return (
     <ViewTransition
-      viewKey={`list-${data.length}`}
+      viewKey="list-enhanced"
       isLoading={isLoading}
       hasError={hasError}
       config={{ duration: 300, easing: 'ease-out' }}
@@ -57,7 +57,8 @@ export const EnhancedListView = React.memo<ViewComponentProps>(({
         </div>
       ) : (
         <ListView
-          data={data}
+          sql="SELECT * FROM nodes ORDER BY created_at DESC LIMIT 100"
+          queryParams={[]}
           onNodeClick={handleNodeClick}
         />
       )}

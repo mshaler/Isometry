@@ -59,7 +59,8 @@ export const EnhancedGridView = React.memo<ViewComponentProps>(({
         </div>
       ) : (
         <GridView
-          data={data}
+          sql="SELECT * FROM nodes ORDER BY created_at DESC LIMIT 100"
+          queryParams={[]}
           onNodeClick={handleNodeClick}
         />
       )}

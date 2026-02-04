@@ -6,7 +6,7 @@ import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import { useGraphAnalytics, useConnectionSuggestions, useGraphMetrics } from '@/hooks/useGraphAnalytics';
-import { connectionSuggestionService, type ConnectionSuggestion } from '@/services/ConnectionSuggestionService';
+import { type ConnectionSuggestion } from '@/services/ConnectionSuggestionService';
 import { graphPerformanceMonitor } from '@/utils/GraphPerformanceMonitor';
 import { performanceMonitor } from '@/utils/d3Performance';
 import type { Node } from '@/types/node';
