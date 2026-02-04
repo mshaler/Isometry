@@ -12,7 +12,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { webViewBridge } from '../utils/webview-bridge';
-import { useLiveDataContext } from '../context/LiveDataContext';
+import { useLiveDataContext } from '../contexts/LiveDataContext';
 import { useDatabase } from '../db/DatabaseContext';
 import { queryKeys } from '../services/queryClient';
 import {
@@ -28,6 +28,8 @@ import { memoryManager } from '../utils/bridge-optimization/memory-manager';
 export interface LiveQueryOptions {
   /** Initial query parameters */
   params?: unknown[];
+  /** Initial query parameters (alias for backward compatibility) */
+  queryParams?: unknown[];
   /** Whether to automatically start the query on mount */
   autoStart?: boolean;
   /** Debounce interval for rapid updates (ms) */
@@ -69,6 +71,8 @@ export interface LiveQueryResult<T = unknown> {
   data: T[] | null;
   /** Loading state */
   loading: boolean;
+  /** Loading state alias for backward compatibility */
+  isLoading: boolean;
   /** Error state */
   error: string | null;
   /** Whether the query is actively being observed */
@@ -146,6 +150,7 @@ export function useLiveQuery<T = unknown>(
 ): LiveQueryResult<T> {
   const {
     params = [],
+    queryParams,
     autoStart = true,
     debounceMs = 100,
     onError,
@@ -160,6 +165,9 @@ export function useLiveQuery<T = unknown>(
     backgroundSyncConfig = {},
     connectionStateConfig = {}
   } = options;
+
+  // Resolve parameters (support both params and queryParams for backward compatibility)
+  const finalParams = queryParams || params;
 
   // TanStack Query client for cache management
   const queryClient = useQueryClient();
@@ -176,8 +184,8 @@ export function useLiveQuery<T = unknown>(
   const cleanupStack = useMemo(() => createCleanupStack(), []);
 
   // Generate query key for cache
-  const queryHash = generateQueryHash(sql, params);
-  const defaultCacheKey = queryKeys.liveQuery(sql, params);
+  const queryHash = generateQueryHash(sql, finalParams);
+  const defaultCacheKey = queryKeys.liveQuery(sql, finalParams);
   const finalCacheKey = cacheKey || defaultCacheKey;
 
   // Cache invalidation managers (created once per hook instance)
@@ -224,7 +232,7 @@ export function useLiveQuery<T = unknown>(
     setTotalQueries(prev => prev + 1);
 
     try {
-      const results = database.execute(sql, params) as T[];
+      const results = database.execute(sql, finalParams) as T[];
 
       // Call custom change handler
       onChange?.(results);
@@ -235,7 +243,7 @@ export function useLiveQuery<T = unknown>(
       onError?.(err instanceof Error ? err : new Error(errorMessage));
       throw err;
     }
-  }, [sql, params, onChange, onError, database]);
+  }, [sql, finalParams, onChange, onError, database]);
 
   // TanStack Query for intelligent caching
   const tanstackQuery = useQuery({
@@ -416,7 +424,7 @@ export function useLiveQuery<T = unknown>(
       // Subscribe to live updates
       const subscriptionId = await subscribe(
         sql,
-        params,
+        finalParams,
         handleLiveUpdate,
         handleLiveError
       );
@@ -447,7 +455,7 @@ export function useLiveQuery<T = unknown>(
       const errorMessage = err instanceof Error ? err.message : String(err);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
     }
-  }, [sql, params, isLive, isConnected, subscribe, handleLiveUpdate, handleLiveError, onError]);
+  }, [sql, finalParams, isLive, isConnected, subscribe, handleLiveUpdate, handleLiveError, onError]);
 
   // Stop live observation
   const stopLive = useCallback(() => {
@@ -687,6 +695,7 @@ export function useLiveQuery<T = unknown>(
   return {
     data: finalData,
     loading: finalLoading,
+    isLoading: finalLoading, // Alias for backward compatibility
     error: finalError,
     isLive,
     refetch,
@@ -728,12 +737,13 @@ export function useLiveQuery<T = unknown>(
 export function useLiveNodes<T = unknown>(
   sql: string,
   params: unknown[] = []
-): Pick<LiveQueryResult<T>, 'data' | 'loading' | 'error' | 'refetch'> {
+): Pick<LiveQueryResult<T>, 'data' | 'loading' | 'isLoading' | 'error' | 'refetch'> {
   const result = useLiveQuery<T>(sql, { params, autoStart: true, enableCache: true });
 
   return {
     data: result.data,
     loading: result.loading,
+    isLoading: result.isLoading,
     error: result.error,
     refetch: result.refetch
   };
