@@ -6,7 +6,7 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
-import { useLiveData, useLiveDataMetrics } from '../hooks/useLiveData';
+import { useLiveData, useLiveDataMetrics as useOriginalLiveDataMetrics } from '../hooks/useLiveData';
 import type {
   LiveDataSubscription,
   LiveDataOptions,
@@ -224,7 +224,7 @@ export function LiveDataProvider({
   enableConnectionMonitoring = true
 }: LiveDataProviderProps) {
   const [state, dispatch] = useReducer(liveDataReducer, initialState);
-  const { metrics, clearMetrics, invalidateCache } = useLiveDataMetrics();
+  const { metrics, clearMetrics, invalidateCache } = useOriginalLiveDataMetrics();
 
   // Active subscription tracking
   const activeSubscriptions = useRef<Map<string, {
@@ -555,19 +555,16 @@ export function useLiveDataGlobalState(): {
 
 /**
  * Hook for live data metrics (useful for debugging/monitoring components)
+ * Re-exports the original useLiveDataMetrics with the full interface
  */
 export function useLiveDataMetrics(): {
   metrics: LiveDataPerformanceMetrics[];
-  getStatistics: () => any;
+  clearMetrics: (subscriptionId?: string) => void;
+  cacheSize: number;
+  invalidateCache: (pattern?: string) => void;
 } {
-  const { metrics } = useLiveDataContext();
-  return {
-    metrics,
-    getStatistics: () => ({
-      events: { total: 0, errors: 0 },
-      sequence: { outOfOrderPercentage: 0 }
-    })
-  };
+  // Use the original hook to get the complete metrics interface
+  return useOriginalLiveDataMetrics();
 }
 
 /**

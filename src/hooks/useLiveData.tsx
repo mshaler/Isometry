@@ -114,10 +114,13 @@ class LiveDataPerformanceMonitor {
   recordCacheHit(subscriptionId: string): void {
     const existing = this.metrics.get(subscriptionId);
     if (existing) {
-      const newCacheHitRate = existing.cacheHits / (existing.updateCount + 1);
+      // Calculate new cache hit rate based on updateCount
+      const totalRequests = existing.updateCount + 1;
+      const cacheHits = Math.round(existing.cacheHitRate * existing.updateCount) + 1;
+      const newCacheHitRate = cacheHits / totalRequests;
+
       this.metrics.set(subscriptionId, {
         ...existing,
-        cacheHits: existing.cacheHits + 1,
         cacheHitRate: newCacheHitRate
       });
     }
@@ -274,7 +277,7 @@ export function useLiveData<T = unknown>(
   // Execute query with performance tracking
   const executeQuery = useCallback(async (bypassCache = false): Promise<void> => {
     const state = subscriptionStateRef.current;
-    if (!state || state.cancelToken.aborted) return;
+    if (!state || state.cancelToken.signal.aborted) return;
 
     const startTime = performance.now();
     const queryHash = generateQueryHash(query, params);
@@ -311,7 +314,7 @@ export function useLiveData<T = unknown>(
       const result: DatabaseResult<T> = await database.executeQuery(query, params);
       const latency = performance.now() - startTime;
 
-      if (state.cancelToken.aborted) return;
+      if (state.cancelToken.signal.aborted) return;
 
       if (result.success && result.data !== undefined) {
         // Cache successful result
@@ -357,7 +360,7 @@ export function useLiveData<T = unknown>(
       const latency = performance.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-      if (state.cancelToken.aborted) return;
+      if (state.cancelToken.signal.aborted) return;
 
       // Increment retry count
       state.retryCount++;
@@ -379,7 +382,7 @@ export function useLiveData<T = unknown>(
         // Exponential backoff for retries
         const retryDelay = Math.min(1000 * Math.pow(2, state.retryCount - 1), 10000);
         setTimeout(() => {
-          if (!state.cancelToken.aborted) {
+          if (!state.cancelToken.signal.aborted) {
             executeQuery(bypassCache);
           }
         }, retryDelay);
