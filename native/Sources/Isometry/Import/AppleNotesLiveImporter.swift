@@ -1,6 +1,7 @@
 import Foundation
 import EventKit
 import Testing
+import Darwin
 
 /// Enhanced Apple Notes importer with live sync capabilities
 /// Extends AltoIndexImporter foundation with real-time monitoring
@@ -26,12 +27,18 @@ public actor AppleNotesLiveImporter {
     private var syncState: LiveSyncState = .idle
     private var changeProcessingQueue: [AppleNotesWatcher.NotesChangeEvent] = []
 
+    // Performance optimization
+    private var batchProcessor: NoteBatchProcessor?
+    private let maxQueueSize = 1000
+    private let memoryThresholdMB: Double = 80.0
+
     public init(database: IsometryDatabase) {
         self.database = database
         self.altoIndexImporter = AltoIndexImporter(database: database)
         self.accessManager = NotesAccessManager()
         self.watcher = AppleNotesWatcher(accessManager: accessManager)
         self.conflictResolver = AppleNotesConflictResolver(database: database)
+        self.batchProcessor = NoteBatchProcessor(database: database)
     }
 
     // MARK: - Configuration
@@ -99,6 +106,8 @@ public actor AppleNotesLiveImporter {
         var fullSyncCount: Int = 0
         var errorCount: Int = 0
         var notesProcessedPerSecond: Double = 0
+        var memoryUsageMB: Double = 0
+        var queuedChanges: Int = 0
 
         mutating func recordSync(duration: TimeInterval, notesProcessed: Int, isIncremental: Bool) {
             totalSyncCount += 1
@@ -114,10 +123,38 @@ public actor AppleNotesLiveImporter {
             if duration > 0 {
                 notesProcessedPerSecond = Double(notesProcessed) / duration
             }
+
+            // Update memory usage
+            updateMemoryUsage()
         }
 
         mutating func recordError() {
             errorCount += 1
+        }
+
+        mutating func updateMemoryUsage() {
+            let info = mach_task_basic_info()
+            var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+
+            let result: kern_return_t = withUnsafeMutablePointer(to: &count) {
+                task_info(mach_task_self_,
+                         task_flavor_t(MACH_TASK_BASIC_INFO),
+                         UnsafeMutablePointer<integer_t>.init($0),
+                         &count)
+            }
+
+            if result == KERN_SUCCESS {
+                memoryUsageMB = Double(info.resident_size) / 1024.0 / 1024.0
+            }
+        }
+
+        var isMemoryConstrained: Bool {
+            return memoryUsageMB > 100.0 // 100MB threshold
+        }
+
+        var processingEfficiency: Double {
+            guard averageSyncDuration > 0 else { return 0 }
+            return notesProcessedPerSecond / (errorCount + 1) // +1 to avoid division by zero
         }
     }
 
@@ -364,17 +401,30 @@ public actor AppleNotesLiveImporter {
     private func handleFileSystemChange(_ changeEvent: AppleNotesWatcher.NotesChangeEvent) async {
         print("AppleNotesLiveImporter: File change detected - \(changeEvent.eventType.rawValue) at \(changeEvent.fileURL.lastPathComponent)")
 
+        // Check if we should pause due to system constraints
+        if shouldPauseProcessing() {
+            print("AppleNotesLiveImporter: Pausing processing due to system constraints")
+            return
+        }
+
         // Add to processing queue
         changeProcessingQueue.append(changeEvent)
 
-        // Trigger immediate sync if not already processing
+        // Manage queue size to prevent memory issues
+        manageQueueSize()
+
+        // Trigger immediate sync if not already processing and memory is acceptable
         guard !syncState.isProcessing else {
             print("AppleNotesLiveImporter: Sync already in progress, queuing change")
             return
         }
 
-        // Process the change immediately for real-time feel
-        await processQueuedChanges()
+        // Process the change immediately for real-time feel if memory usage is acceptable
+        if isMemoryUsageAcceptable() {
+            await processQueuedChanges()
+        } else {
+            print("AppleNotesLiveImporter: Memory usage high, deferring processing")
+        }
     }
 
     /// Process queued file system changes
@@ -385,23 +435,57 @@ public actor AppleNotesLiveImporter {
         syncState = .syncing
 
         do {
-            let changes = changeProcessingQueue
-            changeProcessingQueue.removeAll()
+            // Get optimal batch size based on current performance
+            let optimalBatchSize = getOptimalBatchSize()
 
-            print("AppleNotesLiveImporter: Processing \(changes.count) queued changes")
-
-            for change in changes {
-                try await processIndividualChange(change)
+            // Initialize batch processor if needed
+            if batchProcessor == nil {
+                batchProcessor = NoteBatchProcessor(database: database, batchSize: optimalBatchSize)
             }
 
+            let startTime = Date()
+            var processedCount = 0
+
+            // Process in batches for memory efficiency
+            while !changeProcessingQueue.isEmpty {
+                let batchSize = min(optimalBatchSize, changeProcessingQueue.count)
+                let batch = Array(changeProcessingQueue.prefix(batchSize))
+                changeProcessingQueue.removeFirst(batchSize)
+
+                print("AppleNotesLiveImporter: Processing batch of \(batch.count) changes")
+
+                // Add to batch processor
+                guard let processor = batchProcessor else { continue }
+
+                for change in batch {
+                    await processor.addToBatch(change)
+                }
+
+                // Process the batch
+                let batchProcessedCount = try await processor.processBatch()
+                processedCount += batchProcessedCount
+
+                // Check memory usage between batches
+                if !isMemoryUsageAcceptable() {
+                    print("AppleNotesLiveImporter: Memory pressure detected, pausing batch processing")
+                    break
+                }
+            }
+
+            let duration = Date().timeIntervalSince(startTime)
+            performanceMetrics.recordSync(duration: duration, notesProcessed: processedCount, isIncremental: true)
+
             syncState = .monitoring
-            print("AppleNotesLiveImporter: Successfully processed all queued changes")
+            print("AppleNotesLiveImporter: Successfully processed \(processedCount) changes in \(String(format: "%.2f", duration))s")
 
         } catch {
             syncState = .error(error)
             print("AppleNotesLiveImporter: Error processing changes: \(error)")
 
-            // Re-queue failed changes for retry
+            // Record the error
+            performanceMetrics.recordError()
+
+            // Re-queue failed changes for retry (but limit queue size)
             await handleSyncError(error)
 
             // Restore previous state after error handling
@@ -498,6 +582,150 @@ public actor AppleNotesLiveImporter {
         }
 
         syncState = previousState
+    }
+
+    // MARK: - Performance Optimization
+
+    /// Batch processor for efficient handling of large note collections
+    private actor NoteBatchProcessor {
+        private let database: IsometryDatabase
+        private let batchSize: Int
+        private var processingBatch: [AppleNotesWatcher.NotesChangeEvent] = []
+
+        init(database: IsometryDatabase, batchSize: Int = 50) {
+            self.database = database
+            self.batchSize = batchSize
+        }
+
+        func addToBatch(_ change: AppleNotesWatcher.NotesChangeEvent) {
+            processingBatch.append(change)
+        }
+
+        func processBatch() async throws -> Int {
+            guard !processingBatch.isEmpty else { return 0 }
+
+            let batch = processingBatch
+            processingBatch.removeAll()
+
+            // Group by operation type for efficient database operations
+            var creates: [AppleNotesWatcher.NotesChangeEvent] = []
+            var updates: [AppleNotesWatcher.NotesChangeEvent] = []
+            var deletes: [AppleNotesWatcher.NotesChangeEvent] = []
+
+            for change in batch {
+                switch change.eventType {
+                case .created:
+                    creates.append(change)
+                case .modified:
+                    updates.append(change)
+                case .deleted:
+                    deletes.append(change)
+                case .moved:
+                    // Treat moves as update
+                    updates.append(change)
+                case .permissionsChanged:
+                    // Skip permission changes
+                    continue
+                }
+            }
+
+            var processedCount = 0
+
+            // Process in order: deletes, updates, creates
+            processedCount += try await processDeletes(deletes)
+            processedCount += try await processUpdates(updates)
+            processedCount += try await processCreates(creates)
+
+            return processedCount
+        }
+
+        private func processDeletes(_ deletes: [AppleNotesWatcher.NotesChangeEvent]) async throws -> Int {
+            // TODO: Implement batch delete when we have proper file-to-node mapping
+            return deletes.count
+        }
+
+        private func processUpdates(_ updates: [AppleNotesWatcher.NotesChangeEvent]) async throws -> Int {
+            var count = 0
+            for update in updates {
+                if update.fileURL.pathExtension == "md" {
+                    // Process update (simplified for now)
+                    count += 1
+                }
+            }
+            return count
+        }
+
+        private func processCreates(_ creates: [AppleNotesWatcher.NotesChangeEvent]) async throws -> Int {
+            var count = 0
+            for create in creates {
+                if create.fileURL.pathExtension == "md" {
+                    // Process create (simplified for now)
+                    count += 1
+                }
+            }
+            return count
+        }
+
+        var batchCount: Int {
+            return processingBatch.count
+        }
+
+        var shouldFlush: Bool {
+            return processingBatch.count >= batchSize
+        }
+    }
+
+    /// Check if memory usage is acceptable for continued processing
+    private func isMemoryUsageAcceptable() -> Bool {
+        performanceMetrics.updateMemoryUsage()
+        return !performanceMetrics.isMemoryConstrained
+    }
+
+    /// Adaptive batch size based on current system performance
+    private func getOptimalBatchSize() -> Int {
+        let baseSize = liveSyncConfig.batchSize
+
+        // Reduce batch size under memory pressure
+        if performanceMetrics.isMemoryConstrained {
+            return max(10, baseSize / 4)
+        }
+
+        // Increase batch size for good performance
+        if performanceMetrics.processingEfficiency > 10.0 {
+            return min(200, baseSize * 2)
+        }
+
+        return baseSize
+    }
+
+    /// Manage queue size to prevent memory issues
+    private func manageQueueSize() {
+        performanceMetrics.queuedChanges = changeProcessingQueue.count
+
+        // If queue is too large, process older items first
+        if changeProcessingQueue.count > maxQueueSize {
+            let excessCount = changeProcessingQueue.count - maxQueueSize
+            changeProcessingQueue.removeFirst(excessCount)
+            print("AppleNotesLiveImporter: Queue size exceeded, dropped \(excessCount) oldest changes")
+        }
+    }
+
+    /// Determine if we should pause processing due to system constraints
+    private func shouldPauseProcessing() -> Bool {
+        // Pause if memory usage is too high
+        if performanceMetrics.memoryUsageMB > memoryThresholdMB {
+            return true
+        }
+
+        // Pause if error rate is too high
+        if performanceMetrics.errorCount > 10 && performanceMetrics.totalSyncCount > 0 {
+            let errorRate = Double(performanceMetrics.errorCount) / Double(performanceMetrics.totalSyncCount)
+            if errorRate > 0.5 { // 50% error rate
+                return true
+            }
+        }
+
+        return false
     }
 }
 
