@@ -46,6 +46,8 @@ export interface LiveDataPerformanceMetrics {
   lastError: string | null;
   cacheHitRate: number;
   totalDataTransferred: number;
+  eventCount: number; // Total events processed
+  outOfOrderPercentage: number; // Percentage of out-of-order events
 }
 
 interface SubscriptionState<T> {
