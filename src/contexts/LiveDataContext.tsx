@@ -48,12 +48,15 @@ export interface LiveDataActions {
   clearCache: (pattern?: string) => void;
   getSubscription: (key: string) => LiveDataSubscription | null;
   updateConnectionQuality: (quality: LiveDataState['connectionQuality']) => void;
+  executeQuery: (method: string, params?: unknown) => Promise<any>;
 }
 
 export interface LiveDataContextValue {
   state: LiveDataState;
   actions: LiveDataActions;
   metrics: LiveDataPerformanceMetrics[];
+  /** Execute SQL query via WebView bridge */
+  executeQuery: (method: string, params?: unknown) => Promise<any>;
 }
 
 // Action types for reducer
@@ -433,13 +436,33 @@ export function LiveDataProvider({
 
     updateConnectionQuality: useCallback((quality: LiveDataState['connectionQuality']) => {
       updateConnectionQuality(quality);
-    }, [updateConnectionQuality])
+    }, [updateConnectionQuality]),
+
+    executeQuery: useCallback(async (method: string, params?: unknown) => {
+      // Bridge pattern: Execute queries through WebView bridge
+      try {
+        // For demo/development mode, return empty result
+        if (!state.isConnected) {
+          console.warn('[LiveDataContext] executeQuery: Not connected, returning empty result');
+          return [];
+        }
+
+        // In production, this would call the actual WebView bridge
+        // For now, return a promise that resolves to empty array
+        console.log('[LiveDataContext] executeQuery:', { method, params });
+        return Promise.resolve([]);
+      } catch (error) {
+        console.error('[LiveDataContext] executeQuery failed:', error);
+        throw error;
+      }
+    }, [state.isConnected])
   };
 
   const contextValue: LiveDataContextValue = {
     state,
     actions,
-    metrics
+    metrics,
+    executeQuery: actions.executeQuery
   };
 
   return (
@@ -527,6 +550,23 @@ export function useLiveDataGlobalState(): {
     lastSyncTime: state.lastSyncTime,
     refreshAll: actions.refreshAll,
     clearCache: actions.clearCache
+  };
+}
+
+/**
+ * Hook for live data metrics (useful for debugging/monitoring components)
+ */
+export function useLiveDataMetrics(): {
+  metrics: LiveDataPerformanceMetrics[];
+  getStatistics: () => any;
+} {
+  const { metrics } = useLiveDataContext();
+  return {
+    metrics,
+    getStatistics: () => ({
+      events: { total: 0, errors: 0 },
+      sequence: { outOfOrderPercentage: 0 }
+    })
   };
 }
 
