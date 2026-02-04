@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useLiveQuery } from '../../hooks/useLiveQuery';
-import { useLiveDataContext } from '../../context/LiveDataContext';
+import { useLiveDataContext } from '../../contexts/LiveDataContext';
 import { webViewBridge } from '../../utils/webview-bridge';
 
 interface TestNode {

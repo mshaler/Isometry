@@ -13,7 +13,7 @@ import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
 import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
-import { LiveDataProvider } from './context/LiveDataContext';
+import { LiveDataProvider } from './contexts/LiveDataContext';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { CardOverlayProvider } from './state/CardOverlayContext';
 
