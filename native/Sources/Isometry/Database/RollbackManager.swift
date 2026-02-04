@@ -140,7 +140,7 @@ public actor RollbackManager {
         let startTime = Date()
 
         guard let transaction = activeTransactions[transactionId] else {
-            throw RollbackError.transactionNotFound(transactionId)
+            throw RollbackManagerError.transactionNotFound(transactionId)
         }
 
         do {
@@ -191,7 +191,7 @@ public actor RollbackManager {
                 error: error.localizedDescription
             )
 
-            throw RollbackError.rollbackFailed(transactionId, error.localizedDescription)
+            throw RollbackManagerError.rollbackFailed(transactionId, error.localizedDescription)
         }
     }
 
@@ -420,7 +420,7 @@ public actor RollbackManager {
 
 // MARK: - Error Types
 
-public enum RollbackError: LocalizedError, Sendable {
+public enum RollbackManagerError: LocalizedError, Sendable {
     case transactionNotFound(String)
     case rollbackFailed(String, String)
     case draftCreationFailed(String)

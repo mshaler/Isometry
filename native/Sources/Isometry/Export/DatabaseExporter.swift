@@ -898,7 +898,7 @@ public actor DatabaseExporter {
             switch field.lowercased() {
             case "id": value = node.id
             case "name": value = escapeCSVValue(node.name, delimiter: fieldConfig.delimiter)
-            case "content": value = escapeCSVValue(node.content, delimiter: fieldConfig.delimiter)
+            case "content": value = escapeCSVValue(node.content ?? "", delimiter: fieldConfig.delimiter)
             case "created_at": value = ISO8601DateFormatter().string(from: node.createdAt)
             case "modified_at": value = ISO8601DateFormatter().string(from: node.modifiedAt)
             case "tags": value = escapeCSVValue(node.tags.joined(separator: ";"), delimiter: fieldConfig.delimiter)
@@ -919,7 +919,7 @@ public actor DatabaseExporter {
         var values = [
             "'\(node.id.replacingOccurrences(of: "'", with: "''"))'",
             "'\(node.name.replacingOccurrences(of: "'", with: "''"))'",
-            "'\(node.content.replacingOccurrences(of: "'", with: "''"))'",
+            "'\((node.content ?? "").replacingOccurrences(of: "'", with: "''"))'",
             "'\(ISO8601DateFormatter().string(from: node.createdAt))'",
             "'\(ISO8601DateFormatter().string(from: node.modifiedAt))'"
         ]
@@ -942,7 +942,7 @@ public actor DatabaseExporter {
         var xml = "      <node>\n"
         xml += "        <id>\(xmlEscape(node.id))</id>\n"
         xml += "        <name>\(xmlEscape(node.name))</name>\n"
-        xml += "        <content><![CDATA[\(node.content)]]></content>\n"
+        xml += "        <content><![CDATA[\(node.content ?? "")]]></content>\n"
         xml += "        <created_at>\(ISO8601DateFormatter().string(from: node.createdAt))</created_at>\n"
         xml += "        <modified_at>\(ISO8601DateFormatter().string(from: node.modifiedAt))</modified_at>\n"
 
@@ -1237,32 +1237,5 @@ public struct ExportPerformanceMetrics: Codable {
         let currentAverage = averageExportTime[format] ?? 0.0
         let currentCount = exportsByFormat[format] ?? 1
         averageExportTime[format] = (currentAverage * Double(currentCount - 1) + duration) / Double(currentCount)
-    }
-}
-
-/// Export error types
-public enum ExportError: Error, LocalizedError {
-    case exportFailed(DatabaseExportFormat, Error)
-    case batchExportFailed(UUID, Error)
-    case operationNotFound(UUID)
-    case unsupportedFormat(DatabaseExportFormat)
-    case validationFailed(String)
-    case configurationError(String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .exportFailed(let format, let error):
-            return "Export to \(format) failed: \(error.localizedDescription)"
-        case .batchExportFailed(let id, let error):
-            return "Batch export \(id.uuidString.prefix(8)) failed: \(error.localizedDescription)"
-        case .operationNotFound(let id):
-            return "Export operation not found: \(id.uuidString.prefix(8))"
-        case .unsupportedFormat(let format):
-            return "Unsupported export format: \(format)"
-        case .validationFailed(let reason):
-            return "Export validation failed: \(reason)"
-        case .configurationError(let message):
-            return "Export configuration error: \(message)"
-        }
     }
 }

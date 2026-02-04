@@ -543,7 +543,7 @@ extension ViolationCategory {
     }
 }
 
-extension ViolationSeverity {
+extension ComplianceViolationSeverity {
     var color: Color {
         switch self {
         case .low:

@@ -604,7 +604,7 @@ public actor AttachmentManager {
         try await database.write { db in
             // Get current node
             guard let node = try Node.fetchOne(db, sql: "SELECT * FROM nodes WHERE id = ?", arguments: [noteId]) else {
-                throw AttachmentError.processingFailed("Node not found", DatabaseError.notFound)
+                throw AttachmentError.processingFailed("Node not found", DatabaseError.nodeNotFound(id: noteId))
             }
 
             // Get current attachment references from node metadata
@@ -728,7 +728,7 @@ public actor AttachmentManager {
             sql += " ORDER BY last_accessed_at DESC LIMIT ?"
             arguments.append(limit)
 
-            let metadataList = try AttachmentMetadata.fetchAll(db, sql: sql, arguments: StatementArguments(arguments))
+            let metadataList = try AttachmentMetadata.fetchAll(db, sql: sql, arguments: arguments)
 
             return metadataList.map { metadata in
                 AttachmentInfo(

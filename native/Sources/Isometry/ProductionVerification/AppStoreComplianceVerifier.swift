@@ -424,7 +424,7 @@ public enum ViolationCategory {
     case technical
 }
 
-public enum ViolationSeverity {
+public enum ComplianceViolationSeverity {
     case low
     case medium
     case high
@@ -442,6 +442,6 @@ public struct ComplianceViolation: Identifiable {
     public let id: UUID
     public let category: ViolationCategory
     public let description: String
-    public let severity: ViolationSeverity
+    public let severity: ComplianceViolationSeverity
     public let timestamp: Date
 }

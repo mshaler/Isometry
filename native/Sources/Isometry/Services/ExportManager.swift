@@ -19,6 +19,13 @@ public enum ExportError: Error, LocalizedError {
     case renderTimeout
     case fileSystemError(String)
     case encodingError(String)
+    // Additional cases for DatabaseExporter compatibility
+    case exportFailed(DatabaseExportFormat, Error)
+    case batchExportFailed(UUID, Error)
+    case operationNotFound(UUID)
+    case unsupportedFormat(DatabaseExportFormat)
+    case validationFailed(String)
+    case configurationError(String)
 
     public var errorDescription: String? {
         switch self {
@@ -38,6 +45,18 @@ public enum ExportError: Error, LocalizedError {
             return "File system error: \(message)"
         case .encodingError(let message):
             return "Content encoding error: \(message)"
+        case .exportFailed(let format, let error):
+            return "Export to \(format) failed: \(error.localizedDescription)"
+        case .batchExportFailed(let id, let error):
+            return "Batch export \(id.uuidString.prefix(8)) failed: \(error.localizedDescription)"
+        case .operationNotFound(let id):
+            return "Export operation not found: \(id.uuidString.prefix(8))"
+        case .unsupportedFormat(let format):
+            return "Unsupported export format: \(format)"
+        case .validationFailed(let reason):
+            return "Export validation failed: \(reason)"
+        case .configurationError(let message):
+            return "Export configuration error: \(message)"
         }
     }
 }

@@ -100,7 +100,7 @@ public struct ComplianceViolationsDetailView: View {
 
     private var severityBreakdown: some View {
         HStack(spacing: 16) {
-            ForEach(ViolationSeverity.allCases, id: \.self) { severity in
+            ForEach(ComplianceViolationSeverity.allCases, id: \.self) { severity in
                 let count = violations.filter { $0.severity == severity }.count
                 if count > 0 {
                     VStack(spacing: 2) {
@@ -295,8 +295,8 @@ struct ViolationDetailRow: View {
 
 // MARK: - Extensions
 
-extension ViolationSeverity: CaseIterable {
-    public static var allCases: [ViolationSeverity] = [.critical, .high, .medium, .low]
+extension ComplianceViolationSeverity: CaseIterable {
+    public static var allCases: [ComplianceViolationSeverity] = [.critical, .high, .medium, .low]
 
     var displayText: String {
         switch self {
