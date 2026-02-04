@@ -6,18 +6,18 @@ public struct ConflictInfo: Sendable {
     public let nodeId: String
     public let localRecord: CKRecord
     public let serverRecord: CKRecord
-    public let conflictType: ConflictType
+    public let conflictType: DetectionConflictType
     public let detectedAt: Date
     public let fields: [String] // Specific fields in conflict
 
-    public enum ConflictType: String, Sendable {
+    public enum DetectionConflictType: String, Sendable {
         case fieldConflict = "field_conflict"
         case versionMismatch = "version_mismatch"
         case deletionConflict = "deletion_conflict"
         case typeChange = "type_change"
     }
 
-    public init(nodeId: String, localRecord: CKRecord, serverRecord: CKRecord, conflictType: ConflictType, detectedAt: Date = Date(), fields: [String] = []) {
+    public init(nodeId: String, localRecord: CKRecord, serverRecord: CKRecord, conflictType: DetectionConflictType, detectedAt: Date = Date(), fields: [String] = []) {
         self.nodeId = nodeId
         self.localRecord = localRecord
         self.serverRecord = serverRecord

@@ -280,7 +280,7 @@ public class LiveDataMessageHandler: NSObject, WKScriptMessageHandler {
 
 // MARK: - Error Types
 
-public enum LiveDataBridgeError: Error, LocalizedError {
+public enum MessageHandlerError: Error, LocalizedError {
     case missingParameters(String)
     case bridgeNotInitialized
     case unknownMethod(String)

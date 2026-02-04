@@ -1118,7 +1118,7 @@ public enum TransactionBridgeError: Error, LocalizedError {
 
 // MARK: - Live Data Bridge Errors
 
-public enum LiveDataBridgeError: Error, LocalizedError {
+public enum WebViewBridgeError: Error, LocalizedError {
     case missingParameters(String)
     case bridgeNotInitialized
     case unknownMethod(String)

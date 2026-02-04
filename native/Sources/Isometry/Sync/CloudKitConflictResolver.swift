@@ -19,7 +19,7 @@ public struct ResolvedConflict: Sendable {
 }
 
 /// Strategy used for conflict resolution
-public enum ResolutionStrategy: String, Sendable {
+public enum CloudKitResolutionStrategy: String, Sendable {
     case automaticMerge = "automatic_merge"
     case lastWriteWins = "last_write_wins"
     case fieldLevelMerge = "field_level_merge"

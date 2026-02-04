@@ -38,7 +38,7 @@ public enum SyncError: LocalizedError, Sendable {
 }
 
 /// Conflict resolution strategy
-public enum ConflictResolutionStrategy: Sendable {
+public enum CloudKitConflictResolutionStrategy: Sendable {
     /// Server version always wins (default for simplicity)
     case serverWins
     /// Local version always wins
@@ -57,9 +57,9 @@ public struct SyncConflict: Sendable {
     public let localNode: Node
     public let serverNode: Node
     public let detectedAt: Date
-    public let conflictType: ConflictType
+    public let conflictType: CloudKitConflictType
 
-    public enum ConflictType: String, Sendable {
+    public enum CloudKitConflictType: String, Sendable {
         case bothModified = "both_modified"
         case localDeleted = "local_deleted"
         case serverDeleted = "server_deleted"
@@ -100,7 +100,7 @@ public actor CloudKitSyncManager {
     private let maxRetries = 5
 
     // Conflict resolution
-    private var conflictStrategy: ConflictResolutionStrategy = .latestWins
+    private var conflictStrategy: CloudKitConflictResolutionStrategy = .latestWins
     private var pendingConflicts: [SyncConflict] = []
 
     // MARK: - Types
@@ -109,10 +109,10 @@ public actor CloudKitSyncManager {
     public struct ConflictResolution: Sendable {
         public let nodeId: String
         public let resolvedNode: Node
-        public let strategy: ConflictResolutionStrategy
+        public let strategy: CloudKitConflictResolutionStrategy
         public let resolvedAt: Date
 
-        public init(nodeId: String, resolvedNode: Node, strategy: ConflictResolutionStrategy, resolvedAt: Date) {
+        public init(nodeId: String, resolvedNode: Node, strategy: CloudKitConflictResolutionStrategy, resolvedAt: Date) {
             self.nodeId = nodeId
             self.resolvedNode = resolvedNode
             self.strategy = strategy
@@ -152,7 +152,7 @@ public actor CloudKitSyncManager {
     // MARK: - Configuration
 
     /// Sets the conflict resolution strategy
-    public func setConflictResolutionStrategy(_ strategy: ConflictResolutionStrategy) {
+    public func setConflictResolutionStrategy(_ strategy: CloudKitConflictResolutionStrategy) {
         self.conflictStrategy = strategy
     }
 

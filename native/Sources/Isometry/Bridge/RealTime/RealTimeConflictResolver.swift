@@ -12,7 +12,7 @@ import GRDB
 import OSLog
 
 /// Types of conflicts that can occur
-public enum ConflictType: String, Sendable, Codable {
+public enum RealTimeConflictType: String, Sendable, Codable {
     case textEdit = "text_edit"
     case propertyUpdate = "property_update"
     case relationshipChange = "relationship_change"
@@ -22,7 +22,7 @@ public enum ConflictType: String, Sendable, Codable {
 }
 
 /// Conflict resolution strategy
-public enum ResolutionStrategy: String, Sendable, Codable {
+public enum RealTimeResolutionStrategy: String, Sendable, Codable {
     case automatic = "automatic"
     case mergeFirst = "merge_first"
     case userChoice = "user_choice"
@@ -34,7 +34,7 @@ public enum ResolutionStrategy: String, Sendable, Codable {
 /// Conflict data structure
 public struct ConflictData: Sendable, Codable {
     public let id: String
-    public let type: ConflictType
+    public let type: RealTimeConflictType
     public let tableName: String
     public let recordId: String
     public let fieldName: String?
@@ -49,7 +49,7 @@ public struct ConflictData: Sendable, Codable {
 
     public init(
         id: String,
-        type: ConflictType,
+        type: RealTimeConflictType,
         tableName: String,
         recordId: String,
         fieldName: String? = nil,
@@ -81,7 +81,7 @@ public struct ConflictData: Sendable, Codable {
 /// Conflict resolution result
 public struct ConflictResolution: Sendable, Codable {
     public let conflictId: String
-    public let strategy: ResolutionStrategy
+    public let strategy: RealTimeResolutionStrategy
     public let resolvedValue: String?
     public let requiresUserInput: Bool
     public let autoResolved: Bool
@@ -90,7 +90,7 @@ public struct ConflictResolution: Sendable, Codable {
 
     public init(
         conflictId: String,
-        strategy: ResolutionStrategy,
+        strategy: RealTimeResolutionStrategy,
         resolvedValue: String?,
         requiresUserInput: Bool,
         autoResolved: Bool,
@@ -177,7 +177,7 @@ public actor RealTimeConflictResolver {
     private var resolutionHistory: [ConflictResolution] = []
 
     // Resolution patterns learned from user choices
-    private var resolutionPatterns: [String: ResolutionStrategy] = [:]
+    private var resolutionPatterns: [String: RealTimeResolutionStrategy] = [:]
 
     // Change notification bridge integration
     private weak var changeNotificationBridge: ChangeNotificationBridge?
@@ -340,7 +340,7 @@ public actor RealTimeConflictResolver {
     /// Apply user resolution to deferred conflict
     public func applyUserResolution(
         conflictId: String,
-        strategy: ResolutionStrategy,
+        strategy: RealTimeResolutionStrategy,
         resolvedValue: String?
     ) async -> Bool {
         guard let conflict = deferredConflicts[conflictId] else {
@@ -498,7 +498,7 @@ public actor RealTimeConflictResolver {
         return await applyResolutionStrategy(conflict: conflict, strategy: strategy)
     }
 
-    private func determineResolutionStrategy(_ conflict: ConflictData) -> ResolutionStrategy {
+    private func determineResolutionStrategy(_ conflict: ConflictData) -> RealTimeResolutionStrategy {
         switch conflict.type {
         case .textEdit:
             // Text edits can often be automatically merged
@@ -530,7 +530,7 @@ public actor RealTimeConflictResolver {
 
     private func applyResolutionStrategy(
         conflict: ConflictData,
-        strategy: ResolutionStrategy
+        strategy: RealTimeResolutionStrategy
     ) async -> ConflictResolution {
 
         switch strategy {
@@ -659,7 +659,7 @@ public actor RealTimeConflictResolver {
         return String(describing: value1) == String(describing: value2)
     }
 
-    private func determineConflictType(fieldName: String, currentValue: Any, newValue: Any) -> ConflictType {
+    private func determineConflictType(fieldName: String, currentValue: Any, newValue: Any) -> RealTimeConflictType {
         if fieldName.contains("text") || fieldName.contains("content") || fieldName.contains("description") {
             return .textEdit
         } else if fieldName.contains("_id") || fieldName.contains("parent") || fieldName.contains("child") {
@@ -758,7 +758,7 @@ public actor RealTimeConflictResolver {
         return []
     }
 
-    private func learnResolutionPattern(conflict: ConflictData, strategy: ResolutionStrategy) {
+    private func learnResolutionPattern(conflict: ConflictData, strategy: RealTimeResolutionStrategy) {
         let patternKey = "\(conflict.tableName):\(conflict.fieldName ?? ""):\(conflict.type.rawValue)"
         resolutionPatterns[patternKey] = strategy
 

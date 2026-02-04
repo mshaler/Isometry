@@ -703,7 +703,7 @@ public struct DatabaseChangeDiff: Codable, Sendable {
 
 public struct DatabaseConflict: Codable, Sendable {
     public let id: UUID
-    public let type: ConflictType
+    public let type: DatabaseConflictType
     public let table: String
     public let recordId: String
     public let sourceChange: DatabaseChange
@@ -711,7 +711,7 @@ public struct DatabaseConflict: Codable, Sendable {
     public let detectedAt: Date
 }
 
-public enum ConflictType: String, Codable, CaseIterable, Sendable {
+public enum DatabaseConflictType: String, Codable, CaseIterable, Sendable {
     case modificationConflict = "modification_conflict"
     case deletionConflict = "deletion_conflict"
     case schemaConflict = "schema_conflict"

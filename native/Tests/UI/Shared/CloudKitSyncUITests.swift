@@ -459,12 +459,12 @@ struct CrossDeviceConflict {
     let nodeId: UUID
     let localDevice: String
     let remoteDevice: String
-    let conflictType: ConflictType
+    let conflictType: UITestConflictType
     let localTimestamp: Date
     let remoteTimestamp: Date
 }
 
-enum ConflictType {
+enum UITestConflictType {
     case contentMismatch
     case priorityMismatch
     case tagsMismatch

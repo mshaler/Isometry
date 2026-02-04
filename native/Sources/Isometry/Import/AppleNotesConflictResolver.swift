@@ -20,7 +20,7 @@ public actor AppleNotesConflictResolver {
     // MARK: - Conflict Types and Data Structures
 
     /// Types of conflicts that can occur during synchronization
-    public enum ConflictType: String, Sendable, CaseIterable {
+    public enum NotesConflictType: String, Sendable, CaseIterable {
         case contentConflict = "content_conflict"
         case metadataConflict = "metadata_conflict"
         case deletionConflict = "deletion_conflict"
@@ -48,7 +48,7 @@ public actor AppleNotesConflictResolver {
     }
 
     /// Resolution strategies for different conflict types
-    public enum ResolutionStrategy: String, Sendable, CaseIterable {
+    public enum NotesResolutionStrategy: String, Sendable, CaseIterable {
         case lastWriteWins = "last_write_wins"
         case mergeChanges = "merge_changes"
         case keepBoth = "keep_both"
@@ -68,13 +68,13 @@ public actor AppleNotesConflictResolver {
     /// Represents a conflict between two versions of a note
     public struct NoteConflict: Sendable, Identifiable {
         public let id: String
-        public let conflictType: ConflictType
+        public let conflictType: NotesConflictType
         public let localNode: Node
         public let remoteNode: Node
         public let detectedAt: Date
         public let metadata: [String: String]
 
-        public init(id: String = UUID().uuidString, conflictType: ConflictType, localNode: Node, remoteNode: Node, detectedAt: Date = Date(), metadata: [String: String] = [:]) {
+        public init(id: String = UUID().uuidString, conflictType: NotesConflictType, localNode: Node, remoteNode: Node, detectedAt: Date = Date(), metadata: [String: String] = [:]) {
             self.id = id
             self.conflictType = conflictType
             self.localNode = localNode
@@ -95,13 +95,13 @@ public actor AppleNotesConflictResolver {
     public struct ConflictResolution: Sendable, Identifiable {
         public let id: String
         public let conflictId: String
-        public let strategy: ResolutionStrategy
+        public let strategy: NotesResolutionStrategy
         public let resolvedNode: Node
         public let resolvedAt: Date
         public let wasAutomaticResolution: Bool
         public let preservedData: [String: Any]?
 
-        public init(id: String = UUID().uuidString, conflictId: String, strategy: ResolutionStrategy, resolvedNode: Node, resolvedAt: Date = Date(), wasAutomaticResolution: Bool = false, preservedData: [String: Any]? = nil) {
+        public init(id: String = UUID().uuidString, conflictId: String, strategy: NotesResolutionStrategy, resolvedNode: Node, resolvedAt: Date = Date(), wasAutomaticResolution: Bool = false, preservedData: [String: Any]? = nil) {
             self.id = id
             self.conflictId = conflictId
             self.strategy = strategy
@@ -134,7 +134,7 @@ public actor AppleNotesConflictResolver {
         var automaticallyResolved: Int = 0
         var userResolvedCount: Int = 0
         var averageResolutionTime: TimeInterval = 0
-        var conflictsByType: [ConflictType: Int] = [:]
+        var conflictsByType: [NotesConflictType: Int] = [:]
 
         mutating func recordConflict(_ conflict: NoteConflict, resolutionTime: TimeInterval, wasAutomatic: Bool) {
             totalConflictsDetected += 1
@@ -185,8 +185,8 @@ public actor AppleNotesConflictResolver {
     }
 
     /// Detect specific types of conflicts between two nodes
-    private func detectConflictTypes(local: Node, remote: Node) -> [ConflictType] {
-        var conflicts: [ConflictType] = []
+    private func detectConflictTypes(local: Node, remote: Node) -> [NotesConflictType] {
+        var conflicts: [NotesConflictType] = []
 
         // Content conflicts
         if hasContentConflict(local: local, remote: remote) {
@@ -242,7 +242,7 @@ public actor AppleNotesConflictResolver {
                local.folder != remote.folder
     }
 
-    private func generateConflictMetadata(local: Node, remote: Node, conflictTypes: [ConflictType]) -> [String: String] {
+    private func generateConflictMetadata(local: Node, remote: Node, conflictTypes: [NotesConflictType]) -> [String: String] {
         var metadata: [String: String] = [:]
 
         metadata["conflict_types"] = conflictTypes.map { $0.rawValue }.joined(separator: ",")
@@ -261,7 +261,7 @@ public actor AppleNotesConflictResolver {
     // MARK: - Conflict Resolution
 
     /// Resolve a detected conflict using appropriate strategy
-    public func resolveConflict(_ conflict: NoteConflict, strategy: ResolutionStrategy? = nil) async throws -> ConflictResolution {
+    public func resolveConflict(_ conflict: NoteConflict, strategy: NotesResolutionStrategy? = nil) async throws -> ConflictResolution {
         let startTime = Date()
 
         // Track conflict state
@@ -310,7 +310,7 @@ public actor AppleNotesConflictResolver {
     }
 
     /// Select automatic resolution strategy based on conflict type and characteristics
-    private func selectAutomaticStrategy(for conflict: NoteConflict) -> ResolutionStrategy {
+    private func selectAutomaticStrategy(for conflict: NoteConflict) -> NotesResolutionStrategy {
         switch conflict.conflictType {
         case .metadataConflict:
             return .lastWriteWins
@@ -353,7 +353,7 @@ public actor AppleNotesConflictResolver {
     }
 
     /// Perform the actual conflict resolution
-    private func performResolution(conflict: NoteConflict, strategy: ResolutionStrategy) async throws -> Node {
+    private func performResolution(conflict: NoteConflict, strategy: NotesResolutionStrategy) async throws -> Node {
         print("AppleNotesConflictResolver: Performing \(strategy.rawValue) resolution for \(conflict.conflictType.rawValue)")
 
         switch strategy {
