@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 // Router and providers are handled by parent MVPDemo component
 
 // Import all Figma components
 import { Toolbar } from './Toolbar';
 import { Navigator } from './Navigator';
-import { Sidebar } from './Sidebar';
+import { HeaderBar } from './chrome/HeaderBar';
+import { Sidebar } from './chrome/Sidebar';
 import { RightSidebar } from './RightSidebar';
 import { Canvas } from './Canvas';
 import { NavigatorFooter } from './NavigatorFooter';
@@ -34,6 +35,10 @@ import { useConflictResolution } from '../hooks/useConflictResolution';
  * - CommandBar (DSL input)
  */
 export function UnifiedApp() {
+  // State for chrome layout coordination
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+
   // Initialize conflict resolution (will not show modal unless conflicts exist)
   const {
     conflicts,
@@ -79,6 +84,14 @@ export function UnifiedApp() {
         <Toolbar />
       </ErrorBoundary>
 
+      {/* HeaderBar: Breadcrumbs + Search + Actions */}
+      <ErrorBoundary level="component" name="HeaderBar">
+        <HeaderBar
+          onSidebarToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          sidebarCollapsed={sidebarCollapsed}
+        />
+      </ErrorBoundary>
+
       {/* Navigator: App/View/Dataset selectors */}
       <ErrorBoundary level="component" name="Navigator">
         <Navigator />
@@ -90,7 +103,10 @@ export function UnifiedApp() {
       <div className="flex-1 flex min-h-0">
         {/* Left Sidebar: LATCH filters + Templates */}
         <ErrorBoundary level="feature" name="Sidebar">
-          <Sidebar />
+          <Sidebar
+            isCollapsed={sidebarCollapsed}
+            onCollapsedChange={setSidebarCollapsed}
+          />
         </ErrorBoundary>
 
         {/* Central Canvas: Main data visualization */}
