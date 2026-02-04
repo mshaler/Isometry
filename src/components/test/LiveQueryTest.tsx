@@ -146,8 +146,7 @@ export function LiveQueryTest() {
 
       const newNode = await webViewBridge.database.createNode({
         name: testName,
-        content: testContent,
-        type: 'test'
+        content: testContent
       });
 
       addTestResult(`✅ Node created with ID: ${newNode.id}`);
@@ -195,8 +194,7 @@ export function LiveQueryTest() {
           // Update node on server
           await webViewBridge.database.updateNode({
             id: testNode.id,
-            name: `Updated ${testNode.name}`,
-            updated_at: new Date().toISOString()
+            name: `Updated ${testNode.name}`
           });
 
           addTestResult('✅ Server update completed (should reconcile with optimistic)');
@@ -397,7 +395,7 @@ export function LiveQueryTest() {
 
         <button
           onClick={testOptimisticUpdates}
-          disabled={isTestRunning || !isConnected || !nodes?.length}
+          disabled={isTestRunning || !nodes?.length}
           className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 disabled:bg-gray-300"
         >
           Optimistic Updates

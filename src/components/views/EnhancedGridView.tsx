@@ -16,7 +16,7 @@ import type { Node } from '../../types/node';
  * - Performance optimized with React.memo
  */
 export const EnhancedGridView = React.memo<ViewComponentProps>(({
-  data,
+  data: _data,
   onNodeClick,
   transitionState: _transitionState
 }) => {

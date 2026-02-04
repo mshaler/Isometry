@@ -96,7 +96,7 @@ const SUGGESTION_TYPES = {
 export function EnhancedNetworkView({
   data,
   onNodeClick,
-  showDebugPanel = false,
+  showDebugPanel: _showDebugPanel = false,
   enablePerformanceMonitoring = true
 }: EnhancedNetworkViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
@@ -156,7 +156,7 @@ export function EnhancedNetworkView({
   const graphMetrics = useGraphMetrics();
 
   // Fetch edges with enhanced error handling
-  const { data: edges, isLoading: edgesLoading, error: edgesError } = useSQLiteQuery<EdgeData>('SELECT * FROM edges');
+  const { data: edges, loading: edgesLoading, error: edgesError } = useSQLiteQuery<EdgeData>('SELECT * FROM edges');
 
   // Performance monitoring integration
   const performanceMetricsRef = useRef<{ startTime: number; frameCount: number }>({
@@ -225,8 +225,8 @@ export function EnhancedNetworkView({
 
         return {
           suggestion,
-          source: selectedNodeData as SimNode,
-          target: targetNode as SimNode,
+          source: selectedNodeData as unknown as SimNode,
+          target: targetNode as unknown as SimNode,
           opacity,
           strokeWidth,
           color: typeConfig.color
