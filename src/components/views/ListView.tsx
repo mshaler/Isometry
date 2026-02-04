@@ -10,7 +10,6 @@ import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 
 // Item heights for virtualization
 const ITEM_HEIGHT = 100; // Regular list item height
-const GROUP_HEADER_HEIGHT = 44; // Group header height
 const SEARCH_BAR_HEIGHT = 60; // Search controls height
 
 interface ListViewProps {
@@ -89,7 +88,6 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
 
   const {
     adaptationMetrics,
-    queueOptimizedSync,
     isProcessing
   } = useNetworkAwareSync({
     enableRealTimeSync: {
@@ -126,16 +124,6 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
     );
   }, [handleItemClick, selection.selectedIds]);
 
-  // Network-aware live options
-  const networkAwareLiveOptions = useMemo(() => ({
-    estimateItemSize: ITEM_HEIGHT,
-    overscan: networkQuality === 'high' ? 15 : networkQuality === 'medium' ? 10 : 5,
-    enableDynamicSizing: networkQuality !== 'low',
-    performanceMonitoring: true,
-    enableVirtualCaching: true,
-    updateBatchingMs: networkQuality === 'high' ? 50 : networkQuality === 'medium' ? 100 : 300,
-    ...liveOptions
-  }), [networkQuality, liveOptions]);
 
   // Network status indicator
   const getNetworkIcon = () => {
@@ -254,7 +242,7 @@ export function ListView({ sql, queryParams = [], liveOptions = { containerHeigh
             </div>
           </div>
         ) : (
-          <VirtualizedList<Node>
+          <VirtualizedList
             ref={listRef}
             data={nodes}
             height={window.innerHeight - SEARCH_BAR_HEIGHT - 100} // Adjust for header/footer
