@@ -67,13 +67,6 @@ public struct SyncConflict: Sendable {
     }
 }
 
-/// Result of conflict resolution
-public struct ConflictResolution: Sendable {
-    public let nodeId: String
-    public let resolvedNode: Node
-    public let strategy: ConflictResolutionStrategy
-    public let resolvedAt: Date
-}
 
 /// Thread-safe CloudKit sync manager
 ///
@@ -109,6 +102,23 @@ public actor CloudKitSyncManager {
     // Conflict resolution
     private var conflictStrategy: ConflictResolutionStrategy = .latestWins
     private var pendingConflicts: [SyncConflict] = []
+
+    // MARK: - Types
+
+    /// Result of conflict resolution
+    public struct ConflictResolution: Sendable {
+        public let nodeId: String
+        public let resolvedNode: Node
+        public let strategy: ConflictResolutionStrategy
+        public let resolvedAt: Date
+
+        public init(nodeId: String, resolvedNode: Node, strategy: ConflictResolutionStrategy, resolvedAt: Date) {
+            self.nodeId = nodeId
+            self.resolvedNode = resolvedNode
+            self.strategy = strategy
+            self.resolvedAt = resolvedAt
+        }
+    }
 
     // MARK: - Progress Tracking
 
