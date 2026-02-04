@@ -54,16 +54,14 @@ interface GestureState {
  * - Performance optimization with canvas rendering
  */
 export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewProps) {
-  const { wells } = usePAFV();
+  const pafvContext = usePAFV();
   const { theme } = useTheme();
 
   // Live query for real-time data updates
   const {
     data,
     loading: isLoading,
-    error,
-    isLive,
-    connectionState
+    error
   } = useLiveQuery<Node>(sql, {
     params: queryParams,
     autoStart: true,
@@ -93,7 +91,6 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
   });
 
   // Bridge state for gesture coordination
-  const [nativeGestureState, setNativeGestureState] = useState<GestureState | null>(null);
   const [performanceMetrics, setPerformanceMetrics] = useState<{ native?: NativeRenderingMetrics; comparison?: any }>({});
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -137,8 +134,6 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
 
   // Bridge integration for gesture coordination
   const handleNativeGestureUpdate = useCallback((gestureState: GestureState) => {
-    setNativeGestureState(gestureState);
-
     // Update D3 zoom transform to match native gesture
     if (containerRef.current && gestureState.isActive) {
       setInteractionState(prev => ({
@@ -191,7 +186,7 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
   }, []);
 
   // Debounced gesture bridge update
-  const sendGestureToBridge = useCallback((transform: d3.ZoomTransform) => {
+  const sendGestureToBridge = useCallback((_transform: d3.ZoomTransform) => {
     if (gestureDebounceRef.current) {
       clearTimeout(gestureDebounceRef.current);
     }
@@ -275,8 +270,10 @@ export function D3GridView({ sql, queryParams = [], onNodeClick }: D3GridViewPro
     };
   }, [sendGestureToBridge, handleNativeGestureUpdate, handleNativePerformanceUpdate]);
 
-  // Calculate axis summary for display
-  const axisSummary = `${wells.rows.map(chip => chip.label).join(' × ')} vs ${wells.columns.map(chip => chip.label).join(' × ')}`;
+  // Calculate axis summary for display from PAFV state
+  const axisSummary = pafvContext.state.mappings.length > 0
+    ? pafvContext.state.mappings.map(m => `${m.plane}:${m.facet}`).join(' × ')
+    : 'No axes configured';
 
   // Handle loading and error states
   if (isLoading && (!data || !data.length)) {

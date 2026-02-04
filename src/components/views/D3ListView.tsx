@@ -58,7 +58,7 @@ const SEARCH_BAR_HEIGHT = 60;
  * - Smooth transitions and visual feedback
  */
 export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewProps) {
-  const { wells } = usePAFV();
+  const pafvContext = usePAFV();
   const { theme } = useTheme();
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -99,9 +99,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
   const {
     data,
     loading: isLoading,
-    error,
-    isLive,
-    connectionState
+    error
   } = useLiveQuery<Node>(enhancedSql, {
     params: queryParams,
     autoStart: true,
@@ -119,7 +117,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
 
   // Create groups based on PAFV Y-axis
   const groups = useMemo((): ListGroup[] => {
-    if (!data || !listState.groupingEnabled || wells.rows.length === 0) {
+    if (!data || !listState.groupingEnabled || pafvContext.state.mappings.length === 0) {
       return [{
         key: 'all',
         label: 'All Items',
@@ -129,10 +127,11 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
     }
 
     const groupMap = new Map<string, Node[]>();
-    const firstRowChip = wells.rows[0];
+    const yAxisMapping = pafvContext.state.mappings.find(m => m.plane === 'y');
+    const groupField = yAxisMapping?.facet || 'folder';
 
     (data || []).forEach(node => {
-      const groupValue = getFieldValue(node, firstRowChip.id);
+      const groupValue = getFieldValue(node, groupField);
       const groupKey = String(groupValue);
 
       if (!groupMap.has(groupKey)) {
@@ -151,7 +150,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       }),
       collapsed: listState.collapsedGroups.has(key)
     }));
-  }, [data, wells.rows, listState.groupingEnabled, listState.collapsedGroups, listState.sortDirection]);
+  }, [data, pafvContext.state.mappings, listState.groupingEnabled, listState.collapsedGroups, listState.sortDirection]);
 
   // Filter nodes by search query
   const filteredGroups = useMemo((): ListGroup[] => {
@@ -233,14 +232,14 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
   }, [listItems, scrollTop, containerHeight]);
 
   // Helper function to get field value
-  function getFieldValue(node: Node, chipId: string): string {
+  function getFieldValue(node: Node, fieldName: string): string {
     const fieldMap: Record<string, keyof Node> = {
       folder: 'folder',
       status: 'status',
       priority: 'priority',
     };
 
-    const field = fieldMap[chipId] || 'folder';
+    const field = fieldMap[fieldName] || 'folder';
     return String(node[field] ?? 'Unknown');
   }
 
@@ -336,7 +335,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .on('click', (_event, d) => handleItemClick(d.item));
 
     // Render group headers
-    const groupHeaders = itemGroups.filter(d => d.item.isGroupHeader ?? false);
+    const groupHeaders = itemGroups.filter((d: { item: ListItem; y: number; height: number }) => d.item.isGroupHeader ?? false);
 
     groupHeaders
       .append('rect')
@@ -354,7 +353,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .attr('fill', '#374151')
-      .text(d => d.item.groupLabel || '');
+      .text((d: { item: ListItem; y: number; height: number }) => d.item.groupLabel || '');
 
     groupHeaders
       .append('text')
@@ -363,10 +362,10 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('dominant-baseline', 'central')
       .attr('font-size', '10px')
       .attr('fill', '#6b7280')
-      .text(d => `${d.item.groupCount} items`);
+      .text((d: { item: ListItem; y: number; height: number }) => `${d.item.groupCount} items`);
 
     // Render regular items
-    const regularItems = itemGroups.filter(d => !d.item.isGroupHeader);
+    const regularItems = itemGroups.filter((d: { item: ListItem; y: number; height: number }) => !d.item.isGroupHeader);
 
     regularItems
       .append('rect')
@@ -375,11 +374,11 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('fill', 'white')
       .attr('stroke', theme === 'NeXTSTEP' ? '#c0c0c0' : '#e5e7eb')
       .attr('stroke-width', 0.5)
-      .on('mouseenter', function(_event, d) {
+      .on('mouseenter', function(_event, d: { item: ListItem; y: number; height: number }) {
         d3.select(this).attr('fill', theme === 'NeXTSTEP' ? '#f5f5f5' : '#f9fafb');
         setListState(prev => ({ ...prev, hoveredItem: d.item.id }));
       })
-      .on('mouseleave', function(_event, _d) {
+      .on('mouseleave', function(_event, _d: { item: ListItem; y: number; height: number }) {
         d3.select(this).attr('fill', 'white');
         setListState(prev => ({ ...prev, hoveredItem: null }));
       });
@@ -392,7 +391,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('font-size', '14px')
       .attr('font-weight', '500')
       .attr('fill', '#111827')
-      .text(d => d.item.node.name || '');
+      .text((d: { item: ListItem; y: number; height: number }) => d.item.node.name || '');
 
     // Item content
     regularItems
@@ -401,7 +400,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('y', 38)
       .attr('font-size', '12px')
       .attr('fill', '#6b7280')
-      .text(d => {
+      .text((d: { item: ListItem; y: number; height: number }) => {
         const content = d.item.node.content || '';
         return content.length > 60 ? content.substring(0, 60) + '...' : content;
       });
@@ -413,7 +412,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('y', 58)
       .attr('font-size', '10px')
       .attr('fill', '#9ca3af')
-      .text(d => {
+      .text((d: { item: ListItem; y: number; height: number }) => {
         const node = d.item.node;
         return `${node.folder} • ${node.status} • ${node.priority}`;
       });
@@ -425,7 +424,7 @@ export function D3ListView({ sql, queryParams = [], onNodeClick }: D3ListViewPro
       .attr('y', 10)
       .attr('width', 4)
       .attr('height', ITEM_HEIGHT - 20)
-      .attr('fill', d => {
+      .attr('fill', (d: { item: ListItem; y: number; height: number }) => {
         const priority = d.item.node.priority;
         return priority >= 7 ? '#ef4444' :
                priority >= 4 ? '#f59e0b' : '#10b981';
