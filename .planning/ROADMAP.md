@@ -21,7 +21,7 @@
 - ✅ **v3.1 Live Database Integration** - Phases 18-21, 25-27 (shipped 2026-02-01) - [Details](milestones/v3.1-ROADMAP.md)
 - 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
 - 🆕 **v3.3 Complete Apple Notes Data Lifecycle** - Phase 30 (Native access, CAS storage, verification pipeline, database operations) - 📋 PLANNED
-- 🆕 **v3.4 Multi-Environment Debugging** - Phase 32 (Swift/TypeScript/D3/React debugging and stabilization) - 📋 CURRENT
+- 🆕 **v3.4 Multi-Environment Debugging** - Phase 32 (Swift/TypeScript/D3/React debugging and stabilization) - 🔧 CURRENT
 
 ## Milestone Overview
 
@@ -240,7 +240,7 @@ Plans:
   3. D3.js visualizations render properly and integrate seamlessly with React components
   4. React UI chrome components provide functional development interface with working layouts
   5. Both environments support parallel development without blocking compilation issues
-**Plans:** 8 plans
+**Plans:** 11 plans
 
 **Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
 
@@ -250,9 +250,12 @@ Plans:
 - [x] 32-03-PLAN.md — Restore broken Swift files and fix D3.js integration
 - [x] 32-04-PLAN.md — Fix React UI chrome components and layout coordination
 - [x] 32-05-PLAN.md — Compilation gap closure for D3 Canvas component
-- [ ] 32-06-PLAN.md — Fix critical interface gaps in LiveDataContext and useLiveQuery
-- [ ] 32-07-PLAN.md — Complete TypeScript cleanup with d3-optimization fixes
-- [ ] 32-08-PLAN.md — Fix view component TypeScript errors and prop interfaces
+- [x] 32-06-PLAN.md — Fix critical interface gaps in LiveDataContext and useLiveQuery
+- [x] 32-07-PLAN.md — Complete TypeScript cleanup with d3-optimization fixes
+- [x] 32-08-PLAN.md — Fix view component TypeScript errors and prop interfaces
+- [ ] 32-09-PLAN.md — Fix TypeScript interface missing properties gap closure
+- [ ] 32-10-PLAN.md — Fix Swift ConflictResolution type regression gap closure
+- [ ] 32-11-PLAN.md — Clean up TypeScript unused variables and type safety gap closure
 
 ## Dependencies
 
@@ -346,7 +349,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
 | 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
-| 32. Multi-Environment Debugging | 4/4 | 🔧 Current Phase | - |
+| 32. Multi-Environment Debugging | 11/11 | 🔧 Gap Closure | - |
 
 ## Architecture Integration Summary
 
@@ -579,4 +582,4 @@ Actor Patterns          Message Serialization        React Component Tree
 
 ---
 
-*Last updated: 2026-02-04 after Phase 32 debugging plan creation*
+*Last updated: 2026-02-04 after Phase 32 gap closure plan creation*
