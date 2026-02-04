@@ -218,11 +218,11 @@ Plans:
 **Foundation:** AltoIndexImporter proven capability enhanced with native database access, comprehensive attachment management, enterprise-grade verification, complete operations suite, and sophisticated testing framework.
 
 Plans:
-- [ ] 30-01-PLAN.md — Native Apple Notes importer with TCC permission management and direct database access
-- [ ] 30-02-PLAN.md — Content-Addressable Storage system for attachments with deduplication and metadata preservation
-- [ ] 30-03-PLAN.md — Data verification pipeline with >99.9% accuracy validation and automated comparison
-- [ ] 30-04-PLAN.md — Database lifecycle operations (dump, restore, export, purge, rehydrate) with versioning
-- [ ] 30-05-PLAN.md — Comprehensive property-based test framework with round-trip validation
+- [x] 30-01-PLAN.md — Native Apple Notes importer with TCC permission management and direct database access
+- [x] 30-02-PLAN.md — Content-Addressable Storage system for attachments with deduplication and metadata preservation
+- [x] 30-03-PLAN.md — Data verification pipeline with >99.9% accuracy validation and automated comparison
+- [x] 30-04-PLAN.md — Database lifecycle operations (dump, restore, export, purge, rehydrate) with versioning
+- [x] 30-05-PLAN.md — Comprehensive property-based test framework with round-trip validation
 
 ## Dependencies
 
@@ -299,7 +299,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 26. Virtual Scrolling Performance Integration | 2/2 | ✅ v3.1 Shipped | 2026-01-31 |
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
-| 30. Apple Notes Data Lifecycle Management | 0/5 | 📋 Planned | - |
+| 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
 
 ## Architecture Integration Summary
 
