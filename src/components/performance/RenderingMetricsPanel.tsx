@@ -6,9 +6,9 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRenderingOptimization } from '../../hooks/useRenderingOptimization';
-import { renderingPerformanceMonitor, memoryUsageTracker } from '../../utils/rendering-performance';
-import type { Viewport, RenderingMetrics, OptimizationPlan, PerformanceAlert } from '../../utils/rendering-performance';
+import { useRenderingOptimization, type OptimizationPlan } from '../../hooks/useRenderingOptimization';
+import { renderingPerformanceMonitor } from '../../utils/rendering-performance';
+import type { Viewport, RenderingMetrics, PerformanceAlert } from '../../utils/rendering-performance';
 import { Environment } from '../../utils/webview-bridge';
 
 // ============================================================================

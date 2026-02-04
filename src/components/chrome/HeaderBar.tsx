@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Settings, Menu, Bell, User, ChevronRight, Home } from 'lucide-react';
+import { Search, Settings, Menu, Bell, User, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppState } from '../../contexts/AppStateContext';
 import { useLocation, Link } from 'react-router-dom';
@@ -16,7 +16,10 @@ interface BreadcrumbItem {
 }
 
 export function HeaderBar({ onSidebarToggle, sidebarCollapsed = false }: HeaderBarProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const toggleTheme = () => {
+    setTheme(theme === 'NeXTSTEP' ? 'Modern' : 'NeXTSTEP');
+  };
   const { activeApp, activeView, activeDataset } = useAppState();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
