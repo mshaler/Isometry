@@ -43,10 +43,7 @@ export function GridView({ sql, queryParams = [], liveOptions = { containerHeigh
   const networkQuality = connectionState?.quality === 'fast' ? 'high' :
                          connectionState?.quality === 'slow' ? 'medium' : 'low';
 
-  const {
-    adaptationMetrics,
-    isProcessing
-  } = useNetworkAwareSync({
+  useNetworkAwareSync({
     enableRealTimeSync: {
       high: true,
       medium: true,
