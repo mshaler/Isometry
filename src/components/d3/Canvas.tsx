@@ -34,7 +34,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   className = '',
   enableZoom = true,
   enableBrush = false,
-  renderMode = 'svg',
+  renderMode: _renderMode = 'svg',
   maxNodes = 1000,
   debounceMs = 100
 }) => {
@@ -46,14 +46,13 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Live data query
   const {
     data: nodes = [],
-    isLoading,
+    loading,
     error: queryError
   } = useLiveQuery<Node>(sql, {
-    queryParams,
+    params: queryParams,
     autoStart: true,
     enableCache: true,
     debounceMs,
-    maxResults: maxNodes,
     onError: (err) => {
       console.error('[D3Canvas] Query error:', err);
       setError(`Query failed: ${err.message}`);
@@ -116,18 +115,19 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
       }
 
       // Render nodes
-      if (nodes && nodes.length > 0) {
-        renderNodes(mainGroup, nodes);
+      const safeNodes = nodes || [];
+      if (safeNodes.length > 0) {
+        renderNodes(mainGroup, safeNodes);
       }
 
       // Render connections (if nodes have edges)
-      renderConnections(mainGroup, nodes);
+      renderConnections(mainGroup, safeNodes);
 
       console.log('[D3Canvas] Rendered', nodes?.length || 0, 'nodes');
       setError(null);
 
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Unknown rendering error';
+      const errorMsg = err instanceof Error ? err.message : String(err);
       console.error('[D3Canvas] Render error:', err);
       setError(`Render failed: ${errorMsg}`);
     }
@@ -165,10 +165,21 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
             .attr('class', 'node')
             .attr('transform', (d: any) => `translate(${d.x || 0}, ${d.y || 0})`);
 
-          // Add circle
+          // Add circle - use nodeType for color mapping
           group.append('circle')
             .attr('r', 0)
-            .attr('fill', (d) => d.color || '#3b82f6')
+            .attr('fill', (d) => {
+              const colorMap: Record<string, string> = {
+                'note': '#3b82f6',
+                'task': '#ef4444',
+                'contact': '#10b981',
+                'event': '#f59e0b',
+                'project': '#8b5cf6',
+                'resource': '#06b6d4',
+                'notebook': '#f97316'
+              };
+              return colorMap[d.nodeType] || '#6b7280';
+            })
             .attr('stroke', '#fff')
             .attr('stroke-width', 2)
             .style('cursor', 'pointer')
@@ -188,19 +199,19 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
 
           // Add hover effects
           group
-            .on('mouseenter', function(event, d) {
+            .on('mouseenter', function(_event, _d) {
               d3.select(this).select('circle')
                 .transition()
                 .duration(150)
                 .attr('r', 12);
             })
-            .on('mouseleave', function(event, d) {
+            .on('mouseleave', function(_event, _d) {
               d3.select(this).select('circle')
                 .transition()
                 .duration(150)
                 .attr('r', 8);
             })
-            .on('click', function(event, d) {
+            .on('click', function(_event, d) {
               if (onNodeClick) {
                 onNodeClick(d);
               }
@@ -257,10 +268,10 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
 
   // Handle loading and error states
   useEffect(() => {
-    if (!isLoading && !queryError) {
+    if (!loading && !queryError) {
       setIsReady(true);
     }
-  }, [isLoading, queryError]);
+  }, [loading, queryError]);
 
   // Error display
   if (queryError || error) {
@@ -269,7 +280,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         <div className="text-center">
           <div className="text-red-600 font-medium">D3 Canvas Error</div>
           <div className="text-red-500 text-sm mt-1">
-            {queryError?.message || error}
+            {(queryError && typeof queryError === 'string' ? queryError : queryError instanceof Error ? queryError.message : 'Unknown error') || error}
           </div>
         </div>
       </div>
@@ -277,7 +288,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   }
 
   // Loading display
-  if (isLoading || !isReady) {
+  if (loading || !isReady) {
     return (
       <div className={`flex items-center justify-center bg-gray-50 border border-gray-200 rounded-lg p-4 ${className}`}>
         <div className="text-center">
@@ -303,7 +314,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
       {/* Development info overlay */}
       {process.env.NODE_ENV === 'development' && (
         <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
-          D3Canvas: {nodes.length} nodes, {dimensions.width}x{dimensions.height}
+          D3Canvas: {nodes?.length || 0} nodes, {dimensions.width}x{dimensions.height}
         </div>
       )}
     </div>
