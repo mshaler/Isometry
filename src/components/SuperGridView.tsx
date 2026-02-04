@@ -9,10 +9,12 @@
  * - Node click handling
  */
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { D3SparsityLayer } from './D3SparsityLayer';
+import { D3Canvas } from './d3/Canvas';
 import { createCoordinateSystem } from '@/utils/coordinate-system';
 import { useFilteredNodes } from '@/hooks/useFilteredNodes';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { usePAFV } from '@/hooks/usePAFV';
 import type { Node } from '@/types/node';
 import type { LATCHAxis } from '@/types/pafv';
@@ -20,12 +22,16 @@ import type { OriginPattern } from '@/types/coordinates';
 import type { ZoomTransform } from '@/hooks/useD3Zoom';
 
 interface SuperGridViewProps {
-  /** SQL query to execute for live data (currently unused - using FilterContext instead) */
+  /** SQL query to execute for live data */
   sql?: string;
-  /** Parameters for the SQL query (currently unused - using FilterContext instead) */
+  /** Parameters for the SQL query */
   queryParams?: unknown[];
   /** Callback when node is clicked */
   onNodeClick?: (node: Node) => void;
+  /** Render mode: 'sparsity' for D3SparsityLayer, 'canvas' for D3Canvas */
+  renderMode?: 'sparsity' | 'canvas';
+  /** Enable integration testing with both data sources */
+  enableIntegrationTest?: boolean;
 }
 
 /**
@@ -38,19 +44,47 @@ interface SuperGridViewProps {
  * - Performance monitoring systems
  */
 export function SuperGridView({
-  sql,
+  sql = "SELECT * FROM nodes WHERE deleted_at IS NULL",
   queryParams = [],
-  onNodeClick
+  onNodeClick,
+  renderMode = 'sparsity',
+  enableIntegrationTest = false
 }: SuperGridViewProps) {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [originPattern, setOriginPattern] = useState<OriginPattern>('anchor');
+  const [integrationTestResults, setIntegrationTestResults] = useState<{
+    filterContext: number;
+    liveQuery: number;
+    match: boolean;
+  } | null>(null);
 
   // Get PAFV context for axis mappings
   const pafv = usePAFV();
   const pafvState = pafv.state;
 
-  // Use FilterContext for LATCH-based filtering instead of direct database calls
-  const { data: nodes, loading, error } = useFilteredNodes();
+  // Primary data source: FilterContext for LATCH-based filtering
+  const { data: filterNodes, loading: filterLoading, error: filterError } = useFilteredNodes();
+
+  // Secondary data source: Direct SQL query for integration testing
+  const {
+    data: queryNodes,
+    isLoading: queryLoading,
+    error: queryError
+  } = useLiveQuery<Node>(sql, {
+    queryParams,
+    autoStart: enableIntegrationTest || renderMode === 'canvas',
+    enableCache: true,
+    debounceMs: 100,
+    maxResults: 1000,
+    onError: (err) => {
+      console.error('[SuperGridView] SQL query error:', err);
+    }
+  });
+
+  // Choose primary data source based on render mode
+  const primaryNodes = renderMode === 'canvas' ? queryNodes : filterNodes;
+  const primaryLoading = renderMode === 'canvas' ? queryLoading : filterLoading;
+  const primaryError = renderMode === 'canvas' ? queryError : filterError;
 
   // Extract X and Y axis mappings from PAFV state
   const xMapping = pafvState.mappings.find(m => m.plane === 'x');
@@ -78,53 +112,83 @@ export function SuperGridView({
     setZoomLevel(transform.k);
   }, []);
 
-  // Debug LATCH filter integration
+  // Integration test: compare FilterContext vs SQL query data
+  useEffect(() => {
+    if (enableIntegrationTest && filterNodes && queryNodes) {
+      const filterCount = filterNodes.length;
+      const queryCount = queryNodes.length;
+      const match = filterCount === queryCount;
+
+      setIntegrationTestResults({
+        filterContext: filterCount,
+        liveQuery: queryCount,
+        match
+      });
+
+      console.log('[SuperGridView] Integration Test:', {
+        filterContext: filterCount,
+        liveQuery: queryCount,
+        match: match ? '✓ PASS' : '✗ FAIL',
+        difference: Math.abs(filterCount - queryCount)
+      });
+    }
+  }, [enableIntegrationTest, filterNodes, queryNodes]);
+
+  // Debug both data sources
   if (process.env.NODE_ENV === 'development') {
-    const nodeTypeCounts = nodes ? {
-      notes: nodes.filter(n => n.id.startsWith('n')).length,
-      contacts: nodes.filter(n => n.id.startsWith('c')).length,
-      bookmarks: nodes.filter(n => n.id.startsWith('b')).length,
+    const nodeTypeCounts = primaryNodes ? {
+      notes: primaryNodes.filter(n => n.id.startsWith('n')).length,
+      contacts: primaryNodes.filter(n => n.id.startsWith('c')).length,
+      bookmarks: primaryNodes.filter(n => n.id.startsWith('b')).length,
     } : { notes: 0, contacts: 0, bookmarks: 0 };
 
-    console.log('🎯 SuperGridView LATCH Debug:', {
-      totalNodes: nodes?.length || 0,
+    console.log('🎯 SuperGridView Debug:', {
+      renderMode,
+      primaryNodes: primaryNodes?.length || 0,
       nodeTypes: nodeTypeCounts,
-      loading,
-      error: error?.message,
+      loading: primaryLoading,
+      error: primaryError?.message,
       xAxis: `${xAxis}/${xFacet}`,
       yAxis: `${yAxis}/${yFacet}`,
-      firstNode: nodes?.[0]?.name,
-      dataSource: 'FilterContext + useFilteredNodes'
+      firstNode: primaryNodes?.[0]?.name,
+      dataSource: renderMode === 'canvas' ? 'SQL Query' : 'FilterContext',
+      integrationTest: integrationTestResults
     });
   }
 
-  if (loading) {
+  if (primaryLoading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-gray-600">Loading SuperGrid from SQLite...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-600">
-          SuperGrid Database Error: {error}
+        <div className="text-gray-600">
+          Loading SuperGrid from {renderMode === 'canvas' ? 'SQL Query' : 'FilterContext'}...
         </div>
       </div>
     );
   }
 
-  if (!nodes || nodes.length === 0) {
+  if (primaryError) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-red-600">
+          SuperGrid {renderMode === 'canvas' ? 'SQL' : 'Filter'} Error: {primaryError.message || primaryError}
+        </div>
+      </div>
+    );
+  }
+
+  if (!primaryNodes || primaryNodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-400">
-          No data found in SQLite database for SuperGrid
+          No data found for SuperGrid
           <br />
-          <small>Query: {sql.substring(0, 50)}...</small>
-          <br />
-          <small>Connection: {connectionState?.quality || 'unknown'}</small>
+          <small>Source: {renderMode === 'canvas' ? 'SQL Query' : 'FilterContext'}</small>
+          {sql && renderMode === 'canvas' && (
+            <>
+              <br />
+              <small>Query: {sql.substring(0, 50)}...</small>
+            </>
+          )}
         </div>
       </div>
     );
@@ -132,30 +196,50 @@ export function SuperGridView({
 
   return (
     <div className="w-full h-full relative">
-      {/* Status indicator for LATCH filtering */}
+      {/* Status indicator */}
       <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-sm p-2 text-xs">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span>{nodes?.length || 0} nodes</span>
+          <div className={`w-2 h-2 rounded-full ${renderMode === 'canvas' ? 'bg-green-500' : 'bg-blue-500'}`} />
+          <span>{primaryNodes?.length || 0} nodes</span>
           <span className="text-gray-500">|</span>
-          <span>LATCH filtered</span>
+          <span>{renderMode === 'canvas' ? 'D3 Canvas' : 'Sparsity Layer'}</span>
         </div>
+        {integrationTestResults && (
+          <div className="mt-1 text-xs text-gray-600">
+            Integration: {integrationTestResults.match ? '✓' : '✗'}
+            ({integrationTestResults.filterContext} vs {integrationTestResults.liveQuery})
+          </div>
+        )}
       </div>
 
-      {/* D3 Sparsity Layer with live SQLite data */}
-      <D3SparsityLayer
-        data={nodes}
-        coordinateSystem={d3CoordinateSystem}
-        xAxis={xAxis}
-        xAxisFacet={xFacet}
-        yAxis={yAxis}
-        yAxisFacet={yFacet}
-        originPattern={originPattern}
-        onCellClick={handleCellClick}
-        onZoomChange={handleZoomChange}
-        width={window.innerWidth}
-        height={window.innerHeight}
-      />
+      {/* Render mode switch: Canvas vs Sparsity Layer */}
+      {renderMode === 'canvas' ? (
+        <D3Canvas
+          sql={sql}
+          queryParams={queryParams}
+          onNodeClick={handleCellClick}
+          className="w-full h-full"
+          enableZoom={true}
+          enableBrush={false}
+          renderMode="svg"
+          maxNodes={1000}
+          debounceMs={100}
+        />
+      ) : (
+        <D3SparsityLayer
+          data={primaryNodes}
+          coordinateSystem={d3CoordinateSystem}
+          xAxis={xAxis}
+          xAxisFacet={xFacet}
+          yAxis={yAxis}
+          yAxisFacet={yFacet}
+          originPattern={originPattern}
+          onCellClick={handleCellClick}
+          onZoomChange={handleZoomChange}
+          width={window.innerWidth}
+          height={window.innerHeight}
+        />
+      )}
     </div>
   );
 }
