@@ -2,6 +2,32 @@ import Foundation
 import GRDB
 import CryptoKit
 
+/// Basic audit entry for database lifecycle operations
+public struct AuditEntry {
+    public let id: UUID
+    public let operationType: LifecycleOperationType
+    public let recordId: String
+    public let recordType: String
+    public let timestamp: Date
+    public let details: [String: String]
+
+    public init(
+        id: UUID = UUID(),
+        operationType: LifecycleOperationType,
+        recordId: String,
+        recordType: String,
+        timestamp: Date = Date(),
+        details: [String: String] = [:]
+    ) {
+        self.id = id
+        self.operationType = operationType
+        self.recordId = recordId
+        self.recordType = recordType
+        self.timestamp = timestamp
+        self.details = details
+    }
+}
+
 /// Comprehensive database lifecycle management system
 /// Provides dump, restore, export, purge, and rehydrate operations with versioning integration
 /// Enables complete database management, backup/recovery, and external system integration
