@@ -59,14 +59,14 @@ public actor DataVerificationPipeline {
         print("DataVerificationPipeline: Imported \(nativeResults.count) native notes, \(altoResults.count) alto-index notes")
 
         // Step 2: Perform parallel verification
-        let verificationResults = try await performParallelVerification(
+        let nodeComparisonResults = try await performParallelVerification(
             nativeNodes: nativeResults,
             altoNodes: altoResults
         )
 
         // Step 3: Calculate comprehensive accuracy metrics
         let accuracyResults = await accuracyMetrics.calculateComprehensiveAccuracy(
-            verificationResults: verificationResults,
+            verificationResults: nodeComparisonResults,
             nativeNodeCount: nativeResults.count,
             altoNodeCount: altoResults.count
         )
@@ -78,7 +78,7 @@ public actor DataVerificationPipeline {
             duration: duration,
             nativeNodeCount: nativeResults.count,
             altoNodeCount: altoResults.count,
-            verificationResults: verificationResults,
+            verificationResults: nodeComparisonResults,
             accuracyMetrics: accuracyResults,
             overallAccuracy: accuracyResults.overallAccuracy,
             isAcceptable: accuracyResults.overallAccuracy >= 0.999 // >99.9% requirement
