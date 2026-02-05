@@ -413,7 +413,7 @@ export function useLiveData<T = unknown>(
   // Listen for bridge change notifications
   useEffect(() => {
     const handleDataChange = (event: CustomEvent) => {
-      const { table, operation } = event.detail;
+      const { table } = event.detail;
 
       // Invalidate relevant cache entries
       if (table === 'nodes' || table === 'edges') {

@@ -251,15 +251,9 @@ export function useGraphAnalytics(nodeId?: string): GraphAnalyticsState & {
 
   // Graph change listener for cache invalidation
   useEffect(() => {
-    const handleGraphChange = (changeType: string, changedNodeId: string) => {
-      if (nodeId && (changedNodeId === nodeId || changeType.includes('edge'))) {
-        // Refresh suggestions when related graph changes occur
-        loadSuggestions();
-      }
-    };
-
     // In a real implementation, this would listen to graph mutation events
-    // For now, this is a placeholder for the pattern
+    // TODO: Implement graph change listener for cache invalidation
+    // Would refresh suggestions when related graph changes occur
 
     return () => {
       // Cleanup listener

@@ -153,10 +153,9 @@ export function useOptimisticUpdates<T = any>(
         case 'batch':
           // Apply batch operations in sequence
           if (Array.isArray(op.optimisticData)) {
-            for (const batchItem of op.optimisticData) {
-              // Each batch item should have type and data properties
-              // Implementation depends on specific batch structure
-            }
+            // TODO: Implement batch operations
+            // Each batch item should have type and data properties
+            // Implementation depends on specific batch structure
           }
           break;
       }

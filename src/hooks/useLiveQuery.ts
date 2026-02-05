@@ -182,7 +182,6 @@ export function useLiveQuery<T = unknown>(
   const cleanupStack = useMemo(() => createCleanupStack(), []);
 
   // Generate query key for cache
-  const queryHash = generateQueryHash(sql, finalParams);
   const defaultCacheKey = queryKeys.liveQuery(sql, finalParams);
   const finalCacheKey = cacheKey || defaultCacheKey;
 
@@ -208,7 +207,7 @@ export function useLiveQuery<T = unknown>(
   // Connection state awareness (SYNC-04)
   const [connectionQuality, setConnectionQuality] = useState<'fast' | 'slow' | 'offline'>('fast');
   const [connectionLatency, setConnectionLatency] = useState(0);
-  const [adaptiveSyncEnabled, setAdaptiveSyncEnabled] = useState(
+  const [adaptiveSyncEnabled] = useState(
     connectionStateConfig.enableAdaptiveSync !== false
   );
 
