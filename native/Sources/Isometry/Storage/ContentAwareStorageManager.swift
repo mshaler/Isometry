@@ -341,6 +341,19 @@ public actor ContentAwareStorageManager {
         // Simplified maintenance for now
         return 0
     }
+
+    /// Update performance metrics for storage operations
+    private func updatePerformanceMetrics(operation: String, duration: TimeInterval, fileSize: Int) async {
+        // Update local storage performance metrics
+        performanceMetrics.recordStorage(
+            duration: duration,
+            fileSize: fileSize,
+            wasDeduplication: false // This will be set properly by callers if needed
+        )
+
+        // Optionally integrate with global PerformanceMonitor if available
+        print("ContentAwareStorage: \(operation) completed in \(String(format: "%.3f", duration))s for \(fileSize) bytes")
+    }
 }
 
 // MARK: - Data Types
