@@ -6,7 +6,7 @@
  * data support through SQL queries and real-time updates.
  */
 
-import React, { useCallback, forwardRef } from 'react';
+import React, { useCallback, forwardRef, useMemo } from 'react';
 import { useVirtualizedGrid } from '../../hooks/useVirtualizedList';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
