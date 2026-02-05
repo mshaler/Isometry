@@ -185,11 +185,10 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .force('collision', d3.forceCollide().radius(30));
 
     // Main group with consistent naming for transitions
-    let g = svg.select('.network-container');
+    let g = svg.select<d3.BaseType>('.network-container');
     if (g.empty()) {
-      g = svg.append('g').attr('class', 'network-container');
-      // Setup zoom only on initial render
-      setupZoom(svg, g as d3.Selection<SVGGElement, unknown, null, undefined>, { scaleExtent: [0.2, 4] });
+      g = svg.append('g').attr('class', 'network-container') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
+      setupZoom(svg, g, { scaleExtent: [0.2, 4] });
     }
 
     // Arrow marker for directed edges
@@ -206,9 +205,9 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('d', 'M0,-5L10,0L0,5');
 
     // Links with smooth transitions
-    let linksGroup = g.select('.links');
+    let linksGroup = g.select<d3.BaseType>('.links');
     if (linksGroup.empty()) {
-      linksGroup = g.append('g').attr('class', 'links');
+      linksGroup = g.append('g').attr('class', 'links') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
     }
 
     const link = linksGroup
@@ -242,9 +241,9 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       );
 
     // Link labels with smooth transitions
-    let linkLabelsGroup = g.select('.link-labels');
+    let linkLabelsGroup = g.select<d3.BaseType>('.link-labels');
     if (linkLabelsGroup.empty()) {
-      linkLabelsGroup = g.append('g').attr('class', 'link-labels');
+      linkLabelsGroup = g.append('g').attr('class', 'link-labels') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
     }
 
     const linkLabels = linkLabelsGroup
@@ -335,9 +334,9 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .attr('d', 'M0,-5L10,0L0,5');
 
     // Nodes with smooth transitions
-    let nodesGroup = g.select('.nodes');
+    let nodesGroup = g.select<d3.BaseType>('.nodes');
     if (nodesGroup.empty()) {
-      nodesGroup = g.append('g').attr('class', 'nodes');
+      nodesGroup = g.append('g').attr('class', 'nodes') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
     }
 
     const node = nodesGroup
