@@ -1,5 +1,5 @@
 import React from 'react';
-import { NativeDatabaseProvider, useNativeDatabase, NativeDatabaseContextValue } from './NativeDatabaseContext';
+import { NativeDatabaseProvider, NativeDatabaseContextValue } from './NativeDatabaseContext';
 import { WebViewDatabaseProvider, useWebViewDatabase, WebViewDatabaseContextValue } from './WebViewDatabaseContext';
 import { FallbackDatabaseProvider, useFallbackDatabase, FallbackDatabaseContextValue } from './FallbackDatabaseContext';
 import { DatabaseMode, useEnvironment } from '../contexts/EnvironmentContext';

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { graphAnalytics, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
+import { graphAnalytics } from '@/services/GraphAnalyticsAdapter';
 import type { Node as DataNode } from '@/types/node';
 import type {
   D3ZoomBehavior,
@@ -71,7 +71,6 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
   // Hierarchical analytics state
   const [hierarchicalMetrics, setHierarchicalMetrics] = useState<HierarchicalMetrics | null>(null);
   const [treeOptimizations, setTreeOptimizations] = useState<TreeOptimization[]>([]);
-  const [selectedPath, setSelectedPath] = useState<string[]>([]);
   const [pathAnalysis, setPathAnalysis] = useState<any>(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(true);
@@ -116,22 +115,6 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
     };
   }, []);
 
-  const runPathAnalysis = useCallback(async (fromNodeId: string, toNodeId: string) => {
-    if (!fromNodeId || !toNodeId) return;
-
-    setAnalyticsLoading(true);
-    try {
-      const result = await graphAnalytics.runGraphQuery('shortestPath', {
-        sourceId: fromNodeId,
-        targetId: toNodeId
-      });
-      setPathAnalysis(result.result);
-    } catch (error) {
-      console.warn('Failed to run path analysis:', error);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  }, []);
 
   const generateTreeOptimizations = useCallback((metrics: HierarchicalMetrics): TreeOptimization[] => {
     const optimizations: TreeOptimization[] = [];

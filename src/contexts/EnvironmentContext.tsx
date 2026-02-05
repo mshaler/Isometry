@@ -8,7 +8,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { Environment, postMessage } from '../utils/webview-bridge';
 import { bridgeLogger } from '../utils/logger';
-import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../utils/webview-bridge-waiter';
+import { waitForWebViewBridge } from '../utils/webview-bridge-waiter';
 
 export enum DatabaseMode {
   HTTP_API = 'http-api',

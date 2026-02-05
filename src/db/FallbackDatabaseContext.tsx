@@ -34,7 +34,7 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
 
   const execute = useCallback(<T = Record<string, unknown>>(
     sql: string,
-    params?: unknown[]
+    _params?: unknown[]
   ): T[] => {
     console.log('[FallbackDB] Query executed:', {
       sql: sql.substring(0, 50) + '...',

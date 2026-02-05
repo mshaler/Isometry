@@ -10,7 +10,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/connection-manager';
-import { useLiveDataContext } from './LiveDataContext';
+import { useLiveDataContext } from '../contexts/LiveDataContext';
 
 export interface ConnectionContextValue {
   /** Current connection state */

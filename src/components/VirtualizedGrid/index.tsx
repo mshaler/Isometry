@@ -6,7 +6,7 @@
  * data support through SQL queries and real-time updates.
  */
 
-import React, { useMemo, useCallback, forwardRef } from 'react';
+import React, { useCallback, forwardRef } from 'react';
 import { useVirtualizedGrid } from '../../hooks/useVirtualizedList';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
@@ -126,7 +126,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
     }
 
     // Convert linear virtual items to grid layout
-    return liveQuery.virtualItems.map((virtualItem, i) => {
+    return liveQuery.virtualItems.map((virtualItem) => {
       const rowIndex = Math.floor(virtualItem.index / columnCount);
       const columnIndex = virtualItem.index % columnCount;
 
@@ -280,8 +280,7 @@ export interface NodeGridProps extends Omit<VirtualizedGridProps<Node>, 'renderI
 export function NodeGrid({
   items,
   renderNode,
-  showMetadata = true,
-  ...props
+  showMetadata = true
 }: NodeGridProps) {
   const defaultRenderNode = useCallback((node: Node, index: number) => {
     return (
@@ -336,8 +335,7 @@ export function NodeGrid({
   }, [showMetadata]);
 
   return (
-    <VirtualizedGrid<Node>
-      {...props}
+    <VirtualizedGrid
       items={items}
       renderItem={renderNode || defaultRenderNode}
     />
@@ -357,8 +355,7 @@ export interface EdgeGridProps extends Omit<VirtualizedGridProps<Edge>, 'renderI
 export function EdgeGrid({
   items,
   renderEdge,
-  showDetails = true,
-  ...props
+  showDetails = true
 }: EdgeGridProps) {
   const defaultRenderEdge = useCallback((edge: Edge, index: number) => {
     return (
@@ -409,8 +406,7 @@ export function EdgeGrid({
   }, [showDetails]);
 
   return (
-    <VirtualizedGrid<Edge>
-      {...props}
+    <VirtualizedGrid
       items={items}
       renderItem={renderEdge || defaultRenderEdge}
     />

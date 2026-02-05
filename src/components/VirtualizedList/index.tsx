@@ -6,7 +6,7 @@
  * data support through SQL queries and real-time updates.
  */
 
-import React, { useMemo, useCallback, forwardRef } from 'react';
+import React, { useCallback, forwardRef } from 'react';
 import { useVirtualizedList } from '../../hooks/useVirtualizedList';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
@@ -119,10 +119,6 @@ export const VirtualizedList = forwardRef<HTMLDivElement, VirtualizedListProps>(
     }
   }, [finalItems, onItemClick]);
 
-  // Scroll to specific item (exposed through ref)
-  const scrollToItem = useCallback((index: number, align: 'start' | 'center' | 'end' | 'auto' = 'auto') => {
-    virtualList.scrollToIndex(index, { align });
-  }, [virtualList.scrollToIndex]);
 
   // Error state for live queries
   if (finalError) {
@@ -282,8 +278,7 @@ export function NodeList({
   items,
   renderNode,
   showMetadata = true,
-  compact = false,
-  ...props
+  compact = false
 }: NodeListProps) {
   const defaultRenderNode = useCallback((node: Node, index: number) => {
     if (compact) {
@@ -363,8 +358,7 @@ export function NodeList({
   }, [showMetadata, compact]);
 
   return (
-    <VirtualizedList<Node>
-      {...props}
+    <VirtualizedList
       items={items}
       renderItem={renderNode || defaultRenderNode}
       estimateItemSize={compact ? 60 : 150}
@@ -388,8 +382,7 @@ export function EdgeList({
   items,
   renderEdge,
   showDetails = true,
-  compact = false,
-  ...props
+  compact = false
 }: EdgeListProps) {
   const defaultRenderEdge = useCallback((edge: Edge, index: number) => {
     if (compact) {
@@ -464,8 +457,7 @@ export function EdgeList({
   }, [showDetails, compact]);
 
   return (
-    <VirtualizedList<Edge>
-      {...props}
+    <VirtualizedList
       items={items}
       renderItem={renderEdge || defaultRenderEdge}
       estimateItemSize={compact ? 60 : 180}
