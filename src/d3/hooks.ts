@@ -150,10 +150,13 @@ export interface ZoomOptions {
 
 export function setupZoom(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-  g: d3.Selection<SVGGElement, unknown, null, undefined>,
+  container: d3.Selection<d3.BaseType, unknown, null, undefined>,
   options: ZoomOptions = {}
 ): d3.ZoomBehavior<SVGSVGElement, unknown> {
   const { scaleExtent = [0.2, 4], translateExtent, onZoom } = options;
+
+  // Type assertion for transform operations - D3 zoom works with BaseType but transform needs SVGGElement
+  const g = container as d3.Selection<SVGGElement, unknown, null, undefined>;
 
   const zoom = d3.zoom<SVGSVGElement, unknown>()
     .scaleExtent(scaleExtent)
