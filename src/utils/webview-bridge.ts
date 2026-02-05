@@ -998,8 +998,14 @@ export class OptimizedBridge {
       }
     );
 
+    // Create adapter for QueryPaginator that expects Promise<unknown[]>
+    const queryAdapter = async (sql: string, params: unknown[]): Promise<unknown[]> => {
+      const result = await this.executeQueryInternal(sql, params);
+      return result.rows;
+    };
+
     this.queryPaginator = new QueryPaginator(
-      this.executeQueryInternal.bind(this),
+      queryAdapter,
       {
         maxPageSize: 50
       }

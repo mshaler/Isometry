@@ -106,8 +106,9 @@ export function ConnectionProvider({
       setReconnectionAttempts(metrics.reconnectionAttempts);
 
       // Coordinate with LiveDataContext
-      if (newState === 'connected' && liveDataContext.status !== 'connected') {
-        liveDataContext.testConnection();
+      if (newState === 'connected' && liveDataContext.state.connectionState !== 'connected') {
+        // LiveData context manages its own connections through executeQuery
+        console.log('Connection established, LiveData context available');
       }
     });
 
@@ -158,8 +159,9 @@ export function ConnectionProvider({
       const result = await connectionManager.current.testConnection();
 
       // Update live data context if connection test succeeded
-      if (result && liveDataContext.status !== 'connected') {
-        await liveDataContext.testConnection();
+      if (result && liveDataContext.state.connectionState !== 'connected') {
+        // LiveData context will handle its own connection state
+        console.log('Test connection successful, LiveData context ready');
       }
 
       return result;
@@ -183,7 +185,8 @@ export function ConnectionProvider({
 
       // Sync with live data context on successful reconnection
       if (result) {
-        await liveDataContext.testConnection();
+        // LiveData context will handle reconnection through executeQuery
+        console.log('Forced reconnection successful, LiveData context ready');
       }
 
       return result;
