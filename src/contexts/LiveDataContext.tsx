@@ -57,6 +57,12 @@ export interface LiveDataContextValue {
   metrics: LiveDataPerformanceMetrics[];
   /** Execute SQL query via WebView bridge */
   executeQuery: (method: string, params?: unknown) => Promise<any>;
+  /** Subscribe to live data (backward compatibility) */
+  subscribe: (query: string, callback: Function) => Promise<void>;
+  /** Unsubscribe from live data (backward compatibility) */
+  unsubscribe: (subscriptionId: string) => void;
+  /** Connection status (backward compatibility) */
+  isConnected: boolean;
 }
 
 // Action types for reducer
@@ -452,7 +458,19 @@ export function LiveDataProvider({
     state,
     actions,
     metrics,
-    executeQuery: actions.executeQuery
+    executeQuery: actions.executeQuery,
+    // Backward compatibility methods
+    subscribe: async (query: string, callback: Function) => {
+      const subscriptionId = `bc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      actions.subscribe(subscriptionId, query, [], {
+        onUpdate: callback,
+        enablePolling: true
+      });
+    },
+    unsubscribe: (subscriptionId: string) => {
+      actions.unsubscribe(subscriptionId);
+    },
+    isConnected: state.isConnected
   };
 
   return (

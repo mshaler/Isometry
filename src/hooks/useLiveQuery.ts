@@ -198,7 +198,8 @@ export function useLiveQuery<T = unknown>(
   );
 
   // Context
-  const { subscribe, unsubscribe, isConnected } = useLiveDataContext();
+  const context = useLiveDataContext();
+  const { subscribe, unsubscribe, isConnected } = context;
   const database = useDatabase();
 
   // Refs for cleanup and debouncing

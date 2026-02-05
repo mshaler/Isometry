@@ -192,6 +192,7 @@ export class PerformanceValidator {
   private config: ValidationConfig;
   private testResults: Map<string, TestResult[]> = new Map();
   private onProgress?: (progress: { current: number; total: number; test: string }) => void;
+  public currentTest: PerformanceTest | null = null;
 
   constructor(config: ValidationConfig = {
     enableStressTests: true,
