@@ -136,7 +136,7 @@ public actor CloudKitConflictResolver {
     /// Prepares manual resolution by analyzing conflicts and generating diffs for UI
     /// Provides detailed field-by-field comparison for user decision making
     public func prepareManualResolution(conflict: ConflictInfo) async throws -> ConflictDiff {
-        let fieldDiffs = analyzeFieldDifferences(
+        let fieldDiffs = await analyzeFieldDifferences(
             localRecord: conflict.localRecord,
             serverRecord: conflict.serverRecord
         )
@@ -288,7 +288,8 @@ public actor CloudKitConflictResolver {
         }
 
         let mergedSet = Set(localArray).union(Set(serverArray))
-        return Array(mergedSet).sorted()
+        // Use NSArray for CloudKit compatibility
+        return NSArray(array: Array(mergedSet).sorted())
     }
 
     /// Checks if two CloudKit values are equal
@@ -310,7 +311,7 @@ public actor CloudKitConflictResolver {
     }
 
     /// Analyzes field differences between local and server records
-    private func analyzeFieldDifferences(localRecord: CKRecord, serverRecord: CKRecord) -> [FieldDiff] {
+    private func analyzeFieldDifferences(localRecord: CKRecord, serverRecord: CKRecord) async -> [FieldDiff] {
         let allKeys = Set(localRecord.allKeys()).union(Set(serverRecord.allKeys()))
         var diffs: [FieldDiff] = []
 
