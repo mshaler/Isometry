@@ -10,7 +10,8 @@ import type { Node } from '@/types/node';
 import type {
   SimulationNodeDatum,
   SimulationLinkDatum,
-  D3ForceSimulation
+  D3ForceSimulation,
+  FlexibleSelection
 } from '@/types/d3';
 
 interface EdgeData {
@@ -193,7 +194,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     // Main group with consistent naming for transitions
     let g = svg.select<d3.BaseType>('.network-container');
     if (g.empty()) {
-      g = svg.append('g').attr('class', 'network-container') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
+      g = svg.append('g').attr('class', 'network-container') as unknown as FlexibleSelection<d3.BaseType>;
       setupZoom(svg, g, { scaleExtent: [0.2, 4] });
     }
 
@@ -213,7 +214,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     // Links with smooth transitions
     let linksGroup = g.select<d3.BaseType>('.links');
     if (linksGroup.empty()) {
-      linksGroup = g.append('g').attr('class', 'links') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
+      linksGroup = g.append('g').attr('class', 'links') as unknown as FlexibleSelection<d3.BaseType>;
     }
 
     const link = linksGroup
@@ -249,7 +250,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     // Link labels with smooth transitions
     let linkLabelsGroup = g.select<d3.BaseType>('.link-labels');
     if (linkLabelsGroup.empty()) {
-      linkLabelsGroup = g.append('g').attr('class', 'link-labels') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
+      linkLabelsGroup = g.append('g').attr('class', 'link-labels') as unknown as FlexibleSelection<d3.BaseType>;
     }
 
     const linkLabels = linkLabelsGroup
@@ -338,7 +339,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     // Nodes with smooth transitions
     let nodesGroup = g.select<d3.BaseType>('.nodes');
     if (nodesGroup.empty()) {
-      nodesGroup = g.append('g').attr('class', 'nodes') as unknown as d3.Selection<d3.BaseType, unknown, null, undefined>;
+      nodesGroup = g.append('g').attr('class', 'nodes') as unknown as FlexibleSelection<d3.BaseType>;
     }
 
     const node = nodesGroup

@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getTheme, type ThemeName } from '@/styles/themes';
+import type { FlexibleSelection } from '@/types/d3';
 
 // ============================================================================
 // Types
@@ -150,13 +151,14 @@ export interface ZoomOptions {
 
 export function setupZoom(
   svg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
-  container: d3.Selection<d3.BaseType, unknown, null, undefined>,
+  container: FlexibleSelection<d3.BaseType>,
   options: ZoomOptions = {}
 ): d3.ZoomBehavior<SVGSVGElement, unknown> {
   const { scaleExtent = [0.2, 4], translateExtent, onZoom } = options;
 
   // Type assertion for transform operations - D3 zoom works with BaseType but transform needs SVGGElement
-  const g = container as d3.Selection<SVGGElement, unknown, null, undefined>;
+  // Use FlexibleSelection pattern for type compatibility with explicit unknown cast
+  const g = container as unknown as FlexibleSelection<SVGGElement>;
 
   const zoom = d3.zoom<SVGSVGElement, unknown>()
     .scaleExtent(scaleExtent)
