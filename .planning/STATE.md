@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-30)
 ## Current Position
 
 Phase: 32 of 32+ (Multi-Environment Debugging)
-Plan: 17 of 17+ (D3 Selection type compatibility complete)
+Plan: 16 of 17+ (ObservableObject conformance for Notes actors complete)
 Status: In progress
-Last activity: 2026-02-05 — Completed 32-17-PLAN.md
+Last activity: 2026-02-05 — Completed 32-16-PLAN.md
 
 Progress: [████████████] 100% - Multi-environment debugging capability complete with Swift compilation and bridge communication fully operational
 
@@ -116,6 +116,7 @@ Recent decisions affecting current work:
 - **Module-specific enum naming pattern:** Swift enum conflicts resolved through module-specific naming (ConflictType → ModuleNameConflictType) preserving functionality while eliminating namespace collisions
 - **Centralized D3 component interface pattern:** D3ListView and D3GridView interfaces centralized in d3-types.ts with optional sql/data prop patterns for flexible component usage modes
 - **Flexible D3 Selection typing pattern:** FlexibleSelection type aliases with BaseType interface compatibility resolving SVGGElement/BaseType conflicts through selective type coercion
+- **Actor-ObservableObject conformance pattern:** Swift actors can conform to ObservableObject using @Published nonisolated properties with MainActor state synchronization for SwiftUI compatibility
 
 ### Pending Todos
 
@@ -145,8 +146,8 @@ From v3.1 milestone audit (2026-01-31T21:40:00Z):
 
 ## Session Continuity
 
-Last session: 2026-02-05 00:17
-Stopped at: Completed 32-17-PLAN.md - D3 Selection type compatibility resolved
+Last session: 2026-02-05 00:18
+Stopped at: Completed 32-16-PLAN.md - ObservableObject conformance for Notes actors complete
 Resume file: None
 
 ### Previous Milestone Completion
