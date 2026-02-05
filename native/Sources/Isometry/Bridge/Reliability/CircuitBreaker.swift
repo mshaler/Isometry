@@ -8,6 +8,7 @@
 
 import Foundation
 import OSLog
+import QuartzCore  // Add this import for CACurrentMediaTime()
 
 /// Circuit breaker state enumeration
 public enum CircuitState: String, Sendable, Codable {
