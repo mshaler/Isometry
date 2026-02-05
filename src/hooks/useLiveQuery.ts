@@ -120,20 +120,6 @@ export interface LiveQueryResult<T = unknown> {
   };
 }
 
-/**
- * Generate a cache key for a SQL query and its parameters
- */
-function generateQueryHash(sql: string, params: unknown[]): string {
-  // Simple hash for SQL + params - in production, consider using a better hash function
-  const content = sql + JSON.stringify(params);
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString();
-}
 
 /**
  * Hook for live database queries with real-time updates and intelligent caching

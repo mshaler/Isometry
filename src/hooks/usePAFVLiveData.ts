@@ -5,7 +5,7 @@
  * Provides intelligent caching, performance monitoring, and complex filter scenarios.
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLiveData, type LiveDataPerformanceMetrics } from './useLiveData';
 import { buildPAFVQuery, optimizeQuery, type PAFVQueryOptions } from '@/utils/query-builder';
 import type { Wells } from '@/contexts/PAFVContext';
