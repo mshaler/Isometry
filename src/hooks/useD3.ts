@@ -113,7 +113,7 @@ export function useD3Data<T>(
     onDataChange?: (data: T[]) => void;
   } = {}
 ): { optimizedData: T[]; isDataLimited: boolean } {
-  const { maxItems = 1000, enableVirtualization = false, onDataChange } = options;
+  const { maxItems = 1000, onDataChange } = options;
   const [optimizedData, setOptimizedData] = useState<T[]>([]);
   const [isDataLimited, setIsDataLimited] = useState(false);
 

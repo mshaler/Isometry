@@ -70,7 +70,7 @@ export function useGraphAnalytics(nodeId?: string): GraphAnalyticsState & {
     lastUpdated: 0
   });
 
-  const [errorBoundary, setErrorBoundary] = useState<ErrorBoundaryState>({
+  const [, setErrorBoundary] = useState<ErrorBoundaryState>({
     hasError: false,
     error: null,
     retryCount: 0,

@@ -6,7 +6,6 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { PerformanceMetrics } from '../components/performance/RealTimeRenderer';
 
 export interface CanvasPerformanceMetrics {
   /** Current frames per second */
@@ -381,10 +380,8 @@ class CanvasPerformanceAnalyzer {
  */
 export function useCanvasPerformance(options: CanvasPerformanceOptions = {}) {
   const {
-    targetFps = 60,
     updateInterval = 1000,
     sampleSize = 60,
-    enableAutoOptimize = true,
     memoryWarningThreshold = 100,
     enableDetailedTiming = false,
     onPerformanceWarning
