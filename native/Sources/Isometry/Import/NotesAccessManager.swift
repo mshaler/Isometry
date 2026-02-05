@@ -1,9 +1,10 @@
 import Foundation
 import EventKit
+import Combine
 
 /// TCC permission and authorization management for Apple Notes access
 /// Provides graceful degradation and privacy compliance
-public actor NotesAccessManager {
+public actor NotesAccessManager: ObservableObject {
 
     // Permission tracking
     private var currentStatus: PermissionStatus = .notDetermined
@@ -12,6 +13,10 @@ public actor NotesAccessManager {
 
     // EventKit store for Notes access
     private let eventStore = EKEventStore()
+
+    // ObservableObject conformance with nonisolated access
+    @Published nonisolated public var permissionStatus: PermissionStatus = .notDetermined
+    @Published nonisolated public var isRequestingPermission: Bool = false
 
     public init() {
         Task {
@@ -55,11 +60,36 @@ public actor NotesAccessManager {
         }
     }
 
+    // MARK: - ObservableObject Nonisolated Access
+
+    /// Safe nonisolated access to current permission status for SwiftUI binding
+    nonisolated public var currentPermissionStatus: PermissionStatus {
+        return permissionStatus
+    }
+
+    /// Safe nonisolated access to request state for SwiftUI binding
+    nonisolated public var currentRequestingState: Bool {
+        return isRequestingPermission
+    }
+
     // MARK: - Permission Request and Status
 
     /// Request Notes access permission from user
     public func requestNotesAccess() async throws -> PermissionStatus {
         print("Requesting Notes access permission...")
+
+        // Update requesting state
+        await MainActor.run {
+            isRequestingPermission = true
+        }
+
+        defer {
+            Task {
+                await MainActor.run {
+                    isRequestingPermission = false
+                }
+            }
+        }
 
         return try await withCheckedThrowingContinuation { continuation in
             // Request access for Notes (which maps to Reminders in EventKit)
@@ -252,6 +282,11 @@ public actor NotesAccessManager {
 
         currentStatus = mapEventKitStatus(authStatus)
         lastPermissionCheck = Date()
+
+        // Update published property on MainActor
+        await MainActor.run {
+            permissionStatus = currentStatus
+        }
 
         print("Permission status updated: \(currentStatus.rawValue)")
 
