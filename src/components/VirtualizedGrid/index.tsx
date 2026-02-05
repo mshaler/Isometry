@@ -34,10 +34,10 @@ export interface VirtualizedGridProps<T = unknown> {
   liveOptions?: Partial<VirtualLiveQueryOptions>;
 
   // Grid configuration
-  /** Height of the grid container */
-  height: number;
-  /** Width of the grid container */
-  width: number;
+  /** Height of the grid container (defaults to 400px) */
+  height?: number;
+  /** Width of the grid container (defaults to 100%) */
+  width?: number;
   /** Number of columns in the grid */
   columnCount?: number;
   /** Estimated height of each row */
@@ -68,8 +68,8 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
   sql,
   queryParams = [],
   liveOptions = {},
-  height,
-  width,
+  height = 400,
+  width = 800,
   columnCount = 3,
   estimateRowHeight = 200,
   estimateColumnWidth = 300,

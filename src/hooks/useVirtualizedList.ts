@@ -60,7 +60,6 @@ export function useVirtualizedList(
   options: VirtualizedListOptions
 ): VirtualizedListResult {
   const {
-    containerHeight,
     estimateSize,
     overscan = 10,
     horizontal = false,
@@ -141,8 +140,6 @@ export function useVirtualizedGrid(
   }
 ) {
   const {
-    containerHeight,
-    containerWidth,
     estimateSize: estimateRowHeight,
     estimateColumnWidth,
     overscan = 2,

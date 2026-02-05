@@ -34,8 +34,8 @@ export interface VirtualizedListProps<T = unknown> {
   liveOptions?: Partial<VirtualLiveQueryOptions>;
 
   // List configuration
-  /** Height of the list container */
-  height: number;
+  /** Height of the list container (defaults to 400px) */
+  height?: number;
   /** Estimated height of each item */
   estimateItemSize?: number;
   /** Component to render each item */
@@ -66,7 +66,7 @@ export const VirtualizedList = forwardRef<HTMLDivElement, VirtualizedListProps>(
   sql,
   queryParams = [],
   liveOptions = {},
-  height,
+  height = 400,
   estimateItemSize = 50,
   renderItem,
   loading = false,
