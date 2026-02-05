@@ -30,12 +30,39 @@ function generateAppleNotesData(): Node[] {
     id: `apple_${i + 1}`,
     name: `Note ${i + 1}: ${['Meeting Notes', 'Project Plan', 'Ideas', 'Research', 'Tasks'][i % 5]}`,
     content: `Sample content for note ${i + 1}`,
+    summary: `Summary of note ${i + 1}`,
     nodeType: 'note' as const,
-    folder: folders[i % folders.length],
-    tags: [tags[i % tags.length], tags[(i + 1) % tags.length]],
-    priority: priorities[i % priorities.length],
+
+    // Location (LATCH)
+    latitude: null,
+    longitude: null,
+    locationName: null,
+    locationAddress: null,
+
+    // Time (LATCH)
     createdAt: new Date(2020 + (i % 5), 0, 1 + i * 3).toISOString(),
     modifiedAt: new Date(2020 + (i % 5), 0, 1 + i * 3 + Math.floor(Math.random() * 10)).toISOString(),
+    dueAt: null,
+    completedAt: null,
+    eventStart: null,
+    eventEnd: null,
+
+    // Category (LATCH)
+    folder: folders[i % folders.length],
+    tags: [tags[i % tags.length], tags[(i + 1) % tags.length]],
+    status: null,
+
+    // Hierarchy (LATCH)
+    priority: priorities[i % priorities.length],
+    importance: i % 5 + 1,
+    sortOrder: i,
+
+    // Metadata
+    source: 'demo',
+    sourceId: `apple_demo_${i + 1}`,
+    sourceUrl: null,
+    deletedAt: null,
+    version: 1,
   }));
 }
 
@@ -51,12 +78,39 @@ function generateProjectData(): Node[] {
     id: `proj_${i + 1}`,
     name: `Task ${i + 1}: ${['Implement API', 'Fix Bug', 'Update UI', 'Deploy Service', 'Write Tests'][i % 5]}`,
     content: `Task description for item ${i + 1}`,
+    summary: `Summary of task ${i + 1}`,
     nodeType: 'task' as const,
-    folder: teams[i % teams.length],
-    tags: [statuses[i % statuses.length]],
-    priority: priorities[i % priorities.length],
+
+    // Location (LATCH)
+    latitude: null,
+    longitude: null,
+    locationName: null,
+    locationAddress: null,
+
+    // Time (LATCH)
     createdAt: new Date(2020 + (i % 5), 1, 1 + i * 2).toISOString(),
     modifiedAt: new Date(2020 + (i % 5), 1, 1 + i * 2 + Math.floor(Math.random() * 5)).toISOString(),
+    dueAt: i % 3 === 0 ? new Date(2024, 1, 1 + i).toISOString() : null,
+    completedAt: statuses[i % statuses.length] === 'Done' ? new Date(2024, 0, 1 + i).toISOString() : null,
+    eventStart: null,
+    eventEnd: null,
+
+    // Category (LATCH)
+    folder: teams[i % teams.length],
+    tags: [statuses[i % statuses.length]],
+    status: statuses[i % statuses.length] === 'Done' ? 'completed' : 'active',
+
+    // Hierarchy (LATCH)
+    priority: priorities[i % priorities.length],
+    importance: i % 5 + 1,
+    sortOrder: i,
+
+    // Metadata
+    source: 'demo',
+    sourceId: `proj_demo_${i + 1}`,
+    sourceUrl: null,
+    deletedAt: null,
+    version: 1,
   }));
 }
 
@@ -72,12 +126,39 @@ function generateCustomerData(): Node[] {
     id: `cust_${i + 1}`,
     name: `Customer ${i + 1}: ${['Acme Corp', 'Tech Solutions', 'Global Inc', 'Innovation Ltd', 'Future Systems'][i % 5]}`,
     content: `Customer profile for account ${i + 1}`,
-    nodeType: 'customer' as const,
-    folder: regions[i % regions.length],
-    tags: [segments[i % segments.length]],
-    priority: priorities[i % priorities.length],
+    summary: `Summary for customer ${i + 1}`,
+    nodeType: 'contact' as const,
+
+    // Location (LATCH)
+    latitude: i % 2 === 0 ? 40.7128 + (i * 0.01) : null,
+    longitude: i % 2 === 0 ? -74.0060 + (i * 0.01) : null,
+    locationName: i % 2 === 0 ? `Office ${i + 1}` : null,
+    locationAddress: i % 2 === 0 ? `${100 + i} Main Street, City ${i + 1}` : null,
+
+    // Time (LATCH)
     createdAt: new Date(2020 + (i % 5), 2, 1 + i * 4).toISOString(),
     modifiedAt: new Date(2020 + (i % 5), 2, 1 + i * 4 + Math.floor(Math.random() * 7)).toISOString(),
+    dueAt: null,
+    completedAt: null,
+    eventStart: null,
+    eventEnd: null,
+
+    // Category (LATCH)
+    folder: regions[i % regions.length],
+    tags: [segments[i % segments.length]],
+    status: null,
+
+    // Hierarchy (LATCH)
+    priority: priorities[i % priorities.length],
+    importance: i % 5 + 1,
+    sortOrder: i,
+
+    // Metadata
+    source: 'demo',
+    sourceId: `cust_demo_${i + 1}`,
+    sourceUrl: null,
+    deletedAt: null,
+    version: 1,
   }));
 }
 
@@ -93,12 +174,39 @@ function generateContentData(): Node[] {
     id: `cont_${i + 1}`,
     name: `${['Guide', 'Article', 'Tutorial', 'Policy', 'Announcement'][i % 5]} ${i + 1}`,
     content: `Content body for document ${i + 1}`,
-    nodeType: 'document' as const,
-    folder: categories[i % categories.length],
-    tags: [statuses[i % statuses.length]],
-    priority: priorities[i % priorities.length],
+    summary: `Summary of document ${i + 1}`,
+    nodeType: 'resource' as const,
+
+    // Location (LATCH)
+    latitude: null,
+    longitude: null,
+    locationName: null,
+    locationAddress: null,
+
+    // Time (LATCH)
     createdAt: new Date(2020 + (i % 5), 3, 1 + i).toISOString(),
     modifiedAt: new Date(2020 + (i % 5), 3, 1 + i + Math.floor(Math.random() * 3)).toISOString(),
+    dueAt: null,
+    completedAt: statuses[i % statuses.length] === 'Published' ? new Date(2023, 3, 1 + i).toISOString() : null,
+    eventStart: null,
+    eventEnd: null,
+
+    // Category (LATCH)
+    folder: categories[i % categories.length],
+    tags: [statuses[i % statuses.length]],
+    status: null,
+
+    // Hierarchy (LATCH)
+    priority: priorities[i % priorities.length],
+    importance: i % 5 + 1,
+    sortOrder: i,
+
+    // Metadata
+    source: 'demo',
+    sourceId: `cont_demo_${i + 1}`,
+    sourceUrl: `https://example.com/doc/${i + 1}`,
+    deletedAt: null,
+    version: 1,
   }));
 }
 
