@@ -304,12 +304,18 @@ export function useConflictResolution() {
   // Development testing function setup (separate useEffect)
   useEffect(() => {
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      (window as any).testConflictResolution = (conflictData: Partial<ConflictInfo>) => {
+      (window as any).testConflictResolution = (conflictData: Partial<ConflictInfo> & {
+        recordId?: string;
+        type?: ConflictInfo['conflictType'];
+        fieldName?: string;
+        clientValue?: string;
+        serverValue?: string;
+      }) => {
         const testConflict: ConflictInfo = {
-          nodeId: conflictData.recordId || 'test_node_001',
-          conflictType: conflictData.type || 'field_conflict',
-          detectedAt: new Date(),
-          fields: [conflictData.fieldName || 'content'],
+          nodeId: conflictData.recordId || conflictData.nodeId || 'test_node_001',
+          conflictType: conflictData.type || conflictData.conflictType || 'field_conflict',
+          detectedAt: conflictData.detectedAt || new Date(),
+          fields: conflictData.fields || [conflictData.fieldName || 'content'],
         };
 
         // Create test diff data
