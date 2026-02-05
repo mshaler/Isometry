@@ -2,10 +2,11 @@ import Foundation
 import EventKit
 import Testing
 import Darwin
+import Combine
 
 /// Enhanced Apple Notes importer with live sync capabilities
 /// Extends AltoIndexImporter foundation with real-time monitoring
-public actor AppleNotesLiveImporter {
+public actor AppleNotesLiveImporter: ObservableObject {
     private let database: IsometryDatabase
     private let altoIndexImporter: AltoIndexImporter
     private let accessManager: NotesAccessManager
@@ -31,6 +32,11 @@ public actor AppleNotesLiveImporter {
     private var batchProcessor: NoteBatchProcessor?
     private let maxQueueSize = 1000
     private let memoryThresholdMB: Double = 80.0
+
+    // ObservableObject conformance with nonisolated access
+    @Published nonisolated public var syncStatus: SyncStatus = .idle
+    @Published nonisolated public var isLiveSyncEnabled: Bool = false
+    @Published nonisolated public var performanceMetrics: PerformanceMetrics = PerformanceMetrics()
 
     public init(database: IsometryDatabase) {
         self.database = database
@@ -158,6 +164,23 @@ public actor AppleNotesLiveImporter {
         }
     }
 
+    // MARK: - ObservableObject Nonisolated Access
+
+    /// Safe nonisolated access to current sync status for SwiftUI binding
+    nonisolated public var currentSyncStatus: SyncStatus {
+        return syncStatus
+    }
+
+    /// Safe nonisolated access to live sync enabled state for SwiftUI binding
+    nonisolated public var currentLiveSyncEnabled: Bool {
+        return isLiveSyncEnabled
+    }
+
+    /// Safe nonisolated access to performance metrics for SwiftUI binding
+    nonisolated public var currentPerformanceMetrics: PerformanceMetrics {
+        return performanceMetrics
+    }
+
     // MARK: - Live Sync Control
 
     /// Start live sync with continuous monitoring
@@ -172,11 +195,12 @@ public actor AppleNotesLiveImporter {
         // Check permissions first
         let permissionStatus = await accessManager.checkCurrentPermissionStatus()
         guard permissionStatus == .authorized else {
-            syncStatus = .permissionDenied
+            let status = SyncStatus.permissionDenied
+            await updateSyncStatus(status, liveSyncEnabled: false)
             throw LiveSyncError.insufficientPermissions
         }
 
-        syncStatus = .syncing
+        await updateSyncStatus(.syncing, liveSyncEnabled: true)
         syncState = .monitoring
         print("Starting live sync with interval: \(configuration.syncInterval)s")
 
@@ -207,7 +231,7 @@ public actor AppleNotesLiveImporter {
         await stopFileSystemMonitoring()
 
         if case .syncing = syncStatus {
-            syncStatus = .idle
+            await updateSyncStatus(.idle, liveSyncEnabled: false)
         }
         syncState = .idle
 
@@ -251,9 +275,10 @@ public actor AppleNotesLiveImporter {
                 notesProcessed: result.imported,
                 isIncremental: shouldDoIncrementalSync
             )
+            await updatePerformanceMetrics(performanceMetrics)
 
             lastSyncTime = Date()
-            syncStatus = .idle
+            await updateSyncStatus(.idle, liveSyncEnabled: isLiveSyncEnabled)
 
             if result.imported > 0 {
                 print("Sync completed: \(result.imported) notes processed in \(String(format: "%.2f", duration))s")
@@ -261,6 +286,7 @@ public actor AppleNotesLiveImporter {
 
         } catch {
             performanceMetrics.recordError()
+            await updatePerformanceMetrics(performanceMetrics)
             throw error
         }
     }
@@ -412,7 +438,8 @@ public actor AppleNotesLiveImporter {
     /// Handle sync errors with appropriate recovery strategies
     private func handleSyncError(_ error: Error) async {
         performanceMetrics.recordError()
-        syncStatus = .error(error)
+        await updatePerformanceMetrics(performanceMetrics)
+        await updateSyncStatus(.error(error), liveSyncEnabled: isLiveSyncEnabled)
 
         print("Sync error: \(error.localizedDescription)")
 
@@ -420,11 +447,11 @@ public actor AppleNotesLiveImporter {
         if error is LiveSyncError {
             switch error as! LiveSyncError {
             case .insufficientPermissions:
-                syncStatus = .permissionDenied
+                await updateSyncStatus(.permissionDenied, liveSyncEnabled: false)
                 // Stop live sync on permission error
                 await stopLiveSync()
             case .noAccessAvailable:
-                syncStatus = .noData
+                await updateSyncStatus(.noData, liveSyncEnabled: false)
             case .syncAlreadyRunning, .syncNotRunning:
                 // These shouldn't occur during active sync, but handle gracefully
                 break
@@ -434,14 +461,19 @@ public actor AppleNotesLiveImporter {
 
     // MARK: - Public Status Interface
 
-    /// Get current sync status
-    public var currentSyncStatus: SyncStatus {
-        return syncStatus
+    /// Update published properties on MainActor for SwiftUI compatibility
+    private func updateSyncStatus(_ status: SyncStatus, liveSyncEnabled enabled: Bool) async {
+        await MainActor.run {
+            syncStatus = status
+            isLiveSyncEnabled = enabled
+        }
     }
 
-    /// Get performance metrics
-    public var currentPerformanceMetrics: PerformanceMetrics {
-        return performanceMetrics
+    /// Update performance metrics on MainActor for SwiftUI compatibility
+    private func updatePerformanceMetrics(_ metrics: PerformanceMetrics) async {
+        await MainActor.run {
+            performanceMetrics = metrics
+        }
     }
 
     /// Get live sync configuration
@@ -451,7 +483,7 @@ public actor AppleNotesLiveImporter {
 
     /// Check if live sync is currently running
     public var isLiveSyncActive: Bool {
-        return syncStatus.isActive
+        return currentSyncStatus.isActive
     }
 
     /// Get current sync state (Wave 2)
@@ -562,6 +594,7 @@ public actor AppleNotesLiveImporter {
 
             let duration = Date().timeIntervalSince(startTime)
             performanceMetrics.recordSync(duration: duration, notesProcessed: processedCount, isIncremental: true)
+            await updatePerformanceMetrics(performanceMetrics)
 
             syncState = .monitoring
             print("AppleNotesLiveImporter: Successfully processed \(processedCount) changes in \(String(format: "%.2f", duration))s")
@@ -572,6 +605,7 @@ public actor AppleNotesLiveImporter {
 
             // Record the error
             performanceMetrics.recordError()
+            await updatePerformanceMetrics(performanceMetrics)
 
             // Re-queue failed changes for retry (but limit queue size)
             await handleSyncError(error)
