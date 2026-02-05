@@ -1,4 +1,3 @@
-import * as d3 from 'd3';
 import { performanceMonitor } from './d3Performance';
 
 // ============================================================================
@@ -75,7 +74,6 @@ export class ViewportCuller {
     }
 
     // Update performance metrics
-    const cullRatio = 1 - (visibleCommands.length / culledCount);
     performanceMonitor.startMetric('viewport-culling');
     performanceMonitor.endMetric('viewport-culling');
 
@@ -204,14 +202,14 @@ export class LODManager {
     }
   }
 
-  private simplifyPathData(data: unknown, targetComplexity: number): unknown {
+  private simplifyPathData(data: unknown, _targetComplexity: number): unknown {
     // Simplify SVG path data based on target complexity
     // This is a simplified version - real implementation would use
     // path simplification algorithms like Douglas-Peucker
     return data; // TODO: Implement path simplification
   }
 
-  private simplifyTextData(data: unknown, targetComplexity: number): unknown {
+  private simplifyTextData(data: unknown, _targetComplexity: number): unknown {
     // Simplify text rendering (e.g., remove decorations, simplify font)
     return data; // TODO: Implement text simplification
   }
@@ -256,7 +254,7 @@ export class CommandBatcher {
     }
   }
 
-  private getTextBatchKey(data: unknown): string {
+  private getTextBatchKey(_data: unknown): string {
     // Group text by font family and size (simplified)
     return 'default'; // TODO: Extract font properties from data
   }

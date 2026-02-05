@@ -92,7 +92,7 @@ export class VirtualScrollRenderer<T> {
     // Render visible items
     const items = this.container
       .selectAll('.virtual-item')
-      .data(visibleData, (d, i) => `${this.visibleIndices.start + i}`);
+      .data(visibleData, (_d, i) => `${this.visibleIndices.start + i}`);
 
     items.exit().remove();
 
@@ -105,9 +105,9 @@ export class VirtualScrollRenderer<T> {
     const itemsUpdate = itemsEnter.merge(items as unknown as d3.Selection<HTMLDivElement, T, any, any>);
 
     itemsUpdate
-      .style('top', (d, i) => `${(this.visibleIndices.start + i) * this.config.itemHeight}px`)
+      .style('top', (_d, i) => `${(this.visibleIndices.start + i) * this.config.itemHeight}px`)
       .style('height', `${this.config.itemHeight}px`)
-      .each((d, i, nodes) => {
+      .each((_d, i, nodes) => {
         renderFn(d3.select(nodes[i]), this.visibleIndices.start + i);
       });
   }
@@ -159,7 +159,7 @@ export class LevelOfDetailManager {
       case 'high':
         return selection
           .style('opacity', 1)
-          .attr('class', (d, i, nodes) => {
+          .attr('class', (_d, i, nodes) => {
             const existing = d3.select(nodes[i]).attr('class') || '';
             return existing.replace(/\s*lod-\w+/g, '') + ' lod-high';
           });
@@ -167,7 +167,7 @@ export class LevelOfDetailManager {
       case 'medium':
         return selection
           .style('opacity', 0.8)
-          .attr('class', (d, i, nodes) => {
+          .attr('class', (_d, i, nodes) => {
             const existing = d3.select(nodes[i]).attr('class') || '';
             return existing.replace(/\s*lod-\w+/g, '') + ' lod-medium';
           })
@@ -176,7 +176,7 @@ export class LevelOfDetailManager {
       case 'low':
         return selection
           .style('opacity', 0.6)
-          .attr('class', (d, i, nodes) => {
+          .attr('class', (_d, i, nodes) => {
             const existing = d3.select(nodes[i]).attr('class') || '';
             return existing.replace(/\s*lod-\w+/g, '') + ' lod-low';
           })
@@ -188,7 +188,7 @@ export class LevelOfDetailManager {
     }
   }
 
-  shouldSkipElement(index: number, total: number, lod: 'high' | 'medium' | 'low'): boolean {
+  shouldSkipElement(_index: number, _total: number, lod: 'high' | 'medium' | 'low'): boolean {
     if (lod === 'high') return false;
 
     const skipRatio = lod === 'medium' ? 0.1 : 0.3;
@@ -223,7 +223,7 @@ export class ViewportCuller {
     selection: d3.Selection<any, T, any, any>,
     margin: number = 0
   ): d3.Selection<any, T, any, any> {
-    return selection.style('display', (d, i, nodes) => {
+    return selection.style('display', (_d, i, nodes) => {
       const element = nodes[i] as Element;
       const bounds = element.getBoundingClientRect();
       return this.isInViewport(bounds, margin) ? null : 'none';
