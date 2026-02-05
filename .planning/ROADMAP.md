@@ -240,7 +240,7 @@ Plans:
   3. D3.js visualizations render properly and integrate seamlessly with React components
   4. React UI chrome components provide functional development interface with working layouts
   5. Both environments support parallel development without blocking compilation issues
-**Plans:** 22 plans
+**Plans:** 24 plans
 
 **Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
 
@@ -265,8 +265,10 @@ Plans:
 - [x] 32-18-PLAN.md — Framework import and bridge method implementation for Swift compilation stability
 - [x] 32-19-PLAN.md — TypeScript error cleanup with D3 type casting and unused variable elimination
 - [x] 32-20-PLAN.md — Swift compilation fixes for ContentAwareStorageManager and CloudKitConflictResolver
-- [ ] 32-21-PLAN.md — Fix TypeScript type casting violations and unused variables (Gap Closure)
-- [ ] 32-22-PLAN.md — Fix Swift compilation errors in configuration, database, and verification modules (Gap Closure)
+- [x] 32-21-PLAN.md — Fix TypeScript type casting violations and unused variables (Gap Closure)
+- [x] 32-22-PLAN.md — Fix Swift compilation errors in configuration, database, and verification modules (Gap Closure)
+- [ ] 32-23-PLAN.md — TypeScript compilation completion fixing Node property access and interface methods (Gap Closure)
+- [ ] 32-24-PLAN.md — Swift compilation crisis triage addressing fundamental syntax and type conflicts (Gap Closure)
 
 ## Dependencies
 
@@ -360,7 +362,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
 | 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
-| 32. Multi-Environment Debugging | 17/19 | 🔧 Gap Closure | - |
+| 32. Multi-Environment Debugging | 22/24 | 🔧 Gap Closure | - |
 
 ## Architecture Integration Summary
 
@@ -593,4 +595,4 @@ Actor Patterns          Message Serialization        React Component Tree
 
 ---
 
-*Last updated: 2026-02-05 after Phase 32 gap closure plan creation*
+*Last updated: 2026-02-05 after Phase 32 gap closure plans 23-24 created*
