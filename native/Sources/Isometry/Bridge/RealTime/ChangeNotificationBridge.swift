@@ -294,6 +294,30 @@ public actor ChangeNotificationBridge {
         return stats
     }
 
+    /// Send notification message to WebView for conflict resolution
+    /// Called by RealTimeConflictResolver to notify frontend of conflicts
+    public func notifyWebView(message: [String: Any]) async {
+        guard let webView = webView else {
+            logger.warning("Cannot notify WebView - webView reference is nil")
+            return
+        }
+
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: message)
+            let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+            let javascript = "window.isometryBridge?.handleMessage(\(jsonString))"
+
+            await webView.evaluateJavaScript(javascript)
+            logger.debug("Sent conflict notification to WebView", metadata: [
+                "messageType": "\(message["type"] ?? "unknown")"
+            ])
+        } catch {
+            logger.error("Failed to serialize conflict notification", metadata: [
+                "error": "\(error)"
+            ])
+        }
+    }
+
     // MARK: - Cleanup
 
     deinit {
