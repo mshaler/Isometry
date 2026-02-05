@@ -240,7 +240,7 @@ Plans:
   3. D3.js visualizations render properly and integrate seamlessly with React components
   4. React UI chrome components provide functional development interface with working layouts
   5. Both environments support parallel development without blocking compilation issues
-**Plans:** 17 plans
+**Plans:** 19 plans
 
 **Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
 
@@ -260,8 +260,11 @@ Plans:
 - [x] 32-13-PLAN.md — Fix D3 Canvas component TypeScript errors and integration issues
 - [x] 32-14-PLAN.md — Clean up TypeScript compilation errors in remaining components
 - [x] 32-15-PLAN.md — Fix critical Swift enum namespace conflicts and D3 interface gaps
-- [ ] 32-16-PLAN.md — Fix Swift ObservableObject conformance and missing bridge methods
-- [ ] 32-17-PLAN.md — Resolve TypeScript D3 Selection type conflicts and ecosystem stability
+- [x] 32-16-PLAN.md — Fix Swift ObservableObject conformance and missing bridge methods
+- [x] 32-17-PLAN.md — Resolve TypeScript D3 Selection type conflicts and ecosystem stability
+- [x] 32-18-PLAN.md — Framework import and bridge method implementation for Swift compilation stability
+- [ ] 32-19-PLAN.md — TypeScript error cleanup with D3 type casting and unused variable elimination
+- [ ] 32-20-PLAN.md — Swift compilation fixes for ContentAwareStorageManager and CloudKitConflictResolver
 
 ## Dependencies
 
@@ -355,7 +358,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
 | 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
-| 32. Multi-Environment Debugging | 15/17 | 🔧 Gap Closure | - |
+| 32. Multi-Environment Debugging | 17/19 | 🔧 Gap Closure | - |
 
 ## Architecture Integration Summary
 
@@ -588,4 +591,4 @@ Actor Patterns          Message Serialization        React Component Tree
 
 ---
 
-*Last updated: 2026-02-04 after Phase 32 gap closure plan creation*
+*Last updated: 2026-02-05 after Phase 32 gap closure plan creation*
