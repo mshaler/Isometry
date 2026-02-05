@@ -1,5 +1,13 @@
 // PAFV types
 
+// Chip type for PAFV navigation
+export interface Chip {
+  id: string;
+  label: string;
+  hasCheckbox?: boolean;
+  checked?: boolean;
+}
+
 // LATCH axis types (full names for clarity)
 export type LATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarchy';
 

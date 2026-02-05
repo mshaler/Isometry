@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV, type Wells } from '../contexts/PAFVContext';
 import type { Chip } from '../types/pafv';
 import { useMockData } from './useMockData';
 import type { Node } from '../types/node';
