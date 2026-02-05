@@ -407,13 +407,13 @@ extension HistoryEntry: FetchableRecord, PersistableRecord {
 /// History search filters
 public struct HistoryFilter {
     public let type: CommandType?
-    public let dateRange: DateRange?
+    public let dateRange: ShellDateRange?
     public let searchQuery: String?
     public let success: Bool?
 
     public init(
         type: CommandType? = nil,
-        dateRange: DateRange? = nil,
+        dateRange: ShellDateRange? = nil,
         searchQuery: String? = nil,
         success: Bool? = nil
     ) {
@@ -424,8 +424,8 @@ public struct HistoryFilter {
     }
 }
 
-/// Date range for filtering
-public struct DateRange {
+/// Date range for shell command filtering
+public struct ShellDateRange {
     public let start: Date
     public let end: Date
 
