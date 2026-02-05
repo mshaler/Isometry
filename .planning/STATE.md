@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-30)
 ## Current Position
 
 Phase: 32 of 32+ (Multi-Environment Debugging)
-Plan: 21 of 20+ (TypeScript type safety fixes complete)
+Plan: 19 of 20+ (TypeScript Error Cleanup with D3 Type Casting complete)
 Status: In progress
-Last activity: 2026-02-05 — Completed 32-21-PLAN.md
+Last activity: 2026-02-05 — Completed 32-19-PLAN.md
 
 Progress: [████████████] 100% - Multi-environment debugging capability complete with Swift compilation and bridge communication fully operational
 
@@ -123,6 +123,8 @@ Recent decisions affecting current work:
 - **Variable shadowing elimination:** Rename local variables to prevent shadowing instance properties causing subscript operation failures
 - **Type guard casting patterns:** Replace unsafe 'item as Node' casts with isNode()/isEdge() guard functions for runtime type safety
 - **Unused variable cleanup strategy:** Remove unused destructured variables to eliminate compilation noise and improve error visibility
+- **FlexibleSelection D3 pattern:** Use FlexibleSelection type with explicit 'unknown' casting for D3 BaseType/SVGGElement compatibility maintaining type safety
+- **Container-aware defaults pattern:** Make component sizing optional with sensible defaults enabling specialized components without explicit configuration
 
 ### Pending Todos
 
