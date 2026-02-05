@@ -283,7 +283,7 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
         compressionTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 do {
-                    try self?.compressOldEntries()
+                    try await self?.compressOldEntries()
                 } catch {
                     // Log error but don't crash - compression is not critical
                     print("Failed to compress audit entries: \(error)")
@@ -308,8 +308,8 @@ public final class ConfigurationAudit: ObservableObject, Sendable {
             let compressedEntries = oldEntries.filter { significantActions.contains($0.action) }
             let recentEntries = auditEntries.filter { $0.timestamp >= thirtyDaysAgo }
 
-            auditEntries = recentEntries + compressedEntries
-            try storage.saveAuditEntries(auditEntries)
+            self.auditEntries = recentEntries + compressedEntries
+            try storage.saveAuditEntries(self.auditEntries)
 
             let removedCount = oldEntries.count - compressedEntries.count
             logger.debug("Compressed \(removedCount) old audit entries")
