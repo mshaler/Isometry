@@ -41,6 +41,12 @@ interface SimLink extends SimulationLinkDatum<SimNode> {
   label: string | null;
 }
 
+interface SuggestionLink {
+  source: SimNode;
+  target: SimNode;
+  suggestion: ConnectionSuggestion;
+}
+
 export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -295,14 +301,10 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
               suggestion
             } : null;
           })
-          .filter(Boolean) as Array<{
-            source: SimNode;
-            target: SimNode;
-            suggestion: ConnectionSuggestion;
-          }>;
+          .filter(Boolean) as SuggestionLink[];
 
         suggestionLinks
-          .selectAll('line')
+          .selectAll<SVGLineElement, SuggestionLink>('line')
           .data(suggestionLinkData)
           .join('line')
           .attr('stroke', theme === 'NeXTSTEP' ? '#ff6b35' : '#3b82f6')
@@ -426,7 +428,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
         .attr('y', d => ((d.source as SimNode).y! + (d.target as SimNode).y!) / 2);
 
       // Update suggestion link positions
-      suggestionLinks.selectAll('line')
+      suggestionLinks.selectAll<SVGLineElement, SuggestionLink>('line')
         .attr('x1', d => d.source.x!)
         .attr('y1', d => d.source.y!)
         .attr('x2', d => d.target.x!)
