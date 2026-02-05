@@ -11,6 +11,15 @@ import { useVirtualizedList } from '../../hooks/useVirtualizedList';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
 
+// Type guard functions for safe type casting
+function isNode(item: unknown): item is Node {
+  return typeof item === 'object' && item !== null && 'id' in item && 'nodeType' in item;
+}
+
+function isEdge(item: unknown): item is Edge {
+  return typeof item === 'object' && item !== null && 'id' in item && 'edgeType' in item && 'sourceId' in item && 'targetId' in item;
+}
+
 export interface VirtualizedListProps<T = unknown> {
   // Static data props (for backward compatibility)
   /** Array of items to render (optional if using sql) */
@@ -280,7 +289,17 @@ export function NodeList({
   showMetadata = true,
   compact = false
 }: NodeListProps) {
-  const defaultRenderNode = useCallback((node: Node, index: number) => {
+  const defaultRenderNode = useCallback((item: unknown, index: number) => {
+    // Type guard to ensure item is a Node
+    if (!isNode(item)) {
+      return (
+        <div className="px-4 py-2 bg-red-50 border border-red-200 rounded">
+          <span className="text-red-600 text-sm">Invalid node data</span>
+        </div>
+      );
+    }
+
+    const node = item;
     if (compact) {
       return (
         <div className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 border-b border-gray-100">
@@ -357,10 +376,17 @@ export function NodeList({
     );
   }, [showMetadata, compact]);
 
+  const safeRenderNode = useCallback((item: unknown, index: number) => {
+    if (renderNode && isNode(item)) {
+      return renderNode(item, index);
+    }
+    return defaultRenderNode(item, index);
+  }, [renderNode, defaultRenderNode]);
+
   return (
     <VirtualizedList
       items={items}
-      renderItem={renderNode || defaultRenderNode}
+      renderItem={safeRenderNode}
       estimateItemSize={compact ? 60 : 150}
     />
   );
@@ -384,7 +410,17 @@ export function EdgeList({
   showDetails = true,
   compact = false
 }: EdgeListProps) {
-  const defaultRenderEdge = useCallback((edge: Edge, index: number) => {
+  const defaultRenderEdge = useCallback((item: unknown, index: number) => {
+    // Type guard to ensure item is an Edge
+    if (!isEdge(item)) {
+      return (
+        <div className="px-4 py-2 bg-red-50 border border-red-200 rounded">
+          <span className="text-red-600 text-sm">Invalid edge data</span>
+        </div>
+      );
+    }
+
+    const edge = item;
     if (compact) {
       return (
         <div className="flex items-center space-x-3 px-4 py-2 hover:bg-gray-50 border-b border-gray-100">
@@ -456,10 +492,17 @@ export function EdgeList({
     );
   }, [showDetails, compact]);
 
+  const safeRenderEdge = useCallback((item: unknown, index: number) => {
+    if (renderEdge && isEdge(item)) {
+      return renderEdge(item, index);
+    }
+    return defaultRenderEdge(item, index);
+  }, [renderEdge, defaultRenderEdge]);
+
   return (
     <VirtualizedList
       items={items}
-      renderItem={renderEdge || defaultRenderEdge}
+      renderItem={safeRenderEdge}
       estimateItemSize={compact ? 60 : 180}
     />
   );

@@ -11,6 +11,15 @@ import { useVirtualizedGrid } from '../../hooks/useVirtualizedList';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
 
+// Type guard functions for safe type casting
+function isNode(item: unknown): item is Node {
+  return typeof item === 'object' && item !== null && 'id' in item && 'nodeType' in item;
+}
+
+function isEdge(item: unknown): item is Edge {
+  return typeof item === 'object' && item !== null && 'id' in item && 'edgeType' in item && 'sourceId' in item && 'targetId' in item;
+}
+
 export interface VirtualizedGridProps<T = unknown> {
   // Static data props (for backward compatibility)
   /** Array of items to render (optional if using sql) */
@@ -282,7 +291,17 @@ export function NodeGrid({
   renderNode,
   showMetadata = true
 }: NodeGridProps) {
-  const defaultRenderNode = useCallback((node: Node, index: number) => {
+  const defaultRenderNode = useCallback((item: unknown, index: number) => {
+    // Type guard to ensure item is a Node
+    if (!isNode(item)) {
+      return (
+        <div className="h-full w-full bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-center">
+          <span className="text-red-600 text-xs">Invalid node data</span>
+        </div>
+      );
+    }
+
+    const node = item;
     return (
       <div className="h-full w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
         {/* Node header */}
@@ -334,10 +353,17 @@ export function NodeGrid({
     );
   }, [showMetadata]);
 
+  const safeRenderNode = useCallback((item: unknown, index: number) => {
+    if (renderNode && isNode(item)) {
+      return renderNode(item, index);
+    }
+    return defaultRenderNode(item, index);
+  }, [renderNode, defaultRenderNode]);
+
   return (
     <VirtualizedGrid
       items={items}
-      renderItem={renderNode || defaultRenderNode}
+      renderItem={safeRenderNode}
     />
   );
 }
@@ -357,7 +383,17 @@ export function EdgeGrid({
   renderEdge,
   showDetails = true
 }: EdgeGridProps) {
-  const defaultRenderEdge = useCallback((edge: Edge, index: number) => {
+  const defaultRenderEdge = useCallback((item: unknown, index: number) => {
+    // Type guard to ensure item is an Edge
+    if (!isEdge(item)) {
+      return (
+        <div className="h-full w-full bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-center">
+          <span className="text-red-600 text-xs">Invalid edge data</span>
+        </div>
+      );
+    }
+
+    const edge = item;
     return (
       <div className="h-full w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
         {/* Edge header */}
@@ -405,10 +441,17 @@ export function EdgeGrid({
     );
   }, [showDetails]);
 
+  const safeRenderEdge = useCallback((item: unknown, index: number) => {
+    if (renderEdge && isEdge(item)) {
+      return renderEdge(item, index);
+    }
+    return defaultRenderEdge(item, index);
+  }, [renderEdge, defaultRenderEdge]);
+
   return (
     <VirtualizedGrid
       items={items}
-      renderItem={renderEdge || defaultRenderEdge}
+      renderItem={safeRenderEdge}
     />
   );
 }
