@@ -11,6 +11,12 @@ import * as d3 from 'd3';
 // Generic D3 Selection Types
 // ============================================================================
 
+// D3 Selection type aliases for consistent usage
+export type FlexibleSelection<T = d3.BaseType> = d3.Selection<T, unknown, null, undefined>;
+export type SVGSelection = FlexibleSelection<SVGSVGElement>;
+export type GroupSelection = FlexibleSelection<SVGGElement>;
+export type ContainerSelection = FlexibleSelection<d3.BaseType>;
+
 /** Base selection type for any SVG element */
 export type D3Selection<TElement extends d3.BaseType = d3.BaseType, TDatum = unknown> =
   d3.Selection<TElement, TDatum, null, undefined>;
@@ -218,6 +224,11 @@ export type D3DragBehavior<TElement extends Element, TDatum> =
 export type D3ZoomBehavior<TElement extends Element> =
   d3.ZoomBehavior<TElement, unknown>;
 
+// Zoom-specific type helpers
+export type ZoomBehavior = d3.ZoomBehavior<SVGSVGElement, unknown>;
+export type ZoomTransform = d3.ZoomTransform;
+export type ZoomSelection = FlexibleSelection<SVGSVGElement>;
+
 // ============================================================================
 // Utility Types
 // ============================================================================
@@ -337,3 +348,14 @@ export function isScaleTime(scale: D3Scale): scale is d3.ScaleTime<number, numbe
 export function isScaleOrdinal(scale: D3Scale): scale is d3.ScaleOrdinal<string, string> {
   return 'domain' in scale && 'range' in scale && !('ticks' in scale);
 }
+
+/**
+ * Use FlexibleSelection when working with mixed D3 selection types
+ * Use specific typed selections (GroupSelection, SVGSelection) when type certainty is required
+ *
+ * Examples:
+ * - FlexibleSelection<d3.BaseType> for containers that may hold any SVG element
+ * - GroupSelection for known SVG group elements
+ * - SVGSelection for SVG root elements
+ * - ContainerSelection for BaseType containers in zoom/drag operations
+ */
