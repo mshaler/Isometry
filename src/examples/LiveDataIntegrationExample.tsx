@@ -15,10 +15,10 @@ import type { Node } from '../types/node';
 const RecentNodesComponent: React.FC = () => {
   const { data: nodes, isLoading, error, refresh } = useLiveDataSubscription<Node[]>(
     'recent-nodes',
-    `SELECT id, title, content, modified_at
+    `SELECT id, name, content, modifiedAt
      FROM nodes
      WHERE deleted_at IS NULL
-     ORDER BY modified_at DESC
+     ORDER BY modifiedAt DESC
      LIMIT 10`,
     [],
     {
@@ -58,9 +58,9 @@ const RecentNodesComponent: React.FC = () => {
           ) : (
             nodes.map(node => (
               <div key={node.id} className="p-2 bg-gray-50 rounded text-sm">
-                <div className="font-medium truncate">{node.title}</div>
+                <div className="font-medium truncate">{node.name}</div>
                 <div className="text-gray-600 text-xs">
-                  Modified: {new Date(node.modified_at).toLocaleString()}
+                  Modified: {new Date(node.modifiedAt).toLocaleString()}
                 </div>
               </div>
             ))
@@ -127,7 +127,7 @@ const SearchComponent: React.FC = () => {
           </div>
           {searchResults.map(node => (
             <div key={node.id} className="p-2 bg-gray-50 rounded text-sm">
-              <div className="font-medium truncate">{node.title}</div>
+              <div className="font-medium truncate">{node.name}</div>
               {(node as any).snippet && (
                 <div
                   className="text-gray-600 text-xs mt-1"

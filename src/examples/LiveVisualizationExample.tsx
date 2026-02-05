@@ -87,12 +87,12 @@ export function LiveVisualizationExample() {
       performanceMetrics.reportToMonitor({
         tabIndex: selectedTabIndex,
         tabName: TABS[selectedTabIndex].name,
-        nodeCount: nodes.length,
+        nodeCount: (nodes || []).length,
         latency,
         stressTestActive: stressTest.enabled
       });
     }
-  }, [performanceMetrics, selectedTabIndex, nodes.length, latency, stressTest.enabled]);
+  }, [performanceMetrics, selectedTabIndex, (nodes || []).length, latency, stressTest.enabled]);
 
   // Performance status indicator
   const getPerformanceStatus = () => {
@@ -221,7 +221,7 @@ export function LiveVisualizationExample() {
             </div>
 
             <div className="text-xs text-gray-500">
-              Nodes: {nodes.length} • Latency: {latency.toFixed(0)}ms
+              Nodes: {(nodes || []).length} • Latency: {latency.toFixed(0)}ms
             </div>
           </div>
         </div>
@@ -234,7 +234,7 @@ export function LiveVisualizationExample() {
           <Tab.Panels className="h-full">
             {TABS.map((tab, _index) => (
               <Tab.Panel key={tab.name} className="h-full">
-                {isLoading && nodes.length === 0 ? (
+                {isLoading && (nodes || []).length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-gray-500">Loading visualization data...</div>
                   </div>
@@ -243,7 +243,7 @@ export function LiveVisualizationExample() {
                     <div className="text-red-500">Error: {error}</div>
                   </div>
                 ) : (
-                  <tab.component data={nodes} onNodeClick={handleNodeClick} />
+                  <tab.component data={nodes || []} onNodeClick={handleNodeClick} />
                 )}
               </Tab.Panel>
             ))}
@@ -255,7 +255,6 @@ export function LiveVisualizationExample() {
           <div className="absolute top-4 right-4 w-80">
             <DataFlowMonitor
               position="floating"
-              mode="overview"
               className="bg-white/95 backdrop-blur-sm shadow-lg"
             />
           </div>

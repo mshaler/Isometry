@@ -629,12 +629,12 @@ export function ProductionVisualizationDemo() {
                   <span className="ml-2 font-mono">{selectedNode.id}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Title:</span>
-                  <span className="ml-2">{selectedNode.title}</span>
+                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="ml-2">{selectedNode.name}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-700">Type:</span>
-                  <span className="ml-2">{selectedNode.type}</span>
+                  <span className="font-medium text-gray-700">Status:</span>
+                  <span className="ml-2">{selectedNode.status}</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Modified:</span>
