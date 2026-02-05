@@ -9,8 +9,7 @@
  * and performance monitoring infrastructure from Phase 21.
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
-import { createCleanupStack } from '../memoryManagement';
+import { useEffect, useRef } from 'react';
 
 /**
  * Memory metrics interface for bridge memory management
@@ -76,9 +75,6 @@ export class BridgeMemoryManager {
     pressureLevel: 'low'
   };
 
-  // Memory thresholds from Phase 21
-  private readonly WARNING_THRESHOLD_MB = 50;
-  private readonly CRITICAL_THRESHOLD_MB = 100;
   private readonly CLEANUP_BATCH_SIZE = 10; // Max callbacks to clean per batch
 
   constructor() {

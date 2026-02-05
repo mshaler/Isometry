@@ -11,18 +11,16 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { webViewBridge } from '../utils/webview-bridge';
 import { useLiveDataContext } from '../contexts/LiveDataContext';
 import { useDatabase } from '../db/DatabaseContext';
 import { queryKeys } from '../services/queryClient';
 import {
   createCacheInvalidationManager,
   createOptimisticUpdateManager,
-  invalidationPatterns,
   type InvalidationStrategy
 } from '../utils/cacheInvalidation';
 import { useBackgroundSync } from './useBackgroundSync';
-import { useCleanupEffect, CleanupStack, createCleanupStack } from '../utils/memoryManagement';
+import { useCleanupEffect, createCleanupStack } from '../utils/memoryManagement';
 import { memoryManager } from '../utils/bridge-optimization/memory-manager';
 
 export interface LiveQueryOptions {
