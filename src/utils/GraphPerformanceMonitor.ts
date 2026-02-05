@@ -1,7 +1,6 @@
 import { performanceMonitor, NativeRenderingMetrics, PerformanceComparison } from './d3Performance';
-import { graphAnalytics, CacheStats } from '../services/GraphAnalyticsAdapter';
+import { graphAnalytics } from '../services/GraphAnalyticsAdapter';
 import { ConnectionSuggestion, SuggestionPerformanceMetrics } from '../services/ConnectionSuggestionService';
-import { CacheEffectiveness } from '../services/QueryCacheService';
 
 // Analytics-specific metrics interface
 export interface AnalyticsMetrics {
@@ -440,7 +439,7 @@ export class GraphPerformanceMonitor {
     this.throughputCounters.set(operation, counter);
   }
 
-  private updateSuggestionMetrics(latency: number): void {
+  private updateSuggestionMetrics(_latency: number): void {
     const times = this.operationTimes.get('suggestion-latency') || [];
 
     if (times.length > 0) {
@@ -454,7 +453,7 @@ export class GraphPerformanceMonitor {
     }
   }
 
-  private updateCacheMetrics(operation: string, namespace: string): void {
+  private updateCacheMetrics(_operation: string, namespace: string): void {
     // This would integrate with actual cache statistics
     // For now, using placeholder implementation
     const hitRate = Math.max(0.7, Math.random() * 0.3 + 0.7); // Simulate 70-100% hit rate
