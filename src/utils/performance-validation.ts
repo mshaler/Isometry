@@ -7,7 +7,7 @@
 
 import { renderingPerformanceMonitor, viewportOptimizer } from './rendering-performance';
 import type { Viewport, RenderingMetrics, OptimizationPlan } from './rendering-performance';
-import { Environment, webViewBridge } from './webview-bridge';
+import { Environment } from './webview-bridge';
 
 // ============================================================================
 // Types
@@ -190,7 +190,6 @@ export const DEFAULT_BENCHMARK_SUITE: BenchmarkSuite = {
 
 export class PerformanceValidator {
   private config: ValidationConfig;
-  private currentTest: PerformanceTest | null = null;
   private testResults: Map<string, TestResult[]> = new Map();
   private onProgress?: (progress: { current: number; total: number; test: string }) => void;
 
@@ -463,7 +462,7 @@ export class PerformanceValidator {
   public async validateOptimization(
     viewport: Viewport,
     nodeCount: number,
-    optimizationPlan: OptimizationPlan
+    _optimizationPlan: OptimizationPlan
   ): Promise<{
     effective: boolean;
     improvement: {
@@ -637,8 +636,6 @@ export class PerformanceValidator {
 
   private async simulateOptimizedRendering(viewport: Viewport, nodeCount: number): Promise<void> {
     // Apply optimizations during rendering
-    const cullingBounds = viewportOptimizer.calculateCullingBounds(viewport);
-
     // Simulate viewport culling
     const visibleNodeCount = Math.floor(nodeCount * 0.3); // 30% visible
 

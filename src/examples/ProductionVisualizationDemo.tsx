@@ -177,7 +177,7 @@ export function ProductionVisualizationDemo() {
   // Stress testing state
   const [activeStressTest, setActiveStressTest] = useState<StressTestScenario | null>(null);
   const [stressTestProgress, setStressTestProgress] = useState(0);
-  const [customStressTest, setCustomStressTest] = useState({
+  const [customStressTest] = useState({
     dataSize: 6891,
     updateFrequency: 10,
     filterChanges: true
@@ -192,7 +192,6 @@ export function ProductionVisualizationDemo() {
 
   // Demo control state
   const [autoRotateDemo, setAutoRotateDemo] = useState(false);
-  const [demoStartTime] = useState(Date.now());
 
   const containerRef = useRef<HTMLDivElement>(null);
   const visualizationRef = useRef<HTMLDivElement>(null);
@@ -234,7 +233,7 @@ export function ProductionVisualizationDemo() {
     reportInterval: 1000
   });
 
-  const { metrics: liveDataMetrics, cacheSize, invalidateCache } = useLiveDataMetrics();
+  const { metrics: liveDataMetrics, invalidateCache } = useLiveDataMetrics();
 
   // Filtered data based on active stress test or full dataset
   const displayData = useMemo(() => {

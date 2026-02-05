@@ -5,7 +5,7 @@
  * and real-time filtering capabilities.
  */
 
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Tab } from '@headlessui/react';
 import { NetworkView } from '../components/views/NetworkView';
 import { D3GridView } from '../components/views/D3GridView';
@@ -119,7 +119,7 @@ export function LiveVisualizationExample() {
             <Tab.List className={`flex space-x-1 rounded-lg p-1 ${
               theme === 'NeXTSTEP' ? 'bg-[#e8e8e8]' : 'bg-gray-100'
             }`}>
-              {TABS.map((tab, index) => (
+              {TABS.map((tab, _index) => (
                 <Tab
                   key={tab.name}
                   className={({ selected }) =>
@@ -232,7 +232,7 @@ export function LiveVisualizationExample() {
         {/* Visualization area */}
         <div ref={visualizationRef} className="flex-1">
           <Tab.Panels className="h-full">
-            {TABS.map((tab, index) => (
+            {TABS.map((tab, _index) => (
               <Tab.Panel key={tab.name} className="h-full">
                 {isLoading && nodes.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
