@@ -317,22 +317,12 @@ export function LiveDataProvider({
     if (!state.isConnected) return;
 
     try {
-      // Sync recent nodes
-      const recentNodesQuery = `
-        SELECT * FROM nodes
-        WHERE deleted_at IS NULL
-        ORDER BY modified_at DESC
-        LIMIT 50
-      `;
-
-      // Sync total count
-      const countQuery = `
-        SELECT COUNT(*) as total FROM nodes
-        WHERE deleted_at IS NULL
-      `;
-
-      // Note: These would use the actual bridge calls in production
+      // Note: Query definitions would be used for actual bridge calls in production
       // For now, we'll update the sync time to show the mechanism works
+
+      // TODO: Implement actual bridge calls for:
+      // - Recent nodes sync: SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY modified_at DESC LIMIT 50
+      // - Total count sync: SELECT COUNT(*) as total FROM nodes WHERE deleted_at IS NULL
 
       dispatch({ type: 'UPDATE_SYNC_TIME', payload: { time: new Date() } });
 
@@ -500,7 +490,7 @@ export function useLiveDataSubscription<T = unknown>(
   refresh: () => void;
   subscription: LiveDataSubscription | null;
 } {
-  const { state, actions } = useLiveDataContext();
+  const { actions } = useLiveDataContext();
 
   // Subscribe on mount
   useEffect(() => {
