@@ -1,8 +1,7 @@
 import * as d3 from 'd3';
 import { DatabaseService } from '../db/DatabaseService';
-import { useVirtualizedGrid, type VirtualizedGridResult } from '../hooks/useVirtualizedGrid';
-import { type CellData, type VirtualGridCell } from '../types/grid';
-import { type Node } from '../types/node';
+import { type VirtualizedGridResult } from '../hooks/useVirtualizedGrid';
+import { type VirtualGridCell } from '../types/grid';
 
 /**
  * SuperGrid - Core D3.js renderer with direct sql.js data binding
@@ -496,12 +495,22 @@ export class SuperGrid {
 
     // Use grid-cells container for positioned rendering
     const gridCellsContainer = this.container.select('.grid-cells');
-    const cardSelection = gridCellsContainer
-      .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
-      .data(cardsWithPositions, d => d.id);
 
-    // Apply same join pattern
-    this.applyCardJoin(cardSelection);
+    if (!gridCellsContainer.empty()) {
+      const cardSelection = gridCellsContainer
+        .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
+        .data(cardsWithPositions, d => d.id);
+
+      // Apply same join pattern
+      this.applyCardJoin(cardSelection);
+    } else {
+      // Fallback to rendering directly on container if grid structure not set up
+      const cardSelection = this.container
+        .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
+        .data(cardsWithPositions, d => d.id);
+
+      this.applyCardJoin(cardSelection);
+    }
   }
 
   /**
@@ -764,12 +773,11 @@ export class SuperGrid {
             .text(d => d.count.toString());
 
           // Status indicator
-          const statusColor = this.getStatusColor(d.status === 'No Status' ? undefined : d.status);
           headerGroup.append('circle')
             .attr('cx', this.cardWidth - 12)
             .attr('cy', 12)
             .attr('r', 4)
-            .attr('fill', statusColor);
+            .attr('fill', (d) => this.getStatusColor(d.status === 'No Status' ? undefined : d.status));
 
           return headerGroup;
         },
@@ -780,9 +788,9 @@ export class SuperGrid {
           update.select('text:last-of-type')
             .text(d => d.count.toString());
 
-          const statusColor = this.getStatusColor(d.status === 'No Status' ? undefined : d.status);
+          // Update status indicator
           update.select('circle')
-            .attr('fill', statusColor);
+            .attr('fill', (d) => this.getStatusColor(d.status === 'No Status' ? undefined : d.status));
 
           return update;
         },

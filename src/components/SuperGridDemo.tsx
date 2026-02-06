@@ -1,10 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SuperGrid } from '@/d3/SuperGrid';
 import { DatabaseService } from '@/db/DatabaseService';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { usePAFV } from '@/contexts/PAFVContext';
-import { useFilters } from '@/state/FilterContext';
-import type { Node } from '@/types/node';
 
 /**
  * SuperGridDemo - Comprehensive demonstration component for SuperGrid foundation
@@ -35,7 +33,6 @@ export function SuperGridDemo() {
   // Get contexts
   const { db } = useSQLite();
   const { wells } = usePAFV();
-  const { activeFilters } = useFilters();
 
   // Performance monitoring
   useEffect(() => {
@@ -84,66 +81,74 @@ export function SuperGridDemo() {
   useEffect(() => {
     if (!svgRef.current || !db) return;
 
-    try {
-      // Verify sql.js capabilities
-      const capabilityResults: string[] = [];
-
-      // Test FTS5
+    const initializeGrid = async () => {
       try {
-        db.exec("SELECT fts5_version()");
-        capabilityResults.push("✅ FTS5 support verified");
+        // Verify sql.js capabilities using the provided db
+        const capabilityResults: string[] = [];
+
+        // Test FTS5
+        try {
+          db.exec("SELECT fts5_version()");
+          capabilityResults.push("✅ FTS5 support verified");
+        } catch (error) {
+          capabilityResults.push("❌ FTS5 support missing");
+          setErrorLog(prev => [...prev, `FTS5 Error: ${error}`]);
+        }
+
+        // Test JSON1 extension
+        try {
+          db.exec("SELECT json_extract('{\"test\": 123}', '$.test')");
+          capabilityResults.push("✅ JSON1 extension verified");
+        } catch (error) {
+          capabilityResults.push("❌ JSON1 extension missing");
+          setErrorLog(prev => [...prev, `JSON1 Error: ${error}`]);
+        }
+
+        // Test recursive CTEs
+        try {
+          db.exec(`
+            WITH RECURSIVE test_cte AS (
+              SELECT 1 as n
+              UNION ALL
+              SELECT n + 1 FROM test_cte WHERE n < 3
+            )
+            SELECT COUNT(*) FROM test_cte
+          `);
+          capabilityResults.push("✅ Recursive CTE support verified");
+        } catch (error) {
+          capabilityResults.push("❌ Recursive CTE support missing");
+          setErrorLog(prev => [...prev, `CTE Error: ${error}`]);
+        }
+
+        console.log('sql.js Capability Verification:', capabilityResults);
+
+        // Initialize SuperGrid with existing database from context
+        const databaseService = new DatabaseService();
+
+        // For demo purposes, initialize a fresh DatabaseService since SuperGrid expects it
+        await databaseService.initialize();
+
+        const grid = new SuperGrid(svgRef.current!, databaseService, {
+          width: 800,
+          height: 600
+        });
+
+        // Render with test data
+        grid.render();
+        setSuperGrid(grid);
+
+        // Update cell count from grid stats
+        const stats = grid.getStats();
+        setCellCount(stats.cardsVisible);
+
+        setIsLoading(false);
       } catch (error) {
-        capabilityResults.push("❌ FTS5 support missing");
-        setErrorLog(prev => [...prev, `FTS5 Error: ${error}`]);
+        setErrorLog(prev => [...prev, `SuperGrid Initialization Error: ${error}`]);
+        setIsLoading(false);
       }
+    };
 
-      // Test JSON1 extension
-      try {
-        db.exec("SELECT json_extract('{\"test\": 123}', '$.test')");
-        capabilityResults.push("✅ JSON1 extension verified");
-      } catch (error) {
-        capabilityResults.push("❌ JSON1 extension missing");
-        setErrorLog(prev => [...prev, `JSON1 Error: ${error}`]);
-      }
-
-      // Test recursive CTEs
-      try {
-        db.exec(`
-          WITH RECURSIVE test_cte AS (
-            SELECT 1 as n
-            UNION ALL
-            SELECT n + 1 FROM test_cte WHERE n < 3
-          )
-          SELECT COUNT(*) FROM test_cte
-        `);
-        capabilityResults.push("✅ Recursive CTE support verified");
-      } catch (error) {
-        capabilityResults.push("❌ Recursive CTE support missing");
-        setErrorLog(prev => [...prev, `CTE Error: ${error}`]);
-      }
-
-      console.log('sql.js Capability Verification:', capabilityResults);
-
-      // Initialize SuperGrid with DatabaseService
-      const databaseService = new DatabaseService(db);
-      const grid = new SuperGrid(svgRef.current, databaseService, {
-        width: 800,
-        height: 600
-      });
-
-      // Render with test data
-      grid.render();
-      setSuperGrid(grid);
-
-      // Update cell count from grid stats
-      const stats = grid.getStats();
-      setCellCount(stats.cardsVisible);
-
-      setIsLoading(false);
-    } catch (error) {
-      setErrorLog(prev => [...prev, `SuperGrid Initialization Error: ${error}`]);
-      setIsLoading(false);
-    }
+    initializeGrid();
   }, [db]);
 
   // Handle filter changes
