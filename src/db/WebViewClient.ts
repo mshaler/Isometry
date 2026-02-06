@@ -1,14 +1,32 @@
 /**
- * WebView Database Client
+ * DEPRECATED: WebViewClient (Bridge Elimination v4)
  *
- * Provides identical interface to sql.js Database for seamless React component compatibility.
- * Routes all operations through WebView bridge to native GRDB/CloudKit backend.
- * Includes comprehensive performance monitoring for optimization insights.
+ * This file is deprecated as of Isometry v4 Bridge Elimination architecture.
+ *
+ * OLD ARCHITECTURE (40KB bridge overhead):
+ * SQLite -> SQLite.swift -> MessageBridge.swift -> WKWebView -> D3.js
+ *
+ * NEW ARCHITECTURE (zero bridge overhead):
+ * SQLite file -> sql.js (WASM, in-browser) -> D3.js
+ *
+ * MIGRATION:
+ * - Replace WebViewClient usage with DatabaseService from './DatabaseService'
+ * - Use useSQLite() hook instead of bridge context
+ * - Direct synchronous queries: db.query() not bridge.postMessage()
+ *
+ * See: docs/specs/v4 specs/BRIDGE-ELIMINATION-ARCHITECTURE.md
  */
 
-import { getWebViewBridge, postMessage, isWebViewEnvironment } from '../utils/webview-bridge';
-import { dbLogger } from '../utils/logger';
+export class WebViewClient {
+  constructor() {
+    throw new Error(
+      'WebViewClient is DEPRECATED in Isometry v4. Use DatabaseService with sql.js instead. ' +
+      'See docs/specs/v4 specs/BRIDGE-ELIMINATION-ARCHITECTURE.md for migration guide.'
+    );
+  }
+}
 
+// Legacy exports for backward compatibility during migration
 export interface ConnectionStatus {
   isConnected: boolean;
   lastPing?: Date;
@@ -16,189 +34,24 @@ export interface ConnectionStatus {
   transport: 'webview' | 'fallback';
 }
 
-// Type definition for WebView bridge
-interface WebViewBridge {
-  postMessage: <T = unknown>(handler: 'database' | 'filesystem', method: string, params?: Record<string, unknown>, retries?: number) => Promise<T>;
-  getHealthStatus: () => {
-    isConnected: boolean;
-    pendingRequests: number;
-    environment: {
-      isNative: boolean;
-      platform: string;
-      version: string;
-      transport: string;
-    };
-  };
+/**
+ * @deprecated Use useSQLite() from SQLiteProvider instead
+ */
+export async function createWebViewClient(): Promise<never> {
+  throw new Error(
+    'createWebViewClient is DEPRECATED in Isometry v4. ' +
+    'Use SQLiteProvider and useSQLite() hook for direct sql.js access. ' +
+    'Bridge elimination eliminates 40KB of MessageBridge overhead.'
+  );
 }
 
 /**
- * WebView client for database operations through MessageHandler bridge
- * Maintains exact same interface as sql.js Database for drop-in compatibility
+ * @deprecated Use useSQLite() from SQLiteProvider instead
  */
-export class WebViewClient {
-  private connected: boolean = false;
-  private bridge: WebViewBridge | null = null;
-
-  constructor(_timeout: number = 10000) {
-    // timeout parameter accepted for compatibility but not currently used
-  }
-
-  /**
-   * Test WebView bridge availability and establish connection
-   */
-  async connect(): Promise<void> {
-    if (!isWebViewEnvironment()) {
-      throw new Error('WebView bridge not available - ensure running in native app');
-    }
-
-    try {
-      // Test basic connectivity with a ping operation
-      this.bridge = getWebViewBridge();
-      await this.bridge.postMessage('database', 'ping', {});
-      this.connected = true;
-    } catch (error) {
-      this.connected = false;
-      throw new Error(`WebView bridge connection failed: ${error}`);
-    }
-  }
-
-  /**
-   * Check if client is connected to WebView bridge
-   */
-  isConnected(): boolean {
-    return this.connected && isWebViewEnvironment();
-  }
-
-  /**
-   * Get current connection status for monitoring
-   */
-  getConnectionStatus(): ConnectionStatus {
-    try {
-      const bridge = this.bridge || getWebViewBridge();
-      const healthInfo = bridge.getHealthStatus();
-
-      return {
-        isConnected: this.connected,
-        lastPing: new Date(),
-        pendingRequests: healthInfo.pendingRequests,
-        transport: 'webview',
-      };
-    } catch {
-      return {
-        isConnected: false,
-        pendingRequests: 0,
-        transport: 'fallback',
-      };
-    }
-  }
-
-  /**
-   * Get bridge health status for advanced monitoring
-   */
-  getBridgeHealth() {
-    try {
-      const bridge = this.bridge || getWebViewBridge();
-      return bridge.getHealthStatus();
-    } catch {
-      return {
-        isConnected: false,
-        pendingRequests: 0,
-        environment: {
-          isNative: false,
-          platform: 'browser',
-          version: '1.0',
-          transport: 'fallback'
-        }
-      };
-    }
-  }
-
-  /**
-   * Execute SQL query with exact same interface as sql.js
-   * @param sql SQL query string
-   * @param params Query parameters
-   * @returns Array of result objects matching sql.js format
-   */
-  async execute<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
-    if (!this.connected) {
-      throw new Error('WebView client not connected. Call connect() first.');
-    }
-
-    try {
-      // Route through database MessageHandler with execute method
-      const result = await postMessage<T[]>('database', 'execute', {
-        sql,
-        params: params || []
-      });
-
-      return result || [];
-    } catch (error) {
-      dbLogger.error('Database execution error', { sql, params }, error as Error);
-
-      // Check if error indicates disconnection
-      const errorMessage = (error as Error).message.toLowerCase();
-      if (errorMessage.includes('timeout') || errorMessage.includes('bridge') || errorMessage.includes('webview')) {
-        this.connected = false;
-      }
-
-      throw new Error(`SQL execution failed: ${error}`);
-    }
-  }
-
-
-  /**
-   * Save operation - no-op for compatibility (native handles persistence automatically)
-   */
-  async save(): Promise<void> {
-    // Native backend handles persistence automatically
-    // This method exists for sql.js compatibility only
-    return Promise.resolve();
-  }
-
-  /**
-   * Reset database - calls native reset through MessageHandler
-   */
-  async reset(): Promise<void> {
-    if (!this.connected) {
-      throw new Error('WebView client not connected. Call connect() first.');
-    }
-
-    try {
-      await postMessage('database', 'reset', {});
-      dbLogger.info('Database reset successfully');
-    } catch (error) {
-      dbLogger.error('Database reset error', undefined, error as Error);
-      this.connected = false;
-      throw new Error(`Database reset failed: ${error}`);
-    }
-  }
-
-}
-
-/**
- * Factory function to create and connect a WebView client
- * @param timeout Request timeout in milliseconds
- * @returns Connected WebViewClient instance
- */
-export async function createWebViewClient(timeout?: number): Promise<WebViewClient> {
-  const client = new WebViewClient(timeout);
-  await client.connect();
-  return client;
-}
-
-/**
- * Utility function to test if WebView bridge is available
- * @returns Promise resolving to true if bridge is available
- */
-export async function isWebViewBridgeAvailable(): Promise<boolean> {
-  try {
-    if (!isWebViewEnvironment()) {
-      return false;
-    }
-    const client = new WebViewClient(3000); // Shorter timeout for availability check
-    await client.connect();
-    return true;
-  } catch {
-    return false;
-  }
+export async function isWebViewBridgeAvailable(): Promise<false> {
+  console.warn(
+    'isWebViewBridgeAvailable is DEPRECATED. Bridge eliminated in v4. ' +
+    'Use SQLiteProvider for direct sql.js database access.'
+  );
+  return false;
 }
