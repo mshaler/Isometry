@@ -563,8 +563,7 @@ extension PropertyBasedTestFramework {
                 let exportedData = try await exporter(importedNodes)
                 let preservationScore = try await preservationCheck(originalData, exportedData)
                 return preservationScore >= threshold
-            },
-            iterations: iterations
+            }
         )
     }
 
@@ -590,7 +589,7 @@ extension PropertyBasedTestFramework {
         name: String,
         generator: @escaping () async throws -> T,
         property: @escaping (T) async throws -> Bool,
-        mutations: [@escaping (T) -> T]
+        mutations: [(T) -> T]
     ) -> PropertyTest<T> {
         return PropertyTest(
             name: name,
@@ -647,7 +646,7 @@ extension PropertyBasedTestFramework {
         name: String,
         generator: @escaping () async throws -> TInput,
         processor: @escaping (TInput) async throws -> TOutput,
-        validators: [DataValidator<TInput, TOutput>]
+        validators: [any DataValidator<TInput, TOutput>]
     ) -> PropertyTest<TInput> {
         return PropertyTest(
             name: name,
@@ -723,11 +722,11 @@ extension PropertyBasedTestFramework.TestExecutionEngine {
 
     /// Execute tests with timeout protection
     public func executeWithTimeout<T>(
-        test: PropertyTest<T>,
+        test: PropertyBasedTestFramework.PropertyTest<T>,
         timeout: TimeInterval,
-        strategy: TestStrategy = .random(seed: 42)
-    ) async throws -> TestResult {
-        return try await withThrowingTaskGroup(of: TestResult.self) { group in
+        strategy: PropertyBasedTestFramework.TestStrategy = .random(seed: 42)
+    ) async throws -> PropertyBasedTestFramework.TestResult {
+        return try await withThrowingTaskGroup(of: PropertyBasedTestFramework.TestResult.self) { group in
             group.addTask {
                 return try await self.execute(test: test, strategy: strategy)
             }
@@ -752,6 +751,6 @@ extension PropertyBasedTestFramework.TestExecutionEngine {
 extension PropertyBasedTestFramework.TestResult {
     /// Convert to Swift Testing expectation
     public func expectSuccess(file: StaticString = #file, line: UInt = #line) {
-        #expect(success, "Property test '\(testName)' failed: \(failed)/\(iterations) iterations failed", sourceLocation: SourceLocation(file: file, line: line))
+        #expect(success)
     }
 }

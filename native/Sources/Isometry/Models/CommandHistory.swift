@@ -551,33 +551,17 @@ extension Array where Element == HistoryEntry {
 // MARK: - Enhanced HistoryFilter
 
 extension HistoryFilter {
-    /// Session identifier filter
+    /// Session identifier filter (placeholder - would need to be added to struct)
     public var sessionId: String? { nil }
 
-    /// Card identifier filter
+    /// Card identifier filter (placeholder - would need to be added to struct)
     public var cardId: String? { nil }
-
-    /// Enhanced initializer with additional filters
-    public init(
-        type: CommandType? = nil,
-        dateRange: DateRange? = nil,
-        searchQuery: String? = nil,
-        success: Bool? = nil,
-        sessionId: String? = nil,
-        cardId: String? = nil
-    ) {
-        self.type = type
-        self.dateRange = dateRange
-        self.searchQuery = searchQuery
-        self.success = success
-        // Note: sessionId and cardId would need to be added to the struct definition
-    }
 
     /// Quick filter presets
     public static func today() -> HistoryFilter {
         let startOfDay = Calendar.current.startOfDay(for: Date())
         let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
-        return HistoryFilter(dateRange: DateRange(start: startOfDay, end: endOfDay))
+        return HistoryFilter(dateRange: ShellDateRange(start: startOfDay, end: endOfDay))
     }
 
     public static func successful() -> HistoryFilter {
