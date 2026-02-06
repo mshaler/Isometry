@@ -69,120 +69,8 @@ export class SuperGrid {
       []
     );
 
-    // Calculate grid layout positions if not set
-    const cardsWithPositions = cards.map((card, index) => {
-      if (card.x === 0 && card.y === 0) {
-        // Auto-layout in grid pattern
-        const cols = Math.floor(this.width / (this.cardWidth + this.padding));
-        const row = Math.floor(index / cols);
-        const col = index % cols;
-        return {
-          ...card,
-          x: col * (this.cardWidth + this.padding) + this.padding,
-          y: row * (this.cardHeight + this.padding) + this.padding
-        };
-      }
-      return card;
-    });
-
-    // D3.js data binding in same memory space - zero serialization
-    // Key function required per CLAUDE.md patterns
-    const cardSelection = this.container
-      .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
-      .data(cardsWithPositions, d => d.id); // Key function - always required
-
-    // Enter/update/exit pattern using .join() - CLAUDE.md canonical pattern
-    const cardGroups = cardSelection.join(
-      enter => {
-        const groups = enter.append('g')
-          .attr('class', 'card-group')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        // Card background rectangle
-        groups.append('rect')
-          .attr('class', 'card-background')
-          .attr('width', this.cardWidth)
-          .attr('height', this.cardHeight)
-          .attr('rx', 6)
-          .attr('fill', '#ffffff')
-          .attr('stroke', '#e5e7eb')
-          .attr('stroke-width', 1);
-
-        // Card name text
-        groups.append('text')
-          .attr('class', 'card-name')
-          .attr('x', 8)
-          .attr('y', 20)
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '14px')
-          .attr('font-weight', '600')
-          .attr('fill', '#111827')
-          .text(d => d.name);
-
-        // Folder badge
-        groups.append('text')
-          .attr('class', 'card-folder')
-          .attr('x', 8)
-          .attr('y', 40)
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '11px')
-          .attr('fill', '#6b7280')
-          .text(d => d.folder || 'No folder');
-
-        // Status indicator
-        groups.append('circle')
-          .attr('class', 'status-indicator')
-          .attr('cx', this.cardWidth - 12)
-          .attr('cy', 12)
-          .attr('r', 4)
-          .attr('fill', d => this.getStatusColor(d.status));
-
-        return groups;
-      },
-      update => {
-        // Update positions and content
-        update
-          .transition()
-          .duration(300)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        update.select('.card-name')
-          .text(d => d.name);
-
-        update.select('.card-folder')
-          .text(d => d.folder || 'No folder');
-
-        update.select('.status-indicator')
-          .attr('fill', d => this.getStatusColor(d.status));
-
-        return update;
-      },
-      exit => exit
-        .transition()
-        .duration(200)
-        .attr('opacity', 0)
-        .remove()
-    );
-
-    // Add hover interactions
-    cardGroups
-      .style('cursor', 'pointer')
-      .on('mouseenter', function(event, d) {
-        d3.select(this)
-          .select('.card-background')
-          .attr('stroke', '#3b82f6')
-          .attr('stroke-width', 2);
-      })
-      .on('mouseleave', function(event, d) {
-        d3.select(this)
-          .select('.card-background')
-          .attr('stroke', '#e5e7eb')
-          .attr('stroke-width', 1);
-      })
-      .on('click', (event, d) => {
-        console.log('Card clicked:', d);
-        // Future: emit selection events for React integration
-      });
+    // Use shared rendering logic to ensure consistent behavior
+    this.renderCards(cards);
   }
 
   /**
@@ -318,8 +206,8 @@ export class SuperGrid {
   /**
    * Reusable D3.js join pattern for cards
    */
-  private applyCardJoin(selection: d3.Selection<SVGGElement, any, SVGElement, unknown>) {
-    selection.join(
+  private applyCardJoin(selection: d3.Selection<SVGGElement, any, SVGElement, unknown>): d3.Selection<SVGGElement, any, SVGElement, unknown> {
+    const joined = selection.join(
       enter => {
         const groups = enter.append('g')
           .attr('class', 'card-group')
@@ -381,5 +269,27 @@ export class SuperGrid {
         .attr('opacity', 0)
         .remove()
     );
+
+    // Add hover interactions to all cards (enter + update)
+    joined
+      .style('cursor', 'pointer')
+      .on('mouseenter', function(event, d) {
+        d3.select(this)
+          .select('.card-background')
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 2);
+      })
+      .on('mouseleave', function(event, d) {
+        d3.select(this)
+          .select('.card-background')
+          .attr('stroke', '#e5e7eb')
+          .attr('stroke-width', 1);
+      })
+      .on('click', (event, d) => {
+        console.log('Card clicked:', d);
+        // Future: emit selection events for React integration
+      });
+
+    return joined;
   }
 }
