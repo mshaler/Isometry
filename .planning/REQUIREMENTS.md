@@ -74,32 +74,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | TBD | Pending |
-| FOUND-02 | TBD | Pending |
-| FOUND-03 | TBD | Pending |
-| FOUND-04 | TBD | Pending |
-| FOUND-05 | TBD | Pending |
-| FOUND-06 | TBD | Pending |
-| FOUND-07 | TBD | Pending |
-| DIFF-01 | TBD | Pending |
-| DIFF-02 | TBD | Pending |
-| DIFF-03 | TBD | Pending |
-| DIFF-04 | TBD | Pending |
-| DIFF-05 | TBD | Pending |
-| DIFF-06 | TBD | Pending |
-| DIFF-07 | TBD | Pending |
-| DIFF-08 | TBD | Pending |
-| INTEG-01 | TBD | Pending |
-| INTEG-02 | TBD | Pending |
-| INTEG-03 | TBD | Pending |
-| INTEG-04 | TBD | Pending |
-| INTEG-05 | TBD | Pending |
+| FOUND-01 | Phase 34 | Pending |
+| FOUND-02 | Phase 34 | Pending |
+| FOUND-03 | Phase 34 | Pending |
+| FOUND-04 | Phase 34 | Pending |
+| FOUND-05 | Phase 35 | Pending |
+| FOUND-06 | Phase 35 | Pending |
+| FOUND-07 | Phase 35 | Pending |
+| DIFF-01 | Phase 36 | Pending |
+| DIFF-02 | Phase 35 | Pending |
+| DIFF-03 | Phase 37 | Pending |
+| DIFF-04 | Phase 36 | Pending |
+| DIFF-05 | Phase 35 | Pending |
+| DIFF-06 | Phase 35 | Pending |
+| DIFF-07 | Phase 37 | Pending |
+| DIFF-08 | Phase 35 | Pending |
+| INTEG-01 | Phase 34 | Pending |
+| INTEG-02 | Phase 34 | Pending |
+| INTEG-03 | Phase 34 | Pending |
+| INTEG-04 | Phase 34 | Pending |
+| INTEG-05 | Phase 34 | Pending |
 
 **Coverage:**
 - v4.1 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20 ⚠️
+- Mapped to phases: 20
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-05*
-*Last updated: 2026-02-05 after initial definition*
+*Last updated: 2026-02-05 after roadmap creation*

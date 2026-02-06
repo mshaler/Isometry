@@ -1,62 +1,16 @@
-# Isometry Notebook Sidecar Implementation Roadmap
+# Roadmap: Isometry v4.1 SuperGrid Foundation
 
-**Project:** Isometry Notebook Sidecar
-**Version:** v4.0 (Bridge Elimination Architecture)
-**Target:** sql.js direct access architecture with SuperGrid polymorphic data projection
-**Approach:** Multi-milestone incremental delivery
+## Overview
 
----
+Implement the core SuperGrid polymorphic data projection system through four phases: foundation stabilization with sql.js integration, PAFV grid core with dynamic axis assignment, SuperGrid nested headers with hierarchical spanning, and grid continuum transitions. This roadmap transforms the proven v3.1 live database architecture into the keystone SuperGrid visualization platform with bridge elimination benefits.
 
 ## Milestones
 
 - ✅ **v1.0 React Prototype** - Phases 1-4 (completed)
-- 🚧 **v2.0 Native Integration** - Phases 6.1-6.4 (in progress)
-- 🚧 **v2.1 SQL.js Migration** - Phases 7.1-7.3 (planned)
-- ✅ **v2.2 Database Versioning & ETL Operations** - Phases 8.1-8.4 (completed)
-- 🏗️ **v2.3 Production Readiness Infrastructure** - Phases 9.1-9.4 (App Store submission capability)
-- 🚧 **v2.4 Error Elimination** - Phase 10 (absolute zero lint problems - GAP CLOSURE)
-- 🚧 **v2.5 Advanced Import Systems** - Phases 11.1-11.4 (comprehensive import verification)
-- 🆕 **v2.6 Graph Analytics Engine** - Phases 12.1-12.4 (intelligent connection discovery and query optimization)
-- 🚀 **v3.0 Production Deployment** - Phases 13.1-17 (App Store launch and production infrastructure) - ✅ COMPLETED
-- ✅ **v3.1 Live Database Integration** - Phases 18-21, 25-27 (shipped 2026-02-01) - [Details](milestones/v3.1-ROADMAP.md)
-- 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
-- 🆕 **v3.3 Complete Apple Notes Data Lifecycle** - Phase 30 (Native access, CAS storage, verification pipeline, database operations) - 📋 PLANNED
-- 🆕 **v3.4 Multi-Environment Debugging** - Phase 32 (Swift/TypeScript/D3/React debugging and stabilization) - 🔧 CURRENT
-- 🚀 **v4.0 Bridge Elimination Architecture** - Phase 33 (sql.js direct access, SuperGrid foundation) - 🆕 PLANNED
-
-## Milestone Overview
-
-Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-
-**v1.0 Goal (Completed):** Deliver a working three-component React sidecar that captures notes as Isometry cards, provides embedded terminal with Claude Code integration, and offers universal preview capabilities.
-
-**v2.0 Goal (Current):** Integrate React prototype functionality into native iOS/macOS apps that leverage existing infrastructure while providing superior performance and user experience within App Sandbox constraints.
-
-**v2.1 Goal (Migration):** Phase out sql.js dependency by implementing native API bridge, maintaining React prototype functionality while connecting to production GRDB/CloudKit backend.
-
-**v2.2 Goal (Retrofitting - COMPLETED):** Integrate existing database versioning and ETL operations system into GSD methodology governance through comprehensive verification and testing phases.
-
-**v2.3 Goal (Production Readiness):** Establish comprehensive App Store submission capability through systematic verification of production readiness infrastructure including compliance validation, CloudKit production deployment, performance benchmarking, and beta testing frameworks.
-
-**v2.4 Goal (Error Elimination):** Achieve absolute zero lint problems (205→139→21→0) through comprehensive type safety, ESLint configuration, and systematic elimination of all remaining errors and warnings.
-
-**v2.5 Goal (Advanced Import Systems):** Integrate existing advanced import systems (Office documents, SQLite databases, Apple ecosystem) into GSD methodology governance with comprehensive verification and enterprise-grade capability validation.
-
-**v2.6 Goal (Graph Analytics Engine):** Integrate sophisticated graph analytics engine with intelligent connection discovery, query optimization, and large-scale graph processing capabilities. Implement CardBoard v1/v2 research-derived algorithms for connection suggestions, cache optimization, and predictive analytics.
-
-**v3.0 Goal (Production Deployment - COMPLETED):** Complete App Store submission and production launch with CloudKit production infrastructure, distribution pipeline, beta testing, marketing systems, and post-launch operations.
-
-**v3.1 Goal (Live Database Integration - GAP CLOSURE):** Connect React frontend to native SQLite backend with real-time data synchronization and performance monitoring, establishing foundational bridge communication infrastructure before advanced real-time features. **Critical:** Infrastructure complete but requires application integration gap closure.
-
-**v3.2 Goal (Enhanced Apple Integration):** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Leverage existing AltoIndexImporter foundation to provide production-ready live Notes integration.
-
-**v3.3 Goal (Complete Apple Notes Data Lifecycle):** Establish enterprise-grade Apple Notes data lifecycle management with native database access beyond alto-index exports, Content-Addressable Storage for efficient attachment handling, comprehensive verification pipeline ensuring >99.9% data integrity, complete database operations suite, and property-based testing framework for production-grade reliability.
-
-**v3.4 Goal (Multi-Environment Debugging):** Establish stable development environment across Swift/iOS, TypeScript/React, D3.js integration, and React UI chrome components. Resolve compilation errors, type conflicts, broken file integrations, and layout issues to enable parallel development across native and prototype environments.
-
-**v4.0 Goal (Bridge Elimination Architecture):** Transform from 40KB Swift↔JavaScript MessageBridge to sql.js architecture where D3.js queries SQLite directly in same memory space with zero serialization overhead. Establish foundation for SuperGrid polymorphic data projection system.
-
----
+- ✅ **v3.0 Production Deployment** - Phases 13-17 (completed)
+- ✅ **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
+- ✅ **v4.0 Bridge Elimination Foundation** - Phase 33 (shipped 2026-02-06)
+- 🚧 **v4.1 SuperGrid Foundation** - Phases 34-37 (in progress)
 
 ## Phases
 
@@ -180,105 +134,10 @@ Plans:
 
 </details>
 
-### 🆕 v3.2 Enhanced Apple Integration
+<details>
+<summary>✅ v4.0 Bridge Elimination Foundation (Phase 33) — SHIPPED 2026-02-06</summary>
 
-**Milestone Goal:** Transform Apple Notes integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync. Build upon the existing AltoIndexImporter foundation (6,891 notes successfully imported) to provide production-ready live Notes integration with CRDT conflict resolution and comprehensive user experience.
-
-#### Phase 29: Enhanced Apple Notes Live Integration
-**Goal:** Implement live Apple Notes synchronization with CRDT conflict resolution and comprehensive user experience
-**Depends on:** Phase 27 (Application Integration Gap Closure)
-**Requirements:** NOTES-LIVE-01 through NOTES-LIVE-05, TCC-01 through TCC-04, CRDT-01 through CRDT-04, PERF-NOTES-01 through PERF-NOTES-04
-**Success Criteria** (what must be TRUE):
-  1. Real-time Notes synchronization with <1s change detection via FSEvents monitoring
-  2. TCC permission management with graceful degradation and clear user communication
-  3. CRDT conflict resolution maintains data integrity during multi-device collaborative editing
-  4. User interface provides intuitive configuration and manual conflict resolution controls
-  5. Performance optimized for large Notes libraries (10k+ notes capability) with efficient background processing
-**Plans:** 6 plans
-
-**Foundation:** AltoIndexImporter with proven import capability, enhanced with live sync infrastructure, FSEvents monitoring, CRDT conflict resolution, and comprehensive UI integration.
-
-Plans:
-- [x] 29-01-PLAN.md — Enhanced AltoIndexImporter with live sync and TCC permission management
-- [x] 29-02-PLAN.md — FSEvents monitoring and CRDT conflict resolution infrastructure
-- [x] 29-03-PLAN.md — User interface integration and performance optimization for large libraries
-- [ ] 29-04-PLAN.md — Real EventKit implementation to replace alto-index fallback
-- [ ] 29-05-PLAN.md — WebView bridge integration for React-native communication
-- [ ] 29-06-PLAN.md — Swift compilation fixes in NotesPermissionHandler.swift
-
-### 🆕 v3.3 Complete Apple Notes Data Lifecycle
-
-**Milestone Goal:** Establish enterprise-grade Apple Notes data lifecycle management with native database access beyond alto-index exports, Content-Addressable Storage for efficient attachment handling, comprehensive verification pipeline ensuring >99.9% data integrity, complete database operations suite, and property-based testing framework for production-grade reliability.
-
-#### Phase 30: Apple Notes Data Lifecycle Management
-**Goal:** Implement comprehensive Apple Notes data lifecycle with native access, CAS storage, verification pipeline, and database operations
-**Depends on:** Phase 29 (Enhanced Apple Notes Live Integration)
-**Success Criteria** (what must be TRUE):
-  1. Native Apple Notes importer accesses Notes.app database directly with TCC permissions and graceful fallback
-  2. Content-Addressable Storage efficiently manages attachments with deduplication and metadata preservation
-  3. Data verification pipeline compares native vs alto-index data achieving >99.9% accuracy validation
-  4. Database lifecycle operations (dump, restore, export, purge, rehydrate) execute reliably with versioning
-  5. Property-based testing framework validates data integrity invariants with comprehensive round-trip validation
-**Plans:** 5 plans
-
-**Foundation:** AltoIndexImporter proven capability enhanced with native database access, comprehensive attachment management, enterprise-grade verification, complete operations suite, and sophisticated testing framework.
-
-Plans:
-- [x] 30-01-PLAN.md — Native Apple Notes importer with TCC permission management and direct database access
-- [x] 30-02-PLAN.md — Content-Addressable Storage system for attachments with deduplication and metadata preservation
-- [x] 30-03-PLAN.md — Data verification pipeline with >99.9% accuracy validation and automated comparison
-- [x] 30-04-PLAN.md — Database lifecycle operations (dump, restore, export, purge, rehydrate) with versioning
-- [x] 30-05-PLAN.md — Comprehensive property-based test framework with round-trip validation
-
-### 🆕 v3.4 Multi-Environment Debugging
-
-**Milestone Goal:** Establish stable development environment across Swift/iOS, TypeScript/React, D3.js integration, and React UI chrome components. Resolve compilation errors, type conflicts, broken file integrations, and layout issues to enable parallel development across native and prototype environments.
-
-#### Phase 32: Multi-Environment Debugging
-**Goal:** Fix critical compilation errors and integration issues across Swift, TypeScript, D3.js, and React environments
-**Depends on:** Phase 30 (Complete Apple Notes Data Lifecycle)
-**Success Criteria** (what must be TRUE):
-  1. Swift/iOS/macOS native project compiles without errors and builds successfully
-  2. TypeScript/React prototype builds cleanly with proper type checking enforced
-  3. D3.js visualizations render properly and integrate seamlessly with React components
-  4. React UI chrome components provide functional development interface with working layouts
-  5. Both environments support parallel development without blocking compilation issues
-**Plans:** 25 plans
-
-**Foundation:** Address type conflicts, missing dependencies, broken file imports, and layout issues preventing development progress across both native and prototype environments.
-
-Plans:
-- [x] 32-01-PLAN.md — Fix Swift compilation errors and type conflicts
-- [x] 32-02-PLAN.md — Resolve TypeScript compilation issues and improve type safety
-- [x] 32-03-PLAN.md — Restore broken Swift files and fix D3.js integration
-- [x] 32-04-PLAN.md — Fix React UI chrome components and layout coordination
-- [x] 32-05-PLAN.md — Compilation gap closure for D3 Canvas component
-- [x] 32-06-PLAN.md — Fix critical interface gaps in LiveDataContext and useLiveQuery
-- [x] 32-07-PLAN.md — Complete TypeScript cleanup with d3-optimization fixes
-- [x] 32-08-PLAN.md — Fix view component TypeScript errors and prop interfaces
-- [x] 32-09-PLAN.md — Fix TypeScript interface missing properties gap closure
-- [x] 32-10-PLAN.md — Fix Swift ConflictResolution type regression gap closure
-- [x] 32-11-PLAN.md — Clean up TypeScript unused variables and type safety gap closure
-- [x] 32-12-PLAN.md — Fix remaining Swift compilation errors and interface gaps
-- [x] 32-13-PLAN.md — Fix D3 Canvas component TypeScript errors and integration issues
-- [x] 32-14-PLAN.md — Clean up TypeScript compilation errors in remaining components
-- [x] 32-15-PLAN.md — Fix critical Swift enum namespace conflicts and D3 interface gaps
-- [x] 32-16-PLAN.md — Fix Swift ObservableObject conformance and missing bridge methods
-- [x] 32-17-PLAN.md — Resolve TypeScript D3 Selection type conflicts and ecosystem stability
-- [x] 32-18-PLAN.md — Framework import and bridge method implementation for Swift compilation stability
-- [x] 32-19-PLAN.md — TypeScript error cleanup with D3 type casting and unused variable elimination
-- [x] 32-20-PLAN.md — Swift compilation fixes for ContentAwareStorageManager and CloudKitConflictResolver
-- [x] 32-21-PLAN.md — Fix TypeScript type casting violations and unused variables (Gap Closure)
-- [x] 32-22-PLAN.md — Fix Swift compilation errors in configuration, database, and verification modules (Gap Closure)
-- [x] 32-23-PLAN.md — TypeScript compilation completion fixing Node property access and interface methods (Gap Closure)
-- [ ] 32-24-PLAN.md — Swift compilation crisis triage addressing fundamental syntax and type conflicts (Gap Closure)
-- [ ] 32-25-PLAN.md — TypeScript compilation final push eliminating remaining 81 errors (Gap Closure)
-
-### 🚀 v4.0 Bridge Elimination Architecture
-
-**Milestone Goal:** Transform from 40KB Swift↔JavaScript MessageBridge to sql.js architecture where D3.js queries SQLite directly in same memory space with zero serialization overhead. Establish foundation for SuperGrid polymorphic data projection system and enable Phase 2 SuperGrid development.
-
-#### Phase 33: Bridge Elimination Foundation
+### Phase 33: Bridge Elimination Foundation
 **Goal:** Establish sql.js foundation with verified FTS5, recursive CTEs, and direct D3.js data access patterns
 **Depends on:** Phase 32 (Multi-Environment Debugging)
 **Success Criteria** (what must be TRUE):
@@ -289,399 +148,102 @@ Plans:
   5. Foundation ready for SuperGrid polymorphic data projection system
 **Plans:** 3 plans
 
-**Foundation:** Core database service with synchronous sql.js API, D3.js direct data binding patterns, and bridge code elimination. Gates all SuperGrid development in subsequent phases.
+Plans:
+- [x] 33-01-PLAN.md — Vendor sql.js WASM with FTS5+JSON1 and create DatabaseService
+- [x] 33-02-PLAN.md — Establish D3.js direct data access with SuperGrid foundation
+- [x] 33-03-PLAN.md — Remove legacy bridge code and complete migration to sql.js
+
+</details>
+
+### 🚧 v4.1 SuperGrid Foundation (In Progress)
+
+**Milestone Goal:** Implement the core SuperGrid polymorphic data projection system with nested PAFV headers, direct sql.js integration, dynamic axis assignment, grid continuum views, and Janus density controls.
+
+**Phase Numbering:**
+- Integer phases (34, 35, 36, 37): Planned milestone work
+- Decimal phases (34.1, 34.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 34: Foundation Stabilization** - Verify sql.js + D3.js integration with stable TypeScript compilation
+- [ ] **Phase 35: PAFV Grid Core** - Dynamic axis assignment with basic grid rendering and drag-drop wells
+- [ ] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
+- [ ] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
+
+#### Phase 34: Foundation Stabilization
+**Goal**: Establish stable sql.js + D3.js integration with basic grid rendering and TypeScript compilation cleanup
+**Depends on**: Previous milestone v4.0 (shipped)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, INTEG-01, INTEG-02, INTEG-03, INTEG-04, INTEG-05
+**Success Criteria** (what must be TRUE):
+  1. User sees basic grid cells rendered with D3.js data binding using proper key functions
+  2. User sees row and column headers displaying LATCH dimensions with visual hierarchy indication
+  3. User can scroll through 10k+ cells with 60fps performance maintained
+  4. TypeScript compilation succeeds with zero errors across all SuperGrid modules
+  5. System integrates with existing PAFVContext without breaking current LATCH filtering
+**Plans**: TBD
 
 Plans:
-- [ ] 33-01-PLAN.md — Vendor sql.js WASM with FTS5+JSON1 and create DatabaseService
-- [ ] 33-02-PLAN.md — Establish D3.js direct data access with SuperGrid foundation
-- [ ] 33-03-PLAN.md — Remove legacy bridge code and complete migration to sql.js
+- [ ] 34-01: TBD
+- [ ] 34-02: TBD
+- [ ] 34-03: TBD
 
-## Dependencies
+#### Phase 35: PAFV Grid Core
+**Goal**: Enable dynamic axis assignment with drag-drop wells for real-time view reconfiguration
+**Depends on**: Phase 34
+**Requirements**: DIFF-02, DIFF-05, DIFF-06, DIFF-08, FOUND-05, FOUND-06, FOUND-07
+**Success Criteria** (what must be TRUE):
+  1. User can drag LATCH dimensions between axis wells (X, Y, Z planes) using mouse or touch
+  2. Grid layout updates in real-time when dimensions are reassigned between spatial planes
+  3. User can navigate grid with keyboard (arrow keys, tab, enter) with visible cell selection
+  4. User can resize columns with drag handles and column widths persist across sessions
+  5. User can sort data by clicking column headers with visual sort indicators
+  6. D3.js queries sql.js directly with zero serialization overhead for all grid operations
+**Plans**: TBD
 
-### v3.1 Live Database Integration External Dependencies
-- **GRDB.swift 6.24.0** with ValueObservation for real-time change notifications
-- **MessagePack binary serialization** for 40-60% payload reduction vs JSON
-- **TanStack Virtual 3.2.0** for large dataset virtual scrolling performance
-- **WKWebView MessageHandler** API for secure bridge communication
-- **Native SQLite with FTS5** for text search performance optimization
+Plans:
+- [ ] 35-01: TBD
+- [ ] 35-02: TBD
+- [ ] 35-03: TBD
 
-### v3.2 Enhanced Apple Integration External Dependencies
-- **FSEvents Framework** for real-time file system monitoring
-- **EventKit Framework** for Notes access with TCC permission management
-- **Notes Framework** for direct Notes app integration (limited by sandbox)
-- **Swift-protobuf** for Notes content format parsing
-- **Swift Concurrency (Actor)** for background processing and thread safety
+#### Phase 36: SuperGrid Headers
+**Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
+**Depends on**: Phase 35
+**Requirements**: DIFF-01, DIFF-04
+**Success Criteria** (what must be TRUE):
+  1. User sees multi-level hierarchical headers with visual spanning across parent-child relationships
+  2. User can control data density through orthogonal zoom (value) and pan (extent) controls
+  3. Header cells span appropriately across child dimensions without layout conflicts
+  4. User can expand/collapse header levels while maintaining grid performance
+**Plans**: TBD
 
-### v3.3 Complete Apple Notes Data Lifecycle External Dependencies
-- **EventKit Framework** for TCC permission management and Notes access authorization
-- **SQLite Direct Access** for native Notes database parsing (~/Library/Group Containers/group.com.apple.notes/)
-- **Swift-protobuf** for Notes content format parsing and gzipped content decompression
-- **CryptoKit** for SHA-256 content hashing in Content-Addressable Storage
-- **Swift Testing** for property-based testing framework and advanced validation
+Plans:
+- [ ] 36-01: TBD
+- [ ] 36-02: TBD
 
-### v3.4 Multi-Environment Debugging External Dependencies
-- **Swift Compiler** with proper type resolution and actor isolation
-- **TypeScript 5.x** with strict type checking and modern ES modules
-- **D3.js 7.x** with React integration patterns and TypeScript definitions
-- **Vite 7.x** for development server and build tooling
-- **ESLint/Prettier** for code quality and formatting consistency
+#### Phase 37: Grid Continuum
+**Goal**: Deliver seamless transitions between gallery, list, kanban, and grid projections of same dataset
+**Depends on**: Phase 36
+**Requirements**: DIFF-03, DIFF-07
+**Success Criteria** (what must be TRUE):
+  1. User can transition between gallery → list → kanban → 2D grid → nD SuperGrid views seamlessly
+  2. User's semantic position (selected cards, filter context) preserves during view transitions
+  3. View transitions complete within 200ms with smooth visual animations
+  4. Same LATCH-filtered dataset renders consistently across all projection modes
+**Plans**: TBD
 
-### v4.0 Bridge Elimination Architecture External Dependencies
-- **sql.js 1.13.0** with FTS5 and JSON1 extensions enabled
-- **WebAssembly (WASM)** runtime for in-browser SQLite execution
-- **D3.js 7.x** for direct data binding and visualization rendering
-- **Vite bundler** for WASM asset management and module resolution
-
-### v3.1 Live Database Integration Internal Dependencies
-- **Existing React prototype** providing UI patterns and component architecture
-- **Native GRDB database** with complete schema and CloudKit sync operations
-- **WebView bridge infrastructure** from previous milestone implementations
-- **Performance monitoring** systems for bridge optimization validation
-
-### v3.2 Enhanced Apple Integration Internal Dependencies
-- **AltoIndexImporter foundation** with proven 6,891 note import capability
-- **GRDB database integration** for seamless data persistence
-- **WebView bridge infrastructure** for React-native communication
-- **Existing conflict resolution patterns** from bridge infrastructure
-
-### v3.3 Complete Apple Notes Data Lifecycle Internal Dependencies
-- **AltoIndexImporter foundation** with comprehensive import/export capability and round-trip validation
-- **DatabaseVersionControl system** with git-like branching, merging, and rollback operations
-- **ContentAwareStorageManager** enhanced for attachment handling and Content-Addressable Storage
-- **IsometryDatabase actor** with complete GRDB integration and transaction coordination
-- **Existing verification patterns** from AltoIndexImporter.validateRoundTripData for baseline accuracy measurement
-
-### v3.4 Multi-Environment Debugging Internal Dependencies
-- **Existing Swift codebase** with actor patterns and GRDB integration
-- **React prototype infrastructure** with component architecture and state management
-- **D3.js visualization components** requiring integration with React lifecycle
-- **WebView bridge** for cross-environment communication and data flow
-- **Development toolchain** with consistent build and testing infrastructure
-
-### v4.0 Bridge Elimination Architecture Internal Dependencies
-- **Existing SQLite schema** with complete LPG model (nodes, edges, facets, notebook_cards)
-- **D3.js visualization patterns** from existing Canvas and SuperGrid components
-- **React control chrome** for filter dispatch and UI coordination
-- **TypeScript type definitions** for Node, Edge, and graph data structures
-- **Existing sql.js exploration** in SQLiteProvider.tsx as foundation
-
-### Phase Dependencies
-```
-v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 25 → Phase 26 → Phase 27 (Gap Closure)
-v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
-v3.3: Phase 30 (Complete Apple Notes Data Lifecycle Management)
-v3.4: Phase 32 (Multi-Environment Debugging)
-v4.0: Phase 33 (Bridge Elimination Foundation)
-```
-
-**Phase Ordering Rationale (Research-Based):**
-- **Foundation-first approach** prevents technical debt accumulation that becomes expensive to fix later
-- **Bridge optimization** must precede real-time features to avoid performance bottlenecks under load
-- **Transaction management** requires understanding of bridge communication patterns before implementation
-- **Advanced features** like virtual scrolling depend on stable real-time and sync infrastructure
-- **Application integration** requires complete infrastructure before connecting main app components
-- **Enhanced Apple integration** builds upon proven foundation with sophisticated live sync capabilities
-- **Complete data lifecycle** extends enhanced integration with enterprise-grade operations and verification
-- **Multi-environment debugging** addresses accumulated technical debt across environments before advanced feature development
-- **Bridge elimination** requires stable compilation environment and replaces bridge architecture with sql.js direct access
-
----
+Plans:
+- [ ] 37-01: TBD
+- [ ] 37-02: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30 → 32 → 33
+Phases execute in numeric order: 33 → 34 → 35 → 36 → 37
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 18. Bridge Optimization Foundation | 3/3 | ✅ v3.1 Shipped | 2026-01-30 |
-| 19. Real-Time Change Notifications | 2/2 | ✅ v3.1 Shipped | 2026-01-30 |
-| 20. Transaction and Sync Management | 2/2 | ✅ v3.1 Shipped | 2026-01-31 |
-| 21. Advanced Query and Caching | 5/5 | ✅ v3.1 Shipped | 2026-01-31 |
-| 25. Live Query Integration | 1/1 | ✅ v3.1 Shipped | 2026-01-31 |
-| 26. Virtual Scrolling Performance Integration | 2/2 | ✅ v3.1 Shipped | 2026-01-31 |
-| 27. Application Integration Gap Closure | 3/3 | ✅ v3.1 Shipped | 2026-02-01 |
-| 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
-| 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
-| 32. Multi-Environment Debugging | 23/25 | 🔧 Gap Closure | - |
-| 33. Bridge Elimination Foundation | 3/3 | ✅ v4.0 Foundation | 2026-02-06 |
-
-## Architecture Integration Summary
-
-### v3.1 Live Database Integration Data Flow
-```
-React Components ←→ WebView Bridge ←→ Native GRDB SQLite
-├── useLiveQuery hook  ├── MessagePack serialization  ├── IsometryDatabase actor
-├── Optimistic updates   ├── Circuit breaker patterns   ├── ValueObservation (GRDB)
-├── Virtual scrolling    ├── Performance monitoring     ├── Transaction coordination
-└── Cache invalidation   └── Bridge correlation IDs     └── CloudKit sync integration
-```
-
-### v4.0 Bridge Elimination Architecture Data Flow
-```
-SQLite File ←→ sql.js (WASM) ←→ D3.js Visualizations
-     ↓              ↓                    ↓
-File I/O        Direct Queries      React Controls
-     ↓              ↓                    ↓
-Swift Shell   Zero Serialization   Filter Dispatch
-```
-
-**Key Change:** 40KB bridge infrastructure eliminated, 6 serialization boundaries → 0, D3.js queries SQLite directly in same memory space.
-
-### v3.2 Enhanced Apple Integration Data Flow
-```
-Apple Notes App ←→ FSEvents/EventKit ←→ AppleNotesLiveImporter ←→ IsometryDatabase ←→ WebView Bridge ←→ React UI
-                ↗                    ↗                        ↗
-         TCC Permissions      CRDT Conflict Resolution    Performance Optimization
-```
-
-### v3.3 Complete Apple Notes Data Lifecycle Flow
-```
-Apple Notes Database ←→ Native Access ←→ CAS Storage ←→ Verification Pipeline ←→ Database Operations ←→ Property Testing
-     (Direct TCC)         (Permission)     (Attachments)     (>99.9% accuracy)      (Lifecycle Ops)      (Round-trip)
-         ↓                     ↓                ↓                   ↓                      ↓                   ↓
-   Notes.app SQLite    AppleNotesNativeImporter → AttachmentManager → DataVerificationPipeline → DatabaseLifecycleManager → PropertyBasedTestFramework
-```
-
-### v3.4 Multi-Environment Debugging Flow
-```
-Swift/iOS Environment ←→ Development Toolchain ←→ TypeScript/React Environment
-        ↓                         ↓                          ↓
-Native Compilation      Build System Integration      Frontend Compilation
-        ↓                         ↓                          ↓
-GRDB/CloudKit Database ←→ WebView Bridge ←→ D3.js Visualizations
-        ↓                         ↓                          ↓
-Actor Patterns          Message Serialization        React Component Tree
-```
-
-### Performance Targets (v3.1 vs Baseline)
-
-| Metric | Baseline (sql.js) | v3.1 Target | Research Basis |
-|--------|------------------|-------------|----------------|
-| **Bridge Latency** | N/A | <16ms | 60fps UI responsiveness |
-| **Payload Size** | JSON baseline | -40-60% | MessagePack compression |
-| **Change Notification** | Manual refresh | <100ms | GRDB ValueObservation |
-| **Transaction Safety** | Local only | ACID compliant | Bridge transaction control |
-| **Query Performance** | 2-5 seconds | <50ms cached | Intelligent caching + pagination |
-| **Memory Usage** | Baseline | Stable | Reference cycle prevention |
-| **Reliability** | Browser dependent | 99%+ uptime | Circuit breaker patterns |
-
-### Performance Targets (v4.0 Bridge Elimination)
-
-| Metric | v3.1 Bridge | v4.0 sql.js | Improvement |
-|--------|-------------|-------------|-------------|
-| **Data Access Latency** | <16ms | <1ms | Direct memory access |
-| **Serialization Overhead** | MessagePack | Zero | Same memory space |
-| **Bridge Code Size** | 40KB | 0KB | Eliminated |
-| **Query Execution** | Async/Promise | Synchronous | No callback overhead |
-| **Memory Footprint** | Bridge buffers | Direct binding | ~50% reduction |
-| **Bundle Complexity** | Swift + JS bridge | WASM + JS | Simplified architecture |
-
-### Performance Targets (v3.2 Enhanced Apple Integration)
-
-| Metric | Target | Baseline | Approach |
-|--------|--------|----------|----------|
-| **Change Detection** | <1s | N/A | FSEvents monitoring |
-| **Content Parsing** | <100ms/note | N/A | Background processing |
-| **Conflict Resolution** | <200ms | N/A | CRDT algorithms |
-| **Library Scale** | 10k+ notes | 6,891 notes | Incremental processing |
-
-### Performance Targets (v3.3 Complete Apple Notes Data Lifecycle)
-
-| Metric | Target | Baseline | Approach |
-|--------|--------|----------|----------|
-| **Native Import Speed** | <50ms/note | Alto-index baseline | Direct database access |
-| **Attachment Processing** | <100ms/file | N/A | CAS with deduplication |
-| **Verification Accuracy** | >99.9% | 95% (current) | Comprehensive comparison |
-| **Database Operations** | <5min (100k records) | N/A | Optimized lifecycle ops |
-| **Property Test Coverage** | 100+ scenarios/property | N/A | Automated invariant validation |
-
-### Performance Targets (v3.4 Multi-Environment Debugging)
-
-| Metric | Target | Current | Approach |
-|--------|--------|----------|----------|
-| **Swift Compilation** | <30s clean build | Errors preventing build | Type conflict resolution |
-| **TypeScript Compilation** | <10s full check | ~81 errors | Type safety improvement |
-| **Development Server Start** | <5s | Timeout/errors | Dependency optimization |
-| **D3 Render Performance** | 60fps | Broken integration | React lifecycle integration |
-| **Multi-environment Workflow** | Parallel development | Blocked by compilation | Environment stabilization |
-
----
-
-## Requirements Traceability
-
-### v3.1 Live Database Integration Requirements
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| BRIDGE-01 | Phase 18 | Complete |
-| BRIDGE-02 | Phase 18 | Complete |
-| BRIDGE-03 | Phase 18 | Complete |
-| BRIDGE-04 | Phase 18 | Complete |
-| BRIDGE-05 | Phase 18 | Complete |
-| SYNC-01 | Phase 19 | Complete |
-| SYNC-02 | Phase 19 | Complete |
-| SYNC-03 | Phase 19 | Complete |
-| SYNC-04 | Phase 19 | Complete |
-| SYNC-05 | Phase 19 | Complete |
-| TRANS-01 | Phase 20 | Complete |
-| TRANS-02 | Phase 20 | Complete |
-| TRANS-03 | Phase 20 | Complete |
-| TRANS-04 | Phase 20 | Complete |
-| TRANS-05 | Phase 20 | Complete |
-| PERF-01 | Phase 21 | Complete |
-| PERF-02 | Phase 21 | Complete |
-| PERF-03 | Phase 21 | Complete |
-| PERF-04 | Phase 21 | Complete |
-| PERF-05 | Phase 21 | Complete |
-| APP-INT-01 | Phase 27 | Complete |
-| APP-INT-02 | Phase 27 | Complete |
-| APP-INT-03 | Phase 27 | Complete |
-| APP-INT-04 | Phase 27 | Complete |
-| APP-INT-05 | Phase 27 | Complete |
-
-**v3.1 Coverage:** 25/25 requirements mapped ✓
-
-### v3.2 Enhanced Apple Integration Requirements
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| NOTES-LIVE-01 | Phase 29 | Planned |
-| NOTES-LIVE-02 | Phase 29 | Planned |
-| NOTES-LIVE-03 | Phase 29 | Planned |
-| NOTES-LIVE-04 | Phase 29 | Planned |
-| NOTES-LIVE-05 | Phase 29 | Planned |
-| TCC-01 | Phase 29 | Planned |
-| TCC-02 | Phase 29 | Planned |
-| TCC-03 | Phase 29 | Planned |
-| TCC-04 | Phase 29 | Planned |
-| CRDT-01 | Phase 29 | Planned |
-| CRDT-02 | Phase 29 | Planned |
-| CRDT-03 | Phase 29 | Planned |
-| CRDT-04 | Phase 29 | Planned |
-| PERF-NOTES-01 | Phase 29 | Planned |
-| PERF-NOTES-02 | Phase 29 | Planned |
-| PERF-NOTES-03 | Phase 29 | Planned |
-| PERF-NOTES-04 | Phase 29 | Planned |
-
-**v3.2 Coverage:** 17/17 requirements mapped ✓
-
-### v3.3 Complete Apple Notes Data Lifecycle Requirements
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| NATIVE-ACCESS-01 | Phase 30 | Planned |
-| NATIVE-ACCESS-02 | Phase 30 | Planned |
-| CAS-STORAGE-01 | Phase 30 | Planned |
-| CAS-STORAGE-02 | Phase 30 | Planned |
-| VERIFICATION-01 | Phase 30 | Planned |
-| VERIFICATION-02 | Phase 30 | Planned |
-| LIFECYCLE-OPS-01 | Phase 30 | Planned |
-| LIFECYCLE-OPS-02 | Phase 30 | Planned |
-| PROPERTY-TEST-01 | Phase 30 | Planned |
-| PROPERTY-TEST-02 | Phase 30 | Planned |
-
-**v3.3 Coverage:** 10/10 requirements mapped ✓
-
-### v3.4 Multi-Environment Debugging Requirements
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SWIFT-COMPILE-01 | Phase 32 | Planned |
-| SWIFT-COMPILE-02 | Phase 32 | Planned |
-| TYPESCRIPT-01 | Phase 32 | Planned |
-| TYPESCRIPT-02 | Phase 32 | Planned |
-| D3-INTEGRATION-01 | Phase 32 | Planned |
-| D3-INTEGRATION-02 | Phase 32 | Planned |
-| REACT-CHROME-01 | Phase 32 | Planned |
-| REACT-CHROME-02 | Phase 32 | Planned |
-
-**v3.4 Coverage:** 8/8 requirements mapped ✓
-
-### v4.0 Bridge Elimination Architecture Requirements
-
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| SQLJS-FOUNDATION-01 | Phase 33 | Planned |
-| SQLJS-FOUNDATION-02 | Phase 33 | Planned |
-| SQLJS-FOUNDATION-03 | Phase 33 | Planned |
-| DIRECT-ACCESS-01 | Phase 33 | Planned |
-| DIRECT-ACCESS-02 | Phase 33 | Planned |
-| BRIDGE-ELIMINATION-01 | Phase 33 | Planned |
-| BRIDGE-ELIMINATION-02 | Phase 33 | Planned |
-| SUPERGRID-FOUNDATION-01 | Phase 33 | Planned |
-
-**v4.0 Coverage:** 8/8 requirements mapped ✓
-
----
-
-## Migration Strategy
-
-### Foundation-First Approach (Research-Based)
-1. **Phase 18**: Establish reliable bridge communication before adding complexity
-2. **Phase 19**: Add real-time capabilities on optimized foundation
-3. **Phase 20**: Layer transaction safety on proven real-time infrastructure
-4. **Phase 21**: Optimize performance once core functionality is stable
-5. **Phase 27**: Connect complete infrastructure to main application components
-6. **Phase 29**: Enhance proven AltoIndexImporter with sophisticated live sync capabilities
-7. **Phase 30**: Extend to enterprise-grade data lifecycle with native access and verification
-8. **Phase 32**: Stabilize development environment across all technical stacks before advanced features
-9. **Phase 33**: Eliminate bridge architecture and establish sql.js foundation for SuperGrid
-
-### Data Integrity Protection
-- Bridge-level transaction control with ACID guarantees
-- Optimistic updates with automatic rollback on failure
-- Change event correlation and proper sequencing
-- Comprehensive conflict resolution for multi-device scenarios
-- CRDT algorithms for Notes collaborative editing
-- Property-based testing for invariant validation
-- >99.9% accuracy verification pipeline
-- sql.js synchronous queries maintain data consistency
-
-### Performance Validation
-- Bridge latency monitoring with 16ms targets for 60fps
-- Memory usage tracking to prevent reference cycles
-- Query performance optimization through intelligent caching
-- Background sync with bandwidth-aware optimization
-- Notes library scaling for 10k+ notes with efficient processing
-- Native database access optimization vs alto-index baseline
-- Content-Addressable Storage for efficient attachment handling
-- Multi-environment compilation and development workflow optimization
-- sql.js direct memory access eliminating serialization overhead
-
-### Gap Closure Strategy
-- **Critical Issue:** Infrastructure complete but inaccessible to users
-- **Phase 27**: Simple wiring changes, no new components needed
-- **Low effort, high impact:** Application-level integration only
-- **Success metric:** Users can access live database features through main UI
-
-### Enhanced Apple Integration Strategy
-- **Build on proven foundation:** AltoIndexImporter with 6,891 notes imported
-- **Hybrid architecture:** FSEvents + EventKit + enhanced alto-index processing
-- **Permission-aware design:** TCC authorization with graceful fallbacks
-- **User-centric conflict resolution:** Clear UI for manual conflict handling
-
-### Complete Data Lifecycle Strategy
-- **Enterprise-grade operations:** Native access beyond alto-index limitations
-- **Data integrity first:** >99.9% accuracy with comprehensive verification
-- **Performance optimization:** CAS storage for efficient attachment handling
-- **Testing excellence:** Property-based validation with invariant checking
-- **Operations completeness:** Full database lifecycle (dump, restore, export, purge, rehydrate)
-
-### Multi-Environment Debugging Strategy
-- **Systematic error resolution:** Address compilation blockers in dependency order
-- **Type safety enforcement:** Consistent TypeScript and Swift type checking
-- **Integration stability:** Ensure D3-React patterns work reliably
-- **Development workflow:** Enable parallel native and prototype development
-- **Quality baseline:** Establish clean compilation as foundation for advanced features
-
-### Bridge Elimination Strategy
-- **Architecture transformation:** 40KB bridge → 0KB (sql.js WASM direct access)
-- **Performance optimization:** 6 serialization boundaries → 0 (same memory space)
-- **Development simplification:** Async bridge calls → synchronous queries
-- **Foundation establishment:** Ready sql.js infrastructure for SuperGrid development
-- **Legacy migration:** Deprecate bridge clients with clear migration paths
-
----
-
-*Last updated: 2026-02-05 after Phase 33 bridge elimination planning*
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 33. Bridge Elimination Foundation | v4.0 | 3/3 | ✅ Complete | 2026-02-06 |
+| 34. Foundation Stabilization | v4.1 | 0/3 | Not started | - |
+| 35. PAFV Grid Core | v4.1 | 0/3 | Not started | - |
+| 36. SuperGrid Headers | v4.1 | 0/2 | Not started | - |
+| 37. Grid Continuum | v4.1 | 0/2 | Not started | - |
