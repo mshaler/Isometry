@@ -515,13 +515,11 @@ interface PerformanceMetric {
 }
 
 // Legacy interface - Disabled in sql.js architecture
-/*
-interface ExtendedPerformanceMetrics {
-  basic: PerformanceMetric;
-  nativeRendering?: NativeRenderingMetrics;
-  comparison?: PerformanceComparison;
-}
-*/
+// interface ExtendedPerformanceMetrics {
+//   basic: PerformanceMetric;
+//   nativeRendering?: NativeRenderingMetrics;
+//   comparison?: PerformanceComparison;
+// }
 
 class PerformanceMonitor {
   private metrics = new Map<string, PerformanceMetric>();
