@@ -1,20 +1,36 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { NativeAPIClient, nativeAPI } from './NativeAPIClient';
-
 /**
- * Native Database Context interface matching existing DatabaseContext exactly
- * Provides identical interface for seamless component compatibility
+ * DEPRECATED: NativeDatabaseContext (Bridge Elimination v4)
+ *
+ * See WebViewDatabaseContext.tsx for migration guidance.
+ * Both native and webview contexts replaced by SQLiteProvider.
  */
+
+import React from 'react';
+import { SQLiteProvider } from './SQLiteProvider';
+
+export function NativeDatabaseContext({ children }: { children: React.ReactNode }) {
+  console.warn(
+    'NativeDatabaseContext is deprecated. Use SQLiteProvider directly. ' +
+    'Bridge elimination means no distinction between native/webview contexts.'
+  );
+  return <SQLiteProvider>{children}</SQLiteProvider>;
+}
+
+export const useNativeDatabase = () => {
+  throw new Error(
+    'useNativeDatabase is deprecated. Use useSQLite() from SQLiteProvider instead.'
+  );
+};
+
+// Legacy interfaces for backward compatibility during migration
 export interface NativeDatabaseContextValue {
-  db: NativeAPIClient | null;
+  db: unknown | null;
   loading: boolean;
   error: Error | null;
   execute: <T = Record<string, unknown>>(sql: string, params?: unknown[]) => Promise<T[]>;
   save: () => Promise<void>;
   reset: () => Promise<void>;
 }
-
-const NativeDatabaseContext = createContext<NativeDatabaseContextValue | null>(null);
 
 export interface NativeDatabaseProviderProps {
   children: React.ReactNode;
@@ -25,220 +41,31 @@ export interface NativeDatabaseProviderProps {
 }
 
 /**
- * Native Database Provider using HTTP API instead of sql.js
- * Maintains identical interface and state management patterns as DatabaseProvider
+ * @deprecated Use SQLiteProvider directly
  */
-export function NativeDatabaseProvider({
-  children,
-  baseURL = 'http://localhost:8080',
-  timeout = 5000,
-  retryAttempts = 3,
-  retryDelay = 1000,
-}: NativeDatabaseProviderProps) {
-  const [db, setDb] = useState<NativeAPIClient | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export function NativeDatabaseProvider({ children }: NativeDatabaseProviderProps) {
+  console.warn(
+    'NativeDatabaseProvider is deprecated. Use SQLiteProvider directly for bridge-free database access.'
+  );
+  return <SQLiteProvider>{children}</SQLiteProvider>;
+}
 
-  // Initialize client with retry logic
-  useEffect(() => {
-    let isCancelled = false;
-
-    const initializeClient = async (attempt: number = 1) => {
-      if (isCancelled) return;
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        console.log(`Connecting to native API server at ${baseURL} (attempt ${attempt}/${retryAttempts})`);
-        // Use existing nativeAPI instance instead of creating new client
-        const isAvailable = await nativeAPI.checkAvailability();
-        if (!isAvailable) {
-          throw new Error('Native API not available');
-        }
-        const client = nativeAPI;
-
-        if (!isCancelled) {
-          setDb(client);
-          console.log('Native API client connected successfully');
-        }
-      } catch (err) {
-        console.error(`Native API connection attempt ${attempt} failed:`, err);
-
-        if (!isCancelled) {
-          if (attempt < retryAttempts) {
-            // Retry after delay
-            setTimeout(() => {
-              if (!isCancelled) {
-                initializeClient(attempt + 1);
-              }
-            }, retryDelay * attempt); // Exponential backoff
-            return; // Don't set loading to false yet
-          } else {
-            // All retry attempts failed
-            setError(err as Error);
-          }
-        }
-      } finally {
-        if (!isCancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initializeClient();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [baseURL, timeout, retryAttempts, retryDelay]);
-
-  /**
-   * Execute SQL query - identical interface to sql.js DatabaseContext
-   */
-  const execute = useCallback(async <T = Record<string, unknown>>(
-    sql: string,
-    params?: unknown[]
-  ): Promise<T[]> => {
-    if (!db) {
-      throw new Error('Native database client not initialized');
-    }
-
-    try {
-      return await db.execute<T>(sql, params);
-    } catch (err) {
-      console.error('Native database execution error:', sql, params, err);
-
-      // Check if error indicates disconnection
-      const errorMessage = (err as Error).message.toLowerCase();
-      if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('not connected')) {
-        setError(err as Error);
-      }
-
-      throw err;
-    }
-  }, [db]);
-
-  /**
-   * Save operation - no-op for compatibility (native handles persistence)
-   */
-  const save = useCallback(async () => {
-    if (!db) {
-      throw new Error('Native database client not initialized');
-    }
-
-    await db.save();
-  }, [db]);
-
-  /**
-   * Reset database - calls native reset endpoint and reinitializes client
-   */
-  const reset = useCallback(async () => {
-    if (!db) {
-      throw new Error('Native database client not initialized');
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await db.reset();
-      // Client should still be connected after reset, no need to recreate
-      console.log('Native database reset successfully');
-    } catch (err) {
-      console.error('Native database reset error:', err);
-      setError(err as Error);
-
-      // Try to reconnect after failed reset
-      try {
-        const isAvailable = await nativeAPI.checkAvailability();
-        if (isAvailable) {
-          setDb(nativeAPI);
-        } else {
-          throw new Error('Native API not available after reset');
-        }
-        console.log('Reconnected to native API after reset failure');
-      } catch (reconnectErr) {
-        console.error('Failed to reconnect after reset failure:', reconnectErr);
-        setError(reconnectErr as Error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [db, baseURL, timeout]);
-
-  return (
-    <NativeDatabaseContext.Provider value={{ db, loading, error, execute, save, reset }}>
-      {children}
-    </NativeDatabaseContext.Provider>
+/**
+ * @deprecated Use useSQLite() from SQLiteProvider instead
+ */
+export function useDatabaseCompat(): never {
+  throw new Error(
+    'useDatabaseCompat is deprecated. Use useSQLite() from SQLiteProvider instead.'
   );
 }
 
 /**
- * Hook to access native database context
- * Identical interface to useDatabase() for drop-in replacement
- */
-export function useNativeDatabase(): NativeDatabaseContextValue {
-  const context = useContext(NativeDatabaseContext);
-  if (!context) {
-    throw new Error('useNativeDatabase must be used within NativeDatabaseProvider');
-  }
-  return context;
-}
-
-/**
- * Hook that provides the same interface as useDatabase() from DatabaseContext
- * Allows components to use either sql.js or native database transparently
- */
-export function useDatabaseCompat(): {
-  db: NativeAPIClient | null;
-  loading: boolean;
-  error: Error | null;
-  execute: <T = Record<string, unknown>>(sql: string, params?: unknown[]) => T[] | Promise<T[]>;
-  save: () => Promise<void>;
-  reset: () => Promise<void>;
-} {
-  const { db, loading, error, execute, save, reset } = useNativeDatabase();
-
-  // Wrapper to maintain interface compatibility - some components might expect sync execute
-  const executeCompat = useCallback(<T = Record<string, unknown>>(
-    sql: string,
-    params?: unknown[]
-  ): Promise<T[]> => {
-    return execute<T>(sql, params);
-  }, [execute]);
-
-  return {
-    db,
-    loading,
-    error,
-    execute: executeCompat,
-    save,
-    reset,
-  };
-}
-
-/**
- * Utility component to display connection status for debugging
+ * @deprecated Bridge eliminated - no status to display
  */
 export function NativeDatabaseStatus() {
-  const { db, loading, error } = useNativeDatabase();
-
-  if (loading) {
-    return <div className="text-sm text-gray-500">Connecting to native API...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="text-sm text-red-500">
-        Native API Error: {error.message}
-      </div>
-    );
-  }
-
-  if (db?.isConnected) {
-    return <div className="text-sm text-green-500">Native API Connected</div>;
-  }
-
-  return <div className="text-sm text-yellow-500">Native API Status Unknown</div>;
+  return (
+    <div className="text-sm text-yellow-500">
+      NativeDatabaseStatus is deprecated. Bridge eliminated in v4 - use sql.js directly.
+    </div>
+  );
 }
