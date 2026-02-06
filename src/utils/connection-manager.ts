@@ -9,7 +9,7 @@
  * network conditions and bridge performance metrics.
  */
 
-import { performanceMonitor } from './bridge-optimization/performance-monitor';
+import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
 import { webViewBridge } from './webview-bridge';
 
 export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting' | 'syncing' | 'degraded' | 'error';
@@ -356,13 +356,15 @@ export class ConnectionManager {
   }
 
   private async initializeCircuitBreaker(): Promise<void> {
-    try {
-      // Dynamic import to avoid circular dependencies
-      const { defaultCircuitBreakerRegistry } = await import('../../native/Sources/Isometry/Bridge/Reliability/CircuitBreaker.swift');
-      this.circuitBreakerRegistry = defaultCircuitBreakerRegistry;
-    } catch (error) {
-      console.warn('[ConnectionManager] Circuit breaker not available, continuing without protection');
-    }
+    // Bridge elimination - Circuit breaker removed with native bridge
+    console.warn('[ConnectionManager] Circuit breaker not available in sql.js architecture');
+    // try {
+    //   // Dynamic import to avoid circular dependencies
+    //   const { defaultCircuitBreakerRegistry } = await import('../../native/Sources/Isometry/Bridge/Reliability/CircuitBreaker.swift');
+    //   this.circuitBreakerRegistry = defaultCircuitBreakerRegistry;
+    // } catch (error) {
+    //   console.warn('[ConnectionManager] Circuit breaker not available, continuing without protection');
+    // }
   }
 
   private setState(newState: ConnectionState): void {
@@ -506,14 +508,14 @@ export class ConnectionManager {
     this.updateMetrics();
     this.checkQualityThresholds();
 
-    // Report to performance monitor
-    if (performanceMonitor) {
-      performanceMonitor.recordBridgeOperation({
-        latency,
-        success,
-        operation: 'connection-test'
-      });
-    }
+    // Report to performance monitor (Bridge elimination - TODO: Remove)
+    // if (performanceMonitor) {
+    //   performanceMonitor.recordBridgeOperation({
+    //     latency,
+    //     success,
+    //     operation: 'connection-test'
+    //   });
+    // }
   }
 
   private updateMetrics(): void {
@@ -677,7 +679,8 @@ export class ConnectionManager {
     // This is a placeholder for the actual operation execution logic
     switch (operation.type) {
       case 'database-query':
-        return webViewBridge.database.execute(operation.data.sql, operation.data.params);
+        await webViewBridge.database.execute(operation.data.sql, operation.data.params);
+        return;
       case 'live-query-subscribe':
         // Handle live query subscription
         break;

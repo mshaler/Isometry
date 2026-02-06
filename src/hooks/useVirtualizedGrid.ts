@@ -107,14 +107,14 @@ export function useVirtualizedGrid(
     overscan = 10,
     enableDynamicSizing = true,
     layoutConfig,
-    containerHeight,
-    containerWidth,
+    containerHeight: _containerHeight,
+    containerWidth: _containerWidth,
     enablePerformanceMonitoring = true,
     gap = 4
   } = options;
 
   // Merge layout configuration with defaults
-  const fullLayoutConfig: GridLayoutConfig = useMemo(() => ({
+  const _fullLayoutConfig: GridLayoutConfig = useMemo(() => ({
     ...DEFAULT_GRID_LAYOUT,
     ...layoutConfig,
     virtualScrolling: {

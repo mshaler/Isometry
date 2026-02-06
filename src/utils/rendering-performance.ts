@@ -354,7 +354,7 @@ export class ViewportOptimizer {
           cullingEnabled: result.optimizationSettings.cullingEnabled,
           lodLevel: result.optimizationSettings.lodLevel,
           batchSize: result.optimizationSettings.batchSize,
-          memoryStrategy: result.optimizationSettings.memoryStrategy,
+          memoryStrategy: result.optimizationSettings.memoryStrategy as 'normal' | 'balanced' | 'conservative' | 'aggressive',
           targetFPS: result.optimizationSettings.targetFPS,
           gpuAcceleration: result.optimizationSettings.gpuAcceleration
         };

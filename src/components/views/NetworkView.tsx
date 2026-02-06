@@ -192,9 +192,9 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       .force('collision', d3.forceCollide().radius(30));
 
     // Main group with consistent naming for transitions
-    let g = svg.select<d3.BaseType>('.network-container');
+    let g = svg.select<SVGGElement>('.network-container');
     if (g.empty()) {
-      g = svg.append('g').attr('class', 'network-container') as unknown as FlexibleSelection<d3.BaseType>;
+      g = svg.append('g').attr('class', 'network-container');
       setupZoom(svg, g, { scaleExtent: [0.2, 4] });
     }
 

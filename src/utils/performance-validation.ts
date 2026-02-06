@@ -6,7 +6,7 @@
  */
 
 import { renderingPerformanceMonitor, viewportOptimizer } from './rendering-performance';
-import type { Viewport, RenderingMetrics, OptimizationPlan } from './rendering-performance';
+import type { Viewport, RenderingMetrics, OptimizationStrategy } from './rendering-performance';
 import { Environment } from './webview-bridge';
 
 // ============================================================================
@@ -416,7 +416,7 @@ export class PerformanceValidator {
       };
     }
 
-    let maxDegradation = { fps: 0, renderTime: 0, memoryUsage: 0 };
+    const maxDegradation = { fps: 0, renderTime: 0, memoryUsage: 0 };
     let hasRegression = false;
 
     for (const current of currentResults) {
@@ -463,7 +463,7 @@ export class PerformanceValidator {
   public async validateOptimization(
     viewport: Viewport,
     nodeCount: number,
-    _optimizationPlan: OptimizationPlan
+    _optimizationStrategy: OptimizationStrategy
   ): Promise<{
     effective: boolean;
     improvement: {

@@ -36,12 +36,13 @@ export interface BridgeMessage {
 
 export interface BridgeResponse<T = unknown> {
   id: string;
+  success?: boolean;
   result?: T;
   error?: {
     code: string;
     message: string;
     details?: unknown;
-  };
+  } | string;
   timestamp: number;
 }
 

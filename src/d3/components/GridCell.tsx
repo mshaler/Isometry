@@ -213,8 +213,7 @@ function renderEmptyCell(group: d3.Selection<d3.BaseType, unknown, null, undefin
 function renderSingleCard(
   group: d3.Selection<d3.BaseType, unknown, null, undefined>,
   card: Node,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  cellData: CellData
+  _cellData: CellData
 ) {
   // Card background
   group.append('rect')
@@ -276,8 +275,7 @@ function renderSingleCard(
 function renderCardStack(
   group: d3.Selection<d3.BaseType, unknown, null, undefined>,
   cards: Node[],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  cellData: CellData,
+  _cellData: CellData,
   morphConfig: DensityMorphConfig
 ) {
   const maxVisible = Math.min(cards.length, morphConfig.visual.cardStackMaxVisible);
@@ -340,8 +338,7 @@ function renderCardStack(
 function renderCountBadge(
   group: d3.Selection<d3.BaseType, unknown, null, undefined>,
   count: number,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  cellData: CellData,
+  _cellData: CellData,
   morphConfig: DensityMorphConfig
 ) {
   const badgeSize = Math.min(

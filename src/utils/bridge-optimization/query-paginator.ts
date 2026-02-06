@@ -256,7 +256,7 @@ export class QueryPaginator {
     const { sql, params, cursor, orderBy } = query;
 
     let paginatedSQL = sql;
-    let paginatedParams = [...params];
+    const paginatedParams = [...params];
 
     // Add cursor condition if provided
     if (cursor) {

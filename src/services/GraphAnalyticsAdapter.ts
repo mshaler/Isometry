@@ -127,7 +127,10 @@ export class GraphAnalyticsAdapter {
             if (response.success) {
               pending.resolve(response.result);
             } else {
-              pending.reject(new Error(response.error || 'Unknown bridge error'));
+              const errorMessage = typeof response.error === 'string'
+                ? response.error
+                : response.error?.message || 'Unknown bridge error';
+              pending.reject(new Error(errorMessage));
             }
           }
         }
@@ -180,7 +183,8 @@ export class GraphAnalyticsAdapter {
         params: {
           ...params,
           sequenceId: Date.now()
-        }
+        },
+        timestamp: Date.now()
       };
 
       try {

@@ -45,6 +45,7 @@ interface Statement {
   all: (params?: unknown[]) => unknown[]
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface _Database {
   exec: (sql: string) => QueryExecResult[]
   prepare: (sql: string) => Statement

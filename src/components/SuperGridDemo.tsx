@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { SuperGrid } from '@/d3/SuperGrid';
 import { DatabaseService } from '@/db/DatabaseService';
 import { useSQLite } from '@/db/SQLiteProvider';
-import { usePAFV } from '@/contexts/PAFVContext';
+import { usePAFV } from '@/state/PAFVContext';
 
 /**
  * SuperGridDemo - Comprehensive demonstration component for SuperGrid foundation
@@ -32,7 +32,7 @@ export function SuperGridDemo() {
 
   // Get contexts
   const { db } = useSQLite();
-  const { wells } = usePAFV();
+  const { state } = usePAFV();
 
   // Performance monitoring
   useEffect(() => {
@@ -77,22 +77,28 @@ export function SuperGridDemo() {
     return () => clearInterval(intervalId);
   }, []);
 
-  // Initialize SuperGrid
+  // Initialize SuperGrid - separate effect to ensure proper timing
   useEffect(() => {
-    if (!svgRef.current || !db) return;
+    if (!svgRef.current || !db) {
+      console.log('SuperGrid initialization waiting:', { svgRef: !!svgRef.current, db: !!db });
+      return;
+    }
+
+    console.log('🚀 SuperGrid initialization starting!');
 
     const initializeGrid = async () => {
       try {
         // Verify sql.js capabilities using the provided db
         const capabilityResults: string[] = [];
 
-        // Test FTS5
+        // Test FTS5 (non-blocking)
         try {
           db.exec("SELECT fts5_version()");
           capabilityResults.push("✅ FTS5 support verified");
         } catch (error) {
-          capabilityResults.push("❌ FTS5 support missing");
-          setErrorLog(prev => [...prev, `FTS5 Error: ${error}`]);
+          capabilityResults.push("⚠️ FTS5 support missing (fallback to basic search)");
+          console.warn('FTS5 not available, using fallback:', error);
+          // Don't add to errorLog as this is expected in some sql.js builds
         }
 
         // Test JSON1 extension
@@ -122,13 +128,97 @@ export function SuperGridDemo() {
 
         console.log('sql.js Capability Verification:', capabilityResults);
 
-        // Initialize SuperGrid with existing database from context
-        const databaseService = new DatabaseService();
+        // Ensure database has proper schema
+        try {
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS nodes (
+              id TEXT PRIMARY KEY,
+              node_type TEXT NOT NULL DEFAULT 'note',
+              name TEXT NOT NULL,
+              content TEXT,
+              summary TEXT,
 
-        // For demo purposes, initialize a fresh DatabaseService since SuperGrid expects it
-        await databaseService.initialize();
+              -- LATCH: Location
+              latitude REAL,
+              longitude REAL,
+              location_name TEXT,
+              location_address TEXT,
 
-        const grid = new SuperGrid(svgRef.current!, databaseService, {
+              -- LATCH: Time
+              created_at TEXT NOT NULL DEFAULT (datetime('now')),
+              modified_at TEXT NOT NULL DEFAULT (datetime('now')),
+              due_at TEXT,
+              completed_at TEXT,
+              event_start TEXT,
+              event_end TEXT,
+
+              -- LATCH: Category
+              folder TEXT,
+              tags TEXT,
+              status TEXT,
+
+              -- LATCH: Hierarchy
+              priority INTEGER DEFAULT 0,
+              importance INTEGER DEFAULT 0,
+              sort_order INTEGER DEFAULT 0,
+
+              -- Metadata
+              source TEXT,
+              source_id TEXT,
+              source_url TEXT,
+              deleted_at TEXT,
+              version INTEGER DEFAULT 1
+            );
+          `);
+          console.log('✅ Database schema ensured');
+        } catch (schemaError) {
+          console.warn('Schema creation failed:', schemaError);
+          setErrorLog(prev => [...prev, `Schema Error: ${schemaError}`]);
+        }
+
+        // Insert sample data for demonstration
+        try {
+          db.exec(`
+            INSERT OR IGNORE INTO nodes (id, name, folder, status, created_at) VALUES
+            ('1', 'SuperGrid Foundation', 'work', 'active', '2026-02-06'),
+            ('2', 'Phase 34 Verification', 'work', 'in_progress', '2026-02-06'),
+            ('3', 'TypeScript Cleanup', 'work', 'completed', '2026-02-05'),
+            ('4', 'sql.js Integration', 'work', 'active', '2026-02-05'),
+            ('5', 'PAFV Context', 'work', 'active', '2026-02-04'),
+            ('6', 'D3.js Grid Cells', 'work', 'completed', '2026-02-04'),
+            ('7', 'Database Schema', 'work', 'completed', '2026-02-03'),
+            ('8', 'Virtual Scrolling', 'work', 'blocked', '2026-02-03'),
+            ('9', 'Performance Metrics', 'personal', 'active', '2026-02-02'),
+            ('10', 'Documentation', 'personal', 'in_progress', '2026-02-01');
+          `);
+          console.log('✅ Sample data inserted for SuperGrid demo');
+        } catch (sampleError) {
+          console.warn('Sample data insertion failed:', sampleError);
+          setErrorLog(prev => [...prev, `Sample Data Error: ${sampleError}`]);
+        }
+
+        // Create mock DatabaseService that wraps the existing db from context
+        const mockDatabaseService = {
+          query: (sql: string) => {
+            try {
+              const result = db.exec(sql);
+              return result.length > 0 ? result[0].values.map((row: any) => {
+                const obj: any = {};
+                result[0].columns.forEach((col, idx) => {
+                  obj[col] = row[idx];
+                });
+                return obj;
+              }) : [];
+            } catch (error) {
+              console.warn('Mock query failed:', sql, error);
+              return [];
+            }
+          },
+          exec: (sql: string) => db.exec(sql),
+          isReady: () => true // Database is ready when we reach this point
+        };
+
+        const grid = new SuperGrid(svgRef.current!, mockDatabaseService as any, {
           width: 800,
           height: 600
         });
@@ -181,11 +271,14 @@ export function SuperGridDemo() {
     if (!superGrid) return;
 
     try {
-      // Convert wells to filter format
+      // Convert state mappings to SuperGrid filter format
+      const rowMappings = state.mappings.filter(m => m.plane === 'y');
+      const columnMappings = state.mappings.filter(m => m.plane === 'x');
+
       const pafvFilters = {
-        rows: wells.rows,
-        columns: wells.columns,
-        zLayers: wells.zLayers
+        rows: rowMappings.map(m => ({ id: m.facet, label: m.facet })),
+        columns: columnMappings.map(m => ({ id: m.facet, label: m.facet })),
+        zLayers: [] // Add z-layer support later if needed
       };
 
       superGrid.renderWithPAFVFilters(pafvFilters);
@@ -195,15 +288,9 @@ export function SuperGridDemo() {
     } catch (error) {
       setErrorLog(prev => [...prev, `PAFV Error: ${error}`]);
     }
-  }, [superGrid, wells]);
+  }, [superGrid, state]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-600">Initializing SuperGrid Foundation...</div>
-      </div>
-    );
-  }
+  // Always render the full UI but show loading indicators when needed
 
   return (
     <div className="relative w-full h-screen bg-gray-50">
@@ -338,11 +425,19 @@ export function SuperGridDemo() {
 
       {/* SuperGrid SVG Container */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <svg
-          ref={svgRef}
-          className="border border-gray-300 bg-white"
-          style={{ width: 800, height: 600 }}
-        />
+        <div className="relative">
+          <svg
+            ref={svgRef}
+            className="border border-gray-300 bg-white"
+            style={{ width: 800, height: 600 }}
+          />
+          {/* Loading overlay */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+              <div className="text-gray-600">Initializing SuperGrid Foundation...</div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

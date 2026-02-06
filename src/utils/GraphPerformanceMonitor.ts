@@ -1,4 +1,5 @@
-import { performanceMonitor, NativeRenderingMetrics, PerformanceComparison } from './d3Performance';
+// Bridge elimination - Performance monitoring disabled
+// import { performanceMonitor, NativeRenderingMetrics, PerformanceComparison } from './d3Performance';
 import { graphAnalytics } from '../services/GraphAnalyticsAdapter';
 import { ConnectionSuggestion, SuggestionPerformanceMetrics } from '../services/ConnectionSuggestionService';
 

@@ -12,7 +12,7 @@ import * as d3 from 'd3';
 // ============================================================================
 
 // D3 Selection type aliases for consistent usage
-export type FlexibleSelection<T = d3.BaseType> = d3.Selection<T, unknown, null, undefined>;
+export type FlexibleSelection<T extends d3.BaseType = d3.BaseType> = d3.Selection<T, unknown, null, undefined>;
 export type SVGSelection = FlexibleSelection<SVGSVGElement>;
 export type GroupSelection = FlexibleSelection<SVGGElement>;
 export type ContainerSelection = FlexibleSelection<d3.BaseType>;

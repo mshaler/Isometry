@@ -16,6 +16,7 @@ import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
 import { LiveDataProvider } from './contexts/LiveDataContext';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { CardOverlayProvider } from './state/CardOverlayContext';
+import { SQLiteProvider } from './db/SQLiteProvider';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -87,7 +88,11 @@ function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
         ) : viewMode === 'supergrid' ? (
           <ErrorBoundary level="feature" name="SuperGridDemo">
             <div className="h-full">
-              <SuperGridDemo />
+              <SQLiteProvider>
+                <PAFVProvider>
+                  <SuperGridDemo />
+                </PAFVProvider>
+              </SQLiteProvider>
             </div>
           </ErrorBoundary>
         ) : (

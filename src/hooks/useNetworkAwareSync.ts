@@ -313,7 +313,7 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
     }
 
     // Adapt priority based on network quality
-    let adaptedOptions = { ...options }
+    const adaptedOptions = { ...options }
     if (qualityConfig.autoAdjustPriority) {
       if (quality === 'low' && options.priority === 'high') {
         adaptedOptions.priority = 'normal'

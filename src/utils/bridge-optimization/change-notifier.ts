@@ -202,18 +202,8 @@ export class ChangeNotifier {
   // MARK: - Private Methods
 
   private setupGlobalEventHandler(): void {
-    if (typeof window !== 'undefined' && window._isometryBridge) {
-      // Extend bridge with live data event handler
-      window._isometryBridge.handleLiveDataEvent = (event: LiveDataEvent) => {
-        this.handleLiveDataEvent(event);
-      };
-
-      if (this.options.enableDebugLogging) {
-        console.log('[ChangeNotifier] Global event handler registered');
-      }
-    } else {
-      console.warn('[ChangeNotifier] WebView bridge not available - live data will not work');
-    }
+    // Bridge elimination - Legacy bridge code disabled
+    console.warn('[ChangeNotifier] Bridge-based change notification deprecated in sql.js architecture');
   }
 
   private handleLiveDataEvent(event: LiveDataEvent): void {
@@ -388,12 +378,12 @@ export const changeNotifier = new ChangeNotifier({
   enableDebugLogging: process.env.NODE_ENV === 'development'
 });
 
-// Extend global window interface for TypeScript
-declare global {
-  interface Window {
-    _isometryBridge?: {
-      sendMessage: (handler: string, method: string, params: Record<string, unknown>) => Promise<unknown>;
-      handleLiveDataEvent?: (event: LiveDataEvent) => void;
-    };
-  }
-}
+// Bridge elimination - Global interface disabled
+// declare global {
+//   interface Window {
+//     _isometryBridge?: {
+//       sendMessage: (handler: string, method: string, params: Record<string, unknown>) => Promise<unknown>;
+//       handleLiveDataEvent?: (event: LiveDataEvent) => void;
+//     };
+//   }
+// }
