@@ -43,26 +43,48 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
     }
   }, [card]);
 
-  if (!isOpen || !card) return null;
-
-  const handleSave = () => {
-    if (onSave) {
+  const handleSave = React.useCallback(() => {
+    if (onSave && card) {
       onSave({ ...editedCard, id: card.id });
     }
     setEditMode(false);
-  };
+  }, [onSave, editedCard, card]);
 
-  const handleCancel = () => {
-    setEditedCard({
-      name: card.name,
-      folder: card.folder,
-      status: card.status,
-      summary: card.summary,
-      priority: card.priority,
-      importance: card.importance
-    });
+  const handleCancel = React.useCallback(() => {
+    if (card) {
+      setEditedCard({
+        name: card.name,
+        folder: card.folder,
+        status: card.status,
+        summary: card.summary,
+        priority: card.priority,
+        importance: card.importance
+      });
+    }
     setEditMode(false);
-  };
+  }, [card]);
+
+  // Keyboard shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      if (event.key === 'Escape') {
+        if (editMode) {
+          handleCancel();
+        } else {
+          onClose();
+        }
+      } else if (event.key === 'Enter' && event.metaKey && editMode) {
+        handleSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, editMode, onClose, handleCancel, handleSave]);
+
+  if (!isOpen || !card) return null;
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -105,6 +127,7 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Close modal"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -133,9 +156,10 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
           {/* Status and Folder Row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Folder</label>
+              <label htmlFor="folder-select" className="block text-sm font-medium text-gray-700 mb-2">Folder</label>
               {editMode ? (
                 <select
+                  id="folder-select"
                   value={editedCard.folder || ''}
                   onChange={(e) => setEditedCard({ ...editedCard, folder: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
@@ -157,9 +181,10 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               {editMode ? (
                 <select
+                  id="status-select"
                   value={editedCard.status || ''}
                   onChange={(e) => setEditedCard({ ...editedCard, status: e.target.value })}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
