@@ -279,7 +279,10 @@ export class SuperGrid {
       })
       .on('click', (_event, d) => {
         console.log('Virtual cell clicked:', d);
-        // Future: emit selection events for React integration
+        if (this.callbacks.onCardClick) {
+          // For virtual cells, pass the primary card data
+          this.callbacks.onCardClick(d.cellData?.cards?.[0] || d);
+        }
       });
   }
 
@@ -609,7 +612,9 @@ export class SuperGrid {
       })
       .on('click', (_event, d) => {
         console.log('Card clicked:', d);
-        // Future: emit selection events for React integration
+        if (this.callbacks.onCardClick) {
+          this.callbacks.onCardClick(d);
+        }
       });
 
     return joined;

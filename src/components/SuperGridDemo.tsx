@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { SuperGrid } from '@/d3/SuperGrid';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { usePAFV } from '@/state/PAFVContext';
+import { CardDetailModal } from './CardDetailModal';
 
 /**
  * SuperGridDemo - Comprehensive demonstration component for SuperGrid foundation
@@ -29,9 +30,62 @@ export function SuperGridDemo() {
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Modal state
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Get contexts
   const { db } = useSQLite();
   const { state } = usePAFV();
+
+  // Card interaction handlers
+  const handleCardClick = useCallback((card: any) => {
+    console.log('SuperGridDemo: Card clicked', card);
+    setSelectedCard(card);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false);
+    setSelectedCard(null);
+  }, []);
+
+  const handleCardSave = useCallback(async (updatedCard: any) => {
+    if (!db) {
+      console.error('Database not available');
+      return;
+    }
+
+    try {
+      // Update the card in the database
+      const { id, name, folder, status, priority, summary } = updatedCard;
+
+      db.exec(`
+        UPDATE nodes
+        SET name = ?,
+            folder = ?,
+            status = ?,
+            priority = ?,
+            summary = ?,
+            modified_at = datetime('now')
+        WHERE id = ?
+      `, [name, folder, status, priority || 0, summary, id]);
+
+      console.log('Card saved successfully:', updatedCard);
+
+      // Refresh the grid to show updated data
+      if (superGrid) {
+        superGrid.refresh();
+      }
+
+      // Close modal
+      setIsModalOpen(false);
+      setSelectedCard(null);
+    } catch (error) {
+      console.error('Failed to save card:', error);
+      setErrorLog(prev => [...prev, `Save Error: ${error}`]);
+    }
+  }, [db, superGrid]);
 
   // Performance monitoring
   useEffect(() => {
@@ -265,7 +319,10 @@ export function SuperGridDemo() {
 
         const grid = new SuperGrid(svgRef.current!, mockDatabaseService as any, {
           width: 800,
-          height: 600
+          height: 600,
+          callbacks: {
+            onCardClick: handleCardClick
+          }
         });
 
         // Render with test data
@@ -284,7 +341,7 @@ export function SuperGridDemo() {
     };
 
     initializeGrid();
-  }, [db]);
+  }, [db, handleCardClick]);
 
   // Handle filter changes
   useEffect(() => {
@@ -484,6 +541,14 @@ export function SuperGridDemo() {
           )}
         </div>
       </div>
+
+      {/* Card Detail Modal */}
+      <CardDetailModal
+        card={selectedCard}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        onSave={handleCardSave}
+      />
     </div>
   );
 }
