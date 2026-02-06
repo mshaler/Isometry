@@ -165,8 +165,8 @@ Plans:
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 34: Foundation Stabilization** - Verify sql.js + D3.js integration with stable TypeScript compilation
-- [ ] **Phase 35: PAFV Grid Core** - Dynamic axis assignment with basic grid rendering and drag-drop wells
+- [x] **Phase 34: Foundation Stabilization** - Verify sql.js + D3.js integration with stable TypeScript compilation
+- [ ] **Phase 35: PAFV Grid Core** - Enhanced SuperGrid interactions with card details, filtering, multi-select, and drag & drop
 - [ ] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
 - [ ] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
 
@@ -183,28 +183,29 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 34-01-PLAN.md — TypeScript Foundation and sql.js Capability Verification
-- [ ] 34-02-PLAN.md — Janus Density Grid Cells with Virtual Scrolling
-- [ ] 34-03-PLAN.md — SuperGrid Integration with LATCH Headers
+- [x] 34-01-PLAN.md — TypeScript Foundation and sql.js Capability Verification
+- [x] 34-02-PLAN.md — Janus Density Grid Cells with Virtual Scrolling
+- [x] 34-03-PLAN.md — SuperGrid Integration with LATCH Headers
 
 #### Phase 35: PAFV Grid Core
-**Goal**: Enable dynamic axis assignment with drag-drop wells for real-time view reconfiguration
+**Goal**: Enhanced SuperGrid interactions with card detail modal, header filtering, multi-select, and drag & drop functionality
 **Depends on**: Phase 34
-**Requirements**: DIFF-02, DIFF-05, DIFF-06, DIFF-08, FOUND-05, FOUND-06, FOUND-07
-**Super* Features**: SuperDynamic (axis repositioning), SuperSize (cell expansion), SuperSelect (Z-axis selection)
+**Requirements**: Enhanced interactivity with full data manipulation cycle
+**Super* Features**: SuperSelect (multi-select), SuperModal (card details), SuperFilter (header clicking), SuperDrag (repositioning)
 **Success Criteria** (what must be TRUE):
-  1. User can drag LATCH dimensions between axis wells (X, Y, Z planes) using mouse or touch (SuperDynamic)
-  2. Grid layout updates in real-time when dimensions are reassigned between spatial planes
-  3. User can navigate grid with keyboard (arrow keys, tab, enter) with visible cell selection (SuperSelect)
-  4. User can resize columns with drag handles and column widths persist across sessions (SuperSize)
-  5. User can sort data by clicking column headers with visual sort indicators
-  6. D3.js queries sql.js directly with zero serialization overhead for all grid operations
-**Plans**: TBD
+  1. User can click cards to open detailed modal with view and edit functionality
+  2. User can click headers to apply LATCH filters with visual feedback and filter management
+  3. User can multi-select cards with Ctrl+click and navigate with keyboard for bulk operations
+  4. User can drag cards to reposition with immediate database persistence
+  5. All interactions integrate seamlessly with existing sql.js ↔ D3.js architecture
+  6. D3.js queries sql.js directly with zero serialization overhead for all operations
+**Plans**: 4 plans
 
 Plans:
-- [ ] 35-01: TBD
-- [ ] 35-02: TBD
-- [ ] 35-03: TBD
+- [ ] 35-01-PLAN.md — Card Detail Modal Integration
+- [ ] 35-02-PLAN.md — Header Click LATCH Filtering
+- [ ] 35-03-PLAN.md — Multi-Select and Keyboard Navigation
+- [ ] 35-04-PLAN.md — Drag & Drop with Persistence
 
 #### Phase 36: SuperGrid Headers
 **Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
@@ -248,7 +249,7 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 33. Bridge Elimination Foundation | v4.0 | 3/3 | ✅ Complete | 2026-02-06 |
-| 34. Foundation Stabilization | v4.1 | 0/3 | Not started | - |
-| 35. PAFV Grid Core | v4.1 | 0/3 | Not started | - |
+| 34. Foundation Stabilization | v4.1 | 3/3 | ✅ Complete | 2026-02-06 |
+| 35. PAFV Grid Core | v4.1 | 0/4 | Not started | - |
 | 36. SuperGrid Headers | v4.1 | 0/2 | Not started | - |
 | 37. Grid Continuum | v4.1 | 0/2 | Not started | - |
