@@ -632,10 +632,6 @@ public actor FuzzTestEngine {
                     paths.insert("FileFailed")
                 case .invalidFormat:
                     paths.insert("InvalidFormat")
-                case .networkError:
-                    paths.insert("NetworkError")
-                case .unknown:
-                    paths.insert("UnknownError")
                 }
             }
 

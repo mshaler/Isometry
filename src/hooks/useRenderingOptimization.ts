@@ -368,7 +368,18 @@ export function useRenderingOptimization(config: RenderingOptimizationConfig): R
     if (state.bridgeConnected) {
       try {
         const result = await webViewBridge.d3rendering.getBenchmarkResults({});
-        return result.performanceReport;
+        const report = result.performanceReport as any;
+        // Ensure the bridge report has all required RenderingMetrics properties
+        return {
+          frameRate: report.frameRate || 0,
+          renderTime: report.renderTime || 0,
+          memoryUsage: report.memoryUsage || 0,
+          culledElements: report.culledElements || 0,
+          renderedElements: report.renderedElements || 0,
+          lodLevel: report.lodLevel || 1,
+          gpuUtilization: report.gpuUtilization || 0,
+          performance60FPS: report.performance60FPS || false
+        };
       } catch (error) {
         console.warn('Failed to get native benchmark results:', error);
       }

@@ -1,6 +1,14 @@
 import MVPDemo from './MVPDemo';
+import SQLiteV4TestApp from './SQLiteV4TestApp';
 
 function App() {
+  // TEMP: Test sql.js integration before full integration
+  const isTestMode = new URLSearchParams(window.location.search).get('test') === 'sqlite';
+
+  if (isTestMode) {
+    return <SQLiteV4TestApp />;
+  }
+
   // GSD: Use MVPDemo view switcher with notebook mode and UnifiedApp access
   return <MVPDemo />;
 }

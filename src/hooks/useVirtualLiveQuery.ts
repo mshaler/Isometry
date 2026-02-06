@@ -207,7 +207,6 @@ export function useVirtualLiveQuery<T = unknown>(
     const trackFrameRate = () => {
       if (virtualizer.isScrolling && !isTracking) {
         isTracking = true;
-        const frameStart = performance.now();
 
         const measureFrame = (timestamp: number) => {
           const frameDelta = timestamp - lastFrameTime.current;

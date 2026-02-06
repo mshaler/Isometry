@@ -495,10 +495,28 @@ export function useGraphMetrics(): GraphMetricsState & {
  * Development mode hook for debugging graph analytics state
  * with React DevTools integration
  */
+interface GraphAnalyticsDebugInfo {
+  cacheStats: {
+    entries?: number;
+    memoryUsageMB?: number;
+    hitRate?: number;
+    averageResponseTime?: number;
+    operationsInFlight?: number;
+  };
+  performanceHistory: {
+    suggestionLatencyTrend?: number[];
+    cacheHitRateTrend?: number[];
+    memoryUsageTrend?: number[];
+    throughputTrend?: number[];
+  };
+  errorLogs: any[];
+  operationsInFlight: number;
+}
+
 export function useGraphAnalyticsDebug() {
-  const [debugInfo, setDebugInfo] = useState({
+  const [debugInfo, setDebugInfo] = useState<GraphAnalyticsDebugInfo>({
     cacheStats: {},
-    performanceHistory: [],
+    performanceHistory: {},
     errorLogs: [],
     operationsInFlight: 0
   });

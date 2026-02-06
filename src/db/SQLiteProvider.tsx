@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
+import initSqlJs from 'sql.js-fts5';
+import type { Database, SqlJsStatic } from 'sql.js-fts5';
 import type { SQLiteCapabilityError } from './types';
 
 /**
@@ -88,10 +89,17 @@ export function SQLiteProvider({
           console.log('🔧 SQLiteProvider: Initializing sql.js...');
         }
 
-        // Initialize sql.js with WASM
+        // Initialize sql.js-fts5 with local WASM files
         const sqlInstance = await initSqlJs({
-          // Use CDN for sql.js WASM file with FTS5 support
-          locateFile: (file: string) => `https://sql.js.org/dist/${file}`
+          // Environment-specific WASM loading per research recommendations
+          locateFile: (file: string) => {
+            if (typeof window === 'undefined') {
+              // Node.js environment
+              return `./node_modules/sql.js-fts5/dist/${file}`;
+            }
+            // Browser environment - serve from public/wasm/
+            return `/wasm/${file}`;
+          }
         });
 
         if (!isMounted) return;

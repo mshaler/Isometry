@@ -8,7 +8,7 @@
 
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { TransactionScope, TransactionScopeError, TransactionTimeoutError } from '../utils/transaction/transaction-scope';
-import { generateCorrelationId, createChildId } from '../utils/transaction/correlation-ids';
+import { createChildId } from '../utils/transaction/correlation-ids';
 import { webViewBridge } from '../utils/webview-bridge';
 
 /**

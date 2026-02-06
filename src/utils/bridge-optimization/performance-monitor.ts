@@ -876,8 +876,8 @@ export class PerformanceMonitor {
     const queryHitRate = this.getQueryCacheHitRate();
 
     // Update latency metrics
-    const queryLatencies = all.map(s => s.queryLatency).filter(l => l && l > 0);
-    const renderLatencies = all.map(s => s.renderLatency).filter(l => l && l > 0);
+    const queryLatencies = all.map(s => s.queryLatency).filter((l): l is number => l != null && l > 0);
+    const renderLatencies = all.map(s => s.renderLatency).filter((l): l is number => l != null && l > 0);
     const avgQueryLatency = this.calculateAverage(queryLatencies);
     const avgRenderLatency = this.calculateAverage(renderLatencies);
 
@@ -892,7 +892,7 @@ export class PerformanceMonitor {
     const viewportUtilization = avgVirtualItems > 0 ? Math.min(100, (avgRenderedItems / avgVirtualItems) * 100) : 100;
 
     this.metrics.virtualScrolling = {
-      frameRate: currentFrameRate,
+      frameRate: currentFrameRate || 60, // Ensure we always have a number
       viewportUtilization,
       cacheEfficiency: {
         virtualItemHitRate: virtualHitRate,

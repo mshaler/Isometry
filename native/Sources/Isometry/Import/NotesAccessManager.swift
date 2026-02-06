@@ -4,7 +4,8 @@ import Combine
 
 /// TCC permission and authorization management for Apple Notes access
 /// Provides graceful degradation and privacy compliance
-public actor NotesAccessManager: ObservableObject {
+@MainActor
+public class NotesAccessManager: ObservableObject {
 
     // Permission tracking
     private var currentStatus: PermissionStatus = .notDetermined
@@ -14,9 +15,9 @@ public actor NotesAccessManager: ObservableObject {
     // EventKit store for Notes access
     private let eventStore = EKEventStore()
 
-    // ObservableObject conformance with nonisolated access
-    @Published nonisolated public var permissionStatus: PermissionStatus = .notDetermined
-    @Published nonisolated public var isRequestingPermission: Bool = false
+    // ObservableObject conformance
+    @Published public var permissionStatus: PermissionStatus = .notDetermined
+    @Published public var isRequestingPermission: Bool = false
 
     public init() {
         Task {
@@ -79,16 +80,10 @@ public actor NotesAccessManager: ObservableObject {
         print("Requesting Notes access permission...")
 
         // Update requesting state
-        await MainActor.run {
-            isRequestingPermission = true
-        }
+        isRequestingPermission = true
 
         defer {
-            Task {
-                await MainActor.run {
-                    isRequestingPermission = false
-                }
-            }
+            isRequestingPermission = false
         }
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -283,10 +278,8 @@ public actor NotesAccessManager: ObservableObject {
         currentStatus = mapEventKitStatus(authStatus)
         lastPermissionCheck = Date()
 
-        // Update published property on MainActor
-        await MainActor.run {
-            permissionStatus = currentStatus
-        }
+        // Update published property directly (already on MainActor)
+        permissionStatus = currentStatus
 
         print("Permission status updated: \(currentStatus.rawValue)")
 

@@ -465,7 +465,7 @@ export function LiveDataProvider({
       actions.subscribe(subscriptionId, query, [], {
         onUpdate: callback,
         enablePolling: true
-      });
+      } as LiveDataOptions);
     },
     unsubscribe: (subscriptionId: string) => {
       actions.unsubscribe(subscriptionId);

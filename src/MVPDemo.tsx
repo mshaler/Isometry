@@ -118,8 +118,8 @@ function MVPDemo() {
         <CacheInvalidationProvider>
           <BrowserRouter>
             <LiveDataProvider
-              connectionCheckInterval={30000}
-              enableMetrics={true}
+              syncIntervalMs={30000}
+              enableConnectionMonitoring={true}
             >
               <ThemeProvider>
                 <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
@@ -151,8 +151,8 @@ function MVPDemo() {
       <CacheInvalidationProvider>
         <BrowserRouter>
           <LiveDataProvider
-            connectionCheckInterval={30000}
-            enableMetrics={true}
+            syncIntervalMs={30000}
+            enableConnectionMonitoring={true}
           >
           <ThemeProvider>
             <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>

@@ -82,7 +82,7 @@ extension ETLOperationManager {
             )
 
             // Link stored content to operation result
-            try await linkStoredContent(storedLog.id, to: result.operationId)
+            try await linkStoredContent(storedLog.contentHash, to: result.operationId)
         }
 
         // Store extracted attachments with deduplication
@@ -109,7 +109,7 @@ extension ETLOperationManager {
                         // Update node with content reference
                         try await updateNodeWithContentReference(
                             nodeId: node.id,
-                            contentId: storedContent.id
+                            contentId: storedContent.contentHash
                         )
 
                     } catch {
@@ -390,12 +390,12 @@ extension ETLOperationManager {
         return nil // Placeholder
     }
 
-    private func linkStoredContent(_ contentId: UUID, to operationId: UUID) async throws {
+    private func linkStoredContent(_ contentId: String, to operationId: UUID) async throws {
         // Link stored content to operation for later retrieval
         // Implementation depends on database schema
     }
 
-    private func updateNodeWithContentReference(nodeId: String, contentId: UUID) async throws {
+    private func updateNodeWithContentReference(nodeId: String, contentId: String) async throws {
         // Update node with reference to stored content
         // Implementation depends on database schema
     }

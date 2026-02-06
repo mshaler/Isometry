@@ -405,23 +405,27 @@ export function useLiveQuery<T = unknown>(
     if (isLive || !isConnected) return;
 
     try {
-      // Subscribe to live updates
-      const subscriptionId = await subscribe(
-        sql,
-        finalParams,
-        handleLiveUpdate,
-        handleLiveError
-      );
+      // Generate subscription ID for tracking
+      const subscriptionId = `live-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const correlationId = `live-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Subscribe to live updates - LiveDataContext subscribe only takes query and callback
+      await subscribe(sql, (data: any) => {
+        handleLiveUpdate({
+          sequenceNumber: Date.now(),
+          results: Array.isArray(data) ? data : [data],
+          observationId: subscriptionId,
+          correlationId: correlationId
+        });
+      });
 
       // Register bridge callback cleanup with correlation ID
-      const correlationId = `live-query-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       memoryManager.registerBridgeCallback(
         'subscription',
         { subscriptionId, sql },
         () => {
-          if (subscriptionId) {
-            unsubscribe(subscriptionId);
-          }
+          // Use subscriptionId for unsubscribe tracking
+          unsubscribe(subscriptionId);
         },
         correlationId
       );

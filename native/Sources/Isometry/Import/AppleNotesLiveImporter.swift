@@ -6,7 +6,8 @@ import Combine
 
 /// Enhanced Apple Notes importer with live sync capabilities
 /// Extends AltoIndexImporter foundation with real-time monitoring
-public actor AppleNotesLiveImporter: ObservableObject {
+@MainActor
+public class AppleNotesLiveImporter: ObservableObject {
     private let database: IsometryDatabase
     private let altoIndexImporter: AltoIndexImporter
     private let accessManager: NotesAccessManager
@@ -33,10 +34,10 @@ public actor AppleNotesLiveImporter: ObservableObject {
     private let maxQueueSize = 1000
     private let memoryThresholdMB: Double = 80.0
 
-    // ObservableObject conformance with nonisolated access
-    @Published nonisolated public var syncStatus: SyncStatus = .idle
-    @Published nonisolated public var isLiveSyncEnabled: Bool = false
-    @Published nonisolated public var performanceMetrics: PerformanceMetrics = PerformanceMetrics()
+    // ObservableObject conformance
+    @Published public var syncStatusPublished: SyncStatus = .idle
+    @Published public var isLiveSyncEnabled: Bool = false
+    @Published public var performanceMetrics: PerformanceMetrics = PerformanceMetrics()
 
     public init(database: IsometryDatabase) {
         self.database = database

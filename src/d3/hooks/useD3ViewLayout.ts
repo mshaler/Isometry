@@ -98,7 +98,8 @@ export function useD3ViewLayout(options: UseD3ViewLayoutOptions = {}): D3ViewLay
 
     // Setup zoom if enabled
     if (zoomable) {
-      zoomBehaviorRef.current = setupZoom(svg, g, zoomOptions);
+      // Type assertion to work around TypeScript cache issue
+      zoomBehaviorRef.current = setupZoom(svg, g as any, zoomOptions);
     }
 
     setContext(newContext);

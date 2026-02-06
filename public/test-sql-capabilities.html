@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>sql.js Capabilities Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #00ff00; }
+        pre { background: #000; padding: 10px; border: 1px solid #333; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .warning { color: #ffd43b; }
+    </style>
+</head>
+<body>
+    <h1>Isometry v4 sql.js Capabilities Test</h1>
+    <div id="output"></div>
+
+    <script type="module">
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.textContent = message;
+            div.className = type;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        async function testSQLJSCapabilities() {
+            log('🔧 Testing sql.js capabilities for Isometry v4...', 'info');
+
+            try {
+                // Load sql.js from CDN
+                const script = document.createElement('script');
+                script.src = 'https://sql.js.org/dist/sql-wasm.js';
+                document.head.appendChild(script);
+
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+
+                const initSqlJs = window.initSqlJs;
+                const SQL = await initSqlJs({
+                    locateFile: (file) => `https://sql.js.org/dist/${file}`
+                });
+
+                const db = new SQL.Database();
+                log('✅ sql.js initialized successfully', 'success');
+
+                // Test 1: Basic SQLite functionality
+                db.exec(`
+                    CREATE TABLE test_nodes (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        content TEXT,
+                        created_at TEXT DEFAULT (datetime('now'))
+                    )
+                `);
+
+                db.run(`INSERT INTO test_nodes (id, name, content) VALUES (?, ?, ?)`,
+                       ['test-1', 'Test Node', 'Test content']);
+
+                const basicResults = db.exec('SELECT * FROM test_nodes');
+                log(`✅ Basic SQLite operations work: ${basicResults[0].values.length} rows`, 'success');
+
+                // Test 2: JSON1 Extension
+                try {
+                    const jsonTest = db.exec(`SELECT json('{"test": true}') as json_result`);
+                    log(`✅ JSON1 extension available: ${jsonTest[0].values[0][0]}`, 'success');
+                } catch (jsonError) {
+                    log(`⚠️ JSON1 extension not available: ${jsonError.message}`, 'warning');
+                }
+
+                // Test 3: FTS5 Full-Text Search
+                try {
+                    db.exec(`
+                        CREATE VIRTUAL TABLE test_fts USING fts5(name, content);
+                        INSERT INTO test_fts(name, content) VALUES ('Test', 'Sample content for search');
+                    `);
+
+                    const ftsResults = db.exec(`SELECT * FROM test_fts WHERE test_fts MATCH 'sample'`);
+                    log(`✅ FTS5 full-text search available: ${ftsResults[0].values.length} matches`, 'success');
+                } catch (ftsError) {
+                    log(`⚠️ FTS5 not available: ${ftsError.message}`, 'warning');
+                }
+
+                // Test 4: Recursive CTEs (Critical for GRAPH traversal)
+                try {
+                    const cteResults = db.exec(`
+                        WITH RECURSIVE countdown(n) AS (
+                            SELECT 5
+                            UNION ALL
+                            SELECT n-1 FROM countdown WHERE n > 1
+                        )
+                        SELECT COUNT(*) as count FROM countdown
+                    `);
+                    log(`✅ Recursive CTEs work: ${cteResults[0].values[0][0]} rows generated`, 'success');
+                } catch (cteError) {
+                    log(`❌ Recursive CTEs failed (REQUIRED): ${cteError.message}`, 'error');
+                    throw cteError;
+                }
+
+                // Test 5: Performance - Synchronous query execution
+                const startTime = performance.now();
+
+                // Insert test data
+                const stmt = db.prepare('INSERT INTO test_nodes (id, name, content) VALUES (?, ?, ?)');
+                for (let i = 0; i < 1000; i++) {
+                    stmt.run([`perf-${i}`, `Performance Test ${i}`, `Content ${i}`]);
+                }
+                stmt.free();
+
+                // Query test data
+                const perfResults = db.exec('SELECT COUNT(*) as total FROM test_nodes');
+                const endTime = performance.now();
+
+                log(`✅ Performance test: ${perfResults[0].values[0][0]} rows in ${(endTime - startTime).toFixed(2)}ms (synchronous)`, 'success');
+
+                // Test 6: Graph traversal with edges table
+                db.exec(`
+                    CREATE TABLE test_edges (
+                        id TEXT PRIMARY KEY,
+                        source_id TEXT,
+                        target_id TEXT,
+                        edge_type TEXT
+                    );
+
+                    INSERT INTO test_edges VALUES
+                    ('edge-1', 'test-1', 'perf-1', 'LINK'),
+                    ('edge-2', 'perf-1', 'perf-2', 'SEQUENCE'),
+                    ('edge-3', 'test-1', 'perf-3', 'NEST');
+                `);
+
+                const graphResults = db.exec(`
+                    WITH RECURSIVE graph_traversal(id, path, depth) AS (
+                        SELECT 'test-1', 'test-1', 0
+                        UNION ALL
+                        SELECT e.target_id, gt.path || ' -> ' || e.target_id, gt.depth + 1
+                        FROM graph_traversal gt
+                        JOIN test_edges e ON e.source_id = gt.id
+                        WHERE gt.depth < 3
+                    )
+                    SELECT COUNT(*) as reachable FROM graph_traversal
+                `);
+                log(`✅ Graph traversal with recursive CTEs: ${graphResults[0].values[0][0]} reachable nodes`, 'success');
+
+                db.close();
+                log('\n🚀 sql.js capabilities verification COMPLETE', 'success');
+                log('✅ Ready for bridge elimination - all required features available', 'success');
+
+                return true;
+
+            } catch (error) {
+                log(`💥 sql.js capabilities test FAILED: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Run the test automatically
+        testSQLJSCapabilities();
+    </script>
+</body>
+</html>

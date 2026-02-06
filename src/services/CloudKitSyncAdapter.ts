@@ -57,20 +57,24 @@ export interface SyncProgressEvent {
   timestamp: number;
 }
 
+// Import type for module augmentation (used in declare module below)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { WebKitMessageHandlers } from '../utils/webview-bridge';
+
 // Bridge communication interface
 interface CloudKitBridge {
   postMessage(message: any): void;
 }
 
-interface CloudKitWebKit {
-  messageHandlers: {
+// Module augmentation to extend the existing WebKit interface
+declare module '../utils/webview-bridge' {
+  interface WebKitMessageHandlers {
     cloudkit: CloudKitBridge;
-  };
+  }
 }
 
 declare global {
   interface Window {
-    webkit?: CloudKitWebKit;
     _isometryCloudKitBridge?: {
       handleResponse: (response: BridgeResponse) => void;
     };
