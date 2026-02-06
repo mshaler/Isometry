@@ -1,51 +1,59 @@
-# Requirements: Isometry v3.2 Enhanced Apple Integration
+# Requirements: Isometry v4.1 SuperGrid Foundation
 
-**Defined:** 2026-02-01
-**Core Value:** Transform Apple Notes into a powerful capture interface that feeds Isometry's organizational capabilities, enabling seamless Notes → Isometry workflow with live synchronization and intelligent conflict handling.
+**Defined:** 2026-02-05
+**Core Value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-## v3.2 Requirements
+## v4.1 Requirements
 
-Requirements for Enhanced Apple Integration milestone. Each maps to Phase 29.
+Requirements for SuperGrid Foundation milestone. Foundation systems provide essential grid functionality, differentiators establish unique competitive advantages.
 
-### Real-Time Integration
+### Foundation Systems
 
-- [ ] **NOTES-LIVE-01**: System detects Apple Notes changes in real-time via FSEvents monitoring with <1s latency
-- [ ] **NOTES-LIVE-02**: System imports new Notes automatically as Isometry cards with full PAFV+LATCH+GRAPH capabilities
-- [ ] **NOTES-LIVE-03**: System handles incremental updates to existing Notes without full re-import
-- [ ] **NOTES-LIVE-04**: System scales to monitor 10k+ Notes libraries with efficient background processing
-- [ ] **NOTES-LIVE-05**: System provides real-time sync status visibility and error reporting to user
+- [ ] **FOUND-01**: System renders basic grid cells with D3.js data binding using key functions for performance
+- [ ] **FOUND-02**: System displays row headers with LATCH dimension mapping (Location, Alphabet, Time, Category, Hierarchy)
+- [ ] **FOUND-03**: System displays column headers with LATCH dimension mapping and visual hierarchy indication
+- [ ] **FOUND-04**: System implements virtual scrolling for 10k+ cells maintaining 60fps performance
+- [ ] **FOUND-05**: System supports keyboard navigation (arrow keys, tab, enter) with visible cell selection
+- [ ] **FOUND-06**: System enables column resizing with drag handles and preserves width state
+- [ ] **FOUND-07**: System provides basic sorting by clicking column headers with visual sort indicators
 
-### Permission & Security
+### SuperGrid Differentiators
 
-- [ ] **TCC-01**: System requests TCC Full Disk Access permissions with clear user education
-- [ ] **TCC-02**: System provides graceful degradation when TCC permissions are denied
-- [ ] **TCC-03**: System offers fallback to manual batch import via AltoIndexImporter
-- [ ] **TCC-04**: System communicates permission scope and data safety clearly to user
+- [ ] **DIFF-01**: System renders nested PAFV headers with hierarchical spanning across multiple dimension levels
+- [ ] **DIFF-02**: System enables dynamic axis assignment via drag-drop wells for real-time view reconfiguration
+- [ ] **DIFF-03**: System supports grid continuum transitions between gallery, list, kanban, and grid projections
+- [ ] **DIFF-04**: System implements Janus density model with orthogonal zoom (value) and pan (extent) controls
+- [ ] **DIFF-05**: System binds D3.js directly to sql.js queries with zero serialization overhead
+- [ ] **DIFF-06**: System updates grid layout in real-time when LATCH dimensions are reassigned between spatial planes
+- [ ] **DIFF-07**: System preserves semantic position during view transitions using Janus coordinate translation
+- [ ] **DIFF-08**: System maintains consistent PAFV context across all grid interactions and transformations
 
-### Conflict Resolution
+### Integration Requirements
 
-- [ ] **CRDT-01**: System implements CRDT conflict resolution maintaining data integrity during multi-device editing
-- [ ] **CRDT-02**: System provides user interface for manual conflict resolution when automatic resolution fails
-- [ ] **CRDT-03**: System preserves user changes in Isometry when Notes app rejects or mangles programmatic updates
-- [ ] **CRDT-04**: System maintains bidirectional sync ensuring changes don't get lost between applications
-
-### Performance & Reliability
-
-- [ ] **PERF-NOTES-01**: System processes Notes content parsing in <100ms per note via background processing
-- [ ] **PERF-NOTES-02**: System handles large Notes libraries (6,891+ notes) without performance degradation
-- [ ] **PERF-NOTES-03**: System integrates with existing GRDB database infrastructure seamlessly
-- [ ] **PERF-NOTES-04**: System maintains circuit breaker patterns for reliability under load
+- [ ] **INTEG-01**: System integrates with existing PAFVContext without breaking current LATCH filtering
+- [ ] **INTEG-02**: System uses existing sql.js foundation maintaining bridge elimination architecture
+- [ ] **INTEG-03**: System preserves existing TypeScript interfaces and extends them for grid-specific features
+- [ ] **INTEG-04**: System maintains compatibility with existing D3.js visualization components
+- [ ] **INTEG-05**: System coordinates with existing React context providers without state conflicts
 
 ## Future Requirements
 
-Deferred to future releases. Tracked but not in current roadmap.
+Deferred to later milestones. Tracked but not in current roadmap.
 
 ### Advanced Features
 
-- **NOTES-ADV-01**: Rich media attachment preservation and Content-Addressable Storage
-- **NOTES-ADV-02**: Cross-Note reference detection with automatic graph connection creation
-- **NOTES-ADV-03**: Intelligent Note categorization into PAFV dimensional structure
-- **NOTES-ADV-04**: Selective folder monitoring with user-configurable sync rules
+- **ADV-01**: LATCH-aware formulas and calculation scope with cell dependencies
+- **ADV-02**: Bipolar origin mode for Eisenhower Matrix and quadrant-based layouts
+- **ADV-03**: SuperZoom cartographic navigation with pinned anchor points
+- **ADV-04**: Advanced audit overlay system with formula visibility toggle
+- **ADV-05**: Cell expansion with inline content editing and rich media support
+
+### Performance Optimization
+
+- **PERF-01**: Memory management for 100k+ cell datasets with lazy loading
+- **PERF-02**: Touch gesture support for mobile nested header interaction
+- **PERF-03**: Accessibility compliance with screen reader and keyboard-only navigation
+- **PERF-04**: Export capabilities (CSV, Excel, PDF) with layout preservation
 
 ## Out of Scope
 
@@ -53,10 +61,12 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Bidirectional rich editing | Notes.app resistance to external modifications makes this unreliable |
-| Real-time collaborative editing | Apple Notes collaboration is iCloud-only, conflicts with local processing |
-| Complete Notes app replacement | Goal is integration, not replacement of proven capture interface |
-| Complex attachment handling | Defer to v3.3 with Content-Addressable Storage architecture |
+| Real-time collaboration | Single-user focused, conflicts with local-first architecture |
+| Advanced formula engine | Defer complex calculations to future milestone, focus on visualization |
+| Custom cell renderers | Generic grid cells sufficient for foundation, defer customization |
+| Infinite scroll | Virtual scrolling with pagination more performant and predictable |
+| Mobile app integration | Desktop web focus first, mobile adaptation in future milestone |
+| Data import/export | Existing sql.js foundation handles this, not grid-specific |
 
 ## Traceability
 
@@ -64,29 +74,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| NOTES-LIVE-01 | Phase 29 | Pending |
-| NOTES-LIVE-02 | Phase 29 | Pending |
-| NOTES-LIVE-03 | Phase 29 | Pending |
-| NOTES-LIVE-04 | Phase 29 | Pending |
-| NOTES-LIVE-05 | Phase 29 | Pending |
-| TCC-01 | Phase 29 | Pending |
-| TCC-02 | Phase 29 | Pending |
-| TCC-03 | Phase 29 | Pending |
-| TCC-04 | Phase 29 | Pending |
-| CRDT-01 | Phase 29 | Pending |
-| CRDT-02 | Phase 29 | Pending |
-| CRDT-03 | Phase 29 | Pending |
-| CRDT-04 | Phase 29 | Pending |
-| PERF-NOTES-01 | Phase 29 | Pending |
-| PERF-NOTES-02 | Phase 29 | Pending |
-| PERF-NOTES-03 | Phase 29 | Pending |
-| PERF-NOTES-04 | Phase 29 | Pending |
+| FOUND-01 | TBD | Pending |
+| FOUND-02 | TBD | Pending |
+| FOUND-03 | TBD | Pending |
+| FOUND-04 | TBD | Pending |
+| FOUND-05 | TBD | Pending |
+| FOUND-06 | TBD | Pending |
+| FOUND-07 | TBD | Pending |
+| DIFF-01 | TBD | Pending |
+| DIFF-02 | TBD | Pending |
+| DIFF-03 | TBD | Pending |
+| DIFF-04 | TBD | Pending |
+| DIFF-05 | TBD | Pending |
+| DIFF-06 | TBD | Pending |
+| DIFF-07 | TBD | Pending |
+| DIFF-08 | TBD | Pending |
+| INTEG-01 | TBD | Pending |
+| INTEG-02 | TBD | Pending |
+| INTEG-03 | TBD | Pending |
+| INTEG-04 | TBD | Pending |
+| INTEG-05 | TBD | Pending |
 
 **Coverage:**
-- v3.2 requirements: 17 total
-- Mapped to phases: 17
-- Unmapped: 0 ✓
+- v4.1 requirements: 20 total
+- Mapped to phases: 0
+- Unmapped: 20 ⚠️
 
 ---
-*Requirements defined: 2026-02-01*
-*Last updated: 2026-02-01 after v3.2 milestone definition*
+*Requirements defined: 2026-02-05*
+*Last updated: 2026-02-05 after initial definition*
