@@ -87,6 +87,36 @@ export function SuperGridDemo() {
     }
   }, [db, superGrid]);
 
+  const handleCardDelete = useCallback(async (cardId: string) => {
+    if (!db) {
+      console.error('Database not available');
+      return;
+    }
+
+    try {
+      // Soft delete the card by setting deleted_at timestamp
+      db.exec(`
+        UPDATE nodes
+        SET deleted_at = datetime('now')
+        WHERE id = ?
+      `, [cardId]);
+
+      console.log('Card deleted successfully:', cardId);
+
+      // Refresh the grid to show updated data
+      if (superGrid) {
+        superGrid.refresh();
+      }
+
+      // Close modal
+      setIsModalOpen(false);
+      setSelectedCard(null);
+    } catch (error) {
+      console.error('Failed to delete card:', error);
+      setErrorLog(prev => [...prev, `Delete Error: ${error}`]);
+    }
+  }, [db, superGrid]);
+
   // Performance monitoring
   useEffect(() => {
     let frameCount = 0;
@@ -548,6 +578,7 @@ export function SuperGridDemo() {
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSave={handleCardSave}
+        onDelete={handleCardDelete}
       />
     </div>
   );

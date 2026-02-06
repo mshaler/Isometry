@@ -18,6 +18,7 @@ interface CardDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave?: (updatedCard: Partial<CardData>) => void;
+  onDelete?: (cardId: string) => void;
 }
 
 /**
@@ -26,9 +27,10 @@ interface CardDetailModalProps {
  * Demonstrates the bridge elimination architecture by showing how D3.js
  * click events can seamlessly trigger React UI updates with shared state
  */
-export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailModalProps) {
+export function CardDetailModal({ card, isOpen, onClose, onSave, onDelete }: CardDetailModalProps) {
   const [editMode, setEditMode] = React.useState(false);
   const [editedCard, setEditedCard] = React.useState<Partial<CardData>>({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
 
   React.useEffect(() => {
     if (card) {
@@ -62,7 +64,23 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
       });
     }
     setEditMode(false);
+    setShowDeleteConfirm(false);
   }, [card]);
+
+  const handleDeleteClick = React.useCallback(() => {
+    setShowDeleteConfirm(true);
+  }, []);
+
+  const handleDeleteConfirm = React.useCallback(() => {
+    if (onDelete && card) {
+      onDelete(card.id);
+      setShowDeleteConfirm(false);
+    }
+  }, [onDelete, card]);
+
+  const handleDeleteCancel = React.useCallback(() => {
+    setShowDeleteConfirm(false);
+  }, []);
 
   // Keyboard shortcuts
   React.useEffect(() => {
@@ -117,12 +135,22 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
           </h2>
           <div className="flex items-center space-x-2">
             {!editMode && (
-              <button
-                onClick={() => setEditMode(true)}
-                className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-              >
-                Edit
-              </button>
+              <>
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                >
+                  Edit
+                </button>
+                {onDelete && (
+                  <button
+                    onClick={handleDeleteClick}
+                    className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
+              </>
             )}
             <button
               onClick={onClose}
@@ -270,7 +298,7 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
         </div>
 
         {/* Footer */}
-        {editMode && (
+        {editMode && !showDeleteConfirm && (
           <div className="flex items-center justify-end space-x-3 p-6 border-t bg-gray-50">
             <button
               onClick={handleCancel}
@@ -284,6 +312,39 @@ export function CardDetailModal({ card, isOpen, onClose, onSave }: CardDetailMod
             >
               Save Changes
             </button>
+          </div>
+        )}
+
+        {/* Delete Confirmation */}
+        {showDeleteConfirm && (
+          <div className="p-6 border-t bg-red-50">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="flex-shrink-0">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 8.5c-.77.833-.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-red-900">Delete Card</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Are you sure you want to delete "<span className="font-medium">{card?.name}</span>"? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+              >
+                Delete Card
+              </button>
+            </div>
           </div>
         )}
       </div>

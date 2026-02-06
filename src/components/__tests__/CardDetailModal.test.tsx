@@ -20,6 +20,7 @@ const mockCard = {
 describe('CardDetailModal', () => {
   const mockOnClose = vi.fn();
   const mockOnSave = vi.fn();
+  const mockOnDelete = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,6 +33,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -51,6 +53,7 @@ describe('CardDetailModal', () => {
         isOpen={false}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -64,6 +67,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -80,6 +84,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -99,6 +104,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -145,6 +151,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -176,6 +183,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -205,6 +213,7 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
@@ -222,10 +231,101 @@ describe('CardDetailModal', () => {
         isOpen={true}
         onClose={mockOnClose}
         onSave={mockOnSave}
+        onDelete={mockOnDelete}
       />
     );
 
     const statusSpan = screen.getByText('blocked');
     expect(statusSpan).toHaveClass('bg-red-100', 'text-red-800', 'border-red-300');
+  });
+
+  it('shows delete button when onDelete prop is provided', () => {
+    render(
+      <CardDetailModal
+        card={mockCard}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+      />
+    );
+
+    expect(screen.getByText('Delete')).toBeInTheDocument();
+  });
+
+  it('does not show delete button when onDelete prop is not provided', () => {
+    render(
+      <CardDetailModal
+        card={mockCard}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+      />
+    );
+
+    expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+  });
+
+  it('shows delete confirmation when delete button is clicked', () => {
+    render(
+      <CardDetailModal
+        card={mockCard}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Delete'));
+
+    expect(screen.getByRole('heading', { name: 'Delete Card' })).toBeInTheDocument();
+    expect(screen.getByText(/Are you sure you want to delete/)).toBeInTheDocument();
+    expect(screen.getByText(/This action cannot be undone/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete Card' })).toBeInTheDocument();
+  });
+
+  it('calls onDelete when delete is confirmed', () => {
+    render(
+      <CardDetailModal
+        card={mockCard}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+      />
+    );
+
+    // Click delete button
+    fireEvent.click(screen.getByText('Delete'));
+
+    // Confirm deletion
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Card' }));
+
+    expect(mockOnDelete).toHaveBeenCalledWith('test-card-1');
+  });
+
+  it('cancels delete confirmation when cancel is clicked', () => {
+    render(
+      <CardDetailModal
+        card={mockCard}
+        isOpen={true}
+        onClose={mockOnClose}
+        onSave={mockOnSave}
+        onDelete={mockOnDelete}
+      />
+    );
+
+    // Click delete button
+    fireEvent.click(screen.getByText('Delete'));
+
+    // Cancel deletion - find the cancel button in the delete confirmation
+    const cancelButtons = screen.getAllByText('Cancel');
+    fireEvent.click(cancelButtons[cancelButtons.length - 1]); // Last cancel button
+
+    // Should be back to normal view
+    expect(screen.queryByText('Delete Card')).not.toBeInTheDocument();
+    expect(screen.getByText('Card Details')).toBeInTheDocument();
+    expect(mockOnDelete).not.toHaveBeenCalled();
   });
 });
