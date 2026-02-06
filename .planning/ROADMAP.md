@@ -191,11 +191,12 @@ Plans:
 **Goal**: Enable dynamic axis assignment with drag-drop wells for real-time view reconfiguration
 **Depends on**: Phase 34
 **Requirements**: DIFF-02, DIFF-05, DIFF-06, DIFF-08, FOUND-05, FOUND-06, FOUND-07
+**Super* Features**: SuperDynamic (axis repositioning), SuperSize (cell expansion), SuperSelect (Z-axis selection)
 **Success Criteria** (what must be TRUE):
-  1. User can drag LATCH dimensions between axis wells (X, Y, Z planes) using mouse or touch
+  1. User can drag LATCH dimensions between axis wells (X, Y, Z planes) using mouse or touch (SuperDynamic)
   2. Grid layout updates in real-time when dimensions are reassigned between spatial planes
-  3. User can navigate grid with keyboard (arrow keys, tab, enter) with visible cell selection
-  4. User can resize columns with drag handles and column widths persist across sessions
+  3. User can navigate grid with keyboard (arrow keys, tab, enter) with visible cell selection (SuperSelect)
+  4. User can resize columns with drag handles and column widths persist across sessions (SuperSize)
   5. User can sort data by clicking column headers with visual sort indicators
   6. D3.js queries sql.js directly with zero serialization overhead for all grid operations
 **Plans**: TBD
@@ -209,11 +210,13 @@ Plans:
 **Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
 **Depends on**: Phase 35
 **Requirements**: DIFF-01, DIFF-04
+**Super* Features**: SuperStack (nested headers), SuperZoom (cartographic navigation), SuperFormat (PAFV formatting)
 **Success Criteria** (what must be TRUE):
-  1. User sees multi-level hierarchical headers with visual spanning across parent-child relationships
-  2. User can control data density through orthogonal zoom (value) and pan (extent) controls
+  1. User sees multi-level hierarchical headers with visual spanning across parent-child relationships (SuperStack)
+  2. User can control data density through orthogonal zoom (value) and pan (extent) controls (Janus model)
   3. Header cells span appropriately across child dimensions without layout conflicts
   4. User can expand/collapse header levels while maintaining grid performance
+  5. User can navigate with pinned upper-left corner zoom behavior (SuperZoom)
 **Plans**: TBD
 
 Plans:
@@ -224,11 +227,13 @@ Plans:
 **Goal**: Deliver seamless transitions between gallery, list, kanban, and grid projections of same dataset
 **Depends on**: Phase 36
 **Requirements**: DIFF-03, DIFF-07
+**Super* Features**: SuperViz (context-aware visualizations), Grid Continuum transitions, SuperPosition (coordinate tracking)
 **Success Criteria** (what must be TRUE):
   1. User can transition between gallery → list → kanban → 2D grid → nD SuperGrid views seamlessly
-  2. User's semantic position (selected cards, filter context) preserves during view transitions
+  2. User's semantic position (selected cards, filter context) preserves during view transitions (SuperPosition)
   3. View transitions complete within 200ms with smooth visual animations
   4. Same LATCH-filtered dataset renders consistently across all projection modes
+  5. Context-aware visualizations adapt to data type and density (SuperViz)
 **Plans**: TBD
 
 Plans:
