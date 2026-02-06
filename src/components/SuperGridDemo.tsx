@@ -3,6 +3,7 @@ import { SuperGrid } from '@/d3/SuperGrid';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { usePAFV } from '@/state/PAFVContext';
 import { CardDetailModal } from './CardDetailModal';
+import { type LATCHFilter } from '@/services/LATCHFilterService';
 
 /**
  * SuperGridDemo - Comprehensive demonstration component for SuperGrid foundation
@@ -35,6 +36,9 @@ export function SuperGridDemo() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isOperationInProgress, setIsOperationInProgress] = useState(false);
 
+  // Filter state
+  const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);
+
   // Get contexts
   const { db } = useSQLite();
   const { state } = usePAFV();
@@ -45,6 +49,27 @@ export function SuperGridDemo() {
     setSelectedCard(card);
     setIsModalOpen(true);
   }, []);
+
+  const handleHeaderClick = useCallback((headerType: 'row' | 'column', value: string, filters: LATCHFilter[]) => {
+    console.log('SuperGridDemo: Header clicked', { headerType, value, filtersCount: filters.length });
+    setActiveFilters(filters);
+  }, []);
+
+  const handleFilterRemove = useCallback((filterId: string) => {
+    if (superGrid) {
+      const filterService = superGrid.getFilterService();
+      filterService.removeFilter(filterId);
+      setActiveFilters(filterService.getActiveFilters());
+    }
+  }, [superGrid]);
+
+  const handleClearAllFilters = useCallback(() => {
+    if (superGrid) {
+      const filterService = superGrid.getFilterService();
+      filterService.clearFilters();
+      setActiveFilters([]);
+    }
+  }, [superGrid]);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -187,6 +212,62 @@ export function SuperGridDemo() {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  // Keyboard shortcuts for filtering
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!superGrid) return;
+
+      // Ignore if user is typing in an input
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      const filterService = superGrid.getFilterService();
+
+      switch (event.key.toLowerCase()) {
+        case 'escape':
+          // Clear all filters
+          if (filterService.hasActiveFilters()) {
+            handleClearAllFilters();
+            event.preventDefault();
+          }
+          break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+          // Priority filtering
+          if (event.ctrlKey || event.metaKey) {
+            const priority = parseInt(event.key, 10);
+            filterService.addFilter('H', 'priority', 'equals', priority, `Priority: ${priority}`);
+            setActiveFilters(filterService.getActiveFilters());
+            event.preventDefault();
+          }
+          break;
+        case 'f':
+          // Focus on folder filter (for future enhancement)
+          if (event.ctrlKey || event.metaKey) {
+            console.log('Focus folder filter (future implementation)');
+            event.preventDefault();
+          }
+          break;
+        case 's':
+          // Focus on status filter (for future enhancement)
+          if (event.ctrlKey || event.metaKey) {
+            console.log('Focus status filter (future implementation)');
+            event.preventDefault();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [superGrid, handleClearAllFilters]);
 
   // Initialize SuperGrid - separate effect to ensure proper timing
   useEffect(() => {
@@ -379,7 +460,8 @@ export function SuperGridDemo() {
           width: 800,
           height: 600,
           callbacks: {
-            onCardClick: handleCardClick
+            onCardClick: handleCardClick,
+            onHeaderClick: handleHeaderClick
           }
         });
 
@@ -399,7 +481,7 @@ export function SuperGridDemo() {
     };
 
     initializeGrid();
-  }, [db, handleCardClick]);
+  }, [db, handleCardClick, handleHeaderClick]);
 
   // Handle filter changes
   useEffect(() => {
@@ -469,6 +551,9 @@ export function SuperGridDemo() {
           </div>
           <div>
             <span className="font-medium">Density Level:</span> {densityLevel}
+          </div>
+          <div>
+            <span className="font-medium">Active Filters:</span> {activeFilters.length}
           </div>
         </div>
       </div>
@@ -582,6 +667,85 @@ export function SuperGridDemo() {
           <li>• <strong>Bridge:</strong> Confirms sql.js direct access eliminates serialization</li>
         </ul>
       </div>
+
+      {/* Filter Management Panel */}
+      {activeFilters.length > 0 && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-2xl">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-800">Active Filters</h3>
+            <button
+              onClick={handleClearAllFilters}
+              className="text-xs text-red-600 hover:text-red-800 px-2 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
+            >
+              Clear All
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {activeFilters.map((filter) => (
+              <div
+                key={filter.id}
+                className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
+              >
+                <span>{filter.label}</span>
+                <button
+                  onClick={() => handleFilterRemove(filter.id)}
+                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                  title="Remove filter"
+                >
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 text-xs text-gray-600 border-t border-gray-200 pt-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <strong>Keyboard shortcuts:</strong>
+                <ul className="mt-1 space-y-0.5">
+                  <li>• <kbd className="bg-gray-100 px-1 rounded text-xs">Esc</kbd> - Clear all filters</li>
+                  <li>• <kbd className="bg-gray-100 px-1 rounded text-xs">Cmd/Ctrl + 1-5</kbd> - Filter by priority</li>
+                </ul>
+              </div>
+              <div>
+                <strong>Quick filters:</strong>
+                <div className="mt-1 flex flex-wrap gap-1">
+                  <button
+                    onClick={() => {
+                      if (superGrid) {
+                        const filterService = superGrid.getFilterService();
+                        filterService.clearFilters();
+                        filterService.addFilter('C', 'folder', 'equals', 'work', 'Folder: work');
+                        filterService.addFilter('C', 'status', 'equals', 'active', 'Status: active');
+                        setActiveFilters(filterService.getActiveFilters());
+                      }
+                    }}
+                    className="text-xs px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded border transition-colors"
+                  >
+                    Work + Active
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (superGrid) {
+                        const filterService = superGrid.getFilterService();
+                        filterService.clearFilters();
+                        filterService.addFilter('H', 'priority', 'range', [4, 5], 'High Priority');
+                        setActiveFilters(filterService.getActiveFilters());
+                      }
+                    }}
+                    className="text-xs px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded border transition-colors"
+                  >
+                    High Priority
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SuperGrid SVG Container */}
       <div className="absolute inset-0 flex items-center justify-center">
