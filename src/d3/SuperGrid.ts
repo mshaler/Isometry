@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { DatabaseService } from '../db/DatabaseService';
 import { type VirtualizedGridResult } from '../hooks/useVirtualizedGrid';
 import { type VirtualGridCell } from '../types/grid';
+import { LATCHFilterService, type LATCHFilter } from '../services/LATCHFilterService';
 
 /**
  * SuperGrid - Core D3.js renderer with direct sql.js data binding
@@ -20,7 +21,7 @@ import { type VirtualGridCell } from '../types/grid';
  */
 interface SuperGridCallbacks {
   onCardClick?: (card: any) => void;
-  onHeaderClick?: (headerType: 'row' | 'column', value: string) => void;
+  onHeaderClick?: (headerType: 'row' | 'column', value: string, filters: LATCHFilter[]) => void;
   onCardUpdate?: (cardId: string, updates: any) => void;
 }
 
@@ -33,6 +34,9 @@ export class SuperGrid {
   private cardHeight = 80;
   private padding = 10;
   private callbacks: SuperGridCallbacks = {};
+
+  // LATCH Filter Service for header-based filtering
+  private filterService: LATCHFilterService;
 
   // Virtual scrolling integration
   private virtualScrolling: VirtualizedGridResult | null = null;
@@ -48,6 +52,14 @@ export class SuperGrid {
     this.width = options?.width || 800;
     this.height = options?.height || 600;
     this.callbacks = options?.callbacks || {};
+
+    // Initialize LATCH Filter Service
+    this.filterService = new LATCHFilterService();
+
+    // Subscribe to filter changes to trigger re-rendering
+    this.filterService.onFilterChange((filters) => {
+      this.renderWithLATCHFilters();
+    });
 
     // Set container dimensions
     this.container
@@ -160,11 +172,62 @@ export class SuperGrid {
   }
 
   /**
+   * Render grid using LATCH Filter Service
+   * Core method for header-based filtering
+   */
+  renderWithLATCHFilters(): void {
+    if (!this.db.isReady()) {
+      throw new Error('DatabaseService must be initialized before rendering');
+    }
+
+    // Compile filters to SQL
+    const filterResult = this.filterService.compileToSQL();
+    const { whereClause, parameters } = filterResult;
+
+    // Execute query with compiled filters
+    const cards = this.db.query<{
+      id: string;
+      name: string;
+      folder?: string;
+      status?: string;
+      x?: number;
+      y?: number;
+      created_at?: string;
+    }>(
+      `SELECT id, name, folder, status,
+              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
+       FROM nodes
+       WHERE ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      parameters
+    );
+
+    // Clear and re-render with filtered data
+    this.clear();
+    this.setupGridStructure();
+    this.renderRowHeaders();
+    this.renderColumnHeaders();
+    this.renderCards(cards);
+  }
+
+  /**
+   * Get current LATCH filter service for external access
+   */
+  getFilterService(): LATCHFilterService {
+    return this.filterService;
+  }
+
+  /**
    * Re-render with updated data from database
    * Demonstrates reactive updates in bridge elimination architecture
    */
   refresh(): void {
-    this.render();
+    if (this.filterService.hasActiveFilters()) {
+      this.renderWithLATCHFilters();
+    } else {
+      this.render();
+    }
   }
 
   /**
@@ -669,14 +732,23 @@ export class SuperGrid {
             .attr('class', 'row-header')
             .attr('transform', (_d, i) => `translate(0, ${i * (this.cardHeight + this.padding)})`);
 
-          // Header background
+          // Header background with active filter indication
           headerGroup.append('rect')
             .attr('width', this.cardWidth)
             .attr('height', this.cardHeight)
             .attr('rx', 4)
-            .attr('fill', '#f8fafc')
-            .attr('stroke', '#e2e8f0')
-            .attr('stroke-width', 1);
+            .attr('fill', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? '#dbeafe' : '#f8fafc';
+            })
+            .attr('stroke', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? '#3b82f6' : '#e2e8f0';
+            })
+            .attr('stroke-width', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? 2 : 1;
+            });
 
           // Header text
           headerGroup.append('text')
@@ -710,6 +782,21 @@ export class SuperGrid {
           update.select('text:last-of-type')
             .text(d => d.count.toString());
 
+          // Update header background for filter state changes
+          update.select('rect')
+            .attr('fill', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? '#dbeafe' : '#f8fafc';
+            })
+            .attr('stroke', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? '#3b82f6' : '#e2e8f0';
+            })
+            .attr('stroke-width', d => {
+              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
+              return isActive ? 2 : 1;
+            });
+
           return update;
         },
         exit => exit.remove()
@@ -727,8 +814,7 @@ export class SuperGrid {
           .attr('fill', '#f8fafc');
       })
       .on('click', (_event, d) => {
-        console.log('Row header clicked:', d.folder);
-        // Future: trigger row selection/filtering
+        this.handleRowHeaderClick(d.folder);
       });
   }
 
@@ -759,14 +845,23 @@ export class SuperGrid {
             .attr('class', 'column-header')
             .attr('transform', (_d, i) => `translate(${i * (this.cardWidth + this.padding)}, 0)`);
 
-          // Header background
+          // Header background with active filter indication
           headerGroup.append('rect')
             .attr('width', this.cardWidth)
             .attr('height', this.cardHeight)
             .attr('rx', 4)
-            .attr('fill', '#f8fafc')
-            .attr('stroke', '#e2e8f0')
-            .attr('stroke-width', 1);
+            .attr('fill', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? '#dbeafe' : '#f8fafc';
+            })
+            .attr('stroke', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? '#3b82f6' : '#e2e8f0';
+            })
+            .attr('stroke-width', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? 2 : 1;
+            });
 
           // Header text
           headerGroup.append('text')
@@ -809,6 +904,21 @@ export class SuperGrid {
           update.select('circle')
             .attr('fill', (d) => this.getStatusColor(d.status === 'No Status' ? undefined : d.status));
 
+          // Update header background for filter state changes
+          update.select('rect')
+            .attr('fill', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? '#dbeafe' : '#f8fafc';
+            })
+            .attr('stroke', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? '#3b82f6' : '#e2e8f0';
+            })
+            .attr('stroke-width', d => {
+              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
+              return isActive ? 2 : 1;
+            });
+
           return update;
         },
         exit => exit.remove()
@@ -826,9 +936,72 @@ export class SuperGrid {
           .attr('fill', '#f8fafc');
       })
       .on('click', (_event, d) => {
-        console.log('Column header clicked:', d.status);
-        // Future: trigger column selection/filtering
+        this.handleColumnHeaderClick(d.status);
       });
+  }
+
+  /**
+   * Check if header is currently active (has a filter applied)
+   */
+  private isHeaderActive(facet: string, value: any): boolean {
+    const filters = this.filterService.getFiltersForAxis('C');
+    return filters.some(f => f.facet === facet && f.value === value);
+  }
+
+  /**
+   * Handle row header click - add folder filter
+   */
+  private handleRowHeaderClick(folder: string): void {
+    console.log('Row header clicked:', folder);
+
+    // Handle special case for "No Folder"
+    const folderValue = folder === 'No Folder' ? null : folder;
+
+    // Check if filter already exists for this folder
+    const existingFilters = this.filterService.getFiltersForAxis('C');
+    const existingFolderFilter = existingFilters.find(f => f.facet === 'folder' && f.value === folderValue);
+
+    if (existingFolderFilter) {
+      // Remove existing folder filter (toggle behavior)
+      this.filterService.removeFilter(existingFolderFilter.id);
+    } else {
+      // Add new folder filter
+      const operator = folderValue === null ? 'equals' : 'equals';
+      this.filterService.addFilter('C', 'folder', operator, folderValue, `Folder: ${folder}`);
+    }
+
+    // Notify callback with current filters
+    if (this.callbacks.onHeaderClick) {
+      this.callbacks.onHeaderClick('row', folder, this.filterService.getActiveFilters());
+    }
+  }
+
+  /**
+   * Handle column header click - add status filter
+   */
+  private handleColumnHeaderClick(status: string): void {
+    console.log('Column header clicked:', status);
+
+    // Handle special case for "No Status"
+    const statusValue = status === 'No Status' ? null : status;
+
+    // Check if filter already exists for this status
+    const existingFilters = this.filterService.getFiltersForAxis('C');
+    const existingStatusFilter = existingFilters.find(f => f.facet === 'status' && f.value === statusValue);
+
+    if (existingStatusFilter) {
+      // Remove existing status filter (toggle behavior)
+      this.filterService.removeFilter(existingStatusFilter.id);
+    } else {
+      // Add new status filter
+      const operator = statusValue === null ? 'equals' : 'equals';
+      this.filterService.addFilter('C', 'status', operator, statusValue, `Status: ${status}`);
+    }
+
+    // Notify callback with current filters
+    if (this.callbacks.onHeaderClick) {
+      this.callbacks.onHeaderClick('column', status, this.filterService.getActiveFilters());
+    }
   }
 
   /**
