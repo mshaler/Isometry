@@ -516,7 +516,7 @@ export class SuperGrid {
   /**
    * Reusable D3.js join pattern for cards
    */
-  private applyCardJoin(selection: d3.Selection<SVGGElement, any, SVGElement, unknown>): d3.Selection<SVGGElement, any, SVGElement, unknown> {
+  private applyCardJoin(selection: d3.Selection<SVGGElement, any, any, unknown>): d3.Selection<SVGGElement, any, any, unknown> {
     const joined = selection.join(
       enter => {
         const groups = enter.append('g')
