@@ -45,7 +45,7 @@ interface Statement {
   all: (params?: unknown[]) => unknown[]
 }
 
-interface Database {
+interface _Database {
   exec: (sql: string) => QueryExecResult[]
   prepare: (sql: string) => Statement
   save?: () => Promise<void>

@@ -44,7 +44,7 @@ export class SuperGrid {
    * Core requirement: Synchronous operation with zero serialization overhead
    * Follows CLAUDE.md D3.js patterns exactly
    */
-  render(filters: Record<string, any> = {}): void {
+  render(): void {
     if (!this.db.isReady()) {
       throw new Error('DatabaseService must be initialized before rendering');
     }
@@ -273,19 +273,19 @@ export class SuperGrid {
     // Add hover interactions to all cards (enter + update)
     joined
       .style('cursor', 'pointer')
-      .on('mouseenter', function(event, d) {
+      .on('mouseenter', function() {
         d3.select(this)
           .select('.card-background')
           .attr('stroke', '#3b82f6')
           .attr('stroke-width', 2);
       })
-      .on('mouseleave', function(event, d) {
+      .on('mouseleave', function() {
         d3.select(this)
           .select('.card-background')
           .attr('stroke', '#e5e7eb')
           .attr('stroke-width', 1);
       })
-      .on('click', (event, d) => {
+      .on('click', (_event, d) => {
         console.log('Card clicked:', d);
         // Future: emit selection events for React integration
       });

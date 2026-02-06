@@ -1,6 +1,9 @@
 import { ConnectionSuggestion, SuggestionType, SuggestionOptions } from './GraphAnalyticsAdapter';
 import { graphAnalytics, GraphMetrics } from './GraphAnalyticsAdapter';
 
+// Re-export interfaces for external use
+export type { ConnectionSuggestion, SuggestionType, SuggestionOptions } from './GraphAnalyticsAdapter';
+
 // Performance tracking interface
 export interface SuggestionPerformanceMetrics {
   cacheHitRate: number;
@@ -411,7 +414,7 @@ export class ConnectionSuggestionService {
   /**
    * Track suggestion acceptance for accuracy measurement
    */
-  trackSuggestionAccepted(nodeId: string, suggestionId: string): void {
+  trackSuggestionAccepted(nodeId: string, _suggestionId: string): void {
     const tracking = this.acceptanceTracking.get(nodeId);
     if (tracking) {
       tracking.accepted++;

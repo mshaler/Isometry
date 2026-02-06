@@ -1,4 +1,4 @@
-import { BridgeMessage, BridgeResponse } from '@/types/bridge';
+import { BridgeMessage, BridgeResponse } from '../types/browser-bridge';
 
 // Type definitions matching native Swift ConnectionSuggestion
 export interface ConnectionSuggestion {
@@ -46,20 +46,24 @@ export interface QueryResult {
   cached: boolean;
 }
 
+// Import type for module augmentation (used in declare module below)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { WebKitMessageHandlers } from '../utils/webview-bridge';
+
 // Bridge communication interface
 interface GraphBridge {
   postMessage(message: any): void;
 }
 
-interface GraphWebKit {
-  messageHandlers: {
+// Module augmentation to extend the existing WebKit interface
+declare module '../utils/webview-bridge' {
+  interface WebKitMessageHandlers {
     graphAnalytics: GraphBridge;
-  };
+  }
 }
 
 declare global {
   interface Window {
-    webkit?: GraphWebKit;
     _isometryGraphBridge?: {
       handleResponse: (response: BridgeResponse) => void;
     };
@@ -392,8 +396,8 @@ export class GraphAnalyticsAdapter {
   }
 
   private fallbackConnectionSuggestions(
-    nodeId: string,
-    options: SuggestionOptions
+    _nodeId: string,
+    _options: SuggestionOptions
   ): ConnectionSuggestion[] {
     // Basic fallback implementation using local graph analysis
     // This would implement simple heuristics when native bridge is unavailable

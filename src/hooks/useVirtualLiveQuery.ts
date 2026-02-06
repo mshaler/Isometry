@@ -238,6 +238,37 @@ export function useVirtualLiveQuery<T = unknown>(
     };
   }, [virtualizer.isScrolling, performanceMonitoring, performanceMonitor]);
 
+  // Get virtual items with cache tracking and recycling for large datasets
+  const virtualItems = useMemo(() => {
+    const items = virtualizer.getVirtualItems();
+
+    // Track cache access for each virtual item with proper key tracking
+    items.forEach((item) => {
+      const itemData = virtualData[item.index];
+      const itemKey = itemData && typeof itemData === 'object' && 'id' in itemData
+        ? `virtual-${(itemData as any).id}`
+        : `virtual-item-${item.index}`;
+
+      // Check if item is cached for large datasets
+      const isHit = itemCount > 10000
+        ? virtualItemCache.current.has(itemKey)
+        : true; // Assume hit for smaller datasets
+
+      trackVirtualCacheAccess(isHit, itemKey);
+    });
+
+    // Performance assertion for large datasets
+    if (itemCount > 10000 && items.length > 100) {
+      console.warn('[useVirtualLiveQuery] Large dataset with many rendered items:', {
+        totalItems: itemCount,
+        renderedItems: items.length,
+        recommendation: 'Consider increasing overscan or reducing viewport size'
+      });
+    }
+
+    return items;
+  }, [virtualizer, trackVirtualCacheAccess, virtualData, itemCount]);
+
   // Real-time update integration - track pipeline latency
   useEffect(() => {
     if (liveQuery.isLive && performanceMonitoring && performanceMonitor) {
@@ -288,37 +319,6 @@ export function useVirtualLiveQuery<T = unknown>(
     virtualizer.scrollToOffset(offset);
     trackVirtualCacheAccess(false); // New scroll position = cache miss
   }, [virtualizer, trackVirtualCacheAccess]);
-
-  // Get virtual items with cache tracking and recycling for large datasets
-  const virtualItems = useMemo(() => {
-    const items = virtualizer.getVirtualItems();
-
-    // Track cache access for each virtual item with proper key tracking
-    items.forEach((item, index) => {
-      const itemData = virtualData[item.index];
-      const itemKey = itemData && typeof itemData === 'object' && 'id' in itemData
-        ? `virtual-${(itemData as any).id}`
-        : `virtual-item-${item.index}`;
-
-      // Check if item is cached for large datasets
-      const isHit = itemCount > 10000
-        ? virtualItemCache.current.has(itemKey)
-        : true; // Assume hit for smaller datasets
-
-      trackVirtualCacheAccess(isHit, itemKey);
-    });
-
-    // Performance assertion for large datasets
-    if (itemCount > 10000 && items.length > 100) {
-      console.warn('[useVirtualLiveQuery] Large dataset with many rendered items:', {
-        totalItems: itemCount,
-        renderedItems: items.length,
-        recommendation: 'Consider increasing overscan or reducing viewport size'
-      });
-    }
-
-    return items;
-  }, [virtualizer, trackVirtualCacheAccess, virtualData, itemCount]);
 
   // Performance metrics calculation
   const performanceMetrics = useMemo((): VirtualScrollingMetrics | undefined => {
