@@ -58,33 +58,21 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_source ON nodes(source, source_id) W
 CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
 CREATE INDEX IF NOT EXISTS idx_nodes_content ON nodes(content);
 
--- FTS5 virtual table for full-text search (sql.js 1.9.0+ includes FTS5)
-CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
+-- TEMPORARY: Search view using LIKE until FTS5 is available
+-- TODO Phase 4: Replace with FTS5 virtual table when custom sql.js build ready
+CREATE VIEW IF NOT EXISTS nodes_fts AS
+SELECT
+    rowid,
     name,
     content,
     summary,
     tags,
-    content='nodes',
-    content_rowid='rowid'
-);
+    (name || ' ' || COALESCE(content, '') || ' ' || COALESCE(summary, '') || ' ' || COALESCE(tags, '')) AS search_content
+FROM nodes
+WHERE deleted_at IS NULL;
 
--- FTS5 triggers to keep index in sync
-CREATE TRIGGER IF NOT EXISTS nodes_fts_insert AFTER INSERT ON nodes BEGIN
-    INSERT INTO nodes_fts(rowid, name, content, summary, tags)
-    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.summary, NEW.tags);
-END;
-
-CREATE TRIGGER IF NOT EXISTS nodes_fts_delete AFTER DELETE ON nodes BEGIN
-    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, summary, tags)
-    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.summary, OLD.tags);
-END;
-
-CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes BEGIN
-    INSERT INTO nodes_fts(nodes_fts, rowid, name, content, summary, tags)
-    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.summary, OLD.tags);
-    INSERT INTO nodes_fts(rowid, name, content, summary, tags)
-    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.summary, NEW.tags);
-END;
+-- TEMPORARY: No triggers needed for view-based search
+-- TODO Phase 4: Add FTS5 triggers when virtual table is implemented
 
 -- Edges: Relationships (GRAPH)
 CREATE TABLE IF NOT EXISTS edges (
@@ -170,32 +158,19 @@ CREATE INDEX IF NOT EXISTS idx_notebook_cards_type ON notebook_cards(card_type);
 CREATE INDEX IF NOT EXISTS idx_notebook_cards_modified ON notebook_cards(modified_at);
 CREATE INDEX IF NOT EXISTS idx_notebook_cards_template ON notebook_cards(template_id) WHERE template_id IS NOT NULL;
 
--- FTS5 virtual table for notebook cards full-text search
-CREATE VIRTUAL TABLE IF NOT EXISTS notebook_cards_fts USING fts5(
+-- TEMPORARY: Notebook search view using LIKE until FTS5 is available
+-- TODO Phase 4: Replace with FTS5 virtual table when custom sql.js build ready
+CREATE VIEW IF NOT EXISTS notebook_cards_fts AS
+SELECT
+    rowid,
     markdown_content,
     rendered_content,
     properties,
-    content='notebook_cards',
-    content_rowid='rowid'
-);
+    (COALESCE(markdown_content, '') || ' ' || COALESCE(rendered_content, '') || ' ' || COALESCE(properties, '')) AS search_content
+FROM notebook_cards;
 
--- FTS5 triggers to keep notebook cards index in sync
-CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_insert AFTER INSERT ON notebook_cards BEGIN
-    INSERT INTO notebook_cards_fts(rowid, markdown_content, rendered_content, properties)
-    VALUES (NEW.rowid, NEW.markdown_content, NEW.rendered_content, NEW.properties);
-END;
-
-CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_delete AFTER DELETE ON notebook_cards BEGIN
-    INSERT INTO notebook_cards_fts(notebook_cards_fts, rowid, markdown_content, rendered_content, properties)
-    VALUES ('delete', OLD.rowid, OLD.markdown_content, OLD.rendered_content, OLD.properties);
-END;
-
-CREATE TRIGGER IF NOT EXISTS notebook_cards_fts_update AFTER UPDATE ON notebook_cards BEGIN
-    INSERT INTO notebook_cards_fts(notebook_cards_fts, rowid, markdown_content, rendered_content, properties)
-    VALUES ('delete', OLD.rowid, OLD.markdown_content, OLD.rendered_content, OLD.properties);
-    INSERT INTO notebook_cards_fts(rowid, markdown_content, rendered_content, properties)
-    VALUES (NEW.rowid, NEW.markdown_content, NEW.rendered_content, NEW.properties);
-END;
+-- TEMPORARY: No triggers needed for view-based search
+-- TODO Phase 4: Add FTS5 triggers when virtual table is implemented
 
 -- Trigger to update modified_at timestamp on notebook cards
 CREATE TRIGGER IF NOT EXISTS notebook_cards_update_modified AFTER UPDATE ON notebook_cards BEGIN

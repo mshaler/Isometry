@@ -1,0 +1,559 @@
+/**
+ * SuperCalc Styles - Formula Bar with PAFV Functions
+ *
+ * Spreadsheet-like formula interface for SuperGrid with PAFV-aware functions.
+ * Supports syntax highlighting, auto-completion, and rich result display.
+ */
+
+/* SuperCalc Container */
+.supercalc {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 100;
+}
+
+.supercalc--expanded {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Formula Bar */
+.supercalc__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface-secondary);
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 6px 6px 0 0;
+}
+
+.supercalc--expanded .supercalc__bar {
+  border-radius: 8px 8px 0 0;
+}
+
+/* Input Group */
+.supercalc__input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+/* Expand Toggle */
+.supercalc__expand-toggle {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.supercalc__expand-toggle:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+/* Formula Input */
+.supercalc__formula-input {
+  flex: 1;
+  position: relative;
+}
+
+.supercalc__input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--surface-color);
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.supercalc__input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.1);
+}
+
+.supercalc__input::placeholder {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Execute Button */
+.supercalc__execute-button {
+  background: var(--success-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.supercalc__execute-button:hover:not(:disabled) {
+  background: var(--success-dark);
+  transform: translateY(-1px);
+}
+
+.supercalc__execute-button:disabled {
+  background: var(--border-color);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Status Display */
+.supercalc__status {
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+
+.supercalc__status-text {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Suggestions Dropdown */
+.supercalc__suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.supercalc__suggestion {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background-color 0.15s ease;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+}
+
+.supercalc__suggestion:hover {
+  background: var(--hover-color);
+}
+
+.supercalc__suggestion:last-child {
+  border-radius: 0 0 4px 4px;
+}
+
+/* Expanded Content */
+.supercalc__expanded-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--surface-color);
+  border-radius: 0 0 8px 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Functions Help */
+.supercalc__functions-help {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.supercalc__functions-help h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.supercalc__function-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.supercalc__function-category {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.supercalc__function-category strong {
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.supercalc__function-category code {
+  background: var(--surface-secondary);
+  padding: 4px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+}
+
+/* Result Area */
+.supercalc__result-area {
+  min-height: 100px;
+}
+
+.supercalc__result {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+/* Scalar Result */
+.supercalc__result--scalar {
+  text-align: center;
+}
+
+.supercalc__result-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--accent-color);
+  margin-bottom: 4px;
+}
+
+.supercalc__result-summary {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* Table Result */
+.supercalc__result--table .supercalc__result-summary {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.supercalc__table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.supercalc__table-row {
+  display: flex;
+  gap: 12px;
+  padding: 6px 8px;
+  background: var(--surface-color);
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+.supercalc__table-row:nth-child(even) {
+  background: var(--surface-secondary);
+}
+
+.supercalc__table-cell {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.supercalc__cell-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.supercalc__cell-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Pivot Result */
+.supercalc__result--pivot .supercalc__result-summary {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.supercalc__pivot-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
+.supercalc__pivot-row {
+  display: flex;
+  gap: 1px;
+}
+
+.supercalc__pivot-row-header {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  padding: 6px 8px;
+  font-weight: 500;
+  min-width: 100px;
+  border-radius: 2px 0 0 2px;
+}
+
+.supercalc__pivot-cell {
+  background: var(--surface-color);
+  padding: 6px 8px;
+  text-align: center;
+  min-width: 60px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.supercalc__pivot-cell:last-child {
+  border-radius: 0 2px 2px 0;
+}
+
+/* Error Result */
+.supercalc__result--error {
+  background: var(--error-light);
+  border-color: var(--error-color);
+}
+
+.supercalc__result--error .supercalc__result-summary {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+/* Formula History */
+.supercalc__history {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.supercalc__history h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.supercalc__history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.supercalc__history-item {
+  background: var(--surface-secondary);
+  padding: 6px 8px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Courier New', monospace;
+}
+
+.supercalc__history-item:hover {
+  background: var(--hover-color);
+  color: var(--text-primary);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .supercalc__function-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .supercalc__bar {
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .supercalc__status {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .supercalc__expanded-content {
+    max-height: 300px;
+  }
+
+  .supercalc__table-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .supercalc__pivot-row {
+    flex-direction: column;
+  }
+
+  .supercalc__pivot-row-header,
+  .supercalc__pivot-cell {
+    border-radius: 2px;
+    min-width: auto;
+  }
+}
+
+/* Theme-specific Styles */
+
+/* NeXTSTEP Theme */
+[data-theme="nextstep"] .supercalc {
+  border-color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+[data-theme="nextstep"] .supercalc__input {
+  border-style: inset;
+  border-width: 2px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
+}
+
+[data-theme="nextstep"] .supercalc__execute-button {
+  border-style: outset;
+  border-width: 2px;
+  border-color: var(--success-color);
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+[data-theme="nextstep"] .supercalc__suggestion {
+  border-bottom: 1px solid #d0d0d0;
+}
+
+/* Modern Glass Theme */
+[data-theme="modern"] .supercalc {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="modern"] .supercalc__bar {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .supercalc__input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .supercalc__suggestions {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="modern"] .supercalc__result {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+/* Formula Syntax Highlighting (via CSS classes - would be added by JS) */
+.supercalc__input .formula-function {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.supercalc__input .formula-argument {
+  color: var(--accent-color);
+}
+
+.supercalc__input .formula-string {
+  color: var(--success-color);
+}
+
+.supercalc__input .formula-number {
+  color: var(--warning-color);
+}
+
+/* Animations */
+@keyframes formula-execute {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.supercalc__execute-button:active:not(:disabled) {
+  animation: formula-execute 0.2s ease-out;
+}
+
+@keyframes result-appear {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.supercalc__result {
+  animation: result-appear 0.3s ease-out;
+}
+
+@keyframes suggestion-slide {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.supercalc__suggestions {
+  animation: suggestion-slide 0.2s ease-out;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .supercalc,
+  .supercalc__input,
+  .supercalc__execute-button,
+  .supercalc__suggestion {
+    transition: none;
+  }
+
+  .supercalc__execute-button:active,
+  .supercalc__result,
+  .supercalc__suggestions {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .supercalc {
+    border-width: 2px;
+  }
+
+  .supercalc__input {
+    border-width: 2px;
+  }
+
+  .supercalc__suggestions {
+    border-width: 2px;
+  }
+}

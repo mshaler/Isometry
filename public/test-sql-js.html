@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL.js FTS5 Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        #log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>SQL.js FTS5 Test</h1>
+    <p>Testing sql.js-fts5 initialization and FTS5 capabilities...</p>
+
+    <div id="test-results"></div>
+
+    <h2>Detailed Log</h2>
+    <div id="log"></div>
+
+    <script type="module">
+        const results = document.getElementById('test-results');
+        const log = document.getElementById('log');
+
+        function addResult(type, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+
+        function addLog(message) {
+            log.textContent += new Date().toISOString() + ' - ' + message + '\n';
+            console.log(message);
+        }
+
+        async function testSqlJs() {
+            try {
+                addLog('Starting SQL.js test...');
+
+                // Test 1: Import sql.js-fts5
+                addLog('Importing sql.js-fts5...');
+                const initSqlJs = (await import('sql.js-fts5')).default;
+                addResult('success', 'sql.js-fts5 import successful');
+                addLog('sql.js-fts5 imported successfully');
+
+                // Test 2: Initialize SQL.js with WASM
+                addLog('Initializing SQL.js with WASM...');
+                const SQL = await initSqlJs({
+                    locateFile: (file) => {
+                        addLog(`Locating file: ${file} -> /wasm/${file}`);
+                        return `/wasm/${file}`;
+                    }
+                });
+                addResult('success', 'SQL.js initialization successful');
+                addLog('SQL.js initialized successfully');
+
+                // Test 3: Create database
+                addLog('Creating database...');
+                const db = new SQL.Database();
+                addResult('success', 'Database creation successful');
+                addLog('Database created successfully');
+
+                // Test 4: Test FTS5 support
+                addLog('Testing FTS5 support...');
+                try {
+                    const ftsResult = db.exec("SELECT fts5_version()");
+                    addResult('success', `FTS5 supported - version: ${JSON.stringify(ftsResult)}`);
+                    addLog(`FTS5 version: ${JSON.stringify(ftsResult)}`);
+                } catch (ftsError) {
+                    addResult('error', `FTS5 not supported: ${ftsError.message}`);
+                    addLog(`FTS5 error: ${ftsError.message}`);
+                }
+
+                // Test 5: Test JSON1 support
+                addLog('Testing JSON1 support...');
+                try {
+                    const jsonResult = db.exec("SELECT json('{\"test\": true}')");
+                    addResult('success', `JSON1 supported - result: ${JSON.stringify(jsonResult)}`);
+                    addLog(`JSON1 result: ${JSON.stringify(jsonResult)}`);
+                } catch (jsonError) {
+                    addResult('error', `JSON1 not supported: ${jsonError.message}`);
+                    addLog(`JSON1 error: ${jsonError.message}`);
+                }
+
+                // Test 6: Load schema
+                addLog('Loading schema from /db/schema.sql...');
+                try {
+                    const schemaResponse = await fetch('/db/schema.sql');
+                    if (!schemaResponse.ok) {
+                        throw new Error(`HTTP ${schemaResponse.status}: ${schemaResponse.statusText}`);
+                    }
+                    const schemaSQL = await schemaResponse.text();
+                    addLog(`Schema loaded, length: ${schemaSQL.length} characters`);
+
+                    // Execute schema
+                    addLog('Executing schema...');
+                    db.exec(schemaSQL);
+                    addResult('success', 'Schema executed successfully');
+                    addLog('Schema executed successfully');
+
+                    // Test 7: Query sample data
+                    addLog('Querying sample data...');
+                    const dataResult = db.exec("SELECT COUNT(*) as count FROM nodes");
+                    const rowCount = dataResult[0]?.values[0]?.[0] || 0;
+                    addResult('info', `Found ${rowCount} rows in nodes table`);
+                    addLog(`Nodes table row count: ${rowCount}`);
+
+                    if (rowCount > 0) {
+                        const sampleResult = db.exec("SELECT id, name, folder, status FROM nodes LIMIT 3");
+                        addResult('success', `Sample data: ${JSON.stringify(sampleResult, null, 2)}`);
+                        addLog(`Sample nodes: ${JSON.stringify(sampleResult, null, 2)}`);
+                    } else {
+                        addResult('error', 'No sample data found - INSERT statements may have failed');
+                        addLog('No sample data found');
+                    }
+
+                } catch (schemaError) {
+                    addResult('error', `Schema loading failed: ${schemaError.message}`);
+                    addLog(`Schema error: ${schemaError.message}`);
+                }
+
+                // Test 8: Test recursive CTEs
+                addLog('Testing recursive CTE support...');
+                try {
+                    const cteResult = db.exec(`
+                        WITH RECURSIVE test_cte(n) AS (
+                            SELECT 1
+                            UNION ALL
+                            SELECT n+1 FROM test_cte WHERE n < 3
+                        )
+                        SELECT COUNT(*) as count FROM test_cte
+                    `);
+                    const cteCount = cteResult[0]?.values[0]?.[0] || 0;
+                    if (cteCount === 3) {
+                        addResult('success', 'Recursive CTE support verified');
+                        addLog('Recursive CTE working correctly');
+                    } else {
+                        addResult('error', `Recursive CTE returned wrong count: ${cteCount}, expected 3`);
+                        addLog(`CTE count wrong: ${cteCount}`);
+                    }
+                } catch (cteError) {
+                    addResult('error', `Recursive CTE failed: ${cteError.message}`);
+                    addLog(`CTE error: ${cteError.message}`);
+                }
+
+                addLog('All tests completed');
+
+            } catch (error) {
+                addResult('error', `Test failed: ${error.message}`);
+                addLog(`Test error: ${error.message}`);
+                console.error('SQL.js test error:', error);
+            }
+        }
+
+        // Run the test
+        testSqlJs();
+    </script>
+</body>
+</html>

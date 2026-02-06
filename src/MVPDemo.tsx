@@ -129,18 +129,20 @@ function MVPDemo() {
               <ThemeProvider>
                 <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
                   <DatabaseProvider>
-                    <AppStateProvider>
-                      <FilterProvider>
-                        <PAFVProvider>
-                          <NotebookProvider>
-                            <CardOverlayProvider>
-                              <UnifiedApp />
-                              <NotificationSystem />
-                            </CardOverlayProvider>
-                          </NotebookProvider>
-                        </PAFVProvider>
-                      </FilterProvider>
-                    </AppStateProvider>
+                    <SQLiteProvider>
+                      <AppStateProvider>
+                        <FilterProvider>
+                          <PAFVProvider>
+                            <NotebookProvider>
+                              <CardOverlayProvider>
+                                <UnifiedApp />
+                                <NotificationSystem />
+                              </CardOverlayProvider>
+                            </NotebookProvider>
+                          </PAFVProvider>
+                        </FilterProvider>
+                      </AppStateProvider>
+                    </SQLiteProvider>
                   </DatabaseProvider>
                 </EnvironmentProvider>
               </ThemeProvider>

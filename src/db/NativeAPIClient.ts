@@ -34,6 +34,8 @@ export class NativeAPIClient {
 }
 
 // Legacy type definitions for backward compatibility during migration
+// Disabled in sql.js architecture
+/*
 interface QueryExecResult {
   columns: string[]
   values: unknown[][]
@@ -44,14 +46,17 @@ interface Statement {
   get: (params?: unknown[]) => unknown
   all: (params?: unknown[]) => unknown[]
 }
+*/
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// Legacy interface - Disabled in sql.js architecture
+/*
 interface _Database {
   exec: (sql: string) => QueryExecResult[]
   prepare: (sql: string) => Statement
   save?: () => Promise<void>
   close?: () => void
 }
+*/
 
 /**
  * @deprecated Use useSQLite() from SQLiteProvider instead

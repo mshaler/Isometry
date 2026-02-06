@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug sql.js-fts5 Initialization</title>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { margin: 5px 0; padding: 5px; border-radius: 3px; }
+        .info { background: #e3f2fd; }
+        .success { background: #e8f5e9; }
+        .error { background: #ffebee; }
+        .warning { background: #fff3e0; }
+    </style>
+</head>
+<body>
+    <h1>Debug sql.js-fts5 Initialization</h1>
+    <div id="output"></div>
+
+    <script>
+        function addLog(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            output.appendChild(div);
+            console.log(message);
+        }
+
+        async function testSqlJsInit() {
+            try {
+                addLog('Starting sql.js-fts5 debug test...', 'info');
+
+                // Test 1: Check if sql.js-fts5 can be loaded from node_modules via import
+                addLog('Testing dynamic import of sql.js-fts5...', 'info');
+
+                let initSqlJs;
+                try {
+                    const module = await import('/node_modules/sql.js-fts5/dist/index.js');
+                    initSqlJs = module.default;
+                    addLog('✅ sql.js-fts5 module loaded successfully', 'success');
+                } catch (importError) {
+                    addLog(`❌ sql.js-fts5 import failed: ${importError.message}`, 'error');
+
+                    // Try alternative method
+                    addLog('Trying alternative import path...', 'info');
+                    try {
+                        const fallback = await import('sql.js-fts5');
+                        initSqlJs = fallback.default;
+                        addLog('✅ sql.js-fts5 fallback import successful', 'success');
+                    } catch (fallbackError) {
+                        addLog(`❌ Fallback import failed: ${fallbackError.message}`, 'error');
+                        throw new Error('Both import methods failed');
+                    }
+                }
+
+                // Test 2: Check WASM file availability
+                addLog('Testing WASM file availability...', 'info');
+                try {
+                    const wasmResponse = await fetch('/wasm/sql-wasm.wasm');
+                    if (wasmResponse.ok) {
+                        addLog(`✅ WASM file accessible (${(await wasmResponse.blob()).size} bytes)`, 'success');
+                    } else {
+                        throw new Error(`WASM file HTTP ${wasmResponse.status}: ${wasmResponse.statusText}`);
+                    }
+                } catch (wasmError) {
+                    addLog(`❌ WASM file check failed: ${wasmError.message}`, 'error');
+                }
+
+                // Test 3: Initialize sql.js with explicit locateFile
+                addLog('Initializing sql.js with WASM files...', 'info');
+                const SQL = await initSqlJs({
+                    locateFile: (file) => {
+                        const path = `/wasm/${file}`;
+                        addLog(`WASM locateFile: ${file} -> ${path}`, 'info');
+                        return path;
+                    }
+                });
+                addLog('✅ sql.js initialized successfully', 'success');
+
+                // Test 4: Create database and verify FTS5
+                addLog('Creating test database...', 'info');
+                const db = new SQL.Database();
+                addLog('✅ Database created', 'success');
+
+                // Test 5: Check FTS5 support
+                addLog('Testing FTS5 support...', 'info');
+                try {
+                    const ftsResult = db.exec("SELECT fts5_version() AS version");
+                    if (ftsResult.length > 0 && ftsResult[0].values.length > 0) {
+                        const version = ftsResult[0].values[0][0];
+                        addLog(`✅ FTS5 support verified (version: ${version})`, 'success');
+                    } else {
+                        throw new Error('FTS5 query returned empty result');
+                    }
+                } catch (ftsError) {
+                    addLog(`❌ FTS5 test failed: ${ftsError.message}`, 'error');
+                }
+
+                // Test 6: Test recursive CTE
+                addLog('Testing recursive CTE support...', 'info');
+                try {
+                    const cteResult = db.exec(`
+                        WITH RECURSIVE test_cte(n) AS (
+                            SELECT 1
+                            UNION ALL
+                            SELECT n+1 FROM test_cte WHERE n < 3
+                        )
+                        SELECT COUNT(*) as count FROM test_cte
+                    `);
+
+                    if (cteResult.length > 0 && cteResult[0].values.length > 0) {
+                        const count = cteResult[0].values[0][0];
+                        if (count === 3) {
+                            addLog(`✅ Recursive CTE support verified (count: ${count})`, 'success');
+                        } else {
+                            throw new Error(`CTE returned incorrect count: ${count}, expected 3`);
+                        }
+                    } else {
+                        throw new Error('CTE test returned empty result');
+                    }
+                } catch (cteError) {
+                    addLog(`❌ CTE test failed: ${cteError.message}`, 'error');
+                }
+
+                addLog('🎉 All sql.js-fts5 tests completed successfully!', 'success');
+
+            } catch (error) {
+                addLog(`💥 SQL.js debug test failed: ${error.message}`, 'error');
+                addLog(`Stack trace: ${error.stack}`, 'error');
+            }
+        }
+
+        // Run test when page loads
+        testSqlJsInit();
+    </script>
+</body>
+</html>

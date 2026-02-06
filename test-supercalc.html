@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SuperCalc Test - PAFV Formula Bar</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px;
+            background: #8b5cf6;
+            color: white;
+            border-bottom: 1px solid #7c3aed;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            min-height: 800px;
+        }
+
+        .formula-area {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar {
+            padding: 20px;
+            background: #f8fafc;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .status {
+            padding: 12px 16px;
+            background: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .data-preview {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            font-size: 0.75rem;
+        }
+
+        .data-item {
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .data-item strong {
+            color: #374151;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .data-item div {
+            color: #6b7280;
+            font-size: 0.7rem;
+        }
+
+        .examples-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .examples-section h4 {
+            margin: 0 0 12px 0;
+            color: #374151;
+        }
+
+        .example-formula {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            padding: 8px;
+            margin: 4px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .example-formula:hover {
+            background: #e2e8f0;
+            border-color: #8b5cf6;
+        }
+
+        .example-description {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .controls-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+        }
+
+        .controls-section h4 {
+            margin: 0 0 12px 0;
+            color: #374151;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            min-width: 80px;
+        }
+
+        select, button {
+            padding: 4px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.8rem;
+        }
+
+        button {
+            background: #8b5cf6;
+            color: white;
+            border-color: #7c3aed;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #7c3aed;
+        }
+
+        .result-display {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* CSS Variables for SuperCalc component theming */
+        :root {
+            --surface-color: #ffffff;
+            --surface-secondary: #f8fafc;
+            --border-color: #e5e7eb;
+            --border-light: #f3f4f6;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --primary-color: #8b5cf6;
+            --primary-text: #ffffff;
+            --primary-dark: #7c3aed;
+            --primary-light: #a78bfa;
+            --accent-color: #0ea5e9;
+            --accent-text: #ffffff;
+            --success-color: #22c55e;
+            --success-dark: #16a34a;
+            --success-light: #dcfce7;
+            --warning-color: #f59e0b;
+            --warning-text: #ffffff;
+            --error-color: #ef4444;
+            --error-light: #fef2f2;
+            --hover-color: #f3f4f6;
+            --hover-light: #f9fafb;
+            --active-color: #e5e7eb;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .stat-item {
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #374151;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 SuperCalc Test</h1>
+            <p>PAFV-aware formula bar with spreadsheet-like functions for SuperGrid</p>
+        </div>
+
+        <div class="main-layout">
+            <div class="formula-area">
+                <div id="status" class="status">
+                    Initializing SuperCalc with PAFV functions...
+                </div>
+
+                <div id="superCalcContainer">
+                    <!-- SuperCalc component will render here -->
+                </div>
+
+                <div class="result-display">
+                    <h4>Formula Execution Results</h4>
+                    <div id="resultsArea">
+                        <p style="color: #6b7280; font-style: italic; text-align: center; margin: 40px 0;">
+                            Execute a formula to see results here
+                        </p>
+                    </div>
+                </div>
+
+                <div class="data-preview">
+                    <h4>Sample Data Preview (First 20 items)</h4>
+                    <div id="dataGrid" class="data-grid">
+                        <!-- Data items will be generated here -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar">
+                <div class="examples-section">
+                    <h4>Example Formulas</h4>
+                    <div class="example-description">Click any formula to try it:</div>
+
+                    <div class="example-formula" onclick="executeExample('=COUNT()')">=COUNT()</div>
+                    <div class="example-description">Count total items</div>
+
+                    <div class="example-formula" onclick="executeExample('=SUMOVER(x_axis, priority)')">=SUMOVER(x_axis, priority)</div>
+                    <div class="example-description">Sum priority values by X-axis</div>
+
+                    <div class="example-formula" onclick="executeExample('=COUNTOVER(y_axis)')">=COUNTOVER(y_axis)</div>
+                    <div class="example-description">Count items by Y-axis groups</div>
+
+                    <div class="example-formula" onclick="executeExample('=AVGOVER(category, priority)')">=AVGOVER(category, priority)</div>
+                    <div class="example-description">Average priority by category</div>
+
+                    <div class="example-formula" onclick="executeExample('=FILTER(status=&quot;Active&quot;)')">=FILTER(status="Active")</div>
+                    <div class="example-description">Filter only active items</div>
+
+                    <div class="example-formula" onclick="executeExample('=GROUPBY(folder, COUNT)')">=GROUPBY(folder, COUNT)</div>
+                    <div class="example-description">Group and count by folder</div>
+
+                    <div class="example-formula" onclick="executeExample('=PIVOT(folder, status, priority, SUM)')">=PIVOT(folder, status, priority, SUM)</div>
+                    <div class="example-description">Create pivot table</div>
+
+                    <div class="example-formula" onclick="executeExample('=SORT(priority, DESC)')">=SORT(priority, DESC)</div>
+                    <div class="example-description">Sort by priority descending</div>
+
+                    <div class="example-formula" onclick="executeExample('=MAXOVER(time, priority)')">=MAXOVER(time, priority)</div>
+                    <div class="example-description">Maximum priority by time</div>
+                </div>
+
+                <div class="controls-section">
+                    <h4>PAFV Configuration</h4>
+                    <div class="control-group">
+                        <label>X-Axis:</label>
+                        <select id="xAxisSelect" onchange="updatePAFV()">
+                            <option value="folder">Folder</option>
+                            <option value="status">Status</option>
+                            <option value="month">Month</option>
+                            <option value="priority">Priority</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Y-Axis:</label>
+                        <select id="yAxisSelect" onchange="updatePAFV()">
+                            <option value="month">Month</option>
+                            <option value="folder">Folder</option>
+                            <option value="status">Status</option>
+                            <option value="priority">Priority</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Z-Axis:</label>
+                        <select id="zAxisSelect" onchange="updatePAFV()">
+                            <option value="priority">Priority</option>
+                            <option value="status">Status</option>
+                            <option value="folder">Folder</option>
+                            <option value="month">Month</option>
+                        </select>
+                    </div>
+
+                    <button onclick="regenerateData()">🎲 New Data</button>
+                    <button onclick="clearResults()">🗑️ Clear Results</button>
+                </div>
+
+                <div class="controls-section">
+                    <h4>Data Statistics</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Total Items</span>
+                            <span id="totalItems" class="stat-value">100</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Folders</span>
+                            <span id="folderCount" class="stat-value">5</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Avg Priority</span>
+                            <span id="avgPriority" class="stat-value">1.5</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Active Items</span>
+                            <span id="activeItems" class="stat-value">75</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <h4>Performance</h4>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Formula Time</span>
+                            <span id="formulaTime" class="stat-value">-</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Data Size</span>
+                            <span id="dataSize" class="stat-value">2.1KB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Sample data generation
+        let currentData = [];
+        let pafvState = {
+            xAxis: 'folder',
+            yAxis: 'month',
+            zAxis: 'priority'
+        };
+
+        const statusEl = document.getElementById('status');
+        const resultsArea = document.getElementById('resultsArea');
+
+        function updateStatus(message, type = 'info') {
+            statusEl.textContent = message;
+        }
+
+        function generateSampleData(count = 100) {
+            const folders = ['Work', 'Personal', 'Projects', 'Archive', 'Ideas'];
+            const statuses = ['Active', 'Complete', 'Pending', 'Draft'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const priorities = [0, 1, 2, 3];
+
+            const data = [];
+            for (let i = 0; i < count; i++) {
+                data.push({
+                    id: `item-${i}`,
+                    name: `Item ${i + 1}`,
+                    folder: folders[Math.floor(Math.random() * folders.length)],
+                    status: statuses[Math.floor(Math.random() * statuses.length)],
+                    month: months[Math.floor(Math.random() * months.length)],
+                    priority: priorities[Math.floor(Math.random() * priorities.length)],
+                    value: Math.floor(Math.random() * 100) + 1,
+                    created: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
+                });
+            }
+            return data;
+        }
+
+        function renderDataPreview() {
+            const dataGrid = document.getElementById('dataGrid');
+            dataGrid.innerHTML = currentData.slice(0, 20).map(item => `
+                <div class="data-item">
+                    <strong>${item.name}</strong>
+                    <div>Folder: ${item.folder}</div>
+                    <div>Status: ${item.status}</div>
+                    <div>Month: ${item.month}</div>
+                    <div>Priority: ${item.priority}</div>
+                    <div>Value: ${item.value}</div>
+                </div>
+            `).join('');
+        }
+
+        function updateStatistics() {
+            document.getElementById('totalItems').textContent = currentData.length;
+
+            const folders = [...new Set(currentData.map(d => d.folder))];
+            document.getElementById('folderCount').textContent = folders.length;
+
+            const avgPriority = currentData.reduce((sum, d) => sum + d.priority, 0) / currentData.length;
+            document.getElementById('avgPriority').textContent = avgPriority.toFixed(1);
+
+            const activeItems = currentData.filter(d => d.status === 'Active').length;
+            document.getElementById('activeItems').textContent = activeItems;
+
+            const dataSize = (JSON.stringify(currentData).length / 1024).toFixed(1) + 'KB';
+            document.getElementById('dataSize').textContent = dataSize;
+        }
+
+        function renderSuperCalc() {
+            const container = document.getElementById('superCalcContainer');
+
+            // Simplified SuperCalc implementation for demo
+            container.innerHTML = `
+                <div class="supercalc">
+                    <div class="supercalc__bar">
+                        <div class="supercalc__input-group">
+                            <button class="supercalc__expand-toggle" onclick="toggleExpanded()" id="expandButton">📊</button>
+                            <div class="supercalc__formula-input">
+                                <input type="text" id="formulaInput" class="supercalc__input"
+                                       placeholder="=SUMOVER(x_axis) or =COUNT() or =FILTER(status='Active')"
+                                       onkeydown="handleKeyDown(event)">
+                                <div id="suggestions" class="supercalc__suggestions" style="display: none;"></div>
+                            </div>
+                            <button class="supercalc__execute-button" onclick="executeFormula()" id="executeButton">▶️</button>
+                        </div>
+                        <div class="supercalc__status">
+                            <span class="supercalc__status-text" id="calcStatus">Ready for PAFV formula</span>
+                        </div>
+                    </div>
+                    <div id="expandedContent" class="supercalc__expanded-content" style="display: none;">
+                        <div class="supercalc__functions-help">
+                            <h4>PAFV Functions</h4>
+                            <div class="supercalc__function-grid">
+                                <div class="supercalc__function-category">
+                                    <strong>Aggregation:</strong>
+                                    <code>SUMOVER(axis, field)</code>
+                                    <code>COUNTOVER(axis)</code>
+                                    <code>AVGOVER(axis, field)</code>
+                                    <code>MAXOVER(axis, field)</code>
+                                    <code>MINOVER(axis, field)</code>
+                                </div>
+                                <div class="supercalc__function-category">
+                                    <strong>Data Operations:</strong>
+                                    <code>GROUPBY(axis, func)</code>
+                                    <code>PIVOT(x, y, value, agg)</code>
+                                    <code>FILTER(condition)</code>
+                                    <code>SORT(field, direction)</code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Formula execution logic (simplified version of the React component)
+        function executeFormula() {
+            const input = document.getElementById('formulaInput');
+            const formula = input.value.trim();
+            const startTime = performance.now();
+
+            if (!formula) return;
+
+            try {
+                const result = processFormula(formula);
+                displayResult(result);
+                document.getElementById('calcStatus').textContent = `✅ ${result.summary}`;
+
+                const executionTime = (performance.now() - startTime).toFixed(1) + 'ms';
+                document.getElementById('formulaTime').textContent = executionTime;
+
+            } catch (error) {
+                const errorResult = {
+                    type: 'error',
+                    summary: `Error: ${error.message}`,
+                    data: null
+                };
+                displayResult(errorResult);
+                document.getElementById('calcStatus').textContent = errorResult.summary;
+            }
+        }
+
+        function processFormula(formula) {
+            if (!formula.startsWith('=')) {
+                throw new Error('Formula must start with =');
+            }
+
+            const withoutEquals = formula.slice(1);
+            const functionMatch = withoutEquals.match(/^([A-Z]+)\s*\(/);
+
+            if (!functionMatch) {
+                throw new Error('Invalid function format');
+            }
+
+            const functionName = functionMatch[1];
+            const argsString = withoutEquals.slice(functionName.length + 1, -1);
+            const args = argsString.split(',').map(arg => {
+                const cleaned = arg.trim();
+                if (cleaned.startsWith('"') && cleaned.endsWith('"')) {
+                    return cleaned.slice(1, -1);
+                }
+                if (!isNaN(Number(cleaned))) {
+                    return Number(cleaned);
+                }
+                return cleaned;
+            }).filter(arg => arg !== '');
+
+            // Execute the function
+            switch (functionName) {
+                case 'COUNT':
+                    return {
+                        type: 'scalar',
+                        data: currentData.length,
+                        summary: `Total count: ${currentData.length}`
+                    };
+
+                case 'SUMOVER':
+                    const [axis, field = 'priority'] = args;
+                    const axisField = getAxisField(axis);
+                    const groups = groupByAxis(currentData, axisField);
+                    const sumResults = Object.entries(groups).map(([key, items]) => ({
+                        [axisField]: key,
+                        sum: items.reduce((sum, item) => sum + (Number(item[field]) || 0), 0),
+                        count: items.length
+                    }));
+                    return {
+                        type: 'table',
+                        data: sumResults,
+                        summary: `Sum of ${field} over ${axis} (${sumResults.length} groups)`
+                    };
+
+                case 'COUNTOVER':
+                    const [countAxis] = args;
+                    const countAxisField = getAxisField(countAxis);
+                    const countGroups = groupByAxis(currentData, countAxisField);
+                    const countResults = Object.entries(countGroups).map(([key, items]) => ({
+                        [countAxisField]: key,
+                        count: items.length
+                    }));
+                    return {
+                        type: 'table',
+                        data: countResults,
+                        summary: `Count over ${countAxis} (${countResults.length} groups)`
+                    };
+
+                case 'FILTER':
+                    const [condition] = args;
+                    const filtered = filterData(currentData, condition);
+                    return {
+                        type: 'table',
+                        data: filtered.slice(0, 10), // Show first 10
+                        summary: `Filtered: ${condition} (${filtered.length}/${currentData.length} items)`
+                    };
+
+                case 'GROUPBY':
+                    const [groupAxis, aggregateFunc = 'COUNT'] = args;
+                    const groupAxisField = getAxisField(groupAxis);
+                    const groupGroups = groupByAxis(currentData, groupAxisField);
+                    const groupResults = Object.entries(groupGroups).map(([key, items]) => ({
+                        group: key,
+                        [aggregateFunc.toLowerCase()]: aggregateFunc === 'COUNT' ? items.length :
+                                                      items.reduce((s, i) => s + (Number(i.value) || 0), 0)
+                    }));
+                    return {
+                        type: 'table',
+                        data: groupResults,
+                        summary: `Group by ${groupAxis} with ${aggregateFunc}`
+                    };
+
+                default:
+                    throw new Error(`Unknown function: ${functionName}`);
+            }
+        }
+
+        function getAxisField(axis) {
+            switch (axis.toLowerCase()) {
+                case 'x_axis': return pafvState.xAxis;
+                case 'y_axis': return pafvState.yAxis;
+                case 'z_axis': return pafvState.zAxis;
+                case 'category': return 'folder';
+                case 'time': return 'month';
+                case 'hierarchy': return 'priority';
+                default: return axis;
+            }
+        }
+
+        function groupByAxis(data, field) {
+            return data.reduce((groups, item) => {
+                const key = item[field] || 'Unknown';
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(item);
+                return groups;
+            }, {});
+        }
+
+        function filterData(data, condition) {
+            const match = condition.match(/(\w+)\s*([=<>!]+)\s*(.+)/);
+            if (!match) return data;
+
+            const [, field, operator, value] = match;
+            const cleanValue = value.replace(/"/g, '');
+
+            return data.filter(item => {
+                const itemValue = item[field];
+                switch (operator) {
+                    case '=': return itemValue === cleanValue;
+                    case '>': return Number(itemValue) > Number(cleanValue);
+                    case '<': return Number(itemValue) < Number(cleanValue);
+                    default: return true;
+                }
+            });
+        }
+
+        function displayResult(result) {
+            let html = '';
+
+            switch (result.type) {
+                case 'scalar':
+                    html = `
+                        <div class="supercalc__result supercalc__result--scalar">
+                            <div class="supercalc__result-value" style="font-size: 2rem; font-weight: 600; color: var(--accent-color); text-align: center;">
+                                ${result.data}
+                            </div>
+                            <div class="supercalc__result-summary" style="color: var(--text-secondary); text-align: center; margin-top: 8px;">
+                                ${result.summary}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'table':
+                    html = `
+                        <div class="supercalc__result supercalc__result--table">
+                            <div class="supercalc__result-summary" style="font-weight: 500; margin-bottom: 12px; color: var(--text-primary);">
+                                ${result.summary}
+                            </div>
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                ${result.data.map((row, i) => `
+                                    <div style="display: flex; gap: 12px; padding: 8px; background: ${i % 2 === 0 ? 'var(--surface-color)' : 'var(--surface-secondary)'}; border-radius: 3px; margin: 2px 0;">
+                                        ${Object.entries(row).map(([key, value]) => `
+                                            <div style="display: flex; gap: 4px; min-width: 100px;">
+                                                <span style="color: var(--text-secondary); font-weight: 500;">${key}:</span>
+                                                <span style="color: var(--text-primary); font-weight: 600;">${value}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    break;
+
+                case 'error':
+                    html = `
+                        <div class="supercalc__result supercalc__result--error" style="background: var(--error-light); border: 1px solid var(--error-color); padding: 16px; border-radius: 6px;">
+                            <div style="color: var(--error-color); font-weight: 500;">
+                                ${result.summary}
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+
+            resultsArea.innerHTML = html;
+        }
+
+        // Event handlers
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                executeFormula();
+            }
+        }
+
+        function toggleExpanded() {
+            const content = document.getElementById('expandedContent');
+            const button = document.getElementById('expandButton');
+            const isExpanded = content.style.display === 'block';
+
+            content.style.display = isExpanded ? 'none' : 'block';
+            button.textContent = isExpanded ? '📊' : '📉';
+        }
+
+        window.executeExample = (formula) => {
+            document.getElementById('formulaInput').value = formula;
+            executeFormula();
+        };
+
+        window.updatePAFV = () => {
+            pafvState.xAxis = document.getElementById('xAxisSelect').value;
+            pafvState.yAxis = document.getElementById('yAxisSelect').value;
+            pafvState.zAxis = document.getElementById('zAxisSelect').value;
+            updateStatus(`PAFV updated: X=${pafvState.xAxis}, Y=${pafvState.yAxis}, Z=${pafvState.zAxis}`, 'success');
+        };
+
+        window.regenerateData = () => {
+            currentData = generateSampleData();
+            renderDataPreview();
+            updateStatistics();
+            updateStatus('🎲 Generated new sample data', 'success');
+        };
+
+        window.clearResults = () => {
+            resultsArea.innerHTML = '<p style="color: #6b7280; font-style: italic; text-align: center; margin: 40px 0;">Execute a formula to see results here</p>';
+            document.getElementById('formulaInput').value = '';
+            document.getElementById('calcStatus').textContent = 'Ready for PAFV formula';
+        };
+
+        // Initialize
+        updateStatus('📊 SuperCalc PAFV formula bar ready!', 'success');
+        currentData = generateSampleData();
+        renderSuperCalc();
+        renderDataPreview();
+        updateStatistics();
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+/**
+ * SuperDensity Styles - Janus Density Model Controls
+ *
+ * Four-quadrant control system for orthogonal Pan × Zoom control.
+ * The revolutionary interface that makes SuperGrid truly polymorphic.
+ */
+
+/* SuperDensity Container */
+.superdensity {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 0.875rem;
+}
+
+/* Control Panel */
+.superdensity__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* Control Section */
+.superdensity__section {
+  background: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+/* Section Title */
+.superdensity__title {
+  margin: 0 0 8px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Current Quadrant Display */
+.superdensity__quadrant {
+  background: var(--accent-color);
+  color: var(--accent-text);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Control Label */
+.superdensity__label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.superdensity__label > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Description Text */
+.superdensity__description {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Toggle Switch (Extent/Value) */
+.superdensity__toggle {
+  display: flex;
+  background: var(--border-light);
+  border-radius: 20px;
+  padding: 2px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.superdensity__toggle-option {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 18px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* Sparse/Dense Toggle States */
+.superdensity__toggle--sparse .superdensity__toggle-option--sparse,
+.superdensity__toggle--dense .superdensity__toggle-option--dense {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Leaf/Rolled Toggle States */
+.superdensity__toggle--leaf .superdensity__toggle-option--leaf,
+.superdensity__toggle--rolled .superdensity__toggle-option--rolled {
+  background: var(--secondary-color);
+  color: var(--secondary-text);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Zoom Slider */
+.superdensity__slider {
+  width: 100%;
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.superdensity__slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.superdensity__slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Zoom Value Display */
+.superdensity__zoom-value {
+  font-weight: 600;
+  color: var(--accent-color);
+  font-size: 0.8rem;
+}
+
+/* Zoom Level Labels */
+.superdensity__zoom-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.superdensity__zoom-axis {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.superdensity__axis-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 60px;
+}
+
+.superdensity__level-name {
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.superdensity__level-samples {
+  background: var(--surface-secondary);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+/* Pan Controls (Cartographic Navigation) */
+.superdensity__pan-controls {
+  display: grid;
+  grid-template-areas:
+    ". up ."
+    "left center right"
+    ". down .";
+  gap: 4px;
+  justify-items: center;
+  max-width: 120px;
+  margin: 0 auto;
+}
+
+.superdensity__pan-controls button {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  font-size: 1rem;
+}
+
+.superdensity__pan-controls button:hover {
+  background: var(--hover-color);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+}
+
+.superdensity__pan-controls button:active {
+  transform: translateY(0);
+  background: var(--active-color);
+}
+
+/* Pan control positioning */
+.superdensity__pan-controls button:nth-child(1) { grid-area: up; }
+.superdensity__pan-controls button:nth-child(3) { grid-area: left; }
+.superdensity__pan-controls button:nth-child(4) { grid-area: center; background: var(--accent-color); color: var(--accent-text); }
+.superdensity__pan-controls button:nth-child(5) { grid-area: right; }
+.superdensity__pan-controls button:nth-child(6) { grid-area: down; }
+
+.superdensity__pan-row {
+  display: contents;
+}
+
+/* Pan Position Display */
+.superdensity__pan-position {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: 'Courier New', monospace;
+  margin-top: 8px;
+}
+
+/* Statistics Panel */
+.superdensity__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.superdensity__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.superdensity__stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.superdensity__stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+}
+
+/* Debug Panel */
+.superdensity__debug {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.superdensity__debug summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.superdensity__debug pre {
+  background: var(--surface-color);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  overflow: auto;
+  max-height: 200px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .superdensity__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .superdensity__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .superdensity__toggle-option {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  .superdensity__pan-controls {
+    max-width: 100px;
+  }
+
+  .superdensity__pan-controls button {
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Theme-specific Styles */
+
+/* NeXTSTEP Theme */
+[data-theme="nextstep"] .superdensity {
+  border-color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+[data-theme="nextstep"] .superdensity__toggle {
+  background: #e0e0e0;
+  border: 2px inset #d0d0d0;
+}
+
+[data-theme="nextstep"] .superdensity__toggle-option {
+  border-radius: 0;
+}
+
+[data-theme="nextstep"] .superdensity__pan-controls button {
+  border-style: outset;
+  border-width: 2px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 100%);
+}
+
+[data-theme="nextstep"] .superdensity__pan-controls button:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+}
+
+/* Modern Glass Theme */
+[data-theme="modern"] .superdensity {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="modern"] .superdensity__section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .superdensity__toggle {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .superdensity__pan-controls button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+}
+
+/* Janus Visual Effects */
+
+/* Quadrant transition animation */
+.superdensity__quadrant {
+  transition: all 0.3s ease;
+  animation: quadrantPulse 2s infinite ease-in-out;
+}
+
+@keyframes quadrantPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* Slider track styling */
+.superdensity__slider {
+  background: linear-gradient(to right,
+    var(--error-color) 0%,
+    var(--warning-color) 33%,
+    var(--success-color) 66%,
+    var(--accent-color) 100%);
+}
+
+/* Stats animation on change */
+.superdensity__stat-value {
+  transition: all 0.2s ease;
+}
+
+.superdensity__stat:hover .superdensity__stat-value {
+  transform: scale(1.1);
+  color: var(--accent-color);
+}
+
+/* Pan control ripple effect */
+.superdensity__pan-controls button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s, height 0.3s;
+}
+
+.superdensity__pan-controls button:active::after {
+  width: 40px;
+  height: 40px;
+}
+
+/* Density visualization gradients */
+.superdensity__toggle--sparse {
+  background: linear-gradient(90deg,
+    var(--primary-color) 0%,
+    var(--primary-light) 100%);
+}
+
+.superdensity__toggle--dense {
+  background: linear-gradient(90deg,
+    var(--secondary-color) 0%,
+    var(--secondary-light) 100%);
+}

@@ -1,0 +1,501 @@
+/**
+ * SuperDynamic Styles - Drag-and-Drop Axis Repositioning
+ *
+ * Visual feedback system for dynamic PAFV axis rearrangement.
+ * Supports animated grid reflow and real-time layout preview.
+ */
+
+/* SuperDynamic Container */
+.superdynamic {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 0.875rem;
+  position: relative;
+  user-select: none;
+}
+
+/* Header */
+.superdynamic__header h3 {
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.superdynamic__header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Axis Layout (Cross Formation) */
+.superdynamic__axis-layout {
+  display: grid;
+  grid-template-areas:
+    ". y-axis ."
+    "z-axis cross x-axis";
+  grid-template-columns: 200px 1fr 200px;
+  grid-template-rows: 120px 120px;
+  gap: 16px;
+  align-items: center;
+  justify-items: center;
+  background: var(--surface-color);
+  border-radius: 8px;
+  padding: 20px;
+  border: 2px dashed var(--border-light);
+  transition: border-color 0.3s ease;
+}
+
+.superdynamic__axis-layout:hover {
+  border-color: var(--accent-color);
+}
+
+/* Axis Cross Center */
+.superdynamic__axis-cross {
+  grid-area: cross;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--accent-color);
+  border-radius: 50%;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-align: center;
+  min-width: 80px;
+  min-height: 80px;
+  justify-content: center;
+}
+
+/* Individual Axis Slot */
+.superdynamic__axis-slot {
+  width: 100%;
+  max-width: 180px;
+  min-height: 100px;
+  background: var(--surface-color);
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.superdynamic__axis-slot--x { grid-area: x-axis; }
+.superdynamic__axis-slot--y { grid-area: y-axis; }
+.superdynamic__axis-slot--z { grid-area: z-axis; }
+
+/* Axis Slot States */
+.superdynamic__axis-slot--drop-target {
+  border-color: var(--success-color);
+  background: var(--success-light);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+}
+
+.superdynamic__axis-slot--dragging-from {
+  opacity: 0.5;
+  transform: scale(0.95);
+  border-style: dashed;
+}
+
+/* Axis Label */
+.superdynamic__axis-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 4px;
+}
+
+.superdynamic__axis-icon {
+  font-size: 1rem;
+}
+
+.superdynamic__axis-name {
+  flex: 1;
+}
+
+/* Axis Chip (Assigned Axis) */
+.superdynamic__axis-chip {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  border: 2px solid transparent;
+}
+
+.superdynamic__axis-chip:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.superdynamic__axis-chip:active {
+  cursor: grabbing;
+  transform: translateY(0);
+}
+
+.superdynamic__chip-label {
+  flex: 1;
+  font-size: 0.8rem;
+}
+
+.superdynamic__chip-remove {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+}
+
+.superdynamic__chip-remove:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+/* Empty Axis Slot */
+.superdynamic__axis-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-align: center;
+  border: 2px dashed var(--border-light);
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 60px;
+}
+
+/* Axis Suggestions */
+.superdynamic__axis-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.superdynamic__axis-suggestion {
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.superdynamic__axis-suggestion:hover {
+  background: var(--accent-color);
+  color: var(--accent-text);
+  border-color: var(--accent-color);
+}
+
+/* Available Axes Section */
+.superdynamic__available-axes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.superdynamic__available-axes h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.superdynamic__axes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+/* Available Axis Item */
+.superdynamic__available-axis {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.superdynamic__available-axis:not(.superdynamic__available-axis--in-use):hover {
+  background: var(--hover-color);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.superdynamic__available-axis--in-use {
+  opacity: 0.6;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+
+.superdynamic__available-label {
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.superdynamic__available-description {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.superdynamic__in-use-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--warning-color);
+  color: var(--warning-text);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+/* Drag Ghost Element */
+.superdynamic__drag-ghost {
+  pointer-events: none;
+  opacity: 0.8;
+  transform: rotate(3deg);
+}
+
+.superdynamic__ghost-chip {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 500;
+  font-size: 0.8rem;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+  border: 2px solid var(--primary-light);
+}
+
+/* Drag Overlay */
+.superdynamic__drag-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.superdynamic__drag-instructions {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Statistics Panel */
+.superdynamic__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-light);
+  border-radius: 6px;
+}
+
+.superdynamic__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+}
+
+.superdynamic__stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.superdynamic__stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .superdynamic__axis-layout {
+    grid-template-columns: 150px 1fr 150px;
+    grid-template-rows: 100px 100px;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .superdynamic__axes-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .superdynamic__stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .superdynamic {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .superdynamic__axis-layout {
+    grid-template-areas:
+      "y-axis"
+      "cross"
+      "x-axis"
+      "z-axis";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 16px;
+  }
+
+  .superdynamic__axis-cross {
+    order: -1;
+  }
+
+  .superdynamic__stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Theme-specific Styles */
+
+/* NeXTSTEP Theme */
+[data-theme="nextstep"] .superdynamic {
+  border-color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+[data-theme="nextstep"] .superdynamic__axis-slot {
+  border-style: outset;
+  border-width: 2px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 100%);
+}
+
+[data-theme="nextstep"] .superdynamic__axis-chip {
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  border-style: outset;
+  border-width: 2px;
+  border-color: #357abd;
+}
+
+[data-theme="nextstep"] .superdynamic__axis-chip:hover {
+  background: linear-gradient(135deg, #5ba0f2 0%, #4a90e2 100%);
+}
+
+/* Modern Glass Theme */
+[data-theme="modern"] .superdynamic {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="modern"] .superdynamic__axis-slot {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .superdynamic__axis-chip {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+[data-theme="modern"] .superdynamic__available-axis {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(5px);
+}
+
+/* Animations */
+@keyframes axis-swap {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(0.8) rotate(180deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+.superdynamic__axis-chip--swapping {
+  animation: axis-swap 0.6s ease-in-out;
+}
+
+@keyframes drop-success {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.superdynamic__axis-slot--drop-success {
+  animation: drop-success 0.4s ease-out;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .superdynamic__axis-chip,
+  .superdynamic__axis-slot,
+  .superdynamic__available-axis {
+    transition: none;
+  }
+
+  .superdynamic__axis-chip--swapping,
+  .superdynamic__axis-slot--drop-success {
+    animation: none;
+  }
+}

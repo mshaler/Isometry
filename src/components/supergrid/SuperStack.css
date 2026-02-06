@@ -1,0 +1,258 @@
+/**
+ * SuperStack Styles - Nested PAFV Headers
+ *
+ * Visual spanning headers that adapt to PAFV axis mappings.
+ * Supports both NeXTSTEP (retro) and Modern (glass) themes.
+ */
+
+/* Base SuperStack Container */
+.supergrid-stack {
+  display: grid;
+  gap: 0;
+  border: 1px solid var(--border-color);
+  background: var(--surface-color);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Horizontal (Column Headers) */
+.supergrid-stack--horizontal {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  border-bottom: 2px solid var(--accent-color);
+}
+
+/* Vertical (Row Headers) */
+.supergrid-stack--vertical {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(auto-fit, minmax(32px, 1fr));
+  border-right: 2px solid var(--accent-color);
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+}
+
+/* Header Level Container */
+.supergrid-stack__level {
+  display: grid;
+  gap: 1px;
+  background: var(--border-light);
+}
+
+/* Horizontal Level */
+.supergrid-stack--horizontal .supergrid-stack__level {
+  grid-auto-flow: column;
+  grid-template-columns: subgrid;
+}
+
+/* Vertical Level */
+.supergrid-stack--vertical .supergrid-stack__level {
+  grid-auto-flow: row;
+  grid-template-rows: subgrid;
+}
+
+/* Individual Header Cell */
+.supergrid-stack__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 36px;
+
+  /* Text styling */
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Header Hover State */
+.supergrid-stack__header:hover {
+  background: var(--hover-color);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Active State */
+.supergrid-stack__header:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Header Text */
+.supergrid-stack__header-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+/* Node Count Badge */
+.supergrid-stack__header-count {
+  background: var(--accent-color);
+  color: var(--accent-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  min-width: 20px;
+  text-align: center;
+}
+
+/* Axis Indicator */
+.supergrid-stack__header-axis {
+  font-size: 0.6rem;
+  color: var(--text-secondary);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+/* Level-specific styling */
+.supergrid-stack__level--0 .supergrid-stack__header {
+  background: var(--primary-color);
+  color: var(--primary-text);
+  font-weight: 600;
+  border-width: 2px;
+}
+
+.supergrid-stack__level--1 .supergrid-stack__header {
+  background: var(--secondary-color);
+  color: var(--secondary-text);
+}
+
+.supergrid-stack__level--2 .supergrid-stack__header {
+  background: var(--tertiary-color);
+  color: var(--tertiary-text);
+  font-size: 0.8rem;
+}
+
+.supergrid-stack__level--3 .supergrid-stack__header {
+  background: var(--surface-secondary);
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+/* Empty State */
+.supergrid-stack--empty {
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.supergrid-stack__empty-state {
+  padding: 20px;
+  text-align: center;
+  border: 2px dashed var(--border-light);
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  opacity: 0.7;
+}
+
+/* Drag and Drop States */
+.supergrid-stack__header[draggable="true"] {
+  cursor: grab;
+}
+
+.supergrid-stack__header[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.supergrid-stack__header--dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  z-index: 1000;
+}
+
+.supergrid-stack__header--drop-target {
+  border-color: var(--success-color);
+  background: var(--success-background);
+  animation: pulse 1s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .supergrid-stack__header {
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    min-height: 32px;
+  }
+
+  .supergrid-stack__header-text {
+    margin-right: 4px;
+  }
+
+  .supergrid-stack__header-count {
+    font-size: 0.7rem;
+    padding: 1px 4px;
+  }
+
+  .supergrid-stack--vertical {
+    writing-mode: horizontal-tb;
+    text-orientation: initial;
+  }
+}
+
+/* Theme-specific overrides */
+
+/* NeXTSTEP Theme */
+[data-theme="nextstep"] .supergrid-stack {
+  border-color: #333;
+  font-family: 'Courier New', monospace;
+}
+
+[data-theme="nextstep"] .supergrid-stack__header {
+  border-style: outset;
+  border-width: 2px;
+  background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 100%);
+}
+
+[data-theme="nextstep"] .supergrid-stack__header:hover {
+  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+}
+
+/* Modern Glass Theme */
+[data-theme="modern"] .supergrid-stack {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="modern"] .supergrid-stack__header {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .supergrid-stack__header:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Animation keyframes */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 var(--success-color); }
+  70% { box-shadow: 0 0 0 4px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* Utility classes for dynamic spanning */
+.span-2 { grid-column-end: span 2; }
+.span-3 { grid-column-end: span 3; }
+.span-4 { grid-column-end: span 4; }
+.span-5 { grid-column-end: span 5; }
+.span-6 { grid-column-end: span 6; }
+.span-7 { grid-column-end: span 7; }
+.span-8 { grid-column-end: span 8; }
+
+.row-span-2 { grid-row-end: span 2; }
+.row-span-3 { grid-row-end: span 3; }
+.row-span-4 { grid-row-end: span 4; }
