@@ -287,6 +287,257 @@ export class DatabaseService {
   }
 
   /**
+   * Update card position in the database
+   * @param cardId Card identifier
+   * @param x X coordinate position
+   * @param y Y coordinate position
+   * @returns Success status
+   */
+  updateCardPosition(cardId: string, x: number, y: number): { success: boolean; error?: string } {
+    if (!this.db) {
+      return { success: false, error: 'Database not initialized' };
+    }
+
+    // Validate inputs
+    if (!cardId || typeof x !== 'number' || typeof y !== 'number') {
+      return { success: false, error: 'Invalid parameters: cardId, x, and y are required' };
+    }
+
+    // Validate coordinate ranges
+    if (x < 0 || y < 0 || x > 10000 || y > 10000) {
+      return { success: false, error: 'Invalid coordinates: x and y must be between 0 and 10000' };
+    }
+
+    try {
+      // First, check if we need to add the position columns
+      this.ensurePositionColumns();
+
+      // Check if card exists
+      const existingCard = this.query("SELECT id FROM nodes WHERE id = ? AND deleted_at IS NULL", [cardId]);
+      if (existingCard.length === 0) {
+        return { success: false, error: `Card with id ${cardId} not found` };
+      }
+
+      // Update position with rounded values to avoid floating point precision issues
+      const roundedX = Math.round(x * 100) / 100;
+      const roundedY = Math.round(y * 100) / 100;
+
+      this.run(`
+        UPDATE nodes
+        SET grid_x = ?,
+            grid_y = ?,
+            modified_at = datetime('now')
+        WHERE id = ?
+      `, [roundedX, roundedY, cardId]);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Position update failed: ${error}` };
+    }
+  }
+
+  /**
+   * Bulk update multiple card positions in a transaction
+   * @param positions Array of position updates {cardId, x, y}
+   * @returns Success status with details
+   */
+  updateCardPositions(positions: Array<{cardId: string, x: number, y: number}>): {
+    success: boolean;
+    updated: number;
+    failed: number;
+    errors: Array<{cardId: string, error: string}>;
+  } {
+    if (!this.db) {
+      return { success: false, updated: 0, failed: positions.length, errors: [{ cardId: 'all', error: 'Database not initialized' }] };
+    }
+
+    if (!positions || positions.length === 0) {
+      return { success: true, updated: 0, failed: 0, errors: [] };
+    }
+
+    const errors: Array<{cardId: string, error: string}> = [];
+    let updated = 0;
+
+    try {
+      // Ensure position columns exist
+      this.ensurePositionColumns();
+
+      // Use transaction for atomicity
+      return this.transaction(() => {
+        for (const { cardId, x, y } of positions) {
+          try {
+            // Validate each position update
+            if (!cardId || typeof x !== 'number' || typeof y !== 'number') {
+              errors.push({ cardId, error: 'Invalid parameters' });
+              continue;
+            }
+
+            if (x < 0 || y < 0 || x > 10000 || y > 10000) {
+              errors.push({ cardId, error: 'Coordinates out of range' });
+              continue;
+            }
+
+            // Check if card exists
+            const existingCard = this.query("SELECT id FROM nodes WHERE id = ? AND deleted_at IS NULL", [cardId]);
+            if (existingCard.length === 0) {
+              errors.push({ cardId, error: 'Card not found' });
+              continue;
+            }
+
+            // Update position
+            const roundedX = Math.round(x * 100) / 100;
+            const roundedY = Math.round(y * 100) / 100;
+
+            this.run(`
+              UPDATE nodes
+              SET grid_x = ?,
+                  grid_y = ?,
+                  modified_at = datetime('now')
+              WHERE id = ?
+            `, [roundedX, roundedY, cardId]);
+
+            updated++;
+          } catch (error) {
+            errors.push({ cardId, error: String(error) });
+          }
+        }
+
+        return {
+          success: errors.length === 0,
+          updated,
+          failed: errors.length,
+          errors
+        };
+      });
+    } catch (error) {
+      return {
+        success: false,
+        updated,
+        failed: positions.length - updated,
+        errors: [{ cardId: 'transaction', error: String(error) }]
+      };
+    }
+  }
+
+  /**
+   * Get card position by ID
+   * @param cardId Card identifier
+   * @returns Position data or null if not found
+   */
+  getCardPosition(cardId: string): { x: number; y: number } | null {
+    if (!this.db || !cardId) {
+      return null;
+    }
+
+    try {
+      this.ensurePositionColumns();
+
+      const result = this.query<{grid_x: number, grid_y: number}>(
+        "SELECT grid_x, grid_y FROM nodes WHERE id = ? AND deleted_at IS NULL",
+        [cardId]
+      );
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const { grid_x, grid_y } = result[0];
+      return {
+        x: grid_x || 0,
+        y: grid_y || 0
+      };
+    } catch (error) {
+      console.error('Get card position failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get cards within a specific region
+   * @param x1 Left boundary
+   * @param y1 Top boundary
+   * @param x2 Right boundary
+   * @param y2 Bottom boundary
+   * @returns Cards in the region
+   */
+  getCardsInRegion(x1: number, y1: number, x2: number, y2: number): any[] {
+    if (!this.db) {
+      return [];
+    }
+
+    try {
+      this.ensurePositionColumns();
+
+      return this.query(`
+        SELECT id, name, grid_x, grid_y
+        FROM nodes
+        WHERE deleted_at IS NULL
+          AND grid_x >= ? AND grid_x <= ?
+          AND grid_y >= ? AND grid_y <= ?
+      `, [Math.min(x1, x2), Math.max(x1, x2), Math.min(y1, y2), Math.max(y1, y2)]);
+    } catch (error) {
+      console.error('Get cards in region failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get cards within distance from a center point
+   * @param centerX Center X coordinate
+   * @param centerY Center Y coordinate
+   * @param radius Maximum distance
+   * @returns Cards within the radius
+   */
+  getCardsByDistance(centerX: number, centerY: number, radius: number): any[] {
+    if (!this.db) {
+      return [];
+    }
+
+    try {
+      this.ensurePositionColumns();
+
+      // Use Pythagorean theorem for distance calculation
+      return this.query(`
+        SELECT id, name, grid_x, grid_y,
+               SQRT(POWER(grid_x - ?, 2) + POWER(grid_y - ?, 2)) as distance
+        FROM nodes
+        WHERE deleted_at IS NULL
+          AND grid_x IS NOT NULL
+          AND grid_y IS NOT NULL
+          AND SQRT(POWER(grid_x - ?, 2) + POWER(grid_y - ?, 2)) <= ?
+        ORDER BY distance ASC
+      `, [centerX, centerY, centerX, centerY, radius]);
+    } catch (error) {
+      console.error('Get cards by distance failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Ensure position columns exist in the database (migration helper)
+   * This is a safe operation that only adds columns if they don't exist
+   */
+  private ensurePositionColumns(): void {
+    try {
+      // Check if grid_x column exists
+      const columns = this.query("PRAGMA table_info(nodes)");
+      const hasGridX = columns.some((col: any) => col.name === 'grid_x');
+      const hasGridY = columns.some((col: any) => col.name === 'grid_y');
+
+      if (!hasGridX) {
+        this.run("ALTER TABLE nodes ADD COLUMN grid_x REAL");
+      }
+
+      if (!hasGridY) {
+        this.run("ALTER TABLE nodes ADD COLUMN grid_y REAL");
+      }
+    } catch (error) {
+      // Ignore errors - columns might already exist
+      // This is a safe operation for schema migration
+    }
+  }
+
+  /**
    * Get database statistics for monitoring
    */
   getStats(): {

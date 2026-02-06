@@ -1,686 +1,665 @@
 import * as d3 from 'd3';
-import { DatabaseService } from '../db/DatabaseService';
-import { type VirtualizedGridResult } from '../hooks/useVirtualizedGrid';
-import { type VirtualGridCell } from '../types/grid';
-import { LATCHFilterService, type LATCHFilter } from '../services/LATCHFilterService';
+import type { DatabaseService } from '../db/DatabaseService';
+import type { GridData, GridConfig, AxisData } from '../types/grid';
+import { SelectionManager } from '../services/SelectionManager';
+import type { SelectionCallbacks, GridPosition as SelectionGridPosition } from '../services/SelectionManager';
 
 /**
- * SuperGrid - Core D3.js renderer with direct sql.js data binding
+ * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
  *
- * Purpose: Validate bridge elimination architecture by demonstrating zero serialization
- * overhead between sql.js queries and D3.js data binding. This is the foundation for
- * all future D3 renderers (Network, Kanban, Timeline).
- *
- * Architecture: D3.js queries DatabaseService directly in same memory space - no bridge
- *
- * Key principles from CLAUDE.md:
- * - Always use .join() with key functions (d => d.id)
- * - Direct synchronous db.query() calls (no promises)
- * - Same memory space data binding (cards array directly to D3)
- * - Zero serialization boundaries
+ * Key features:
+ * - PAFV spatial projection (Planes → Axes → Facets → Values)
+ * - Bridge elimination: sql.js → D3.js direct data binding
+ * - Multi-select with keyboard navigation
+ * - Dynamic axis allocation and view transitions
+ * - Nested dimensional headers with visual spanning
  */
-interface SuperGridCallbacks {
-  onCardClick?: (card: any) => void;
-  onHeaderClick?: (headerType: 'row' | 'column', value: string, filters: LATCHFilter[]) => void;
-  onCardUpdate?: (cardId: string, updates: any) => void;
-}
 
 export class SuperGrid {
-  private db: DatabaseService;
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
-  private width: number;
-  private height: number;
-  private cardWidth = 120;
-  private cardHeight = 80;
-  private padding = 10;
-  private callbacks: SuperGridCallbacks = {};
+  private database: DatabaseService;
+  private config: GridConfig;
+  private currentData: GridData | null = null;
+  private selectionManager: SelectionManager;
 
-  // LATCH Filter Service for header-based filtering
-  private filterService: LATCHFilterService;
+  // Grid dimensions and layout
+  private readonly cardWidth = 220;
+  private readonly cardHeight = 100;
+  private readonly padding = 20;
+  private readonly headerHeight = 40;
 
-  // Virtual scrolling integration
-  private virtualScrolling: VirtualizedGridResult | null = null;
-  private enableVirtualScrolling = true;
+  // Drag & drop state
+  private isDragging = false;
+  private dragStartPosition: { x: number; y: number } = { x: 0, y: 0 };
+  private dragBehavior: d3.DragBehavior<SVGGElement, any, any> | null = null;
 
-  constructor(container: SVGElement, db: DatabaseService, options?: {
-    width?: number;
-    height?: number;
-    callbacks?: SuperGridCallbacks;
-  }) {
-    this.db = db;
+  // Callbacks
+  private onCardClick?: (card: any) => void;
+  private onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
+  private onBulkOperation?: (operation: string, selectedIds: string[]) => void;
+  private onCardUpdate?: (card: any) => void;
+
+  constructor(
+    container: SVGElement,
+    database: DatabaseService,
+    config: GridConfig = {},
+    callbacks: {
+      onCardClick?: (card: any) => void;
+      onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
+      onBulkOperation?: (operation: string, selectedIds: string[]) => void;
+      onCardUpdate?: (card: any) => void;
+    } = {}
+  ) {
     this.container = d3.select(container);
-    this.width = options?.width || 800;
-    this.height = options?.height || 600;
-    this.callbacks = options?.callbacks || {};
+    this.database = database;
+    this.config = { columnsPerRow: 5, enableHeaders: true, ...config };
+    this.onCardClick = callbacks.onCardClick;
+    this.onSelectionChange = callbacks.onSelectionChange;
+    this.onBulkOperation = callbacks.onBulkOperation;
+    this.onCardUpdate = callbacks.onCardUpdate;
 
-    // Initialize LATCH Filter Service
-    this.filterService = new LATCHFilterService();
+    // Initialize selection manager with callbacks
+    const selectionCallbacks: SelectionCallbacks = {
+      onSelectionChange: (selectedIds: string[], focusedId: string | null) => {
+        this.updateCardSelectionVisuals(selectedIds);
+        this.onSelectionChange?.(selectedIds, focusedId);
+      },
+      onFocusChange: (focusedId: string | null) => {
+        this.updateCardFocusVisuals(focusedId);
+      },
+      onBulkOperation: (operation: string, selectedIds: string[]) => {
+        this.onBulkOperation?.(operation, selectedIds);
+      }
+    };
 
-    // Subscribe to filter changes to trigger re-rendering
-    this.filterService.onFilterChange((_filters) => {
-      this.renderWithLATCHFilters();
-    });
+    this.selectionManager = new SelectionManager(selectionCallbacks);
+    this.setupKeyboardHandlers();
+    this.initializeDragBehavior();
+  }
 
-    // Set container dimensions
+  /**
+   * Set up keyboard navigation and shortcuts
+   */
+  private setupKeyboardHandlers(): void {
+    // Make the SVG focusable for keyboard events
     this.container
-      .attr('width', this.width)
-      .attr('height', this.height)
-      .attr('viewBox', `0 0 ${this.width} ${this.height}`);
-  }
+      .attr('tabindex', 0)
+      .on('keydown', (event: KeyboardEvent) => {
+        // Prevent default browser behavior for navigation keys
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'Enter'].includes(event.code)) {
+          event.preventDefault();
+        }
 
-  /**
-   * Render grid with direct sql.js query → D3.js data binding
-   *
-   * Core requirement: Synchronous operation with zero serialization overhead
-   * Follows CLAUDE.md D3.js patterns exactly
-   */
-  render(): void {
-    if (!this.db.isReady()) {
-      throw new Error('DatabaseService must be initialized before rendering');
-    }
-
-    // Direct synchronous query - core CLAUDE.md requirement
-    // This proves sql.js → D3.js works in same memory space
-    const cards = this.db.query<{
-      id: string;
-      name: string;
-      folder?: string;
-      status?: string;
-      x?: number;
-      y?: number;
-      created_at?: string;
-    }>(
-      `SELECT id, name, folder, status,
-              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
-       FROM nodes
-       WHERE deleted_at IS NULL
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      []
-    );
-
-    // Clear existing content before rendering
-    this.clear();
-
-    // Set up grid structure with headers
-    this.setupGridStructure();
-
-    // Render LATCH headers first
-    this.renderRowHeaders();
-    this.renderColumnHeaders();
-
-    // Use shared rendering logic to ensure consistent behavior
-    this.renderCards(cards);
-  }
-
-  /**
-   * Apply LATCH filters via SQL WHERE clauses
-   * Demonstrates how filtering works in the bridge elimination architecture
-   */
-  renderWithFilters(filters: {
-    folder?: string;
-    status?: string;
-    search?: string;
-  } = {}): void {
-    if (!this.db.isReady()) {
-      throw new Error('DatabaseService must be initialized before rendering');
-    }
-
-    // Build SQL WHERE clause from LATCH filters
-    const whereConditions: string[] = ['deleted_at IS NULL'];
-    const params: any[] = [];
-
-    if (filters.folder) {
-      whereConditions.push('folder = ?');
-      params.push(filters.folder);
-    }
-
-    if (filters.status) {
-      whereConditions.push('status = ?');
-      params.push(filters.status);
-    }
-
-    if (filters.search) {
-      // Use LIKE fallback since standard sql.js lacks FTS5
-      whereConditions.push('name LIKE ?');
-      params.push(`%${filters.search}%`);
-    }
-
-    const whereClause = whereConditions.join(' AND ');
-
-    // Direct synchronous filtered query
-    const cards = this.db.query<{
-      id: string;
-      name: string;
-      folder?: string;
-      status?: string;
-      x?: number;
-      y?: number;
-      created_at?: string;
-    }>(
-      `SELECT id, name, folder, status,
-              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
-       FROM nodes
-       WHERE ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      params
-    );
-
-    // Same D3.js binding logic as render() - could be refactored
-    this.renderCards(cards);
-  }
-
-  /**
-   * Render grid using LATCH Filter Service
-   * Core method for header-based filtering
-   */
-  renderWithLATCHFilters(): void {
-    if (!this.db.isReady()) {
-      throw new Error('DatabaseService must be initialized before rendering');
-    }
-
-    // Compile filters to SQL
-    const filterResult = this.filterService.compileToSQL();
-    const { whereClause, parameters } = filterResult;
-
-    // Execute query with compiled filters
-    const cards = this.db.query<{
-      id: string;
-      name: string;
-      folder?: string;
-      status?: string;
-      x?: number;
-      y?: number;
-      created_at?: string;
-    }>(
-      `SELECT id, name, folder, status,
-              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
-       FROM nodes
-       WHERE ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      parameters
-    );
-
-    // Clear and re-render with filtered data
-    this.clear();
-    this.setupGridStructure();
-    this.renderRowHeaders();
-    this.renderColumnHeaders();
-    this.renderCards(cards);
-  }
-
-  /**
-   * Get current LATCH filter service for external access
-   */
-  getFilterService(): LATCHFilterService {
-    return this.filterService;
-  }
-
-  /**
-   * Re-render with updated data from database
-   * Demonstrates reactive updates in bridge elimination architecture
-   */
-  refresh(): void {
-    if (this.filterService.hasActiveFilters()) {
-      this.renderWithLATCHFilters();
-    } else {
-      this.render();
-    }
-  }
-
-  /**
-   * Clear the grid
-   */
-  clear(): void {
-    this.container.selectAll('.card-group').remove();
-    this.container.selectAll('.grid-structure').remove();
-  }
-
-  /**
-   * Enable virtual scrolling with performance optimization for large datasets
-   */
-  enableVirtualization(enable: boolean = true): void {
-    this.enableVirtualScrolling = enable;
-  }
-
-  /**
-   * Render virtual grid cells using D3.js data binding with virtual items
-   *
-   * This method handles the integration between TanStack Virtual's virtualization
-   * and D3.js rendering for high-performance grid display with 10k+ cells
-   */
-  renderVirtualCells(virtualItems: VirtualGridCell[]): void {
-    if (!virtualItems.length) {
-      this.clear();
-      return;
-    }
-
-    // Convert virtual items to card data for D3.js binding
-    const cardsWithPositions = virtualItems.map((virtualItem) => {
-      const { cellData } = virtualItem;
-
-      // Use virtual positioning from TanStack Virtual
-      return {
-        ...cellData.cards[0], // Use first card as primary data
-        id: `cell-${cellData.row}-${cellData.column}`,
-        x: cellData.x,
-        y: cellData.y,
-        virtualIndex: virtualItem.virtualIndex,
-        cellData: cellData, // Include full cell data for morphing
-        cardCount: cellData.cards.length
-      };
-    });
-
-    // Apply D3.js data binding with virtual items
-    const cellSelection = this.container
-      .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.virtual-cell')
-      .data(cardsWithPositions, d => d.id);
-
-    // Use specialized join for virtual cells
-    this.applyVirtualCellJoin(cellSelection);
-  }
-
-  /**
-   * Specialized D3.js join pattern for virtual grid cells
-   *
-   * Handles Janus density morphing and count badges based on cell data
-   */
-  private applyVirtualCellJoin(selection: d3.Selection<SVGGElement, any, SVGElement, unknown>): void {
-    const joined = selection.join(
-      enter => {
-        const groups = enter.append('g')
-          .attr('class', 'virtual-cell')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        // Render based on cell density level
-        groups.each((d, i, nodes) => {
-          const group = d3.select(nodes[i]);
-          this.renderCellContent(group, d);
-        });
-
-        return groups;
-      },
-      update => {
-        // Update position and content for existing cells
-        update
-          .transition()
-          .duration(200)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        // Re-render cell content if density changed
-        update.each((d, i, nodes) => {
-          const group = d3.select(nodes[i]);
-          group.selectAll('*').remove(); // Clear existing content
-          this.renderCellContent(group, d);
-        });
-
-        return update;
-      },
-      exit => exit
-        .transition()
-        .duration(150)
-        .attr('opacity', 0)
-        .remove()
-    );
-
-    // Add interaction handlers
-    joined
-      .style('cursor', 'pointer')
-      .on('mouseenter', function(_event, d) {
-        d3.select(this)
-          .transition()
-          .duration(100)
-          .attr('transform', `translate(${d.x}, ${d.y}) scale(1.02)`);
-      })
-      .on('mouseleave', function(_event, d) {
-        d3.select(this)
-          .transition()
-          .duration(100)
-          .attr('transform', `translate(${d.x}, ${d.y}) scale(1)`);
-      })
-      .on('click', (_event, d) => {
-        console.log('Virtual cell clicked:', d);
-        if (this.callbacks.onCardClick) {
-          // For virtual cells, pass the primary card data
-          this.callbacks.onCardClick(d.cellData?.cards?.[0] || d);
+        switch (event.code) {
+          case 'ArrowUp':
+            this.selectionManager.moveSelection('up', event.shiftKey);
+            break;
+          case 'ArrowDown':
+            this.selectionManager.moveSelection('down', event.shiftKey);
+            break;
+          case 'ArrowLeft':
+            this.selectionManager.moveSelection('left', event.shiftKey);
+            break;
+          case 'ArrowRight':
+            this.selectionManager.moveSelection('right', event.shiftKey);
+            break;
+          case 'Space':
+          case 'Enter':
+            // Toggle selection of focused card
+            const focusedId = this.selectionManager.getFocusedCard();
+            if (focusedId) {
+              this.selectionManager.selectCard(focusedId, 'add');
+            }
+            break;
+          case 'Escape':
+            this.selectionManager.clearSelection();
+            break;
+          case 'KeyA':
+            if (event.ctrlKey || event.metaKey) {
+              this.selectionManager.selectAll();
+            }
+            break;
+          default:
+            return; // Don't handle other keys
         }
       });
   }
 
   /**
-   * Render cell content based on Janus density model
+   * Initialize D3 drag behavior for card repositioning
    */
-  private renderCellContent(group: d3.Selection<SVGGElement, any, null, undefined>, cellData: any): void {
-    const { cardCount = 1 } = cellData;
-
-    if (cardCount === 1) {
-      // Single card rendering
-      this.renderSingleCard(group, cellData);
-    } else if (cardCount <= 5) {
-      // Card stack with visible count
-      this.renderCardStack(group, cellData, cardCount);
-    } else {
-      // Dense count badge
-      this.renderCountBadge(group, cardCount);
-    }
+  private initializeDragBehavior(): void {
+    this.dragBehavior = d3.drag<SVGGElement, any>()
+      .on('start', (event, d) => this.handleDragStart(event, d))
+      .on('drag', (event, d) => this.handleDragging(event, d))
+      .on('end', (event, d) => this.handleDragEnd(event, d));
   }
 
   /**
-   * Render single card (sparse state)
+   * Handle drag start event
    */
-  private renderSingleCard(group: d3.Selection<SVGGElement, any, null, undefined>, cardData: any): void {
-    // Card background
-    group.append('rect')
-      .attr('width', this.cardWidth)
-      .attr('height', this.cardHeight)
-      .attr('rx', 6)
-      .attr('fill', '#ffffff')
-      .attr('stroke', '#e5e7eb')
-      .attr('stroke-width', 1)
-      .style('filter', 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))');
+  private handleDragStart(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+    // Prevent click events during drag
+    this.isDragging = true;
 
-    // Card title
-    group.append('text')
-      .attr('x', 8)
-      .attr('y', 20)
-      .attr('font-family', 'system-ui, sans-serif')
-      .attr('font-size', '14px')
-      .attr('font-weight', '600')
-      .attr('fill', '#111827')
-      .text(this.truncateText(cardData.name || 'Untitled', 14));
-
-    // Status indicator
-    group.append('circle')
-      .attr('cx', this.cardWidth - 12)
-      .attr('cy', 12)
-      .attr('r', 4)
-      .attr('fill', this.getStatusColor(cardData.status));
-  }
-
-  /**
-   * Render card stack (group state)
-   */
-  private renderCardStack(group: d3.Selection<SVGGElement, any, null, undefined>, cardData: any, count: number): void {
-    const stackOffset = 3;
-    const maxVisible = Math.min(count, 3);
-
-    // Render stacked cards with offset
-    for (let i = maxVisible - 1; i >= 0; i--) {
-      const offset = i * stackOffset;
-
-      const cardGroup = group.append('g')
-        .attr('transform', `translate(${offset}, ${offset})`);
-
-      // Card background
-      cardGroup.append('rect')
-        .attr('width', this.cardWidth - offset * 2)
-        .attr('height', this.cardHeight - offset * 2)
-        .attr('rx', 6)
-        .attr('fill', i === 0 ? '#ffffff' : '#f9fafb')
-        .attr('stroke', '#e5e7eb')
-        .attr('stroke-width', 1)
-        .attr('opacity', 1 - i * 0.15);
-
-      // Only show content on top card
-      if (i === 0) {
-        cardGroup.append('text')
-          .attr('x', 8)
-          .attr('y', 20)
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '14px')
-          .attr('font-weight', '600')
-          .attr('fill', '#111827')
-          .text(this.truncateText(cardData.name || 'Untitled', 12));
-
-        // Count badge in corner
-        const countBadge = cardGroup.append('g')
-          .attr('transform', 'translate(90, 8)');
-
-        countBadge.append('circle')
-          .attr('r', 12)
-          .attr('fill', '#3b82f6')
-          .attr('stroke', '#ffffff')
-          .attr('stroke-width', 2);
-
-        countBadge.append('text')
-          .attr('text-anchor', 'middle')
-          .attr('dy', '0.35em')
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '11px')
-          .attr('font-weight', '700')
-          .attr('fill', '#ffffff')
-          .text(count.toString());
-      }
-    }
-  }
-
-  /**
-   * Render count badge (dense states)
-   */
-  private renderCountBadge(group: d3.Selection<SVGGElement, any, null, undefined>, count: number): void {
-    const badgeSize = Math.min(32, Math.max(16, 16 + Math.log10(count) * 8));
-
-    // Background circle
-    group.append('circle')
-      .attr('cx', this.cardWidth / 2)
-      .attr('cy', this.cardHeight / 2)
-      .attr('r', badgeSize)
-      .attr('fill', '#3b82f6')
-      .attr('stroke', '#ffffff')
-      .attr('stroke-width', 3)
-      .style('filter', 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))');
-
-    // Count text
-    group.append('text')
-      .attr('x', this.cardWidth / 2)
-      .attr('y', this.cardHeight / 2)
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.35em')
-      .attr('font-family', 'system-ui, sans-serif')
-      .attr('font-size', `${Math.min(18, badgeSize * 0.7)}px`)
-      .attr('font-weight', '700')
-      .attr('fill', '#ffffff')
-      .text(this.formatCount(count));
-  }
-
-  /**
-   * Get grid statistics for monitoring including virtual scrolling metrics
-   */
-  getStats(): {
-    cardsVisible: number;
-    gridDimensions: { width: number; height: number };
-    layoutType: string;
-    virtualScrolling?: {
-      enabled: boolean;
-      renderedCells: number;
-      totalCells: number;
-      memoryEfficiency: number;
-    };
-  } {
-    const cardCount = this.container.selectAll('.virtual-cell, .card-group').size();
-    const stats = {
-      cardsVisible: cardCount,
-      gridDimensions: { width: this.width, height: this.height },
-      layoutType: this.enableVirtualScrolling ? 'virtual-grid' : 'auto-grid'
+    // Store original position
+    this.dragStartPosition = {
+      x: cardData.x || 0,
+      y: cardData.y || 0
     };
 
-    if (this.enableVirtualScrolling && this.virtualScrolling) {
-      return {
-        ...stats,
-        virtualScrolling: {
-          enabled: true,
-          renderedCells: this.virtualScrolling.virtualItems.length,
-          totalCells: this.virtualScrolling.performanceMetrics.totalItemCount,
-          memoryEfficiency: this.virtualScrolling.performanceMetrics.memoryEfficiency
-        }
-      };
-    }
+    // Visual feedback - add dragging class and raise z-index
+    const cardGroup = d3.select(event.sourceEvent.currentTarget as SVGGElement);
+    cardGroup
+      .classed('dragging', true)
+      .style('cursor', 'grabbing')
+      .style('z-index', '1000');
 
-    return stats;
+    // Make card semi-transparent and add drop shadow
+    cardGroup.select('.card-background')
+      .attr('opacity', 0.8)
+      .attr('filter', 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))');
+
+    // Disable text selection
+    d3.select('body').style('user-select', 'none');
   }
 
   /**
-   * Helper to get status indicator color
+   * Handle dragging event - update position with constraints
    */
-  private getStatusColor(status?: string): string {
-    switch (status) {
-      case 'active': return '#10b981';
-      case 'completed': return '#6b7280';
-      case 'blocked': return '#ef4444';
-      case 'in_progress': return '#f59e0b';
-      default: return '#9ca3af';
-    }
-  }
+  private handleDragging(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+    if (!this.isDragging) return;
 
-  /**
-   * Truncate text to specified length
-   */
-  private truncateText(text: string, maxLength: number): string {
-    if (text.length <= maxLength) return text;
-    return text.slice(0, maxLength - 3) + '...';
-  }
+    // Calculate new position based on drag delta
+    const newX = this.dragStartPosition.x + event.x;
+    const newY = this.dragStartPosition.y + event.y;
 
-  /**
-   * Format count for display in badges
-   */
-  private formatCount(count: number): string {
-    if (count < 1000) return count.toString();
-    if (count < 1000000) return `${Math.round(count / 100) / 10}k`;
-    return `${Math.round(count / 100000) / 10}M`;
-  }
-
-  /**
-   * Shared card rendering logic
-   */
-  private renderCards(cards: any[]): void {
-    // Calculate positions
-    const cardsWithPositions = cards.map((card, index) => {
-      if (!card.x || !card.y) {
-        const availableWidth = this.width - (this.cardWidth + this.padding);
-        const cols = Math.floor(availableWidth / (this.cardWidth + this.padding));
-        const row = Math.floor(index / cols);
-        const col = index % cols;
-        return {
-          ...card,
-          x: col * (this.cardWidth + this.padding),
-          y: row * (this.cardHeight + this.padding)
-        };
-      }
-      return card;
-    });
-
-    // Use grid-cells container for positioned rendering
-    const gridCellsContainer = this.container.select('.grid-cells');
-
-    if (!gridCellsContainer.empty()) {
-      const cardSelection = gridCellsContainer
-        .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
-        .data(cardsWithPositions, d => d.id);
-
-      // Apply same join pattern
-      this.applyCardJoin(cardSelection);
-    } else {
-      // Fallback to rendering directly on container if grid structure not set up
-      const cardSelection = this.container
-        .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
-        .data(cardsWithPositions, d => d.id);
-
-      this.applyCardJoin(cardSelection);
-    }
-  }
-
-  /**
-   * Reusable D3.js join pattern for cards
-   */
-  private applyCardJoin(selection: d3.Selection<SVGGElement, any, any, unknown>): d3.Selection<SVGGElement, any, any, unknown> {
-    const joined = selection.join(
-      enter => {
-        const groups = enter.append('g')
-          .attr('class', 'card-group')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        // Same card structure as in render()
-        groups.append('rect')
-          .attr('class', 'card-background')
-          .attr('width', this.cardWidth)
-          .attr('height', this.cardHeight)
-          .attr('rx', 6)
-          .attr('fill', '#ffffff')
-          .attr('stroke', '#e5e7eb')
-          .attr('stroke-width', 1);
-
-        groups.append('text')
-          .attr('class', 'card-name')
-          .attr('x', 8)
-          .attr('y', 20)
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '14px')
-          .attr('font-weight', '600')
-          .attr('fill', '#111827')
-          .text(d => d.name);
-
-        groups.append('text')
-          .attr('class', 'card-folder')
-          .attr('x', 8)
-          .attr('y', 40)
-          .attr('font-family', 'system-ui, sans-serif')
-          .attr('font-size', '11px')
-          .attr('fill', '#6b7280')
-          .text(d => d.folder || 'No folder');
-
-        groups.append('circle')
-          .attr('class', 'status-indicator')
-          .attr('cx', this.cardWidth - 12)
-          .attr('cy', 12)
-          .attr('r', 4)
-          .attr('fill', d => this.getStatusColor(d.status));
-
-        return groups;
-      },
-      update => {
-        update
-          .transition()
-          .duration(300)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
-
-        update.select('.card-name').text(d => d.name);
-        update.select('.card-folder').text(d => d.folder || 'No folder');
-        update.select('.status-indicator').attr('fill', d => this.getStatusColor(d.status));
-
-        return update;
-      },
-      exit => exit
-        .transition()
-        .duration(200)
-        .attr('opacity', 0)
-        .remove()
+    // Apply grid bounds constraints
+    const constrainedX = Math.max(0, Math.min(newX, this.getGridWidth() - this.cardWidth));
+    const constrainedY = Math.max(
+      this.config.enableHeaders ? this.headerHeight + this.padding : 0,
+      Math.min(newY, this.getGridHeight() - this.cardHeight)
     );
 
-    // Add hover interactions to all cards (enter + update)
-    joined
+    // Update card position immediately for visual feedback
+    const cardGroup = d3.select(event.sourceEvent.currentTarget as SVGGElement);
+    cardGroup.attr('transform', `translate(${constrainedX}, ${constrainedY})`);
+
+    // Update card data for position tracking
+    cardData.x = constrainedX;
+    cardData.y = constrainedY;
+  }
+
+  /**
+   * Handle drag end event - persist position and cleanup
+   */
+  private handleDragEnd(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+    if (!this.isDragging) return;
+
+    // Calculate final position
+    const finalX = cardData.x;
+    const finalY = cardData.y;
+
+    // Reset visual state
+    const cardGroup = d3.select(event.sourceEvent.currentTarget as SVGGElement);
+    cardGroup
+      .classed('dragging', false)
       .style('cursor', 'pointer')
+      .style('z-index', null);
+
+    cardGroup.select('.card-background')
+      .attr('opacity', 1)
+      .attr('filter', null);
+
+    // Re-enable text selection
+    d3.select('body').style('user-select', null);
+
+    // Check if position actually changed
+    const positionChanged =
+      Math.abs(finalX - this.dragStartPosition.x) > 5 ||
+      Math.abs(finalY - this.dragStartPosition.y) > 5;
+
+    if (positionChanged) {
+      // Update card data with new position
+      const updatedCard = {
+        ...cardData,
+        grid_x: finalX,
+        grid_y: finalY,
+        modified_at: new Date().toISOString()
+      };
+
+      // Trigger position persistence
+      this.persistCardPosition(cardData.id, finalX, finalY);
+      this.onCardUpdate?.(updatedCard);
+
+      // Handle multi-select drag if other cards are selected
+      const selectedIds = this.selectionManager.getSelectedCards();
+      if (selectedIds.length > 1 && selectedIds.includes(cardData.id)) {
+        this.handleMultiCardDrag(cardData.id, finalX, finalY, selectedIds);
+      }
+    }
+
+    // Reset drag state
+    this.isDragging = false;
+    this.dragStartPosition = { x: 0, y: 0 };
+
+    // Brief delay to prevent click events after drag
+    setTimeout(() => {
+      this.isDragging = false;
+    }, 100);
+  }
+
+  /**
+   * Handle multi-card drag - move all selected cards maintaining relative positions
+   */
+  private handleMultiCardDrag(draggedCardId: string, newX: number, newY: number, selectedIds: string[]): void {
+    if (!this.currentData) return;
+
+    const draggedCardOriginal = this.currentData.cards.find(card => card.id === draggedCardId);
+    if (!draggedCardOriginal) return;
+
+    // Calculate offset for the dragged card
+    const offsetX = newX - this.dragStartPosition.x;
+    const offsetY = newY - this.dragStartPosition.y;
+
+    // Update positions for all selected cards
+    const updates: Array<{id: string, x: number, y: number}> = [];
+
+    selectedIds.forEach(cardId => {
+      if (cardId === draggedCardId) return; // Already handled
+
+      const card = this.currentData!.cards.find(c => c.id === cardId);
+      if (!card) return;
+
+      const newCardX = (card.x || 0) + offsetX;
+      const newCardY = (card.y || 0) + offsetY;
+
+      // Apply constraints for each card
+      const constrainedX = Math.max(0, Math.min(newCardX, this.getGridWidth() - this.cardWidth));
+      const constrainedY = Math.max(
+        this.config.enableHeaders ? this.headerHeight + this.padding : 0,
+        Math.min(newCardY, this.getGridHeight() - this.cardHeight)
+      );
+
+      // Update visual position
+      this.container.selectAll('.card-group')
+        .filter((d: any) => d.id === cardId)
+        .attr('transform', `translate(${constrainedX}, ${constrainedY})`);
+
+      updates.push({
+        id: cardId,
+        x: constrainedX,
+        y: constrainedY
+      });
+    });
+
+    // Batch update positions
+    if (updates.length > 0) {
+      this.batchUpdateCardPositions(updates);
+    }
+  }
+
+  /**
+   * Persist single card position to database
+   */
+  private persistCardPosition(cardId: string, x: number, y: number): void {
+    try {
+      const result = this.database.updateCardPosition(cardId, x, y);
+      if (!result.success) {
+        console.error('Failed to persist card position:', result.error);
+      }
+    } catch (error) {
+      console.error('Error persisting card position:', error);
+    }
+  }
+
+  /**
+   * Batch update multiple card positions
+   */
+  private batchUpdateCardPositions(updates: Array<{id: string, x: number, y: number}>): void {
+    try {
+      // Map to the format expected by DatabaseService
+      const positions = updates.map(update => ({
+        cardId: update.id,
+        x: update.x,
+        y: update.y
+      }));
+
+      const result = this.database.updateCardPositions(positions);
+      if (!result.success) {
+        console.error('Batch position update failed:', result.errors);
+      }
+
+      // Also trigger onCardUpdate for each successfully updated card
+      updates.forEach(update => {
+        const card = this.currentData?.cards.find(c => c.id === update.id);
+        if (card) {
+          const updatedCard = {
+            ...card,
+            grid_x: update.x,
+            grid_y: update.y,
+            modified_at: new Date().toISOString()
+          };
+          this.onCardUpdate?.(updatedCard);
+        }
+      });
+    } catch (error) {
+      console.error('Error in batch position update:', error);
+    }
+  }
+
+  /**
+   * Get current grid width for boundary calculations
+   */
+  private getGridWidth(): number {
+    // Calculate based on columns per row
+    return this.config.columnsPerRow! * (this.cardWidth + this.padding) - this.padding;
+  }
+
+  /**
+   * Get current grid height for boundary calculations
+   */
+  private getGridHeight(): number {
+    if (!this.currentData) return 600; // Default height
+
+    const rows = Math.ceil(this.currentData.cards.length / this.config.columnsPerRow!);
+    const headerOffset = this.config.enableHeaders ? this.headerHeight + this.padding : 0;
+    return headerOffset + (rows * (this.cardHeight + this.padding));
+  }
+
+  /**
+   * Handle card click with multi-select support
+   * Modified to prevent clicks during drag operations
+   */
+  private handleCardClick(event: MouseEvent, cardData: any): void {
+    // Ignore clicks during or immediately after drag
+    if (this.isDragging) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    const selectionMode = event.ctrlKey || event.metaKey ? 'add' :
+                         event.shiftKey ? 'range' : 'single';
+
+    this.selectionManager.selectCard(cardData.id, selectionMode);
+
+    // Legacy single card click callback
+    if (selectionMode === 'single' && this.onCardClick) {
+      this.onCardClick(cardData);
+    }
+  }
+
+  /**
+   * Update visual state for selected cards
+   */
+  private updateCardSelectionVisuals(selectedIds: string[]): void {
+    this.container.selectAll('.card-group')
+      .select('.card-background')
+      .attr('stroke', (d: any) => selectedIds.includes(d.id) ? '#2563eb' : '#e5e7eb')
+      .attr('stroke-width', (d: any) => selectedIds.includes(d.id) ? 3 : 1);
+
+    // Update selection indicators
+    this.container.selectAll('.selection-indicator')
+      .style('opacity', (d: any) => selectedIds.includes(d.id) ? 1 : 0);
+  }
+
+  /**
+   * Update visual state for focused card
+   */
+  private updateCardFocusVisuals(focusedId: string | null): void {
+    this.container.selectAll('.focus-indicator')
+      .style('opacity', (d: any) => d.id === focusedId ? 1 : 0);
+  }
+
+  /**
+   * Query data with current LATCH filters and render grid
+   */
+  query(filters: Record<string, any> = {}): void {
+    try {
+      // Construct SQL query based on filters
+      let sql = 'SELECT * FROM nodes WHERE deleted_at IS NULL';
+      const params: any[] = [];
+
+      // Apply LATCH filters
+      if (filters.folder) {
+        sql += ' AND folder = ?';
+        params.push(filters.folder);
+      }
+      if (filters.status) {
+        sql += ' AND status = ?';
+        params.push(filters.status);
+      }
+      if (filters.priority) {
+        sql += ' AND priority = ?';
+        params.push(filters.priority);
+      }
+      if (filters.search) {
+        sql += ' AND (name LIKE ? OR summary LIKE ?)';
+        params.push(`%${filters.search}%`, `%${filters.search}%`);
+      }
+
+      sql += ' ORDER BY created_at DESC';
+
+      // Execute query
+      const cards = this.database.query<any>(sql, params) || [];
+
+      // Transform to grid data structure
+      const gridData: GridData = {
+        cards: cards,
+        headers: this.generateHeaders(cards),
+        dimensions: {
+          rows: Math.ceil(cards.length / this.config.columnsPerRow!),
+          columns: Math.min(cards.length, this.config.columnsPerRow!)
+        }
+      };
+
+      this.currentData = gridData;
+      this.updateGridLayout();
+      this.render();
+
+    } catch (error) {
+      console.error('SuperGrid query error:', error);
+    }
+  }
+
+  /**
+   * Update selection manager with current grid layout
+   */
+  private updateGridLayout(): void {
+    if (!this.currentData) return;
+
+    const layout: SelectionGridPosition[] = [];
+    const cards = this.currentData.cards;
+    const columnsPerRow = this.config.columnsPerRow!;
+
+    cards.forEach((card: any, index: number) => {
+      layout.push({
+        row: Math.floor(index / columnsPerRow),
+        col: index % columnsPerRow,
+        id: card.id
+      });
+    });
+
+    this.selectionManager.updateGridLayout(layout);
+  }
+
+  /**
+   * Generate header structure for current data
+   */
+  private generateHeaders(cards: any[]): AxisData[] {
+    if (!this.config.enableHeaders) return [];
+
+    // Group cards by status for demo headers
+    const statusGroups = cards.reduce((groups: Record<string, any[]>, card) => {
+      const status = card.status || 'unknown';
+      if (!groups[status]) groups[status] = [];
+      groups[status].push(card);
+      return groups;
+    }, {});
+
+    return Object.entries(statusGroups).map(([status, statusCards]: [string, any[]]) => ({
+      id: `status-${status}`,
+      label: status.charAt(0).toUpperCase() + status.slice(1),
+      facet: 'status',
+      value: status,
+      count: statusCards.length,
+      span: statusCards.length
+    }));
+  }
+
+  /**
+   * Main render method
+   */
+  render(): void {
+    if (!this.currentData) return;
+
+    this.setupGridStructure();
+    this.renderHeaders();
+    this.renderCards();
+  }
+
+  /**
+   * Render card elements with multi-select support
+   */
+  private renderCards(): void {
+    if (!this.currentData) return;
+
+    const cards = this.currentData.cards;
+    const columnsPerRow = this.config.columnsPerRow!;
+
+    // Calculate positions - use stored grid positions if available, otherwise calculate from index
+    const cardGroups = cards.map((card: any, index: number) => ({
+      ...card,
+      x: card.grid_x !== undefined && card.grid_x !== null ?
+         card.grid_x :
+         (index % columnsPerRow) * (this.cardWidth + this.padding),
+      y: card.grid_y !== undefined && card.grid_y !== null ?
+         card.grid_y :
+         Math.floor(index / columnsPerRow) * (this.cardHeight + this.padding) +
+           (this.config.enableHeaders ? this.headerHeight + this.padding : 0)
+    }));
+
+    // Data binding with D3.js join pattern
+    const joined = this.container.selectAll<SVGGElement, any>('.card-group')
+      .data(cardGroups, (d: any) => d.id);
+
+    // Enter new cards
+    const entering = joined.enter()
+      .append('g')
+      .attr('class', 'card-group')
+      .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+
+    // Card background with selection visual feedback
+    entering.append('rect')
+      .attr('class', 'card-background')
+      .attr('width', this.cardWidth)
+      .attr('height', this.cardHeight)
+      .attr('rx', 8)
+      .attr('fill', '#ffffff')
+      .attr('stroke', '#e5e7eb')
+      .attr('stroke-width', 1);
+
+    // Selection indicator (checkmark)
+    entering.append('circle')
+      .attr('class', 'selection-indicator')
+      .attr('cx', this.cardWidth - 20)
+      .attr('cy', 20)
+      .attr('r', 8)
+      .attr('fill', '#2563eb')
+      .style('opacity', 0);
+
+    entering.append('text')
+      .attr('class', 'selection-checkmark')
+      .attr('x', this.cardWidth - 20)
+      .attr('y', 25)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'white')
+      .attr('font-size', '12px')
+      .text('✓')
+      .style('pointer-events', 'none')
+      .style('opacity', 0);
+
+    // Focus indicator (blue outline)
+    entering.append('rect')
+      .attr('class', 'focus-indicator')
+      .attr('width', this.cardWidth + 4)
+      .attr('height', this.cardHeight + 4)
+      .attr('x', -2)
+      .attr('y', -2)
+      .attr('rx', 10)
+      .attr('fill', 'none')
+      .attr('stroke', '#3b82f6')
+      .attr('stroke-width', 2)
+      .attr('stroke-dasharray', '5,5')
+      .style('opacity', 0);
+
+    // Card title
+    entering.append('text')
+      .attr('class', 'card-title')
+      .attr('x', 16)
+      .attr('y', 30)
+      .attr('font-size', '16px')
+      .attr('font-weight', '600')
+      .attr('fill', '#1f2937')
+      .style('pointer-events', 'none')
+      .text((d: any) => d.name || 'Untitled');
+
+    // Card summary
+    entering.append('text')
+      .attr('class', 'card-summary')
+      .attr('x', 16)
+      .attr('y', 50)
+      .attr('font-size', '12px')
+      .attr('fill', '#6b7280')
+      .style('pointer-events', 'none')
+      .text((d: any) => {
+        const summary = d.summary || '';
+        return summary.length > 30 ? summary.substring(0, 30) + '...' : summary;
+      });
+
+    // Merge entering and updating - simplified to avoid typing issues
+    const allCards = joined.merge(entering as any);
+
+    allCards
+      .transition()
+      .duration(300)
+      .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+
+    // Exit old cards
+    joined.exit()
+      .transition()
+      .duration(300)
+      .attr('transform', (d: any) => `translate(${d.x}, ${d.y - 50})`)
+      .attr('opacity', 0)
+      .remove();
+
+    // Add hover, click, and drag interactions with multi-select support
+    const cardSelection = this.container.selectAll<SVGGElement, any>('.card-group');
+
+    cardSelection
+      .style('cursor', 'grab')
       .on('mouseenter', function() {
         d3.select(this)
           .select('.card-background')
           .attr('stroke', '#3b82f6')
           .attr('stroke-width', 2);
       })
-      .on('mouseleave', function() {
-        d3.select(this)
+      .on('mouseleave', (event, d: any) => {
+        const isSelected = this.selectionManager.isSelected(d.id);
+        d3.select(event.currentTarget)
           .select('.card-background')
-          .attr('stroke', '#e5e7eb')
-          .attr('stroke-width', 1);
+          .attr('stroke', isSelected ? '#2563eb' : '#e5e7eb')
+          .attr('stroke-width', isSelected ? 3 : 1);
       })
-      .on('click', (_event, d) => {
-        console.log('Card clicked:', d);
-        if (this.callbacks.onCardClick) {
-          this.callbacks.onCardClick(d);
-        }
+      .on('click', (event, d) => {
+        this.handleCardClick(event, d);
       });
 
-    return joined;
+    // Apply drag behavior to all card groups
+    if (this.dragBehavior) {
+      cardSelection.call(this.dragBehavior);
+    }
   }
 
   /**
@@ -698,403 +677,110 @@ export class SuperGrid {
     gridStructure.append('g')
       .attr('class', 'column-headers')
       .attr('transform', `translate(${this.cardWidth + this.padding}, 0)`);
-
-    // Create grid cells container offset by header space
-    gridStructure.append('g')
-      .attr('class', 'grid-cells')
-      .attr('transform', `translate(${this.cardWidth + this.padding}, ${this.cardHeight + this.padding})`);
   }
 
   /**
-   * Render row headers showing LATCH dimensions (folders)
+   * Render dimensional headers
    */
-  private renderRowHeaders(): void {
-    if (!this.db.isReady()) return;
+  private renderHeaders(): void {
+    if (!this.config.enableHeaders || !this.currentData?.headers.length) {
+      return;
+    }
 
-    // Query distinct folders for row headers
-    const folders = this.db.query<{ folder: string; count: number }>(
-      `SELECT COALESCE(folder, 'No Folder') as folder, COUNT(*) as count
-       FROM nodes
-       WHERE deleted_at IS NULL
-       GROUP BY folder
-       ORDER BY folder`,
-      []
-    );
+    const headers = this.currentData.headers;
 
-    const rowHeaderContainer = this.container.select('.row-headers');
+    // Render status headers (example implementation)
+    const headerGroups = this.container.select('.grid-structure')
+      .selectAll('.header-group')
+      .data(headers, (d: any) => d.id);
 
-    const headers = rowHeaderContainer
-      .selectAll<SVGTextElement, typeof folders[0]>('.row-header')
-      .data(folders, d => d.folder)
-      .join(
-        enter => {
-          const headerGroup = enter.append('g')
-            .attr('class', 'row-header')
-            .attr('transform', (_d, i) => `translate(0, ${i * (this.cardHeight + this.padding)})`);
+    const entering = headerGroups.enter()
+      .append('g')
+      .attr('class', 'header-group');
 
-          // Header background with active filter indication
-          headerGroup.append('rect')
-            .attr('width', this.cardWidth)
-            .attr('height', this.cardHeight)
-            .attr('rx', 4)
-            .attr('fill', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? '#dbeafe' : '#f8fafc';
-            })
-            .attr('stroke', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? '#3b82f6' : '#e2e8f0';
-            })
-            .attr('stroke-width', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? 2 : 1;
-            });
+    entering.append('rect')
+      .attr('class', 'header-background')
+      .attr('width', (d: any) => d.span * (this.cardWidth + this.padding) - this.padding)
+      .attr('height', this.headerHeight)
+      .attr('fill', '#f3f4f6')
+      .attr('stroke', '#d1d5db')
+      .attr('rx', 4);
 
-          // Header text
-          headerGroup.append('text')
-            .attr('x', 8)
-            .attr('y', this.cardHeight / 2)
-            .attr('dy', '0.35em')
-            .attr('font-family', 'system-ui, sans-serif')
-            .attr('font-size', '12px')
-            .attr('font-weight', '600')
-            .attr('fill', '#475569')
-            .text(d => this.truncateText(d.folder, 12));
+    entering.append('text')
+      .attr('class', 'header-label')
+      .attr('x', 12)
+      .attr('y', this.headerHeight / 2 + 4)
+      .attr('font-size', '14px')
+      .attr('font-weight', '600')
+      .attr('fill', '#374151')
+      .text((d: any) => `${d.label} (${d.count})`);
 
-          // Count badge
-          headerGroup.append('text')
-            .attr('x', this.cardWidth - 8)
-            .attr('y', this.cardHeight / 2)
-            .attr('dy', '0.35em')
-            .attr('text-anchor', 'end')
-            .attr('font-family', 'system-ui, sans-serif')
-            .attr('font-size', '10px')
-            .attr('font-weight', '500')
-            .attr('fill', '#64748b')
-            .text(d => d.count.toString());
-
-          return headerGroup;
-        },
-        update => {
-          update.select('text:first-of-type')
-            .text(d => this.truncateText(d.folder, 12));
-
-          update.select('text:last-of-type')
-            .text(d => d.count.toString());
-
-          // Update header background for filter state changes
-          update.select('rect')
-            .attr('fill', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? '#dbeafe' : '#f8fafc';
-            })
-            .attr('stroke', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? '#3b82f6' : '#e2e8f0';
-            })
-            .attr('stroke-width', d => {
-              const isActive = this.isHeaderActive('folder', d.folder === 'No Folder' ? null : d.folder);
-              return isActive ? 2 : 1;
-            });
-
-          return update;
-        },
-        exit => exit.remove()
-      );
-
-    // Add hover interactions
-    headers
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).select('rect')
-          .attr('fill', '#e2e8f0');
-      })
-      .on('mouseleave', function() {
-        d3.select(this).select('rect')
-          .attr('fill', '#f8fafc');
-      })
-      .on('click', (_event, d) => {
-        this.handleRowHeaderClick(d.folder);
-      });
+    headerGroups.exit().remove();
   }
 
   /**
-   * Render column headers showing LATCH dimensions (statuses)
+   * Get current selection state
    */
-  private renderColumnHeaders(): void {
-    if (!this.db.isReady()) return;
-
-    // Query distinct statuses for column headers
-    const statuses = this.db.query<{ status: string; count: number }>(
-      `SELECT COALESCE(status, 'No Status') as status, COUNT(*) as count
-       FROM nodes
-       WHERE deleted_at IS NULL
-       GROUP BY status
-       ORDER BY status`,
-      []
-    );
-
-    const colHeaderContainer = this.container.select('.column-headers');
-
-    const headers = colHeaderContainer
-      .selectAll<SVGGElement, typeof statuses[0]>('.column-header')
-      .data(statuses, d => d.status)
-      .join(
-        enter => {
-          const headerGroup = enter.append('g')
-            .attr('class', 'column-header')
-            .attr('transform', (_d, i) => `translate(${i * (this.cardWidth + this.padding)}, 0)`);
-
-          // Header background with active filter indication
-          headerGroup.append('rect')
-            .attr('width', this.cardWidth)
-            .attr('height', this.cardHeight)
-            .attr('rx', 4)
-            .attr('fill', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? '#dbeafe' : '#f8fafc';
-            })
-            .attr('stroke', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? '#3b82f6' : '#e2e8f0';
-            })
-            .attr('stroke-width', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? 2 : 1;
-            });
-
-          // Header text
-          headerGroup.append('text')
-            .attr('x', 8)
-            .attr('y', 20)
-            .attr('font-family', 'system-ui, sans-serif')
-            .attr('font-size', '12px')
-            .attr('font-weight', '600')
-            .attr('fill', '#475569')
-            .text(d => this.truncateText(d.status, 12));
-
-          // Count badge
-          headerGroup.append('text')
-            .attr('x', this.cardWidth - 8)
-            .attr('y', this.cardHeight - 8)
-            .attr('text-anchor', 'end')
-            .attr('font-family', 'system-ui, sans-serif')
-            .attr('font-size', '10px')
-            .attr('font-weight', '500')
-            .attr('fill', '#64748b')
-            .text(d => d.count.toString());
-
-          // Status indicator
-          headerGroup.append('circle')
-            .attr('cx', this.cardWidth - 12)
-            .attr('cy', 12)
-            .attr('r', 4)
-            .attr('fill', (d) => this.getStatusColor(d.status === 'No Status' ? undefined : d.status));
-
-          return headerGroup;
-        },
-        update => {
-          update.select('text:first-of-type')
-            .text(d => this.truncateText(d.status, 12));
-
-          update.select('text:last-of-type')
-            .text(d => d.count.toString());
-
-          // Update status indicator
-          update.select('circle')
-            .attr('fill', (d) => this.getStatusColor(d.status === 'No Status' ? undefined : d.status));
-
-          // Update header background for filter state changes
-          update.select('rect')
-            .attr('fill', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? '#dbeafe' : '#f8fafc';
-            })
-            .attr('stroke', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? '#3b82f6' : '#e2e8f0';
-            })
-            .attr('stroke-width', d => {
-              const isActive = this.isHeaderActive('status', d.status === 'No Status' ? null : d.status);
-              return isActive ? 2 : 1;
-            });
-
-          return update;
-        },
-        exit => exit.remove()
-      );
-
-    // Add hover interactions
-    headers
-      .style('cursor', 'pointer')
-      .on('mouseenter', function() {
-        d3.select(this).select('rect')
-          .attr('fill', '#e2e8f0');
-      })
-      .on('mouseleave', function() {
-        d3.select(this).select('rect')
-          .attr('fill', '#f8fafc');
-      })
-      .on('click', (_event, d) => {
-        this.handleColumnHeaderClick(d.status);
-      });
+  getSelection(): {
+    selectedIds: string[];
+    focusedId: string | null;
+    count: number;
+  } {
+    return {
+      selectedIds: this.selectionManager.getSelectedCards(),
+      focusedId: this.selectionManager.getFocusedCard(),
+      count: this.selectionManager.getSelectedCards().length
+    };
   }
 
   /**
-   * Check if header is currently active (has a filter applied)
+   * Get selection manager instance
    */
-  private isHeaderActive(facet: string, value: any): boolean {
-    const filters = this.filterService.getFiltersForAxis('C');
-    return filters.some(f => f.facet === facet && f.value === value);
+  getSelectionManager(): SelectionManager {
+    return this.selectionManager;
   }
 
   /**
-   * Handle row header click - add folder filter
+   * Programmatically set selection
    */
-  private handleRowHeaderClick(folder: string): void {
-    console.log('Row header clicked:', folder);
-
-    // Handle special case for "No Folder"
-    const folderValue = folder === 'No Folder' ? null : folder;
-
-    // Check if filter already exists for this folder
-    const existingFilters = this.filterService.getFiltersForAxis('C');
-    const existingFolderFilter = existingFilters.find(f => f.facet === 'folder' && f.value === folderValue);
-
-    if (existingFolderFilter) {
-      // Remove existing folder filter (toggle behavior)
-      this.filterService.removeFilter(existingFolderFilter.id);
-    } else {
-      // Add new folder filter
-      const operator = folderValue === null ? 'equals' : 'equals';
-      this.filterService.addFilter('C', 'folder', operator, folderValue, `Folder: ${folder}`);
-    }
-
-    // Notify callback with current filters
-    if (this.callbacks.onHeaderClick) {
-      this.callbacks.onHeaderClick('row', folder, this.filterService.getActiveFilters());
-    }
+  setSelection(cardIds: string[]): void {
+    this.selectionManager.clearSelection();
+    cardIds.forEach(id => this.selectionManager.selectCard(id, 'add'));
   }
 
   /**
-   * Handle column header click - add status filter
+   * Clear all selections
    */
-  private handleColumnHeaderClick(status: string): void {
-    console.log('Column header clicked:', status);
-
-    // Handle special case for "No Status"
-    const statusValue = status === 'No Status' ? null : status;
-
-    // Check if filter already exists for this status
-    const existingFilters = this.filterService.getFiltersForAxis('C');
-    const existingStatusFilter = existingFilters.find(f => f.facet === 'status' && f.value === statusValue);
-
-    if (existingStatusFilter) {
-      // Remove existing status filter (toggle behavior)
-      this.filterService.removeFilter(existingStatusFilter.id);
-    } else {
-      // Add new status filter
-      const operator = statusValue === null ? 'equals' : 'equals';
-      this.filterService.addFilter('C', 'status', operator, statusValue, `Status: ${status}`);
-    }
-
-    // Notify callback with current filters
-    if (this.callbacks.onHeaderClick) {
-      this.callbacks.onHeaderClick('column', status, this.filterService.getActiveFilters());
-    }
+  clearSelection(): void {
+    this.selectionManager.clearSelection();
   }
 
   /**
-   * Enhanced render with PAFV integration
-   * Accepts filters from React context and applies them to grid rendering
+   * Refresh grid with current data
    */
-  renderWithPAFVFilters(pafvFilters?: {
-    rows?: Array<{ id: string; label: string }>;
-    columns?: Array<{ id: string; label: string }>;
-    zLayers?: Array<{ id: string; label: string; checked?: boolean }>;
-  }): void {
-    if (!this.db.isReady()) {
-      throw new Error('DatabaseService must be initialized before rendering');
-    }
+  refresh(): void {
+    this.render();
+  }
 
-    // Build LATCH-aware WHERE clause based on PAFV filter chips
-    const whereConditions: string[] = ['deleted_at IS NULL'];
-    const params: any[] = [];
+  /**
+   * Get database stats
+   */
+  getStats(): any {
+    return this.database.getStats();
+  }
 
-    // Apply row filters (typically folder/category)
-    if (pafvFilters?.rows && pafvFilters.rows.length > 0) {
-      const rowConditions = pafvFilters.rows.map(chip => {
-        switch (chip.id) {
-          case 'folder':
-            return 'folder IS NOT NULL';
-          case 'subfolder':
-            return 'folder LIKE "%/%"';
-          case 'tags':
-            return 'tags != "[]" AND tags IS NOT NULL';
-          default:
-            return '1=1';
-        }
-      });
-      whereConditions.push(`(${rowConditions.join(' OR ')})`);
-    }
+  /**
+   * Focus on SVG for keyboard navigation
+   */
+  focus(): void {
+    (this.container.node() as any)?.focus();
+  }
 
-    // Apply column filters (typically status/priority)
-    if (pafvFilters?.columns && pafvFilters.columns.length > 0) {
-      const colConditions = pafvFilters.columns.map(chip => {
-        switch (chip.id) {
-          case 'status':
-            return 'status IS NOT NULL';
-          case 'priority':
-            return 'priority IS NOT NULL';
-          default:
-            return '1=1';
-        }
-      });
-      whereConditions.push(`(${colConditions.join(' OR ')})`);
-    }
-
-    // Apply z-layer filters (active checkboxes)
-    if (pafvFilters?.zLayers) {
-      const activeZLayers = pafvFilters.zLayers.filter(chip => chip.checked);
-      if (activeZLayers.length > 0) {
-        const zConditions = activeZLayers.map(chip => {
-          switch (chip.id) {
-            case 'auditview':
-              return 'modified_at != created_at';
-            default:
-              return '1=1';
-          }
-        });
-        whereConditions.push(`(${zConditions.join(' AND ')})`);
-      }
-    }
-
-    const whereClause = whereConditions.join(' AND ');
-
-    // Query with PAFV filters applied
-    const cards = this.db.query<{
-      id: string;
-      name: string;
-      folder?: string;
-      status?: string;
-      x?: number;
-      y?: number;
-      created_at?: string;
-    }>(
-      `SELECT id, name, folder, status,
-              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
-       FROM nodes
-       WHERE ${whereClause}
-       ORDER BY created_at DESC
-       LIMIT 200`,
-      params
-    );
-
-    // Clear and re-render with filtered data
-    this.clear();
-    this.setupGridStructure();
-    this.renderRowHeaders();
-    this.renderColumnHeaders();
-    this.renderCards(cards);
+  /**
+   * Clean up event listeners and resources
+   */
+  destroy(): void {
+    this.container.selectAll('*').remove();
+    this.container.on('keydown', null);
   }
 }
