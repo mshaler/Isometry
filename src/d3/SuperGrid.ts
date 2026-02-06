@@ -57,7 +57,7 @@ export class SuperGrid {
     this.filterService = new LATCHFilterService();
 
     // Subscribe to filter changes to trigger re-rendering
-    this.filterService.onFilterChange((filters) => {
+    this.filterService.onFilterChange((_filters) => {
       this.renderWithLATCHFilters();
     });
 

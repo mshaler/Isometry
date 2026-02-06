@@ -86,7 +86,7 @@ export function SuperGridDemo() {
 
     try {
       // Optimistic update - update the selected card immediately
-      setSelectedCard(prev => prev ? { ...prev, ...updatedCard } : null);
+      setSelectedCard((prev: any) => prev ? { ...prev, ...updatedCard } : null);
 
       // Update the card in the database
       const { id, name, folder, status, priority, summary } = updatedCard;
