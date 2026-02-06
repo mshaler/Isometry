@@ -33,6 +33,7 @@ export function SuperGridDemo() {
   // Modal state
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isOperationInProgress, setIsOperationInProgress] = useState(false);
 
   // Get contexts
   const { db } = useSQLite();
@@ -56,7 +57,12 @@ export function SuperGridDemo() {
       return;
     }
 
+    setIsOperationInProgress(true);
+
     try {
+      // Optimistic update - update the selected card immediately
+      setSelectedCard(prev => prev ? { ...prev, ...updatedCard } : null);
+
       // Update the card in the database
       const { id, name, folder, status, priority, summary } = updatedCard;
 
@@ -73,19 +79,30 @@ export function SuperGridDemo() {
 
       console.log('Card saved successfully:', updatedCard);
 
-      // Refresh the grid to show updated data
-      if (superGrid) {
-        superGrid.refresh();
-      }
-
-      // Close modal
+      // Close modal first for immediate feedback
       setIsModalOpen(false);
       setSelectedCard(null);
+
+      // Then refresh the grid to show updated data
+      if (superGrid) {
+        superGrid.refresh();
+
+        // Update cell count after refresh
+        const stats = superGrid.getStats();
+        setCellCount(stats.cardsVisible);
+      }
     } catch (error) {
       console.error('Failed to save card:', error);
       setErrorLog(prev => [...prev, `Save Error: ${error}`]);
+
+      // Revert optimistic update on error
+      if (selectedCard) {
+        setSelectedCard(selectedCard);
+      }
+    } finally {
+      setIsOperationInProgress(false);
     }
-  }, [db, superGrid]);
+  }, [db, superGrid, selectedCard]);
 
   const handleCardDelete = useCallback(async (cardId: string) => {
     if (!db) {
@@ -93,7 +110,13 @@ export function SuperGridDemo() {
       return;
     }
 
+    setIsOperationInProgress(true);
+
     try {
+      // Close modal immediately for fast feedback
+      setIsModalOpen(false);
+      setSelectedCard(null);
+
       // Soft delete the card by setting deleted_at timestamp
       db.exec(`
         UPDATE nodes
@@ -106,14 +129,19 @@ export function SuperGridDemo() {
       // Refresh the grid to show updated data
       if (superGrid) {
         superGrid.refresh();
-      }
 
-      // Close modal
-      setIsModalOpen(false);
-      setSelectedCard(null);
+        // Update cell count after refresh
+        const stats = superGrid.getStats();
+        setCellCount(stats.cardsVisible);
+      }
     } catch (error) {
       console.error('Failed to delete card:', error);
       setErrorLog(prev => [...prev, `Delete Error: ${error}`]);
+
+      // On error, could optionally reopen the modal
+      // but for now just log the error
+    } finally {
+      setIsOperationInProgress(false);
     }
   }, [db, superGrid]);
 
@@ -580,6 +608,16 @@ export function SuperGridDemo() {
         onSave={handleCardSave}
         onDelete={handleCardDelete}
       />
+
+      {/* Operation in progress overlay */}
+      {isOperationInProgress && (
+        <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-gray-700">Updating data...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
