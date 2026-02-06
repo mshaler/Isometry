@@ -15,22 +15,23 @@
 - ✅ Virtual scrolling optimization with intelligent caching for large datasets (10k+ items)
 - ✅ End-to-end application integration with full user access to live database features
 
-## Current Milestone: v3.2 Enhanced Apple Integration
+## Current Milestone: v4.1 SuperGrid Foundation
 
-**Goal:** Transform Apple Notes into a powerful capture interface that feeds Isometry's organizational capabilities, enabling seamless Notes → Isometry workflow with live synchronization and intelligent conflict handling.
+**Goal:** Implement the core SuperGrid polymorphic data projection system with nested PAFV headers, direct sql.js integration, dynamic axis assignment, grid continuum views, and Janus density controls.
 
 **Target features:**
-- Real-time Notes change detection and import pipeline building on AltoIndexImporter foundation
-- Read-mostly sync strategy with careful bidirectional updates to handle Notes' finicky external modification behavior
-- User interface for conflict resolution when Notes rejects or mangles programmatic changes
-- TCC permission management with graceful degradation and clear user communication
-- Performance optimization for large Notes libraries scaling beyond current 6,891 note capacity
+- SuperGrid Nested PAFV Headers with dimensional spanning across hierarchy levels
+- Direct sql.js Integration for D3.js data binding with synchronous SQLite queries and zero serialization
+- Dynamic Axis Assignment with drag-and-drop LATCH dimensions to different planes
+- Basic Grid Continuum with view transitions (gallery → list → kanban → 2D grid → nD SuperGrid)
+- Janus Density Model with orthogonal zoom (value) and pan (extent) controls
 
-**Core workflow enablement:**
-1. User captures ideas in Apple Notes (via Siri, quick entry)
-2. Isometry detects changes in real-time and imports as cards with full PAFV+LATCH+GRAPH capabilities
-3. User organizes, connects, and analyzes in Isometry's rich semantic interface
-4. Bidirectional sync ensures changes don't get lost despite Notes' resistance to external modifications
+**Core capability enablement:**
+1. Users can visualize the same dataset through multiple projection modes (grid/kanban/network/timeline)
+2. Users can drag LATCH dimensions between spatial planes for real-time view transformation
+3. Users can navigate data density through independent zoom/pan controls
+4. D3.js queries SQLite directly in same memory space with zero bridge overhead
+5. Nested headers provide hierarchical context across all PAFV dimensions
 
 ## Core Value
 
@@ -163,11 +164,11 @@ Three-component React sidecar application:
 
 ### Active
 
-- [ ] Real-time Notes change detection and import pipeline building on AltoIndexImporter foundation
-- [ ] Read-mostly sync strategy with careful bidirectional updates handling Notes' finicky behavior
-- [ ] User interface for conflict resolution when Notes rejects or mangles programmatic changes
-- [ ] TCC permission management with graceful degradation and clear user communication
-- [ ] Performance optimization for large Notes libraries scaling beyond current 6,891 note capacity
+- [ ] SuperGrid Nested PAFV Headers with dimensional spanning across hierarchy levels
+- [ ] Direct sql.js Integration for D3.js data binding with synchronous SQLite queries and zero serialization
+- [ ] Dynamic Axis Assignment with drag-and-drop LATCH dimensions to different planes
+- [ ] Basic Grid Continuum with view transitions (gallery → list → kanban → 2D grid → nD SuperGrid)
+- [ ] Janus Density Model with orthogonal zoom (value) and pan (extent) controls
 
 ### Out of Scope
 
@@ -190,4 +191,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-01 after v3.2 milestone definition*
+*Last updated: 2026-02-05 after v4.1 SuperGrid Foundation milestone definition*

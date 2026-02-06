@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-30)
+See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v3.2 Enhanced Apple Integration - Transform Notes into powerful Isometry capture interface
+**Current focus:** v4.1 SuperGrid Foundation - Core polymorphic data projection system
 
 ## Current Position
 
-Phase: 33 of 33+ (Bridge Elimination)
-Plan: 3 of 3 (Bridge Elimination Foundation complete)
-Status: Complete ✅
-Last activity: 2026-02-06 — Completed Phase 33 Bridge Elimination Foundation
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-05 — Milestone v4.1 SuperGrid Foundation started
 
-Progress: [████████████████] 100% - v4.0 Bridge Elimination Foundation complete: sql.js foundation with direct D3.js binding eliminates 40KB MessageBridge
+Progress: [                ] 0% - Starting v4.1 SuperGrid Foundation milestone
 
 ## Performance Metrics
 
