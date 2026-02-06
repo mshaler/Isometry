@@ -48,6 +48,49 @@ export interface CellData {
 }
 
 /**
+ * Grid data structure for SuperGrid
+ */
+export interface GridData {
+  cards: any[];
+  headers: AxisData[];
+  dimensions: {
+    rows: number;
+    columns: number;
+  };
+}
+
+/**
+ * Grid configuration for SuperGrid
+ */
+export interface GridConfig {
+  columnsPerRow?: number;
+  enableHeaders?: boolean;
+  enableSelection?: boolean;
+  enableKeyboardNavigation?: boolean;
+}
+
+/**
+ * Grid position for layout calculations
+ */
+export interface GridPosition {
+  row: number;
+  col: number;
+  id: string;
+}
+
+/**
+ * Axis data for headers
+ */
+export interface AxisData {
+  id: string;
+  label: string;
+  facet: string;
+  value: any;
+  count: number;
+  span: number;
+}
+
+/**
  * Grid selection coordinate system for Super* features
  *
  * Multi-dimensional selection supporting nested headers and depth traversal

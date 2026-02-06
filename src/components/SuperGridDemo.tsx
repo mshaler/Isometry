@@ -1,47 +1,147 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { SuperGrid } from '@/d3/SuperGrid';
-import { useSQLite } from '@/db/SQLiteProvider';
-import { usePAFV } from '@/state/PAFVContext';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { SuperGrid } from '../d3/SuperGrid';
+import type { DatabaseService } from '../db/DatabaseService';
 import { CardDetailModal } from './CardDetailModal';
-import { type LATCHFilter } from '@/services/LATCHFilterService';
+import { useSQLite } from '../db/SQLiteProvider';
+import { usePAFV } from '../hooks/usePAFV';
+import type { LATCHFilter } from '../types/filters';
+
+interface FilterChipProps {
+  filter: LATCHFilter;
+  onRemove: () => void;
+}
+
+function FilterChip({ filter, onRemove }: FilterChipProps) {
+  return (
+    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+      {filter.label}: {filter.displayValue}
+      <button
+        onClick={onRemove}
+        className="ml-2 w-4 h-4 text-blue-600 hover:text-blue-800"
+        aria-label="Remove filter"
+      >
+        ×
+      </button>
+    </span>
+  );
+}
 
 /**
- * SuperGridDemo - Comprehensive demonstration component for SuperGrid foundation
+ * SuperGridDemo - Demonstration component showcasing multi-select capabilities
  *
- * Demonstrates:
- * - SuperGrid with LATCH headers and PAFV integration
- * - Performance monitoring with 60fps tracking
- * - Interactive controls for testing density and filters
- * - sql.js capability verification and error telemetry
- * - Foundation readiness for Phase 35 PAFV Grid Core
- *
- * This component validates the complete foundation stabilization requirements.
+ * Features:
+ * - Multi-select cards with visual feedback
+ * - Keyboard navigation (arrow keys, space, enter, esc)
+ * - Bulk operations (delete, edit status, move to folder)
+ * - Integration with LATCH filtering
+ * - Card detail modals
  */
 export function SuperGridDemo() {
-  const [densityLevel, setDensityLevel] = useState<number>(1);
-  const [selectedFolder, setSelectedFolder] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [itemCount, setItemCount] = useState<number>(100);
-  const [fps, setFps] = useState<number>(60);
-  const [cellCount, setCellCount] = useState<number>(0);
-  const [memoryUsage, setMemoryUsage] = useState<string>('0 MB');
-  const [errorLog, setErrorLog] = useState<string[]>([]);
-
-  const svgRef = useRef<SVGSVGElement>(null);
+  // State management
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Modal state
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isOperationInProgress, setIsOperationInProgress] = useState(false);
-
-  // Filter state
+  const [isModalLoading, setIsModalLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);
+  const [selectedCards, setSelectedCards] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [dbService, setDbService] = useState<DatabaseService | null>(null);
 
-  // Get contexts
-  const { db } = useSQLite();
-  const { state } = usePAFV();
+  // Refs
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Context hooks
+  const { db, execute: sqliteExecute } = useSQLite();
+  const { state: pafvState } = usePAFV();
+
+  // Create DatabaseService adapter from SQLite context
+  useEffect(() => {
+    if (!db) {
+      setDbService(null);
+      return;
+    }
+
+    // Create a simple DatabaseService adapter that wraps the sql.js Database
+    const adapter = {
+      isReady: () => !!db,
+      db,
+      SQL: null,
+      dirty: false,
+      saveTimer: null,
+      initialize: async () => {},
+      query: function(sql: string, params: any[] = []) {
+        if (!db) throw new Error('Database not ready');
+
+        try {
+          const stmt = db.prepare(sql);
+          const result: any[] = [];
+
+          if (params && params.length > 0) {
+            // Convert unknown[] to proper sql.js parameter types
+            const validParams = params.map(p => {
+              if (p === null || p === undefined) return null;
+              if (typeof p === 'string' || typeof p === 'number' || typeof p === 'boolean') return p;
+              return String(p);
+            });
+            stmt.bind(validParams as any);
+          }
+
+          while (stmt.step()) {
+            result.push(stmt.getAsObject());
+          }
+
+          stmt.free();
+          return result;
+        } catch (error) {
+          console.error('Database query error:', error);
+          throw error;
+        }
+      },
+      run: (sql: string, params: any[] = []) => {
+        if (!db) throw new Error('Database not ready');
+
+        try {
+          if (params && params.length > 0) {
+            // Convert unknown[] to proper sql.js parameter types
+            const validParams = params.map(p => {
+              if (p === null || p === undefined) return null;
+              if (typeof p === 'string' || typeof p === 'number' || typeof p === 'boolean') return p;
+              return String(p);
+            });
+            const stmt = db.prepare(sql);
+            stmt.bind(validParams as any);
+            stmt.step();
+            stmt.free();
+          } else {
+            db.run(sql);
+          }
+        } catch (error) {
+          console.error('Database exec error:', error);
+          throw error;
+        }
+      },
+      export: () => db.export(),
+      close: () => db.close(),
+      isDirty: () => false,
+      getRawDatabase: () => db,
+      transaction: (fn: any) => fn(),
+      verifyFTS5: () => ({ available: false }),
+      verifyJSON1: () => ({ available: false }),
+      verifyRecursiveCTE: () => ({ available: false }),
+      getCapabilities: () => ({ fts5: { available: false }, json1: { available: false }, recursiveCTE: { available: false }, ready: true, dirty: false }),
+      getStats: () => ({ tables: 0, indexes: 0, triggers: 0, size: 0 }),
+      markDirty: () => {} // Add missing method
+    } as unknown as DatabaseService;
+
+    setDbService(adapter);
+  }, [db]);
+
+  // Selection handlers
+  const handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
+    console.log('SuperGridDemo: Selection changed', { count: selectedIds.length, focused: focusedId });
+    setSelectedCards(selectedIds);
+    setShowBulkActions(selectedIds.length > 1);
+  }, []);
 
   // Card interaction handlers
   const handleCardClick = useCallback((card: any) => {
@@ -50,738 +150,407 @@ export function SuperGridDemo() {
     setIsModalOpen(true);
   }, []);
 
-  const handleHeaderClick = useCallback((headerType: 'row' | 'column', value: string, filters: LATCHFilter[]) => {
-    console.log('SuperGridDemo: Header clicked', { headerType, value, filtersCount: filters.length });
-    setActiveFilters(filters);
+  const handleFilterRemove = useCallback((filterId: string) => {
+    // Remove filter from active filters
+    setActiveFilters(prev => prev.filter(filter => filter.id !== filterId));
   }, []);
 
-  const handleFilterRemove = useCallback((filterId: string) => {
-    if (superGrid) {
-      const filterService = superGrid.getFilterService();
-      filterService.removeFilter(filterId);
-      setActiveFilters(filterService.getActiveFilters());
-    }
-  }, [superGrid]);
-
   const handleClearAllFilters = useCallback(() => {
-    if (superGrid) {
-      const filterService = superGrid.getFilterService();
-      filterService.clearFilters();
-      setActiveFilters([]);
-    }
-  }, [superGrid]);
+    setActiveFilters([]);
+  }, []);
 
+  // Bulk operation handlers
+  const handleBulkDelete = useCallback(async (selectedIds: string[]) => {
+    if (!sqliteExecute || selectedIds.length === 0) return;
+
+    try {
+      setIsModalLoading(true);
+      const selectionManager = superGrid?.getSelectionManager();
+
+      // Soft delete - mark as deleted_at
+      const placeholders = selectedIds.map(() => '?').join(', ');
+      sqliteExecute(`UPDATE nodes SET deleted_at = datetime('now') WHERE id IN (${placeholders})`, selectedIds);
+
+      // Clear selection and refresh grid
+      selectionManager?.clearSelection();
+      superGrid?.refresh();
+
+      // Update stats
+      const stats = superGrid?.getStats();
+      console.log('Bulk delete completed:', { deletedCount: selectedIds.length, stats });
+
+    } catch (error) {
+      console.error('Bulk delete error:', error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  }, [sqliteExecute, superGrid]);
+
+  const handleBulkStatusUpdate = useCallback(async (selectedIds: string[], newStatus: string) => {
+    if (!sqliteExecute || selectedIds.length === 0) return;
+
+    try {
+      setIsModalLoading(true);
+      const selectionManager = superGrid?.getSelectionManager();
+
+      // Update status for selected cards
+      const placeholders = selectedIds.map(() => '?').join(', ');
+      sqliteExecute(`UPDATE nodes SET status = ? WHERE id IN (${placeholders})`, [newStatus, ...selectedIds]);
+
+      // Clear selection and refresh grid
+      selectionManager?.clearSelection();
+      superGrid?.refresh();
+
+      // Update stats
+      const stats = superGrid?.getStats();
+      console.log('Bulk status update completed:', {
+        updatedCount: selectedIds.length,
+        newStatus,
+        stats
+      });
+
+    } catch (error) {
+      console.error('Bulk status update error:', error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  }, [sqliteExecute, superGrid]);
+
+  const handleBulkFolderMove = useCallback(async (selectedIds: string[], newFolder: string) => {
+    if (!sqliteExecute || selectedIds.length === 0) return;
+
+    try {
+      setIsModalLoading(true);
+      const selectionManager = superGrid?.getSelectionManager();
+
+      // Update folder for selected cards
+      const placeholders = selectedIds.map(() => '?').join(', ');
+      sqliteExecute(`UPDATE nodes SET folder = ? WHERE id IN (${placeholders})`, [newFolder, ...selectedIds]);
+
+      // Clear selection and refresh grid
+      selectionManager?.clearSelection();
+      superGrid?.refresh();
+
+      // Update stats
+      const stats = superGrid?.getStats();
+      console.log('Bulk folder move completed:', {
+        movedCount: selectedIds.length,
+        newFolder,
+        stats
+      });
+
+    } catch (error) {
+      console.error('Bulk folder move error:', error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  }, [sqliteExecute, superGrid]);
+
+  const handleBulkOperation = useCallback((operation: string, selectedIds: string[]) => {
+    console.log('SuperGridDemo: Bulk operation requested', { operation, count: selectedIds.length });
+
+    switch (operation) {
+      case 'delete':
+        handleBulkDelete(selectedIds);
+        break;
+      case 'archive':
+        handleBulkFolderMove(selectedIds, 'archive');
+        break;
+      default:
+        console.warn('Unknown bulk operation:', operation);
+    }
+  }, [handleBulkDelete, handleBulkFolderMove]);
+
+  // Modal handlers
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
     setSelectedCard(null);
+    setIsModalLoading(false);
   }, []);
 
-  const handleCardSave = useCallback(async (updatedCard: any) => {
-    if (!db) {
-      console.error('Database not available');
-      return;
-    }
-
-    setIsOperationInProgress(true);
+  const handleCardSave = useCallback(async (updatedCard: Partial<any>) => {
+    if (!sqliteExecute || !updatedCard.id) return;
 
     try {
-      // Optimistic update - update the selected card immediately
-      setSelectedCard((prev: any) => prev ? { ...prev, ...updatedCard } : null);
+      setIsModalLoading(true);
 
-      // Update the card in the database
-      const { id, name, folder, status, priority, summary } = updatedCard;
+      // Build dynamic SQL update query
+      const updates: string[] = [];
+      const params: any[] = [];
 
-      db.exec(`
-        UPDATE nodes
-        SET name = ?,
-            folder = ?,
-            status = ?,
-            priority = ?,
-            summary = ?,
-            modified_at = datetime('now')
-        WHERE id = ?
-      `, [name, folder, status, priority || 0, summary, id]);
-
-      console.log('Card saved successfully:', updatedCard);
-
-      // Close modal first for immediate feedback
-      setIsModalOpen(false);
-      setSelectedCard(null);
-
-      // Then refresh the grid to show updated data
-      if (superGrid) {
-        superGrid.refresh();
-
-        // Update cell count after refresh
-        const stats = superGrid.getStats();
-        setCellCount(stats.cardsVisible);
+      if (updatedCard.name !== undefined) {
+        updates.push('name = ?');
+        params.push(updatedCard.name);
       }
+      if (updatedCard.folder !== undefined) {
+        updates.push('folder = ?');
+        params.push(updatedCard.folder);
+      }
+      if (updatedCard.status !== undefined) {
+        updates.push('status = ?');
+        params.push(updatedCard.status);
+      }
+      if (updatedCard.summary !== undefined) {
+        updates.push('summary = ?');
+        params.push(updatedCard.summary);
+      }
+      if (updatedCard.priority !== undefined) {
+        updates.push('priority = ?');
+        params.push(updatedCard.priority);
+      }
+      if (updatedCard.importance !== undefined) {
+        updates.push('importance = ?');
+        params.push(updatedCard.importance);
+      }
+
+      if (updates.length > 0) {
+        updates.push('modified_at = datetime(\'now\')');
+        params.push(updatedCard.id);
+
+        const sql = `UPDATE nodes SET ${updates.join(', ')} WHERE id = ?`;
+        sqliteExecute(sql, params);
+
+        // Refresh grid to show changes
+        superGrid?.refresh();
+
+        // Update stats
+        const stats = superGrid?.getStats();
+        console.log('Card updated:', { cardId: updatedCard.id, stats });
+      }
+
+      handleModalClose();
+
     } catch (error) {
-      console.error('Failed to save card:', error);
-      setErrorLog(prev => [...prev, `Save Error: ${error}`]);
-
-      // Revert optimistic update on error
-      if (selectedCard) {
-        setSelectedCard(selectedCard);
-      }
+      console.error('Card save error:', error);
     } finally {
-      setIsOperationInProgress(false);
+      setIsModalLoading(false);
     }
-  }, [db, superGrid, selectedCard]);
+  }, [sqliteExecute, superGrid, handleModalClose]);
 
   const handleCardDelete = useCallback(async (cardId: string) => {
-    if (!db) {
-      console.error('Database not available');
-      return;
-    }
-
-    setIsOperationInProgress(true);
+    if (!sqliteExecute) return;
 
     try {
-      // Close modal immediately for fast feedback
-      setIsModalOpen(false);
-      setSelectedCard(null);
+      setIsModalLoading(true);
 
-      // Soft delete the card by setting deleted_at timestamp
-      db.exec(`
-        UPDATE nodes
-        SET deleted_at = datetime('now')
-        WHERE id = ?
-      `, [cardId]);
+      // Soft delete
+      sqliteExecute('UPDATE nodes SET deleted_at = datetime(\'now\') WHERE id = ?', [cardId]);
 
-      console.log('Card deleted successfully:', cardId);
-
-      // Refresh the grid to show updated data
-      if (superGrid) {
-        superGrid.refresh();
-
-        // Update cell count after refresh
-        const stats = superGrid.getStats();
-        setCellCount(stats.cardsVisible);
-      }
-    } catch (error) {
-      console.error('Failed to delete card:', error);
-      setErrorLog(prev => [...prev, `Delete Error: ${error}`]);
-
-      // On error, could optionally reopen the modal
-      // but for now just log the error
-    } finally {
-      setIsOperationInProgress(false);
-    }
-  }, [db, superGrid]);
-
-  // Performance monitoring
-  useEffect(() => {
-    let frameCount = 0;
-    let lastTime = performance.now();
-    let rafId: number;
-
-    const measureFPS = () => {
-      frameCount++;
-      const currentTime = performance.now();
-
-      if (currentTime - lastTime >= 1000) {
-        const currentFPS = Math.round((frameCount * 1000) / (currentTime - lastTime));
-        setFps(currentFPS);
-        frameCount = 0;
-        lastTime = currentTime;
-      }
-
-      rafId = requestAnimationFrame(measureFPS);
-    };
-
-    rafId = requestAnimationFrame(measureFPS);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, []);
-
-  // Memory usage monitoring
-  useEffect(() => {
-    const updateMemoryUsage = () => {
-      if ('memory' in performance) {
-        const memory = (performance as any).memory;
-        const usedMB = Math.round(memory.usedJSHeapSize / 1048576);
-        setMemoryUsage(`${usedMB} MB`);
-      }
-    };
-
-    const intervalId = setInterval(updateMemoryUsage, 2000);
-    updateMemoryUsage();
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // Keyboard shortcuts for filtering
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (!superGrid) return;
-
-      // Ignore if user is typing in an input
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-
-      const filterService = superGrid.getFilterService();
-
-      switch (event.key.toLowerCase()) {
-        case 'escape':
-          // Clear all filters
-          if (filterService.hasActiveFilters()) {
-            handleClearAllFilters();
-            event.preventDefault();
-          }
-          break;
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-          // Priority filtering
-          if (event.ctrlKey || event.metaKey) {
-            const priority = parseInt(event.key, 10);
-            filterService.addFilter('H', 'priority', 'equals', priority, `Priority: ${priority}`);
-            setActiveFilters(filterService.getActiveFilters());
-            event.preventDefault();
-          }
-          break;
-        case 'f':
-          // Focus on folder filter (for future enhancement)
-          if (event.ctrlKey || event.metaKey) {
-            console.log('Focus folder filter (future implementation)');
-            event.preventDefault();
-          }
-          break;
-        case 's':
-          // Focus on status filter (for future enhancement)
-          if (event.ctrlKey || event.metaKey) {
-            console.log('Focus status filter (future implementation)');
-            event.preventDefault();
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [superGrid, handleClearAllFilters]);
-
-  // Initialize SuperGrid - separate effect to ensure proper timing
-  useEffect(() => {
-    if (!svgRef.current || !db) {
-      console.log('SuperGrid initialization waiting:', { svgRef: !!svgRef.current, db: !!db });
-      return;
-    }
-
-    console.log('🚀 SuperGrid initialization starting!');
-
-    const initializeGrid = async () => {
-      try {
-        // Verify sql.js capabilities using the provided db
-        const capabilityResults: string[] = [];
-
-        // Test FTS5 (non-blocking)
-        try {
-          db.exec("SELECT fts5_version()");
-          capabilityResults.push("✅ FTS5 support verified");
-        } catch (error) {
-          capabilityResults.push("⚠️ FTS5 support missing (fallback to basic search)");
-          console.warn('FTS5 not available, using fallback:', error);
-          // Don't add to errorLog as this is expected in some sql.js builds
-        }
-
-        // Test JSON1 extension
-        try {
-          db.exec("SELECT json_extract('{\"test\": 123}', '$.test')");
-          capabilityResults.push("✅ JSON1 extension verified");
-        } catch (error) {
-          capabilityResults.push("❌ JSON1 extension missing");
-          setErrorLog(prev => [...prev, `JSON1 Error: ${error}`]);
-        }
-
-        // Test recursive CTEs
-        try {
-          db.exec(`
-            WITH RECURSIVE test_cte AS (
-              SELECT 1 as n
-              UNION ALL
-              SELECT n + 1 FROM test_cte WHERE n < 3
-            )
-            SELECT COUNT(*) FROM test_cte
-          `);
-          capabilityResults.push("✅ Recursive CTE support verified");
-        } catch (error) {
-          capabilityResults.push("❌ Recursive CTE support missing");
-          setErrorLog(prev => [...prev, `CTE Error: ${error}`]);
-        }
-
-        console.log('sql.js Capability Verification:', capabilityResults);
-
-        // Ensure database has proper schema
-        try {
-          db.exec(`
-            CREATE TABLE IF NOT EXISTS nodes (
-              id TEXT PRIMARY KEY,
-              node_type TEXT NOT NULL DEFAULT 'note',
-              name TEXT NOT NULL,
-              content TEXT,
-              summary TEXT,
-
-              -- LATCH: Location
-              latitude REAL,
-              longitude REAL,
-              location_name TEXT,
-              location_address TEXT,
-
-              -- LATCH: Time
-              created_at TEXT NOT NULL DEFAULT (datetime('now')),
-              modified_at TEXT NOT NULL DEFAULT (datetime('now')),
-              due_at TEXT,
-              completed_at TEXT,
-              event_start TEXT,
-              event_end TEXT,
-
-              -- LATCH: Category
-              folder TEXT,
-              tags TEXT,
-              status TEXT,
-
-              -- LATCH: Hierarchy
-              priority INTEGER DEFAULT 0,
-              importance INTEGER DEFAULT 0,
-              sort_order INTEGER DEFAULT 0,
-
-              -- Grid positioning (for SuperGrid)
-              x REAL DEFAULT 0,
-              y REAL DEFAULT 0,
-
-              -- Metadata
-              source TEXT,
-              source_id TEXT,
-              source_url TEXT,
-              deleted_at TEXT,
-              version INTEGER DEFAULT 1
-            );
-          `);
-          console.log('✅ Database schema ensured');
-
-          // Add missing columns if they don't exist (for existing tables)
-          try {
-            db.exec('ALTER TABLE nodes ADD COLUMN x REAL DEFAULT 0');
-            console.log('✅ Added x column to existing table');
-          } catch {
-            // Column already exists, which is fine
-          }
-
-          try {
-            db.exec('ALTER TABLE nodes ADD COLUMN y REAL DEFAULT 0');
-            console.log('✅ Added y column to existing table');
-          } catch {
-            // Column already exists, which is fine
-          }
-
-        } catch (schemaError) {
-          console.warn('Schema creation failed:', schemaError);
-          setErrorLog(prev => [...prev, `Schema Error: ${schemaError}`]);
-        }
-
-        // Insert IsometryKB-inspired sample data for demonstration
-        try {
-          db.exec(`
-            INSERT OR IGNORE INTO nodes (id, name, folder, status, created_at, summary, priority, importance, source) VALUES
-            -- Architecture & Foundation
-            ('arch_mvp_gap', 'Isometry MVP Gap Analysis', 'specs', 'active', '2026-01-15', 'Executive analysis of gaps between backend capabilities, frontend designs, and UX requirements', 5, 5, 'IsometryKB'),
-            ('arch_truth', 'CardBoard Architecture Truth', 'specs', 'active', '2025-12-20', 'PAFV + LATCH + GRAPH framework definitions and core principles', 5, 5, 'IsometryKB'),
-            ('v4_spec', 'CardBoard v4 Specification', 'specs', 'active', '2026-01-10', 'Complete technical specification for Isometry v4 architecture', 4, 5, 'IsometryKB'),
-
-            -- Development Phases
-            ('phase_1_foundation', 'Phase 1: Foundation', 'plans', 'completed', '2025-11-15', 'Foundation setup with TypeScript, React, and core architecture', 4, 4, 'IsometryKB'),
-            ('phase_2_supergrid', 'Phase 2: SuperGrid Implementation', 'plans', 'in_progress', '2026-01-20', 'Polymorphic data projection system with PAFV spatial mapping', 5, 5, 'IsometryKB'),
-            ('phase_3_notebook', 'Phase 3: Three-Canvas Notebook', 'plans', 'todo', '2026-02-01', 'Capture, Shell, Preview canvas integration', 3, 4, 'IsometryKB'),
-
-            -- Technical Plans
-            ('canvas_pan_zoom', 'Canvas Pan Zoom Controls Plan', 'plans', 'active', '2026-01-25', 'Implementation plan for cartographic navigation with pinned anchor', 3, 3, 'IsometryKB'),
-            ('bridge_elimination', 'Bridge Elimination Architecture', 'plans', 'completed', '2026-01-05', 'sql.js direct access eliminating 40KB MessageBridge overhead', 4, 4, 'IsometryKB'),
-
-            -- Journal Entries
-            ('conv_2025_q4', 'Development Conversations Q4 2025', 'journal', 'archived', '2025-12-31', 'Quarterly development conversations and decisions', 2, 2, 'IsometryKB'),
-            ('v1_cardboard', 'V1 CardBoard 2023 Retrospective', 'journal', 'archived', '2023-12-01', 'Lessons learned from first CardBoard implementation', 2, 3, 'IsometryKB'),
-
-            -- Current Development
-            ('supergrid_foundation', 'SuperGrid Foundation Demo', 'work', 'active', '2026-02-06', 'Phase 34 verification with sql.js + D3.js integration', 5, 5, 'Current'),
-            ('typescript_cleanup', 'TypeScript Compilation Cleanup', 'work', 'completed', '2026-02-05', 'Zero compilation errors with strict typing', 4, 4, 'Current'),
-            ('pafv_integration', 'PAFV Context Integration', 'work', 'active', '2026-02-04', 'Plane-Axis-Facet-Value spatial projection system', 4, 4, 'Current'),
-            ('latch_headers', 'LATCH Headers Implementation', 'work', 'completed', '2026-02-03', 'Location-Alphabet-Time-Category-Hierarchy headers', 3, 4, 'Current'),
-            ('virtual_scrolling', 'Virtual Scrolling Performance', 'work', 'blocked', '2026-02-03', 'TanStack Virtual integration for 10k+ cells', 3, 3, 'Current'),
-
-            -- Research & Analysis
-            ('performance_analysis', 'Grid Performance Analysis', 'research', 'in_progress', '2026-01-30', 'Memory usage and rendering performance optimization', 3, 3, 'IsometryKB'),
-            ('user_interaction_patterns', 'User Interaction Patterns', 'research', 'todo', '2026-01-28', 'Study of grid interaction patterns and user flows', 2, 3, 'IsometryKB'),
-
-            -- Documentation
-            ('api_documentation', 'SuperGrid API Documentation', 'docs', 'in_progress', '2026-02-02', 'Complete API reference for SuperGrid components', 3, 3, 'IsometryKB'),
-            ('deployment_guide', 'Production Deployment Guide', 'docs', 'todo', '2026-01-15', 'Step-by-step production deployment documentation', 2, 3, 'IsometryKB'),
-
-            -- Future Features
-            ('graph_network_view', 'Graph Network View', 'future', 'todo', '2026-03-01', 'Force-directed network visualization of card relationships', 2, 4, 'IsometryKB'),
-            ('timeline_view', 'Timeline View Implementation', 'future', 'todo', '2026-03-15', 'Temporal card visualization with swim lanes', 2, 4, 'IsometryKB');
-          `);
-          console.log('✅ IsometryKB-inspired sample data inserted for SuperGrid demo');
-        } catch (sampleError) {
-          console.warn('Sample data insertion failed:', sampleError);
-          setErrorLog(prev => [...prev, `Sample Data Error: ${sampleError}`]);
-        }
-
-        // Create mock DatabaseService that wraps the existing db from context
-        const mockDatabaseService = {
-          query: <T = any>(sql: string, params?: any[]): T[] => {
-            try {
-              const result = db.exec(sql, params);
-              return result.length > 0 ? result[0].values.map((row: any) => {
-                const obj: any = {};
-                result[0].columns.forEach((col, idx) => {
-                  obj[col] = row[idx];
-                });
-                return obj as T;
-              }) : [];
-            } catch (error) {
-              console.warn('Mock query failed:', sql, error);
-              return [];
-            }
-          },
-          exec: (sql: string) => db.exec(sql),
-          isReady: () => true // Database is ready when we reach this point
-        };
-
-        const grid = new SuperGrid(svgRef.current!, mockDatabaseService as any, {
-          width: 800,
-          height: 600,
-          callbacks: {
-            onCardClick: handleCardClick,
-            onHeaderClick: handleHeaderClick
-          }
-        });
-
-        // Render with test data
-        grid.render();
-        setSuperGrid(grid);
-
-        // Update cell count from grid stats
-        const stats = grid.getStats();
-        setCellCount(stats.cardsVisible);
-
-        setIsLoading(false);
-      } catch (error) {
-        setErrorLog(prev => [...prev, `SuperGrid Initialization Error: ${error}`]);
-        setIsLoading(false);
-      }
-    };
-
-    initializeGrid();
-  }, [db, handleCardClick, handleHeaderClick]);
-
-  // Handle filter changes
-  useEffect(() => {
-    if (!superGrid) return;
-
-    try {
-      const filters: any = {};
-
-      if (selectedFolder !== 'all') {
-        filters.folder = selectedFolder;
-      }
-      if (selectedStatus !== 'all') {
-        filters.status = selectedStatus;
-      }
-
-      // Apply filters to grid
-      superGrid.renderWithFilters(filters);
+      // Refresh grid
+      superGrid?.refresh();
 
       // Update stats
-      const stats = superGrid.getStats();
-      setCellCount(stats.cardsVisible);
-    } catch (error) {
-      setErrorLog(prev => [...prev, `Filter Error: ${error}`]);
-    }
-  }, [superGrid, selectedFolder, selectedStatus]);
+      const stats = superGrid?.getStats();
+      console.log('Card deleted:', { cardId, stats });
 
-  // Handle PAFV changes
+      handleModalClose();
+
+    } catch (error) {
+      console.error('Card delete error:', error);
+    } finally {
+      setIsModalLoading(false);
+    }
+  }, [sqliteExecute, superGrid, handleModalClose]);
+
+  // Initialize SuperGrid when database service is ready
+  useEffect(() => {
+    if (!svgRef.current || !dbService) return;
+
+    console.log('SuperGridDemo: Initializing SuperGrid');
+
+    const grid = new SuperGrid(
+      svgRef.current,
+      dbService,
+      {
+        columnsPerRow: 4,
+        enableHeaders: true,
+        enableSelection: true,
+        enableKeyboardNavigation: true
+      },
+      {
+        onCardClick: handleCardClick,
+        onSelectionChange: handleSelectionChange,
+        onBulkOperation: handleBulkOperation
+      }
+    );
+
+    setSuperGrid(grid);
+
+    // Focus for keyboard navigation
+    setTimeout(() => grid.focus(), 100);
+
+    return () => {
+      grid.destroy();
+      setSuperGrid(null);
+    };
+  }, [dbService, handleCardClick, handleSelectionChange, handleBulkOperation]);
+
+  // Apply LATCH filters to grid
   useEffect(() => {
     if (!superGrid) return;
 
-    try {
-      // Convert state mappings to SuperGrid filter format
-      const rowMappings = state.mappings.filter(m => m.plane === 'y');
-      const columnMappings = state.mappings.filter(m => m.plane === 'x');
+    const filters: Record<string, any> = {};
 
-      const pafvFilters = {
-        rows: rowMappings.map(m => ({ id: m.facet, label: m.facet })),
-        columns: columnMappings.map(m => ({ id: m.facet, label: m.facet })),
-        zLayers: [] // Add z-layer support later if needed
-      };
+    activeFilters.forEach(filter => {
+      filters[filter.dimension] = filter.value;
+    });
 
-      superGrid.renderWithPAFVFilters(pafvFilters);
+    console.log('SuperGridDemo: Applying filters', filters);
+    superGrid.query(filters);
+  }, [superGrid, activeFilters]);
 
-      const stats = superGrid.getStats();
-      setCellCount(stats.cardsVisible);
-    } catch (error) {
-      setErrorLog(prev => [...prev, `PAFV Error: ${error}`]);
-    }
-  }, [superGrid, state]);
+  // Handle PAFV state changes
+  useEffect(() => {
+    if (!superGrid || !pafvState) return;
 
-  // Always render the full UI but show loading indicators when needed
+    console.log('SuperGridDemo: PAFV state changed', pafvState);
+    // Future: Apply PAFV axis mappings to grid layout
+  }, [superGrid, pafvState]);
+
+  const handleFilterFromHeader = useCallback((headerValue: string, dimension: string) => {
+    const newFilter: LATCHFilter = {
+      id: `${dimension}-${headerValue}-${Date.now()}`,
+      dimension: dimension as any,
+      operator: 'equals',
+      value: headerValue,
+      displayValue: headerValue,
+      label: dimension.charAt(0).toUpperCase() + dimension.slice(1),
+      category: 'user'
+    };
+
+    setActiveFilters(prev => [...prev, newFilter]);
+  }, []);
 
   return (
-    <div className="relative w-full h-screen bg-gray-50">
-      {/* Performance Monitor */}
-      <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-sm">
-        <h2 className="text-lg font-semibold mb-2">Performance Monitor</h2>
-        <div className="text-sm space-y-1">
-          <div className={`${fps < 55 ? 'text-red-600' : fps < 58 ? 'text-yellow-600' : 'text-green-600'}`}>
-            <span className="font-medium">FPS:</span> {fps}
-          </div>
+    <div className="w-full h-full flex flex-col bg-gray-50">
+      {/* Header with filter controls */}
+      <div className="flex-none p-4 bg-white border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <span className="font-medium">Cells Visible:</span> {cellCount}
-          </div>
-          <div>
-            <span className="font-medium">Memory Usage:</span> {memoryUsage}
-          </div>
-          <div>
-            <span className="font-medium">Density Level:</span> {densityLevel}
-          </div>
-          <div>
-            <span className="font-medium">Active Filters:</span> {activeFilters.length}
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive Controls */}
-      <div className="absolute top-4 right-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-sm">
-        <h3 className="text-sm font-semibold mb-2">Test Controls</h3>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Density Level
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="3"
-              step="1"
-              value={densityLevel}
-              onChange={(e) => setDensityLevel(Number(e.target.value))}
-              className="w-full"
-            />
-            <div className="text-xs text-gray-500 mt-1">
-              0=Sparse, 1=Group, 2=Rollup, 3=Collapsed
-            </div>
+            <h2 className="text-xl font-bold text-gray-900">SuperGrid Multi-Select Demo</h2>
+            <p className="text-sm text-gray-600">
+              {selectedCards.length > 0
+                ? `${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} selected`
+                : 'Click cards to select, Cmd/Ctrl+click for multi-select, Shift+click for range'
+              }
+            </p>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Filter by Folder
-            </label>
-            <select
-              value={selectedFolder}
-              onChange={(e) => setSelectedFolder(e.target.value)}
-              className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-            >
-              <option value="all">All Folders</option>
-              <option value="work">Work</option>
-              <option value="personal">Personal</option>
-              <option value="projects">Projects</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Filter by Status
-            </label>
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full text-xs border border-gray-300 rounded px-2 py-1"
-            >
-              <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="blocked">Blocked</option>
-              <option value="in_progress">In Progress</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Item Count
-            </label>
-            <input
-              type="range"
-              min="10"
-              max="1000"
-              step="10"
-              value={itemCount}
-              onChange={(e) => setItemCount(Number(e.target.value))}
-              className="w-full"
-            />
-            <div className="text-xs text-gray-500 mt-1">{itemCount} items</div>
-          </div>
-        </div>
-      </div>
-
-      {/* sql.js Capability Status */}
-      <div className="absolute bottom-4 left-4 z-10 bg-white rounded-lg shadow-lg p-4 max-w-md">
-        <h3 className="text-sm font-semibold mb-2">sql.js Capabilities</h3>
-        <div className="text-xs space-y-1">
-          <div className="text-green-600">✅ FTS5 support verified</div>
-          <div className="text-green-600">✅ JSON1 extension verified</div>
-          <div className="text-green-600">✅ Recursive CTE support verified</div>
-          <div className="text-green-600">✅ TypeScript compilation: 0 errors</div>
-        </div>
-      </div>
-
-      {/* Error Telemetry */}
-      {errorLog.length > 0 && (
-        <div className="absolute bottom-4 right-4 z-10 bg-red-50 border border-red-200 rounded-lg shadow-lg p-4 max-w-md">
-          <h3 className="text-sm font-semibold mb-2 text-red-800">Error Telemetry</h3>
-          <div className="text-xs space-y-1 max-h-32 overflow-y-auto">
-            {errorLog.map((error, index) => (
-              <div key={index} className="text-red-600">
-                {error}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Foundation Instructions */}
-      <div className="absolute top-40 left-4 z-10 bg-blue-50 border border-blue-200 rounded-lg shadow-lg p-4 max-w-sm">
-        <h3 className="text-sm font-semibold mb-2 text-blue-800">Foundation Demo</h3>
-        <ul className="text-xs space-y-1 text-blue-700">
-          <li>• <strong>Headers:</strong> Row headers show folders, column headers show statuses</li>
-          <li>• <strong>Performance:</strong> Monitor shows 60fps target for 10k+ cells</li>
-          <li>• <strong>Density:</strong> Slider tests Janus morphing between states</li>
-          <li>• <strong>PAFV:</strong> Filters integrate with existing context system</li>
-          <li>• <strong>Bridge:</strong> Confirms sql.js direct access eliminates serialization</li>
-        </ul>
-      </div>
-
-      {/* Filter Management Panel */}
-      {activeFilters.length > 0 && (
-        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-2xl">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-800">Active Filters</h3>
-            <button
-              onClick={handleClearAllFilters}
-              className="text-xs text-red-600 hover:text-red-800 px-2 py-1 border border-red-200 rounded hover:bg-red-50 transition-colors"
-            >
-              Clear All
-            </button>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {activeFilters.map((filter) => (
-              <div
-                key={filter.id}
-                className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full border border-blue-200"
+          {/* Bulk action controls */}
+          {showBulkActions && (
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500">
+                {selectedCards.length} selected:
+              </span>
+              <button
+                onClick={() => handleBulkStatusUpdate(selectedCards, 'active')}
+                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                disabled={isModalLoading}
               >
-                <span>{filter.label}</span>
-                <button
-                  onClick={() => handleFilterRemove(filter.id)}
-                  className="text-blue-600 hover:text-blue-800 hover:bg-blue-200 rounded-full p-0.5 transition-colors"
-                  title="Remove filter"
-                >
-                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-3 text-xs text-gray-600 border-t border-gray-200 pt-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <strong>Keyboard shortcuts:</strong>
-                <ul className="mt-1 space-y-0.5">
-                  <li>• <kbd className="bg-gray-100 px-1 rounded text-xs">Esc</kbd> - Clear all filters</li>
-                  <li>• <kbd className="bg-gray-100 px-1 rounded text-xs">Cmd/Ctrl + 1-5</kbd> - Filter by priority</li>
-                </ul>
-              </div>
-              <div>
-                <strong>Quick filters:</strong>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  <button
-                    onClick={() => {
-                      if (superGrid) {
-                        const filterService = superGrid.getFilterService();
-                        filterService.clearFilters();
-                        filterService.addFilter('C', 'folder', 'equals', 'work', 'Folder: work');
-                        filterService.addFilter('C', 'status', 'equals', 'active', 'Status: active');
-                        setActiveFilters(filterService.getActiveFilters());
-                      }
-                    }}
-                    className="text-xs px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded border transition-colors"
-                  >
-                    Work + Active
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (superGrid) {
-                        const filterService = superGrid.getFilterService();
-                        filterService.clearFilters();
-                        filterService.addFilter('H', 'priority', 'range', [4, 5], 'High Priority');
-                        setActiveFilters(filterService.getActiveFilters());
-                      }
-                    }}
-                    className="text-xs px-2 py-0.5 bg-gray-100 hover:bg-gray-200 rounded border transition-colors"
-                  >
-                    High Priority
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SuperGrid SVG Container */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative">
-          <svg
-            ref={svgRef}
-            className="border border-gray-300 bg-white"
-            style={{ width: 800, height: 600 }}
-          />
-          {/* Loading overlay */}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
-              <div className="text-gray-600">Initializing SuperGrid Foundation...</div>
+                Mark Active
+              </button>
+              <button
+                onClick={() => handleBulkStatusUpdate(selectedCards, 'completed')}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                disabled={isModalLoading}
+              >
+                Mark Complete
+              </button>
+              <button
+                onClick={() => handleBulkFolderMove(selectedCards, 'archive')}
+                className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                disabled={isModalLoading}
+              >
+                Archive
+              </button>
+              <button
+                onClick={() => handleBulkDelete(selectedCards)}
+                className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+                disabled={isModalLoading}
+              >
+                Delete
+              </button>
             </div>
           )}
         </div>
+
+        {/* Active filters */}
+        {activeFilters.length > 0 && (
+          <div className="flex items-center space-x-2 mb-4">
+            <span className="text-sm text-gray-500">Active filters:</span>
+            <div className="flex flex-wrap gap-2">
+              {activeFilters.map(filter => (
+                <FilterChip
+                  key={filter.id}
+                  filter={filter}
+                  onRemove={() => handleFilterRemove(filter.id)}
+                />
+              ))}
+            </div>
+            {activeFilters.length > 1 && (
+              <button
+                onClick={handleClearAllFilters}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Quick filter buttons */}
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-500">Quick filters:</span>
+          <button
+            onClick={() => handleFilterFromHeader('active', 'status')}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Active Items
+          </button>
+          <button
+            onClick={() => handleFilterFromHeader('work', 'folder')}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            Work Items
+          </button>
+          <button
+            onClick={() => handleFilterFromHeader('5', 'priority')}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+          >
+            High Priority
+          </button>
+        </div>
       </div>
 
-      {/* Card Detail Modal */}
+      {/* Grid container */}
+      <div className="flex-1 overflow-hidden">
+        <svg
+          ref={svgRef}
+          className="w-full h-full"
+          style={{ backgroundColor: '#fafafa' }}
+          tabIndex={0} // Enable keyboard focus
+        />
+      </div>
+
+      {/* Keyboard shortcuts help */}
+      <div className="flex-none p-2 bg-gray-100 text-xs text-gray-600">
+        <span className="font-medium">Keyboard shortcuts:</span>
+        <span className="mx-2">Arrow keys: Navigate</span>
+        <span className="mx-2">Space/Enter: Select</span>
+        <span className="mx-2">Escape: Clear selection</span>
+        <span className="mx-2">Cmd/Ctrl+A: Select all</span>
+        <span className="mx-2">Shift+Arrow: Extend selection</span>
+      </div>
+
+      {/* Card detail modal */}
       <CardDetailModal
         card={selectedCard}
         isOpen={isModalOpen}
+        isLoading={isModalLoading}
         onClose={handleModalClose}
         onSave={handleCardSave}
         onDelete={handleCardDelete}
       />
-
-      {/* Operation in progress overlay */}
-      {isOperationInProgress && (
-        <div className="fixed inset-0 bg-black bg-opacity-25 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-700">Updating data...</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
