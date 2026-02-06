@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { SuperGrid } from '@/d3/SuperGrid';
-import { DatabaseService } from '@/db/DatabaseService';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { usePAFV } from '@/state/PAFVContext';
 
@@ -162,6 +161,10 @@ export function SuperGridDemo() {
               importance INTEGER DEFAULT 0,
               sort_order INTEGER DEFAULT 0,
 
+              -- Grid positioning (for SuperGrid)
+              x REAL DEFAULT 0,
+              y REAL DEFAULT 0,
+
               -- Metadata
               source TEXT,
               source_id TEXT,
@@ -171,27 +174,69 @@ export function SuperGridDemo() {
             );
           `);
           console.log('✅ Database schema ensured');
+
+          // Add missing columns if they don't exist (for existing tables)
+          try {
+            db.exec('ALTER TABLE nodes ADD COLUMN x REAL DEFAULT 0');
+            console.log('✅ Added x column to existing table');
+          } catch {
+            // Column already exists, which is fine
+          }
+
+          try {
+            db.exec('ALTER TABLE nodes ADD COLUMN y REAL DEFAULT 0');
+            console.log('✅ Added y column to existing table');
+          } catch {
+            // Column already exists, which is fine
+          }
+
         } catch (schemaError) {
           console.warn('Schema creation failed:', schemaError);
           setErrorLog(prev => [...prev, `Schema Error: ${schemaError}`]);
         }
 
-        // Insert sample data for demonstration
+        // Insert IsometryKB-inspired sample data for demonstration
         try {
           db.exec(`
-            INSERT OR IGNORE INTO nodes (id, name, folder, status, created_at) VALUES
-            ('1', 'SuperGrid Foundation', 'work', 'active', '2026-02-06'),
-            ('2', 'Phase 34 Verification', 'work', 'in_progress', '2026-02-06'),
-            ('3', 'TypeScript Cleanup', 'work', 'completed', '2026-02-05'),
-            ('4', 'sql.js Integration', 'work', 'active', '2026-02-05'),
-            ('5', 'PAFV Context', 'work', 'active', '2026-02-04'),
-            ('6', 'D3.js Grid Cells', 'work', 'completed', '2026-02-04'),
-            ('7', 'Database Schema', 'work', 'completed', '2026-02-03'),
-            ('8', 'Virtual Scrolling', 'work', 'blocked', '2026-02-03'),
-            ('9', 'Performance Metrics', 'personal', 'active', '2026-02-02'),
-            ('10', 'Documentation', 'personal', 'in_progress', '2026-02-01');
+            INSERT OR IGNORE INTO nodes (id, name, folder, status, created_at, summary, priority, importance, source) VALUES
+            -- Architecture & Foundation
+            ('arch_mvp_gap', 'Isometry MVP Gap Analysis', 'specs', 'active', '2026-01-15', 'Executive analysis of gaps between backend capabilities, frontend designs, and UX requirements', 5, 5, 'IsometryKB'),
+            ('arch_truth', 'CardBoard Architecture Truth', 'specs', 'active', '2025-12-20', 'PAFV + LATCH + GRAPH framework definitions and core principles', 5, 5, 'IsometryKB'),
+            ('v4_spec', 'CardBoard v4 Specification', 'specs', 'active', '2026-01-10', 'Complete technical specification for Isometry v4 architecture', 4, 5, 'IsometryKB'),
+
+            -- Development Phases
+            ('phase_1_foundation', 'Phase 1: Foundation', 'plans', 'completed', '2025-11-15', 'Foundation setup with TypeScript, React, and core architecture', 4, 4, 'IsometryKB'),
+            ('phase_2_supergrid', 'Phase 2: SuperGrid Implementation', 'plans', 'in_progress', '2026-01-20', 'Polymorphic data projection system with PAFV spatial mapping', 5, 5, 'IsometryKB'),
+            ('phase_3_notebook', 'Phase 3: Three-Canvas Notebook', 'plans', 'todo', '2026-02-01', 'Capture, Shell, Preview canvas integration', 3, 4, 'IsometryKB'),
+
+            -- Technical Plans
+            ('canvas_pan_zoom', 'Canvas Pan Zoom Controls Plan', 'plans', 'active', '2026-01-25', 'Implementation plan for cartographic navigation with pinned anchor', 3, 3, 'IsometryKB'),
+            ('bridge_elimination', 'Bridge Elimination Architecture', 'plans', 'completed', '2026-01-05', 'sql.js direct access eliminating 40KB MessageBridge overhead', 4, 4, 'IsometryKB'),
+
+            -- Journal Entries
+            ('conv_2025_q4', 'Development Conversations Q4 2025', 'journal', 'archived', '2025-12-31', 'Quarterly development conversations and decisions', 2, 2, 'IsometryKB'),
+            ('v1_cardboard', 'V1 CardBoard 2023 Retrospective', 'journal', 'archived', '2023-12-01', 'Lessons learned from first CardBoard implementation', 2, 3, 'IsometryKB'),
+
+            -- Current Development
+            ('supergrid_foundation', 'SuperGrid Foundation Demo', 'work', 'active', '2026-02-06', 'Phase 34 verification with sql.js + D3.js integration', 5, 5, 'Current'),
+            ('typescript_cleanup', 'TypeScript Compilation Cleanup', 'work', 'completed', '2026-02-05', 'Zero compilation errors with strict typing', 4, 4, 'Current'),
+            ('pafv_integration', 'PAFV Context Integration', 'work', 'active', '2026-02-04', 'Plane-Axis-Facet-Value spatial projection system', 4, 4, 'Current'),
+            ('latch_headers', 'LATCH Headers Implementation', 'work', 'completed', '2026-02-03', 'Location-Alphabet-Time-Category-Hierarchy headers', 3, 4, 'Current'),
+            ('virtual_scrolling', 'Virtual Scrolling Performance', 'work', 'blocked', '2026-02-03', 'TanStack Virtual integration for 10k+ cells', 3, 3, 'Current'),
+
+            -- Research & Analysis
+            ('performance_analysis', 'Grid Performance Analysis', 'research', 'in_progress', '2026-01-30', 'Memory usage and rendering performance optimization', 3, 3, 'IsometryKB'),
+            ('user_interaction_patterns', 'User Interaction Patterns', 'research', 'todo', '2026-01-28', 'Study of grid interaction patterns and user flows', 2, 3, 'IsometryKB'),
+
+            -- Documentation
+            ('api_documentation', 'SuperGrid API Documentation', 'docs', 'in_progress', '2026-02-02', 'Complete API reference for SuperGrid components', 3, 3, 'IsometryKB'),
+            ('deployment_guide', 'Production Deployment Guide', 'docs', 'todo', '2026-01-15', 'Step-by-step production deployment documentation', 2, 3, 'IsometryKB'),
+
+            -- Future Features
+            ('graph_network_view', 'Graph Network View', 'future', 'todo', '2026-03-01', 'Force-directed network visualization of card relationships', 2, 4, 'IsometryKB'),
+            ('timeline_view', 'Timeline View Implementation', 'future', 'todo', '2026-03-15', 'Temporal card visualization with swim lanes', 2, 4, 'IsometryKB');
           `);
-          console.log('✅ Sample data inserted for SuperGrid demo');
+          console.log('✅ IsometryKB-inspired sample data inserted for SuperGrid demo');
         } catch (sampleError) {
           console.warn('Sample data insertion failed:', sampleError);
           setErrorLog(prev => [...prev, `Sample Data Error: ${sampleError}`]);
@@ -199,15 +244,15 @@ export function SuperGridDemo() {
 
         // Create mock DatabaseService that wraps the existing db from context
         const mockDatabaseService = {
-          query: (sql: string) => {
+          query: <T = any>(sql: string, params?: any[]): T[] => {
             try {
-              const result = db.exec(sql);
+              const result = db.exec(sql, params);
               return result.length > 0 ? result[0].values.map((row: any) => {
                 const obj: any = {};
                 result[0].columns.forEach((col, idx) => {
                   obj[col] = row[idx];
                 });
-                return obj;
+                return obj as T;
               }) : [];
             } catch (error) {
               console.warn('Mock query failed:', sql, error);

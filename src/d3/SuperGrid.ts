@@ -18,6 +18,12 @@ import { type VirtualGridCell } from '../types/grid';
  * - Same memory space data binding (cards array directly to D3)
  * - Zero serialization boundaries
  */
+interface SuperGridCallbacks {
+  onCardClick?: (card: any) => void;
+  onHeaderClick?: (headerType: 'row' | 'column', value: string) => void;
+  onCardUpdate?: (cardId: string, updates: any) => void;
+}
+
 export class SuperGrid {
   private db: DatabaseService;
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
@@ -26,16 +32,22 @@ export class SuperGrid {
   private cardWidth = 120;
   private cardHeight = 80;
   private padding = 10;
+  private callbacks: SuperGridCallbacks = {};
 
   // Virtual scrolling integration
   private virtualScrolling: VirtualizedGridResult | null = null;
   private enableVirtualScrolling = true;
 
-  constructor(container: SVGElement, db: DatabaseService, options?: { width?: number; height?: number }) {
+  constructor(container: SVGElement, db: DatabaseService, options?: {
+    width?: number;
+    height?: number;
+    callbacks?: SuperGridCallbacks;
+  }) {
     this.db = db;
     this.container = d3.select(container);
     this.width = options?.width || 800;
     this.height = options?.height || 600;
+    this.callbacks = options?.callbacks || {};
 
     // Set container dimensions
     this.container
