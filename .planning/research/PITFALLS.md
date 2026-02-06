@@ -1,264 +1,247 @@
-# Domain Pitfalls: Apple Notes Live Sync Integration
+# Domain Pitfalls: SuperGrid Implementation
 
-**Domain:** Adding live Apple Notes sync to existing knowledge management system with proven batch import
-**Researched:** 2026-02-01
-**Confidence:** HIGH
-
-*Research focus: Common mistakes when ADDING live sync to existing Apple Notes import system*
-*Project context: Isometry has successful AltoIndexImporter (6,891 notes), now adding real-time sync*
+**Domain:** Polymorphic data visualization (SuperGrid foundation)
+**Researched:** 2026-02-05
+**Context:** Adding SuperGrid features to proven sql.js + D3.js foundation
 
 ## Critical Pitfalls
 
-### Pitfall 1: TCC Permission Escalation Without User Understanding
+Mistakes that cause rewrites or major issues.
 
-**What goes wrong:**
-Live sync requires "Full Disk Access" TCC permission to monitor the Notes database, but users grant this without understanding they're giving the app complete system access. Users think they're just allowing Notes access, but Full Disk Access permits reading all user files, which creates security liability and user trust issues.
+### Pitfall 1: D3 Data Binding Without Key Functions
+**What goes wrong:** Manual enter/update/exit patterns without proper key functions cause DOM thrashing and data inconsistency. Elements get created/destroyed unnecessarily, losing state and causing performance degradation.
+**Why it happens:** Developers skip the key function parameter in `.data()` calls, defaulting to array index binding
+**Consequences:**
+- 50% slower rendering on data updates
+- Lost selection states during re-renders
+- Visual flicker and incorrect animations
+- Memory leaks from orphaned event listeners
+**Prevention:**
+- ALWAYS use `.data(cards, d => d.id)` pattern
+- ALWAYS use `.join()` over manual enter/update/exit
+- Validate key functions return unique, stable identifiers
+**Detection:** Watch for DOM element count mismatches after data updates; monitor for visual flicker during transitions
 
+### Pitfall 2: WASM Memory Overflow with Large sql.js Databases
+**What goes wrong:** WebAssembly.instantiate() out of memory errors when loading databases >100MB or during frequent reinitializations. Browser crashes or fails to load.
 **Why it happens:**
-Apple doesn't provide granular TCC permissions for Notes database access. The Notes SQLite database is protected by macOS 10.13+ security sandbox, requiring the nuclear option of Full Disk Access. Developers often present this as "Notes access" in UI rather than explaining the broad system access being granted.
+- sql.js loads entire database into WASM memory space (4GB limit)
+- Multiple WASM instances created without proper cleanup
+- Page reloads accumulate memory without proper disposal
+**Consequences:**
+- Application won't start with production data
+- Memory leaks causing progressive slowdown
+- Safari particularly susceptible to WASM range errors
+**Prevention:**
+- Implement proper DatabaseService disposal in useEffect cleanup
+- Monitor database file size; implement data archiving at 50MB
+- Use single DatabaseService instance across app lifecycle
+- Add memory monitoring to detect leaks early
+**Detection:**
+- Monitor WASM heap usage in browser dev tools
+- Test with 100MB+ database files
+- Check for increasing memory usage on page reloads
 
-**How to avoid:**
-- Implement clear consent flow explaining what Full Disk Access actually grants
-- Provide alternative read-only batch import mode for users uncomfortable with broad access
-- Consider sandboxed CloudKit sync as primary mechanism, file system monitoring as optional advanced feature
-- Document security implications clearly in app store description and first-run flow
-
-**Warning signs:**
-- User reviews complaining about "excessive permissions"
-- Security audits flagging unnecessary system access
-- Users uninstalling after seeing permission dialog
-
-**Phase to address:**
-Phase 1: TCC Permission Strategy & User Consent Design
-
----
-
-### Pitfall 2: Database Corruption from Concurrent Access
-
-**What goes wrong:**
-Both the app and Notes.app attempt to access the Notes SQLite database simultaneously, leading to database corruption, sync failures, and data loss. The existing AltoIndexImporter works because it reads exported files, but live sync introduces direct database competition.
-
+### Pitfall 3: SQL Performance Regression from Missing Indexes
+**What goes wrong:** SuperGrid dynamic axis queries bypass existing indexes, causing 10x+ slower queries as data grows. What works with 1K records fails with 100K.
 **Why it happens:**
-SQLite databases don't handle concurrent access gracefully without proper locking mechanisms. Apple Notes keeps its database open with exclusive locks during operation. Live monitoring requires continuous database polling or change watching, creating lock contention with the official Notes app.
+- PAFV axis mappings generate dynamic WHERE clauses
+- Indexes built for static queries don't match dynamic patterns
+- FTS5 fallback to LIKE queries scales poorly
+**Consequences:**
+- Grid becomes unusable with real-world datasets
+- Users abandon app due to perceived "hanging"
+- CPU usage spikes block UI interactions
+**Prevention:**
+- Create composite indexes for common LATCH combinations
+- Profile queries with EXPLAIN QUERY PLAN
+- Set maximum query time limits (500ms) with user feedback
+- Implement query result pagination for large datasets
+**Detection:** Monitor query execution times; alert if >100ms for typical operations
 
-**How to avoid:**
-- Use read-only access with proper SQLite WAL mode handling
-- Implement defensive database opening with timeout and retry logic
-- Monitor Notes.app process state and pause access when Notes is active
-- Create database connection pooling with short-lived connections
-- Implement database backup verification before any access attempts
+## Moderate Pitfalls
 
-**Warning signs:**
-- SQLite "database is locked" errors in logs
-- Notes.app becoming unresponsive or slow
-- Sync operations failing with "database busy" messages
-- User reports of missing notes or corrupted content
+Mistakes that cause delays or technical debt.
 
-**Phase to address:**
-Phase 2: Database Concurrency & Locking Strategy
+### Pitfall 4: React-D3 Lifecycle Conflicts
+**What goes wrong:** React re-renders conflict with D3 DOM manipulation, causing "double updates" where React overwrites D3 changes or D3 modifies React-controlled elements.
+**Prevention:**
+- Use refs to create D3-only DOM zones
+- Never let React and D3 manage same DOM elements
+- Trigger D3 updates via useEffect, not render cycles
+- Use React for chrome/controls, D3 for data visualization only
 
----
+### Pitfall 5: SuperGrid Cell Content Overflow
+**What goes wrong:** Nested headers and multi-card cells break layout when content exceeds calculated cell dimensions. Text truncation and visual clipping.
+**Prevention:**
+- Implement text measurement before rendering
+- Add ellipsis handling for long content
+- Design responsive cell sizing with minimum dimensions
+- Test with worst-case content (long names, many categories)
 
-### Pitfall 3: Protobuf Version Incompatibility Cascading Failures
+### Pitfall 6: PAFV State Synchronization Drift
+**What goes wrong:** Axis assignments become inconsistent between FilterNav controls and actual grid rendering, causing "phantom" columns or incorrect data display.
+**Prevention:**
+- Single source of truth for PAFV state in React context
+- Validate axis assignments before triggering re-renders
+- Add development-mode state consistency checks
+- Implement axis assignment snapshots for debugging
 
-**What goes wrong:**
-Apple updates the Notes protobuf schema with iOS/macOS releases, breaking live sync parsing. Unlike batch import where failures affect individual files, live sync failures cascade - one bad protobuf corrupts the entire monitoring loop, stopping all sync until manually resolved.
+### Pitfall 7: Z-Axis Header Spanning Performance
+**What goes wrong:** CSS-based header spanning calculations become expensive with deep hierarchies (4+ axis levels), causing layout thrashing.
+**Prevention:**
+- Limit maximum axis depth to 3 levels initially
+- Pre-calculate spanning dimensions, cache results
+- Use CSS transforms over layout-triggering properties
+- Measure spanning calculation performance, optimize hot paths
 
-**Why it happens:**
-Apple's Notes protobuf schema is undocumented and changes without notice. The existing AltoIndexImporter handles individual parsing failures gracefully, but live sync monitoring processes need to handle ongoing stream of changes. A single malformed protobuf can crash the monitoring actor, requiring restart and potentially losing queued changes.
+## Minor Pitfalls
 
-**How to avoid:**
-- Implement robust protobuf parsing with schema version detection
-- Create fallback parsing strategies for unknown schema versions
-- Isolate protobuf parsing in separate actors with supervision strategies
-- Implement monitoring loop recovery with change event replay capability
-- Build protobuf compatibility matrix testing for each OS release
+Mistakes that cause annoyance but are fixable.
 
-**Warning signs:**
-- Sync stopping completely after OS updates
-- Consistent parsing failures in logs for specific note types
-- Users reporting sync works for some notes but not others
-- Memory leaks from failed parsing attempts accumulating
+### Pitfall 8: Hardcoded Grid Dimensions
+**What goes wrong:** Fixed cardWidth/cardHeight constants don't adapt to different screen sizes or content density preferences.
+**Prevention:**
+- Calculate dimensions based on container size
+- Implement density scaling (SuperDensity feature)
+- Add responsive breakpoints for mobile vs desktop
 
-**Phase to address:**
-Phase 3: Protobuf Schema Resilience & Version Handling
+### Pitfall 9: Missing Transition States
+**What goes wrong:** Abrupt changes during view transitions (grid → kanban) feel jarring without intermediate states.
+**Prevention:**
+- Add loading states during SQL query execution
+- Implement transition animations between view modes
+- Show skeleton UI while calculating new layouts
 
----
+### Pitfall 10: Inconsistent Event Handling
+**What goes wrong:** Click/hover behaviors differ between header elements, cells, and cards, confusing users.
+**Prevention:**
+- Establish consistent interaction patterns early
+- Document event handling conventions
+- Test interaction flows across all grid elements
 
-### Pitfall 4: File System Event Flood Creating Resource Exhaustion
+## Phase-Specific Warnings
 
-**What goes wrong:**
-Apple Notes database receives hundreds of file system events per minute during active use (each character typed triggers events). Live sync monitoring attempts to process every event, overwhelming the system with database queries and creating performance degradation that makes both the app and Notes.app unusable.
+| Phase Topic | Likely Pitfall | Mitigation |
+|-------------|---------------|------------|
+| PAFV Header Implementation | Z-axis spanning performance (#7) | Limit initial depth, profile calculations |
+| Dynamic Axis Assignment | State synchronization drift (#6) | Implement validation layer |
+| Grid Layout Foundation | Data binding without keys (#1) | Code review mandatory for D3 patterns |
+| Database Integration | WASM memory overflow (#2) | Memory monitoring and cleanup testing |
+| Filter Integration | SQL performance regression (#3) | Query profiling with real datasets |
+| React Integration | Lifecycle conflicts (#4) | Clear DOM ownership boundaries |
 
-**Why it happens:**
-File system monitoring APIs report all changes, not just meaningful ones. Apple Notes writes frequently during editing - temporary files, journal entries, checkpoint operations. Without proper debouncing, the live sync system generates database queries for every keystroke, creating a feedback loop of resource consumption.
+## Lessons Learned from IsometryKB
 
-**How to avoid:**
-- Implement intelligent debouncing with sliding time windows (500ms minimum)
-- Filter file system events to meaningful database changes only
-- Use background queue processing with rate limiting and backpressure
-- Implement circuit breaker pattern to temporarily disable monitoring under load
-- Monitor CPU and memory usage, auto-throttling when thresholds exceeded
+**Historical Context:** CardBoard v1-v3 iterations reveal specific failure patterns:
 
-**Warning signs:**
-- CPU usage spikes when Notes.app is active
-- User reports of system slowdown when using Notes
-- File system event processing queues growing unbounded
-- Memory usage climbing steadily during Notes usage
+1. **"Two SuperGrid implementations"** - DOM-based vs D3-based versions diverged without clear canonical source. Prevention: Single implementation with clear ownership.
 
-**Phase to address:**
-Phase 4: Event Processing & Resource Management
+2. **"We made improvements, but broke what was working before"** - Architectural changes introduced regressions in working features. Prevention: Comprehensive regression testing before major changes.
 
----
+3. **"Hard to get the backend wired up"** - Bridge complexity led to multiple abandoned approaches. Prevention: Bridge elimination architecture already addresses this.
 
-### Pitfall 5: Sync State Inconsistency from Failed Transaction Rollbacks
+4. **"RenderEngine not connected to SuperGrid"** - Abstraction layers created integration gaps. Prevention: Direct D3.js approach eliminates middleware complexity.
 
-**What goes wrong:**
-Live sync creates complex multi-step operations: detect change → parse protobuf → update local database → sync to CloudKit. When middle steps fail, the system enters inconsistent state where local database thinks sync completed but CloudKit never received updates, or vice versa. Unlike batch import's atomic file operations, live sync state spans multiple systems.
+5. **"Test status contradictions"** - Optimistic test reporting masked real failures. Prevention: Strict test criteria, manual verification of integration tests.
 
-**Why it happens:**
-Network failures, CloudKit rate limiting, or parsing errors can interrupt multi-step sync operations. The existing CloudKitSyncManager handles some failure modes, but adding live file system monitoring introduces additional failure points. Without proper transaction boundaries across all systems, partial failures leave orphaned state.
+## Integration-Specific Warnings
 
-**How to avoid:**
-- Design idempotent sync operations that can safely retry
-- Implement saga pattern for complex multi-step sync workflows
-- Use event sourcing for sync state tracking with replay capability
-- Create sync state validation and repair procedures
-- Implement periodic full reconciliation between all data sources
+**Adding SuperGrid to Existing Foundation:**
 
-**Warning signs:**
-- Notes appearing in some but not all data sources
-- Sync status indicators showing success but data missing
-- Users reporting "phantom" notes that appear/disappear unpredictably
-- CloudKit quota usage not matching local database storage
-
-**Phase to address:**
-Phase 5: Distributed Sync State Management & Consistency
-
----
-
-### Pitfall 6: Apple Notes App Integration Breaking Existing Workflows
-
-**What goes wrong:**
-Users who rely on the existing batch import workflow (AltoIndexImporter) experience disruption when live sync is introduced. Their established export/import routines break, sync conflicts emerge between batch and live data, and existing notes appear duplicated or inconsistent between import methods.
-
-**Why it happens:**
-Teams focus on the technical challenge of live sync without considering migration path from existing batch import users. Live sync and batch import use different source identification strategies, creating duplicate detection problems. Users don't understand when to use which import method.
-
-**How to avoid:**
-- Design hybrid import strategy that detects and merges batch/live imported notes
-- Provide clear migration path from batch-only to live sync mode
-- Implement conflict resolution for notes that exist in both systems
-- Maintain backward compatibility with existing batch import workflows
-- Create user education about live vs batch import trade-offs
-
-**Warning signs:**
-- User support requests about "duplicate notes"
-- Existing users reporting broken workflows after update
-- Confusion about which import method to use
-- Data appearing differently depending on import source
-
-**Phase to address:**
-Phase 6: Import Method Integration & User Migration
-
----
+- **DON'T** modify existing DatabaseService APIs for SuperGrid features - extend through composition
+- **DON'T** create new React contexts for SuperGrid state - use existing PAFV/Filter contexts
+- **DON'T** introduce new D3 rendering patterns - follow established SuperGrid.ts conventions
+- **DO** validate existing sql.js queries still work after SuperGrid additions
+- **DO** maintain backward compatibility with current D3 visualization code
+- **DO** test memory usage before/after SuperGrid integration
 
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Polling Notes database every 5 seconds | Simple implementation | Battery drain, performance degradation | Never - use file system events with proper debouncing |
-| Parsing all protobuf fields blindly | Complete data extraction | Brittle parsing, crashes on schema changes | Never - parse only known fields with fallback handling |
-| Storing full Notes database state locally | Fast queries, offline access | Storage bloat, sync complexity | Never - store only metadata and changes |
-| Using Full Disk Access without granular opt-in | Easy implementation | Security liability, user trust issues | Never - implement proper consent flow |
-| Blocking main thread for sync operations | Simpler error handling | UI freezing, poor UX | Never - all sync operations must be async |
+| Skip key functions in D3 data binding | Faster initial implementation | Performance degradation, state loss | Never - always use key functions |
+| Hardcode grid dimensions | Simple initial layout | Poor responsive behavior | Prototype only |
+| Manual enter/update/exit over .join() | More explicit control | Harder to maintain, error-prone | Never - .join() is canonical |
+| Store full database in WASM memory | Fast queries | Memory overflow with real data | Development only |
+| Skip EXPLAIN QUERY PLAN profiling | Faster development | Slow queries at scale | Early prototyping only |
 
 ## Integration Gotchas
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Notes SQLite Access | Opening database with exclusive locks | Use WAL mode with read-only connections and short timeouts |
-| CloudKit Sync | Treating file changes as CloudKit sync triggers | Separate file monitoring from CloudKit operations, use change consolidation |
-| TCC Permissions | Requesting Full Disk Access on first run | Implement progressive permission disclosure with clear explanations |
-| File System Events | Processing every FSEvent immediately | Debounce and batch events, filter to meaningful database changes only |
-| Protobuf Parsing | Assuming schema stability across OS versions | Implement version detection and graceful degradation |
-| Import Method Conflicts | Running batch and live import simultaneously | Design unified import detection and conflict resolution |
+| React-D3 Integration | Letting React manage D3-controlled DOM | Use refs to create D3-only zones |
+| PAFV State Management | Creating new context for SuperGrid | Extend existing FilterContext/PAFVContext |
+| Database Queries | Using separate DB instances | Single DatabaseService instance with proper cleanup |
+| Event Handling | Inconsistent interaction patterns | Establish common event handling conventions |
+| Memory Management | Creating new WASM instances | Reuse single sql.js database instance |
 
 ## Performance Traps
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Database query per FSEvent | CPU spikes during typing in Notes | Batch queries, debounce events | >10 notes with active editing |
-| Storing full note content locally | Fast search but massive storage | Store metadata only, lazy-load content | >1000 notes with attachments |
-| Synchronous CloudKit operations | UI freezing during sync | All CloudKit ops on background queues | Any sync operation >100ms |
-| Memory retention of parsed protobufs | Growing memory usage over time | Stream processing with immediate disposal | >500 notes processed per session |
-| Concurrent batch and live imports | Resource contention and duplicate processing | Serialize import operations through queue | When both systems access same notes |
+| Missing key functions in D3 data binding | Visual flicker, slow updates | Always use `d => d.id` key functions | >100 DOM elements |
+| WASM memory accumulation | Progressive slowdown | Proper database disposal, memory monitoring | >50MB database size |
+| Synchronous SQL queries on main thread | UI freezing | Move queries to web workers (future consideration) | >10K records |
+| Missing indexes for dynamic queries | Slow grid updates | Create composite indexes for LATCH combinations | >5K records |
+| Header spanning calculations | Layout thrashing | Cache spanning dimensions, use CSS transforms | >3 axis levels |
 
-## Security Mistakes
+## Security Considerations
 
-| Mistake | Risk | Prevention |
-|---------|------|------------|
-| Caching Notes content without encryption | Sensitive data exposure in memory dumps | Encrypt cached content, clear on app background |
-| Logging protobuf parsing failures with content | PII leakage in debug logs | Log error types only, never content |
-| Storing CloudKit tokens in plaintext | Account hijacking if device compromised | Use Keychain for all CloudKit credentials |
-| Full Disk Access without security audit | Broad system access creates attack surface | Regular security reviews, principle of least privilege |
-| Exposing Notes database path to React layer | Potential unauthorized access vector | Keep all database access in native layer only |
+| Consideration | Risk | Prevention |
+|---------------|------|------------|
+| SQL injection in dynamic queries | Data corruption | Use parameterized queries only |
+| Memory dumps containing data | Data exposure | Clear sensitive data from memory |
+| Client-side data storage | Data persistence | Understand browser storage limitations |
 
 ## UX Pitfalls
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Sync errors as technical alerts | Users don't understand "protobuf parsing failed" | User-friendly error messages with suggested actions |
-| No sync progress indication | Users can't tell if app is working | Progressive sync status with note counts |
-| Requesting Full Disk Access without explanation | Users refuse or grant reluctantly | Clear value proposition and security education |
-| Sync conflicts requiring technical decisions | Users forced to understand database concepts | Intelligent conflict resolution with simple choices |
-| Breaking existing batch import workflows | User frustration with changed behavior | Smooth migration path with clear instructions |
+| No loading states during slow queries | Users think app is frozen | Progressive loading indicators |
+| Abrupt view transitions | Jarring experience | Smooth animated transitions |
+| Inconsistent interaction patterns | Confusion about what's clickable | Unified hover/click behaviors |
+| No error recovery from failed queries | Dead-end user experience | Graceful error handling with retry options |
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Live Sync:** Often missing proper FSEvent debouncing — verify no CPU spikes during Notes typing
-- [ ] **TCC Permissions:** Often missing user education flow — verify clear explanation of Full Disk Access
-- [ ] **Error Handling:** Often missing protobuf parsing fallbacks — verify graceful degradation on schema changes
-- [ ] **Concurrency:** Often missing database lock management — verify no SQLite "busy" errors under load
-- [ ] **Memory Management:** Often missing protobuf disposal — verify stable memory usage during extended operation
-- [ ] **CloudKit Integration:** Often missing proper change token handling — verify incremental sync works correctly
-- [ ] **State Consistency:** Often missing transaction boundaries — verify atomic sync operations with rollback capability
-- [ ] **Import Conflicts:** Often missing batch/live sync conflict resolution — verify notes don't duplicate across import methods
-- [ ] **Performance Monitoring:** Often missing resource usage tracking — verify system responsiveness under heavy Notes usage
+- [ ] **D3 Data Binding:** Often missing key functions — verify `d => d.id` pattern used consistently
+- [ ] **Memory Management:** Often missing WASM disposal — verify stable memory usage during extended use
+- [ ] **Query Performance:** Often missing index optimization — verify sub-100ms query times with real datasets
+- [ ] **React Integration:** Often mixing React/D3 DOM control — verify clean separation of responsibilities
+- [ ] **Error Handling:** Often missing query failure recovery — verify graceful degradation on database errors
+- [ ] **State Consistency:** Often missing PAFV validation — verify axis assignments stay synchronized
+- [ ] **Responsive Design:** Often hardcoded dimensions — verify grid adapts to different screen sizes
+- [ ] **Transition States:** Often missing loading indicators — verify user feedback during operations
 
 ## Recovery Strategies
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Database corruption | HIGH | Stop live monitoring, restore from AltoIndex import, rebuild local database |
-| Protobuf parsing failure | MEDIUM | Reset monitoring position, re-import affected notes via batch import |
-| TCC permission revocation | LOW | Graceful fallback to batch import mode, user re-consent flow |
-| CloudKit quota exceeded | MEDIUM | Implement data pruning, migrate to user's CloudKit quota |
-| Memory leak from parsing | LOW | Restart monitoring actor, implement better resource management |
-| File system event flood | MEDIUM | Enable circuit breaker, tune debouncing parameters |
-| Import method conflicts | HIGH | Implement unified import detection, resolve duplicates, user data cleanup |
-
-## Pitfall-to-Phase Mapping
-
-| Pitfall | Prevention Phase | Verification |
-|---------|------------------|--------------|
-| TCC Permission Escalation | Phase 1: Permission Strategy | Users understand Full Disk Access grants, clear consent metrics |
-| Database Corruption | Phase 2: Concurrency Strategy | No SQLite lock errors under concurrent access testing |
-| Protobuf Incompatibility | Phase 3: Schema Resilience | Parsing continues working across iOS beta releases |
-| File System Event Flood | Phase 4: Resource Management | CPU usage <5% during active Notes usage |
-| Sync State Inconsistency | Phase 5: Consistency Management | All notes appear in all systems after network failures |
-| Import Method Conflicts | Phase 6: Import Integration | No duplicate notes, smooth migration from batch to live sync |
+| D3 data binding without keys | MEDIUM | Refactor data bindings to include key functions, test performance |
+| WASM memory overflow | HIGH | Implement database cleanup, add memory monitoring, reduce data size |
+| Missing SQL indexes | LOW | Add indexes for common query patterns, re-test performance |
+| React-D3 DOM conflicts | MEDIUM | Refactor to separate React/D3 DOM ownership, test edge cases |
+| PAFV state drift | MEDIUM | Add state validation, implement consistency checks |
 
 ## Sources
 
-- Apple Notes protobuf parsing challenges: [apple_cloud_notes_parser](https://github.com/threeplanetssoftware/apple_cloud_notes_parser) - HIGH confidence
-- macOS TCC permission complications: [Huntress TCC Analysis](https://www.huntress.com/blog/full-transparency-controlling-apples-tcc) - HIGH confidence
-- File system monitoring best practices: [Apple FSEvents Documentation](https://developer.apple.com/documentation/coreservices/file_system_events) - HIGH confidence
-- CloudKit sync patterns from existing project implementation - HIGH confidence
-- Apple Notes database structure analysis: [Ciofeca Forensics protobuf analysis](https://ciofecaforensics.com/2020/09/18/apple-notes-revisited-protobuf/) - HIGH confidence
-- Apple Community sync issues: Multiple user reports of real-time sync failures and permission challenges - MEDIUM confidence
-- Project context: Existing AltoIndexImporter implementation and CloudKitSyncManager architecture - HIGH confidence
+**HIGH Confidence:**
+- IsometryKB integration gaps analysis (/Users/mshaler/Developer/Projects/IsometryKB/notes/apple-notes/CardBoard/⚠️ Integration Gaps-.md)
+- Existing SuperGrid.ts implementation (/Users/mshaler/Developer/Projects/Isometry/src/d3/SuperGrid.ts)
+- DatabaseService architecture (/Users/mshaler/Developer/Projects/Isometry/src/db/DatabaseService.ts)
+- SuperGrid architecture specification (/Users/mshaler/Developer/Projects/IsometryKB/V1V2_Port/SuperGrid.md)
+
+**MEDIUM Confidence:**
+- D3.js performance optimization best practices (Web search: D3.js grid visualization performance anti-patterns, 2025)
+- sql.js WASM memory limitations (Web search: sql.js WASM memory issues, GitHub issues, 2025)
+- CardBoard historical failure patterns from IsometryKB evolution
+
+**LOW Confidence:**
+- Specific performance metrics (extrapolated from general D3.js patterns)
+- Phase-specific timing estimates (based on complexity assessment)
+- Integration timing with existing codebase (estimated based on current architecture)
 
 ---
-*Pitfalls research for: Apple Notes Live Sync Integration*
-*Researched: 2026-02-01*
+*Research focus: SuperGrid implementation pitfalls for Isometry v4 foundation*
+*Researched: 2026-02-05*

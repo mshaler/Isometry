@@ -1,307 +1,259 @@
-# Architecture Research
+# Architecture Patterns: SuperGrid Integration
 
-**Domain:** Live Apple Notes Integration with Swift Actor + GRDB + CloudKit
-**Researched:** 2026-02-01
+**Domain:** Polymorphic data projection platform
+**Researched:** 2026-02-05
 **Confidence:** HIGH
 
-## Standard Architecture
+## Recommended Architecture
 
-### System Overview
+SuperGrid integrates with Isometry's existing sql.js + D3.js bridge elimination architecture as a **three-layer z-axis system** that preserves the core architectural principles while extending functionality.
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     User Interface Layer                     │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │  SwiftUI │  │ WebView │  │  TCC    │  │ Progress│        │
-│  │  Views   │  │ Bridge  │  │Manager  │  │  UI     │        │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘        │
-│       │            │            │            │              │
-├───────┴────────────┴────────────┴────────────┴──────────────┤
-│                  Actor Coordination Layer                    │
-├─────────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────────┐    │
-│  │              NotesIntegrationActor                   │    │
-│  │  (FSEvents monitoring, conflict resolution)          │    │
-│  └─────┬────────────────────────┬─────────────────────┘     │
-│        │                        │                           │
-├────────┴────────────────────────┴───────────────────────────┤
-│                     Data Layer                               │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐                   │
-│  │AltoIndex │  │Isometry  │  │CloudKit  │                   │
-│  │Importer  │  │Database  │  │Sync Mgr  │                   │
-│  └──────────┘  └──────────┘  └──────────┘                   │
-└─────────────────────────────────────────────────────────────┘
-```
+### Core Integration Points
 
-### Component Responsibilities
+| Integration Layer | Existing Component | SuperGrid Extension |
+|------------------|-------------------|-------------------|
+| **Data Layer** | DatabaseService.ts | Direct sql.js queries with PAFV-aware SQL generation |
+| **Context Layer** | PAFVContext.tsx | Grid coordinate mapping and axis allocation |
+| **Rendering Layer** | D3 SuperGrid.ts | Extended with GridBlock rendering system |
+| **UI Layer** | React Components | New density controls + existing filter navigation |
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| NotesIntegrationActor | Live sync coordination, FSEvents monitoring, conflict resolution | Swift Actor with FileSystemEventStream |
-| TCCManager | Privacy permissions management | Actor wrapping TCC database queries |
-| ConflictResolver | Bidirectional sync conflict handling | Actor with strategy pattern for resolution |
-| ChangeMonitor | Real-time Notes database monitoring | FSEvents wrapper with debouncing |
-| AltoIndexImporter | Batch Notes import from exported data | Enhanced existing actor with live sync capability |
-| IsometryDatabase | Local SQLite storage with GRDB | Existing Actor with additional Notes sync tables |
-| CloudKitSyncManager | Bidirectional CloudKit synchronization | Enhanced existing actor with Notes record types |
-
-## Recommended Project Structure
+### Component Architecture
 
 ```
-Sources/Isometry/
-├── Integration/          # Live Notes integration components
-│   ├── NotesIntegrationActor.swift    # Main coordination actor
-│   ├── ChangeMonitor.swift           # FSEvents monitoring
-│   ├── ConflictResolver.swift        # Conflict resolution strategies
-│   ├── TCCManager.swift              # Privacy permissions management
-│   └── NotesWatcher.swift            # File system change detection
-├── Import/              # Enhanced import functionality
-│   ├── AltoIndexImporter.swift       # Existing (enhanced for live sync)
-│   └── LiveNotesImporter.swift       # New live import capability
-├── Database/            # Enhanced database layer
-│   ├── IsometryDatabase.swift        # Existing (add Notes sync tables)
-│   ├── NotesChangeLog.swift          # Change tracking for sync
-│   └── SyncConflict.swift            # Conflict metadata storage
-├── Sync/                # Enhanced sync management
-│   ├── CloudKitSyncManager.swift     # Existing (add Notes record types)
-│   ├── NotesRecordTransformer.swift  # CloudKit ↔ Notes conversion
-│   └── SyncCoordinator.swift         # Multi-source sync coordination
-└── Resources/
-    ├── schema.sql                    # Enhanced with Notes sync tables
-    └── migrations/                   # Database migration scripts
-        └── 002_add_notes_sync.sql
+┌──────────────────────────────────────────────────────────────────┐
+│                    SuperGrid Architecture                          │
+│                                                                    │
+│   z=2 OVERLAY    │   React Components (NEW)                       │
+│   Layer          │   • Cards (expanded values)                    │
+│                  │   • Overlays (audit, modals)                   │
+│   ──────────────────────────────────────────────────────────────  │
+│   z=1 DENSITY    │   React Controls (MIXED)                       │
+│   Layer          │   • MiniNav (NEW GridBlock 1)                  │
+│                  │   • FilterNav (EXISTING, enhanced)             │
+│                  │   • Header spanning logic (NEW)               │
+│   ──────────────────────────────────────────────────────────────  │
+│   z=0 SPARSITY   │   D3.js Data Floor (ENHANCED)                 │
+│   Layer          │   • Column Headers (NEW GridBlock 2)           │
+│                  │   • Row Headers (NEW GridBlock 3)              │
+│                  │   • Data Cells (ENHANCED GridBlock 4)          │
+│                  │   • Uses existing D3 SuperGrid.ts patterns     │
+│   ──────────────────────────────────────────────────────────────  │
+│   DATA           │   sql.js + DatabaseService (UNCHANGED)         │
+│   Foundation     │   • Same synchronous query pattern             │
+│                  │   • Enhanced SQL with PAFV coordinate queries  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Structure Rationale
+## Patterns to Follow
 
-- **Integration/:** Isolates live Notes-specific logic from existing import patterns, follows Actor model
-- **Enhanced Import/:** Builds on proven AltoIndexImporter pattern, adds live sync without breaking batch import
-- **Database/:** Extends existing GRDB Actor pattern, maintains transaction safety and CloudKit sync compatibility
-- **Sync/:** Enhances existing CloudKit patterns, adds Notes-specific conflict resolution and record transformation
-
-## Architectural Patterns
-
-### Pattern 1: Actor-Based Isolation
-
-**What:** Each major subsystem (monitoring, sync, conflict resolution) runs in its own Actor to maintain thread safety
-**When to use:** Required for Swift concurrency with shared mutable state and external resource access
-**Trade-offs:** Excellent safety and concurrency, but requires careful message passing design
-
+### Pattern 1: z-Axis Layer Separation
+**What:** Three distinct rendering layers with clear responsibilities
+**When:** Always - this is the core SuperGrid architectural pattern
 **Example:**
-```swift
-public actor NotesIntegrationActor {
-    private let changeMonitor: ChangeMonitor
-    private let conflictResolver: ConflictResolver
-    private let database: IsometryDatabase
+```typescript
+// z=0: D3 renders raw cells individually
+const cells = this.db.query(`
+  SELECT x, y, value, node_id, col_path, row_path
+  FROM grid_cells WHERE view_id = ?
+`);
 
-    public func startLiveSync() async throws {
-        try await changeMonitor.startWatching { [weak self] changes in
-            await self?.processChanges(changes)
-        }
-    }
-}
+// z=1: React adds spanning and navigation
+<MiniNav gridConfig={config} />
+<HeaderSpanning cells={cells} axis="column" />
+
+// z=2: React overlays cards and modals
+<CardOverlay node={selectedNode} position={cellPosition} />
 ```
 
-### Pattern 2: FSEvents + Debouncing
-
-**What:** Monitor Notes database directory with FSEvents, debounce rapid changes to avoid sync storms
-**When to use:** Real-time file system monitoring where changes come in bursts
-**Trade-offs:** Near real-time responsiveness vs avoiding excessive processing
-
+### Pattern 2: PAFV Coordinate Mapping
+**What:** Transform LATCH dimensions into grid coordinates via PAFVContext
+**When:** Any view transition or axis reassignment
 **Example:**
-```swift
-public actor ChangeMonitor {
-    private var debounceTimer: Task<Void, Never>?
-    private let debounceInterval: TimeInterval = 0.5
+```typescript
+// Existing PAFVContext wells become grid axes
+const coordinateQuery = generateCoordinateQuery(wells.rows, wells.columns);
 
-    private func handleFileSystemEvent() {
-        debounceTimer?.cancel()
-        debounceTimer = Task {
-            await Task.sleep(nanoseconds: UInt64(debounceInterval * 1_000_000_000))
-            await processQueuedChanges()
-        }
-    }
-}
+// Query returns positioned data for D3
+SELECT
+  ${rowAxisToX(wells.rows)} as x,
+  ${colAxisToY(wells.columns)} as y,
+  value,
+  row_header_path,
+  col_header_path
+FROM pafv_projection
+WHERE ...
 ```
 
-### Pattern 3: Bidirectional Conflict Resolution
-
-**What:** Handle conflicts when both Notes.app and Isometry modify the same note simultaneously
-**When to use:** Any bidirectional sync system with concurrent modification capability
-**Trade-offs:** Preserves data integrity but requires careful timestamp tracking and user notification
-
+### Pattern 3: Direct sql.js Binding Preservation
+**What:** Keep existing zero-serialization D3 ← sql.js data flow
+**When:** All SuperGrid rendering operations
 **Example:**
-```swift
-public actor ConflictResolver {
-    public enum Strategy {
-        case notesWins, isometryWins, manualResolution, timestampBased
-    }
+```typescript
+// EXISTING pattern (unchanged)
+const cards = this.db.query(`SELECT id, name FROM nodes`);
+d3.selectAll('.card').data(cards, d => d.id).join('div');
 
-    public func resolve(conflict: SyncConflict, strategy: Strategy) async throws -> Node {
-        switch strategy {
-        case .timestampBased:
-            return conflict.notesVersion.modifiedAt > conflict.isometryVersion.modifiedAt
-                ? conflict.notesVersion : conflict.isometryVersion
-        case .manualResolution:
-            // Queue for user decision
-            try await database.queueConflictForResolution(conflict)
-        }
-    }
-}
+// ENHANCED pattern for SuperGrid
+const gridCells = this.db.query(`
+  SELECT x, y, value, node_id FROM grid_cells
+`);
+d3.selectAll('.grid-cell').data(gridCells, d => `${d.x},${d.y}`).join('rect');
 ```
 
-## Data Flow
+## Anti-Patterns to Avoid
 
-### Live Sync Flow
+### Anti-Pattern 1: React Rendering Grid Data
+**What goes wrong:** React components directly rendering grid cells
+**Why bad:** Violates z-axis separation, breaks sql.js → D3 direct binding
+**Instead:** React controls density (navigation, spanning), D3 renders sparsity (cells)
 
+### Anti-Pattern 2: Merged Cell Data Models
+**What goes wrong:** Trying to implement header spanning by merging database cells
+**Why bad:** Breaks coordinate system integrity
+**Instead:** Visual spanning via React overlays on top of individual D3 cells
+
+### Anti-Pattern 3: Breaking Bridge Elimination
+**What goes wrong:** Adding serialization layers between sql.js and SuperGrid
+**Why bad:** Loses the core performance advantage of the v4 architecture
+**Instead:** Direct DatabaseService queries with enhanced SQL for coordinates
+
+## Component Boundaries
+
+| Component | Responsibility | Communicates With |
+|-----------|---------------|-------------------|
+| **DatabaseService** | ENHANCED: Add PAFV coordinate queries | PAFVContext via SQL generation |
+| **PAFVContext** | ENHANCED: Grid axis mapping + wells management | SuperGridView, DatabaseService |
+| **SuperGrid (D3)** | NEW: GridBlock 2,3,4 rendering (headers + cells) | DatabaseService, React overlays |
+| **SuperGridView** | NEW: Integration component orchestrating layers | All other components |
+| **GridMiniNav** | NEW: GridBlock 1 navigation controls | PAFVContext, FilterNav |
+| **HeaderSpanning** | NEW: Visual spanning logic for headers | SuperGrid D3 output |
+| **CardOverlay** | NEW: GridBlock 5 expanded card display | SuperGridView, Node selection |
+
+## Data Flow Changes for SuperGrid
+
+### Current Flow (Preserved)
 ```
-[Notes.app modification]
-    ↓
-[FSEvents notification] → [ChangeMonitor] → [NotesIntegrationActor]
-    ↓                                               ↓
-[Protobuf parsing] → [AltoIndexImporter] → [IsometryDatabase]
-    ↓                                               ↓
-[CloudKitSyncManager] → [Conflict detection] → [ConflictResolver]
-    ↓                                               ↓
-[CloudKit push] ← [Resolved Node] ← [Strategy application]
-```
-
-### Conflict Resolution Flow
-
-```
-[Concurrent modification detected]
-    ↓
-[ConflictResolver] → [Strategy selection] → [Resolution method]
-    ↓                        ↓                      ↓
-[Database update] ← [User notification] ← [Manual resolution queue]
-```
-
-### Key Data Flows
-
-1. **Live Change Detection:** FSEvents → ChangeMonitor → debounced processing → database sync
-2. **Conflict Resolution:** Concurrent modification detection → strategy application → user notification if needed
-3. **Bidirectional Sync:** Notes ↔ Isometry ↔ CloudKit with conflict detection at each boundary
-
-## Scaling Considerations
-
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| 0-1k notes | Direct Actor communication, single FSEvents monitor |
-| 1k-10k notes | Batched change processing, selective sync by folder |
-| 10k+ notes | Incremental sync with change tokens, background processing priority |
-
-### Scaling Priorities
-
-1. **First bottleneck:** FSEvents notification rate - solve with debouncing and batch processing
-2. **Second bottleneck:** Protobuf parsing performance - solve with background processing and selective parsing
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Synchronous FSEvents Processing
-
-**What people do:** Process every FSEvents notification immediately in blocking manner
-**Why it's wrong:** Causes UI freezing and sync storms during rapid Notes modifications
-**Do this instead:** Use debouncing in ChangeMonitor Actor with async processing
-
-### Anti-Pattern 2: Direct Notes Database Access
-
-**What people do:** Directly read from NoteStore.sqlite bypassing Notes.app's locking
-**Why it's wrong:** Can corrupt Notes database and violate SIP/TCC constraints
-**Do this instead:** Use alto-index export pattern or monitor changes through FSEvents only
-
-### Anti-Pattern 3: Aggressive CloudKit Sync
-
-**What people do:** Push every local change immediately to CloudKit
-**Why it's wrong:** Hits rate limits and creates excessive conflict scenarios
-**Do this instead:** Batch changes and implement exponential backoff in CloudKitSyncManager
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| Notes.app | FSEvents monitoring + alto-index export | Requires TCC permissions, respects app boundaries |
-| CloudKit | Enhanced existing sync patterns | Add Notes record types, handle larger attachment sizes |
-| File System | FSEvents with proper debouncing | Monitor ~/Library/Group\ Containers/group.com.apple.notes/ |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| UI ↔ NotesIntegrationActor | async/await with progress callbacks | Progress updates for long-running sync operations |
-| Database ↔ Sync actors | GRDB transaction isolation | Maintain existing transaction patterns |
-| Conflict resolution ↔ UI | Publisher/subscriber pattern | User notification for manual conflict resolution |
-
-### Existing Architecture Integration
-
-**AltoIndexImporter Enhancement:**
-- Keep existing batch import functionality intact
-- Add live sync capability through new `startLiveImport()` method
-- Share protobuf parsing logic between batch and live modes
-
-**IsometryDatabase Extension:**
-- Add Notes-specific sync tables (notes_changes, sync_conflicts)
-- Maintain existing CloudKit sync patterns
-- Extend transaction methods for multi-source conflict detection
-
-**CloudKitSyncManager Integration:**
-- Add Notes record type alongside existing Node records
-- Implement Notes-specific conflict resolution strategies
-- Maintain existing chunked upload and retry patterns
-
-## Apple Notes Technical Constraints
-
-### Database Location & Access
-- Notes stored at: `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
-- WAL mode active while Notes.app running (-wal, -shm files)
-- TCC permissions required for `kTCCServiceAppleEvents` access
-- SIP protection prevents direct database modification
-
-### Data Format Challenges
-- Note content stored as gzipped protobuf in ZICNOTEDATA.ZDATA column
-- Protobuf structure changes between iOS versions (7 new columns in iOS 18)
-- Embedded objects (tables, attachments) require separate parsing
-- Tags stored as hashtag attachment types in protobuf structure
-
-### Sync Limitations
-- Notes.app sync timing unpredictable (can take hours)
-- No official real-time sync API from Apple
-- FSEvents monitoring adds ~0.5s latency for responsiveness
-- Conflict resolution must handle Apple's eventual consistency model
-
-## Performance Optimization
-
-### FSEvents Monitoring
-```swift
-// Optimized FSEvents configuration
-let streamRef = FSEventStreamCreate(
-    nil, callback, &context,
-    [notesContainerPath] as CFArray,
-    FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-    0.5, // 500ms latency for responsiveness
-    UInt32(kFSEventStreamCreateFlagUseCFTypes |
-           kFSEventStreamCreateFlagNoDefer |
-           kFSEventStreamCreateFlagFileEvents)
-)
+FilterContext → DatabaseService → D3 SuperGrid → React UI
+    ↑                                                ↓
+    └──────────── User interactions ─────────────────┘
 ```
 
-### Protobuf Parsing Strategy
-- Parse only modified notes (timestamp comparison)
-- Cache parsed protobuf structures
-- Background parsing with priority queue
-- Selective field extraction based on Isometry's needs
+### Enhanced Flow for SuperGrid
+```
+PAFVContext → SQL generation → DatabaseService → GridBlocks
+     ↓              ↓               ↓              ↓
+Wells config → Coordinate → sql.js queries → D3 rendering
+     ↓           mapping        ↓              ↓
+FilterNav ←─────────────────────────────→ React overlays
+     ↓                                       ↓
+MiniNav controls ←─────────────────→ Header spanning
+```
 
-## Sources
+### New SQL Query Patterns
 
-- [Apple Notes Database Structure Research](https://github.com/threeplanetssoftware/apple_cloud_notes_parser)
-- [FSEvents Documentation](https://developer.apple.com/documentation/coreservices/file_system_events)
-- [TCC Framework Guidelines (macOS Sequoia)](https://atlasgondal.com/macos/priavcy-and-security/app-permissions-priavcy-and-security/a-guide-to-tcc-services-on-macos-sequoia-15-0/)
-- [GRDB CloudKit Sync Patterns](https://github.com/groue/GRDB.swift/discussions/1569)
-- [Swift Actor Concurrency Patterns](https://developer.apple.com/documentation/swift/actor)
-- [Apple Notes iOS 18 Analysis (2024)](https://www.ciofecaforensics.com/2024/12/10/ios18-notes/)
+From IsometryKB architectural patterns, SuperGrid requires enhanced SQL:
 
----
-*Architecture research for: Live Apple Notes Integration*
-*Researched: 2026-02-01*
+```sql
+-- Anchor Origin (corner): Traditional spreadsheet
+SELECT
+  col_index as x,
+  row_index as y,
+  value,
+  col_header_path,
+  row_header_path
+FROM grid_cells
+WHERE view_id = ?
+ORDER BY y DESC, x ASC;
+
+-- Bipolar Origin (center): Eisenhower Matrix
+SELECT
+  urgency_rank as x,      -- Can be negative
+  importance_rank as y,   -- Can be negative
+  task_id as value,
+  'urgency' as col_header_path,
+  'importance' as row_header_path
+FROM nodes
+WHERE node_type = 'task'
+ORDER BY ABS(x) + ABS(y) DESC;
+```
+
+## Integration with Existing Systems
+
+### PAFVContext Integration
+**Status:** MODIFY existing component
+**Changes needed:**
+- Add `wells` to `coordinateMapping` transformation
+- Generate grid-specific SQL from axis assignments
+- Maintain existing `transpose()` and `moveChip()` functionality
+
+### DatabaseService Integration
+**Status:** EXTEND existing service
+**Changes needed:**
+- Add coordinate-aware query builders
+- Support negative coordinates for bipolar origins
+- Maintain existing synchronous query pattern
+
+### D3 SuperGrid Integration
+**Status:** ENHANCE existing renderer
+**Changes needed:**
+- Extract current card rendering into GridBlock 4 (Data Cells)
+- Add GridBlock 2 (Column Headers) and GridBlock 3 (Row Headers)
+- Support coordinate-based positioning instead of just auto-grid
+
+### FilterNav Integration
+**Status:** EXTEND existing navigation
+**Changes needed:**
+- Add axis assignment controls (which LATCH dimension maps to x/y)
+- Add density controls (sparsity ↔ density slider)
+- Maintain existing filter functionality
+
+## Scalability Considerations
+
+| Concern | Current (100 users) | With SuperGrid (100 users) | At Scale (10K users) |
+|---------|---------------------|----------------------------|---------------------|
+| Memory Usage | ~50MB sql.js WASM | ~60MB (grid coordinate cache) | ~100MB (optimized indices) |
+| Query Performance | Direct sql.js | Enhanced with coordinate indexing | Partitioned grid queries |
+| Rendering Performance | 1000 cards | 1000 cells in 4 GridBlocks | Virtual scrolling + LOD |
+| Coordinate Complexity | O(n) linear | O(n) with spatial indexing | O(log n) with QuadTree |
+
+## Build Order Based on Dependencies
+
+### Phase 1: Foundation Components
+1. **Enhanced PAFVContext** - Add grid coordinate mapping
+2. **Grid SQL Generators** - Coordinate-aware queries in DatabaseService
+3. **SuperGrid D3 Base** - Extract and enhance existing SuperGrid.ts
+
+### Phase 2: GridBlock Implementation
+1. **GridBlock System** - Define z-axis layer interfaces
+2. **Column/Row Headers** - GridBlocks 2&3 with D3 rendering
+3. **Data Cells Enhanced** - GridBlock 4 with coordinate positioning
+
+### Phase 3: React Overlay System
+1. **SuperGridView Integration** - Orchestration component
+2. **MiniNav Controls** - GridBlock 1 navigation
+3. **Header Spanning Logic** - React overlays on D3 headers
+
+### Phase 4: Advanced Features
+1. **Card Overlays** - GridBlock 5 expanded values
+2. **Audit/Modal Overlays** - GridBlock 6 inspection tools
+3. **Origin Pattern System** - Anchor vs Bipolar coordinate patterns
+
+## IsometryKB Architectural Patterns Applied
+
+### Four-Quadrant Layout (from SuperGrid.md)
+Applied as MiniNav + Column Headers + Row Headers + Data Cells grid structure, directly matching the CardBoard v1/v2 pattern of treating SuperGrid as "4 grids."
+
+### Janus Density Model (from supergrid-architecture-v4.md)
+Implemented as z-axis separation where D3 shows sparsity (individual cells) and React controls density (spanning, aggregation, navigation).
+
+### PAFV Spatial Projection (from CardBoard architecture)
+Extended existing PAFVContext wells system to generate coordinate mappings, enabling same data to render as traditional grid, Eisenhower matrix, or any LATCH-based projection.
+
+### Bridge Elimination Preservation
+Maintains core v4 principle: sql.js ← DatabaseService → D3 direct binding with zero serialization overhead. SuperGrid enhances but never breaks this pattern.
+
+## Ready for Implementation
+
+SuperGrid integration preserves Isometry's bridge elimination architecture while adding polymorphic grid rendering through a proven three-layer z-axis system. All integration points are clearly defined, with existing components requiring enhancement rather than replacement.
+
+**Key insight:** SuperGrid isn't a separate view - it's an enhanced rendering mode for the existing D3 + sql.js foundation, controlled by PAFV axis mappings and presented through layered React controls.

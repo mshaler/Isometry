@@ -1,172 +1,159 @@
 # Project Research Summary
 
-**Project:** Isometry - Live Apple Notes Integration
-**Domain:** Knowledge Management App Enhancement (Adding Real-Time Apple Notes Sync)
-**Researched:** 2026-02-01
+**Project:** Isometry v4.1 SuperGrid Foundation
+**Domain:** Polymorphic data projection platform
+**Researched:** 2026-02-05
 **Confidence:** HIGH
 
 ## Executive Summary
 
-Isometry has proven Apple Notes integration foundation through AltoIndexImporter (6,891 notes imported successfully). Adding live sync requires careful security architecture around macOS TCC permissions, robust concurrent database access patterns, and sophisticated protobuf parsing resilience. The research reveals this is a technically mature domain with established patterns, but significant user trust and data safety considerations.
+SuperGrid represents a fundamentally different approach to data visualization — rather than building separate view components, it implements a unified coordinate system where the same LATCH-filtered dataset can render through multiple spatial projections (Gallery → List → Kanban → Grid → SuperGrid). This polymorphic design, combined with Isometry's proven sql.js + D3.js bridge elimination architecture, creates a unique competitive advantage that no existing grid system offers.
 
-The recommended approach builds incrementally on existing batch import infrastructure, adding FSEvents monitoring, SwiftProtobuf parsing, and enhanced CloudKit conflict resolution. Critical success factors include transparent TCC permission education, read-only Notes access philosophy, and graceful degradation when permissions are denied. Primary risk is database corruption from concurrent access, mitigated through WAL-mode SQLite connections with proper timeout handling.
+The recommended approach leverages Isometry's existing foundation while extending it through a three-layer z-axis architecture: D3.js handles sparsity (individual cells), React manages density (navigation, spanning, overlays), and sql.js provides direct data access without serialization overhead. This preserves the core v4 performance benefits while adding revolutionary grid capabilities.
 
-Key strategic decision: Position live sync as enhancement to existing batch workflow rather than replacement, maintaining backward compatibility and user choice between manual and automatic synchronization modes.
+Key risks center on maintaining D3.js data binding integrity, preventing WASM memory overflow as datasets scale, and avoiding React-D3 lifecycle conflicts. These are all well-understood patterns with proven mitigation strategies. The architecture builds incrementally on working foundations rather than requiring rewrites.
 
 ## Key Findings
 
 ### Recommended Stack
 
-Building on proven GRDB.swift + CloudKit foundation, live sync adds minimal new dependencies while leveraging native Apple APIs for security compliance. The enhancement preserves existing AltoIndexImporter architecture while adding real-time capabilities.
+The research confirms Isometry's existing stack choice while identifying specific extensions needed for SuperGrid functionality. The core sql.js + D3.js + React architecture remains optimal, with targeted additions for grid-specific features.
 
 **Core technologies:**
-- **FSEvents API**: Real-time Notes database monitoring — native macOS API with zero dependencies, battle-tested for directory tree changes
-- **SwiftProtobuf 2.0.0+**: Direct Notes protobuf parsing — official Apple library, handles complex nested structures safely
-- **Foundation Compression**: Gzip decompression for Notes content — native implementation, no external dependencies
-- **Enhanced GRDB Actor pattern**: Concurrent database access — proven with existing 6,891 notes, maintains thread safety
-- **Extended CloudKitSyncManager**: Bidirectional conflict resolution — builds on existing sync patterns with Notes-specific strategies
+- **@dnd-kit/core (v6.3.1)**: Modern drag-drop for axis reordering — replaces deprecated react-dnd with better performance and accessibility
+- **d3-selection-multi (v3.0.0)**: Bulk attribute setting for nested headers — optimizes complex grid rendering
+- **react-window (existing)**: Virtual scrolling foundation — already proven for performance at scale
+- **immer (v10.1.1)**: Immutable PAFV state updates — handles complex axis assignments without mutation
+- **sql.js (existing)**: Direct WASM queries — maintains bridge elimination architecture
 
 ### Expected Features
 
-Research identifies clear user expectations around live sync, with emphasis on security transparency and graceful degradation.
+SuperGrid features divide into foundational table stakes, competitive differentiators, and deliberate anti-features to avoid complexity traps.
 
 **Must have (table stakes):**
-- Real-Time Change Detection — users expect Siri → Notes captures to automatically appear in Isometry
-- Read-Only Apple Notes Access — users expect safe access without corruption risk
-- Graceful TCC Permission Handling — users need clear prompts and fallback options
-- Sync Status Visibility — users need monitoring indicators and error states
-- Incremental Updates Only — users expect only changed notes to trigger updates
+- Basic cell rendering with D3.js data binding
+- Row/column headers with LATCH dimension mapping
+- Virtual scrolling for 10k+ cell performance
+- Keyboard navigation and cell selection
+- Column resizing and basic sorting
 
 **Should have (competitive):**
-- Intelligent Note Categorization — auto-organize Notes into PAFV dimensional structure
-- Cross-Note Reference Detection — automatically create graph connections between related Notes
-- Selective Folder Monitoring — monitor only specific Notes folders to reduce noise
-- Smart Conflict Resolution UI — visual diff interface for programmatic change conflicts
+- Nested PAFV headers with hierarchical spanning — signature SuperGrid feature
+- Dynamic axis assignment via drag-drop wells — real-time view reconfiguration
+- Grid continuum transitions — same data, multiple projections
+- Janus density model — orthogonal zoom/pan controls
+- Direct sql.js binding — zero serialization overhead
 
 **Defer (v2+):**
-- Rich Media Preservation — complex attachment handling conflicts with incremental updates
-- Bidirectional Editing — extremely risky for data corruption, read-only approach safer
-- Real-Time Collaborative Editing — Apple Notes collaboration is iCloud-only
+- LATCH-aware formulas and calculation scope
+- Bipolar origin mode for Eisenhower Matrix layouts
+- SuperZoom cartographic navigation
+- Advanced audit and overlay systems
 
 ### Architecture Approach
 
-The architecture extends existing Swift Actor patterns with careful isolation of live sync concerns. FSEvents monitoring feeds into enhanced AltoIndexImporter through debounced change processing, maintaining existing CloudKit sync patterns while adding Notes-specific conflict resolution.
+SuperGrid integrates as a three-layer z-axis system that preserves Isometry's bridge elimination architecture while extending D3.js rendering capabilities. The z-axis separation ensures clean responsibilities: React controls density and navigation (z=1), D3.js renders sparse data cells (z=0), with React overlays for expanded content (z=2).
 
 **Major components:**
-1. **NotesIntegrationActor** — coordination layer for live sync with FSEvents monitoring and conflict resolution
-2. **Enhanced AltoIndexImporter** — adds live protobuf parsing while preserving batch import functionality
-3. **Extended CloudKitSyncManager** — adds Notes record types and Notes-specific conflict resolution strategies
-4. **ChangeMonitor** — FSEvents wrapper with intelligent debouncing (500ms) and resource management
-5. **ConflictResolver** — bidirectional sync conflict handling with user notification and manual resolution UI
+1. **Enhanced DatabaseService** — adds PAFV coordinate queries while maintaining synchronous sql.js pattern
+2. **Extended PAFVContext** — maps LATCH dimensions to grid axes, generates coordinate-aware SQL
+3. **SuperGrid D3 Renderer** — four GridBlocks (MiniNav, Column Headers, Row Headers, Data Cells) with proper data binding
+4. **React Integration Layer** — header spanning logic, density controls, card overlays without DOM conflicts
 
 ### Critical Pitfalls
 
-Research reveals six critical failure modes, with TCC permissions and database corruption representing highest impact risks.
+Based on analysis of grid system failures and Isometry's architecture patterns, the most dangerous pitfalls center on data binding integrity and memory management.
 
-1. **TCC Permission Escalation Without User Understanding** — Full Disk Access required but users don't understand scope; provide clear consent flow and alternative batch import mode
-2. **Database Corruption from Concurrent Access** — SQLite contention between app and Notes.app; use read-only WAL mode with timeout/retry logic
-3. **Protobuf Version Incompatibility Cascading Failures** — Apple schema changes break parsing loops; implement version detection and supervised actor recovery
-4. **File System Event Flood Creating Resource Exhaustion** — hundreds of events per minute during editing; require intelligent debouncing and circuit breaker patterns
-5. **Sync State Inconsistency from Failed Transaction Rollbacks** — partial failures across multiple systems; design idempotent operations with saga pattern
-6. **Apple Notes App Integration Breaking Existing Workflows** — live sync disrupts proven batch import users; maintain hybrid approach with clear migration path
+1. **D3 Data Binding Without Key Functions** — causes 50% performance degradation and DOM thrashing; always use `.data(cards, d => d.id).join()` pattern
+2. **WASM Memory Overflow** — sql.js databases >100MB exhaust WASM memory space; implement proper disposal and monitoring
+3. **SQL Performance Regression** — dynamic PAFV queries bypass static indexes causing 10x slowdowns; create composite indexes for common LATCH combinations
+4. **React-D3 Lifecycle Conflicts** — mixing DOM ownership causes double updates; maintain strict separation via refs
+5. **PAFV State Synchronization Drift** — axis assignments become inconsistent between UI and rendering; implement validation layer
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure prioritizes security and data safety while building incrementally on proven foundation:
+Based on research, suggested phase structure prioritizes foundation stability, then builds SuperGrid incrementally to minimize integration risks:
 
-### Phase 1: TCC Permission Strategy & User Consent Design
-**Rationale:** Foundation for all live sync features; must establish user trust and security compliance before technical implementation
-**Delivers:** Clear permission flow, graceful degradation, user education about Full Disk Access scope
-**Addresses:** TCC Permission Escalation pitfall, Graceful TCC Permission Handling feature requirement
-**Avoids:** User trust issues and security audit failures by establishing transparent consent patterns
+### Phase 1: Foundation Stabilization (4 weeks)
+**Rationale:** Bridge elimination architecture must be proven stable before SuperGrid additions
+**Delivers:** Verified sql.js + D3.js integration with TypeScript compilation cleanup
+**Addresses:** Core table stakes (basic rendering, data binding)
+**Avoids:** Building on unstable foundations that cause rework
 
-### Phase 2: Database Concurrency & Locking Strategy
-**Rationale:** Prevents data corruption risk; must be bulletproof before adding real-time monitoring
-**Delivers:** Read-only SQLite access patterns, WAL mode handling, concurrent access protection
-**Uses:** Enhanced GRDB Actor patterns with Notes-specific timeout and retry logic
-**Implements:** Safe database access foundation for all live sync operations
-**Avoids:** Database Corruption from Concurrent Access pitfall
+### Phase 2: PAFV Grid Core (6 weeks)
+**Rationale:** PAFV axis assignment is the key differentiator requiring solid implementation first
+**Delivers:** Dynamic axis assignment with basic grid rendering
+**Uses:** Enhanced PAFVContext, @dnd-kit integration, D3.js GridBlock system
+**Implements:** Single-level headers, axis wells, coordinate mapping
 
-### Phase 3: FSEvents Monitoring & Change Detection
-**Rationale:** Core live sync capability; requires robust resource management to avoid performance issues
-**Delivers:** Real-time change detection with intelligent debouncing and circuit breaker protection
-**Uses:** FSEvents API with Foundation frameworks, ChangeMonitor actor architecture
-**Implements:** NotesIntegrationActor coordination layer with resource management
-**Avoids:** File System Event Flood pitfall through proper debouncing and rate limiting
+### Phase 3: SuperGrid Headers (4 weeks)
+**Rationale:** Nested headers are signature feature but require solid PAFV foundation
+**Delivers:** Multi-level hierarchical headers with visual spanning
+**Addresses:** Primary differentiator (nested PAFV headers)
+**Avoids:** Header spanning performance pitfalls through careful implementation
 
-### Phase 4: Protobuf Schema Resilience & Version Handling
-**Rationale:** Enables direct Notes parsing; must handle Apple's undocumented schema changes gracefully
-**Delivers:** SwiftProtobuf parsing with version detection and fallback strategies
-**Uses:** SwiftProtobuf 2.0.0+ with Foundation Compression for gzip handling
-**Implements:** Enhanced AltoIndexImporter with supervised protobuf parsing actors
-**Avoids:** Protobuf Version Incompatibility pitfall through robust error handling and recovery
-
-### Phase 5: Distributed Sync State Management & Consistency
-**Rationale:** Ensures data consistency across Notes/Isometry/CloudKit; prevents sync state corruption
-**Delivers:** Saga pattern for multi-step sync, event sourcing for state tracking, periodic reconciliation
-**Uses:** Enhanced CloudKitSyncManager with Notes-specific conflict resolution
-**Implements:** ConflictResolver with user notification and manual resolution UI
-**Avoids:** Sync State Inconsistency pitfall through idempotent operations and transaction boundaries
-
-### Phase 6: Import Method Integration & User Migration
-**Rationale:** Preserves existing user workflows while adding live sync; maintains backward compatibility
-**Delivers:** Hybrid import detection, conflict resolution for batch/live data, user migration path
-**Uses:** Enhanced AltoIndexImporter with unified conflict detection across import methods
-**Implements:** Smooth transition from batch-only to live sync without workflow disruption
-**Avoids:** Apple Notes App Integration Breaking Existing Workflows pitfall
+### Phase 4: Grid Continuum (3 weeks)
+**Rationale:** View transitions leverage existing architecture with minimal new complexity
+**Delivers:** Seamless transitions between Gallery/List/Kanban/Grid views
+**Uses:** Existing filter system with PAFV coordinate translation
+**Implements:** Janus translation layer for semantic position preservation
 
 ### Phase Ordering Rationale
 
-- **Security-first progression:** TCC permissions and database safety must be established before adding complexity
-- **Incremental risk introduction:** Each phase adds one major risk factor while building on proven foundation
-- **User-centric validation:** Each phase delivers user-visible value while maintaining existing functionality
-- **Architectural isolation:** Live sync concerns are contained in new components without modifying existing patterns
+- **Foundation-first approach** prevents building SuperGrid on unstable architecture
+- **PAFV-centric sequencing** prioritizes unique differentiator over standard grid features
+- **Incremental complexity** adds one major system per phase to avoid integration overwhelm
+- **Performance validation gates** ensure each phase maintains sql.js architectural benefits
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 1:** User experience design for TCC permission flows requires UX research and A/B testing
-- **Phase 4:** Protobuf schema analysis across iOS versions needs reverse engineering research
+- **Phase 3 (SuperGrid Headers):** Complex CSS spanning calculations need performance profiling with real hierarchies
+- **Phase 4 (Grid Continuum):** Janus coordinate translation algorithms need validation with diverse datasets
 
 Phases with standard patterns (skip research-phase):
-- **Phase 2:** Database concurrency is well-documented GRDB pattern
-- **Phase 3:** FSEvents monitoring follows established Apple documentation
-- **Phase 5:** CloudKit conflict resolution extends existing proven patterns
+- **Phase 1 (Foundation):** Well-documented TypeScript/sql.js integration patterns
+- **Phase 2 (PAFV Core):** Existing PAFVContext extension, established D3.js patterns
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Building on proven AltoIndexImporter (6,891 notes) with minimal new dependencies, native Apple APIs |
-| Features | MEDIUM | User expectations clear from research but TCC permission adoption rates uncertain |
-| Architecture | HIGH | Extends existing Swift Actor + GRDB + CloudKit patterns with minimal new complexity |
-| Pitfalls | HIGH | Six critical pitfalls identified with clear prevention strategies and phase-specific addressing |
+| Stack | HIGH | IsometryKB provides detailed architectural specifications; existing codebase validates patterns |
+| Features | HIGH | Competitive analysis and IsometryKB evolution show clear feature differentiation |
+| Architecture | HIGH | Three-layer z-axis pattern extensively documented; integration points clearly defined |
+| Pitfalls | HIGH | Historical CardBoard failure analysis provides comprehensive pitfall catalog |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-Research was comprehensive but some areas need validation during implementation:
+The research provides comprehensive coverage with minimal gaps requiring validation:
 
-- **TCC permission adoption rates:** Real user acceptance of Full Disk Access for Notes sync needs A/B testing during Phase 1
-- **Apple Notes protobuf schema stability:** Future iOS releases may change protobuf structure; requires ongoing monitoring and compatibility testing
-- **Performance scaling:** Resource consumption patterns for large Notes libraries (>10k notes) need load testing during Phase 3
+- **Performance metrics with large datasets:** Exact sql.js performance characteristics with 100k+ records need measurement during Phase 1
+- **Touch interaction patterns:** Mobile gesture support for nested headers needs UX validation during Phase 3
+- **Memory usage scaling:** WASM memory consumption patterns with complex grid hierarchies need monitoring during implementation
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Apple Developer Documentation (FSEvents, TCC, CloudKit) — official APIs and patterns
-- Existing Isometry AltoIndexImporter implementation — 6,891 notes successfully imported
-- Apple Notes protobuf research: github.com/threeplanetssoftware/apple_cloud_notes_parser — reverse engineering analysis
-- GRDB.swift CloudKit sync patterns — established concurrency and conflict resolution approaches
+- IsometryKB/notes/SuperGrid.md — Core architecture specification and design principles
+- IsometryKB/notes/supergrid-architecture-v4.md — Three-layer z-axis pattern and Janus density model
+- IsometryKB/notes/apple-notes/CardBoard/SuperGrid*.md — Historical evolution and proven patterns
+- /Users/mshaler/Developer/Projects/Isometry/src/types/supergrid.ts — Current TypeScript interfaces
+- /Users/mshaler/Developer/Projects/Isometry/src/d3/SuperGrid.ts — Existing D3.js implementation baseline
 
 ### Secondary (MEDIUM confidence)
-- Apple Community developer reports — TCC permission challenges and user adoption patterns
-- iOS 18 Notes format analysis — ciofecaforensics.com protobuf structure documentation
+- @dnd-kit documentation and performance analysis — Modern drag-drop replacement rationale
+- D3.js v7 performance patterns — Data binding best practices and anti-patterns
+- sql.js WASM limitations research — Memory management and scaling considerations
+- Competitive analysis (AG Grid, React Table, Airtable) — Feature differentiation validation
 
 ### Tertiary (LOW confidence)
-- User experience patterns for permission flows — needs validation through user research
+- Exact performance metrics — Extrapolated from general patterns, need measurement
+- Phase timing estimates — Based on complexity assessment, subject to implementation reality
+- Touch interaction UX patterns — Inferred from mobile grid usage, needs validation
 
 ---
-*Research completed: 2026-02-01*
+*Research completed: 2026-02-05*
 *Ready for roadmap: yes*

@@ -1,185 +1,179 @@
-# Feature Research
+# Feature Landscape
 
-**Domain:** Live Apple Notes Integration for Knowledge Management App
-**Researched:** 2026-02-01
-**Confidence:** MEDIUM
+**Domain:** SuperGrid polymorphic data visualization
+**Researched:** 2026-02-05
 
-## Feature Landscape
+## Executive Summary
 
-### Table Stakes (Users Expect These)
+SuperGrid polymorphic visualization represents a fundamentally different approach to data grids — rather than building separate view components, it implements a unified coordinate system that can render the same LATCH-filtered dataset through multiple spatial projections. Based on extensive analysis of IsometryKB patterns and existing Isometry v4 architecture, SuperGrid breaks new ground with its Janus Density Model, nested PAFV headers with dimensional spanning, and direct sql.js integration for zero-serialization data binding.
 
-Features users assume exist. Missing these = product feels incomplete for live Apple Notes integration.
+The feature landscape divides into foundational table stakes (basic grid functionality), competitive differentiators (unique SuperGrid capabilities), and deliberate anti-features to avoid complexity traps that plague traditional grid systems.
+
+## Table Stakes
+
+Features users expect from any modern data grid. Missing = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Real-Time Change Detection** | Users expect captures via Siri → Notes to automatically appear in Isometry | HIGH | FSEvents monitoring, NSMetadataQuery for iCloud, AppleScript access requires TCC permissions |
-| **Read-Only Apple Notes Access** | Users expect external apps to safely read their Notes without corruption risk | MEDIUM | AppleScript automation with kTCCServiceAppleEvents permission, no direct API available |
-| **Automatic Content Extraction** | Users expect new notes to be parsed into structured cards automatically | MEDIUM | Text processing, link extraction, metadata parsing from Notes format |
-| **Bi-directional Link Preservation** | Users expect links in Notes to work and be preserved during sync | LOW | Maintain URLs, phone numbers, addresses as recognized by Notes system integration |
-| **Graceful TCC Permission Handling** | Users expect clear prompts and graceful degradation when permissions denied | MEDIUM | TCC database management, fallback to manual import when AppleScript blocked |
-| **Sync Status Visibility** | Users need to know when Notes are being monitored and synced | LOW | Visual indicators for active monitoring, last sync timestamp, error states |
-| **Incremental Updates Only** | Users expect only changed/new notes to trigger updates, not full re-sync | MEDIUM | Timestamp-based change detection, modification tracking per note |
+| Basic Cell Rendering | Fundamental grid display | Low | D3.js data binding with sql.js queries |
+| Row/Column Headers | Grid navigation requirement | Low | Static headers before spanning logic |
+| Cell Selection | User interaction foundation | Medium | Single/multi-select with keyboard nav |
+| Keyboard Navigation | Accessibility & power user expectation | Medium | Arrow keys, Tab, Enter patterns |
+| Scroll Performance | Large dataset usability | High | Virtual scrolling with 10k+ cells |
+| Resize Columns | User customization expectation | Medium | Drag handles with proportional sizing |
+| Sort by Column | Basic data manipulation | Low | SQL ORDER BY integration |
+| Export Data | Data portability requirement | Low | CSV/JSON export from sql.js |
+| Responsive Layout | Mobile/tablet compatibility | Medium | Adaptive cell sizing and header collapse |
+| Undo/Redo | Data editing safety net | High | Operation stack with ACID transactions |
 
-### Differentiators (Competitive Advantage)
+## Differentiators
 
-Features that set the product apart. Not required, but valuable for knowledge management integration.
+Features that set SuperGrid apart from existing grid systems. Not expected, but valued.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Intelligent Note Categorization** | Auto-organize Notes into PAFV dimensional structure based on content | HIGH | AI/ML content analysis, domain-specific tagging for knowledge management |
-| **Cross-Note Reference Detection** | Automatically create graph connections between related Notes | HIGH | Content similarity analysis, entity extraction, semantic linking |
-| **Smart Conflict Resolution UI** | Visual diff interface when Notes rejects programmatic changes | HIGH | Change visualization, user-guided merge resolution, backup/restore capability |
-| **Selective Folder Monitoring** | Monitor only specific Notes folders to reduce noise | MEDIUM | Folder-based filtering, user configuration for targeted sync |
-| **Rich Media Preservation** | Handle images, sketches, tables from Notes without data loss | HIGH | Media extraction, format conversion, attachment management |
-| **Siri → Notes → Isometry Workflow** | Seamless voice capture pipeline with automatic processing | MEDIUM | Workflow automation, trigger-based processing, voice-to-structure parsing |
-| **Notes Template Integration** | Pre-structured Notes that create specific card types in Isometry | MEDIUM | Template recognition, structured data extraction, format standardization |
+| **Nested PAFV Headers** | Hierarchical data visualization no one else has | High | Signature SuperGrid feature - visual spanning across hierarchy levels |
+| **Grid Continuum** | Same data, multiple views seamlessly | High | Gallery → List → Kanban → Grid → SuperGrid transitions |
+| **Janus Density Model** | Orthogonal zoom/pan controls | High | Independent value density (zoom) and extent density (pan) |
+| **Dynamic Axis Assignment** | Drag LATCH dimensions between planes | High | Real-time PAFV remapping with smooth transitions |
+| **Direct sql.js Binding** | Zero serialization overhead | Medium | D3.js queries SQLite in same memory space |
+| **Bipolar Origin Mode** | Eisenhower Matrix & 2D semantic grids | Medium | Center-origin coordinates for quadrant semantics |
+| **Anchor Origin Mode** | Traditional spreadsheet layouts | Low | Corner-origin for hierarchical data |
+| **SuperStack Spanning** | Visual header spanning without merged cells | High | Pure CSS/SVG spanning preserves data model |
+| **LATCH-Aware Formulas** | Multidimensional calculations | High | Formula scope respects PAFV context |
+| **SuperZoom Navigation** | Cartographic grid navigation | Medium | Pinned upper-left anchor like Maps.app |
+| **Coordinate Persistence** | Position survives view transitions | Medium | Janus translation layer maintains context |
+| **Four-Quadrant Layout** | MiniNav + Headers + Data separation | Low | Clean rendering boundary definitions |
 
-### Anti-Features (Commonly Requested, Often Problematic)
+## Anti-Features
 
-Features that seem good but create problems with Apple Notes integration.
+Features to explicitly NOT build. Common mistakes in grid systems.
 
-| Feature | Why Requested | Why Problematic | Alternative |
-|---------|---------------|-----------------|-------------|
-| **Bidirectional Editing** | Users want to edit in both Notes and Isometry | Notes is extremely finicky about external modifications, causes data corruption | Read-only Notes access with manual editing workflows |
-| **Real-Time Collaborative Editing** | Users want multiple people editing same note | Apple Notes collaboration is iCloud-only, external apps can't participate | Comments/annotations system overlaid on read-only Notes |
-| **Automatic Note Creation** | Create Notes from Isometry back to Notes app | Programmatic Notes creation often fails or creates malformed content | Export functionality with manual user confirmation |
-| **Full Notes Database Access** | Direct SQLite access to Notes database | Notes database is SIP-protected, encrypted, frequently changes schema | AppleScript-only access through official interfaces |
-| **Background Continuous Monitoring** | Monitor all Notes changes without user interaction | Massive battery drain, privacy concerns, TCC permission abuse | User-triggered sync with optional periodic checks |
-| **Notes Folder Structure Replication** | Mirror Notes folder hierarchy exactly in Isometry | Notes folder structure is designed for Notes app UX, not knowledge graphs | Content-based organization using PAFV dimensions instead |
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| **Merged Data Cells** | Breaks selection, copy/paste, and formula scope | Use visual spanning with CSS/SVG overlays |
+| **Complex ORM Layer** | Performance killer, debugging nightmare | Direct SQL with TypeScript interfaces |
+| **Cell-Level State Management** | Memory explosion with large grids | D3's data join IS state management |
+| **External State Managers** | Redux/Zustand conflicts with D3 patterns | Use D3 data binding + React contexts only |
+| **Native Bridge Complexity** | 40KB overhead, serialization bottleneck | sql.js eliminates all bridge code |
+| **Infinite Scroll** | Poor UX for data grids, breaks keyboard nav | Virtual scrolling with known boundaries |
+| **Real-time Everything** | Performance degradation, battery drain | Selective real-time based on user focus |
+| **Auto-Save Every Keystroke** | Database thrashing, poor performance | Debounced saves with explicit save points |
+| **Complex Drag-Drop Framework** | Over-engineering, poor touch support | Simple PAFV chip movement with snap zones |
+| **Pivot Table UI** | Complexity explosion, poor mobile UX | LATCH filtering with visual aggregation |
+| **Advanced Query Builder** | Scope creep, SQL is better for power users | Direct SQL with syntax highlighting |
+| **Custom Undo Framework** | Reinventing the wheel, edge case bugs | Browser/system undo + SQL transactions |
 
 ## Feature Dependencies
 
 ```
-Real-Time Change Detection
-    └──requires──> Read-Only Apple Notes Access
-                       └──requires──> Graceful TCC Permission Handling
+Foundation Layer:
+- sql.js Integration → Basic Cell Rendering
+- Basic Cell Rendering → Row/Column Headers
+- Row/Column Headers → Cell Selection
 
-Automatic Content Extraction
-    └──requires──> Real-Time Change Detection
-    └──requires──> Incremental Updates Only
+SuperGrid Core:
+- PAFV Context → Dynamic Axis Assignment
+- Dynamic Axis Assignment → Grid Continuum
+- Grid Continuum → Nested PAFV Headers
+- Coordinate System → Bipolar/Anchor Origins
 
-Intelligent Note Categorization
-    └──requires──> Automatic Content Extraction
-                       └──enhances──> Cross-Note Reference Detection
-
-Smart Conflict Resolution UI
-    └──requires──> Bidirectional Editing (anti-feature)
-    └──alternative──> Read-only with export workflows
-
-Rich Media Preservation
-    └──requires──> Advanced Apple Notes parsing
-    └──conflicts──> Incremental Updates Only (full content re-processing)
-
-Siri → Notes → Isometry Workflow
-    └──requires──> Real-Time Change Detection
-    └──requires──> Intelligent Note Categorization
+Advanced Features:
+- Nested PAFV Headers → SuperStack Spanning
+- Janus Density Model → SuperZoom Navigation
+- PAFV Context → LATCH-Aware Formulas
 ```
 
-### Dependency Notes
+## MVP Recommendation
 
-- **Real-time detection requires TCC permissions:** FSEvents monitoring needs system access
-- **Content extraction requires change detection:** Can't process what you can't detect
-- **Conflict UI implies bidirectional editing:** But bidirectional editing is an anti-feature
-- **Rich media conflicts with incremental updates:** Processing images/sketches requires full content parsing
+For SuperGrid Foundation (v4.1), prioritize:
 
-## MVP Definition
+1. **Direct sql.js Integration** - Proves bridge elimination architecture
+2. **Basic PAFV Headers** - Single-level row/column headers with LATCH mapping
+3. **Dynamic Axis Assignment** - Drag chips between wells (rows/columns/available)
+4. **Anchor Origin Mode** - Traditional grid coordinates (0,0 at top-left)
+5. **Basic Grid Continuum** - Switch between List → Grid views
 
-### Launch With (v1)
+Defer to post-MVP:
+- **SuperStack Spanning**: Complex visual spanning logic, needs solid foundation first
+- **Janus Density Model**: Advanced UX concept, requires user feedback on basic grid
+- **Bipolar Origin Mode**: Specialized feature, Eisenhower Matrix can wait
+- **LATCH-Aware Formulas**: Formula system is a major feature deserving its own phase
+- **SuperZoom Navigation**: Nice-to-have, not core grid functionality
 
-Minimum viable product for Apple Notes integration.
+## Competitive Analysis
 
-- [ ] **Read-Only Apple Notes Access** — Core capability, use AppleScript with proper TCC handling
-- [ ] **Manual Sync Trigger** — User-initiated import to validate content extraction pipeline
-- [ ] **Basic Content Extraction** — Text, links, simple formatting preservation
-- [ ] **Graceful TCC Permission Handling** — Clear user guidance, fallback options
-- [ ] **Sync Status Visibility** — Users understand what's happening and when
+**Existing Solutions Analyzed:**
+- AG Grid: Industry standard, but heavy and lacks axis assignment
+- React Table: Hooks-based, but no polymorphic view support
+- MUI DataGrid: Good UX, but no grid continuum concept
+- Airtable: Best view switching UX, but proprietary and limited
+- Notion: Great table/board views, but no hierarchical headers
 
-### Add After Validation (v1.x)
+**SuperGrid's Unique Position:**
+- Only system with polymorphic view continuum (same data, multiple projections)
+- Only system with nested PAFV headers across arbitrary dimensions
+- Only system with orthogonal density controls (Janus model)
+- Only system with direct WASM SQLite integration for zero serialization
+- Only system designed specifically for LATCH filtering + GRAPH connectivity
 
-Features to add once core Notes access is working.
+## Implementation Insights from IsometryKB
 
-- [ ] **Real-Time Change Detection** — FSEvents monitoring for live sync (requires TCC validation)
-- [ ] **Incremental Updates Only** — Optimize performance with timestamp-based filtering
-- [ ] **Selective Folder Monitoring** — Allow users to choose which Notes folders to track
-- [ ] **Bi-directional Link Preservation** — Maintain clickable links and system integrations
+**Key Patterns Discovered:**
 
-### Future Consideration (v2+)
+1. **Four-Grid Architecture**: SuperGrid consists of MiniNav, Column Headers, Row Headers, and Data Cells - each with distinct rendering responsibilities
 
-Advanced features requiring mature integration foundation.
+2. **Z-Axis Layer Stack**:
+   - z=0 Sparsity (D3 data floor)
+   - z=1 Density (React controls)
+   - z=2 Overlay (Cards/modals)
 
-- [ ] **Intelligent Note Categorization** — AI-powered PAFV organization
-- [ ] **Cross-Note Reference Detection** — Graph connections between related Notes
-- [ ] **Rich Media Preservation** — Handle images, sketches, tables from Notes
-- [ ] **Siri → Notes → Isometry Workflow** — Voice capture automation
+3. **Janus Translation**: Positions recomputed across view transitions rather than preserved literally - maintains semantic meaning while adapting to new coordinate systems
 
-## Feature Prioritization Matrix
+4. **Density-Dimensionality Unification**: SuperDensity controls semantic precision (sparse: "January" vs dense: "Q1") without losing fidelity
 
-| Feature | User Value | Implementation Cost | TCC Risk | Priority |
-|---------|------------|---------------------|----------|----------|
-| Read-Only Apple Notes Access | HIGH | MEDIUM | HIGH | P1 |
-| Manual Sync Trigger | MEDIUM | LOW | LOW | P1 |
-| Basic Content Extraction | HIGH | MEDIUM | LOW | P1 |
-| Graceful TCC Permission Handling | HIGH | MEDIUM | MEDIUM | P1 |
-| Sync Status Visibility | MEDIUM | LOW | LOW | P1 |
-| Real-Time Change Detection | HIGH | HIGH | HIGH | P2 |
-| Incremental Updates Only | MEDIUM | MEDIUM | LOW | P2 |
-| Selective Folder Monitoring | MEDIUM | MEDIUM | LOW | P2 |
-| Intelligent Note Categorization | HIGH | HIGH | LOW | P3 |
-| Cross-Note Reference Detection | MEDIUM | HIGH | LOW | P3 |
+5. **Grid Continuum Mapping**:
+   - Gallery: 0 explicit axes (position only)
+   - List: 1 axis (vertical)
+   - Kanban: 1 facet (columns)
+   - 2D Grid: 2 axes (x/y)
+   - SuperGrid: n axes (stacked z-headers)
 
-**Priority key:**
-- P1: Must have for launch (low TCC risk, core functionality)
-- P2: Should have (optimize performance, user experience)
-- P3: Nice to have (advanced AI features, differentiation)
+## Technical Architecture Requirements
 
-## Implementation Notes by Feature Category
+**From Existing Isometry Implementation:**
 
-### Apple Notes Access Strategy
-- **AppleScript Only**: No direct API access, use AppleScript automation with proper error handling
-- **TCC Management**: Request kTCCServiceAppleEvents permission, provide clear fallback workflows
-- **Read-Only Philosophy**: Never attempt programmatic Notes modification, export-only workflows
+- **TypeScript**: Strict mode compliance with comprehensive interfaces
+- **sql.js**: Direct WASM SQLite queries, no bridge serialization
+- **D3.js v7**: Data binding with .join() and key functions always
+- **React 18**: Context providers for PAFV state management
+- **Vitest**: TDD workflow with tests before implementation
+- **Performance**: 60fps rendering with 10k+ cards via virtual scrolling
 
-### Change Detection Architecture
-- **FSEvents for Local**: Monitor ~/Library/Group Containers/group.com.apple.notes/ for local changes
-- **NSMetadataQuery for iCloud**: Track iCloud Notes folder changes, handle sync delays
-- **Polling Fallback**: When FSEvents unavailable, periodic AppleScript queries with user consent
+**SuperGrid-Specific Requirements:**
 
-### Content Processing Pipeline
-- **Text Extraction**: Parse Notes RTF/HTML format, preserve basic formatting
-- **Link Preservation**: Extract and validate URLs, phone numbers, addresses recognized by system
-- **Media Handling**: Reference attachments without extraction (v1), full media in future versions
-
-## Apple Notes Integration Challenges
-
-### Technical Limitations (2026)
-- **No Public API**: Apple provides no official Notes API, all access via AppleScript automation
-- **TCC Restrictions**: Requires user permission for kTCCServiceAppleEvents, can be revoked anytime
-- **Format Complexity**: Notes uses proprietary RTF/HTML hybrid format with embedded attachments
-- **iCloud Sync Delays**: Changes may not immediately reflect in local file system monitoring
-
-### User Experience Considerations
-- **Permission Fatigue**: Users may decline TCC permissions, need graceful degradation
-- **Sync Expectations**: Users expect immediate sync but Notes has inherent delays
-- **Data Safety**: Users extremely protective of Notes data, any corruption destroys trust
-- **Platform Lock-in**: Integration only works on macOS/iOS, no Windows/Android equivalent
-
-## Competitive Analysis Context
-
-Modern Apple Notes integration in 2026 emphasizes:
-- **Privacy-First Design**: Minimal data access, clear user control, transparent operations
-- **Voice Capture Workflows**: Siri → Notes → processing pipelines for rapid knowledge capture
-- **Read-Only Safety**: External apps avoid Notes modification due to corruption risks
-- **Selective Integration**: Users choose which Notes folders/content to sync rather than everything
+- **Coordinate System**: Support both Anchor (0,0 corner) and Bipolar (0,0 center) origins
+- **PAFV Integration**: Hook into existing PAFVContext for axis assignments
+- **LATCH Awareness**: Column/row headers map to LATCH dimensions (Location, Alphabet, Time, Category, Hierarchy)
+- **View Persistence**: Grid state survives transitions to other views (Network, Kanban, Timeline)
 
 ## Sources
 
-- WebSearch: Apple Notes live sync real-time integration patterns 2026 (MEDIUM confidence)
-- WebSearch: Apple Notes EventKit integration bidirectional sync conflict resolution 2026 (LOW confidence)
-- WebSearch: "Apple Notes API" read-only external integrations TCC permissions 2026 (HIGH confidence)
-- WebSearch: "Apple Notes" file change monitoring FSEvents NSMetadataQuery live sync patterns (MEDIUM confidence)
-- WebSearch: Apple Notes conflict resolution sync strategies knowledge management apps 2025 2026 (MEDIUM confidence)
-- WebFetch: NSMetadataQuery Apple Developer Documentation (FAILED - JavaScript disabled page)
+**HIGH Confidence (Context7/Official Sources):**
+- IsometryKB/notes/SuperGrid.md - Core architecture specification
+- IsometryKB/notes/supergrid-architecture-v4.md - PAFV implementation details
+- IsometryKB/notes/apple-notes/CardBoard/SuperGrid*.md - Design evolution patterns
+- /Users/mshaler/Developer/Projects/Isometry/src/types/supergrid.ts - Current TypeScript interfaces
+- /Users/mshaler/Developer/Projects/Isometry/src/d3/SuperGrid.ts - Existing D3 implementation
 
----
-*Feature research for: Live Apple Notes Integration for Knowledge Management App*
-*Researched: 2026-02-01*
+**MEDIUM Confidence (Web Research Verified):**
+- Modern data grid drag-drop patterns from AG Grid, MUI DataGrid, RevoGrid documentation
+- View switching patterns from Airtable, Notion, project management tools
+- Sparse grid visualization research from academic papers (2025)
+
+**LOW Confidence (Flagged for Validation):**
+- Exact performance characteristics of sql.js with large datasets
+- Touch interaction patterns for nested header spanning
+- Memory usage patterns with 10k+ cells in browser environment
+
+This research provides comprehensive foundation for SuperGrid v4.1 implementation, prioritizing proven patterns while identifying unique differentiators that set SuperGrid apart from existing grid systems.
