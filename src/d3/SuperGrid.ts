@@ -76,6 +76,16 @@ export class SuperGrid {
       []
     );
 
+    // Clear existing content before rendering
+    this.clear();
+
+    // Set up grid structure with headers
+    this.setupGridStructure();
+
+    // Render LATCH headers first
+    this.renderRowHeaders();
+    this.renderColumnHeaders();
+
     // Use shared rendering logic to ensure consistent behavior
     this.renderCards(cards);
   }
@@ -151,6 +161,7 @@ export class SuperGrid {
    */
   clear(): void {
     this.container.selectAll('.card-group').remove();
+    this.container.selectAll('.grid-structure').remove();
   }
 
   /**
@@ -470,20 +481,22 @@ export class SuperGrid {
     // Calculate positions
     const cardsWithPositions = cards.map((card, index) => {
       if (!card.x || !card.y) {
-        const cols = Math.floor(this.width / (this.cardWidth + this.padding));
+        const availableWidth = this.width - (this.cardWidth + this.padding);
+        const cols = Math.floor(availableWidth / (this.cardWidth + this.padding));
         const row = Math.floor(index / cols);
         const col = index % cols;
         return {
           ...card,
-          x: col * (this.cardWidth + this.padding) + this.padding,
-          y: row * (this.cardHeight + this.padding) + this.padding
+          x: col * (this.cardWidth + this.padding),
+          y: row * (this.cardHeight + this.padding)
         };
       }
       return card;
     });
 
-    // Same D3.js data binding pattern
-    const cardSelection = this.container
+    // Use grid-cells container for positioned rendering
+    const gridCellsContainer = this.container.select('.grid-cells');
+    const cardSelection = gridCellsContainer
       .selectAll<SVGGElement, typeof cardsWithPositions[0]>('.card-group')
       .data(cardsWithPositions, d => d.id);
 
@@ -579,5 +592,311 @@ export class SuperGrid {
       });
 
     return joined;
+  }
+
+  /**
+   * Set up grid structure with header groups
+   */
+  private setupGridStructure(): void {
+    const gridStructure = this.container.append('g')
+      .attr('class', 'grid-structure');
+
+    // Create header containers
+    gridStructure.append('g')
+      .attr('class', 'row-headers')
+      .attr('transform', `translate(0, ${this.cardHeight + this.padding})`);
+
+    gridStructure.append('g')
+      .attr('class', 'column-headers')
+      .attr('transform', `translate(${this.cardWidth + this.padding}, 0)`);
+
+    // Create grid cells container offset by header space
+    gridStructure.append('g')
+      .attr('class', 'grid-cells')
+      .attr('transform', `translate(${this.cardWidth + this.padding}, ${this.cardHeight + this.padding})`);
+  }
+
+  /**
+   * Render row headers showing LATCH dimensions (folders)
+   */
+  private renderRowHeaders(): void {
+    if (!this.db.isReady()) return;
+
+    // Query distinct folders for row headers
+    const folders = this.db.query<{ folder: string; count: number }>(
+      `SELECT COALESCE(folder, 'No Folder') as folder, COUNT(*) as count
+       FROM nodes
+       WHERE deleted_at IS NULL
+       GROUP BY folder
+       ORDER BY folder`,
+      []
+    );
+
+    const rowHeaderContainer = this.container.select('.row-headers');
+
+    const headers = rowHeaderContainer
+      .selectAll<SVGTextElement, typeof folders[0]>('.row-header')
+      .data(folders, d => d.folder)
+      .join(
+        enter => {
+          const headerGroup = enter.append('g')
+            .attr('class', 'row-header')
+            .attr('transform', (_d, i) => `translate(0, ${i * (this.cardHeight + this.padding)})`);
+
+          // Header background
+          headerGroup.append('rect')
+            .attr('width', this.cardWidth)
+            .attr('height', this.cardHeight)
+            .attr('rx', 4)
+            .attr('fill', '#f8fafc')
+            .attr('stroke', '#e2e8f0')
+            .attr('stroke-width', 1);
+
+          // Header text
+          headerGroup.append('text')
+            .attr('x', 8)
+            .attr('y', this.cardHeight / 2)
+            .attr('dy', '0.35em')
+            .attr('font-family', 'system-ui, sans-serif')
+            .attr('font-size', '12px')
+            .attr('font-weight', '600')
+            .attr('fill', '#475569')
+            .text(d => this.truncateText(d.folder, 12));
+
+          // Count badge
+          headerGroup.append('text')
+            .attr('x', this.cardWidth - 8)
+            .attr('y', this.cardHeight / 2)
+            .attr('dy', '0.35em')
+            .attr('text-anchor', 'end')
+            .attr('font-family', 'system-ui, sans-serif')
+            .attr('font-size', '10px')
+            .attr('font-weight', '500')
+            .attr('fill', '#64748b')
+            .text(d => d.count.toString());
+
+          return headerGroup;
+        },
+        update => {
+          update.select('text:first-of-type')
+            .text(d => this.truncateText(d.folder, 12));
+
+          update.select('text:last-of-type')
+            .text(d => d.count.toString());
+
+          return update;
+        },
+        exit => exit.remove()
+      );
+
+    // Add hover interactions
+    headers
+      .style('cursor', 'pointer')
+      .on('mouseenter', function() {
+        d3.select(this).select('rect')
+          .attr('fill', '#e2e8f0');
+      })
+      .on('mouseleave', function() {
+        d3.select(this).select('rect')
+          .attr('fill', '#f8fafc');
+      })
+      .on('click', (_event, d) => {
+        console.log('Row header clicked:', d.folder);
+        // Future: trigger row selection/filtering
+      });
+  }
+
+  /**
+   * Render column headers showing LATCH dimensions (statuses)
+   */
+  private renderColumnHeaders(): void {
+    if (!this.db.isReady()) return;
+
+    // Query distinct statuses for column headers
+    const statuses = this.db.query<{ status: string; count: number }>(
+      `SELECT COALESCE(status, 'No Status') as status, COUNT(*) as count
+       FROM nodes
+       WHERE deleted_at IS NULL
+       GROUP BY status
+       ORDER BY status`,
+      []
+    );
+
+    const colHeaderContainer = this.container.select('.column-headers');
+
+    const headers = colHeaderContainer
+      .selectAll<SVGGElement, typeof statuses[0]>('.column-header')
+      .data(statuses, d => d.status)
+      .join(
+        enter => {
+          const headerGroup = enter.append('g')
+            .attr('class', 'column-header')
+            .attr('transform', (_d, i) => `translate(${i * (this.cardWidth + this.padding)}, 0)`);
+
+          // Header background
+          headerGroup.append('rect')
+            .attr('width', this.cardWidth)
+            .attr('height', this.cardHeight)
+            .attr('rx', 4)
+            .attr('fill', '#f8fafc')
+            .attr('stroke', '#e2e8f0')
+            .attr('stroke-width', 1);
+
+          // Header text
+          headerGroup.append('text')
+            .attr('x', 8)
+            .attr('y', 20)
+            .attr('font-family', 'system-ui, sans-serif')
+            .attr('font-size', '12px')
+            .attr('font-weight', '600')
+            .attr('fill', '#475569')
+            .text(d => this.truncateText(d.status, 12));
+
+          // Count badge
+          headerGroup.append('text')
+            .attr('x', this.cardWidth - 8)
+            .attr('y', this.cardHeight - 8)
+            .attr('text-anchor', 'end')
+            .attr('font-family', 'system-ui, sans-serif')
+            .attr('font-size', '10px')
+            .attr('font-weight', '500')
+            .attr('fill', '#64748b')
+            .text(d => d.count.toString());
+
+          // Status indicator
+          const statusColor = this.getStatusColor(d.status === 'No Status' ? undefined : d.status);
+          headerGroup.append('circle')
+            .attr('cx', this.cardWidth - 12)
+            .attr('cy', 12)
+            .attr('r', 4)
+            .attr('fill', statusColor);
+
+          return headerGroup;
+        },
+        update => {
+          update.select('text:first-of-type')
+            .text(d => this.truncateText(d.status, 12));
+
+          update.select('text:last-of-type')
+            .text(d => d.count.toString());
+
+          const statusColor = this.getStatusColor(d.status === 'No Status' ? undefined : d.status);
+          update.select('circle')
+            .attr('fill', statusColor);
+
+          return update;
+        },
+        exit => exit.remove()
+      );
+
+    // Add hover interactions
+    headers
+      .style('cursor', 'pointer')
+      .on('mouseenter', function() {
+        d3.select(this).select('rect')
+          .attr('fill', '#e2e8f0');
+      })
+      .on('mouseleave', function() {
+        d3.select(this).select('rect')
+          .attr('fill', '#f8fafc');
+      })
+      .on('click', (_event, d) => {
+        console.log('Column header clicked:', d.status);
+        // Future: trigger column selection/filtering
+      });
+  }
+
+  /**
+   * Enhanced render with PAFV integration
+   * Accepts filters from React context and applies them to grid rendering
+   */
+  renderWithPAFVFilters(pafvFilters?: {
+    rows?: Array<{ id: string; label: string }>;
+    columns?: Array<{ id: string; label: string }>;
+    zLayers?: Array<{ id: string; label: string; checked?: boolean }>;
+  }): void {
+    if (!this.db.isReady()) {
+      throw new Error('DatabaseService must be initialized before rendering');
+    }
+
+    // Build LATCH-aware WHERE clause based on PAFV filter chips
+    const whereConditions: string[] = ['deleted_at IS NULL'];
+    const params: any[] = [];
+
+    // Apply row filters (typically folder/category)
+    if (pafvFilters?.rows && pafvFilters.rows.length > 0) {
+      const rowConditions = pafvFilters.rows.map(chip => {
+        switch (chip.id) {
+          case 'folder':
+            return 'folder IS NOT NULL';
+          case 'subfolder':
+            return 'folder LIKE "%/%"';
+          case 'tags':
+            return 'tags != "[]" AND tags IS NOT NULL';
+          default:
+            return '1=1';
+        }
+      });
+      whereConditions.push(`(${rowConditions.join(' OR ')})`);
+    }
+
+    // Apply column filters (typically status/priority)
+    if (pafvFilters?.columns && pafvFilters.columns.length > 0) {
+      const colConditions = pafvFilters.columns.map(chip => {
+        switch (chip.id) {
+          case 'status':
+            return 'status IS NOT NULL';
+          case 'priority':
+            return 'priority IS NOT NULL';
+          default:
+            return '1=1';
+        }
+      });
+      whereConditions.push(`(${colConditions.join(' OR ')})`);
+    }
+
+    // Apply z-layer filters (active checkboxes)
+    if (pafvFilters?.zLayers) {
+      const activeZLayers = pafvFilters.zLayers.filter(chip => chip.checked);
+      if (activeZLayers.length > 0) {
+        const zConditions = activeZLayers.map(chip => {
+          switch (chip.id) {
+            case 'auditview':
+              return 'modified_at != created_at';
+            default:
+              return '1=1';
+          }
+        });
+        whereConditions.push(`(${zConditions.join(' AND ')})`);
+      }
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    // Query with PAFV filters applied
+    const cards = this.db.query<{
+      id: string;
+      name: string;
+      folder?: string;
+      status?: string;
+      x?: number;
+      y?: number;
+      created_at?: string;
+    }>(
+      `SELECT id, name, folder, status,
+              COALESCE(x, 0) as x, COALESCE(y, 0) as y, created_at
+       FROM nodes
+       WHERE ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT 200`,
+      params
+    );
+
+    // Clear and re-render with filtered data
+    this.clear();
+    this.setupGridStructure();
+    this.renderRowHeaders();
+    this.renderColumnHeaders();
+    this.renderCards(cards);
   }
 }
