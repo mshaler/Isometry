@@ -1,8 +1,8 @@
 # Isometry Notebook Sidecar Implementation Roadmap
 
 **Project:** Isometry Notebook Sidecar
-**Version:** v3.1 (Live Database Integration)
-**Target:** Production-ready native iOS/macOS apps with React prototype bridge
+**Version:** v4.0 (Bridge Elimination Architecture)
+**Target:** sql.js direct access architecture with SuperGrid polymorphic data projection
 **Approach:** Multi-milestone incremental delivery
 
 ---
@@ -22,6 +22,7 @@
 - 🆕 **v3.2 Enhanced Apple Integration** - Phase 29 (Live Apple Notes sync with CRDT conflict resolution) - 📋 PLANNED
 - 🆕 **v3.3 Complete Apple Notes Data Lifecycle** - Phase 30 (Native access, CAS storage, verification pipeline, database operations) - 📋 PLANNED
 - 🆕 **v3.4 Multi-Environment Debugging** - Phase 32 (Swift/TypeScript/D3/React debugging and stabilization) - 🔧 CURRENT
+- 🚀 **v4.0 Bridge Elimination Architecture** - Phase 33 (sql.js direct access, SuperGrid foundation) - 🆕 PLANNED
 
 ## Milestone Overview
 
@@ -52,6 +53,8 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 **v3.3 Goal (Complete Apple Notes Data Lifecycle):** Establish enterprise-grade Apple Notes data lifecycle management with native database access beyond alto-index exports, Content-Addressable Storage for efficient attachment handling, comprehensive verification pipeline ensuring >99.9% data integrity, complete database operations suite, and property-based testing framework for production-grade reliability.
 
 **v3.4 Goal (Multi-Environment Debugging):** Establish stable development environment across Swift/iOS, TypeScript/React, D3.js integration, and React UI chrome components. Resolve compilation errors, type conflicts, broken file integrations, and layout issues to enable parallel development across native and prototype environments.
+
+**v4.0 Goal (Bridge Elimination Architecture):** Transform from 40KB Swift↔JavaScript MessageBridge to sql.js architecture where D3.js queries SQLite directly in same memory space with zero serialization overhead. Establish foundation for SuperGrid polymorphic data projection system.
 
 ---
 
@@ -271,6 +274,28 @@ Plans:
 - [ ] 32-24-PLAN.md — Swift compilation crisis triage addressing fundamental syntax and type conflicts (Gap Closure)
 - [ ] 32-25-PLAN.md — TypeScript compilation final push eliminating remaining 81 errors (Gap Closure)
 
+### 🚀 v4.0 Bridge Elimination Architecture
+
+**Milestone Goal:** Transform from 40KB Swift↔JavaScript MessageBridge to sql.js architecture where D3.js queries SQLite directly in same memory space with zero serialization overhead. Establish foundation for SuperGrid polymorphic data projection system and enable Phase 2 SuperGrid development.
+
+#### Phase 33: Bridge Elimination Foundation
+**Goal:** Establish sql.js foundation with verified FTS5, recursive CTEs, and direct D3.js data access patterns
+**Depends on:** Phase 32 (Multi-Environment Debugging)
+**Success Criteria** (what must be TRUE):
+  1. sql.js initializes with FTS5 and JSON1 support from vendored WASM binary
+  2. D3.js queries sql.js directly with zero serialization overhead in same memory space
+  3. Recursive CTEs execute successfully for graph traversal operations
+  4. Legacy bridge client code eliminated or deprecated with clear migration paths
+  5. Foundation ready for SuperGrid polymorphic data projection system
+**Plans:** 3 plans
+
+**Foundation:** Core database service with synchronous sql.js API, D3.js direct data binding patterns, and bridge code elimination. Gates all SuperGrid development in subsequent phases.
+
+Plans:
+- [ ] 33-01-PLAN.md — Vendor sql.js WASM with FTS5+JSON1 and create DatabaseService
+- [ ] 33-02-PLAN.md — Establish D3.js direct data access with SuperGrid foundation
+- [ ] 33-03-PLAN.md — Remove legacy bridge code and complete migration to sql.js
+
 ## Dependencies
 
 ### v3.1 Live Database Integration External Dependencies
@@ -301,6 +326,12 @@ Plans:
 - **Vite 7.x** for development server and build tooling
 - **ESLint/Prettier** for code quality and formatting consistency
 
+### v4.0 Bridge Elimination Architecture External Dependencies
+- **sql.js 1.13.0** with FTS5 and JSON1 extensions enabled
+- **WebAssembly (WASM)** runtime for in-browser SQLite execution
+- **D3.js 7.x** for direct data binding and visualization rendering
+- **Vite bundler** for WASM asset management and module resolution
+
 ### v3.1 Live Database Integration Internal Dependencies
 - **Existing React prototype** providing UI patterns and component architecture
 - **Native GRDB database** with complete schema and CloudKit sync operations
@@ -327,12 +358,20 @@ Plans:
 - **WebView bridge** for cross-environment communication and data flow
 - **Development toolchain** with consistent build and testing infrastructure
 
+### v4.0 Bridge Elimination Architecture Internal Dependencies
+- **Existing SQLite schema** with complete LPG model (nodes, edges, facets, notebook_cards)
+- **D3.js visualization patterns** from existing Canvas and SuperGrid components
+- **React control chrome** for filter dispatch and UI coordination
+- **TypeScript type definitions** for Node, Edge, and graph data structures
+- **Existing sql.js exploration** in SQLiteProvider.tsx as foundation
+
 ### Phase Dependencies
 ```
 v3.1: Phase 18 → Phase 19 → Phase 20 → Phase 21 → Phase 25 → Phase 26 → Phase 27 (Gap Closure)
 v3.2: Phase 29 (Enhanced Apple Notes Live Integration)
 v3.3: Phase 30 (Complete Apple Notes Data Lifecycle Management)
 v3.4: Phase 32 (Multi-Environment Debugging)
+v4.0: Phase 33 (Bridge Elimination Foundation)
 ```
 
 **Phase Ordering Rationale (Research-Based):**
@@ -344,13 +383,14 @@ v3.4: Phase 32 (Multi-Environment Debugging)
 - **Enhanced Apple integration** builds upon proven foundation with sophisticated live sync capabilities
 - **Complete data lifecycle** extends enhanced integration with enterprise-grade operations and verification
 - **Multi-environment debugging** addresses accumulated technical debt across environments before advanced feature development
+- **Bridge elimination** requires stable compilation environment and replaces bridge architecture with sql.js direct access
 
 ---
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30 → 32
+Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 → 29 → 30 → 32 → 33
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -364,6 +404,7 @@ Phases execute in numeric order: 18 → 19 → 20 → 21 → 25 → 26 → 27 �
 | 29. Enhanced Apple Notes Live Integration | 6/6 | 📋 Gap Closure | - |
 | 30. Apple Notes Data Lifecycle Management | 5/5 | ✅ v3.3 Complete | 2026-02-04 |
 | 32. Multi-Environment Debugging | 23/25 | 🔧 Gap Closure | - |
+| 33. Bridge Elimination Foundation | 0/3 | 🆕 Planned | - |
 
 ## Architecture Integration Summary
 
@@ -375,6 +416,17 @@ React Components ←→ WebView Bridge ←→ Native GRDB SQLite
 ├── Virtual scrolling    ├── Performance monitoring     ├── Transaction coordination
 └── Cache invalidation   └── Bridge correlation IDs     └── CloudKit sync integration
 ```
+
+### v4.0 Bridge Elimination Architecture Data Flow
+```
+SQLite File ←→ sql.js (WASM) ←→ D3.js Visualizations
+     ↓              ↓                    ↓
+File I/O        Direct Queries      React Controls
+     ↓              ↓                    ↓
+Swift Shell   Zero Serialization   Filter Dispatch
+```
+
+**Key Change:** 40KB bridge infrastructure eliminated, 6 serialization boundaries → 0, D3.js queries SQLite directly in same memory space.
 
 ### v3.2 Enhanced Apple Integration Data Flow
 ```
@@ -413,6 +465,17 @@ Actor Patterns          Message Serialization        React Component Tree
 | **Query Performance** | 2-5 seconds | <50ms cached | Intelligent caching + pagination |
 | **Memory Usage** | Baseline | Stable | Reference cycle prevention |
 | **Reliability** | Browser dependent | 99%+ uptime | Circuit breaker patterns |
+
+### Performance Targets (v4.0 Bridge Elimination)
+
+| Metric | v3.1 Bridge | v4.0 sql.js | Improvement |
+|--------|-------------|-------------|-------------|
+| **Data Access Latency** | <16ms | <1ms | Direct memory access |
+| **Serialization Overhead** | MessagePack | Zero | Same memory space |
+| **Bridge Code Size** | 40KB | 0KB | Eliminated |
+| **Query Execution** | Async/Promise | Synchronous | No callback overhead |
+| **Memory Footprint** | Bridge buffers | Direct binding | ~50% reduction |
+| **Bundle Complexity** | Swift + JS bridge | WASM + JS | Simplified architecture |
 
 ### Performance Targets (v3.2 Enhanced Apple Integration)
 
@@ -535,6 +598,21 @@ Actor Patterns          Message Serialization        React Component Tree
 
 **v3.4 Coverage:** 8/8 requirements mapped ✓
 
+### v4.0 Bridge Elimination Architecture Requirements
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SQLJS-FOUNDATION-01 | Phase 33 | Planned |
+| SQLJS-FOUNDATION-02 | Phase 33 | Planned |
+| SQLJS-FOUNDATION-03 | Phase 33 | Planned |
+| DIRECT-ACCESS-01 | Phase 33 | Planned |
+| DIRECT-ACCESS-02 | Phase 33 | Planned |
+| BRIDGE-ELIMINATION-01 | Phase 33 | Planned |
+| BRIDGE-ELIMINATION-02 | Phase 33 | Planned |
+| SUPERGRID-FOUNDATION-01 | Phase 33 | Planned |
+
+**v4.0 Coverage:** 8/8 requirements mapped ✓
+
 ---
 
 ## Migration Strategy
@@ -548,6 +626,7 @@ Actor Patterns          Message Serialization        React Component Tree
 6. **Phase 29**: Enhance proven AltoIndexImporter with sophisticated live sync capabilities
 7. **Phase 30**: Extend to enterprise-grade data lifecycle with native access and verification
 8. **Phase 32**: Stabilize development environment across all technical stacks before advanced features
+9. **Phase 33**: Eliminate bridge architecture and establish sql.js foundation for SuperGrid
 
 ### Data Integrity Protection
 - Bridge-level transaction control with ACID guarantees
@@ -557,6 +636,7 @@ Actor Patterns          Message Serialization        React Component Tree
 - CRDT algorithms for Notes collaborative editing
 - Property-based testing for invariant validation
 - >99.9% accuracy verification pipeline
+- sql.js synchronous queries maintain data consistency
 
 ### Performance Validation
 - Bridge latency monitoring with 16ms targets for 60fps
@@ -567,6 +647,7 @@ Actor Patterns          Message Serialization        React Component Tree
 - Native database access optimization vs alto-index baseline
 - Content-Addressable Storage for efficient attachment handling
 - Multi-environment compilation and development workflow optimization
+- sql.js direct memory access eliminating serialization overhead
 
 ### Gap Closure Strategy
 - **Critical Issue:** Infrastructure complete but inaccessible to users
@@ -594,6 +675,13 @@ Actor Patterns          Message Serialization        React Component Tree
 - **Development workflow:** Enable parallel native and prototype development
 - **Quality baseline:** Establish clean compilation as foundation for advanced features
 
+### Bridge Elimination Strategy
+- **Architecture transformation:** 40KB bridge → 0KB (sql.js WASM direct access)
+- **Performance optimization:** 6 serialization boundaries → 0 (same memory space)
+- **Development simplification:** Async bridge calls → synchronous queries
+- **Foundation establishment:** Ready sql.js infrastructure for SuperGrid development
+- **Legacy migration:** Deprecate bridge clients with clear migration paths
+
 ---
 
-*Last updated: 2026-02-05 after Phase 32 gap closure plans 24-25 created*
+*Last updated: 2026-02-05 after Phase 33 bridge elimination planning*
