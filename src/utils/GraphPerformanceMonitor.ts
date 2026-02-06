@@ -1,7 +1,8 @@
 // Bridge elimination - Performance monitoring disabled
 // import { performanceMonitor, NativeRenderingMetrics, PerformanceComparison } from './d3Performance';
-import { graphAnalytics } from '../services/GraphAnalyticsAdapter';
-import { ConnectionSuggestion, SuggestionPerformanceMetrics } from '../services/ConnectionSuggestionService';
+// Bridge elimination - Legacy imports disabled
+// import { graphAnalytics } from '../services/GraphAnalyticsAdapter';
+// import { ConnectionSuggestion, SuggestionPerformanceMetrics } from '../services/ConnectionSuggestionService';
 
 // Analytics-specific metrics interface
 export interface AnalyticsMetrics {
@@ -172,7 +173,9 @@ export class GraphPerformanceMonitor {
    */
   async analyzeGraphComplexity(): Promise<GraphComplexityMetrics> {
     try {
-      const graphMetrics = await graphAnalytics.getGraphMetrics();
+      // Bridge elimination - Legacy graph analytics disabled
+      // const graphMetrics = await graphAnalytics.getGraphMetrics();
+      const graphMetrics = { totalNodes: 0, totalEdges: 0, graphDensity: 0 }; // Fallback
 
       const complexity: GraphComplexityMetrics = {
         nodeCount: graphMetrics.totalNodes,
@@ -311,16 +314,24 @@ export class GraphPerformanceMonitor {
   /**
    * Integration with native RenderingPerformanceMonitor
    */
-  async getNativeRenderingMetrics(): Promise<NativeRenderingMetrics | null> {
-    return performanceMonitor.getNativeMetrics();
+  async getNativeRenderingMetrics(): Promise<any | null> {
+    // Bridge elimination - Native metrics disabled
+    console.warn('[GraphPerformanceMonitor] Native rendering metrics disabled in sql.js architecture');
+    return null;
   }
 
   /**
    * Compare graph analytics performance with DOM rendering
    */
-  async getPerformanceComparison(datasetSize: number): Promise<PerformanceComparison | null> {
-    const complexity = await this.analyzeGraphComplexity();
-    return performanceMonitor.getPerformanceComparison(datasetSize, complexity.complexityScore);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async getPerformanceComparison(_datasetSize: number): Promise<any | null> {
+    // Graph complexity analysis - preserved for future performance comparison
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _complexity = await this.analyzeGraphComplexity();
+    void _complexity; // Explicitly mark as preserved
+    // Bridge elimination - Performance comparison disabled
+    console.warn('[GraphPerformanceMonitor] Performance comparison disabled in sql.js architecture');
+    return null;
   }
 
   /**
@@ -517,7 +528,8 @@ export class GraphPerformanceMonitor {
 
   private integrateWithD3Performance(): void {
     // Integration with existing d3Performance monitor
-    performanceMonitor.startMetric('graph-analytics-integration');
+    // Bridge elimination - D3Performance integration disabled
+    console.warn('[GraphPerformanceMonitor] D3Performance integration disabled in sql.js architecture');
   }
 
   private startMetricsCollection(): void {

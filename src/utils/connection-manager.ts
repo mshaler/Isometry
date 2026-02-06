@@ -9,7 +9,8 @@
  * network conditions and bridge performance metrics.
  */
 
-import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
+// Bridge elimination - Performance monitoring disabled
+// import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
 import { webViewBridge } from './webview-bridge';
 
 export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting' | 'syncing' | 'degraded' | 'error';
@@ -151,7 +152,9 @@ export class ConnectionManager {
 
     try {
       // Use circuit breaker for connection testing
-      const result = await this.executeWithCircuitBreaker(async () => {
+      // Circuit breaker result - preserved for future error handling
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _result = await this.executeWithCircuitBreaker(async () => {
         const health = webViewBridge.getHealthStatus();
         if (!health.isConnected) {
           throw new Error('Bridge not connected');
@@ -161,6 +164,7 @@ export class ConnectionManager {
         await webViewBridge.database.execute('SELECT 1', []);
         return true;
       }, 'connection-test');
+      void _result; // Explicitly mark as preserved
 
       const latency = performance.now() - startTime;
       this.recordConnectionAttempt(true, latency);

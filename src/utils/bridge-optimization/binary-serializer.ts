@@ -155,7 +155,7 @@ export class BinarySerializer {
   /**
    * Convenience method for decoding bridge messages
    */
-  decodeBridgeMessage<T = unknown>(binaryData: Uint8Array): DeserializationResult<{
+  decodeBridgeMessage(binaryData: Uint8Array): DeserializationResult<{
     id: string;
     handler: string;
     method: string;

@@ -5,6 +5,7 @@ import { CardDetailModal } from './CardDetailModal';
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFV } from '../hooks/usePAFV';
 import type { LATCHFilter } from '../types/filters';
+import { SQLiteDebugConsole } from './SQLiteDebugConsole';
 
 interface FilterChipProps {
   filter: LATCHFilter;
@@ -51,8 +52,11 @@ export function SuperGridDemo() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Context hooks
-  const { db, execute: sqliteExecute } = useSQLite();
+  const { db, execute: sqliteExecute, loading: sqliteLoading, error: sqliteError } = useSQLite();
   const { state: pafvState } = usePAFV();
+
+  // Debug logging
+  console.log('SuperGridDemo: SQLite state', { db: !!db, loading: sqliteLoading, error: sqliteError });
 
   // Create DatabaseService adapter from SQLite context
   useEffect(() => {
@@ -70,7 +74,12 @@ export function SuperGridDemo() {
       saveTimer: null,
       initialize: async () => {},
       query: function(sql: string, params: any[] = []) {
-        if (!db) throw new Error('Database not ready');
+        console.log('🎯 DatabaseService.query(): Called', { sql, params });
+
+        if (!db) {
+          console.error('🚨 DatabaseService.query(): Database not ready');
+          throw new Error('Database not ready');
+        }
 
         try {
           const stmt = db.prepare(sql);
@@ -83,6 +92,7 @@ export function SuperGridDemo() {
               if (typeof p === 'string' || typeof p === 'number' || typeof p === 'boolean') return p;
               return String(p);
             });
+            console.log('🎯 DatabaseService.query(): Binding params', validParams);
             stmt.bind(validParams as any);
           }
 
@@ -91,6 +101,8 @@ export function SuperGridDemo() {
           }
 
           stmt.free();
+          console.log('✅ DatabaseService.query(): Result count:', result.length);
+          console.log('📝 DatabaseService.query(): Sample results:', result.slice(0, 2));
           return result;
         } catch (error) {
           console.error('Database query error:', error);
@@ -130,7 +142,34 @@ export function SuperGridDemo() {
       verifyRecursiveCTE: () => ({ available: false }),
       getCapabilities: () => ({ fts5: { available: false }, json1: { available: false }, recursiveCTE: { available: false }, ready: true, dirty: false }),
       getStats: () => ({ tables: 0, indexes: 0, triggers: 0, size: 0 }),
-      markDirty: () => {} // Add missing method
+      markDirty: () => {}, // Add missing method
+      // Add missing drag & drop methods
+      updateCardPosition: (cardId: string, x: number, y: number) => {
+        try {
+          const stmt = db.prepare('UPDATE nodes SET grid_x = ?, grid_y = ?, modified_at = datetime("now") WHERE id = ?');
+          stmt.bind([x, y, cardId]);
+          stmt.step();
+          stmt.free();
+          return { success: true };
+        } catch (error) {
+          console.error('updateCardPosition error:', error);
+          return { success: false, error };
+        }
+      },
+      updateCardPositions: (positions: Array<{cardId: string, x: number, y: number}>) => {
+        try {
+          positions.forEach(pos => {
+            const stmt = db.prepare('UPDATE nodes SET grid_x = ?, grid_y = ?, modified_at = datetime("now") WHERE id = ?');
+            stmt.bind([pos.x, pos.y, pos.cardId]);
+            stmt.step();
+            stmt.free();
+          });
+          return { success: true };
+        } catch (error) {
+          console.error('updateCardPositions error:', error);
+          return { success: false, errors: [error] };
+        }
+      }
     } as unknown as DatabaseService;
 
     setDbService(adapter);
@@ -376,6 +415,10 @@ export function SuperGridDemo() {
 
     setSuperGrid(grid);
 
+    // Load initial data with no filters (show all cards)
+    console.log('SuperGridDemo: Loading initial data');
+    grid.query({});
+
     // Focus for keyboard navigation
     setTimeout(() => grid.focus(), 100);
 
@@ -421,8 +464,37 @@ export function SuperGridDemo() {
     setActiveFilters(prev => [...prev, newFilter]);
   }, []);
 
+  // Show loading state while SQLite initializes
+  if (sqliteLoading) {
+    return (
+      <div className="h-full bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading SQLite database...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if SQLite failed to initialize
+  if (sqliteError) {
+    return (
+      <div className="h-full bg-white flex items-center justify-center">
+        <div className="text-center text-red-600">
+          <p className="font-semibold mb-2">Database Error</p>
+          <p className="text-sm">{sqliteError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full flex flex-col bg-gray-50">
+      {/* SQLite Debug Console */}
+      <div className="flex-none p-4 bg-white border-b border-gray-200">
+        <SQLiteDebugConsole />
+      </div>
+
       {/* Header with filter controls */}
       <div className="flex-none p-4 bg-white border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">

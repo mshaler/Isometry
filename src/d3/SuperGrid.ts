@@ -443,6 +443,10 @@ export class SuperGrid {
 
       // Execute query
       const cards = this.database.query<any>(sql, params) || [];
+      console.log('🔍 SuperGrid.query(): SQL:', sql);
+      console.log('🔍 SuperGrid.query(): Params:', params);
+      console.log('🔍 SuperGrid.query(): Result count:', cards.length);
+      console.log('🔍 SuperGrid.query(): Sample cards:', cards.slice(0, 3));
 
       // Transform to grid data structure
       const gridData: GridData = {
@@ -453,6 +457,12 @@ export class SuperGrid {
           columns: Math.min(cards.length, this.config.columnsPerRow!)
         }
       };
+
+      console.log('📊 SuperGrid.query(): Grid data:', {
+        cardCount: gridData.cards.length,
+        headerCount: gridData.headers.length,
+        dimensions: gridData.dimensions
+      });
 
       this.currentData = gridData;
       this.updateGridLayout();
@@ -512,21 +522,44 @@ export class SuperGrid {
    * Main render method
    */
   render(): void {
-    if (!this.currentData) return;
+    console.log('🎨 SuperGrid.render(): Called', {
+      hasCurrentData: !!this.currentData,
+      cardCount: this.currentData?.cards.length || 0
+    });
 
+    if (!this.currentData) {
+      console.warn('⚠️ SuperGrid.render(): No current data to render');
+      return;
+    }
+
+    console.log('🎨 SuperGrid.render(): Setting up grid structure...');
     this.setupGridStructure();
+
+    console.log('🎨 SuperGrid.render(): Rendering headers...');
     this.renderHeaders();
+
+    console.log('🎨 SuperGrid.render(): Rendering cards...');
     this.renderCards();
+
+    console.log('✅ SuperGrid.render(): Complete');
   }
 
   /**
    * Render card elements with multi-select support
    */
   private renderCards(): void {
-    if (!this.currentData) return;
+    console.log('🗂️ SuperGrid.renderCards(): Starting...');
+
+    if (!this.currentData) {
+      console.warn('⚠️ SuperGrid.renderCards(): No current data');
+      return;
+    }
 
     const cards = this.currentData.cards;
     const columnsPerRow = this.config.columnsPerRow!;
+
+    console.log('🗂️ SuperGrid.renderCards(): Cards to render:', cards.length);
+    console.log('🗂️ SuperGrid.renderCards(): Columns per row:', columnsPerRow);
 
     // Calculate positions - use stored grid positions if available, otherwise calculate from index
     const cardGroups = cards.map((card: any, index: number) => ({
@@ -540,9 +573,16 @@ export class SuperGrid {
            (this.config.enableHeaders ? this.headerHeight + this.padding : 0)
     }));
 
+    console.log('🗂️ SuperGrid.renderCards(): Card groups prepared:', cardGroups.length);
+
     // Data binding with D3.js join pattern
+    console.log('🗂️ SuperGrid.renderCards(): Binding data to DOM...');
     const joined = this.container.selectAll<SVGGElement, any>('.card-group')
       .data(cardGroups, (d: any) => d.id);
+
+    console.log('🗂️ SuperGrid.renderCards(): Data bound. Existing elements:', joined.size());
+    console.log('🗂️ SuperGrid.renderCards(): Elements to enter:', joined.enter().size());
+    console.log('🗂️ SuperGrid.renderCards(): Elements to exit:', joined.exit().size());
 
     // Enter new cards
     const entering = joined.enter()
@@ -666,8 +706,15 @@ export class SuperGrid {
    * Set up grid structure with header groups
    */
   private setupGridStructure(): void {
+    console.log('🏗️ SuperGrid.setupGridStructure(): Setting up grid structure...');
+
+    // Remove existing grid structure to avoid duplicates
+    this.container.select('.grid-structure').remove();
+
     const gridStructure = this.container.append('g')
       .attr('class', 'grid-structure');
+
+    console.log('🏗️ SuperGrid.setupGridStructure(): Grid structure created');
 
     // Create header containers
     gridStructure.append('g')
@@ -780,7 +827,24 @@ export class SuperGrid {
    * Clean up event listeners and resources
    */
   destroy(): void {
+    // Remove all event listeners and clear selection manager
+    if (this.selectionManager) {
+      this.selectionManager.clearSelection();
+    }
+
+    // Clear drag behavior to prevent memory leaks
+    if (this.dragBehavior) {
+      this.container.selectAll('.card-group').on('.drag', null);
+      this.dragBehavior = null;
+    }
+
+    // Remove all D3 elements and event listeners
     this.container.selectAll('*').remove();
     this.container.on('keydown', null);
+
+    // Clear data references
+    this.currentData = null;
+    this.isDragging = false;
+    this.dragStartPosition = { x: 0, y: 0 };
   }
 }

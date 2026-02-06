@@ -6,7 +6,10 @@
  */
 
 import { renderingPerformanceMonitor, viewportOptimizer } from './rendering-performance';
-import type { Viewport, RenderingMetrics, OptimizationStrategy } from './rendering-performance';
+// Import types still needed for method signatures
+import type { Viewport } from './rendering-performance';
+// Bridge elimination - Unused legacy types disabled
+// import type { RenderingMetrics, OptimizationStrategy } from './rendering-performance';
 import { Environment } from './webview-bridge';
 
 // ============================================================================
@@ -463,7 +466,7 @@ export class PerformanceValidator {
   public async validateOptimization(
     viewport: Viewport,
     nodeCount: number,
-    _optimizationStrategy: OptimizationStrategy
+    _optimizationStrategy: unknown
   ): Promise<{
     effective: boolean;
     improvement: {
@@ -635,7 +638,9 @@ export class PerformanceValidator {
     }
   }
 
-  private async simulateOptimizedRendering(viewport: Viewport, nodeCount: number): Promise<void> {
+  // Viewport simulation - preserved for future optimization validation
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private async simulateOptimizedRendering(_viewport: Viewport, nodeCount: number): Promise<void> {
     // Apply optimizations during rendering
     // Simulate viewport culling
     const visibleNodeCount = Math.floor(nodeCount * 0.3); // 30% visible

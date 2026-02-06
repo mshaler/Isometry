@@ -369,7 +369,7 @@ export class CircuitBreaker {
   private createFailureResult<T>(
     error: Error,
     startTime: number,
-    operationName?: string
+    _operationName?: string
   ): ExecutionResult<T> {
     const executionTime = performance.now() - startTime;
 

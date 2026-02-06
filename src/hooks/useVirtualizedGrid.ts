@@ -114,7 +114,9 @@ export function useVirtualizedGrid(
   } = options;
 
   // Merge layout configuration with defaults
-  const _fullLayoutConfig: GridLayoutConfig = useMemo(() => ({
+  // Computed layout config - preserved for potential future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const fullLayoutConfig: GridLayoutConfig = useMemo(() => ({
     ...DEFAULT_GRID_LAYOUT,
     ...layoutConfig,
     virtualScrolling: {
@@ -122,6 +124,9 @@ export function useVirtualizedGrid(
       ...layoutConfig?.virtualScrolling
     }
   }), [layoutConfig]);
+
+  // Explicitly mark as used for potential future features
+  void fullLayoutConfig;
 
   // Container refs for virtualization
   const containerRef = useRef<HTMLDivElement>(null);

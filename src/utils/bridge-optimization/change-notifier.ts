@@ -76,6 +76,9 @@ export class ChangeNotifier {
     if (this.options.enableDebugLogging) {
       console.log('[ChangeNotifier] Initialized with options:', this.options);
     }
+
+    // Explicitly mark legacy methods as preserved for compatibility
+    void this._handleLiveDataEvent;
   }
 
   /**
@@ -206,7 +209,9 @@ export class ChangeNotifier {
     console.warn('[ChangeNotifier] Bridge-based change notification deprecated in sql.js architecture');
   }
 
-  private handleLiveDataEvent(event: LiveDataEvent): void {
+  // Legacy method - preserved for bridge compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private _handleLiveDataEvent(event: LiveDataEvent): void {
     this.eventCount++;
 
     // Verify event ordering

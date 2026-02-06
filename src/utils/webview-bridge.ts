@@ -1308,9 +1308,10 @@ export class OptimizedBridge {
   /**
    * Execute query with pagination
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private async executeWithPagination<T>(
-    handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
-    method: string,
+    _handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
+    _method: string,
     params: Record<string, unknown>
   ): Promise<T> {
     // Convert to SQL query format for paginator

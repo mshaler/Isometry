@@ -126,9 +126,15 @@ function calculateImportance(content: string, docType: string): number {
 
   // Document type weights
   switch (docType) {
-    case 'spec': score += 1;
-    case 'plan': score += 1;
-    case 'journal': score -= 1; break;
+    case 'spec':
+      score += 1;
+      break;
+    case 'plan':
+      score += 1;
+      break;
+    case 'journal':
+      score -= 1;
+      break;
   }
 
   return Math.min(Math.max(score, 0), 5); // Clamp 0-5

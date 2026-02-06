@@ -58,8 +58,7 @@ export interface SyncProgressEvent {
 }
 
 // Import type for module augmentation (used in declare module below)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { WebKitMessageHandlers } from '../utils/webview-bridge';
+// import type { WebKitMessageHandlers } from '../utils/webview-bridge';
 
 // Bridge communication interface
 interface CloudKitBridge {

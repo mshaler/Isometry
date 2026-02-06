@@ -57,7 +57,9 @@ export interface PaginatorMetrics {
 export class QueryPaginator {
   private readonly defaultPageSize: number;
   private readonly maxPageSize: number;
-  private readonly enableEstimation: boolean;
+  // Legacy option - preserved for compatibility
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private readonly _enableEstimation: boolean;
   private readonly cursorField: string;
 
   // Metrics tracking
@@ -88,8 +90,11 @@ export class QueryPaginator {
     this.executeQuery = executeQuery;
     this.defaultPageSize = Math.min(options.defaultPageSize ?? 50, 50); // Max 50 records per message
     this.maxPageSize = Math.min(options.maxPageSize ?? 50, 50); // Enforce 50 record limit
-    this.enableEstimation = options.enableEstimation ?? false;
+    this._enableEstimation = options.enableEstimation ?? false;
     this.cursorField = options.cursorField ?? 'id';
+
+    // Explicitly mark preserved fields
+    void this._enableEstimation;
   }
 
   /**
@@ -329,7 +334,8 @@ export class QueryPaginator {
   /**
    * Build cursor condition for WHERE clause
    */
-  private buildCursorCondition(sql: string, operator: string, cursorValue: string): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private buildCursorCondition(_sql: string, operator: string, _cursorValue: string): string {
     return `${this.cursorField} ${operator} ?`;
   }
 

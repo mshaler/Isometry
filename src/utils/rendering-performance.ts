@@ -233,7 +233,9 @@ export class RenderingPerformanceMonitor {
     };
   }
 
-  private detectMemoryLeak(currentUsage: number): boolean {
+  // Memory leak detection - preserved for future memory monitoring
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private detectMemoryLeak(_currentUsage: number): boolean {
     if (this.memoryReadings.length < 10) return false;
 
     // Simple leak detection: continuous growth over time

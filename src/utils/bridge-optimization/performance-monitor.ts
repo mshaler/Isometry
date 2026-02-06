@@ -346,7 +346,7 @@ export class PerformanceMonitor {
   /**
    * Track cache efficiency for virtual scrolling
    */
-  public trackCacheEfficiency(virtualHits: number, queryHits: number, total: number): void {
+  public trackCacheEfficiency(virtualHits: number, _queryHits: number, total: number): void {
     const now = performance.now();
 
     const sample: MetricsSample = {
@@ -369,7 +369,7 @@ export class PerformanceMonitor {
   /**
    * Track update latency pipeline: query → virtual → render
    */
-  public trackUpdateLatency(queryTime: number, virtualTime: number, renderTime: number): void {
+  public trackUpdateLatency(queryTime: number, _virtualTime: number, renderTime: number): void {
     const now = performance.now();
 
     const sample: MetricsSample = {
@@ -861,7 +861,10 @@ export class PerformanceMonitor {
    */
   private updateVirtualScrollingMetrics(): void {
     const all = this.samples;
-    const recent = this.samples.slice(-10);
+    // Recent samples - preserved for potential analytics
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _recent = this.samples.slice(-10);
+    void _recent; // Explicitly mark as preserved
 
     // Frame rate metrics
     const frameRates = all.map(s => s.frameRate).filter(f => f && f > 0);
