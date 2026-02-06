@@ -180,12 +180,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can scroll through 10k+ cells with 60fps performance maintained
   4. TypeScript compilation succeeds with zero errors across all SuperGrid modules
   5. System integrates with existing PAFVContext without breaking current LATCH filtering
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 34-01: TBD
-- [ ] 34-02: TBD
-- [ ] 34-03: TBD
+- [ ] 34-01-PLAN.md — TypeScript Foundation and sql.js Capability Verification
+- [ ] 34-02-PLAN.md — Janus Density Grid Cells with Virtual Scrolling
+- [ ] 34-03-PLAN.md — SuperGrid Integration with LATCH Headers
 
 #### Phase 35: PAFV Grid Core
 **Goal**: Enable dynamic axis assignment with drag-drop wells for real-time view reconfiguration
