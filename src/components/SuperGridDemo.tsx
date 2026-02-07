@@ -5,6 +5,7 @@ import { CardDetailModal } from './CardDetailModal';
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFV } from '../hooks/usePAFV';
 import type { LATCHFilter } from '../types/filters';
+import { LATCHFilterService } from '../services/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
 
 interface FilterChipProps {
@@ -15,7 +16,7 @@ interface FilterChipProps {
 function FilterChip({ filter, onRemove }: FilterChipProps) {
   return (
     <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
-      {filter.label}: {filter.displayValue}
+      {filter.label}
       <button
         onClick={onRemove}
         className="ml-2 w-4 h-4 text-blue-600 hover:text-blue-800"
@@ -47,6 +48,7 @@ export function SuperGridDemo() {
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [dbService, setDbService] = useState<DatabaseService | null>(null);
+  const [filterService] = useState(() => new LATCHFilterService());
 
   // Refs
   const svgRef = useRef<SVGSVGElement>(null);
@@ -57,6 +59,19 @@ export function SuperGridDemo() {
 
   // Debug logging
   console.log('SuperGridDemo: SQLite state', { db: !!db, loading: sqliteLoading, error: sqliteError });
+
+  // Set up filter service listener for state sync
+  useEffect(() => {
+    const unsubscribe = filterService.onFilterChange((filters) => {
+      console.log('SuperGridDemo: Filter service state changed', { count: filters.length, filters });
+      setActiveFilters(filters);
+    });
+
+    // Initialize with current filters
+    setActiveFilters(filterService.getActiveFilters());
+
+    return unsubscribe;
+  }, [filterService]);
 
   // Create DatabaseService adapter from SQLite context
   useEffect(() => {
@@ -189,14 +204,38 @@ export function SuperGridDemo() {
     setIsModalOpen(true);
   }, []);
 
+  // Header click handler for LATCH filtering
+  const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
+    console.log('SuperGridDemo: Header clicked', { axis, facet, value });
+
+    // Check if filter already exists
+    const existing = filterService.getActiveFilters().find(
+      filter => filter.facet === facet && filter.value === value
+    );
+
+    if (existing) {
+      // Remove existing filter (toggle off)
+      filterService.removeFilter(existing.id);
+    } else {
+      // Add new filter
+      const filterId = filterService.addFilter(
+        axis as any,
+        facet,
+        'equals',
+        value,
+        `${facet}: ${value}`
+      );
+      console.log('SuperGridDemo: Added filter', { filterId, axis, facet, value });
+    }
+  }, [filterService]);
+
   const handleFilterRemove = useCallback((filterId: string) => {
-    // Remove filter from active filters
-    setActiveFilters(prev => prev.filter(filter => filter.id !== filterId));
-  }, []);
+    filterService.removeFilter(filterId);
+  }, [filterService]);
 
   const handleClearAllFilters = useCallback(() => {
-    setActiveFilters([]);
-  }, []);
+    filterService.clearFilters();
+  }, [filterService]);
 
   // Bulk operation handlers
   const handleBulkDelete = useCallback(async (selectedIds: string[]) => {
@@ -409,15 +448,17 @@ export function SuperGridDemo() {
       {
         onCardClick: handleCardClick,
         onSelectionChange: handleSelectionChange,
-        onBulkOperation: handleBulkOperation
+        onBulkOperation: handleBulkOperation,
+        onHeaderClick: handleHeaderClick
       }
     );
 
     setSuperGrid(grid);
 
-    // Load initial data with no filters (show all cards)
+    // Load initial data with compiled filters
     console.log('SuperGridDemo: Loading initial data');
-    grid.query({});
+    const filterCompilation = filterService.compileToSQL();
+    grid.query(filterCompilation);
 
     // Focus for keyboard navigation
     setTimeout(() => grid.focus(), 100);
@@ -426,21 +467,22 @@ export function SuperGridDemo() {
       grid.destroy();
       setSuperGrid(null);
     };
-  }, [dbService, handleCardClick, handleSelectionChange, handleBulkOperation]);
+  }, [dbService, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
 
   // Apply LATCH filters to grid
   useEffect(() => {
-    if (!superGrid) return;
+    if (!superGrid || !filterService) return;
 
-    const filters: Record<string, any> = {};
-
-    activeFilters.forEach(filter => {
-      filters[filter.dimension] = filter.value;
+    console.log('SuperGridDemo: Compiling and applying filters', { activeFilterCount: activeFilters.length });
+    const filterCompilation = filterService.compileToSQL();
+    console.log('SuperGridDemo: Filter compilation result', {
+      whereClause: filterCompilation.whereClause,
+      parameterCount: filterCompilation.parameters.length,
+      isEmpty: filterCompilation.isEmpty
     });
 
-    console.log('SuperGridDemo: Applying filters', filters);
-    superGrid.query(filters);
-  }, [superGrid, activeFilters]);
+    superGrid.query(filterCompilation);
+  }, [superGrid, activeFilters, filterService]);
 
   // Handle PAFV state changes
   useEffect(() => {
@@ -450,19 +492,28 @@ export function SuperGridDemo() {
     // Future: Apply PAFV axis mappings to grid layout
   }, [superGrid, pafvState]);
 
-  const handleFilterFromHeader = useCallback((headerValue: string, dimension: string) => {
-    const newFilter: LATCHFilter = {
-      id: `${dimension}-${headerValue}-${Date.now()}`,
-      dimension: dimension as any,
-      operator: 'equals',
-      value: headerValue,
-      displayValue: headerValue,
-      label: dimension.charAt(0).toUpperCase() + dimension.slice(1),
-      category: 'user'
+  const handleFilterFromHeader = useCallback((headerValue: string, facet: string) => {
+    // Map facet to LATCH axis
+    const facetToAxisMap: Record<string, 'L' | 'A' | 'T' | 'C' | 'H'> = {
+      'status': 'C',
+      'folder': 'C',
+      'priority': 'H',
+      'name': 'A',
+      'created_at': 'T'
     };
 
-    setActiveFilters(prev => [...prev, newFilter]);
-  }, []);
+    const axis = facetToAxisMap[facet] || 'C'; // Default to Category
+
+    // Add filter using LATCHFilterService
+    const filterId = filterService.addFilter(
+      axis,
+      facet,
+      'equals',
+      headerValue,
+      `${facet}: ${headerValue}`
+    );
+    console.log('SuperGridDemo: Quick filter added', { filterId, axis, facet, value: headerValue });
+  }, [filterService]);
 
   // Show loading state while SQLite initializes
   if (sqliteLoading) {
