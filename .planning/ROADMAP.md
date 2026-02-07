@@ -168,7 +168,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 34: Foundation Stabilization** - Verify sql.js + D3.js integration with stable TypeScript compilation
 - [x] **Phase 35: PAFV Grid Core** - Enhanced SuperGrid interactions with card details, filtering, multi-select, and drag & drop
 - [x] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
-- [ ] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
+- [x] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
+- [ ] **Phase 38: Foundation Verification & Architecture Reconciliation** - Gap closure for Phase 34 verification and architectural mismatch resolution
+- [ ] **Phase 39: Missing Requirement Implementation** - Implementation of missing FOUND-06 column resizing requirement
+- [ ] **Phase 40: Tech Debt Cleanup & Integration Polish** - Resolution of identified tech debt and integration TODOs
 
 #### Phase 34: Foundation Stabilization
 **Goal**: Establish stable sql.js + D3.js integration with basic grid rendering and TypeScript compilation cleanup
@@ -243,10 +246,46 @@ Plans:
 - [x] 37-01-PLAN.md — View Infrastructure and Orchestration Layer
 - [x] 37-02-PLAN.md — ListView, KanbanView, and ViewSwitcher Integration
 
+#### Phase 38: Foundation Verification & Architecture Reconciliation
+**Goal**: Verify Phase 34 requirements and resolve architectural mismatch between DatabaseService and SQLiteProvider
+**Depends on**: Phase 37
+**Gap Closure**: Addresses missing VERIFICATION.md for Phase 34 and 9 unverified requirements
+**Success Criteria** (what must be TRUE):
+  1. Phase 34 VERIFICATION.md file created with all requirement verifications
+  2. All 9 FOUND/INTEG requirements verified as implemented (FOUND-01 through INTEG-05)
+  3. DatabaseService vs SQLiteProvider architectural mismatch resolved
+  4. Bridge elimination architecture fully operational without adapter patterns
+  5. Foundation requirements verified and documented for milestone closure
+**Plans**: TBD - use `/gsd:plan-phase 38`
+
+#### Phase 39: Missing Requirement Implementation
+**Goal**: Implement missing FOUND-06 requirement for column resizing with drag handles
+**Depends on**: Phase 38
+**Gap Closure**: Implements missing FOUND-06 requirement identified in audit
+**Success Criteria** (what must be TRUE):
+  1. User can resize columns by dragging handles on column borders
+  2. Column widths persist across sessions and view transitions
+  3. Resizing integrates seamlessly with existing SuperGrid architecture
+  4. Performance remains at 60fps during resize operations
+  5. FOUND-06 requirement fully satisfied and verifiable
+**Plans**: TBD - use `/gsd:plan-phase 39`
+
+#### Phase 40: Tech Debt Cleanup & Integration Polish
+**Goal**: Resolve identified tech debt and TODO placeholders for clean milestone closure
+**Depends on**: Phase 39
+**Gap Closure**: Addresses 15+ TODO items and integration stubs identified in audit
+**Success Criteria** (what must be TRUE):
+  1. All "TODO: Database service integration" items resolved
+  2. Smooth scrolling implemented in ListView/KanbanView
+  3. Card type analysis completed in SelectionManager
+  4. All integration TODO placeholders removed or implemented
+  5. Clean codebase ready for milestone archival
+**Plans**: TBD - use `/gsd:plan-phase 40`
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 33 → 34 → 35 → 36 → 37
+Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -255,3 +294,6 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37
 | 35. PAFV Grid Core | v4.1 | 5/5 | ✅ Complete | 2026-02-07 |
 | 36. SuperGrid Headers | v4.1 | 3/3 | ✅ Complete | 2026-02-07 |
 | 37. Grid Continuum | v4.1 | 2/2 | ✅ Complete | 2026-02-07 |
+| 38. Foundation Verification & Architecture Reconciliation | v4.1 | 0/TBD | 📋 Gap Closure | - |
+| 39. Missing Requirement Implementation | v4.1 | 0/TBD | 📋 Gap Closure | - |
+| 40. Tech Debt Cleanup & Integration Polish | v4.1 | 0/TBD | 📋 Gap Closure | - |
