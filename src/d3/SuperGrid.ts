@@ -133,6 +133,36 @@ export class SuperGrid {
     this.initializeDragBehavior();
   }
 
+  // ========================================================================
+  // Zoom/Pan Handlers (SuperGridZoom callbacks)
+  // ========================================================================
+
+  private handleZoomChange(
+    _level: ZoomLevel,
+    _transform: d3.ZoomTransform
+  ): void {
+    // Re-render at new zoom level
+    if (this.currentData) {
+      this.render(); // Use no-arg render to maintain current behavior
+    }
+  }
+
+  private handlePanChange(
+    _level: PanLevel,
+    _transform: d3.ZoomTransform
+  ): void {
+    // Re-render at new pan/density level
+    if (this.currentData) {
+      this.render(); // Use no-arg render to maintain current behavior
+    }
+  }
+
+  private handleJanusStateChange(state: JanusState): void {
+    console.log('🔍 SuperGrid.handleJanusStateChange():', state);
+    // Persist state for restoration
+    // TODO: Save to DatabaseService for cross-session persistence
+  }
+
   /**
    * Set up keyboard navigation and shortcuts
    */
@@ -946,42 +976,6 @@ export class SuperGrid {
   }
 
   // SuperGridZoom Integration
-
-  /**
-   * Handle zoom level change from SuperGridZoom
-   */
-  private handleZoomChange(level: ZoomLevel, transform: d3.ZoomTransform): void {
-    console.log('🔍 SuperGrid.handleZoomChange():', { level, transform });
-
-    // Trigger grid re-render with new zoom level
-    this.render();
-  }
-
-  /**
-   * Handle pan level change from SuperGridZoom
-   */
-  private handlePanChange(level: PanLevel, transform: d3.ZoomTransform): void {
-    console.log('🔍 SuperGrid.handlePanChange():', { level, transform });
-
-    // Trigger grid re-render with new pan level
-    this.render();
-  }
-
-  /**
-   * Handle Janus state change from SuperGridZoom
-   */
-  private handleJanusStateChange(state: JanusState): void {
-    console.log('🔍 SuperGrid.handleJanusStateChange():', state);
-
-    // Save state to database via DatabaseService
-    try {
-      // Store state as JSON in a user preferences table or similar
-      // For now, we'll just log it - database persistence can be enhanced later
-      console.log('🔍 SuperGrid: Janus state saved to database context');
-    } catch (error) {
-      console.error('Failed to save Janus state:', error);
-    }
-  }
 
   /**
    * Set zoom level (value density control)

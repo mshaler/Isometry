@@ -4,9 +4,10 @@ import type { DatabaseService } from '../db/DatabaseService';
 import { CardDetailModal } from './CardDetailModal';
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFV } from '../hooks/usePAFV';
-import type { LATCHFilter } from '../types/filters';
 import { LATCHFilterService } from '../services/LATCHFilterService';
+import type { LATCHFilter } from '../services/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
+import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 
 interface FilterChipProps {
   filter: LATCHFilter;
@@ -49,6 +50,10 @@ export function SuperGridDemo() {
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [dbService, setDbService] = useState<DatabaseService | null>(null);
   const [filterService] = useState(() => new LATCHFilterService());
+
+  // Zoom/Pan state for Janus controls
+  const [currentZoomLevel, setCurrentZoomLevel] = useState<ZoomLevel>('leaf');
+  const [currentPanLevel, setCurrentPanLevel] = useState<PanLevel>('dense');
 
   // Refs
   const svgRef = useRef<SVGSVGElement>(null);
@@ -463,6 +468,14 @@ export function SuperGridDemo() {
     // Focus for keyboard navigation
     setTimeout(() => grid.focus(), 100);
 
+    // Sync component state with SuperGrid's zoom/pan levels
+    setTimeout(() => {
+      const currentZoom = grid.getCurrentZoomLevel();
+      const currentPan = grid.getCurrentPanLevel();
+      setCurrentZoomLevel(currentZoom);
+      setCurrentPanLevel(currentPan);
+    }, 100);
+
     return () => {
       grid.destroy();
       setSuperGrid(null);
@@ -514,6 +527,32 @@ export function SuperGridDemo() {
     );
     console.log('SuperGridDemo: Quick filter added', { filterId, axis, facet, value: headerValue });
   }, [filterService]);
+
+  // Zoom/Pan control handlers
+  const handleZoomLevelChange = useCallback((level: ZoomLevel) => {
+    console.log('SuperGridDemo: Zoom level changed to:', level);
+    setCurrentZoomLevel(level);
+    if (superGrid) {
+      superGrid.setZoomLevel(level);
+    }
+  }, [superGrid]);
+
+  const handlePanLevelChange = useCallback((level: PanLevel) => {
+    console.log('SuperGridDemo: Pan level changed to:', level);
+    setCurrentPanLevel(level);
+    if (superGrid) {
+      superGrid.setPanLevel(level);
+    }
+  }, [superGrid]);
+
+  const handleResetZoomPan = useCallback(() => {
+    console.log('SuperGridDemo: Resetting zoom/pan to defaults');
+    setCurrentZoomLevel('leaf');
+    setCurrentPanLevel('dense');
+    if (superGrid) {
+      superGrid.resetZoomPan();
+    }
+  }, [superGrid]);
 
   // Show loading state while SQLite initializes
   if (sqliteLoading) {
@@ -622,7 +661,7 @@ export function SuperGridDemo() {
         )}
 
         {/* Quick filter buttons */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 mb-4">
           <span className="text-sm text-gray-500">Quick filters:</span>
           <button
             onClick={() => handleFilterFromHeader('active', 'status')}
@@ -641,6 +680,71 @@ export function SuperGridDemo() {
             className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
           >
             High Priority
+          </button>
+        </div>
+
+        {/* Janus Zoom/Pan Controls */}
+        <div className="flex items-center justify-between">
+          {/* Zoom Level Control (Value Density) */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">Zoom Level:</span>
+            <div className="flex border border-gray-300 rounded overflow-hidden">
+              <button
+                onClick={() => handleZoomLevelChange('leaf')}
+                className={`px-3 py-1 text-sm ${
+                  currentZoomLevel === 'leaf'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Leaf (Jan, Feb, Mar)
+              </button>
+              <button
+                onClick={() => handleZoomLevelChange('collapsed')}
+                className={`px-3 py-1 text-sm border-l ${
+                  currentZoomLevel === 'collapsed'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Collapsed (Q1)
+              </button>
+            </div>
+          </div>
+
+          {/* Pan Level Control (Extent Density) */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-500">Pan Level:</span>
+            <div className="flex border border-gray-300 rounded overflow-hidden">
+              <button
+                onClick={() => handlePanLevelChange('dense')}
+                className={`px-3 py-1 text-sm ${
+                  currentPanLevel === 'dense'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Dense (Populated Only)
+              </button>
+              <button
+                onClick={() => handlePanLevelChange('sparse')}
+                className={`px-3 py-1 text-sm border-l ${
+                  currentPanLevel === 'sparse'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                Sparse (Full Cartesian)
+              </button>
+            </div>
+          </div>
+
+          {/* Reset Control */}
+          <button
+            onClick={handleResetZoomPan}
+            className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50 text-gray-700"
+          >
+            Reset View
           </button>
         </div>
       </div>
