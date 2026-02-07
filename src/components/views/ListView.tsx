@@ -34,7 +34,12 @@ interface ListViewProps {
  * - Sort direction toggle
  * - Integrates with SelectionContext for Card Overlay
  */
-export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { containerHeight: 600 }, onNodeClick }: ListViewProps) {
+export function ListView({
+  sql,
+  queryParams = [],
+  liveOptions: _liveOptions = { containerHeight: 600 },
+  onNodeClick
+}: ListViewProps) {
   const { selection, select } = useSelection();
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +58,11 @@ export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { 
         LOWER(name) LIKE '%${searchTerm}%' OR
         LOWER(content) LIKE '%${searchTerm}%' OR
         LOWER(summary) LIKE '%${searchTerm}%' OR
-        id IN (SELECT node_id FROM node_tags nt JOIN tags t ON nt.tag_id = t.id WHERE LOWER(t.name) LIKE '%${searchTerm}%')
+        id IN (
+          SELECT node_id FROM node_tags nt
+          JOIN tags t ON nt.tag_id = t.id
+          WHERE LOWER(t.name) LIKE '%${searchTerm}%'
+        )
       )`;
     }
 
@@ -170,12 +179,19 @@ export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by title, content, or tags..."
-            className="w-full pl-10 pr-10 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className={
+              "w-full pl-10 pr-10 py-2 text-sm border border-gray-300 " +
+              "dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 " +
+              "focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            }
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              className={
+                "absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 " +
+                "hover:text-gray-600 dark:hover:text-gray-200"
+              }
               aria-label="Clear search"
             >
               <X size={16} />
@@ -186,7 +202,11 @@ export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { 
         {/* Sort Toggle */}
         <button
           onClick={toggleSort}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+          className={
+            "flex items-center gap-2 px-3 py-2 text-sm font-medium " +
+            "text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 " +
+            "hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors"
+          }
           aria-label={`Sort ${sortAscending ? 'descending' : 'ascending'}`}
         >
           <ArrowUpDown size={16} />
@@ -196,7 +216,8 @@ export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { 
         {/* Live Data Indicator */}
         <div className={`flex items-center gap-1 px-2 py-1 text-xs rounded border ${
           isLive
-            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+            ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 ' +
+              'border-green-200 dark:border-green-800'
             : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
         }`}>
           <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-green-500 animate-pulse' : 'bg-red-400'}`}></div>
@@ -205,7 +226,10 @@ export function ListView({ sql, queryParams = [], liveOptions: _liveOptions = { 
 
         {/* Network Status Indicator */}
         <div
-          className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded border"
+          className={
+            "flex items-center gap-1 px-2 py-1 text-xs text-gray-600 " +
+            "dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded border"
+          }
           title={getNetworkTooltip()}
         >
           {getNetworkIcon()}

@@ -13,7 +13,9 @@ interface ShellComponentProps {
 function ShellComponentInner({ className }: ShellComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
-  const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<'configured' | 'not-configured'>('not-configured');
+  const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<
+    'configured' | 'not-configured'
+  >('not-configured');
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const { executeCommand: executeRouterCommand, navigateHistory, isExecuting } = useCommandRouter();
   const { getActiveCardContext } = useProjectContext();
@@ -53,7 +55,15 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     }
   };
 
-  const { createTerminal, attachToProcess, dispose, resizeTerminal, isConnected, writeOutput, showPrompt } = useTerminal({
+  const {
+    createTerminal,
+    attachToProcess,
+    dispose,
+    resizeTerminal,
+    isConnected,
+    writeOutput,
+    showPrompt
+  } = useTerminal({
     onCommand: handleTerminalCommand,
     onNavigateHistory: navigateHistory
   });
@@ -176,7 +186,12 @@ function ShellComponentInner({ className }: ShellComponentProps) {
             </div>
             <div className="flex items-center gap-1">
               <span className="text-gray-400">Claude:</span>
-              <Circle size={6} className={`fill-current ${claudeConnectionStatus === 'configured' ? 'text-green-400' : 'text-gray-500'}`} />
+              <Circle
+                size={6}
+                className={`fill-current ${
+                  claudeConnectionStatus === 'configured' ? 'text-green-400' : 'text-gray-500'
+                }`}
+              />
               <span className={claudeConnectionStatus === 'configured' ? 'text-green-400' : 'text-gray-500'}>
                 {claudeConnectionStatus === 'configured' ? 'ready' : 'not configured'}
               </span>

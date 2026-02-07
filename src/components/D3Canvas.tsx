@@ -411,7 +411,8 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   }, [useNativeRendering]);
 
   // Convert D3 cell commands to native render commands
-  const convertToNativeRenderCommands = useCallback((cellCommands: typeof canvasState.renderCommands.cells): RenderCommand[] => {
+  const convertToNativeRenderCommands = useCallback(
+    (cellCommands: typeof canvasState.renderCommands.cells): RenderCommand[] => {
     return cellCommands.map(cellCommand => {
       const { bounds, style } = cellCommand;
 
@@ -522,7 +523,14 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
         setFrameRate(fps);
       });
     }, 16), // 60fps debouncing
-    [canvasState.renderCommands, spatialIndex, isNativeRenderingEnabled, nativeCapabilities, viewport, convertToNativeRenderCommands]
+    [
+      canvasState.renderCommands,
+      spatialIndex,
+      isNativeRenderingEnabled,
+      nativeCapabilities,
+      viewport,
+      convertToNativeRenderCommands
+    ]
   );
 
   // Render canvas content when state changes

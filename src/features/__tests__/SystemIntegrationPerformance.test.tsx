@@ -71,8 +71,22 @@ describe('System Integration Performance Tests', () => {
           name: 'UI Button Test',
           description: 'Testing button colors',
           variants: [
-            { id: 'control', name: 'Blue Button', description: 'Current blue button', weight: 0.5, isControl: true, configuration: {} },
-            { id: 'test', name: 'Red Button', description: 'New red button', weight: 0.5, isControl: false, configuration: {} }
+            {
+              id: 'control',
+              name: 'Blue Button',
+              description: 'Current blue button',
+              weight: 0.5,
+              isControl: true,
+              configuration: {}
+            },
+            {
+              id: 'test',
+              name: 'Red Button',
+              description: 'New red button',
+              weight: 0.5,
+              isControl: false,
+              configuration: {}
+            }
           ],
           targetAudience: [],
           inclusionCriteria: [],
@@ -90,8 +104,22 @@ describe('System Integration Performance Tests', () => {
         createdAt: new Date().toISOString(),
         startedAt: new Date().toISOString(),
         variants: [
-          { id: 'control', name: 'Blue Button', description: 'Current blue button', weight: 0.5, isControl: true, configuration: {} },
-          { id: 'test', name: 'Red Button', description: 'New red button', weight: 0.5, isControl: false, configuration: {} }
+          {
+            id: 'control',
+            name: 'Blue Button',
+            description: 'Current blue button',
+            weight: 0.5,
+            isControl: true,
+            configuration: {}
+          },
+          {
+            id: 'test',
+            name: 'Red Button',
+            description: 'New red button',
+            weight: 0.5,
+            isControl: false,
+            configuration: {}
+          }
         ],
         userAssignments: {}
       }

@@ -445,7 +445,10 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     return () => {
       simulation.stop();
     };
-  }, [data, edges, edgesLoading, edgesError, theme, selectedNode, onNodeClick, connectionSuggestions, confidenceThreshold, applySuggestion]);
+  }, [
+    data, edges, edgesLoading, edgesError, theme, selectedNode,
+    onNodeClick, connectionSuggestions, confidenceThreshold, applySuggestion
+  ]);
 
   return (
     <div ref={containerRef} className="w-full h-full relative">

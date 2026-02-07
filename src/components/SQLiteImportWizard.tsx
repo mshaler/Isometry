@@ -278,10 +278,18 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
                     <input
                       type="number"
                       value={syncOptions.batchSize}
-                      onChange={(e) => setSyncOptions(prev => ({ ...prev, batchSize: parseInt(e.target.value) || 500 }))}
+                      onChange={(e) =>
+                        setSyncOptions(prev => ({
+                          ...prev,
+                          batchSize: parseInt(e.target.value) || 500
+                        }))
+                      }
                       min="100"
                       max="2000"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                      className={
+                        "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 " +
+                        "rounded-md bg-white dark:bg-gray-800"
+                      }
                     />
                   </div>
 
@@ -298,7 +306,10 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
                       }))}
                       min="10"
                       max="500"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
+                      className={
+                        "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 " +
+                        "rounded-md bg-white dark:bg-gray-800"
+                      }
                     />
                   </div>
                 </div>
@@ -335,7 +346,10 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
             />
             <label
               htmlFor="sqlite-file-input"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              className={
+                "inline-flex items-center px-4 py-2 border border-transparent " +
+                "text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
+              }
             >
               <Upload className="w-4 h-4 mr-2" />
               Select Database Files
@@ -437,7 +451,12 @@ export function SQLiteImportWizard({ isOpen, onClose, onImportComplete }: SQLite
                       )}
                       {fileStatus.status === 'processing' && (
                         <div className="flex items-center space-x-2">
-                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                          <div
+                            className={
+                              "w-4 h-4 border-2 border-blue-600 border-t-transparent " +
+                              "rounded-full animate-spin"
+                            }
+                          />
                           <span className="text-sm text-blue-600">Processing</span>
                         </div>
                       )}

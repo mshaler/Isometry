@@ -255,7 +255,11 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   }, [configurations, environment, valueCache]);
 
   // Set configuration value
-  const setValue = async function<T>(key: string, value: T, targetEnvironment?: ConfigurationEnvironment): Promise<void> {
+  const setValue = async function<T>(
+    key: string,
+    value: T,
+    targetEnvironment?: ConfigurationEnvironment
+  ): Promise<void> {
     try {
       const serializedValue = serializeConfigurationValue(value);
       const env = targetEnvironment || environment;
@@ -299,7 +303,10 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   }
 
   // Set multiple configuration values
-  const setBulkValues = async (updates: Record<string, unknown>, targetEnvironment?: ConfigurationEnvironment): Promise<void> => {
+  const setBulkValues = async (
+    updates: Record<string, unknown>,
+    targetEnvironment?: ConfigurationEnvironment
+  ): Promise<void> => {
     try {
       const serializedUpdates: Record<string, string> = {};
       for (const [key, value] of Object.entries(updates)) {
@@ -432,7 +439,10 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           format
         });
 
-        logger.info('configuration', `Configuration import completed - ${Object.keys(processedConfigs).length} keys imported`);
+        logger.info(
+          'configuration',
+          `Configuration import completed - ${Object.keys(processedConfigs).length} keys imported`
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to import configurations');

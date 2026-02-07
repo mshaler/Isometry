@@ -123,7 +123,12 @@ interface ABTestContextValue {
   isLoading: boolean;
   error?: string;
   getVariant: (experimentId: string, userId?: string) => ABTestVariant | null;
-  trackEvent: (eventType: ABTestEventType, experimentId: string, value?: number, metadata?: Record<string, unknown>) => void;
+  trackEvent: (
+    eventType: ABTestEventType,
+    experimentId: string,
+    value?: number,
+    metadata?: Record<string, unknown>
+  ) => void;
   getExperimentResults: (experimentId: string) => ExperimentResults | undefined;
   createExperiment: (config: ABTestConfiguration) => Promise<ABTest>;
   startExperiment: (experimentId: string) => Promise<void>;

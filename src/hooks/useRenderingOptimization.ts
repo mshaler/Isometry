@@ -96,7 +96,9 @@ export interface RenderingOptimizationActions {
 // Hook Implementation
 // ============================================================================
 
-export function useRenderingOptimization(config: RenderingOptimizationConfig): RenderingOptimizationState & RenderingOptimizationActions {
+export function useRenderingOptimization(
+  config: RenderingOptimizationConfig
+): RenderingOptimizationState & RenderingOptimizationActions {
 
   // ========================================================================
   // State

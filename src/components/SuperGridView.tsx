@@ -170,7 +170,20 @@ export function SuperGridView({
         }
       });
     }
-  }, [renderMode, activeView, primaryNodes?.length, showSuperCalc, showSuperDynamic, showJanusDensity, dynamicAxes, densityConfig, currentXAxis, currentXFacet, currentYAxis, currentYFacet]);
+  }, [
+    renderMode,
+    activeView,
+    primaryNodes?.length,
+    showSuperCalc,
+    showSuperDynamic,
+    showJanusDensity,
+    dynamicAxes,
+    densityConfig,
+    currentXAxis,
+    currentXFacet,
+    currentYAxis,
+    currentYFacet
+  ]);
 
   // Loading state
   if (primaryLoading) {

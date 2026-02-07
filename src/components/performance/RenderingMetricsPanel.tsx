@@ -335,7 +335,10 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
     } catch (error) {
       console.error('Failed to export performance report:', error);
     }
-  }, [customConfig, currentMetrics, alerts, memoryMetrics, recommendations, performanceStatus, metricTrends, metricHistory]);
+  }, [
+    customConfig, currentMetrics, alerts, memoryMetrics,
+    recommendations, performanceStatus, metricTrends, metricHistory
+  ]);
 
   // ========================================================================
   // Render Helpers

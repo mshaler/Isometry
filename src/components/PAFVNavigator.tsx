@@ -40,7 +40,8 @@ function DraggableChip({ chip, well, index, moveChip, toggleCheckbox, theme }: D
         isDragging ? 'opacity-50' : 'opacity-100'
       } ${
         theme === 'NeXTSTEP'
-          ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070]'
+          ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 ' +
+            'border-b-[#707070] border-r-[#707070]'
           : 'bg-white hover:bg-gray-50 rounded-md border border-gray-300'
       }`}
     >
@@ -86,12 +87,21 @@ function DropWell({ title, well, chips, moveChip, toggleCheckbox, theme }: DropW
         ref={drop}
         className={`min-h-[140px] p-2 flex flex-col gap-1.5 ${
           theme === 'NeXTSTEP'
-            ? 'bg-[#a0a0a0] border-t-2 border-l-2 border-[#606060] border-b-2 border-r-2 border-r-[#d0d0d0] border-b-[#d0d0d0]'
+            ? 'bg-[#a0a0a0] border-t-2 border-l-2 border-[#606060] border-b-2 border-r-2 ' +
+              'border-r-[#d0d0d0] border-b-[#d0d0d0]'
             : 'bg-gray-50 border border-gray-300 rounded-lg'
         }`}
       >
         {chips.map((chip, index) => (
-          <DraggableChip key={chip.id} chip={chip} well={well} index={index} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+          <DraggableChip
+            key={chip.id}
+            chip={chip}
+            well={well}
+            index={index}
+            moveChip={moveChip}
+            toggleCheckbox={toggleCheckbox}
+            theme={theme}
+          />
         ))}
       </div>
     </div>
@@ -121,8 +131,22 @@ function PAFVNavigatorContent() {
       {/* Main PAFV Controls */}
       <div className="p-3">
         <div className="flex gap-3">
-          <DropWell title="Available" well="available" chips={wells.available} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-          <DropWell title="Rows" well="rows" chips={wells.rows} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+          <DropWell
+            title="Available"
+            well="available"
+            chips={wells.available}
+            moveChip={moveChip}
+            toggleCheckbox={toggleCheckbox}
+            theme={theme}
+          />
+          <DropWell
+            title="Rows"
+            well="rows"
+            chips={wells.rows}
+            moveChip={moveChip}
+            toggleCheckbox={toggleCheckbox}
+            theme={theme}
+          />
 
           {/* Transpose button between Rows and Columns */}
           <div className="flex items-center">
@@ -130,7 +154,10 @@ function PAFVNavigatorContent() {
               onClick={transpose}
               className={`p-2 rounded transition-colors ${
                 theme === 'NeXTSTEP'
-                  ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 border-b-[#707070] border-r-[#707070] hover:bg-[#c0c0c0] active:border-t-[#707070] active:border-l-[#707070] active:border-b-[#ffffff] active:border-r-[#ffffff]'
+                  ? 'bg-[#d4d4d4] border-t-2 border-l-2 border-[#ffffff] border-b-2 border-r-2 ' +
+                    'border-b-[#707070] border-r-[#707070] hover:bg-[#c0c0c0] ' +
+                    'active:border-t-[#707070] active:border-l-[#707070] active:border-b-[#ffffff] ' +
+                    'active:border-r-[#ffffff]'
                   : 'bg-gray-100 hover:bg-gray-200 border border-gray-300'
               }`}
               title="Transpose rows and columns"
@@ -139,8 +166,22 @@ function PAFVNavigatorContent() {
             </button>
           </div>
 
-          <DropWell title="Columns" well="columns" chips={wells.columns} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
-          <DropWell title="Layers" well="zLayers" chips={wells.zLayers} moveChip={moveChip} toggleCheckbox={toggleCheckbox} theme={theme} />
+          <DropWell
+            title="Columns"
+            well="columns"
+            chips={wells.columns}
+            moveChip={moveChip}
+            toggleCheckbox={toggleCheckbox}
+            theme={theme}
+          />
+          <DropWell
+            title="Layers"
+            well="zLayers"
+            chips={wells.zLayers}
+            moveChip={moveChip}
+            toggleCheckbox={toggleCheckbox}
+            theme={theme}
+          />
         </div>
       </div>
 

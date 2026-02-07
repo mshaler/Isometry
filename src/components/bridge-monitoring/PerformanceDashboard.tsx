@@ -392,7 +392,9 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
               {metrics.batchEfficiency.queueSize}
             </div>
             <div className="text-xs text-neutral-500">
-              {formatPercentage(metrics.batchEfficiency.queueSize / metrics.batchEfficiency.maxQueueSize * 100)} capacity |
+              {formatPercentage(
+                metrics.batchEfficiency.queueSize / metrics.batchEfficiency.maxQueueSize * 100
+              )} capacity |
               Rate: {metrics.batchEfficiency.batchRate.toFixed(1)}/s
             </div>
           </div>
@@ -492,7 +494,9 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
               <div className="space-y-1 text-neutral-600">
                 <div>Messages/batch: {metrics.batchEfficiency.messagesPerBatch.toFixed(1)}</div>
                 <div>Batch rate: {metrics.batchEfficiency.batchRate.toFixed(2)}/s</div>
-                <div>Queue utilization: {formatPercentage(metrics.batchEfficiency.queueSize / metrics.batchEfficiency.maxQueueSize * 100)}</div>
+                <div>Queue utilization: {formatPercentage(
+                  metrics.batchEfficiency.queueSize / metrics.batchEfficiency.maxQueueSize * 100
+                )}</div>
               </div>
             </div>
             <div>

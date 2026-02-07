@@ -160,7 +160,13 @@ export function SuperGridDemo() {
       verifyFTS5: () => ({ available: false }),
       verifyJSON1: () => ({ available: false }),
       verifyRecursiveCTE: () => ({ available: false }),
-      getCapabilities: () => ({ fts5: { available: false }, json1: { available: false }, recursiveCTE: { available: false }, ready: true, dirty: false }),
+      getCapabilities: () => ({
+        fts5: { available: false },
+        json1: { available: false },
+        recursiveCTE: { available: false },
+        ready: true,
+        dirty: false
+      }),
       getStats: () => ({ tables: 0, indexes: 0, triggers: 0, size: 0 }),
       markDirty: () => {}, // Add missing method
       // Add missing drag & drop methods

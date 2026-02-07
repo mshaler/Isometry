@@ -198,7 +198,12 @@ export function useSlashCommands() {
   }, [executeCommand]);
 
   // Detect slash command trigger and handle keyboard events
-  const handleKeyDown = useCallback((event: KeyboardEvent, _currentContent: string, cursorPosition: number, element?: HTMLTextAreaElement | HTMLInputElement) => {
+  const handleKeyDown = useCallback((
+    event: KeyboardEvent,
+    _currentContent: string,
+    cursorPosition: number,
+    element?: HTMLTextAreaElement | HTMLInputElement
+  ) => {
     // If menu is open, handle navigation
     if (menuState.isOpen) {
       switch (event.key) {

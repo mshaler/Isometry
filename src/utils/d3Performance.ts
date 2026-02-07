@@ -137,7 +137,12 @@ class TextureCache {
     return texture;
   }
 
-  set(cacheKey: string, width: number, height: number, renderFn: (ctx: OffscreenCanvasRenderingContext2D) => void): CachedTexture {
+  set(
+    cacheKey: string,
+    width: number,
+    height: number,
+    renderFn: (ctx: OffscreenCanvasRenderingContext2D) => void
+  ): CachedTexture {
     // Clean up old entries if cache is full
     if (this.cache.size >= this.maxEntries) {
       const oldestKey = this.getOldestEntry();
@@ -324,7 +329,12 @@ class TransitionManager {
   private activeTransitions = new Map<string, ActiveTransition>();
   private animationFrame: number | null = null;
 
-  start(id: string, startValues: Record<string, number>, endValues: Record<string, number>, config: TransitionConfig): void {
+  start(
+    id: string,
+    startValues: Record<string, number>,
+    endValues: Record<string, number>,
+    config: TransitionConfig
+  ): void {
     const transition: ActiveTransition = {
       id,
       startTime: performance.now(),

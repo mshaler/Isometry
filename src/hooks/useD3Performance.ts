@@ -85,7 +85,8 @@ export function useD3Performance(target?: SVGElement | HTMLElement): D3Performan
 
     // Update metrics if we have enough data
     if (state.renderTimeHistory.length > 5) {
-      const avgRenderTime = state.renderTimeHistory.reduce((sum, time) => sum + time, 0) / state.renderTimeHistory.length;
+      const avgRenderTime = state.renderTimeHistory.reduce((sum, time) => sum + time, 0)
+        / state.renderTimeHistory.length;
 
       setMetrics(prev => ({
         ...prev,

@@ -165,7 +165,9 @@ export function useNodes(options: NodesQueryOptions = {}): OptimizedQueryState<N
  * Hook for loading notebook cards with optimization
  * Routes to optimized /api/notebook-cards endpoint when possible
  */
-export function useNotebookCards(options: NotebookCardsQueryOptions = {}): OptimizedQueryState<Record<string, unknown>> {
+export function useNotebookCards(
+  options: NotebookCardsQueryOptions = {}
+): OptimizedQueryState<Record<string, unknown>> {
   const {
     folder,
     search,

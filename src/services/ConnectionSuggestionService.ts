@@ -550,7 +550,8 @@ export class ConnectionSuggestionService {
     }
 
     // Update metrics
-    this.metrics.avgComputeTime = this.performanceHistory.reduce((sum, time) => sum + time, 0) / this.performanceHistory.length;
+    this.metrics.avgComputeTime = this.performanceHistory.reduce((sum, time) => sum + time, 0)
+      / this.performanceHistory.length;
     this.metrics.lastUpdated = Date.now();
   }
 

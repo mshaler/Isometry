@@ -20,7 +20,10 @@ export function createTemplateManager() {
       return [...BUILT_IN_TEMPLATES, ...validCustomTemplates];
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to load custom templates');
-      errorReporting.reportUserWarning('Template Loading Failed', 'Using default templates only. Your custom templates could not be loaded.');
+      errorReporting.reportUserWarning(
+        'Template Loading Failed',
+        'Using default templates only. Your custom templates could not be loaded.'
+      );
       console.warn('Failed to load custom templates:', err);
       return BUILT_IN_TEMPLATES;
     }
@@ -32,7 +35,10 @@ export function createTemplateManager() {
       localStorage.setItem(TEMPLATES_STORAGE_KEY, JSON.stringify(customTemplates));
     } catch (error) {
       const err = error instanceof Error ? error : new Error('Failed to save custom templates');
-      errorReporting.reportUserError('Template Save Failed', 'Your custom template changes could not be saved and may be lost.', [
+      errorReporting.reportUserError(
+        'Template Save Failed',
+        'Your custom template changes could not be saved and may be lost.',
+        [
         {
           label: 'Retry',
           action: () => {
@@ -53,7 +59,11 @@ export function createTemplateManager() {
     }
   };
 
-  const createTemplate = async (name: string, description: string, fromCard: NotebookCard): Promise<NotebookTemplate> => {
+  const createTemplate = async (
+    name: string,
+    description: string,
+    fromCard: NotebookCard
+  ): Promise<NotebookTemplate> => {
     const now = new Date().toISOString();
     const template: NotebookTemplate = {
       id: crypto.randomUUID(),

@@ -162,7 +162,8 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const groups = groupByAxis(gridData, axisField);
         const results = Object.entries(groups).map(([key, items]) => ({
           [axisField]: key,
-          average: (items as any[]).reduce((sum: number, item: any) => sum + (Number(item[field]) || 0), 0) / (items as any[]).length,
+          average: (items as any[]).reduce((sum: number, item: any) => sum + (Number(item[field]) || 0), 0)
+            / (items as any[]).length,
           count: (items as any[]).length
         }));
         return { type: 'table', data: results, summary: `Average of ${field} over ${axis}` };

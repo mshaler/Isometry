@@ -198,7 +198,12 @@ export function ProductionVisualizationDemo() {
   const stressTestTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Live data subscriptions with production dataset
-  const { data: allNodes = [], isLoading: nodesLoading, error: nodesError, latency: nodesLatency } = useLiveData<Node[]>(
+  const {
+    data: allNodes = [],
+    isLoading: nodesLoading,
+    error: nodesError,
+    latency: nodesLatency
+  } = useLiveData<Node[]>(
     'SELECT * FROM nodes ORDER BY modifiedAt DESC',
     [],
     {
@@ -248,8 +253,10 @@ export function ProductionVisualizationDemo() {
 
   // Current performance metrics calculation
   const currentMetrics: PerformanceMetrics = useMemo(() => {
-    const avgLatency = liveDataMetrics.reduce((sum, m) => sum + m.averageLatency, 0) / Math.max(1, liveDataMetrics.length);
-    const avgCacheHit = liveDataMetrics.reduce((sum, m) => sum + m.cacheHitRate, 0) / Math.max(1, liveDataMetrics.length);
+    const avgLatency = liveDataMetrics.reduce((sum, m) => sum + m.averageLatency, 0)
+      / Math.max(1, liveDataMetrics.length);
+    const avgCacheHit = liveDataMetrics.reduce((sum, m) => sum + m.cacheHitRate, 0)
+      / Math.max(1, liveDataMetrics.length);
     const totalErrors = liveDataMetrics.reduce((sum, m) => sum + m.errorCount, 0);
     const totalUpdates = liveDataMetrics.reduce((sum, m) => sum + m.updateCount, 0);
 
@@ -454,7 +461,10 @@ export function ProductionVisualizationDemo() {
 
           {/* Section Navigation */}
           <div className="mb-6">
-            <Tab.Group selectedIndex={DEMO_SECTIONS.findIndex(s => s.id === activeSectionId)} onChange={(index) => setActiveSectionId(DEMO_SECTIONS[index].id)}>
+            <Tab.Group
+              selectedIndex={DEMO_SECTIONS.findIndex(s => s.id === activeSectionId)}
+              onChange={(index) => setActiveSectionId(DEMO_SECTIONS[index].id)}
+            >
               <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1">
                 {DEMO_SECTIONS.map((section) => (
                   <Tab
@@ -573,7 +583,12 @@ export function ProductionVisualizationDemo() {
                         max="10"
                         step="0.1"
                         value={errorSimulation.frequency}
-                        onChange={(e) => setErrorSimulation(prev => ({ ...prev, frequency: parseFloat(e.target.value) }))}
+                        onChange={(e) => {
+                          setErrorSimulation(prev => ({
+                            ...prev,
+                            frequency: parseFloat(e.target.value)
+                          }));
+                        }}
                         className="w-full p-2 border border-gray-300 rounded"
                         disabled={!errorSimulation.enabled}
                         placeholder="Errors per minute"

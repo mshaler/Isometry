@@ -19,7 +19,12 @@ interface GridViewProps {
 }
 
 
-export function GridView({ sql, queryParams = [], liveOptions: _liveOptions = { containerHeight: 600 }, onNodeClick }: GridViewProps) {
+export function GridView({
+  sql,
+  queryParams = [],
+  liveOptions: _liveOptions = { containerHeight: 600 },
+  onNodeClick
+}: GridViewProps) {
   const { theme } = useTheme();
 
   // Live query for real-time data updates
@@ -290,7 +295,12 @@ export function GridView({ sql, queryParams = [], liveOptions: _liveOptions = { 
           {isLive ? 'LIVE' : 'OFFLINE'}
         </div>
         {connectionState && (
-          <div className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded border border-gray-200">
+          <div
+            className={
+              "inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-50 " +
+              "text-gray-700 rounded border border-gray-200"
+            }
+          >
             {connectionState.quality.toUpperCase()} ({connectionState.latency}ms)
           </div>
         )}

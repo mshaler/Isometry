@@ -528,7 +528,10 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
       // Update previous state reference
       prevStateRef.current = { nodes, wells };
     }
-  }, [nodes, wells, loading, dataError, canvasState.viewport, processDataPipeline, detectChanges, canvasState.rawData.length]);
+  }, [
+    nodes, wells, loading, dataError, canvasState.viewport,
+    processDataPipeline, detectChanges, canvasState.rawData.length
+  ]);
 
   // Viewport change effect
   useEffect(() => {

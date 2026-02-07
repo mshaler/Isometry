@@ -336,7 +336,11 @@ export class ViewportOptimizer {
   /**
    * Optimize viewport settings for performance
    */
-  async optimizeForDataset(viewport: Viewport, nodeCount: number, targetFPS: number = 60): Promise<OptimizationStrategy> {
+  async optimizeForDataset(
+    viewport: Viewport,
+    nodeCount: number,
+    targetFPS: number = 60
+  ): Promise<OptimizationStrategy> {
     // Debounce optimization calls
     const now = Date.now();
     if (now - this.lastOptimization < this.optimizationDebounceMs) {
@@ -392,7 +396,10 @@ export class ViewportOptimizer {
   /**
    * Determine if element should be culled
    */
-  shouldCullElement(elementBounds: { x: number; y: number; width?: number; height?: number }, cullingBounds: ReturnType<typeof this.calculateCullingBounds>): boolean {
+  shouldCullElement(
+    elementBounds: { x: number; y: number; width?: number; height?: number },
+    cullingBounds: ReturnType<typeof this.calculateCullingBounds>
+  ): boolean {
     const elementRight = elementBounds.x + (elementBounds.width || 0);
     const elementBottom = elementBounds.y + (elementBounds.height || 0);
 
@@ -417,7 +424,11 @@ export class ViewportOptimizer {
     };
   }
 
-  private calculateOptimizationStrategy(viewport: Viewport, nodeCount: number, targetFPS: number): OptimizationStrategy {
+  private calculateOptimizationStrategy(
+    viewport: Viewport,
+    nodeCount: number,
+    targetFPS: number
+  ): OptimizationStrategy {
     // Determine strategy based on dataset size and viewport
     let lodLevel = 0;
     let batchSize = 50;

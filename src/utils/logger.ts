@@ -62,7 +62,13 @@ class Logger {
     return true;
   }
 
-  private createEntry(level: LogLevel, category: string, message: string, context?: Record<string, unknown>, error?: Error): LogEntry {
+  private createEntry(
+    level: LogLevel,
+    category: string,
+    message: string,
+    context?: Record<string, unknown>,
+    error?: Error
+  ): LogEntry {
     return {
       timestamp: new Date().toISOString(),
       level,

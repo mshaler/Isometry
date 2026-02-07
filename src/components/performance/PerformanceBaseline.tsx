@@ -173,7 +173,8 @@ export function PerformanceBaseline({
 
     // Collect measurements every second
     measurementIntervalRef.current = setInterval(() => {
-      const avgCacheHit = liveDataMetrics.reduce((sum, m) => sum + m.cacheHitRate, 0) / Math.max(1, liveDataMetrics.length);
+      const avgCacheHit = liveDataMetrics.reduce((sum, m) => sum + m.cacheHitRate, 0)
+        / Math.max(1, liveDataMetrics.length);
       const totalErrors = liveDataMetrics.reduce((sum, m) => sum + m.errorCount, 0);
 
       setCurrentMeasurements(prev => ({
@@ -213,13 +214,16 @@ export function PerformanceBaseline({
       timestamp: new Date(),
       dataSize,
       initialRenderTime: currentMeasurements.renderTimes[0] || 0,
-      averageFPS: currentMeasurements.fps.reduce((a, b) => a + b, 0) / Math.max(1, currentMeasurements.fps.length),
-      averageLatency: currentMeasurements.latency.reduce((a, b) => a + b, 0) / Math.max(1, currentMeasurements.latency.length),
+      averageFPS: currentMeasurements.fps.reduce((a, b) => a + b, 0)
+        / Math.max(1, currentMeasurements.fps.length),
+      averageLatency: currentMeasurements.latency.reduce((a, b) => a + b, 0)
+        / Math.max(1, currentMeasurements.latency.length),
       memoryUsageBaseline: Math.min(...currentMeasurements.memory) || 0,
       memoryUsagePeak: Math.max(...currentMeasurements.memory) || 0,
       totalMeasurementDuration: totalDuration,
       measurementCount: currentMeasurements.fps.length,
-      cacheHitRate: currentMeasurements.cacheHits.reduce((a, b) => a + b, 0) / Math.max(1, currentMeasurements.cacheHits.length),
+      cacheHitRate: currentMeasurements.cacheHits.reduce((a, b) => a + b, 0)
+        / Math.max(1, currentMeasurements.cacheHits.length),
       errorRate: (currentMeasurements.errors / Math.max(1, currentMeasurements.fps.length)) * 100,
       quality: currentQuality
     };

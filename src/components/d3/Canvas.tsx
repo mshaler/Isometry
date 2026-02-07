@@ -144,7 +144,10 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   }, [nodes, dimensions, enableZoom, enableBrush]);
 
   // Render individual nodes
-  const renderNodes = useCallback((container: d3.Selection<SVGGElement, unknown, null, undefined>, nodeData: Node[]) => {
+  const renderNodes = useCallback((
+    container: d3.Selection<SVGGElement, unknown, null, undefined>,
+    nodeData: Node[]
+  ) => {
     // Position nodes using a simple force simulation or grid layout
     const simulation = d3.forceSimulation(nodeData as any)
       .force('charge', d3.forceManyBody().strength(-30))
@@ -233,7 +236,10 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   }, [dimensions, onNodeClick]);
 
   // Render connections between nodes
-  const renderConnections = useCallback((container: d3.Selection<SVGGElement, unknown, null, undefined>, nodeData: Node[]) => {
+  const renderConnections = useCallback((
+    container: d3.Selection<SVGGElement, unknown, null, undefined>,
+    nodeData: Node[]
+  ) => {
     // For now, just render random connections for demo
     // In practice, this would use edge data from the database
     const connections: Array<{source: Node, target: Node}> = [];

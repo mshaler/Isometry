@@ -301,7 +301,10 @@ export function useVirtualLiveQuery<T = unknown>(
         virtualItemCount: virtualItems.length
       });
     }
-  }, [liveQuery.data, liveQuery.isLive, performanceMonitoring, performanceMonitor, sql, itemCount, virtualItems.length]);
+  }, [
+    liveQuery.data, liveQuery.isLive, performanceMonitoring,
+    performanceMonitor, sql, itemCount, virtualItems.length
+  ]);
 
   // Virtual scrolling control functions
   const scrollToIndex = useCallback((

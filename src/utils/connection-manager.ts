@@ -364,7 +364,9 @@ export class ConnectionManager {
     console.warn('[ConnectionManager] Circuit breaker not available in sql.js architecture');
     // try {
     //   // Dynamic import to avoid circular dependencies
-    //   const { defaultCircuitBreakerRegistry } = await import('../../native/Sources/Isometry/Bridge/Reliability/CircuitBreaker.swift');
+    //   const { defaultCircuitBreakerRegistry } = await import(
+    //     '../../native/Sources/Isometry/Bridge/Reliability/CircuitBreaker.swift'
+    //   );
     //   this.circuitBreakerRegistry = defaultCircuitBreakerRegistry;
     // } catch (error) {
     //   console.warn('[ConnectionManager] Circuit breaker not available, continuing without protection');
@@ -577,7 +579,8 @@ export class ConnectionManager {
     if (this.latencyHistory.length < 10) return 100;
 
     const mean = this.latencyHistory.reduce((sum, l) => sum + l, 0) / this.latencyHistory.length;
-    const variance = this.latencyHistory.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) / this.latencyHistory.length;
+    const variance = this.latencyHistory.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0)
+      / this.latencyHistory.length;
     const coefficient = Math.sqrt(variance) / mean;
 
     // Convert coefficient of variation to stability score (0-100)

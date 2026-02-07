@@ -147,7 +147,10 @@ export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3
       }),
       collapsed: listState.collapsedGroups.has(key)
     }));
-  }, [nodes, pafvContext.state.mappings, listState.groupingEnabled, listState.collapsedGroups, listState.sortDirection]);
+  }, [
+    nodes, pafvContext.state.mappings, listState.groupingEnabled,
+    listState.collapsedGroups, listState.sortDirection
+  ]);
 
   // Filter nodes by search query
   const filteredGroups = useMemo((): ListGroup[] => {
@@ -332,7 +335,9 @@ export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3
       .on('click', (_event, d) => handleItemClick(d.item));
 
     // Render group headers
-    const groupHeaders = itemGroups.filter((d: { item: ListItem; y: number; height: number }) => d.item.isGroupHeader ?? false);
+    const groupHeaders = itemGroups.filter(
+      (d: { item: ListItem; y: number; height: number }) => d.item.isGroupHeader ?? false
+    );
 
     groupHeaders
       .append('rect')
@@ -563,7 +568,8 @@ export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3
       }`}>
         {listState.searchQuery ? (
           <span>
-            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {nodes.length} items match "{listState.searchQuery}"
+            {filteredGroups.reduce((sum, group) => sum + group.nodes.length, 0)} of {nodes.length} items
+            match "{listState.searchQuery}"
           </span>
         ) : (
           <span>

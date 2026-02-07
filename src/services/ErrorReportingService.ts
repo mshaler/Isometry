@@ -313,7 +313,11 @@ class ErrorReportingService {
   }
 
   // User feedback methods
-  public reportUserError(title: string, _message: string, actions?: Array<{ label: string; action: () => void }>): void {
+  public reportUserError(
+    title: string,
+    _message: string,
+    actions?: Array<{ label: string; action: () => void }>
+  ): void {
     const notification: ErrorNotification = {
       id: `user_${Date.now()}`,
       type: 'error',

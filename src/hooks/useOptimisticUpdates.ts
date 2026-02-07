@@ -294,7 +294,15 @@ export function useOptimisticUpdates<T = any>(
         onOperationError?.(error instanceof Error ? error : new Error(String(error)), operation);
       }
     }
-  }, [isConnected, maxRetries, operationTimeout, enableDebugLogging, generateOperationId, applyOptimisticChanges, onOperationError]);
+  }, [
+    isConnected,
+    maxRetries,
+    operationTimeout,
+    enableDebugLogging,
+    generateOperationId,
+    applyOptimisticChanges,
+    onOperationError
+  ]);
 
   // Rollback specific operation
   const rollbackOperation = useCallback(async (operationId: string): Promise<void> => {

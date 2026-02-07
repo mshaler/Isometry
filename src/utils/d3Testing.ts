@@ -301,7 +301,9 @@ export const benchmarkDataProcessing = async (nodeCount: number): Promise<Perfor
   }
 };
 
-export const runPerformanceBenchmarks = async (nodeCounts: number[] = [50, 100, 500, 1000]): Promise<PerformanceBenchmark[]> => {
+export const runPerformanceBenchmarks = async (
+  nodeCounts: number[] = [50, 100, 500, 1000]
+): Promise<PerformanceBenchmark[]> => {
   const benchmarks: PerformanceBenchmark[] = [];
 
   for (const nodeCount of nodeCounts) {
@@ -427,7 +429,8 @@ export const runComprehensiveTestSuite = async (): Promise<TestSuiteResults> => 
   const passedTests = allTests.filter(success => success).length;
   const failedTests = totalTests - passedTests;
 
-  const averageProcessingTime = performanceTests.reduce((sum, test) => sum + test.duration, 0) / performanceTests.length;
+  const averageProcessingTime = performanceTests.reduce((sum, test) => sum + test.duration, 0)
+    / performanceTests.length;
   const maxMemoryUsage = Math.max(...performanceTests.map(test => test.memoryUsed));
 
   // Determine recommended max nodes based on performance

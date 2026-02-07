@@ -38,7 +38,9 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
   ): T[] => {
     console.log('[FallbackDB] Query executed:', {
       sql: sql.substring(0, 50) + '...',
-      returning: sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes') ? `${ALL_NOTES.length} real nodes` : 'other data'
+      returning: sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes')
+        ? `${ALL_NOTES.length} real nodes`
+        : 'other data'
     });
 
     // Return sample data for nodes queries
@@ -58,7 +60,10 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
           tags: JSON.stringify(note.tags),
           priority: note.priority,
           created_at: new Date(Date.now() - note.createdDaysAgo * 24 * 60 * 60 * 1000).toISOString(),
-          modified_at: new Date(Date.now() - Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3)) * 24 * 60 * 60 * 1000).toISOString(),
+          modified_at: new Date(
+            Date.now() - Math.max(0, note.createdDaysAgo - Math.floor(Math.random() * 3))
+              * 24 * 60 * 60 * 1000
+          ).toISOString(),
           deleted_at: null,
           latitude: null,
           longitude: null,

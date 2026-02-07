@@ -470,11 +470,15 @@ export class PerformanceMonitor {
   private calculateSessionMetrics(): SessionMetrics {
     return {
       frameRateMin: this.frameRates.length > 0 ? Math.min(...this.frameRates) : 0,
-      frameRateAvg: this.frameRates.length > 0 ? this.frameRates.reduce((a, b) => a + b, 0) / this.frameRates.length : 0,
+      frameRateAvg: this.frameRates.length > 0
+        ? this.frameRates.reduce((a, b) => a + b, 0) / this.frameRates.length
+        : 0,
       frameRateMax: this.frameRates.length > 0 ? Math.max(...this.frameRates) : 0,
 
       memoryUsageMin: this.memoryReadings.length > 0 ? Math.min(...this.memoryReadings) : 0,
-      memoryUsageAvg: this.memoryReadings.length > 0 ? this.memoryReadings.reduce((a, b) => a + b, 0) / this.memoryReadings.length : 0,
+      memoryUsageAvg: this.memoryReadings.length > 0
+        ? this.memoryReadings.reduce((a, b) => a + b, 0) / this.memoryReadings.length
+        : 0,
       memoryUsageMax: this.memoryReadings.length > 0 ? Math.max(...this.memoryReadings) : 0,
       memoryLeaks: this.detectMemoryLeaks(),
 
@@ -483,15 +487,23 @@ export class PerformanceMonitor {
       inputLatencyP99: this.calculatePercentile(this.inputLatencies, 99),
 
       queryCount: this.queryMetrics.length,
-      queryLatencyAvg: this.queryMetrics.length > 0 ? this.queryMetrics.reduce((a, b) => a + b.latency, 0) / this.queryMetrics.length : 0,
-      queryErrorRate: this.queryMetrics.length > 0 ? (this.queryMetrics.filter(q => !q.success).length / this.queryMetrics.length) * 100 : 0,
+      queryLatencyAvg: this.queryMetrics.length > 0
+        ? this.queryMetrics.reduce((a, b) => a + b.latency, 0) / this.queryMetrics.length
+        : 0,
+      queryErrorRate: this.queryMetrics.length > 0
+        ? (this.queryMetrics.filter(q => !q.success).length / this.queryMetrics.length) * 100
+        : 0,
 
       syncOperations: this.syncMetrics.length,
       syncFailures: this.syncMetrics.filter(s => !s.success).length,
-      syncLatencyAvg: this.syncMetrics.length > 0 ? this.syncMetrics.reduce((a, b) => a + b.latency, 0) / this.syncMetrics.length : 0,
+      syncLatencyAvg: this.syncMetrics.length > 0
+        ? this.syncMetrics.reduce((a, b) => a + b.latency, 0) / this.syncMetrics.length
+        : 0,
 
       renderCount: this.renderMetrics.length,
-      renderLatencyAvg: this.renderMetrics.length > 0 ? this.renderMetrics.reduce((a, b) => a + b.latency, 0) / this.renderMetrics.length : 0,
+      renderLatencyAvg: this.renderMetrics.length > 0
+        ? this.renderMetrics.reduce((a, b) => a + b.latency, 0) / this.renderMetrics.length
+        : 0,
       layoutShifts: 0 // Would need more sophisticated tracking
     };
   }
@@ -546,13 +558,20 @@ export class PerformanceMonitor {
       databaseLatency: metrics.queryLatencyAvg,
       syncLatency: metrics.syncLatencyAvg,
       uiLatency: metrics.renderLatencyAvg,
-      databaseThroughput: metrics.queryCount > 0 ? (metrics.queryCount / ((this.currentSession!.endTime || Date.now()) - this.currentSession!.startTime)) * 1000 : 0,
-      syncThroughput: metrics.syncOperations > 0 ? (metrics.syncOperations / ((this.currentSession!.endTime || Date.now()) - this.currentSession!.startTime)) * 1000 : 0,
+      databaseThroughput: metrics.queryCount > 0
+        ? (metrics.queryCount / ((this.currentSession!.endTime || Date.now()) - this.currentSession!.startTime)) * 1000
+        : 0,
+      syncThroughput: metrics.syncOperations > 0
+        ? (metrics.syncOperations
+          / ((this.currentSession!.endTime || Date.now()) - this.currentSession!.startTime)) * 1000
+        : 0,
       memoryUsage: metrics.memoryUsageAvg,
       memoryLeakRate: metrics.memoryLeaks,
       fps: metrics.frameRateAvg,
       frameDrops: Math.max(0, 60 - metrics.frameRateMin),
-      successRate: metrics.queryCount > 0 ? ((metrics.queryCount - (metrics.queryCount * metrics.queryErrorRate / 100)) / metrics.queryCount) * 100 : 100,
+      successRate: metrics.queryCount > 0
+        ? ((metrics.queryCount - (metrics.queryCount * metrics.queryErrorRate / 100)) / metrics.queryCount) * 100
+        : 100,
       errorRate: metrics.queryErrorRate
     };
   }

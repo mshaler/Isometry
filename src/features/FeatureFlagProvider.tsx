@@ -90,7 +90,9 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
   const isMountedRef = useRef(true);
 
   // Evaluation cache for performance
-  const [evaluationCache, setEvaluationCache] = useState<Map<string, { result: boolean; timestamp: number }>>(new Map());
+  const [evaluationCache, setEvaluationCache] = useState<
+    Map<string, { result: boolean; timestamp: number }>
+  >(new Map());
   const cacheValidityMs = 30000; // 30 seconds
 
   // Bridge communication for native integration
@@ -248,7 +250,9 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
           const evaluationTime = performance.now() - startTime;
           setEvaluationMetrics(prev => ({
             totalEvaluations: prev.totalEvaluations + 1,
-            averageEvaluationTime: (prev.averageEvaluationTime * prev.totalEvaluations + evaluationTime) / (prev.totalEvaluations + 1),
+            averageEvaluationTime:
+              (prev.averageEvaluationTime * prev.totalEvaluations + evaluationTime) /
+              (prev.totalEvaluations + 1),
             cacheHitRate: (prev.cacheHitRate * prev.totalEvaluations) / (prev.totalEvaluations + 1)
           }));
 

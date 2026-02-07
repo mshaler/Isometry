@@ -576,7 +576,8 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
                 </div>
 
                 <p className="text-sm text-gray-600">
-                  When enabled, simple conflicts like metadata changes will be resolved automatically using smart merge strategies.
+                  When enabled, simple conflicts like metadata changes will be resolved automatically
+                  using smart merge strategies.
                 </p>
 
                 <div className="flex items-center justify-between">

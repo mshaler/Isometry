@@ -23,7 +23,8 @@ export interface ScaleConfig {
 }
 
 export interface D3Scale {
-  scale: d3.ScaleTime<number, number> | d3.ScaleBand<string> | d3.ScaleLinear<number, number> | d3.ScaleOrdinal<string, unknown>;
+  scale: d3.ScaleTime<number, number> | d3.ScaleBand<string>
+    | d3.ScaleLinear<number, number> | d3.ScaleOrdinal<string, unknown>;
   type: ScaleType;
   config: ScaleConfig;
 }
@@ -417,7 +418,12 @@ const scaleCache = new ScaleCache();
 /**
  * Create a cached D3 scale from chip configuration
  */
-export const createCachedScale = (chip: Chip, domain: unknown[], range: [number, number], padding?: number): D3Scale => {
+export const createCachedScale = (
+  chip: Chip,
+  domain: unknown[],
+  range: [number, number],
+  padding?: number
+): D3Scale => {
   // Check cache first
   const cachedScale = scaleCache.get(chip.id, domain, range);
   if (cachedScale) {

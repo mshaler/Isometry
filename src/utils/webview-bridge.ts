@@ -455,7 +455,9 @@ export class WebViewBridge {
       return this.postMessage('database', 'search', { query, ...options });
     },
 
-    getGraph: async (options: { nodeId?: string; depth?: number } = {}): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
+    getGraph: async (
+      options: { nodeId?: string; depth?: number } = {}
+    ): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
       return this.postMessage('database', 'getGraph', options);
     },
 
@@ -1156,7 +1158,9 @@ export class OptimizedBridge {
       return this.postMessage('database', 'search', { query, ...options });
     },
 
-    getGraph: async (options: { nodeId?: string; depth?: number } = {}): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
+    getGraph: async (
+      options: { nodeId?: string; depth?: number } = {}
+    ): Promise<{ nodes: Node[]; edges: { source: string; target: string; type: string }[] }> => {
       return this.postMessage('database', 'getGraph', options);
     },
 

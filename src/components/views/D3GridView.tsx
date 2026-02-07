@@ -88,7 +88,10 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
   });
 
   // Bridge state for gesture coordination
-  const [performanceMetrics, setPerformanceMetrics] = useState<{ native?: NativeRenderingMetrics; comparison?: any }>({});
+  const [performanceMetrics, setPerformanceMetrics] = useState<{
+    native?: NativeRenderingMetrics;
+    comparison?: any;
+  }>({});
 
   const containerRef = useRef<HTMLDivElement>(null);
   const lastViewportRef = useRef<any>(null);
@@ -177,7 +180,8 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
     // Simple complexity calculation based on data characteristics
     const baseComplexity = Math.min(data.length / 100, 5); // 0-5 based on size
     const contentComplexity = data.filter(node => node.content).length / data.length * 2; // 0-2 based on content
-    const priorityComplexity = data.reduce((sum, node) => sum + node.priority, 0) / data.length / 10 * 3; // 0-3 based on priority
+    const priorityComplexity = data.reduce((sum, node) => sum + node.priority, 0)
+      / data.length / 10 * 3; // 0-3 based on priority
 
     return Math.min(baseComplexity + contentComplexity + priorityComplexity, 10);
   }, []);

@@ -252,7 +252,8 @@ export class PerformanceValidator {
 
         // Calculate FPS
         if (metrics.renderTime.length > 1) {
-          const avgRenderTime = metrics.renderTime.slice(-10).reduce((a, b) => a + b, 0) / Math.min(metrics.renderTime.length, 10);
+          const avgRenderTime = metrics.renderTime.slice(-10).reduce((a, b) => a + b, 0)
+            / Math.min(metrics.renderTime.length, 10);
           const fps = avgRenderTime > 0 ? 1000 / avgRenderTime : 0;
           metrics.fps.push(fps);
         }
@@ -427,9 +428,12 @@ export class PerformanceValidator {
       if (!baseline) continue;
 
       // Calculate degradation percentages
-      const fpsDegradation = ((baseline.metrics.averageFPS - current.metrics.averageFPS) / baseline.metrics.averageFPS) * 100;
-      const renderTimeDegradation = ((current.metrics.averageRenderTime - baseline.metrics.averageRenderTime) / baseline.metrics.averageRenderTime) * 100;
-      const memoryDegradation = ((current.metrics.memoryUsage.peak - baseline.metrics.memoryUsage.peak) / baseline.metrics.memoryUsage.peak) * 100;
+      const fpsDegradation = ((baseline.metrics.averageFPS - current.metrics.averageFPS)
+        / baseline.metrics.averageFPS) * 100;
+      const renderTimeDegradation = ((current.metrics.averageRenderTime - baseline.metrics.averageRenderTime)
+        / baseline.metrics.averageRenderTime) * 100;
+      const memoryDegradation = ((current.metrics.memoryUsage.peak - baseline.metrics.memoryUsage.peak)
+        / baseline.metrics.memoryUsage.peak) * 100;
 
       // Check if degradation exceeds tolerance
       if (fpsDegradation > this.config.tolerancePercent ||
@@ -505,9 +509,13 @@ export class PerformanceValidator {
     const optimizedResult = await this.runTest(optimizedTest, viewport, nodeCount);
 
     // Calculate improvement
-    const fpsImprovement = ((optimizedResult.metrics.averageFPS - baselineResult.metrics.averageFPS) / baselineResult.metrics.averageFPS) * 100;
-    const renderTimeImprovement = ((baselineResult.metrics.averageRenderTime - optimizedResult.metrics.averageRenderTime) / baselineResult.metrics.averageRenderTime) * 100;
-    const memoryImprovement = ((baselineResult.metrics.memoryUsage.peak - optimizedResult.metrics.memoryUsage.peak) / baselineResult.metrics.memoryUsage.peak) * 100;
+    const fpsImprovement = ((optimizedResult.metrics.averageFPS - baselineResult.metrics.averageFPS)
+      / baselineResult.metrics.averageFPS) * 100;
+    const renderTimeImprovement = ((baselineResult.metrics.averageRenderTime
+      - optimizedResult.metrics.averageRenderTime)
+      / baselineResult.metrics.averageRenderTime) * 100;
+    const memoryImprovement = ((baselineResult.metrics.memoryUsage.peak - optimizedResult.metrics.memoryUsage.peak)
+      / baselineResult.metrics.memoryUsage.peak) * 100;
 
     const effective = fpsImprovement > 5 || renderTimeImprovement > 10 || memoryImprovement > 5;
 

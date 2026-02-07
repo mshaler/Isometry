@@ -47,7 +47,14 @@ export interface WordDocumentData {
   content: string;
   html: string;
   images: { id: string; buffer: ArrayBuffer; contentType: string }[];
-  styles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; underline?: boolean; }>;
+  styles: Record<string, {
+    color?: string;
+    fontSize?: number;
+    fontFamily?: string;
+    bold?: boolean;
+    italic?: boolean;
+    underline?: boolean;
+  }>;
 }
 
 interface MammothImage {
@@ -281,7 +288,13 @@ export class OfficeDocumentProcessor {
     preserveFormatting: boolean
   ): Promise<WordDocumentData> {
     const extractedImages: { id: string; buffer: ArrayBuffer; contentType: string }[] = [];
-    const extractedStyles: Record<string, { color?: string; fontSize?: number; fontFamily?: string; bold?: boolean; italic?: boolean; }> = {};
+    const extractedStyles: Record<string, {
+      color?: string;
+      fontSize?: number;
+      fontFamily?: string;
+      bold?: boolean;
+      italic?: boolean;
+    }> = {};
 
     const options = {
       convertImage: mammoth.images.imgElement((image: MammothImage) => {
