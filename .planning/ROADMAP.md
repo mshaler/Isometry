@@ -166,7 +166,7 @@ Plans:
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 34: Foundation Stabilization** - Verify sql.js + D3.js integration with stable TypeScript compilation
-- [ ] **Phase 35: PAFV Grid Core** - Enhanced SuperGrid interactions with card details, filtering, multi-select, and drag & drop
+- [x] **Phase 35: PAFV Grid Core** - Enhanced SuperGrid interactions with card details, filtering, multi-select, and drag & drop
 - [ ] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
 - [ ] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
 
@@ -219,11 +219,11 @@ Plans:
   3. Header cells span appropriately across child dimensions without layout conflicts
   4. User can expand/collapse header levels while maintaining grid performance
   5. User can navigate with pinned upper-left corner zoom behavior (SuperZoom)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 36-01: TBD
-- [ ] 36-02: TBD
+- [ ] 36-01-PLAN.md — Hierarchical Header Foundation with Multi-Level Rendering
+- [ ] 36-02-PLAN.md — Janus Controls & Interactive Header System
 
 #### Phase 37: Grid Continuum
 **Goal**: Deliver seamless transitions between gallery, list, kanban, and grid projections of same dataset
