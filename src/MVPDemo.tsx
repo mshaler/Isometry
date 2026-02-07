@@ -136,12 +136,14 @@ function MVPDemo() {
                       <AppStateProvider>
                         <FilterProvider>
                           <PAFVProvider>
-                            <NotebookProvider>
-                              <CardOverlayProvider>
-                                <UnifiedApp />
-                                <NotificationSystem />
-                              </CardOverlayProvider>
-                            </NotebookProvider>
+                            <SelectionProvider>
+                              <NotebookProvider>
+                                <CardOverlayProvider>
+                                  <UnifiedApp />
+                                  <NotificationSystem />
+                                </CardOverlayProvider>
+                              </NotebookProvider>
+                            </SelectionProvider>
                           </PAFVProvider>
                         </FilterProvider>
                       </AppStateProvider>
