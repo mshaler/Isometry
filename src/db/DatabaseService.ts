@@ -538,6 +538,170 @@ export class DatabaseService {
   }
 
   /**
+   * Save header state for per-dataset, per-app persistence
+   */
+  saveHeaderState(
+    datasetId: string,
+    appContext: string,
+    expandedLevels: string[],
+    zoomLevel: string,
+    panLevel: string
+  ): { success: boolean; error?: string } {
+    if (!this.db) {
+      return { success: false, error: 'Database not initialized' };
+    }
+
+    try {
+      // Ensure header_state table exists
+      this.ensureHeaderStateTable();
+
+      // Upsert header state
+      this.run(`
+        INSERT OR REPLACE INTO header_state (
+          dataset_id,
+          app_context,
+          expanded_levels,
+          zoom_level,
+          pan_level,
+          last_updated
+        ) VALUES (?, ?, ?, ?, ?, datetime('now'))
+      `, [
+        datasetId,
+        appContext,
+        JSON.stringify(expandedLevels),
+        zoomLevel,
+        panLevel
+      ]);
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Save header state failed: ${error}` };
+    }
+  }
+
+  /**
+   * Load header state for dataset/app combination
+   */
+  loadHeaderState(
+    datasetId: string,
+    appContext: string
+  ): {
+    expandedLevels: string[];
+    zoomLevel: string;
+    panLevel: string;
+    lastUpdated?: string;
+  } | null {
+    if (!this.db) {
+      return null;
+    }
+
+    try {
+      this.ensureHeaderStateTable();
+
+      const result = this.query<{
+        expanded_levels: string;
+        zoom_level: string;
+        pan_level: string;
+        last_updated: string;
+      }>(
+        "SELECT expanded_levels, zoom_level, pan_level, last_updated FROM header_state WHERE dataset_id = ? AND app_context = ?",
+        [datasetId, appContext]
+      );
+
+      if (result.length === 0) {
+        return null;
+      }
+
+      const state = result[0];
+      return {
+        expandedLevels: JSON.parse(state.expanded_levels || '[]'),
+        zoomLevel: state.zoom_level,
+        panLevel: state.pan_level,
+        lastUpdated: state.last_updated
+      };
+    } catch (error) {
+      console.error('Load header state failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Update header state incrementally during user interactions
+   */
+  updateHeaderState(
+    datasetId: string,
+    appContext: string,
+    updates: {
+      expandedLevels?: string[];
+      zoomLevel?: string;
+      panLevel?: string;
+    }
+  ): { success: boolean; error?: string } {
+    if (!this.db) {
+      return { success: false, error: 'Database not initialized' };
+    }
+
+    try {
+      this.ensureHeaderStateTable();
+
+      // Load existing state first
+      const existing = this.loadHeaderState(datasetId, appContext);
+
+      // Merge with updates
+      const mergedState = {
+        expandedLevels: updates.expandedLevels ?? existing?.expandedLevels ?? [],
+        zoomLevel: updates.zoomLevel ?? existing?.zoomLevel ?? 'leaf',
+        panLevel: updates.panLevel ?? existing?.panLevel ?? 'dense'
+      };
+
+      // Save merged state
+      return this.saveHeaderState(
+        datasetId,
+        appContext,
+        mergedState.expandedLevels,
+        mergedState.zoomLevel,
+        mergedState.panLevel
+      );
+    } catch (error) {
+      return { success: false, error: `Update header state failed: ${error}` };
+    }
+  }
+
+  /**
+   * Delete header state for cleanup
+   */
+  deleteHeaderState(
+    datasetId: string,
+    appContext?: string
+  ): { success: boolean; error?: string } {
+    if (!this.db) {
+      return { success: false, error: 'Database not initialized' };
+    }
+
+    try {
+      this.ensureHeaderStateTable();
+
+      if (appContext) {
+        // Delete specific app context
+        this.run(
+          "DELETE FROM header_state WHERE dataset_id = ? AND app_context = ?",
+          [datasetId, appContext]
+        );
+      } else {
+        // Delete all states for dataset
+        this.run(
+          "DELETE FROM header_state WHERE dataset_id = ?",
+          [datasetId]
+        );
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: `Delete header state failed: ${error}` };
+    }
+  }
+
+  /**
    * Get database statistics for monitoring
    */
   getStats(): {
@@ -563,6 +727,27 @@ export class DatabaseService {
       };
     } catch (error) {
       return { tables: 0, indexes: 0, triggers: 0 };
+    }
+  }
+
+  /**
+   * Ensure header_state table exists (migration helper)
+   */
+  private ensureHeaderStateTable(): void {
+    try {
+      this.run(`
+        CREATE TABLE IF NOT EXISTS header_state (
+          dataset_id TEXT NOT NULL,
+          app_context TEXT NOT NULL,
+          expanded_levels TEXT NOT NULL DEFAULT '[]',
+          zoom_level TEXT NOT NULL DEFAULT 'leaf',
+          pan_level TEXT NOT NULL DEFAULT 'dense',
+          last_updated TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (dataset_id, app_context)
+        )
+      `);
+    } catch (error) {
+      // Ignore errors - table might already exist
     }
   }
 }

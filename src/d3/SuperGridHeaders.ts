@@ -17,6 +17,7 @@ import type {
 } from '../types/grid';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
+import type { DatabaseService } from '../db/DatabaseService';
 
 export interface SuperGridHeadersConfig {
   defaultHeaderHeight: number;
@@ -39,6 +40,7 @@ export class SuperGridHeaders {
   private layoutService: HeaderLayoutService;
   private config: SuperGridHeadersConfig;
   private currentHierarchy: HeaderHierarchy | null = null;
+  private database: DatabaseService | null = null;
 
   // Performance tracking for lazy fallback
   private renderStartTime: number = 0;
@@ -48,6 +50,11 @@ export class SuperGridHeaders {
   // Animation state tracking
   private runningTransitions: Set<string> = new Set();
   private animationStartTime: number = 0;
+
+  // State persistence properties
+  private saveStateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private currentDatasetId: string = 'default';
+  private currentAppContext: string = 'supergrid';
 
   // Event callbacks
   private onHeaderClick?: (event: HeaderClickEvent) => void;
@@ -70,15 +77,22 @@ export class SuperGridHeaders {
     callbacks: {
       onHeaderClick?: (event: HeaderClickEvent) => void;
       onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
-    } = {}
+    } = {},
+    database?: DatabaseService
   ) {
     this.container = d3.select(container);
     this.layoutService = layoutService;
     this.config = { ...SuperGridHeaders.DEFAULT_CONFIG, ...config };
     this.onHeaderClick = callbacks.onHeaderClick;
     this.onExpandCollapse = callbacks.onExpandCollapse;
+    this.database = database || null;
 
     this.initializeStructure();
+
+    // Restore state on initialization if database is available
+    if (this.database) {
+      this.restoreHeaderState();
+    }
   }
 
   /**
@@ -157,6 +171,9 @@ export class SuperGridHeaders {
     // Trigger callback
     this.onExpandCollapse?.(nodeId, node.isExpanded);
 
+    // Save state after expand/collapse change
+    this.saveHeaderState();
+
     // Animate the change
     this.animateToggle(node);
 
@@ -172,6 +189,19 @@ export class SuperGridHeaders {
    */
   public getHierarchy(): HeaderHierarchy | null {
     return this.currentHierarchy;
+  }
+
+  /**
+   * Set dataset and app context for state persistence
+   */
+  public setStateContext(datasetId: string, appContext: string): void {
+    this.currentDatasetId = datasetId;
+    this.currentAppContext = appContext;
+
+    // Restore state for new context
+    if (this.database) {
+      this.restoreHeaderState();
+    }
   }
 
   /**
@@ -827,4 +857,99 @@ export class SuperGridHeaders {
       .attr('fill', '#dc2626')
       .text('Header Error');
   }
+
+  // State persistence methods
+
+  /**
+   * Save current header state with debouncing for smooth animations
+   */
+  private saveHeaderState(): void {
+    if (!this.database || !this.currentHierarchy) return;
+
+    // Clear existing debounce timer
+    if (this.saveStateDebounceTimer) {
+      clearTimeout(this.saveStateDebounceTimer);
+    }
+
+    // Debounce saves to prevent excessive database writes during animations
+    this.saveStateDebounceTimer = setTimeout(() => {
+      if (!this.currentHierarchy || !this.database) return;
+
+      // Collect expanded node IDs
+      const expandedLevels = Array.from(this.currentHierarchy.expandedNodeIds);
+
+      // Save state to database
+      const result = this.database.saveHeaderState(
+        this.currentDatasetId,
+        this.currentAppContext,
+        expandedLevels,
+        'leaf', // Default zoom level - could be parameter
+        'dense' // Default pan level - could be parameter
+      );
+
+      if (result.success) {
+        console.log('✅ SuperGridHeaders.saveHeaderState(): State saved', {
+          datasetId: this.currentDatasetId,
+          appContext: this.currentAppContext,
+          expandedCount: expandedLevels.length
+        });
+      } else {
+        console.error('❌ SuperGridHeaders.saveHeaderState(): Failed to save:', result.error);
+      }
+    }, 300); // Debounce for 300ms to avoid excessive saves during animations
+  }
+
+  /**
+   * Restore header state from database
+   */
+  private restoreHeaderState(): void {
+    if (!this.database) return;
+
+    try {
+      const savedState = this.database.loadHeaderState(
+        this.currentDatasetId,
+        this.currentAppContext
+      );
+
+      if (!savedState || !this.currentHierarchy) {
+        console.log('📋 SuperGridHeaders.restoreHeaderState(): No saved state found');
+        return;
+      }
+
+      console.log('🔄 SuperGridHeaders.restoreHeaderState(): Restoring state', {
+        datasetId: this.currentDatasetId,
+        appContext: this.currentAppContext,
+        expandedLevels: savedState.expandedLevels,
+        lastUpdated: savedState.lastUpdated
+      });
+
+      // Restore expanded state
+      this.currentHierarchy.expandedNodeIds = new Set(savedState.expandedLevels);
+
+      // Apply expansion state to hierarchy nodes
+      this.currentHierarchy.allNodes.forEach(node => {
+        if (this.currentHierarchy!.expandedNodeIds.has(node.id)) {
+          node.isExpanded = true;
+          this.currentHierarchy!.collapsedSubtrees.delete(node.id);
+        } else {
+          node.isExpanded = false;
+          if (!node.isLeaf) {
+            this.currentHierarchy!.collapsedSubtrees.add(node.id);
+          }
+        }
+      });
+
+      // Re-render with restored state
+      if (this.currentHierarchy.totalWidth > 0) {
+        this.calculateHierarchyWidths(this.currentHierarchy.totalWidth);
+        this.renderAllLevels();
+      }
+
+      console.log('✅ SuperGridHeaders.restoreHeaderState(): State restored successfully');
+
+    } catch (error) {
+      console.error('❌ SuperGridHeaders.restoreHeaderState(): Error restoring state:', error);
+    }
+  }
+
 }

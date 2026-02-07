@@ -98,7 +98,8 @@ export class SuperGrid {
         onExpandCollapse: (nodeId: string, isExpanded: boolean) => {
           console.log('🔄 SuperGrid: Header expanded/collapsed:', { nodeId, isExpanded });
         }
-      }
+      },
+      this.database // Pass database for state persistence
     );
 
     this.setupKeyboardHandlers();
