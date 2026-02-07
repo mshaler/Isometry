@@ -14,6 +14,9 @@ import {
 } from '../types/views';
 import type { Node } from '../types/node';
 
+// Re-export CardPosition for external use
+export type { CardPosition };
+
 /**
  * ViewContinuum - Orchestrator for seamless view transitions
  *
