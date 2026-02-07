@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { SuperGrid } from '../d3/SuperGrid';
+import { ListView } from '../d3/ListView';
+import { KanbanView } from '../d3/KanbanView';
+import { ViewContinuum } from '../d3/ViewContinuum';
+import type { ViewContinuumCallbacks } from '../d3/ViewContinuum';
+import { ViewSwitcher, useViewSwitcher } from './ViewSwitcher';
+import { ViewType } from '../types/views';
 import type { DatabaseService } from '../db/DatabaseService';
 import { CardDetailModal } from './CardDetailModal';
 import { useSQLite } from '../db/SQLiteProvider';
@@ -40,8 +46,13 @@ function FilterChip({ filter, onRemove }: FilterChipProps) {
  * - Card detail modals
  */
 export function SuperGridDemo() {
+  // View state management
+  const canvasId = 'supergrid-demo';
+  const { currentView, setCurrentView } = useViewSwitcher(canvasId, ViewType.SUPERGRID);
+
   // State management
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
+  const [viewContinuum, setViewContinuum] = useState<ViewContinuum | null>(null);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalLoading, setIsModalLoading] = useState(false);
@@ -51,7 +62,7 @@ export function SuperGridDemo() {
   const [dbService, setDbService] = useState<DatabaseService | null>(null);
   const [filterService] = useState(() => new LATCHFilterService());
 
-  // Zoom/Pan state for Janus controls
+  // Zoom/Pan state for Janus controls (SuperGrid specific)
   const [currentZoomLevel, setCurrentZoomLevel] = useState<ZoomLevel>('leaf');
   const [currentPanLevel, setCurrentPanLevel] = useState<PanLevel>('dense');
 
@@ -441,13 +452,37 @@ export function SuperGridDemo() {
     }
   }, [sqliteExecute, superGrid, handleModalClose]);
 
-  // Initialize SuperGrid when database service is ready
+  // ViewContinuum callbacks
+  const viewContinuumCallbacks: ViewContinuumCallbacks = {
+    onViewChange: (event) => {
+      console.log('📊 SuperGridDemo: View change event:', event);
+      setCurrentView(event.toView);
+    },
+    onSelectionChange: (selectedIds, _focusedId) => {
+      setSelectedCards(selectedIds);
+      setShowBulkActions(selectedIds.length > 0);
+    },
+    onCardClick: (card) => {
+      setSelectedCard(card);
+      setIsModalOpen(true);
+    }
+  };
+
+  // Initialize ViewContinuum when database service is ready
   useEffect(() => {
     if (!svgRef.current || !dbService) return;
 
-    console.log('SuperGridDemo: Initializing SuperGrid');
+    console.log('SuperGridDemo: Initializing ViewContinuum');
 
-    const grid = new SuperGrid(
+    // Initialize ViewContinuum
+    const continuum = new ViewContinuum(
+      svgRef.current,
+      canvasId,
+      viewContinuumCallbacks
+    );
+
+    // Create and register view renderers
+    const superGridRenderer = new SuperGrid(
       svgRef.current,
       dbService,
       {
@@ -464,29 +499,56 @@ export function SuperGridDemo() {
       }
     );
 
-    setSuperGrid(grid);
+    const listViewRenderer = new ListView(svgRef.current);
+    const kanbanViewRenderer = new KanbanView(svgRef.current);
+
+    // Create adapter for SuperGrid to implement ViewRenderer interface
+    const superGridAdapter = {
+      render: (cards: any[], _axisMapping: any, activeFilters: any[]) => {
+        // Update SuperGrid data and re-render
+        superGridRenderer.updateCards(cards);
+        superGridRenderer.render(activeFilters);
+      },
+      getCardPositions: () => superGridRenderer.getCardPositions(),
+      scrollToCard: (cardId: string) => superGridRenderer.scrollToCard(cardId),
+      destroy: () => superGridRenderer.destroy()
+    };
+
+    // Register view renderers with ViewContinuum
+    continuum.registerViewRenderer(ViewType.SUPERGRID, superGridAdapter);
+    continuum.registerViewRenderer(ViewType.LIST, listViewRenderer);
+    continuum.registerViewRenderer(ViewType.KANBAN, kanbanViewRenderer);
+
+    setViewContinuum(continuum);
+    setSuperGrid(superGridRenderer); // Keep for compatibility with Janus controls
+
+    // Switch to current view
+    continuum.switchToView(currentView, 'programmatic', false);
 
     // Load initial data with compiled filters
     console.log('SuperGridDemo: Loading initial data');
     const filterCompilation = filterService.compileToSQL();
-    grid.query(filterCompilation);
 
-    // Focus for keyboard navigation
-    setTimeout(() => grid.focus(), 100);
+    // Query via ViewContinuum instead of direct SuperGrid
+    // TODO: Replace with continuum.queryAndCache when DatabaseService is integrated
+    superGridRenderer.query(filterCompilation);
 
-    // Sync component state with SuperGrid's zoom/pan levels
+    // Sync component state with SuperGrid's zoom/pan levels (only for SuperGrid view)
     setTimeout(() => {
-      const currentZoom = grid.getCurrentZoomLevel();
-      const currentPan = grid.getCurrentPanLevel();
-      setCurrentZoomLevel(currentZoom);
-      setCurrentPanLevel(currentPan);
+      if (currentView === ViewType.SUPERGRID) {
+        const currentZoom = superGridRenderer.getCurrentZoomLevel();
+        const currentPan = superGridRenderer.getCurrentPanLevel();
+        setCurrentZoomLevel(currentZoom);
+        setCurrentPanLevel(currentPan);
+      }
     }, 100);
 
     return () => {
-      grid.destroy();
+      continuum.destroy();
+      setViewContinuum(null);
       setSuperGrid(null);
     };
-  }, [dbService, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
+  }, [dbService, canvasId, currentView, viewContinuumCallbacks, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
 
   // Apply LATCH filters to grid
   useEffect(() => {
@@ -595,14 +657,26 @@ export function SuperGridDemo() {
       <div className="flex-none p-4 bg-white border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">SuperGrid Multi-Select Demo</h2>
+            <h2 className="text-xl font-bold text-gray-900">Grid Continuum Demo</h2>
             <p className="text-sm text-gray-600">
               {selectedCards.length > 0
                 ? `${selectedCards.length} card${selectedCards.length > 1 ? 's' : ''} selected`
-                : 'Click cards to select, Cmd/Ctrl+click for multi-select, Shift+click for range'
+                : 'Switch views and see seamless data projection transitions'
               }
             </p>
           </div>
+
+          {/* View Switcher */}
+          <ViewSwitcher
+            currentView={currentView}
+            onViewChange={async (newView) => {
+              console.log('📊 SuperGridDemo: View switch requested:', { from: currentView, to: newView });
+              if (viewContinuum) {
+                await viewContinuum.switchToView(newView, 'user', true);
+              }
+            }}
+            className="ml-4"
+          />
 
           {/* Bulk action controls */}
           {showBulkActions && (
@@ -689,7 +763,8 @@ export function SuperGridDemo() {
           </button>
         </div>
 
-        {/* Janus Zoom/Pan Controls */}
+        {/* Janus Zoom/Pan Controls (SuperGrid only) */}
+        {currentView === ViewType.SUPERGRID && (
         <div className="flex items-center justify-between">
           {/* Zoom Level Control (Value Density) */}
           <div className="flex items-center space-x-2">
@@ -753,6 +828,7 @@ export function SuperGridDemo() {
             Reset View
           </button>
         </div>
+        )}
       </div>
 
       {/* Grid container */}
@@ -768,11 +844,12 @@ export function SuperGridDemo() {
       {/* Keyboard shortcuts help */}
       <div className="flex-none p-2 bg-gray-100 text-xs text-gray-600">
         <span className="font-medium">Keyboard shortcuts:</span>
-        <span className="mx-2">Arrow keys: Navigate</span>
+        <span className="mx-2">⌘1: List View</span>
+        <span className="mx-2">⌘2: Kanban</span>
+        <span className="mx-2">⌘3: SuperGrid</span>
         <span className="mx-2">Space/Enter: Select</span>
         <span className="mx-2">Escape: Clear selection</span>
-        <span className="mx-2">Cmd/Ctrl+A: Select all</span>
-        <span className="mx-2">Shift+Arrow: Extend selection</span>
+        <span className="mx-2">Arrow keys: Navigate</span>
       </div>
 
       {/* Card detail modal */}

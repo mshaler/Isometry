@@ -7,6 +7,7 @@ import type { FilterCompilationResult } from '../services/LATCHFilterService';
 import { SuperGridHeaders, type HeaderClickEvent } from './SuperGridHeaders';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
+import type { CardPosition } from '../types/views';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
@@ -1087,6 +1088,94 @@ export class SuperGrid {
       console.warn('Failed to restore Janus state from localStorage:', error);
     }
   }
+
+  // ========================================================================
+  // ViewRenderer Interface Methods (for ViewContinuum integration)
+  // ========================================================================
+
+  /**
+   * Get card positions for FLIP animations
+   * Returns current card positions as Map<cardId, position>
+   */
+  getCardPositions(): Map<string, CardPosition> {
+    const positions = new Map<string, CardPosition>();
+
+    // Get all rendered cards and their positions
+    this.container
+      .selectAll<SVGGElement, any>('.card-group')
+      .each((d, i, nodes) => {
+        const element = d3.select(nodes[i]);
+        const transform = element.attr('transform');
+
+        // Parse transform to get x, y coordinates
+        const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        if (match && d.id) {
+          const x = parseFloat(match[1]);
+          const y = parseFloat(match[2]);
+
+          positions.set(d.id, {
+            cardId: d.id,
+            x,
+            y,
+            width: this.cardWidth,
+            height: this.cardHeight
+          });
+        }
+      });
+
+    console.log('📏 SuperGrid.getCardPositions():', { count: positions.size });
+    return positions;
+  }
+
+  /**
+   * Update grid data (for ViewRenderer interface)
+   */
+  updateCards(cards: any[]): void {
+    if (this.currentData) {
+      this.currentData.cards = cards;
+    }
+  }
+
+  /**
+   * Scroll to a specific card (semantic positioning)
+   * Brings the card into the viewport and optionally focuses it
+   */
+  scrollToCard(cardId: string): void {
+    const cardElement = this.container
+      .selectAll('.card-group')
+      .filter((d: any) => d.id === cardId);
+
+    if (!cardElement.empty()) {
+      const transform = cardElement.attr('transform');
+      const match = transform?.match(/translate\(([^,]+),\s*([^)]+)\)/);
+
+      if (match) {
+        const x = parseFloat(match[1]);
+        const y = parseFloat(match[2]);
+
+        // TODO: Implement smooth panning to card position
+        // For now, just ensure the card is visible
+        console.log('🔍 SuperGrid: Should pan to card at position:', { x, y });
+
+        // Briefly highlight the card to indicate focus
+        cardElement
+          .select('.card-background')
+          .transition()
+          .duration(150)
+          .attr('stroke', '#3b82f6')
+          .attr('stroke-width', 3)
+          .transition()
+          .duration(150)
+          .attr('stroke', '#e5e7eb')
+          .attr('stroke-width', 1);
+
+        console.log('🎯 SuperGrid.scrollToCard():', { cardId, x, y });
+      }
+    } else {
+      console.warn('⚠️ SuperGrid.scrollToCard(): Card not found:', cardId);
+    }
+  }
+
 
   /**
    * Clean up event listeners and resources
