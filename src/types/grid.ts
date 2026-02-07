@@ -1,12 +1,12 @@
 /**
- * Grid Types - Unified CellData Structure for Janus Density Model
+ * Grid Types - Unified CellData Structure for Janus Density Model & Hierarchical Headers
  *
  * This module provides the unified data structure for all grid cells across
- * density levels, supporting the Janus model's orthogonal Pan × Zoom controls
- * and future Super* feature integration.
+ * density levels, supporting the Janus model's orthogonal Pan × Zoom controls,
+ * hierarchical PAFV headers, and future Super* feature integration.
  *
  * Architecture: Future-ready with minimal Super* hooks for structural preparation
- * while focusing on immediate Janus density requirements.
+ * while focusing on immediate Janus density requirements and hierarchical headers.
  */
 
 import { type Node } from './node';
@@ -88,6 +88,142 @@ export interface AxisData {
   value: any;
   count: number;
   span: number;
+}
+
+// ===============================================================
+// HIERARCHICAL HEADER TYPES FOR PHASE 36 SUPERGRID HEADERS
+// ===============================================================
+
+/**
+ * Header node for hierarchical header structures using d3-hierarchy
+ *
+ * Supports unlimited nesting depth with visual spanning across parent-child relationships.
+ * Each node represents a dimension value in the LATCH/PAFV axis hierarchy.
+ */
+export interface HeaderNode {
+  id: string;                     // Unique identifier for the header node
+  label: string;                  // Display label for the header
+  parentId?: string;              // Parent node ID for hierarchy construction
+  facet: string;                  // LATCH facet (location, alphabet, time, category, hierarchy)
+  value: any;                     // The actual data value represented
+  count: number;                  // Number of data items in this group
+  level: number;                  // Depth level in the hierarchy (0 = root)
+  span: number;                   // Number of child columns this header spans
+  children?: HeaderNode[];        // Child header nodes
+
+  // Visual and interaction state
+  isExpanded: boolean;            // Whether children are currently visible
+  isLeaf: boolean;                // True if this node has no children
+
+  // Layout calculation properties
+  x: number;                      // Calculated x position in header layout
+  y: number;                      // Calculated y position in header layout
+  width: number;                  // Calculated width for this header cell
+  height: number;                 // Calculated height for this header cell
+
+  // Content alignment based on span length and content type
+  textAlign: ContentAlignment;    // How to align text within the header cell
+
+  // Click zones for interaction
+  labelZone: {                    // Zone for expand/collapse operations (~32px)
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  bodyZone: {                     // Zone for data selection (remaining area)
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+}
+
+/**
+ * Complete header hierarchy structure for a grid axis
+ *
+ * Contains the full tree of header nodes with metadata for rendering
+ * and interaction management.
+ */
+export interface HeaderHierarchy {
+  axis: string;                   // LATCH axis (L, A, T, C, H)
+  rootNodes: HeaderNode[];        // Top-level header nodes
+  allNodes: HeaderNode[];         // Flattened array of all nodes for quick lookup
+  maxDepth: number;               // Maximum nesting depth in this hierarchy
+  totalWidth: number;             // Total calculated width of all headers
+  totalHeight: number;            // Total calculated height of header area
+
+  // State for expand/collapse operations
+  expandedNodeIds: Set<string>;   // Set of currently expanded node IDs
+  collapsedSubtrees: Set<string>; // Set of collapsed subtree root IDs
+
+  // Configuration for this hierarchy
+  config: SpanCalculationConfig;  // Span calculation configuration
+  lastUpdated: number;            // Timestamp of last recalculation
+}
+
+/**
+ * Configuration for hybrid span calculation system
+ *
+ * User-decided approach: data-proportional + content-based minimums + equal distribution fallback
+ */
+export interface SpanCalculationConfig {
+  // Primary sizing approach: data-proportional
+  dataProportionalWeight: number;     // Weight for data count in sizing (0-1)
+
+  // Content-based minimums to prevent illegibility
+  minWidthPerCharacter: number;       // Minimum pixels per character in header text
+  absoluteMinWidth: number;           // Absolute minimum width for any header
+  absoluteMaxWidth: number;           // Maximum width to prevent excessively wide headers
+
+  // Equal distribution fallback
+  useEqualFallback: boolean;          // Use equal distribution when data counts are uniform
+  uniformDataThreshold: number;       // Coefficient of variation threshold for "uniform" data
+
+  // Content-aware padding
+  paddingScale: number;               // Scale factor for padding based on text length
+  iconWidth: number;                  // Width reserved for expand/collapse icons
+
+  // Performance optimization
+  recalculationThreshold: number;     // Data change threshold requiring recalculation
+  enableCaching: boolean;             // Whether to cache span calculations
+}
+
+/**
+ * Content alignment rules for header text based on span and content type
+ *
+ * User-decided: center for short spans, left for long spans,
+ * numeric right-align, dates left-align
+ */
+export enum ContentAlignment {
+  CENTER = 'center',          // Short spans (1-3 words like 'Q1', 'Jan')
+  LEFT = 'left',             // Long spans (multi-word categories)
+  RIGHT = 'right',           // Numeric content regardless of span
+  DATE_LEFT = 'date-left'    // Date content (special left-align treatment)
+}
+
+/**
+ * State persistence interface for header expansion/collapse
+ *
+ * Per-dataset and per-app state persistence as required by user decisions
+ */
+export interface HeaderStateManager {
+  datasetId: string;              // Current dataset identifier
+  appInstanceId: string;          // App instance for multi-session support
+
+  // State data
+  expandedNodes: Record<string, Set<string>>;    // Per-axis expanded node sets
+  userPreferences: {
+    defaultExpansionLevel: number;               // Default depth to expand to
+    rememberLastState: boolean;                  // Whether to persist between sessions
+    autoCollapseThreshold: number;               // Auto-collapse if more than N nodes
+  };
+
+  // Persistence methods
+  saveState(): void;
+  loadState(): void;
+  clearState(): void;
+  resetToDefaults(): void;
 }
 
 /**
@@ -275,4 +411,56 @@ export const DEFAULT_GRID_LAYOUT: GridLayoutConfig = {
     renderBatchSize: 50,
     updateThrottle: 16  // ~60fps
   }
+};
+
+/**
+ * Default configuration for hierarchical header span calculations
+ *
+ * Implements the user-decided hybrid approach: data-proportional + content-based minimums + equal fallback
+ */
+export const DEFAULT_SPAN_CONFIG: SpanCalculationConfig = {
+  dataProportionalWeight: 0.7,       // 70% weight to data proportions
+  minWidthPerCharacter: 8,            // 8px per character minimum
+  absoluteMinWidth: 80,               // 80px absolute minimum width
+  absoluteMaxWidth: 300,              // 300px maximum to prevent excessive width
+  useEqualFallback: true,             // Enable equal distribution fallback
+  uniformDataThreshold: 0.15,         // Use equal if coefficient of variation < 0.15
+  paddingScale: 1.2,                  // 20% extra padding for content
+  iconWidth: 32,                      // 32px reserved for expand/collapse icon
+  recalculationThreshold: 0.1,        // Recalculate if 10% data change
+  enableCaching: true                 // Enable calculation caching
+};
+
+/**
+ * Type guard for HeaderNode validation
+ */
+export const isHeaderNode = (obj: any): obj is HeaderNode => {
+  return obj &&
+    typeof obj.id === 'string' &&
+    typeof obj.label === 'string' &&
+    typeof obj.facet === 'string' &&
+    typeof obj.count === 'number' &&
+    typeof obj.level === 'number' &&
+    typeof obj.span === 'number' &&
+    typeof obj.isExpanded === 'boolean' &&
+    typeof obj.isLeaf === 'boolean' &&
+    typeof obj.x === 'number' &&
+    typeof obj.y === 'number' &&
+    typeof obj.width === 'number' &&
+    typeof obj.height === 'number';
+};
+
+/**
+ * Type guard for HeaderHierarchy validation
+ */
+export const isHeaderHierarchy = (obj: any): obj is HeaderHierarchy => {
+  return obj &&
+    typeof obj.axis === 'string' &&
+    Array.isArray(obj.rootNodes) &&
+    Array.isArray(obj.allNodes) &&
+    typeof obj.maxDepth === 'number' &&
+    typeof obj.totalWidth === 'number' &&
+    typeof obj.totalHeight === 'number' &&
+    obj.expandedNodeIds instanceof Set &&
+    obj.collapsedSubtrees instanceof Set;
 };
