@@ -17,6 +17,7 @@ import { LiveDataProvider } from './contexts/LiveDataContext';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { CardOverlayProvider } from './state/CardOverlayContext';
 import { SQLiteProvider } from './db/SQLiteProvider';
+import { SelectionProvider } from './state/SelectionContext';
 
 type ViewMode = 'app' | 'd3demo' | 'supergrid' | 'components' | 'notebook';
 
@@ -90,7 +91,9 @@ function MVPDemoShell({ onShowUnified }: { onShowUnified: () => void }) {
             <div className="h-full">
               <SQLiteProvider>
                 <PAFVProvider>
-                  <SuperGridDemo />
+                  <SelectionProvider>
+                    <SuperGridDemo />
+                  </SelectionProvider>
                 </PAFVProvider>
               </SQLiteProvider>
             </div>
