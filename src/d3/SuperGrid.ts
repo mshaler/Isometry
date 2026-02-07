@@ -131,6 +131,9 @@ export class SuperGrid {
 
     this.setupKeyboardHandlers();
     this.initializeDragBehavior();
+
+    // Restore saved Janus state if available
+    this.restoreSavedJanusState();
   }
 
   // ========================================================================
@@ -158,9 +161,29 @@ export class SuperGrid {
   }
 
   private handleJanusStateChange(state: JanusState): void {
-    console.log('🔍 SuperGrid.handleJanusStateChange():', state);
+    console.log('🔍 SuperGrid: Janus state changed:', {
+      zoomLevel: state.zoomLevel,
+      panLevel: state.panLevel,
+      transform: `translate(${state.zoomTransform.x.toFixed(1)}, ${state.zoomTransform.y.toFixed(1)}) scale(${state.zoomTransform.k.toFixed(2)})`
+    });
+
     // Persist state for restoration
     // TODO: Save to DatabaseService for cross-session persistence
+    try {
+      // For now, save to localStorage as demonstration
+      const stateKey = `supergrid-janus-state`;
+      localStorage.setItem(stateKey, JSON.stringify({
+        zoomLevel: state.zoomLevel,
+        panLevel: state.panLevel,
+        zoomTransform: {
+          x: state.zoomTransform.x,
+          y: state.zoomTransform.y,
+          k: state.zoomTransform.k
+        }
+      }));
+    } catch (error) {
+      console.warn('Failed to save Janus state to localStorage:', error);
+    }
   }
 
   /**
@@ -1024,6 +1047,44 @@ export class SuperGrid {
    */
   resetZoomPan(): void {
     this.superGridZoom.reset();
+  }
+
+  /**
+   * Restore saved Janus state from localStorage
+   */
+  private restoreSavedJanusState(): void {
+    try {
+      const stateKey = `supergrid-janus-state`;
+      const savedStateStr = localStorage.getItem(stateKey);
+
+      if (savedStateStr) {
+        const savedState = JSON.parse(savedStateStr);
+
+        // Reconstruct the JanusState with proper d3.ZoomTransform
+        const restoredState: JanusState = {
+          zoomLevel: savedState.zoomLevel || 'leaf',
+          panLevel: savedState.panLevel || 'dense',
+          zoomTransform: d3.zoomIdentity
+            .translate(savedState.zoomTransform?.x || 0, savedState.zoomTransform?.y || 0)
+            .scale(savedState.zoomTransform?.k || 1),
+          viewportBounds: {
+            x: 0,
+            y: 0,
+            width: 800,
+            height: 600
+          }
+        };
+
+        this.superGridZoom.restoreState(restoredState);
+
+        console.log('🔍 SuperGrid: Restored Janus state from localStorage:', {
+          zoomLevel: restoredState.zoomLevel,
+          panLevel: restoredState.panLevel
+        });
+      }
+    } catch (error) {
+      console.warn('Failed to restore Janus state from localStorage:', error);
+    }
   }
 
   /**

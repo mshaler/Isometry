@@ -64,7 +64,6 @@ export class SuperGridZoom implements JanusControls {
 
   // Animation tracking
   private isAnimating = false;
-  private animationStartTime = 0;
 
   // Default configuration
   private static readonly DEFAULT_CONFIG: SuperGridZoomConfig = {
@@ -94,13 +93,6 @@ export class SuperGridZoom implements JanusControls {
 
     this.initializeZoomBehavior();
     this.setupZoomBehavior();
-
-    console.log('🔍 SuperGridZoom initialized:', {
-      minZoom: this.config.minZoom,
-      maxZoom: this.config.maxZoom,
-      anchorCorner: this.config.anchorCorner,
-      animationDuration: this.config.animationDuration
-    });
   }
 
   /**
@@ -138,14 +130,7 @@ export class SuperGridZoom implements JanusControls {
   setZoomLevel(level: ZoomLevel): void {
     if (this.currentZoomLevel === level) return;
 
-    const previousLevel = this.currentZoomLevel;
     this.currentZoomLevel = level;
-
-    console.log('🔍 SuperGridZoom.setZoomLevel():', {
-      from: previousLevel,
-      to: level,
-      independent: true
-    });
 
     // Apply zoom level change with animation
     this.animateZoomLevelChange(level);
@@ -162,14 +147,7 @@ export class SuperGridZoom implements JanusControls {
   setPanLevel(level: PanLevel): void {
     if (this.currentPanLevel === level) return;
 
-    const previousLevel = this.currentPanLevel;
     this.currentPanLevel = level;
-
-    console.log('🔍 SuperGridZoom.setPanLevel():', {
-      from: previousLevel,
-      to: level,
-      independent: true
-    });
 
     // Apply pan level change with animation
     this.animatePanLevelChange(level);
@@ -192,12 +170,6 @@ export class SuperGridZoom implements JanusControls {
     // Calculate transform with upper-left anchor
     const targetTransform = this.calculateAnchoredTransform(x, y, constrainedScale);
 
-    console.log('🔍 SuperGridZoom.zoomTo():', {
-      target: { x, y, scale: constrainedScale },
-      anchor: this.config.anchorCorner,
-      transform: targetTransform
-    });
-
     // Apply transform with smooth animation
     this.animateToTransform(targetTransform);
   }
@@ -210,12 +182,6 @@ export class SuperGridZoom implements JanusControls {
       .translate(x, y)
       .scale(this.currentTransform.k);
 
-    console.log('🔍 SuperGridZoom.panTo():', {
-      target: { x, y },
-      currentScale: this.currentTransform.k,
-      transform: targetTransform
-    });
-
     // Apply transform with smooth animation
     this.animateToTransform(targetTransform);
   }
@@ -224,8 +190,6 @@ export class SuperGridZoom implements JanusControls {
    * Reset to default zoom/pan state
    */
   reset(): void {
-    console.log('🔍 SuperGridZoom.reset(): Resetting to default state');
-
     this.currentZoomLevel = 'leaf';
     this.currentPanLevel = 'dense';
 
@@ -253,8 +217,6 @@ export class SuperGridZoom implements JanusControls {
    * Restore Janus state from saved state
    */
   restoreState(state: JanusState): void {
-    console.log('🔍 SuperGridZoom.restoreState():', state);
-
     this.currentZoomLevel = state.zoomLevel;
     this.currentPanLevel = state.panLevel;
 
@@ -276,7 +238,6 @@ export class SuperGridZoom implements JanusControls {
    * Handle zoom start event
    */
   private handleZoomStart(_event: d3.D3ZoomEvent<SVGElement, unknown>): void {
-    console.log('🔍 SuperGridZoom.handleZoomStart()');
     this.isAnimating = false; // User interaction interrupts animations
   }
 
@@ -302,12 +263,8 @@ export class SuperGridZoom implements JanusControls {
   /**
    * Handle zoom end event
    */
-  private handleZoomEnd(event: d3.D3ZoomEvent<SVGElement, unknown>): void {
-    console.log('🔍 SuperGridZoom.handleZoomEnd():', {
-      finalTransform: event.transform,
-      zoomLevel: this.currentZoomLevel,
-      panLevel: this.currentPanLevel
-    });
+  private handleZoomEnd(_event: d3.D3ZoomEvent<SVGElement, unknown>): void {
+    // Zoom end handling complete
   }
 
   /**
@@ -324,14 +281,9 @@ export class SuperGridZoom implements JanusControls {
   /**
    * Animate pan level change with layout adjustment
    */
-  private animatePanLevelChange(level: PanLevel): void {
+  private animatePanLevelChange(_level: PanLevel): void {
     // Pan level affects what's visible, not the transform directly
     // This triggers layout recalculation in the calling components
-
-    console.log('🔄 SuperGridZoom.animatePanLevelChange():', {
-      level,
-      note: 'Layout recalculation triggered'
-    });
   }
 
   /**
@@ -360,7 +312,6 @@ export class SuperGridZoom implements JanusControls {
    */
   private animateToTransform(targetTransform: d3.ZoomTransform): void {
     this.isAnimating = true;
-    this.animationStartTime = performance.now();
 
     const transition = this.container.transition()
       .duration(this.config.animationDuration)
@@ -372,12 +323,6 @@ export class SuperGridZoom implements JanusControls {
         targetTransform
       ).on('end', () => {
         this.isAnimating = false;
-
-        const duration = performance.now() - this.animationStartTime;
-        console.log('✅ SuperGridZoom animation complete:', {
-          duration: `${duration.toFixed(2)}ms`,
-          withinBudget: duration < this.config.animationDuration
-        });
       });
     }
   }
@@ -469,7 +414,5 @@ export class SuperGridZoom implements JanusControls {
     this.onZoomChange = undefined;
     this.onPanChange = undefined;
     this.onStateChange = undefined;
-
-    console.log('🗑️ SuperGridZoom destroyed');
   }
 }
