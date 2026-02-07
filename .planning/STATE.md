@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 
 ## Current Position
 
-Phase: 35 of 37 (PAFV Grid Core) 🟡 IN PROGRESS
-Plan: 4 of 4 in current phase ✅ COMPLETE
-Status: Plan 35-05 Header Click LATCH Filtering completed successfully
-Last activity: 2026-02-07 — Completed 35-05-PLAN.md with interactive header filtering
+Phase: 36 of 37 (SuperGrid Headers) 🟡 IN PROGRESS
+Plan: 1 of 4 in current phase ✅ COMPLETE
+Status: Plan 36-01 Hierarchical Header Foundation completed successfully
+Last activity: 2026-02-07 — Completed 36-01-PLAN.md with hierarchical PAFV headers
 
-Progress: [████████░░] 80% (Phase 35 complete, Phase 36 ready)
+Progress: [████████▓░] 82% (Phase 36 Plan 1 complete)
 
 ## Performance Metrics
 
@@ -30,6 +30,7 @@ Progress: [████████░░] 80% (Phase 35 complete, Phase 36 read
 | 33 (v4.0) | 3/3 | Complete | Foundation established |
 | 34 (v4.1) | 3/3 | ✅ COMPLETE | SuperGrid foundation stable |
 | 35 (v4.1) | 4/4 | ✅ COMPLETE | Interactive header filtering (3.37 mins avg) |
+| 36 (v4.1) | 1/4 | 🟡 IN PROGRESS | Hierarchical headers foundation (6.5 mins) |
 
 **Recent Trend:**
 - v4.0 Phase 33: Bridge elimination foundation completed successfully
@@ -40,9 +41,10 @@ Progress: [████████░░] 80% (Phase 35 complete, Phase 36 read
 - v4.1 Phase 35-02: Header click LATCH filtering with comprehensive UI ✅
 - v4.1 Phase 35-03: Multi-select and keyboard navigation with bulk operations ✅
 - v4.1 Phase 35-05: Interactive header filtering with LATCH filter service integration ✅
-- Trend: Phase 35 PAFV Grid Core complete, ready for Phase 36 Grid Continuum
+- v4.1 Phase 36-01: Hierarchical header foundation with d3-hierarchy, hybrid span calculation, progressive rendering ✅
+- Trend: Phase 35 PAFV Grid Core complete, Phase 36 SuperGrid Headers foundation established
 
-*Updated after Phase 35-05 completion - 2026-02-07*
+*Updated after Phase 36-01 completion - 2026-02-07*
 
 ## Accumulated Context
 
@@ -61,6 +63,10 @@ Recent decisions affecting current work:
 - 34-02: TanStack Virtual integration for 10k+ cell performance vs custom virtualization
 - 34-03: Bridge elimination architecture proven working (sql.js → D3.js zero serialization)
 - 34-03: SuperGrid foundation stable with LATCH headers and real data visualization
+- 36-01: Unlimited nesting depth based on data complexity (vs arbitrary limits)
+- 36-01: Hybrid span calculation: data-proportional + content minimums + equal fallback
+- 36-01: Geometric click zones: 32px parent label for expand/collapse, remaining body for selection
+- 36-01: Content-aware alignment serving scannability over uniformity
 
 ### Pending Todos
 
@@ -68,20 +74,21 @@ None yet.
 
 ### Blockers/Concerns
 
-None. Phase 35 PAFV Grid Core complete. SuperGrid fully operational with:
-- Bridge elimination architecture working (sql.js → D3.js direct binding)
-- Interactive header filtering with LATCH filter service integration
-- Multi-select with keyboard navigation and bulk operations
-- Card detail modals with full CRUD operations
-- Visual feedback for active filter states
-- Zero TypeScript compilation errors
+None. Phase 36-01 Hierarchical Header Foundation complete. SuperGrid enhanced with:
+- Hierarchical PAFV headers with unlimited nesting depth
+- d3-hierarchy integration with hybrid span calculations
+- Multi-level visual spanning across parent-child relationships
+- Expand/collapse with geometric click zones and progressive rendering
+- Content-aware text alignment based on span length and content type
+- HeaderLayoutService with calculation caching and state persistence hooks
+- Zero compilation errors, maintains 60fps performance
 
-Ready for Phase 36 Grid Continuum implementation.
+Ready for Phase 36-02 Janus controls integration.
 
 ## Session Continuity
 
-Last session: 2026-02-07T01:44:10Z
-Stopped at: ✅ PLAN 35-05 COMPLETE - Interactive header filtering implementation
+Last session: 2026-02-07T20:41:03Z
+Stopped at: ✅ PLAN 36-01 COMPLETE - Hierarchical header foundation implementation
 Resume file: None
 
-Next: Begin Phase 36 Grid Continuum
+Next: Begin Phase 36-02 Janus Controls Integration
