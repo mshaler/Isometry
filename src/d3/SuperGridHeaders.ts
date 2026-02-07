@@ -45,6 +45,10 @@ export class SuperGridHeaders {
   private renderCount: number = 0;
   private averageRenderTime: number = 0;
 
+  // Animation state tracking
+  private runningTransitions: Set<string> = new Set();
+  private animationStartTime: number = 0;
+
   // Event callbacks
   private onHeaderClick?: (event: HeaderClickEvent) => void;
   private onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
@@ -471,42 +475,274 @@ export class SuperGridHeaders {
     });
   }
 
-  private animateToggle(node: HeaderNode): void {
-    // Find all child nodes that should show/hide
-    const childNodes = this.getChildNodesRecursive(node);
+  /**
+   * Animate header expansion with morphing boundary style
+   * Implements user-decided smooth transitions with "quiet app" aesthetic
+   */
+  public animateHeaderExpansion(node: HeaderNode): void {
+    if (!this.currentHierarchy) return;
 
+    this.animationStartTime = performance.now();
+    const transitionId = `expand-${node.id}-${Date.now()}`;
+
+    console.log('🔄 SuperGridHeaders.animateHeaderExpansion():', {
+      nodeId: node.id,
+      isExpanded: node.isExpanded,
+      transitionId
+    });
+
+    // Interrupt any running transitions for smooth user experience
+    this.interruptTransitions(node.id);
+
+    // Track this transition
+    this.runningTransitions.add(transitionId);
+
+    // Find all affected nodes (parent and children)
+    const parentNode = node;
+    const childNodes = this.getChildNodesRecursive(parentNode);
+    const affectedNodes = [parentNode, ...childNodes];
+
+    // Recalculate layouts with new expansion state
+    this.recalculateAffectedWidths(affectedNodes);
+
+    // Animate morphing boundaries with coordinated transforms
+    this.animateMorphingBoundaries(parentNode, childNodes, transitionId);
+
+    // Clean up transition tracking when complete
+    setTimeout(() => {
+      this.runningTransitions.delete(transitionId);
+      this.trackAnimationPerformance();
+    }, this.config.animationDuration + 50); // Small buffer for cleanup
+  }
+
+  /**
+   * Original toggle method - now delegates to morphing animation
+   */
+  private animateToggle(node: HeaderNode): void {
+    this.animateHeaderExpansion(node);
+  }
+
+  /**
+   * Animate morphing boundaries with coordinated parent-child layout changes
+   */
+  private animateMorphingBoundaries(
+    parentNode: HeaderNode,
+    childNodes: HeaderNode[],
+    transitionId: string
+  ): void {
+    // Animate parent span width changes with morphing boundaries
+    this.animateParentSpanChanges(parentNode, transitionId);
+
+    // Animate child positioning with coordinated transforms
+    this.animateChildPositioning(childNodes, transitionId);
+
+    // Update expand/collapse icon
+    this.animateExpandIcon(parentNode, transitionId);
+  }
+
+  /**
+   * Animate parent header span width changes with morphing boundaries
+   */
+  private animateParentSpanChanges(parentNode: HeaderNode, transitionId: string): void {
+    const parentElement = this.container
+      .selectAll('.header-node')
+      .filter((d: any) => d.id === parentNode.id);
+
+    if (parentElement.empty()) return;
+
+    // Animate background width change
+    parentElement.select('.header-background')
+      .interrupt() // Always interrupt previous transitions
+      .transition(`parent-span-${transitionId}`)
+      .duration(this.config.animationDuration)
+      .ease(d3.easeQuadOut) // "quiet app" aesthetic
+      .attr('width', parentNode.width);
+
+    // Animate text positioning adjustment
+    parentElement.select('.header-label')
+      .interrupt()
+      .transition(`parent-text-${transitionId}`)
+      .duration(this.config.animationDuration)
+      .ease(d3.easeQuadOut)
+      .attr('x', this.getTextX(parentNode))
+      .attr('text-anchor', this.getTextAnchor(parentNode));
+  }
+
+  /**
+   * Animate child header positioning with coordinated transforms
+   */
+  private animateChildPositioning(childNodes: HeaderNode[], transitionId: string): void {
     childNodes.forEach(child => {
       const childElement = this.container
         .select(`.header-level-${child.level}`)
         .selectAll('.header-node')
         .filter((d: any) => d.id === child.id);
 
-      if (node.isExpanded) {
-        // Show children with fade-in
+      if (childElement.empty()) return;
+
+      if (child.parentId && this.isNodeExpanded(child.parentId)) {
+        // Show children with slide-in and fade-in
         childElement
           .style('opacity', 0)
-          .transition()
+          .attr('transform', `translate(${child.x - 20}, 0)`) // Start slightly left
+          .interrupt()
+          .transition(`child-show-${transitionId}`)
           .duration(this.config.animationDuration)
-          .style('opacity', 1);
+          .ease(d3.easeQuadOut)
+          .style('opacity', 1)
+          .attr('transform', `translate(${child.x}, 0)`);
+
+        // Animate child widths smoothly
+        childElement.select('.header-background')
+          .interrupt()
+          .transition(`child-width-${transitionId}`)
+          .duration(this.config.animationDuration)
+          .ease(d3.easeQuadOut)
+          .attr('width', child.width);
       } else {
-        // Hide children with fade-out
+        // Hide children with slide-out and fade-out
         childElement
-          .transition()
+          .interrupt()
+          .transition(`child-hide-${transitionId}`)
           .duration(this.config.animationDuration)
-          .style('opacity', 0);
+          .ease(d3.easeQuadOut)
+          .style('opacity', 0)
+          .attr('transform', `translate(${child.x - 20}, 0)`); // Slide left while fading
+      }
+    });
+  }
+
+  /**
+   * Animate expand/collapse icon with smooth rotation
+   */
+  private animateExpandIcon(parentNode: HeaderNode, transitionId: string): void {
+    const iconElement = this.container
+      .selectAll('.header-node')
+      .filter((d: any) => d.id === parentNode.id)
+      .select('.expand-icon');
+
+    if (iconElement.empty()) return;
+
+    iconElement
+      .interrupt()
+      .transition(`icon-${transitionId}`)
+      .duration(this.config.animationDuration)
+      .ease(d3.easeQuadOut)
+      .text(parentNode.isExpanded ? '−' : '+')
+      .attr('transform', (_d, i, nodes) => {
+        // Add subtle rotation during transition
+        const currentTransform = d3.select(nodes[i]).attr('transform') || '';
+        return `${currentTransform} rotate(${parentNode.isExpanded ? 0 : 180})`;
+      });
+  }
+
+  /**
+   * Interrupt running transitions to prevent visual glitches
+   * User-decided requirement: smooth experience when clicking faster than animations
+   */
+  private interruptTransitions(nodeId: string): void {
+    // Find all transition names that might affect this node
+    const relatedTransitionIds = Array.from(this.runningTransitions).filter(id =>
+      id.includes(nodeId) || id.includes('expand-') || id.includes('child-')
+    );
+
+    relatedTransitionIds.forEach(transitionId => {
+      // Interrupt all related transitions
+      this.container.selectAll('*').interrupt(transitionId);
+      this.runningTransitions.delete(transitionId);
+    });
+
+    console.log('⏹️ SuperGridHeaders.interruptTransitions():', {
+      nodeId,
+      interruptedCount: relatedTransitionIds.length
+    });
+  }
+
+  /**
+   * Recalculate span widths for affected nodes after expansion state change
+   */
+  private recalculateAffectedWidths(affectedNodes: HeaderNode[]): void {
+    if (!this.currentHierarchy) return;
+
+    // Recalculate from leaf nodes up to ensure proper parent widths
+    const leafNodes = affectedNodes.filter(node => node.isLeaf);
+    const parentNodes = affectedNodes.filter(node => !node.isLeaf);
+
+    // Update leaf node visibility and positions
+    leafNodes.forEach(leaf => {
+      const isVisible = this.isNodeVisible(leaf);
+      if (isVisible) {
+        // Leaf is visible, ensure proper width calculation
+        leaf.width = this.layoutService.calculateNodeWidth(leaf, this.currentHierarchy!.totalWidth);
       }
     });
 
-    // Update expand icon
-    const iconElement = this.container
-      .selectAll('.header-node')
-      .filter((d: any) => d.id === node.id)
-      .select('.expand-icon');
+    // Recalculate parent widths from children (bottom-up)
+    parentNodes.sort((a, b) => b.level - a.level).forEach(parentNode => {
+      const visibleChildren = this.currentHierarchy!.allNodes.filter(
+        node => node.parentId === parentNode.id && this.isNodeVisible(node)
+      );
 
-    iconElement
-      .transition()
-      .duration(this.config.animationDuration)
-      .text(node.isExpanded ? '−' : '+');
+      if (visibleChildren.length > 0) {
+        parentNode.width = visibleChildren.reduce((sum, child) => sum + child.width, 0);
+        parentNode.span = visibleChildren.length;
+      }
+
+      this.updateClickZones(parentNode);
+    });
+  }
+
+  /**
+   * Check if a node should be visible based on parent expansion states
+   */
+  private isNodeVisible(node: HeaderNode): boolean {
+    if (!this.currentHierarchy || node.level === 0) return true;
+
+    // Check all parent nodes up the chain
+    let currentNode = node;
+    while (currentNode.parentId) {
+      const parent = this.currentHierarchy.allNodes.find(n => n.id === currentNode.parentId);
+      if (!parent || !parent.isExpanded) {
+        return false;
+      }
+      currentNode = parent;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if a specific node is expanded
+   */
+  private isNodeExpanded(nodeId: string): boolean {
+    if (!this.currentHierarchy) return false;
+
+    const node = this.currentHierarchy.allNodes.find(n => n.id === nodeId);
+    return node ? node.isExpanded : false;
+  }
+
+  /**
+   * Track animation performance for progressive rendering fallback
+   */
+  private trackAnimationPerformance(): void {
+    const animationTime = performance.now() - this.animationStartTime;
+
+    // Progressive rendering fallback - check if performance drops below 16ms budget
+    if (animationTime > this.config.performanceBudgetMs) {
+      console.warn('⚠️ SuperGridHeaders animation exceeded budget:', {
+        actualTime: `${animationTime.toFixed(2)}ms`,
+        budget: `${this.config.performanceBudgetMs}ms`,
+        fallbackRecommended: true
+      });
+
+      // Could trigger progressive rendering mode here
+      // For now, just log the performance issue
+    } else {
+      console.log('✅ SuperGridHeaders animation within budget:', {
+        time: `${animationTime.toFixed(2)}ms`,
+        budget: `${this.config.performanceBudgetMs}ms`
+      });
+    }
   }
 
   private getChildNodesRecursive(parentNode: HeaderNode): HeaderNode[] {

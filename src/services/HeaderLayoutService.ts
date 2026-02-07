@@ -210,6 +210,22 @@ export class HeaderLayoutService {
   }
 
   /**
+   * Calculate width for a single node based on content and data proportion
+   */
+  public calculateNodeWidth(node: HeaderNode, totalAvailableWidth: number): number {
+    // Content-based minimum width
+    const contentMinWidth = this.getContentMinWidth(node.label, node.level);
+
+    // Data-proportional calculation (simplified for single node)
+    const baseProportionalWidth = Math.max(
+      contentMinWidth,
+      totalAvailableWidth * 0.1 // Minimum 10% of available width
+    );
+
+    return Math.min(baseProportionalWidth, totalAvailableWidth * 0.5); // Max 50% of available
+  }
+
+  /**
    * Clear calculation cache
    */
   public clearCache(): void {
