@@ -4,6 +4,8 @@ import type { GridData, GridConfig, AxisData } from '../types/grid';
 import { SelectionManager } from '../services/SelectionManager';
 import type { SelectionCallbacks, GridPosition as SelectionGridPosition } from '../services/SelectionManager';
 import type { FilterCompilationResult } from '../services/LATCHFilterService';
+import { SuperGridHeaders, type HeaderClickEvent } from './SuperGridHeaders';
+import { HeaderLayoutService } from '../services/HeaderLayoutService';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
@@ -22,6 +24,10 @@ export class SuperGrid {
   private config: GridConfig;
   private currentData: GridData | null = null;
   private selectionManager: SelectionManager;
+
+  // Hierarchical headers system
+  private superGridHeaders: SuperGridHeaders;
+  private headerLayoutService: HeaderLayoutService;
 
   // Grid dimensions and layout
   private readonly cardWidth = 220;
@@ -77,6 +83,24 @@ export class SuperGrid {
     };
 
     this.selectionManager = new SelectionManager(selectionCallbacks);
+
+    // Initialize hierarchical headers system
+    this.headerLayoutService = new HeaderLayoutService();
+    this.superGridHeaders = new SuperGridHeaders(
+      container,
+      this.headerLayoutService,
+      {
+        defaultHeaderHeight: this.headerHeight,
+        enableProgressiveRendering: true
+      },
+      {
+        onHeaderClick: (event: HeaderClickEvent) => this.handleHierarchicalHeaderClick(event),
+        onExpandCollapse: (nodeId: string, isExpanded: boolean) => {
+          console.log('🔄 SuperGrid: Header expanded/collapsed:', { nodeId, isExpanded });
+        }
+      }
+    );
+
     this.setupKeyboardHandlers();
     this.initializeDragBehavior();
   }
@@ -513,6 +537,27 @@ export class SuperGrid {
   }
 
   /**
+   * Handle hierarchical header click events
+   */
+  private handleHierarchicalHeaderClick(event: HeaderClickEvent): void {
+    const { action, node } = event;
+
+    console.log('👆 SuperGrid.handleHierarchicalHeaderClick():', {
+      action,
+      nodeId: node.id,
+      facet: node.facet,
+      value: node.value
+    });
+
+    if (action === 'select') {
+      // Map to LATCH axis and trigger filter
+      const latchAxis = this.getLatchAxisFromFacet(node.facet);
+      this.onHeaderClick?.(latchAxis, node.facet, node.value);
+    }
+    // expand/collapse actions are handled by SuperGridHeaders directly
+  }
+
+  /**
    * Main render method
    */
   render(activeFilters: any[] = []): void {
@@ -530,8 +575,8 @@ export class SuperGrid {
     console.log('🎨 SuperGrid.render(): Setting up grid structure...');
     this.setupGridStructure();
 
-    console.log('🎨 SuperGrid.render(): Rendering headers with filter state...');
-    this.renderHeaders(activeFilters);
+    console.log('🎨 SuperGrid.render(): Rendering hierarchical headers...');
+    this.renderHierarchicalHeaders(activeFilters);
 
     console.log('🎨 SuperGrid.render(): Rendering cards...');
     this.renderCards();
@@ -722,101 +767,59 @@ export class SuperGrid {
   }
 
   /**
-   * Render dimensional headers with click handlers and filter state awareness
+   * Render hierarchical headers using SuperGridHeaders
    */
-  private renderHeaders(activeFilters: any[] = []): void {
-    if (!this.config.enableHeaders || !this.currentData?.headers.length) {
+  private renderHierarchicalHeaders(_activeFilters: any[] = []): void {
+    if (!this.config.enableHeaders || !this.currentData?.cards.length) {
+      console.log('📋 SuperGrid.renderHierarchicalHeaders(): Headers disabled or no data');
       return;
     }
 
-    const headers = this.currentData.headers;
+    try {
+      // Calculate available width for headers
+      const totalWidth = this.config.columnsPerRow! * (this.cardWidth + this.padding) - this.padding;
 
-    // Render status headers with interactive functionality
-    const headerGroups = this.container.select('.grid-structure')
-      .selectAll('.header-group')
-      .data(headers, (d: any) => d.id);
+      // Render hierarchical headers using the current data
+      this.superGridHeaders.renderHeaders(
+        this.currentData.cards,
+        'C', // Category axis for status-based demo
+        'status', // Use status as the primary facet
+        totalWidth
+      );
 
-    const entering = headerGroups.enter()
-      .append('g')
-      .attr('class', 'header-group')
-      .style('cursor', 'pointer');
+      console.log('✅ SuperGrid.renderHierarchicalHeaders(): Hierarchical headers rendered');
 
-    // Header background with active state support
-    entering.append('rect')
-      .attr('class', 'header-background')
-      .attr('width', (d: any) => d.span * (this.cardWidth + this.padding) - this.padding)
+    } catch (error) {
+      console.error('❌ SuperGrid.renderHierarchicalHeaders(): Error:', error);
+      // Fallback to simple headers if hierarchical rendering fails
+      this.renderSimpleFallbackHeader();
+    }
+  }
+
+  /**
+   * Fallback header rendering for error cases
+   */
+  private renderSimpleFallbackHeader(): void {
+    console.warn('⚠️ SuperGrid.renderSimpleFallbackHeader(): Using simple fallback');
+
+    const headerContainer = this.container.select('.grid-structure')
+      .select('.column-headers');
+
+    headerContainer.selectAll('*').remove();
+
+    headerContainer.append('rect')
+      .attr('width', 200)
       .attr('height', this.headerHeight)
-      .attr('rx', 4);
+      .attr('fill', '#f3f4f6')
+      .attr('stroke', '#d1d5db');
 
-    // Header label text
-    entering.append('text')
-      .attr('class', 'header-label')
-      .attr('x', 12)
-      .attr('y', this.headerHeight / 2 + 4)
+    headerContainer.append('text')
+      .attr('x', 100)
+      .attr('y', 25)
+      .attr('text-anchor', 'middle')
       .attr('font-size', '14px')
-      .attr('font-weight', '600')
-      .style('pointer-events', 'none')
-      .text((d: any) => `${d.label} (${d.count})`);
-
-    // Merge entering and existing headers
-    const allHeaders = headerGroups.merge(entering as any);
-
-    // Apply visual styling based on filter state
-    allHeaders.select('.header-background')
-      .attr('fill', (d: any) => {
-        const isActive = activeFilters.some(filter =>
-          filter.facet === d.facet && filter.value === d.value
-        );
-        return isActive ? '#dbeafe' : '#f3f4f6';
-      })
-      .attr('stroke', (d: any) => {
-        const isActive = activeFilters.some(filter =>
-          filter.facet === d.facet && filter.value === d.value
-        );
-        return isActive ? '#3b82f6' : '#d1d5db';
-      })
-      .attr('stroke-width', (d: any) => {
-        const isActive = activeFilters.some(filter =>
-          filter.facet === d.facet && filter.value === d.value
-        );
-        return isActive ? 2 : 1;
-      });
-
-    // Apply text styling for active filters
-    allHeaders.select('.header-label')
-      .attr('fill', (d: any) => {
-        const isActive = activeFilters.some(filter =>
-          filter.facet === d.facet && filter.value === d.value
-        );
-        return isActive ? '#1e40af' : '#374151';
-      });
-
-    // Add click event handlers
-    allHeaders
-      .on('mouseenter', function(event, d: any) {
-        if (!d3.select(this).classed('active')) {
-          d3.select(this).select('.header-background')
-            .attr('fill', '#e5e7eb');
-        }
-      })
-      .on('mouseleave', function(event, d: any) {
-        const isActive = activeFilters.some(filter =>
-          filter.facet === d.facet && filter.value === d.value
-        );
-        d3.select(this).select('.header-background')
-          .attr('fill', isActive ? '#dbeafe' : '#f3f4f6');
-      })
-      .on('click', (event, d: any) => {
-        // Determine LATCH axis from facet
-        const latchAxis = this.getLatchAxisFromFacet(d.facet);
-
-        // Call header click callback with filter information
-        if (this.onHeaderClick) {
-          this.onHeaderClick(latchAxis, d.facet, d.value);
-        }
-      });
-
-    headerGroups.exit().remove();
+      .attr('fill', '#374151')
+      .text('Headers');
   }
 
   /**
@@ -927,6 +930,16 @@ export class SuperGrid {
     if (this.dragBehavior) {
       this.container.selectAll('.card-group').on('.drag', null);
       this.dragBehavior = null;
+    }
+
+    // Clear hierarchical headers
+    if (this.superGridHeaders) {
+      this.superGridHeaders.clear();
+    }
+
+    // Clear header layout service cache
+    if (this.headerLayoutService) {
+      this.headerLayoutService.clearCache();
     }
 
     // Remove all D3 elements and event listeners
