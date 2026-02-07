@@ -115,7 +115,7 @@ export function useVirtualizedGrid(
 
   // Merge layout configuration with defaults
   // Computed layout config - preserved for potential future use
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const fullLayoutConfig: GridLayoutConfig = useMemo(() => ({
     ...DEFAULT_GRID_LAYOUT,
     ...layoutConfig,

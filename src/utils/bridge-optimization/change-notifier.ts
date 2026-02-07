@@ -210,7 +210,7 @@ export class ChangeNotifier {
   }
 
   // Legacy method - preserved for bridge compatibility
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private _handleLiveDataEvent(event: LiveDataEvent): void {
     this.eventCount++;
 

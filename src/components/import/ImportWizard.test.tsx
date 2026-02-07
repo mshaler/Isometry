@@ -67,8 +67,9 @@ class ImportWizardTestHarness {
   private mockImportOfficeFile: any;
   private mockProps: any;
 
-  constructor() {
-    this.mockImportOfficeFile = vi.mocked(require('../../utils/officeDocumentProcessor').importOfficeFile);
+  async initialize() {
+    const { importOfficeFile } = await import('../../utils/officeDocumentProcessor');
+    this.mockImportOfficeFile = vi.mocked(importOfficeFile);
     this.mockProps = {
       isOpen: true,
       onClose: vi.fn(),
@@ -149,8 +150,9 @@ class ImportWizardTestHarness {
 describe('ImportWizard Component', () => {
   let harness: ImportWizardTestHarness;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     harness = new ImportWizardTestHarness();
+    await harness.initialize();
     vi.clearAllMocks();
   });
 

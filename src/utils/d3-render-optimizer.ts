@@ -52,7 +52,7 @@ export class ViewportCuller {
 
     const visibleCommands: RenderCommand[] = [];
     // Culling metrics - preserved for future performance analysis
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _culledCount = commands.length;
     void _culledCount; // Explicitly mark as preserved
 

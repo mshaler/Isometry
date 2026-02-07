@@ -531,7 +531,7 @@ class PerformanceMonitor {
   private nativeMetrics: NativeRenderingMetrics | null = null;
   private lastNativeUpdate = 0;
   // Native metrics interval - preserved for future native integration
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private _nativeUpdateInterval = 1000; // Update every second
 
   constructor() {

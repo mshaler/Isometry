@@ -318,12 +318,13 @@ function extractNodeValue(node: Node, axis: LATCHAxis, facet: string): string {
       if (facet === 'name') return node.name.charAt(0).toUpperCase();
       return node.name.charAt(0).toUpperCase();
 
-    case 'time':
+    case 'time': {
       const date = new Date(node.createdAt);
       if (facet === 'year') return date.getFullYear().toString();
       if (facet === 'month') return date.toLocaleDateString('en-US', { month: 'long' });
       if (facet === 'quarter') return `Q${Math.floor(date.getMonth() / 3) + 1}`;
       return date.getFullYear().toString();
+    }
 
     case 'category':
       if (facet === 'folder') return node.folder || 'Uncategorized';

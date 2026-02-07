@@ -58,7 +58,7 @@ export interface LiveDataContextValue {
   /** Execute SQL query via WebView bridge */
   executeQuery: (method: string, params?: unknown) => Promise<any>;
   /** Subscribe to live data (backward compatibility) */
-  subscribe: (query: string, callback: Function) => Promise<void>;
+  subscribe: (query: string, callback: (...args: any[]) => void) => Promise<void>;
   /** Unsubscribe from live data (backward compatibility) */
   unsubscribe: (subscriptionId: string) => void;
   /** Connection status (backward compatibility) */
@@ -460,7 +460,7 @@ export function LiveDataProvider({
     metrics,
     executeQuery: actions.executeQuery,
     // Backward compatibility methods
-    subscribe: async (query: string, callback: Function) => {
+    subscribe: async (query: string, callback: (...args: any[]) => void) => {
       const subscriptionId = `bc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       actions.subscribe(subscriptionId, query, [], {
         onUpdate: callback,

@@ -1,0 +1,16 @@
+{
+  "threshold": 25,
+  "reporters": ["console"],
+  "ignore": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.d.ts",
+    "src/dsl/grammar/**"
+  ],
+  "format": ["typescript", "tsx"],
+  "absolute": true,
+  "gitignore": true
+}

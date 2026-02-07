@@ -385,8 +385,11 @@ const matches = db.exec(`
 
 | Task | Priority | Status |
 |------|----------|--------|
-| Fix all TypeScript compilation errors | P0 | ❌ ~50+ errors |
-| Delete dead bridge code | P0 | ❌ |
+| Fix all TypeScript compilation errors | P0 | ✅ Zero TS errors |
+| Static analysis ratchet (10-level pipeline) | P0 | ✅ Operational |
+| ESLint errors → 0 | P0 | 🔄 102 errors remaining (CC handoff) |
+| ESLint warnings → budget (700) | P1 | 🔄 749 warnings (49 over budget) |
+| Delete dead bridge code | P1 | ❌ |
 | Verify FTS5 works in sql.js | P0 | ❌ Gates everything |
 | Verify recursive CTEs in sql.js | P0 | ❌ Gates everything |
 | Set up Vitest with sql.js | P1 | ❌ |
@@ -512,6 +515,43 @@ Triggered by: starting a new phase, onboarding to unfamiliar code, or planning a
 - When you've been away from the codebase for >1 week
 - After a major merge or dependency update
 
+### Cleanup GSD (systematic lint/error elimination)
+
+Triggered by: ESLint error count > 0, warning budget exceeded, or pre-handoff to Claude Code for batch fixes.
+
+1. **Scan** — Run `npm run check`, capture baseline counts (errors, warnings, by rule)
+2. **Categorize** — Group violations by rule, estimate effort per category:
+   - **Surgical** (1-2 min each): `prefer-const`, `no-useless-escape`, `no-case-declarations`
+   - **Mechanical** (2-5 min each): `max-len` line wrapping, `no-empty-object-type`
+   - **Structural** (5-15 min each): `complexity`, `max-lines`, `no-explicit-any` (needs real types)
+3. **Execute** — Fix by category in priority order (surgical → mechanical → structural). Run `npm run check:types` after each batch to prevent regressions.
+4. **Verify** — Full `npm run check` passes. Error count = 0. Warning count ≤ budget.
+5. **Commit** — One commit per rule category: `fix(lint): resolve {rule} errors ({count})`
+
+**Rules for Cleanup GSD:**
+- Fix only the targeted rule category per batch — no drive-by refactors
+- Never change behavior, only fix lint violations
+- If a lint fix requires understanding business logic, skip it and note for Refactor GSD
+- Ideal for Claude Code handoff — provide the scan results and let CC execute mechanically
+
+### Claude Code Handoff Template
+
+When handing batch cleanup work to Claude Code, provide this structure:
+
+```
+Run `npm run check:lint` and systematically fix all {rule} violations.
+
+Files affected: {list or "see output"}
+Current count: {N} errors / {N} warnings for this rule
+Fix pattern: {description of the mechanical fix}
+
+Rules:
+- Run `npm run check:types` after each batch to ensure no regressions
+- Do NOT change warning-level rules unless explicitly told to
+- Do NOT refactor or change behavior — lint fixes only
+- Commit after each category: "fix(lint): resolve {rule} errors ({count})"
+```
+
 ### Choosing the Right GSD Variant
 
 | Signal | GSD Type | Commit Prefix |
@@ -523,6 +563,8 @@ Triggered by: starting a new phase, onboarding to unfamiliar code, or planning a
 | "I don't understand this code" | Analysis | (no commit — produces plan) |
 | Bug discovered during refactoring | Feature (separate cycle) | `fix:` |
 | Starting a new phase | Analysis → Refactor(s) → Feature(s) | mixed |
+| ESLint errors > 0 or warnings > budget | Cleanup | `fix(lint):` |
+| Batch mechanical fixes (CC handoff) | Cleanup | `fix(lint):` |
 
 ---
 

@@ -58,7 +58,7 @@ function extractTitle(content: string, filename: string): string {
 function extractSummary(content: string): string {
   // Remove title lines and get first meaningful paragraph
   const lines = content.split('\n');
-  let summaryLines: string[] = [];
+  const summaryLines: string[] = [];
 
   for (const line of lines) {
     const trimmed = line.trim();

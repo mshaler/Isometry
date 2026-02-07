@@ -1,0 +1,23 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/main.tsx",
+    "src/App.tsx"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}"
+  ],
+  "ignore": [
+    "src/dsl/grammar/**",
+    "src/types/*.d.ts",
+    "**/*.test.{ts,tsx}",
+    "**/*.spec.{ts,tsx}"
+  ],
+  "ignoreDependencies": [
+    "@types/*",
+    "autoprefixer",
+    "postcss",
+    "tailwindcss"
+  ],
+  "ignoreExportsUsedInFile": true
+}

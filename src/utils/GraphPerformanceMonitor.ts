@@ -323,10 +323,10 @@ export class GraphPerformanceMonitor {
   /**
    * Compare graph analytics performance with DOM rendering
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   async getPerformanceComparison(_datasetSize: number): Promise<any | null> {
     // Graph complexity analysis - preserved for future performance comparison
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _complexity = await this.analyzeGraphComplexity();
     void _complexity; // Explicitly mark as preserved
     // Bridge elimination - Performance comparison disabled

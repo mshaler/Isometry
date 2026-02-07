@@ -16,12 +16,10 @@ declare const afterEach: any;
 declare const it: any;
 declare const expect: any;
 
-declare namespace jest {
-  interface Mock {
-    mockResolvedValue: (value: any) => Mock;
-    mockRejectedValue: (value: any) => Mock;
-    mockReturnValue: (value: any) => Mock;
-  }
+interface JestMock {
+  mockResolvedValue: (value: any) => JestMock;
+  mockRejectedValue: (value: any) => JestMock;
+  mockReturnValue: (value: any) => JestMock;
 }
 
 // Mock localStorage
@@ -66,13 +64,13 @@ Object.defineProperty(global, 'performance', { value: mockPerformance, writable:
 
 // Mock sync manager interface
 interface MockSyncManager {
-  syncChanges: jest.Mock;
-  getLastSyncTimestamp: jest.Mock;
-  registerChangeHandler: jest.Mock;
-  emit: jest.Mock;
-  publishLocalChange: jest.Mock;
-  onConflict: jest.Mock;
-  getSyncState: jest.Mock;
+  syncChanges: JestMock;
+  getLastSyncTimestamp: JestMock;
+  registerChangeHandler: JestMock;
+  emit: JestMock;
+  publishLocalChange: JestMock;
+  onConflict: JestMock;
+  getSyncState: JestMock;
 }
 
 describe('EnhancedSyncManager', () => {

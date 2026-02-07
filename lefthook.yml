@@ -1,0 +1,17 @@
+# lefthook.yml — Git hooks for Isometry
+# Install: npx lefthook install
+
+pre-commit:
+  parallel: false
+  commands:
+    check-quick:
+      run: npm run check:quick
+      stage_fixed: true
+    check-unused:
+      run: npm run check:unused
+    check-duplication:
+      run: npm run check:duplication
+    check-boundaries:
+      run: npm run check:boundaries
+    check-directory-health:
+      run: npm run check:directory-health

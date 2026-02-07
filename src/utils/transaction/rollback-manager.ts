@@ -101,7 +101,7 @@ export class RollbackManager {
 
     try {
       // Timing metrics - preserved for future performance analysis
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const _startTime = Date.now();
       void _startTime; // Explicitly mark as preserved
 
@@ -187,7 +187,7 @@ export class RollbackManager {
     }
 
     // Operation count - preserved for future batch analysis
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _totalOperations = drafts.reduce((sum, draft) => sum + draft.operationCount, 0);
     void _totalOperations; // Explicitly mark as preserved
 

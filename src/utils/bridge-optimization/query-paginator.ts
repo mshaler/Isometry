@@ -58,7 +58,7 @@ export class QueryPaginator {
   private readonly defaultPageSize: number;
   private readonly maxPageSize: number;
   // Legacy option - preserved for compatibility
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private readonly _enableEstimation: boolean;
   private readonly cursorField: string;
 
@@ -334,7 +334,7 @@ export class QueryPaginator {
   /**
    * Build cursor condition for WHERE clause
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private buildCursorCondition(_sql: string, operator: string, _cursorValue: string): string {
     return `${this.cursorField} ${operator} ?`;
   }

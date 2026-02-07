@@ -862,7 +862,7 @@ export class PerformanceMonitor {
   private updateVirtualScrollingMetrics(): void {
     const all = this.samples;
     // Recent samples - preserved for potential analytics
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _recent = this.samples.slice(-10);
     void _recent; // Explicitly mark as preserved
 

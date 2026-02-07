@@ -136,7 +136,7 @@ export class D3NativeBridge {
   // Batched updates
   private pendingRenderCommands: RenderCommand[] = [];
   // Viewport batching - preserved for future optimization
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private _pendingViewport: Viewport | null = null;
 
   // Error boundaries
@@ -369,7 +369,7 @@ export class D3NativeBridge {
   // MARK: - Performance Tracking
 
   // Metrics tracking - result preserved for future analytics
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private updateRenderMetrics(commandCount: number, renderTime: number, _result: RenderResult): void {
     this.metrics.renderCommandsSent += commandCount;
     this.metrics.nativeRenderTime += renderTime;
@@ -422,7 +422,7 @@ export class D3NativeBridge {
   }
 
   // Error recovery - preserved for future error handling improvements
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private _resetErrorCount(): void {
     if (this.consecutiveErrors > 0) {
       this.consecutiveErrors = 0;

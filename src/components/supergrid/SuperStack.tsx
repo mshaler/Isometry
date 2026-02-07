@@ -213,13 +213,14 @@ function extractNodeValue(node: Node, axis: LATCHAxis, facet: string): string {
       if (facet === 'summary') return (node.summary || '').charAt(0).toUpperCase() || 'A';
       return node.name.charAt(0).toUpperCase();
 
-    case 'time':
+    case 'time': {
       const date = new Date(node.createdAt);
       if (facet === 'year') return date.getFullYear().toString();
       if (facet === 'month') return date.toLocaleDateString('en-US', { month: 'long' });
       if (facet === 'quarter') return `Q${Math.floor(date.getMonth() / 3) + 1}`;
       if (facet === 'day') return date.toLocaleDateString('en-US', { weekday: 'long' });
       return date.getFullYear().toString();
+    }
 
     case 'category':
       if (facet === 'folder') return node.folder || 'Uncategorized';

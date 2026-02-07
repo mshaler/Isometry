@@ -100,8 +100,9 @@ class ImportWizardPerformanceHarness {
   private baseline = new PerformanceBaseline();
   private mockImportOfficeFile: any;
 
-  constructor() {
-    this.mockImportOfficeFile = vi.mocked(require('../../utils/officeDocumentProcessor').importOfficeFile);
+  async initialize() {
+    const { importOfficeFile } = await import('../../utils/officeDocumentProcessor');
+    this.mockImportOfficeFile = vi.mocked(importOfficeFile);
   }
 
   setupMockImport(result: OfficeImportResult, delay: number = 0) {
@@ -315,8 +316,9 @@ class ImportWizardPerformanceHarness {
 describe('ImportWizard Performance Tests', () => {
   let harness: ImportWizardPerformanceHarness;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     harness = new ImportWizardPerformanceHarness();
+    await harness.initialize();
     vi.clearAllMocks();
   });
 

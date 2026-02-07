@@ -185,7 +185,7 @@ export function SQLiteProvider({
           }
         } catch (jsonError) {
           logCapabilityError('json1', jsonError as Error, {
-            test_query: 'SELECT json(\'{\"test\": true}\')'
+            test_query: 'SELECT json(\'{"test": true}\')'
           });
         }
 

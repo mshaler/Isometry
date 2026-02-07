@@ -221,7 +221,10 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                     min="1"
                     max="5"
                     value={editedCard.priority || ''}
-                    onChange={(e) => setEditedCard(prev => ({ ...prev, priority: e.target.value ? parseInt(e.target.value) : undefined }))}
+                    onChange={(e) => setEditedCard(prev => ({
+                      ...prev,
+                      priority: e.target.value ? parseInt(e.target.value) : undefined
+                    }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
                   />
@@ -242,7 +245,10 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                     min="1"
                     max="5"
                     value={editedCard.importance || ''}
-                    onChange={(e) => setEditedCard(prev => ({ ...prev, importance: e.target.value ? parseInt(e.target.value) : undefined }))}
+                    onChange={(e) => setEditedCard(prev => ({
+                      ...prev,
+                      importance: e.target.value ? parseInt(e.target.value) : undefined
+                    }))}
                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     disabled={isLoading}
                   />

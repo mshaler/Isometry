@@ -122,7 +122,7 @@ export function useNodes(options: NodesQueryOptions = {}): OptimizedQueryState<N
         } else {
           // Fallback to SQL execution
           const sqlCall = translation as SQLCall;
-          rows = await (execute as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
+          rows = await (execute as unknown as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
             sqlCall.sql,
             sqlCall.params
           );
@@ -243,7 +243,7 @@ export function useNotebookCards(options: NotebookCardsQueryOptions = {}): Optim
         } else {
           // Fallback to SQL execution
           const sqlCall = translation as SQLCall;
-          rows = await (execute as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
+          rows = await (execute as unknown as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
             sqlCall.sql,
             sqlCall.params
           );
@@ -373,7 +373,7 @@ export function useSearch(query: string, options: SearchOptions = {}): Optimized
         } else {
           // Fallback to SQL execution
           const sqlCall = translation as SQLCall;
-          rows = await (execute as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
+          rows = await (execute as unknown as (sql: string, params?: unknown[]) => Promise<Record<string, unknown>[]>)(
             sqlCall.sql,
             sqlCall.params
           );

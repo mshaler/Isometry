@@ -621,7 +621,7 @@ export class WebViewBridge {
       return this.postMessage('d3rendering', 'manageMemory', params);
     },
 
-    getBenchmarkResults: async (params: {}): Promise<{
+    getBenchmarkResults: async (params: Record<string, unknown>): Promise<{
       success: boolean;
       performanceReport: {
         frameRate: number;
@@ -651,7 +651,7 @@ export class WebViewBridge {
       return this.postMessage('d3rendering', 'recordFramePerformance', params);
     },
 
-    getOptimizationRecommendations: async (params: {}): Promise<{
+    getOptimizationRecommendations: async (params: Record<string, unknown>): Promise<{
       success: boolean;
       recommendations: string[];
       priority: string;
@@ -1225,7 +1225,7 @@ export class OptimizedBridge {
       return this.postMessage('d3rendering', 'manageMemory', params);
     },
 
-    getBenchmarkResults: async (params: {}) => {
+    getBenchmarkResults: async (params: Record<string, unknown>) => {
       return this.postMessage('d3rendering', 'getBenchmarkResults', params);
     },
 
@@ -1235,7 +1235,7 @@ export class OptimizedBridge {
       return this.postMessage('d3rendering', 'recordFramePerformance', params);
     },
 
-    getOptimizationRecommendations: async (params: {}) => {
+    getOptimizationRecommendations: async (params: Record<string, unknown>) => {
       return this.postMessage('d3rendering', 'getOptimizationRecommendations', params);
     }
   };
@@ -1308,7 +1308,7 @@ export class OptimizedBridge {
   /**
    * Execute query with pagination
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private async executeWithPagination<T>(
     _handler: 'database' | 'filesystem' | 'd3rendering' | 'liveData',
     _method: string,

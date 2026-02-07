@@ -153,7 +153,7 @@ export class ConnectionManager {
     try {
       // Use circuit breaker for connection testing
       // Circuit breaker result - preserved for future error handling
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       const _result = await this.executeWithCircuitBreaker(async () => {
         const health = webViewBridge.getHealthStatus();
         if (!health.isConnected) {

@@ -389,7 +389,7 @@ function extractCellKey(node: Node, axis: LATCHAxis, zoomLevel: number): string 
   // Simplified version - in real implementation, this would use
   // the same logic as SuperStack.extractNodeValue but with hierarchical levels
   switch (axis) {
-    case 'time':
+    case 'time': {
       const date = new Date(node.createdAt);
       switch (zoomLevel) {
         case 0: return `${Math.floor(date.getFullYear() / 10) * 10}s`;
@@ -398,6 +398,7 @@ function extractCellKey(node: Node, axis: LATCHAxis, zoomLevel: number): string 
         case 3: return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
         default: return date.getFullYear().toString();
       }
+    }
     case 'category':
       switch (zoomLevel) {
         case 0: return node.folder ? 'Categorized' : 'Uncategorized';

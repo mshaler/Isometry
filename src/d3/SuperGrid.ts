@@ -213,13 +213,14 @@ export class SuperGrid {
             this.selectionManager.moveSelection('right', event.shiftKey);
             break;
           case 'Space':
-          case 'Enter':
+          case 'Enter': {
             // Toggle selection of focused card
             const focusedId = this.selectionManager.getFocusedCard();
             if (focusedId) {
               this.selectionManager.selectCard(focusedId, 'add');
             }
             break;
+          }
           case 'Escape':
             this.selectionManager.clearSelection();
             break;

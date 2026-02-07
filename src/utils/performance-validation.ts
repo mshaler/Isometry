@@ -639,7 +639,7 @@ export class PerformanceValidator {
   }
 
   // Viewport simulation - preserved for future optimization validation
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private async simulateOptimizedRendering(_viewport: Viewport, nodeCount: number): Promise<void> {
     // Apply optimizations during rendering
     // Simulate viewport culling
