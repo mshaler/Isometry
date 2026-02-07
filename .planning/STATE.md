@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 36 of 37 (SuperGrid Headers) 🟡 IN PROGRESS
-Plan: 1 of 4 in current phase ✅ COMPLETE
-Status: Plan 36-01 Hierarchical Header Foundation completed successfully
-Last activity: 2026-02-07 — Completed 36-01-PLAN.md with hierarchical PAFV headers
+Plan: 2 of 4 in current phase ✅ COMPLETE
+Status: Plan 36-02 Janus Controls & Interactive Headers completed successfully
+Last activity: 2026-02-07 — Completed 36-02-PLAN.md with orthogonal zoom/pan controls
 
-Progress: [████████▓░] 82% (Phase 36 Plan 1 complete)
+Progress: [████████▓▓] 85% (Phase 36 Plans 1-2 complete)
 
 ## Performance Metrics
 
@@ -30,7 +30,7 @@ Progress: [████████▓░] 82% (Phase 36 Plan 1 complete)
 | 33 (v4.0) | 3/3 | Complete | Foundation established |
 | 34 (v4.1) | 3/3 | ✅ COMPLETE | SuperGrid foundation stable |
 | 35 (v4.1) | 4/4 | ✅ COMPLETE | Interactive header filtering (3.37 mins avg) |
-| 36 (v4.1) | 1/4 | 🟡 IN PROGRESS | Hierarchical headers foundation (6.5 mins) |
+| 36 (v4.1) | 2/4 | 🟡 IN PROGRESS | Hierarchical headers + Janus controls (17.3 mins avg) |
 
 **Recent Trend:**
 - v4.0 Phase 33: Bridge elimination foundation completed successfully
@@ -42,9 +42,10 @@ Progress: [████████▓░] 82% (Phase 36 Plan 1 complete)
 - v4.1 Phase 35-03: Multi-select and keyboard navigation with bulk operations ✅
 - v4.1 Phase 35-05: Interactive header filtering with LATCH filter service integration ✅
 - v4.1 Phase 36-01: Hierarchical header foundation with d3-hierarchy, hybrid span calculation, progressive rendering ✅
-- Trend: Phase 35 PAFV Grid Core complete, Phase 36 SuperGrid Headers foundation established
+- v4.1 Phase 36-02: Janus orthogonal zoom/pan controls, morphing boundary animations, state persistence ✅
+- Trend: Phase 36 SuperGrid Headers advancing with interactive controls and persistent state
 
-*Updated after Phase 36-01 completion - 2026-02-07*
+*Updated after Phase 36-02 completion - 2026-02-07*
 
 ## Accumulated Context
 
@@ -67,6 +68,10 @@ Recent decisions affecting current work:
 - 36-01: Hybrid span calculation: data-proportional + content minimums + equal fallback
 - 36-01: Geometric click zones: 32px parent label for expand/collapse, remaining body for selection
 - 36-01: Content-aware alignment serving scannability over uniformity
+- 36-02: Separate zoom/pan controls initially (not combined widget)
+- 36-02: Fixed corner anchor for zoom operations (upper-left pinned)
+- 36-02: Smooth animation transitions with "quiet app" aesthetic (300ms max)
+- 36-02: Per-dataset, per-app state persistence for user context restoration
 
 ### Pending Todos
 
@@ -74,21 +79,22 @@ None yet.
 
 ### Blockers/Concerns
 
-None. Phase 36-01 Hierarchical Header Foundation complete. SuperGrid enhanced with:
-- Hierarchical PAFV headers with unlimited nesting depth
-- d3-hierarchy integration with hybrid span calculations
-- Multi-level visual spanning across parent-child relationships
-- Expand/collapse with geometric click zones and progressive rendering
-- Content-aware text alignment based on span length and content type
-- HeaderLayoutService with calculation caching and state persistence hooks
+None. Phase 36-02 Janus Controls & Interactive Headers complete. SuperGrid enhanced with:
+- Janus orthogonal zoom/pan controls (value density × extent density)
+- Morphing boundary animations with D3 transitions (300ms, ease-out)
+- Comprehensive state persistence system (per-dataset, per-app)
+- Fixed corner anchor zoom behavior (upper-left pinned)
+- Transition interruption handling for smooth user experience
+- Progressive rendering fallback when performance budgets exceeded
+- Debounced state saves during animations (300ms debounce)
 - Zero compilation errors, maintains 60fps performance
 
-Ready for Phase 36-02 Janus controls integration.
+Ready for Phase 36-03 Dynamic Reflow with axis repositioning.
 
 ## Session Continuity
 
-Last session: 2026-02-07T20:41:03Z
-Stopped at: ✅ PLAN 36-01 COMPLETE - Hierarchical header foundation implementation
+Last session: 2026-02-07T21:09:53Z
+Stopped at: ✅ PLAN 36-02 COMPLETE - Janus controls with morphing animations and state persistence
 Resume file: None
 
-Next: Begin Phase 36-02 Janus Controls Integration
+Next: Begin Phase 36-03 Dynamic Reflow Implementation
