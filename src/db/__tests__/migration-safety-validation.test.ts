@@ -15,24 +15,29 @@ import {
 } from '../migration-safety';
 import { DatabaseMode } from '../../contexts/EnvironmentContext';
 
-// Mock WebView bridge
-const mockWebViewBridge = {
-  database: {
-    execute: vi.fn()
+// Mock WebView bridge and sync manager before importing migration-safety
+vi.mock('../../utils/webview-bridge', () => ({
+  webViewBridge: {
+    database: {
+      execute: vi.fn()
+    }
+  },
+  Environment: {
+    isWebView: vi.fn()
   }
-};
+}));
 
-// Mock Environment
-const mockEnvironment = {
-  isWebView: vi.fn()
-};
+vi.mock('../../utils/sync-manager', () => ({
+  syncManager: {
+    getSyncState: vi.fn(() => ({
+      pendingChanges: 0
+    }))
+  }
+}));
 
-// Mock sync manager
-const mockSyncManager = {
-  getSyncState: vi.fn(() => ({
-    pendingChanges: 0
-  }))
-};
+// Import mocked modules to get their mock functions
+import { webViewBridge, Environment } from '../../utils/webview-bridge';
+import { syncManager } from '../../utils/sync-manager';
 
 // Crypto is now mocked globally in test setup
 
@@ -41,8 +46,8 @@ describe('Migration Safety Validation', () => {
     vi.clearAllMocks();
 
     // Setup default mocks
-    mockEnvironment.isWebView.mockReturnValue(true);
-    mockWebViewBridge.database.execute.mockImplementation((query) => {
+    vi.mocked(Environment.isWebView).mockReturnValue(true);
+    vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
       // Mock database responses based on query
       if (query.includes('sqlite_master')) {
         return Promise.resolve([
@@ -83,7 +88,7 @@ describe('Migration Safety Validation', () => {
 
   describe('Safety Assessment', () => {
     it('should assess rollback safety correctly for safe conditions', async () => {
-      mockSyncManager.getSyncState.mockReturnValue({
+      vi.mocked(syncManager.getSyncState).mockReturnValue({
         pendingChanges: 0
       });
 
@@ -106,11 +111,11 @@ describe('Migration Safety Validation', () => {
 
     it('should identify high risk conditions correctly', async () => {
       // Set up high-risk conditions
-      mockSyncManager.getSyncState.mockReturnValue({
+      vi.mocked(syncManager.getSyncState).mockReturnValue({
         pendingChanges: 150 // High pending changes
       });
 
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('COUNT(*)')) {
           return Promise.resolve([{ count: 1000000 }]); // Large dataset
         }
@@ -142,13 +147,13 @@ describe('Migration Safety Validation', () => {
       // Note: Monitoring call count for cache validation
 
       // Reset and call again - should make new calls
-      mockWebViewBridge.database.execute.mockClear();
+      vi.mocked(webViewBridge.database.execute).mockClear();
 
       // Force cache miss by waiting
       await new Promise(resolve => setTimeout(resolve, 10));
 
       await safety.assessRollbackSafety();
-      expect(mockWebViewBridge.database.execute).toHaveBeenCalled();
+      expect(webViewBridge.database.execute).toHaveBeenCalled();
     });
   });
 
@@ -191,13 +196,13 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should handle backup failures gracefully', async () => {
-      mockWebViewBridge.database.execute.mockRejectedValue(new Error('Database unavailable'));
+      vi.mocked(webViewBridge.database.execute).mockRejectedValue(new Error('Database unavailable'));
 
       await expect(createDataBackup()).rejects.toThrow('Export failed');
     });
 
     it('should export data in correct format for WebView environment', async () => {
-      mockEnvironment.isWebView.mockReturnValue(true);
+      vi.mocked(Environment.isWebView).mockReturnValue(true);
 
       const backup = await createDataBackup();
 
@@ -207,7 +212,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should fallback gracefully for non-WebView environment', async () => {
-      mockEnvironment.isWebView.mockReturnValue(false);
+      vi.mocked(Environment.isWebView).mockReturnValue(false);
 
       const backup = await createDataBackup();
 
@@ -243,7 +248,7 @@ describe('Migration Safety Validation', () => {
 
     it('should detect schema consistency issues', async () => {
       // Mock failed integrity check
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('PRAGMA integrity_check')) {
           return Promise.resolve([{ integrity_check: 'corruption detected' }]);
         }
@@ -259,7 +264,7 @@ describe('Migration Safety Validation', () => {
 
     it('should detect foreign key violations', async () => {
       // Mock foreign key violations
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('foreign_key_check')) {
           return Promise.resolve([
             { table: 'edges', rowid: 1, parent: 'nodes', fkid: 0 }
@@ -279,7 +284,7 @@ describe('Migration Safety Validation', () => {
       await createDataBackup();
 
       // Mock different record count for validation
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('COUNT(*)')) {
           return Promise.resolve([{ count: 50 }]); // Different from backup
         }
@@ -293,7 +298,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should handle validation errors gracefully', async () => {
-      mockWebViewBridge.database.execute.mockRejectedValue(new Error('Database error'));
+      vi.mocked(webViewBridge.database.execute).mockRejectedValue(new Error('Database error'));
 
       const report = await validateDataIntegrity();
 
@@ -322,7 +327,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should detect missing FTS5 support', async () => {
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('json_valid')) {
           throw new Error('JSON functions not available');
         }
@@ -337,7 +342,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should detect missing CTE support', async () => {
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('WITH test_cte')) {
           throw new Error('CTE not supported');
         }
@@ -351,7 +356,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should handle non-WebView environment', async () => {
-      mockEnvironment.isWebView.mockReturnValue(false);
+      vi.mocked(Environment.isWebView).mockReturnValue(false);
 
       const report = await validateNativeState();
 
@@ -360,7 +365,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should handle feature testing failures gracefully', async () => {
-      mockWebViewBridge.database.execute.mockRejectedValue(new Error('Database unavailable'));
+      vi.mocked(webViewBridge.database.execute).mockRejectedValue(new Error('Database unavailable'));
 
       const report = await validateNativeState();
 
@@ -381,7 +386,7 @@ describe('Migration Safety Validation', () => {
       const backup = await safety.createDataBackup();
 
       // Mock successful rollback operations
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('BEGIN') || query.includes('COMMIT') || query.includes('ROLLBACK')) {
           return Promise.resolve([]);
         }
@@ -407,7 +412,7 @@ describe('Migration Safety Validation', () => {
       const backup = await safety.createDataBackup();
 
       // Mock rollback failure
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('DELETE FROM')) {
           throw new Error('Cannot delete data');
         }
@@ -446,7 +451,7 @@ describe('Migration Safety Validation', () => {
 
       // Mock foreign key violations after restore
       let afterRestore = false;
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('PRAGMA foreign_key_check') && afterRestore) {
           return Promise.resolve([
             { table: 'edges', rowid: 1, parent: 'nodes', fkid: 0 }
@@ -485,7 +490,7 @@ describe('Migration Safety Validation', () => {
 
       // Mock performance metrics
       let callCount = 0;
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         callCount++;
         if (query.includes('SELECT COUNT(*)')) {
           // Simulate slightly different performance
@@ -511,7 +516,7 @@ describe('Migration Safety Validation', () => {
     it('should handle performance measurement failures', async () => {
       const safety = new MigrationSafety();
 
-      mockWebViewBridge.database.execute.mockRejectedValue(new Error('Performance test failed'));
+      vi.mocked(webViewBridge.database.execute).mockRejectedValue(new Error('Performance test failed'));
 
       const impact = await safety['measurePerformanceImpact']();
 
@@ -523,20 +528,20 @@ describe('Migration Safety Validation', () => {
 
   describe('Database Analysis Methods', () => {
     it('should accurately count database tables', async () => {
-      mockWebViewBridge.database.execute.mockResolvedValue([{ count: 15 }]);
+      vi.mocked(webViewBridge.database.execute).mockResolvedValue([{ count: 15 }]);
 
       const safety = new MigrationSafety();
       const tableCount = await safety['getTableCount']();
 
       expect(tableCount).toBe(15);
-      expect(mockWebViewBridge.database.execute).toHaveBeenCalledWith(
+      expect(webViewBridge.database.execute).toHaveBeenCalledWith(
         expect.stringContaining('COUNT(*) as count FROM sqlite_master'),
         []
       );
     });
 
     it('should analyze relationship complexity', async () => {
-      mockWebViewBridge.database.execute.mockResolvedValue([
+      vi.mocked(webViewBridge.database.execute).mockResolvedValue([
         { sql: 'CREATE TABLE test (id INTEGER, FOREIGN KEY(id) REFERENCES other(id))' },
         { sql: 'CREATE TABLE other (id INTEGER)' }
       ]);
@@ -548,7 +553,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should measure database size accurately', async () => {
-      mockWebViewBridge.database.execute.mockImplementation((query) => {
+      vi.mocked(webViewBridge.database.execute).mockImplementation((query) => {
         if (query.includes('page_size')) {
           return Promise.resolve([{ page_size: 4096 }]);
         }
@@ -565,7 +570,7 @@ describe('Migration Safety Validation', () => {
     });
 
     it('should fallback gracefully when database queries fail', async () => {
-      mockWebViewBridge.database.execute.mockRejectedValue(new Error('Query failed'));
+      vi.mocked(webViewBridge.database.execute).mockRejectedValue(new Error('Query failed'));
 
       const safety = new MigrationSafety();
 
