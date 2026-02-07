@@ -455,19 +455,110 @@ const matches = db.exec(`
 
 ## GSD Executor Pattern
 
-When Claude Code operates in this repo, it follows the GSD pattern:
+When Claude Code operates in this repo, it follows the GSD pattern.
+
+### Feature GSD (building new capabilities)
 
 1. **Spec** — Understand the requirement, reference architecture truth
 2. **Plan** — Break into atomic tasks, identify files to create/modify
 3. **Implement** — Write failing test → implement → green → refactor
 4. **Test** — Verify all tests pass, typecheck clean
-5. **Commit** — Atomic commit with conventional prefix
+5. **Check** — Run `npm run check` — all checks must pass (see Quality Gate below)
+6. **Commit** — Atomic commit with conventional prefix
 
 Every task should be completable in a single GSD cycle. If it's too big, split it.
 
+### Refactor GSD (improving existing structure)
+
+Triggered by: `npm run check` failures, ratchet tightening, or explicit cleanup tasks.
+
+1. **Diagnose** — Run `npm run check`, identify the specific violation(s)
+2. **Scope** — Define the refactoring boundary. One concern per cycle:
+   - File too long → extract module
+   - Function too complex → decompose
+   - Directory over limit → reorganize into focused subdirectories
+   - Duplicate code → extract shared utility
+   - Circular dependency → invert or introduce interface
+   - Unused exports → delete dead code
+3. **Verify pre-state** — Run existing tests. They must pass BEFORE refactoring begins. If tests don't exist for the code being refactored, write characterization tests first (separate commit).
+4. **Refactor** — Change structure only, not behavior. No new features. No bug fixes. Pure restructuring.
+5. **Verify post-state** — All existing tests still pass. `npm run check` passes. The violation that triggered this cycle is resolved.
+6. **Commit** — `refactor:` prefix. Message names the structural change, not a feature.
+
+**Key rules for Refactor GSD:**
+- Never mix refactoring with feature work in the same commit
+- If a refactoring reveals a bug, note it and fix it in a separate Feature GSD cycle
+- If a file split requires updating imports across many files, that's ONE refactor commit (the split), not spread across multiple
+- Characterization tests ("tests that describe current behavior, even if imperfect") are acceptable as a pre-refactoring safety net
+
+### Analysis GSD (understanding before acting)
+
+Triggered by: starting a new phase, onboarding to unfamiliar code, or planning a large refactoring.
+
+1. **Survey** — Run `npm run check` for structural health. Run `depcruise --output-type dot src | dot -T svg > dependency-graph.svg` for visual dependency map.
+2. **Identify** — List specific structural problems with locations and severity:
+   - Which files exceed length limits?
+   - Which functions exceed complexity limits?
+   - Where are circular dependencies?
+   - What's the duplication percentage?
+   - Which directories are over their file count limits?
+3. **Prioritize** — Rank by impact on the next planned feature work. Refactoring that unblocks Phase 35 implementation comes first. Cosmetic cleanup comes last.
+4. **Plan** — Break into individual Refactor GSD cycles, each independently committable.
+5. **Document** — Write findings as a checklist in a GitHub issue or spec file. Each item becomes a Refactor GSD cycle.
+
+**When to run Analysis GSD:**
+- Before starting any new implementation phase
+- When `npm run check` starts failing on pre-existing code
+- When you've been away from the codebase for >1 week
+- After a major merge or dependency update
+
+### Choosing the Right GSD Variant
+
+| Signal | GSD Type | Commit Prefix |
+|--------|----------|---------------|
+| New user-facing capability | Feature | `feat:` |
+| `npm run check` failure in code you wrote | Feature (fix before committing) | `feat:` |
+| `npm run check` failure in pre-existing code | Refactor | `refactor:` |
+| Ratchet tightening (lowering thresholds) | Refactor | `refactor:` |
+| "I don't understand this code" | Analysis | (no commit — produces plan) |
+| Bug discovered during refactoring | Feature (separate cycle) | `fix:` |
+| Starting a new phase | Analysis → Refactor(s) → Feature(s) | mixed |
+
 ---
 
-*Last updated: 2026-02-05*
+## Quality Gate (MANDATORY)
+
+Before marking ANY task as complete, run:
+
+```bash
+npm run check
+```
+
+This runs the full static analysis ratchet: typecheck → lint (with complexity/length limits) → unused export detection → duplication detection → module boundary enforcement → directory health.
+
+All checks must pass. The lint warning budget is currently **700** (ratchet down as cleanup progresses). If a check fails:
+1. Fix the violation in code you wrote during this task
+2. If the violation is in pre-existing code you didn't touch, note it but don't fix it (avoid scope creep)
+3. Re-run `npm run check` until clean
+
+For rapid iteration during development, use `npm run check:quick` (types + lint only). Full `check` before commit.
+
+Never commit with `--no-verify`. The pre-commit hook exists as a safety net.
+
+### Structural Limits
+
+| Rule | Threshold | Rationale |
+|------|-----------|----------|
+| Max file length | 300 lines (warn), 500 (error) | Files you can read in <60s |
+| Cyclomatic complexity | 15 (warn), 25 (error) | Functions that fit in your head |
+| Cognitive complexity | 20 (warn), 30 (error) | Readability, not just branches |
+| Max line length | 120 chars | No horizontal scrolling |
+| Max function params | 4 (warn) | Use options object instead |
+| Max nesting depth | 4 (warn) | Extract early returns |
+
+---
+
+*Last updated: 2026-02-07*
 *Architecture: Bridge Elimination — sql.js direct access*
 *Keystone: SuperGrid polymorphic data projection*
 *Status: Phase 1 Stabilization*

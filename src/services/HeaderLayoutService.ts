@@ -226,6 +226,16 @@ export class HeaderLayoutService {
   }
 
   /**
+   * Get content-based minimum width for a header label
+   */
+  private getContentMinWidth(label: string, _level: number): number {
+    return Math.max(
+      label.length * this.config.minWidthPerCharacter,
+      this.config.absoluteMinWidth
+    );
+  }
+
+  /**
    * Clear calculation cache
    */
   public clearCache(): void {
