@@ -3,6 +3,7 @@ import type { DatabaseService } from '../db/DatabaseService';
 import type { GridData, GridConfig, AxisData } from '../types/grid';
 import { SelectionManager } from '../services/SelectionManager';
 import type { SelectionCallbacks, GridPosition as SelectionGridPosition } from '../services/SelectionManager';
+import type { FilterCompilationResult } from '../services/LATCHFilterService';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
@@ -38,6 +39,7 @@ export class SuperGrid {
   private onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
   private onBulkOperation?: (operation: string, selectedIds: string[]) => void;
   private onCardUpdate?: (card: any) => void;
+  private onHeaderClick?: (axis: string, facet: string, value: any) => void;
 
   constructor(
     container: SVGElement,
@@ -48,6 +50,7 @@ export class SuperGrid {
       onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
       onBulkOperation?: (operation: string, selectedIds: string[]) => void;
       onCardUpdate?: (card: any) => void;
+      onHeaderClick?: (axis: string, facet: string, value: any) => void;
     } = {}
   ) {
     this.container = d3.select(container);
@@ -57,6 +60,7 @@ export class SuperGrid {
     this.onSelectionChange = callbacks.onSelectionChange;
     this.onBulkOperation = callbacks.onBulkOperation;
     this.onCardUpdate = callbacks.onCardUpdate;
+    this.onHeaderClick = callbacks.onHeaderClick;
 
     // Initialize selection manager with callbacks
     const selectionCallbacks: SelectionCallbacks = {
@@ -413,30 +417,20 @@ export class SuperGrid {
   }
 
   /**
-   * Query data with current LATCH filters and render grid
+   * Query data with LATCH filter compilation result and render grid
    */
-  query(filters: Record<string, any> = {}): void {
+  query(filterCompilationResult?: FilterCompilationResult): void {
     try {
-      // Construct SQL query based on filters
-      let sql = 'SELECT * FROM nodes WHERE deleted_at IS NULL';
-      const params: any[] = [];
+      // Use compiled filter result or default fallback
+      let sql = 'SELECT * FROM nodes WHERE ';
+      let params: any[] = [];
 
-      // Apply LATCH filters
-      if (filters.folder) {
-        sql += ' AND folder = ?';
-        params.push(filters.folder);
-      }
-      if (filters.status) {
-        sql += ' AND status = ?';
-        params.push(filters.status);
-      }
-      if (filters.priority) {
-        sql += ' AND priority = ?';
-        params.push(filters.priority);
-      }
-      if (filters.search) {
-        sql += ' AND (name LIKE ? OR summary LIKE ?)';
-        params.push(`%${filters.search}%`, `%${filters.search}%`);
+      if (filterCompilationResult && !filterCompilationResult.isEmpty) {
+        sql += filterCompilationResult.whereClause;
+        params = filterCompilationResult.parameters;
+      } else {
+        // Default: show non-deleted cards only
+        sql += 'deleted_at IS NULL';
       }
 
       sql += ' ORDER BY created_at DESC';
@@ -466,7 +460,7 @@ export class SuperGrid {
 
       this.currentData = gridData;
       this.updateGridLayout();
-      this.render();
+      this.render(filterCompilationResult?.activeFilters || []);
 
     } catch (error) {
       console.error('SuperGrid query error:', error);
@@ -521,10 +515,11 @@ export class SuperGrid {
   /**
    * Main render method
    */
-  render(): void {
+  render(activeFilters: any[] = []): void {
     console.log('🎨 SuperGrid.render(): Called', {
       hasCurrentData: !!this.currentData,
-      cardCount: this.currentData?.cards.length || 0
+      cardCount: this.currentData?.cards.length || 0,
+      activeFilterCount: activeFilters.length
     });
 
     if (!this.currentData) {
@@ -535,8 +530,8 @@ export class SuperGrid {
     console.log('🎨 SuperGrid.render(): Setting up grid structure...');
     this.setupGridStructure();
 
-    console.log('🎨 SuperGrid.render(): Rendering headers...');
-    this.renderHeaders();
+    console.log('🎨 SuperGrid.render(): Rendering headers with filter state...');
+    this.renderHeaders(activeFilters);
 
     console.log('🎨 SuperGrid.render(): Rendering cards...');
     this.renderCards();
@@ -727,42 +722,138 @@ export class SuperGrid {
   }
 
   /**
-   * Render dimensional headers
+   * Render dimensional headers with click handlers and filter state awareness
    */
-  private renderHeaders(): void {
+  private renderHeaders(activeFilters: any[] = []): void {
     if (!this.config.enableHeaders || !this.currentData?.headers.length) {
       return;
     }
 
     const headers = this.currentData.headers;
 
-    // Render status headers (example implementation)
+    // Render status headers with interactive functionality
     const headerGroups = this.container.select('.grid-structure')
       .selectAll('.header-group')
       .data(headers, (d: any) => d.id);
 
     const entering = headerGroups.enter()
       .append('g')
-      .attr('class', 'header-group');
+      .attr('class', 'header-group')
+      .style('cursor', 'pointer');
 
+    // Header background with active state support
     entering.append('rect')
       .attr('class', 'header-background')
       .attr('width', (d: any) => d.span * (this.cardWidth + this.padding) - this.padding)
       .attr('height', this.headerHeight)
-      .attr('fill', '#f3f4f6')
-      .attr('stroke', '#d1d5db')
       .attr('rx', 4);
 
+    // Header label text
     entering.append('text')
       .attr('class', 'header-label')
       .attr('x', 12)
       .attr('y', this.headerHeight / 2 + 4)
       .attr('font-size', '14px')
       .attr('font-weight', '600')
-      .attr('fill', '#374151')
+      .style('pointer-events', 'none')
       .text((d: any) => `${d.label} (${d.count})`);
 
+    // Merge entering and existing headers
+    const allHeaders = headerGroups.merge(entering as any);
+
+    // Apply visual styling based on filter state
+    allHeaders.select('.header-background')
+      .attr('fill', (d: any) => {
+        const isActive = activeFilters.some(filter =>
+          filter.facet === d.facet && filter.value === d.value
+        );
+        return isActive ? '#dbeafe' : '#f3f4f6';
+      })
+      .attr('stroke', (d: any) => {
+        const isActive = activeFilters.some(filter =>
+          filter.facet === d.facet && filter.value === d.value
+        );
+        return isActive ? '#3b82f6' : '#d1d5db';
+      })
+      .attr('stroke-width', (d: any) => {
+        const isActive = activeFilters.some(filter =>
+          filter.facet === d.facet && filter.value === d.value
+        );
+        return isActive ? 2 : 1;
+      });
+
+    // Apply text styling for active filters
+    allHeaders.select('.header-label')
+      .attr('fill', (d: any) => {
+        const isActive = activeFilters.some(filter =>
+          filter.facet === d.facet && filter.value === d.value
+        );
+        return isActive ? '#1e40af' : '#374151';
+      });
+
+    // Add click event handlers
+    allHeaders
+      .on('mouseenter', function(event, d: any) {
+        if (!d3.select(this).classed('active')) {
+          d3.select(this).select('.header-background')
+            .attr('fill', '#e5e7eb');
+        }
+      })
+      .on('mouseleave', function(event, d: any) {
+        const isActive = activeFilters.some(filter =>
+          filter.facet === d.facet && filter.value === d.value
+        );
+        d3.select(this).select('.header-background')
+          .attr('fill', isActive ? '#dbeafe' : '#f3f4f6');
+      })
+      .on('click', (event, d: any) => {
+        // Determine LATCH axis from facet
+        const latchAxis = this.getLatchAxisFromFacet(d.facet);
+
+        // Call header click callback with filter information
+        if (this.onHeaderClick) {
+          this.onHeaderClick(latchAxis, d.facet, d.value);
+        }
+      });
+
     headerGroups.exit().remove();
+  }
+
+  /**
+   * Map facet name to LATCH axis
+   */
+  private getLatchAxisFromFacet(facet: string): string {
+    const facetToAxisMap: Record<string, string> = {
+      // Location (L)
+      'location_name': 'L',
+      'location_address': 'L',
+      'coordinates': 'L',
+
+      // Alphabet (A) - text-based
+      'name': 'A',
+      'content': 'A',
+      'summary': 'A',
+
+      // Time (T)
+      'created_at': 'T',
+      'modified_at': 'T',
+      'due_at': 'T',
+      'completed_at': 'T',
+      'event_start': 'T',
+      'event_end': 'T',
+
+      // Category (C)
+      'folder': 'C',
+      'status': 'C',
+      'tags': 'C',
+
+      // Hierarchy (H)
+      'priority': 'H',
+      'importance': 'H',
+      'sort_order': 'H'
+    };
+
+    return facetToAxisMap[facet] || 'C'; // Default to Category
   }
 
   /**
