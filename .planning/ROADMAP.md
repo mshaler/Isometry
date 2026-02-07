@@ -199,13 +199,14 @@ Plans:
   4. User can drag cards to reposition with immediate database persistence
   5. All interactions integrate seamlessly with existing sql.js ↔ D3.js architecture
   6. D3.js queries sql.js directly with zero serialization overhead for all operations
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
-- [ ] 35-01-PLAN.md — Card Detail Modal Integration
-- [ ] 35-02-PLAN.md — Header Click LATCH Filtering
-- [ ] 35-03-PLAN.md — Multi-Select and Keyboard Navigation
-- [ ] 35-04-PLAN.md — Drag & Drop with Persistence
+- [x] 35-01-PLAN.md — Card Detail Modal Integration
+- [x] 35-02-PLAN.md — Header Click LATCH Filtering
+- [x] 35-03-PLAN.md — Multi-Select and Keyboard Navigation
+- [x] 35-04-PLAN.md — Drag & Drop with Persistence
+- [x] 35-05-PLAN.md — Header Click LATCH Filtering (Gap Closure)
 
 #### Phase 36: SuperGrid Headers
 **Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
@@ -250,6 +251,6 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37
 |-------|-----------|----------------|--------|-----------|
 | 33. Bridge Elimination Foundation | v4.0 | 3/3 | ✅ Complete | 2026-02-06 |
 | 34. Foundation Stabilization | v4.1 | 3/3 | ✅ Complete | 2026-02-06 |
-| 35. PAFV Grid Core | v4.1 | 0/4 | Not started | - |
+| 35. PAFV Grid Core | v4.1 | 5/5 | ✅ Complete | 2026-02-07 |
 | 36. SuperGrid Headers | v4.1 | 0/2 | Not started | - |
 | 37. Grid Continuum | v4.1 | 0/2 | Not started | - |
