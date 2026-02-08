@@ -21,6 +21,8 @@
     "dev:full-native": "concurrently \"npm run start:native-api\" \"npm run dev:native\"",
     "build:native": "cd native && swift build --target IsometryAPIServer",
     "watch:console": "node scripts/console-watch.mjs",
+    "dev:debug": "node scripts/dev-debug-cycle.mjs",
+    "dev:debug:headless": "HEADLESS=true node scripts/dev-debug-cycle.mjs",
     "check": "npm run check:types && npm run check:lint && npm run check:unused && npm run check:duplication && npm run check:boundaries && npm run check:directory-health",
     "check:quick": "npm run check:types && npm run check:lint",
     "check:types": "tsc --noEmit",

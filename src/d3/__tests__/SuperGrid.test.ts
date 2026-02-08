@@ -1,7 +1,7 @@
-import { SuperGrid } from '../SuperGrid';
-import { DatabaseService } from '../../db/DatabaseService';
+import { initDatabase, getDatabase } from '@/db/init';
 import * as d3 from 'd3';
 import { beforeEach, describe, it, expect, afterEach } from 'vitest';
+import type { Database } from 'sql.js';
 
 /**
  * SuperGrid D3-sql.js Integration Tests
@@ -17,88 +17,66 @@ import { beforeEach, describe, it, expect, afterEach } from 'vitest';
  *
  * Architecture validation: This test suite proves sql.js eliminates the 40KB MessageBridge
  */
-describe('SuperGrid D3-sql.js Integration', () => {
-  let db: DatabaseService;
+describe('SuperGrid Foundation', () => {
+  let db: Database;
   let svg: SVGElement;
-  let grid: SuperGrid;
 
   beforeEach(async () => {
     // Setup test database with sql.js
-    db = new DatabaseService();
-    await db.initialize();
-
-    // Create test schema matching Isometry LPG model
-    db.run(`
-      CREATE TABLE IF NOT EXISTS nodes (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL,
-        folder TEXT,
-        status TEXT,
-        x INTEGER DEFAULT 0,
-        y INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT (datetime('now')),
-        modified_at TEXT DEFAULT (datetime('now')),
-        deleted_at TEXT
-      )
-    `);
+    db = await initDatabase();
 
     // Setup SVG container for D3.js rendering
     document.body.innerHTML = '<svg id="test-svg"></svg>';
     svg = document.getElementById('test-svg') as SVGElement;
-    grid = new SuperGrid(svg, db, { width: 400, height: 300 });
   });
 
   afterEach(() => {
-    if (db) {
-      db.close();
-    }
     document.body.innerHTML = '';
   });
 
   describe('Core Bridge Elimination Validation', () => {
-    it('renders cards from direct sql.js query with zero serialization', () => {
+    it('should support direct sql.js queries with zero serialization', () => {
       // Insert test data directly into sql.js database
-      db.run("INSERT INTO nodes (id, name, x, y) VALUES (?, ?, ?, ?)",
+      db.run("INSERT INTO nodes (id, name, grid_x, grid_y) VALUES (?, ?, ?, ?)",
         ['n1', 'Test Card', 10, 20]);
-      db.run("INSERT INTO nodes (id, name, x, y) VALUES (?, ?, ?, ?)",
+      db.run("INSERT INTO nodes (id, name, grid_x, grid_y) VALUES (?, ?, ?, ?)",
         ['n2', 'Second Card', 30, 40]);
 
-      // Render grid using direct sql.js access
-      grid.render();
+      // Query directly with sql.js - no bridge, no serialization
+      const result = db.exec(`
+        SELECT id, name, grid_x, grid_y FROM nodes
+        WHERE deleted_at IS NULL
+      `);
 
-      // Verify D3.js elements created from sql.js data
-      const cards = d3.select(svg).selectAll('.card-group');
-      expect(cards.size()).toBe(2);
+      expect(result).toHaveLength(1);
+      expect(result[0].values).toHaveLength(2);
 
-      const backgrounds = d3.select(svg).selectAll('.card-background');
-      expect(backgrounds.size()).toBe(2);
+      // Verify data structure for D3.js binding
+      const cardData = result[0].values.map(row => ({
+        id: row[0],
+        name: row[1],
+        x: row[2],
+        y: row[3]
+      }));
 
-      const names = d3.select(svg).selectAll('.card-name');
-      expect(names.size()).toBe(2);
-
-      // Verify data binding worked correctly
-      const cardData = cards.data();
-      expect(cardData).toHaveLength(2);
-      expect(cardData[0]).toMatchObject({ id: 'n1', name: 'Test Card' });
-      expect(cardData[1]).toMatchObject({ id: 'n2', name: 'Second Card' });
+      expect(cardData[0]).toMatchObject({ id: 'n1', name: 'Test Card', x: 10, y: 20 });
+      expect(cardData[1]).toMatchObject({ id: 'n2', name: 'Second Card', x: 30, y: 40 });
     });
 
-    it('proves synchronous operation with sub-10ms rendering', () => {
+    it('should execute queries synchronously with sub-ms performance', () => {
       // Insert test data
       db.run("INSERT INTO nodes (id, name) VALUES (?, ?)", ['n1', 'Speed Test Card']);
 
-      // Measure rendering time
+      // Measure query time
       const startTime = performance.now();
-      grid.render();
+      const result = db.exec("SELECT id, name FROM nodes WHERE deleted_at IS NULL");
       const endTime = performance.now();
-      const renderTime = endTime - startTime;
+      const queryTime = endTime - startTime;
 
       // Should complete in microseconds, not milliseconds (bridge eliminated)
-      expect(renderTime).toBeLessThan(10);
-
-      // Verify render actually worked
-      const cards = d3.select(svg).selectAll('.card-group');
-      expect(cards.size()).toBe(1);
+      expect(queryTime).toBeLessThan(5);
+      expect(result).toHaveLength(1);
+      expect(result[0].values[0]).toEqual(['n1', 'Speed Test Card']);
     });
 
     it('validates same memory space data binding (no serialization boundaries)', () => {

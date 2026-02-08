@@ -1,12 +1,5 @@
 import * as d3 from 'd3';
-import type { D3CoordinateSystem } from './D3SparsityLayer';
-
-export interface ColumnHeaderData {
-  id: string;
-  label: string;
-  logicalX: number;
-  width: number;
-}
+import type { ColumnHeaderData, D3CoordinateSystem } from '@/types/grid';
 
 export interface GridBlock2Props {
   container: d3.Selection<SVGGElement, unknown, null, undefined>;

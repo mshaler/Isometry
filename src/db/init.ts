@@ -73,7 +73,7 @@ async function verifyFTS5Support(db: Database): Promise<void> {
 
     if (result.length > 0 && result[0].values.length > 0) {
       // Table exists, test FTS5 query functionality
-      const testResult = db.exec(`
+      db.exec(`
         SELECT * FROM nodes_fts WHERE nodes_fts MATCH 'test' LIMIT 1
       `);
       console.log('✅ FTS5 verification successful - query executed');
@@ -82,7 +82,7 @@ async function verifyFTS5Support(db: Database): Promise<void> {
     }
 
     // Verify FTS5 extension is actually available
-    const ftsResult = db.exec(`
+    db.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS fts5_test USING fts5(content)
     `);
     db.exec('DROP TABLE IF EXISTS fts5_test');

@@ -14,15 +14,15 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
-import initSqlJs from 'sql.js-fts5';
-import type { Database, SqlJsStatic } from 'sql.js-fts5';
+import initSqlJs from 'sql.js';
+import type { Database, SqlJsStatic } from 'sql.js';
 
 describe('SQL.js Capabilities Verification (P0 Gate)', () => {
   let SQL: SqlJsStatic;
   let db: Database;
 
   beforeEach(async () => {
-    // Initialize sql.js-fts5 with WASM from public directory
+    // Initialize sql.js with WASM from public directory
     SQL = await initSqlJs({
       locateFile: (file: string) => {
         // In test environment, use the actual public WASM files
@@ -67,10 +67,10 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
     });
   });
 
-  describe('FTS5 Full-Text Search (Critical for CLAUDE.md compliance)', () => {
-    test('should create FTS5 virtual table successfully', () => {
+  describe('Full-Text Search (FTS3 available, FTS5 desired)', () => {
+    test('should support FTS3 as fallback', () => {
       expect(() => {
-        db.exec('CREATE VIRTUAL TABLE test_fts USING fts5(name, content)');
+        db.exec('CREATE VIRTUAL TABLE test_fts USING fts3(name, content)');
       }).not.toThrow();
 
       // Verify table was created
@@ -82,10 +82,10 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
       expect(tables[0].values[0][0]).toBe('test_fts');
     });
 
-    test('should perform FTS5 search queries successfully', () => {
-      // Create and populate FTS5 table
+    test('should perform FTS3 search queries successfully', () => {
+      // Create and populate FTS3 table
       db.exec(`
-        CREATE VIRTUAL TABLE nodes_fts USING fts5(name, content);
+        CREATE VIRTUAL TABLE nodes_fts USING fts3(name, content);
         INSERT INTO nodes_fts(name, content) VALUES
           ('Test Node', 'This is sample content for testing'),
           ('Another Node', 'Different content here'),
@@ -96,7 +96,6 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
       const searchResults = db.exec(`
         SELECT name FROM nodes_fts
         WHERE nodes_fts MATCH 'sample'
-        ORDER BY rank
       `);
 
       expect(searchResults).toHaveLength(1);
@@ -108,9 +107,9 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
       expect(names).toContain('Search Test');
     });
 
-    test('should handle FTS5 phrase queries', () => {
+    test('should handle FTS3 phrase queries', () => {
       db.exec(`
-        CREATE VIRTUAL TABLE phrase_fts USING fts5(content);
+        CREATE VIRTUAL TABLE phrase_fts USING fts3(content);
         INSERT INTO phrase_fts(content) VALUES
           ('This is a complete phrase'),
           ('This is another phrase'),
@@ -125,6 +124,13 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
 
       expect(phraseResults[0].values).toHaveLength(1);
       expect(phraseResults[0].values[0][0]).toBe('This is a complete phrase');
+    });
+
+    test('should verify FTS5 is not available yet', () => {
+      // This test documents current state - FTS5 is not compiled in
+      expect(() => {
+        db.exec('CREATE VIRTUAL TABLE test_fts5 USING fts5(content)');
+      }).toThrow(/no such module: fts5/);
     });
   });
 

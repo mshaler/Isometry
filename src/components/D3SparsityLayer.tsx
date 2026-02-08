@@ -145,7 +145,7 @@ export function D3SparsityLayer({
       container: dataCellsGroup,
       cells,
       coordinateSystem,
-      onCellClick,
+      onCellClick: onCellClick as ((node: any) => void) | undefined,
     });
 
   }, [data, coordinateSystem, dimensions, onCellClick, columns, rows, cells]);

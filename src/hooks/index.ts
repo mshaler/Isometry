@@ -7,8 +7,7 @@ export type { FTS5Result, FTS5SearchState } from './database/useFTS5Search';
 
 // Visualization hooks
 export { useD3, useResizeObserver } from './visualization/useD3';
-export { useD3Canvas } from './visualization/useD3Canvas';
-export { useD3Visualization } from './visualization/useD3Visualization';
+// Removed: useD3Canvas, useD3Visualization - these import contexts creating circular deps
 export { useD3Zoom } from './visualization/useD3Zoom';
 export { useGridCoordinates } from './visualization/useGridCoordinates';
 export { useCoordinates } from './visualization/useCoordinates';
@@ -18,7 +17,7 @@ export { useNodeTree } from './visualization/useNodeTree';
 export type { UseCoordinatesResult, UseCoordinatesOptions } from './visualization/useCoordinates';
 
 // UI hooks
-export { useMarkdownEditor } from './ui/useMarkdownEditor';
+// Removed: useMarkdownEditor - imports contexts creating circular deps
 export { useSlashCommands } from './ui/useSlashCommands';
 export { useWebPreview } from './ui/useWebPreview';
 
@@ -46,7 +45,7 @@ export type { LiveDataPerformanceMetrics } from './database/useLiveData';
 // Data hooks
 export { useAllTags as useTagColors } from './data/useTagColors';
 export { usePAFV } from './data/usePAFV';
-export { default as usePAFVLiveData } from './data/usePAFVLiveData';
+// Removed: usePAFVLiveData - imports contexts creating circular deps
 export { useFilteredNodes } from './data/useFilteredNodes';
 
 // Database hooks (additional)

@@ -8,8 +8,7 @@
  * - D3.js renders everything, React controls configuration
  */
 
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { SuperGridEngine, type SuperGridConfig, type PAFVConfiguration } from '../d3/SuperGridEngine';
+import { useState, useCallback } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFVProjection, useSearchProjection, useFacets, useAxisValues } from '../hooks/database/usePAFVProjection';
 import { useSQLiteQuery } from '../hooks/database/useSQLiteQuery';
@@ -45,12 +44,8 @@ export default function SuperGridSQLDemo({
   height = 600,
   className = ''
 }: SuperGridSQLDemoProps) {
-  // Refs
-  const containerRef = useRef<HTMLDivElement>(null);
-  const engineRef = useRef<SuperGridEngine | null>(null);
-
   // sql.js database context
-  const { db: database, loading: dbLoading, error: dbError } = useSQLite();
+  const { loading: dbLoading, error: dbError } = useSQLite();
 
   // PAFV control state
   const [pafvState, setPafvState] = useState<PAFVControlState>({
@@ -60,19 +55,6 @@ export default function SuperGridSQLDemo({
     activeView: 'projection'
   });
 
-  // SuperGrid configuration - temporarily disabled
-  const [gridConfig] = useState({
-    width,
-    height,
-    cellMinWidth: 140,
-    cellMinHeight: 100,
-    headerMinHeight: 50,
-    headerMinWidth: 120,
-    enableProgressive: true,
-    enableZoomPan: true,
-    enableSelection: true,
-    animationDuration: 300
-  });
 
   // ============================================================================
   // Data Hooks - Bridge Elimination in Action

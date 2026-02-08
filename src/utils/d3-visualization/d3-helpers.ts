@@ -1,7 +1,5 @@
 import type { Node } from '@/types/node';
-import type { ColumnHeaderData } from '@/components/GridBlock2_ColumnHeaders';
-import type { RowHeaderData } from '@/components/GridBlock3_RowHeaders';
-import type { DataCellData } from '@/components/GridBlock4_DataCells';
+import type { ColumnHeaderData, RowHeaderData, DataCellData } from '@/types/grid';
 
 /**
  * D3 Helper Functions for SuperGrid
