@@ -28,9 +28,9 @@ import type {
   ProgressiveDisclosureState,
   LevelGroup,
   LevelPickerTab,
-  ZoomControlState,
-  DEFAULT_PROGRESSIVE_CONFIG
+  ZoomControlState
 } from '../types/supergrid';
+import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
 
 export interface SuperGridHeadersConfig {
   defaultHeaderHeight: number;
@@ -142,7 +142,7 @@ export class SuperGridHeaders {
         transitionDuration: this.config.progressiveDisclosure.transitionDuration,
         lazyLoadingBuffer: this.config.progressiveDisclosure.lazyLoadingBuffer
       },
-      this.database
+      this.database as any
     );
 
     // Initialize progressive state
@@ -206,7 +206,7 @@ export class SuperGridHeaders {
         // Use progressive disclosure system
         this.progressiveSystem.updateHierarchy(this.currentHierarchy);
         this.updateProgressiveStateFromSystem();
-        superGridLogger.render('Using progressive disclosure system');
+        superGridLogger.render('Using progressive disclosure system', {});
       } else {
         // Progressive rendering decision for shallow hierarchies
         if (this.shouldUseProgressiveRendering()) {
@@ -223,7 +223,7 @@ export class SuperGridHeaders {
       this.renderFallback();
     }
 
-    superGridLogger.render('Header rendering complete');
+    superGridLogger.render('Header rendering complete', {});
   }
 
   /**
@@ -420,7 +420,7 @@ export class SuperGridHeaders {
         .attr('transform', `translate(0, ${level * this.config.defaultHeaderHeight})`);
     }
 
-    superGridLogger.setup('Header structure initialized');
+    superGridLogger.setup('Header structure initialized', {});
   }
 
   private calculateHierarchyWidths(totalWidth: number): void {
@@ -511,7 +511,7 @@ export class SuperGridHeaders {
   }
 
   private renderProgressively(): void {
-    superGridLogger.render('Using progressive rendering');
+    superGridLogger.render('Using progressive rendering', {});
 
     if (!this.currentHierarchy) return;
 
@@ -528,7 +528,7 @@ export class SuperGridHeaders {
   }
 
   private renderAllLevels(): void {
-    superGridLogger.render('Rendering all levels');
+    superGridLogger.render('Rendering all levels', {});
 
     if (!this.currentHierarchy) return;
 
@@ -1118,7 +1118,7 @@ export class SuperGridHeaders {
     if (!db) return;
 
     try {
-      const savedState = db.loadHeaderState(
+      const savedState = (db as any).loadHeaderState?.(
         this.currentDatasetId,
         this.currentAppContext
       );
@@ -1178,7 +1178,7 @@ export class SuperGridHeaders {
       .on('drag', (event, d) => this.handleResizeDrag(event, d))
       .on('end', (event, d) => this.handleResizeEnd(event, d));
 
-    superGridLogger.setup('Column resize behavior initialized');
+    superGridLogger.setup('Column resize behavior initialized', {});
   }
 
   /**
@@ -1402,7 +1402,7 @@ export class SuperGridHeaders {
           columnCount: Object.keys(columnWidths).length
         });
       } else {
-        console.error('❌ Failed to save column widths:', result?.error || 'Unknown error');
+        console.error('❌ Failed to save column widths:', (result as any)?.error || 'Unknown error');
       }
     }, 300); // 300ms debounce
   }

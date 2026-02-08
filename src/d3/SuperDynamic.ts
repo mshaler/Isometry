@@ -12,13 +12,10 @@
 
 import * as d3 from 'd3';
 import type { ViewAxisMapping } from '../types/views';
-import type { AxisMapping, LATCHAxis } from '../types/pafv';
 import type {
   SuperDynamicConfig,
   DragState,
-  AxisSlotConfig,
-  GridReflowOptions,
-  DropZone
+  GridReflowOptions
 } from '../types/supergrid';
 
 export interface SuperDynamicEngine {
@@ -409,12 +406,12 @@ export class SuperDynamicD3Engine implements SuperDynamicEngine {
 
       // Move source to target
       if (sourceAxisConfig) {
-        newMapping[`${targetSlot}Axis`] = sourceAxisConfig;
+        newMapping[`${targetSlot}Axis`] = sourceAxisConfig as any;
       }
 
       // Move target to source (if target had content)
       if (targetAxisConfig && sourceSlot !== targetSlot) {
-        newMapping[`${sourceSlot}Axis`] = targetAxisConfig;
+        newMapping[`${sourceSlot}Axis`] = targetAxisConfig as any;
       }
     } else {
       // New axis assignment from available pool
@@ -424,7 +421,7 @@ export class SuperDynamicD3Engine implements SuperDynamicEngine {
         latchDimension: this.inferLATCHDimension(sourceAxis),
         facet: sourceAxis,
         label: this.getAxisDisplayName(sourceAxis)
-      };
+      } as any;
     }
 
     return newMapping;

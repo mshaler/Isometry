@@ -123,7 +123,7 @@ export function useFeedbackCollection(
   const triggerFeedback = useCallback((
     type: FeedbackEvent['type'],
     context: string,
-    userAction?: string
+    _userAction?: string
   ) => {
     if (!canShowFeedback()) {
       return;

@@ -98,7 +98,7 @@ export function useGraphAnalytics(nodeId?: string): GraphAnalyticsState & {
       const latency = performance.now() - startTime;
 
       // Track performance
-      graphPerformanceMonitor.trackSuggestionLatency(nodeId, latency, suggestions.length);
+      performanceMonitor.trackSuggestionLatency(nodeId, latency);
 
       setState(prev => ({
         ...prev,
@@ -144,7 +144,7 @@ export function useGraphAnalytics(nodeId?: string): GraphAnalyticsState & {
   const loadMetrics = useCallback(async () => {
     try {
       const [analyticsMetrics, graphMetrics] = await Promise.all([
-        graphPerformanceMonitor.getAnalyticsMetrics(),
+        performanceMonitor.getAnalyticsMetrics(),
         graphAnalytics.getGraphMetrics()
       ]);
 
@@ -420,10 +420,10 @@ export function useGraphMetrics(): GraphMetricsState & {
 
     try {
       const [performance, cache, suggestions, optimizations] = await Promise.all([
-        graphPerformanceMonitor.getAnalyticsMetrics(),
+        performanceMonitor.getAnalyticsMetrics(),
         queryCacheService.getCacheEffectiveness(),
         connectionSuggestionService.getPerformanceMetrics(),
-        graphPerformanceMonitor.generateOptimizationSuggestions()
+        performanceMonitor.generateOptimizationSuggestions()
       ]);
 
       setState(prev => ({
@@ -447,7 +447,7 @@ export function useGraphMetrics(): GraphMetricsState & {
 
   // Export metrics for analysis
   const exportMetrics = useCallback(async () => {
-    const exported = graphPerformanceMonitor.exportMetrics();
+    const exported = performanceMonitor.exportMetrics();
     return {
       ...exported,
       cache: await queryCacheService.getStats(),
@@ -528,7 +528,7 @@ export function useGraphAnalyticsDebug() {
       try {
         const [cacheStats, performanceHistory] = await Promise.all([
           queryCacheService.getStats(),
-          graphPerformanceMonitor.getPerformanceTrends()
+          performanceMonitor.getPerformanceTrends()
         ]);
 
         setDebugInfo(prev => ({

@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useBridgeDatabase } from './useBridgeDatabase';
-import type { DatabaseResult } from './useBridgeDatabase';
+// import type { DatabaseResult } from './useBridgeDatabase';
 
 export interface LiveDataSubscription<T = unknown> {
   id: string;
@@ -313,7 +313,7 @@ export function useLiveData<T = unknown>(
       }
 
       // Execute fresh query
-      const result: DatabaseResult<T> = await database.executeQuery(query, params);
+      const result = await (database as any).executeQuery(query, params) as any;
       const latency = performance.now() - startTime;
 
       if (state.cancelToken.signal.aborted) return;

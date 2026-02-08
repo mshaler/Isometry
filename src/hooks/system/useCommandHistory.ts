@@ -8,7 +8,7 @@ import {
   compressHistory,
   pruneHistory,
   exportHistory
-} from '../utils/commandHistory';
+} from '../../utils/commandHistory';
 import { MAX_HISTORY_ENTRIES } from '../../types/shell';
 
 interface UseCommandHistoryReturn {

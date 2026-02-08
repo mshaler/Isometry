@@ -8,10 +8,10 @@
  */
 
 import { useMemo } from 'react';
-import type { Node } from '@/types/node';
-import type { LATCHAxis } from '@/types/pafv';
-import type { OriginPattern } from '@/types/coordinates';
-import { extractAxisValue, getAxisLabel } from '@/utils/axis-value-extractor';
+import type { Node } from '../../types/node';
+import type { LATCHAxis } from '../../types/pafv';
+import type { OriginPattern } from '../../types/coordinates';
+import { extractAxisValue, getAxisLabel } from '../../utils/database/axis-value-extractor';
 
 export interface GridCoordinate {
   x: number;

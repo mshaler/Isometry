@@ -53,6 +53,8 @@ export interface CellData {
 export interface GridData {
   cards: any[];
   headers: AxisData[];
+  xAxis?: AxisData[];
+  yAxis?: AxisData[];
   dimensions: {
     rows: number;
     columns: number;

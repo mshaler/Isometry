@@ -73,7 +73,7 @@ export class TauriService {
         return null; // User cancelled
       }
 
-      const path = typeof selected === 'string' ? selected : selected.path;
+      const path = typeof selected === 'string' ? selected : (selected as any)?.path;
       const name = this.extractFileName(path);
 
       // Read file data (placeholder for now)
@@ -94,7 +94,7 @@ export class TauriService {
   /**
    * Save .isometry file using native file dialog
    */
-  async saveIsometryFile(data: ArrayBuffer, suggestedName?: string): Promise<string | null> {
+  async saveIsometryFile(_data: ArrayBuffer, suggestedName?: string): Promise<string | null> {
     if (!this.capabilities.hasNativeDialogs) {
       throw new Error('Native file dialogs not available');
     }

@@ -8,8 +8,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLiveData, type LiveDataPerformanceMetrics } from '../database/useLiveData';
 import { buildPAFVQuery, optimizeQuery, type PAFVQueryOptions } from '@/utils/database/query-builder';
-// Local type to avoid hooks→contexts import
-type Wells = Record<string, { axis: string; facet: string; value: unknown; }>;
+import type { Wells } from '@/contexts/PAFVContext';
 import type { Node } from '@/types/node';
 
 export interface PAFVQueryMetrics {
@@ -248,7 +247,7 @@ export function usePAFVLiveData(
     }
 
     // Build new queries
-    const baseQuery = buildPAFVQuery(wells, { ...queryOptions, maxRows });
+    const baseQuery = buildPAFVQuery(wells as any, { ...queryOptions, maxRows });
     const optimizedQuery = optimizeQuery(baseQuery);
     const aggQuery = includeAggregations ? buildAggregationQuery(optimizedQuery) : '';
 

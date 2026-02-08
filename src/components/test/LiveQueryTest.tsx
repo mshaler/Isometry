@@ -10,7 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import { useLiveDataContext } from '../../contexts/LiveDataContext';
 // Bridge eliminated in v4 - sql.js direct access
-// import { webViewBridge } from '../../utils/webview-bridge';
+import { webViewBridge } from '../../utils/webview-bridge';
 
 interface TestNode {
   id: string;

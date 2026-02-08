@@ -15,7 +15,17 @@ export interface LiveDataContextType {
   subscribe: (callback: () => void) => () => void;
   unsubscribe: (callback: () => void) => void;
   metrics: LiveDataPerformanceMetrics[]; // Array of performance metrics
+  executeQuery: (method: string, params?: unknown) => Promise<any>;
 }
+
+// Export the hook for compatibility
+export const useLiveDataSubscription = () => {
+  const context = useContext(LiveDataContext);
+  if (!context) {
+    throw new Error('useLiveDataSubscription must be used within LiveDataProvider');
+  }
+  return context;
+};
 
 const LiveDataContext = createContext<LiveDataContextType | undefined>(undefined);
 
@@ -56,6 +66,9 @@ export const useLiveDataMetrics = _useLiveDataMetrics;
 
 interface LiveDataProviderProps {
   children: ReactNode;
+  enableGlobalSync?: boolean;
+  syncIntervalMs?: number;
+  enableConnectionMonitoring?: boolean;
 }
 
 export function LiveDataProvider({ children }: LiveDataProviderProps) {
@@ -63,7 +76,8 @@ export function LiveDataProvider({ children }: LiveDataProviderProps) {
     state: { isConnected: false, lastUpdate: null },
     subscribe: () => () => {},
     unsubscribe: () => {},
-    metrics: [] // Empty array for compatibility
+    metrics: [], // Empty array for compatibility
+    executeQuery: async () => ({ success: false, data: [], error: 'Stub implementation' })
   };
 
   return (

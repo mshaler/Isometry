@@ -124,10 +124,7 @@ function MVPDemo() {
       <ErrorBoundary level="app" name="UnifiedApp">
         <CacheInvalidationProvider>
           <BrowserRouter>
-            <LiveDataProvider
-              syncIntervalMs={30000}
-              enableConnectionMonitoring={true}
-            >
+            <LiveDataProvider>
               <ThemeProvider>
                 <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
                     <SQLiteProvider>
@@ -159,10 +156,7 @@ function MVPDemo() {
     <ErrorBoundary level="app" name="MVPDemo">
       <CacheInvalidationProvider>
         <BrowserRouter>
-          <LiveDataProvider
-            syncIntervalMs={30000}
-            enableConnectionMonitoring={true}
-          >
+          <LiveDataProvider>
           <ThemeProvider>
             <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
               <SQLiteProvider>

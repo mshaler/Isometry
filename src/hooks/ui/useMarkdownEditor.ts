@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { useNotebook } from '../contexts/NotebookContext';
-import { debounce } from '../utils/debounce';
+import { useNotebook } from '../../contexts/NotebookContext';
+import { debounce } from '../../utils/debounce';
 
 interface UseMarkdownEditorOptions {
   autoSaveDelay?: number;

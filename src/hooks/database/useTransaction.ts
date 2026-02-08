@@ -7,10 +7,10 @@
  */
 
 import { useCallback, useState, useRef, useEffect } from 'react';
-import { TransactionScope, TransactionScopeError, TransactionTimeoutError } from '../utils/transaction/transaction-scope';
-import { createChildId } from '../utils/transaction/correlation-ids';
+import { TransactionScope, TransactionScopeError, TransactionTimeoutError } from '../../utils/transaction/transaction-scope';
+import { createChildId } from '../../utils/transaction/correlation-ids';
 // Bridge eliminated in v4 - sql.js direct access
-// import { webViewBridge } from '../utils/webview/webview-bridge';
+import { webViewBridge } from '../../utils/webview-bridge';
 
 /**
  * Transaction execution context passed to operation functions
@@ -304,7 +304,7 @@ async function sendTransactionMessage(method: string, params: any): Promise<any>
 
       default:
         // Fallback to generic transaction message
-        return await webViewBridge.sendTransactionMessage(method, params, correlationId);
+        return await webViewBridge.sendTransactionMessage({ method, params, correlationId });
     }
 
   } catch (error) {

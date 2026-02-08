@@ -189,3 +189,22 @@ export function useTextTheme() {
     label: theme === 'NeXTSTEP' ? 'text-xs text-[#404040]' : 'text-xs text-gray-600',
   }), [theme]);
 }
+
+/**
+ * Main component theme hook that provides access to all theme functions
+ */
+export function useComponentTheme() {
+  return {
+    useThemeClasses,
+    useThemeValues,
+    useButtonTheme,
+    usePanelTheme,
+    useInputTheme,
+    useDropdownTheme,
+    useCardTheme,
+    useBadgeTheme,
+    useTableTheme,
+    useCanvasTheme,
+    useTextTheme,
+  };
+}

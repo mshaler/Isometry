@@ -10,7 +10,7 @@ import { useRenderingOptimization, type OptimizationPlan } from '@/hooks';
 import { renderingPerformanceMonitor } from '../../utils/performance/rendering-performance';
 import type { Viewport, RenderingMetrics, PerformanceAlert } from '../../utils/performance/rendering-performance';
 // Bridge eliminated in v4 - sql.js direct access
-// import { Environment } from '../../utils/webview-bridge';
+import { Environment } from '../../utils/webview-bridge';
 
 // ============================================================================
 // Types
@@ -157,7 +157,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
       setMetricHistory(prev => ({
         frameRate: [...prev.frameRate.slice(-59), metrics.frameRate], // Keep last 60 readings
         renderTime: [...prev.renderTime.slice(-59), metrics.renderTime],
-        memoryUsage: [...prev.memoryUsage.slice(-59), metrics.memoryUsage / 1024 / 1024] // Convert to MB
+        memoryUsage: [...prev.memoryUsage.slice(-59), metrics.memoryUsageMB] // Already in MB
       }));
     }, 1000);
 
@@ -309,7 +309,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
     try {
       const report = {
         timestamp: new Date().toISOString(),
-        environment: Environment.isWebView() ? 'native' : 'browser',
+        environment: Environment.isNative ? 'native' : 'browser',
         configuration: customConfig,
         metrics: currentMetrics,
         alerts: alerts,
@@ -558,8 +558,8 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
                   </div>
                   <div className="flex justify-between">
                     <dt className="text-sm text-gray-600">60fps Target:</dt>
-                    <dd className={`text-sm font-medium ${currentMetrics.performance60FPS ? 'text-green-600' : 'text-red-600'}`}>
-                      {currentMetrics.performance60FPS ? 'Met' : 'Not Met'}
+                    <dd className={`text-sm font-medium ${currentMetrics.frameRate >= 60 ? 'text-green-600' : 'text-red-600'}`}>
+                      {currentMetrics.frameRate >= 60 ? 'Met' : 'Not Met'}
                     </dd>
                   </div>
                 </dl>

@@ -105,14 +105,14 @@ export class SyncQueue {
 
     // Set up memory pressure monitoring
     memoryManager.addMemoryPressureCallback((metrics, activeCallbacks) => {
-      this.memoryPressureActive = metrics.pressureLevel === 'critical'
+      this.memoryPressureActive = metrics.pressureLevel === 'high'
 
       if (this.memoryPressureActive) {
         console.warn('[SyncQueue] Critical memory pressure detected:', {
           queueSize: this.queue.length,
           processing: this.processing,
           usage: `${metrics.usedJSHeapSize.toFixed(1)}MB`,
-          activeCallbacks: activeCallbacks.length
+          activeCallbacks: Array.isArray(activeCallbacks) ? activeCallbacks.length : activeCallbacks
         })
 
         // Trigger queue cleanup during memory pressure
@@ -160,10 +160,9 @@ export class SyncQueue {
 
     // Register operation with memory manager for bridge callback cleanup tracking
     if (operation.correlationId) {
-      memoryManager.registerBridgeCallback(
-        'sync',
-        { operationId: syncOp.id, type: syncOp.type },
-        () => {
+      memoryManager.registerBridgeCallback({
+        id: `sync_${syncOp.id}`,
+        cleanup: () => {
           // Cleanup function - remove from queue if it's still pending
           const index = this.queue.findIndex(op => op.id === syncOp.id)
           if (index >= 0) {
@@ -171,9 +170,8 @@ export class SyncQueue {
             this.persistQueue()
             this.notifyStateChange()
           }
-        },
-        operation.correlationId
-      )
+        }
+      })
     }
 
     // Insert based on priority (immediate and user-initiated operations first)

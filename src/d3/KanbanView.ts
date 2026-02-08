@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import type { ViewRenderer, CardPosition } from '../d3/ViewContinuum';
 import type { ViewAxisMapping } from '../types/views';
 import type { Node } from '../types/node';
-import { d3Logger } from '../utils/logging/dev-logger';
+import { devLogger as d3Logger } from '../utils/logging/dev-logger';
 
 /**
  * KanbanView - 1-facet column projection using D3

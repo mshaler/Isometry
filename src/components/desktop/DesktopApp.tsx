@@ -2,7 +2,7 @@
  * Desktop Application Layout - Main container for Tauri desktop app
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { DesktopMenu } from './DesktopMenu';
 import { SQLiteP0GateTest } from '../../SQLiteP0GateTest';
 import { ThreeCanvasDemo } from '../ThreeCanvasDemo';

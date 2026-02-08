@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
-import { contextLogger } from '../utils/logging/dev-logger';
+import { contextLogger } from '../utils/dev-logger';
 
 /**
  * Debug console to diagnose SQLite issues

@@ -134,7 +134,7 @@ export function EnvironmentProvider({
 
       // ROBUST BRIDGE DETECTION: Wait for WebView bridge to be fully ready
       bridgeLogger.debug('Environment: Waiting for WebView bridge initialization', {});
-      const bridgeReady = await waitForWebViewBridge(1000); // 1 second timeout for faster browser fallback
+      const bridgeReady = await waitForWebViewBridge(); // 1 second timeout for faster browser fallback
 
       if (bridgeReady) {
         bridgeLogger.debug('Environment: WebView bridge detected after waiting', {});

@@ -24,6 +24,18 @@ export interface SimpleAlert {
   severity: 'low' | 'medium' | 'high';
   message: string;
   timestamp: number;
+  recommendation?: string;
+}
+
+// Alias for compatibility
+export type PerformanceAlert = SimpleAlert;
+
+export interface Viewport {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
 }
 
 // ============================================================================
@@ -305,6 +317,9 @@ export class SimpleMemoryTracker {
 
 export const simpleRenderingMonitor = new SimpleRenderingPerformanceMonitor();
 export const simpleMemoryTracker = new SimpleMemoryTracker();
+
+// Aliases for compatibility
+export const renderingPerformanceMonitor = simpleRenderingMonitor;
 
 // ============================================================================
 // Utility Functions

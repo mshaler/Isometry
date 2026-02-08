@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { useNotebook } from '../contexts/NotebookContext';
-import { useDatabase } from '../db/DatabaseContext';
+import { useNotebook } from '../../contexts/NotebookContext';
+import { useDatabase } from '../../db/DatabaseContext';
 
 export interface ProjectContext {
   activeCard: {

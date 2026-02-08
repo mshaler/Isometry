@@ -331,7 +331,7 @@ export function SuperGridDemo() {
   // ViewContinuum callbacks
   const viewContinuumCallbacks: ViewContinuumCallbacks = {
     onViewChange: (event) => {
-      contextLogger.metrics('SuperGridDemo: View change event', event);
+      contextLogger.metrics('SuperGridDemo: View change event', { event: JSON.stringify(event) });
       setCurrentView(event.toView);
     },
     onSelectionChange: (selectedIds, _focusedId) => {
@@ -445,7 +445,7 @@ export function SuperGridDemo() {
   useEffect(() => {
     if (!superGrid || !pafvState) return;
 
-    contextLogger.state('SuperGridDemo: PAFV state changed', pafvState);
+    contextLogger.state('SuperGridDemo: PAFV state changed', { pafvState: JSON.stringify(pafvState) });
     // Future: Apply PAFV axis mappings to grid layout
   }, [superGrid, pafvState]);
 

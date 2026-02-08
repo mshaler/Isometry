@@ -17,7 +17,7 @@ export function WebViewDiagnostic() {
 
       // Simplified check for sql.js environment
       const immediateCheck = hasWebKit;
-      const bridgeWaitResult = environment.mode === 'webview';
+      const bridgeWaitResult = environment.mode === 'webview-bridge';
 
       const data = {
         userAgent,

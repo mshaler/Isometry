@@ -1,4 +1,20 @@
-import { BridgeMessage, BridgeResponse } from '../types/browser-bridge';
+// Bridge types (local definitions to replace eliminated bridge module)
+interface BridgeMessage {
+  id: string;
+  method: string;
+  params: any;
+  timestamp: number;
+}
+
+interface BridgeResponse {
+  id: string;
+  success: boolean;
+  result?: any;
+  data?: any;
+  error?: string | { message: string };
+  message?: string;
+  timestamp: number;
+}
 
 // Type definitions matching native Swift ConnectionSuggestion
 export interface ConnectionSuggestion {
@@ -46,20 +62,8 @@ export interface QueryResult {
   cached: boolean;
 }
 
-// Import type for module augmentation (used in declare module below)
-// import type { WebKitMessageHandlers } from '../utils/webview/webview-bridge';
-
-// Bridge communication interface
-interface GraphBridge {
-  postMessage(message: any): void;
-}
-
-// Module augmentation to extend the existing WebKit interface
-declare module '../utils/webview-bridge' {
-  interface WebKitMessageHandlers {
-    graphAnalytics: GraphBridge;
-  }
-}
+// Bridge communication interface (local definition - bridge eliminated)
+// Note: Interface kept for documentation - bridge is eliminated in v4
 
 declare global {
   interface Window {
@@ -141,8 +145,8 @@ export class GraphAnalyticsAdapter {
    * Check if native bridge is available
    */
   private isBridgeAvailable(): boolean {
-    return typeof window !== 'undefined' &&
-           window.webkit?.messageHandlers?.graphAnalytics != null;
+    // Bridge eliminated in favor of sql.js direct access - always false in v4
+    return false;
   }
 
   /**

@@ -12,8 +12,22 @@
  */
 
 import type { ViewAxisMapping } from '../types/views';
-import type { AxisMapping, LATCHAxis, PAFVState, Facet } from '../types/pafv';
+import type { LATCHAxis, LATCHAxisAbbr } from '../types/pafv';
 import type { AxisChangeEvent, SuperDynamicMetrics } from '../types/supergrid';
+
+
+/**
+ * Convert LATCH full name to abbreviation
+ */
+function fullToAbbr(full: LATCHAxis): LATCHAxisAbbr {
+  switch (full) {
+    case 'location': return 'L';
+    case 'alphabet': return 'A';
+    case 'time': return 'T';
+    case 'category': return 'C';
+    case 'hierarchy': return 'H';
+  }
+}
 
 export interface PAFVAxisServiceConfig {
   /** Database instance for persistence */
@@ -130,7 +144,7 @@ export class PAFVAxisService {
       {
         id: 'folder',
         facet: 'folder',
-        latchDimension: 'C',
+        latchDimension: 'category',
         label: 'Category → Folder',
         description: 'Organize by project folder grouping',
         dataType: 'string',
@@ -139,7 +153,7 @@ export class PAFVAxisService {
       {
         id: 'status',
         facet: 'status',
-        latchDimension: 'C',
+        latchDimension: 'category',
         label: 'Category → Status',
         description: 'Group by completion status',
         dataType: 'string',
@@ -148,7 +162,7 @@ export class PAFVAxisService {
       {
         id: 'created_at',
         facet: 'created_at',
-        latchDimension: 'T',
+        latchDimension: 'time',
         label: 'Time → Created',
         description: 'Chronological by creation date',
         dataType: 'date',
@@ -157,7 +171,7 @@ export class PAFVAxisService {
       {
         id: 'modified_at',
         facet: 'modified_at',
-        latchDimension: 'T',
+        latchDimension: 'time',
         label: 'Time → Modified',
         description: 'Chronological by last modification',
         dataType: 'date',
@@ -166,7 +180,7 @@ export class PAFVAxisService {
       {
         id: 'name',
         facet: 'name',
-        latchDimension: 'A',
+        latchDimension: 'alphabet',
         label: 'Alphabet → Name',
         description: 'Alphabetical by card name',
         dataType: 'string',
@@ -175,7 +189,7 @@ export class PAFVAxisService {
       {
         id: 'priority',
         facet: 'priority',
-        latchDimension: 'H',
+        latchDimension: 'hierarchy',
         label: 'Hierarchy → Priority',
         description: 'By importance/priority level',
         dataType: 'number',
@@ -268,15 +282,15 @@ export class PAFVAxisService {
 
   private setDefaultMapping(): void {
     // Set up default mapping based on available axes
-    const categoryAxis = this.availableAxes.find(a => a.latchDimension === 'C');
-    const timeAxis = this.availableAxes.find(a => a.latchDimension === 'T');
-    const hierarchyAxis = this.availableAxes.find(a => a.latchDimension === 'H');
+    const categoryAxis = this.availableAxes.find(a => a.latchDimension === 'category');
+    const timeAxis = this.availableAxes.find(a => a.latchDimension === 'time');
+    const hierarchyAxis = this.availableAxes.find(a => a.latchDimension === 'hierarchy');
 
     this.currentMapping = {};
 
     if (categoryAxis) {
       this.currentMapping.xAxis = {
-        latchDimension: categoryAxis.latchDimension,
+        latchDimension: fullToAbbr(categoryAxis.latchDimension),
         facet: categoryAxis.facet,
         label: categoryAxis.label
       };
@@ -284,7 +298,7 @@ export class PAFVAxisService {
 
     if (timeAxis) {
       this.currentMapping.yAxis = {
-        latchDimension: timeAxis.latchDimension,
+        latchDimension: fullToAbbr(timeAxis.latchDimension),
         facet: timeAxis.facet,
         label: timeAxis.label
       };
@@ -292,7 +306,7 @@ export class PAFVAxisService {
 
     if (hierarchyAxis) {
       this.currentMapping.zAxis = {
-        latchDimension: hierarchyAxis.latchDimension,
+        latchDimension: fullToAbbr(hierarchyAxis.latchDimension),
         facet: hierarchyAxis.facet,
         label: hierarchyAxis.label,
         depth: 3
@@ -343,12 +357,20 @@ export class PAFVAxisService {
 
     // Create new axis assignment
     const axisProperty = `${plane}Axis` as keyof ViewAxisMapping;
-    this.currentMapping[axisProperty] = {
-      latchDimension: axis.latchDimension,
-      facet: axis.facet,
-      label: axis.label,
-      ...(plane === 'z' ? { depth: 3 } : {})
-    };
+    if (plane === 'z') {
+      this.currentMapping[axisProperty] = {
+        latchDimension: fullToAbbr(axis.latchDimension),
+        facet: axis.facet,
+        label: axis.label,
+        depth: 3
+      } as any;
+    } else {
+      this.currentMapping[axisProperty] = {
+        latchDimension: fullToAbbr(axis.latchDimension),
+        facet: axis.facet,
+        label: axis.label
+      } as any;
+    }
 
     // Track metrics
     this.updateMetrics('programmatic', oldMapping, this.currentMapping);
@@ -403,13 +425,13 @@ export class PAFVAxisService {
 
     // Perform the swap
     if (fromAxis) {
-      this.currentMapping[toProperty] = fromAxis;
+      this.currentMapping[toProperty] = fromAxis as any;
     } else {
       delete this.currentMapping[toProperty];
     }
 
     if (toAxis) {
-      this.currentMapping[fromProperty] = toAxis;
+      this.currentMapping[fromProperty] = toAxis as any;
     } else {
       delete this.currentMapping[fromProperty];
     }
@@ -458,12 +480,20 @@ export class PAFVAxisService {
         const axis = this.availableAxes.find(a => a.id === axisId);
         if (axis) {
           const property = `${plane}Axis` as keyof ViewAxisMapping;
-          result[property] = {
-            latchDimension: axis.latchDimension,
-            facet: axis.facet,
-            label: axis.label,
-            ...(plane === 'z' ? { depth: 3 } : {})
-          };
+          if (plane === 'z') {
+            result[property] = {
+              latchDimension: fullToAbbr(axis.latchDimension),
+              facet: axis.facet,
+              label: axis.label,
+              depth: 3
+            } as any;
+          } else {
+            result[property] = {
+              latchDimension: fullToAbbr(axis.latchDimension),
+              facet: axis.facet,
+              label: axis.label
+            } as any;
+          }
         }
       }
     });

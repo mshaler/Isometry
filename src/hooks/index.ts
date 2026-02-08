@@ -2,6 +2,7 @@
 export { useSQLiteQuery, useNodes } from './database/useSQLiteQuery';
 export { useFTS5Search } from './database/useFTS5Search';
 export { useLiveQuery } from './database/useLiveQuery';
+export { useLiveData } from './database/useLiveData';
 export type { FTS5Result, FTS5SearchState } from './database/useFTS5Search';
 
 // Visualization hooks

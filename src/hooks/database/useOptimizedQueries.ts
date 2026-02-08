@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useSQLite } from '../db/SQLiteProvider';
-import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
+import { useSQLite } from '../../db/SQLiteProvider';
+import { translateQuery, OptimizedCall, SQLCall } from '../../db/QueryTranslation';
 import { rowToNode, Node } from '../../types/node';
 import { useQueryCacheRegistration, useCacheInvalidation, CacheTags, type CacheTag } from './useCacheInvalidation';
 
@@ -470,4 +470,19 @@ export function useRecentNodes(limit: number = 20, options: Omit<NodesQueryOptio
 
 export function useRecentNotebookCards(limit: number = 20, options: Omit<NotebookCardsQueryOptions, 'limit'> = {}) {
   return useNotebookCards({ ...options, limit });
+}
+
+/**
+ * Main optimized queries hook that provides access to all optimized query functions
+ */
+export function useOptimizedQueries() {
+  return {
+    useNodes,
+    useNotebookCards,
+    useSearch,
+    useAllNodes,
+    useFolderNodes,
+    useRecentNodes,
+    useRecentNotebookCards,
+  };
 }

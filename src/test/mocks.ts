@@ -122,7 +122,7 @@ export function createMockSQLiteContext(options: {
     // For INSERT/UPDATE/DELETE operations, just log
     if (mockDatabase) {
       if (params.length > 0) {
-        mockDatabase.run(sql, params);
+        mockDatabase.run(sql, params as any);
       } else {
         mockDatabase.exec(sql);
       }
@@ -159,8 +159,13 @@ export function createMockSQLiteContext(options: {
           `);
           for (const node of data.nodes) {
             stmt.run([
-              node.id, node.name, node.content, node.folder, node.status,
-              node.priority, node.created_at
+              node.id || '',
+              node.name || '',
+              node.content || '',
+              node.folder || '',
+              node.status || '',
+              node.priority || 0,
+              node.created_at || new Date().toISOString()
             ]);
           }
           stmt.free();
@@ -172,8 +177,12 @@ export function createMockSQLiteContext(options: {
           `);
           for (const edge of data.edges) {
             stmt.run([
-              edge.id, edge.edge_type, edge.source_id, edge.target_id,
-              edge.label, edge.weight
+              edge.id || '',
+              edge.edge_type || 'LINK',
+              edge.source_id || '',
+              edge.target_id || '',
+              edge.label || '',
+              edge.weight || 1
             ]);
           }
           stmt.free();
@@ -324,7 +333,7 @@ export function setupSQLiteProviderMocks() {
     const original = await importOriginal();
 
     return {
-      ...original,
+      ...(original as any),
       SQLiteProvider: ({ children }: { children: React.ReactNode }) => {
         return children;
       },

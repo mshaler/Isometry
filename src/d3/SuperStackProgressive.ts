@@ -142,7 +142,7 @@ export class SuperStackProgressive {
       this.restoreState();
     }
 
-    superGridLogger.setup('SuperStack Progressive Disclosure initialized');
+    superGridLogger.setup('SuperStack Progressive Disclosure initialized', {});
   }
 
   /**
@@ -169,7 +169,7 @@ export class SuperStackProgressive {
     }
 
     this.saveState();
-    superGridLogger.render('Progressive disclosure analysis complete');
+    superGridLogger.render('Progressive disclosure analysis complete', {});
   }
 
   /**
@@ -371,10 +371,10 @@ export class SuperStackProgressive {
       if (savedState) {
         this.visibleLevels = savedState.visibleLevels || [0, 1, 2];
         this.currentTab = savedState.currentTab || 0;
-        this.zoomLevel = savedState.zoomLevel || 0;
+        this.zoomLevel = (savedState as any).zoomLevel || 0;
 
-        if (savedState.groups) {
-          this.levelGroups = savedState.groups;
+        if ((savedState as any).groups) {
+          this.levelGroups = (savedState as any).groups;
         }
 
         superGridLogger.state('Progressive state restored', {
@@ -415,7 +415,7 @@ export class SuperStackProgressive {
         .style('opacity', 0); // Start hidden
     }
 
-    superGridLogger.setup('Progressive structure initialized');
+    superGridLogger.setup('Progressive structure initialized', {});
   }
 
   private shouldUseProgressiveDisclosure(): boolean {
@@ -584,7 +584,7 @@ export class SuperStackProgressive {
   private renderProgressively(): void {
     if (!this.currentHierarchy) return;
 
-    superGridLogger.render('Progressive rendering started');
+    superGridLogger.render('Progressive rendering started', {});
 
     // Load visible levels immediately
     this.visibleLevels.forEach(level => this.loadLevel(level));
@@ -595,7 +595,7 @@ export class SuperStackProgressive {
     // Render visible levels with transitions
     this.renderVisibleLevels();
 
-    superGridLogger.render('Progressive rendering complete');
+    superGridLogger.render('Progressive rendering complete', {});
   }
 
   private renderAllLevels(): void {

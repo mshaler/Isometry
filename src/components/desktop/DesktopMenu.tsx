@@ -2,7 +2,6 @@
  * Desktop Menu Component - Native-style menu for Tauri app
  */
 
-import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   FileText,

@@ -123,7 +123,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
     columnCount,
     containerHeight: height,
     containerWidth: width,
-    estimatedItemHeight: estimateRowHeight(),
+    estimatedItemHeight: estimateRowHeight,
     estimatedItemWidth: actualColumnWidth,
     enableDynamicSizing
   });

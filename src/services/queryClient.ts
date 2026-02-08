@@ -17,7 +17,7 @@ export class QueryClient {
     };
   }
 
-  invalidateQueries(pattern: string): void {
+  invalidateQueries(_pattern?: string): void {
     // Stub implementation
   }
 }
@@ -28,6 +28,9 @@ export const queryClient = new QueryClient();
 export const cacheUtils = {
   getCacheStats: () => ({
     totalQueries: 0,
+    activeQueries: 0,
+    staleQueries: 0,
+    cachedQueries: 0,
     cacheSize: 0,
     hitRate: 100,
     missRate: 0

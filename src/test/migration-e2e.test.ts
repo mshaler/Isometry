@@ -7,7 +7,7 @@
 
 import { bridgePerformanceTest, PERFORMANCE_TARGETS } from '../utils/bridge-performance';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
-import { Environment } from '../utils/webview/webview-bridge';
+import { Environment } from '../utils/webview-bridge';
 
 export interface TestResult {
   success: boolean;

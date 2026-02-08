@@ -118,7 +118,7 @@ export const bridgeLogger = new SimpleDevLogger();
 export const performanceLogger = new SimpleDevLogger();
 
 // Factory function to create loggers with specific contexts
-export const createLogger = (context: string): DevLogger => {
+export const createLogger = (_context: string): DevLogger => {
   const logger = new SimpleDevLogger();
   // Could add context-specific configuration here if needed
   return logger;

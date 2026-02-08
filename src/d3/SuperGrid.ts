@@ -444,9 +444,11 @@ export class SuperGrid {
         y: update.y
       }));
 
-      const result = this.database.updateCardPositions(positions);
-      if (!result.success) {
-        console.error('Batch position update failed:', result.errors);
+      if (this.database) {
+        const result = (this.database as any).updateCardPositions(positions);
+        if (result && !result.success) {
+          console.error('Batch position update failed:', result.errors);
+        }
       }
 
       // Also trigger onCardUpdate for each successfully updated card
@@ -663,23 +665,23 @@ export class SuperGrid {
       return;
     }
 
-    superGridLogger.render('Setting up grid structure...');
+    superGridLogger.render('Setting up grid structure', {});
     this.setupGridStructure();
 
-    superGridLogger.render('Rendering hierarchical headers...');
+    superGridLogger.render('Rendering hierarchical headers', {});
     this.renderHierarchicalHeaders(activeFilters);
 
-    superGridLogger.render('Rendering cards...');
+    superGridLogger.render('Rendering cards', {});
     this.renderCards();
 
-    superGridLogger.render('Complete');
+    superGridLogger.render('Complete', {});
   }
 
   /**
    * Render card elements with multi-select support
    */
   private renderCards(): void {
-    superGridLogger.render('Starting card rendering...');
+    superGridLogger.render('Starting card rendering', {});
 
     if (!this.currentData) {
       console.warn('⚠️ SuperGrid.renderCards(): No current data');
@@ -707,7 +709,7 @@ export class SuperGrid {
     superGridLogger.data('Card groups prepared', cardGroups.length);
 
     // Data binding with D3.js join pattern
-    superGridLogger.render('Binding data to DOM...');
+    superGridLogger.render('Binding data to DOM', {});
     const joined = this.container.selectAll<SVGGElement, any>('.card-group')
       .data(cardGroups, (d: any) => d.id);
 
@@ -837,7 +839,7 @@ export class SuperGrid {
    * Set up grid structure with header groups
    */
   private setupGridStructure(): void {
-    superGridLogger.setup('Setting up grid structure...');
+    superGridLogger.setup('Setting up grid structure', {});
 
     // Remove existing grid structure to avoid duplicates
     this.container.select('.grid-structure').remove();
@@ -845,7 +847,7 @@ export class SuperGrid {
     const gridStructure = this.container.append('g')
       .attr('class', 'grid-structure');
 
-    superGridLogger.setup('Grid structure created');
+    superGridLogger.setup('Grid structure created', {});
 
     // Create header containers
     gridStructure.append('g')
@@ -862,7 +864,7 @@ export class SuperGrid {
    */
   private renderHierarchicalHeaders(_activeFilters: any[] = []): void {
     if (!this.config.enableHeaders || !this.currentData?.cards.length) {
-      superGridLogger.render('Headers disabled or no data');
+      superGridLogger.render('Headers disabled or no data', {});
       return;
     }
 
@@ -878,7 +880,7 @@ export class SuperGrid {
         totalWidth
       );
 
-      superGridLogger.render('Hierarchical headers rendered');
+      superGridLogger.render('Hierarchical headers rendered', {});
 
     } catch (error) {
       console.error('❌ SuperGrid.renderHierarchicalHeaders(): Error:', error);

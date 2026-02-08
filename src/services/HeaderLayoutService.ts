@@ -304,7 +304,7 @@ export class HeaderLayoutService {
    * Find semantic grouping patterns in hierarchy levels
    */
   public findSemanticLevelGroups(hierarchy: HeaderHierarchy): any[] {
-    const groups = [];
+    const groups: any[] = [];
     const facetsByLevel = this.groupFacetsByLevel(hierarchy);
 
     // Common semantic patterns
@@ -359,7 +359,7 @@ export class HeaderLayoutService {
    * Create data density-based groups as fallback
    */
   public createDataDensityGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): any[] {
-    const groups = [];
+    const groups: any[] = [];
     const nodeCountsByLevel = this.getNodeCountsByLevel(hierarchy);
     const levels = Object.keys(nodeCountsByLevel).map(Number).sort((a, b) => a - b);
 

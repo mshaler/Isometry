@@ -6,7 +6,7 @@ import {
   getSecureAPIEndpoint,
   getSecurityHeaders,
   validateSecurityConfig
-} from '../config/security';
+} from '../../config/security';
 
 interface ProcessEnv {
   ANTHROPIC_API_KEY?: string;

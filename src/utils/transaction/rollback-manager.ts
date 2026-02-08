@@ -106,9 +106,13 @@ export class RollbackManager {
       void _startTime; // Explicitly mark as preserved
 
       const bridge = getWebViewBridge();
-      const result = await bridge.sendMessage('transaction', 'rollback', {
-        transactionId: correlationId,
-        preserveDrafts,
+      const result = await bridge.sendMessage({
+        type: 'transaction',
+        action: 'rollback',
+        data: {
+          transactionId: correlationId,
+          preserveDrafts,
+        }
       }) as RollbackResult;
 
       // Convert duration from seconds to milliseconds for consistency
@@ -193,8 +197,12 @@ export class RollbackManager {
 
     try {
       const bridge = getWebViewBridge();
-      const result = await bridge.sendMessage('transaction', 'recoverFromDrafts', {
-        draftIds,
+      const result = await bridge.sendMessage({
+        type: 'transaction',
+        action: 'recoverFromDrafts',
+        data: {
+          draftIds,
+        }
       }) as RecoveryResult;
 
       // Remove recovered drafts from local tracking
@@ -254,7 +262,11 @@ export class RollbackManager {
   public async removeDraft(draftId: string): Promise<void> {
     try {
       const bridge = getWebViewBridge();
-      await bridge.sendMessage('transaction', 'removeDraft', { draftId });
+      await bridge.sendMessage({
+        type: 'transaction',
+        action: 'removeDraft',
+        data: { draftId }
+      });
 
       this.availableDrafts.delete(draftId);
     } catch (error) {
@@ -287,7 +299,11 @@ export class RollbackManager {
   private async loadAvailableDrafts(): Promise<void> {
     try {
       const bridge = getWebViewBridge();
-      const drafts = await bridge.sendMessage('transaction', 'getAvailableDrafts', {}) as DraftInfo[];
+      const drafts = await bridge.sendMessage({
+        type: 'transaction',
+        action: 'getAvailableDrafts',
+        data: {}
+      }) as DraftInfo[];
 
       // Update local cache
       this.availableDrafts.clear();
@@ -349,7 +365,11 @@ export class RollbackManager {
   public async getRollbackMetrics(): Promise<Record<string, number>> {
     try {
       const bridge = getWebViewBridge();
-      return await bridge.sendMessage('transaction', 'getRollbackMetrics', {}) as Record<string, number>;
+      return await bridge.sendMessage({
+        type: 'transaction',
+        action: 'getRollbackMetrics',
+        data: {}
+      }) as Record<string, number>;
     } catch (error) {
       console.error('Failed to get rollback metrics:', error);
       return {};

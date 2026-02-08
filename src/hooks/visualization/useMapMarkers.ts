@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDatabase } from '../db/DatabaseContext';
+import { useDatabase } from '../../db/DatabaseContext';
 
 export interface MapMarker {
   id: string;
@@ -50,12 +50,15 @@ export function useMapMarkers(): {
           return;
         }
 
-        const markerData: MapMarker[] = result.map((row: Record<string, unknown>) => ({
-          id: String(row.id),
-          title: String(row.name),
-          lat: Number(row.latitude),
-          lng: Number(row.longitude),
-        }));
+        const markerData: MapMarker[] = result.map((row: unknown) => {
+          const record = row as Record<string, unknown>;
+          return {
+            id: String(record.id),
+            title: String(record.name),
+            lat: Number(record.latitude),
+            lng: Number(record.longitude),
+          };
+        });
 
         setMarkers(markerData);
         setError(null);

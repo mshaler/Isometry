@@ -3,7 +3,7 @@ import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
 import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
-import { useURLState } from '../hooks/useURLState';
+import { useURLState } from '../hooks/ui/useURLState';
 import { PAFVContext, type PAFVContextValue } from '../hooks/data/usePAFV';
 // Bridge eliminated in v4 - sql.js direct access
 // import { pafvBridge } from '../utils/pafv-bridge';

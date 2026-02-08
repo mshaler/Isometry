@@ -296,7 +296,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     options: '["work", "personal", "research", "projects"]',
     icon: 'folder',
     color: '#4F46E5',
-    enabled: 1,
+    enabled: true,
     sort_order: 1,
   },
   {
@@ -308,7 +308,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     options: '["active", "in_progress", "completed", "blocked", "cancelled"]',
     icon: 'status',
     color: '#10B981',
-    enabled: 1,
+    enabled: true,
     sort_order: 2,
   },
   {
@@ -320,7 +320,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     options: '{"min": 1, "max": 5, "step": 1}',
     icon: 'priority',
     color: '#F59E0B',
-    enabled: 1,
+    enabled: true,
     sort_order: 3,
   },
   {
@@ -332,7 +332,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     options: '{"format": "YYYY-MM-DD"}',
     icon: 'calendar',
     color: '#8B5CF6',
-    enabled: 1,
+    enabled: true,
     sort_order: 4,
   },
   {
@@ -344,7 +344,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     options: '{"map_enabled": true}',
     icon: 'map-pin',
     color: '#EF4444',
-    enabled: 1,
+    enabled: true,
     sort_order: 5,
   },
 ];
@@ -454,19 +454,19 @@ export async function loadTestFixtures(db: Database, options: {
 
       for (const node of TEST_NODES) {
         stmt.run([
-          node.id,
-          node.name,
-          node.content,
-          node.summary,
-          node.folder,
-          node.tags,
-          node.status,
-          node.priority,
-          node.importance,
-          node.grid_x,
-          node.grid_y,
-          node.created_at,
-          node.modified_at,
+          node.id || '',
+          node.name || '',
+          node.content || '',
+          node.summary || '',
+          node.folder || '',
+          node.tags || '',
+          node.status || '',
+          node.priority || 0,
+          node.importance || 0,
+          node.grid_x || 0,
+          node.grid_y || 0,
+          node.created_at || new Date().toISOString(),
+          node.modified_at || new Date().toISOString(),
           node.completed_at || null,
           node.due_at || null,
           node.location_name || null,
@@ -487,13 +487,13 @@ export async function loadTestFixtures(db: Database, options: {
 
       for (const edge of TEST_EDGES) {
         stmt.run([
-          edge.id,
-          edge.edge_type,
-          edge.source_id,
-          edge.target_id,
-          edge.label,
-          edge.weight,
-          edge.directed,
+          edge.id || '',
+          edge.edge_type || 'LINK',
+          edge.source_id || '',
+          edge.target_id || '',
+          edge.label || '',
+          edge.weight || 1,
+          edge.directed ? 1 : 0,
           edge.sequence_order || null,
         ]);
       }
@@ -510,16 +510,16 @@ export async function loadTestFixtures(db: Database, options: {
 
       for (const facet of TEST_FACETS) {
         stmt.run([
-          facet.id,
-          facet.name,
-          facet.facet_type,
-          facet.axis,
-          facet.source_column,
-          facet.options,
-          facet.icon,
-          facet.color,
-          facet.enabled,
-          facet.sort_order,
+          facet.id || '',
+          facet.name || '',
+          facet.facet_type || 'text',
+          facet.axis || 'C',
+          facet.source_column || '',
+          facet.options || null,
+          facet.icon || null,
+          facet.color || null,
+          facet.enabled ? 1 : 0,
+          facet.sort_order || 0,
         ]);
       }
       stmt.free();
@@ -535,11 +535,11 @@ export async function loadTestFixtures(db: Database, options: {
 
       for (const card of TEST_NOTEBOOK_CARDS) {
         stmt.run([
-          card.id,
-          card.node_id,
-          card.card_type,
-          card.markdown_content,
-          card.properties,
+          card.id || '',
+          card.node_id || '',
+          card.card_type || 'capture',
+          card.markdown_content || '',
+          card.properties || '{}',
         ]);
       }
       stmt.free();
@@ -648,8 +648,8 @@ export async function loadTestScenario(
 
       for (const node of scenarioData.nodes) {
         stmt.run([
-          node.id, node.name, node.content, node.summary, node.folder,
-          node.tags, node.status, node.priority, node.created_at
+          node.id || '', node.name || '', node.content || '', node.summary || '', node.folder || '',
+          node.tags || '', node.status || '', node.priority || 0, node.created_at || new Date().toISOString()
         ]);
       }
       stmt.free();
@@ -663,8 +663,8 @@ export async function loadTestScenario(
 
       for (const edge of scenarioData.edges) {
         stmt.run([
-          edge.id, edge.edge_type, edge.source_id, edge.target_id,
-          edge.label, edge.weight, edge.directed
+          edge.id || '', edge.edge_type || 'LINK', edge.source_id || '', edge.target_id || '',
+          edge.label || '', edge.weight || 1, edge.directed ? 1 : 0
         ]);
       }
       stmt.free();

@@ -22,7 +22,6 @@ import type {
   JanusDensityState,
   DensityAggregationResult,
   DensityAggregatedRow,
-  DensityChangeEvent,
   RegionDensityConfig
 } from '@/types/supergrid';
 
@@ -68,21 +67,21 @@ export interface DensityVisualState {
  * SuperDensityRenderer - D3.js density visualization engine
  */
 export class SuperDensityRenderer {
-  private svg: d3.Selection<SVGSVGElement, unknown, null, undefined>;
-  private container: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private gridGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private overlayGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private tooltipDiv: d3.Selection<HTMLDivElement, unknown, null, undefined>;
+  private svg!: d3.Selection<SVGSVGElement, unknown, null, undefined>;
+  private container!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private gridGroup!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private overlayGroup!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private tooltipDiv!: d3.Selection<HTMLDivElement, unknown, null, undefined>;
 
   private currentData: DensityAggregatedRow[] = [];
   private currentState: JanusDensityState;
   private visualState: DensityVisualState;
   private config: DensityRenderConfig;
 
-  private xScale: d3.ScaleLinear<number, number>;
-  private yScale: d3.ScaleLinear<number, number>;
-  private colorScale: d3.ScaleOrdinal<string, string>;
-  private sizeScale: d3.ScaleLinear<number, number>;
+  private xScale!: d3.ScaleLinear<number, number>;
+  private yScale!: d3.ScaleLinear<number, number>;
+  private colorScale!: d3.ScaleOrdinal<string, string>;
+  private sizeScale!: d3.ScaleLinear<number, number>;
 
   constructor(
     containerElement: HTMLElement,
@@ -357,8 +356,8 @@ export class SuperDensityRenderer {
       .duration(this.config.transitionDuration)
       .attr('x', (_, i) => this.xScale(i % Math.ceil(Math.sqrt(this.currentData.length))))
       .attr('y', (_, i) => this.yScale(Math.floor(i / Math.ceil(Math.sqrt(this.currentData.length)))))
-      .attr('width', this.config.cellWidth * this.getSizeMultiplier)
-      .attr('height', this.config.cellHeight * this.getSizeMultiplier)
+      .attr('width', d => this.config.cellWidth * this.getSizeMultiplier(d))
+      .attr('height', d => this.config.cellHeight * this.getSizeMultiplier(d))
       .style('fill', d => this.colorScale(this.getColorValue(d)));
 
     // Exit transition
@@ -466,8 +465,8 @@ export class SuperDensityRenderer {
       .duration(this.config.transitionDuration)
       .attr('x', (_, i) => this.xScale(i % Math.ceil(Math.sqrt(data.length))))
       .attr('y', (_, i) => this.yScale(Math.floor(i / Math.ceil(Math.sqrt(data.length)))))
-      .attr('width', this.config.cellWidth * this.getSizeMultiplier)
-      .attr('height', this.config.cellHeight * this.getSizeMultiplier)
+      .attr('width', d => this.config.cellWidth * this.getSizeMultiplier(d))
+      .attr('height', d => this.config.cellHeight * this.getSizeMultiplier(d))
       .style('fill', d => this.colorScale(this.getColorValue(d)));
 
     cellSelection

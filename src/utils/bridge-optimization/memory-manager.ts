@@ -28,7 +28,7 @@ class MemoryManagerStub {
   /**
    * Add memory pressure callback (stub - no-op)
    */
-  addMemoryPressureCallback(callback: MemoryPressureCallback): void {
+  addMemoryPressureCallback(_callback: MemoryPressureCallback): void {
     // No-op: Bridge eliminated, no memory pressure monitoring needed
     console.log('[MemoryManager] Bridge eliminated - memory pressure callback ignored');
   }
@@ -36,7 +36,7 @@ class MemoryManagerStub {
   /**
    * Register bridge callback (stub - no-op)
    */
-  registerBridgeCallback(callback: BridgeCallback): void {
+  registerBridgeCallback(_callback: BridgeCallback): void {
     // No-op: Bridge eliminated, no callbacks to register
     console.log('[MemoryManager] Bridge eliminated - callback registration ignored');
   }

@@ -6,14 +6,11 @@ import type {
   GridCell,
   GridPosition,
   AxisData,
-  AxisRange,
   ProgressiveDisclosureConfig,
   ProgressiveDisclosureState,
-  LevelGroup,
-  LevelPickerTab,
-  ZoomControlState,
-  DEFAULT_PROGRESSIVE_CONFIG
+  LevelGroup
 } from '../types/supergrid';
+import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
 
 /**
  * SuperGrid v4 - Bridge-Free Implementation
@@ -44,14 +41,14 @@ export class SuperGridV4 {
 
   // Core state
   private currentData: GridData | null = null;
-  private progressiveState: ProgressiveDisclosureState;
+  private progressiveState!: ProgressiveDisclosureState;
   private callbacks: SuperGridCallbacks = {};
 
   // D3 selections for performance
-  private gridGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private headerGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private cellsGroup: d3.Selection<SVGGElement, unknown, null, undefined>;
-  private zoomBehavior: d3.ZoomBehavior<SVGElement, unknown>;
+  private gridGroup!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private headerGroup!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private cellsGroup!: d3.Selection<SVGGElement, unknown, null, undefined>;
+  private zoomBehavior!: d3.ZoomBehavior<SVGElement, unknown>;
 
   // Performance tracking
   private renderStartTime = 0;
@@ -188,22 +185,20 @@ export class SuperGridV4 {
       const cardNames = row[colIndices.cardNames]?.split('|') || [];
 
       return {
-        id: `${row[colIndices.x]}-${row[colIndices.y]}`,
-        x: row[colIndices.x],
-        y: row[colIndices.y],
-        value: row[colIndices.count],
+        position: { x: row[colIndices.x], y: row[colIndices.y] },
+        value: row[colIndices.count] || 0,
+        nodeId: parseInt(cardIds[0]) || 0,
+        colPath: `${xField}/${row[colIndices.x]}`,
+        rowPath: `${yField}/${row[colIndices.y]}`,
         cards: cardIds.map((id: string, i: number) => ({
           id: id.trim(),
           name: cardNames[i]?.trim() || `Card ${id}`,
           priority: row[colIndices.avgPriority] || 1,
           status: row[colIndices.status] || 'active'
         })),
-        metadata: {
-          avgPriority: row[colIndices.avgPriority],
-          status: row[colIndices.status],
-          cardCount: row[colIndices.count]
-        }
-      };
+        x: row[colIndices.x],
+        y: row[colIndices.y]
+      } as GridCell;
     });
 
     // Build axis ranges
@@ -211,41 +206,46 @@ export class SuperGridV4 {
     const yValues = [...new Set(values.map((row: any) => row[colIndices.y]))].sort();
 
     const xAxisData: AxisData = {
-      field: xField,
+      label: xField,
+      accessor: xField,
       values: xValues,
-      type: 'categorical', // Could be enhanced to detect numeric/date types
-      range: { min: 0, max: xValues.length - 1 }
+      type: 'x',
+      range: { min: 0, max: xValues.length - 1, count: xValues.length }
     };
 
     const yAxisData: AxisData = {
-      field: yField,
+      label: yField,
+      accessor: yField,
       values: yValues,
-      type: 'categorical',
-      range: { min: 0, max: yValues.length - 1 }
+      type: 'y',
+      range: { min: 0, max: yValues.length - 1, count: yValues.length }
     };
 
     return {
-      cells,
+      rows: [cells] as any,
+      columns: xAxisData,
+      rowAxis: yAxisData,
       xAxis: xAxisData,
       yAxis: yAxisData,
+      cells: cells,
       metadata: {
         totalCells: cells.length,
-        totalCards: cells.reduce((sum, cell) => sum + cell.cards.length, 0),
-        queryTime: performance.now() - this.renderStartTime
+        filledCells: cells.filter(cell => cell.cards.length > 0).length,
+        density: cells.filter(cell => cell.cards.length > 0).length / cells.length
       }
     };
   }
 
   private analyzeHierarchy(gridData: GridData): void {
     // Detect natural hierarchy levels in the data
-    const xValueDepth = this.calculateHierarchyDepth(gridData.xAxis.values);
-    const yValueDepth = this.calculateHierarchyDepth(gridData.yAxis.values);
+    const xValueDepth = this.calculateHierarchyDepth(gridData.xAxis?.values as any || []);
+    const yValueDepth = this.calculateHierarchyDepth(gridData.yAxis?.values as any || []);
 
     // Create level groups based on data patterns
     const levelGroups: LevelGroup[] = [];
 
     // Time-based semantic grouping
-    if (this.isTimeAxis(gridData.xAxis.field) || this.isTimeAxis(gridData.yAxis.field)) {
+    if (this.isTimeAxis((gridData.xAxis as any)?.field || '') || this.isTimeAxis((gridData.yAxis as any)?.field || '')) {
       levelGroups.push({
         id: 'time-overview',
         name: 'Time Overview',
@@ -267,7 +267,7 @@ export class SuperGridV4 {
     }
 
     // Density-based grouping
-    const totalNodes = gridData.cells.length;
+    const totalNodes = gridData.cells?.length || 0;
     if (totalNodes > 50) {
       levelGroups.push({
         id: 'dense-overview',
@@ -323,11 +323,16 @@ export class SuperGridV4 {
   private render(): void {
     if (!this.currentData) return;
 
-    console.log('[SuperGrid] Rendering', this.currentData.cells.length, 'cells');
+    console.log('[SuperGrid] Rendering', this.currentData.cells?.length || 0, 'cells');
 
     // Calculate layout dimensions
     const { cellWidth, cellHeight, headerWidth, headerHeight } = this.config;
     const { xAxis, yAxis, cells } = this.currentData;
+
+    if (!xAxis || !yAxis || !cells) {
+      console.warn('[SuperGrid] Missing required data for rendering');
+      return;
+    }
 
     // Render headers
     this.renderHeaders(xAxis, yAxis);
@@ -335,16 +340,20 @@ export class SuperGridV4 {
     // Render cells with proper data binding
     const cellGroups = this.cellsGroup
       .selectAll<SVGGElement, GridCell>('.cell')
-      .data(cells, d => d.id); // Key function for proper data binding
+      .data(cells || [], (d: any) => d.id); // Key function for proper data binding
 
     // Enter + Update pattern
     const cellEnter = cellGroups
       .enter()
       .append('g')
       .attr('class', 'cell')
-      .attr('transform', d => {
-        const x = xAxis.values.indexOf(d.x) * cellWidth + headerWidth;
-        const y = yAxis.values.indexOf(d.y) * cellHeight + headerHeight;
+      .attr('transform', (d: any) => {
+        const xAxisData = Array.isArray(xAxis) ? xAxis[0] : xAxis;
+        const yAxisData = Array.isArray(yAxis) ? yAxis[0] : yAxis;
+        const xValues = xAxisData?.values || [];
+        const yValues = yAxisData?.values || [];
+        const x = xValues.indexOf(d.x) * cellWidth + headerWidth;
+        const y = yValues.indexOf(d.y) * cellHeight + headerHeight;
         return `translate(${x}, ${y})`;
       });
 
@@ -390,16 +399,20 @@ export class SuperGridV4 {
     console.log('[SuperGrid] Render complete:', renderTime.toFixed(2), 'ms');
   }
 
-  private renderHeaders(xAxis: AxisData, yAxis: AxisData): void {
+  private renderHeaders(xAxis: AxisData | AxisData[] | undefined, yAxis: AxisData | AxisData[] | undefined): void {
+    if (!xAxis || !yAxis) return;
     const { cellWidth, cellHeight, headerWidth, headerHeight } = this.config;
 
     // Clear existing headers
     this.headerGroup.selectAll('*').remove();
 
     // X-axis headers
+    const xAxisData = Array.isArray(xAxis) ? xAxis[0] : xAxis;
+    const yAxisData = Array.isArray(yAxis) ? yAxis[0] : yAxis;
+
     const xHeaders = this.headerGroup
       .selectAll('.x-header')
-      .data(xAxis.values)
+      .data(xAxisData?.values || [])
       .join('g')
       .attr('class', 'x-header')
       .attr('transform', (_, i) => `translate(${i * cellWidth + headerWidth}, 0)`);
@@ -424,7 +437,7 @@ export class SuperGridV4 {
     // Y-axis headers
     const yHeaders = this.headerGroup
       .selectAll('.y-header')
-      .data(yAxis.values)
+      .data(yAxisData?.values || [])
       .join('g')
       .attr('class', 'y-header')
       .attr('transform', (_, i) => `translate(0, ${i * cellHeight + headerHeight})`);
@@ -461,19 +474,27 @@ export class SuperGridV4 {
   private setupCellInteractivity(): void {
     this.cellsGroup
       .selectAll('.cell')
-      .on('click', (_, d: GridCell) => {
+      .on('click', (_event: any, d: any) => {
+        const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
+        const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
+        const xValues = xAxisData?.values || [];
+        const yValues = yAxisData?.values || [];
         const position: GridPosition = {
-          x: this.currentData!.xAxis.values.indexOf(d.x),
-          y: this.currentData!.yAxis.values.indexOf(d.y)
+          x: xValues.indexOf(d.x),
+          y: yValues.indexOf(d.y)
         };
-        this.callbacks.onCellClick?.(d, position);
+        this.callbacks.onCellClick?.(d as GridCell, position);
       })
-      .on('mouseenter', (_, d: GridCell) => {
+      .on('mouseenter', (_event: any, d: any) => {
+        const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
+        const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
+        const xValues = xAxisData?.values || [];
+        const yValues = yAxisData?.values || [];
         const position: GridPosition = {
-          x: this.currentData!.xAxis.values.indexOf(d.x),
-          y: this.currentData!.yAxis.values.indexOf(d.y)
+          x: xValues.indexOf(d.x),
+          y: yValues.indexOf(d.y)
         };
-        this.callbacks.onCellHover?.(d, position);
+        this.callbacks.onCellHover?.(d as GridCell, position);
       })
       .on('mouseleave', () => {
         this.callbacks.onCellHover?.(null, null);

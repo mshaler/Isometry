@@ -5,9 +5,9 @@ import type { Database } from 'sql.js-fts5';
 import type {
   GridConfig,
   ProgressiveDisclosureConfig,
-  LevelGroup,
-  DEFAULT_PROGRESSIVE_CONFIG
+  LevelGroup
 } from '../types/supergrid';
+import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
 
 interface SuperGridV4DemoProps {
   database?: Database;
@@ -63,8 +63,8 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 
       const svg = d3.select(svgRef.current);
 
-      // Create SuperGrid instance
-      const grid = new SuperGridV4(svg, database, gridConfig, progressiveConfig);
+      // Create SuperGrid instance - cast SVGSVGElement to SVGElement for compatibility
+      const grid = new SuperGridV4(svg as any, database, gridConfig, progressiveConfig);
 
       // Set up callbacks
       grid.setCallbacks({

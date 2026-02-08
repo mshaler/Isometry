@@ -13,7 +13,7 @@ import {
   getViewStateStorageKey
 } from '../types/views';
 import type { Node } from '../types/node';
-import { d3Logger } from '../utils/logging/dev-logger';
+import { devLogger as d3Logger } from '../utils/logging/dev-logger';
 
 // Re-export CardPosition for external use
 export type { CardPosition };
@@ -161,7 +161,7 @@ export class ViewContinuum {
 
     const fromView = this.viewState.currentView;
     if (fromView === targetView) {
-      d3Logger.info('Already on target view', targetView);
+      d3Logger.info('Already on target view', { view: targetView } as any);
       return;
     }
 
@@ -624,9 +624,9 @@ export class ViewContinuum {
       this.activeRenderer = currentRenderer;
       this.restoreViewState();
 
-      d3Logger.setup('Active view initialized', this.viewState.currentView);
+      d3Logger.setup('Active view initialized', { view: this.viewState.currentView } as any);
     } else {
-      d3Logger.info('No renderer available for current view', this.viewState.currentView);
+      d3Logger.info('No renderer available for current view', { view: this.viewState.currentView } as any);
     }
   }
 

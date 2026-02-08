@@ -53,6 +53,44 @@ export interface AxisRange {
 }
 
 /**
+ * Position within the grid with optional metadata
+ */
+export interface GridPosition {
+  x: number;
+  y: number;
+  cell?: GridCell;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Data structure for axis information
+ */
+export interface AxisData {
+  range: AxisRange;
+  label: string;
+  type: 'x' | 'y' | 'z';
+  values: any[];
+  accessor: string;
+}
+
+/**
+ * Complete grid data structure
+ */
+export interface GridData {
+  rows: GridCell[][];
+  columns: AxisData;
+  rowAxis: AxisData;
+  xAxis?: AxisData[] | AxisData;
+  yAxis?: AxisData[] | AxisData;
+  cells?: GridCell[];
+  metadata: {
+    totalCells: number;
+    filledCells: number;
+    density: number;
+  };
+}
+
+/**
  * Data for a single grid cell to be rendered.
  *
  * @property position - Logical coordinates (x, y)
@@ -461,6 +499,19 @@ export interface JanusDensityState {
 
   /** Lossless aggregation preferences */
   aggregationPreferences: AggregationPreferences;
+
+  // Legacy compatibility properties (mapped to new structure above)
+  /** @deprecated Use extentDensity instead */
+  extentMode?: ExtentDensityMode;
+
+  /** @deprecated Use valueDensity instead */
+  valueMode?: ValueDensityMode;
+
+  /** Current zoom level */
+  zoomLevel?: number;
+
+  /** Pan offset coordinates */
+  panOffset?: { x: number; y: number };
 }
 
 /**

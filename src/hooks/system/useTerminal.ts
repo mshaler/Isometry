@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { useTerminalContext } from '../context/TerminalContext';
+import { useTerminalContext } from '../../context/TerminalContext';
 
 interface UseTerminalOptions {
   workingDirectory?: string;

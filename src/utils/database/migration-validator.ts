@@ -488,9 +488,9 @@ export class MigrationValidator {
       checks.push({
         check: 'app-sandbox',
         category: 'security',
-        passed: Environment.isWebView(),
-        message: Environment.isWebView() ? 'App Sandbox compliant' : 'Not in App Sandbox environment',
-        severity: Environment.isWebView() ? 'info' : 'warning',
+        passed: Boolean(Environment.isWebView),
+        message: Environment.isWebView ? 'App Sandbox compliant' : 'Not in App Sandbox environment',
+        severity: Environment.isWebView ? 'info' : 'warning',
         remediation: 'Ensure WebView bridge operates within App Sandbox constraints'
       });
 

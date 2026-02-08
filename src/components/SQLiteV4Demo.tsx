@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SQLiteProvider, useSQLite } from '../db/SQLiteProvider';
-import { contextLogger } from '../utils/logging/dev-logger';
+import { contextLogger } from '../utils/dev-logger';
 import { useNodesV4, useFTS5SearchV4, useGraphTraversalV4 } from '../hooks/database/useSQLiteQuery.v4';
 import type { Node } from '../types/node';
 

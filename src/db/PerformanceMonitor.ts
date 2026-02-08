@@ -141,6 +141,87 @@ export class PerformanceMonitor {
   }
 
   /**
+   * Start performance data collection
+   */
+  startCollection(): void {
+    this.enabled = true;
+  }
+
+  /**
+   * Stop performance data collection
+   */
+  stopCollection(): void {
+    this.enabled = false;
+  }
+
+  /**
+   * Track virtual scrolling frame performance
+   */
+  trackVirtualScrollingFrame(frameData: {
+    visibleCount: number;
+    totalCount: number;
+    renderTime: number;
+  }): void {
+    if (!this.enabled) return;
+
+    this.logMetric({
+      operation: 'virtual-scrolling-frame',
+      method: 'optimized',
+      duration: frameData.renderTime,
+      timestamp: Date.now(),
+      rowCount: frameData.visibleCount,
+      success: true,
+      metadata: { totalCount: frameData.totalCount, visibleCount: frameData.visibleCount }
+    });
+  }
+
+  /**
+   * Track update latency
+   */
+  trackUpdateLatency(operation: string, latency: number): void {
+    if (!this.enabled) return;
+
+    this.logMetric({
+      operation: `update-${operation}`,
+      method: 'optimized',
+      duration: latency,
+      timestamp: Date.now(),
+      success: true
+    });
+  }
+
+  /**
+   * Track cache efficiency metrics
+   */
+  trackCacheEfficiency(operation: string, hitRatio: number): void {
+    if (!this.enabled) return;
+
+    this.logMetric({
+      operation: `cache-${operation}`,
+      method: 'optimized',
+      duration: 0, // No duration for cache metrics
+      timestamp: Date.now(),
+      success: true,
+      metadata: { hitRatio }
+    });
+  }
+
+  /**
+   * Track suggestion latency (for SimplePerformanceMonitor compatibility)
+   */
+  trackSuggestionLatency?(operation: string, latency: number): void {
+    if (!this.enabled) return;
+
+    this.logMetric({
+      operation: `suggestion-${operation}`,
+      method: 'optimized',
+      duration: latency,
+      timestamp: Date.now(),
+      success: true
+    });
+  }
+
+  /**
    * Get comprehensive performance report
    */
   getPerformanceReport(): PerformanceReport {

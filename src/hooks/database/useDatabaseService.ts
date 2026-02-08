@@ -1,5 +1,4 @@
 import { useSQLite } from '../../db/SQLiteProvider';
-import type { Database } from 'sql.js-fts5';
 
 /**
  * Unified Database Access Hook

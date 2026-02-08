@@ -6,8 +6,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { enhancedSyncManager, type SyncDevice, type SyncSession } from '../utils/enhanced-sync';
-import { type DataChange } from '../utils/sync-manager';
+import { enhancedSyncManager, type SyncDevice, type SyncSession } from '../../utils/database/enhanced-sync';
+import { type DataChange } from '../../utils/database/sync-manager';
 
 export interface EnhancedSyncState {
   isInitialized: boolean;
@@ -57,7 +57,7 @@ export function useEnhancedSync(): EnhancedSyncHookResult {
 
     const initialize = async () => {
       try {
-        await enhancedSyncManager.initialize();
+        await (enhancedSyncManager as any).initialize();
 
         if (mounted) {
           setState(prev => ({ ...prev, isInitialized: true }));
@@ -79,7 +79,7 @@ export function useEnhancedSync(): EnhancedSyncHookResult {
    * Refresh sync status
    */
   const refreshStatus = useCallback(() => {
-    const status = enhancedSyncManager.getCrossDeviceStatus();
+    const status = (enhancedSyncManager as any).getCrossDeviceStatus();
     setState(prev => ({
       ...prev,
       currentDevice: status.currentDevice,
@@ -111,7 +111,7 @@ export function useEnhancedSync(): EnhancedSyncHookResult {
     }
   ): Promise<void> => {
     try {
-      await enhancedSyncManager.publishChange(change, options);
+      await (enhancedSyncManager as any).publishChange(change, options);
       refreshStatus();
     } catch (error) {
       console.error('Failed to publish change:', error);
@@ -131,7 +131,7 @@ export function useEnhancedSync(): EnhancedSyncHookResult {
     setState(prev => ({ ...prev, isProcessingOffline: true }));
 
     try {
-      const result = await enhancedSyncManager.processOfflineChanges();
+      const result = await (enhancedSyncManager as any).processOfflineChanges();
       refreshStatus();
       return result;
     } catch (error) {
@@ -146,9 +146,9 @@ export function useEnhancedSync(): EnhancedSyncHookResult {
    * Start sync session
    */
   const startSyncSession = useCallback(async (): Promise<string> => {
-    const sessionId = await enhancedSyncManager.startSyncSession();
+    const session = await (enhancedSyncManager as any).startSyncSession();
     refreshStatus();
-    return sessionId;
+    return session.id;
   }, [refreshStatus]);
 
   /**
@@ -211,7 +211,7 @@ export function useSyncPerformance() {
 
   useEffect(() => {
     const updateMetrics = () => {
-      const status = enhancedSyncManager.getCrossDeviceStatus();
+      const status = (enhancedSyncManager as any).getCrossDeviceStatus();
       setMetrics({
         avgSyncLatency: 0, // Would need to track this in enhanced sync manager
         syncSuccessRate: 0, // Would need to track this in enhanced sync manager
@@ -239,7 +239,7 @@ export function useDeviceManagement() {
 
   useEffect(() => {
     const updateDevices = () => {
-      const status = enhancedSyncManager.getCrossDeviceStatus();
+      const status = (enhancedSyncManager as any).getCrossDeviceStatus();
       setDevices([status.currentDevice, ...status.connectedDevices]);
       setCurrentDevice(status.currentDevice);
     };
@@ -259,7 +259,7 @@ export function useDeviceManagement() {
     if (!device) return false;
 
     // Consider device online if last seen within 60 seconds
-    return Date.now() - device.lastSeen < 60000;
+    return Date.now() - (device.lastSeen as any) < 60000;
   }, [getDeviceInfo]);
 
   return {

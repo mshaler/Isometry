@@ -10,40 +10,7 @@ import type { Database, SqlJsStatic } from 'sql.js-fts5';
 import { initializeTestSqlJs } from './sqljs-setup';
 
 // Import database schema types (simple interfaces for testing)
-interface TestLPGNode {
-  id: string;
-  name: string;
-  content?: string;
-  folder?: string;
-  status?: string;
-  priority?: number;
-  created_at?: string;
-}
-
-interface TestLPGEdge {
-  id: string;
-  edge_type: string;
-  source_id: string;
-  target_id: string;
-  label?: string;
-  weight?: number;
-}
-
-interface TestLPGFacet {
-  id: string;
-  name: string;
-  facet_type: string;
-  axis: string;
-  source_column: string;
-}
-
-interface TestNotebookCard {
-  id: string;
-  node_id: string;
-  card_type: string;
-  markdown_content?: string;
-  properties?: string;
-}
+// Note: These interfaces are kept for future extensibility but not currently used
 
 /**
  * Test Database Manager

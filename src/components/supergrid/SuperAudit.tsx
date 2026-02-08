@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
-import { Eye, EyeOff, Code, BarChart3 } from 'lucide-react';
+import { Eye, EyeOff, Code } from 'lucide-react';
 import './SuperAudit.css';
 
 export interface CellState {

@@ -52,7 +52,7 @@ interface SyncStatistics {
 export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSettingsProps) {
   const { theme } = useTheme();
   const liveDataContext = useLiveDataContext();
-  const bridgeExecuteQuery = liveDataContext?.executeQuery;
+  const bridgeExecuteQuery = liveDataContext.executeQuery;
 
   // Bridge communication with error handling and timeouts
   const executeQuery = useCallback(async (method: string, params?: unknown): Promise<any> => {

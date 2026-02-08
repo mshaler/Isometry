@@ -15,8 +15,8 @@ import {
   SyncOperationType,
   SyncPriority,
   QueueState
-} from '../services/syncQueue'
-import { useCleanupEffect } from '../utils/memoryManagement'
+} from '../../services/syncQueue'
+import { useCleanupEffect } from '../../utils/memoryManagement'
 // Note: Optimistic updates integration available for future enhancement
 import { useTransaction } from './useTransaction'
 
@@ -138,7 +138,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
     })
 
     return unsubscribe
-  }, [maxQueueSize], 'BackgroundSync:StateListener')
+  }, [maxQueueSize] as any)
 
   /**
    * Handle online/offline status changes
@@ -165,7 +165,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [], 'BackgroundSync:NetworkEvents')
+  }, [] as any)
 
   /**
    * Queue a sync operation

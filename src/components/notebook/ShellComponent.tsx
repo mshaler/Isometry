@@ -66,17 +66,17 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   };
 
   // Handle command routing through terminal
-  const handleTerminalCommand = async (command: string) => {
+  const handleTerminalCommand = async (_command: string) => {
     try {
       // Execute command through router
-      const response = await executeRouterCommand(command);
+      const response = await executeRouterCommand();
 
       // Display response using terminal output methods
       if (response.error) {
         writeOutput(response.error, true);
       } else if (response.output) {
         // Format output for terminal display
-        const formattedOutput = formatTerminalOutput(response.output, response.type);
+        const formattedOutput = formatTerminalOutput(response.output, "system");
         writeOutput(formattedOutput, false);
       }
 

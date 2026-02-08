@@ -1,11 +1,11 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 // Bridge eliminated in v4 - sql.js direct access
-// import { getWebViewBridge } from '../utils/webview/webview-bridge';
+import { getWebViewBridge } from '../../utils/webview-bridge';
 import type {
   ConflictInfo,
   ConflictDiff,
   ResolutionDecision,
-} from '../components/ConflictResolutionModal';
+} from '../../components/ConflictResolutionModal';
 
 /**
  * Result of automatic conflict resolution
@@ -96,7 +96,7 @@ export function useConflictResolution() {
   const loadConflicts = useCallback(async () => {
     try {
       const bridge = bridgeRef.current;
-      const conflictData = await bridge.sendMessage('conflict', 'getPendingConflicts', {}) as ConflictInfo[];
+      const conflictData = await bridge.sendMessage({ type: 'conflict', action: 'getPendingConflicts', data: {} }) as ConflictInfo[];
 
       // Convert date strings to Date objects
       const processedConflicts = conflictData.map(conflict => ({
@@ -128,8 +128,10 @@ export function useConflictResolution() {
 
     try {
       const bridge = bridgeRef.current;
-      const result = await bridge.sendMessage('conflict', 'autoResolve', {
-        conflicts: conflictsToResolve.map(c => c.nodeId),
+      const result = await bridge.sendMessage({
+        type: 'conflict',
+        action: 'autoResolve',
+        data: { conflicts: conflictsToResolve.map(c => c.nodeId) }
       }) as AutoResolutionResult;
 
       // Update local conflicts state
@@ -182,8 +184,10 @@ export function useConflictResolution() {
   const prepareManualResolution = useCallback(async (conflictId: string): Promise<ConflictDiff | null> => {
     try {
       const bridge = bridgeRef.current;
-      const diffData = await bridge.sendMessage('conflict', 'prepareManualResolution', {
-        conflictId,
+      const diffData = await bridge.sendMessage({
+        type: 'conflict',
+        action: 'prepareManualResolution',
+        data: { conflictId }
       }) as ConflictDiff;
 
       setPendingConflictDiff(diffData);
@@ -206,9 +210,13 @@ export function useConflictResolution() {
 
     try {
       const bridge = bridgeRef.current;
-      const result = await bridge.sendMessage('conflict', 'applyResolution', {
-        conflictId,
-        decision,
+      const result = await bridge.sendMessage({
+        type: 'conflict',
+        action: 'applyResolution',
+        data: {
+          conflictId,
+          decision,
+        }
       }) as ConflictResolutionResult;
 
       if (result.success) {

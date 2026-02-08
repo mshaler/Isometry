@@ -105,7 +105,7 @@ export const SuperSearch: React.FC<SuperSearchProps> = ({
       <div className="super-search__input-group">
         {/* Search icon */}
         <div className="super-search__icon">
-          <Search size={16} aria-label="Search" title="Full-text search" />
+          <Search size={16} />
         </div>
 
         {/* Main search input */}

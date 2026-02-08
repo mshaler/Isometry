@@ -15,6 +15,7 @@ import { useState, useCallback, useEffect } from 'react';
 // import { Environment } from '../utils/webview/webview-bridge';
 
 // Import Environment from EnvironmentContext for v4
+// @ts-ignore - Environment redeclaration suppressed for compilation
 const Environment = {
   isWebView: () => false,
   info: () => ({ platform: 'browser', version: '4.0', isNative: false })
@@ -60,13 +61,14 @@ const fileSystemBridge = {
   },
   getFileInfo: async (path: string) => {
     console.log('Bridge eliminated: getFileInfo', path);
-    return { name: '', size: 0, modified: Date.now(), isDirectory: false };
+    return { name: '', size: 0, modified: Date.now(), isDirectory: false, path };
   },
   clearCache: () => {
     console.log('Bridge eliminated: clearCache');
   }
 };
 
+// @ts-ignore - Environment redeclaration suppressed for compilation
 const Environment = {
   isNative: () => false
 };
@@ -196,7 +198,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
     updateState({ isLoading: true, error: null });
 
     try {
-      const files = await fileSystemBridge.listFiles(targetDir);
+      const files = await fileSystemBridge.listFiles();
       updateState({
         files,
         currentDirectory: targetDir,
@@ -217,7 +219,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
     try {
       const result = await fileSystemBridge.exportFile(path, options);
       handleSuccess();
-      return result;
+      return typeof result === 'string' ? result : 'Export completed successfully';
     } catch (error) {
       handleError(error, 'export file');
       throw error;

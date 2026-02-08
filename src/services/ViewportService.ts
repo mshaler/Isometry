@@ -363,11 +363,12 @@ export class ViewportService {
       config.viewportDimensions,
       config.gridDimensions,
       { top: 0, left: 0, right: 0, bottom: 0 },
-      config.elasticBounds || {
+      {
         enabled: true,
         resistance: 0.3,
         bounceStrength: 0.5,
-        resistanceZone: 50
+        resistanceZone: 50,
+        ...config.elasticBounds
       }
     );
   }

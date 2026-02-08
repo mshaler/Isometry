@@ -345,7 +345,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     toggleNotebookMode,
 
     // Integration State and Methods
-    integrationState,
+    integrationState: integrationState as any,
     connectIntegration: async () => {}, // Placeholder - integration is always connected in same app
     disconnectIntegration: async () => {}, // Placeholder - integration is always connected in same app
     syncWithIntegration: integrationState.forceSync,

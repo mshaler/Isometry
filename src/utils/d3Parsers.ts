@@ -7,9 +7,41 @@
 import * as d3 from 'd3';
 
 export interface ParsedData {
+  [key: string]: unknown;
   id: string | number;
   value: unknown;
   type: 'string' | 'number' | 'date' | 'boolean';
+}
+
+export type VisualizationType =
+  | 'bar-chart'
+  | 'line-chart'
+  | 'scatter-plot'
+  | 'histogram'
+  | 'network-graph'
+  | 'pie-chart'
+  | 'area-chart'
+  | 'bar'
+  | 'line'
+  | 'area'
+  | 'scatter'
+  | 'pie'
+  | 'unknown';
+
+export interface VisualizationConfig {
+  type: VisualizationType;
+  axes?: {
+    x?: string;
+    y?: string;
+    color?: string;
+    size?: string;
+  };
+  encoding?: {
+    xType: 'categorical' | 'continuous' | 'temporal';
+    yType: 'categorical' | 'continuous' | 'temporal';
+  };
+  suggestions?: string[];
+  confidence?: number;
 }
 
 export function parseCSVData(csvString: string): ParsedData[] {
@@ -66,16 +98,6 @@ export function detectDataType(value: unknown): 'string' | 'number' | 'date' | '
   return 'string';
 }
 
-export interface VisualizationConfig {
-  type: 'scatter' | 'bar' | 'line' | 'area' | 'pie' | 'histogram' | 'unknown';
-  axes: Record<string, string>;
-  encoding: {
-    xType: 'categorical' | 'continuous' | 'temporal';
-    yType: 'categorical' | 'continuous' | 'temporal';
-  };
-  suggestions: string[];
-  confidence: number;
-}
 
 export interface VisualizationDirective {
   type: string;
@@ -87,13 +109,13 @@ export interface VisualizationDirective {
   size?: string;
 }
 
-export interface ChartDataResult {
+export interface ChartDataResult extends Array<ParsedData> {
   isValid: boolean;
   data: ParsedData[];
   error?: string;
 }
 
-export function parseChartData(content: string): ChartDataResult {
+export function parseChartData(content: string): ParsedData[] {
   try {
     let data: ParsedData[] = [];
 
@@ -110,17 +132,9 @@ export function parseChartData(content: string): ChartDataResult {
       data = parseJSONData(content);
     }
 
-    return {
-      isValid: data.length > 0,
-      data,
-      error: data.length === 0 ? 'No valid data found in content' : undefined
-    };
+    return data;
   } catch (error) {
-    return {
-      isValid: false,
-      data: [],
-      error: error instanceof Error ? error.message : 'Failed to parse data'
-    };
+    return [];
   }
 }
 
@@ -169,7 +183,7 @@ export function extractVisualizationConfig(content: string): VisualizationDirect
   const config = detectVisualizationType(data);
 
   return {
-    type: config.type,
+    type: config.type as string,
     config,
     data
   };

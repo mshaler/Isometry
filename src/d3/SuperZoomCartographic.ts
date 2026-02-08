@@ -22,7 +22,6 @@ import type {
   BoundaryConstraints,
   CartographicVisualFeedback,
   CartographicPerformanceMetrics,
-  ZoomAnchorMode,
   ValueDensityMode,
   ExtentDensityMode
 } from '../types/supergrid';
@@ -34,14 +33,14 @@ export class SuperZoomCartographic implements CartographicControlInterface {
   private callbacks: CartographicCallbacks;
 
   // Current state
-  private currentState: CartographicState;
-  private boundaryConstraints: BoundaryConstraints;
+  private currentState!: CartographicState;
+  private boundaryConstraints!: BoundaryConstraints;
 
   // D3 zoom behavior instance
   private zoomBehavior: d3.ZoomBehavior<SVGElement, unknown> | null = null;
 
   // Performance tracking
-  private performanceMetrics: CartographicPerformanceMetrics;
+  private performanceMetrics!: CartographicPerformanceMetrics;
   private animationStartTime: number = 0;
   private frameCount: number = 0;
 
@@ -50,7 +49,7 @@ export class SuperZoomCartographic implements CartographicControlInterface {
   private isInternalAnimation: boolean = false;
 
   // Visual feedback state
-  private visualFeedback: CartographicVisualFeedback;
+  private visualFeedback!: CartographicVisualFeedback;
 
   constructor(
     container: SVGElement,
@@ -119,7 +118,8 @@ export class SuperZoomCartographic implements CartographicControlInterface {
       totalZoomOperations: 0,
       totalPanOperations: 0,
       boundaryHitsPerSession: 0,
-      animationInterruptRate: 0
+      animationInterruptRate: 0,
+      lastOperationDuration: 0
     };
   }
 

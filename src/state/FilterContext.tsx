@@ -17,9 +17,11 @@ import {
   generatePresetId,
   presetNameExists
 } from '../utils/filter-presets';
-import { useURLState } from '../hooks/useURLState';
+import { useURLState } from '../hooks/ui/useURLState';
 import { serializeFilters, deserializeFilters, validateFilterURLLength } from '../utils/filter-serialization';
-import { useBridgeFilters, isBridgeAvailable } from '../filters/bridge';
+// Bridge functions replaced with local implementations (bridge eliminated)
+const useBridgeFilters = () => null; // Returns null since bridge is eliminated
+const isBridgeAvailable = () => false; // Always false - bridge eliminated
 
 type FilterAction =
   | { type: 'SET_LOCATION'; payload: LocationFilter | null }
@@ -126,15 +128,12 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   const urlUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize bridge filters hook with debounced execution (only when bridge mode is active)
-  const bridgeFilterState = useBridgeFilters(
-    bridgeMode ? activeFilters : { ...EMPTY_FILTERS },
-    300
-  );
+  const bridgeFilterState = useBridgeFilters();
 
-  const bridgeResults = bridgeMode ? bridgeFilterState.filteredNodes : [];
-  const bridgeIsLoading = bridgeMode ? bridgeFilterState.isLoading : false;
-  const bridgeError = bridgeMode ? bridgeFilterState.error : null;
-  const bridgeSequenceId = bridgeMode ? bridgeFilterState.lastSequenceId : null;
+  const bridgeResults = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.filteredNodes || []) : [];
+  const bridgeIsLoading = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.isLoading || false) : false;
+  const bridgeError = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.error || null) : null;
+  const bridgeSequenceId = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.lastSequenceId || null) : null;
 
   // Bridge availability detection and mode management
   useEffect(() => {

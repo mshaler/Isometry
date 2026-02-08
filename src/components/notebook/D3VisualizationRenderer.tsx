@@ -105,29 +105,34 @@ export function D3VisualizationRenderer({
     const renderParams: ChartRendererParams = {
       g,
       data,
-      config,
+      config: config as any,
       dimensions: { innerWidth, innerHeight },
       colors
     };
 
     try {
-      switch (vizType) {
+      switch (vizType as any) {
         case 'bar-chart':
+        case 'bar':
           renderBarChart(renderParams);
           break;
         case 'line-chart':
+        case 'line':
           renderLineChart(renderParams);
           break;
         case 'scatter-plot':
+        case 'scatter':
           renderScatterPlot(renderParams);
           break;
         case 'histogram':
           renderHistogram(renderParams);
           break;
         case 'pie-chart':
+        case 'pie':
           renderPieChart(renderParams);
           break;
         case 'area-chart':
+        case 'area':
           renderAreaChart(renderParams);
           break;
         case 'network-graph':

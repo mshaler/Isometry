@@ -10,7 +10,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useLiveData as useLiveDataMetrics, useD3Performance as useD3PerformanceWithMonitor } from '@/hooks';
+import { useD3Performance } from '@/hooks';
+import { useLiveDataMetrics } from '@/contexts/LiveDataContext';
 import { useDataFlowMonitor } from '../DataFlowMonitor';
 
 // Baseline measurement interfaces
@@ -130,7 +131,7 @@ export function PerformanceBaseline({
 
   // Mock D3 performance hook for baseline component
   const d3PerformanceRef = useRef<HTMLDivElement>(null);
-  const d3Performance = useD3PerformanceWithMonitor(d3PerformanceRef.current || undefined, 'performance-baseline');
+  const d3Performance = useD3Performance(d3PerformanceRef.current || undefined);
 
   // Calculate current performance quality
   const currentQuality = useMemo(() => {

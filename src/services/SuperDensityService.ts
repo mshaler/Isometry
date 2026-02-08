@@ -24,7 +24,6 @@ import type {
   ExtentDensityMode,
   ValueDensityMode,
   RegionDensityConfig,
-  AggregationFunction,
   DensityChangeEvent,
   DensityAggregationResult,
   DensityAggregatedRow,
@@ -240,7 +239,9 @@ export class SuperDensityService {
       // Manage cache size
       if (this.aggregationCache.size > this.config.maxCacheSize) {
         const firstKey = this.aggregationCache.keys().next().value;
-        this.aggregationCache.delete(firstKey);
+        if (firstKey !== undefined) {
+          this.aggregationCache.delete(firstKey);
+        }
       }
     }
 

@@ -17,7 +17,7 @@ import {
   screenToLogical as utilScreenToLogical,
   logicalToScreen as utilLogicalToScreen,
   getOriginPreset,
-} from '../utils/coordinates';
+} from '../../utils/coordinate-system/coordinates';
 
 /**
  * Hook interface returned by useCoordinates.
