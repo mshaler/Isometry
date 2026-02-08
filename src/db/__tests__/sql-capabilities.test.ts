@@ -25,8 +25,8 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
     // Initialize sql.js-fts5 with WASM from public directory
     SQL = await initSqlJs({
       locateFile: (file: string) => {
-        // In test environment, use the public WASM files
-        return `/wasm/${file}`;
+        // In test environment, use the actual public WASM files
+        return `public/wasm/${file}`;
       }
     });
 

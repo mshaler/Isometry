@@ -2,9 +2,15 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight, Save, AlertCircle, Hash, Code, Settings } from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useMarkdownEditor } from '../../hooks/useMarkdownEditor';
-import { useSlashCommands, type SlashCommand } from '../../hooks/useSlashCommands';
+import { useMarkdownEditor, useSlashCommands } from '@/hooks';
 import PropertyEditor from './PropertyEditor';
+
+type SlashCommand = {
+  id: string;
+  label: string;
+  category: 'isometry' | 'template' | 'format';
+  action: () => void;
+};
 
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 

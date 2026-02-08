@@ -1,6 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useResizeObserver } from '../hooks/visualization/useD3';
-import { useD3Canvas, type D3CanvasState, type Viewport, type PerformanceMetrics } from '../hooks/visualization/useD3Canvas';
+import { useResizeObserver, useD3Canvas } from '@/hooks';
 import { Node } from '../types';
 import {
   performanceMonitor,
@@ -9,8 +8,51 @@ import {
   measurePerformance,
   debounce
 } from '../utils/d3-visualization/d3Performance';
-import { d3NativeBridge, createRectangleCommand, type RenderCommand, type CanvasCapabilities } from '../utils/webview/d3-native-bridge';
 import * as d3 from 'd3';
+
+// Types for bridge functionality (now replaced by sql.js)
+type D3CanvasState = {
+  loading: boolean;
+  error: string | null;
+  scaleSystem: {
+    x: { composite: d3.ScaleBand<string> };
+    y: { composite: d3.ScaleBand<string> };
+  };
+  renderCommands: {
+    cells: Array<{
+      bounds: { x: number; y: number; width: number; height: number };
+      style: { fill: string; stroke: string; strokeWidth: number; opacity: number };
+      nodes: Node[];
+      rowKey: string;
+      colKey: string;
+    }>;
+  };
+};
+
+type Viewport = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  scale: number;
+};
+
+type PerformanceMetrics = {
+  totalPipeline: number;
+  dataTransform: number;
+  scaleGeneration: number;
+  layoutCalculation: number;
+  renderPrep: number;
+  memoryUsage: number;
+  nodeCount: number;
+  cellCount: number;
+};
+
+type CanvasCapabilities = {
+  platform: string;
+  nativeRenderingAvailable: boolean;
+  maxRenderCommands: number;
+};
 
 // ============================================================================
 // Type Definitions - TypeScript strict mode compliant
@@ -256,7 +298,7 @@ const renderSVGHeaders = (
     .attr('class', 'column-headers')
     .attr('transform', `translate(0, 0)`);
 
-  scaleSystem.x.composite.domain().forEach((colKey, _index) => {
+  scaleSystem.x.composite.domain().forEach((colKey: string, _index: number) => {
     const x = scaleSystem.x.composite(colKey) || 0;
     const width = scaleSystem.x.composite.bandwidth();
 
@@ -291,7 +333,7 @@ const renderSVGHeaders = (
     .attr('class', 'row-headers')
     .attr('transform', `translate(0, ${colHeaderHeight})`);
 
-  scaleSystem.y.composite.domain().forEach((rowKey, _index) => {
+  scaleSystem.y.composite.domain().forEach((rowKey: string, _index: number) => {
     const y = scaleSystem.y.composite(rowKey) || 0;
     const height = scaleSystem.y.composite.bandwidth();
 
@@ -393,43 +435,29 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Use resize observer for responsive sizing
   useResizeObserver(containerRef, handleResize);
 
-  // Native rendering capability detection
+  // Native rendering capability detection (placeholder for sql.js integration)
   useEffect(() => {
     if (useNativeRendering) {
-      d3NativeBridge.getCapabilities()
-        .then(capabilities => {
-          setNativeCapabilities(capabilities);
-          setIsNativeRenderingEnabled(capabilities.nativeRenderingAvailable);
-          setNativeRenderingError(null);
-        })
-        .catch(error => {
-          setNativeRenderingError(error.message);
-          setIsNativeRenderingEnabled(false);
-          console.warn('D3Canvas: Native rendering capability detection failed:', error);
-        });
+      // TODO: Replace with sql.js direct access patterns
+      setNativeCapabilities({ platform: 'sql.js', nativeRenderingAvailable: false, maxRenderCommands: 1000 });
+      setIsNativeRenderingEnabled(false);
+      setNativeRenderingError('Native rendering replaced by sql.js direct access');
     }
   }, [useNativeRendering]);
 
-  // Convert D3 cell commands to native render commands
-  const convertToNativeRenderCommands = useCallback(
-    (cellCommands: typeof canvasState.renderCommands.cells): RenderCommand[] => {
+  // Convert D3 cell commands to render operations (simplified for sql.js)
+  const convertToRenderOperations = useCallback(
+    (cellCommands: typeof canvasState.renderCommands.cells) => {
     return cellCommands.map(cellCommand => {
-      const { bounds, style } = cellCommand;
-
-      return createRectangleCommand(
-        {
-          x: bounds.x,
-          y: bounds.y,
-          width: bounds.width,
-          height: bounds.height
-        },
-        {
-          fill: style.fill,
-          stroke: style.stroke,
-          strokeWidth: style.strokeWidth,
-          opacity: style.opacity
-        }
-      );
+      const { bounds, style, nodes, rowKey, colKey } = cellCommand;
+      return {
+        type: 'rectangle' as const,
+        bounds,
+        style,
+        nodes,
+        rowKey,
+        colKey
+      };
     });
   }, []);
 
@@ -441,51 +469,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
       const canvas = canvasRef.current;
 
       await measurePerformance('canvas-render', async () => {
-        // Try native rendering first if enabled
-        if (isNativeRenderingEnabled && nativeCapabilities?.nativeRenderingAvailable) {
-          try {
-            // Convert to native render commands
-            const nativeCommands = convertToNativeRenderCommands(canvasState.renderCommands.cells);
-
-            // Send viewport update
-            await d3NativeBridge.sendCanvasUpdate({
-              x: viewport.x,
-              y: viewport.y,
-              width: viewport.width,
-              height: viewport.height,
-              scale: viewport.scale
-            });
-
-            // Send render commands
-            const renderResult = await d3NativeBridge.sendRenderCommands(nativeCommands);
-
-            if (renderResult) {
-              console.log('Native render result:', renderResult);
-            }
-
-            // Update spatial index for hit testing (still needed for interactions)
-            spatialIndex.clear();
-            canvasState.renderCommands.cells.forEach(cellCommand => {
-              const { bounds, nodes, rowKey, colKey } = cellCommand;
-              spatialIndex.insert({
-                id: `${colKey}||${rowKey}`,
-                bounds,
-                data: { nodes, rowKey, colKey }
-              });
-            });
-
-            // Update frame rate
-            const fps = performanceMonitor.recordFrameTime();
-            setFrameRate(fps);
-            return;
-
-          } catch (error) {
-            console.warn('Native rendering failed, falling back to DOM:', error);
-            setNativeRenderingError(error instanceof Error ? error.message : 'Native rendering failed');
-          }
-        }
-
-        // DOM fallback rendering
+        // Canvas rendering with sql.js direct access
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
@@ -529,7 +513,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
       isNativeRenderingEnabled,
       nativeCapabilities,
       viewport,
-      convertToNativeRenderCommands
+      convertToRenderOperations
     ]
   );
 

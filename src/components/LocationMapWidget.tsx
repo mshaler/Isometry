@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { formatDistance } from '@/utils/geo-utils';
+import { formatDistance } from '@/utils/coordinate-system/geo-utils';
 
 // Fix Leaflet icon paths (Vite asset handling)
 // @ts-expect-error Leaflet global override

@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useFilters } from '@/state/FilterContext';
 import { useFilterPreview } from '@/hooks/ui/useFilterPreview';
-import { useDatabaseStatus } from '@/hooks/database/useBridgeDatabase';
-import { useBridgeAvailability } from '@/filters/bridge';
 import { LATCHFilter } from './LATCHFilter';
 import { FilterPresetDropdown } from './FilterPresetDropdown';
 import { ChevronUp, Activity, Database, AlertCircle, CheckCircle, Clock, BarChart3 } from 'lucide-react';
@@ -50,8 +48,9 @@ export function FilterPanelOverlay({
   } = useFilters();
 
   const { count, isLoading } = useFilterPreview(previewFilters);
-  const bridgeAvailable = useBridgeAvailability();
-  const { isInitialized, currentBackend } = useDatabaseStatus();
+  const bridgeAvailable = false; // Bridge eliminated in sql.js architecture
+  const isInitialized = true;
+  const currentBackend = 'sql.js';
 
   // Performance monitoring state
   const [showPerformancePanel, setShowPerformancePanel] = useState(false);

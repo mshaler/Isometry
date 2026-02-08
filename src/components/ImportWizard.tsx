@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, File, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { importOfficeFile, type OfficeImportResult, type OfficeImportOptions } from '../utils/officeDocumentProcessor';
+import { importOfficeFile, type OfficeImportResult, type OfficeImportOptions } from '../utils/import-export/officeDocumentProcessor';
 import type { Node } from '../types/node';
 
 interface ImportWizardProps {

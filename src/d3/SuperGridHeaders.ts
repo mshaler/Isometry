@@ -22,6 +22,15 @@ import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
 import { superGridLogger } from '../utils/logging/dev-logger';
+import { SuperStackProgressive } from './SuperStackProgressive';
+import type {
+  ProgressiveDisclosureConfig,
+  ProgressiveDisclosureState,
+  LevelGroup,
+  LevelPickerTab,
+  ZoomControlState,
+  DEFAULT_PROGRESSIVE_CONFIG
+} from '../types/supergrid';
 
 export interface SuperGridHeadersConfig {
   defaultHeaderHeight: number;
@@ -30,6 +39,9 @@ export interface SuperGridHeadersConfig {
   maxVisibleLevels: number;
   enableProgressiveRendering: boolean;
   performanceBudgetMs: number;
+
+  // Progressive disclosure configuration
+  progressiveDisclosure: ProgressiveDisclosureConfig;
 }
 
 export interface HeaderClickEvent {
@@ -45,6 +57,10 @@ export class SuperGridHeaders {
   private config: SuperGridHeadersConfig;
   private currentHierarchy: HeaderHierarchy | null = null;
   private database: ReturnType<typeof useDatabaseService> | null = null;
+
+  // Progressive disclosure system
+  private progressiveSystem: SuperStackProgressive;
+  private progressiveState: ProgressiveDisclosureState;
 
   // Performance tracking for lazy fallback
   private renderStartTime: number = 0;
@@ -79,7 +95,10 @@ export class SuperGridHeaders {
     animationDuration: 300,
     maxVisibleLevels: 5,
     enableProgressiveRendering: true,
-    performanceBudgetMs: 16 // ~60fps budget
+    performanceBudgetMs: 16, // ~60fps budget
+
+    // Progressive disclosure configuration
+    progressiveDisclosure: DEFAULT_PROGRESSIVE_CONFIG
   };
 
   constructor(
@@ -111,6 +130,31 @@ export class SuperGridHeaders {
       pendingUpdate: null
     };
 
+    // Initialize progressive disclosure system
+    this.progressiveSystem = new SuperStackProgressive(
+      container,
+      {
+        maxVisibleLevels: this.config.progressiveDisclosure.maxVisibleLevels,
+        autoGroupThreshold: this.config.progressiveDisclosure.autoGroupThreshold,
+        semanticGrouping: this.config.progressiveDisclosure.semanticGroupingEnabled,
+        enableZoomControls: this.config.progressiveDisclosure.enableZoomControls,
+        enableLevelPicker: this.config.progressiveDisclosure.enableLevelPicker,
+        transitionDuration: this.config.progressiveDisclosure.transitionDuration,
+        lazyLoadingBuffer: this.config.progressiveDisclosure.lazyLoadingBuffer
+      },
+      this.database
+    );
+
+    // Initialize progressive state
+    this.progressiveState = {
+      currentLevels: [0, 1, 2],
+      availableLevelGroups: [],
+      activeLevelTab: 0,
+      zoomLevel: 0,
+      isTransitioning: false,
+      lastTransitionTime: 0
+    };
+
     this.initializeStructure();
     this.initializeColumnResizeBehavior();
 
@@ -118,6 +162,7 @@ export class SuperGridHeaders {
     if (this.database) {
       this.restoreHeaderState();
       this.restoreColumnWidths();
+      this.progressiveSystem.restoreState();
     }
   }
 
@@ -156,11 +201,19 @@ export class SuperGridHeaders {
       // Calculate span widths for all nodes
       this.calculateHierarchyWidths(totalWidth);
 
-      // Progressive rendering decision
-      if (this.shouldUseProgressiveRendering()) {
-        this.renderProgressively();
+      // Check if progressive disclosure is needed
+      if (this.isProgressiveDisclosureActive()) {
+        // Use progressive disclosure system
+        this.progressiveSystem.updateHierarchy(this.currentHierarchy);
+        this.updateProgressiveStateFromSystem();
+        superGridLogger.render('Using progressive disclosure system');
       } else {
-        this.renderAllLevels();
+        // Progressive rendering decision for shallow hierarchies
+        if (this.shouldUseProgressiveRendering()) {
+          this.renderProgressively();
+        } else {
+          this.renderAllLevels();
+        }
       }
 
       this.trackRenderPerformance();
@@ -224,10 +277,112 @@ export class SuperGridHeaders {
     this.currentDatasetId = datasetId;
     this.currentAppContext = appContext;
 
+    // Update progressive system context
+    this.progressiveSystem.setStateContext(datasetId, appContext);
+
     // Restore state for new context
     if (this.database) {
       this.restoreHeaderState();
     }
+  }
+
+  // ===============================================================
+  // PROGRESSIVE DISCLOSURE API FOR SUPERGRID INTEGRATION
+  // ===============================================================
+
+  /**
+   * Get progressive disclosure state for UI coordination
+   */
+  public getProgressiveState(): ProgressiveDisclosureState {
+    const levelPickerState = this.progressiveSystem.getLevelPickerState();
+    const zoomState = this.progressiveSystem.getZoomControlState();
+
+    return {
+      currentLevels: this.progressiveSystem.getVisibleLevels(),
+      availableLevelGroups: [
+        ...this.progressiveSystem.getSemanticGroups(),
+        ...this.progressiveSystem.getDataDensityGroups()
+      ],
+      activeLevelTab: levelPickerState.currentTab,
+      zoomLevel: zoomState.currentLevel,
+      isTransitioning: false, // Would be tracked during transitions
+      lastTransitionTime: Date.now()
+    };
+  }
+
+  /**
+   * Get level picker tabs for HeaderLevelPicker component
+   */
+  public getLevelPickerTabs(): LevelPickerTab[] {
+    const state = this.progressiveSystem.getLevelPickerState();
+    return state.tabs;
+  }
+
+  /**
+   * Get zoom control state for HeaderLevelPicker component
+   */
+  public getZoomControlState(): ZoomControlState {
+    return this.progressiveSystem.getZoomControlState();
+  }
+
+  /**
+   * Select a level picker tab (called from HeaderLevelPicker)
+   */
+  public selectLevelTab(tabIndex: number): void {
+    this.progressiveSystem.selectLevelTab(tabIndex);
+    // Update our state tracking
+    this.progressiveState.activeLevelTab = tabIndex;
+    this.progressiveState.currentLevels = this.progressiveSystem.getVisibleLevels();
+  }
+
+  /**
+   * Zoom in to more detailed levels
+   */
+  public zoomIn(): void {
+    this.progressiveSystem.stepDown(); // Step down = more detail = zoom in
+    this.updateProgressiveStateFromSystem();
+  }
+
+  /**
+   * Zoom out to less detailed levels
+   */
+  public zoomOut(): void {
+    this.progressiveSystem.stepUp(); // Step up = less detail = zoom out
+    this.updateProgressiveStateFromSystem();
+  }
+
+  /**
+   * Step up hierarchy (move toward root levels)
+   */
+  public stepUp(): void {
+    this.progressiveSystem.stepUp();
+    this.updateProgressiveStateFromSystem();
+  }
+
+  /**
+   * Step down hierarchy (move toward leaf levels)
+   */
+  public stepDown(): void {
+    this.progressiveSystem.stepDown();
+    this.updateProgressiveStateFromSystem();
+  }
+
+  /**
+   * Check if progressive disclosure is currently active
+   */
+  public isProgressiveDisclosureActive(): boolean {
+    if (!this.currentHierarchy) return false;
+    return this.currentHierarchy.maxDepth >= this.config.progressiveDisclosure.autoGroupThreshold;
+  }
+
+  /**
+   * Get available level groups for UI display
+   */
+  public getLevelGroups(): LevelGroup[] {
+    return [
+      ...this.progressiveSystem.getSemanticGroups(),
+      ...this.progressiveSystem.getDataDensityGroups()
+    ];
   }
 
   /**
@@ -239,6 +394,16 @@ export class SuperGridHeaders {
   }
 
   // Private methods
+
+  private updateProgressiveStateFromSystem(): void {
+    const levelPickerState = this.progressiveSystem.getLevelPickerState();
+    const zoomState = this.progressiveSystem.getZoomControlState();
+
+    this.progressiveState.currentLevels = this.progressiveSystem.getVisibleLevels();
+    this.progressiveState.activeLevelTab = levelPickerState.currentTab;
+    this.progressiveState.zoomLevel = zoomState.currentLevel;
+    this.progressiveState.lastTransitionTime = Date.now();
+  }
 
   private initializeStructure(): void {
     // Remove existing structure

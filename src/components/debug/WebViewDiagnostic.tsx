@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useEnvironment } from '../../contexts/EnvironmentContext';
 import { contextLogger } from '../../utils/dev-logger';
-import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../../utils/webview/webview-bridge-waiter';
 
 export function WebViewDiagnostic() {
   const { environment } = useEnvironment();
@@ -16,9 +15,9 @@ export function WebViewDiagnostic() {
       const availableHandlers = typeof window !== 'undefined' && window.webkit?.messageHandlers ?
         Object.keys(window.webkit.messageHandlers) : [];
 
-      // Test bridge waiter
-      const immediateCheck = isWebViewEnvironmentImmediate();
-      const bridgeWaitResult = await waitForWebViewBridge(2000);
+      // Simplified check for sql.js environment
+      const immediateCheck = hasWebKit;
+      const bridgeWaitResult = environment.mode === 'webview';
 
       const data = {
         userAgent,

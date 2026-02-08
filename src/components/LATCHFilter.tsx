@@ -4,10 +4,7 @@ import type { FilterState } from '@/types/filter';
 import { LocationMapWidget } from './LocationMapWidget';
 import { HierarchyTreeView } from '@/components/HierarchyTreeView';
 import { CategoryColorPicker } from './CategoryColorPicker';
-import { useNodes, useSQLiteQuery } from '@/hooks/useSQLiteQuery';
-import { useNodeTree } from '@/hooks/visualization/useNodeTree';
-import { useMapMarkers } from '@/hooks/useMapMarkers';
-import { useAllTags } from '@/hooks/useTagColors';
+import { useNodes, useSQLiteQuery, useNodeTree, useMapMarkers, useTagColors } from '@/hooks';
 
 /**
  * LATCHFilter - Individual axis filter component
@@ -57,7 +54,7 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
   const { markers } = useMapMarkers();
 
   // For Category filter: fetch all unique tags
-  const { tags: allTags, tagCounts } = useAllTags();
+  const { tags: allTags, tagCounts } = useTagColors();
 
   if (!previewFilters) return null;
 

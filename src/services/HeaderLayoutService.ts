@@ -250,6 +250,253 @@ export class HeaderLayoutService {
     this.clearCache(); // Clear cache when config changes
   }
 
+  /**
+   * Generate progressive hierarchy with level grouping for deep structures
+   */
+  public generateProgressiveHierarchy(
+    flatData: any[],
+    axis: string,
+    facetField: string = 'status',
+    maxVisibleLevels: number = 3
+  ): HeaderHierarchy & { levelGroups: any[]; recommendedLevels: number[] } {
+    const baseHierarchy = this.generateHeaderHierarchy(flatData, axis, facetField);
+
+    // If hierarchy is shallow, return as-is
+    if (baseHierarchy.maxDepth < maxVisibleLevels) {
+      return {
+        ...baseHierarchy,
+        levelGroups: [],
+        recommendedLevels: Array.from({ length: baseHierarchy.maxDepth + 1 }, (_, i) => i)
+      };
+    }
+
+    // Analyze for progressive disclosure
+    const levelGroups = this.analyzeLevelGroups(baseHierarchy, maxVisibleLevels);
+    const recommendedLevels = this.getRecommendedStartLevels(baseHierarchy, maxVisibleLevels);
+
+    return {
+      ...baseHierarchy,
+      levelGroups,
+      recommendedLevels
+    };
+  }
+
+  /**
+   * Analyze hierarchy structure for level grouping opportunities
+   */
+  public analyzeLevelGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): any[] {
+    const groups = [];
+
+    // Check for semantic patterns first
+    const semanticGroups = this.findSemanticLevelGroups(hierarchy);
+    groups.push(...semanticGroups);
+
+    // Fallback to data density grouping
+    if (groups.length === 0) {
+      const densityGroups = this.createDataDensityGroups(hierarchy, maxVisibleLevels);
+      groups.push(...densityGroups);
+    }
+
+    return groups;
+  }
+
+  /**
+   * Find semantic grouping patterns in hierarchy levels
+   */
+  public findSemanticLevelGroups(hierarchy: HeaderHierarchy): any[] {
+    const groups = [];
+    const facetsByLevel = this.groupFacetsByLevel(hierarchy);
+
+    // Common semantic patterns
+    const patterns = {
+      time: {
+        facets: ['year', 'quarter', 'month', 'week', 'day', 'hour'],
+        groupName: 'Time Periods',
+        maxLevelsPerGroup: 3
+      },
+      location: {
+        facets: ['country', 'region', 'state', 'city', 'address'],
+        groupName: 'Geographic',
+        maxLevelsPerGroup: 3
+      },
+      organization: {
+        facets: ['company', 'department', 'team', 'person'],
+        groupName: 'Organizational',
+        maxLevelsPerGroup: 2
+      },
+      product: {
+        facets: ['category', 'subcategory', 'product', 'variant'],
+        groupName: 'Product Hierarchy',
+        maxLevelsPerGroup: 2
+      }
+    };
+
+    for (const [patternKey, pattern] of Object.entries(patterns)) {
+      const matchingLevels = this.findPatternLevels(facetsByLevel, pattern.facets);
+
+      if (matchingLevels.length >= 2) {
+        // Split into chunks if too many levels
+        const chunks = this.chunkLevels(matchingLevels, pattern.maxLevelsPerGroup);
+
+        chunks.forEach((levels, index) => {
+          const nodeCount = this.countNodesInLevels(hierarchy, levels);
+          groups.push({
+            id: `${patternKey}-${index}`,
+            name: chunks.length > 1 ? `${pattern.groupName} ${index + 1}` : pattern.groupName,
+            type: 'semantic',
+            levels,
+            nodeCount,
+            pattern: patternKey
+          });
+        });
+      }
+    }
+
+    return groups;
+  }
+
+  /**
+   * Create data density-based groups as fallback
+   */
+  public createDataDensityGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): any[] {
+    const groups = [];
+    const nodeCountsByLevel = this.getNodeCountsByLevel(hierarchy);
+    const levels = Object.keys(nodeCountsByLevel).map(Number).sort((a, b) => a - b);
+
+    // Create groups based on data density
+    const levelChunks = this.chunkLevels(levels, maxVisibleLevels);
+
+    levelChunks.forEach((chunk, index) => {
+      const nodeCount = chunk.reduce((sum, level) => sum + nodeCountsByLevel[level], 0);
+      const avgDensity = Math.round(nodeCount / chunk.length);
+
+      let densityLabel = 'Light';
+      if (avgDensity >= 15) densityLabel = 'Dense';
+      else if (avgDensity >= 5) densityLabel = 'Medium';
+
+      groups.push({
+        id: `density-${index}`,
+        name: `${densityLabel} Detail`,
+        type: 'density',
+        levels: chunk,
+        nodeCount,
+        avgDensity
+      });
+    });
+
+    return groups;
+  }
+
+  /**
+   * Get recommended starting levels for progressive disclosure
+   */
+  public getRecommendedStartLevels(hierarchy: HeaderHierarchy, maxVisibleLevels: number): number[] {
+    // Start with top levels by default
+    const topLevels = Array.from({ length: Math.min(maxVisibleLevels, hierarchy.maxDepth + 1) }, (_, i) => i);
+
+    // Analyze data distribution to recommend better starting point
+    const nodeCountsByLevel = this.getNodeCountsByLevel(hierarchy);
+    const totalNodes = hierarchy.allNodes.length;
+
+    // Find the level range with the most balanced distribution
+    let bestScore = -1;
+    let bestLevels = topLevels;
+
+    for (let start = 0; start <= hierarchy.maxDepth - maxVisibleLevels + 1; start++) {
+      const levels = Array.from({ length: maxVisibleLevels }, (_, i) => start + i);
+      const validLevels = levels.filter(l => l <= hierarchy.maxDepth);
+
+      if (validLevels.length < maxVisibleLevels) continue;
+
+      // Calculate distribution score
+      const nodesInRange = validLevels.reduce((sum, level) => sum + (nodeCountsByLevel[level] || 0), 0);
+      const coverage = nodesInRange / totalNodes;
+      const balance = this.calculateLevelBalance(validLevels, nodeCountsByLevel);
+
+      const score = coverage * 0.6 + balance * 0.4; // Weight coverage more than balance
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestLevels = validLevels;
+      }
+    }
+
+    return bestLevels;
+  }
+
+  /**
+   * Calculate span widths for a specific level subset (progressive mode)
+   */
+  public calculateProgressiveSpanWidths(
+    hierarchy: HeaderHierarchy,
+    visibleLevels: number[],
+    totalAvailableWidth: number
+  ): Map<string, number> {
+    // Filter nodes to only visible levels
+    const visibleNodes = hierarchy.allNodes.filter(node => visibleLevels.includes(node.level));
+
+    // Calculate widths for visible nodes only
+    return this.calculateSpanWidths(visibleNodes, totalAvailableWidth);
+  }
+
+  // Private helper methods for progressive features
+
+  private groupFacetsByLevel(hierarchy: HeaderHierarchy): Record<number, Set<string>> {
+    return hierarchy.allNodes.reduce((acc, node) => {
+      if (!acc[node.level]) acc[node.level] = new Set();
+      acc[node.level].add(node.facet);
+      return acc;
+    }, {} as Record<number, Set<string>>);
+  }
+
+  private findPatternLevels(facetsByLevel: Record<number, Set<string>>, patternFacets: string[]): number[] {
+    const matchingLevels: number[] = [];
+
+    for (const [levelStr, facets] of Object.entries(facetsByLevel)) {
+      const level = parseInt(levelStr, 10);
+      const hasPatternFacet = patternFacets.some(facet => facets.has(facet));
+
+      if (hasPatternFacet) {
+        matchingLevels.push(level);
+      }
+    }
+
+    return matchingLevels.sort((a, b) => a - b);
+  }
+
+  private chunkLevels(levels: number[], chunkSize: number): number[][] {
+    const chunks: number[][] = [];
+    for (let i = 0; i < levels.length; i += chunkSize) {
+      chunks.push(levels.slice(i, i + chunkSize));
+    }
+    return chunks;
+  }
+
+  private countNodesInLevels(hierarchy: HeaderHierarchy, levels: number[]): number {
+    return hierarchy.allNodes.filter(node => levels.includes(node.level)).length;
+  }
+
+  private getNodeCountsByLevel(hierarchy: HeaderHierarchy): Record<number, number> {
+    return hierarchy.allNodes.reduce((acc, node) => {
+      acc[node.level] = (acc[node.level] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+  }
+
+  private calculateLevelBalance(levels: number[], nodeCountsByLevel: Record<number, number>): number {
+    const counts = levels.map(level => nodeCountsByLevel[level] || 0);
+    const mean = counts.reduce((sum, count) => sum + count, 0) / counts.length;
+
+    if (mean === 0) return 0;
+
+    const variance = counts.reduce((sum, count) => sum + Math.pow(count - mean, 2), 0) / counts.length;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = stdDev / mean;
+
+    // Return balance score (0-1, where 1 is perfect balance)
+    return Math.max(0, 1 - coefficientOfVariation);
+  }
+
   // Private helper methods
 
   private transformToHeaderNodes(

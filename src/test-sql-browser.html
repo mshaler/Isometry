@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL.js FTS5 Browser Test</title>
+</head>
+<body>
+    <h1>SQL.js FTS5 Test</h1>
+    <div id="output"></div>
+
+    <script type="module">
+        async function testSqlJs() {
+            const output = document.getElementById('output');
+            try {
+                output.innerHTML += '<p>Loading sql.js...</p>';
+
+                // Use the working WASM files from public directory
+                const initSqlJs = (await import('sql.js-fts5')).default;
+
+                const SQL = await initSqlJs({
+                    locateFile: (file) => {
+                        console.log('Looking for WASM file:', file);
+                        return `/wasm/${file}`;
+                    }
+                });
+
+                output.innerHTML += '<p>✅ SQL.js initialized!</p>';
+
+                const db = new SQL.Database();
+                output.innerHTML += '<p>✅ Database created!</p>';
+
+                // Test FTS5
+                db.run(`
+                    CREATE VIRTUAL TABLE docs USING fts5(title, body);
+                    INSERT INTO docs VALUES('SuperGrid', 'PAFV spatial projection system');
+                    INSERT INTO docs VALUES('LATCH', 'Location, Alphabet, Time, Category, Hierarchy');
+                `);
+
+                const result = db.exec("SELECT * FROM docs WHERE docs MATCH 'spatial'");
+                output.innerHTML += `<p>✅ FTS5 search result: ${JSON.stringify(result)}</p>`;
+
+                // Test recursive CTE
+                db.run(`
+                    CREATE TABLE edges (source TEXT, target TEXT);
+                    INSERT INTO edges VALUES ('a', 'b'), ('b', 'c'), ('c', 'd');
+                `);
+
+                const cteResult = db.exec(`
+                    WITH RECURSIVE path(node, depth) AS (
+                        SELECT 'a', 0
+                        UNION ALL
+                        SELECT e.target, p.depth + 1
+                        FROM path p JOIN edges e ON e.source = p.node
+                        WHERE p.depth < 5
+                    )
+                    SELECT * FROM path;
+                `);
+
+                output.innerHTML += `<p>✅ Recursive CTE result: ${JSON.stringify(cteResult)}</p>`;
+                output.innerHTML += '<p><strong>🎉 Both FTS5 and recursive CTEs work!</strong></p>';
+
+                db.close();
+
+            } catch (error) {
+                output.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+                console.error('SQL.js test failed:', error);
+            }
+        }
+
+        testSqlJs();
+    </script>
+</body>
+</html>

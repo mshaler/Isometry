@@ -3,7 +3,7 @@ import type {
   ChartDatum,
   D3ChartTheme
 } from '../../../types/d3';
-import type { VisualizationConfig } from '../../../utils/d3Parsers';
+import type { VisualizationConfig } from '../../../utils/d3-visualization/d3Parsers';
 
 export interface RenderDimensions {
   innerWidth: number;

@@ -1,7 +1,7 @@
-export { performanceValidation } from './performance-validation';
+export { performanceValidator } from './performance-validation';
 export { bridgePerformance } from './bridge-performance';
 export { PerformanceBenchmarks } from './performance-benchmarks';
 export { PerformanceMonitor } from './performance-monitor';
 export { GraphPerformanceMonitor } from './GraphPerformanceMonitor';
-export { renderingPerformance } from './rendering-performance';
-export { memoryManagement } from './memoryManagement';
+export { renderingPerformanceMonitor } from './rendering-performance';
+export { CleanupStack, createCleanupStack, useCleanupEffect, useWebSocketCleanup } from './memoryManagement';

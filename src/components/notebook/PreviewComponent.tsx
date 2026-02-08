@@ -2,8 +2,8 @@ import { useState, useRef, useCallback } from 'react';
 import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, FileText, Globe, Image as ImageIcon, FileType, BarChart3 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
-import { useWebPreview } from '../../hooks/useWebPreview';
-import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/exportUtils';
+import { useWebPreview } from '@/hooks';
+import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-export/exportUtils';
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import MDEditor from '@uiw/react-md-editor';
 

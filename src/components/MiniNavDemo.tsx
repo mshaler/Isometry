@@ -8,9 +8,10 @@
  */
 
 import MiniNav from './MiniNav';
-import { useCoordinates } from '../hooks/useCoordinates';
+import { useCoordinates } from '@/hooks';
 import { usePAFV } from '../hooks/data/usePAFV';
 import { PAFVProvider } from '../state/PAFVContext';
+import type { AxisMapping } from '../types/pafv';
 
 /**
  * Inner demo component (must be wrapped in PAFVProvider).
@@ -42,14 +43,14 @@ function MiniNavDemoInner() {
 
           // Handle mapping changes - compare with current state
           const currentMappingKeys = new Set(
-            pafv.state.mappings.map((m) => `${m.plane}:${m.axis}:${m.facet}`)
+            pafv.state.mappings.map((m: AxisMapping) => `${m.plane}:${m.axis}:${m.facet}`)
           );
           const newMappingKeys = new Set(
-            newState.mappings.map((m) => `${m.plane}:${m.axis}:${m.facet}`)
+            newState.mappings.map((m: AxisMapping) => `${m.plane}:${m.axis}:${m.facet}`)
           );
 
           // Find added/changed mappings
-          newState.mappings.forEach((mapping) => {
+          newState.mappings.forEach((mapping: AxisMapping) => {
             const key = `${mapping.plane}:${mapping.axis}:${mapping.facet}`;
             if (!currentMappingKeys.has(key)) {
               pafv.setMapping(mapping);

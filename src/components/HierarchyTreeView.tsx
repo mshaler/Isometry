@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { TreeNode, Tree } from '@/hooks/visualization/useNodeTree';
-import { getSubtreeIds, searchNodes, filterByPriority } from '@/utils/tree-utils';
+import { getSubtreeIds, searchNodes, filterByPriority } from '@/utils/database/tree-utils';
 import { Slider } from '@/components/ui/slider';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 
@@ -105,12 +105,12 @@ export function HierarchyTreeView({
 
     // Get nodes matching search
     const matchingNodes = searchTerm
-      ? new Set(searchNodes(tree, searchTerm).map(n => n.id))
+      ? new Set(searchNodes(tree, searchTerm).map((n: TreeNode) => n.id))
       : new Set(tree.nodeMap.keys());
 
     // Filter by priority range
     const priorityFiltered = filterByPriority(tree, priorityRange[0], priorityRange[1]);
-    const prioritySet = new Set(priorityFiltered.map(n => n.id));
+    const prioritySet = new Set(priorityFiltered.map((n: TreeNode) => n.id));
 
     // Intersection of search and priority filters
     const filteredIds = new Set(
@@ -136,7 +136,7 @@ export function HierarchyTreeView({
     const expanded = new Set(expandedIds);
 
     // Expand all ancestor paths to matching nodes
-    matching.forEach(node => {
+    matching.forEach((node: TreeNode) => {
       const current = node;
       while (current) {
         expanded.add(current.id);
