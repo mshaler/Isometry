@@ -18,11 +18,19 @@ import type { Node } from './node';
  * - list: 1-axis projection (single LATCH axis drives ordering/grouping)
  * - kanban: 1-facet column projection (Category facet drives columns)
  * - supergrid: Full PAFV 2D projection with hierarchical headers
+ * - grid: Alias for supergrid
+ * - timeline: Time-based linear projection
+ * - network: Graph-based connection projection
+ * - calendar: Time-grid hybrid projection
  */
 export enum ViewType {
   LIST = 'list',
   KANBAN = 'kanban',
-  SUPERGRID = 'supergrid'
+  SUPERGRID = 'supergrid',
+  GRID = 'grid',
+  TIMELINE = 'timeline',
+  NETWORK = 'network',
+  CALENDAR = 'calendar'
 }
 
 /**
@@ -261,6 +269,63 @@ export const DEFAULT_VIEW_MAPPINGS: Record<ViewType, ViewAxisMapping> = {
       facet: 'modified_at',
       direction: 'desc'
     }
+  },
+
+  [ViewType.GRID]: {
+    // Alias for SUPERGRID
+    xAxis: {
+      latchDimension: 'C',
+      facet: 'folder',
+      label: 'Folder'
+    },
+    yAxis: {
+      latchDimension: 'T',
+      facet: 'modified_at',
+      label: 'Modified Date'
+    },
+    primarySort: {
+      facet: 'modified_at',
+      direction: 'desc'
+    }
+  },
+
+  [ViewType.TIMELINE]: {
+    // Time-based linear projection
+    xAxis: {
+      latchDimension: 'T',
+      facet: 'created_at',
+      label: 'Created Date'
+    },
+    primarySort: {
+      facet: 'created_at',
+      direction: 'asc'
+    }
+  },
+
+  [ViewType.NETWORK]: {
+    // Graph-based connection projection
+    primarySort: {
+      facet: 'name',
+      direction: 'asc'
+    }
+  },
+
+  [ViewType.CALENDAR]: {
+    // Time-grid hybrid projection
+    xAxis: {
+      latchDimension: 'T',
+      facet: 'due_at',
+      label: 'Due Date'
+    },
+    yAxis: {
+      latchDimension: 'C',
+      facet: 'status',
+      label: 'Status'
+    },
+    primarySort: {
+      facet: 'due_at',
+      direction: 'asc'
+    }
   }
 };
 
@@ -350,6 +415,22 @@ export const createDefaultViewState = (canvasId: string): ViewState => {
       },
       [ViewType.SUPERGRID]: {
         axisMapping: DEFAULT_VIEW_MAPPINGS[ViewType.SUPERGRID],
+        lastUpdated: now
+      },
+      [ViewType.GRID]: {
+        axisMapping: DEFAULT_VIEW_MAPPINGS[ViewType.GRID],
+        lastUpdated: now
+      },
+      [ViewType.TIMELINE]: {
+        axisMapping: DEFAULT_VIEW_MAPPINGS[ViewType.TIMELINE],
+        lastUpdated: now
+      },
+      [ViewType.NETWORK]: {
+        axisMapping: DEFAULT_VIEW_MAPPINGS[ViewType.NETWORK],
+        lastUpdated: now
+      },
+      [ViewType.CALENDAR]: {
+        axisMapping: DEFAULT_VIEW_MAPPINGS[ViewType.CALENDAR],
         lastUpdated: now
       }
     },

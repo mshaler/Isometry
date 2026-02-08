@@ -1,12 +1,13 @@
 import * as d3 from 'd3';
 import type {
-  ViewType,
   ViewState,
   ViewAxisMapping,
   CardPosition,
   FlipAnimationConfig,
   ViewTransitionEvent
 } from '../types/views';
+import { ViewType } from '../types/views';
+import type { ViewType as EngineViewType } from '../engine/contracts/ViewConfig';
 import {
   DEFAULT_FLIP_CONFIG,
   createDefaultViewState,
@@ -260,88 +261,9 @@ export class ViewContinuum {
     }
   }
 
-  /**
-   * @deprecated FLIP animation handled by ViewEngine.transition()
-   * Perform FLIP animation between views
-   */
-  private async performFlipAnimation(
-    sourcePositions: Map<string, CardPosition>,
-    targetRenderer: ViewRenderer
-  ): Promise<void> {
-    const targetPositions = targetRenderer.getCardPositions();
-    const animationPromises: Promise<void>[] = [];
+  // [Removed unused performFlipAnimation method - FLIP animation handled by ViewEngine.transition()]
 
-    let staggerDelay = 0;
-
-    // Animate each card that exists in both source and target
-    sourcePositions.forEach((sourcePos, cardId) => {
-      const targetPos = targetPositions.get(cardId);
-      if (targetPos) {
-        const animationPromise = this.animateCardFlip(
-          cardId,
-          sourcePos,
-          targetPos,
-          staggerDelay
-        );
-        animationPromises.push(animationPromise);
-
-        if (this.animationConfig.stagger) {
-          staggerDelay += this.animationConfig.stagger;
-        }
-      }
-    });
-
-    // Wait for all animations to complete
-    if (animationPromises.length > 0) {
-      await Promise.all(animationPromises);
-    }
-  }
-
-  /**
-   * Animate a single card using FLIP technique
-   */
-  private animateCardFlip(
-    cardId: string,
-    from: CardPosition,
-    to: CardPosition,
-    delay: number
-  ): Promise<void> {
-    return new Promise((resolve) => {
-      const cardElement = this.container
-        .select(`[data-card-id="${cardId}"]`);
-
-      if (cardElement.empty()) {
-        resolve();
-        return;
-      }
-
-      // Calculate deltas (First → Last, Invert, Play)
-      const deltaX = from.x - to.x;
-      const deltaY = from.y - to.y;
-      const deltaScale = (from.width / to.width) || 1;
-
-      // Apply inverted transform immediately
-      cardElement
-        .style('transform-origin', 'top left')
-        .attr('transform', `translate(${to.x + deltaX}, ${to.y + deltaY}) scale(${deltaScale})`);
-
-      // Add fade effect if enabled
-      if (this.animationConfig.effects?.enableFade) {
-        cardElement.style('opacity', 0.8);
-      }
-
-      // Animate to identity transform (Play)
-      setTimeout(() => {
-        cardElement
-          .transition()
-          .duration(this.animationConfig.duration)
-          .ease(this.getD3Easing())
-          .attr('transform', `translate(${to.x}, ${to.y}) scale(1)`)
-          .style('opacity', 1)
-          .on('end', () => resolve());
-      }, delay);
-    });
-  }
+  // [Removed unused animateCardFlip method - FLIP animation handled by ViewEngine.transition()]
 
   /**
    * Interrupt current transition
@@ -655,19 +577,20 @@ export class ViewContinuum {
   /**
    * Map ViewContinuum ViewType to ViewEngine viewType
    */
-  private mapViewTypeToEngineType(viewType: ViewType): import('../engine/contracts/ViewConfig').ViewType {
+  private mapViewTypeToEngineType(viewType: ViewType): EngineViewType {
     switch (viewType) {
-      case 'grid':
+      case ViewType.GRID:
+      case ViewType.SUPERGRID:
         return 'grid';
-      case 'list':
+      case ViewType.LIST:
         return 'list';
-      case 'kanban':
+      case ViewType.KANBAN:
         return 'kanban';
-      case 'timeline':
+      case ViewType.TIMELINE:
         return 'timeline';
-      case 'network':
+      case ViewType.NETWORK:
         return 'graph'; // ViewEngine uses 'graph' instead of 'network'
-      case 'calendar':
+      case ViewType.CALENDAR:
         return 'calendar';
       default:
         return 'grid'; // fallback
@@ -718,20 +641,7 @@ export class ViewContinuum {
     d3Logger.setup('SVG structure initialized');
   }
 
-  /**
-   * Initialize active view if renderer is available
-   */
-  private initializeActiveView(): void {
-    const currentRenderer = this.viewRenderers.get(this.viewState.currentView);
-    if (currentRenderer) {
-      this.activeRenderer = currentRenderer;
-      this.restoreViewState();
-
-      d3Logger.setup('Active view initialized', { view: this.viewState.currentView } as any);
-    } else {
-      d3Logger.info('No renderer available for current view', { view: this.viewState.currentView } as any);
-    }
-  }
+  // [Removed unused initializeActiveView method - initialization handled by ViewEngine.render()]
 
   // ========================================================================
   // Utility Methods
@@ -752,20 +662,7 @@ export class ViewContinuum {
     return hash.toString(36);
   }
 
-  /**
-   * Get D3 easing function for animations
-   */
-  private getD3Easing(): (t: number) => number {
-    switch (this.animationConfig.easing) {
-      case 'ease-in-out':
-        return d3.easeCubicInOut;
-      case 'cubic':
-        return d3.easeCubic;
-      case 'ease-out':
-      default:
-        return d3.easeCubicOut; // Matches Phase 36 choice
-    }
-  }
+  // [Removed unused getD3Easing method - animation handled by ViewEngine.transition()]
 
   /**
    * Emit view change event
@@ -866,7 +763,7 @@ export class ViewContinuum {
     this.interruptTransition();
 
     // Clean up ViewEngine
-    this.viewEngine.cleanup();
+    this.viewEngine.destroy();
 
     // Clean up legacy renderers (deprecated)
     this.viewRenderers.forEach((renderer) => {
