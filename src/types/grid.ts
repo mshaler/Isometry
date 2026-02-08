@@ -67,6 +67,9 @@ export interface GridConfig {
   enableHeaders?: boolean;
   enableSelection?: boolean;
   enableKeyboardNavigation?: boolean;
+  enableColumnResizing?: boolean;
+  enableProgressiveDisclosure?: boolean;
+  enableCartographicZoom?: boolean;
 }
 
 /**

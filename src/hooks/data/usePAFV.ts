@@ -1,6 +1,6 @@
 import { useContext } from 'react';
 import { createContext } from 'react';
-import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
+import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../../types/pafv';
 
 // Re-export the context interface for use in tests
 export interface PAFVContextValue {

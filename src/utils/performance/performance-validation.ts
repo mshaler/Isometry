@@ -69,8 +69,6 @@ export class SimplePerformanceValidator {
   public async runSimpleTest(test: SimplePerformanceTest): Promise<SimpleTestResult> {
     console.log(`🧪 Running simple test: ${test.name}`);
 
-    const startTime = performance.now();
-    const initialMemory = this.getMemoryUsageMB();
 
     // Simulate query performance test
     const queryStart = performance.now();

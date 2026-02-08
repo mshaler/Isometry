@@ -1,6 +1,6 @@
 import type { NotebookCard, NotebookCardType, NotebookTemplate, LayoutPosition } from '../../types/notebook';
-import type { NotebookIntegrationState } from '../../hooks/useNotebookIntegration';
-import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '../../hooks/useNotebookPerformance';
+import type { NotebookIntegrationState } from '@/hooks';
+import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '@/hooks';
 
 export interface NotebookLayoutState {
   capture: LayoutPosition;

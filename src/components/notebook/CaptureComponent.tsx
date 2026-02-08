@@ -4,7 +4,7 @@ import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMarkdownEditor, useSlashCommands } from '@/hooks';
 import { useSQLite } from '../../db/SQLiteProvider';
-import { useTerminalContext } from '../../context/TerminalContext';
+import { useNotebook } from '../../contexts/NotebookContext';
 import PropertyEditor from './PropertyEditor';
 
 type SlashCommand = {
@@ -40,7 +40,8 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     enableAutoSave: true
   });
 
-  const { execute: dbExecute, run: dbRun } = useSQLite();
+  const { run: dbRun } = useSQLite();
+  useNotebook(); // For context connection
   // const terminalContext = useTerminalContext(); // TODO: Add when available
 
   const slashHook = useSlashCommands();
@@ -63,7 +64,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
 
     try {
       // Extract title from first line or use first 50 chars
-      const lines = content.split('\n').filter(line => line.trim());
+      const lines = content.split('\n').filter((line: string) => line.trim());
       const title = lines[0]?.replace(/^#+\s*/, '') || content.substring(0, 50).trim();
       const summary = content.substring(0, 200).trim();
 

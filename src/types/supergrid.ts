@@ -60,6 +60,9 @@ export interface AxisRange {
  * @property nodeId - Database ID for this cell's node
  * @property colPath - LATCH facet path for column (e.g., "time/2024/Q1")
  * @property rowPath - LATCH facet path for row (e.g., "category/work")
+ * @property cards - Array of cards/nodes in this cell
+ * @property x - X coordinate for positioning and lookups
+ * @property y - Y coordinate for positioning and lookups
  *
  * @example
  * const cell: GridCell = {
@@ -67,7 +70,10 @@ export interface AxisRange {
  *   value: "Project Alpha",
  *   nodeId: 42,
  *   colPath: "time/2024/Q1",
- *   rowPath: "category/work"
+ *   rowPath: "category/work",
+ *   cards: [],
+ *   x: 2,
+ *   y: 1
  * };
  */
 export interface GridCell {
@@ -76,6 +82,9 @@ export interface GridCell {
   nodeId: number;
   colPath: string;
   rowPath: string;
+  cards: any[]; // Array of cards/nodes in this cell
+  x: number;    // X coordinate for positioning
+  y: number;    // Y coordinate for positioning
 }
 
 /**
@@ -105,6 +114,13 @@ export interface GridConfig {
   cellHeight: number;
   headerWidth: number;
   headerHeight: number;
+  columnsPerRow?: number;
+  enableHeaders?: boolean;
+  enableSelection?: boolean;
+  enableKeyboardNavigation?: boolean;
+  enableColumnResizing?: boolean;
+  enableProgressiveDisclosure?: boolean;
+  enableCartographicZoom?: boolean;
 }
 
 /**
@@ -901,6 +917,9 @@ export interface CartographicPerformanceMetrics {
 
   /** Total zoom operations performed */
   totalZoomOperations: number;
+
+  /** Duration of last operation (ms) */
+  lastOperationDuration: number;
 
   /** Total pan operations performed */
   totalPanOperations: number;

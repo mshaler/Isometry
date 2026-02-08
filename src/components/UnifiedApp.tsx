@@ -15,7 +15,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary';
 //import { NotificationSystem } from './ui/NotificationSystem';
 import { EnvironmentDebug } from './debug/EnvironmentDebug';
 import { ConflictResolutionModal, type ResolutionDecision } from './ConflictResolutionModal';
-import { useConflictResolution } from '../hooks/useConflictResolution';
+import { useConflictResolution } from '@/hooks';
 
 /**
  * Unified App Component

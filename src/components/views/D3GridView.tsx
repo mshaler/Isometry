@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { D3Canvas } from '../D3Canvas';
-import { usePAFV } from '../../hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
@@ -8,8 +8,8 @@ import type { AxisMapping } from '../../types/pafv';
 import type { D3GridViewProps } from '../../types/d3-types';
 
 export type { D3GridViewProps };
-import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3Performance';
-import { renderOptimizer } from '../../utils/d3-render-optimizer';
+import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3-visualization/d3Performance';
+import { renderOptimizer } from '../../utils/d3-visualization/d3-render-optimizer';
 import * as d3 from 'd3';
 
 interface CellDetailOverlay {

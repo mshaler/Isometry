@@ -14,7 +14,7 @@
  */
 
 import React, { useMemo, useCallback } from 'react';
-import { usePAFV } from '@/hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import type { Node } from '@/types/node';
 

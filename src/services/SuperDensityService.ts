@@ -352,7 +352,7 @@ export class SuperDensityService {
   /**
    * Build time-based aggregation based on granularity
    */
-  private buildTimeAggregation(granularity: number, aggregationFunc: string): { selectClause: string; groupClause: string } {
+  private buildTimeAggregation(granularity: number, _aggregationFunc: string): { selectClause: string; groupClause: string } {
     switch (granularity) {
       case 0: // Decade
         return {
@@ -381,7 +381,7 @@ export class SuperDensityService {
   /**
    * Build category-based aggregation
    */
-  private buildCategoryAggregation(granularity: number, aggregationFunc: string): { selectClause: string; groupClause: string } {
+  private buildCategoryAggregation(granularity: number, _aggregationFunc: string): { selectClause: string; groupClause: string } {
     switch (granularity) {
       case 0: // Domain level
         return {
@@ -410,7 +410,7 @@ export class SuperDensityService {
   /**
    * Build hierarchy-based aggregation
    */
-  private buildHierarchyAggregation(granularity: number, aggregationFunc: string): { selectClause: string; groupClause: string } {
+  private buildHierarchyAggregation(granularity: number, _aggregationFunc: string): { selectClause: string; groupClause: string } {
     switch (granularity) {
       case 0: // Priority tier
         return {
@@ -439,7 +439,7 @@ export class SuperDensityService {
   /**
    * Build location-based aggregation
    */
-  private buildLocationAggregation(granularity: number, aggregationFunc: string): { selectClause: string; groupClause: string } {
+  private buildLocationAggregation(_granularity: number, _aggregationFunc: string): { selectClause: string; groupClause: string } {
     // Simplified location aggregation - could be enhanced with geographic data
     return {
       selectClause: `COALESCE(location_name, 'Unknown') as location`,
@@ -450,7 +450,7 @@ export class SuperDensityService {
   /**
    * Build alphabet-based aggregation
    */
-  private buildAlphabetAggregation(granularity: number, aggregationFunc: string): { selectClause: string; groupClause: string } {
+  private buildAlphabetAggregation(granularity: number, _aggregationFunc: string): { selectClause: string; groupClause: string } {
     switch (granularity) {
       case 0: // Letter groups
         return {

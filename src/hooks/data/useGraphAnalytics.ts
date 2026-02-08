@@ -184,7 +184,7 @@ export function useGraphAnalytics(nodeId?: string): GraphAnalyticsState & {
   const subscribeToUpdates = useCallback((
     callback: (suggestions: ConnectionSuggestion[]) => void
   ) => {
-    return connectionSuggestionService.subscribe((suggestions, subscribedNodeId) => {
+    return connectionSuggestionService.subscribe((suggestions: ConnectionSuggestion[], subscribedNodeId: string) => {
       if (!nodeId || subscribedNodeId === nodeId) {
         callback(suggestions);
 

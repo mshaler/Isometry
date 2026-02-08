@@ -12,10 +12,21 @@ interface TestLPGNode {
   id: string;
   name: string;
   content?: string;
+  summary?: string;
   folder?: string;
+  tags?: string;
   status?: string;
   priority?: number;
+  importance?: number;
+  grid_x?: number;
+  grid_y?: number;
   created_at?: string;
+  modified_at?: string;
+  completed_at?: string;
+  due_at?: string;
+  location_name?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 interface TestLPGEdge {
@@ -25,6 +36,11 @@ interface TestLPGEdge {
   target_id: string;
   label?: string;
   weight?: number;
+  directed?: number;
+  sequence_order?: number;
+  channel?: string;
+  subject?: string;
+  timestamp?: string;
 }
 
 interface TestLPGFacet {
@@ -33,6 +49,11 @@ interface TestLPGFacet {
   facet_type: string;
   axis: string;
   source_column: string;
+  options?: string;
+  icon?: string;
+  color?: string;
+  enabled?: boolean;
+  sort_order?: number;
 }
 
 interface TestNotebookCard {

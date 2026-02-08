@@ -263,10 +263,15 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   }, []);
 
   // Get PAFV state for SuperCalc
+  const getAxisMapping = (plane: 'x' | 'y' | 'z') => {
+    const mapping = pafv.state.mappings.find(m => m.plane === plane);
+    return mapping ? mapping.axis : null;
+  };
+
   const pafvState = {
-    xAxis: pafv.currentMapping?.x || 'status',
-    yAxis: pafv.currentMapping?.y || 'priority',
-    zAxis: pafv.currentMapping?.z || 'folder'
+    xAxis: getAxisMapping('x') || 'status',
+    yAxis: getAxisMapping('y') || 'priority',
+    zAxis: getAxisMapping('z') || 'folder'
   };
 
   return (

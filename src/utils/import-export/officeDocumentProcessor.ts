@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as mammoth from 'mammoth';
 import JSZip from 'jszip';
-import type { Node, NodeType } from '../types/node';
+import type { Node, NodeType } from '../../types/node';
 
 // Type definitions for document processing
 interface DocumentStyle {

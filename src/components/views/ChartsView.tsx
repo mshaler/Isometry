@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { usePanelTheme, useInputTheme, useTextTheme } from '@/hooks/useComponentTheme';
+import { usePanelTheme, useInputTheme, useTextTheme } from '@/hooks';
 import { createColorScale, styleAxis, setupHoverEffect } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import type { Node } from '@/types/node';

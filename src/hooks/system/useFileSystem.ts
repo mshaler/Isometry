@@ -6,12 +6,70 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  fileSystemBridge,
-  FileInfo,
-  ExportOptions
-} from '../utils/file-system-bridge';
-import { Environment } from '../utils/webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import {
+//   fileSystemBridge,
+//   FileInfo,
+//   ExportOptions
+// } from '../utils/file-system-bridge';
+// import { Environment } from '../utils/webview/webview-bridge';
+
+// Import Environment from EnvironmentContext for v4
+const Environment = {
+  isWebView: () => false,
+  info: () => ({ platform: 'browser', version: '4.0', isNative: false })
+};
+
+// Stub types for bridge elimination
+interface FileInfo {
+  name: string;
+  size: number;
+  isDirectory: boolean;
+  path: string;
+}
+
+interface ExportOptions {
+  format: string;
+  filename?: string;
+}
+
+// Stub implementations for bridge elimination
+const fileSystemBridge = {
+  listFiles: async () => [],
+  exportData: async (data: any, options: ExportOptions) => { console.log('Bridge eliminated: exportData', data, options); },
+  readFile: async (path: string, binary: boolean = false) => {
+    console.log('Bridge eliminated: readFile', path, binary);
+    return binary ? new ArrayBuffer(0) : '';
+  },
+  writeFile: async (path: string, content: string | ArrayBuffer) => {
+    console.log('Bridge eliminated: writeFile', path, content);
+  },
+  deleteFile: async (path: string) => {
+    console.log('Bridge eliminated: deleteFile', path);
+  },
+  exportFile: async (path: string, options: ExportOptions) => {
+    console.log('Bridge eliminated: exportFile', path, options);
+    return { success: true };
+  },
+  createDirectory: async (path: string) => {
+    console.log('Bridge eliminated: createDirectory', path);
+  },
+  fileExists: async (path: string) => {
+    console.log('Bridge eliminated: fileExists', path);
+    return false;
+  },
+  getFileInfo: async (path: string) => {
+    console.log('Bridge eliminated: getFileInfo', path);
+    return { name: '', size: 0, modified: Date.now(), isDirectory: false };
+  },
+  clearCache: () => {
+    console.log('Bridge eliminated: clearCache');
+  }
+};
+
+const Environment = {
+  isNative: () => false
+};
 
 interface UseFileSystemState {
   isLoading: boolean;

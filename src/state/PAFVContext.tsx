@@ -5,7 +5,14 @@ import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPla
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
 import { useURLState } from '../hooks/useURLState';
 import { PAFVContext, type PAFVContextValue } from '../hooks/data/usePAFV';
-import { pafvBridge } from '../utils/pafv-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { pafvBridge } from '../utils/pafv-bridge';
+
+// Stub implementation for bridge elimination
+const pafvBridge = {
+  dispose: () => { console.log('Bridge eliminated: pafvBridge.dispose'); },
+  sendAxisMappingUpdate: (state: any) => { console.log('Bridge eliminated: pafvBridge.sendAxisMappingUpdate', state); }
+};
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
   // Use URL state for persistence

@@ -114,7 +114,8 @@ export function SuperDynamicDemo() {
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem>({
     pattern: 'anchor',
     scale: 1.0,
-    origin: { x: 0, y: 0 }
+    viewportWidth: 800,
+    viewportHeight: 600
   });
 
   const [isReflowing, setIsReflowing] = useState(false);

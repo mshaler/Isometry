@@ -12,7 +12,7 @@ import type {
   Point,
   CoordinateSystem,
   OriginPattern,
-} from '../types/coordinates';
+} from '../../types/coordinates';
 import {
   screenToLogical as utilScreenToLogical,
   logicalToScreen as utilLogicalToScreen,

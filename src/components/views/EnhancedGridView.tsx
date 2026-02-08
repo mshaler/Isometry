@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { GridView } from './GridView';
-import { usePAFV } from '../../hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import { ViewTransition, SkeletonLoader } from './ViewTransitions';
 import type { ViewComponentProps } from '../../types/view';
 import type { Node } from '../../types/node';

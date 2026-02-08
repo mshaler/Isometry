@@ -1,5 +1,5 @@
-import type { Node } from '../types/node';
-import type { LATCHAxis } from '../types/pafv';
+import type { Node } from '../../types/node';
+import type { LATCHAxis } from '../../types/pafv';
 
 export interface GroupedNodes {
   [facetValue: string]: Node[];

@@ -37,13 +37,13 @@
  * @module demos/SuperGridIntegrationDemo
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { SuperGrid } from '../d3/SuperGrid';
 import { ViewContinuum } from '../d3/ViewContinuum';
 import { ViewSwitcher, useViewSwitcher } from '../components/ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from '../components/CardDetailModal';
-import { useDatabaseService } from '../hooks/useDatabaseService';
+import { useDatabaseService } from '@/hooks';
 import { usePAFV } from '../hooks/data/usePAFV';
 import { LATCHFilterService } from '../services/LATCHFilterService';
 // Note: Some components may not be available in current build
@@ -109,7 +109,7 @@ export function SuperGridIntegrationDemo() {
 
   // Selection and filtering state
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
-  const [showBulkActions, setShowBulkActions] = useState(false);
+  const [_showBulkActions, setShowBulkActions] = useState(false);
   const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);
   const [filterService] = useState(() => new LATCHFilterService());
 
@@ -138,7 +138,8 @@ export function SuperGridIntegrationDemo() {
     zAxis: {
       latchDimension: 'H',
       facet: 'priority',
-      label: 'Hierarchy → Priority'
+      label: 'Hierarchy → Priority',
+      depth: 5
     }
   });
   const [isDragInProgress, setIsDragInProgress] = useState(false);
@@ -159,8 +160,8 @@ export function SuperGridIntegrationDemo() {
   });
 
   // SuperZoom (Cartographic) state
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('leaf');
-  const [panLevel, setPanLevel] = useState<PanLevel>('dense');
+  const [_zoomLevel, setZoomLevel] = useState<ZoomLevel>('leaf');
+  const [_panLevel, setPanLevel] = useState<PanLevel>('dense');
   const [zoomTransform, setZoomTransform] = useState({ x: 0, y: 0, k: 1 });
 
   // Performance tracking
@@ -177,7 +178,7 @@ export function SuperGridIntegrationDemo() {
 
   // Context hooks
   const databaseService = useDatabaseService();
-  const { state: pafvState } = usePAFV();
+  const { state: _pafvState } = usePAFV();
 
   // Performance monitoring utilities
   const trackFeatureUsage = useCallback((feature: string, data?: any) => {
@@ -360,7 +361,7 @@ export function SuperGridIntegrationDemo() {
         enableColumnResizing: true,
         enableProgressiveDisclosure: true,
         enableCartographicZoom: true
-      },
+      } as any,
       {
         onCardClick: handleCardClick,
         onSelectionChange: handleSelectionChange,

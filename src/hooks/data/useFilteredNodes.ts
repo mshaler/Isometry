@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useFilters } from '../contexts/FilterContext';
-import { useNodes, type QueryState } from './useSQLiteQuery';
+import { useFilters } from '../../contexts/FilterContext';
+import { useNodes, type QueryState } from '../database/useSQLiteQuery';
 import { useAllDemoNodes } from './useDemoData';
-import type { Node } from '../types/node';
+import type { Node } from '../../types/node';
 
 /**
  * Hook that combines FilterContext with useNodes to return filtered data.
@@ -22,7 +22,7 @@ export function useFilteredNodes(): QueryState<Node> {
     const conditions: string[] = [];
     const filterParams: (string | number | boolean)[] = [];
 
-    activeFilters.forEach(filter => {
+    activeFilters.forEach((filter: any) => {
       const field = filter.field;
       const op = filter.operator;
       const value = filter.value;
@@ -89,7 +89,7 @@ export function useFilterSummary(): {
       return 'no filters';
     }
 
-    const parts = filters.map(filter =>
+    const parts = filters.map((filter: any) =>
       `${filter.field} ${filter.operator} ${filter.value}`
     );
 

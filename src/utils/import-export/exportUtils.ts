@@ -1,5 +1,5 @@
 import html2pdf from 'html2pdf.js';
-import type { NotebookCard } from '../types/notebook';
+import type { NotebookCard } from '../../types/notebook';
 import { officeProcessor, downloadBlob } from './officeDocumentProcessor';
 
 export interface PDFOptions {

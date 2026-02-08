@@ -14,13 +14,13 @@
  * @module examples/SuperGridShowcase
  */
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { SuperGrid } from '../d3/SuperGrid';
 import { ViewContinuum } from '../d3/ViewContinuum';
 import { ViewSwitcher, useViewSwitcher } from '../components/ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from '../components/CardDetailModal';
-import { useDatabaseService } from '../hooks/useDatabaseService';
+import { useDatabaseService } from '@/hooks';
 import { LATCHFilterService } from '../services/LATCHFilterService';
 import type { LATCHFilter } from '../services/LATCHFilterService';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
@@ -248,7 +248,7 @@ export function SuperGridShowcase({
     setIsModalOpen(true);
   }, [trackFeature]);
 
-  const handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
+  const handleSelectionChange = useCallback((selectedIds: string[], _focusedId: string | null) => {
     trackFeature('selection-change');
     setSelectedCards(selectedIds);
   }, [trackFeature]);
@@ -357,7 +357,7 @@ export function SuperGridShowcase({
         enableSelection: true,
         enableKeyboardNavigation: true,
         enableColumnResizing: true
-      },
+      } as any,
       {
         onCardClick: handleCardClick,
         onSelectionChange: handleSelectionChange,
@@ -464,7 +464,7 @@ export function SuperGridShowcase({
                   how to get the most out of SuperGrid's advanced capabilities.
                 </p>
                 <div className="flex space-x-2">
-                  {featureGuides.map((guide, index) => (
+                  {featureGuides.map((guide, _index) => (
                     <button
                       key={guide.id}
                       onClick={() => handleStartGuide(guide.id)}
@@ -707,11 +707,11 @@ export function SuperGridShowcase({
           setIsModalOpen(false);
           setSelectedCard(null);
         }}
-        onSave={async (updatedCard) => {
+        onSave={async (_updatedCard) => {
           trackFeature('card-update');
           setIsModalOpen(false);
         }}
-        onDelete={async (cardId) => {
+        onDelete={async (_cardId) => {
           trackFeature('card-delete');
           setIsModalOpen(false);
         }}

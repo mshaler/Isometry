@@ -9,7 +9,8 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { TransactionScope, TransactionScopeError, TransactionTimeoutError } from '../utils/transaction/transaction-scope';
 import { createChildId } from '../utils/transaction/correlation-ids';
-import { webViewBridge } from '../utils/webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { webViewBridge } from '../utils/webview/webview-bridge';
 
 /**
  * Transaction execution context passed to operation functions

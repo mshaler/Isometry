@@ -10,8 +10,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useLiveDataMetrics } from '../../hooks/useLiveData';
-import { useD3PerformanceWithMonitor } from '../../hooks/useD3Performance';
+import { useLiveData as useLiveDataMetrics, useD3Performance as useD3PerformanceWithMonitor } from '@/hooks';
 import { useDataFlowMonitor } from '../DataFlowMonitor';
 
 // Baseline measurement interfaces

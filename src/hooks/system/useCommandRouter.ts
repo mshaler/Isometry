@@ -4,7 +4,7 @@ import { useProjectContext } from './useProjectContext';
 import { useCommandHistory } from './useCommandHistory';
 import { useTerminalContext } from '../context/TerminalContext';
 import { parseCommand, isClaudeHelp, getClaudeHelpText } from '../utils/commandParsing';
-import type { CommandResponse, CommandType, HistoryEntry } from '../types/shell';
+import type { CommandResponse, CommandType, HistoryEntry } from '../../types/shell';
 import { getSecureWorkingDirectory } from '../config/environment';
 
 interface UseCommandRouterReturn {

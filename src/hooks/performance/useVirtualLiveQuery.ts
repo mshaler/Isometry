@@ -31,6 +31,10 @@ export interface VirtualLiveQueryOptions extends LiveQueryOptions {
   /** Padding at start and end of the virtual list */
   paddingStart?: number;
   paddingEnd?: number;
+  /** Whether to auto-start the virtual query */
+  autoStart?: boolean;
+  /** Enable caching for improved performance */
+  enableCache?: boolean;
 }
 
 export interface VirtualScrollingMetrics {

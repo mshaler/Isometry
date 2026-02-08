@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { getWebViewBridge } from '../utils/webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { getWebViewBridge } from '../utils/webview/webview-bridge';
 import type {
   ConflictInfo,
   ConflictDiff,

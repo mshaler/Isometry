@@ -7,8 +7,8 @@
  */
 
 import React, { useCallback, forwardRef } from 'react';
-import { useVirtualizedList } from '../../hooks/useVirtualizedList';
-import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
+import { useVirtualizedList } from '@/hooks';
+import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '@/hooks';
 import { Node, Edge } from '../../types/node';
 
 // Type guard functions for safe type casting

@@ -445,7 +445,7 @@ export function useNetworkQuality() {
     const monitor = getNetworkMonitor()
     setQuality(monitor.getQuality().quality)
 
-    const unsubscribe = monitor.addEventListener((event) => {
+    const unsubscribe = monitor.addEventListener((event: NetworkChangeEvent) => {
       setQuality(event.current.quality)
       setIsOnline(event.current.quality !== 'offline')
     })

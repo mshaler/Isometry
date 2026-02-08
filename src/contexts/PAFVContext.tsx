@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useCallback, useEffect } from 'react';
-import { useLiveData, type LiveDataPerformanceMetrics } from '@/hooks/useLiveData';
+import { useLiveData, type LiveDataPerformanceMetrics } from '@/hooks';
 import type { Node } from '@/types/node';
 
 export interface Chip {

@@ -58,16 +58,12 @@ export const SuperZoomControls: React.FC<SuperZoomControlsProps> = ({
   const [visualFeedback, setVisualFeedback] = useState<CartographicVisualFeedback>(
     cartographic.getVisualFeedback()
   );
-  const [boundaries, setBoundaries] = useState<BoundaryConstraints>(
-    cartographic.getBoundaryConstraints()
-  );
 
   // Update state when cartographic engine changes
   useEffect(() => {
     const updateState = () => {
       setState(cartographic.getState());
       setVisualFeedback(cartographic.getVisualFeedback());
-      setBoundaries(cartographic.getBoundaryConstraints());
     };
 
     // Set up polling for state updates (could be improved with proper event system)

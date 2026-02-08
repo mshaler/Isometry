@@ -1,11 +1,11 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VirtualizedGrid } from '../VirtualizedGrid';
-import { useNetworkAwareSync } from '../../hooks/useNetworkAwareSync';
-import { useCleanupEffect, createCleanupStack, MemoryLeakDetector } from '../../utils/memoryManagement';
+import { useNetworkAwareSync } from '@/hooks';
+import { useCleanupEffect, createCleanupStack, MemoryLeakDetector } from '../../utils/performance/memoryManagement';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '@/types/node';
-import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
+import type { VirtualLiveQueryOptions } from '@/hooks';
 
 interface GridViewProps {
   /** SQL query to execute and observe for live data */

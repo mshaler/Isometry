@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { translateQuery, OptimizedCall, SQLCall } from '../db/QueryTranslation';
-import { rowToNode, Node } from '../types/node';
+import { rowToNode, Node } from '../../types/node';
 import { useQueryCacheRegistration, useCacheInvalidation, CacheTags, type CacheTag } from './useCacheInvalidation';
 
 // Environment variable detection for API mode

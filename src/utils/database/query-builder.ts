@@ -5,7 +5,8 @@
  * index usage, query optimization, and performance validation.
  */
 
-import type { Wells } from '@/contexts/PAFVContext';
+// Duplicate type to avoid utils→contexts import violation
+type Wells = Record<string, { axis: string; facet: string; value: unknown; }>;
 
 export interface PAFVQueryOptions {
   /** Maximum number of rows to return (default: 1000) */

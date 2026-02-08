@@ -40,7 +40,6 @@ export class SimpleRenderingPerformanceMonitor {
 
   // Configuration
   private readonly maxHistorySize = 60; // 1 second at 60fps
-  private readonly targetFrameTime = 16.67; // 60fps target in ms
 
   /**
    * Start performance monitoring
@@ -74,7 +73,7 @@ export class SimpleRenderingPerformanceMonitor {
   /**
    * Record frame rendering performance
    */
-  recordFrame(renderTime: number, elementsRendered = 1): void {
+  recordFrame(renderTime: number, _elementsRendered = 1): void {
     if (!this.isMonitoring) return;
 
     const currentTime = performance.now();

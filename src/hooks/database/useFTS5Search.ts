@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSQLiteQuery } from './useSQLiteQuery';
-import type { Node } from '../types/node';
+import type { Node } from '../../types/node';
 
 export interface FTS5Result extends Node {
   rank: number; // FTS5 relevance score (lower is more relevant)

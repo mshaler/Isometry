@@ -128,7 +128,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
   useCleanupEffect(() => {
     if (!syncQueueRef.current) return
 
-    const unsubscribe = syncQueueRef.current.onStateChange((state) => {
+    const unsubscribe = syncQueueRef.current.onStateChange((state: QueueState) => {
       setQueueState(state)
 
       // Auto-clear completed operations if queue gets too large

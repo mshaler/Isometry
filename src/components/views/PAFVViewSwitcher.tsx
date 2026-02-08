@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { usePAFV } from '../../hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import { useViewRegistry } from './ViewRegistry';
 import { PerformanceMonitor, usePerformanceTracking } from './PerformanceMonitor';
 import type { ViewType, ViewComponentProps, ViewRenderer } from '../../types/view';

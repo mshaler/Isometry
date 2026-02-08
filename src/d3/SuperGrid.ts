@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import type { useDatabaseService } from '../hooks/useDatabaseService';
+import type { useDatabaseService } from '@/hooks';
 import type { GridData, GridConfig, AxisData } from '../types/grid';
 import { SelectionManager } from '../services/SelectionManager';
 import type { SelectionCallbacks, GridPosition as SelectionGridPosition } from '../services/SelectionManager';
@@ -56,7 +56,7 @@ export class SuperGrid {
   constructor(
     container: SVGElement,
     database: ReturnType<typeof useDatabaseService>,
-    config: GridConfig = {},
+    config: Partial<GridConfig> = {},
     callbacks: {
       onCardClick?: (card: any) => void;
       onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
@@ -67,7 +67,14 @@ export class SuperGrid {
   ) {
     this.container = d3.select(container);
     this.database = database;
-    this.config = { columnsPerRow: 5, enableHeaders: true, ...config };
+    this.config = {
+      columnsPerRow: 5,
+      enableHeaders: true,
+      enableColumnResizing: false,
+      enableProgressiveDisclosure: false,
+      enableCartographicZoom: false,
+      ...config
+    };
     this.onCardClick = callbacks.onCardClick;
     this.onSelectionChange = callbacks.onSelectionChange;
     this.onBulkOperation = callbacks.onBulkOperation;
@@ -417,7 +424,7 @@ export class SuperGrid {
   private persistCardPosition(cardId: string, x: number, y: number): void {
     try {
       const result = this.database.updateCardPosition(cardId, x, y);
-      if (!result.success) {
+      if (result && typeof result === 'object' && 'success' in result && !result.success) {
         console.error('Failed to persist card position:', result.error);
       }
     } catch (error) {

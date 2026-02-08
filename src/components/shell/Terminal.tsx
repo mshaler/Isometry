@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useTerminal } from '../../hooks/useTerminal';
+import { useTerminal } from '@/hooks';
 // import { useTerminalContext } from '../../context/TerminalContext';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 

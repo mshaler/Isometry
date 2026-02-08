@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import type { Node } from '../types/node';
+import type { Node } from '../../types/node';
 // Define a simple Chip interface compatible with d3 usage
 interface Chip {
   id: string;

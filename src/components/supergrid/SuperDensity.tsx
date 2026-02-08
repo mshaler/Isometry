@@ -27,11 +27,11 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { usePAFV } from '@/hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import { useDatabase } from '@/db/DatabaseContext';
 import { SuperDensityService } from '@/services/SuperDensityService';
 import { LATCHFilterService } from '@/services/LATCHFilterService';
-import { SuperDensityRenderer } from '@/d3/SuperDensityRenderer';
+import { SuperDensityRenderer, type DensityRenderConfig } from '@/d3/SuperDensityRenderer';
 import { JanusDensityControls } from '@/components/JanusDensityControls';
 import type { LATCHAxis } from '@/types/pafv';
 import type { Node } from '@/types/node';

@@ -643,7 +643,7 @@ export function useLiveQuery<T = unknown>(
     }
 
     // Add memory pressure callback for this query
-    const memoryPressureCleanup = memoryManager.addMemoryPressureCallback((metrics, activeCallbacks) => {
+    const memoryPressureCleanup = memoryManager.addMemoryPressureCallback((metrics: any, activeCallbacks: any) => {
       if (!mountedRef.current) return;
 
       // Cancel observations during critical memory pressure

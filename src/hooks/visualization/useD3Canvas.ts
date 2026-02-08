@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePAFV, type Wells } from '../contexts/PAFVContext';
-import type { Chip } from '../types/pafv';
+import type { Chip } from '../../types/pafv';
 import { useMockData } from './useMockData';
-import type { Node } from '../types/node';
+import type { Node } from '../../types/node';
 import * as d3 from 'd3';
 import { createScaleSystem, extractFieldValue, type ScaleSystemConfig, type HierarchicalScale } from '../utils/d3Scales';
 

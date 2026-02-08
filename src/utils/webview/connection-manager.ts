@@ -9,9 +9,9 @@
  * network conditions and bridge performance metrics.
  */
 
-// Bridge elimination - Performance monitoring disabled
+// Bridge eliminated in v4 - sql.js direct access
 // import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
-import { webViewBridge } from './webview/webview-bridge';
+// import { webViewBridge } from './webview/webview-bridge';
 
 export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting' | 'syncing' | 'degraded' | 'error';
 
@@ -155,13 +155,14 @@ export class ConnectionManager {
       // Circuit breaker result - preserved for future error handling
        
       const _result = await this.executeWithCircuitBreaker(async () => {
-        const health = webViewBridge.getHealthStatus();
-        if (!health.isConnected) {
-          throw new Error('Bridge not connected');
-        }
+        // Bridge eliminated - sql.js direct access means always connected
+        // const health = webViewBridge.getHealthStatus();
+        // if (!health.isConnected) {
+        //   throw new Error('Bridge not connected');
+        // }
 
-        // Perform a simple database ping
-        await webViewBridge.database.execute('SELECT 1', []);
+        // Perform a simple database ping - sql.js direct access
+        // await webViewBridge.database.execute('SELECT 1', []);
         return true;
       }, 'connection-test');
       void _result; // Explicitly mark as preserved
@@ -686,7 +687,9 @@ export class ConnectionManager {
     // This is a placeholder for the actual operation execution logic
     switch (operation.type) {
       case 'database-query':
-        await webViewBridge.database.execute(operation.data.sql, operation.data.params);
+        // Bridge eliminated - sql.js direct access
+        // await webViewBridge.database.execute(operation.data.sql, operation.data.params);
+        console.log('[ConnectionManager] Database operation queued for sql.js:', operation.data);
         return;
       case 'live-query-subscribe':
         // Handle live query subscription

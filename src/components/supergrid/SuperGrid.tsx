@@ -17,8 +17,7 @@
 
 import { useMemo, useCallback, useRef } from 'react';
 import { SuperStack } from './SuperStack';
-import { usePAFV } from '@/hooks/usePAFV';
-import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
+import { usePAFV, useSQLiteQuery } from '@/hooks';
 import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import './SuperStack.css';

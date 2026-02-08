@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { CommandResponse } from '../types/shell';
+import { CommandResponse } from '../../types/shell';
 import {
   shouldUseAPIProxy,
   getSecureAPIEndpoint,

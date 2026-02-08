@@ -6,10 +6,11 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRenderingOptimization, type OptimizationPlan } from '../../hooks/useRenderingOptimization';
-import { renderingPerformanceMonitor } from '../../utils/rendering-performance';
-import type { Viewport, RenderingMetrics, PerformanceAlert } from '../../utils/rendering-performance';
-import { Environment } from '../../utils/webview-bridge';
+import { useRenderingOptimization, type OptimizationPlan } from '@/hooks';
+import { renderingPerformanceMonitor } from '../../utils/performance/rendering-performance';
+import type { Viewport, RenderingMetrics, PerformanceAlert } from '../../utils/performance/rendering-performance';
+// Bridge eliminated in v4 - sql.js direct access
+// import { Environment } from '../../utils/webview-bridge';
 
 // ============================================================================
 // Types
@@ -813,7 +814,7 @@ function generateOptimizationRecommendations(
   const recommendations: OptimizationRecommendation[] = [];
 
   // Frame rate recommendations
-  if (!metrics.performance60FPS) {
+  if (metrics.frameRate < 60) {
     recommendations.push({
       id: 'fps-optimization',
       category: 'performance',
@@ -827,7 +828,7 @@ function generateOptimizationRecommendations(
   }
 
   // Memory recommendations
-  const memoryMB = metrics.memoryUsage / 1024 / 1024;
+  const memoryMB = metrics.memoryUsageMB;
   if (memoryMB > 100) {
     recommendations.push({
       id: 'memory-optimization',

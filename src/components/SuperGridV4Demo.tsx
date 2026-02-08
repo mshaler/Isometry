@@ -38,8 +38,8 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 
   // Grid configuration
   const gridConfig: GridConfig = {
-    xAxisRange: { min: 0, max: 10 },
-    yAxisRange: { min: 0, max: 10 },
+    xAxisRange: { min: 0, max: 10, count: 11 },
+    yAxisRange: { min: 0, max: 10, count: 11 },
     cellWidth: 80,
     cellHeight: 60,
     headerWidth: 120,

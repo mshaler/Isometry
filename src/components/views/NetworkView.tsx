@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useCanvasTheme } from '@/hooks/useComponentTheme';
-import { useLiveData } from '@/hooks/useLiveData';
+import { useCanvasTheme, useLiveData } from '@/hooks';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
@@ -69,7 +68,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     {
       trackPerformance: true,
       throttleMs: 100,
-      onPerformanceUpdate: (metrics) => {
+      onPerformanceUpdate: (metrics: any) => {
         console.debug('NetworkView edges performance:', metrics);
       }
     }
@@ -167,8 +166,8 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     // Filter edges to only include those with valid source/target
     const links: SimLink[] = (edges || [])
-      .filter(e => nodeMap.has(e.source_id) && nodeMap.has(e.target_id))
-      .map(e => ({
+      .filter((e: EdgeData) => nodeMap.has(e.source_id) && nodeMap.has(e.target_id))
+      .map((e: EdgeData) => ({
         id: e.id,
         source: e.source_id,
         target: e.target_id,
@@ -362,11 +361,11 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
               d.fx = d.x;
               d.fy = d.y;
             })
-            .on('drag', (event, d: SimNode) => {
+            .on('drag', (event: any, d: SimNode) => {
               d.fx = event.x;
               d.fy = event.y;
             })
-            .on('end', (event, d: SimNode) => {
+            .on('end', (event: any, d: SimNode) => {
               if (!event.active) simulation.alphaTarget(0);
               d.fx = null;
               d.fy = null;

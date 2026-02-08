@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { usePAFV } from './usePAFV';
 import { useFilteredNodes } from './useFilteredNodes';
-import type { Node } from '../types/node';
-import type { LATCHAxis } from '../types/pafv';
+import type { Node } from '../../types/node';
+import type { LATCHAxis } from '../../types/pafv';
 
 export interface ListGroup {
   key: string;
@@ -120,7 +120,7 @@ export function useListData(groupingEnabled: boolean = true): ListData {
 
     const groupMap = new Map<string, Node[]>();
 
-    sortedNodes.forEach(node => {
+    sortedNodes.forEach((node: Node) => {
       let groupKey = 'Uncategorized';
 
       // Determine group key based on axis and facet

@@ -34,7 +34,13 @@ export function useDatabaseService() {
       getFilteredCards: () => [],
       saveHeaderState: () => {},
       getHeaderState: () => null,
-      getStats: () => ({ totalCards: 0, totalEdges: 0 })
+      getStats: () => ({ totalCards: 0, totalEdges: 0 }),
+      saveProgressiveState: () => ({ success: false }),
+      loadProgressiveState: () => null,
+      saveLevelVisibility: () => ({ success: false }),
+      loadLevelVisibility: () => null,
+      saveColumnWidths: () => ({ success: false }),
+      loadColumnWidths: () => null
     };
   }
 
@@ -310,6 +316,105 @@ export function useDatabaseService() {
         return columnWidths;
       } catch (error) {
         console.error('Load column widths failed:', error);
+        return null;
+      }
+    },
+
+    // Progressive disclosure state persistence methods
+    saveProgressiveState: (datasetId: string, appContext: string, state: any) => {
+      try {
+        // Create progressive_state table if not exists
+        run(`
+          CREATE TABLE IF NOT EXISTS progressive_state (
+            dataset_id TEXT NOT NULL,
+            app_context TEXT NOT NULL,
+            visible_levels TEXT NOT NULL,
+            current_tab INTEGER NOT NULL,
+            last_updated TEXT NOT NULL,
+            PRIMARY KEY (dataset_id, app_context)
+          )
+        `);
+
+        // Upsert state
+        run(`
+          INSERT OR REPLACE INTO progressive_state (
+            dataset_id, app_context, visible_levels, current_tab, last_updated
+          ) VALUES (?, ?, ?, ?, datetime('now'))
+        `, [datasetId, appContext, JSON.stringify(state.visibleLevels), state.currentTab]);
+
+        return { success: true };
+      } catch (error) {
+        console.error('Save progressive state failed:', error);
+        return { success: false, error: String(error) };
+      }
+    },
+
+    loadProgressiveState: (datasetId: string, appContext: string) => {
+      try {
+        const results = execute(`
+          SELECT visible_levels, current_tab, last_updated
+          FROM progressive_state
+          WHERE dataset_id = ? AND app_context = ?
+        `, [datasetId, appContext]);
+
+        if (results.length === 0) return null;
+
+        const state = results[0];
+        return {
+          visibleLevels: JSON.parse(state.visible_levels as string || '[0, 1, 2]'),
+          currentTab: state.current_tab as number,
+          lastUpdated: state.last_updated as string
+        };
+      } catch (error) {
+        console.error('Load progressive state failed:', error);
+        return null;
+      }
+    },
+
+    saveLevelVisibility: (datasetId: string, appContext: string, levelVisibility: any) => {
+      try {
+        // Create level_visibility table if not exists
+        run(`
+          CREATE TABLE IF NOT EXISTS level_visibility (
+            dataset_id TEXT NOT NULL,
+            app_context TEXT NOT NULL,
+            visible_levels TEXT NOT NULL,
+            last_updated TEXT NOT NULL,
+            PRIMARY KEY (dataset_id, app_context)
+          )
+        `);
+
+        // Upsert visibility state
+        run(`
+          INSERT OR REPLACE INTO level_visibility (
+            dataset_id, app_context, visible_levels, last_updated
+          ) VALUES (?, ?, ?, datetime('now'))
+        `, [datasetId, appContext, JSON.stringify(levelVisibility.visibleLevels)]);
+
+        return { success: true };
+      } catch (error) {
+        console.error('Save level visibility failed:', error);
+        return { success: false, error: String(error) };
+      }
+    },
+
+    loadLevelVisibility: (datasetId: string, appContext: string) => {
+      try {
+        const results = execute(`
+          SELECT visible_levels, last_updated
+          FROM level_visibility
+          WHERE dataset_id = ? AND app_context = ?
+        `, [datasetId, appContext]);
+
+        if (results.length === 0) return null;
+
+        const state = results[0];
+        return {
+          visibleLevels: JSON.parse(state.visible_levels as string || '[0, 1, 2]'),
+          lastUpdated: state.last_updated as string
+        };
+      } catch (error) {
+        console.error('Load level visibility failed:', error);
         return null;
       }
     }

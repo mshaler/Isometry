@@ -6,9 +6,23 @@
  */
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { Environment, postMessage } from '../utils/webview/webview-bridge';
-import { bridgeLogger } from '../utils/logging/logger';
-import { waitForWebViewBridge } from '../utils/webview-bridge-waiter';
+// Bridge eliminated in v4 - sql.js direct access
+// import { Environment, postMessage } from '../utils/webview/webview-bridge';
+// import { bridgeLogger } from '../utils/logging/logger';
+// import { waitForWebViewBridge } from '../utils/webview-bridge-waiter';
+
+// Stub implementations for bridge elimination
+const Environment = {
+  isWebView: () => false,
+  info: () => ({ platform: 'browser', version: '4.0', isNative: false })
+};
+const bridgeLogger = {
+  debug: console.debug,
+  info: console.info,
+  warn: console.warn,
+  error: console.error
+};
+const waitForWebViewBridge = async () => false;
 
 export enum DatabaseMode {
   HTTP_API = 'http-api',
@@ -188,10 +202,10 @@ export function EnvironmentProvider({
     bridgeLogger.debug('WebView bridge: database handler available, testing ping', {});
 
     try {
-      // Test if bridge is actually functional with a simple ping
-      const response = await postMessage('database', 'ping', {});
-      bridgeLogger.debug('WebView bridge: Ping successful', { response });
-      return response !== null;
+      // Bridge eliminated - sql.js direct access
+      // const response = await postMessage('database', 'ping', {});
+      bridgeLogger.debug('WebView bridge: Ping simulated (bridge eliminated)');
+      return false; // Bridge no longer exists
     } catch (error) {
       console.log('❌ WebView bridge: Ping failed:', error);
       bridgeLogger.debug('WebView bridge test failed', { error: error as Error });

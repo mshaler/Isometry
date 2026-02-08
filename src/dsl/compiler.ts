@@ -14,7 +14,7 @@ import {
   sanitizeFieldName,
   sanitizeOperator,
   isSecurityRisk
-} from '../utils/input-sanitization';
+} from '../utils/security/input-sanitization';
 
 /**
  * Compile AST to SQL WHERE clause with parameterized values

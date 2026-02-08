@@ -48,6 +48,7 @@ export interface DensityRenderConfig {
   showAggregationIndicators: boolean;
   showPerformanceMetrics: boolean;
   enableHoverDetails: boolean;
+  enableDebugLogging?: boolean;
 }
 
 export interface DensityVisualState {
@@ -692,7 +693,7 @@ export class SuperDensityRenderer {
   /**
    * Handle cell mouse leave
    */
-  private handleCellMouseLeave(event: MouseEvent, row: DensityAggregatedRow): void {
+  private handleCellMouseLeave(_event: MouseEvent, _row: DensityAggregatedRow): void {
     this.visualState.hoveredCell = null;
 
     if (this.config.enableHoverDetails) {
@@ -703,7 +704,7 @@ export class SuperDensityRenderer {
   /**
    * Handle cell click
    */
-  private handleCellClick(event: MouseEvent, row: DensityAggregatedRow): void {
+  private handleCellClick(_event: MouseEvent, row: DensityAggregatedRow): void {
     if (this.visualState.selectedCells.has(row.cellId)) {
       this.visualState.selectedCells.delete(row.cellId);
     } else {

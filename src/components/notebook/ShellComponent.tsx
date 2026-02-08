@@ -1,12 +1,30 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Minimize2, Maximize2, Circle, Bot, Code, Settings } from 'lucide-react';
+import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings } from 'lucide-react';
 import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 
 // TODO: Implement these hooks or replace with sql.js equivalents
-const useCommandRouter = () => ({ route: () => {}, history: [] });
-const useProjectContext = () => ({ project: null });
-const useClaudeAPI = () => ({ send: () => Promise.resolve(''), isLoading: false });
+const useCommandRouter = () => ({
+  route: () => {},
+  history: [],
+  executeCommand: () => Promise.resolve({
+    success: true,
+    output: '',
+    error: undefined,
+    type: 'success' as const
+  }),
+  navigateHistory: () => null,
+  isExecuting: false
+});
+const useProjectContext = () => ({
+  project: null,
+  getActiveCardContext: () => ({ title: 'Mock Card' })
+});
+const useClaudeAPI = () => ({
+  send: () => Promise.resolve(''),
+  isLoading: false,
+  isConfigured: false
+});
 
 interface ShellComponentProps {
   className?: string;

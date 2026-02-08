@@ -14,7 +14,7 @@
 import { useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { usePAFV } from '@/hooks/usePAFV';
+import { usePAFV } from '@/hooks';
 import { D3ViewWrapper } from '@/d3/components/D3ViewWrapper';
 import { nodeToCardValue } from '@/types/lpg';
 import type { Node } from '@/types/node';

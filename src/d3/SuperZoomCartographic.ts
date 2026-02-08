@@ -544,7 +544,7 @@ export class SuperZoomCartographic implements CartographicControlInterface {
   // D3 Zoom Event Handlers
   // ========================================================================
 
-  private handleZoomStart(event: d3.D3ZoomEvent<SVGElement, unknown>): void {
+  private handleZoomStart(_event: d3.D3ZoomEvent<SVGElement, unknown>): void {
     if (!this.isInternalAnimation) {
       // User-initiated interaction
       this.interruptAnimation();
@@ -575,10 +575,9 @@ export class SuperZoomCartographic implements CartographicControlInterface {
     this.notifyStateChange();
   }
 
-  private handleZoomEnd(event: d3.D3ZoomEvent<SVGElement, unknown>): void {
+  private handleZoomEnd(_event: d3.D3ZoomEvent<SVGElement, unknown>): void {
     if (!this.isInternalAnimation) {
       // User interaction ended
-      const duration = performance.now() - this.animationStartTime;
       this.updatePerformanceMetrics(this.animationStartTime);
     }
   }

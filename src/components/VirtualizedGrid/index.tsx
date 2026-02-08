@@ -7,8 +7,8 @@
  */
 
 import React, { useCallback, forwardRef, useMemo } from 'react';
-import { useVirtualizedGrid } from '../../hooks/useVirtualizedList';
-import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
+import { useVirtualizedGrid } from '@/hooks';
+import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '@/hooks';
 import { Node, Edge } from '../../types/node';
 
 // Type guard functions for safe type casting
@@ -228,7 +228,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
           width: virtualGrid.totalWidth
         }}
       >
-        {virtualGridItems.map(virtualItem => {
+        {virtualGridItems.map((virtualItem: any) => {
           const item = finalItems[virtualItem.itemIndex];
           if (!item) return null;
 

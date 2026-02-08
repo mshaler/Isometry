@@ -393,7 +393,6 @@ export class ViewportService {
     x: number;
     y: number;
   } {
-    const constraints = this.calculateBoundaryConstraints(1.0);
 
     // Center content in viewport if possible
     const targetX = -contentBounds.x + (this.viewport.width - contentBounds.width) / 2;

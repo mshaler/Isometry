@@ -100,7 +100,7 @@ export class PAFVAxisService {
       }
 
       const rows = results[0];
-      this.availableAxes = rows.values.map(row => {
+      this.availableAxes = rows.values.map((row: any) => {
         const [id, facet, latchDimension, , facetType, enabled, , nodeCount] = row;
 
         return {

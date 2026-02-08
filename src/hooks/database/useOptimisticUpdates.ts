@@ -12,7 +12,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from './useLiveQuery';
 import { useConnection } from '../context/ConnectionContext';
-import { webViewBridge } from '../utils/webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { webViewBridge } from '../utils/webview/webview-bridge';
 
 export interface OptimisticOperation {
   id: string;

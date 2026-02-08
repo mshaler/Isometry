@@ -20,7 +20,8 @@ import {
   type LODConfiguration,
   type MemoryMetrics
 } from '../utils/rendering-performance';
-import { Environment, webViewBridge } from '../utils/webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { Environment, webViewBridge } from '../utils/webview/webview-bridge';
 
 // ============================================================================
 // Types
@@ -155,7 +156,7 @@ export function useRenderingOptimization(
       renderingPerformanceMonitor.startMonitoring();
 
       if (config.memoryMonitoring) {
-        memoryUsageTracker.startMonitoring(5000, (metrics) => {
+        memoryUsageTracker.startMonitoring(5000, (metrics: any) => {
           if (metrics.leakDetected) {
             setState(prev => ({
               ...prev,

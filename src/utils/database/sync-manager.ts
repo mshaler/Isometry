@@ -5,7 +5,21 @@
  */
 
 import { useState, useEffect } from 'react';
-import { webViewBridge, Environment } from './webview/webview-bridge';
+// Bridge eliminated in v4 - sql.js direct access
+// import { webViewBridge, Environment } from './webview/webview-bridge';
+
+// Stub implementations for bridge elimination
+const webViewBridge = {
+  database: {
+    execute: async (sql: string, params: any[]) => { console.log('Bridge eliminated: execute', sql, params); },
+    createNode: async (data: any) => { console.log('Bridge eliminated: createNode', data); },
+    updateNode: async (data: any) => { console.log('Bridge eliminated: updateNode', data); },
+    deleteNode: async (id: string) => { console.log('Bridge eliminated: deleteNode', id); }
+  }
+};
+const Environment = {
+  isWebView: () => false
+};
 
 export interface DataChange {
   id: string;

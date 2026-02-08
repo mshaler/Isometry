@@ -12,8 +12,8 @@ import type {
   CoordinateSystem,
   OriginPattern,
   OriginPreset,
-} from '../types/coordinates';
-import type { AxisRange, GridCell } from '../types/supergrid';
+} from '../../types/coordinates';
+import type { AxisRange, GridCell } from '../../types/supergrid';
 
 /**
  * Convert screen coordinates (SVG pixel position) to logical grid coordinates.

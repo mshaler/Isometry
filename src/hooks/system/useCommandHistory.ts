@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { HistoryEntry } from '../types/shell';
+import type { HistoryEntry } from '../../types/shell';
 import {
   saveHistory,
   loadHistory,
@@ -9,7 +9,7 @@ import {
   pruneHistory,
   exportHistory
 } from '../utils/commandHistory';
-import { MAX_HISTORY_ENTRIES } from '../types/shell';
+import { MAX_HISTORY_ENTRIES } from '../../types/shell';
 
 interface UseCommandHistoryReturn {
   addHistoryEntry: (entry: HistoryEntry) => void;

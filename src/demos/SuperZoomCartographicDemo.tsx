@@ -44,7 +44,7 @@ export const SuperZoomCartographicDemo: React.FC = () => {
           console.log('Pan changed:', x, y);
           setState({ ...state });
         },
-        onBoundaryHit: (boundary, state) => {
+        onBoundaryHit: (boundary, _state) => {
           console.log('Hit boundary:', boundary);
         }
       }

@@ -3,10 +3,10 @@ import { Search, X, ArrowUpDown, Wifi, WifiOff, Loader } from 'lucide-react';
 import { VirtualizedList } from '../VirtualizedList';
 import { useSelection } from '../../state/SelectionContext';
 import { ListItem } from '../ListItem';
-import { useNetworkAwareSync } from '../../hooks/useNetworkAwareSync';
+import { useNetworkAwareSync } from '@/hooks';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
-import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
+import type { VirtualLiveQueryOptions } from '@/hooks';
 
 // Item heights for virtualization
 const ITEM_HEIGHT = 100; // Regular list item height

@@ -10,8 +10,8 @@
  * immediately reflect in others via shared NotebookContext.
  */
 
-import { useEffect, useState } from 'react';
-import { Grid3x3, Terminal, Edit3, ArrowRight, Check, ExternalLink } from 'lucide-react';
+import { useState } from 'react';
+import { Grid3x3, Terminal, Edit3, Check, ExternalLink } from 'lucide-react';
 
 interface DemoStep {
   title: string;
@@ -60,7 +60,7 @@ const demoSteps: DemoStep[] = [
 ];
 
 export function ThreeCanvasDemo() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 
   const markStepComplete = (step: number) => {

@@ -98,7 +98,7 @@ export function ConnectionProvider({
     connectionManager.current = getConnectionManager(managerOptions);
 
     // Set up state change listener
-    connectionManager.current.onStateChange((newState, metrics) => {
+    connectionManager.current.onStateChange((newState: ConnectionState, metrics: any) => {
       setStatus(newState);
       setIsConnected(newState === 'connected' || newState === 'degraded' || newState === 'syncing');
       setUptime(metrics.uptime);
@@ -113,7 +113,7 @@ export function ConnectionProvider({
     });
 
     // Set up quality change listener
-    connectionManager.current.onQualityChange((newQuality) => {
+    connectionManager.current.onQualityChange((newQuality: ConnectionQuality) => {
       setQuality(newQuality);
     });
 

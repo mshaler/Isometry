@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode } from 'react';
-import { useURLState } from '@/hooks/useURLState';
+import { useURLState } from '@/hooks';
 
 export type AppName = 'Demo' | 'Inbox' | 'Projects' | 'LinkedIn' | 'MTGs' | 'ReadWatch';
 export type ViewName = 'List' | 'Gallery' | 'Timeline' | 'Calendar' | 'Tree' | 'Kanban' | 'Grid' | 'Charts' | 'Graphs' | 'SuperGrid';
