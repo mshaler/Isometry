@@ -1,15 +1,18 @@
 import { useState, useRef, useCallback } from 'react';
-import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, FileText, Globe, Image as ImageIcon, FileType, BarChart3 } from 'lucide-react';
+import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useWebPreview } from '@/hooks';
 import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-export/exportUtils';
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
+import { SuperGrid } from '../supergrid/SuperGrid';
 import MDEditor from '@uiw/react-md-editor';
 
 interface PreviewComponentProps {
   className?: string;
 }
+
+type PreviewTab = 'supergrid' | 'network' | 'data-inspector' | 'web-preview' | 'd3-visualization';
 
 export function PreviewComponent({ className }: PreviewComponentProps) {
   const { theme } = useTheme();
@@ -18,7 +21,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const [previewUrl, setPreviewUrl] = useState('https://example.com');
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'web' | 'd3-visualization'>('d3-visualization');
+  const [activeTab, setActiveTab] = useState<PreviewTab>('supergrid');
   const [dataPointCount, setDataPointCount] = useState(0);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -97,21 +100,18 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
     setZoom(zoom - 25);
   }, [zoom, setZoom]);
 
-  // Get content type icon
-  const getContentIcon = () => {
-    if (previewMode === 'd3-visualization') {
-      return BarChart3;
-    }
-    switch (contentType) {
-      case 'web': return Globe;
-      case 'pdf': return FileType;
-      case 'image': return ImageIcon;
-      case 'markdown': return FileText;
-      default: return Monitor;
-    }
-  };
+  // Tab definitions with icons and labels
+  const tabs: Array<{ id: PreviewTab; icon: typeof Grid3x3; label: string; description: string }> = [
+    { id: 'supergrid', icon: Grid3x3, label: 'SuperGrid', description: 'Polymorphic data projection' },
+    { id: 'network', icon: Network, label: 'Network', description: 'Graph visualization' },
+    { id: 'data-inspector', icon: Database, label: 'Inspector', description: 'Data explorer' },
+    { id: 'web-preview', icon: Globe, label: 'Web', description: 'Web content preview' },
+    { id: 'd3-visualization', icon: BarChart3, label: 'D3 Viz', description: 'Interactive charts' }
+  ];
 
-  const ContentIcon = getContentIcon();
+  // Get current tab info
+  const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
+  const ContentIcon = currentTab.icon;
 
   if (isMinimized) {
     return (
@@ -139,17 +139,11 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
       <div className={`flex items-center justify-between p-2 ${theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'} rounded-t-lg border-b`}>
         <div className="flex items-center gap-2">
           <ContentIcon size={16} className="text-gray-600" />
-          <span className="font-medium text-sm">Preview</span>
+          <span className="font-medium text-sm">{currentTab.label}</span>
+          <span className="text-xs text-gray-500">•</span>
+          <span className="text-xs text-gray-500">{currentTab.description}</span>
         </div>
         <div className="flex items-center gap-1">
-          {/* Mode toggle */}
-          <button
-            onClick={() => setPreviewMode(previewMode === 'd3-visualization' ? 'web' : 'd3-visualization')}
-            className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors ${previewMode === 'd3-visualization' ? 'bg-blue-100' : ''}`}
-            title={previewMode === 'd3-visualization' ? 'Switch to Web Preview' : 'Switch to Data Visualization'}
-          >
-            {previewMode === 'd3-visualization' ? <BarChart3 size={14} className="text-blue-600" /> : <Globe size={14} className="text-gray-600" />}
-          </button>
 
           {/* Export dropdown */}
           <div className="relative" ref={exportDropdownRef}>
@@ -233,9 +227,32 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
         </div>
       </div>
 
-      {/* Address Bar */}
+      {/* Tab Bar */}
+      <div className={`border-b flex ${theme === 'NeXTSTEP' ? 'border-[#707070] bg-[#d4d4d4]' : 'border-gray-200 bg-gray-100'}`}>
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-3 py-2 text-sm border-r transition-colors ${
+                isActive
+                  ? `${theme === 'NeXTSTEP' ? 'bg-white border-[#707070]' : 'bg-white border-gray-300'} text-blue-600 font-medium`
+                  : `${theme === 'NeXTSTEP' ? 'hover:bg-[#b0b0b0] border-[#707070]' : 'hover:bg-gray-200 border-gray-200'} text-gray-600 hover:text-gray-900`
+              }`}
+              title={tab.description}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Address Bar / Context Info */}
       <div className={`border-b ${theme === 'NeXTSTEP' ? 'border-[#707070] bg-white' : 'border-gray-200 bg-gray-50'}`}>
-        {previewMode === 'web' ? (
+        {activeTab === 'web-preview' ? (
           <form onSubmit={handleUrlSubmit} className="flex items-center gap-2 p-2">
             <button type="button" className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-gray-200' : 'bg-gray-200'} transition-colors`} title="Back">
               <ArrowLeft size={12} className="text-gray-600" />
@@ -251,10 +268,33 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
               placeholder="Enter URL to preview..."
             />
           </form>
+        ) : activeTab === 'supergrid' ? (
+          <div className="flex items-center gap-2 p-2">
+            <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
+              sql://nodes?filter=active-card-data
+            </div>
+            {dataPointCount > 0 && (
+              <span className="text-xs text-gray-500">
+                {dataPointCount} nodes
+              </span>
+            )}
+          </div>
+        ) : activeTab === 'network' ? (
+          <div className="flex items-center gap-2 p-2">
+            <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
+              graph://nodes+edges?layout=force-directed
+            </div>
+          </div>
+        ) : activeTab === 'data-inspector' ? (
+          <div className="flex items-center gap-2 p-2">
+            <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
+              inspector://sqlite-schema+data
+            </div>
+          </div>
         ) : (
           <div className="flex items-center gap-2 p-2">
             <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
-              visualization://active-card-data
+              d3://visualization?source=active-card
             </div>
             {dataPointCount > 0 && (
               <span className="text-xs text-gray-500">
@@ -267,8 +307,42 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
 
       {/* Content Area */}
       <div className="flex-1 relative">
-        {previewMode === 'd3-visualization' ? (
-          /* D3 Visualization Mode */
+        {activeTab === 'supergrid' ? (
+          /* SuperGrid Tab - Primary Data Projection */
+          <SuperGrid
+            sql="SELECT * FROM nodes WHERE deleted_at IS NULL LIMIT 100"
+            mode="supergrid"
+            enableSuperStack={true}
+            enableDragDrop={true}
+            onCellClick={(node) => {
+              // Handle cell selection - could update activeCard context
+              console.log('SuperGrid cell clicked:', node);
+            }}
+            onHeaderClick={(level, value, axis) => {
+              // Handle header filtering
+              console.log('SuperGrid header clicked:', { level, value, axis });
+            }}
+          />
+        ) : activeTab === 'network' ? (
+          /* Network Graph Tab */
+          <div className="h-full flex items-center justify-center text-gray-500">
+            <div className="text-center">
+              <Network size={48} className="mx-auto mb-2" />
+              <div className="font-medium mb-1">Network Graph View</div>
+              <div className="text-sm">Graph visualization coming soon...</div>
+            </div>
+          </div>
+        ) : activeTab === 'data-inspector' ? (
+          /* Data Inspector Tab */
+          <div className="h-full flex items-center justify-center text-gray-500">
+            <div className="text-center">
+              <Database size={48} className="mx-auto mb-2" />
+              <div className="font-medium mb-1">Data Inspector</div>
+              <div className="text-sm">SQLite schema & data explorer coming soon...</div>
+            </div>
+          </div>
+        ) : activeTab === 'd3-visualization' ? (
+          /* D3 Visualization Tab */
           <D3VisualizationRenderer
             content={activeCard?.markdownContent || ''}
             width={400}
@@ -365,12 +439,20 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
       <div className={`border-t px-3 py-1 ${theme === 'NeXTSTEP' ? 'border-[#707070] bg-[#d4d4d4]' : 'border-gray-200 bg-gray-50'}`}>
         <div className="flex items-center justify-between text-xs">
           <div className="text-gray-600">
-            {previewMode === 'd3-visualization' ? (
-              dataPointCount > 0 ? `Data visualization • ${dataPointCount} points` : 'Visualization ready'
-            ) : (
+            {activeTab === 'supergrid' ? (
+              `SuperGrid • Polymorphic data projection${dataPointCount > 0 ? ` • ${dataPointCount} nodes` : ''}`
+            ) : activeTab === 'network' ? (
+              'Network Graph • Graph visualization'
+            ) : activeTab === 'data-inspector' ? (
+              'Data Inspector • SQLite browser'
+            ) : activeTab === 'd3-visualization' ? (
+              dataPointCount > 0 ? `D3 Visualization • ${dataPointCount} points` : 'D3 ready'
+            ) : activeTab === 'web-preview' ? (
               content ? `${contentType.charAt(0).toUpperCase() + contentType.slice(1)} content` : 'No content'
+            ) : (
+              'Ready'
             )}
-            {previewMode === 'web' && (contentType === 'pdf' || contentType === 'image') ? ` • ${zoom}%` : ''}
+            {activeTab === 'web-preview' && (contentType === 'pdf' || contentType === 'image') ? ` • ${zoom}%` : ''}
           </div>
           <div className="text-gray-500">
             {isExporting ? 'Exporting...' : isLoading ? 'Loading...' : 'Ready'}
