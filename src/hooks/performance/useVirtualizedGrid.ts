@@ -18,7 +18,7 @@ import {
   DEFAULT_GRID_LAYOUT,
   isCellData
 } from '../../types/grid';
-import { PerformanceMonitor } from '../utils/bridge-optimization/performance-monitor';
+import { PerformanceMonitor } from '../../utils/bridge-optimization/performance-monitor';
 
 export interface VirtualizedGridOptions {
   /** Total number of rows in the dataset */

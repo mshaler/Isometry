@@ -167,10 +167,13 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
         isEmpty: false,
         activeFilters: [
           {
+            id: `search-${Date.now()}`,
             axis: 'A', // Alphabet
+            facet: 'name',
             operator: 'contains',
             value: query,
-            label: `Search: "${query}"`
+            label: `Search: "${query}"`,
+            timestamp: Date.now()
           }
         ]
       };
@@ -350,7 +353,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .advanced-supergrid-demo {
           display: flex;
           flex-direction: column;

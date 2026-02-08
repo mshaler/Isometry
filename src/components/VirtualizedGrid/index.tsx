@@ -109,19 +109,29 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
     return Math.max((width - totalGapWidth) / columnCount, estimateColumnWidth);
   }, [width, columnCount, gap, estimateColumnWidth]);
 
-  // Virtual grid hook for static data fallback
-  const staticVirtualGrid = useVirtualizedGrid(finalItems.length, columnCount, {
+  // Virtual grid hook for static data fallback - need to pass proper grid data structure
+  const staticGridData = useMemo(() => {
+    const rows: any[][] = [];
+    for (let i = 0; i < finalItems.length; i += columnCount) {
+      rows.push(finalItems.slice(i, i + columnCount));
+    }
+    return rows;
+  }, [finalItems, columnCount]);
+
+  const staticVirtualGrid = useVirtualizedGrid(staticGridData, {
+    rowCount: Math.ceil(finalItems.length / columnCount),
+    columnCount,
     containerHeight: height,
     containerWidth: width,
-    estimateSize: estimateRowHeight,
-    estimateColumnWidth: actualColumnWidth,
+    estimatedItemHeight: estimateRowHeight(),
+    estimatedItemWidth: actualColumnWidth,
     enableDynamicSizing
   });
 
   // Use live virtual grid if available, otherwise static virtual grid
   const virtualGrid = usingLiveData ? {
     containerRef: liveQuery.containerRef,
-    virtualGridItems: [], // Will be calculated from virtualItems
+    virtualItems: [], // Will be calculated from virtualItems
     totalHeight: liveQuery.totalSize,
     totalWidth: width,
     scrollToIndex: liveQuery.scrollToIndex,
@@ -131,7 +141,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
   // Convert live virtual items to grid format if using live data
   const virtualGridItems = useMemo(() => {
     if (!usingLiveData) {
-      return staticVirtualGrid.virtualGridItems;
+      return staticVirtualGrid.virtualItems;
     }
 
     // Convert linear virtual items to grid layout
@@ -150,7 +160,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
         height: virtualItem.size
       };
     });
-  }, [usingLiveData, liveQuery.virtualItems, staticVirtualGrid.virtualGridItems, columnCount, actualColumnWidth, gap]);
+  }, [usingLiveData, liveQuery.virtualItems, staticVirtualGrid.virtualItems, columnCount, actualColumnWidth, gap]);
 
   // Handle item click
   const handleItemClick = useCallback((itemIndex: number) => {
