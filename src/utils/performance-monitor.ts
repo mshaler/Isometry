@@ -8,6 +8,7 @@ import React from 'react';
 import { performanceBenchmarks, type BaselineMetrics } from './performance-benchmarks';
 import { Environment } from './webview-bridge';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
+import { devLogger } from './dev-logger';
 
 // Extension of Performance API to include memory information
 interface PerformanceWithMemory extends Performance {
@@ -287,7 +288,7 @@ export class PerformanceMonitor {
     const alert = this.alerts.get(alertId);
     if (alert) {
       alert.resolved = true;
-      console.log(`✅ Performance alert resolved: ${alert.message}`);
+      devLogger.metrics('Performance alert resolved', { message: alert.message });
     }
   }
 
@@ -594,7 +595,7 @@ export class PerformanceMonitor {
   private generatePerformanceReport(session: PerformanceSession): void {
     const duration = (session.endTime! - session.startTime) / 1000;
 
-    console.log(`📊 Performance Report - Session ${session.id.slice(-8)}`);
+    devLogger.metrics('Performance Report - Session', { sessionId: session.id.slice(-8) });
     console.log(`Duration: ${duration.toFixed(1)}s`);
     console.log(`Frame Rate: ${session.metrics.frameRateMin}-${session.metrics.frameRateMax} FPS (avg: ${session.metrics.frameRateAvg.toFixed(1)})`);
     console.log(`Memory: ${session.metrics.memoryUsageMin.toFixed(1)}-${session.metrics.memoryUsageMax.toFixed(1)} MB (avg: ${session.metrics.memoryUsageAvg.toFixed(1)})`);

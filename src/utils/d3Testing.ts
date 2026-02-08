@@ -1,5 +1,6 @@
 import { validatePerformanceTargets, performanceMonitor } from './d3Performance';
 import type { Node } from '../types/node';
+import { devLogger } from './dev-logger';
 
 // Import types to avoid JSX module resolution issues
 interface Wells {
@@ -453,7 +454,7 @@ export const runComprehensiveTestSuite = async (): Promise<TestSuiteResults> => 
     }
   };
 
-  console.log('✅ Test suite completed:', results.summary);
+  devLogger.metrics('Test suite completed', results.summary);
   return results;
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, cleanup } from '@testing-library/react';
+import { componentLogger } from '../../utils/dev-logger';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ImportWizard } from '../ImportWizard';
 import { ReactTestDataGenerator } from './ImportWizard.test';
@@ -350,7 +351,7 @@ describe('ImportWizard Performance Tests', () => {
 
       // Log performance baselines
       const report = harness.getPerformanceReport();
-      console.log('📊 ImportWizard Performance Baselines:', JSON.stringify(report, null, 2));
+      componentLogger.metrics('ImportWizard Performance Baselines', report);
     }, 30000); // Extended timeout for baseline establishment
   });
 
@@ -363,7 +364,7 @@ describe('ImportWizard Performance Tests', () => {
       });
 
       const avgDuration = measurements.reduce((sum, m) => sum + m.duration, 0) / measurements.length;
-      console.log(`📊 Render Performance (5 files): ${avgDuration.toFixed(2)}ms`);
+      componentLogger.metrics('Render Performance (5 files)', { avgDuration: avgDuration.toFixed(2) + 'ms' });
     });
 
     it('maintains performance with medium file counts', async () => {
@@ -374,7 +375,7 @@ describe('ImportWizard Performance Tests', () => {
       });
 
       const avgDuration = measurements.reduce((sum, m) => sum + m.duration, 0) / measurements.length;
-      console.log(`📊 Render Performance (20 files): ${avgDuration.toFixed(2)}ms`);
+      componentLogger.metrics('Render Performance (20 files)', { avgDuration: avgDuration.toFixed(2) + 'ms' });
     });
 
     it('handles large file counts without excessive degradation', async () => {
@@ -385,7 +386,7 @@ describe('ImportWizard Performance Tests', () => {
       });
 
       const avgDuration = measurements.reduce((sum, m) => sum + m.duration, 0) / measurements.length;
-      console.log(`📊 Render Performance (50 files): ${avgDuration.toFixed(2)}ms`);
+      componentLogger.metrics('Render Performance (50 files)', { avgDuration: avgDuration.toFixed(2) + 'ms' });
     });
   });
 
@@ -399,7 +400,7 @@ describe('ImportWizard Performance Tests', () => {
       });
 
       const avgThroughput = measurements.reduce((sum, m) => sum + m.throughput, 0) / measurements.length;
-      console.log(`📊 Upload Throughput: ${avgThroughput.toFixed(1)} files/second`);
+      componentLogger.metrics('Upload Throughput', { avgThroughput: avgThroughput.toFixed(1) + ' files/second' });
     });
 
     it('scales file upload performance linearly', async () => {
@@ -425,7 +426,7 @@ describe('ImportWizard Performance Tests', () => {
         expect(durationRatio).toBeLessThan(scaleFactor * 2);
       }
 
-      console.log('📊 Upload Scaling:', results);
+      componentLogger.metrics('Upload Scaling', results);
     });
   });
 
@@ -439,7 +440,7 @@ describe('ImportWizard Performance Tests', () => {
       });
 
       const avgThroughput = measurements.reduce((sum, m) => sum + m.throughput, 0) / measurements.length;
-      console.log(`📊 Processing Throughput: ${avgThroughput.toFixed(1)} nodes/second`);
+      componentLogger.metrics('Processing Throughput', { avgThroughput: avgThroughput.toFixed(1) + ' nodes/second' });
     });
 
     it('handles concurrent file processing efficiently', async () => {
@@ -477,7 +478,7 @@ describe('ImportWizard Performance Tests', () => {
       // Allow some growth but not excessive (50% threshold)
       expect(memoryGrowth).toBeLessThan(initialMemory * 0.5);
 
-      console.log(`📊 Memory Usage: Initial=${initialMemory}, Final=${finalMemory}, Growth=${memoryGrowth}`);
+      componentLogger.metrics('Memory Usage', { initialMemory, finalMemory, memoryGrowth });
     });
 
     it('cleans up resources after component unmount', async () => {
@@ -526,7 +527,7 @@ describe('ImportWizard Performance Tests', () => {
       expect(regression.isRegression).toBe(true);
       expect(regression.durationRatio).toBeGreaterThan(1.5);
 
-      console.log('📊 Regression Detection:', regression);
+      componentLogger.metrics('Regression Detection', regression);
 
       // Restore original mock
       harness['mockImportOfficeFile'] = originalMock;

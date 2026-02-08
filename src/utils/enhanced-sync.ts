@@ -7,6 +7,7 @@
 
 import { syncManager, type DataChange, type SyncConflict } from './sync-manager';
 import { performanceMonitor } from './performance-monitor';
+import { devLogger } from './dev-logger';
 
 export interface SyncDevice {
   id: string;
@@ -93,7 +94,7 @@ export class EnhancedSyncManager {
    * Initialize enhanced sync with device registration
    */
   async initialize(): Promise<void> {
-    console.log('🔄 Initializing enhanced sync manager...');
+    devLogger.setup('Initializing enhanced sync manager', {});
 
     // Register current device
     const deviceInfo: SyncDevice = {
@@ -112,7 +113,7 @@ export class EnhancedSyncManager {
     // Load and process offline changes
     await this.processOfflineChanges();
 
-    console.log(`✅ Enhanced sync initialized for device: ${deviceInfo.name} (${this.deviceId.slice(-8)})`);
+    devLogger.setup('Enhanced sync initialized for device', { deviceName: deviceInfo.name, deviceId: this.deviceId.slice(-8) });
   }
 
   /**
@@ -189,7 +190,7 @@ export class EnhancedSyncManager {
         const duration = performance.now() - startTime;
         performanceMonitor.recordSyncOperation(duration, true);
 
-        console.log(`✅ Synced offline change: ${offlineChange.change.id}`);
+        devLogger.state('Synced offline change', { changeId: offlineChange.change.id });
 
       } catch (error) {
         console.error(`❌ Failed to sync offline change ${offlineChange.change.id}:`, error);
@@ -211,7 +212,7 @@ export class EnhancedSyncManager {
     // Persist updated offline queue
     this.persistOfflineChanges();
 
-    console.log(`📊 Offline sync summary: ${processed} processed, ${failed} failed, ${conflicts} conflicts`);
+    devLogger.metrics('Offline sync summary', { processed, failed, conflicts });
 
     return { processed, failed, conflicts };
   }
@@ -257,7 +258,7 @@ export class EnhancedSyncManager {
     this.crossDeviceState.activeSessions.delete(sessionId);
 
     const duration = session.endTime - session.startTime;
-    console.log(`✅ Sync session ${sessionId} completed in ${duration}ms`);
+    devLogger.metrics('Sync session completed', { sessionId, duration: duration + 'ms' });
     console.log(`   Sent: ${session.changesSent}, Received: ${session.changesReceived}, Conflicts: ${session.conflictsResolved}`);
 
     return session;
@@ -335,7 +336,7 @@ export class EnhancedSyncManager {
    * Force sync all offline changes
    */
   async forceSyncAll(): Promise<void> {
-    console.log('🔄 Forcing sync of all offline changes...');
+    devLogger.state('Forcing sync of all offline changes', {});
     await this.processOfflineChanges();
   }
 
@@ -345,7 +346,7 @@ export class EnhancedSyncManager {
   async clearOfflineQueue(): Promise<void> {
     this.offlineStorage.clear();
     this.persistOfflineChanges();
-    console.log('🗑️ Offline queue cleared');
+    devLogger.state('Offline queue cleared', {});
   }
 
   // ==========================================================================

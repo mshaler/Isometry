@@ -1,3 +1,5 @@
+import { devLogger } from './dev-logger';
+
 export interface EnvironmentConfig {
   isConfigured: boolean;
   hasAPIKey: boolean;
@@ -169,7 +171,7 @@ export function isProductionEnvironment(): boolean {
 export function logEnvironmentStatus(): void {
   const config = getEnvironmentConfig();
 
-  console.log('🔧 Claude API Environment Status:', {
+  devLogger.debug('Claude API Environment Status', {
     configured: config.isConfigured,
     hasKey: config.hasAPIKey,
     status: config.configurationStatus,
@@ -178,7 +180,7 @@ export function logEnvironmentStatus(): void {
   });
 
   if (!config.isConfigured) {
-    console.log('📋 Setup Instructions:');
+    devLogger.setup('Setup Instructions', {});
     setupEnvironmentInstructions().forEach(instruction => console.log(instruction));
   }
 }

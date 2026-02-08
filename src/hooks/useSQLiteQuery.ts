@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { rowToNode, Node } from '../types/node';
+import { devLogger } from '../utils/dev-logger';
 
 export interface QueryState<T> {
   data: T[] | null;
@@ -82,7 +83,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
 
       // Log performance in development mode
       if (import.meta.env.DEV) {
-        console.log('🔍 sql.js Query:', {
+        devLogger.data('sql.js Query', {
           sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
           params: params.length > 0 ? params : undefined,
           duration: `${queryDuration.toFixed(2)}ms`,

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useEnvironment } from '../../contexts/EnvironmentContext';
+import { contextLogger } from '../../utils/dev-logger';
 import { waitForWebViewBridge, isWebViewEnvironmentImmediate } from '../../utils/webview-bridge-waiter';
 
 export function WebViewDiagnostic() {
@@ -35,7 +36,7 @@ export function WebViewDiagnostic() {
       setDiagnosticData(data);
 
       // Also log to console
-      console.log('🔍 WebView Diagnostic Data:', data);
+      contextLogger.inspect('WebView Diagnostic Data', data);
     }
 
     runDiagnostics();

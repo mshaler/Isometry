@@ -1,0 +1,1945 @@
+{
+  "timestamp": "2026-02-07T23:58:26.107Z",
+  "totalChanges": 277,
+  "changes": [
+    {
+      "line": 1252,
+      "action": "remove_debug",
+      "before": "console.log('[OptimizedBridge] Optimization configuration updated:', this.optimizationsEnabled);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/webview-bridge.ts"
+    },
+    {
+      "line": 369,
+      "action": "remove_debug",
+      "before": "console.log('🔍 WebView Environment Check:');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/utils/webview-bridge.ts"
+    },
+    {
+      "line": 288,
+      "action": "wrap_conditional",
+      "before": "console.log(`[WebView Bridge Performance] ${response.id}: ${duration}ms`);",
+      "after": "if (import.meta.env.DEV) { console.log(`[WebView Bridge Performance] ${response.id}: ${duration}ms`); }",
+      "file": "src/utils/webview-bridge.ts"
+    },
+    {
+      "line": 61,
+      "action": "remove_debug",
+      "before": "console.log('📡 Received isometry-bridge-ready event');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/webview-bridge-waiter.ts"
+    },
+    {
+      "line": 39,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge detected via IsometryNative user agent');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/webview-bridge-waiter.ts"
+    },
+    {
+      "line": 33,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge detected via webkit.messageHandlers');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/webview-bridge-waiter.ts"
+    },
+    {
+      "line": 22,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Bridge check:', {",
+      "after": "// Debug: removed inspection log",
+      "file": "src/utils/webview-bridge-waiter.ts"
+    },
+    {
+      "line": 10,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Waiting for WebView bridge initialization...');",
+      "after": "// Debug: removed state change log",
+      "file": "src/utils/webview-bridge-waiter.ts"
+    },
+    {
+      "line": 597,
+      "action": "remove_debug",
+      "before": "console.debug(`📦 Executed batch of ${operations.length} operations in ${duration.toFixed(2)}ms`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/rendering-performance.ts"
+    },
+    {
+      "line": 523,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ Forced garbage collection');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/rendering-performance.ts"
+    },
+    {
+      "line": 121,
+      "action": "remove_debug",
+      "before": "console.log('📊 Rendering performance monitoring stopped', metrics);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/utils/rendering-performance.ts"
+    },
+    {
+      "line": 109,
+      "action": "remove_debug",
+      "before": "console.log('📊 Rendering performance monitoring started');",
+      "after": "// Debug: removed metrics log",
+      "file": "src/utils/rendering-performance.ts"
+    },
+    {
+      "line": 93,
+      "action": "remove_debug",
+      "before": "console.log('🚀 Native rendering optimization bridge available');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/rendering-performance.ts"
+    },
+    {
+      "line": 483,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Validating optimization effectiveness...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/utils/performance-validation.ts"
+    },
+    {
+      "line": 405,
+      "action": "remove_debug",
+      "before": "console.log(`🏁 Benchmark suite completed: ${results.length} tests run`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-validation.ts"
+    },
+    {
+      "line": 348,
+      "action": "remove_debug",
+      "before": "console.log(`🚀 Starting benchmark suite: ${suite.name}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-validation.ts"
+    },
+    {
+      "line": 328,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Test completed: ${test.name} - ${testResult.passed ? 'PASSED' : 'FAILED'}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-validation.ts"
+    },
+    {
+      "line": 603,
+      "action": "wrap_conditional",
+      "before": "console.log(`Sync Performance: ${session.metrics.syncOperations} operations, ${session.metrics.syncFailures} failures`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Sync Performance: ${session.metrics.syncOperations} operations, ${session.metrics.syncFailures} failures`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 602,
+      "action": "wrap_conditional",
+      "before": "console.log(`Query Performance: ${session.metrics.queryCount} queries, ${session.metrics.queryLatencyAvg.toFixed(1)}ms avg, ${session.metrics.queryErrorRate.toFixed(1)}% error rate`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Query Performance: ${session.metrics.queryCount} queries, ${session.metrics.queryLatencyAvg.toFixed(1)}ms avg, ${session.metrics.queryErrorRate.toFixed(1)}% error rate`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 601,
+      "action": "wrap_conditional",
+      "before": "console.log(`Input Latency P90: ${session.metrics.inputLatencyP90.toFixed(1)}ms`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Input Latency P90: ${session.metrics.inputLatencyP90.toFixed(1)}ms`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 600,
+      "action": "wrap_conditional",
+      "before": "console.log(`Memory: ${session.metrics.memoryUsageMin.toFixed(1)}-${session.metrics.memoryUsageMax.toFixed(1)} MB (avg: ${session.metrics.memoryUsageAvg.toFixed(1)})`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Memory: ${session.metrics.memoryUsageMin.toFixed(1)}-${session.metrics.memoryUsageMax.toFixed(1)} MB (avg: ${session.metrics.memoryUsageAvg.toFixed(1)})`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 599,
+      "action": "wrap_conditional",
+      "before": "console.log(`Frame Rate: ${session.metrics.frameRateMin}-${session.metrics.frameRateMax} FPS (avg: ${session.metrics.frameRateAvg.toFixed(1)})`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Frame Rate: ${session.metrics.frameRateMin}-${session.metrics.frameRateMax} FPS (avg: ${session.metrics.frameRateAvg.toFixed(1)})`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 597,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Performance Report - Session ${session.id.slice(-8)}`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 353,
+      "action": "wrap_conditional",
+      "before": "console.log(`Navigation timing: ${navEntry.loadEventEnd - navEntry.loadEventStart}ms`);",
+      "after": "if (import.meta.env.DEV) { console.log(`Navigation timing: ${navEntry.loadEventEnd - navEntry.loadEventStart}ms`); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 290,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Performance alert resolved: ${alert.message}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 177,
+      "action": "remove_debug",
+      "before": "console.log('🛑 Stopping performance monitoring...');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 147,
+      "action": "remove_debug",
+      "before": "console.log('🚀 Starting performance monitoring...');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 143,
+      "action": "wrap_conditional",
+      "before": "console.log('Performance monitoring skipped (sampling)');",
+      "after": "if (import.meta.env.DEV) { console.log('Performance monitoring skipped (sampling)'); }",
+      "file": "src/utils/performance-monitor.ts"
+    },
+    {
+      "line": 346,
+      "action": "remove_debug",
+      "before": "console.debug(`[PAFVBridge] ${message}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/pafv-bridge.ts"
+    },
+    {
+      "line": 398,
+      "action": "remove_debug",
+      "before": "console.log(`🗑️ Checkpoint deleted: ${id}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 327,
+      "action": "remove_debug",
+      "before": "console.log(`📼 Restoring from checkpoint...`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 315,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Checkpoint created: ${id}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 281,
+      "action": "remove_debug",
+      "before": "console.log(`📸 Creating migration checkpoint: ${reason}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 240,
+      "action": "remove_debug",
+      "before": "console.log('✅ Rollback completed successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 102,
+      "action": "remove_debug",
+      "before": "console.log(`🔍 Validating migration path: ${from} → ${to}`);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/utils/migration-validator.ts"
+    },
+    {
+      "line": 181,
+      "action": "remove_debug",
+      "before": "console.log('📋 Setup Instructions:');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/environmentSetup.ts"
+    },
+    {
+      "line": 172,
+      "action": "remove_debug",
+      "before": "console.log('🔧 Claude API Environment Status:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/environmentSetup.ts"
+    },
+    {
+      "line": 458,
+      "action": "remove_debug",
+      "before": "console.log(`📁 Loaded ${this.offlineStorage.size} offline changes from storage`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 386,
+      "action": "remove_debug",
+      "before": "console.log(`📥 Added change to offline queue: ${change.id} (priority: ${priority})`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 348,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ Offline queue cleared');",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 338,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Forcing sync of all offline changes...');",
+      "after": "// Debug: removed state change log",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 306,
+      "action": "remove_debug",
+      "before": "console.log(`🔀 Resolved conflict ${conflict.id} using ${this.conflictStrategy.strategy}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 260,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Sync session ${sessionId} completed in ${duration}ms`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 241,
+      "action": "remove_debug",
+      "before": "console.log(`🚀 Started sync session: ${sessionId}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 214,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Offline sync summary: ${processed} processed, ${failed} failed, ${conflicts} conflicts`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 192,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Synced offline change: ${offlineChange.change.id}`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 167,
+      "action": "remove_debug",
+      "before": "console.log(`📤 Processing ${this.offlineStorage.size} offline changes...`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 115,
+      "action": "remove_debug",
+      "before": "console.log(`✅ Enhanced sync initialized for device: ${deviceInfo.name} (${this.deviceId.slice(-8)})`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 96,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Initializing enhanced sync manager...');",
+      "after": "// Debug: removed state change log",
+      "file": "src/utils/enhanced-sync.ts"
+    },
+    {
+      "line": 456,
+      "action": "remove_debug",
+      "before": "console.log('✅ Test suite completed:', results.summary);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/d3Testing.ts"
+    },
+    {
+      "line": 664,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionManager] Processed queued operation:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/connection-manager.ts"
+    },
+    {
+      "line": 383,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionManager] State transition:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/connection-manager.ts"
+    },
+    {
+      "line": 251,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionManager] Queued operation:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/connection-manager.ts"
+    },
+    {
+      "line": 344,
+      "action": "remove_debug",
+      "before": "console.debug('[CacheInvalidation]', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/cacheInvalidation.ts"
+    },
+    {
+      "line": 316,
+      "action": "remove_debug",
+      "before": "console.log(`💪 Stress testing migration: ${loadLevel} load`);",
+      "after": "// Debug logging removed",
+      "file": "src/test/performance-regression.test.ts"
+    },
+    {
+      "line": 250,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Detecting performance regressions...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/test/performance-regression.test.ts"
+    },
+    {
+      "line": 190,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Benchmarking migration: ${scenario.name}`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/test/performance-regression.test.ts"
+    },
+    {
+      "line": 106,
+      "action": "remove_debug",
+      "before": "console.log(`🎯 Validating performance targets for ${provider}...`);",
+      "after": "// Debug logging removed",
+      "file": "src/test/performance-regression.test.ts"
+    },
+    {
+      "line": 274,
+      "action": "remove_debug",
+      "before": "console.log(`📱 Validating cross-platform compatibility: ${platform}`);",
+      "after": "// Debug logging removed",
+      "file": "src/test/migration-e2e.test.ts"
+    },
+    {
+      "line": 119,
+      "action": "remove_debug",
+      "before": "console.log(`🔄 Testing migration: ${from} → ${to}`);",
+      "after": "// Debug: removed state change log",
+      "file": "src/test/migration-e2e.test.ts"
+    },
+    {
+      "line": 56,
+      "action": "remove_debug",
+      "before": "console.log('🚀 Starting complete workflow validation...');",
+      "after": "// Debug logging removed",
+      "file": "src/test/migration-e2e.test.ts"
+    },
+    {
+      "line": 313,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Running comprehensive migration validation...\\n');",
+      "after": "// Debug: removed state change log",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 301,
+      "action": "remove_debug",
+      "before": "console.log('✅ All migration documentation complete and accurate');",
+      "after": "// Debug logging removed",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 259,
+      "action": "remove_debug",
+      "before": "console.log('✅ Security compliance requirements validated');",
+      "after": "// Debug logging removed",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 226,
+      "action": "remove_debug",
+      "before": "console.log('✅ All React components maintain compatibility');",
+      "after": "// Debug logging removed",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 163,
+      "action": "remove_debug",
+      "before": "console.log('✅ All performance targets exceeded:');",
+      "after": "// Debug logging removed",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 76,
+      "action": "remove_debug",
+      "before": "console.log('✅ sql.js completely removed from codebase');",
+      "after": "// Debug logging removed",
+      "file": "src/test/final-migration-validation.test.ts"
+    },
+    {
+      "line": 417,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Detecting data corruption...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/test/data-integrity-validation.test.ts"
+    },
+    {
+      "line": 342,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Testing concurrent operations and conflict resolution...');",
+      "after": "// Debug: removed state change log",
+      "file": "src/test/data-integrity-validation.test.ts"
+    },
+    {
+      "line": 247,
+      "action": "remove_debug",
+      "before": "console.log(`🔄 Testing data migration: ${migrationPath.source} → ${migrationPath.target}`);",
+      "after": "// Debug: removed state change log",
+      "file": "src/test/data-integrity-validation.test.ts"
+    },
+    {
+      "line": 156,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Validating data consistency across providers...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/test/data-integrity-validation.test.ts"
+    },
+    {
+      "line": 200,
+      "action": "remove_debug",
+      "before": "console.log('✅ Native server built successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 177,
+      "action": "remove_debug",
+      "before": "console.log('🔧 Building native server (this may take a moment)...');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 171,
+      "action": "remove_debug",
+      "before": "console.log('✅ Native server binary found');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 121,
+      "action": "remove_debug",
+      "before": "console.log('🛑 Stopping native API server...');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 87,
+      "action": "remove_debug",
+      "before": "console.log('🚀 Starting native API server...');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 82,
+      "action": "remove_debug",
+      "before": "console.log('🔨 Building native API server...');",
+      "after": "// Debug logging removed",
+      "file": "src/server/native-api-server.ts"
+    },
+    {
+      "line": 613,
+      "action": "remove_debug",
+      "before": "console.debug('Native cache invalidation failed (non-critical):', error);",
+      "after": "// Debug logging removed",
+      "file": "src/services/QueryCacheService.ts"
+    },
+    {
+      "line": 599,
+      "action": "remove_debug",
+      "before": "console.debug('Failed to check graph metrics for cache warming:', error);",
+      "after": "// Debug logging removed",
+      "file": "src/services/ConnectionSuggestionService.ts"
+    },
+    {
+      "line": 596,
+      "action": "remove_debug",
+      "before": "console.debug('Graph size grown, considering cache warming');",
+      "after": "// Debug logging removed",
+      "file": "src/services/ConnectionSuggestionService.ts"
+    },
+    {
+      "line": 466,
+      "action": "remove_debug",
+      "before": "console.debug(`Precomputation failed for node ${nodeId}:`, error);",
+      "after": "// Debug logging removed",
+      "file": "src/services/ConnectionSuggestionService.ts"
+    },
+    {
+      "line": 295,
+      "action": "remove_debug",
+      "before": "console.debug('[useVirtualLiveQuery] Update pipeline:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useVirtualLiveQuery.ts"
+    },
+    {
+      "line": 75,
+      "action": "remove_debug",
+      "before": "console.log('🔍 SQL Query (v4):', {",
+      "after": "// Debug: removed inspection log",
+      "file": "src/hooks/useSQLiteQuery.v4.ts"
+    },
+    {
+      "line": 85,
+      "action": "remove_debug",
+      "before": "console.log('🔍 sql.js Query:', {",
+      "after": "// Debug: removed inspection log",
+      "file": "src/hooks/useSQLiteQuery.ts"
+    },
+    {
+      "line": 436,
+      "action": "remove_debug",
+      "before": "console.log('🎯 Auto-optimization: decreased aggressiveness due to high FPS');",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useRenderingOptimization.ts"
+    },
+    {
+      "line": 426,
+      "action": "remove_debug",
+      "before": "console.log('🎯 Auto-optimization: increased aggressiveness due to low FPS');",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useRenderingOptimization.ts"
+    },
+    {
+      "line": 352,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Reset optimizations to defaults');",
+      "after": "// Debug: removed state change log",
+      "file": "src/hooks/useRenderingOptimization.ts"
+    },
+    {
+      "line": 340,
+      "action": "remove_debug",
+      "before": "console.log('🎯 Applied optimization plan:', plan);",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useRenderingOptimization.ts"
+    },
+    {
+      "line": 405,
+      "action": "remove_debug",
+      "before": "console.log('[useOptimisticUpdates] Connection lost with pending operations:',",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useOptimisticUpdates.ts"
+    },
+    {
+      "line": 365,
+      "action": "remove_debug",
+      "before": "console.log('[useOptimisticUpdates] Rolling back all operations:', currentOperations.length);",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useOptimisticUpdates.ts"
+    },
+    {
+      "line": 321,
+      "action": "remove_debug",
+      "before": "console.log('[useOptimisticUpdates] Rolling back operation:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useOptimisticUpdates.ts"
+    },
+    {
+      "line": 238,
+      "action": "remove_debug",
+      "before": "console.log('[useOptimisticUpdates] Operation succeeded:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useOptimisticUpdates.ts"
+    },
+    {
+      "line": 205,
+      "action": "remove_debug",
+      "before": "console.log('[useOptimisticUpdates] Applied optimistic update:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useOptimisticUpdates.ts"
+    },
+    {
+      "line": 579,
+      "action": "remove_debug",
+      "before": "console.log('[useLiveQuery] Rolled back optimistic update:', { rollbackKey, id: removedId });",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useLiveQuery.ts"
+    },
+    {
+      "line": 534,
+      "action": "remove_debug",
+      "before": "console.log('[useLiveQuery] Applied optimistic update:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useLiveQuery.ts"
+    },
+    {
+      "line": 462,
+      "action": "remove_debug",
+      "before": "console.log('[useLiveQuery] Stopped live observation:', observationId);",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useLiveQuery.ts"
+    },
+    {
+      "line": 436,
+      "action": "remove_debug",
+      "before": "console.log('[useLiveQuery] Started live observation:', {",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useLiveQuery.ts"
+    },
+    {
+      "line": 337,
+      "action": "remove_debug",
+      "before": "console.log('[useLiveQuery] Merging optimistic update for item:', (item as any).id);",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useLiveQuery.ts"
+    },
+    {
+      "line": 547,
+      "action": "wrap_conditional",
+      "before": "console.log('D3 Canvas Pipeline Performance:', {",
+      "after": "if (import.meta.env.DEV) { console.log('D3 Canvas Pipeline Performance:', { }",
+      "file": "src/hooks/useD3Canvas.ts"
+    },
+    {
+      "line": 55,
+      "action": "remove_debug",
+      "before": "console.log('🔒 Using secure API proxy for Claude requests');",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useClaudeAPI.ts"
+    },
+    {
+      "line": 399,
+      "action": "wrap_conditional",
+      "before": "console.log('[DatabaseProvider Performance]', {",
+      "after": "if (import.meta.env.DEV) { console.log('[DatabaseProvider Performance]', { }",
+      "file": "src/hooks/useBridgeDatabase.tsx"
+    },
+    {
+      "line": 339,
+      "action": "remove_debug",
+      "before": "console.log('[useBridgeDatabase] getFilteredNodes called with filters:', filters);",
+      "after": "// Debug logging removed",
+      "file": "src/hooks/useBridgeDatabase.tsx"
+    },
+    {
+      "line": 55,
+      "action": "remove_debug",
+      "before": "console.debug('LiveVisualizationExample performance:', metrics);",
+      "after": "// Debug logging removed",
+      "file": "src/examples/LiveVisualizationExample.tsx"
+    },
+    {
+      "line": 468,
+      "action": "remove_debug",
+      "before": "console.log('✅ Database schema initialized successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 466,
+      "action": "remove_debug",
+      "before": "console.log('📊 Sample nodes loaded:', nodeCount);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 463,
+      "action": "remove_debug",
+      "before": "console.log('🏗️ Tables created:', tables);",
+      "after": "// Debug: removed setup log",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 444,
+      "action": "remove_debug",
+      "before": "console.log('✅ Schema execution completed successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 441,
+      "action": "remove_debug",
+      "before": "console.log('🔨 Executing schema SQL...');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 438,
+      "action": "remove_debug",
+      "before": "console.log(`📄 Schema loaded: ${schemaSQL.length} characters`);",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 429,
+      "action": "remove_debug",
+      "before": "console.log('🔧 Initializing database schema...');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 398,
+      "action": "remove_debug",
+      "before": "console.log('📂 Database loaded from file');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 374,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Database reset complete');",
+      "after": "// Debug: removed state change log",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 347,
+      "action": "remove_debug",
+      "before": "console.log('💾 Database saved to localStorage backup');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 320,
+      "action": "remove_debug",
+      "before": "console.log('🔧 SQL Run:', {",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 284,
+      "action": "remove_debug",
+      "before": "console.log('🔍 SQL Query:', {",
+      "after": "// Debug: removed inspection log",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 232,
+      "action": "remove_debug",
+      "before": "console.log('🚀 SQLiteProvider: Database initialization complete');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 208,
+      "action": "remove_debug",
+      "before": "console.log('✅ SQLiteProvider: Recursive CTE support verified');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 184,
+      "action": "remove_debug",
+      "before": "console.log('✅ SQLiteProvider: JSON1 support verified');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 167,
+      "action": "remove_debug",
+      "before": "console.log('✅ SQLiteProvider: FTS5 support verified with virtual table test');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 141,
+      "action": "remove_debug",
+      "before": "console.log(`📝 SQLiteProvider: Creating new database (load failed: ${loadError})`);",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 133,
+      "action": "remove_debug",
+      "before": "console.log('✅ SQLiteProvider: Loaded existing database successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 121,
+      "action": "remove_debug",
+      "before": "console.log(`📦 SQLiteProvider: Downloaded database (${arrayBuffer.byteLength} bytes)`);",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 115,
+      "action": "remove_debug",
+      "before": "console.log(`🔍 SQLiteProvider: Attempting to load database from ${databaseUrl}`);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 89,
+      "action": "remove_debug",
+      "before": "console.log('🔧 SQLiteProvider: Initializing sql.js...');",
+      "after": "// Debug logging removed",
+      "file": "src/db/SQLiteProvider.tsx"
+    },
+    {
+      "line": 93,
+      "action": "remove_debug",
+      "before": "console.log(`[FallbackDB] Returning ${sampleNodes.length} total nodes:`, nodeTypeCounts);",
+      "after": "// Debug logging removed",
+      "file": "src/db/FallbackDatabaseContext.tsx"
+    },
+    {
+      "line": 39,
+      "action": "remove_debug",
+      "before": "console.log('[FallbackDB] Query executed:', {",
+      "after": "// Debug logging removed",
+      "file": "src/db/FallbackDatabaseContext.tsx"
+    },
+    {
+      "line": 57,
+      "action": "remove_debug",
+      "before": "console.log('🔄 Using Fallback Database (bridge infrastructure eliminated in v4)');",
+      "after": "// Debug: removed state change log",
+      "file": "src/db/DatabaseContext.tsx"
+    },
+    {
+      "line": 783,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ ViewContinuum.destroy(): Cleanup complete');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 755,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ViewContinuum.resetState(): State reset to defaults');",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 719,
+      "action": "remove_debug",
+      "before": "console.log('🎯 ViewContinuum.focusCard():', { cardId, viewType: this.viewState.currentView });",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 702,
+      "action": "remove_debug",
+      "before": "console.log('📐 ViewContinuum.updateAxisMapping():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 626,
+      "action": "remove_debug",
+      "before": "console.log('✅ ViewContinuum: Active view initialized:', this.viewState.currentView);",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 614,
+      "action": "remove_debug",
+      "before": "console.log('🏗️ ViewContinuum: SVG structure initialized');",
+      "after": "// Debug: removed setup log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 587,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ViewContinuum.restoreViewState():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 571,
+      "action": "remove_debug",
+      "before": "console.log('💾 ViewContinuum.saveCurrentViewState():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 547,
+      "action": "remove_debug",
+      "before": "console.log('💾 ViewContinuum: Saved state to localStorage:', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 516,
+      "action": "remove_debug",
+      "before": "console.log('🆕 ViewContinuum: Created default view state');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 503,
+      "action": "remove_debug",
+      "before": "console.log('💾 ViewContinuum: Loaded state from localStorage:', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 459,
+      "action": "remove_debug",
+      "before": "console.log('📋 ViewContinuum.updateSelection():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 429,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ViewContinuum.reprojectCachedData(): Re-projected data to current view:', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 402,
+      "action": "remove_debug",
+      "before": "console.log('🔍 ViewContinuum.queryAndCache():', {",
+      "after": "// Debug: removed inspection log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 380,
+      "action": "remove_debug",
+      "before": "console.log('💾 ViewContinuum.queryAndCache(): Using cached results');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 249,
+      "action": "remove_debug",
+      "before": "console.log('✅ ViewContinuum.switchToView(): Transition complete', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 173,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ViewContinuum.switchToView():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 136,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ ViewContinuum.unregisterViewRenderer():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 109,
+      "action": "remove_debug",
+      "before": "console.log('📋 ViewContinuum.registerViewRenderer():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 92,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ViewContinuum initialized:', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ViewContinuum.ts"
+    },
+    {
+      "line": 948,
+      "action": "remove_debug",
+      "before": "console.log('✅ SuperGridHeaders.restoreHeaderState(): State restored successfully');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 919,
+      "action": "remove_debug",
+      "before": "console.log('🔄 SuperGridHeaders.restoreHeaderState(): Restoring state', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 915,
+      "action": "remove_debug",
+      "before": "console.log('📋 SuperGridHeaders.restoreHeaderState(): No saved state found');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 891,
+      "action": "remove_debug",
+      "before": "console.log('✅ SuperGridHeaders.saveHeaderState(): State saved', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 832,
+      "action": "wrap_conditional",
+      "before": "console.log('⏱️ SuperGridHeaders.trackRenderPerformance():', {",
+      "after": "if (import.meta.env.DEV) { console.log('⏱️ SuperGridHeaders.trackRenderPerformance():', { }",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 771,
+      "action": "remove_debug",
+      "before": "console.log('✅ SuperGridHeaders animation within budget:', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 518,
+      "action": "remove_debug",
+      "before": "console.log('🔄 SuperGridHeaders.animateHeaderExpansion():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 500,
+      "action": "remove_debug",
+      "before": "console.log('👆 SuperGridHeaders.handleClick():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 433,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Rendered level ${level}: ${nodesAtLevel.length} nodes`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 340,
+      "action": "remove_debug",
+      "before": "console.log('🎨 SuperGridHeaders.renderAllLevels(): Rendering all levels');",
+      "after": "// Debug: removed render log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 323,
+      "action": "remove_debug",
+      "before": "console.log('🔄 SuperGridHeaders.renderProgressively(): Using progressive rendering');",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 232,
+      "action": "remove_debug",
+      "before": "console.log('🏗️ SuperGridHeaders.initializeStructure(): Structure initialized');",
+      "after": "// Debug: removed setup log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 180,
+      "action": "remove_debug",
+      "before": "console.log('🔄 SuperGridHeaders.toggleNode():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 147,
+      "action": "remove_debug",
+      "before": "console.log('✅ SuperGridHeaders.renderHeaders(): Complete');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 124,
+      "action": "remove_debug",
+      "before": "console.log('📊 SuperGridHeaders.renderHeaders(): Hierarchy generated:', {",
+      "after": "// Debug: removed metrics log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 107,
+      "action": "remove_debug",
+      "before": "console.log('🎨 SuperGridHeaders.renderHeaders(): Starting...', {",
+      "after": "// Debug: removed render log",
+      "file": "src/d3/SuperGridHeaders.ts"
+    },
+    {
+      "line": 1151,
+      "action": "remove_debug",
+      "before": "",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 1137,
+      "action": "remove_debug",
+      "before": "}",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 1105,
+      "action": "remove_debug",
+      "before": ".selectAll<SVGGElement, any>('.card-group')",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 1061,
+      "action": "remove_debug",
+      "before": "",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 852,
+      "action": "remove_debug",
+      "before": "/**",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 836,
+      "action": "remove_debug",
+      "before": "",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 819,
+      "action": "remove_debug",
+      "before": "this.handleCardClick(event, d);",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 811,
+      "action": "remove_debug",
+      "before": ".on('mouseleave', (event, d: any) => {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 687,
+      "action": "remove_debug",
+      "before": "// Calculate positions - use stored grid positions if available, otherwise calculate from index",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 686,
+      "action": "remove_debug",
+      "before": "",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 685,
+      "action": "remove_debug",
+      "before": "console.log('🗂️ SuperGrid.renderCards(): Columns per row:', columnsPerRow);",
+      "after": "// Debug: removed data log",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 681,
+      "action": "remove_debug",
+      "before": "const cards = this.currentData.cards;",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 678,
+      "action": "remove_debug",
+      "before": "return;",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 664,
+      "action": "remove_debug",
+      "before": "console.log('🎨 SuperGrid.render(): Rendering cards...');",
+      "after": "// Debug: removed render log",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 663,
+      "action": "remove_debug",
+      "before": "",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 653,
+      "action": "remove_debug",
+      "before": "if (!this.currentData) {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/SuperGrid.ts"
+    },
+    {
+      "line": 441,
+      "action": "remove_debug",
+      "before": "console.log('🏗️ ListView: SVG structure initialized');",
+      "after": "// Debug: removed setup log",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 399,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ListView.toggleExpansion():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 359,
+      "action": "remove_debug",
+      "before": "console.log('✅ ListView.renderHierarchicalList():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 349,
+      "action": "remove_debug",
+      "before": "console.log('📋 ListView: Card clicked:', d.card.id);",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 225,
+      "action": "remove_debug",
+      "before": "console.log('🔄 ListView.applySort():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 169,
+      "action": "remove_debug",
+      "before": "console.log('🌳 ListView.buildHierarchy():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 107,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ ListView.destroy(): Cleanup complete');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 98,
+      "action": "remove_debug",
+      "before": "console.log('🎯 ListView.scrollToCard():', { cardId, y });",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 80,
+      "action": "remove_debug",
+      "before": "console.log('📏 ListView.getCardPositions():', { count: positions.size });",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 37,
+      "action": "remove_debug",
+      "before": "console.log('📝 ListView.render():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/ListView.ts"
+    },
+    {
+      "line": 546,
+      "action": "remove_debug",
+      "before": "console.log('🏗️ KanbanView: SVG structure initialized');",
+      "after": "// Debug: removed setup log",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 524,
+      "action": "remove_debug",
+      "before": "console.log('✅ KanbanView.renderCardsInColumns():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 514,
+      "action": "remove_debug",
+      "before": "console.log('📋 KanbanView: Card clicked:', d.card.id);",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 279,
+      "action": "remove_debug",
+      "before": "console.log('🔄 KanbanView.applySortToColumns():', {",
+      "after": "// Debug: removed state change log",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 172,
+      "action": "remove_debug",
+      "before": "console.log('📊 KanbanView.groupCardsByFacet():', {",
+      "after": "// Debug: removed metrics log",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 110,
+      "action": "remove_debug",
+      "before": "console.log('🗑️ KanbanView.destroy(): Cleanup complete');",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 101,
+      "action": "remove_debug",
+      "before": "console.log('🎯 KanbanView.scrollToCard():', { cardId, x, y });",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 82,
+      "action": "remove_debug",
+      "before": "console.log('📏 KanbanView.getCardPositions():', { count: positions.size });",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 39,
+      "action": "remove_debug",
+      "before": "console.log('📋 KanbanView.render():', {",
+      "after": "// Debug logging removed",
+      "file": "src/d3/KanbanView.ts"
+    },
+    {
+      "line": 237,
+      "action": "remove_debug",
+      "before": "console.log('🌍 Environment Configuration:', {",
+      "after": "// Debug logging removed",
+      "file": "src/config/environment.ts"
+    },
+    {
+      "line": 448,
+      "action": "remove_debug",
+      "before": "console.log('[LiveDataContext] executeQuery:', { method, params });",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/LiveDataContext.tsx"
+    },
+    {
+      "line": 189,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge: Ping successful, response:', response);",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 184,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge: database handler available, testing ping...');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 176,
+      "action": "remove_debug",
+      "before": "console.log('🔍 WebView bridge: Available handlers:', Object.keys(window.webkit.messageHandlers));",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 175,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge: messageHandlers available');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 167,
+      "action": "remove_debug",
+      "before": "console.log('✅ WebView bridge: window.webkit available');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 145,
+      "action": "remove_debug",
+      "before": "console.log('⚠️ Environment: No backend available, using fallback mode');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 139,
+      "action": "remove_debug",
+      "before": "console.log('✅ Environment: HTTP API detected');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 137,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: No WebKit or IsometryNative detected, testing HTTP API...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 130,
+      "action": "remove_debug",
+      "before": "console.log('⚠️ Environment: WebKit detected but bridge not ready, forcing WebView mode');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 123,
+      "action": "remove_debug",
+      "before": "console.log('✅ Environment: WebView bridge detected after waiting');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 119,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: Waiting for WebView bridge initialization...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 113,
+      "action": "remove_debug",
+      "before": "console.log(`🔍 Environment: Full user agent: ${userAgent}`);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 112,
+      "action": "remove_debug",
+      "before": "console.log('✅ Environment: IsometryNative user agent detected - forcing WebView mode');",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 107,
+      "action": "remove_debug",
+      "before": "console.log(`🔍 Environment: UserAgent: ${userAgent.substring(0, 60)}...`);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 106,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: Standard browser detected - skipping WebView bridge detection');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 97,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: UserAgent:', navigator.userAgent);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 96,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: messageHandlers available:', typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 95,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: window.webkit available:', typeof window !== 'undefined' && typeof window.webkit !== 'undefined');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 94,
+      "action": "remove_debug",
+      "before": "console.log('🔍 Environment: Starting detection...');",
+      "after": "// Debug: removed inspection log",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 89,
+      "action": "remove_debug",
+      "before": "console.log('🔧 Environment: Using forced mode:', forcedMode);",
+      "after": "// Debug logging removed",
+      "file": "src/contexts/EnvironmentContext.tsx"
+    },
+    {
+      "line": 328,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionContext] Pending operations:', pendingOperations);",
+      "after": "// Debug logging removed",
+      "file": "src/context/ConnectionContext.tsx"
+    },
+    {
+      "line": 300,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionContext] Connection status changed:', {",
+      "after": "// Debug logging removed",
+      "file": "src/context/ConnectionContext.tsx"
+    },
+    {
+      "line": 245,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionContext] Cancelled operation:', operationId);",
+      "after": "// Debug logging removed",
+      "file": "src/context/ConnectionContext.tsx"
+    },
+    {
+      "line": 222,
+      "action": "remove_debug",
+      "before": "console.log('[ConnectionContext] Queued operation:', {",
+      "after": "// Debug logging removed",
+      "file": "src/context/ConnectionContext.tsx"
+    },
+    {
+      "line": 223,
+      "action": "remove_debug",
+      "before": "console.log('💾 ViewSwitcher: Persisted view choice:', {",
+      "after": "// Debug logging removed",
+      "file": "src/components/ViewSwitcher.tsx"
+    },
+    {
+      "line": 70,
+      "action": "remove_debug",
+      "before": "console.log('📊 ViewSwitcher: View change requested:', {",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/ViewSwitcher.tsx"
+    },
+    {
+      "line": 156,
+      "action": "remove_debug",
+      "before": "console.log('🎯 SuperGridView State:', {",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridView.tsx"
+    },
+    {
+      "line": 145,
+      "action": "remove_debug",
+      "before": "console.log('[SuperGridView] Cell clicked:', node.name);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridView.tsx"
+    },
+    {
+      "line": 121,
+      "action": "remove_debug",
+      "before": "console.log('[SuperGridView] Formula executed:', formula, result);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridView.tsx"
+    },
+    {
+      "line": 673,
+      "action": "remove_debug",
+      "before": "console.log('📊 SuperGridDemo: View switch requested:', { from: currentView, to: newView });",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 458,
+      "action": "remove_debug",
+      "before": "console.log('📊 SuperGridDemo: View change event:', event);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 136,
+      "action": "remove_debug",
+      "before": "console.log('📝 DatabaseService.query(): Sample results:', result.slice(0, 2));",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 135,
+      "action": "remove_debug",
+      "before": "console.log('✅ DatabaseService.query(): Result count:', result.length);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 126,
+      "action": "remove_debug",
+      "before": "console.log('🎯 DatabaseService.query(): Binding params', validParams);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 108,
+      "action": "remove_debug",
+      "before": "console.log('🎯 DatabaseService.query(): Called', { sql, params });",
+      "after": "// Debug logging removed",
+      "file": "src/components/SuperGridDemo.tsx"
+    },
+    {
+      "line": 54,
+      "action": "remove_debug",
+      "before": "console.log('✅ Sample data inserted');",
+      "after": "// Debug logging removed",
+      "file": "src/components/SQLiteV4Demo.tsx"
+    },
+    {
+      "line": 28,
+      "action": "remove_debug",
+      "before": "console.log('📋 Available tables:', tables);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SQLiteDebugConsole.tsx"
+    },
+    {
+      "line": 24,
+      "action": "remove_debug",
+      "before": "console.log('📝 Sample nodes:', sampleNodes);",
+      "after": "// Debug logging removed",
+      "file": "src/components/SQLiteDebugConsole.tsx"
+    },
+    {
+      "line": 20,
+      "action": "remove_debug",
+      "before": "console.log('📊 Node count query result:', countResult);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/SQLiteDebugConsole.tsx"
+    },
+    {
+      "line": 16,
+      "action": "remove_debug",
+      "before": "console.log('🔧 SQLiteDebugConsole: Running diagnostic queries...');",
+      "after": "// Debug logging removed",
+      "file": "src/components/SQLiteDebugConsole.tsx"
+    },
+    {
+      "line": 248,
+      "action": "remove_debug",
+      "before": "console.debug(",
+      "after": "// Debug logging removed",
+      "file": "src/utils/transaction/transaction-scope.ts"
+    },
+    {
+      "line": 100,
+      "action": "remove_debug",
+      "before": "console.debug(`[Transaction] Started scope: ${this.correlationId} (nested: ${this.isNested})`);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/transaction/transaction-scope.ts"
+    },
+    {
+      "line": 1102,
+      "action": "wrap_conditional",
+      "before": "console.log('[PerformanceMonitor] Loaded persisted metrics');",
+      "after": "if (import.meta.env.DEV) { console.log('[PerformanceMonitor] Loaded persisted metrics'); }",
+      "file": "src/utils/bridge-optimization/performance-monitor.ts"
+    },
+    {
+      "line": 244,
+      "action": "wrap_conditional",
+      "before": "console.log('[PerformanceMonitor] Stopped metrics collection');",
+      "after": "if (import.meta.env.DEV) { console.log('[PerformanceMonitor] Stopped metrics collection'); }",
+      "file": "src/utils/bridge-optimization/performance-monitor.ts"
+    },
+    {
+      "line": 227,
+      "action": "wrap_conditional",
+      "before": "console.log('[PerformanceMonitor] Started metrics collection');",
+      "after": "if (import.meta.env.DEV) { console.log('[PerformanceMonitor] Started metrics collection'); }",
+      "file": "src/utils/bridge-optimization/performance-monitor.ts"
+    },
+    {
+      "line": 210,
+      "action": "remove_debug",
+      "before": "console.log('[PerformanceMonitor] Initialized with components:', Object.keys(components));",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/performance-monitor.ts"
+    },
+    {
+      "line": 412,
+      "action": "remove_debug",
+      "before": "console.log('[useBridgeMemoryManager] Memory pressure detected:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 345,
+      "action": "remove_debug",
+      "before": "console.log('[BridgeMemoryManager] Purged inactive callbacks:', purged);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 233,
+      "action": "remove_debug",
+      "before": "console.log('[BridgeMemoryManager] Bridge callback cleanup complete:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 211,
+      "action": "remove_debug",
+      "before": "console.log('[BridgeMemoryManager] Starting bridge callback cleanup:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 189,
+      "action": "remove_debug",
+      "before": "console.log('[BridgeMemoryManager] Unregistered callback:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 134,
+      "action": "remove_debug",
+      "before": "console.log('[BridgeMemoryManager] Registered callback:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/memory-manager.ts"
+    },
+    {
+      "line": 356,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Native observation stopped:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 328,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Native observation started successfully:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 201,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Cleaned up old subscriptions:', removedCount);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 147,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Subscription removed:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 121,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Subscription created:', {",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 77,
+      "action": "remove_debug",
+      "before": "console.log('[ChangeNotifier] Initialized with options:', this.options);",
+      "after": "// Debug logging removed",
+      "file": "src/utils/bridge-optimization/change-notifier.ts"
+    },
+    {
+      "line": 46,
+      "action": "remove_debug",
+      "before": "console.log('✅ FTS5 virtual tables working');",
+      "after": "// Debug logging removed",
+      "file": "src/db/__tests__/DatabaseService.test.ts"
+    },
+    {
+      "line": 28,
+      "action": "remove_debug",
+      "before": "console.log(`✅ FTS5 available: ${result[0].fts5_version}`);",
+      "after": "// Debug logging removed",
+      "file": "src/db/__tests__/DatabaseService.test.ts"
+    },
+    {
+      "line": 73,
+      "action": "remove_debug",
+      "before": "console.debug('NetworkView edges performance:', metrics);",
+      "after": "// Debug logging removed",
+      "file": "src/components/views/NetworkView.tsx"
+    },
+    {
+      "line": 334,
+      "action": "wrap_conditional",
+      "before": "console.log('Performance report exported');",
+      "after": "if (import.meta.env.DEV) { console.log('Performance report exported'); }",
+      "file": "src/components/performance/RenderingMetricsPanel.tsx"
+    },
+    {
+      "line": 300,
+      "action": "wrap_conditional",
+      "before": "console.log('Performance test completed:', testResults);",
+      "after": "if (import.meta.env.DEV) { console.log('Performance test completed:', testResults); }",
+      "file": "src/components/performance/RenderingMetricsPanel.tsx"
+    },
+    {
+      "line": 457,
+      "action": "remove_debug",
+      "before": "console.log('[RealTimeRenderer] Performance Metrics:', {",
+      "after": "// Debug logging removed",
+      "file": "src/components/performance/RealTimeRenderer.tsx"
+    },
+    {
+      "line": 434,
+      "action": "remove_debug",
+      "before": "console.debug('Performance settings:', performanceSettings);",
+      "after": "// Debug logging removed",
+      "file": "src/components/performance/RealTimeRenderer.tsx"
+    },
+    {
+      "line": 240,
+      "action": "wrap_conditional",
+      "before": "console.log('Performance baseline established:', baseline);",
+      "after": "if (import.meta.env.DEV) { console.log('Performance baseline established:', baseline); }",
+      "file": "src/components/performance/PerformanceBaseline.tsx"
+    },
+    {
+      "line": 529,
+      "action": "remove_debug",
+      "before": "console.log('📊 Regression Detection:', regression);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 480,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Memory Usage: Initial=${initialMemory}, Final=${finalMemory}, Growth=${memoryGrowth}`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 442,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Processing Throughput: ${avgThroughput.toFixed(1)} nodes/second`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 428,
+      "action": "remove_debug",
+      "before": "console.log('📊 Upload Scaling:', results);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 402,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Upload Throughput: ${avgThroughput.toFixed(1)} files/second`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 388,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Render Performance (50 files): ${avgDuration.toFixed(2)}ms`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 377,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Render Performance (20 files): ${avgDuration.toFixed(2)}ms`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 366,
+      "action": "remove_debug",
+      "before": "console.log(`📊 Render Performance (5 files): ${avgDuration.toFixed(2)}ms`);",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 353,
+      "action": "remove_debug",
+      "before": "console.log('📊 ImportWizard Performance Baselines:', JSON.stringify(report, null, 2));",
+      "after": "// Debug: removed metrics log",
+      "file": "src/components/import/ImportPerformance.test.tsx"
+    },
+    {
+      "line": 38,
+      "action": "remove_debug",
+      "before": "console.log('🔍 WebView Diagnostic Data:', data);",
+      "after": "// Debug: removed inspection log",
+      "file": "src/components/debug/WebViewDiagnostic.tsx"
+    },
+    {
+      "line": 110,
+      "action": "remove_debug",
+      "before": "console.log('[D3Canvas] Brush selection:', { x0, y0, x1, y1 });",
+      "after": "// Debug logging removed",
+      "file": "src/components/d3/Canvas.tsx"
+    }
+  ]
+}

@@ -366,11 +366,12 @@ export class WebViewBridge {
     const hasMessageHandlers = typeof window.webkit?.messageHandlers !== 'undefined';
     const hasUserAgent = navigator.userAgent.includes('IsometryNative');
 
-    console.log('🔍 WebView Environment Check:');
-    console.log('  - window.webkit exists:', hasWebkit);
-    console.log('  - messageHandlers exists:', hasMessageHandlers);
-    console.log('  - IsometryNative user agent:', hasUserAgent);
-    console.log('  - Available handlers:', Object.keys(window.webkit?.messageHandlers || {}));
+    bridgeLogger.debug('WebView Environment Check', {
+      webkitExists: hasWebkit,
+      messageHandlersExists: hasMessageHandlers,
+      isometryNativeUserAgent: hasUserAgent,
+      availableHandlers: Object.keys(window.webkit?.messageHandlers || {})
+    });
 
     // Return true if we have webkit AND messageHandlers
     const isWebView = hasWebkit && hasMessageHandlers;

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { ViewType } from '../types/views';
+import { contextLogger } from '../utils/dev-logger';
 
 /**
  * ViewSwitcher - React toolbar component for view type selection
@@ -67,7 +68,7 @@ export function ViewSwitcher({
 
   const handleViewClick = useCallback((view: ViewType) => {
     if (!disabled && view !== currentView) {
-      console.log('📊 ViewSwitcher: View change requested:', {
+      contextLogger.metrics('ViewSwitcher: View change requested', {
         from: currentView,
         to: view,
         trigger: 'click'
@@ -220,7 +221,7 @@ export function useViewSwitcher(canvasId: string, defaultView: ViewType = ViewTy
       };
       localStorage.setItem(storageKey, JSON.stringify(updatedState));
 
-      console.log('💾 ViewSwitcher: Persisted view choice:', {
+      contextLogger.data('ViewSwitcher: Persisted view choice', {
         canvasId,
         view: newView,
         timestamp: updatedState.lastModified

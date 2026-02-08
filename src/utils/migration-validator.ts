@@ -7,6 +7,7 @@
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from './webview-bridge';
+import { devLogger } from './dev-logger';
 
 export interface ValidationResult {
   success: boolean;
@@ -99,7 +100,7 @@ export class MigrationValidator {
    * Validate migration path before execution
    */
   async validateMigrationPath(from: DatabaseMode, to: DatabaseMode): Promise<ValidationResult> {
-    console.log(`🔍 Validating migration path: ${from} → ${to}`);
+    devLogger.inspect('Validating migration path', { from, to });
 
     const details: ValidationDetail[] = [];
     let validationsPassed = 0;
@@ -178,7 +179,7 @@ export class MigrationValidator {
    * Execute rollback procedure
    */
   async executeRollback(scenario: RollbackScenario): Promise<RollbackResult> {
-    console.log(`↩️ Executing rollback: ${scenario.type}`);
+    devLogger.state('Executing rollback', { scenarioType: scenario.type });
 
     const startTime = performance.now();
     const errors: string[] = [];
@@ -237,7 +238,7 @@ export class MigrationValidator {
 
       // Validate rollback success
       if (dataPreserved && performanceRestored && errors.length === 0) {
-        console.log('✅ Rollback completed successfully');
+        devLogger.metrics('Rollback completed successfully', {});
       } else {
         console.warn('⚠️ Rollback completed with issues');
       }
@@ -312,7 +313,7 @@ export class MigrationValidator {
       // Cleanup old checkpoints
       await this.cleanupOldCheckpoints();
 
-      console.log(`✅ Checkpoint created: ${id}`);
+      devLogger.setup('Checkpoint created', { id });
       return checkpoint;
 
     } catch (error) {
@@ -395,7 +396,7 @@ export class MigrationValidator {
     const deleted = this.checkpoints.delete(id);
     if (deleted) {
       this.saveCheckpoints();
-      console.log(`🗑️ Checkpoint deleted: ${id}`);
+      devLogger.state('Checkpoint deleted', { id });
     }
     return deleted;
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SQLiteProvider, useSQLite } from '../db/SQLiteProvider';
+import { contextLogger } from '../utils/dev-logger';
 import { useNodesV4, useFTS5SearchV4, useGraphTraversalV4 } from '../hooks/useSQLiteQuery.v4';
 
 /**
@@ -51,9 +52,9 @@ function SQLiteControls() {
           ('edge-2', 'SEQUENCE', 'demo-2', 'demo-3', 'leads_to')
       `);
 
-      console.log('✅ Sample data inserted');
+      contextLogger.metrics('Sample data inserted', {});
     } catch (err) {
-      console.error('💥 Failed to insert sample data:', err);
+      contextLogger.state('Failed to insert sample data', { error: err });
     }
   };
 

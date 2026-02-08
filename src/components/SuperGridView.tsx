@@ -10,6 +10,7 @@
  */
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
+import { contextLogger } from '../utils/dev-logger';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { D3Canvas } from './d3/Canvas';
 import { SuperGrid } from './supergrid/SuperGrid';
@@ -118,7 +119,7 @@ export function SuperGridView({
 
   // SuperCalc formula execution
   const handleFormulaExecute = useCallback((formula: string, result: any) => {
-    console.log('[SuperGridView] Formula executed:', formula, result);
+    contextLogger.metrics('SuperGridView: Formula executed', { formula, result });
     // Could dispatch results to other parts of the UI
   }, []);
 
@@ -130,7 +131,7 @@ export function SuperGridView({
     if (axis === 'x' || axis === 'y') {
       const [axisType, facet] = value.split('-');
       // TODO: Update PAFV mapping when updateMapping method is available
-      console.log('Would update PAFV mapping:', axis, axisType, facet);
+      contextLogger.state('SuperGridView: Would update PAFV mapping', { axis, axisType, facet });
     }
   }, [pafv]);
 
@@ -142,7 +143,7 @@ export function SuperGridView({
   // Node click handling
   const handleCellClick = useCallback((node: Node) => {
     onNodeClick?.(node);
-    console.log('[SuperGridView] Cell clicked:', node.name);
+    contextLogger.data('SuperGridView: Cell clicked', { nodeName: node.name });
   }, [onNodeClick]);
 
   // Zoom handling
@@ -153,7 +154,7 @@ export function SuperGridView({
   // Debug logging
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 SuperGridView State:', {
+      contextLogger.state('SuperGridView State', {
         renderMode,
         activeView,
         nodes: primaryNodes?.length || 0,

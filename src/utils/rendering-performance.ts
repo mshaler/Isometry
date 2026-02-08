@@ -7,6 +7,7 @@
 
 import { performanceMonitor } from './performance-monitor';
 import { Environment, webViewBridge } from './webview-bridge';
+import { devLogger } from './dev-logger';
 
 // ============================================================================
 // Types
@@ -106,7 +107,7 @@ export class RenderingPerformanceMonitor {
     this.memoryReadings = [];
     this.alerts = [];
 
-    console.log('📊 Rendering performance monitoring started');
+    devLogger.metrics('Rendering performance monitoring started', {});
   }
 
   /**
@@ -118,7 +119,7 @@ export class RenderingPerformanceMonitor {
     this.isMonitoring = false;
 
     const metrics = this.calculateCurrentMetrics();
-    console.log('📊 Rendering performance monitoring stopped', metrics);
+    devLogger.metrics('Rendering performance monitoring stopped', metrics);
 
     return metrics;
   }
@@ -520,7 +521,7 @@ export class MemoryUsageTracker {
   forceGarbageCollection(): boolean {
     if ((window as any).gc) {
       (window as any).gc();
-      console.log('🗑️ Forced garbage collection');
+      devLogger.state('Forced garbage collection', {});
       return true;
     }
     return false;

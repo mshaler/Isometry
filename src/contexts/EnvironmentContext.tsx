@@ -86,15 +86,16 @@ export function EnvironmentProvider({
     try {
       // If forced mode is specified, use it
       if (forcedMode && forcedMode !== DatabaseMode.AUTO) {
-        console.log('🔧 Environment: Using forced mode:', forcedMode);
+        bridgeLogger.debug('Environment: Using forced mode', { forcedMode });
         return forcedMode;
       }
 
       // Debug environment detection
-      console.log('🔍 Environment: Starting detection...');
-      console.log('🔍 Environment: window.webkit available:', typeof window !== 'undefined' && typeof window.webkit !== 'undefined');
-      console.log('🔍 Environment: messageHandlers available:', typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined');
-      console.log('🔍 Environment: UserAgent:', navigator.userAgent);
+      bridgeLogger.debug('Environment: Starting detection', {
+        webkitAvailable: typeof window !== 'undefined' && typeof window.webkit !== 'undefined',
+        messageHandlersAvailable: typeof window !== 'undefined' && typeof window.webkit?.messageHandlers !== 'undefined',
+        userAgent: navigator.userAgent
+      });
 
       // Check for immediate WebView indicators
       const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
@@ -103,46 +104,48 @@ export function EnvironmentProvider({
 
       // Quick browser check - if no WebKit and not IsometryNative, skip bridge detection
       if (!isIsometryNative && !hasWebKit) {
-        console.log('🔍 Environment: Standard browser detected - skipping WebView bridge detection');
-        console.log(`🔍 Environment: UserAgent: ${userAgent.substring(0, 60)}...`);
+        bridgeLogger.debug('Environment: Standard browser detected - skipping WebView bridge detection', {
+          userAgent: userAgent.substring(0, 60) + '...'
+        });
         return DatabaseMode.FALLBACK;
       }
 
       if (isIsometryNative) {
-        console.log('✅ Environment: IsometryNative user agent detected - forcing WebView mode');
-        console.log(`🔍 Environment: Full user agent: ${userAgent}`);
+        bridgeLogger.debug('Environment: IsometryNative user agent detected - forcing WebView mode', {
+          fullUserAgent: userAgent
+        });
         bridgeLogger.info('IsometryNative user agent detected, using WebView mode');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
       // ROBUST BRIDGE DETECTION: Wait for WebView bridge to be fully ready
-      console.log('🔍 Environment: Waiting for WebView bridge initialization...');
+      bridgeLogger.debug('Environment: Waiting for WebView bridge initialization', {});
       const bridgeReady = await waitForWebViewBridge(1000); // 1 second timeout for faster browser fallback
 
       if (bridgeReady) {
-        console.log('✅ Environment: WebView bridge detected after waiting');
+        bridgeLogger.debug('Environment: WebView bridge detected after waiting', {});
         bridgeLogger.info('WebView bridge detected');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
       // Fallback: Check for any WebKit indicators immediately
       if (typeof window !== 'undefined' && typeof window.webkit !== 'undefined') {
-        console.log('⚠️ Environment: WebKit detected but bridge not ready, forcing WebView mode');
+        bridgeLogger.warn('Environment: WebKit detected but bridge not ready, forcing WebView mode', {});
         bridgeLogger.info('WebKit available but bridge not ready, using WebView mode anyway');
         return DatabaseMode.WEBVIEW_BRIDGE;
       }
 
       // PRIORITY 3: Check for HTTP API availability (lowest priority)
       // Only test if we're definitely NOT in a WebView environment
-      console.log('🔍 Environment: No WebKit or IsometryNative detected, testing HTTP API...');
+      bridgeLogger.debug('Environment: No WebKit or IsometryNative detected, testing HTTP API', {});
       if (await testHTTPAPIConnection()) {
-        console.log('✅ Environment: HTTP API detected');
+        bridgeLogger.debug('Environment: HTTP API detected', {});
         bridgeLogger.info('HTTP API detected');
         return DatabaseMode.HTTP_API;
       }
 
       // Fall back to FALLBACK mode (no backend required)
-      console.log('⚠️ Environment: No backend available, using fallback mode');
+      bridgeLogger.warn('Environment: No backend available, using fallback mode', {});
       bridgeLogger.info('No backend available, using fallback mode');
       return DatabaseMode.FALLBACK;
 
@@ -164,7 +167,7 @@ export function EnvironmentProvider({
       return false;
     }
 
-    console.log('✅ WebView bridge: window.webkit available');
+    bridgeLogger.debug('WebView bridge: window.webkit available', {});
 
     // Check if messageHandlers is available
     if (typeof window.webkit.messageHandlers === 'undefined') {
@@ -172,8 +175,9 @@ export function EnvironmentProvider({
       return false;
     }
 
-    console.log('✅ WebView bridge: messageHandlers available');
-    console.log('🔍 WebView bridge: Available handlers:', Object.keys(window.webkit.messageHandlers));
+    bridgeLogger.debug('WebView bridge: messageHandlers available', {
+      availableHandlers: Object.keys(window.webkit.messageHandlers)
+    });
 
     // Check if database handler exists
     if (typeof window.webkit.messageHandlers.database === 'undefined') {
@@ -181,12 +185,12 @@ export function EnvironmentProvider({
       return false;
     }
 
-    console.log('✅ WebView bridge: database handler available, testing ping...');
+    bridgeLogger.debug('WebView bridge: database handler available, testing ping', {});
 
     try {
       // Test if bridge is actually functional with a simple ping
       const response = await postMessage('database', 'ping', {});
-      console.log('✅ WebView bridge: Ping successful, response:', response);
+      bridgeLogger.debug('WebView bridge: Ping successful', { response });
       return response !== null;
     } catch (error) {
       console.log('❌ WebView bridge: Ping failed:', error);
@@ -207,7 +211,7 @@ export function EnvironmentProvider({
     const envIsWebView = Environment.isWebView();
 
     if (isNativeUserAgent || hasWebKit || envIsWebView) {
-      console.log('⏭️ HTTP API test skipped: WebView environment detected');
+      bridgeLogger.debug('HTTP API test skipped: WebView environment detected', {});
       console.log(`  - IsometryNative user agent: ${isNativeUserAgent}`);
       console.log(`  - Has WebKit: ${hasWebKit}`);
       console.log(`  - Environment.isWebView(): ${envIsWebView}`);

@@ -51,6 +51,28 @@ export default tseslint.config(
       'max-params': ['warn', 4],                           // functions with >4 params need an options object
       'max-depth': ['warn', 4],                            // max nesting depth
       'no-nested-ternary': 'off',                          // temporarily disabled to meet 700 warning budget
+
+      // --- Console cleanup rules ---
+      'no-console': ['warn', {
+        allow: ['warn', 'error'] // Allow console.warn and console.error (legitimate)
+      }],
+
+      // --- Debug pattern restrictions ---
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'CallExpression[callee.object.name="console"][callee.property.name="log"] Literal[value=/^[🔍🔄👆🎨📊🗂️🏗️📋📏🎯✅⚠️]/]',
+          message: 'Debug console.log with emoji pattern should be removed or use devLogger.inspect() instead'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="console"][callee.property.name="log"] Literal[value=/\\[.*\\].*:/]',
+          message: 'Service-specific debug logs should use service-specific loggers (superGridLogger, bridgeLogger, etc.)'
+        },
+        {
+          selector: 'CallExpression[callee.object.name="console"][callee.property.name="debug"]',
+          message: 'console.debug should be replaced with devLogger.debug()'
+        }
+      ]
     },
   },
 

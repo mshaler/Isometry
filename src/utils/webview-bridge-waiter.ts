@@ -6,8 +6,10 @@
  * before the Swift bridge injection scripts complete.
  */
 
+import { devLogger } from './dev-logger';
+
 export async function waitForWebViewBridge(timeoutMs: number = 5000): Promise<boolean> {
-  console.log('🔄 Waiting for WebView bridge initialization...');
+  devLogger.setup('Waiting for WebView bridge initialization', {});
 
   const startTime = Date.now();
 
@@ -19,7 +21,7 @@ export async function waitForWebViewBridge(timeoutMs: number = 5000): Promise<bo
       const userAgent = typeof window !== 'undefined' ? navigator.userAgent : '';
       const isIsometryNative = userAgent.includes('IsometryNative');
 
-      console.log('🔍 Bridge check:', {
+      devLogger.inspect('Bridge check', {
         hasWebKit,
         hasMessageHandlers,
         hasIsometryBridge,
@@ -30,13 +32,13 @@ export async function waitForWebViewBridge(timeoutMs: number = 5000): Promise<bo
 
       // Consider bridge ready if we have either webkit.messageHandlers OR IsometryNative user agent
       if (hasWebKit && hasMessageHandlers) {
-        console.log('✅ WebView bridge detected via webkit.messageHandlers');
+        devLogger.setup('WebView bridge detected via webkit.messageHandlers', {});
         resolve(true);
         return;
       }
 
       if (isIsometryNative) {
-        console.log('✅ WebView bridge detected via IsometryNative user agent');
+        devLogger.setup('WebView bridge detected via IsometryNative user agent', {});
         resolve(true);
         return;
       }

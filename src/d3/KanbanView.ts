@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import type { ViewRenderer, CardPosition } from '../d3/ViewContinuum';
 import type { ViewAxisMapping } from '../types/views';
 import type { Node } from '../types/node';
+import { d3Logger } from '../utils/dev-logger';
 
 /**
  * KanbanView - 1-facet column projection using D3
@@ -36,7 +37,7 @@ export class KanbanView implements ViewRenderer {
   // ========================================================================
 
   render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void {
-    console.log('📋 KanbanView.render():', {
+    d3Logger.data('KanbanView.render()', {
       cardCount: cards.length,
       axisMapping,
       filterCount: activeFilters.length
@@ -79,7 +80,7 @@ export class KanbanView implements ViewRenderer {
         }
       });
 
-    console.log('📏 KanbanView.getCardPositions():', { count: positions.size });
+    d3Logger.metrics('KanbanView.getCardPositions()', { count: positions.size });
     return positions;
   }
 
@@ -98,7 +99,7 @@ export class KanbanView implements ViewRenderer {
 
         // Animate scroll to bring card into view
         // TODO: Implement smooth scrolling to x,y position
-        console.log('🎯 KanbanView.scrollToCard():', { cardId, x, y });
+        d3Logger.inspect('KanbanView.scrollToCard()', { cardId, x, y });
       }
     }
   }
@@ -107,7 +108,7 @@ export class KanbanView implements ViewRenderer {
     this.contentGroup.selectAll('*').remove();
     this.columnData = [];
 
-    console.log('🗑️ KanbanView.destroy(): Cleanup complete');
+    d3Logger.setup('KanbanView.destroy(): Cleanup complete', {});
   }
 
   // ========================================================================
@@ -169,7 +170,7 @@ export class KanbanView implements ViewRenderer {
     // Sort columns by logical order
     this.sortColumnsByLogicalOrder(columns, facet);
 
-    console.log('📊 KanbanView.groupCardsByFacet():', {
+    d3Logger.metrics('KanbanView.groupCardsByFacet()', {
       facet,
       columnCount: columns.length,
       unassignedCount: unassignedCards.length,
@@ -276,7 +277,7 @@ export class KanbanView implements ViewRenderer {
       });
     });
 
-    console.log('🔄 KanbanView.applySortToColumns():', {
+    d3Logger.state('KanbanView.applySortToColumns()', {
       sortFacet: facet,
       direction: sortConfig.direction,
       columnCount: columns.length
@@ -511,7 +512,7 @@ export class KanbanView implements ViewRenderer {
           .attr('stroke', '#e5e7eb');
       })
       .on('click', (_event, d) => {
-        console.log('📋 KanbanView: Card clicked:', d.card.id);
+        d3Logger.data('KanbanView: Card clicked', { cardId: d.card.id });
       });
 
     // Exit selection
@@ -521,7 +522,7 @@ export class KanbanView implements ViewRenderer {
       .style('opacity', 0)
       .remove();
 
-    console.log('✅ KanbanView.renderCardsInColumns():', {
+    d3Logger.render('KanbanView.renderCardsInColumns()', {
       cardCount: flattenedCards.length,
       visibleCards: updateCards.size()
     });
@@ -543,7 +544,7 @@ export class KanbanView implements ViewRenderer {
       .attr('class', 'kanban-view-content')
       .attr('transform', 'translate(0, 0)');
 
-    console.log('🏗️ KanbanView: SVG structure initialized');
+    d3Logger.setup('KanbanView: SVG structure initialized', {});
     return contentGroup;
   }
 

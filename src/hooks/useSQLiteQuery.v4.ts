@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { rowToNode, Node } from '../types/node';
+import { devLogger } from '../utils/dev-logger';
 
 /**
  * useSQLiteQuery v4 - Bridge Elimination Edition
@@ -72,7 +73,7 @@ export function useSQLiteQueryV4<T = Record<string, unknown>>(
       setDuration(queryDuration);
 
       if (enableLogging) {
-        console.log('🔍 SQL Query (v4):', {
+        devLogger.data('SQL Query (v4)', {
           sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
           params,
           resultCount: result.length,

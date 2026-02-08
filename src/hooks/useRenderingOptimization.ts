@@ -5,6 +5,8 @@
  * Integrates with native bridge for maximum performance
  */
 
+import { devLogger } from '../utils/dev-logger';
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   renderingPerformanceMonitor,
@@ -337,7 +339,7 @@ export function useRenderingOptimization(
       optimizedViewport: prev.optimizedViewport // Keep current viewport
     }));
 
-    console.log('🎯 Applied optimization plan:', plan);
+    devLogger.state('Applied optimization plan', plan);
   }, []);
 
   const resetOptimizations = useCallback(() => {
@@ -349,7 +351,7 @@ export function useRenderingOptimization(
       optimizedViewport: configRef.current.viewport
     }));
 
-    console.log('🔄 Reset optimizations to defaults');
+    devLogger.state('Reset optimizations to defaults', {});
   }, []);
 
   const forceGarbageCollection = useCallback(() => {
@@ -423,7 +425,7 @@ export function useRenderingOptimization(
                         prev.memoryStrategy === 'balanced' ? 'conservative' : 'aggressive'
         }));
 
-        console.log('🎯 Auto-optimization: increased aggressiveness due to low FPS');
+        devLogger.state('Auto-optimization: increased aggressiveness due to low FPS', {});
       } else if (currentFPS > targetFPS * 1.1) {
         // Performance is good, reduce optimizations for quality
         setState(prev => ({
@@ -433,7 +435,7 @@ export function useRenderingOptimization(
                         prev.memoryStrategy === 'conservative' ? 'balanced' : 'normal'
         }));
 
-        console.log('🎯 Auto-optimization: decreased aggressiveness due to high FPS');
+        devLogger.state('Auto-optimization: decreased aggressiveness due to high FPS', {});
       }
 
       setState(prev => ({ ...prev, lastOptimizationTime: Date.now() }));

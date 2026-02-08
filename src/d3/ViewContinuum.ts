@@ -13,6 +13,7 @@ import {
   getViewStateStorageKey
 } from '../types/views';
 import type { Node } from '../types/node';
+import { d3Logger } from '../utils/dev-logger';
 
 // Re-export CardPosition for external use
 export type { CardPosition };
@@ -89,7 +90,7 @@ export class ViewContinuum {
     // Restore active view if renderers are available
     this.initializeActiveView();
 
-    console.log('🔄 ViewContinuum initialized:', {
+    d3Logger.setup('ViewContinuum initialized', {
       canvasId: this.canvasId,
       currentView: this.viewState.currentView,
       hasPersistedState: this.viewState.lastModified > 0
@@ -106,7 +107,7 @@ export class ViewContinuum {
   registerViewRenderer(viewType: ViewType, renderer: ViewRenderer): void {
     this.viewRenderers.set(viewType, renderer);
 
-    console.log('📋 ViewContinuum.registerViewRenderer():', {
+    d3Logger.setup('View renderer registered', {
       viewType,
       totalRegistered: this.viewRenderers.size
     });
@@ -133,7 +134,7 @@ export class ViewContinuum {
       renderer.destroy();
       this.viewRenderers.delete(viewType);
 
-      console.log('🗑️ ViewContinuum.unregisterViewRenderer():', {
+      d3Logger.setup('View renderer unregistered', {
         viewType,
         remainingRegistered: this.viewRenderers.size
       });
@@ -160,7 +161,7 @@ export class ViewContinuum {
 
     const fromView = this.viewState.currentView;
     if (fromView === targetView) {
-      console.log('ℹ️ ViewContinuum.switchToView(): Already on target view:', targetView);
+      d3Logger.info('Already on target view', targetView);
       return;
     }
 
@@ -170,7 +171,7 @@ export class ViewContinuum {
       throw new Error(`No renderer registered for view type: ${targetView}`);
     }
 
-    console.log('🔄 ViewContinuum.switchToView():', {
+    d3Logger.state('View switch initiated', {
       from: fromView,
       to: targetView,
       trigger,
@@ -246,7 +247,7 @@ export class ViewContinuum {
       // Emit transition event
       this.emitViewChangeEvent(transitionEvent);
 
-      console.log('✅ ViewContinuum.switchToView(): Transition complete', {
+      d3Logger.render('View transition complete', {
         to: targetView,
         duration: Date.now() - transitionEvent.timestamp
       });
@@ -357,7 +358,7 @@ export class ViewContinuum {
     this.isTransitioning = false;
     this.viewState.transitionState = undefined;
 
-    console.log('⏹️ ViewContinuum: Transition interrupted');
+    d3Logger.info('Transition interrupted');
   }
 
   // ========================================================================
@@ -377,7 +378,7 @@ export class ViewContinuum {
 
     // Return cached results if query hasn't changed
     if (queryHash === this.cachedQueryHash && this.cachedCards.length > 0) {
-      console.log('💾 ViewContinuum.queryAndCache(): Using cached results');
+      d3Logger.state('ViewContinuum.queryAndCache(): Using cached results', {});
       return this.cachedCards;
     }
 
@@ -399,7 +400,7 @@ export class ViewContinuum {
       hash: queryHash
     };
 
-    console.log('🔍 ViewContinuum.queryAndCache():', {
+    d3Logger.data('Query and cache', {
       queryHash,
       resultCount: results.length,
       cached: true
@@ -426,7 +427,7 @@ export class ViewContinuum {
     const currentMapping = this.viewState.viewStates[this.viewState.currentView].axisMapping;
     this.activeRenderer.render(this.cachedCards, currentMapping, this.lastActiveFilters);
 
-    console.log('🔄 ViewContinuum.reprojectCachedData(): Re-projected data to current view:', {
+    d3Logger.data('Re-projected data to current view', {
       viewType: this.viewState.currentView,
       cardCount: this.cachedCards.length
     });
@@ -456,7 +457,7 @@ export class ViewContinuum {
     // Trigger callback
     this.callbacks.onSelectionChange?.(selectedIds, focusedId);
 
-    console.log('📋 ViewContinuum.updateSelection():', {
+    d3Logger.data('Update selection', {
       selectedCount: selectedIds.length,
       focusedId,
       viewType: this.viewState.currentView
@@ -500,7 +501,7 @@ export class ViewContinuum {
           }
         });
 
-        console.log('💾 ViewContinuum: Loaded state from localStorage:', {
+        d3Logger.state('ViewContinuum: Loaded state from localStorage', {
           currentView: parsed.currentView,
           selectionCount: parsed.selectionState?.selectedCardIds?.size || 0
         });
@@ -544,7 +545,7 @@ export class ViewContinuum {
 
       localStorage.setItem(storageKey, JSON.stringify(serializable));
 
-      console.log('💾 ViewContinuum: Saved state to localStorage:', {
+      d3Logger.state('ViewContinuum: Saved state to localStorage', {
         currentView: this.viewState.currentView,
         timestamp: this.viewState.lastModified
       });
@@ -568,7 +569,7 @@ export class ViewContinuum {
     // TODO: Capture scroll position, zoom state, etc. from renderer
     // This will be implemented when view renderers support these methods
 
-    console.log('💾 ViewContinuum.saveCurrentViewState():', {
+    d3Logger.state('ViewContinuum.saveCurrentViewState()', {
       viewType: currentView,
       timestamp: viewState.lastUpdated
     });
@@ -584,7 +585,7 @@ export class ViewContinuum {
     // TODO: Restore scroll position, zoom state, etc. to renderer
     // This will be implemented when view renderers support these methods
 
-    console.log('🔄 ViewContinuum.restoreViewState():', {
+    d3Logger.state('View state restored', {
       viewType: currentView,
       lastUpdated: viewState.lastUpdated
     });
@@ -611,7 +612,7 @@ export class ViewContinuum {
       .attr('class', 'transition-overlay')
       .style('pointer-events', 'none');
 
-    console.log('🏗️ ViewContinuum: SVG structure initialized');
+    d3Logger.setup('SVG structure initialized');
   }
 
   /**
@@ -623,9 +624,9 @@ export class ViewContinuum {
       this.activeRenderer = currentRenderer;
       this.restoreViewState();
 
-      console.log('✅ ViewContinuum: Active view initialized:', this.viewState.currentView);
+      d3Logger.setup('Active view initialized', this.viewState.currentView);
     } else {
-      console.log('ℹ️ ViewContinuum: No renderer available for current view:', this.viewState.currentView);
+      d3Logger.info('No renderer available for current view', this.viewState.currentView);
     }
   }
 
@@ -716,7 +717,7 @@ export class ViewContinuum {
       this.activeRenderer.scrollToCard(cardId);
     }
 
-    console.log('🎯 ViewContinuum.focusCard():', { cardId, viewType: this.viewState.currentView });
+    d3Logger.inspect('Focus card', { cardId, viewType: this.viewState.currentView });
   }
 
   /**
@@ -752,7 +753,7 @@ export class ViewContinuum {
     this.viewState = createDefaultViewState(this.canvasId);
     this.saveViewState();
 
-    console.log('🔄 ViewContinuum.resetState(): State reset to defaults');
+    d3Logger.state('State reset to defaults', {});
   }
 
   /**
@@ -780,6 +781,6 @@ export class ViewContinuum {
     // Clear cached data
     this.clearCache();
 
-    console.log('🗑️ ViewContinuum.destroy(): Cleanup complete');
+    d3Logger.setup('ViewContinuum cleanup complete');
   }
 }

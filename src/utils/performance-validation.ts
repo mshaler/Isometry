@@ -11,6 +11,7 @@ import type { Viewport } from './rendering-performance';
 // Bridge elimination - Unused legacy types disabled
 // import type { RenderingMetrics, OptimizationStrategy } from './rendering-performance';
 import { Environment } from './webview-bridge';
+import { devLogger } from './dev-logger';
 
 // ============================================================================
 // Types
@@ -325,7 +326,7 @@ export class PerformanceValidator {
       testResult.failures = this.getTestFailures(testResult, test);
       testResult.recommendations = this.getTestRecommendations(testResult, test);
 
-      console.log(`✅ Test completed: ${test.name} - ${testResult.passed ? 'PASSED' : 'FAILED'}`);
+      devLogger.metrics('Test completed', { testName: test.name, passed: testResult.passed });
 
       return testResult;
 
@@ -354,12 +355,12 @@ export class PerformanceValidator {
 
       // Skip certain test types based on config
       if (!this.config.enableStressTests && test.category === 'stress') {
-        console.log(`⏭️ Skipping stress test: ${test.name} (disabled in config)`);
+        devLogger.state('Skipping stress test', { testName: test.name, reason: 'disabled in config' });
         continue;
       }
 
       if (!this.config.enableMemoryTests && test.category === 'memory') {
-        console.log(`⏭️ Skipping memory test: ${test.name} (disabled in config)`);
+        devLogger.state('Skipping memory test', { testName: test.name, reason: 'disabled in config' });
         continue;
       }
 
@@ -480,7 +481,7 @@ export class PerformanceValidator {
     };
     recommendations: string[];
   }> {
-    console.log('🔍 Validating optimization effectiveness...');
+    devLogger.setup('Validating optimization effectiveness', {});
 
     // Run baseline test without optimization
     const baselineTest: PerformanceTest = {

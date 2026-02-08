@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import type { ViewRenderer, CardPosition } from '../d3/ViewContinuum';
 import type { ViewAxisMapping } from '../types/views';
 import type { Node } from '../types/node';
+import { d3Logger } from '../utils/dev-logger';
 
 /**
  * ListView - 1-axis list projection using D3
@@ -34,7 +35,7 @@ export class ListView implements ViewRenderer {
   // ========================================================================
 
   render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void {
-    console.log('📝 ListView.render():', {
+    d3Logger.render('ListView.render()', {
       cardCount: cards.length,
       axisMapping,
       filterCount: activeFilters.length
@@ -77,7 +78,7 @@ export class ListView implements ViewRenderer {
         }
       });
 
-    console.log('📏 ListView.getCardPositions():', { count: positions.size });
+    d3Logger.metrics('ListView.getCardPositions()', { count: positions.size });
     return positions;
   }
 
@@ -95,7 +96,7 @@ export class ListView implements ViewRenderer {
 
         // Animate scroll to bring card into view
         // TODO: Implement smooth scrolling to y position
-        console.log('🎯 ListView.scrollToCard():', { cardId, y });
+        d3Logger.inspect('ListView.scrollToCard()', { cardId, y });
       }
     }
   }
@@ -104,7 +105,7 @@ export class ListView implements ViewRenderer {
     this.contentGroup.selectAll('*').remove();
     this.hierarchicalData = [];
 
-    console.log('🗑️ ListView.destroy(): Cleanup complete');
+    d3Logger.setup('ListView.destroy()', { message: 'Cleanup complete' });
   }
 
   // ========================================================================
@@ -166,7 +167,7 @@ export class ListView implements ViewRenderer {
 
     const hierarchy = rootCards.map(card => buildNode(card));
 
-    console.log('🌳 ListView.buildHierarchy():', {
+    d3Logger.data('ListView.buildHierarchy()', {
       totalCards: cards.length,
       rootCards: rootCards.length,
       maxDepth: this.getMaxDepth(hierarchy)
@@ -222,7 +223,7 @@ export class ListView implements ViewRenderer {
 
     sortRecursive(items);
 
-    console.log('🔄 ListView.applySort():', {
+    d3Logger.state('ListView.applySort()', {
       facet: sortConfig.facet,
       direction: sortConfig.direction,
       itemCount: items.length
@@ -346,7 +347,7 @@ export class ListView implements ViewRenderer {
       })
       .on('click', (_event, d) => {
         // Handle card selection
-        console.log('📋 ListView: Card clicked:', d.card.id);
+        d3Logger.data('ListView: Card clicked', { cardId: d.card.id });
       });
 
     // Exit selection
@@ -356,7 +357,7 @@ export class ListView implements ViewRenderer {
       .style('opacity', 0)
       .remove();
 
-    console.log('✅ ListView.renderHierarchicalList():', {
+    d3Logger.render('ListView.renderHierarchicalList()', {
       flattenedCount: flattenedItems.length,
       visibleCount: updateSelection.size()
     });
@@ -396,7 +397,7 @@ export class ListView implements ViewRenderer {
     // Re-render to show/hide children
     this.renderHierarchicalList();
 
-    console.log('🔄 ListView.toggleExpansion():', {
+    d3Logger.state('ListView.toggleExpansion()', {
       cardId: item.card.id,
       isExpanded: item.isExpanded,
       childCount: item.children.length
@@ -438,7 +439,7 @@ export class ListView implements ViewRenderer {
       .attr('class', 'list-view-content')
       .attr('transform', 'translate(0, 0)');
 
-    console.log('🏗️ ListView: SVG structure initialized');
+    d3Logger.setup('ListView: SVG structure initialized', {});
     return contentGroup;
   }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
+import { contextLogger } from '../utils/dev-logger';
 
 /**
  * Debug console to diagnose SQLite issues
@@ -13,19 +14,19 @@ export function SQLiteDebugConsole() {
 
     const runDebugQueries = async () => {
       try {
-        console.log('🔧 SQLiteDebugConsole: Running diagnostic queries...');
+        contextLogger.setup('SQLiteDebugConsole: Running diagnostic queries', {});
 
         // Test basic query
         const countResult = execute('SELECT COUNT(*) as count FROM nodes WHERE deleted_at IS NULL');
-        console.log('📊 Node count query result:', countResult);
+        contextLogger.data('SQLiteDebugConsole: Node count query result', countResult);
 
         // Get sample nodes
         const sampleNodes = execute('SELECT id, name, folder, status, grid_x, grid_y FROM nodes WHERE deleted_at IS NULL LIMIT 5');
-        console.log('📝 Sample nodes:', sampleNodes);
+        contextLogger.data('SQLiteDebugConsole: Sample nodes', sampleNodes);
 
         // Check table info
         const tables = execute("SELECT name FROM sqlite_master WHERE type='table'");
-        console.log('📋 Available tables:', tables);
+        contextLogger.data('SQLiteDebugConsole: Available tables', tables);
 
         setDebugInfo({
           nodeCount: countResult,
@@ -39,7 +40,7 @@ export function SQLiteDebugConsole() {
         });
 
       } catch (err) {
-        console.error('💥 Debug query failed:', err);
+        contextLogger.state('SQLiteDebugConsole: Debug query failed', { error: err });
         setDebugInfo({
           error: err instanceof Error ? err.message : String(err),
           capabilities,
