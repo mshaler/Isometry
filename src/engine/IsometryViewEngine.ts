@@ -281,7 +281,15 @@ export class IsometryViewEngine implements ViewEngine {
         return new GridRenderer();
 
       case 'list':
+        // Import ListRenderer dynamically to avoid circular dependencies
+        const { ListRenderer } = require('./renderers/ListRenderer');
+        return new ListRenderer();
+
       case 'kanban':
+        // Import KanbanRenderer dynamically to avoid circular dependencies
+        const { KanbanRenderer } = require('./renderers/KanbanRenderer');
+        return new KanbanRenderer();
+
       case 'timeline':
       case 'graph':
       case 'supergrid':
