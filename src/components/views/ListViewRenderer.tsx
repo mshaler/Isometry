@@ -1,13 +1,18 @@
 import React from 'react';
 import { ReactViewRenderer } from './ReactViewRenderer';
-import { EnhancedListView } from './EnhancedListView';
 import type { ViewComponentProps, ViewTransitionState } from '../../types/view';
 
+// Placeholder component - replaced by unified ViewEngine
+const ListViewPlaceholder: React.FC<ViewComponentProps> = () => (
+  <div className="p-4 text-center text-gray-500">
+    List View - Replaced by unified ViewEngine
+  </div>
+);
+
 /**
- * ListViewRenderer - ViewRenderer implementation for ListView
+ * ListViewRenderer - Legacy renderer (replaced by unified ViewEngine)
  *
- * Provides standardized interface for the existing ListView component,
- * with enhanced state preservation for scroll position and grouping settings.
+ * @deprecated Use IsometryViewEngine with ListRenderer instead
  */
 export class ListViewRenderer extends ReactViewRenderer {
   public readonly type = 'list' as const;
@@ -18,9 +23,9 @@ export class ListViewRenderer extends ReactViewRenderer {
   private sortAscending: boolean = false;
   private groupingEnabled: boolean = true;
 
-  // Return the EnhancedListView component
+  // Return placeholder component
   getComponent(): React.ComponentType<ViewComponentProps> {
-    return EnhancedListView;
+    return ListViewPlaceholder;
   }
 
   // Enhanced state management for list view

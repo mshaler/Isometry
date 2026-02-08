@@ -1,21 +1,26 @@
 import React from 'react';
 import { ReactViewRenderer } from './ReactViewRenderer';
-import { EnhancedGridView } from './EnhancedGridView';
 import type { ViewComponentProps, ViewTransitionState } from '../../types/view';
 
+// Placeholder component - replaced by unified ViewEngine
+const GridViewPlaceholder: React.FC<ViewComponentProps> = () => (
+  <div className="p-4 text-center text-gray-500">
+    Grid View - Replaced by unified ViewEngine
+  </div>
+);
+
 /**
- * GridViewRenderer - ViewRenderer implementation for GridView
+ * GridViewRenderer - Legacy renderer (replaced by unified ViewEngine)
  *
- * Provides standardized interface for the existing GridView component,
- * enabling seamless view switching and state preservation.
+ * @deprecated Use IsometryViewEngine with GridRenderer instead
  */
 export class GridViewRenderer extends ReactViewRenderer {
   public readonly type = 'grid' as const;
   public readonly name = 'Grid View';
 
-  // Return the EnhancedGridView component
+  // Return placeholder component
   getComponent(): React.ComponentType<ViewComponentProps> {
-    return EnhancedGridView;
+    return GridViewPlaceholder;
   }
 
   // Grid-specific state management

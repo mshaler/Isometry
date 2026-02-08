@@ -15,8 +15,6 @@ import { NetworkView } from '../components/views/NetworkView';
 import { D3GridView } from '../components/views/D3GridView';
 import { D3ListView } from '../components/views/D3ListView';
 import { EnhancedNetworkView } from '../components/views/EnhancedNetworkView';
-import { EnhancedGridView } from '../components/views/EnhancedGridView';
-import { EnhancedListView } from '../components/views/EnhancedListView';
 import DataFlowMonitor from '../components/DataFlowMonitor';
 import { PerformanceBaseline } from '../components/performance/PerformanceBaseline';
 import { PAFVProvider } from '../contexts/PAFVContext';
@@ -134,26 +132,10 @@ const DEMO_SECTIONS: DemoSection[] = [
     isActive: false
   },
   {
-    id: 'grid-enhanced',
-    name: 'Enhanced Grid',
-    description: 'Optimized grid with performance enhancements',
-    component: EnhancedGridView,
-    enhanced: true,
-    isActive: false
-  },
-  {
     id: 'list',
     name: 'List Visualization',
     description: 'Dynamic list view with FTS5 search and live updates',
     component: D3ListView,
-    isActive: false
-  },
-  {
-    id: 'list-enhanced',
-    name: 'Enhanced List',
-    description: 'Performance-optimized list with advanced filtering',
-    component: EnhancedListView,
-    enhanced: true,
     isActive: false
   }
 ];
