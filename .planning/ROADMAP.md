@@ -170,8 +170,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
 - [x] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
 - [x] **Phase 38: Foundation Verification & Architecture Reconciliation** - Gap closure for Phase 34 verification and architectural mismatch resolution
-- [ ] **Phase 39: Missing Requirement Implementation** - Implementation of missing FOUND-06 column resizing requirement
-- [ ] **Phase 40: Tech Debt Cleanup & Integration Polish** - Resolution of identified tech debt and integration TODOs
+- [x] **Phase 39: Missing Requirement Implementation** - Implementation of missing FOUND-06 column resizing requirement
+- [x] **Phase 40: Tech Debt Cleanup & Integration Polish** - Resolution of identified tech debt and integration TODOs
+- [ ] **Phase 41: PAFV Architectural Unification** - Eliminate dual D3/CSS rendering split and establish "D3 renders, React controls" contract
 
 #### Phase 34: Foundation Stabilization
 **Goal**: Establish stable sql.js + D3.js integration with basic grid rendering and TypeScript compilation cleanup
@@ -210,9 +211,9 @@ Plans:
 - [x] 35-03-PLAN.md — Multi-Select and Keyboard Navigation
 - [x] 35-04-PLAN.md — Drag & Drop with Persistence
 - [x] 35-05-PLAN.md — Header Click LATCH Filtering (Gap Closure)
-- [ ] 35-06-PLAN.md — TypeScript Export/Import Cleanup (LiveDataContext, QueryClient, Logging)
-- [ ] 35-07-PLAN.md — SuperGrid Type Interface Alignment (JanusDensityState, Virtual Grid)
-- [ ] 35-08-PLAN.md — Module Resolution and Service Interface Fixes
+- [x] 35-06-PLAN.md — TypeScript Export/Import Cleanup (LiveDataContext, QueryClient, Logging)
+- [x] 35-07-PLAN.md — SuperGrid Type Interface Alignment (JanusDensityState, Virtual Grid)
+- [x] 35-08-PLAN.md — Module Resolution and Service Interface Fixes
 
 #### Phase 36: SuperGrid Headers
 **Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
@@ -278,7 +279,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 39-01-PLAN.md — Column Resize Implementation with Drag Handles and State Persistence
+- [x] 39-01-PLAN.md — Column Resize Implementation with Drag Handles and State Persistence
 
 #### Phase 40: Tech Debt Cleanup & Integration Polish
 **Goal**: Resolve identified tech debt and TODO placeholders for clean milestone closure
@@ -290,12 +291,34 @@ Plans:
   3. Card type analysis completed in SelectionManager
   4. All integration TODO placeholders removed or implemented
   5. Clean codebase ready for milestone archival
-**Plans**: TBD - use `/gsd:plan-phase 40`
+**Plans**: 1 plan
+
+Plans:
+- [x] 40-01-PLAN.md — Foundation Stabilization with Bridge Elimination and Import Cleanup
+
+#### Phase 41: PAFV Architectural Unification
+**Goal**: Eliminate dual D3/CSS rendering split and establish "D3 renders, React controls" contract
+**Depends on**: Phase 40
+**Requirements**: Core PAFV foundation from pafv-implementation-plan.md Phase 0
+**Super* Features**: Unified ViewEngine architecture, rendering contract establishment
+**Success Criteria** (what must be TRUE):
+  1. Canvas contains zero data-rendering JSX (only container div for D3)
+  2. IsometryViewEngine class exists with render() and transition() methods
+  3. Grid view renders via D3 with enter/update/exit animations
+  4. Card click events propagate from D3 back to React state
+  5. No visual regression from current UI during architectural transition
+  6. ViewConfig interface drives all rendering decisions through D3 engine
+**Plans**: 3 plans
+
+Plans:
+- [ ] 41-01-PLAN.md — ViewEngine Architecture Foundation with D3 Renderer Framework
+- [ ] 41-02-PLAN.md — Canvas Transformation and Dual Path Elimination
+- [ ] 41-03-PLAN.md — Legacy Component Cleanup and Event Flow Verification
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40
+Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -305,5 +328,6 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 �
 | 36. SuperGrid Headers | v4.1 | 3/3 | ✅ Complete | 2026-02-07 |
 | 37. Grid Continuum | v4.1 | 2/2 | ✅ Complete | 2026-02-07 |
 | 38. Foundation Verification & Architecture Reconciliation | v4.1 | 2/2 | ✅ Complete | 2026-02-08 |
-| 39. Missing Requirement Implementation | v4.1 | 1/1 | 📋 Ready | - |
-| 40. Tech Debt Cleanup & Integration Polish | v4.1 | 0/TBD | 📋 Gap Closure | - |
+| 39. Missing Requirement Implementation | v4.1 | 1/1 | ✅ Complete | 2026-02-08 |
+| 40. Tech Debt Cleanup & Integration Polish | v4.1 | 1/1 | ✅ Complete | 2026-02-08 |
+| 41. PAFV Architectural Unification | v4.2 | 0/3 | 📋 Ready | - |
