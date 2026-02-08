@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
@@ -16,7 +16,7 @@ type PreviewTab = 'supergrid' | 'network' | 'data-inspector' | 'web-preview' | '
 
 export function PreviewComponent({ className }: PreviewComponentProps) {
   const { theme } = useTheme();
-  const { activeCard } = useNotebook();
+  const { activeCard, cards, setActiveCard } = useNotebook();
   const [isMinimized, setIsMinimized] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('https://example.com');
   const [isExporting, setIsExporting] = useState(false);
@@ -112,6 +112,11 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   // Get current tab info
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   const ContentIcon = currentTab.icon;
+
+  // Update data point count when cards change (cross-canvas data flow)
+  useEffect(() => {
+    setDataPointCount(cards.length);
+  }, [cards]);
 
   if (isMinimized) {
     return (
@@ -315,8 +320,12 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             enableSuperStack={true}
             enableDragDrop={true}
             onCellClick={(node) => {
-              // Handle cell selection - could update activeCard context
+              // Handle cell selection - update activeCard to trigger cross-canvas updates
               console.log('SuperGrid cell clicked:', node);
+              const card = cards.find(c => c.nodeId === node.id);
+              if (card) {
+                setActiveCard(card);
+              }
             }}
             onHeaderClick={(level, value, axis) => {
               // Handle header filtering
