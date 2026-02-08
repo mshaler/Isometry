@@ -274,12 +274,11 @@ export class IsometryViewEngine implements ViewEngine {
   }
 
   private createRenderer(viewType: string): ViewRenderer {
-    // For now, throw error for unsupported types
-    // Will be populated as individual renderers are implemented
     switch (viewType) {
       case 'grid':
-        // GridRenderer will be implemented in Task 3
-        throw new UnsupportedViewTypeError(viewType + ' (GridRenderer not yet implemented)');
+        // Import GridRenderer dynamically to avoid circular dependencies
+        const { GridRenderer } = require('./renderers/GridRenderer');
+        return new GridRenderer();
 
       case 'list':
       case 'kanban':
