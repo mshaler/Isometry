@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useSQLite } from '../db/SQLiteProvider';
-import { rowToNode, Node } from '../types/node';
-import { devLogger } from '../utils/logging/dev-logger';
+import { useSQLite } from '../../db/SQLiteProvider';
+import { rowToNode, Node } from '../../types/node';
+import { devLogger } from '../../utils/logging/dev-logger';
 
 export interface QueryState<T> {
   data: T[] | null;
