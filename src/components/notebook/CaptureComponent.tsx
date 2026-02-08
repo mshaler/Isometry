@@ -3,6 +3,8 @@ import { Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight, Save, AlertCirc
 import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMarkdownEditor, useSlashCommands } from '@/hooks';
+import { useSQLite } from '../../db/SQLiteProvider';
+import { useTerminalContext } from '../../context/TerminalContext';
 import PropertyEditor from './PropertyEditor';
 
 type SlashCommand = {
@@ -38,14 +40,110 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     enableAutoSave: true
   });
 
+  const { execute: dbExecute, run: dbRun } = useSQLite();
+  // const terminalContext = useTerminalContext(); // TODO: Add when available
+
+  const slashHook = useSlashCommands();
   const {
     menuState,
     registerInsertText,
     handleKeyDown,
     handleTextInput,
-    executeCommand
-    // Note: navigateMenu and closeMenu not currently used in this component
-  } = useSlashCommands();
+    executeCommand: originalExecuteCommand,
+    commands: allCommands,
+    filteredCommands
+  } = slashHook;
+
+  // Save current content as a new card
+  const handleSaveCard = useCallback(async () => {
+    if (!content.trim()) {
+      alert('No content to save');
+      return;
+    }
+
+    try {
+      // Extract title from first line or use first 50 chars
+      const lines = content.split('\n').filter(line => line.trim());
+      const title = lines[0]?.replace(/^#+\s*/, '') || content.substring(0, 50).trim();
+      const summary = content.substring(0, 200).trim();
+
+      // Generate unique ID
+      const nodeId = `card-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Insert new node into database
+      dbRun(
+        `INSERT INTO nodes (id, name, summary, markdown_content, created_at, modified_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [nodeId, title, summary, content, new Date().toISOString(), new Date().toISOString()]
+      );
+
+      // Create corresponding notebook card
+      dbRun(
+        `INSERT INTO notebook_cards (node_id, card_type, markdown_content, created_at, modified_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        [nodeId, 'capture', content, new Date().toISOString(), new Date().toISOString()]
+      );
+
+      // Clear the editor or show success message
+      alert(`Card saved: ${title}`);
+      setContent(''); // Clear for new content
+    } catch (error) {
+      console.error('Failed to save card:', error);
+      alert('Failed to save card: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }, [content, dbRun, setContent]);
+
+  // Send content to shell for execution
+  const handleSendToShell = useCallback(() => {
+    if (!content.trim()) {
+      alert('No content to send to shell');
+      return;
+    }
+
+    try {
+      // Extract command from content - could be a code block or just text
+      let command = content.trim();
+
+      // If it's a markdown code block, extract the code
+      const codeBlockMatch = content.match(/```(?:bash|sh|shell)?\n(.*?)```/s);
+      if (codeBlockMatch) {
+        command = codeBlockMatch[1].trim();
+      }
+
+      // For now, just log it - in full implementation this would send to terminal
+      console.log('Sending to shell:', command);
+      alert(`Command sent to shell: ${command.substring(0, 50)}...`);
+
+      // TODO: Integrate with TerminalContext when available
+      // terminalContext.executeCommand(command);
+
+    } catch (error) {
+      console.error('Failed to send to shell:', error);
+      alert('Failed to send to shell: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  }, [content]);
+
+  // Enhanced command execution with special handlers
+  const executeCommand = useCallback((commandId?: string) => {
+    // Get the command being executed
+    const command = commandId
+      ? allCommands.find(cmd => cmd.id === commandId)
+      : filteredCommands[menuState.selectedIndex];
+
+    if (!command) return originalExecuteCommand(commandId);
+
+    // Handle special Isometry commands
+    if (command.id === 'save-card') {
+      handleSaveCard();
+      return true;
+    } else if (command.id === 'send-to-shell') {
+      handleSendToShell();
+      return true;
+    }
+
+    // Default command execution for templates and formats
+    return originalExecuteCommand(commandId);
+  }, [allCommands, filteredCommands, menuState.selectedIndex, originalExecuteCommand, handleSaveCard, handleSendToShell]);
 
   const handleManualSave = useCallback(async () => {
     try {
@@ -180,8 +278,10 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
         <div className="flex items-center gap-2">
           <Edit3 size={16} className="text-gray-600" />
           <span className="font-medium text-sm">
-            {activeCard ? `Card: ${activeCard.nodeId.slice(0, 8)}...` : 'No Active Card'}
+            {activeCard ? `Card: ${activeCard.nodeId.slice(0, 8)}...` : 'Capture'}
           </span>
+          <span className="text-xs text-gray-500">•</span>
+          <span className="text-xs text-gray-500">Type / for commands</span>
           {isDirty && <div className="w-2 h-2 bg-orange-500 rounded-full" title="Unsaved changes" />}
           {isSaving && <div className="text-xs text-gray-500">Saving...</div>}
         </div>

@@ -91,6 +91,23 @@ const ISOMETRY_COMMANDS: SlashCommand[] = [
     content: '$$\n\n$$',
     cursorOffset: 3,
     shortcut: 'math'
+  },
+  {
+    id: 'save-card',
+    label: 'Save Card',
+    description: 'Save current content as new card',
+    category: 'isometry',
+    content: '/save-card',
+    shortcut: 'save'
+  },
+  {
+    id: 'send-to-shell',
+    label: 'Send to Shell',
+    description: 'Send content or command to shell',
+    category: 'isometry',
+    content: '/send-to-shell ',
+    cursorOffset: 0,
+    shortcut: 'shell'
   }
 ];
 
