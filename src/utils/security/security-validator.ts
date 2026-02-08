@@ -18,17 +18,17 @@ import {
   setEncryptedItem,
   getEncryptedItem,
   getEncryptionInfo
-} from './security/encrypted-storage';
+} from './encrypted-storage';
 import {
   getSecurityConfig,
   validateSecurityConfig,
   shouldUseAPIProxy
-} from '../config/security';
+} from '../../config/security';
 import {
   getEnvironmentConfig,
   validateEnvironmentSecurity,
   getSecureWorkingDirectory
-} from '../config/environment';
+} from '../../config/environment';
 
 /**
  * Security test result

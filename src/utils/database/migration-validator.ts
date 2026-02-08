@@ -5,9 +5,15 @@
  * Leverages sync infrastructure for comprehensive migration safety
  */
 
-import { DatabaseMode } from '../contexts/EnvironmentContext';
-import { Environment } from './webview/webview-bridge';
-import { devLogger } from './dev-logger';
+// Local enum definition to avoid context imports from utils
+export enum DatabaseMode {
+  HTTP_API = 'http-api',
+  WEBVIEW_BRIDGE = 'webview-bridge',
+  FALLBACK = 'fallback',
+  AUTO = 'auto'
+}
+import { Environment } from '../webview-bridge';
+import { devLogger } from '../logging/dev-logger';
 
 export interface ValidationResult {
   success: boolean;

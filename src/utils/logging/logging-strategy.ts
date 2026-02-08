@@ -6,7 +6,7 @@
  * categorized logging that can be filtered and configured by environment.
  */
 
-import { logger, LogLevel } from './logging/logger';
+import { logger, LogLevel } from './logger';
 
 // Environment-specific logging configurations
 export const LOGGING_CONFIGS = {

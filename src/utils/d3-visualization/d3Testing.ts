@@ -1,6 +1,6 @@
 import { validatePerformanceTargets, performanceMonitor } from './d3Performance';
 import type { Node } from '../../types/node';
-import { devLogger } from './dev-logger';
+import { devLogger } from '../logging/dev-logger';
 
 // Import types to avoid JSX module resolution issues
 interface Wells {
