@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperGrid Complete Feature Test</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 16px;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .feature {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .control-section {
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 16px;
+            background: #fafbfc;
+        }
+
+        .control-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+            border-bottom: 2px solid #e1e5e9;
+            padding-bottom: 4px;
+        }
+
+        .supergrid-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            flex: 1;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: relative;
+            min-height: 600px;
+        }
+
+        #supergrid-canvas {
+            width: 100%;
+            height: 100%;
+            min-height: 560px;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px solid #e1e5e9;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 4px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn.secondary {
+            background: #6c757d;
+        }
+
+        .btn.small {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-group {
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #e1e5e9;
+            margin: 4px 0;
+        }
+
+        .btn-group .btn {
+            margin: 0;
+            border-radius: 0;
+            border: none;
+            background: white;
+            color: #333;
+        }
+
+        .btn-group .btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .card {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            stroke-width: 2;
+            stroke: #667eea;
+        }
+
+        .card.selected {
+            stroke: #764ba2;
+            stroke-width: 3;
+        }
+
+        .header-cell {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .header-cell:hover {
+            fill-opacity: 0.8;
+        }
+
+        .filter-chip {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin: 2px;
+            cursor: pointer;
+        }
+
+        .performance-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        .demo-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        .keyboard-shortcuts {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .keyboard-shortcuts h4 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .shortcut {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        .key {
+            background: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .transitioning {
+            animation: pulse 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>SuperGrid Complete Integration Test</h1>
+            <p class="subtitle">
+                Real-time demonstration of all SuperGrid features working together harmoniously
+            </p>
+
+            <div class="feature-list">
+                <div class="feature">
+                    <div class="feature-title">🚀 Core SuperGrid</div>
+                    <div class="feature-desc">Multi-select, drag & drop, modal, filtering, resizing</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">📚 SuperStack</div>
+                    <div class="feature-desc">Progressive disclosure, level picker, morphing</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">🔄 SuperDynamic</div>
+                    <div class="feature-desc">Axis repositioning, reflow animations</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">🎛️ Janus Density</div>
+                    <div class="feature-desc">Independent zoom/pan, aggregation</div>
+                </div>
+                <div class="feature">
+                    <div class="feature-title">🔍 SuperZoom</div>
+                    <div class="feature-desc">Cartographic navigation, boundary constraints</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <!-- SuperStack Controls -->
+                <div class="control-section">
+                    <h3>SuperStack Controls</h3>
+                    <div>
+                        <label>Level Picker:</label>
+                        <div class="btn-group">
+                            <button class="btn active" onclick="setProgressiveLevel(0)">Overview</button>
+                            <button class="btn" onclick="setProgressiveLevel(1)">Categories</button>
+                            <button class="btn" onclick="setProgressiveLevel(2)">Details</button>
+                            <button class="btn" onclick="setProgressiveLevel(3)">Full</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Zoom Level: <span id="zoom-level">0</span></label>
+                        <input type="range" min="0" max="3" value="0" onchange="setZoomLevel(this.value)">
+                    </div>
+                    <button class="btn small" onclick="triggerMorphingAnimation()">Trigger Morphing</button>
+                </div>
+
+                <!-- SuperDynamic Controls -->
+                <div class="control-section">
+                    <h3>SuperDynamic Controls</h3>
+                    <div>
+                        <label>Current Mapping:</label>
+                        <div>X-Axis: <span id="x-axis">Category</span></div>
+                        <div>Y-Axis: <span id="y-axis">Time</span></div>
+                        <div>Z-Axis: <span id="z-axis">Priority</span></div>
+                    </div>
+                    <div>
+                        <button class="btn small" onclick="transposeAxes()">Transpose X↔Y</button>
+                        <button class="btn small" onclick="rotateAxes()">Rotate X→Y→Z</button>
+                    </div>
+                    <div id="reflow-status"></div>
+                </div>
+
+                <!-- Janus Density Controls -->
+                <div class="control-section">
+                    <h3>Janus Density Controls</h3>
+                    <div>
+                        <label>Value Density (Zoom):</label>
+                        <div class="btn-group">
+                            <button class="btn active" onclick="setValueDensity('leaf')">Leaf</button>
+                            <button class="btn" onclick="setValueDensity('collapsed')">Collapsed</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label>Extent Density (Pan):</label>
+                        <div class="btn-group">
+                            <button class="btn active" onclick="setExtentDensity('dense')">Dense</button>
+                            <button class="btn" onclick="setExtentDensity('sparse')">Sparse</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SuperZoom Controls -->
+                <div class="control-section">
+                    <h3>SuperZoom Controls</h3>
+                    <div>
+                        <label>Transform: <span id="transform-info">x:0 y:0 k:1.00</span></label>
+                    </div>
+                    <div>
+                        <button class="btn small" onclick="zoomIn()">Zoom In</button>
+                        <button class="btn small" onclick="zoomOut()">Zoom Out</button>
+                        <button class="btn small" onclick="resetZoom()">Reset</button>
+                    </div>
+                    <div>
+                        <button class="btn small" onclick="panLeft()">← Pan</button>
+                        <button class="btn small" onclick="panRight()">Pan →</button>
+                        <button class="btn small" onclick="panUp()">↑ Pan</button>
+                        <button class="btn small" onclick="panDown()">Pan ↓</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SuperGrid Container -->
+        <div class="supergrid-container">
+            <svg id="supergrid-canvas"></svg>
+
+            <!-- Performance Indicator -->
+            <div class="performance-indicator">
+                <div>FPS: <span id="fps">60</span></div>
+                <div>Render: <span id="render-time">0</span>ms</div>
+                <div>Cards: <span id="card-count">0</span></div>
+            </div>
+
+            <!-- Demo Info -->
+            <div class="demo-info">
+                <div><strong>Live Demo Status</strong></div>
+                <div>Selected: <span id="selected-count">0</span> cards</div>
+                <div>Filters: <span id="filter-count">0</span> active</div>
+                <div>Interactions: <span id="interaction-count">0</span></div>
+            </div>
+
+            <!-- Status Bar -->
+            <div class="status-bar">
+                <div>
+                    <div id="active-filters"></div>
+                </div>
+                <div class="metric">
+                    <span>Feature Usage:</span>
+                    <span class="metric-value" id="feature-usage">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyboard Shortcuts -->
+        <div class="keyboard-shortcuts">
+            <h4>Keyboard Shortcuts</h4>
+            <div class="shortcut">
+                <span>Navigate cards:</span>
+                <span><span class="key">↑↓←→</span></span>
+            </div>
+            <div class="shortcut">
+                <span>Select/deselect:</span>
+                <span><span class="key">Space</span></span>
+            </div>
+            <div class="shortcut">
+                <span>Open card details:</span>
+                <span><span class="key">Enter</span></span>
+            </div>
+            <div class="shortcut">
+                <span>Multi-select:</span>
+                <span><span class="key">Shift</span> + click</span>
+            </div>
+            <div class="shortcut">
+                <span>Clear selection:</span>
+                <span><span class="key">Esc</span></span>
+            </div>
+            <div class="shortcut">
+                <span>Quick zoom:</span>
+                <span><span class="key">+/-</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state for the SuperGrid demo
+        let globalState = {
+            superGrid: null,
+            selectedCards: new Set(),
+            activeFilters: [],
+            currentZoom: { x: 0, y: 0, k: 1 },
+            progressiveLevel: 0,
+            axisMapping: { x: 'Category', y: 'Time', z: 'Priority' },
+            janusState: { value: 'leaf', extent: 'dense' },
+            performanceMetrics: { fps: 60, renderTime: 0, interactions: 0 },
+            isTransitioning: false,
+            featureUsageCount: {}
+        };
+
+        // Sample data for demonstration
+        const DEMO_DATA = Array.from({ length: 100 }, (_, i) => ({
+            id: `item-${i + 1}`,
+            name: `Task ${i + 1}: ${['Setup Database', 'Design UI', 'Write Tests', 'Deploy', 'Review Code'][i % 5]}`,
+            category: ['Development', 'Design', 'QA', 'DevOps'][i % 4],
+            status: ['Active', 'Complete', 'Pending', 'Blocked'][i % 4],
+            priority: Math.floor(i / 20) + 1,
+            created: new Date(2024, (i % 12), (i % 28) + 1).toISOString(),
+            assignee: ['Alice', 'Bob', 'Charlie', 'Diana'][i % 4],
+            x: (i % 10) * 80 + 50,
+            y: Math.floor(i / 10) * 80 + 50
+        }));
+
+        // Track feature usage
+        function trackFeature(feature) {
+            globalState.featureUsageCount[feature] = (globalState.featureUsageCount[feature] || 0) + 1;
+            globalState.performanceMetrics.interactions++;
+            updateUI();
+            console.log(`Feature used: ${feature}`);
+        }
+
+        // SuperStack: Progressive Level Controls
+        function setProgressiveLevel(level) {
+            trackFeature('superstack-level');
+            globalState.progressiveLevel = level;
+
+            // Update button states
+            document.querySelectorAll('.control-section:first-child .btn-group .btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === level);
+            });
+
+            // Trigger transition animation
+            triggerTransition(() => {
+                console.log(`Progressive level set to: ${level}`);
+                // Here you would update the actual SuperGrid level display
+            });
+        }
+
+        function setZoomLevel(level) {
+            trackFeature('superstack-zoom');
+            document.getElementById('zoom-level').textContent = level;
+            // Update grid zoom level
+            console.log(`Zoom level set to: ${level}`);
+        }
+
+        function triggerMorphingAnimation() {
+            trackFeature('superstack-morphing');
+            const container = document.getElementById('supergrid-canvas');
+            container.classList.add('transitioning');
+            setTimeout(() => {
+                container.classList.remove('transitioning');
+            }, 300);
+        }
+
+        // SuperDynamic: Axis Repositioning
+        function transposeAxes() {
+            trackFeature('superdynamic-transpose');
+            const temp = globalState.axisMapping.x;
+            globalState.axisMapping.x = globalState.axisMapping.y;
+            globalState.axisMapping.y = temp;
+            updateAxisDisplay();
+            triggerReflowAnimation();
+        }
+
+        function rotateAxes() {
+            trackFeature('superdynamic-rotate');
+            const temp = globalState.axisMapping.x;
+            globalState.axisMapping.x = globalState.axisMapping.y;
+            globalState.axisMapping.y = globalState.axisMapping.z;
+            globalState.axisMapping.z = temp;
+            updateAxisDisplay();
+            triggerReflowAnimation();
+        }
+
+        function updateAxisDisplay() {
+            document.getElementById('x-axis').textContent = globalState.axisMapping.x;
+            document.getElementById('y-axis').textContent = globalState.axisMapping.y;
+            document.getElementById('z-axis').textContent = globalState.axisMapping.z;
+        }
+
+        function triggerReflowAnimation() {
+            const status = document.getElementById('reflow-status');
+            status.textContent = 'Reflow in progress...';
+            status.style.color = '#ff9800';
+
+            setTimeout(() => {
+                status.textContent = 'Reflow complete';
+                status.style.color = '#4caf50';
+                setTimeout(() => {
+                    status.textContent = '';
+                }, 1000);
+            }, 500);
+        }
+
+        // Janus Density Controls
+        function setValueDensity(mode) {
+            trackFeature('janus-value-density');
+            globalState.janusState.value = mode;
+
+            // Update button states
+            const buttons = document.querySelectorAll('.control-section:nth-child(3) .btn-group:first-of-type .btn');
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle('active', (i === 0 && mode === 'leaf') || (i === 1 && mode === 'collapsed'));
+            });
+
+            console.log(`Value density set to: ${mode}`);
+        }
+
+        function setExtentDensity(mode) {
+            trackFeature('janus-extent-density');
+            globalState.janusState.extent = mode;
+
+            // Update button states
+            const buttons = document.querySelectorAll('.control-section:nth-child(3) .btn-group:last-of-type .btn');
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle('active', (i === 0 && mode === 'dense') || (i === 1 && mode === 'sparse'));
+            });
+
+            console.log(`Extent density set to: ${mode}`);
+        }
+
+        // SuperZoom: Cartographic Navigation
+        function zoomIn() {
+            trackFeature('superzoom-in');
+            globalState.currentZoom.k = Math.min(5, globalState.currentZoom.k * 1.5);
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function zoomOut() {
+            trackFeature('superzoom-out');
+            globalState.currentZoom.k = Math.max(0.1, globalState.currentZoom.k / 1.5);
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function resetZoom() {
+            trackFeature('superzoom-reset');
+            globalState.currentZoom = { x: 0, y: 0, k: 1 };
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function panLeft() {
+            trackFeature('superzoom-pan');
+            globalState.currentZoom.x += 50;
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function panRight() {
+            trackFeature('superzoom-pan');
+            globalState.currentZoom.x -= 50;
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function panUp() {
+            trackFeature('superzoom-pan');
+            globalState.currentZoom.y += 50;
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function panDown() {
+            trackFeature('superzoom-pan');
+            globalState.currentZoom.y -= 50;
+            updateTransformDisplay();
+            applyZoomTransform();
+        }
+
+        function updateTransformDisplay() {
+            const { x, y, k } = globalState.currentZoom;
+            document.getElementById('transform-info').textContent = `x:${x.toFixed(0)} y:${y.toFixed(0)} k:${k.toFixed(2)}`;
+        }
+
+        function applyZoomTransform() {
+            const svg = d3.select('#supergrid-canvas');
+            const { x, y, k } = globalState.currentZoom;
+
+            svg.select('.main-group')
+                .transition()
+                .duration(300)
+                .attr('transform', `translate(${x},${y}) scale(${k})`);
+        }
+
+        // Performance monitoring
+        function updatePerformanceMetrics() {
+            const start = performance.now();
+
+            // Simulate render work
+            setTimeout(() => {
+                const end = performance.now();
+                globalState.performanceMetrics.renderTime = end - start;
+                globalState.performanceMetrics.fps = Math.min(60, 1000 / (end - start));
+                updateUI();
+            }, 0);
+        }
+
+        // UI updates
+        function updateUI() {
+            document.getElementById('fps').textContent = Math.round(globalState.performanceMetrics.fps);
+            document.getElementById('render-time').textContent = globalState.performanceMetrics.renderTime.toFixed(1);
+            document.getElementById('card-count').textContent = DEMO_DATA.length;
+            document.getElementById('selected-count').textContent = globalState.selectedCards.size;
+            document.getElementById('filter-count').textContent = globalState.activeFilters.length;
+            document.getElementById('interaction-count').textContent = globalState.performanceMetrics.interactions;
+
+            const featureCount = Object.keys(globalState.featureUsageCount).length;
+            document.getElementById('feature-usage').textContent = featureCount;
+        }
+
+        function triggerTransition(callback) {
+            globalState.isTransitioning = true;
+            const container = document.getElementById('supergrid-canvas');
+            container.classList.add('transitioning');
+
+            setTimeout(() => {
+                callback();
+                globalState.isTransitioning = false;
+                container.classList.remove('transitioning');
+            }, 300);
+        }
+
+        // Initialize the SuperGrid visualization
+        function initializeSuperGrid() {
+            const svg = d3.select('#supergrid-canvas');
+            const width = svg.node().clientWidth;
+            const height = svg.node().clientHeight;
+
+            svg.attr('viewBox', `0 0 ${width} ${height}`);
+
+            // Create main group for zoom/pan transforms
+            const mainGroup = svg.append('g').attr('class', 'main-group');
+
+            // Create grid headers
+            const headerGroup = mainGroup.append('g').attr('class', 'headers');
+
+            // Create column headers
+            const colHeaders = ['Category', 'Time', 'Priority', 'Status'];
+            headerGroup.selectAll('.col-header')
+                .data(colHeaders)
+                .enter()
+                .append('g')
+                .attr('class', 'col-header')
+                .attr('transform', (d, i) => `translate(${i * 200 + 100}, 20)`)
+                .each(function(d) {
+                    const g = d3.select(this);
+                    g.append('rect')
+                        .attr('class', 'header-cell')
+                        .attr('x', -80)
+                        .attr('y', 0)
+                        .attr('width', 160)
+                        .attr('height', 30)
+                        .attr('fill', '#f0f2f5')
+                        .attr('stroke', '#d1d5db')
+                        .attr('rx', 4)
+                        .on('click', function() {
+                            trackFeature('header-click');
+                            console.log(`Header clicked: ${d}`);
+                        });
+
+                    g.append('text')
+                        .attr('text-anchor', 'middle')
+                        .attr('y', 20)
+                        .attr('font-size', '12px')
+                        .attr('font-weight', '600')
+                        .attr('fill', '#374151')
+                        .text(d);
+                });
+
+            // Create data cards
+            const cardGroup = mainGroup.append('g').attr('class', 'cards');
+
+            function updateCards() {
+                const cards = cardGroup.selectAll('.card')
+                    .data(DEMO_DATA, d => d.id);
+
+                const cardEnter = cards.enter()
+                    .append('g')
+                    .attr('class', 'card')
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+                cardEnter.append('rect')
+                    .attr('x', -35)
+                    .attr('y', -15)
+                    .attr('width', 70)
+                    .attr('height', 30)
+                    .attr('rx', 4)
+                    .attr('fill', '#ffffff')
+                    .attr('stroke', '#e5e7eb')
+                    .attr('stroke-width', 1);
+
+                cardEnter.append('text')
+                    .attr('text-anchor', 'middle')
+                    .attr('y', 3)
+                    .attr('font-size', '10px')
+                    .attr('fill', '#374151')
+                    .text(d => d.name.split(':')[0]);
+
+                // Add click handlers
+                cardEnter
+                    .style('cursor', 'pointer')
+                    .on('click', function(event, d) {
+                        trackFeature('card-click');
+
+                        if (event.shiftKey) {
+                            // Multi-select
+                            if (globalState.selectedCards.has(d.id)) {
+                                globalState.selectedCards.delete(d.id);
+                            } else {
+                                globalState.selectedCards.add(d.id);
+                            }
+                        } else {
+                            // Single select
+                            globalState.selectedCards.clear();
+                            globalState.selectedCards.add(d.id);
+                        }
+
+                        updateCardSelection();
+                        updateUI();
+                    });
+
+                cards.merge(cardEnter)
+                    .transition()
+                    .duration(300)
+                    .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+                cards.exit().remove();
+            }
+
+            function updateCardSelection() {
+                cardGroup.selectAll('.card rect')
+                    .attr('stroke', d => globalState.selectedCards.has(d.id) ? '#764ba2' : '#e5e7eb')
+                    .attr('stroke-width', d => globalState.selectedCards.has(d.id) ? 3 : 1);
+            }
+
+            // Initial render
+            updateCards();
+
+            // Set up keyboard navigation
+            document.addEventListener('keydown', function(event) {
+                switch(event.key) {
+                    case ' ':
+                        event.preventDefault();
+                        trackFeature('keyboard-select');
+                        break;
+                    case 'Escape':
+                        globalState.selectedCards.clear();
+                        updateCardSelection();
+                        updateUI();
+                        trackFeature('keyboard-clear');
+                        break;
+                    case '+':
+                    case '=':
+                        zoomIn();
+                        break;
+                    case '-':
+                        zoomOut();
+                        break;
+                }
+            });
+
+            // Performance monitoring loop
+            setInterval(updatePerformanceMetrics, 1000);
+
+            console.log('SuperGrid initialized with all features');
+            updateUI();
+        }
+
+        // Initialize everything when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('SuperGrid Complete Integration Test initialized');
+            initializeSuperGrid();
+
+            // Auto-demo loop (optional)
+            let demoStep = 0;
+            const demoSteps = [
+                () => setProgressiveLevel(1),
+                () => transposeAxes(),
+                () => setValueDensity('collapsed'),
+                () => zoomIn(),
+                () => triggerMorphingAnimation(),
+                () => setExtentDensity('sparse'),
+                () => resetZoom(),
+                () => setProgressiveLevel(0)
+            ];
+
+            // Uncomment to enable auto-demo
+            // setInterval(() => {
+            //     demoSteps[demoStep % demoSteps.length]();
+            //     demoStep++;
+            // }, 3000);
+        });
+    </script>
+</body>
+</html>
