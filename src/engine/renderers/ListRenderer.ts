@@ -50,7 +50,6 @@ interface ListLayout {
  * Pure D3 list renderer implementation
  */
 export class ListRenderer implements ViewRenderer {
-  private container: HTMLElement | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private listGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   private contentGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
@@ -76,7 +75,6 @@ export class ListRenderer implements ViewRenderer {
    */
   render(container: HTMLElement, data: Node[], config: ViewConfig): void {
     try {
-      this.container = container;
       this.config = config;
 
       // Update layout from config
@@ -463,7 +461,7 @@ export class ListRenderer implements ViewRenderer {
   }
 
   private truncateText(maxWidth: number, textSelection: d3.Selection<SVGTextElement, HierarchicalListItem, SVGGElement, unknown>): void {
-    textSelection.each(function(d) {
+    textSelection.each(function(_d) {
       const text = d3.select(this);
       const originalText = text.text();
 
@@ -481,7 +479,7 @@ export class ListRenderer implements ViewRenderer {
     // Item click events
     this.contentGroup
       .selectAll('.list-item')
-      .on('click', (event, d) => {
+      .on('click', (_event, d) => {
         const itemData = d as HierarchicalListItem;
         console.log('[ListRenderer] Item clicked:', itemData.node.name);
         this.config?.eventHandlers?.onNodeClick?.(itemData.node, { x: itemData.x, y: itemData.y });

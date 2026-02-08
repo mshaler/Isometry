@@ -63,7 +63,6 @@ interface KanbanLayout {
  * Pure D3 kanban renderer implementation
  */
 export class KanbanRenderer implements ViewRenderer {
-  private container: HTMLElement | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private kanbanGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   private columnsGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
@@ -92,7 +91,6 @@ export class KanbanRenderer implements ViewRenderer {
    */
   render(container: HTMLElement, data: Node[], config: ViewConfig): void {
     try {
-      this.container = container;
       this.config = config;
 
       // Update layout from config
@@ -656,7 +654,7 @@ export class KanbanRenderer implements ViewRenderer {
     // Card click and hover events
     this.cardsGroup
       .selectAll('.kanban-card')
-      .on('click', (event, d) => {
+      .on('click', (_event, d) => {
         const cardData = d as KanbanCardData;
         console.log('[KanbanRenderer] Card clicked:', cardData.node.name);
         this.config?.eventHandlers?.onNodeClick?.(cardData.node, { x: cardData.x, y: cardData.y });
