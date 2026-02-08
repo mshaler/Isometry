@@ -169,7 +169,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 35: PAFV Grid Core** - Enhanced SuperGrid interactions with card details, filtering, multi-select, and drag & drop
 - [x] **Phase 36: SuperGrid Headers** - Nested PAFV headers with hierarchical spanning across multiple dimension levels
 - [x] **Phase 37: Grid Continuum** - Seamless view transitions between gallery, list, kanban, and grid projections
-- [ ] **Phase 38: Foundation Verification & Architecture Reconciliation** - Gap closure for Phase 34 verification and architectural mismatch resolution
+- [x] **Phase 38: Foundation Verification & Architecture Reconciliation** - Gap closure for Phase 34 verification and architectural mismatch resolution
 - [ ] **Phase 39: Missing Requirement Implementation** - Implementation of missing FOUND-06 column resizing requirement
 - [ ] **Phase 40: Tech Debt Cleanup & Integration Polish** - Resolution of identified tech debt and integration TODOs
 
@@ -272,7 +272,10 @@ Plans:
   3. Resizing integrates seamlessly with existing SuperGrid architecture
   4. Performance remains at 60fps during resize operations
   5. FOUND-06 requirement fully satisfied and verifiable
-**Plans**: TBD - use `/gsd:plan-phase 39`
+**Plans**: 1 plan
+
+Plans:
+- [ ] 39-01-PLAN.md — Column Resize Implementation with Drag Handles and State Persistence
 
 #### Phase 40: Tech Debt Cleanup & Integration Polish
 **Goal**: Resolve identified tech debt and TODO placeholders for clean milestone closure
@@ -299,5 +302,5 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 �
 | 36. SuperGrid Headers | v4.1 | 3/3 | ✅ Complete | 2026-02-07 |
 | 37. Grid Continuum | v4.1 | 2/2 | ✅ Complete | 2026-02-07 |
 | 38. Foundation Verification & Architecture Reconciliation | v4.1 | 2/2 | ✅ Complete | 2026-02-08 |
-| 39. Missing Requirement Implementation | v4.1 | 0/TBD | 📋 Gap Closure | - |
+| 39. Missing Requirement Implementation | v4.1 | 1/1 | 📋 Ready | - |
 | 40. Tech Debt Cleanup & Integration Polish | v4.1 | 0/TBD | 📋 Gap Closure | - |
