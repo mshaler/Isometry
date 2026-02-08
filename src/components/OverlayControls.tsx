@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { useKeyboardClose } from '@/hooks/useKeyboardClose';
+import { useKeyboardClose } from '@/hooks/ui/useKeyboardClose';
 
 /**
  * OverlayControls - Portal-based overlay container (GridBlock 6)

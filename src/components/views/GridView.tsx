@@ -3,7 +3,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { VirtualizedGrid } from '../VirtualizedGrid';
 import { useNetworkAwareSync } from '../../hooks/useNetworkAwareSync';
 import { useCleanupEffect, createCleanupStack, MemoryLeakDetector } from '../../utils/memoryManagement';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '@/types/node';
 import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 

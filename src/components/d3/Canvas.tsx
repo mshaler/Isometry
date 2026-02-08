@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import * as d3 from 'd3';
 import { useD3, useResizeObserver } from '../../hooks/useD3';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '@/types/node';
 
 interface D3CanvasProps {

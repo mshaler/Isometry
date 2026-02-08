@@ -1,0 +1,9 @@
+export { useCloudKitSync } from './useCloudKitSync';
+export { useConflictResolution } from './useConflictResolution';
+export { useFileSystem } from './useFileSystem';
+export { useClaudeAPI } from './useClaudeAPI';
+export { useTerminal } from './useTerminal';
+export { useCommandHistory } from './useCommandHistory';
+export { useCommandRouter } from './useCommandRouter';
+export { useProjectContext } from './useProjectContext';
+export { useNotebookIntegration } from './useNotebookIntegration';

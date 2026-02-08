@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import type { NotebookCard, NotebookCardType, NotebookTemplate } from '../types/notebook';
-import { useDatabase } from '../db/DatabaseContext';
+import { useSQLite } from '../db/SQLiteProvider';
 import { useNotebookIntegration } from '../hooks/useNotebookIntegration';
 import { useNotebookPerformance } from '../hooks/useNotebookPerformance';
 import { useErrorReporting } from '../services/ErrorReportingService';
@@ -33,9 +33,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<Error | null>(null);
 
   // Hooks
-  const databaseContext = useDatabase();
-  const db = 'db' in databaseContext ? databaseContext.db : null;
-  const execute = 'execute' in databaseContext ? databaseContext.execute : undefined;
+  const { db, execute } = useSQLite();
   const errorReporting = useErrorReporting();
   const performanceHook = useNotebookPerformance('NotebookProvider', cards.length);
 

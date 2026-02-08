@@ -6,7 +6,6 @@ import { AppStateProvider } from './contexts/AppStateContext';
 import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './state/PAFVContext';
 import { NotebookProvider, useNotebook } from './contexts/NotebookContext';
-import { DatabaseProvider } from './db/DatabaseContext';
 import { Canvas } from './components/Canvas';
 import { UnifiedApp } from './components/UnifiedApp';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
@@ -131,7 +130,6 @@ function MVPDemo() {
             >
               <ThemeProvider>
                 <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
-                  <DatabaseProvider>
                     <SQLiteProvider>
                       <AppStateProvider>
                         <FilterProvider>
@@ -148,7 +146,6 @@ function MVPDemo() {
                         </FilterProvider>
                       </AppStateProvider>
                     </SQLiteProvider>
-                  </DatabaseProvider>
                 </EnvironmentProvider>
               </ThemeProvider>
             </LiveDataProvider>
@@ -168,7 +165,7 @@ function MVPDemo() {
           >
           <ThemeProvider>
             <EnvironmentProvider forcedMode={DatabaseMode.FALLBACK} enableAutoDetection={false}>
-              <DatabaseProvider>
+              <SQLiteProvider>
                 <AppStateProvider>
                   <FilterProvider>
                     <PAFVProvider>
@@ -180,7 +177,7 @@ function MVPDemo() {
                     </PAFVProvider>
                   </FilterProvider>
                 </AppStateProvider>
-              </DatabaseProvider>
+              </SQLiteProvider>
             </EnvironmentProvider>
           </ThemeProvider>
         </LiveDataProvider>

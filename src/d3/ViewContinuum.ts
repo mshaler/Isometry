@@ -13,7 +13,7 @@ import {
   getViewStateStorageKey
 } from '../types/views';
 import type { Node } from '../types/node';
-import { d3Logger } from '../utils/dev-logger';
+import { d3Logger } from '../utils/logging/dev-logger';
 
 // Re-export CardPosition for external use
 export type { CardPosition };

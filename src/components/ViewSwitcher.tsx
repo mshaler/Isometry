@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 import { ViewType } from '../types/views';
-import { contextLogger } from '../utils/dev-logger';
+import { contextLogger } from '../utils/logging/dev-logger';
 
 /**
  * ViewSwitcher - React toolbar component for view type selection

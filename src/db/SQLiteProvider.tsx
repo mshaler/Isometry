@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import initSqlJs from 'sql.js-fts5';
 import type { Database, SqlJsStatic } from 'sql.js-fts5';
 import type { SQLiteCapabilityError } from './types';
+import { devLogger } from '../utils/dev-logger';
 
 /**
  * SQLiteProvider - Direct sql.js access for Isometry v4
@@ -86,7 +87,7 @@ export function SQLiteProvider({
     const initDatabase = async () => {
       try {
         if (enableLogging) {
-          console.log('🔧 SQLiteProvider: Initializing sql.js...');
+          devLogger.setup('SQLiteProvider: Initializing sql.js', {});
         }
 
         // Initialize sql.js-fts5 with local WASM files
@@ -112,13 +113,13 @@ export function SQLiteProvider({
         try {
           // Try to load existing database file
           if (enableLogging) {
-            console.log(`🔍 SQLiteProvider: Attempting to load database from ${databaseUrl}`);
+            devLogger.inspect('SQLiteProvider: Attempting to load database', { databaseUrl });
           }
           const response = await fetch(databaseUrl);
           if (response.ok) {
             const arrayBuffer = await response.arrayBuffer();
             if (enableLogging) {
-              console.log(`📦 SQLiteProvider: Downloaded database (${arrayBuffer.byteLength} bytes)`);
+              devLogger.data('SQLiteProvider: Downloaded database', { bytes: arrayBuffer.byteLength });
             }
 
             // Verify the data looks like a SQLite file
@@ -130,7 +131,7 @@ export function SQLiteProvider({
 
             database = new sqlInstance.Database(uint8Array);
             if (enableLogging) {
-              console.log('✅ SQLiteProvider: Loaded existing database successfully');
+              devLogger.setup('SQLiteProvider: Loaded existing database successfully', {});
             }
           } else {
             throw new Error(`Database fetch failed: ${response.status} ${response.statusText}`);
@@ -138,7 +139,7 @@ export function SQLiteProvider({
         } catch (loadError) {
           // Create new database with schema
           if (enableLogging) {
-            console.log(`📝 SQLiteProvider: Creating new database (load failed: ${loadError})`);
+            devLogger.setup('SQLiteProvider: Creating new database', { loadError: String(loadError) });
           }
           database = new sqlInstance.Database();
           await initializeSchema(database, logCapabilityError);
@@ -164,7 +165,7 @@ export function SQLiteProvider({
           if (fts5Results.length > 0) {
             newCapabilities.fts5 = true;
             if (enableLogging) {
-              console.log('✅ SQLiteProvider: FTS5 support verified with virtual table test');
+              devLogger.setup('SQLiteProvider: FTS5 support verified with virtual table test', {});
             }
           } else {
             throw new Error('FTS5 virtual table created but search failed');
@@ -181,7 +182,7 @@ export function SQLiteProvider({
           database.exec("SELECT json('{\"test\": true}') AS json_result");
           newCapabilities.json1 = true;
           if (enableLogging) {
-            console.log('✅ SQLiteProvider: JSON1 support verified');
+            devLogger.setup('SQLiteProvider: JSON1 support verified', {});
           }
         } catch (jsonError) {
           logCapabilityError('json1', jsonError as Error, {
@@ -205,7 +206,7 @@ export function SQLiteProvider({
             if (count === 3) {
               newCapabilities.recursiveCte = true;
               if (enableLogging) {
-                console.log('✅ SQLiteProvider: Recursive CTE support verified');
+                devLogger.setup('SQLiteProvider: Recursive CTE support verified', {});
               }
             } else {
               throw new Error(`CTE returned incorrect result: ${count}, expected 3`);
@@ -229,7 +230,7 @@ export function SQLiteProvider({
         setError(null);
 
         if (enableLogging) {
-          console.log('🚀 SQLiteProvider: Database initialization complete');
+          devLogger.setup('SQLiteProvider: Database initialization complete', {});
         }
 
       } catch (err) {
@@ -281,7 +282,7 @@ export function SQLiteProvider({
       stmt.free();
 
       if (enableLogging && import.meta.env.DEV) {
-        console.log('🔍 SQL Query:', {
+        devLogger.inspect('SQL Query', {
           sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
           params,
           resultCount: results.length,
@@ -317,7 +318,7 @@ export function SQLiteProvider({
       }
 
       if (enableLogging && import.meta.env.DEV) {
-        console.log('🔧 SQL Run:', {
+        devLogger.inspect('SQL Run', {
           sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
           params,
         });
@@ -344,7 +345,7 @@ export function SQLiteProvider({
         if (typeof reader.result === 'string') {
           localStorage.setItem('isometry-db-backup', reader.result);
           if (enableLogging) {
-            console.log('💾 Database saved to localStorage backup');
+            devLogger.data('Database saved to localStorage backup', {});
           }
         }
       };
@@ -371,7 +372,7 @@ export function SQLiteProvider({
       setDb(newDb);
 
       if (enableLogging) {
-        console.log('🔄 Database reset complete');
+        devLogger.state('Database reset complete', {});
       }
     } catch (err) {
       console.error('💥 Database reset error:', err);
@@ -395,7 +396,7 @@ export function SQLiteProvider({
       setDb(newDb);
 
       if (enableLogging) {
-        console.log('📂 Database loaded from file');
+        devLogger.data('Database loaded from file', {});
       }
     } catch (err) {
       console.error('💥 Database load error:', err);
@@ -426,7 +427,7 @@ export function SQLiteProvider({
 // Initialize database schema
 async function initializeSchema(db: Database, logCapabilityError?: (capability: SQLiteCapabilityError['capability'], error: Error | string, context?: Record<string, unknown>) => void): Promise<void> {
   try {
-    console.log('🔧 Initializing database schema...');
+    devLogger.setup('Initializing database schema', {});
 
     // Load schema from public folder (using full schema with compatibility fixes)
     const response = await fetch('/db/schema.sql');
@@ -435,13 +436,13 @@ async function initializeSchema(db: Database, logCapabilityError?: (capability: 
     }
 
     const schemaSQL = await response.text();
-    console.log(`📄 Schema loaded: ${schemaSQL.length} characters`);
+    devLogger.data('Schema loaded', { length: schemaSQL.length });
 
     // Execute schema with detailed logging and error handling
-    console.log('🔨 Executing schema SQL...');
+    devLogger.setup('Executing schema SQL', {});
     try {
       db.exec(schemaSQL);
-      console.log('✅ Schema execution completed successfully');
+      devLogger.setup('Schema execution completed successfully', {});
     } catch (schemaExecError) {
       console.error('💥 Schema execution failed:', schemaExecError);
       // Log the specific line that failed if possible
@@ -460,12 +461,12 @@ async function initializeSchema(db: Database, logCapabilityError?: (capability: 
 
     // Verify schema was created properly
     const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name");
-    console.log('🏗️ Tables created:', tables);
+    devLogger.setup('Tables created', { tables });
 
     const nodeCount = db.exec("SELECT COUNT(*) as count FROM nodes WHERE deleted_at IS NULL");
-    console.log('📊 Sample nodes loaded:', nodeCount);
+    devLogger.data('Sample nodes loaded', { nodeCount });
 
-    console.log('✅ Database schema initialized successfully');
+    devLogger.setup('Database schema initialized successfully', {});
   } catch (err) {
     console.error('💥 Schema initialization failed:', err);
     throw err;

@@ -18,7 +18,7 @@ import type {
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
 import type { useDatabaseService } from '../hooks/useDatabaseService';
-import { superGridLogger } from '../utils/dev-logger';
+import { superGridLogger } from '../utils/logging/dev-logger';
 
 export interface SuperGridHeadersConfig {
   defaultHeaderHeight: number;

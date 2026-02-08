@@ -22,7 +22,7 @@ import { PerformanceBaseline } from '../components/performance/PerformanceBaseli
 import { PAFVProvider } from '../contexts/PAFVContext';
 // import { PAFVDropZone } from '../components/pafv/PAFVDropZone';
 // import { PAFVActiveFilters } from '../components/pafv/PAFVActiveFilters';
-import { useLiveData, useLiveDataMetrics } from '../hooks/useLiveData';
+import { useLiveData, useLiveDataMetrics } from '../hooks/database/useLiveData';
 import { useD3PerformanceWithMonitor } from '../hooks/useD3Performance';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Node, Edge } from '../types';

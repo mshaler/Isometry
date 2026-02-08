@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { D3Canvas } from '../D3Canvas';
 import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
 import type { D3GridViewProps } from '../../types/d3-types';
 

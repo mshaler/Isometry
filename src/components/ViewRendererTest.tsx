@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useMockData } from '../hooks/useMockData';
+import { useMockData } from '../hooks/data/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV } from '../hooks/data/usePAFV';
 import { performanceTracker } from './views/PerformanceMonitor';
 import type { Node } from '@/types/node';
 import type { MemoryInfo } from '@/types/performance';

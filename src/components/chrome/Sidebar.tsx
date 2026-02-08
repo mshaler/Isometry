@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Filter, FileText, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useFilters } from '../../contexts/FilterContext';
-import { useSQLiteQuery } from '../../hooks/useSQLiteQuery';
+import { useSQLiteQuery } from '../../hooks/database/useSQLiteQuery';
 import { TabPanel, type Tab } from '../ui/TabPanel';
 import { AccordionSection } from '../ui/AccordionSection';
 

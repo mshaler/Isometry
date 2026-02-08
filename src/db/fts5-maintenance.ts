@@ -1,5 +1,5 @@
 // Database interface for FTS5 maintenance
-import { dbLogger } from '../utils/logger';
+import { dbLogger } from '../utils/logging/logger';
 
 interface Database {
   exec: (sql: string) => DatabaseExecResult[]

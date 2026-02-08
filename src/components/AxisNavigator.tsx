@@ -9,7 +9,7 @@
 
 import { useMemo } from 'react';
 import type { PAFVState, LATCHAxis, Plane, AxisMapping } from '../types/pafv';
-import { useDragDrop } from '../hooks/useDragDrop';
+import { useDragDrop } from '../hooks/ui/useDragDrop';
 import '../styles/AxisNavigator.css';
 
 export interface AxisNavigatorProps {

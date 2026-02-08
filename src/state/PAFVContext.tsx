@@ -4,7 +4,7 @@ import { DEFAULT_PAFV } from '../types/pafv';
 import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
 import { useURLState } from '../hooks/useURLState';
-import { PAFVContext, type PAFVContextValue } from '../hooks/usePAFV';
+import { PAFVContext, type PAFVContextValue } from '../hooks/data/usePAFV';
 import { pafvBridge } from '../utils/pafv-bridge';
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
@@ -132,4 +132,4 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
 }
 
 // Export usePAFV hook for convenience
-export { usePAFV } from '../hooks/usePAFV';
+export { usePAFV } from '../hooks/data/usePAFV';

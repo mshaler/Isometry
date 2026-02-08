@@ -5,7 +5,7 @@ import { LocationMapWidget } from './LocationMapWidget';
 import { HierarchyTreeView } from '@/components/HierarchyTreeView';
 import { CategoryColorPicker } from './CategoryColorPicker';
 import { useNodes, useSQLiteQuery } from '@/hooks/useSQLiteQuery';
-import { useNodeTree } from '@/hooks/useNodeTree';
+import { useNodeTree } from '@/hooks/visualization/useNodeTree';
 import { useMapMarkers } from '@/hooks/useMapMarkers';
 import { useAllTags } from '@/hooks/useTagColors';
 

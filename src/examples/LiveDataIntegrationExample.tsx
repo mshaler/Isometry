@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react';
 import { LiveDataProvider, useLiveDataSubscription, useLiveDataGlobalState } from '../contexts/LiveDataContext';
 import DataFlowMonitor, { DataFlowStatusIndicator, useDataFlowMonitor } from '../components/DataFlowMonitor';
-import { useLiveData, invalidateLiveData } from '../hooks/useLiveData';
+import { useLiveData, invalidateLiveData } from '../hooks/database/useLiveData';
 import type { Node } from '../types/node';
 
 // Example component that uses live data for recent nodes

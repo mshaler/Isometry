@@ -11,7 +11,7 @@ import { NetworkView } from '../components/views/NetworkView';
 import { D3GridView } from '../components/views/D3GridView';
 import { D3ListView } from '../components/views/D3ListView';
 import DataFlowMonitor from '../components/DataFlowMonitor';
-import { useLiveData } from '../hooks/useLiveData';
+import { useLiveData } from '../hooks/database/useLiveData';
 import { useD3PerformanceWithMonitor } from '../hooks/useD3Performance';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Node } from '../types/node';

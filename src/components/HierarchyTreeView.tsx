@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import type { TreeNode, Tree } from '@/hooks/useNodeTree';
+import type { TreeNode, Tree } from '@/hooks/visualization/useNodeTree';
 import { getSubtreeIds, searchNodes, filterByPriority } from '@/utils/tree-utils';
 import { Slider } from '@/components/ui/slider';
 import { ChevronRight, ChevronDown } from 'lucide-react';

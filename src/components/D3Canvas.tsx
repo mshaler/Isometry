@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useResizeObserver } from '../hooks/useD3';
-import { useD3Canvas, type D3CanvasState, type Viewport, type PerformanceMetrics } from '../hooks/useD3Canvas';
+import { useResizeObserver } from '../hooks/visualization/useD3';
+import { useD3Canvas, type D3CanvasState, type Viewport, type PerformanceMetrics } from '../hooks/visualization/useD3Canvas';
 import { Node } from '../types';
 import {
   performanceMonitor,
@@ -8,8 +8,8 @@ import {
   transitionManager,
   measurePerformance,
   debounce
-} from '../utils/d3Performance';
-import { d3NativeBridge, createRectangleCommand, type RenderCommand, type CanvasCapabilities } from '../utils/d3-native-bridge';
+} from '../utils/d3-visualization/d3Performance';
+import { d3NativeBridge, createRectangleCommand, type RenderCommand, type CanvasCapabilities } from '../utils/webview/d3-native-bridge';
 import * as d3 from 'd3';
 
 // ============================================================================

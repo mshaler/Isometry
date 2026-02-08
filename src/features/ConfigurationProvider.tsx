@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logging/logger';
 
 // Types for configuration management system
 export interface ConfigurationItem {

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
-import { useCanvasPerformance } from '../hooks/useCanvasPerformance';
+import { useCanvasPerformance } from '../hooks/performance/useCanvasPerformance';
 import { RealTimeRenderer } from './performance/RealTimeRenderer';
 import DataFlowMonitor from './DataFlowMonitor';
 import { SuperGridView } from './SuperGridView';
@@ -18,7 +18,7 @@ import {
 import { D3GridView } from './views/D3GridView';
 import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
-import { useLiveQuery } from '../hooks/useLiveQuery';
+import { useLiveQuery } from '../hooks/database/useLiveQuery';
 import type { Node } from '@/types/node';
 
 export function Canvas() {

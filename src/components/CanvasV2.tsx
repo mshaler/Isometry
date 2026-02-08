@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
-import { useMockData } from '../hooks/useMockData';
+import { useMockData } from '../hooks/data/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
 import { D3GridView } from './views/D3GridView';
 import { D3ListView } from './views/D3ListView';
 // Updated to support data prop
 import { FilterBar } from './FilterBar';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV } from '../hooks/data/usePAFV';
 import type { Node } from '@/types/node';
 
 /**

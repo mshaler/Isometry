@@ -10,7 +10,7 @@
  */
 
 import { useMemo, useState, useCallback, useEffect } from 'react';
-import { contextLogger } from '../utils/dev-logger';
+import { contextLogger } from '../utils/logging/dev-logger';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import { D3Canvas } from './d3/Canvas';
 import { SuperGrid } from './supergrid/SuperGrid';
@@ -24,7 +24,7 @@ import { usePAFV } from '@/hooks/usePAFV';
 import type { Node } from '@/types/node';
 // import type { LATCHAxis } from '@/types/pafv';
 import type { OriginPattern } from '@/types/coordinates';
-import type { ZoomTransform } from '@/hooks/useD3Zoom';
+import type { ZoomTransform } from '@/hooks/visualization/useD3Zoom';
 
 interface SuperGridViewProps {
   /** SQL query to execute for live data */

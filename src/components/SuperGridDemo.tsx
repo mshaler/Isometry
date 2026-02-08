@@ -8,12 +8,12 @@ import { ViewSwitcher, useViewSwitcher } from './ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from './CardDetailModal';
 import { useDatabaseService } from '../hooks/useDatabaseService';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV } from '../hooks/data/usePAFV';
 import { LATCHFilterService } from '../services/LATCHFilterService';
 import type { LATCHFilter } from '../services/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
-import { contextLogger } from '../utils/dev-logger';
+import { contextLogger } from '../utils/logging/dev-logger';
 
 interface FilterChipProps {
   filter: LATCHFilter;

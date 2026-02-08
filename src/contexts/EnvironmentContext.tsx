@@ -6,8 +6,8 @@
  */
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { Environment, postMessage } from '../utils/webview-bridge';
-import { bridgeLogger } from '../utils/logger';
+import { Environment, postMessage } from '../utils/webview/webview-bridge';
+import { bridgeLogger } from '../utils/logging/logger';
 import { waitForWebViewBridge } from '../utils/webview-bridge-waiter';
 
 export enum DatabaseMode {

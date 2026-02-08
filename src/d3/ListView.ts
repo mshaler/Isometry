@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import type { ViewRenderer, CardPosition } from '../d3/ViewContinuum';
 import type { ViewAxisMapping } from '../types/views';
 import type { Node } from '../types/node';
-import { d3Logger } from '../utils/dev-logger';
+import { d3Logger } from '../utils/logging/dev-logger';
 
 /**
  * ListView - 1-axis list projection using D3

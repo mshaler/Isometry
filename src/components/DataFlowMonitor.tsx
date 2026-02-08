@@ -7,8 +7,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLiveDataContext, useLiveDataGlobalState } from '../contexts/LiveDataContext';
-import { useLiveDataMetrics } from '../hooks/useLiveData';
-import type { LiveDataPerformanceMetrics } from '../hooks/useLiveData';
+import { useLiveDataMetrics } from '../hooks/database/useLiveData';
+import type { LiveDataPerformanceMetrics } from '../hooks/database/useLiveData';
 
 // Component configuration
 interface DataFlowMonitorProps {

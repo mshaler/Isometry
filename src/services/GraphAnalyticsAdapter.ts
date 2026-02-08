@@ -47,7 +47,7 @@ export interface QueryResult {
 }
 
 // Import type for module augmentation (used in declare module below)
-// import type { WebKitMessageHandlers } from '../utils/webview-bridge';
+// import type { WebKitMessageHandlers } from '../utils/webview/webview-bridge';
 
 // Bridge communication interface
 interface GraphBridge {

@@ -1,5 +1,5 @@
 import type { ErrorInfo } from 'react';
-import { logger } from '../utils/logger';
+import { logger } from '../utils/logging/logger';
 
 // Import the interfaces from ErrorBoundary to ensure compatibility
 interface ErrorReportingData {

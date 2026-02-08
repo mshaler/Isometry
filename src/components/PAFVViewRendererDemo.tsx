@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useMockData } from '../hooks/useMockData';
+import { useMockData } from '../hooks/data/useMockData';
 import { PAFVViewSwitcher } from './views/PAFVViewSwitcher';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV } from '../hooks/data/usePAFV';
 import type { Node } from '@/types/node';
 import type { AxisMapping, LATCHAxis, Plane } from '@/types/pafv';
 

@@ -11,8 +11,8 @@ import {
   getEncryptedItem,
   migrateToEncryptedStorage,
   isEncryptedStorageSupported
-} from './encrypted-storage';
-import { logger } from './logger';
+} from './security/encrypted-storage';
+import { logger } from './logging/logger';
 
 const STORAGE_KEY = 'isometry:filter-presets';
 

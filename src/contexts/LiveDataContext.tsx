@@ -6,12 +6,12 @@
  */
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
-import { useLiveDataMetrics as useOriginalLiveDataMetrics } from '../hooks/useLiveData';
+import { useLiveDataMetrics as useOriginalLiveDataMetrics } from '../hooks/database/useLiveData';
 import type {
   LiveDataSubscription,
   LiveDataOptions,
   LiveDataPerformanceMetrics
-} from '../hooks/useLiveData';
+} from '../hooks/database/useLiveData';
 import type { Node } from '../types/node';
 
 // Live data context types

@@ -9,7 +9,7 @@
 
 import MiniNav from './MiniNav';
 import { useCoordinates } from '../hooks/useCoordinates';
-import { usePAFV } from '../hooks/usePAFV';
+import { usePAFV } from '../hooks/data/usePAFV';
 import { PAFVProvider } from '../state/PAFVContext';
 
 /**

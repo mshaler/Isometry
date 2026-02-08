@@ -4,7 +4,7 @@ import { VirtualizedList } from '../VirtualizedList';
 import { useSelection } from '../../state/SelectionContext';
 import { ListItem } from '../ListItem';
 import { useNetworkAwareSync } from '../../hooks/useNetworkAwareSync';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
 import type { VirtualLiveQueryOptions } from '../../hooks/useVirtualLiveQuery';
 

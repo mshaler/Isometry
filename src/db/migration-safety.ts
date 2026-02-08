@@ -5,7 +5,7 @@
  */
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
-import { webViewBridge, Environment } from '../utils/webview-bridge';
+import { webViewBridge, Environment } from '../utils/webview/webview-bridge';
 import { syncManager } from '../utils/sync-manager';
 
 export interface DataBackup {

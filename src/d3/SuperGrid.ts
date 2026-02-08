@@ -8,7 +8,7 @@ import { SuperGridHeaders, type HeaderClickEvent } from './SuperGridHeaders';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 import type { CardPosition } from '../types/views';
-import { superGridLogger } from '../utils/dev-logger';
+import { superGridLogger } from '../utils/logging/dev-logger';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
@@ -105,7 +105,7 @@ export class SuperGrid {
           superGridLogger.state('Header expanded/collapsed', { nodeId, isExpanded });
         }
       },
-      this.database // Pass database for state persistence
+      this.database as any // Pass database for state persistence - type compatibility bridge
     );
 
     // Initialize SuperGridZoom system
@@ -544,7 +544,7 @@ export class SuperGrid {
       sql += ' ORDER BY created_at DESC';
 
       // Execute query
-      const cards = this.database.query<any>(sql, params) || [];
+      const cards = this.database.query(sql, params) || [];
       superGridLogger.inspect('SQL', sql);
       superGridLogger.inspect('Params', params);
       superGridLogger.data('Result count', cards.length);

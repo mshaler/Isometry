@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useLiveQuery } from '../../hooks/useLiveQuery';
+import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import { useLiveDataContext } from '../../contexts/LiveDataContext';
 import { webViewBridge } from '../../utils/webview-bridge';
 

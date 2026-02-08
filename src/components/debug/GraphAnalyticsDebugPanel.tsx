@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { queryCacheService } from '@/services/QueryCacheService';
 import { connectionSuggestionService } from '@/services/ConnectionSuggestionService';
-import { useGraphMetrics, useGraphAnalyticsDebug } from '@/hooks/useGraphAnalytics';
+import { useGraphMetrics, useGraphAnalyticsDebug } from '@/hooks/data/useGraphAnalytics';
 
 // Configuration interfaces
 export interface AnalyticsDebugConfig {

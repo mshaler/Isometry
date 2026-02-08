@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from './Card';
 import { useCardOverlay } from '@/state/CardOverlayContext';
-import { useKeyboardClose } from '@/hooks/useKeyboardClose';
-import { useCardPosition, type CellCoordinates } from '@/hooks/useCardPosition';
+import { useKeyboardClose } from '@/hooks/ui/useKeyboardClose';
+import { useCardPosition, type CellCoordinates } from '@/hooks/visualization/useCardPosition';
 
 /**
  * CardOverlay - Portal-based overlay for Card display (GridBlock 5)

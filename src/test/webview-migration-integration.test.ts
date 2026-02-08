@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { WebViewBridge } from '../utils/webview-bridge';
+import { WebViewBridge } from '../utils/webview/webview-bridge';
 import { MigrationSafety } from '../db/migration-safety';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 

@@ -1,85 +1,33 @@
 /**
- * Development Logger Utility
+ * DevLogger - Production-optimized conditional compilation logging
  *
- * Provides conditional logging that only operates in development mode.
- * Replaces debug console statements with type-safe, conditional logging.
+ * Tree-shaken in production builds for zero runtime overhead
+ * Semantic logging methods for different debugging contexts
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
-
-interface DevLoggerConfig {
-  enabled: boolean;
-  level: LogLevel;
+interface DevLoggerOptions {
   prefix?: string;
+  enabledLevels?: Array<'debug' | 'info' | 'warn' | 'error'>;
 }
 
 class DevLogger {
-  private config: DevLoggerConfig;
+  private prefix: string;
+  private enabledLevels: Set<string>;
 
-  constructor(config: Partial<DevLoggerConfig> = {}) {
-    this.config = {
-      enabled: import.meta.env.DEV || false,
-      level: 'debug',
-      prefix: '',
-      ...config
-    };
+  constructor(options: DevLoggerOptions = {}) {
+    this.prefix = options.prefix || '[DevLogger]';
+    this.enabledLevels = new Set(options.enabledLevels || ['debug', 'info', 'warn', 'error']);
   }
 
-  private shouldLog(level: LogLevel): boolean {
-    if (!this.config.enabled) return false;
-
-    const levels: Record<LogLevel, number> = {
-      debug: 0,
-      info: 1,
-      warn: 2,
-      error: 3
-    };
-
-    return levels[level] >= levels[this.config.level];
+  private shouldLog(level: string): boolean {
+    return import.meta.env.DEV && this.enabledLevels.has(level);
   }
 
   private formatMessage(message: string): string {
-    return this.config.prefix ? `${this.config.prefix} ${message}` : message;
+    return `${this.prefix} ${message}`;
   }
 
-  debug(message: string, ...args: any[]): void {
-    if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(message), ...args);
-    }
-  }
-
-  info(message: string, ...args: any[]): void {
-    if (this.shouldLog('info')) {
-      console.info(this.formatMessage(message), ...args);
-    }
-  }
-
-  warn(message: string, ...args: any[]): void {
-    if (this.shouldLog('warn')) {
-      console.warn(this.formatMessage(message), ...args);
-    }
-  }
-
-  error(message: string, ...args: any[]): void {
-    if (this.shouldLog('error')) {
-      console.error(this.formatMessage(message), ...args);
-    }
-  }
-
-  // Performance logging
-  time(label: string): void {
-    if (this.shouldLog('debug')) {
-      console.time(this.formatMessage(label));
-    }
-  }
-
-  timeEnd(label: string): void {
-    if (this.shouldLog('debug')) {
-      console.timeEnd(this.formatMessage(label));
-    }
-  }
-
-  // Data inspection (replaces emoji debug patterns)
+  // Semantic logging methods for specific debugging contexts
   inspect(label: string, data: any): void {
     if (this.shouldLog('debug')) {
       console.log(this.formatMessage(`🔍 ${label}:`), data);
@@ -92,9 +40,9 @@ class DevLogger {
     }
   }
 
-  render(label: string, data?: any): void {
+  render(label: string, data: any): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🎨 ${label}`), data || '');
+      console.log(this.formatMessage(`🎨 ${label}:`), data);
     }
   }
 
@@ -110,28 +58,50 @@ class DevLogger {
     }
   }
 
-  setup(label: string, data?: any): void {
+  setup(label: string, data: any): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🏗️ ${label}`), data || '');
+      console.log(this.formatMessage(`🏗️ ${label}:`), data);
+    }
+  }
+
+  // Standard log levels
+  debug(message: string, data?: any): void {
+    if (this.shouldLog('debug')) {
+      console.log(this.formatMessage(message), data);
+    }
+  }
+
+  info(message: string, data?: any): void {
+    if (this.shouldLog('info')) {
+      console.info(this.formatMessage(message), data);
+    }
+  }
+
+  warn(message: string, data?: any): void {
+    if (this.shouldLog('warn')) {
+      console.warn(this.formatMessage(message), data);
+    }
+  }
+
+  error(message: string, data?: any): void {
+    if (this.shouldLog('error')) {
+      console.error(this.formatMessage(message), data);
     }
   }
 }
 
-// Create service-specific loggers
-export const createLogger = (service: string) =>
-  new DevLogger({ prefix: `[${service}]` });
-
-// Pre-configured loggers for common services
-export const superGridLogger = createLogger('SuperGrid');
-export const bridgeLogger = createLogger('Bridge');
-export const performanceLogger = createLogger('Performance');
-export const d3Logger = createLogger('D3');
-export const sqliteLogger = createLogger('SQLite');
-export const pafvLogger = createLogger('PAFV');
-export const migrationLogger = createLogger('Migration');
-export const contextLogger = createLogger('Context');
-
-// General development logger
+// Default logger instance
 export const devLogger = new DevLogger();
 
-export default DevLogger;
+// Specialized loggers for different modules
+export const superGridLogger = new DevLogger({ prefix: '[SuperGrid]' });
+export const d3Logger = new DevLogger({ prefix: '[D3]' });
+export const contextLogger = new DevLogger({ prefix: '[Context]' });
+export const hookLogger = new DevLogger({ prefix: '[Hook]' });
+export const componentLogger = new DevLogger({ prefix: '[Component]' });
+export const utilLogger = new DevLogger({ prefix: '[Util]' });
+
+// Bridge logger with limited methods (matching existing bridge logger interface)
+export const bridgeLogger = new DevLogger({ prefix: '[Bridge]' });
+
+export default devLogger;

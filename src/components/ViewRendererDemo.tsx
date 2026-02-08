@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMockData } from '../hooks/useMockData';
+import { useMockData } from '../hooks/data/useMockData';
 import { EnhancedViewSwitcher } from './views/EnhancedViewSwitcher';
 import { useViewRegistry } from './views/ViewRegistry';
 import type { Node } from '@/types/node';

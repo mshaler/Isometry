@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useFilters } from '@/state/FilterContext';
-import { useFilterPreview } from '@/hooks/useFilterPreview';
-import { useDatabaseStatus } from '@/hooks/useBridgeDatabase';
+import { useFilterPreview } from '@/hooks/ui/useFilterPreview';
+import { useDatabaseStatus } from '@/hooks/database/useBridgeDatabase';
 import { useBridgeAvailability } from '@/filters/bridge';
 import { LATCHFilter } from './LATCHFilter';
 import { FilterPresetDropdown } from './FilterPresetDropdown';
