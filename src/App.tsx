@@ -7,6 +7,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { ThreeCanvasDemo } from './components/ThreeCanvasDemo';
 import { DesktopApp } from './components/desktop/DesktopApp';
 import { useIsDesktop } from './hooks/useTauri';
+import FeedbackWidget from './components/feedback/FeedbackWidget';
 
 function App() {
   const isDesktop = useIsDesktop();
@@ -42,6 +43,10 @@ function App() {
           <div className="h-screen bg-gray-50 relative">
             <NotebookLayout />
             <ThreeCanvasDemo />
+            <FeedbackWidget
+              enabled={true}
+              position="bottom-right"
+            />
           </div>
         </NotebookProvider>
       </ThemeProvider>
