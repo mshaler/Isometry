@@ -14,6 +14,8 @@ import {
 } from '../types/views';
 import type { Node } from '../types/node';
 import { devLogger as d3Logger } from '../utils/logging/dev-logger';
+import { IsometryViewEngine } from '../engine/IsometryViewEngine';
+import type { ViewConfig } from '../engine/contracts/ViewConfig';
 
 // Re-export CardPosition for external use
 export type { CardPosition };
@@ -29,7 +31,8 @@ export type { CardPosition };
  */
 
 /**
- * Common interface that all view classes must implement
+ * @deprecated ViewRenderer interface replaced by IsometryViewEngine
+ * Kept for backward compatibility during transition
  */
 export interface ViewRenderer {
   render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void;
@@ -50,11 +53,16 @@ export interface ViewContinuumCallbacks {
 
 export class ViewContinuum {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
+  private containerElement: HTMLElement;
   private canvasId: string;
   private viewState: ViewState;
   private callbacks: ViewContinuumCallbacks;
 
-  // View renderer registry
+  // Unified ViewEngine for all rendering
+  private viewEngine: IsometryViewEngine;
+  private currentViewConfig: ViewConfig | null = null;
+
+  // Legacy renderer registry (deprecated, for backward compatibility)
   private viewRenderers: Map<ViewType, ViewRenderer> = new Map();
   private activeRenderer: ViewRenderer | null = null;
 
@@ -77,9 +85,13 @@ export class ViewContinuum {
     animationConfig: FlipAnimationConfig = DEFAULT_FLIP_CONFIG
   ) {
     this.container = d3.select(container);
+    this.containerElement = container.parentElement || container as any;
     this.canvasId = canvasId;
     this.callbacks = callbacks;
     this.animationConfig = animationConfig;
+
+    // Initialize unified ViewEngine
+    this.viewEngine = new IsometryViewEngine();
 
     // Initialize view state (load from storage or create default)
     this.viewState = this.loadViewState();
@@ -87,10 +99,10 @@ export class ViewContinuum {
     // Set up SVG structure
     this.setupSVGStructure();
 
-    // Restore active view if renderers are available
-    this.initializeActiveView();
+    // Initialize ViewEngine with container
+    this.initializeViewEngine();
 
-    d3Logger.setup('ViewContinuum initialized', {
+    d3Logger.setup('ViewContinuum initialized with unified ViewEngine', {
       canvasId: this.canvasId,
       currentView: this.viewState.currentView,
       hasPersistedState: this.viewState.lastModified > 0
@@ -165,12 +177,6 @@ export class ViewContinuum {
       return;
     }
 
-    const targetRenderer = this.viewRenderers.get(targetView);
-    if (!targetRenderer) {
-      console.error('❌ ViewContinuum.switchToView(): No renderer registered for view:', targetView);
-      throw new Error(`No renderer registered for view type: ${targetView}`);
-    }
-
     d3Logger.state('View switch initiated', {
       from: fromView,
       to: targetView,
@@ -207,38 +213,27 @@ export class ViewContinuum {
     try {
       this.isTransitioning = true;
 
-      let sourcePositions: Map<string, CardPosition> = new Map();
+      // Create target view configuration
+      const targetMapping = this.viewState.viewStates[targetView].axisMapping;
+      const targetViewConfig = this.createViewConfig(targetView, targetMapping);
 
-      // Capture source positions if animating
-      if (animated && this.activeRenderer) {
-        sourcePositions = this.activeRenderer.getCardPositions();
+      // Use ViewEngine transition if animation enabled, otherwise render directly
+      if (animated && this.currentViewConfig) {
+        await this.viewEngine.transition(
+          this.currentViewConfig,
+          targetViewConfig,
+          this.animationConfig.duration
+        );
+      } else {
+        await this.viewEngine.render(this.containerElement, this.cachedCards, targetViewConfig);
       }
 
-      // Switch to target view
+      // Update current view state
       this.viewState.currentView = targetView;
-      this.activeRenderer = targetRenderer;
+      this.currentViewConfig = targetViewConfig;
 
       // Load target view state
       this.restoreViewState();
-
-      // Render new view
-      if (this.cachedCards.length > 0) {
-        const targetMapping = this.viewState.viewStates[targetView].axisMapping;
-        this.activeRenderer.render(this.cachedCards, targetMapping, this.lastActiveFilters);
-      }
-
-      // Perform FLIP animation if enabled
-      if (animated && sourcePositions.size > 0) {
-        await this.performFlipAnimation(sourcePositions, targetRenderer);
-      }
-
-      // Auto-focus on switch if configured
-      if (this.viewState.config.autoFocusOnSwitch) {
-        const focusedCardId = this.viewState.viewStates[targetView].focusedCardId;
-        if (focusedCardId) {
-          this.activeRenderer.scrollToCard(focusedCardId);
-        }
-      }
 
       // Update state and persist
       this.viewState.lastModified = Date.now();
@@ -257,7 +252,6 @@ export class ViewContinuum {
 
       // Rollback on error
       this.viewState.currentView = fromView;
-      this.activeRenderer = this.viewRenderers.get(fromView) || null;
 
       throw error;
     } finally {
@@ -267,6 +261,7 @@ export class ViewContinuum {
   }
 
   /**
+   * @deprecated FLIP animation handled by ViewEngine.transition()
    * Perform FLIP animation between views
    */
   private async performFlipAnimation(
@@ -406,10 +401,14 @@ export class ViewContinuum {
       cached: true
     });
 
-    // Re-render active view with new data
-    if (this.activeRenderer) {
+    // Re-render current view with new data using ViewEngine
+    if (this.currentViewConfig) {
+      this.viewEngine.render(this.containerElement, results, this.currentViewConfig);
+    } else {
+      // Create initial view config if none exists
       const currentMapping = this.viewState.viewStates[this.viewState.currentView].axisMapping;
-      this.activeRenderer.render(results, currentMapping, activeFilters);
+      this.currentViewConfig = this.createViewConfig(this.viewState.currentView, currentMapping);
+      this.viewEngine.render(this.containerElement, results, this.currentViewConfig);
     }
 
     return results;
@@ -419,13 +418,14 @@ export class ViewContinuum {
    * Re-project cached data to current view (no re-query)
    */
   reprojectCachedData(): void {
-    if (this.cachedCards.length === 0 || !this.activeRenderer) {
-      console.warn('⚠️ ViewContinuum.reprojectCachedData(): No cached data or active renderer');
+    if (this.cachedCards.length === 0) {
+      console.warn('⚠️ ViewContinuum.reprojectCachedData(): No cached data');
       return;
     }
 
     const currentMapping = this.viewState.viewStates[this.viewState.currentView].axisMapping;
-    this.activeRenderer.render(this.cachedCards, currentMapping, this.lastActiveFilters);
+    this.currentViewConfig = this.createViewConfig(this.viewState.currentView, currentMapping);
+    this.viewEngine.render(this.containerElement, this.cachedCards, this.currentViewConfig);
 
     d3Logger.data('Re-projected data to current view', {
       viewType: this.viewState.currentView,
@@ -592,6 +592,109 @@ export class ViewContinuum {
   }
 
   // ========================================================================
+  // ViewEngine Integration Methods
+  // ========================================================================
+
+  /**
+   * Initialize ViewEngine with container
+   */
+  private initializeViewEngine(): void {
+    // ViewEngine will be initialized when first render is called
+    d3Logger.setup('ViewEngine ready for rendering');
+  }
+
+  /**
+   * Create ViewConfig from ViewType and axis mapping
+   */
+  private createViewConfig(viewType: ViewType, axisMapping: ViewAxisMapping): ViewConfig {
+    return {
+      viewType: this.mapViewTypeToEngineType(viewType) as any, // TODO: Fix type mapping
+      projection: {
+        x: {
+          axis: this.mapLATCHAbbreviation(axisMapping.xAxis?.latchDimension || 'C'),
+          facet: axisMapping.xAxis?.facet || 'status',
+          dataType: 'string'
+        },
+        y: {
+          axis: this.mapLATCHAbbreviation(axisMapping.yAxis?.latchDimension || 'H'),
+          facet: axisMapping.yAxis?.facet || 'priority',
+          dataType: 'number'
+        }
+      },
+      filters: this.lastActiveFilters as any[] || [],
+      sort: [],
+      zoom: {
+        scale: 1.0,
+        offset: { x: 0, y: 0 },
+        constrained: false
+      },
+      selection: {
+        selectedIds: Array.from(this.viewState.selectionState.selectedCardIds),
+        lastClickedId: this.viewState.selectionState.lastSelectedId,
+        mode: 'multiple'
+      },
+      styling: {
+        colorScheme: 'light', // TODO: Get from theme context
+        animations: {
+          enabled: this.viewState.config.enableAnimations,
+          duration: this.animationConfig.duration,
+          easing: 'ease-out'
+        }
+      },
+      eventHandlers: {
+        onNodeClick: this.callbacks.onCardClick,
+        onSelectionChange: (nodes) => {
+          // Adapt interface: ViewEngine expects nodes, ViewContinuum provides ids
+          const selectedIds = nodes.map(n => n.id || n);
+          this.callbacks.onSelectionChange?.(selectedIds, selectedIds[selectedIds.length - 1] || null);
+        }
+      }
+    };
+  }
+
+  /**
+   * Map ViewContinuum ViewType to ViewEngine viewType
+   */
+  private mapViewTypeToEngineType(viewType: ViewType): import('../engine/contracts/ViewConfig').ViewType {
+    switch (viewType) {
+      case 'grid':
+        return 'grid';
+      case 'list':
+        return 'list';
+      case 'kanban':
+        return 'kanban';
+      case 'timeline':
+        return 'timeline';
+      case 'network':
+        return 'graph'; // ViewEngine uses 'graph' instead of 'network'
+      case 'calendar':
+        return 'calendar';
+      default:
+        return 'grid'; // fallback
+    }
+  }
+
+  /**
+   * Map LATCH abbreviation to full name
+   */
+  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): import('../types/pafv').LATCHAxis {
+    switch (abbr) {
+      case 'L':
+        return 'location';
+      case 'A':
+        return 'alphabet';
+      case 'T':
+        return 'time';
+      case 'C':
+        return 'category';
+      case 'H':
+        return 'hierarchy';
+      default:
+        return 'category';
+    }
+  }
+
+  // ========================================================================
   // Initialization and Setup
   // ========================================================================
 
@@ -713,9 +816,8 @@ export class ViewContinuum {
     this.viewState.viewStates[this.viewState.currentView].focusedCardId = cardId;
     this.viewState.selectionState.lastSelectedId = cardId;
 
-    if (this.activeRenderer) {
-      this.activeRenderer.scrollToCard(cardId);
-    }
+    // TODO: Implement card focusing in ViewEngine
+    // this.viewEngine.focusCard(cardId);
 
     d3Logger.inspect('Focus card', { cardId, viewType: this.viewState.currentView });
   }
@@ -763,7 +865,10 @@ export class ViewContinuum {
     // Interrupt any running transitions
     this.interruptTransition();
 
-    // Clean up all registered renderers
+    // Clean up ViewEngine
+    this.viewEngine.cleanup();
+
+    // Clean up legacy renderers (deprecated)
     this.viewRenderers.forEach((renderer) => {
       renderer.destroy();
     });
@@ -771,6 +876,7 @@ export class ViewContinuum {
 
     // Clear active renderer
     this.activeRenderer = null;
+    this.currentViewConfig = null;
 
     // Save final state
     this.saveViewState();
