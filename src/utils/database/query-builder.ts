@@ -5,8 +5,20 @@
  * index usage, query optimization, and performance validation.
  */
 
-// Duplicate type to avoid utils→contexts import violation
-type Wells = Record<string, { axis: string; facet: string; value: unknown; }>;
+// Local type definitions to avoid context imports from utils
+interface Chip {
+  id: string;
+  label: string;
+  hasCheckbox: boolean;
+  checked?: boolean;
+}
+
+interface Wells {
+  available: Chip[];
+  rows: Chip[];
+  columns: Chip[];
+  zLayers: Chip[];
+}
 
 export interface PAFVQueryOptions {
   /** Maximum number of rows to return (default: 1000) */
