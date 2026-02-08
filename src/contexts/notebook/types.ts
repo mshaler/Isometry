@@ -1,6 +1,42 @@
 import type { NotebookCard, NotebookCardType, NotebookTemplate, LayoutPosition } from '../../types/notebook';
-import type { NotebookIntegrationState } from '@/hooks';
-import type { PerformanceMetrics, PerformanceAlert, OptimizationSuggestion } from '@/hooks';
+
+// Local type definitions to avoid circular dependencies
+export interface NotebookIntegrationState {
+  isConnected: boolean;
+  lastSyncTime: Date | null;
+  pendingChanges: number;
+  conflicts: Array<{ id: string; type: string; description: string }>;
+  integrationHealth: 'excellent' | 'good' | 'degraded' | 'offline';
+  syncStatusMessage: string;
+}
+
+export interface PerformanceMetrics {
+  renderTime: number;
+  memoryUsage: number;
+  queryTime: number;
+  frameRate: number;
+  bundleSize: number;
+  componentCount: number;
+  reRenderCount: number;
+  lastMeasurement: Date;
+}
+
+export interface PerformanceAlert {
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  metric: string; // keyof PerformanceMetrics but string for simplicity
+  value: number;
+  threshold: number;
+  timestamp: Date;
+}
+
+export interface OptimizationSuggestion {
+  type: 'virtualization' | 'memoization' | 'debouncing' | 'lazy-loading' | 'bundle-splitting';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  impact: string;
+  implementation: string;
+}
 
 export interface NotebookLayoutState {
   capture: LayoutPosition;
