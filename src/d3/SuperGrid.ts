@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import type { DatabaseService } from '../db/DatabaseService';
+import type { useDatabaseService } from '../hooks/useDatabaseService';
 import type { GridData, GridConfig, AxisData } from '../types/grid';
 import { SelectionManager } from '../services/SelectionManager';
 import type { SelectionCallbacks, GridPosition as SelectionGridPosition } from '../services/SelectionManager';
@@ -8,6 +8,7 @@ import { SuperGridHeaders, type HeaderClickEvent } from './SuperGridHeaders';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 import type { CardPosition } from '../types/views';
+import { superGridLogger } from '../utils/dev-logger';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation
@@ -22,7 +23,7 @@ import type { CardPosition } from '../types/views';
 
 export class SuperGrid {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
-  private database: DatabaseService;
+  private database: ReturnType<typeof useDatabaseService>;
   private config: GridConfig;
   private currentData: GridData | null = null;
   private selectionManager: SelectionManager;
@@ -54,7 +55,7 @@ export class SuperGrid {
 
   constructor(
     container: SVGElement,
-    database: DatabaseService,
+    database: ReturnType<typeof useDatabaseService>,
     config: GridConfig = {},
     callbacks: {
       onCardClick?: (card: any) => void;
@@ -101,7 +102,7 @@ export class SuperGrid {
       {
         onHeaderClick: (event: HeaderClickEvent) => this.handleHierarchicalHeaderClick(event),
         onExpandCollapse: (nodeId: string, isExpanded: boolean) => {
-          console.log('🔄 SuperGrid: Header expanded/collapsed:', { nodeId, isExpanded });
+          superGridLogger.state('Header expanded/collapsed', { nodeId, isExpanded });
         }
       },
       this.database // Pass database for state persistence
@@ -162,7 +163,7 @@ export class SuperGrid {
   }
 
   private handleJanusStateChange(state: JanusState): void {
-    console.log('🔍 SuperGrid: Janus state changed:', {
+    superGridLogger.state('Janus state changed', {
       zoomLevel: state.zoomLevel,
       panLevel: state.panLevel,
       transform: `translate(${state.zoomTransform.x.toFixed(1)}, ${state.zoomTransform.y.toFixed(1)}) scale(${state.zoomTransform.k.toFixed(2)})`
@@ -544,10 +545,10 @@ export class SuperGrid {
 
       // Execute query
       const cards = this.database.query<any>(sql, params) || [];
-      console.log('🔍 SuperGrid.query(): SQL:', sql);
-      console.log('🔍 SuperGrid.query(): Params:', params);
-      console.log('🔍 SuperGrid.query(): Result count:', cards.length);
-      console.log('🔍 SuperGrid.query(): Sample cards:', cards.slice(0, 3));
+      superGridLogger.inspect('SQL', sql);
+      superGridLogger.inspect('Params', params);
+      superGridLogger.data('Result count', cards.length);
+      superGridLogger.data('Sample cards', cards.slice(0, 3));
 
       // Transform to grid data structure
       const gridData: GridData = {
@@ -559,7 +560,7 @@ export class SuperGrid {
         }
       };
 
-      console.log('📊 SuperGrid.query(): Grid data:', {
+      superGridLogger.metrics('Grid data', {
         cardCount: gridData.cards.length,
         headerCount: gridData.headers.length,
         dimensions: gridData.dimensions
@@ -625,7 +626,7 @@ export class SuperGrid {
   private handleHierarchicalHeaderClick(event: HeaderClickEvent): void {
     const { action, node } = event;
 
-    console.log('👆 SuperGrid.handleHierarchicalHeaderClick():', {
+    superGridLogger.inspect('Header click', {
       action,
       nodeId: node.id,
       facet: node.facet,
@@ -644,7 +645,7 @@ export class SuperGrid {
    * Main render method
    */
   render(activeFilters: any[] = []): void {
-    console.log('🎨 SuperGrid.render(): Called', {
+    superGridLogger.render('Called', {
       hasCurrentData: !!this.currentData,
       cardCount: this.currentData?.cards.length || 0,
       activeFilterCount: activeFilters.length
@@ -655,23 +656,23 @@ export class SuperGrid {
       return;
     }
 
-    console.log('🎨 SuperGrid.render(): Setting up grid structure...');
+    superGridLogger.render('Setting up grid structure...');
     this.setupGridStructure();
 
-    console.log('🎨 SuperGrid.render(): Rendering hierarchical headers...');
+    superGridLogger.render('Rendering hierarchical headers...');
     this.renderHierarchicalHeaders(activeFilters);
 
-    console.log('🎨 SuperGrid.render(): Rendering cards...');
+    superGridLogger.render('Rendering cards...');
     this.renderCards();
 
-    console.log('✅ SuperGrid.render(): Complete');
+    superGridLogger.render('Complete');
   }
 
   /**
    * Render card elements with multi-select support
    */
   private renderCards(): void {
-    console.log('🗂️ SuperGrid.renderCards(): Starting...');
+    superGridLogger.render('Starting card rendering...');
 
     if (!this.currentData) {
       console.warn('⚠️ SuperGrid.renderCards(): No current data');
@@ -681,8 +682,8 @@ export class SuperGrid {
     const cards = this.currentData.cards;
     const columnsPerRow = this.config.columnsPerRow!;
 
-    console.log('🗂️ SuperGrid.renderCards(): Cards to render:', cards.length);
-    console.log('🗂️ SuperGrid.renderCards(): Columns per row:', columnsPerRow);
+    superGridLogger.data('Cards to render', cards.length);
+    superGridLogger.data('Columns per row', columnsPerRow);
 
     // Calculate positions - use stored grid positions if available, otherwise calculate from index
     const cardGroups = cards.map((card: any, index: number) => ({
@@ -696,16 +697,16 @@ export class SuperGrid {
            (this.config.enableHeaders ? this.headerHeight + this.padding : 0)
     }));
 
-    console.log('🗂️ SuperGrid.renderCards(): Card groups prepared:', cardGroups.length);
+    superGridLogger.data('Card groups prepared', cardGroups.length);
 
     // Data binding with D3.js join pattern
-    console.log('🗂️ SuperGrid.renderCards(): Binding data to DOM...');
+    superGridLogger.render('Binding data to DOM...');
     const joined = this.container.selectAll<SVGGElement, any>('.card-group')
       .data(cardGroups, (d: any) => d.id);
 
-    console.log('🗂️ SuperGrid.renderCards(): Data bound. Existing elements:', joined.size());
-    console.log('🗂️ SuperGrid.renderCards(): Elements to enter:', joined.enter().size());
-    console.log('🗂️ SuperGrid.renderCards(): Elements to exit:', joined.exit().size());
+    superGridLogger.data('Data bound - Existing elements', joined.size());
+    superGridLogger.data('Elements to enter', joined.enter().size());
+    superGridLogger.data('Elements to exit', joined.exit().size());
 
     // Enter new cards
     const entering = joined.enter()
@@ -829,7 +830,7 @@ export class SuperGrid {
    * Set up grid structure with header groups
    */
   private setupGridStructure(): void {
-    console.log('🏗️ SuperGrid.setupGridStructure(): Setting up grid structure...');
+    superGridLogger.setup('Setting up grid structure...');
 
     // Remove existing grid structure to avoid duplicates
     this.container.select('.grid-structure').remove();
@@ -837,7 +838,7 @@ export class SuperGrid {
     const gridStructure = this.container.append('g')
       .attr('class', 'grid-structure');
 
-    console.log('🏗️ SuperGrid.setupGridStructure(): Grid structure created');
+    superGridLogger.setup('Grid structure created');
 
     // Create header containers
     gridStructure.append('g')
@@ -854,7 +855,7 @@ export class SuperGrid {
    */
   private renderHierarchicalHeaders(_activeFilters: any[] = []): void {
     if (!this.config.enableHeaders || !this.currentData?.cards.length) {
-      console.log('📋 SuperGrid.renderHierarchicalHeaders(): Headers disabled or no data');
+      superGridLogger.render('Headers disabled or no data');
       return;
     }
 
@@ -870,7 +871,7 @@ export class SuperGrid {
         totalWidth
       );
 
-      console.log('✅ SuperGrid.renderHierarchicalHeaders(): Hierarchical headers rendered');
+      superGridLogger.render('Hierarchical headers rendered');
 
     } catch (error) {
       console.error('❌ SuperGrid.renderHierarchicalHeaders(): Error:', error);
@@ -1079,7 +1080,7 @@ export class SuperGrid {
 
         this.superGridZoom.restoreState(restoredState);
 
-        console.log('🔍 SuperGrid: Restored Janus state from localStorage:', {
+        superGridLogger.inspect('Restored Janus state from localStorage', {
           zoomLevel: restoredState.zoomLevel,
           panLevel: restoredState.panLevel
         });
@@ -1123,7 +1124,7 @@ export class SuperGrid {
         }
       });
 
-    console.log('📏 SuperGrid.getCardPositions():', { count: positions.size });
+    superGridLogger.metrics('Card positions', { count: positions.size });
     return positions;
   }
 
@@ -1155,7 +1156,7 @@ export class SuperGrid {
 
         // TODO: Implement smooth panning to card position
         // For now, just ensure the card is visible
-        console.log('🔍 SuperGrid: Should pan to card at position:', { x, y });
+        superGridLogger.inspect('Should pan to card at position', { x, y });
 
         // Briefly highlight the card to indicate focus
         cardElement
@@ -1169,7 +1170,7 @@ export class SuperGrid {
           .attr('stroke', '#e5e7eb')
           .attr('stroke-width', 1);
 
-        console.log('🎯 SuperGrid.scrollToCard():', { cardId, x, y });
+        superGridLogger.inspect('Scroll to card', { cardId, x, y });
       }
     } else {
       console.warn('⚠️ SuperGrid.scrollToCard(): Card not found:', cardId);

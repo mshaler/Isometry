@@ -6,14 +6,14 @@ import { ViewContinuum } from '../d3/ViewContinuum';
 import type { ViewContinuumCallbacks } from '../d3/ViewContinuum';
 import { ViewSwitcher, useViewSwitcher } from './ViewSwitcher';
 import { ViewType } from '../types/views';
-import type { DatabaseService } from '../db/DatabaseService';
 import { CardDetailModal } from './CardDetailModal';
-import { useSQLite } from '../db/SQLiteProvider';
+import { useDatabaseService } from '../hooks/useDatabaseService';
 import { usePAFV } from '../hooks/usePAFV';
 import { LATCHFilterService } from '../services/LATCHFilterService';
 import type { LATCHFilter } from '../services/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
+import { contextLogger } from '../utils/dev-logger';
 
 interface FilterChipProps {
   filter: LATCHFilter;
@@ -59,7 +59,6 @@ export function SuperGridDemo() {
   const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
   const [showBulkActions, setShowBulkActions] = useState(false);
-  const [dbService, setDbService] = useState<DatabaseService | null>(null);
   const [filterService] = useState(() => new LATCHFilterService());
 
   // Zoom/Pan state for Janus controls (SuperGrid specific)
@@ -70,16 +69,16 @@ export function SuperGridDemo() {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Context hooks
-  const { db, execute: sqliteExecute, loading: sqliteLoading, error: sqliteError } = useSQLite();
+  const databaseService = useDatabaseService();
   const { state: pafvState } = usePAFV();
 
   // Debug logging
-  console.log('SuperGridDemo: SQLite state', { db: !!db, loading: sqliteLoading, error: sqliteError });
+  contextLogger.state('SuperGridDemo: Database service state', { ready: databaseService.isReady() });
 
   // Set up filter service listener for state sync
   useEffect(() => {
     const unsubscribe = filterService.onFilterChange((filters) => {
-      console.log('SuperGridDemo: Filter service state changed', { count: filters.length, filters });
+      contextLogger.state('SuperGridDemo: Filter service state changed', { count: filters.length, filters });
       setActiveFilters(filters);
     });
 
@@ -89,146 +88,24 @@ export function SuperGridDemo() {
     return unsubscribe;
   }, [filterService]);
 
-  // Create DatabaseService adapter from SQLite context
-  useEffect(() => {
-    if (!db) {
-      setDbService(null);
-      return;
-    }
-
-    // Create a simple DatabaseService adapter that wraps the sql.js Database
-    const adapter = {
-      isReady: () => !!db,
-      db,
-      SQL: null,
-      dirty: false,
-      saveTimer: null,
-      initialize: async () => {},
-      query: function(sql: string, params: any[] = []) {
-        console.log('🎯 DatabaseService.query(): Called', { sql, params });
-
-        if (!db) {
-          console.error('🚨 DatabaseService.query(): Database not ready');
-          throw new Error('Database not ready');
-        }
-
-        try {
-          const stmt = db.prepare(sql);
-          const result: any[] = [];
-
-          if (params && params.length > 0) {
-            // Convert unknown[] to proper sql.js parameter types
-            const validParams = params.map(p => {
-              if (p === null || p === undefined) return null;
-              if (typeof p === 'string' || typeof p === 'number' || typeof p === 'boolean') return p;
-              return String(p);
-            });
-            console.log('🎯 DatabaseService.query(): Binding params', validParams);
-            stmt.bind(validParams as any);
-          }
-
-          while (stmt.step()) {
-            result.push(stmt.getAsObject());
-          }
-
-          stmt.free();
-          console.log('✅ DatabaseService.query(): Result count:', result.length);
-          console.log('📝 DatabaseService.query(): Sample results:', result.slice(0, 2));
-          return result;
-        } catch (error) {
-          console.error('Database query error:', error);
-          throw error;
-        }
-      },
-      run: (sql: string, params: any[] = []) => {
-        if (!db) throw new Error('Database not ready');
-
-        try {
-          if (params && params.length > 0) {
-            // Convert unknown[] to proper sql.js parameter types
-            const validParams = params.map(p => {
-              if (p === null || p === undefined) return null;
-              if (typeof p === 'string' || typeof p === 'number' || typeof p === 'boolean') return p;
-              return String(p);
-            });
-            const stmt = db.prepare(sql);
-            stmt.bind(validParams as any);
-            stmt.step();
-            stmt.free();
-          } else {
-            db.run(sql);
-          }
-        } catch (error) {
-          console.error('Database exec error:', error);
-          throw error;
-        }
-      },
-      export: () => db.export(),
-      close: () => db.close(),
-      isDirty: () => false,
-      getRawDatabase: () => db,
-      transaction: (fn: any) => fn(),
-      verifyFTS5: () => ({ available: false }),
-      verifyJSON1: () => ({ available: false }),
-      verifyRecursiveCTE: () => ({ available: false }),
-      getCapabilities: () => ({
-        fts5: { available: false },
-        json1: { available: false },
-        recursiveCTE: { available: false },
-        ready: true,
-        dirty: false
-      }),
-      getStats: () => ({ tables: 0, indexes: 0, triggers: 0, size: 0 }),
-      markDirty: () => {}, // Add missing method
-      // Add missing drag & drop methods
-      updateCardPosition: (cardId: string, x: number, y: number) => {
-        try {
-          const stmt = db.prepare('UPDATE nodes SET grid_x = ?, grid_y = ?, modified_at = datetime("now") WHERE id = ?');
-          stmt.bind([x, y, cardId]);
-          stmt.step();
-          stmt.free();
-          return { success: true };
-        } catch (error) {
-          console.error('updateCardPosition error:', error);
-          return { success: false, error };
-        }
-      },
-      updateCardPositions: (positions: Array<{cardId: string, x: number, y: number}>) => {
-        try {
-          positions.forEach(pos => {
-            const stmt = db.prepare('UPDATE nodes SET grid_x = ?, grid_y = ?, modified_at = datetime("now") WHERE id = ?');
-            stmt.bind([pos.x, pos.y, pos.cardId]);
-            stmt.step();
-            stmt.free();
-          });
-          return { success: true };
-        } catch (error) {
-          console.error('updateCardPositions error:', error);
-          return { success: false, errors: [error] };
-        }
-      }
-    } as unknown as DatabaseService;
-
-    setDbService(adapter);
-  }, [db]);
 
   // Selection handlers
   const handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
-    console.log('SuperGridDemo: Selection changed', { count: selectedIds.length, focused: focusedId });
+    contextLogger.data('SuperGridDemo: Selection changed', { count: selectedIds.length, focused: focusedId });
     setSelectedCards(selectedIds);
     setShowBulkActions(selectedIds.length > 1);
   }, []);
 
   // Card interaction handlers
   const handleCardClick = useCallback((card: any) => {
-    console.log('SuperGridDemo: Card clicked', card);
+    contextLogger.data('SuperGridDemo: Card clicked', card);
     setSelectedCard(card);
     setIsModalOpen(true);
   }, []);
 
   // Header click handler for LATCH filtering
   const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
-    console.log('SuperGridDemo: Header clicked', { axis, facet, value });
+    contextLogger.data('SuperGridDemo: Header clicked', { axis, facet, value });
 
     // Check if filter already exists
     const existing = filterService.getActiveFilters().find(
@@ -247,7 +124,7 @@ export function SuperGridDemo() {
         value,
         `${facet}: ${value}`
       );
-      console.log('SuperGridDemo: Added filter', { filterId, axis, facet, value });
+      contextLogger.state('SuperGridDemo: Added filter', { filterId, axis, facet, value });
     }
   }, [filterService]);
 
@@ -261,7 +138,7 @@ export function SuperGridDemo() {
 
   // Bulk operation handlers
   const handleBulkDelete = useCallback(async (selectedIds: string[]) => {
-    if (!sqliteExecute || selectedIds.length === 0) return;
+    if (!databaseService || selectedIds.length === 0) return;
 
     try {
       setIsModalLoading(true);
@@ -269,7 +146,7 @@ export function SuperGridDemo() {
 
       // Soft delete - mark as deleted_at
       const placeholders = selectedIds.map(() => '?').join(', ');
-      sqliteExecute(`UPDATE nodes SET deleted_at = datetime('now') WHERE id IN (${placeholders})`, selectedIds);
+      databaseService.run(`UPDATE nodes SET deleted_at = datetime('now') WHERE id IN (${placeholders})`, selectedIds);
 
       // Clear selection and refresh grid
       selectionManager?.clearSelection();
@@ -277,17 +154,17 @@ export function SuperGridDemo() {
 
       // Update stats
       const stats = superGrid?.getStats();
-      console.log('Bulk delete completed:', { deletedCount: selectedIds.length, stats });
+      contextLogger.metrics('Bulk delete completed', { deletedCount: selectedIds.length, stats });
 
     } catch (error) {
       console.error('Bulk delete error:', error);
     } finally {
       setIsModalLoading(false);
     }
-  }, [sqliteExecute, superGrid]);
+  }, [databaseService, superGrid]);
 
   const handleBulkStatusUpdate = useCallback(async (selectedIds: string[], newStatus: string) => {
-    if (!sqliteExecute || selectedIds.length === 0) return;
+    if (!databaseService || selectedIds.length === 0) return;
 
     try {
       setIsModalLoading(true);
@@ -295,7 +172,7 @@ export function SuperGridDemo() {
 
       // Update status for selected cards
       const placeholders = selectedIds.map(() => '?').join(', ');
-      sqliteExecute(`UPDATE nodes SET status = ? WHERE id IN (${placeholders})`, [newStatus, ...selectedIds]);
+      databaseService.run(`UPDATE nodes SET status = ? WHERE id IN (${placeholders})`, [newStatus, ...selectedIds]);
 
       // Clear selection and refresh grid
       selectionManager?.clearSelection();
@@ -303,7 +180,7 @@ export function SuperGridDemo() {
 
       // Update stats
       const stats = superGrid?.getStats();
-      console.log('Bulk status update completed:', {
+      contextLogger.metrics('Bulk status update completed', {
         updatedCount: selectedIds.length,
         newStatus,
         stats
@@ -314,10 +191,10 @@ export function SuperGridDemo() {
     } finally {
       setIsModalLoading(false);
     }
-  }, [sqliteExecute, superGrid]);
+  }, [databaseService, superGrid]);
 
   const handleBulkFolderMove = useCallback(async (selectedIds: string[], newFolder: string) => {
-    if (!sqliteExecute || selectedIds.length === 0) return;
+    if (!databaseService || selectedIds.length === 0) return;
 
     try {
       setIsModalLoading(true);
@@ -325,7 +202,7 @@ export function SuperGridDemo() {
 
       // Update folder for selected cards
       const placeholders = selectedIds.map(() => '?').join(', ');
-      sqliteExecute(`UPDATE nodes SET folder = ? WHERE id IN (${placeholders})`, [newFolder, ...selectedIds]);
+      databaseService.run(`UPDATE nodes SET folder = ? WHERE id IN (${placeholders})`, [newFolder, ...selectedIds]);
 
       // Clear selection and refresh grid
       selectionManager?.clearSelection();
@@ -333,7 +210,7 @@ export function SuperGridDemo() {
 
       // Update stats
       const stats = superGrid?.getStats();
-      console.log('Bulk folder move completed:', {
+      contextLogger.metrics('Bulk folder move completed', {
         movedCount: selectedIds.length,
         newFolder,
         stats
@@ -344,10 +221,10 @@ export function SuperGridDemo() {
     } finally {
       setIsModalLoading(false);
     }
-  }, [sqliteExecute, superGrid]);
+  }, [databaseService, superGrid]);
 
   const handleBulkOperation = useCallback((operation: string, selectedIds: string[]) => {
-    console.log('SuperGridDemo: Bulk operation requested', { operation, count: selectedIds.length });
+    contextLogger.data('SuperGridDemo: Bulk operation requested', { operation, count: selectedIds.length });
 
     switch (operation) {
       case 'delete':
@@ -369,7 +246,7 @@ export function SuperGridDemo() {
   }, []);
 
   const handleCardSave = useCallback(async (updatedCard: Partial<any>) => {
-    if (!sqliteExecute || !updatedCard.id) return;
+    if (!databaseService || !updatedCard.id) return;
 
     try {
       setIsModalLoading(true);
@@ -408,14 +285,14 @@ export function SuperGridDemo() {
         params.push(updatedCard.id);
 
         const sql = `UPDATE nodes SET ${updates.join(', ')} WHERE id = ?`;
-        sqliteExecute(sql, params);
+        databaseService.run(sql, params);
 
         // Refresh grid to show changes
         superGrid?.refresh();
 
         // Update stats
         const stats = superGrid?.getStats();
-        console.log('Card updated:', { cardId: updatedCard.id, stats });
+        contextLogger.metrics('Card updated', { cardId: updatedCard.id, stats });
       }
 
       handleModalClose();
@@ -425,23 +302,23 @@ export function SuperGridDemo() {
     } finally {
       setIsModalLoading(false);
     }
-  }, [sqliteExecute, superGrid, handleModalClose]);
+  }, [databaseService, superGrid, handleModalClose]);
 
   const handleCardDelete = useCallback(async (cardId: string) => {
-    if (!sqliteExecute) return;
+    if (!databaseService) return;
 
     try {
       setIsModalLoading(true);
 
       // Soft delete
-      sqliteExecute('UPDATE nodes SET deleted_at = datetime(\'now\') WHERE id = ?', [cardId]);
+      databaseService.run('UPDATE nodes SET deleted_at = datetime(\'now\') WHERE id = ?', [cardId]);
 
       // Refresh grid
       superGrid?.refresh();
 
       // Update stats
       const stats = superGrid?.getStats();
-      console.log('Card deleted:', { cardId, stats });
+      contextLogger.metrics('Card deleted', { cardId, stats });
 
       handleModalClose();
 
@@ -450,12 +327,12 @@ export function SuperGridDemo() {
     } finally {
       setIsModalLoading(false);
     }
-  }, [sqliteExecute, superGrid, handleModalClose]);
+  }, [databaseService, superGrid, handleModalClose]);
 
   // ViewContinuum callbacks
   const viewContinuumCallbacks: ViewContinuumCallbacks = {
     onViewChange: (event) => {
-      console.log('📊 SuperGridDemo: View change event:', event);
+      contextLogger.metrics('SuperGridDemo: View change event', event);
       setCurrentView(event.toView);
     },
     onSelectionChange: (selectedIds, _focusedId) => {
@@ -470,9 +347,9 @@ export function SuperGridDemo() {
 
   // Initialize ViewContinuum when database service is ready
   useEffect(() => {
-    if (!svgRef.current || !dbService) return;
+    if (!svgRef.current || !databaseService) return;
 
-    console.log('SuperGridDemo: Initializing ViewContinuum');
+    contextLogger.setup('SuperGridDemo: Initializing ViewContinuum', {});
 
     // Initialize ViewContinuum
     const continuum = new ViewContinuum(
@@ -484,7 +361,7 @@ export function SuperGridDemo() {
     // Create and register view renderers
     const superGridRenderer = new SuperGrid(
       svgRef.current,
-      dbService,
+      databaseService,
       {
         columnsPerRow: 4,
         enableHeaders: true,
@@ -526,7 +403,7 @@ export function SuperGridDemo() {
     continuum.switchToView(currentView, 'programmatic', false);
 
     // Load initial data with compiled filters
-    console.log('SuperGridDemo: Loading initial data');
+    contextLogger.setup('SuperGridDemo: Loading initial data', {});
     const filterCompilation = filterService.compileToSQL();
 
     // Query via ViewContinuum instead of direct SuperGrid
@@ -548,15 +425,15 @@ export function SuperGridDemo() {
       setViewContinuum(null);
       setSuperGrid(null);
     };
-  }, [dbService, canvasId, currentView, viewContinuumCallbacks, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
+  }, [databaseService, canvasId, currentView, viewContinuumCallbacks, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
 
   // Apply LATCH filters to grid
   useEffect(() => {
     if (!superGrid || !filterService) return;
 
-    console.log('SuperGridDemo: Compiling and applying filters', { activeFilterCount: activeFilters.length });
+    contextLogger.state('SuperGridDemo: Compiling and applying filters', { activeFilterCount: activeFilters.length });
     const filterCompilation = filterService.compileToSQL();
-    console.log('SuperGridDemo: Filter compilation result', {
+    contextLogger.data('SuperGridDemo: Filter compilation result', {
       whereClause: filterCompilation.whereClause,
       parameterCount: filterCompilation.parameters.length,
       isEmpty: filterCompilation.isEmpty
@@ -569,7 +446,7 @@ export function SuperGridDemo() {
   useEffect(() => {
     if (!superGrid || !pafvState) return;
 
-    console.log('SuperGridDemo: PAFV state changed', pafvState);
+    contextLogger.state('SuperGridDemo: PAFV state changed', pafvState);
     // Future: Apply PAFV axis mappings to grid layout
   }, [superGrid, pafvState]);
 
@@ -593,12 +470,12 @@ export function SuperGridDemo() {
       headerValue,
       `${facet}: ${headerValue}`
     );
-    console.log('SuperGridDemo: Quick filter added', { filterId, axis, facet, value: headerValue });
+    contextLogger.state('SuperGridDemo: Quick filter added', { filterId, axis, facet, value: headerValue });
   }, [filterService]);
 
   // Zoom/Pan control handlers
   const handleZoomLevelChange = useCallback((level: ZoomLevel) => {
-    console.log('SuperGridDemo: Zoom level changed to:', level);
+    contextLogger.state('SuperGridDemo: Zoom level changed to', { level });
     setCurrentZoomLevel(level);
     if (superGrid) {
       superGrid.setZoomLevel(level);
@@ -606,7 +483,7 @@ export function SuperGridDemo() {
   }, [superGrid]);
 
   const handlePanLevelChange = useCallback((level: PanLevel) => {
-    console.log('SuperGridDemo: Pan level changed to:', level);
+    contextLogger.state('SuperGridDemo: Pan level changed to', { level });
     setCurrentPanLevel(level);
     if (superGrid) {
       superGrid.setPanLevel(level);
@@ -614,7 +491,7 @@ export function SuperGridDemo() {
   }, [superGrid]);
 
   const handleResetZoomPan = useCallback(() => {
-    console.log('SuperGridDemo: Resetting zoom/pan to defaults');
+    contextLogger.state('SuperGridDemo: Resetting zoom/pan to defaults', {});
     setCurrentZoomLevel('leaf');
     setCurrentPanLevel('dense');
     if (superGrid) {
@@ -622,25 +499,13 @@ export function SuperGridDemo() {
     }
   }, [superGrid]);
 
-  // Show loading state while SQLite initializes
-  if (sqliteLoading) {
+  // Show loading state if database service is not ready
+  if (!databaseService.isReady()) {
     return (
       <div className="h-full bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading SQLite database...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if SQLite failed to initialize
-  if (sqliteError) {
-    return (
-      <div className="h-full bg-white flex items-center justify-center">
-        <div className="text-center text-red-600">
-          <p className="font-semibold mb-2">Database Error</p>
-          <p className="text-sm">{sqliteError.message}</p>
+          <p className="text-gray-600">Loading database service...</p>
         </div>
       </div>
     );
@@ -670,7 +535,7 @@ export function SuperGridDemo() {
           <ViewSwitcher
             currentView={currentView}
             onViewChange={async (newView) => {
-              console.log('📊 SuperGridDemo: View switch requested:', { from: currentView, to: newView });
+              contextLogger.metrics('SuperGridDemo: View switch requested', { from: currentView, to: newView });
               if (viewContinuum) {
                 await viewContinuum.switchToView(newView, 'user', true);
               }

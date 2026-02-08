@@ -17,7 +17,8 @@ import type {
 } from '../types/grid';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
-import type { DatabaseService } from '../db/DatabaseService';
+import type { useDatabaseService } from '../hooks/useDatabaseService';
+import { superGridLogger } from '../utils/dev-logger';
 
 export interface SuperGridHeadersConfig {
   defaultHeaderHeight: number;
@@ -40,7 +41,7 @@ export class SuperGridHeaders {
   private layoutService: HeaderLayoutService;
   private config: SuperGridHeadersConfig;
   private currentHierarchy: HeaderHierarchy | null = null;
-  private database: DatabaseService | null = null;
+  private database: ReturnType<typeof useDatabaseService> | null = null;
 
   // Performance tracking for lazy fallback
   private renderStartTime: number = 0;
@@ -78,7 +79,7 @@ export class SuperGridHeaders {
       onHeaderClick?: (event: HeaderClickEvent) => void;
       onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
     } = {},
-    database?: DatabaseService
+    database?: ReturnType<typeof useDatabaseService>
   ) {
     this.container = d3.select(container);
     this.layoutService = layoutService;
@@ -104,7 +105,7 @@ export class SuperGridHeaders {
     facetField: string = 'status',
     totalWidth: number = 800
   ): void {
-    console.log('🎨 SuperGridHeaders.renderHeaders(): Starting...', {
+    superGridLogger.render('Header rendering starting', {
       dataCount: flatData.length,
       axis,
       facetField,
@@ -121,7 +122,7 @@ export class SuperGridHeaders {
         facetField
       );
 
-      console.log('📊 SuperGridHeaders.renderHeaders(): Hierarchy generated:', {
+      superGridLogger.metrics('Header hierarchy generated', {
         rootNodesCount: this.currentHierarchy.rootNodes.length,
         totalNodesCount: this.currentHierarchy.allNodes.length,
         maxDepth: this.currentHierarchy.maxDepth
@@ -144,7 +145,7 @@ export class SuperGridHeaders {
       this.renderFallback();
     }
 
-    console.log('✅ SuperGridHeaders.renderHeaders(): Complete');
+    superGridLogger.render('Header rendering complete');
   }
 
   /**
@@ -177,7 +178,7 @@ export class SuperGridHeaders {
     // Animate the change
     this.animateToggle(node);
 
-    console.log('🔄 SuperGridHeaders.toggleNode():', {
+    superGridLogger.state('Toggle node', {
       nodeId,
       isExpanded: node.isExpanded,
       expandedCount: this.currentHierarchy.expandedNodeIds.size
@@ -229,7 +230,7 @@ export class SuperGridHeaders {
         .attr('transform', `translate(0, ${level * this.config.defaultHeaderHeight})`);
     }
 
-    console.log('🏗️ SuperGridHeaders.initializeStructure(): Structure initialized');
+    superGridLogger.setup('Header structure initialized');
   }
 
   private calculateHierarchyWidths(totalWidth: number): void {
@@ -320,7 +321,7 @@ export class SuperGridHeaders {
   }
 
   private renderProgressively(): void {
-    console.log('🔄 SuperGridHeaders.renderProgressively(): Using progressive rendering');
+    superGridLogger.render('Using progressive rendering');
 
     if (!this.currentHierarchy) return;
 
@@ -337,7 +338,7 @@ export class SuperGridHeaders {
   }
 
   private renderAllLevels(): void {
-    console.log('🎨 SuperGridHeaders.renderAllLevels(): Rendering all levels');
+    superGridLogger.render('Rendering all levels');
 
     if (!this.currentHierarchy) return;
 
@@ -430,7 +431,7 @@ export class SuperGridHeaders {
       .attr('opacity', 0)
       .remove();
 
-    console.log(`📊 Rendered level ${level}: ${nodesAtLevel.length} nodes`);
+    superGridLogger.metrics(`Rendered level ${level}`, { nodeCount: nodesAtLevel.length });
   }
 
   private addInteractionHandlers(
@@ -497,7 +498,7 @@ export class SuperGridHeaders {
 
     this.onHeaderClick?.(headerClickEvent);
 
-    console.log('👆 SuperGridHeaders.handleClick():', {
+    superGridLogger.inspect('Header click', {
       nodeId: node.id,
       action,
       clickZone: mouseX <= 32 ? 'label' : 'body',
@@ -515,7 +516,7 @@ export class SuperGridHeaders {
     this.animationStartTime = performance.now();
     const transitionId = `expand-${node.id}-${Date.now()}`;
 
-    console.log('🔄 SuperGridHeaders.animateHeaderExpansion():', {
+    superGridLogger.state('Animate header expansion', {
       nodeId: node.id,
       isExpanded: node.isExpanded,
       transitionId
@@ -682,7 +683,7 @@ export class SuperGridHeaders {
       this.runningTransitions.delete(transitionId);
     });
 
-    console.log('⏹️ SuperGridHeaders.interruptTransitions():', {
+    superGridLogger.state('SuperGridHeaders.interruptTransitions():', {
       nodeId,
       interruptedCount: relatedTransitionIds.length
     });
@@ -768,7 +769,7 @@ export class SuperGridHeaders {
       // Could trigger progressive rendering mode here
       // For now, just log the performance issue
     } else {
-      console.log('✅ SuperGridHeaders animation within budget:', {
+      superGridLogger.metrics('SuperGridHeaders animation within budget:', {
         time: `${animationTime.toFixed(2)}ms`,
         budget: `${this.config.performanceBudgetMs}ms`
       });
@@ -829,7 +830,7 @@ export class SuperGridHeaders {
       (this.averageRenderTime * (this.renderCount - 1)) + renderTime
     ) / this.renderCount;
 
-    console.log('⏱️ SuperGridHeaders.trackRenderPerformance():', {
+    superGridLogger.metrics('SuperGridHeaders.trackRenderPerformance():', {
       renderTime: `${renderTime.toFixed(2)}ms`,
       averageTime: `${this.averageRenderTime.toFixed(2)}ms`,
       renderCount: this.renderCount,
@@ -888,7 +889,7 @@ export class SuperGridHeaders {
       );
 
       if (result.success) {
-        console.log('✅ SuperGridHeaders.saveHeaderState(): State saved', {
+        superGridLogger.metrics('SuperGridHeaders.saveHeaderState(): State saved', {
           datasetId: this.currentDatasetId,
           appContext: this.currentAppContext,
           expandedCount: expandedLevels.length
@@ -912,11 +913,11 @@ export class SuperGridHeaders {
       );
 
       if (!savedState || !this.currentHierarchy) {
-        console.log('📋 SuperGridHeaders.restoreHeaderState(): No saved state found');
+        superGridLogger.data('No saved state found', {});
         return;
       }
 
-      console.log('🔄 SuperGridHeaders.restoreHeaderState(): Restoring state', {
+      superGridLogger.state('SuperGridHeaders.restoreHeaderState(): Restoring state', {
         datasetId: this.currentDatasetId,
         appContext: this.currentAppContext,
         expandedLevels: savedState.expandedLevels,
@@ -945,7 +946,7 @@ export class SuperGridHeaders {
         this.renderAllLevels();
       }
 
-      console.log('✅ SuperGridHeaders.restoreHeaderState(): State restored successfully');
+      superGridLogger.state('State restored successfully', {});
 
     } catch (error) {
       console.error('❌ SuperGridHeaders.restoreHeaderState(): Error restoring state:', error);
