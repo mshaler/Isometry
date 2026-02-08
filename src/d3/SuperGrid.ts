@@ -8,7 +8,7 @@ import { SuperGridHeaders, type HeaderClickEvent } from './SuperGridHeaders';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 import type { CardPosition } from '../types/views';
-import { superGridLogger } from '../utils/logging/dev-logger';
+import { superGridLogger } from '../utils/dev-logger';
 
 /**
  * SuperGrid - Polymorphic data projection with multi-select and keyboard navigation

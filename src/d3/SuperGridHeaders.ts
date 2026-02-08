@@ -21,7 +21,7 @@ import { DEFAULT_RESIZE_CONFIG } from '../types/grid';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
-import { superGridLogger } from '../utils/logging/dev-logger';
+import { superGridLogger } from '../utils/dev-logger';
 import { SuperStackProgressive } from './SuperStackProgressive';
 import type {
   ProgressiveDisclosureConfig,

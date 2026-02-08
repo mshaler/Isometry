@@ -17,7 +17,7 @@
 import * as d3 from 'd3';
 import type { HeaderNode, HeaderHierarchy } from '../types/grid';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
-import { superGridLogger } from '../utils/logging/dev-logger';
+import { superGridLogger } from '../utils/dev-logger';
 
 // Progressive disclosure configuration
 export interface SuperStackProgressiveConfig {
@@ -796,7 +796,7 @@ export class SuperStackProgressive {
 
       try {
         // Save progressive state
-        const result = db.saveProgressiveState?.(state);
+        const result = db.saveProgressiveState?.(this.currentDatasetId, this.currentAppContext, state);
 
         // Also save level visibility for compatibility
         const levelResult = db.saveLevelVisibility?.(
