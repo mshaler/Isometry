@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { connectionSuggestionService, ConnectionSuggestion, SuggestionPerformanceMetrics } from '../services/ConnectionSuggestionService';
-import { queryCacheService, CacheEffectiveness } from '../services/QueryCacheService';
-import { graphPerformanceMonitor, AnalyticsMetrics, OptimizationSuggestion } from '../utils/GraphPerformanceMonitor';
-import { graphAnalytics, GraphMetrics, SuggestionOptions } from '../services/GraphAnalyticsAdapter';
+import { connectionSuggestionService, ConnectionSuggestion, SuggestionPerformanceMetrics } from '../../services/ConnectionSuggestionService';
+import { queryCacheService, CacheEffectiveness } from '../../services/QueryCacheService';
+import { performanceMonitor, AnalyticsMetrics, OptimizationSuggestion } from '../../utils/performance/performance-monitor';
+import { graphAnalytics, GraphMetrics, SuggestionOptions } from '../../services/GraphAnalyticsAdapter';
 
 // Hook state interfaces
 interface GraphAnalyticsState {

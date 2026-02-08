@@ -9,7 +9,7 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/connection-manager';
+import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/webview/connection-manager';
 import { useLiveDataContext } from '../contexts/LiveDataContext';
 
 export interface ConnectionContextValue {

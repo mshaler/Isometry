@@ -3,7 +3,7 @@
  */
 
 import { useMemo } from 'react';
-import { useSQLiteQuery } from './useSQLiteQuery';
+import { useSQLiteQuery } from '../database/useSQLiteQuery';
 
 interface TagRow {
   tag: string;

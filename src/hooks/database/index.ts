@@ -10,7 +10,7 @@ export { useEnhancedSync } from './useEnhancedSync';
 export { useBackgroundSync } from './useBackgroundSync';
 export { useNetworkAwareSync } from './useNetworkAwareSync';
 export { useCacheInvalidation } from './useCacheInvalidation';
-export { useBridgeDatabase } from './useBridgeDatabase';
+// Bridge database removed in v4
 
 // Re-export types
 export type { FTS5Result, FTS5SearchState } from './useFTS5Search';

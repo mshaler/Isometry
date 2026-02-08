@@ -6,9 +6,10 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import { useLiveData, type LiveDataPerformanceMetrics } from './useLiveData';
-import { buildPAFVQuery, optimizeQuery, type PAFVQueryOptions } from '@/utils/query-builder';
-import type { Wells } from '@/contexts/PAFVContext';
+import { useLiveData, type LiveDataPerformanceMetrics } from '../database/useLiveData';
+import { buildPAFVQuery, optimizeQuery, type PAFVQueryOptions } from '@/utils/database/query-builder';
+// Local type to avoid hooks→contexts import
+type Wells = Record<string, { axis: string; facet: string; value: unknown; }>;
 import type { Node } from '@/types/node';
 
 export interface PAFVQueryMetrics {
