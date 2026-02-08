@@ -5,8 +5,8 @@
  * for the comprehensive testing infrastructure.
  */
 
-import initSqlJs from 'sql.js-fts5';
-import type { Database, SqlJsStatic } from 'sql.js-fts5';
+import initSqlJs from 'sql.js';
+import type { Database, SqlJsStatic } from 'sql.js';
 
 // Global sql.js instance and utilities for tests
 declare global {
@@ -30,14 +30,13 @@ global.__CLEANUP_TEST_DBS__ = () => {
   global.__TEST_DB_INSTANCES__.clear();
 };
 
-// Mock WASM file loading for test environment
-function mockWasmLoader() {
+// WASM file loading for test environment - use real FTS5-enabled WASM
+function wasmLoader() {
   return {
     locateFile: (file: string) => {
-      // In test environment, provide a mock path
+      // Use our custom FTS5-enabled WASM files
       if (file.endsWith('.wasm')) {
-        // Return a path that won't be used in mocked environment
-        return `/test-wasm/${file}`;
+        return `/wasm/${file}`;
       }
       return file;
     },
@@ -51,23 +50,13 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
   }
 
   try {
-    // Try to initialize with FTS5 support
-    global.__TEST_SQL__ = await initSqlJs(mockWasmLoader());
-    console.log('[Test] sql.js-fts5 initialized successfully');
+    // Initialize sql.js with custom FTS5-enabled build
+    global.__TEST_SQL__ = await initSqlJs(wasmLoader());
+    console.log('[Test] sql.js initialized successfully (FTS5 enabled)');
     return global.__TEST_SQL__;
   } catch (error) {
-    console.warn('[Test] Failed to initialize sql.js-fts5:', error);
-
-    // Fallback to standard sql.js for basic functionality
-    try {
-      const standardSqlJs = await import('sql.js');
-      global.__TEST_SQL__ = await standardSqlJs.default(mockWasmLoader());
-      console.log('[Test] Fallback to standard sql.js');
-      return global.__TEST_SQL__;
-    } catch (fallbackError) {
-      console.error('[Test] Failed to initialize any sql.js variant:', fallbackError);
-      throw new Error('Could not initialize sql.js for testing');
-    }
+    console.error('[Test] Failed to initialize sql.js:', error);
+    throw new Error('Could not initialize sql.js for testing');
   }
 }
 
@@ -98,31 +87,9 @@ function createMockWasmModule() {
   };
 }
 
-// Mock fetch for WASM loading in test environment
-const originalFetch = global.fetch;
-global.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-  const url = typeof input === 'string' ? input : input.toString();
-
-  if (url.endsWith('.wasm') || url.includes('wasm')) {
-    // Return mock WASM content for sql.js
-    const mockWasmBuffer = createMockWasmModule().buffer;
-    return new Response(mockWasmBuffer, {
-      status: 200,
-      statusText: 'OK',
-      headers: {
-        'Content-Type': 'application/wasm',
-        'Content-Length': mockWasmBuffer.byteLength.toString(),
-      },
-    });
-  }
-
-  // Use original fetch for other requests
-  if (originalFetch) {
-    return originalFetch(input, init);
-  }
-
-  throw new Error(`Fetch not available for: ${url}`);
-};
+// Note: Using real WASM files instead of mocked ones for FTS5 testing
+// Mock fetch would prevent loading our custom FTS5-enabled WASM
+// const originalFetch = global.fetch; // Keep original fetch available
 
 // Initialize sql.js on module load
 try {
