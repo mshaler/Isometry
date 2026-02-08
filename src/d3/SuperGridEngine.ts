@@ -19,7 +19,7 @@
  * - z=2 OVERLAY LAYER (React): Cards, Audit View, Modals, Inspector
  */
 
-import type { Database } from 'sql.js-fts5';
+import type { Database } from 'sql.js';
 import EventEmitter from 'events';
 
 // Core Data Types
@@ -617,7 +617,7 @@ export class SuperGridEngine extends EventEmitter {
       aggregateData: {
         avgPriority: node.priority,
         statusCounts: { [node.status]: 1 },
-        tagCounts: node.tags.reduce((acc, tag) => ({ ...acc, [tag]: 1 }), {})
+        tagCounts: (node.tags || []).reduce((acc, tag) => ({ ...acc, [tag]: 1 }), {})
       }
     }));
   }

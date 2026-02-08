@@ -1,6 +1,8 @@
 /**
- * Query Client - Stub Implementation
+ * Query Client - TanStack Query Integration
  */
+
+import { QueryClient as TanstackQueryClient } from '@tanstack/react-query';
 
 export interface QueryResult<T = unknown> {
   data: T;
@@ -8,21 +10,16 @@ export interface QueryResult<T = unknown> {
   error: Error | null;
 }
 
-export class QueryClient {
-  async query<T>(_sql: string, _params?: unknown[]): Promise<QueryResult<T>> {
-    return {
-      data: [] as T,
-      loading: false,
-      error: null
-    };
-  }
-
-  invalidateQueries(_pattern?: string): void {
-    // Stub implementation
-  }
-}
-
-export const queryClient = new QueryClient();
+// Use the real TanStack QueryClient
+export const queryClient = new TanstackQueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Cache utilities for diagnostic and management purposes
 export const cacheUtils = {

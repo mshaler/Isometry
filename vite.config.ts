@@ -31,7 +31,7 @@ export default defineConfig({
     // Enable aggressive dependency pre-bundling
     force: false,
   },
-  assetsInclude: ['**/*.sql'],
+  assetsInclude: ['**/*.sql', '**/*.wasm'],
   build: {
     target: 'esnext',
     minify: 'terser',
@@ -92,6 +92,12 @@ export default defineConfig({
     },
     hmr: {
       overlay: true,
+    },
+    // Configure MIME types for WASM files
+    middlewareMode: false,
+    headers: {
+      'Cross-Origin-Embedder-Policy': 'require-corp',
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
   // Preview server configuration for production testing

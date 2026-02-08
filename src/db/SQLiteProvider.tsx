@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import initSqlJs from 'sql.js-fts5';
-import type { Database, SqlJsStatic } from 'sql.js-fts5';
+import initSqlJs from 'sql.js';
+import type { Database, SqlJsStatic } from 'sql.js';
 import type { SQLiteCapabilityError } from './types';
 import { devLogger } from '../utils/dev-logger';
 
@@ -90,17 +90,9 @@ export function SQLiteProvider({
           devLogger.setup('SQLiteProvider: Initializing sql.js', {});
         }
 
-        // Initialize sql.js-fts5 with local WASM files
+        // Initialize sql.js using default CDN approach for now
         const sqlInstance = await initSqlJs({
-          // Environment-specific WASM loading per research recommendations
-          locateFile: (file: string) => {
-            if (typeof window === 'undefined') {
-              // Node.js environment
-              return `./node_modules/sql.js-fts5/dist/${file}`;
-            }
-            // Browser environment - serve from public/wasm/
-            return `/wasm/${file}`;
-          }
+          locateFile: file => `https://sql.js.org/dist/${file}`
         });
 
         if (!isMounted) return;
@@ -429,8 +421,8 @@ async function initializeSchema(db: Database, logCapabilityError?: (capability: 
   try {
     devLogger.setup('Initializing database schema', {});
 
-    // Load schema from public folder (using full schema with compatibility fixes)
-    const response = await fetch('/db/schema.sql');
+    // Load schema from public folder (using FTS5-free schema for basic sql.js)
+    const response = await fetch('/db/schema-no-fts5.sql');
     if (!response.ok) {
       throw new Error(`Schema fetch failed: ${response.status} ${response.statusText}`);
     }

@@ -11,7 +11,7 @@ export interface QueryState<T> {
   duration?: number; // Query execution time in milliseconds
 }
 
-interface QueryOptions<T> {
+export interface QueryOptions<T> {
   enabled?: boolean;
   transform?: (rows: Record<string, unknown>[]) => T[];
   fallbackData?: T[];
@@ -179,8 +179,36 @@ export function useGraphTraversal(
   );
 }
 
-// Convenience hook for full-text search (will work when FTS5 is available)
+// FTS5-enabled full-text search hook
 export function useSearchNodes(
+  searchQuery: string,
+  enabled: boolean = true
+): QueryState<Node> {
+  const sql = useMemo(() => `
+    SELECT n.*,
+           nft.rank as search_rank,
+           snippet(nodes_fts, 0, '<mark>', '</mark>', '...', 32) as name_snippet,
+           snippet(nodes_fts, 1, '<mark>', '</mark>', '...', 64) as content_snippet
+    FROM nodes_fts nft
+    JOIN nodes n ON n.rowid = nft.rowid
+    WHERE nodes_fts MATCH ?
+      AND n.deleted_at IS NULL
+    ORDER BY nft.rank, n.modified_at DESC
+    LIMIT 100
+  `, [searchQuery]);
+
+  return useSQLiteQuery<Node>(
+    sql,
+    [searchQuery],
+    {
+      enabled: enabled && searchQuery.length > 0,
+      transform: nodeTransform
+    }
+  );
+}
+
+// Convenience hook for LIKE-based search fallback (for compatibility)
+export function useSearchNodesLike(
   searchQuery: string,
   enabled: boolean = true
 ): QueryState<Node> {

@@ -14,7 +14,7 @@ const AppComponent = isTauri ? TauriTestApp : App;
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient as any}>
+    <QueryClientProvider client={queryClient}>
       <AppComponent />
     </QueryClientProvider>
   </React.StrictMode>
