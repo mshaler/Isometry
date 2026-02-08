@@ -1,37 +1,24 @@
 import { useEffect, useRef, useMemo } from 'react';
 import * as d3 from 'd3';
-import type { Node } from '@/types/node';
+import type { Node as AppNode } from '@/types/node';
 import type { LATCHAxis } from '@/types/pafv';
 import type { OriginPattern } from '@/types/coordinates';
+import type { D3CoordinateSystem } from '@/types/grid';
 import { useD3Zoom, type ZoomTransform } from '@/hooks/visualization/useD3Zoom';
 import { useGridCoordinates, getUniqueAxisValues } from '@/hooks/visualization/useGridCoordinates';
 import { renderColumnHeaders } from './GridBlock2_ColumnHeaders';
 import { renderRowHeaders } from './GridBlock3_RowHeaders';
 import { renderDataCells } from './GridBlock4_DataCells';
 
-// D3SparsityLayer-specific coordinate system interface with function methods
-export interface D3CoordinateSystem {
-  originX: number;
-  originY: number;
-  cellWidth: number;
-  cellHeight: number;
-  pattern?: OriginPattern;
-  scale?: number;
-  viewportWidth?: number;
-  viewportHeight?: number;
-  logicalToScreen: (logicalX: number, _logicalY: number) => { x: number; y: number };
-  screenToLogical: (screenX: number, _screenY: number) => { x: number; y: number };
-}
-
 export interface D3SparsityLayerProps {
-  data: Node[];
+  data: AppNode[];
   coordinateSystem: D3CoordinateSystem;
   xAxis?: LATCHAxis;
   xAxisFacet?: string;
   yAxis?: LATCHAxis;
   yAxisFacet?: string;
   originPattern?: OriginPattern;
-  onCellClick?: (node: Node) => void;
+  onCellClick?: (node: AppNode) => void;
   onZoomChange?: (transform: ZoomTransform) => void;
   width?: number;
   height?: number;

@@ -90,9 +90,9 @@ export function SQLiteProvider({
           devLogger.setup('SQLiteProvider: Initializing sql.js', {});
         }
 
-        // Initialize sql.js using default CDN approach for now
+        // Initialize sql.js using local WASM files in public folder
         const sqlInstance = await initSqlJs({
-          locateFile: file => `https://sql.js.org/dist/${file}`
+          locateFile: file => `/wasm/${file}`
         });
 
         if (!isMounted) return;

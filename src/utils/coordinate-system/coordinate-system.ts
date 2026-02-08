@@ -1,4 +1,4 @@
-import type { D3CoordinateSystem } from '@/components/D3SparsityLayer';
+import type { D3CoordinateSystem } from '@/types/grid';
 import type { OriginPattern } from '@/types/coordinates';
 
 /**

@@ -1,20 +1,12 @@
 import * as d3 from 'd3';
-import type { Node } from '@/types/node';
-import type { D3CoordinateSystem } from './D3SparsityLayer';
-
-export interface DataCellData {
-  id: string;
-  node: Node;
-  logicalX: number;
-  logicalY: number;
-  value: string;
-}
+import type { DataCellData, D3CoordinateSystem } from '@/types/grid';
+import type { Node as AppNode } from '@/types/node';
 
 export interface GridBlock4Props {
   container: d3.Selection<SVGGElement, unknown, null, undefined>;
   cells: DataCellData[];
   coordinateSystem: D3CoordinateSystem;
-  onCellClick?: (node: Node) => void;
+  onCellClick?: (node: AppNode) => void;
 }
 
 /**

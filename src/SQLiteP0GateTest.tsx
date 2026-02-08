@@ -36,10 +36,10 @@ export function SQLiteP0GateTest() {
     setResults([]);
 
     try {
-      // Phase 1: Initialize sql.js with FTS5
+      // Phase 1: Initialize sql.js with FTS5 - Use same working package as SQLiteProvider
       addResult({ phase: 'SQL.js Init', success: false, message: 'Starting sql.js initialization...' });
 
-      const initSqlJs = (await import('sql.js-fts5')).default;
+      const initSqlJs = (await import('sql.js')).default;
 
       const SQL = await initSqlJs({
         locateFile: (file: string) => {

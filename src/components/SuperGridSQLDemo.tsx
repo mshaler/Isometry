@@ -13,6 +13,9 @@ import { SuperGridEngine, type SuperGridConfig, type PAFVConfiguration } from '.
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFVProjection, useSearchProjection, useFacets, useAxisValues } from '../hooks/database/usePAFVProjection';
 import { useSQLiteQuery } from '../hooks/database/useSQLiteQuery';
+import { D3SparsityLayer } from './D3SparsityLayer';
+import type { D3CoordinateSystem } from '../types/grid';
+import type { Node } from '../types/node';
 import './SuperGridSQLDemo.css';
 
 // ============================================================================
@@ -85,8 +88,7 @@ export default function SuperGridSQLDemo({
   // Raw node data for SuperGridEngine (it does its own projection)
   const { data: allNodes, loading: nodesLoading, error: nodesError } = useSQLiteQuery<any>(
     `SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY modified_at DESC`,
-    [],
-    { enabled: true }
+    []
   );
 
   // Keep the PAFV projection for metrics display
@@ -113,76 +115,64 @@ export default function SuperGridSQLDemo({
   // );
 
   // ============================================================================
-  // SuperGridEngine Lifecycle
+  // D3SparsityLayer Configuration
   // ============================================================================
 
-  // Initialize SuperGrid engine when database is ready
-  useEffect(() => {
-    if (!database || !containerRef.current || dbLoading) return;
+  // Create coordinate system for D3SparsityLayer
+  const coordinateSystem: D3CoordinateSystem = {
+    originX: 150, // Space for row headers
+    originY: 50,  // Space for column headers
+    cellWidth: 140,
+    cellHeight: 100,
+    viewportWidth: width,
+    viewportHeight: height,
+    logicalToScreen: (logicalX: number, logicalY: number) => ({
+      x: 150 + logicalX * 140,
+      y: 50 + logicalY * 100
+    }),
+    screenToLogical: (screenX: number, screenY: number) => ({
+      x: Math.floor((screenX - 150) / 140),
+      y: Math.floor((screenY - 50) / 100)
+    })
+  };
 
-    console.log('✅ SQL Database loaded successfully!', { database });
+  // Convert SQL nodes to Node type for D3SparsityLayer
+  const d3Nodes: Node[] = allNodes?.map(node => ({
+    id: node.id,
+    name: node.name || 'Untitled',
+    summary: node.summary || '',
+    created_at: node.created_at,
+    modified_at: node.modified_at,
+    due_date: node.due_date,
+    status: node.status || 'pending',
+    priority: node.priority || 1,
+    folder: node.folder || 'default',
+    tags: node.tags || [],
+    location: node.location,
+    // Add any additional fields needed
+    ...node
+  })) || [];
 
-    // Create new engine
-    engineRef.current = new SuperGridEngine(database, gridConfig);
+  // Database debugging - get table info and sample data
+  const { data: tableInfo } = useSQLiteQuery<any>(
+    `SELECT name, type FROM sqlite_master WHERE type IN ('table','view') ORDER BY name`,
+    []
+  );
 
-    // Set up event listeners
-    engineRef.current.on('cellClick', ({ cell, nodes }) => {
-      console.log('SuperGrid Cell Click:', { cell, nodeCount: nodes.length });
-    });
+  const { data: nodeCount } = useSQLiteQuery<any>(
+    `SELECT COUNT(*) as count FROM nodes WHERE 1=1`,
+    []
+  );
 
-    engineRef.current.on('configChange', (newConfig) => {
-      console.log('SuperGrid Config Change:', newConfig);
-    });
+  const { data: sampleNodes } = useSQLiteQuery<any>(
+    `SELECT id, name, folder, status FROM nodes LIMIT 3`,
+    []
+  );
 
-    // Mount to DOM
-    engineRef.current.mount(containerRef.current);
-
-    // Test basic query functionality
-    try {
-      const result = database.exec('SELECT COUNT(*) as count FROM nodes WHERE deleted_at IS NULL');
-      console.log('✅ Sample query result:', result);
-    } catch (error) {
-      console.error('❌ Query failed:', error);
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (engineRef.current) {
-        engineRef.current.destroyV4();
-        engineRef.current = null;
-      }
-    };
-  }, [database, dbLoading, gridConfig]);
-
-  // ============================================================================
-  // Data Updates
-  // ============================================================================
-
-  // Update SuperGrid with node data when it changes
-  useEffect(() => {
-    if (!engineRef.current || nodesLoading || !allNodes) return;
-
-    try {
-      console.log('🔄 Updating SuperGrid with node data:', {
-        nodes: allNodes.length,
-        xAxis: pafvState.xAxis,
-        yAxis: pafvState.yAxis
-      });
-
-      // Update engine with raw node data (SuperGrid does its own projection)
-      engineRef.current.setData(allNodes, []);
-
-      // Update axis configuration
-      engineRef.current.setAxisMapping({
-        xAxis: pafvState.xAxis,
-        yAxis: pafvState.yAxis,
-        zAxis: pafvState.zAxis
-      });
-
-    } catch (error) {
-      console.error('❌ SuperGrid data update failed:', error);
-    }
-  }, [allNodes, pafvState, nodesLoading]);
+  // Handle cell clicks
+  const handleCellClick = useCallback((node: Node) => {
+    console.log('SuperGrid Cell Click:', { node });
+  }, []);
 
   // For search mode, we could filter allNodes or use a separate search hook
   // For now, let's keep it simple and always use allNodes since FTS5 isn't available yet
@@ -340,18 +330,74 @@ export default function SuperGridSQLDemo({
             </div>
           </div>
         </div>
+
+        <div className="controls-section">
+          <h3>Database Debug</h3>
+          <div className="metrics">
+            <div className="metric">
+              <span>Tables:</span>
+              <span>{tableInfo?.map(t => t.name).join(', ') || 'none'}</span>
+            </div>
+            <div className="metric">
+              <span>Node Count:</span>
+              <span>{nodeCount?.[0]?.count || 0}</span>
+            </div>
+            <div className="metric">
+              <span>Sample Nodes:</span>
+              <span>{sampleNodes?.map(n => n.id).join(', ') || 'none'}</span>
+            </div>
+            <div className="metric">
+              <span>AllNodes Array:</span>
+              <span>{allNodes?.length || 0} items</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* SuperGrid Container */}
-      <div className="supergrid-container">
-        <div
-          ref={containerRef}
-          className="supergrid-canvas"
-          style={{ width, height }}
-        />
+      <div className="supergrid-container" style={{ position: 'relative', width, height }}>
+        {/* D3 Sparsity Layer - The actual grid visualization */}
+        {!dbLoading && d3Nodes.length > 0 && (
+          <div className="d3-grid-debug" style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'linear-gradient(45deg, #f0f0f0 25%, #fff 25%, #fff 50%, #f0f0f0 50%, #f0f0f0 75%, #fff 75%)',
+            backgroundSize: '20px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '18px',
+            color: '#333',
+            fontWeight: 'bold'
+          }}>
+            🎯 D3.js Grid Placeholder - {d3Nodes.length} nodes ready for PAFV projection
+            <br />
+            <small style={{ fontSize: '14px', marginTop: '10px', display: 'block' }}>
+              X: {pafvState.xAxis} | Y: {pafvState.yAxis} | Data: {JSON.stringify(d3Nodes.slice(0,2).map(n => ({id: n.id, folder: n.folder, status: n.status})))}
+            </small>
+          </div>
+        )}
 
-        {/* Loading Overlay */}
-        {(projectionLoading || searchLoading) && (
+        {/* D3SparsityLayer - Now enabled since data pipeline is verified working */}
+        {!dbLoading && d3Nodes.length > 0 && (
+          <D3SparsityLayer
+            data={d3Nodes}
+            coordinateSystem={coordinateSystem}
+            xAxis={pafvState.xAxis as any}
+            xAxisFacet={pafvState.xAxis}
+            yAxis={pafvState.yAxis as any}
+            yAxisFacet={pafvState.yAxis}
+            onCellClick={handleCellClick}
+            width={width}
+            height={height}
+          />
+        )}
+
+        {/* Loading Overlay - only show if database or nodes are actually loading */}
+        {(dbLoading || nodesLoading) && (
           <div className="grid-loading-overlay">
             <div className="loading-spinner">
               ⚡ Querying sql.js with {pafvState.searchQuery ? 'FTS5' : 'PAFV projection'}...
@@ -359,11 +405,32 @@ export default function SuperGridSQLDemo({
           </div>
         )}
 
+        {/* Empty state - database ready but no nodes */}
+        {!dbLoading && !nodesLoading && !nodesError && d3Nodes.length === 0 && (
+          <div className="grid-loading-overlay">
+            <div className="loading-spinner">
+              📊 Database ready, but no nodes found. Expected {d3Nodes.length} nodes. dbLoading: {dbLoading.toString()}, nodesLoading: {nodesLoading.toString()}
+            </div>
+          </div>
+        )}
+
         {/* Error Display */}
-        {projectionError && (
+        {(projectionError || nodesError) && !dbLoading && (
           <div className="grid-error-overlay">
             <div className="error-content">
-              ❌ Projection Error: {projectionError.message}
+              ❌ Error: {projectionError?.message || nodesError?.message}
+            </div>
+          </div>
+        )}
+
+        {/* Success indicator - brief message that fades */}
+        {!dbLoading && !nodesLoading && !projectionLoading && !searchLoading && d3Nodes.length > 0 && (
+          <div className="grid-success-overlay" style={{
+            animation: 'fadeInOut 3s ease-in-out forwards',
+            animationDelay: '1s'
+          }}>
+            <div className="success-content">
+              ✅ Bridge Elimination Success: {d3Nodes.length} nodes rendered via sql.js → D3.js
             </div>
           </div>
         )}

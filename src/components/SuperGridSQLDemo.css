@@ -248,7 +248,8 @@
    ============================================================================ */
 
 .grid-loading-overlay,
-.grid-error-overlay {
+.grid-error-overlay,
+.grid-success-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -263,7 +264,8 @@
 }
 
 .loading-spinner,
-.error-content {
+.error-content,
+.success-content {
   padding: 1rem 1.5rem;
   background: #fff;
   border: 1px solid #ccc;
@@ -298,6 +300,23 @@
 .error-content {
   color: #d73a49;
   border-color: #d73a49;
+}
+
+.success-content {
+  color: #28a745;
+  border-color: #28a745;
+}
+
+.grid-success-overlay {
+  pointer-events: none; /* Allow clicks to pass through to the grid */
+  background: rgba(255, 255, 255, 0.95);
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(20px); }
+  20% { opacity: 1; transform: translateY(0); }
+  80% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
 }
 
 /* Demo Loading State */
