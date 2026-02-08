@@ -6,8 +6,8 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useCloudKitSync } from '@/hooks/useCloudKitSync';
-import { ConflictResolution, ConflictStrategy } from '@/services/CloudKitSyncAdapter';
+import { useCloudKitSync } from '@/hooks/system/useCloudKitSync';
+import { ConflictResolution, ConflictStrategy, type ConflictEvent } from '@/services/CloudKitSyncAdapter';
 import { cn } from '@/lib/utils';
 
 // Component props
@@ -314,7 +314,7 @@ export function SyncStatusIndicator({
             Conflicts Requiring Resolution ({conflicts.length})
           </h4>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {conflicts.map(conflict => (
+            {conflicts.map((conflict: ConflictEvent) => (
               <div
                 key={conflict.id}
                 className="p-3 border border-orange-200 bg-orange-50 rounded-lg"

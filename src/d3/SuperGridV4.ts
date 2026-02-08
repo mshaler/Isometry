@@ -207,8 +207,8 @@ export class SuperGridV4 {
     });
 
     // Build axis ranges
-    const xValues = [...new Set(values.map(row => row[colIndices.x]))].sort();
-    const yValues = [...new Set(values.map(row => row[colIndices.y]))].sort();
+    const xValues = [...new Set(values.map((row: any) => row[colIndices.x]))].sort();
+    const yValues = [...new Set(values.map((row: any) => row[colIndices.y]))].sort();
 
     const xAxisData: AxisData = {
       field: xField,

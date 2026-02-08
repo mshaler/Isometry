@@ -328,7 +328,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         .superstack-demo {
           display: flex;
           flex-direction: column;

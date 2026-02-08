@@ -17,6 +17,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { CoordinateSystem, OriginPattern } from '../types/coordinates';
 import type { ViewAxisMapping } from '../types/views';
+import { ViewType } from '../types/views';
 import type { PAFVState } from '../types/pafv';
 import type { SuperDynamicConfig } from '../types/supergrid';
 import { useDragDrop } from '../hooks/ui/useDragDrop';
@@ -407,10 +408,13 @@ export function MiniNavEnhanced({
         <section className="mininav-section">
           <h2 className="mininav-section-title">View</h2>
           <ViewSwitcher
-            currentView={pafvState.viewMode}
+            currentView={pafvState.viewMode === 'grid' ? ViewType.SUPERGRID : ViewType.LIST}
             onViewChange={(mode) => {
-              if (mode === 'grid' || mode === 'list') {
-                onPAFVChange({ ...pafvState, viewMode: mode });
+              // Map ViewType to PAFVState viewMode
+              if (mode === ViewType.SUPERGRID) {
+                onPAFVChange({ ...pafvState, viewMode: 'grid' });
+              } else if (mode === ViewType.LIST) {
+                onPAFVChange({ ...pafvState, viewMode: 'list' });
               }
             }}
           />

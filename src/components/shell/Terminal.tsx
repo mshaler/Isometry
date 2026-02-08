@@ -38,7 +38,7 @@ export function Terminal({
     workingDirectory: initialDirectory,
     shell,
     onCommand,
-    onNavigateHistory: (direction) => {
+    onNavigateHistory: (direction: 'up' | 'down') => {
       // TODO: Implement command history
       console.log('Navigate history:', direction);
       return null;

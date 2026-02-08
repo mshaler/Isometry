@@ -15,7 +15,7 @@
 
 import React, { useMemo, useCallback } from 'react';
 import { usePAFV } from '@/hooks/usePAFV';
-import type { LATCHAxis } from '@/types/pafv';
+import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import type { Node } from '@/types/node';
 
 interface SuperStackProps {
@@ -65,12 +65,12 @@ export function SuperStack({
 
   // Extract active axis mappings for this orientation
   const activeMappings = useMemo(() => {
-    const mappings = pafvState.mappings.filter(m =>
+    const mappings = pafvState.mappings.filter((m: AxisMapping) =>
       (orientation === 'horizontal' && (m.plane === 'x' || m.plane === 'color')) ||
       (orientation === 'vertical' && (m.plane === 'y' || m.plane === 'size'))
     );
 
-    return mappings.slice(0, maxLevels).sort((a, b) => {
+    return mappings.slice(0, maxLevels).sort((a: AxisMapping, b: AxisMapping) => {
       // Sort by priority: x/y first, then color/size
       const priorityA = a.plane === 'x' || a.plane === 'y' ? 0 : 1;
       const priorityB = b.plane === 'x' || b.plane === 'y' ? 0 : 1;
@@ -85,7 +85,7 @@ export function SuperStack({
     // Group nodes by hierarchy levels
     const levels: HeaderLevel[] = [];
 
-    activeMappings.forEach((mapping, levelIndex) => {
+    activeMappings.forEach((mapping: AxisMapping, levelIndex: number) => {
       const level: HeaderLevel = {
         level: levelIndex,
         axis: mapping.axis,

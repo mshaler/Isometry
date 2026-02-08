@@ -33,8 +33,8 @@ export function useAllTags() {
     `,
     [],
     {
-      transform: (rows) =>
-        rows.map((row) => ({
+      transform: (rows: Record<string, unknown>[]) =>
+        rows.map((row: Record<string, unknown>) => ({
           tag: row.tag as string,
           count: row.count as number,
         })),
@@ -43,13 +43,13 @@ export function useAllTags() {
 
   // Extract just the tag names
   const tags = useMemo(() => {
-    return data?.map((row) => row.tag) || [];
+    return data?.map((row: { tag: string; count: number }) => row.tag) || [];
   }, [data]);
 
   // Create a Map of tag counts
   const tagCounts = useMemo(() => {
     const map = new Map<string, number>();
-    data?.forEach((row) => {
+    data?.forEach((row: { tag: string; count: number }) => {
       map.set(row.tag, row.count);
     });
     return map;

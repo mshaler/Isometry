@@ -21,20 +21,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [activeApp, setActiveApp] = useURLState<AppName>(
     'app',
     'Demo',
-    (v) => v,
-    (s) => s as AppName
+    (v: AppName) => v,
+    (s: string) => s as AppName
   );
   const [activeView, setActiveView] = useURLState<ViewName>(
     'view',
     'SuperGrid',
-    (v) => v,
-    (s) => s as ViewName
+    (v: ViewName) => v,
+    (s: string) => s as ViewName
   );
   const [activeDataset, setActiveDataset] = useURLState<DatasetName>(
     'dataset',
     'Notes',
-    (v) => v,
-    (s) => s as DatasetName
+    (v: DatasetName) => v,
+    (s: string) => s as DatasetName
   );
 
   return (

@@ -22,7 +22,7 @@ import { useFilteredNodes } from '@/hooks/useFilteredNodes';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { usePAFV } from '@/hooks/usePAFV';
 import type { Node } from '@/types/node';
-// import type { LATCHAxis } from '@/types/pafv';
+import type { AxisMapping } from '@/types/pafv';
 import type { OriginPattern } from '@/types/coordinates';
 import type { ZoomTransform } from '@/hooks/visualization/useD3Zoom';
 
@@ -103,8 +103,8 @@ export function SuperGridView({
   const primaryError = renderMode === 'canvas' ? queryError : filterError;
 
   // Extract current axis mappings (fallback to dynamic axes if PAFV not configured)
-  const xMapping = pafvState.mappings.find(m => m.plane === 'x');
-  const yMapping = pafvState.mappings.find(m => m.plane === 'y');
+  const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
+  const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
 
   const currentXAxis = xMapping?.axis || 'category';
   const currentXFacet = xMapping?.facet || 'folder';

@@ -11,7 +11,7 @@ import { UnifiedApp } from './components/UnifiedApp';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { NotificationSystem } from './components/ui/NotificationSystem';
-import { CacheInvalidationProvider } from './hooks/useCacheInvalidation';
+import { CacheInvalidationProvider } from './hooks/database/useCacheInvalidation';
 import { LiveDataProvider } from './contexts/LiveDataContext';
 import { SuperGridDemo } from './components/SuperGridDemo';
 import { CardOverlayProvider } from './state/CardOverlayContext';

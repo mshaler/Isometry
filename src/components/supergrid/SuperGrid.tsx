@@ -20,7 +20,7 @@ import { SuperStack } from './SuperStack';
 import { usePAFV } from '@/hooks/usePAFV';
 import { useSQLiteQuery } from '@/hooks/useSQLiteQuery';
 import type { Node } from '@/types/node';
-import type { LATCHAxis } from '@/types/pafv';
+import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import './SuperStack.css';
 import './SuperGrid.css';
 
@@ -71,8 +71,8 @@ export function SuperGrid({
 
   // Determine grid layout based on PAFV mappings and mode
   const gridLayout = useMemo(() => {
-    const xMapping = pafvState.mappings.find(m => m.plane === 'x');
-    const yMapping = pafvState.mappings.find(m => m.plane === 'y');
+    const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
+    const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
 
     return {
       hasColumns: !!xMapping,
@@ -93,7 +93,7 @@ export function SuperGrid({
     const columnValues = new Set<string>();
     const rowValues = new Set<string>();
 
-    nodes.forEach(node => {
+    nodes.forEach((node: Node) => {
       let colKey = 'default';
       let rowKey = 'default';
 
@@ -223,7 +223,7 @@ export function SuperGrid({
         >
           {gridLayout.effectiveMode === 'gallery' ? (
             // Gallery mode: icon view
-            nodes.map(node => (
+            nodes.map((node: Node) => (
               <div
                 key={node.id}
                 className="supergrid__cell supergrid__cell--gallery"

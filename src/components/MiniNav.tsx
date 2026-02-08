@@ -12,6 +12,7 @@
 
 import type { CoordinateSystem, OriginPattern } from '../types/coordinates';
 import type { PAFVState } from '../types/pafv';
+import { ViewType } from '../types/views';
 import ViewSwitcher from './ViewSwitcher';
 import AxisNavigator from './AxisNavigator';
 import OriginPatternSelector from './OriginPatternSelector';
@@ -69,11 +70,13 @@ export function MiniNav({
         <section className="mininav-section">
           <h2 className="mininav-section-title">View</h2>
           <ViewSwitcher
-            currentView={pafvState.viewMode}
+            currentView={pafvState.viewMode === 'grid' ? ViewType.SUPERGRID : ViewType.LIST}
             onViewChange={(mode) => {
-              // Only update if it's a valid PAFV view mode (grid or list)
-              if (mode === 'grid' || mode === 'list') {
-                onPAFVChange({ ...pafvState, viewMode: mode });
+              // Map ViewType to PAFVState viewMode
+              if (mode === ViewType.SUPERGRID) {
+                onPAFVChange({ ...pafvState, viewMode: 'grid' });
+              } else if (mode === ViewType.LIST) {
+                onPAFVChange({ ...pafvState, viewMode: 'list' });
               }
             }}
           />

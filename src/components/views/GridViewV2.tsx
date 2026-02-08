@@ -18,6 +18,7 @@ import { usePAFV } from '@/hooks/usePAFV';
 import { D3ViewWrapper } from '@/d3/components/D3ViewWrapper';
 import { nodeToCardValue } from '@/types/lpg';
 import type { Node } from '@/types/node';
+import type { AxisMapping } from '@/types/pafv';
 import type { NodeValue, CanvasDimensions } from '@/types/lpg';
 import type { D3ViewCallbacks } from '@/d3/components/D3ViewWrapper';
 
@@ -80,8 +81,8 @@ export function GridViewV2({ data, onNodeClick }: GridViewV2Props) {
   const { state: pafvState } = usePAFV();
 
   // Get axis assignments from PAFV mappings
-  const xAxisMapping = pafvState.mappings.find(m => m.plane === 'x');
-  const yAxisMapping = pafvState.mappings.find(m => m.plane === 'y');
+  const xAxisMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
+  const yAxisMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
   const xAxis = xAxisMapping?.facet || 'year';
   const yAxis = yAxisMapping?.facet || 'folder';
 

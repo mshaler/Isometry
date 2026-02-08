@@ -4,6 +4,7 @@ import { usePAFV } from '../../hooks/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
+import type { AxisMapping } from '../../types/pafv';
 import type { D3GridViewProps } from '../../types/d3-types';
 
 export type { D3GridViewProps };
@@ -273,7 +274,7 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
 
   // Calculate axis summary for display from PAFV state
   const axisSummary = pafvContext.state.mappings.length > 0
-    ? pafvContext.state.mappings.map(m => `${m.plane}:${m.facet}`).join(' × ')
+    ? pafvContext.state.mappings.map((m: AxisMapping) => `${m.plane}:${m.facet}`).join(' × ')
     : 'No axes configured';
 
   // Handle loading and error states

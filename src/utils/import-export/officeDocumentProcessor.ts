@@ -605,10 +605,10 @@ export class OfficeDocumentProcessor {
     }
 
     // Otherwise, treat as simple text data
-    const lines = content.split('\n').filter(line => line.trim());
+    const lines = content.split('\n').filter((line: string) => line.trim());
     return [
       ['Content'],
-      ...lines.map(line => [line])
+      ...lines.map((line: string) => [line])
     ];
   }
 

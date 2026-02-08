@@ -436,7 +436,7 @@ async function testEnvironmentSecurity(): Promise<SecurityTestResult[]> {
       });
 
       // Add warnings as separate results
-      validation.warnings.forEach(warning => {
+      validation.warnings.forEach((warning: string) => {
         results.push({
           testName: 'Environment Security Warning',
           passed: true,

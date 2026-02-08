@@ -533,7 +533,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
               <div>
                 <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Alerts</h4>
                 <div className="space-y-2">
-                  {alerts.slice(-3).map(alert => renderAlertBadge(alert))}
+                  {alerts.slice(-3).map((alert: PerformanceAlert) => renderAlertBadge(alert))}
                 </div>
               </div>
             )}
@@ -759,7 +759,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
             {/* Alerts List */}
             {alerts.length > 0 ? (
               <div className="space-y-3">
-                {alerts.map((alert, index) => (
+                {alerts.map((alert: PerformanceAlert, index: number) => (
                   <div key={index} className="bg-white rounded-lg shadow p-4 border">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
