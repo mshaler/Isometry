@@ -63,6 +63,7 @@ interface KanbanLayout {
  * Pure D3 kanban renderer implementation
  */
 export class KanbanRenderer implements ViewRenderer {
+  private container: HTMLElement | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private kanbanGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   private columnsGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
@@ -91,6 +92,7 @@ export class KanbanRenderer implements ViewRenderer {
    */
   render(container: HTMLElement, data: Node[], config: ViewConfig): void {
     try {
+      this.container = container;
       this.config = config;
 
       // Update layout from config

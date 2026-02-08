@@ -50,6 +50,7 @@ interface ListLayout {
  * Pure D3 list renderer implementation
  */
 export class ListRenderer implements ViewRenderer {
+  private container: HTMLElement | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private listGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
   private contentGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
@@ -75,6 +76,7 @@ export class ListRenderer implements ViewRenderer {
    */
   render(container: HTMLElement, data: Node[], config: ViewConfig): void {
     try {
+      this.container = container;
       this.config = config;
 
       // Update layout from config
