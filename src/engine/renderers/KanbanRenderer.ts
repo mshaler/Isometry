@@ -474,7 +474,10 @@ export class KanbanRenderer implements ViewRenderer {
 
     // Priority indicator (for high priority items)
     cardEnter
-      .filter(d => d.node.priority && d.node.priority > 1)
+      .filter(d => {
+        const priority = d.node.priority;
+        return typeof priority === 'number' && priority > 1;
+      })
       .append('circle')
       .attr('class', 'priority-indicator')
       .attr('cx', d => d.width - 15)
@@ -668,7 +671,7 @@ export class KanbanRenderer implements ViewRenderer {
 
         this.config?.eventHandlers?.onNodeHover?.(cardData.node, { x: cardData.x, y: cardData.y });
       })
-      .on('mouseleave', (event, d) => {
+      .on('mouseleave', (event, _d) => {
         // Remove highlight
         d3.select(event.currentTarget)
           .select('.card-background')

@@ -496,7 +496,7 @@ export class ListRenderer implements ViewRenderer {
 
         this.config?.eventHandlers?.onNodeHover?.(itemData.node, { x: itemData.x, y: itemData.y });
       })
-      .on('mouseleave', (event, d) => {
+      .on('mouseleave', (event, _d) => {
         // Remove highlight
         d3.select(event.currentTarget)
           .select('.card-background')

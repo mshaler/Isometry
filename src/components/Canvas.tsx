@@ -1,35 +1,26 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
 import { useCanvasPerformance } from '../hooks/performance/useCanvasPerformance';
-import { RealTimeRenderer } from './performance/RealTimeRenderer';
 import DataFlowMonitor from './DataFlowMonitor';
-import { SuperGridView } from './SuperGridView';
-import {
-  ListView,
-  GridView,
-  KanbanView,
-  TimelineView,
-  CalendarView,
-  ChartsView,
-  NetworkView,
-  TreeView,
-} from './views';
-import { D3GridView } from './views/D3GridView';
-import { D3ListView } from './views/D3ListView';
 import { FilterBar } from './FilterBar';
 import { useLiveQuery } from '../hooks/database/useLiveQuery';
+import { IsometryViewEngine } from '../engine/IsometryViewEngine';
+import { DEFAULT_VIEW_CONFIG } from '../engine/contracts/ViewConfig';
+import type { ViewConfig, ViewType } from '../engine/contracts/ViewConfig';
 import type { Node } from '@/types/node';
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [useD3Mode, setUseD3Mode] = useState(false); // Toggle for D3 vs CSS rendering
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
-  const [performanceQualityMode, setPerformanceQualityMode] = useState<'high' | 'medium' | 'low'>('high');
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
+
+  // ViewEngine refs and state
+  const containerRef = useRef<HTMLDivElement>(null);
+  const engineRef = useRef<IsometryViewEngine | null>(null);
 
   // Base SQL query for database access
   const baseNodeSql = "SELECT * FROM nodes WHERE deleted_at IS NULL";
@@ -46,10 +37,9 @@ export function Canvas() {
     }
   });
 
-  // Performance monitoring
+  // Performance monitoring (unified for all rendering)
   const {
     metrics,
-    isMonitoring,
     startMonitoring,
     stopMonitoring,
     recordRender
@@ -58,15 +48,7 @@ export function Canvas() {
     enableAutoOptimize: true,
     onPerformanceWarning: (issue, severity) => {
       console.warn(`[Canvas Performance] ${severity.toUpperCase()}: ${issue}`);
-
-      // Auto-adjust quality mode based on performance
-      if (severity === 'critical' && performanceQualityMode === 'high') {
-        setPerformanceQualityMode('medium');
-        console.log('[Canvas] Automatically reduced quality to medium');
-      } else if (severity === 'critical' && performanceQualityMode === 'medium') {
-        setPerformanceQualityMode('low');
-        console.log('[Canvas] Automatically reduced quality to low');
-      }
+      // Performance adjustments can be handled here if needed
     }
   });
 
@@ -75,106 +57,90 @@ export function Canvas() {
     console.log('Node clicked:', node);
   }, []);
 
-  // Start/stop performance monitoring based on D3 mode
+  // Map activeView to ViewType
+  const mapActiveViewToViewType = useCallback((view: string): ViewType => {
+    switch (view) {
+      case 'List': return 'list';
+      case 'Kanban': return 'kanban';
+      case 'Grid':
+      case 'Gallery':
+      case 'SuperGrid':
+      default: return 'grid';
+    }
+  }, []);
+
+  // Create ViewConfig from current state
+  const createViewConfig = useCallback((viewType: ViewType, _data: Node[]): ViewConfig => {
+    return {
+      ...DEFAULT_VIEW_CONFIG,
+      viewType,
+      eventHandlers: {
+        onNodeClick: handleNodeClick,
+        onNodeHover: (node, position) => {
+          // Handle hover events if needed
+          console.log('Node hover:', node?.name, position);
+        }
+      },
+      performance: {
+        maxNodes: 10000,
+        enableVirtualization: true,
+        targetFps: 60
+      },
+      styling: {
+        ...DEFAULT_VIEW_CONFIG.styling,
+        colorScheme: theme === 'NeXTSTEP' ? 'light' : 'light' // Could add dark mode support
+      }
+    };
+  }, [handleNodeClick, theme]);
+
+  // Initialize ViewEngine on mount
   useEffect(() => {
-    if (useD3Mode) {
-      startMonitoring();
-    } else {
-      stopMonitoring();
+    if (!engineRef.current) {
+      engineRef.current = new IsometryViewEngine();
+      startMonitoring(); // Start monitoring for unified rendering
     }
 
     return () => {
+      if (engineRef.current) {
+        engineRef.current.destroy();
+        engineRef.current = null;
+      }
       stopMonitoring();
     };
-  }, [useD3Mode, startMonitoring, stopMonitoring]);
+  }, [startMonitoring, stopMonitoring]);
 
-  // Record render performance for D3 mode
+  // Render when data or activeView changes
   useEffect(() => {
-    if (useD3Mode) {
-      const renderStartTime = performance.now();
+    if (!containerRef.current || !engineRef.current || !nodes || nodes.length === 0) {
+      return;
+    }
 
-      // Simulate render completion in next tick
-      requestAnimationFrame(() => {
+    const renderStartTime = performance.now();
+    const viewType = mapActiveViewToViewType(activeView);
+    const config = createViewConfig(viewType, nodes);
+
+    // Execute ViewEngine render
+    engineRef.current.render(containerRef.current, nodes, config)
+      .then(() => {
         const renderTime = performance.now() - renderStartTime;
-        recordRender(renderTime, 0); // Node count will be tracked by individual components
+        recordRender(renderTime, nodes.length);
+        console.log(`[Canvas] Rendered ${viewType} view with ${nodes.length} nodes in ${renderTime.toFixed(2)}ms`);
+      })
+      .catch((error) => {
+        console.error('[Canvas] ViewEngine render failed:', error);
       });
-    }
-  }, [useD3Mode, recordRender]);
 
-  // Render the appropriate view based on activeView
+  }, [nodes, activeView, mapActiveViewToViewType, createViewConfig, recordRender]);
+
+  // Simple container for ViewEngine rendering
   const renderView = () => {
-
-    // D3 Mode - Use D3 Canvas rendering with performance optimization
-    if (useD3Mode) {
-      const d3View = (() => {
-        switch (activeView) {
-          case 'List':
-            return <D3ListView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
-
-          case 'SuperGrid':
-            return <SuperGridView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
-
-          case 'Gallery':
-          case 'Grid':
-          default:
-            return <D3GridView sql={baseNodeSql} queryParams={[]} onNodeClick={handleNodeClick} />;
-        }
-      })();
-
-      return (
-        <RealTimeRenderer
-          maxNodes={performanceQualityMode === 'high' ? 10000 : performanceQualityMode === 'medium' ? 5000 : 2500}
-          targetFps={60}
-          enableLOD={true}
-          enableProgressiveRendering={true}
-          onPerformanceChange={(perfMetrics) => {
-            // Update performance monitoring from RealTimeRenderer
-            if (isMonitoring) {
-              recordRender(perfMetrics.renderTime, perfMetrics.nodeCount);
-            }
-          }}
-          debug={process.env.NODE_ENV === 'development'}
-          className="h-full"
-        >
-          {d3View}
-        </RealTimeRenderer>
-      );
-    }
-
-    // CSS Mode - Use existing CSS-based components
-    switch (activeView) {
-      case 'List':
-        return <ListView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
-
-      case 'SuperGrid':
-        return <SuperGridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
-
-      case 'Gallery':
-      case 'Grid':
-        return <GridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
-
-      case 'Kanban':
-        return <KanbanView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      case 'Timeline':
-        return <TimelineView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      case 'Calendar':
-        return <CalendarView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      case 'Charts':
-        return <ChartsView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      case 'Graphs':
-        return <NetworkView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      case 'Tree':
-        return <TreeView data={nodes || []} onNodeClick={handleNodeClick} />;
-
-      default:
-        // Default to Grid view for MVP
-        return <GridView sql={baseNodeSql} onNodeClick={handleNodeClick} />;
-    }
+    return (
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        style={{ minHeight: '400px' }}
+      />
+    );
   };
 
   return (
@@ -183,67 +149,30 @@ export function Canvas() {
         ? 'bg-white border-t-2 border-l-2 border-[#707070] border-b-2 border-r-2 border-b-[#e8e8e8] border-r-[#e8e8e8]'
         : 'bg-white rounded-lg shadow-lg border border-gray-200'
     }`}>
-      {/* Filter Bar with D3 Mode Toggle */}
+      {/* Filter Bar with Performance Controls */}
       <div className="flex items-center">
         <div className="flex-1">
           <FilterBar />
         </div>
 
-        {/* Performance and Mode Controls */}
+        {/* Performance Controls (unified for all rendering) */}
         {process.env.NODE_ENV === 'development' && (
           <div className="flex items-center gap-2 px-3 py-2">
-            {/* D3 Mode Toggle */}
+            {/* Performance Monitor Toggle */}
             <button
-              onClick={() => setUseD3Mode(!useD3Mode)}
-              className={`px-3 py-1 text-xs font-medium rounded ${
-                useD3Mode
-                  ? theme === 'NeXTSTEP'
-                    ? 'bg-[#0066cc] text-white'
-                    : 'bg-blue-600 text-white'
-                  : theme === 'NeXTSTEP'
-                    ? 'bg-[#e8e8e8] text-gray-700 hover:bg-[#d8d8d8]'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
+              className={`px-2 py-1 text-xs rounded ${
+                showPerformanceMonitor
+                  ? 'bg-green-100 text-green-700 border border-green-300'
+                  : 'bg-gray-100 text-gray-600 border border-gray-300'
               }`}
-              title={useD3Mode ? 'Switch to CSS rendering' : 'Switch to D3 rendering'}
+              title="Toggle performance monitor"
             >
-              {useD3Mode ? 'D3' : 'CSS'}
+              📊 {metrics?.fps ? Math.round(metrics.fps) + ' FPS' : 'Monitor'}
             </button>
 
-            {/* Performance Quality Mode */}
-            {useD3Mode && (
-              <select
-                value={performanceQualityMode}
-                onChange={(e) => setPerformanceQualityMode(e.target.value as 'high' | 'medium' | 'low')}
-                className={`px-2 py-1 text-xs rounded border ${
-                  theme === 'NeXTSTEP'
-                    ? 'bg-white border-[#808080]'
-                    : 'bg-white border-gray-300'
-                }`}
-                title="Performance quality mode"
-              >
-                <option value="high">High Quality</option>
-                <option value="medium">Medium Quality</option>
-                <option value="low">Low Quality</option>
-              </select>
-            )}
-
-            {/* Performance Monitor Toggle */}
-            {useD3Mode && (
-              <button
-                onClick={() => setShowPerformanceMonitor(!showPerformanceMonitor)}
-                className={`px-2 py-1 text-xs rounded ${
-                  showPerformanceMonitor
-                    ? 'bg-green-100 text-green-700 border border-green-300'
-                    : 'bg-gray-100 text-gray-600 border border-gray-300'
-                }`}
-                title="Toggle performance monitor"
-              >
-                📊 {metrics?.fps ? Math.round(metrics.fps) + ' FPS' : 'Monitor'}
-              </button>
-            )}
-
             {/* Performance Summary */}
-            {useD3Mode && metrics && (
+            {metrics && (
               <div className={`flex items-center gap-1 px-2 py-1 text-xs rounded ${
                 metrics.qualityLevel === 'high' ? 'bg-green-100 text-green-700' :
                 metrics.qualityLevel === 'medium' ? 'bg-yellow-100 text-yellow-700' :
@@ -259,6 +188,11 @@ export function Canvas() {
                 <span>{Math.round(metrics.performanceScore)}</span>
               </div>
             )}
+
+            {/* View Type Indicator */}
+            <div className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
+              {mapActiveViewToViewType(activeView).toUpperCase()} View
+            </div>
           </div>
         )}
       </div>
@@ -316,7 +250,7 @@ export function Canvas() {
       </div>
 
       {/* Performance Monitor Overlay */}
-      {useD3Mode && showPerformanceMonitor && (
+      {showPerformanceMonitor && (
         <DataFlowMonitor
           isVisible={showPerformanceMonitor}
           position="bottom-right"
