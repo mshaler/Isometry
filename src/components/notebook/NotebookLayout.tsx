@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { CaptureComponent } from './CaptureComponent';
-import { Terminal } from '../shell/Terminal';
+import { ShellComponent } from './ShellComponent';
 import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
@@ -177,9 +177,9 @@ function NotebookLayoutInner() {
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
-        <ErrorBoundary level="feature" name="Terminal">
+        <ErrorBoundary level="feature" name="ShellComponent">
           <div ref={shellRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
-            <Terminal className="h-full" />
+            <ShellComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="PreviewComponent">
@@ -201,9 +201,9 @@ function NotebookLayoutInner() {
           </div>
         </ErrorBoundary>
         <div className="flex-1 flex gap-2 min-h-[300px]">
-          <ErrorBoundary level="feature" name="Terminal">
+          <ErrorBoundary level="feature" name="ShellComponent">
             <div ref={shellRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
-              <Terminal className="h-full" />
+              <ShellComponent className="h-full" />
             </div>
           </ErrorBoundary>
           <ErrorBoundary level="feature" name="PreviewComponent">
@@ -238,15 +238,15 @@ function NotebookLayoutInner() {
       {/* Capture-Shell Divider */}
       {renderDivider('capture-shell', 'w-1 h-full')}
 
-      {/* Terminal Component */}
-      <ErrorBoundary level="feature" name="Terminal">
+      {/* Shell Component */}
+      <ErrorBoundary level="feature" name="ShellComponent">
         <div
           ref={shellRef}
           style={{ width: `${componentLayouts.shell.width}%` }}
           className="min-w-[250px] relative focusable-component"
           tabIndex={0}
         >
-          <Terminal className="h-full" />
+          <ShellComponent className="h-full" />
         </div>
       </ErrorBoundary>
 

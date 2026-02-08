@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Terminal, Minimize2, Maximize2, Circle } from 'lucide-react';
+import { Terminal, Minimize2, Maximize2, Circle, Bot, Code, Settings } from 'lucide-react';
 import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 
@@ -12,8 +12,11 @@ interface ShellComponentProps {
   className?: string;
 }
 
+type ShellTab = 'claude-ai' | 'claude-code' | 'gsd-gui';
+
 function ShellComponentInner({ className }: ShellComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
+  const [activeTab, setActiveTab] = useState<ShellTab>('claude-code');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<
     'configured' | 'not-configured'
@@ -22,6 +25,16 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   const { executeCommand: executeRouterCommand, navigateHistory, isExecuting } = useCommandRouter();
   const { getActiveCardContext } = useProjectContext();
   const { isConfigured: isClaudeConfigured } = useClaudeAPI();
+
+  // Tab definitions
+  const tabs: Array<{ id: ShellTab; icon: typeof Bot; label: string; description: string }> = [
+    { id: 'claude-ai', icon: Bot, label: 'Claude AI', description: 'AI assistant with MCP' },
+    { id: 'claude-code', icon: Terminal, label: 'Terminal', description: 'Command execution' },
+    { id: 'gsd-gui', icon: Settings, label: 'GSD GUI', description: 'Getting Shit Done interface' }
+  ];
+
+  // Get current tab info
+  const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[1]; // Default to claude-code
 
   // Format output for terminal display
   const formatTerminalOutput = (output: string, type: 'system' | 'claude'): string => {
@@ -70,9 +83,9 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     onNavigateHistory: navigateHistory
   });
 
-  // Initialize terminal when component mounts
+  // Initialize terminal when component mounts and claude-code tab is active
   useEffect(() => {
-    if (!isMinimized && terminalContainerRef.current) {
+    if (!isMinimized && activeTab === 'claude-code' && terminalContainerRef.current) {
       const containerId = 'terminal-container';
       terminalContainerRef.current.id = containerId;
 
@@ -98,7 +111,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
         window.removeEventListener('resize', handleResize);
       };
     }
-  }, [isMinimized]);
+  }, [isMinimized, activeTab]);
 
   // Update connection status based on terminal state
   useEffect(() => {
@@ -149,9 +162,11 @@ function ShellComponentInner({ className }: ShellComponentProps) {
       <div className="flex items-center justify-between p-2 bg-gray-800 rounded-t-lg border-b border-gray-700">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <Terminal size={16} className="text-green-400" />
-            <span className="font-medium text-sm text-gray-200">Shell</span>
+            <currentTab.icon size={16} className="text-green-400" />
+            <span className="font-medium text-sm text-gray-200">{currentTab.label}</span>
           </div>
+          <span className="text-xs text-gray-500">•</span>
+          <span className="text-xs text-gray-400">{currentTab.description}</span>
           <div className="flex items-center gap-2">
             <Circle size={8} className={`fill-current ${statusColors[connectionStatus]}`} />
             <span className="text-xs text-gray-400 capitalize">{connectionStatus}</span>
@@ -168,13 +183,59 @@ function ShellComponentInner({ className }: ShellComponentProps) {
         </div>
       </div>
 
-      {/* Terminal Area */}
+      {/* Tab Bar */}
+      <div className="border-b border-gray-700 flex bg-gray-850">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-3 py-2 text-sm border-r border-gray-700 transition-colors ${
+                isActive
+                  ? 'bg-gray-700 text-green-400 font-medium'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+              }`}
+              title={tab.description}
+            >
+              <Icon size={14} />
+              <span>{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content Area */}
       <div className="flex-1 flex flex-col">
-        <div
-          ref={terminalContainerRef}
-          className="flex-1 min-h-0"
-          style={{ height: '300px' }} // Minimum height for terminal
-        />
+        {activeTab === 'claude-code' ? (
+          /* Terminal Tab - Direct command execution */
+          <div
+            ref={terminalContainerRef}
+            className="flex-1 min-h-0"
+            style={{ height: '300px' }} // Minimum height for terminal
+          />
+        ) : activeTab === 'claude-ai' ? (
+          /* Claude AI Tab - MCP Assistant */
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <Bot size={48} className="mx-auto mb-3 text-gray-600" />
+              <div className="font-medium mb-1 text-gray-300">Claude AI Assistant</div>
+              <div className="text-sm mb-3">AI-powered assistance with MCP integration</div>
+              <div className="text-xs">Coming soon: Direct AI conversation interface</div>
+            </div>
+          </div>
+        ) : (
+          /* GSD GUI Tab - Getting Shit Done interface */
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <Settings size={48} className="mx-auto mb-3 text-gray-600" />
+              <div className="font-medium mb-1 text-gray-300">GSD GUI</div>
+              <div className="text-sm mb-3">Visual interface for Getting Shit Done workflows</div>
+              <div className="text-xs">Coming soon: Interactive task management</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Status Bar */}
@@ -206,12 +267,22 @@ function ShellComponentInner({ className }: ShellComponentProps) {
             )}
           </div>
           <div className="text-gray-400">
-            {isExecuting ? (
-              <span className="text-yellow-400">Executing...</span>
-            ) : connectionStatus === 'connected' ? (
-              'Ready for commands'
+            {activeTab === 'claude-code' ? (
+              isExecuting ? (
+                <span className="text-yellow-400">Executing...</span>
+              ) : connectionStatus === 'connected' ? (
+                'Ready for commands'
+              ) : (
+                'Initializing...'
+              )
+            ) : activeTab === 'claude-ai' ? (
+              claudeConnectionStatus === 'configured' ? (
+                <span className="text-green-400">AI Ready</span>
+              ) : (
+                'Configure AI settings'
+              )
             ) : (
-              'Initializing...'
+              'GSD Interface Ready'
             )}
           </div>
         </div>
