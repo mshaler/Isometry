@@ -123,7 +123,7 @@ export function PAFVViewRendererDemo() {
             <div>
               <label className="block text-sm font-medium mb-2">X-Axis (Columns)</label>
               <select
-                value={pafvState.mappings.find(m => m.plane === 'x')?.facet || ''}
+                value={pafvState.mappings.find((m: AxisMapping) => m.plane === 'x')?.facet || ''}
                 onChange={(e) => {
                   if (e.target.value) {
                     handleAxisMapping('x', e.target.value);
@@ -146,7 +146,7 @@ export function PAFVViewRendererDemo() {
             <div>
               <label className="block text-sm font-medium mb-2">Y-Axis (Rows)</label>
               <select
-                value={pafvState.mappings.find(m => m.plane === 'y')?.facet || ''}
+                value={pafvState.mappings.find((m: AxisMapping) => m.plane === 'y')?.facet || ''}
                 onChange={(e) => {
                   if (e.target.value) {
                     handleAxisMapping('y', e.target.value);
@@ -172,7 +172,7 @@ export function PAFVViewRendererDemo() {
               <div className="font-medium mb-2">Current Mappings:</div>
               {pafvState.mappings.length > 0 ? (
                 <div className="space-y-1">
-                  {pafvState.mappings.map((mapping, index) => (
+                  {pafvState.mappings.map((mapping: AxisMapping, index: number) => (
                     <div key={index} className="flex items-center gap-2 text-xs">
                       <span className="font-mono bg-gray-200 px-2 py-1 rounded">
                         {mapping.plane.toUpperCase()}

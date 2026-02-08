@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState, type AppName, type ViewName, type DatasetName } from '@/contexts/AppStateContext';
 import { Dropdown, type DropdownOption } from '@/components/ui/Dropdown';
 import { usePAFV } from '@/state/PAFVContext';
-import type { LATCHAxis, Plane } from '@/types/pafv';
+import type { LATCHAxis, Plane, AxisMapping } from '@/types/pafv';
 
 export function Navigator() {
   const { activeApp, activeView, activeDataset, setActiveApp, setActiveView, setActiveDataset } = useAppState();
@@ -104,7 +104,7 @@ function SimplePAFVNavigator() {
 
   const handleAxisToPlane = (axis: LATCHAxis, plane: Plane) => {
     // Remove any existing mapping for this plane first
-    const existingMapping = state.mappings.find(m => m.plane === plane);
+    const existingMapping = state.mappings.find((m: AxisMapping) => m.plane === plane);
     if (existingMapping) {
       removeMapping(plane);
     }
@@ -118,7 +118,7 @@ function SimplePAFVNavigator() {
   };
 
   const getCurrentMapping = (plane: Plane) => {
-    return state.mappings.find(m => m.plane === plane);
+    return state.mappings.find((m: AxisMapping) => m.plane === plane);
   };
 
   return (
@@ -211,7 +211,7 @@ function SimplePAFVNavigator() {
         <div className="mt-3 pt-3 border-t border-gray-300">
           <div className="text-xs text-gray-600">
             Current mappings: {state.mappings.length > 0
-              ? state.mappings.map(m => `${m.plane}:${m.axis}`).join(', ')
+              ? state.mappings.map((m: AxisMapping) => `${m.plane}:${m.axis}`).join(', ')
               : 'None'
             }
           </div>

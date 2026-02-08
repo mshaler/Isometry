@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { SQLiteProvider, useSQLite } from '../db/SQLiteProvider';
 import { contextLogger } from '../utils/logging/dev-logger';
-import { useNodesV4, useFTS5SearchV4, useGraphTraversalV4 } from '../hooks/useSQLiteQuery.v4';
+import { useNodesV4, useFTS5SearchV4, useGraphTraversalV4 } from '../hooks/database/useSQLiteQuery.v4';
+import type { Node } from '../types/node';
 
 /**
  * SQLiteV4Demo - Demonstrates the bridge elimination architecture
@@ -118,7 +119,7 @@ function NodeQueryDemo() {
       <div className="space-y-2">
         <label className="block text-sm font-medium">Nodes ({nodes?.length || 0}):</label>
         <div className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">
-          {nodes?.map(node => (
+          {nodes?.map((node: Node) => (
             <div key={node.id} className="border-b py-1">
               <strong>{node.name}</strong> - {node.folder} ({node.status})
             </div>
@@ -158,7 +159,7 @@ function FTS5SearchDemo() {
       <div className="space-y-2">
         <label className="block text-sm font-medium">Results ({searchResults?.length || 0}):</label>
         <div className="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">
-          {searchResults?.map(node => (
+          {searchResults?.map((node: Node) => (
             <div key={node.id} className="border-b py-1">
               <strong>{node.name}</strong> - {node.content?.substring(0, 100)}...
             </div>

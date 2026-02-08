@@ -58,7 +58,7 @@ function MiniNavDemoInner() {
           });
 
           // Find removed mappings
-          pafv.state.mappings.forEach((mapping) => {
+          pafv.state.mappings.forEach((mapping: AxisMapping) => {
             const key = `${mapping.plane}:${mapping.axis}:${mapping.facet}`;
             if (!newMappingKeys.has(key)) {
               pafv.removeMapping(mapping.plane);
