@@ -4,6 +4,7 @@ import { SQLiteP0GateTest } from './SQLiteP0GateTest';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { NotebookProvider } from './contexts/NotebookContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { ThreeCanvasDemo } from './components/ThreeCanvasDemo';
 
 function App() {
   // TEMP: Test sql.js integration before full integration
@@ -29,8 +30,9 @@ function App() {
     return (
       <ThemeProvider>
         <NotebookProvider>
-          <div className="h-screen bg-gray-50">
+          <div className="h-screen bg-gray-50 relative">
             <NotebookLayout />
+            <ThreeCanvasDemo />
           </div>
         </NotebookProvider>
       </ThemeProvider>
