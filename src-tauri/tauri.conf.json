@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.isometry.supergrid",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "frontendDist": "../public",
+    "devUrl": "http://localhost:5173/tauri-test.html",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
   },
   "app": {
     "windows": [

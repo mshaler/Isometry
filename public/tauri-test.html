@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isometry SuperGrid - Desktop</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: white;
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin: 0;
+            font-weight: 700;
+        }
+        .header p {
+            font-size: 1.2rem;
+            margin: 0.5rem 0;
+            opacity: 0.9;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .card h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+        .card p {
+            margin: 0 0 1rem 0;
+            color: #666;
+            line-height: 1.5;
+        }
+        .features {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .features li {
+            padding: 0.3rem 0;
+            font-size: 0.9rem;
+        }
+        .feature-complete { color: #059669; }
+        .feature-progress { color: #d97706; }
+        .feature-pending { color: #6b7280; }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .progress-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .progress-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        .progress-item h4 {
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+        }
+        .progress-item ul {
+            margin: 0;
+            padding-left: 1rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Isometry SuperGrid</h1>
+            <p>Desktop Application - Tauri Integration Test</p>
+            <div class="status-badge" id="status-badge">
+                🔄 Checking environment...
+            </div>
+        </header>
+
+        <div class="cards">
+            <div class="card">
+                <h2>🚀 Desktop Features</h2>
+                <p>Native desktop integration with Tauri</p>
+                <ul class="features">
+                    <li class="feature-complete" id="feature-desktop">⏳ Native desktop environment</li>
+                    <li class="feature-complete" id="feature-filesystem">⏳ File system access</li>
+                    <li class="feature-complete" id="feature-dialogs">⏳ Native file dialogs</li>
+                    <li class="feature-complete" id="feature-window">⏳ Window management</li>
+                </ul>
+                <div style="space-y: 0.5rem;">
+                    <button class="btn" onclick="testFileDialog()" id="file-dialog-btn" disabled>
+                        Test File Dialog
+                    </button>
+                    <button class="btn" onclick="testSaveFile()" id="file-save-btn" disabled style="margin-left: 0.5rem;">
+                        Test File Save
+                    </button>
+                    <button class="btn" onclick="getAppInfo()" id="app-info-btn" disabled style="margin-left: 0.5rem;">
+                        App Info
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📊 SuperGrid Integration</h2>
+                <p>When complete, this will show the full SuperGrid interface with:</p>
+                <ul class="features">
+                    <li>• LATCH filtering (Location, Alphabet, Time, Category, Hierarchy)</li>
+                    <li>• PAFV spatial projection (Planes → Axes → Facets → Values)</li>
+                    <li>• Interactive data grid with sql.js backend</li>
+                    <li>• Three-canvas notebook integration</li>
+                    <li>• Direct database access (no serialization)</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>🏗️ Architecture</h2>
+                <p>Bridge elimination with direct sql.js access:</p>
+                <ul class="features">
+                    <li>• SQLite compiled to WASM (sql.js)</li>
+                    <li>• D3.js queries database synchronously</li>
+                    <li>• No MessageBridge overhead</li>
+                    <li>• FTS5 full-text search enabled</li>
+                    <li>• Recursive CTEs for graph queries</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h3>Development Progress</h3>
+            <div class="progress-grid">
+                <div class="progress-item">
+                    <h4 class="feature-complete">✅ Phase 1: Foundation</h4>
+                    <ul>
+                        <li>Tauri project initialization</li>
+                        <li>Desktop environment detection</li>
+                        <li>Rust backend setup with plugins</li>
+                        <li>React integration layer</li>
+                        <li>Window configuration</li>
+                    </ul>
+                </div>
+                <div class="progress-item">
+                    <h4 class="feature-progress">🚧 Phase 2: File System</h4>
+                    <ul>
+                        <li>Native file dialogs</li>
+                        <li>.isometry file association</li>
+                        <li>Recent files management</li>
+                        <li>Database persistence</li>
+                        <li>Auto-save functionality</li>
+                    </ul>
+                </div>
+                <div class="progress-item">
+                    <h4 class="feature-pending">📋 Phase 3: SuperGrid</h4>
+                    <ul>
+                        <li>Complete SuperGrid integration</li>
+                        <li>Three-canvas notebook</li>
+                        <li>Performance optimization</li>
+                        <li>Desktop-specific features</li>
+                        <li>Keyboard shortcuts</li>
+                    </ul>
+                </div>
+                <div class="progress-item">
+                    <h4 class="feature-pending">📦 Phase 4: Production</h4>
+                    <ul>
+                        <li>Code signing</li>
+                        <li>Auto-updater</li>
+                        <li>Multi-platform builds</li>
+                        <li>Installer generation</li>
+                        <li>App store distribution</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isDesktop = false;
+
+        async function checkEnvironment() {
+            try {
+                // Check if we're in Tauri
+                if (window.__TAURI_INTERNALS__) {
+                    isDesktop = true;
+                    document.getElementById('status-badge').innerHTML = '✅ Running in Tauri Desktop Environment';
+                    document.getElementById('file-dialog-btn').disabled = false;
+                    document.getElementById('file-save-btn').disabled = false;
+                    document.getElementById('app-info-btn').disabled = false;
+
+                    // Update feature status
+                    const features = ['desktop', 'filesystem', 'dialogs', 'window'];
+                    features.forEach(feature => {
+                        const el = document.getElementById(`feature-${feature}`);
+                        el.textContent = el.textContent.replace('⏳', '✅');
+                        el.className = 'feature-complete';
+                    });
+                } else {
+                    document.getElementById('status-badge').innerHTML = '🌐 Running in Web Browser';
+
+                    // Update feature status
+                    const features = ['desktop', 'filesystem', 'dialogs', 'window'];
+                    features.forEach(feature => {
+                        const el = document.getElementById(`feature-${feature}`);
+                        el.textContent = el.textContent.replace('⏳', '❌');
+                        el.className = 'feature-pending';
+                    });
+                }
+            } catch (error) {
+                console.error('Environment check failed:', error);
+                document.getElementById('status-badge').innerHTML = '❌ Error checking environment';
+            }
+        }
+
+        async function testFileDialog() {
+            if (!isDesktop) {
+                alert('File dialogs only available in desktop mode');
+                return;
+            }
+
+            try {
+                // Try to use Tauri API
+                const result = await window.__TAURI__.core.invoke('open_isometry_file');
+                alert(`File operation result:\n${result}`);
+            } catch (error) {
+                console.error('File dialog error:', error);
+                alert(`Error: ${error.message || error}`);
+            }
+        }
+
+        async function testSaveFile() {
+            if (!isDesktop) {
+                alert('File operations only available in desktop mode');
+                return;
+            }
+
+            try {
+                const testData = JSON.stringify({
+                    timestamp: new Date().toISOString(),
+                    message: 'Test file from Isometry SuperGrid desktop app',
+                    features: ['LATCH filtering', 'PAFV projection', 'sql.js integration']
+                }, null, 2);
+
+                const result = await window.__TAURI__.core.invoke('save_isometry_file', { data: testData });
+                alert(`File save result:\n${result}`);
+            } catch (error) {
+                console.error('File save error:', error);
+                alert(`Error: ${error.message || error}`);
+            }
+        }
+
+        async function getAppInfo() {
+            if (!isDesktop) {
+                alert('App info only available in desktop mode');
+                return;
+            }
+
+            try {
+                const info = await window.__TAURI__.core.invoke('get_app_info');
+                console.log('App info:', info);
+
+                const infoText = `
+App Information:
+- Name: ${info.name}
+- Version: ${info.version}
+- App Data Directory: ${info.app_data_dir}
+- Desktop: ${info.desktop}
+- File System: ${info.capabilities.file_system}
+- Native Dialogs: ${info.capabilities.native_dialogs}
+- Window Management: ${info.capabilities.window_management}
+                `.trim();
+
+                alert(infoText);
+            } catch (error) {
+                console.error('App info error:', error);
+                alert(`Error: ${error.message || error}`);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', checkEnvironment);
+    </script>
+</body>
+</html>
