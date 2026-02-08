@@ -202,7 +202,7 @@ Plans:
   4. User can drag cards to reposition with immediate database persistence
   5. All interactions integrate seamlessly with existing sql.js ↔ D3.js architecture
   6. D3.js queries sql.js directly with zero serialization overhead for all operations
-**Plans**: 5 plans
+**Plans**: 8 plans (5 original + 3 gap closure)
 
 Plans:
 - [x] 35-01-PLAN.md — Card Detail Modal Integration
@@ -210,6 +210,9 @@ Plans:
 - [x] 35-03-PLAN.md — Multi-Select and Keyboard Navigation
 - [x] 35-04-PLAN.md — Drag & Drop with Persistence
 - [x] 35-05-PLAN.md — Header Click LATCH Filtering (Gap Closure)
+- [ ] 35-06-PLAN.md — TypeScript Export/Import Cleanup (LiveDataContext, QueryClient, Logging)
+- [ ] 35-07-PLAN.md — SuperGrid Type Interface Alignment (JanusDensityState, Virtual Grid)
+- [ ] 35-08-PLAN.md — Module Resolution and Service Interface Fixes
 
 #### Phase 36: SuperGrid Headers
 **Goal**: Implement nested PAFV headers with hierarchical spanning across multiple dimension levels
