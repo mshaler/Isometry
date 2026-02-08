@@ -8,7 +8,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useConnection, useConnectionQuality, useOfflineQueue } from '../../context/ConnectionContext';
-import { useLiveDataMetrics } from '../../contexts/LiveDataContext';
+import { useLiveDataMetrics } from '../../hooks/database/useLiveData';
 
 interface ConnectionStatusProps {
   /** Always show status (for debugging/monitoring) */
