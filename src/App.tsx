@@ -5,8 +5,17 @@ import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { NotebookProvider } from './contexts/NotebookContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ThreeCanvasDemo } from './components/ThreeCanvasDemo';
+import { DesktopApp } from './components/desktop/DesktopApp';
+import { useIsDesktop } from './hooks/useTauri';
 
 function App() {
+  const isDesktop = useIsDesktop();
+
+  // If running in Tauri desktop, use desktop app layout
+  if (isDesktop) {
+    return <DesktopApp />;
+  }
+
   // TEMP: Test sql.js integration before full integration
   const testMode = new URLSearchParams(window.location.search).get('test');
 

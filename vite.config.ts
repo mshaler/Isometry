@@ -4,7 +4,8 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: process.env.NODE_ENV === 'production' ? '/Isometry/' : '/',
+  // Prevent TAURI_DEBUG from injecting the production base in development
+  base: process.env.NODE_ENV === 'production' && !process.env.TAURI_DEBUG ? '/Isometry/' : '/',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -98,8 +99,9 @@ export default defineConfig({
     port: 4173,
     host: true,
   },
-  // Enable bundle analysis in development
+  // Enable bundle analysis in development and Tauri support
   define: {
     __DEV__: process.env.NODE_ENV === 'development',
+    global: 'globalThis',
   },
 });
