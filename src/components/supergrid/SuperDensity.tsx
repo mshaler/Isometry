@@ -31,7 +31,7 @@ import { usePAFV } from '@/hooks';
 import { useDatabase } from '@/db/DatabaseContext';
 import { SuperDensityService } from '@/services/SuperDensityService';
 import { LATCHFilterService } from '@/services/LATCHFilterService';
-import { SuperDensityRenderer, type DensityRenderConfig } from '@/d3/SuperDensityRenderer';
+import { SuperDensityRenderer } from '@/d3/SuperDensityRenderer';
 import { JanusDensityControls } from '@/components/JanusDensityControls';
 import type { LATCHAxis } from '@/types/pafv';
 import type { Node } from '@/types/node';
@@ -40,9 +40,9 @@ import type {
   DensityLevel,
   DensityChangeEvent,
   DensityAggregationResult,
-  DensityPerformanceMetrics,
-  DEFAULT_JANUS_DENSITY
+  DensityPerformanceMetrics
 } from '@/types/supergrid';
+import { DEFAULT_JANUS_DENSITY } from '@/types/supergrid';
 
 export interface SuperDensityProps {
   /** Current nodes being displayed */
@@ -95,7 +95,7 @@ export function SuperDensity({
   useEffect(() => {
     if (!densityServiceRef.current) {
       densityServiceRef.current = new SuperDensityService(
-        { execute },
+        { execute: execute as <T = Record<string, unknown>>(sql: string, params?: unknown[]) => T[] },
         filterServiceRef.current,
         {
           performanceTarget: 100,

@@ -17,7 +17,8 @@ import { SuperGrid } from './supergrid/SuperGrid';
 import { SuperDynamic } from './supergrid/SuperDynamic';
 import { SuperCalc } from './supergrid/SuperCalc';
 import { SuperDensity } from './supergrid/SuperDensity';
-import { createCoordinateSystem } from '@/utils/coordinate-system/coordinates';
+import type { DensityChangeEvent } from '@/types/supergrid';
+import { createD3CoordinateSystem } from '@/utils/coordinate-system/coordinates';
 import { useFilteredNodes, useLiveQuery, usePAFV } from '@/hooks';
 import type { Node } from '@/types/node';
 import type { AxisMapping } from '@/types/pafv';
@@ -111,7 +112,7 @@ export function SuperGridView({
 
   // Create coordinate system
   const d3CoordinateSystem = useMemo(() =>
-    createCoordinateSystem(originPattern, 120, 60),
+    createD3CoordinateSystem(originPattern, 120, 60),
     [originPattern]
   );
 
@@ -134,7 +135,14 @@ export function SuperGridView({
   }, [pafv]);
 
   // Janus Density configuration
-  const handleDensityChange = useCallback((newDensity: typeof densityConfig) => {
+  const handleDensityChange = useCallback((event: DensityChangeEvent) => {
+    // Extract the density configuration from the new state, mapping to legacy structure
+    const newDensity = {
+      extentMode: (event.newState.extentMode || event.newState.extentDensity || 'sparse') as 'sparse' | 'dense',
+      valueMode: (event.newState.valueMode || event.newState.valueDensity || 'leaf') as 'leaf' | 'rolled',
+      zoomLevel: event.newState.zoomLevel || 3,
+      panOffset: event.newState.panOffset || { x: 0, y: 0 }
+    };
     setDensityConfig(newDensity);
   }, []);
 
@@ -388,7 +396,6 @@ export function SuperGridView({
             <div className="border-b border-gray-200 bg-white">
               <SuperDensity
                 nodes={primaryNodes || []}
-                density={densityConfig}
                 onDensityChange={handleDensityChange}
                 activeAxes={['category', 'time', 'hierarchy']}
                 debug={process.env.NODE_ENV === 'development'}

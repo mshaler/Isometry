@@ -16,6 +16,22 @@ import type {
 import type { AxisRange, GridCell } from '../../types/supergrid';
 
 /**
+ * D3-compatible coordinate system interface with function methods
+ */
+export interface D3CoordinateSystem {
+  originX: number;
+  originY: number;
+  cellWidth: number;
+  cellHeight: number;
+  pattern?: OriginPattern;
+  scale?: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
+  logicalToScreen: (logicalX: number, logicalY: number) => { x: number; y: number };
+  screenToLogical: (screenX: number, screenY: number) => { x: number; y: number };
+}
+
+/**
  * Convert screen coordinates (SVG pixel position) to logical grid coordinates.
  *
  * @param screenPoint - Point in SVG screen space (pixels)
@@ -233,4 +249,79 @@ export function verifyRoundTrip(
   const deltaY = Math.abs(screenPoint.y - backToScreen.y);
 
   return deltaX <= tolerance && deltaY <= tolerance;
+}
+
+/**
+ * Create a coordinate system configuration.
+ *
+ * @param pattern - Origin pattern ('anchor' or 'bipolar')
+ * @param viewportWidth - Viewport width in pixels
+ * @param viewportHeight - Viewport height in pixels
+ * @param scale - Initial scale factor (default: 1.0)
+ * @returns Complete coordinate system configuration
+ *
+ * @example
+ * // Create anchor mode coordinate system
+ * const anchorSystem = createCoordinateSystem('anchor', 1024, 768);
+ *
+ * @example
+ * // Create bipolar mode with custom scale
+ * const bipolarSystem = createCoordinateSystem('bipolar', 800, 600, 2.0);
+ */
+export function createCoordinateSystem(
+  pattern: OriginPattern,
+  viewportWidth: number,
+  viewportHeight: number,
+  scale: number = 1.0
+): CoordinateSystem {
+  return {
+    pattern,
+    scale,
+    viewportWidth,
+    viewportHeight,
+  };
+}
+
+/**
+ * Create a D3-compatible coordinate system with bound methods.
+ *
+ * @param pattern - Origin pattern ('anchor' or 'bipolar')
+ * @param cellWidth - Width of each cell in pixels
+ * @param cellHeight - Height of each cell in pixels
+ * @param originX - X origin offset (default: 0)
+ * @param originY - Y origin offset (default: 0)
+ * @param scale - Scale factor (default: 1.0)
+ * @returns D3CoordinateSystem with bound methods
+ */
+export function createD3CoordinateSystem(
+  pattern: OriginPattern,
+  cellWidth: number = 120,
+  cellHeight: number = 60,
+  originX: number = 0,
+  originY: number = 0,
+  scale: number = 1.0,
+  viewportWidth: number = 1024,
+  viewportHeight: number = 768
+): D3CoordinateSystem {
+  const coordinateSystem: CoordinateSystem = {
+    pattern,
+    scale,
+    viewportWidth,
+    viewportHeight,
+  };
+
+  return {
+    originX,
+    originY,
+    cellWidth,
+    cellHeight,
+    pattern,
+    scale,
+    viewportWidth,
+    viewportHeight,
+    logicalToScreen: (logicalX: number, logicalY: number) =>
+      logicalToScreen({ x: logicalX, y: logicalY }, coordinateSystem),
+    screenToLogical: (screenX: number, screenY: number) =>
+      screenToLogical({ x: screenX, y: screenY }, coordinateSystem),
+  };
 }

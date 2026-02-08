@@ -16,8 +16,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import type {
   CartographicState,
   CartographicControlInterface,
-  CartographicVisualFeedback,
-  BoundaryConstraints
+  CartographicVisualFeedback
 } from '../types/supergrid';
 
 export interface SuperZoomControlsProps {
