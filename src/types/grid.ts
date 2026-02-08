@@ -464,3 +464,122 @@ export const isHeaderHierarchy = (obj: any): obj is HeaderHierarchy => {
     obj.expandedNodeIds instanceof Set &&
     obj.collapsedSubtrees instanceof Set;
 };
+
+// ===============================================================
+// COLUMN RESIZE TYPES FOR PHASE 39 MISSING REQUIREMENT
+// ===============================================================
+
+/**
+ * Column resize event data for drag operations
+ *
+ * Provides detailed context for resize operations with performance optimization
+ * and state persistence integration.
+ */
+export interface ColumnResizeEvent {
+  nodeId: string;                 // Header node being resized
+  originalWidth: number;          // Width before resize operation
+  newWidth: number;               // Width after resize operation
+  event: MouseEvent;              // Original drag event for context
+  deltaX: number;                 // Change in X position
+  isComplete: boolean;            // Whether resize operation is complete
+}
+
+/**
+ * Column width state for persistence across sessions
+ *
+ * Manages per-dataset and per-app column width preferences with
+ * zero-serialization sql.js integration.
+ */
+export interface ColumnWidthState {
+  datasetId: string;              // Dataset identifier for state isolation
+  appContext: string;             // App context for multi-session support
+  columnWidths: Record<string, number>;  // Column ID to width mapping
+  lastUpdated: string;            // ISO timestamp of last update
+  version?: number;               // Version for migration support
+}
+
+/**
+ * Resize handle configuration for column interactions
+ *
+ * Controls visual and behavioral aspects of column resize handles
+ * with 60fps performance optimization.
+ */
+export interface ResizeHandleConfig {
+  edgeDetectionZone: number;      // Pixels from right edge for resize detection (default 4px)
+  minColumnWidth: number;         // Minimum allowed column width (default 50px)
+  maxColumnWidth?: number;        // Maximum allowed column width (optional)
+  animationDuration: number;      // Animation duration in ms (default 0 for RAF)
+  cursorChangeThreshold: number;  // Distance threshold for cursor state changes
+  enableSmoothing: boolean;       // Whether to use RAF for smooth updates
+}
+
+/**
+ * Extended HeaderNode interface with resize state
+ *
+ * Adds resize-specific properties to existing HeaderNode interface
+ * without breaking existing functionality.
+ */
+export interface ResizableHeaderNode extends HeaderNode {
+  originalWidth?: number;         // Stored width at resize start for delta calculations
+  isResizing?: boolean;           // Current resize state flag
+  resizeStartX?: number;          // X coordinate when resize started
+  minWidth?: number;              // Node-specific minimum width override
+  maxWidth?: number;              // Node-specific maximum width override
+}
+
+/**
+ * Resize operation state tracking
+ *
+ * Internal state management for active resize operations
+ * with performance monitoring and error recovery.
+ */
+export interface ResizeOperationState {
+  isActive: boolean;              // Whether a resize is currently active
+  targetNodeId: string | null;    // Node currently being resized
+  startTime: number;              // Timestamp of resize start
+  frameCount: number;             // Number of animation frames rendered
+  lastFrameTime: number;          // Timestamp of last frame update
+  pendingUpdate: {               // Batched update for RAF optimization
+    nodeId: string;
+    newWidth: number;
+  } | null;
+}
+
+/**
+ * Type guard for ColumnResizeEvent validation
+ */
+export const isColumnResizeEvent = (obj: any): obj is ColumnResizeEvent => {
+  return obj &&
+    typeof obj.nodeId === 'string' &&
+    typeof obj.originalWidth === 'number' &&
+    typeof obj.newWidth === 'number' &&
+    obj.event instanceof MouseEvent &&
+    typeof obj.deltaX === 'number' &&
+    typeof obj.isComplete === 'boolean';
+};
+
+/**
+ * Type guard for ColumnWidthState validation
+ */
+export const isColumnWidthState = (obj: any): obj is ColumnWidthState => {
+  return obj &&
+    typeof obj.datasetId === 'string' &&
+    typeof obj.appContext === 'string' &&
+    typeof obj.columnWidths === 'object' &&
+    obj.columnWidths !== null &&
+    typeof obj.lastUpdated === 'string';
+};
+
+/**
+ * Default resize handle configuration
+ *
+ * Optimized for 60fps performance with smooth user experience
+ */
+export const DEFAULT_RESIZE_CONFIG: ResizeHandleConfig = {
+  edgeDetectionZone: 4,           // 4px edge detection zone
+  minColumnWidth: 50,             // 50px minimum to prevent disappearing columns
+  maxColumnWidth: 600,            // 600px maximum to prevent excessive width
+  animationDuration: 0,           // Use RAF instead of CSS transitions
+  cursorChangeThreshold: 2,       // 2px threshold for cursor changes
+  enableSmoothing: true           // Enable RAF-based smoothing
+};

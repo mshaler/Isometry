@@ -1,4 +1,4 @@
-import { useSQLite } from '../db/SQLiteProvider';
+import { useSQLite } from '../../db/SQLiteProvider';
 import type { Database } from 'sql.js-fts5';
 
 /**
@@ -234,6 +234,84 @@ export function useDatabaseService() {
       indexes: 0,
       triggers: 0,
       size: db.export().length
-    })
+    }),
+
+    // Column width persistence methods for Phase 39
+    saveColumnWidths: (datasetId: string, appContext: string, widths: Record<string, number>) => {
+      try {
+        // Create column_widths table if not exists
+        run(`
+          CREATE TABLE IF NOT EXISTS column_widths (
+            dataset_id TEXT NOT NULL,
+            app_context TEXT NOT NULL,
+            column_id TEXT NOT NULL,
+            width REAL NOT NULL,
+            last_updated TEXT NOT NULL,
+            PRIMARY KEY (dataset_id, app_context, column_id)
+          )
+        `);
+
+        // Use transaction for atomic updates
+        db.exec("BEGIN TRANSACTION");
+        try {
+          // Clear existing widths for this dataset/context
+          run('DELETE FROM column_widths WHERE dataset_id = ? AND app_context = ?', [datasetId, appContext]);
+
+          // Insert current widths
+          const timestamp = new Date().toISOString();
+          Object.entries(widths).forEach(([columnId, width]) => {
+            // Validate width value
+            if (typeof width !== 'number' || width < 0 || width > 2000) {
+              throw new Error(`Invalid width for column ${columnId}: ${width}`);
+            }
+
+            run(`
+              INSERT INTO column_widths (dataset_id, app_context, column_id, width, last_updated)
+              VALUES (?, ?, ?, ?, ?)
+            `, [datasetId, appContext, columnId, width, timestamp]);
+          });
+
+          db.exec("COMMIT");
+          return { success: true };
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      } catch (error) {
+        return { success: false, error: String(error) };
+      }
+    },
+
+    loadColumnWidths: (datasetId: string, appContext: string) => {
+      try {
+        const results = execute(`
+          SELECT column_id, width, last_updated
+          FROM column_widths
+          WHERE dataset_id = ? AND app_context = ?
+          ORDER BY last_updated DESC
+        `, [datasetId, appContext]);
+
+        if (results.length === 0) {
+          return null;
+        }
+
+        // Convert results to Record<string, number>
+        const columnWidths: Record<string, number> = {};
+        results.forEach((row: any) => {
+          const columnId = row.column_id as string;
+          const width = row.width as number;
+
+          // Validate loaded width
+          if (typeof width === 'number' && width >= 0 && width <= 2000) {
+            columnWidths[columnId] = width;
+          }
+        });
+
+        return columnWidths;
+      } catch (error) {
+        console.error('Load column widths failed:', error);
+        return null;
+      }
+    }
   };
 }

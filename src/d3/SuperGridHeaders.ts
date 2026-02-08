@@ -13,11 +13,14 @@
 import * as d3 from 'd3';
 import type {
   HeaderNode,
-  HeaderHierarchy
+  HeaderHierarchy,
+  ResizeHandleConfig,
+  ResizeOperationState
 } from '../types/grid';
+import { DEFAULT_RESIZE_CONFIG } from '../types/grid';
 import { HeaderLayoutService } from '../services/HeaderLayoutService';
 import { ContentAlignment as ContentAlignmentEnum } from '../types/grid';
-import type { useDatabaseService } from '../hooks/useDatabaseService';
+import type { useDatabaseService } from '../hooks/database/useDatabaseService';
 import { superGridLogger } from '../utils/logging/dev-logger';
 
 export interface SuperGridHeadersConfig {
@@ -61,6 +64,14 @@ export class SuperGridHeaders {
   private onHeaderClick?: (event: HeaderClickEvent) => void;
   private onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
 
+  // Column resize functionality (Phase 39)
+  private resizeBehavior: d3.DragBehavior<SVGGElement, HeaderNode, any> | null = null;
+  private resizeConfig: ResizeHandleConfig;
+  private resizeState: ResizeOperationState;
+  private animationFrameId: number | null = null;
+  private pendingResizeUpdate: { nodeId: string; newWidth: number } | null = null;
+  private saveColumnWidthsDebounceTimer: NodeJS.Timeout | null = null;
+
   // Default configuration
   private static readonly DEFAULT_CONFIG: SuperGridHeadersConfig = {
     defaultHeaderHeight: 40,
@@ -79,7 +90,8 @@ export class SuperGridHeaders {
       onHeaderClick?: (event: HeaderClickEvent) => void;
       onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
     } = {},
-    database?: ReturnType<typeof useDatabaseService>
+    database?: ReturnType<typeof useDatabaseService>,
+    resizeConfig?: Partial<ResizeHandleConfig>
   ) {
     this.container = d3.select(container);
     this.layoutService = layoutService;
@@ -88,11 +100,24 @@ export class SuperGridHeaders {
     this.onExpandCollapse = callbacks.onExpandCollapse;
     this.database = database || null;
 
+    // Initialize resize configuration
+    this.resizeConfig = { ...DEFAULT_RESIZE_CONFIG, ...resizeConfig };
+    this.resizeState = {
+      isActive: false,
+      targetNodeId: null,
+      startTime: 0,
+      frameCount: 0,
+      lastFrameTime: 0,
+      pendingUpdate: null
+    };
+
     this.initializeStructure();
+    this.initializeColumnResizeBehavior();
 
     // Restore state on initialization if database is available
     if (this.database) {
       this.restoreHeaderState();
+      this.restoreColumnWidths();
     }
   }
 
@@ -441,27 +466,47 @@ export class SuperGridHeaders {
       .style('cursor', 'pointer')
       .on('mouseenter', (event, d) => this.handleMouseEnter(event, d))
       .on('mouseleave', (event, d) => this.handleMouseLeave(event, d))
+      .on('mousemove', (event, d) => this.handleMouseMove(event, d))
       .on('click', (event, d) => this.handleClick(event, d));
+
+    // Apply resize behavior if enabled
+    if (this.resizeBehavior) {
+      headerSelection.call(this.resizeBehavior);
+    }
   }
 
   private handleMouseEnter(event: MouseEvent, node: HeaderNode): void {
-    // Update cursor based on zone
+    this.updateCursorForZone(event, node);
+
+    // Highlight header
+    d3.select(event.currentTarget as SVGGElement)
+      .select('.header-background')
+      .attr('fill', '#e2e8f0');
+  }
+
+  private handleMouseMove(event: MouseEvent, node: HeaderNode): void {
+    // Update cursor based on current mouse position
+    this.updateCursorForZone(event, node);
+  }
+
+  private updateCursorForZone(event: MouseEvent, node: HeaderNode): void {
     const rect = (event.currentTarget as SVGGElement).getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
 
     let cursor = 'pointer';
-    if (!node.isLeaf && mouseX <= 32) {
+
+    // Check if we're in the resize zone (within edgeDetectionZone pixels of right edge)
+    const isInResizeZone = mouseX > node.width - this.resizeConfig.edgeDetectionZone;
+
+    if (isInResizeZone) {
+      cursor = 'col-resize';
+    } else if (!node.isLeaf && mouseX <= 32) {
       cursor = 'pointer'; // Expand/collapse zone
     } else {
       cursor = 'pointer'; // Selection zone
     }
 
     d3.select(event.currentTarget as SVGGElement).style('cursor', cursor);
-
-    // Highlight header
-    d3.select(event.currentTarget as SVGGElement)
-      .select('.header-background')
-      .attr('fill', '#e2e8f0');
   }
 
   private handleMouseLeave(event: MouseEvent, _node: HeaderNode): void {
@@ -888,14 +933,14 @@ export class SuperGridHeaders {
         'dense' // Default pan level - could be parameter
       );
 
-      if (result.success) {
+      if (result && result.success) {
         superGridLogger.metrics('SuperGridHeaders.saveHeaderState(): State saved', {
           datasetId: this.currentDatasetId,
           appContext: this.currentAppContext,
           expandedCount: expandedLevels.length
         });
       } else {
-        console.error('❌ SuperGridHeaders.saveHeaderState(): Failed to save:', result.error);
+        console.error('❌ SuperGridHeaders.saveHeaderState(): Failed to save:', result?.error || 'Unknown error');
       }
     }, 300); // Debounce for 300ms to avoid excessive saves during animations
   }
@@ -904,10 +949,11 @@ export class SuperGridHeaders {
    * Restore header state from database
    */
   private restoreHeaderState(): void {
-    if (!this.database) return;
+    const db = this.database;
+    if (!db) return;
 
     try {
-      const savedState = this.database.loadHeaderState(
+      const savedState = db.loadHeaderState(
         this.currentDatasetId,
         this.currentAppContext
       );
@@ -950,6 +996,291 @@ export class SuperGridHeaders {
 
     } catch (error) {
       console.error('❌ SuperGridHeaders.restoreHeaderState(): Error restoring state:', error);
+    }
+  }
+
+  // ===============================================================
+  // COLUMN RESIZE IMPLEMENTATION FOR PHASE 39
+  // ===============================================================
+
+  /**
+   * Initialize column resize behavior using d3-drag
+   */
+  private initializeColumnResizeBehavior(): void {
+    this.resizeBehavior = d3.drag<SVGGElement, HeaderNode>()
+      .filter((event, d) => this.isResizeZone(event, d))
+      .on('start', (event, d) => this.handleResizeStart(event, d))
+      .on('drag', (event, d) => this.handleResizeDrag(event, d))
+      .on('end', (event, d) => this.handleResizeEnd(event, d));
+
+    superGridLogger.setup('Column resize behavior initialized');
+  }
+
+  /**
+   * Check if mouse event is in resize zone for drag filter
+   */
+  private isResizeZone(event: d3.D3DragEvent<SVGGElement, HeaderNode, any>, node: HeaderNode): boolean {
+    const mouseX = event.sourceEvent.offsetX || 0;
+    return mouseX > node.width - this.resizeConfig.edgeDetectionZone;
+  }
+
+  /**
+   * Handle resize drag start
+   */
+  private handleResizeStart(event: d3.D3DragEvent<SVGGElement, HeaderNode, any>, node: HeaderNode): void {
+    // Initialize resize state
+    this.resizeState.isActive = true;
+    this.resizeState.targetNodeId = node.id;
+    this.resizeState.startTime = performance.now();
+    this.resizeState.frameCount = 0;
+    this.resizeState.lastFrameTime = this.resizeState.startTime;
+
+    // Store original width for delta calculations
+    (node as any).originalWidth = node.width;
+    (node as any).isResizing = true;
+    (node as any).resizeStartX = event.x;
+
+    // Set resize cursor
+    d3.select(event.sourceEvent.target as Element).style('cursor', 'col-resize');
+
+    // Prevent other interactions during resize
+    event.sourceEvent.stopPropagation();
+
+    superGridLogger.inspect('Resize start', {
+      nodeId: node.id,
+      originalWidth: node.width,
+      startX: event.x
+    });
+  }
+
+  /**
+   * Handle resize drag with RAF optimization for 60fps
+   */
+  private handleResizeDrag(event: d3.D3DragEvent<SVGGElement, HeaderNode, any>, node: HeaderNode): void {
+    if (!this.resizeState.isActive || this.resizeState.targetNodeId !== node.id) {
+      return;
+    }
+
+    const originalWidth = (node as any).originalWidth || node.width;
+    const newWidth = Math.max(
+      this.resizeConfig.minColumnWidth,
+      Math.min(
+        this.resizeConfig.maxColumnWidth || 600,
+        originalWidth + (event.x - ((node as any).resizeStartX || 0))
+      )
+    );
+
+    // Batch update for next animation frame
+    this.pendingResizeUpdate = { nodeId: node.id, newWidth };
+
+    if (!this.animationFrameId && this.resizeConfig.enableSmoothing) {
+      this.animationFrameId = requestAnimationFrame(() => this.applyResizeUpdate());
+    } else if (!this.resizeConfig.enableSmoothing) {
+      // Apply immediately if smoothing disabled
+      this.updateColumnWidth(node.id, newWidth);
+    }
+  }
+
+  /**
+   * Handle resize end and persist state
+   */
+  private handleResizeEnd(event: d3.D3DragEvent<SVGGElement, HeaderNode, any>, node: HeaderNode): void {
+    if (!this.resizeState.isActive || this.resizeState.targetNodeId !== node.id) {
+      return;
+    }
+
+    // Apply final update if pending
+    if (this.pendingResizeUpdate) {
+      this.updateColumnWidth(this.pendingResizeUpdate.nodeId, this.pendingResizeUpdate.newWidth);
+      this.pendingResizeUpdate = null;
+    }
+
+    // Clean up animation frame
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+
+    // Reset resize state
+    this.resizeState.isActive = false;
+    this.resizeState.targetNodeId = null;
+    (node as any).isResizing = false;
+
+    // Reset cursor
+    d3.select(event.sourceEvent.target as Element).style('cursor', 'pointer');
+
+    // Save column widths to database with debouncing
+    this.saveColumnWidthState();
+
+    const duration = performance.now() - this.resizeState.startTime;
+    superGridLogger.inspect('Resize end', {
+      nodeId: node.id,
+      finalWidth: node.width,
+      duration: `${duration.toFixed(2)}ms`,
+      frameCount: this.resizeState.frameCount
+    });
+  }
+
+  /**
+   * Apply batched resize update using RAF for smooth performance
+   */
+  private applyResizeUpdate(): void {
+    if (this.pendingResizeUpdate) {
+      this.updateColumnWidth(this.pendingResizeUpdate.nodeId, this.pendingResizeUpdate.newWidth);
+      this.resizeState.frameCount++;
+      this.resizeState.lastFrameTime = performance.now();
+      this.pendingResizeUpdate = null;
+    }
+    this.animationFrameId = null;
+  }
+
+  /**
+   * Update column width and trigger re-render
+   */
+  private updateColumnWidth(nodeId: string, newWidth: number): void {
+    if (!this.currentHierarchy) return;
+
+    const node = this.currentHierarchy.allNodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    // Update node width
+    node.width = newWidth;
+
+    // Update click zones
+    this.updateClickZones(node);
+
+    // Update visual representation
+    const headerElement = this.container
+      .selectAll('.header-node')
+      .filter((d: any) => d.id === nodeId);
+
+    if (!headerElement.empty()) {
+      // Update background width
+      headerElement.select('.header-background')
+        .attr('width', newWidth);
+
+      // Update text positioning
+      headerElement.select('.header-label')
+        .attr('x', this.getTextX(node))
+        .attr('text-anchor', this.getTextAnchor(node));
+    }
+
+    // Recalculate parent widths if this affects hierarchy
+    this.recalculateAffectedWidthsForResize(node);
+  }
+
+  /**
+   * Recalculate parent widths after resize operation
+   */
+  private recalculateAffectedWidthsForResize(resizedNode: HeaderNode): void {
+    if (!this.currentHierarchy || resizedNode.level === 0) return;
+
+    // Find parent node and update its width
+    const parent = this.currentHierarchy.allNodes.find(n => n.id === resizedNode.parentId);
+    if (parent) {
+      const children = this.currentHierarchy.allNodes.filter(n => n.parentId === parent.id);
+      parent.width = children.reduce((sum, child) => sum + child.width, 0);
+      this.updateClickZones(parent);
+
+      // Update parent visual representation
+      const parentElement = this.container
+        .selectAll('.header-node')
+        .filter((d: any) => d.id === parent.id);
+
+      if (!parentElement.empty()) {
+        parentElement.select('.header-background')
+          .attr('width', parent.width);
+        parentElement.select('.header-label')
+          .attr('x', this.getTextX(parent))
+          .attr('text-anchor', this.getTextAnchor(parent));
+      }
+
+      // Recursively update up the hierarchy
+      this.recalculateAffectedWidthsForResize(parent);
+    }
+  }
+
+  /**
+   * Save column widths to database with debouncing
+   */
+  private saveColumnWidthState(): void {
+    const db = this.database;
+    if (!db || !this.currentHierarchy) return;
+
+    // Clear existing debounce timer
+    if (this.saveColumnWidthsDebounceTimer) {
+      clearTimeout(this.saveColumnWidthsDebounceTimer);
+    }
+
+    // Debounce saves to prevent excessive database writes
+    this.saveColumnWidthsDebounceTimer = setTimeout(() => {
+      const currentHierarchy = this.currentHierarchy;
+      if (!currentHierarchy || !db) return;
+
+      // Collect column widths
+      const columnWidths: Record<string, number> = {};
+      currentHierarchy.allNodes.forEach(node => {
+        columnWidths[node.id] = node.width;
+      });
+
+      // Save to database
+      const result = db.saveColumnWidths(
+        this.currentDatasetId,
+        this.currentAppContext,
+        columnWidths
+      );
+
+      if (result?.success) {
+        superGridLogger.metrics('Column widths saved', {
+          datasetId: this.currentDatasetId,
+          appContext: this.currentAppContext,
+          columnCount: Object.keys(columnWidths).length
+        });
+      } else {
+        console.error('❌ Failed to save column widths:', result?.error || 'Unknown error');
+      }
+    }, 300); // 300ms debounce
+  }
+
+  /**
+   * Restore column widths from database
+   */
+  private restoreColumnWidths(): void {
+    const db = this.database;
+    if (!db) return;
+
+    try {
+      const savedWidths = db.loadColumnWidths(
+        this.currentDatasetId,
+        this.currentAppContext
+      );
+
+      if (!savedWidths || !this.currentHierarchy) {
+        superGridLogger.data('No saved column widths found', {});
+        return;
+      }
+
+      superGridLogger.state('Restoring column widths', {
+        datasetId: this.currentDatasetId,
+        appContext: this.currentAppContext,
+        columnCount: Object.keys(savedWidths).length
+      });
+
+      // Apply saved widths to nodes
+      this.currentHierarchy.allNodes.forEach(node => {
+        if (savedWidths[node.id]) {
+          node.width = savedWidths[node.id];
+          this.updateClickZones(node);
+        }
+      });
+
+      // Recalculate parent widths from bottom up
+      this.calculateParentWidths();
+
+      superGridLogger.state('Column widths restored successfully', {});
+
+    } catch (error) {
+      console.error('❌ Error restoring column widths:', error);
     }
   }
 
