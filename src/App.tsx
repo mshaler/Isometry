@@ -4,14 +4,11 @@ import { SQLiteP0GateTest } from './SQLiteP0GateTest';
 import SuperGridSQLDemo from './components/SuperGridSQLDemo';
 import { SQLiteProvider } from './db/SQLiteProvider';
 import { CLIIntegrationTest } from './CLIIntegrationTest';
-// TEMP: Commenting out broken imports to restore P0 test access
-// import { NotebookLayout } from './components/notebook/NotebookLayout';
-// import { NotebookProvider } from './contexts/NotebookContext';
-// import { ThemeProvider } from './contexts/ThemeContext';
-// import { ThreeCanvasDemo } from './components/ThreeCanvasDemo';
-// import { DesktopApp } from './components/desktop/DesktopApp';
-// import { useIsDesktop } from './hooks/useTauri';
-// import FeedbackWidget from './components/feedback/FeedbackWidget';
+import { NotebookLayout } from './components/notebook/NotebookLayout';
+import { NotebookProvider } from './contexts/NotebookContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { FilterProvider } from './contexts/FilterContext';
+import { PAFVProvider } from './state/PAFVContext';
 
 function App() {
   // TEMP: Disabled while imports are broken
@@ -53,13 +50,17 @@ function App() {
 
   if (testMode === 'three-canvas') {
     return (
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-4">Three-Canvas Test Disabled</h1>
-        <p className="text-gray-600 mb-4">
-          Three-Canvas test temporarily disabled due to broken import dependencies.
-          Use P0 test instead: <a href="?test=p0" className="text-blue-600 underline">?test=p0</a>
-        </p>
-      </div>
+      <SQLiteProvider>
+        <FilterProvider>
+          <ThemeProvider>
+            <PAFVProvider>
+              <NotebookProvider>
+                <NotebookLayout />
+              </NotebookProvider>
+            </PAFVProvider>
+          </ThemeProvider>
+        </FilterProvider>
+      </SQLiteProvider>
     );
   }
 

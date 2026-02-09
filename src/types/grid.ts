@@ -53,3 +53,60 @@ export interface D3CoordinateSystem {
   logicalToScreen: (logicalX: number, logicalY: number) => { x: number; y: number };
   screenToLogical: (screenX: number, screenY: number) => { x: number; y: number };
 }
+
+/**
+ * Missing types and constants that need to be defined
+ * TODO: Properly implement these based on actual requirements
+ */
+
+// Header hierarchy types for SuperStackProgressive
+export interface HeaderNode {
+  id: string;
+  label: string;
+  level: number;
+  children?: HeaderNode[];
+  parent?: HeaderNode;
+  data?: any;
+}
+
+export interface HeaderHierarchy {
+  nodes: HeaderNode[];
+  maxDepth: number;
+  totalNodes: number;
+}
+
+// Content alignment enum
+export enum ContentAlignment {
+  LEFT = 'left',
+  RIGHT = 'right',
+  CENTER = 'center',
+  JUSTIFY = 'justify'
+}
+
+// Span configuration for headers
+export interface SpanConfig {
+  enabled: boolean;
+  maxSpan: number;
+  autoCollapse: boolean;
+}
+
+export const DEFAULT_SPAN_CONFIG: SpanConfig = {
+  enabled: true,
+  maxSpan: 5,
+  autoCollapse: true
+};
+
+// Resize configuration for headers
+export interface ResizeConfig {
+  enabled: boolean;
+  minWidth: number;
+  maxWidth: number;
+  snap: boolean;
+}
+
+export const DEFAULT_RESIZE_CONFIG: ResizeConfig = {
+  enabled: true,
+  minWidth: 60,
+  maxWidth: 400,
+  snap: true
+};

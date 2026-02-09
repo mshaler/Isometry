@@ -41,7 +41,10 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
   const templateManager = createTemplateManager();
   const cardOperations = createCardOperations(
     execute as (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
-    performanceHook
+    {
+      measureRender: performanceHook.measureRender,
+      measureQuery: performanceHook.measureQuery
+    }
   );
   const layoutManager = createLayoutManager(DEFAULT_LAYOUT);
 
@@ -357,8 +360,6 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
 
     // Performance Methods
     clearPerformanceData: performanceHook.clearMetrics,
-    dismissAlert: () => {}, // Placeholder - alerts auto-expire
-    applyOptimization: () => {}, // Placeholder - suggestions are informational only
 
     // Memory Management
     flushCache,

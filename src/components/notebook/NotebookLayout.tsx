@@ -6,7 +6,6 @@ import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
 import { TerminalProvider } from '../../context/TerminalContext';
-import { SQLiteProvider } from '../../db/SQLiteProvider';
 
 interface ComponentLayout {
   width: number;
@@ -270,12 +269,10 @@ function NotebookLayoutInner() {
 
 export function NotebookLayout() {
   return (
-    <SQLiteProvider>
-      <TerminalProvider initialDirectory="/Users/mshaler/Developer/Projects/Isometry">
-        <FocusProvider>
-          <NotebookLayoutInner />
-        </FocusProvider>
-      </TerminalProvider>
-    </SQLiteProvider>
+    <TerminalProvider initialDirectory="/Users/mshaler/Developer/Projects/Isometry">
+      <FocusProvider>
+        <NotebookLayoutInner />
+      </FocusProvider>
+    </TerminalProvider>
   );
 }

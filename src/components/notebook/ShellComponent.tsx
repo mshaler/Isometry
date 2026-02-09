@@ -3,19 +3,7 @@ import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings } from 'lucide-re
 import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 
-// TODO: Implement these hooks or replace with sql.js equivalents
-const useCommandRouter = () => ({
-  route: () => {},
-  history: [],
-  executeCommand: () => Promise.resolve({
-    success: true,
-    output: '',
-    error: undefined,
-    type: 'success' as const
-  }),
-  navigateHistory: () => null,
-  isExecuting: false
-});
+// Simplified implementations for notebook environment
 const useProjectContext = () => ({
   project: null,
   getActiveCardContext: () => ({ title: 'Mock Card' })
@@ -40,7 +28,6 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     'configured' | 'not-configured'
   >('not-configured');
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const { executeCommand: executeRouterCommand, navigateHistory, isExecuting } = useCommandRouter();
   const { getActiveCardContext } = useProjectContext();
   const { isConfigured: isClaudeConfigured } = useClaudeAPI();
 
@@ -54,51 +41,14 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   // Get current tab info
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[1]; // Default to claude-code
 
-  // Format output for terminal display
-  const formatTerminalOutput = (output: string, type: 'system' | 'claude'): string => {
-    if (type === 'claude') {
-      // Claude output is already formatted by the API hook
-      return output;
-    }
-
-    // System command output - return as-is
-    return output;
-  };
-
-  // Handle command routing through terminal
-  const handleTerminalCommand = async (_command: string) => {
-    try {
-      // Execute command through router
-      const response = await executeRouterCommand();
-
-      // Display response using terminal output methods
-      if (response.error) {
-        writeOutput(response.error, true);
-      } else if (response.output) {
-        // Format output for terminal display
-        const formattedOutput = formatTerminalOutput(response.output, "system");
-        writeOutput(formattedOutput, false);
-      }
-
-      // Show new prompt
-      showPrompt();
-    } catch (error) {
-      writeOutput(`Error executing command: ${error}`, true);
-      showPrompt();
-    }
-  };
-
   const {
     createTerminal,
     attachToProcess,
     dispose,
     resizeTerminal,
-    isConnected,
-    writeOutput,
-    showPrompt
+    isConnected
   } = useTerminal({
-    onCommand: handleTerminalCommand,
-    onNavigateHistory: navigateHistory
+    // No custom command handler - let the terminal handle commands directly
   });
 
   // Initialize terminal when component mounts and claude-code tab is active
@@ -286,9 +236,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
           </div>
           <div className="text-gray-400">
             {activeTab === 'claude-code' ? (
-              isExecuting ? (
-                <span className="text-yellow-400">Executing...</span>
-              ) : connectionStatus === 'connected' ? (
+              connectionStatus === 'connected' ? (
                 'Ready for commands'
               ) : (
                 'Initializing...'

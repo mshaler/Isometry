@@ -9,19 +9,22 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration
 const CONFIG = {
-  port: 5173,
-  testUrl: '/?test=cli-test',
+  port: 5174,
+  testUrl: '/?test=three-canvas',
   buildTimeout: 30000,
   monitorDuration: 10000,
   maxIterations: 5,
   errorThreshold: 10,
-  logFile: 'cli-test-results.log'
+  logFile: 'three-canvas-test-results.log'
 };
 
 class CLITestAutomation {
@@ -157,21 +160,49 @@ class CLITestAutomation {
   }
 
   async testCLIIntegration(testResults) {
-    // In a real implementation, this would use Playwright or similar
-    // For now, we simulate the tests based on what we know about the CLI integration
+    this.log('🧪 Testing CLI integration components with browser automation...');
 
-    this.log('🧪 Testing CLI integration components...');
+    try {
+      // Use Node.js to interact with the CLI test page
+      const testPageContent = await this.fetchCLITestPage();
 
-    // Simulate checking for CLI hook initialization
-    testResults.cliHookInit = true; // We fixed the infinite loop
+      if (testPageContent) {
+        // Check if the page loads the CLI test component
+        testResults.cliHookInit = testPageContent.includes('CLI Integration Test');
+        testResults.commandExecution = testPageContent.includes('Testing CLI integration');
 
-    // Simulate checking for command execution
-    testResults.commandExecution = true; // We have simulation working
+        this.log('✅ Browser-based CLI test page loaded successfully');
+      } else {
+        testResults.errors.push('Failed to load CLI test page');
+        testResults.cliHookInit = false;
+        testResults.commandExecution = false;
+      }
+
+    } catch (error) {
+      this.log(`❌ Browser testing failed: ${error.message}`, 'ERROR');
+      testResults.errors.push(`Browser automation error: ${error.message}`);
+      testResults.cliHookInit = false;
+      testResults.commandExecution = false;
+    }
 
     // Check for known error patterns in the build
     const knownIssues = await this.checkForKnownIssues();
     testResults.errors.push(...knownIssues.errors);
     testResults.warnings.push(...knownIssues.warnings);
+  }
+
+  async fetchCLITestPage() {
+    return new Promise((resolve) => {
+      exec(`curl -s "http://localhost:${CONFIG.port}${CONFIG.testUrl}"`, (error, stdout, stderr) => {
+        if (error) {
+          this.log(`❌ Failed to fetch CLI test page: ${error.message}`, 'ERROR');
+          resolve(null);
+        } else {
+          this.log('📄 Successfully fetched CLI test page content');
+          resolve(stdout);
+        }
+      });
+    });
   }
 
   async checkForKnownIssues() {

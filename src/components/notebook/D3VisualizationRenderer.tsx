@@ -1,6 +1,6 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 import * as d3 from 'd3';
-import { useD3Visualization, useD3 } from '@/hooks';
+import { useD3 } from '@/hooks';
 import { useTheme } from '../../contexts/ThemeContext';
 // import type { VisualizationConfig } from '../../utils/d3Parsers';
 import type { D3ChartTheme } from '../../types/d3';
@@ -35,15 +35,52 @@ export function D3VisualizationRenderer({
   const { theme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const {
-    data,
-    vizType,
-    config,
-    isLoading,
-    error,
-    canVisualize,
-    updateVisualization
-  } = useD3Visualization();
+  // Simple local state to replace useD3Visualization hook to avoid circular dependency
+  const [data, setData] = useState<any[]>([]);
+  const [vizType, setVizType] = useState<string>('bar-chart');
+  const [config, setConfig] = useState<any>({ type: 'bar-chart' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [canVisualize, setCanVisualize] = useState(false);
+
+  // Simple content parsing function
+  const updateVisualization = useCallback((content: string) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Basic CSV/TSV parsing for demo purposes
+      if (content.includes('\t') || content.includes(',')) {
+        const lines = content.trim().split('\n');
+        if (lines.length > 1) {
+          const delimiter = content.includes('\t') ? '\t' : ',';
+          const headers = lines[0].split(delimiter);
+          const parsedData = lines.slice(1).map(line => {
+            const values = line.split(delimiter);
+            const row: any = {};
+            headers.forEach((header, i) => {
+              row[header.trim()] = isNaN(Number(values[i])) ? values[i]?.trim() : Number(values[i]);
+            });
+            return row;
+          });
+
+          setData(parsedData);
+          setVizType('bar-chart');
+          setConfig({ type: 'bar-chart' });
+          setCanVisualize(parsedData.length > 0);
+        } else {
+          setCanVisualize(false);
+        }
+      } else {
+        setCanVisualize(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to parse visualization data');
+      setCanVisualize(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   // Track data points count
   useEffect(() => {

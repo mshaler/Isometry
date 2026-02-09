@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useClaude } from './hooks/useClaude';
 import { getEnvironmentConfig } from './utils/environmentSetup';
 
@@ -6,13 +6,18 @@ export function CLIIntegrationTest() {
   const [testResults, setTestResults] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const claude = useClaude();
+  const hasRunRef = useRef(false);
 
   const addResult = (message: string) => {
     setTestResults(prev => [...prev, `${new Date().toISOString()}: ${message}`]);
   };
 
   useEffect(() => {
+    // Prevent infinite loop by running only once
+    if (hasRunRef.current) return;
+
     const runTests = async () => {
+      hasRunRef.current = true;
       addResult('🧪 Starting CLI Integration Tests...');
 
       try {
@@ -85,7 +90,7 @@ export function CLIIntegrationTest() {
     };
 
     runTests();
-  }, [claude]);
+  }, []); // Empty dependency array - run only once on mount
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

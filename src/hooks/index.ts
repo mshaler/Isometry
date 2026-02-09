@@ -17,7 +17,7 @@ export { useNodeTree } from './visualization/useNodeTree';
 export type { UseCoordinatesResult, UseCoordinatesOptions } from './visualization/useCoordinates';
 
 // UI hooks
-// Removed: useMarkdownEditor - imports contexts creating circular deps
+export { useMarkdownEditor } from './ui/useMarkdownEditor';
 export { useSlashCommands } from './ui/useSlashCommands';
 export { useWebPreview } from './ui/useWebPreview';
 
@@ -28,14 +28,14 @@ export { useNotebookIntegration } from './system/useNotebookIntegration';
 
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
-export { useRenderingOptimization } from './performance/useRenderingOptimization';
+// export { useRenderingOptimization } from './performance/useRenderingOptimization'; // Disabled - missing dependencies
 export { useVirtualLiveQuery } from './performance/useVirtualLiveQuery';
-export { useVirtualizedGrid } from './performance/useVirtualizedGrid';
+// export { useVirtualizedGrid } from './performance/useVirtualizedGrid'; // Disabled - missing dependencies
 export { useVirtualizedList } from './performance/useVirtualizedList';
 export { useNotebookPerformance } from './performance/useNotebookPerformance';
 
 // Performance types
-export type { OptimizationPlan } from './performance/useRenderingOptimization';
+// export type { OptimizationPlan } from './performance/useRenderingOptimization'; // Disabled - missing dependencies
 export type { VirtualLiveQueryOptions } from './performance/useVirtualLiveQuery';
 export type { PerformanceMetrics } from '../types/performance';
 export type { PerformanceAlert, OptimizationSuggestion } from '../utils/performance/performance-monitor';
