@@ -11,14 +11,7 @@
 
 import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping, Plane } from '@/types/pafv';
-
-// Grid Continuum modes - the 5-level polymorphic view system
-export type GridContinuumMode =
-  | 'gallery'    // 0 axes - position-only layout
-  | 'list'       // 1 axis - vertical hierarchy
-  | 'kanban'     // 1 facet - column grouping
-  | 'grid'       // 2 axes - matrix rows × columns
-  | 'supergrid'; // n axes - nested PAFV headers
+import type { GridContinuumMode } from '@/types/view';
 
 // Layout types for different projections
 export type ProjectionLayout =

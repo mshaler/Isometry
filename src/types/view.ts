@@ -2,7 +2,11 @@
 
 import type { Node } from './node';
 
-export type ViewType = 'grid' | 'list' | 'kanban' | 'timeline' | 'calendar' | 'network' | 'tree';
+// Grid Continuum modes (core SuperGrid functionality)
+export type GridContinuumMode = 'gallery' | 'list' | 'kanban' | 'grid' | 'supergrid';
+
+// Extended view types (includes Grid Continuum + additional views)
+export type ViewType = GridContinuumMode | 'timeline' | 'calendar' | 'network' | 'tree';
 export type RenderMode = 'react' | 'd3';
 
 export interface Dimensions {
