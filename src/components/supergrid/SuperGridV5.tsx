@@ -25,6 +25,7 @@ import type { Node } from '@/types/node';
 import type { AxisMapping } from '@/types/pafv';
 import type { SuperGridConfig, SuperGridEventHandlers } from '@/engine/SuperGridEngine';
 import { GridContinuumController } from './GridContinuumController';
+import { GridContinuumSwitcher } from './GridContinuumSwitcher';
 import type { GridContinuumMode } from '@/types/view';
 
 // Import all Super* components
@@ -75,11 +76,19 @@ function SuperGridCore({
 
   // Grid Continuum Controller - the polymorphic projection engine
   const [gridController] = useState(() => new GridContinuumController());
+  const [currentMode, setCurrentMode] = useState<GridContinuumMode>(mode as GridContinuumMode);
 
   // Initialize controller with mode
   useEffect(() => {
-    gridController.setMode(mode as GridContinuumMode);
+    gridController.setMode(currentMode);
+    setCurrentMode(mode as GridContinuumMode);
   }, [gridController, mode]);
+
+  // Handle mode changes from switcher
+  const handleModeChange = (newMode: GridContinuumMode) => {
+    setCurrentMode(newMode);
+    gridController.setMode(newMode);
+  };
 
   // SuperGrid context
   const {
@@ -122,7 +131,7 @@ function SuperGridCore({
   const gridProjection = useMemo(() => {
     if (!nodes?.length) return null;
     return gridController.getProjection(nodes);
-  }, [gridController, nodes, mode, pafvState.mappings]);
+  }, [gridController, nodes, currentMode, pafvState.mappings]);
 
   // Derive layout from projection (backwards compatibility)
   const gridLayout = useMemo(() => {
@@ -220,6 +229,15 @@ function SuperGridCore({
       data-columns={gridLayout.hasColumns}
       data-rows={gridLayout.hasRows}
     >
+      {/* Grid Continuum Mode Switcher */}
+      <div className="supergrid__grid-continuum-switcher">
+        <GridContinuumSwitcher
+          currentMode={currentMode}
+          onModeChange={handleModeChange}
+          showTransitionFeedback={true}
+        />
+      </div>
+
       {/* SuperSearch - Top Level Search */}
       {isFeatureEnabled('enableSuperSearch') && (
         <div className="supergrid__super-search">

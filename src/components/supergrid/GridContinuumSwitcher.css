@@ -1,0 +1,176 @@
+/**
+ * Grid Continuum Switcher Styles
+ *
+ * Visual design for the 5-mode Grid Continuum switcher:
+ * Gallery → List → Kanban → Grid → SuperGrid
+ */
+
+.grid-continuum-switcher {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--background-panel);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.grid-continuum-switcher__modes {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--background-subtle);
+  border-radius: 6px;
+}
+
+.grid-continuum-switcher__mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  min-width: 4rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-secondary);
+}
+
+.grid-continuum-switcher__mode:hover {
+  background: var(--background-hover);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.grid-continuum-switcher__mode:focus {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.grid-continuum-switcher__mode.active {
+  background: var(--background-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary-inverse);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.grid-continuum-switcher__mode.active:hover {
+  background: var(--background-primary-hover);
+  transform: none;
+}
+
+.grid-continuum-switcher__mode-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.grid-continuum-switcher__mode.active .grid-continuum-switcher__mode-icon {
+  opacity: 1;
+}
+
+.grid-continuum-switcher__mode-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.grid-continuum-switcher__mode-axes {
+  font-size: 0.625rem;
+  opacity: 0.6;
+  font-variant: tabular-nums;
+}
+
+.grid-continuum-switcher__mode.active .grid-continuum-switcher__mode-axes {
+  opacity: 0.8;
+}
+
+/* Progression bar */
+.grid-continuum-switcher__progression {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  background: var(--background-subtle);
+  border-radius: 1.5px;
+  overflow: hidden;
+}
+
+.grid-continuum-switcher__progression-bar {
+  height: 100%;
+  background: linear-gradient(90deg,
+    var(--accent-primary) 0%,
+    var(--accent-secondary) 100%
+  );
+  border-radius: 1.5px;
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Transition feedback */
+.grid-continuum-switcher--transitioning {
+  opacity: 0.8;
+}
+
+.grid-continuum-switcher--transitioning .grid-continuum-switcher__progression-bar {
+  animation: pulse-glow 600ms ease-in-out;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(var(--accent-primary-rgb), 0);
+  }
+  50% {
+    box-shadow: 0 0 8px rgba(var(--accent-primary-rgb), 0.4);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .grid-continuum-switcher__modes {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .grid-continuum-switcher__mode {
+    min-width: 3rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .grid-continuum-switcher__mode-label {
+    display: none;
+  }
+
+  .grid-continuum-switcher__mode-icon {
+    font-size: 1rem;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .grid-continuum-switcher__mode {
+    border-width: 2px;
+  }
+
+  .grid-continuum-switcher__mode.active {
+    box-shadow: 0 0 0 2px var(--focus-ring);
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .grid-continuum-switcher__mode {
+    transition: none;
+  }
+
+  .grid-continuum-switcher__progression-bar {
+    transition: none;
+  }
+
+  .grid-continuum-switcher--transitioning .grid-continuum-switcher__progression-bar {
+    animation: none;
+  }
+}
