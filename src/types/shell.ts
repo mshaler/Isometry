@@ -17,10 +17,22 @@ export interface CommandResponse {
   type: CommandType;
 }
 
-export interface ClaudeAPIConfig {
-  apiKey: string;
-  maxTokens?: number;
-  temperature?: number;
+export interface ClaudeCLIConfig {
+  cliPath: string;
+  isAvailable: boolean;
+  version?: string;
+  maxResponseTime?: number;
+}
+
+export interface CommandRoutingContext {
+  projectPath?: string;
+  activeFile?: string;
+  selectedText?: string;
+  cardContext?: {
+    id: string;
+    title: string;
+    content?: string;
+  };
 }
 
 export interface HistoryEntry {

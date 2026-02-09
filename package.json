@@ -33,7 +33,6 @@
     "check:directory-health": "node scripts/check-directory-health.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.2",
     "@headlessui/react": "^2.2.9",
     "@msgpack/msgpack": "^3.1.3",
     "@radix-ui/react-select": "^2.2.6",

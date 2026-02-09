@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useClaudeAPI } from './useClaudeAPI';
+import { useClaude } from '../useClaude';
 import { useProjectContext } from './useProjectContext';
 import { useCommandHistory } from './useCommandHistory';
 import { useTerminalContext } from '../../context/TerminalContext';
@@ -20,7 +20,7 @@ interface UseCommandRouterReturn {
  * Command router that dispatches to appropriate handlers (terminal vs Claude)
  */
 export function useCommandRouter(): UseCommandRouterReturn {
-  const claudeAPI = useClaudeAPI();
+  const claude = useClaude();
   const projectContext = useProjectContext();
   const history = useCommandHistory();
   const terminalContext = useTerminalContext();
@@ -101,7 +101,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
       }
 
       // Execute Claude command
-      const response = await claudeAPI.executeClaudeCommand(enhancedPrompt);
+      const response = await claude.executeClaudeCommand(enhancedPrompt);
 
       // Add to history with context info
       const historyEntry: HistoryEntry = {
@@ -147,7 +147,7 @@ export function useCommandRouter(): UseCommandRouterReturn {
       history.addHistoryEntry(errorHistoryEntry);
       return errorResponse;
     }
-  }, [claudeAPI, projectContext, history, terminalContext]);
+  }, [claude, projectContext, history, terminalContext]);
 
   const executeSystemCommand = useCallback(async (command: string, originalInput: string): Promise<CommandResponse> => {
     const startTime = Date.now();
