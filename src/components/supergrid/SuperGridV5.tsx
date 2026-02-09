@@ -22,7 +22,6 @@ import { useMemo, useEffect, useRef, useState } from 'react';
 import { SuperGridProvider, useSuperGrid } from '@/contexts/SuperGridContext';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import type { Node } from '@/types/node';
-import type { AxisMapping } from '@/types/pafv';
 import type { SuperGridConfig, SuperGridEventHandlers } from '@/engine/SuperGridEngine';
 import { GridContinuumController } from './GridContinuumController';
 import { GridContinuumSwitcher } from './GridContinuumSwitcher';
@@ -72,7 +71,12 @@ function SuperGridCore({
   debugMode = false
 }: Omit<SuperGridV5Props, 'superConfig' | 'eventHandlers'>) {
   const gridRef = useRef<HTMLDivElement>(null);
-  const { state: pafvState } = usePAFV();
+  const {
+    state: pafvState,
+    setMapping: setPAFVMapping,
+    setViewMode: setPAFVViewMode,
+    getAxisForPlane
+  } = usePAFV();
 
   // Grid Continuum Controller - the polymorphic projection engine
   const [gridController] = useState(() => new GridContinuumController());
@@ -88,6 +92,35 @@ function SuperGridCore({
   const handleModeChange = (newMode: GridContinuumMode) => {
     setCurrentMode(newMode);
     gridController.setMode(newMode);
+
+    // Sync with PAFV view mode (simplified to grid/list)
+    if (newMode === 'list') {
+      setPAFVViewMode('list');
+    } else {
+      setPAFVViewMode('grid');
+    }
+
+    // Update PAFV mappings based on mode defaults
+    if (newMode === 'gallery') {
+      // Gallery mode: no axis mappings needed
+    } else if (newMode === 'list') {
+      // List mode: default to hierarchy on Y axis
+      setPAFVMapping({ plane: 'y', axis: 'hierarchy', facet: 'priority' });
+    } else if (newMode === 'kanban') {
+      // Kanban mode: default to category on X axis
+      setPAFVMapping({ plane: 'x', axis: 'category', facet: 'status' });
+    } else if (newMode === 'grid') {
+      // Grid mode: default to category X, hierarchy Y
+      setPAFVMapping({ plane: 'x', axis: 'category', facet: 'status' });
+      setPAFVMapping({ plane: 'y', axis: 'hierarchy', facet: 'priority' });
+    } else if (newMode === 'supergrid') {
+      // SuperGrid mode: preserve existing mappings or use grid defaults
+      const existingX = getAxisForPlane('x');
+      const existingY = getAxisForPlane('y');
+
+      if (!existingX) setPAFVMapping({ plane: 'x', axis: 'category', facet: 'status' });
+      if (!existingY) setPAFVMapping({ plane: 'y', axis: 'hierarchy', facet: 'priority' });
+    }
   };
 
   // SuperGrid context
@@ -116,8 +149,9 @@ function SuperGridCore({
 
   // Sync PAFV mappings with GridContinuumController
   useEffect(() => {
-    const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
-    const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
+    // Bridge PAFV state mappings to GridContinuumController
+    const xMapping = pafvState.mappings.find(m => m.plane === 'x');
+    const yMapping = pafvState.mappings.find(m => m.plane === 'y');
 
     if (xMapping) {
       gridController.setAxisMapping('x', xMapping.axis, xMapping.facet);
