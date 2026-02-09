@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings } from 'lucide-react';
 import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
+import { GSDInterface } from '../gsd/GSDInterface';
+import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
+// import { getClaudeCodeDispatcher } from '../../services/claudeCodeWebSocketDispatcher';
 
 // Simplified implementations for notebook environment
 const useProjectContext = () => ({
@@ -27,9 +30,48 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   const [claudeConnectionStatus, setClaudeConnectionStatus] = useState<
     'configured' | 'not-configured'
   >('not-configured');
+
+  // Command history state
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+
+  // Terminal output buffer for GSD integration
+  const [terminalOutput, setTerminalOutput] = useState<string>('');
+
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const { getActiveCardContext } = useProjectContext();
   const { isConfigured: isClaudeConfigured } = useClaudeAPI();
+
+  // GSD integration - simplified for now (will be replaced with proper hook)
+  const gsdService = null;
+
+  // Handle terminal output for GSD integration
+  const handleTerminalOutput = useCallback((output: string) => {
+    setTerminalOutput(prev => prev + output + '\n');
+  }, []);
+
+  // GSD terminal integration
+  const gsdTerminalIntegration = useGSDTerminalIntegration({
+    gsdService,
+    sessionId: null,
+    enabled: activeTab === 'gsd-gui', // Only enable when GSD tab is active
+    onStateUpdate: (state) => {
+      console.log('GSD state updated:', state);
+    },
+    onChoicePrompt: (choices) => {
+      console.log('GSD choice prompt:', choices);
+    },
+    onError: (error) => {
+      console.error('GSD terminal integration error:', error);
+    }
+  });
+
+  // Process terminal output through GSD integration
+  useEffect(() => {
+    if (terminalOutput && gsdTerminalIntegration.isMonitoring) {
+      gsdTerminalIntegration.processTerminalOutput(terminalOutput);
+    }
+  }, [terminalOutput, gsdTerminalIntegration.isMonitoring, gsdTerminalIntegration.processTerminalOutput]);
 
   // Tab definitions
   const tabs: Array<{ id: ShellTab; icon: typeof Bot; label: string; description: string }> = [
@@ -37,6 +79,42 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     { id: 'claude-code', icon: Terminal, label: 'Terminal', description: 'Command execution' },
     { id: 'gsd-gui', icon: Settings, label: 'GSD GUI', description: 'Getting Shit Done interface' }
   ];
+
+  // Command history handlers
+  const handleCommand = (command: string) => {
+    if (command.trim()) {
+      setCommandHistory(prev => [...prev.slice(-99), command.trim()]); // Keep last 100 commands
+      setHistoryIndex(-1);
+    }
+  };
+
+  const handleNavigateHistory = (direction: 'up' | 'down'): string | null => {
+    if (commandHistory.length === 0) return null;
+
+    let newIndex: number;
+    if (direction === 'up') {
+      newIndex = historyIndex + 1;
+      if (newIndex >= commandHistory.length) {
+        return null; // At the beginning of history
+      }
+    } else {
+      newIndex = historyIndex - 1;
+      if (newIndex < -1) {
+        return null; // Past the end of history
+      }
+    }
+
+    setHistoryIndex(newIndex);
+
+    if (newIndex === -1) {
+      return ''; // Return to empty line
+    }
+
+    return commandHistory[commandHistory.length - 1 - newIndex];
+  };
+
+  // Real-time GSD monitoring status indicator
+  const gsdMonitoringStatus = gsdTerminalIntegration.isMonitoring ? 'monitoring' : 'inactive';
 
   // Get current tab info
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[1]; // Default to claude-code
@@ -48,7 +126,9 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     resizeTerminal,
     isConnected
   } = useTerminal({
-    // No custom command handler - let the terminal handle commands directly
+    onCommand: handleCommand,
+    onNavigateHistory: handleNavigateHistory,
+    onOutput: handleTerminalOutput,
   });
 
   // Initialize terminal when component mounts and claude-code tab is active
@@ -195,14 +275,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
           </div>
         ) : (
           /* GSD GUI Tab - Getting Shit Done interface */
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <Settings size={48} className="mx-auto mb-3 text-gray-600" />
-              <div className="font-medium mb-1 text-gray-300">GSD GUI</div>
-              <div className="text-sm mb-3">Visual interface for Getting Shit Done workflows</div>
-              <div className="text-xs">Coming soon: Interactive task management</div>
-            </div>
-          </div>
+          <GSDInterface className="flex-1" />
         )}
       </div>
 
@@ -227,6 +300,20 @@ function ShellComponentInner({ className }: ShellComponentProps) {
                 {claudeConnectionStatus === 'configured' ? 'ready' : 'not configured'}
               </span>
             </div>
+            {activeTab === 'gsd-gui' && (
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400">GSD:</span>
+                <Circle
+                  size={6}
+                  className={`fill-current ${
+                    gsdMonitoringStatus === 'monitoring' ? 'text-blue-400' : 'text-gray-500'
+                  }`}
+                />
+                <span className={gsdMonitoringStatus === 'monitoring' ? 'text-blue-400' : 'text-gray-500'}>
+                  {gsdMonitoringStatus === 'monitoring' ? 'monitoring' : 'inactive'}
+                </span>
+              </div>
+            )}
             {getActiveCardContext() && (
               <div className="flex items-center gap-1">
                 <span className="text-gray-400">Context:</span>

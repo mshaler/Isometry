@@ -9,6 +9,7 @@ interface UseTerminalOptions {
   shell?: string;
   onCommand?: (command: string) => void;
   onNavigateHistory?: (direction: 'up' | 'down') => string | null;
+  onOutput?: (output: string) => void;
 }
 
 interface UseTerminalReturn {
@@ -126,7 +127,12 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     } else {
       terminal.write(`${output}\r\n`);
     }
-  }, []);
+
+    // Notify output callback for external processing (e.g., GSD integration)
+    if (options.onOutput) {
+      options.onOutput(output);
+    }
+  }, [options.onOutput]);
 
   const showPrompt = useCallback(() => {
     const terminal = terminalRef.current;
