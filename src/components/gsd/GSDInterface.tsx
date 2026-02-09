@@ -13,12 +13,16 @@ import {
   Settings,
   FolderOpen,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Terminal,
+  Zap
 } from 'lucide-react';
 import { ExecutionProgress } from './ExecutionProgress';
 import { ChoicePrompt } from './ChoicePrompt';
 import { CommandPalette, CommandInputModal } from './CommandPalette';
 import { QuickActions } from './QuickActions';
+import { RichCommandBuilder, CommandTemplate, BuiltCommand } from './RichCommandBuilder';
+import { ClaudeCodeTerminal } from './ClaudeCodeTerminal';
 import { GSDService } from '../../services/gsdService';
 import { GSDSessionState, GSDPhase, FileChange } from '../../types/gsd';
 import { useSQLite } from '../../db/SQLiteProvider';
@@ -40,6 +44,8 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [commandInputModal, setCommandInputModal] = useState<{ command: SlashCommand; isOpen: boolean }>({ command: null as any, isOpen: false });
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'builder' | 'terminal'>('dashboard');
+  const [savedTemplates, setSavedTemplates] = useState<CommandTemplate[]>([]);
 
   // Initialize GSD service when database is available
   useEffect(() => {
@@ -353,6 +359,63 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
     setCommandInputModal({ command: null as any, isOpen: false });
   }, []);
 
+  // Rich Command Builder handlers
+  const handleBuiltCommandExecute = useCallback(async (command: BuiltCommand) => {
+    try {
+      const claudeCommand = {
+        command: 'claude',
+        args: [command.finalCommand],
+        workingDirectory: sessionState?.projectPath || '/Users/mshaler/Developer/Projects/Isometry'
+      };
+
+      const dispatcher = await getClaudeCodeDispatcher();
+      const execution = await dispatcher.executeAsync(claudeCommand);
+      setCurrentExecutionId(execution.id);
+
+      console.log('Rich command executed:', command.finalCommand);
+    } catch (error) {
+      setError(`Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [sessionState]);
+
+  const handleSaveTemplate = useCallback((template: CommandTemplate) => {
+    setSavedTemplates(prev => [...prev, template]);
+    console.log('Template saved:', template.name);
+  }, []);
+
+  // Claude Code Terminal handlers
+  const handleTerminalCommandExecute = useCallback(async (command: string) => {
+    try {
+      const claudeCommand = {
+        command: 'claude',
+        args: [command],
+        workingDirectory: sessionState?.projectPath || '/Users/mshaler/Developer/Projects/Isometry'
+      };
+
+      const dispatcher = await getClaudeCodeDispatcher();
+      const execution = await dispatcher.executeAsync(claudeCommand);
+      setCurrentExecutionId(execution.id);
+
+      console.log('Terminal command executed:', command);
+    } catch (error) {
+      setError(`Failed to execute terminal command: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }, [sessionState]);
+
+  const handleTerminalChoiceSelect = useCallback(async (choices: number[]) => {
+    if (choices.length === 1) {
+      try {
+        const command = GSDCommands.selectChoice(choices[0]);
+        const dispatcher = await getClaudeCodeDispatcher();
+        const execution = await dispatcher.executeAsync(command);
+        setCurrentExecutionId(execution.id);
+        console.log('Terminal choice selected:', choices[0]);
+      } catch (error) {
+        setError(`Failed to send choice: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  }, []);
+
   // Handle file changes from file monitoring
   const handleFileChange = useCallback((fileChange: FileChangeEvent) => {
     if (!gsdService || !sessionState) return;
@@ -524,53 +587,116 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
         onClose={handleCommandInputClose}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 space-y-4">
-        {/* Quick Actions */}
-        <QuickActions
-          phase={displayState.phase}
-          status={displayState.status}
-          hasActiveSession={!!sessionState}
-          onCommandExecute={handleSlashCommand}
-          onShowCommandPalette={() => setShowCommandPalette(true)}
-          className="bg-gray-800 border border-gray-700 rounded-lg p-4"
-        />
+      {/* Tab Navigation */}
+      <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-1 border border-gray-700">
+        <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'dashboard'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+          }`}
+        >
+          <Sparkles size={16} />
+          Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab('builder')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'builder'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+          }`}
+        >
+          <Zap size={16} />
+          Command Builder
+        </button>
+        <button
+          onClick={() => setActiveTab('terminal')}
+          className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+            activeTab === 'terminal'
+              ? 'bg-blue-600 text-white'
+              : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+          }`}
+        >
+          <Terminal size={16} />
+          Enhanced Terminal
+        </button>
+      </div>
 
-        {/* Progress Section */}
-        <ExecutionProgress
-          currentPhase={displayState.phase}
-          phaseHistory={displayState.phaseHistory}
-          activeToolUse={displayState.status === 'executing' ? 'Writing SuperGrid component with D3.js data binding...' : null}
-          fileChanges={{
-            created: displayState.fileChanges.filter(f => f.type === 'create').length,
-            modified: displayState.fileChanges.filter(f => f.type === 'modify').length,
-            deleted: displayState.fileChanges.filter(f => f.type === 'delete').length
-          }}
-          tokenUsage={displayState.tokenUsage}
-          status={displayState.status}
-        />
+      {/* Tab Content */}
+      <div className="flex-1 overflow-hidden">
+        {activeTab === 'dashboard' && (
+          <div className="h-full space-y-4">
+            {/* Quick Actions */}
+            <QuickActions
+              phase={displayState.phase}
+              status={displayState.status}
+              hasActiveSession={!!sessionState}
+              onCommandExecute={handleSlashCommand}
+              onShowCommandPalette={() => setShowCommandPalette(true)}
+              className="bg-gray-800 border border-gray-700 rounded-lg p-4"
+            />
 
-        {/* Choice Prompt Section */}
-        {displayState.pendingChoices && displayState.status === 'waiting-input' && (
-          <ChoicePrompt
-            choices={displayState.pendingChoices}
-            multiSelect={false}
-            onSelect={handleChoiceSelect}
-            onFreeformInput={handleFreeformInput}
-            disabled={displayState.status !== 'waiting-input'}
-          />
+            {/* Progress Section */}
+            <ExecutionProgress
+              currentPhase={displayState.phase}
+              phaseHistory={displayState.phaseHistory}
+              activeToolUse={displayState.status === 'executing' ? 'Writing SuperGrid component with D3.js data binding...' : null}
+              fileChanges={{
+                created: displayState.fileChanges.filter(f => f.type === 'create').length,
+                modified: displayState.fileChanges.filter(f => f.type === 'modify').length,
+                deleted: displayState.fileChanges.filter(f => f.type === 'delete').length
+              }}
+              tokenUsage={displayState.tokenUsage}
+              status={displayState.status}
+            />
+
+            {/* Choice Prompt Section */}
+            {displayState.pendingChoices && displayState.status === 'waiting-input' && (
+              <ChoicePrompt
+                choices={displayState.pendingChoices}
+                multiSelect={false}
+                onSelect={handleChoiceSelect}
+                onFreeformInput={handleFreeformInput}
+                disabled={displayState.status !== 'waiting-input'}
+              />
+            )}
+
+            {/* Status Message */}
+            {displayState.status === 'executing' && (
+              <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-blue-200">
+                  <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
+                  <span className="font-medium">Claude is working...</span>
+                </div>
+                <p className="text-sm text-gray-300 mt-1">
+                  Implementation in progress. This may take a few minutes.
+                </p>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Status Message */}
-        {displayState.status === 'executing' && (
-          <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-4">
-            <div className="flex items-center gap-2 text-blue-200">
-              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" />
-              <span className="font-medium">Claude is working...</span>
-            </div>
-            <p className="text-sm text-gray-300 mt-1">
-              Implementation in progress. This may take a few minutes.
-            </p>
+        {activeTab === 'builder' && (
+          <div className="h-full">
+            <RichCommandBuilder
+              onCommandExecute={handleBuiltCommandExecute}
+              onSaveTemplate={handleSaveTemplate}
+              savedTemplates={savedTemplates}
+              className="h-full"
+            />
+          </div>
+        )}
+
+        {activeTab === 'terminal' && (
+          <div className="h-full">
+            <ClaudeCodeTerminal
+              sessionId={sessionState?.sessionId}
+              onChoiceSelect={handleTerminalChoiceSelect}
+              onCommandExecute={handleTerminalCommandExecute}
+              className="h-full"
+            />
           </div>
         )}
       </div>
