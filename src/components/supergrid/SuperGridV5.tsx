@@ -18,12 +18,14 @@
  * Grid Continuum: Gallery → List → Kanban → 2D Grid → nD SuperGrid
  */
 
-import { useMemo, useEffect, useRef } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { SuperGridProvider, useSuperGrid } from '@/contexts/SuperGridContext';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import type { Node } from '@/types/node';
-import type { LATCHAxis, AxisMapping } from '@/types/pafv';
+import type { AxisMapping } from '@/types/pafv';
 import type { SuperGridConfig, SuperGridEventHandlers } from '@/engine/SuperGridEngine';
+import { GridContinuumController } from './GridContinuumController';
+import type { GridContinuumMode } from '@/types/view';
 
 // Import all Super* components
 import { SuperStack } from './SuperStack';
@@ -71,6 +73,14 @@ function SuperGridCore({
   const gridRef = useRef<HTMLDivElement>(null);
   const { state: pafvState } = usePAFV();
 
+  // Grid Continuum Controller - the polymorphic projection engine
+  const [gridController] = useState(() => new GridContinuumController());
+
+  // Initialize controller with mode
+  useEffect(() => {
+    gridController.setMode(mode as GridContinuumMode);
+  }, [gridController, mode]);
+
   // SuperGrid context
   const {
     state: superState,
@@ -95,70 +105,75 @@ function SuperGridCore({
     updateState({ mode });
   }, [mode, updateState]);
 
-  // Determine grid layout based on PAFV mappings and mode
-  const gridLayout = useMemo(() => {
+  // Sync PAFV mappings with GridContinuumController
+  useEffect(() => {
     const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
     const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
 
-    return {
-      hasColumns: !!xMapping,
-      hasRows: !!yMapping,
-      columnAxis: xMapping?.axis,
-      rowAxis: yMapping?.axis,
-      columnFacet: xMapping?.facet,
-      rowFacet: yMapping?.facet,
-      effectiveMode: mode === 'supergrid' && (!xMapping && !yMapping) ? 'gallery' : mode
-    };
-  }, [pafvState.mappings, mode]);
+    if (xMapping) {
+      gridController.setAxisMapping('x', xMapping.axis, xMapping.facet);
+    }
+    if (yMapping) {
+      gridController.setAxisMapping('y', yMapping.axis, yMapping.facet);
+    }
+  }, [pafvState.mappings, gridController]);
 
-  // Group nodes by grid coordinates (enhanced with SuperSize support)
+  // Get grid projection from GridContinuumController
+  const gridProjection = useMemo(() => {
+    if (!nodes?.length) return null;
+    return gridController.getProjection(nodes);
+  }, [gridController, nodes, mode, pafvState.mappings]);
+
+  // Derive layout from projection (backwards compatibility)
+  const gridLayout = useMemo(() => {
+    if (!gridProjection) {
+      return {
+        hasColumns: false,
+        hasRows: false,
+        columnAxis: null,
+        rowAxis: null,
+        columnFacet: null,
+        rowFacet: null,
+        effectiveMode: 'gallery'
+      };
+    }
+
+    const xMapping = gridProjection.mappings.find(m => m.plane === 'x');
+    const yMapping = gridProjection.mappings.find(m => m.plane === 'y');
+
+    return {
+      hasColumns: !!xMapping || gridProjection.layout === 'column-groups',
+      hasRows: !!yMapping || gridProjection.layout === 'vertical-hierarchy',
+      columnAxis: xMapping?.axis || null,
+      rowAxis: yMapping?.axis || null,
+      columnFacet: xMapping?.facet || null,
+      rowFacet: yMapping?.facet || null,
+      effectiveMode: gridProjection.mode
+    };
+  }, [gridProjection]);
+
+  // Get grid data from projection (enhanced with SuperSize support)
   const gridData = useMemo(() => {
-    const filteredNodes = getFilteredNodes();
-    if (!filteredNodes?.length) return { cells: [], columnHeaders: [], rowHeaders: [] };
+    if (!gridProjection) {
+      return { cells: [], columnHeaders: [], rowHeaders: [] };
+    }
 
-    const cells = new Map<string, Node[]>();
-    const columnValues = new Set<string>();
-    const rowValues = new Set<string>();
-
-    filteredNodes.forEach((node: Node) => {
-      let colKey = 'default';
-      let rowKey = 'default';
-
-      // Extract column value
-      if (gridLayout.hasColumns && gridLayout.columnAxis && gridLayout.columnFacet) {
-        colKey = extractNodeValue(node, gridLayout.columnAxis, gridLayout.columnFacet);
-        columnValues.add(colKey);
-      }
-
-      // Extract row value
-      if (gridLayout.hasRows && gridLayout.rowAxis && gridLayout.rowFacet) {
-        rowKey = extractNodeValue(node, gridLayout.rowAxis, gridLayout.rowFacet);
-        rowValues.add(rowKey);
-      }
-
-      const cellKey = `${rowKey}:${colKey}`;
-      if (!cells.has(cellKey)) {
-        cells.set(cellKey, []);
-      }
-      cells.get(cellKey)!.push(node);
-    });
+    // Use projection cells directly
+    const cells = gridProjection.cells.map(cell => ({
+      ...cell,
+      rowKey: cell.rowKey || 'default',
+      colKey: cell.columnKey || 'default',
+      size: cell.size || { width: 120, height: 80 } // Default size from SuperSize config
+    }));
 
     return {
-      cells: Array.from(cells.entries()).map(([key, cellNodes]) => {
-        const [rowKey, colKey] = key.split(':');
-        return {
-          id: key,
-          rowKey,
-          colKey,
-          nodes: cellNodes,
-          position: { x: 0, y: 0 }, // Will be calculated by SuperSize/SuperZoom
-          size: { width: 120, height: 80 } // Default size from SuperSize config
-        };
-      }),
-      columnHeaders: Array.from(columnValues).sort(),
-      rowHeaders: Array.from(rowValues).sort()
+      cells,
+      columnHeaders: gridProjection.columns || [],
+      rowHeaders: gridProjection.rows || [],
+      layout: gridProjection.layout,
+      axisCount: gridProjection.axisCount
     };
-  }, [getFilteredNodes, gridLayout]);
+  }, [gridProjection]);
 
   // Loading state
   if (loading) {
@@ -262,6 +277,15 @@ function SuperGridCore({
             <summary>SuperGridV5 Debug ({nodes.length} nodes, {getFilteredNodes().length} filtered)</summary>
             <pre>{JSON.stringify({
               gridLayout,
+              gridProjection: gridProjection ? {
+                mode: gridProjection.mode,
+                axisCount: gridProjection.axisCount,
+                layout: gridProjection.layout,
+                mappings: gridProjection.mappings,
+                cellCount: gridProjection.cells.length,
+                columns: gridProjection.columns,
+                rows: gridProjection.rows
+              } : null,
               pafvState,
               superState: {
                 mode: superState.mode,
@@ -271,7 +295,9 @@ function SuperGridCore({
               gridData: {
                 cellCount: gridData.cells.length,
                 columnHeaders: gridData.columnHeaders,
-                rowHeaders: gridData.rowHeaders
+                rowHeaders: gridData.rowHeaders,
+                layout: gridData.layout,
+                axisCount: gridData.axisCount
               }
             }, null, 2)}</pre>
           </details>
@@ -450,45 +476,5 @@ export function SuperGridV5(props: SuperGridV5Props) {
   );
 }
 
-/**
- * Extract value from node for given axis and facet
- */
-function extractNodeValue(node: Node, axis: LATCHAxis, facet: string): string {
-  switch (axis) {
-    case 'location':
-      if (facet === 'location_name') return node.locationName || 'Unknown';
-      return node.locationName || 'Unknown';
-
-    case 'alphabet':
-      if (facet === 'name') return node.name.charAt(0).toUpperCase();
-      return node.name.charAt(0).toUpperCase();
-
-    case 'time': {
-      const date = new Date(node.createdAt);
-      if (facet === 'year') return date.getFullYear().toString();
-      if (facet === 'month') return date.toLocaleDateString('en-US', { month: 'long' });
-      if (facet === 'quarter') return `Q${Math.floor(date.getMonth() / 3) + 1}`;
-      return date.getFullYear().toString();
-    }
-
-    case 'category':
-      if (facet === 'folder') return node.folder || 'Uncategorized';
-      if (facet === 'status') return node.status || 'None';
-      return node.folder || 'Uncategorized';
-
-    case 'hierarchy':
-      if (facet === 'priority') {
-        const p = node.priority || 0;
-        if (p >= 3) return 'High';
-        if (p >= 2) return 'Medium';
-        if (p >= 1) return 'Low';
-        return 'None';
-      }
-      return 'None';
-
-    default:
-      return 'Unknown';
-  }
-}
 
 export default SuperGridV5;
