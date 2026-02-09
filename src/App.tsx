@@ -3,6 +3,7 @@
 import { SQLiteP0GateTest } from './SQLiteP0GateTest';
 import SuperGridSQLDemo from './components/SuperGridSQLDemo';
 import { SQLiteProvider } from './db/SQLiteProvider';
+import { CLIIntegrationTest } from './CLIIntegrationTest';
 // TEMP: Commenting out broken imports to restore P0 test access
 // import { NotebookLayout } from './components/notebook/NotebookLayout';
 // import { NotebookProvider } from './contexts/NotebookContext';
@@ -46,6 +47,10 @@ function App() {
     );
   }
 
+  if (testMode === 'cli-test') {
+    return <CLIIntegrationTest />;
+  }
+
   if (testMode === 'three-canvas') {
     return (
       <div className="p-6">
@@ -69,6 +74,7 @@ function App() {
       <div className="space-y-2">
         <div><a href="?test=p0" className="text-blue-600 underline">P0 Gate Test</a> - Foundation verification + SuperGrid v4 demo</div>
         <div><a href="?test=supergrid" className="text-blue-600 underline">SuperGrid + sql.js + FTS5</a> - Complete integration demonstration</div>
+        <div><a href="?test=cli-test" className="text-blue-600 underline font-bold">🧪 CLI Integration Test</a> - Verify Phase 3 Claude CLI integration</div>
         <div><a href="?test=three-canvas" className="text-blue-600 underline">Three-Canvas Notebook</a> - Complete three-canvas integration demo</div>
         <div><a href="?test=sqlite" className="text-blue-600 underline">SQLite Test</a> - sql.js integration testing</div>
       </div>

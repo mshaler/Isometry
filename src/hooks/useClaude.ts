@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CommandResponse, CommandType } from '../types/shell';
 import { getEnvironmentConfig } from '../utils/environmentSetup';
 import { devLogger } from '../utils/dev-logger';
@@ -31,6 +31,16 @@ export function useClaude() {
   });
 
   const commandIdRef = useRef(0);
+
+  // Sync state with environment config on mount (safely)
+  useEffect(() => {
+    const envConfig = getEnvironmentConfig();
+    setState(prev => ({
+      ...prev,
+      isAvailable: envConfig.cliAvailable,
+      cliPath: envConfig.cliPath
+    }));
+  }, []); // Empty deps - only run once on mount
 
   /**
    * Execute a Claude command using CLI with proper error handling
@@ -163,16 +173,7 @@ when running in a Node.js environment (Tauri/Electron).`;
    */
   const validateCLI = useCallback((): boolean => {
     const envConfig = getEnvironmentConfig();
-    const isAvailable = envConfig.cliAvailable;
-
-    setState(prev => ({
-      ...prev,
-      isAvailable,
-      cliPath: envConfig.cliPath,
-      lastError: isAvailable ? undefined : 'Claude Code CLI not detected'
-    }));
-
-    return isAvailable;
+    return envConfig.cliAvailable;
   }, []);
 
   /**
