@@ -1,0 +1,556 @@
+/**
+ * SuperZoom CSS - Cartographic Navigation Styling
+ *
+ * Styles for SuperZoom component including pan/zoom interactions,
+ * boundary indicators, visual feedback, and control interfaces.
+ */
+
+.super-zoom-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+/* SVG Container */
+.super-zoom-svg {
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  transition: cursor 150ms ease;
+}
+
+.super-zoom-svg.dragging {
+  cursor: grabbing;
+}
+
+.super-zoom-svg.panning {
+  cursor: move;
+}
+
+.super-zoom-svg.zooming {
+  cursor: zoom-in;
+}
+
+/* Cartographic Container */
+.superzoom-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Zoom Transform Group */
+.superzoom-transform-group {
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.superzoom-transform-group.animating {
+  transition-duration: 250ms;
+}
+
+/* Boundary Indicators */
+.super-zoom-boundary-indicators {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.super-zoom-boundary-indicators.visible {
+  opacity: 1;
+}
+
+.super-zoom-boundary-top,
+.super-zoom-boundary-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f59e0b 0%, #ef4444 50%, #f59e0b 100%);
+  animation: super-zoom-boundary-pulse 1s ease-in-out infinite;
+}
+
+.super-zoom-boundary-top {
+  top: 0;
+}
+
+.super-zoom-boundary-bottom {
+  bottom: 0;
+}
+
+.super-zoom-boundary-left,
+.super-zoom-boundary-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #f59e0b 0%, #ef4444 50%, #f59e0b 100%);
+  animation: super-zoom-boundary-pulse 1s ease-in-out infinite;
+}
+
+.super-zoom-boundary-left {
+  left: 0;
+}
+
+.super-zoom-boundary-right {
+  right: 0;
+}
+
+@keyframes super-zoom-boundary-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Bounce Direction Feedback */
+.super-zoom-bounce-indicator {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.super-zoom-bounce-message {
+  padding: 8px 16px;
+  background: rgba(245, 158, 11, 0.9);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 20px;
+  backdrop-filter: blur(8px);
+  animation: super-zoom-bounce-animation 0.5s ease-out;
+}
+
+@keyframes super-zoom-bounce-animation {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Current State Indicator */
+.super-zoom-state-indicator {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Controls Panel */
+.super-zoom-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 320px;
+  z-index: 30;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.super-zoom-controls-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.super-zoom-controls-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.super-zoom-controls-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Control Sections */
+.super-zoom-control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.super-zoom-control-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Zoom Controls */
+.super-zoom-zoom-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.super-zoom-zoom-button {
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.super-zoom-zoom-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.super-zoom-zoom-button:active {
+  background: #f3f4f6;
+}
+
+.super-zoom-zoom-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.super-zoom-reset-button {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Zoom Slider */
+.super-zoom-slider-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.super-zoom-slider-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.super-zoom-slider-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}
+
+/* Pan Controls */
+.super-zoom-pan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.super-zoom-pan-button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 150ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.super-zoom-pan-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.super-zoom-pan-button.center {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.super-zoom-pan-button.center:hover {
+  background: #2563eb;
+}
+
+/* Quick Actions */
+.super-zoom-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.super-zoom-quick-action {
+  padding: 6px 12px;
+  font-size: 11px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.super-zoom-quick-action:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* Performance Monitor */
+.super-zoom-performance {
+  padding: 12px 0;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.super-zoom-performance-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.super-zoom-performance-badge {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  color: white;
+}
+
+.super-zoom-performance-badge.grade-a {
+  background: #059669;
+}
+
+.super-zoom-performance-badge.grade-b {
+  background: #d97706;
+}
+
+.super-zoom-performance-badge.grade-c,
+.super-zoom-performance-badge.grade-d {
+  background: #dc2626;
+}
+
+.super-zoom-performance-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+}
+
+.super-zoom-performance-label {
+  color: #6b7280;
+}
+
+.super-zoom-performance-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.super-zoom-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #f3f4f6;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.super-zoom-progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  transition: width 300ms ease;
+}
+
+/* Keyboard Shortcuts Help */
+.super-zoom-shortcuts {
+  border: 1px solid #f3f4f6;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+
+.super-zoom-shortcuts summary {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+.super-zoom-shortcuts-content {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.super-zoom-shortcut-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #374151;
+}
+
+.super-zoom-shortcut-keys {
+  font-family: 'JetBrains Mono', monospace;
+  background: #f3f4f6;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 9px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .super-zoom-controls {
+    width: 280px;
+    right: 8px;
+    top: 8px;
+  }
+
+  .super-zoom-state-indicator {
+    bottom: 8px;
+    left: 8px;
+    font-size: 10px;
+  }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  .super-zoom-container {
+    background: #111827;
+  }
+
+  .super-zoom-controls {
+    background: #1f2937;
+    border-color: #374151;
+    color: #f9fafb;
+  }
+
+  .super-zoom-controls-header {
+    border-color: #374151;
+  }
+
+  .super-zoom-controls-title {
+    color: #f9fafb;
+  }
+
+  .super-zoom-control-label {
+    color: #d1d5db;
+  }
+
+  .super-zoom-zoom-button,
+  .super-zoom-pan-button,
+  .super-zoom-quick-action {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .super-zoom-zoom-button:hover,
+  .super-zoom-pan-button:hover,
+  .super-zoom-quick-action:hover {
+    background: #4b5563;
+    border-color: #6b7280;
+  }
+
+  .super-zoom-performance {
+    border-color: #374151;
+  }
+
+  .super-zoom-performance-label {
+    color: #9ca3af;
+  }
+
+  .super-zoom-performance-value {
+    color: #f9fafb;
+  }
+
+  .super-zoom-shortcuts {
+    border-color: #374151;
+  }
+
+  .super-zoom-shortcuts summary {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .super-zoom-shortcut-item {
+    color: #d1d5db;
+  }
+
+  .super-zoom-shortcut-keys {
+    background: #4b5563;
+  }
+
+  .super-zoom-progress-bar {
+    background: #374151;
+  }
+}
+
+/* Animation Performance */
+.super-zoom-svg,
+.superzoom-transform-group {
+  will-change: transform;
+}
+
+.super-zoom-bounce-message {
+  will-change: transform, opacity;
+}
+
+/* Print Styles */
+@media print {
+  .super-zoom-controls {
+    display: none;
+  }
+
+  .super-zoom-state-indicator {
+    display: none;
+  }
+
+  .super-zoom-boundary-indicators {
+    display: none;
+  }
+
+  .super-zoom-bounce-indicator {
+    display: none;
+  }
+}
