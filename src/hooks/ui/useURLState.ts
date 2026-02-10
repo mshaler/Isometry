@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { devLogger } from '../../utils/logging';
 
 /**
  * Generic hook for synchronizing state with URL query parameters (router-independent)
@@ -23,7 +24,11 @@ export function useURLState<T>(
       try {
         return deserialize(urlValue);
       } catch (error) {
-        console.warn(`Failed to deserialize URL param "${key}":`, error);
+        devLogger.warn('Failed to deserialize URL param', {
+          key,
+          error: error instanceof Error ? error.message : String(error),
+          urlValue
+        });
         return defaultValue;
       }
     }
@@ -51,7 +56,11 @@ export function useURLState<T>(
       const newUrl = `${url.pathname}?${params.toString()}${url.hash}`;
       window.history.replaceState({}, '', newUrl);
     } catch (error) {
-      console.warn(`Failed to serialize value for "${key}":`, error);
+      devLogger.warn('Failed to serialize value for URL param', {
+        key,
+        error: error instanceof Error ? error.message : String(error),
+        value: newValue
+      });
       params.delete(key);
       const newUrl = `${url.pathname}?${params.toString()}${url.hash}`;
       window.history.replaceState({}, '', newUrl);
@@ -68,7 +77,11 @@ export function useURLState<T>(
           const deserialized = deserialize(currentUrlValue);
           setValueInternal(deserialized);
         } catch (error) {
-          console.warn(`Failed to deserialize URL param "${key}" on popstate:`, error);
+          devLogger.warn('Failed to deserialize URL param on popstate', {
+            key,
+            error: error instanceof Error ? error.message : String(error),
+            urlValue: currentUrlValue
+          });
           setValueInternal(defaultValue);
         }
       } else {
