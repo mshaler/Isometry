@@ -1,4 +1,5 @@
 import { getWebViewBridge } from '../webview-bridge';
+import { devLogger } from '../logging/logger';
 // Bridge elimination - Legacy correlation IDs disabled
 // import { generateCorrelationId } from './correlation-ids';
 
@@ -270,7 +271,7 @@ export class RollbackManager {
 
       this.availableDrafts.delete(draftId);
     } catch (error) {
-      console.error('Failed to remove draft:', error);
+      devLogger.error('Failed to remove draft', { draftId, error });
       throw error;
     }
   }
@@ -321,7 +322,7 @@ export class RollbackManager {
       });
 
     } catch (error) {
-      console.error('Failed to load available drafts:', error);
+      devLogger.error('Failed to load available drafts', { error });
     }
   }
 
@@ -345,7 +346,11 @@ export class RollbackManager {
 
     // Also log for development/debugging
     const logLevel = config.type === 'error' ? 'error' : 'info';
-    console[logLevel]('RollbackManager:', message);
+    if (logLevel === 'error') {
+      devLogger.error('RollbackManager notification', { message });
+    } else {
+      devLogger.info('RollbackManager notification', { message });
+    }
   }
 
   /**
@@ -371,7 +376,7 @@ export class RollbackManager {
         data: {}
       }) as Record<string, number>;
     } catch (error) {
-      console.error('Failed to get rollback metrics:', error);
+      devLogger.error('Failed to get rollback metrics', { error });
       return {};
     }
   }
