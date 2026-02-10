@@ -5,6 +5,7 @@
 - ✅ **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
 - ✅ **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
 - 🚧 **v4.2 Three-Canvas Notebook** - Phases 43-46 (in progress)
+- 🚧 **v4.3 Navigator Foundation** - Phase 50 (in progress)
 
 ## Phases
 
@@ -108,13 +109,35 @@ Plans:
 - [ ] 46-01: TBD (planned during phase planning)
 - [ ] 46-02: TBD
 
+### 🚧 v4.3 Navigator Foundation (In Progress)
+
+**Milestone Goal:** Build schema-on-read property classification for Navigator faceted navigation
+
+#### Phase 50: Foundation (Schema-on-Read Classification)
+**Goal**: Build property classification service that reads facets table and produces LATCH+GRAPH bucketed property list
+**Depends on**: Phase 42 (v4.1 complete)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05
+**Success Criteria** (what must be TRUE):
+  1. classifyProperties(db) returns PropertyClassification with correct LATCH+GRAPH buckets
+  2. GRAPH bucket contains 4 edge types (LINK, NEST, SEQUENCE, AFFINITY) + 2 metrics (degree, weight)
+  3. Disabled facets are excluded from classification
+  4. Sort order is respected within each bucket
+  5. usePropertyClassification hook provides cached, refreshable access
+**Gate**: Property classifier returns correct LATCH-bucketed results from live database.
+**Plans**: 2 plans in 1 wave
+
+Plans:
+- [ ] 50-01-PLAN.md — Property classification service validation with tests
+- [ ] 50-02-PLAN.md — usePropertyClassification hook caching validation
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 43 → 44 → 45 → 46
-
+v4.2 phases execute: 43 → 44 → 45 → 46
 Phase 45 can begin after Phase 43 completes (parallel with Phase 44).
 Phase 46 requires both Phases 44 and 45 complete.
+
+v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -124,6 +147,7 @@ Phase 46 requires both Phases 44 and 45 complete.
 | 44. Preview Visualization Expansion | v4.2 | 0/? | Not started | - |
 | 45. TipTap Editor Migration | v4.2 | 0/? | Not started | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
+| 50. Foundation (Schema-on-Read) | v4.3 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
