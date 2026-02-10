@@ -18,6 +18,7 @@ import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { ViewRenderer } from '../contracts/ViewEngine';
 import type { ViewConfig } from '../contracts/ViewConfig';
+import { devLogger } from '../../utils/logging';
 
 /**
  * Kanban column data structure
@@ -119,10 +120,15 @@ export class KanbanRenderer implements ViewRenderer {
       // Set up interactivity
       this.setupEventHandlers();
 
-      console.log(`[KanbanRenderer] Rendered ${data.length} nodes in ${this.columns.length} columns`);
+      devLogger.render('KanbanRenderer rendered nodes in columns', {
+        totalNodes: data.length,
+        columnCount: this.columns.length
+      });
 
     } catch (error) {
-      console.error('[KanbanRenderer] Render failed:', error);
+      devLogger.error('KanbanRenderer render failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
   }
@@ -144,7 +150,7 @@ export class KanbanRenderer implements ViewRenderer {
     this.cards = [];
     this.config = null;
 
-    console.log('[KanbanRenderer] Destroyed successfully');
+    devLogger.debug('KanbanRenderer destroyed successfully');
   }
 
   /**
@@ -225,7 +231,11 @@ export class KanbanRenderer implements ViewRenderer {
     // Calculate column positions
     this.calculateColumnPositions(columns);
 
-    console.log(`[KanbanRenderer] Grouped ${data.length} nodes into ${columns.length} columns by ${groupingFacet}`);
+    devLogger.debug('KanbanRenderer grouped nodes into columns', {
+      totalNodes: data.length,
+      columnCount: columns.length,
+      groupingFacet
+    });
     return columns;
   }
 
@@ -419,7 +429,9 @@ export class KanbanRenderer implements ViewRenderer {
     // EXIT selection
     columnGroups.exit().remove();
 
-    console.log(`[KanbanRenderer] Rendered ${this.columns.length} kanban columns`);
+    devLogger.render('KanbanRenderer rendered kanban columns', {
+      columnCount: this.columns.length
+    });
   }
 
   private renderCards(): void {
@@ -531,7 +543,9 @@ export class KanbanRenderer implements ViewRenderer {
       .style('opacity', 0)
       .remove();
 
-    console.log(`[KanbanRenderer] Rendered ${this.cards.length} kanban cards with D3 data binding`);
+    devLogger.render('KanbanRenderer rendered kanban cards', {
+      cardCount: this.cards.length
+    });
   }
 
   private getNodeFacetValue(node: Node, facet: string): any {
@@ -660,7 +674,10 @@ export class KanbanRenderer implements ViewRenderer {
       .selectAll('.kanban-card')
       .on('click', (_event, d) => {
         const cardData = d as KanbanCardData;
-        console.log('[KanbanRenderer] Card clicked:', cardData.node.name);
+        devLogger.debug('KanbanRenderer card clicked', {
+          nodeName: cardData.node.name,
+          nodeId: cardData.node.id
+        });
         this.config?.eventHandlers?.onNodeClick?.(cardData.node, { x: cardData.x, y: cardData.y });
       })
       .on('mouseenter', (event, d) => {
@@ -686,6 +703,6 @@ export class KanbanRenderer implements ViewRenderer {
     // TODO: Add drag and drop functionality
     // this.setupDragAndDrop();
 
-    console.log('[KanbanRenderer] Event handlers set up for kanban interactions');
+    devLogger.setup('KanbanRenderer event handlers configured');
   }
 }
