@@ -80,14 +80,14 @@ export function useFilterPreview(
           WHERE ${sql}
         `;
 
-        // @ts-ignore - Generic type argument suppressed for compilation
+        // @ts-expect-error - Generic type argument suppressed for compilation
         const rowsResult = execute<{ count: number }>(query, params);
 
         // Handle both sync (sql.js) and async (native API) execute results
         const rows = Array.isArray(rowsResult) ? rowsResult : await rowsResult;
 
         if (rows.length > 0) {
-          // @ts-ignore - Object property access suppressed for compilation
+          // @ts-expect-error - Object property access suppressed for compilation
           const countValue = rows[0].count;
           setCount(countValue);
         } else {
