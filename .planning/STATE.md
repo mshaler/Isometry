@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 51 (Navigator UI Integration)
-Plan: 0 of 2 complete (planning complete, ready to execute)
-Status: Planned, ready to execute
-Last activity: 2026-02-10 — Completed Phase 51 planning
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-02-10 — Completed 51-01-PLAN.md (DnD Foundation)
 
-Progress: [████████████] 100% Phase 50 complete | Phase 51 planned (0/2)
+Progress: [██████░░░░░░] 50% Phase 51 (1/2 plans complete)
 
 ## Performance Metrics
 
@@ -86,6 +86,11 @@ Key v4.1 decisions carried forward:
 - Requirement traceability tests tagged with [FOUND-XX] in test names
 - dataVersion-based cache invalidation for hook refresh behavior
 
+**Phase 51 decisions:**
+- GRAPH bucket facets are disabled in MVP - visible but not draggable
+- Use sourceColumn from ClassifiedProperty as facet field in AxisMapping
+- Theme styling follows existing PAFVNavigator NeXTSTEP/Modern patterns
+
 ### Pending Todos
 
 None - 45-03 complete, ready for 45-04 (Markdown Serialization).
@@ -106,13 +111,12 @@ None - 45-03 complete, ready for 45-04 (Markdown Serialization).
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 45-03 (Wiki Links)
+Stopped at: Completed 51-01 (DnD Foundation)
 Resume file: None
 
 ## Next Steps
 
-1. **Execute Phase 51**: Run `/gsd:execute-phase 51` to implement Navigator UI Integration
-   - 51-01 (Wave 1): DraggableFacet and PlaneDropZone components
+1. **Execute 51-02**: Run `/gsd:execute-phase 51` to complete Navigator UI Integration
    - 51-02 (Wave 2): SimplePAFVNavigator refactor with classification buckets
 2. Verify NAV-01 through NAV-05 requirements
 3. Continue v4.2 phases when ready (44, 45, 46)
