@@ -2,6 +2,7 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { devLogger } from '../utils/logging/logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -79,12 +80,12 @@ export async function startNativeAPIServer(
     timeout = 30000
   } = config;
 
-  console.log('🔨 Building native API server...');
+  devLogger.inspect('Building native API server...');
 
   // Build native server first
   await buildNativeServer();
 
-  console.log('🚀 Starting native API server...');
+  devLogger.inspect('Starting native API server...');
 
   // Spawn the native server process
   const serverProcess = spawn('swift', ['run', 'IsometryAPIServer', '--port', port.toString(), '--database', database], {
@@ -105,7 +106,7 @@ export async function startNativeAPIServer(
 
     serverProcess.stdout?.on('data', (data) => {
       const output = data.toString();
-      console.log(`[Native Server] ${output.trim()}`);
+      devLogger.debug('Native server output', { output: output.trim() });
 
       // Look for port confirmation
       const portMatch = output.match(/Server ready at http:\/\/127\.0\.0\.1:(\d+)/);
@@ -118,7 +119,7 @@ export async function startNativeAPIServer(
           port: actualPort,
           isRunning: true,
           stop: async () => {
-            console.log('🛑 Stopping native API server...');
+            devLogger.inspect('Stopping native API server...');
             serverProcess.kill();
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for graceful shutdown
           }
@@ -130,7 +131,7 @@ export async function startNativeAPIServer(
 
     serverProcess.stderr?.on('data', (data) => {
       const error = data.toString();
-      console.error(`[Native Server Error] ${error.trim()}`);
+      devLogger.error('Native server error', { error: error.trim() });
     });
 
     serverProcess.on('error', (error) => {
@@ -168,13 +169,13 @@ async function buildNativeServer(): Promise<void> {
 
     try {
       await fs.access(buildPath);
-      console.log('✅ Native server binary found');
+      devLogger.debug('Native server binary found');
       return;
     } catch {
       // Binary doesn't exist, need to build
     }
 
-    console.log('🔧 Building native server (this may take a moment)...');
+    devLogger.inspect('Building native server (this may take a moment)...');
 
     return new Promise((resolve, reject) => {
       const buildProcess = spawn('swift', ['build', '--target', 'IsometryAPIServer'], {
@@ -186,18 +187,18 @@ async function buildNativeServer(): Promise<void> {
         const output = data.toString();
         // Only show important build messages
         if (output.includes('error') || output.includes('complete')) {
-          console.log(`[Build] ${output.trim()}`);
+          devLogger.debug('Build output', { output: output.trim() });
         }
       });
 
       buildProcess.stderr?.on('data', (data) => {
         const error = data.toString();
-        console.error(`[Build Error] ${error.trim()}`);
+        devLogger.error('Build error', { error: error.trim() });
       });
 
       buildProcess.on('exit', (code) => {
         if (code === 0) {
-          console.log('✅ Native server built successfully');
+          devLogger.debug('Native server built successfully');
           resolve();
         } else {
           reject(new Error(`Build failed with exit code ${code}`));
