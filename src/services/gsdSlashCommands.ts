@@ -9,6 +9,7 @@
 
 import { GSDPhase, GSDStatus } from '../types/gsd';
 import { getClaudeCodeDispatcher, GSDCommands } from './claudeCodeWebSocketDispatcher';
+import { devLogger } from '../utils/logging';
 
 export interface SlashCommand {
   command: string;
@@ -424,7 +425,7 @@ export class GSDSlashCommandProcessor {
     command: SlashCommand
   ): Promise<SlashCommandExecution> {
     // In real implementation, this would pause the current Claude Code execution
-    console.log('Pausing current execution...');
+    devLogger.debug('Pausing current execution', { component: 'GSDSlashCommands', command: command.command });
     return { command };
   }
 
@@ -435,7 +436,7 @@ export class GSDSlashCommandProcessor {
     command: SlashCommand
   ): Promise<SlashCommandExecution> {
     // In real implementation, this would resume the paused execution
-    console.log('Resuming execution...');
+    devLogger.debug('Resuming execution', { component: 'GSDSlashCommands', command: command.command });
     return { command };
   }
 
@@ -447,13 +448,7 @@ export class GSDSlashCommandProcessor {
   ): Promise<SlashCommandExecution> {
     const suggestions = this.getSuggestions({});
 
-    console.log('Available GSD commands:');
-    for (const cmd of suggestions.commands) {
-      console.log(`  ${cmd.command} - ${cmd.description}`);
-      if (cmd.shortcut) {
-        console.log(`    Shortcut: ${cmd.shortcut}`);
-      }
-    }
+    devLogger.inspect('Available GSD commands', { component: 'GSDSlashCommands', commands: suggestions.commands.map(cmd => ({ command: cmd.command, description: cmd.description, shortcut: cmd.shortcut })) });
 
     return { command };
   }
