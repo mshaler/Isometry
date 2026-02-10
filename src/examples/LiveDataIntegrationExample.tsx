@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Live Data Integration Example
  *
