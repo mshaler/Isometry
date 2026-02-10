@@ -17,6 +17,7 @@ import type {
   DragState,
   GridReflowOptions
 } from '../types/supergrid';
+import { devLogger } from '../utils/logging';
 
 export interface SuperDynamicEngine {
   /** Initialize the engine with container and config */
@@ -370,10 +371,15 @@ export class SuperDynamicD3Engine implements SuperDynamicEngine {
         this.onReflowComplete();
       }
 
-      console.log(`SuperDynamic: Axis drop completed in ${duration.toFixed(1)}ms`);
+      devLogger.debug('SuperDynamic axis drop completed', {
+        duration: `${duration.toFixed(1)}ms`,
+        axisId: this.dragState?.axisId,
+        targetSlot: targetSlot,
+        performance: duration < 500 ? 'excellent' : duration < 1000 ? 'acceptable' : 'slow'
+      });
 
     } catch (error) {
-      console.error('SuperDynamic: Drop operation failed', error);
+      devLogger.error('SuperDynamic drop operation failed', { error });
 
       // Restore previous mapping on error
       this.currentMapping = oldMapping;
@@ -518,7 +524,10 @@ export class SuperDynamicD3Engine implements SuperDynamicEngine {
       this.highlightDropZone(slot as 'x' | 'y' | 'z', false);
     });
 
-    console.log('SuperDynamic: Drag operation cancelled');
+    devLogger.debug('SuperDynamic drag operation cancelled', {
+      axisId: this.dragState?.axisId || 'unknown',
+      duration: this.dragState ? Date.now() - this.dragState.startTime : 0
+    });
   }
 
   private cleanup(): void {
