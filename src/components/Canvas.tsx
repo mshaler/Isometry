@@ -10,7 +10,8 @@ import { DEFAULT_VIEW_CONFIG } from '../engine/contracts/ViewConfig';
 import type { ViewConfig, ViewType } from '../engine/contracts/ViewConfig';
 import type { Node } from '@/types/node';
 import { devLogger } from '../utils/logging';
-import { useSQLite } from '../db/SQLiteProvider';
+import { usePAFV } from '../state/PAFVContext';
+import type { LATCHAxis } from '../types/pafv';
 
 // Node statistics for alto-index data visibility
 interface NodeStats {
@@ -32,6 +33,9 @@ export function Canvas() {
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
+
+  // PAFV axis mapping state for projection configuration
+  const { state: pafvState } = usePAFV();
 
   // Access storage quota from SQLite context for monitoring
   const { storageQuota } = useSQLite();
@@ -126,11 +130,50 @@ export function Canvas() {
     }
   }, []);
 
-  // Create ViewConfig from current state with alto-index node type colors
+  // Map LATCH axis to facet name for PAFV projection
+  const latchToFacet = useCallback((axis: LATCHAxis): string => {
+    switch (axis) {
+      case 'location': return 'locationName';
+      case 'alphabet': return 'name';
+      case 'time': return 'createdAt';
+      case 'category': return 'folder';
+      case 'hierarchy': return 'priority';
+      default: return 'name';
+    }
+  }, []);
+
+  // Create ViewConfig from current state with PAFV mappings and alto-index node type colors
   const createViewConfig = useCallback((viewType: ViewType, _data: Node[]): ViewConfig => {
+    // Convert PAFV mappings to ViewConfig projection format
+    const xMapping = pafvState.mappings.find(m => m.plane === 'x');
+    const yMapping = pafvState.mappings.find(m => m.plane === 'y');
+    const colorMapping = pafvState.mappings.find(m => m.plane === 'color');
+
+    // Log PAFV configuration for debugging
+    devLogger.debug('Canvas createViewConfig with PAFV mappings', {
+      viewType,
+      pafvViewMode: pafvState.viewMode,
+      mappings: pafvState.mappings.map(m => `${m.plane}:${m.axis}`),
+      xAxis: xMapping?.axis,
+      yAxis: yMapping?.axis,
+      colorAxis: colorMapping?.axis
+    });
+
     return {
       ...DEFAULT_VIEW_CONFIG,
       viewType,
+      // Apply PAFV projection from Navigator axis assignments
+      projection: {
+        x: xMapping
+          ? { axis: xMapping.axis, facet: latchToFacet(xMapping.axis) }
+          : DEFAULT_VIEW_CONFIG.projection.x,
+        y: yMapping
+          ? { axis: yMapping.axis, facet: latchToFacet(yMapping.axis) }
+          : DEFAULT_VIEW_CONFIG.projection.y,
+        color: colorMapping
+          ? { axis: colorMapping.axis, facet: latchToFacet(colorMapping.axis) }
+          : DEFAULT_VIEW_CONFIG.projection.color,
+      },
       eventHandlers: {
         onNodeClick: handleNodeClick,
         onNodeHover: (node, position) => {
@@ -166,7 +209,7 @@ export function Canvas() {
         }
       }
     };
-  }, [handleNodeClick, theme]);
+  }, [handleNodeClick, theme, pafvState.mappings, pafvState.viewMode, latchToFacet]);
 
   // Initialize ViewEngine on mount
   useEffect(() => {
@@ -230,7 +273,8 @@ export function Canvas() {
         devLogger.error('Canvas ViewEngine render failed', { error, viewType });
       });
 
-  }, [nodes, activeView, mapActiveViewToViewType, createViewConfig, recordRender]);
+  // Also react to PAFV mapping changes for axis switching
+  }, [nodes, activeView, pafvState.mappings, mapActiveViewToViewType, createViewConfig, recordRender]);
 
   // Simple container for ViewEngine rendering with empty state handling
   const renderView = () => {
