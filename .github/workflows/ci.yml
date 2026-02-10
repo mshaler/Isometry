@@ -124,11 +124,12 @@ jobs:
           retention-days: 7
 
   # Job 3: Desktop Build Validation (Tauri)
+  # Disabled: no Tauri project exists yet. Re-enable when src-tauri/ is created.
   desktop-validation:
     name: Desktop Build Validation
     runs-on: ${{ matrix.os }}
     needs: quality-gates
-    if: success()
+    if: false
     timeout-minutes: 20
 
     strategy:
