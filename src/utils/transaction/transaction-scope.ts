@@ -7,6 +7,7 @@
  */
 
 import { generateCorrelationId, createChildId, extractParentId } from './correlation-ids';
+import { devLogger } from '../logging/logger';
 
 /**
  * Transaction execution context and state management
@@ -97,7 +98,10 @@ export class TransactionScope {
     TransactionScope.activeScopes.push(this);
 
     if (process.env.NODE_ENV === 'development') {
-      console.debug(`[Transaction] Started scope: ${this.correlationId} (nested: ${this.isNested})`);
+      devLogger.debug('Transaction scope started', {
+        correlationId: this.correlationId,
+        isNested: this.isNested
+      });
     }
   }
 
@@ -125,7 +129,10 @@ export class TransactionScope {
       try {
         await this.performBridgeRollback();
       } catch (rollbackError) {
-        console.error(`[Transaction] Failed to rollback after commit failure:`, rollbackError);
+        devLogger.error('Failed to rollback after commit failure', {
+          correlationId: this.correlationId,
+          error: rollbackError
+        });
       }
       await this.finalize(false);
       throw error;
@@ -155,7 +162,10 @@ export class TransactionScope {
     try {
       await this.performBridgeRollback();
     } catch (error) {
-      console.error(`[Transaction] Failed to rollback transaction:`, error);
+      devLogger.error('Failed to rollback transaction', {
+        correlationId: this.correlationId,
+        error
+      });
     } finally {
       await this.finalize(false);
     }
@@ -245,9 +255,12 @@ export class TransactionScope {
     const status = committed ? 'committed' : 'rolled back';
 
     if (process.env.NODE_ENV === 'development') {
-      console.debug(
-        `[Transaction] Finalized scope: ${this.correlationId} (${status}, ${this.operationCount} ops, ${duration}ms)`
-      );
+      devLogger.debug('Transaction scope finalized', {
+        correlationId: this.correlationId,
+        status,
+        operationCount: this.operationCount,
+        duration
+      });
     }
   }
 
@@ -279,7 +292,10 @@ export class TransactionScope {
     });
 
     if (!response.success) {
-      console.warn(`Transaction rollback warning: ${response.error}`);
+      devLogger.warn('Transaction rollback warning', {
+        correlationId: this.correlationId,
+        error: response.error
+      });
     }
   }
 
