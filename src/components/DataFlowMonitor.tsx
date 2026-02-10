@@ -192,16 +192,17 @@ const SubscriptionDetail: React.FC<SubscriptionDetailProps> = ({ metric, compact
 };
 
 // Main DataFlowMonitor component
-const DataFlowMonitor: React.FC<DataFlowMonitorProps> = ({
-  isVisible = false,
-  position = 'bottom-right',
-  compact = false,
-  realTime = true,
-  updateIntervalMs = 1000,
-  enableConsoleLogging = false,
-  className = '',
-  draggable = false
-}) => {
+const DataFlowMonitor: React.FC<DataFlowMonitorProps> = (props) => {
+  const {
+    isVisible = false,
+    position = 'bottom-right',
+    compact = false,
+    realTime = true,
+    updateIntervalMs = 1000,
+    enableConsoleLogging = false,
+    className = '',
+    draggable = false
+  } = props;
   const [visible, setVisible] = useState(isVisible);
   const [currentTab, setCurrentTab] = useState<'overview' | 'subscriptions' | 'logs'>('overview');
   const [logs, setLogs] = useState<Array<{ time: Date; level: string; message: string }>>([]);
@@ -269,74 +270,30 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = ({
     return positions[position] || positions['bottom-right'];
   };
 
-  // Render toggle button when hidden
+  // Use focused sub-components for render logic
   if (!visible) {
     return (
-      <button
-        className={`${getPositionStyle()} z-50 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors`}
-        onClick={() => setVisible(true)}
-        title="Open Data Flow Monitor"
-      >
-        📊
-      </button>
+      <MonitorToggleButton
+        position={position}
+        onShow={() => setVisible(true)}
+      />
     );
   }
 
   return (
-    <div
-      className={`
-        ${getPositionStyle()}
-        ${draggable ? 'cursor-move' : ''}
-        z-50 bg-white shadow-xl rounded-lg border border-gray-200
-        ${compact ? 'w-64' : 'w-80'}
-        max-h-96 overflow-hidden
-        ${className}
-      `}
-      style={{ resize: position === 'floating' ? 'both' : undefined }}
+    <MonitorContainer
+      position={position}
+      compact={compact}
+      draggable={draggable}
+      className={className}
     >
-      {/* Header */}
-      <div className={`bg-gray-50 border-b border-gray-200 ${compact ? 'p-2' : 'p-3'}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📊</span>
-            <span className={`font-semibold ${compact ? 'text-sm' : 'text-base'}`}>
-              Data Flow Monitor
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {!compact && (
-              <div className={`w-2 h-2 rounded-full ${
-                globalState.isConnected ? 'bg-green-500' : 'bg-red-500'
-              }`} />
-            )}
-            <button
-              className="p-1 hover:bg-gray-200 rounded"
-              onClick={() => setVisible(false)}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        {/* Tabs */}
-        {!compact && (
-          <div className="flex gap-1 mt-2">
-            {(['overview', 'subscriptions', 'logs'] as const).map(tab => (
-              <button
-                key={tab}
-                className={`px-2 py-1 text-xs rounded ${
-                  currentTab === tab
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-                onClick={() => setCurrentTab(tab)}
-              >
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <MonitorHeader
+        compact={compact}
+        isConnected={globalState.isConnected}
+        currentTab={currentTab}
+        onTabChange={setCurrentTab}
+        onClose={() => setVisible(false)}
+      />
 
       {/* Content */}
       <div className={`${compact ? 'p-2' : 'p-3'} overflow-y-auto max-h-72`}>
@@ -538,6 +495,145 @@ export function useDataFlowMonitor() {
     latency: globalState.averageLatency,
     errorRate: globalState.errorRate
   };
+}
+
+// Helper components for reduced complexity
+
+function MonitorToggleButton({ position, onShow }: { position: string; onShow: () => void }) {
+  const getPositionStyle = () => {
+    if (position === 'floating') {
+      return 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2';
+    }
+
+    const positions = {
+      'bottom-right': 'fixed bottom-4 right-4',
+      'bottom-left': 'fixed bottom-4 left-4',
+      'top-right': 'fixed top-4 right-4',
+      'top-left': 'fixed top-4 left-4'
+    };
+
+    return positions[position as keyof typeof positions] || positions['bottom-right'];
+  };
+
+  return (
+    <button
+      className={`${getPositionStyle()} z-50 p-2 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors`}
+      onClick={onShow}
+      title="Open Data Flow Monitor"
+    >
+      📊
+    </button>
+  );
+}
+
+interface MonitorContainerProps {
+  position: string;
+  compact: boolean;
+  draggable: boolean;
+  className: string;
+  children: React.ReactNode;
+}
+
+function MonitorContainer({ position, compact, draggable, className, children }: MonitorContainerProps) {
+  const getPositionStyle = () => {
+    if (position === 'floating') {
+      return 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2';
+    }
+
+    const positions = {
+      'bottom-right': 'fixed bottom-4 right-4',
+      'bottom-left': 'fixed bottom-4 left-4',
+      'top-right': 'fixed top-4 right-4',
+      'top-left': 'fixed top-4 left-4'
+    };
+
+    return positions[position as keyof typeof positions] || positions['bottom-right'];
+  };
+
+  return (
+    <div
+      className={`
+        ${getPositionStyle()}
+        ${draggable ? 'cursor-move' : ''}
+        z-50 bg-white shadow-xl rounded-lg border border-gray-200
+        ${compact ? 'w-64' : 'w-80'}
+        max-h-96 overflow-hidden
+        ${className}
+      `}
+      style={{ resize: position === 'floating' ? 'both' : undefined }}
+    >
+      {children}
+    </div>
+  );
+}
+
+interface MonitorHeaderProps {
+  compact: boolean;
+  isConnected: boolean;
+  currentTab: string;
+  onTabChange: (tab: 'overview' | 'subscriptions' | 'logs') => void;
+  onClose: () => void;
+}
+
+function MonitorHeader({ compact, isConnected, currentTab, onTabChange, onClose }: MonitorHeaderProps) {
+  return (
+    <div className={`bg-gray-50 border-b border-gray-200 ${compact ? 'p-2' : 'p-3'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">📊</span>
+          <span className={`font-semibold ${compact ? 'text-sm' : 'text-base'}`}>
+            Data Flow Monitor
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {!compact && (
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-500' : 'bg-red-500'
+            }`} />
+          )}
+          <button
+            className="p-1 hover:bg-gray-200 rounded"
+            onClick={onClose}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      {!compact && (
+        <div className="flex gap-1 mt-2">
+          {(['overview', 'subscriptions', 'logs'] as const).map(tab => (
+            <button
+              key={tab}
+              className={`px-2 py-1 text-xs rounded ${
+                currentTab === tab
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+              onClick={() => onTabChange(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface MonitorFooterProps {
+  lastSyncTime?: Date;
+  compact: boolean;
+}
+
+function MonitorFooter({ lastSyncTime, compact }: MonitorFooterProps) {
+  if (!lastSyncTime || compact) return null;
+
+  return (
+    <div className="px-3 py-1 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+      Last sync: {lastSyncTime.toLocaleTimeString()}
+    </div>
+  );
 }
 
 export default DataFlowMonitor;
