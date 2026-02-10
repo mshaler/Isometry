@@ -7,6 +7,8 @@ export { useCoordinates } from './useCoordinates';
 export { useCardPosition } from './useCardPosition';
 export { useMapMarkers } from './useMapMarkers';
 export { useNodeTree } from './useNodeTree';
+export { useDataInspector } from './useDataInspector';
 
 // Re-export types
 export type { UseCoordinatesResult, UseCoordinatesOptions } from './useCoordinates';
+export type { SortConfig, UseDataInspectorResult } from './useDataInspector';
