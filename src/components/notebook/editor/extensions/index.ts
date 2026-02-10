@@ -9,3 +9,6 @@ export type {
   SlashCommandsOptions,
   SlashCommandSuggestionProps
 } from './slash-commands';
+
+export { WikiLink, createWikiLinkSuggestion } from './wiki-links';
+export type { WikiLinkOptions, WikiLinkSuggestionProps } from './wiki-links';

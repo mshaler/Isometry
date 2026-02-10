@@ -3,9 +3,8 @@ name: App Store Deployment
 # app-store-upload pipeline
 
 on:
-  push:
-    tags:
-      - 'v*'
+  # Disabled: native Xcode projects not yet implemented
+  # Re-enable when native/IsometryiOS and native/IsometrymacOS exist
   workflow_dispatch:
     inputs:
       platform:
