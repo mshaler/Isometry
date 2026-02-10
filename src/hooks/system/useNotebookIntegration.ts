@@ -206,7 +206,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     const conflicts: string[] = [];
 
     // Query for nodes that have been modified in both notebook and main app recently
-    // @ts-ignore - Generic type argument suppressed for compilation
+    // @ts-expect-error - Generic type argument suppressed for compilation
     const recentlyModified = await execute<ConflictQueryResult>(
       `SELECT nc.id as card_id, nc.modified_at as card_modified, n.modified_at as node_modified
        FROM notebook_cards nc
@@ -217,14 +217,14 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     );
 
     for (const row of recentlyModified) {
-      // @ts-ignore - Date constructor type suppressed for compilation
+      // @ts-expect-error - Date constructor type suppressed for compilation
       const cardTime = new Date(row.card_modified).getTime();
-      // @ts-ignore - Date constructor type suppressed for compilation
+      // @ts-expect-error - Date constructor type suppressed for compilation
       const nodeTime = new Date(row.node_modified).getTime();
 
       // If both were modified within 5 minutes of each other, consider it a conflict
       if (Math.abs(cardTime - nodeTime) < 5 * 60 * 1000) {
-        // @ts-ignore - String type suppressed for compilation
+        // @ts-expect-error - String type suppressed for compilation
         conflicts.push(row.card_id);
       }
     }
@@ -264,7 +264,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
         case 'main': {
           // Keep main app version, update notebook card
-          // @ts-ignore - Generic type argument suppressed for compilation
+          // @ts-expect-error - Generic type argument suppressed for compilation
           const nodeDataResult = await execute<NodeQueryResult>(
             `SELECT * FROM nodes WHERE id = ?`,
             [card.nodeId]
