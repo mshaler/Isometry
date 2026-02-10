@@ -16,7 +16,7 @@ import { devLogger } from '../../utils/logging';
 // import { Environment } from '../utils/webview/webview-bridge';
 
 // Import Environment from EnvironmentContext for v4
-// @ts-ignore - Environment redeclaration suppressed for compilation
+// @ts-expect-error - Environment redeclaration suppressed for compilation
 const Environment = {
   isWebView: () => false,
   info: () => ({ platform: 'browser', version: '4.0', isNative: false })
@@ -69,7 +69,7 @@ const fileSystemBridge = {
   }
 };
 
-// @ts-ignore - Environment redeclaration suppressed for compilation
+// @ts-expect-error - Environment redeclaration suppressed for compilation
 const Environment = {
   isNative: () => false
 };
