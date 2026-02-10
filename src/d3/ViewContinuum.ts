@@ -168,7 +168,7 @@ export class ViewContinuum {
   ): Promise<void> {
 
     if (this.isTransitioning) {
-      console.warn('⚠️ ViewContinuum.switchToView(): Transition already in progress, interrupting');
+      d3Logger.warn('ViewContinuum switchToView: Transition already in progress, interrupting');
       this.interruptTransition();
     }
 
@@ -249,7 +249,9 @@ export class ViewContinuum {
       });
 
     } catch (error) {
-      console.error('❌ ViewContinuum.switchToView(): Transition failed:', error);
+      d3Logger.error('ViewContinuum switchToView transition failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
 
       // Rollback on error
       this.viewState.currentView = fromView;
@@ -341,7 +343,7 @@ export class ViewContinuum {
    */
   reprojectCachedData(): void {
     if (this.cachedCards.length === 0) {
-      console.warn('⚠️ ViewContinuum.reprojectCachedData(): No cached data');
+      d3Logger.warn('ViewContinuum reprojectCachedData: No cached data available');
       return;
     }
 
@@ -431,12 +433,14 @@ export class ViewContinuum {
         return parsed;
       }
     } catch (error) {
-      console.warn('⚠️ ViewContinuum: Failed to load state from localStorage:', error);
+      d3Logger.warn('ViewContinuum failed to load state from localStorage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
 
     // Create default state
     const defaultState = createDefaultViewState(this.canvasId);
-    console.log('🆕 ViewContinuum: Created default view state');
+    d3Logger.debug('ViewContinuum created default view state');
     return defaultState;
   }
 
@@ -472,7 +476,9 @@ export class ViewContinuum {
         timestamp: this.viewState.lastModified
       });
     } catch (error) {
-      console.warn('⚠️ ViewContinuum: Failed to save state to localStorage:', error);
+      d3Logger.warn('ViewContinuum failed to save state to localStorage', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
@@ -700,7 +706,7 @@ export class ViewContinuum {
     // Re-project data with new mapping
     this.reprojectCachedData();
 
-    console.log('📐 ViewContinuum.updateAxisMapping():', {
+    d3Logger.state('ViewContinuum updateAxisMapping', {
       viewType: this.viewState.currentView,
       mapping
     });
@@ -742,7 +748,7 @@ export class ViewContinuum {
     this.lastActiveFilters = [];
     this.viewState.cachedQuery = undefined;
 
-    console.log('🧹 ViewContinuum.clearCache(): Cache cleared');
+    d3Logger.debug('ViewContinuum cache cleared');
   }
 
   /**
