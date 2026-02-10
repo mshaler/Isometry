@@ -30,6 +30,7 @@ import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration
 import { getClaudeCodeDispatcher, GSDCommands } from '../../services/claudeCodeWebSocketDispatcher';
 import { gsdSlashCommands, SlashCommand } from '../../services/gsdSlashCommands';
 import { FileChangeEvent } from '../../services/claudeCodeServer';
+import { devLogger } from '../../utils/logging';
 
 interface GSDInterfaceProps {
   className?: string;
@@ -68,7 +69,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
       setSessionState(updatedState);
     },
     onChoicePrompt: (choices) => {
-      console.log('Choice prompt received:', choices);
+      devLogger.debug('Choice prompt received', { component: 'GSDInterface', choices });
     },
     onError: (error) => {
       setError(error);
@@ -195,7 +196,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
     try {
       // Send choice selection to Claude Code
       const selectedChoices = indices.map(i => sessionState.pendingChoices![i]);
-      console.log('GSD Choice Selected:', selectedChoices);
+      devLogger.debug('GSD Choice Selected', { component: 'GSDInterface', selectedChoices, indices });
 
       // For single choice, send the index
       if (indices.length === 1) {
@@ -224,7 +225,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
 
   const handleFreeformInput = useCallback(async () => {
     // For now, send a generic "help" message to trigger more detailed explanation
-    console.log('Requesting freeform input from Claude');
+    devLogger.debug('Requesting freeform input from Claude', { component: 'GSDInterface' });
 
     if (sessionState && gsdService) {
       try {
@@ -267,7 +268,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
         phase: sessionState.phase
       });
 
-      console.log('GSD session aborted');
+      devLogger.debug('GSD session aborted', { component: 'GSDInterface', sessionId: sessionState.sessionId });
     } catch (error) {
       setError(`Failed to abort session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -299,7 +300,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
         setCurrentExecutionId(execution.id);
       }
 
-      console.log('GSD session restarted');
+      devLogger.debug('GSD session restarted', { component: 'GSDInterface', sessionId: newSessionId });
     } catch (error) {
       setError(`Failed to restart session: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -372,7 +373,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
       const execution = await dispatcher.executeAsync(claudeCommand);
       setCurrentExecutionId(execution.id);
 
-      console.log('Rich command executed:', command.finalCommand);
+      devLogger.debug('Rich command executed', { component: 'GSDInterface', finalCommand: command.finalCommand, executionId: execution.id });
     } catch (error) {
       setError(`Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -380,7 +381,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
 
   const handleSaveTemplate = useCallback((template: CommandTemplate) => {
     setSavedTemplates(prev => [...prev, template]);
-    console.log('Template saved:', template.name);
+    devLogger.debug('Template saved', { component: 'GSDInterface', templateName: template.name, template });
   }, []);
 
   // Claude Code Terminal handlers
@@ -396,7 +397,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
       const execution = await dispatcher.executeAsync(claudeCommand);
       setCurrentExecutionId(execution.id);
 
-      console.log('Terminal command executed:', command);
+      devLogger.debug('Terminal command executed', { component: 'GSDInterface', command, executionId: execution.id });
     } catch (error) {
       setError(`Failed to execute terminal command: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -409,7 +410,7 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
         const dispatcher = await getClaudeCodeDispatcher();
         const execution = await dispatcher.executeAsync(command);
         setCurrentExecutionId(execution.id);
-        console.log('Terminal choice selected:', choices[0]);
+        devLogger.debug('Terminal choice selected', { component: 'GSDInterface', choice: choices[0], executionId: execution.id });
       } catch (error) {
         setError(`Failed to send choice: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -437,9 +438,14 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
         setSessionState(updatedState);
       }
 
-      console.log(`📁 File change detected and recorded: ${fileChange.changeType} ${fileChange.path}`);
+      devLogger.inspect('File change detected and recorded', {
+        component: 'GSDInterface',
+        changeType: fileChange.changeType,
+        path: fileChange.path,
+        sessionId: sessionState.sessionId
+      });
     } catch (error) {
-      console.error('Error handling file change:', error);
+      devLogger.error('Error handling file change', { component: 'GSDInterface', error, fileChangePath: fileChange.path });
       setError(`Failed to record file change: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }, [gsdService, sessionState]);
