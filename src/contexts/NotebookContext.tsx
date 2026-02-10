@@ -4,6 +4,7 @@ import { useSQLite } from '../db/SQLiteProvider';
 import { useNotebookIntegration } from '@/hooks';
 import { useNotebookPerformance } from '../hooks/performance/useNotebookPerformance';
 import { useErrorReporting } from '../services/ErrorReportingService';
+import { devLogger } from '../utils/logging/logger';
 import {
   type NotebookContextType,
   DEFAULT_LAYOUT,
@@ -298,7 +299,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem('notebook_mode', newMode.toString());
     } catch (error) {
-      console.warn('Failed to save notebook mode:', error);
+      devLogger.warn('Failed to save notebook mode', { error });
     }
 
     if (newMode && db) {
