@@ -15,6 +15,7 @@ import { useLiveData } from '../hooks/database/useLiveData';
 import { useD3PerformanceWithMonitor } from '@/hooks';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Node } from '../types/node';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 interface StressTestOptions {
   dataSize: number;
@@ -52,7 +53,7 @@ export function LiveVisualizationExample() {
       enablePolling: stressTest.enabled,
       pollingIntervalMs: stressTest.enabled ? Math.floor(1000 / stressTest.updateFrequency) : 5000,
       onPerformanceUpdate: (metrics) => {
-        console.debug('LiveVisualizationExample performance:', metrics);
+        devLogger.debug('LiveVisualizationExample performance:', { metrics });
       }
     }
   );

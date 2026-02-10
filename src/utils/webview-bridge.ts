@@ -5,6 +5,8 @@
  * The original WebView bridge is eliminated in favor of sql.js direct access.
  */
 
+import { bridgeLogger } from '@/utils/logging/dev-logger';
+
 export interface Environment {
   isNative: boolean;
   platform: 'ios' | 'macos' | 'web';
@@ -43,29 +45,29 @@ class WebViewBridgeStub implements WebViewBridge {
 
   async postMessage(message: any): Promise<any> {
     // No-op: Bridge eliminated
-    console.log('[WebViewBridge] Bridge eliminated - message ignored:', message);
+    bridgeLogger.debug('Bridge eliminated - message ignored:', { message });
     return null;
   }
 
   async sendMessage(message: any): Promise<any> {
     // No-op: Bridge eliminated
-    console.log('[WebViewBridge] Bridge eliminated - sendMessage ignored:', message);
+    bridgeLogger.debug('Bridge eliminated - sendMessage ignored:', { message });
     return null;
   }
 
   addMessageListener(_listener: (message: any) => void): void {
     // No-op: Bridge eliminated
-    console.log('[WebViewBridge] Bridge eliminated - message listener ignored');
+    bridgeLogger.debug('Bridge eliminated - message listener ignored');
   }
 
   removeMessageListener(_listener: (message: any) => void): void {
     // No-op: Bridge eliminated
-    console.log('[WebViewBridge] Bridge eliminated - message listener removal ignored');
+    bridgeLogger.debug('Bridge eliminated - message listener removal ignored');
   }
 
   async sendTransactionMessage(message: any): Promise<any> {
     // No-op: Bridge eliminated
-    console.log('[WebViewBridge] Bridge eliminated - sendTransactionMessage ignored:', message);
+    bridgeLogger.debug('Bridge eliminated - sendTransactionMessage ignored:', { message });
     return null;
   }
 }
@@ -93,7 +95,7 @@ export function getEnvironment(): Environment {
  * Post message to bridge (stub - no-op)
  */
 export function postMessage(message: any): Promise<any> {
-  console.log('[WebViewBridge] Bridge eliminated - postMessage ignored:', message);
+  bridgeLogger.debug('Bridge eliminated - postMessage ignored:', { message });
   return Promise.resolve(null);
 }
 

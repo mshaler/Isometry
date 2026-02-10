@@ -12,6 +12,7 @@ import {
 } from '../utils/bridge-performance';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from '../utils/webview-bridge';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 export interface PerformanceReport {
   provider: DatabaseMode;
@@ -103,7 +104,7 @@ export interface MigrationScenario {
  * Validate performance targets against established Phase 7.2 baselines
  */
 export async function validatePerformanceTargets(provider: DatabaseMode): Promise<PerformanceReport> {
-  console.log(`🎯 Validating performance targets for ${provider}...`);
+  devLogger.inspect(`Validating performance targets for ${provider}...`);
 
   const timestamp = new Date().toISOString();
   const targets = getTargetsForProvider(provider);
@@ -187,7 +188,7 @@ export async function validatePerformanceTargets(provider: DatabaseMode): Promis
  * Benchmark migration path performance
  */
 export async function benchmarkMigrationPath(scenario: MigrationScenario): Promise<BenchmarkResult> {
-  console.log(`📊 Benchmarking migration: ${scenario.name}`);
+  devLogger.inspect(`Benchmarking migration: ${scenario.name}`);
 
   try {
     // Establish baseline performance
@@ -247,7 +248,7 @@ async function analyzeRegressions(_provider: any, _results: any): Promise<Regres
  * Detect performance regressions from baseline
  */
 export async function detectRegressions(baseline: PerformanceBaseline): Promise<RegressionAnalysis> {
-  console.log('🔍 Detecting performance regressions...');
+  devLogger.inspect('Detecting performance regressions...');
 
   try {
     const currentMetrics = await measureCurrentPerformance(baseline.provider);

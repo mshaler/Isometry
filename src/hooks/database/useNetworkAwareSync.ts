@@ -1,4 +1,4 @@
-// @ts-nocheck
+// TODO: Fix network monitoring types - file needs comprehensive type definitions
 /**
  * Network-Aware Sync Hook
  *

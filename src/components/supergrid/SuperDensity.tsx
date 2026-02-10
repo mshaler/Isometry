@@ -33,6 +33,7 @@ import { SuperDensityService } from '@/services/SuperDensityService';
 import { LATCHFilterService } from '@/services/LATCHFilterService';
 import { SuperDensityRenderer } from '@/d3/SuperDensityRenderer';
 import { JanusDensityControls } from '@/components/JanusDensityControls';
+import { superGridLogger } from '@/utils/logging/dev-logger';
 import type { LATCHAxis } from '@/types/pafv';
 import type { Node } from '@/types/node';
 import type {
@@ -150,7 +151,7 @@ export function SuperDensity({
     }
 
     if (debug) {
-      console.log('[SuperDensity] Density changed:', {
+      superGridLogger.debug('Density changed:', {
         level: event.changedLevel,
         performanceMs: event.metrics.totalTime,
         withinTarget: event.metrics.withinPerformanceTarget
@@ -191,7 +192,7 @@ export function SuperDensity({
       }
 
       if (debug) {
-        console.log('[SuperDensity] Aggregation completed:', {
+        superGridLogger.debug('Aggregation completed:', {
           sourceRows: result.metadata.sourceRowCount,
           aggregatedRows: result.metadata.aggregatedRowCount,
           compressionRatio: result.metadata.compressionRatio,

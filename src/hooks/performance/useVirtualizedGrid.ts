@@ -235,7 +235,7 @@ export function useVirtualizedGrid(
             }
 
             // Track in performance monitor
-            // @ts-ignore - PerformanceMonitor method suppressed for compilation
+            // @ts-expect-error - PerformanceMonitor method may not exist
             performanceMonitor.current?.trackVirtualScrollingFrame(frameDelta);
           }
           lastFrameTime.current = timestamp;

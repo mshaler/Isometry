@@ -6,6 +6,8 @@
  * since sql.js operates in the same memory space as D3.js.
  */
 
+import { bridgeLogger } from '@/utils/logging/dev-logger';
+
 export interface MemoryMetrics {
   totalMemory: number;
   usedMemory: number;
@@ -30,7 +32,7 @@ class MemoryManagerStub {
    */
   addMemoryPressureCallback(_callback: MemoryPressureCallback): void {
     // No-op: Bridge eliminated, no memory pressure monitoring needed
-    console.log('[MemoryManager] Bridge eliminated - memory pressure callback ignored');
+    bridgeLogger.debug('Bridge eliminated - memory pressure callback ignored');
   }
 
   /**
@@ -38,7 +40,7 @@ class MemoryManagerStub {
    */
   registerBridgeCallback(_callback: BridgeCallback): void {
     // No-op: Bridge eliminated, no callbacks to register
-    console.log('[MemoryManager] Bridge eliminated - callback registration ignored');
+    bridgeLogger.debug('Bridge eliminated - callback registration ignored');
   }
 
   /**
@@ -46,7 +48,7 @@ class MemoryManagerStub {
    */
   cleanupBridgeCallbacks(): void {
     // No-op: Bridge eliminated, no cleanup needed
-    console.log('[MemoryManager] Bridge eliminated - callback cleanup ignored');
+    bridgeLogger.debug('Bridge eliminated - callback cleanup ignored');
   }
 
   /**

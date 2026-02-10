@@ -1,5 +1,6 @@
 import { ConnectionSuggestion, SuggestionType, SuggestionOptions } from './GraphAnalyticsAdapter';
 import { graphAnalytics, GraphMetrics } from './GraphAnalyticsAdapter';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 // Re-export interfaces for external use
 export type { ConnectionSuggestion, SuggestionType, SuggestionOptions } from './GraphAnalyticsAdapter';
@@ -463,7 +464,7 @@ export class ConnectionSuggestionService {
       try {
         await this.suggestConnections(nodeId, options);
       } catch (error) {
-        console.debug(`Precomputation failed for node ${nodeId}:`, error);
+        devLogger.debug(`Precomputation failed for node ${nodeId}:`, { error });
       }
     });
 
@@ -593,10 +594,10 @@ export class ConnectionSuggestionService {
         // If graph has grown significantly, warm cache for high-degree nodes
         if (metrics.totalNodes > 1000) {
           // Implement cache warming for popular nodes
-          console.debug('Graph size grown, considering cache warming');
+          devLogger.debug('Graph size grown, considering cache warming');
         }
       } catch (error) {
-        console.debug('Failed to check graph metrics for cache warming:', error);
+        devLogger.debug('Failed to check graph metrics for cache warming:', { error });
       }
     }, 60000); // Check every minute
   }

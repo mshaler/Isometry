@@ -12,6 +12,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useLiveQuery } from './useLiveQuery';
 import { useConnection } from '../../context/ConnectionContext';
+import { dbLogger } from '@/utils/logging/logger';
 // Bridge eliminated in v4 - sql.js direct access
 import { webViewBridge } from '../../utils/webview-bridge';
 
@@ -203,7 +204,7 @@ export function useOptimisticUpdates<T = any>(
       const optimisticData = applyOptimisticChanges(prev.actualData, newPendingOps);
 
       if (enableDebugLogging) {
-        console.log('[useOptimisticUpdates] Applied optimistic update:', {
+        dbLogger.debug('Applied optimistic update:', {
           operation: operation.type,
           table: operation.table,
           id: operation.id,
@@ -236,7 +237,7 @@ export function useOptimisticUpdates<T = any>(
         const newPendingOps = prev.pendingOperations.filter(op => op.id !== operation.id);
 
         if (enableDebugLogging) {
-          console.log('[useOptimisticUpdates] Operation succeeded:', {
+          dbLogger.debug('Operation succeeded:', {
             operation: operation.type,
             id: operation.id,
             remainingPending: newPendingOps.length
@@ -319,7 +320,7 @@ export function useOptimisticUpdates<T = any>(
         if (!operationToRollback) return prev;
 
         if (enableDebugLogging) {
-          console.log('[useOptimisticUpdates] Rolling back operation:', {
+          dbLogger.debug('Rolling back operation:', {
             operation: operationToRollback.type,
             id: operationId
           });
@@ -363,7 +364,7 @@ export function useOptimisticUpdates<T = any>(
     const currentOperations = optimisticState.pendingOperations.map(op => op.id);
 
     if (enableDebugLogging) {
-      console.log('[useOptimisticUpdates] Rolling back all operations:', currentOperations.length);
+      dbLogger.debug('Rolling back all operations:', { count: currentOperations.length });
     }
 
     await Promise.all(currentOperations.map(rollbackOperation));
@@ -403,8 +404,9 @@ export function useOptimisticUpdates<T = any>(
     if (!isConnected && optimisticState.pendingOperations.length > 0) {
       // Queue operations for retry when connection is restored
       if (enableDebugLogging) {
-        console.log('[useOptimisticUpdates] Connection lost with pending operations:',
-          optimisticState.pendingOperations.length);
+        dbLogger.debug('Connection lost with pending operations:', {
+          count: optimisticState.pendingOperations.length
+        });
       }
     } else if (isConnected && status === 'connected') {
       // Connection restored - retry any failed operations

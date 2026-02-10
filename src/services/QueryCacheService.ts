@@ -1,4 +1,5 @@
 import { graphAnalytics } from './GraphAnalyticsAdapter';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 // Cache entry interface with comprehensive metadata
 export interface CacheEntry<T = unknown> {
@@ -610,7 +611,7 @@ export class QueryCacheService {
       const patternStr = pattern instanceof RegExp ? pattern.source : pattern;
       await graphAnalytics.runGraphQuery('invalidateCache', { pattern: patternStr });
     } catch (error) {
-      console.debug('Native cache invalidation failed (non-critical):', error);
+      devLogger.debug('Native cache invalidation failed (non-critical):', { error });
     }
   }
 

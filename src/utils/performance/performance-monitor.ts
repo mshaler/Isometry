@@ -6,6 +6,7 @@
  */
 
 // No bridge dependencies - direct sql.js + D3.js access
+import { performanceLogger } from '@/utils/logging/dev-logger';
 
 export interface SimplePerformanceAlert {
   id: string;
@@ -130,11 +131,11 @@ export class SimplePerformanceMonitor {
 
     // Sampling check
     if (Math.random() > this.config.sampleRate) {
-      console.log('Performance monitoring skipped (sampling)');
+      performanceLogger.debug('Performance monitoring skipped (sampling)');
       return;
     }
 
-    console.log('🚀 Starting simple performance monitoring...');
+    performanceLogger.debug('Starting simple performance monitoring...');
 
     this.isMonitoring = true;
     this.sessionStartTime = Date.now();
@@ -149,7 +150,7 @@ export class SimplePerformanceMonitor {
       return null;
     }
 
-    console.log('🛑 Stopping simple performance monitoring...');
+    performanceLogger.debug('Stopping simple performance monitoring...');
 
     this.isMonitoring = false;
 
@@ -241,7 +242,7 @@ export class SimplePerformanceMonitor {
     const alert = this.alerts.get(alertId);
     if (alert) {
       alert.resolved = true;
-      console.log(`✅ Performance alert resolved: ${alert.message}`);
+      performanceLogger.debug(`Performance alert resolved: ${alert.message}`);
     }
   }
 
@@ -410,14 +411,13 @@ export class SimplePerformanceMonitor {
   private generateSimpleReport(metrics: SimpleSessionMetrics): void {
     const duration = (Date.now() - this.sessionStartTime) / 1000;
 
-    console.group('📊 Simple Performance Report');
-    console.log(`Duration: ${duration.toFixed(1)}s`);
-    console.log(`Queries: ${metrics.queryCount} (avg: ${metrics.queryTimeAvg.toFixed(1)}ms, max: ${metrics.queryTimeMax.toFixed(1)}ms)`);
-    console.log(`Renders: ${metrics.renderCount} (avg: ${metrics.renderTimeAvg.toFixed(1)}ms, fps: ${metrics.frameRate.toFixed(1)})`);
-    console.log(`Memory: ${metrics.memoryUsageMB.toFixed(1)}MB`);
-    console.log(`Errors: ${metrics.errorCount}`);
-    console.log(`Alerts: ${this.getAlerts().length}`);
-    console.groupEnd();
+    performanceLogger.debug('Simple Performance Report');
+    performanceLogger.debug(`Duration: ${duration.toFixed(1)}s`);
+    performanceLogger.debug(`Queries: ${metrics.queryCount} (avg: ${metrics.queryTimeAvg.toFixed(1)}ms, max: ${metrics.queryTimeMax.toFixed(1)}ms)`);
+    performanceLogger.debug(`Renders: ${metrics.renderCount} (avg: ${metrics.renderTimeAvg.toFixed(1)}ms, fps: ${metrics.frameRate.toFixed(1)})`);
+    performanceLogger.debug(`Memory: ${metrics.memoryUsageMB.toFixed(1)}MB`);
+    performanceLogger.debug(`Errors: ${metrics.errorCount}`);
+    performanceLogger.debug(`Alerts: ${this.getAlerts().length}`);
   }
 
   private resetMetrics(): void {
@@ -435,7 +435,7 @@ export class SimplePerformanceMonitor {
   trackSuggestionLatency(operation: string, latency: number): void {
     if (!this.isMonitoring) return;
 
-    console.log(`🔍 Suggestion latency (${operation}): ${latency}ms`);
+    performanceLogger.debug(`Suggestion latency (${operation}): ${latency}ms`);
 
     // Could add to a suggestion latency array if needed for metrics
     if (latency > 500) {
@@ -468,7 +468,7 @@ export function monitorSQLQuery<T>(queryFn: () => T, queryName?: string): T {
     simplePerformanceMonitor.recordQuery(duration, true);
 
     if (duration > 50) { // Log slow queries
-      console.log(`🐌 Slow query${queryName ? ` (${queryName})` : ''}: ${duration.toFixed(1)}ms`);
+      performanceLogger.debug(`Slow query${queryName ? ` (${queryName})` : ''}: ${duration.toFixed(1)}ms`);
     }
 
     return result;
@@ -488,7 +488,7 @@ export function monitorD3Render<T>(renderFn: () => T, renderName?: string): T {
     simplePerformanceMonitor.recordRender(duration);
 
     if (duration > 16) { // Log slow renders (60fps = 16ms)
-      console.log(`🎨 Slow render${renderName ? ` (${renderName})` : ''}: ${duration.toFixed(1)}ms`);
+      performanceLogger.debug(`Slow render${renderName ? ` (${renderName})` : ''}: ${duration.toFixed(1)}ms`);
     }
 
     return result;

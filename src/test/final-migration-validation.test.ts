@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 interface MigrationSuccessCriteria {
   sqlJsRemoved: boolean;           // No sql.js code or dependencies
@@ -73,7 +74,7 @@ class FinalMigrationValidator {
         }
       }
 
-      console.log('✅ sql.js completely removed from codebase');
+      devLogger.inspect('sql.js completely removed from codebase');
       return true;
     } catch (error) {
       console.error('❌ Error validating sql.js removal:', error);
@@ -160,11 +161,11 @@ class FinalMigrationValidator {
         return false;
       }
 
-      console.log('✅ All performance targets exceeded:');
-      console.log(`  Query Latency: ${(latencyImprovement * 100).toFixed(1)}% improvement`);
-      console.log(`  Memory Usage: ${(memoryImprovement * 100).toFixed(1)}% improvement`);
-      console.log(`  Bundle Size: ${(bundleImprovement * 100).toFixed(1)}% improvement`);
-      console.log(`  Startup Time: ${(startupImprovement * 100).toFixed(1)}% improvement`);
+      devLogger.inspect('All performance targets exceeded:');
+      devLogger.inspect(`  Query Latency: ${(latencyImprovement * 100).toFixed(1)}% improvement`);
+      devLogger.inspect(`  Memory Usage: ${(memoryImprovement * 100).toFixed(1)}% improvement`);
+      devLogger.inspect(`  Bundle Size: ${(bundleImprovement * 100).toFixed(1)}% improvement`);
+      devLogger.inspect(`  Startup Time: ${(startupImprovement * 100).toFixed(1)}% improvement`);
 
       return true;
     } catch (error) {
@@ -223,7 +224,7 @@ class FinalMigrationValidator {
       // Validate environment detection works
       // Mock environment detection validation
 
-      console.log('✅ All React components maintain compatibility');
+      devLogger.inspect('All React components maintain compatibility');
       return true;
     } catch (error) {
       console.error('❌ Error validating component compatibility:', error);
@@ -256,7 +257,7 @@ class FinalMigrationValidator {
       // Validate data encryption requirements
       // This would verify encryption keys and storage in real implementation
 
-      console.log('✅ Security compliance requirements validated');
+      devLogger.inspect('Security compliance requirements validated');
       return true;
     } catch (error) {
       console.error('❌ Error validating security compliance:', error);
@@ -298,7 +299,7 @@ class FinalMigrationValidator {
         }
       }
 
-      console.log('✅ All migration documentation complete and accurate');
+      devLogger.inspect('All migration documentation complete and accurate');
       return true;
     } catch (error) {
       console.error('❌ Error validating documentation:', error);
@@ -310,7 +311,7 @@ class FinalMigrationValidator {
    * Generate comprehensive migration success report
    */
   async generateMigrationSuccessReport(): Promise<MigrationSuccessCriteria> {
-    console.log('🔄 Running comprehensive migration validation...\n');
+    devLogger.inspect('Running comprehensive migration validation...\n');
 
     const criteria: MigrationSuccessCriteria = {
       sqlJsRemoved: await this.validateSqlJsRemoval(),
@@ -321,20 +322,20 @@ class FinalMigrationValidator {
       documentationComplete: await this.validateDocumentationComplete()
     };
 
-    console.log('\n📊 Migration Success Report:');
-    console.log('================================');
+    devLogger.inspect('\n📊 Migration Success Report:');
+    devLogger.inspect('================================');
     Object.entries(criteria).forEach(([key, value]) => {
       const status = value ? '✅ PASS' : '❌ FAIL';
-      console.log(`${key}: ${status}`);
+      devLogger.inspect(`${key}: ${status}`);
     });
 
     const allCriteriaMet = Object.values(criteria).every(Boolean);
-    console.log('\n🎯 Overall Migration Status:', allCriteriaMet ? '✅ SUCCESS' : '❌ FAILED');
+    devLogger.inspect('\n🎯 Overall Migration Status:', allCriteriaMet ? '✅ SUCCESS' : '❌ FAILED');
 
     if (allCriteriaMet) {
-      console.log('\n🚀 Migration completed successfully! Production deployment approved.');
+      devLogger.inspect('\n🚀 Migration completed successfully! Production deployment approved.');
     } else {
-      console.log('\n🚨 Migration validation failed. Review failed criteria before production deployment.');
+      devLogger.inspect('\n🚨 Migration validation failed. Review failed criteria before production deployment.');
     }
 
     return criteria;

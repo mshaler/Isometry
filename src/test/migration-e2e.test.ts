@@ -8,6 +8,7 @@
 import { bridgePerformanceTest, PERFORMANCE_TARGETS } from '../utils/bridge-performance';
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { Environment } from '../utils/webview-bridge';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 export interface TestResult {
   success: boolean;
@@ -53,14 +54,14 @@ export interface PlatformResult {
  * Complete workflow validation across all database providers
  */
 export async function testCompleteWorkflow(providers: DatabaseMode[]): Promise<TestResult> {
-  console.log('🚀 Starting complete workflow validation...');
+  devLogger.inspect('Starting complete workflow validation...');
 
   const startTime = performance.now();
   const errors: string[] = [];
 
   try {
     for (const provider of providers) {
-      console.log(`Testing provider: ${provider}`);
+      devLogger.inspect(`Testing provider: ${provider}`);
 
       // Test basic operations
       const basicResult = await testBasicOperations(provider);
@@ -116,7 +117,7 @@ export async function testCompleteWorkflow(providers: DatabaseMode[]): Promise<T
  * Test migration between different database providers
  */
 export async function testProviderMigration(from: DatabaseMode, to: DatabaseMode): Promise<MigrationResult> {
-  console.log(`🔄 Testing migration: ${from} → ${to}`);
+  devLogger.inspect(`Testing migration: ${from} → ${to}`);
 
   const errors: string[] = [];
   let dataIntegrity = false;
@@ -201,7 +202,7 @@ export async function testProviderMigration(from: DatabaseMode, to: DatabaseMode
  * Test rollback procedures for safe reversion
  */
 export async function testRollbackProcedures(scenario: RollbackScenario): Promise<RollbackResult> {
-  console.log(`↩️ Testing rollback: ${scenario.type} (${scenario.fromProvider} → ${scenario.targetProvider})`);
+  devLogger.inspect(`Testing rollback: ${scenario.type} (${scenario.fromProvider} → ${scenario.targetProvider})`);
 
   const errors: string[] = [];
   let dataPreserved = false;
@@ -271,7 +272,7 @@ export async function testRollbackProcedures(scenario: RollbackScenario): Promis
  * Test cross-platform compatibility (iOS/macOS)
  */
 export async function validateCrossPlatform(platform: 'ios' | 'macos'): Promise<PlatformResult> {
-  console.log(`📱 Validating cross-platform compatibility: ${platform}`);
+  devLogger.inspect(`Validating cross-platform compatibility: ${platform}`);
 
   const errors: string[] = [];
   let uiConsistency = false;
@@ -560,7 +561,7 @@ async function testPerformanceValidationFlow(provider: DatabaseMode): Promise<Te
 
 async function switchToProvider(_provider: DatabaseMode): Promise<void> {
   // Implementation would switch the active database provider
-  console.log(`Switching to provider: ${_provider}`);
+  devLogger.inspect(`Switching to provider: ${_provider}`);
 }
 
 async function testCreateOperation(_provider: DatabaseMode): Promise<TestResult> {

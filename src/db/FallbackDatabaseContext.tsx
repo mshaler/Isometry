@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { SAMPLE_NOTES as ALL_NOTES } from './sample-data';
+import { dbLogger } from '@/utils/logging/logger';
 
 export interface FallbackDatabaseContextValue {
   loading: boolean;
@@ -36,7 +37,7 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
     sql: string,
     _params?: unknown[]
   ): T[] => {
-    console.log('[FallbackDB] Query executed:', {
+    dbLogger.debug('Query executed:', {
       sql: sql.substring(0, 50) + '...',
       returning: sql.toLowerCase().includes('select') && sql.toLowerCase().includes('nodes')
         ? `${ALL_NOTES.length} real nodes`
@@ -90,7 +91,7 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
         bookmarks: sampleNodes.filter(n => (n as any).node_type === 'bookmark').length,
       };
 
-      console.log(`[FallbackDB] Returning ${sampleNodes.length} total nodes:`, nodeTypeCounts);
+      dbLogger.debug(`Returning ${sampleNodes.length} total nodes:`, nodeTypeCounts);
       return sampleNodes;
     }
 
@@ -99,11 +100,11 @@ export function FallbackDatabaseProvider({ children }: FallbackDatabaseProviderP
   }, []);
 
   const save = useCallback(async (): Promise<void> => {
-    console.log('[FallbackDB] Save operation (no-op in fallback mode)');
+    dbLogger.debug('Save operation (no-op in fallback mode)');
   }, []);
 
   const reset = useCallback(async (): Promise<void> => {
-    console.log('[FallbackDB] Reset operation (no-op in fallback mode)');
+    dbLogger.debug('Reset operation (no-op in fallback mode)');
   }, []);
 
   const contextValue: FallbackDatabaseContextValue = {

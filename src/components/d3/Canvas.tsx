@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { useD3, useResizeObserver } from '@/hooks';
 import { useLiveQuery } from '@/hooks';
 import type { Node } from '@/types/node';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 interface D3CanvasProps {
   sql: string;
@@ -107,7 +108,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
             .on('brushend', (event) => {
               if (event.selection) {
                 const [[x0, y0], [x1, y1]] = event.selection;
-                console.log('[D3Canvas] Brush selection:', { x0, y0, x1, y1 });
+                devLogger.debug('Brush selection:', { x0, y0, x1, y1 });
               }
             });
         }
@@ -123,7 +124,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
       // Render connections (if nodes have edges)
       renderConnections(mainGroup, safeNodes);
 
-      console.log('[D3Canvas] Rendered', nodes?.length || 0, 'nodes');
+      devLogger.debug('Rendered nodes count:', { count: nodes?.length || 0 });
       setError(null);
 
     } catch (err) {

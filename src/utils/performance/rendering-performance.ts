@@ -6,6 +6,7 @@
  */
 
 // No bridge dependencies - direct access to sql.js and D3.js
+import { performanceLogger } from '@/utils/logging/dev-logger';
 
 // ============================================================================
 // Types
@@ -65,7 +66,7 @@ export class SimpleRenderingPerformanceMonitor {
     this.queryTimeHistory = [];
     this.alerts = [];
 
-    console.log('🚀 Simple rendering performance monitoring started');
+    performanceLogger.debug('Simple rendering performance monitoring started');
   }
 
   /**
@@ -77,7 +78,7 @@ export class SimpleRenderingPerformanceMonitor {
     this.isMonitoring = false;
 
     const metrics = this.calculateCurrentMetrics();
-    console.log('🛑 Simple rendering performance monitoring stopped', metrics);
+    performanceLogger.debug('Simple rendering performance monitoring stopped', { metrics });
 
     return metrics;
   }
@@ -274,7 +275,7 @@ export class SimpleMemoryTracker {
       }
     }, intervalMs);
 
-    console.log('🧠 Simple memory monitoring started');
+    performanceLogger.debug('Simple memory monitoring started');
   }
 
   /**
@@ -284,7 +285,7 @@ export class SimpleMemoryTracker {
     if (this.monitorInterval) {
       clearInterval(this.monitorInterval);
       this.monitorInterval = null;
-      console.log('🧠 Simple memory monitoring stopped');
+      performanceLogger.debug('Simple memory monitoring stopped');
     }
   }
 
@@ -304,7 +305,7 @@ export class SimpleMemoryTracker {
   forceGarbageCollection(): boolean {
     if ((window as any).gc) {
       (window as any).gc();
-      console.log('🗑️ Forced garbage collection');
+      performanceLogger.debug('Forced garbage collection');
       return true;
     }
     return false;

@@ -5,6 +5,7 @@ import { useCanvasTheme, useLiveData } from '@/hooks';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
 import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
+import { devLogger } from '@/utils/logging/dev-logger';
 import type { Node } from '@/types/node';
 import type {
   SimulationNodeDatum,
@@ -69,7 +70,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
       trackPerformance: true,
       throttleMs: 100,
       onPerformanceUpdate: (metrics: any) => {
-        console.debug('NetworkView edges performance:', metrics);
+        devLogger.debug('NetworkView edges performance:', { metrics });
       }
     }
   );
@@ -109,7 +110,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     // Here you would implement the logic to create the connection
     // This would typically involve adding a new edge to the database
-    console.info('Applying suggestion:', suggestion);
+    devLogger.info('Applying suggestion:', { suggestion });
 
     // Refresh suggestions after applying
     await fetchConnectionSuggestions(selectedNode);

@@ -6,6 +6,7 @@
  */
 
 import { DatabaseMode } from '../contexts/EnvironmentContext';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 export interface ConsistencyReport {
   provider: DatabaseMode;
@@ -153,7 +154,7 @@ export interface DatasetMetadata {
  * Validate data consistency across multiple database providers
  */
 export async function validateDataConsistency(providers: DatabaseMode[]): Promise<ConsistencyReport> {
-  console.log('🔍 Validating data consistency across providers...');
+  devLogger.inspect('Validating data consistency across providers...');
 
   const timestamp = new Date().toISOString();
   const checks: ConsistencyCheck[] = [];
@@ -174,7 +175,7 @@ export async function validateDataConsistency(providers: DatabaseMode[]): Promis
         const providerA = providers[i];
         const providerB = providers[j];
 
-        console.log(`Comparing ${providerA} vs ${providerB}`);
+        devLogger.inspect(`Comparing ${providerA} vs ${providerB}`);
 
         // Field-level comparison
         const fieldChecks = await compareProviderData(providerA, providerB, testDataset);
@@ -244,7 +245,7 @@ export async function validateDataConsistency(providers: DatabaseMode[]): Promis
  * Test data migration integrity with comprehensive validation
  */
 export async function testDataMigration(migrationPath: MigrationPath): Promise<IntegrityReport> {
-  console.log(`🔄 Testing data migration: ${migrationPath.source} → ${migrationPath.target}`);
+  devLogger.inspect(`Testing data migration: ${migrationPath.source} → ${migrationPath.target}`);
 
   const timestamp = new Date().toISOString();
   let passed = false;
@@ -339,7 +340,7 @@ export async function testDataMigration(migrationPath: MigrationPath): Promise<I
  * Test concurrent operations and conflict resolution
  */
 export async function validateConcurrentOperations(): Promise<ConcurrencyReport> {
-  console.log('🔄 Testing concurrent operations and conflict resolution...');
+  devLogger.inspect('Testing concurrent operations and conflict resolution...');
 
   const scenario = 'multi-user-concurrent-editing';
   const totalOperations = 50;
@@ -414,7 +415,7 @@ export async function detectDataCorruption(dataset: TestDataset): Promise<{
   corruptionDetails: CorruptionDetail[];
   repairRecommendations: string[];
 }> {
-  console.log('🔍 Detecting data corruption...');
+  devLogger.inspect('Detecting data corruption...');
 
   const corruptionDetails: CorruptionDetail[] = [];
   const repairRecommendations: string[] = [];
@@ -525,7 +526,7 @@ async function createTestDataset(): Promise<TestDataset> {
 
 async function populateProviderWithData(_provider: DatabaseMode, _dataset: TestDataset): Promise<void> {
   // Implementation would populate the specific provider with test data
-  console.log(`Populating ${_provider} with test data`);
+  devLogger.inspect(`Populating ${_provider} with test data`);
 }
 
 async function compareProviderData(
@@ -624,7 +625,7 @@ async function calculateDataChecksum(_provider: DatabaseMode, _dataset: TestData
 
 async function performDataMigration(_migrationPath: MigrationPath, _dataset: TestDataset): Promise<void> {
   // Implementation would perform actual data migration
-  console.log('Performing data migration...');
+  devLogger.inspect('Performing data migration...');
 }
 
 async function analyzeDataLoss(_migrationPath: MigrationPath, _dataset: TestDataset): Promise<DataLossAnalysis> {

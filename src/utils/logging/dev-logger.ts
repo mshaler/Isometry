@@ -39,12 +39,14 @@ class SimpleDevLogger implements DevLogger {
 
   debug(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`🔍 ${message}`, context || '');
     }
   }
 
   info(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('info')) {
+      // eslint-disable-next-line no-console
       console.info(`ℹ️ ${message}`, context || '');
     }
   }
@@ -64,36 +66,42 @@ class SimpleDevLogger implements DevLogger {
   // Extended methods for D3 components (using debug level)
   data(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`📊 DATA: ${message}`, context || '');
     }
   }
 
   metrics(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`📈 METRICS: ${message}`, context || '');
     }
   }
 
   setup(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`🔧 SETUP: ${message}`, context || '');
     }
   }
 
   state(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`🔄 STATE: ${message}`, context || '');
     }
   }
 
   render(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`🎨 RENDER: ${message}`, context || '');
     }
   }
 
   inspect(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-restricted-syntax
       console.debug(`🔍 INSPECT: ${message}`, context || '');
     }
   }
@@ -116,6 +124,7 @@ export const devLogger = new SimpleDevLogger();
 export const contextLogger = new SimpleDevLogger();
 export const bridgeLogger = new SimpleDevLogger();
 export const performanceLogger = new SimpleDevLogger();
+export const superGridLogger = new SimpleDevLogger();
 
 // Factory function to create loggers with specific contexts
 export const createLogger = (_context: string): DevLogger => {

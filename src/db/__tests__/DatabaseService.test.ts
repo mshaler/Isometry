@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DatabaseService } from '../DatabaseService';
+import { devLogger } from '@/utils/logging/dev-logger';
 
 describe('DatabaseService', () => {
   let db: DatabaseService;
@@ -25,7 +26,7 @@ describe('DatabaseService', () => {
       try {
         const result = db.query<{fts5_version: string}>("SELECT fts5_version()");
         expect(result[0].fts5_version).toMatch(/^\d+\.\d+\.\d+$/);
-        console.log(`✅ FTS5 available: ${result[0].fts5_version}`);
+        devLogger.inspect(`FTS5 available: ${result[0].fts5_version}`);
       } catch (error) {
         console.warn('⚠️ FTS5 not available in standard sql.js build. Need custom FTS5-enabled build.');
         // Document the limitation but don't fail the test suite entirely
@@ -43,7 +44,7 @@ describe('DatabaseService', () => {
         `);
         expect(results).toHaveLength(1);
         expect(results[0].content).toBe('hello world');
-        console.log('✅ FTS5 virtual tables working');
+        devLogger.inspect('FTS5 virtual tables working');
       } catch (error) {
         console.warn('⚠️ FTS5 virtual tables not available. Using standard text search as fallback.');
         // Test fallback to LIKE queries for text search

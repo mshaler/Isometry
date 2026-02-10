@@ -24,6 +24,7 @@ import type {
   DensityAggregatedRow,
   RegionDensityConfig
 } from '@/types/supergrid';
+import { superGridLogger } from '@/utils/logging/dev-logger';
 
 export interface DensityRenderConfig {
   /** Container dimensions */
@@ -289,7 +290,7 @@ export class SuperDensityRenderer {
       this.visualState.isTransitioning = false;
 
       const endTime = performance.now();
-      console.log(`[SuperDensityRenderer] Render completed in ${(endTime - startTime).toFixed(2)}ms`);
+      superGridLogger.debug(`Render completed in ${(endTime - startTime).toFixed(2)}ms`);
     }
   }
 

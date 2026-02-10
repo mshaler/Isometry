@@ -6,6 +6,7 @@ import { SuperCalc } from './SuperCalc';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import type { GridConfig } from '../../types/grid';
 import type { FilterCompilationResult } from '../../services/LATCHFilterService';
+import { superGridLogger } from '@/utils/logging/dev-logger';
 
 interface AdvancedSuperGridDemoProps {
   className?: string;
@@ -133,15 +134,15 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
 
   // SuperGrid event handlers
   const handleCardClick = useCallback((card: any) => {
-    console.log('Card clicked:', card);
+    superGridLogger.debug('Card clicked:', { card });
   }, []);
 
   const handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
-    console.log('Selection changed:', { selectedIds, focusedId });
+    superGridLogger.debug('Selection changed:', { selectedIds, focusedId });
   }, []);
 
   const handleCardUpdate = useCallback((card: any) => {
-    console.log('Card updated:', card);
+    superGridLogger.debug('Card updated:', { card });
 
     // Update cell state to reflect CRUD operation
     setCellStates(prev => prev.map(cell =>
@@ -152,7 +153,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   }, []);
 
   const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
-    console.log('Header clicked:', { axis, facet, value });
+    superGridLogger.debug('Header clicked:', { axis, facet, value });
   }, []);
 
   // SuperSearch handlers
@@ -249,7 +250,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
 
   // SuperCalc handlers
   const handleFormulaExecute = useCallback((formula: string, result: any) => {
-    console.log('Formula executed:', { formula, result });
+    superGridLogger.debug('Formula executed:', { formula, result });
 
     // Add computed cells to audit tracking
     if (result.type === 'table' || result.type === 'pivot') {

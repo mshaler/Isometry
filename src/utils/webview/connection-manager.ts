@@ -12,6 +12,7 @@
 // Bridge eliminated in v4 - sql.js direct access
 // import { PerformanceMonitor } from './bridge-optimization/performance-monitor';
 // import { webViewBridge } from './webview/webview-bridge';
+import { bridgeLogger } from '@/utils/logging/dev-logger';
 
 export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting' | 'syncing' | 'degraded' | 'error';
 
@@ -124,7 +125,7 @@ export class ConnectionManager {
    * Start connection monitoring
    */
   public start(): void {
-    console.log('[ConnectionManager] Starting connection monitoring');
+    bridgeLogger.debug('Starting connection monitoring');
 
     this.connectionStartTime = Date.now();
     this.testConnection()
@@ -136,7 +137,7 @@ export class ConnectionManager {
    * Stop connection monitoring
    */
   public stop(): void {
-    console.log('[ConnectionManager] Stopping connection monitoring');
+    bridgeLogger.debug('Stopping connection monitoring');
 
     this.stopHeartbeat();
     this.stopReconnection();
@@ -215,7 +216,7 @@ export class ConnectionManager {
    * Force reconnection
    */
   public async forceReconnection(): Promise<boolean> {
-    console.log('[ConnectionManager] Forcing reconnection');
+    bridgeLogger.debug('Forcing reconnection');
 
     this.stopHeartbeat();
     this.setState('reconnecting');
@@ -249,7 +250,7 @@ export class ConnectionManager {
     const insertIndex = this.findInsertIndex(queuedOp.priority);
     this.operationQueue.splice(insertIndex, 0, queuedOp);
 
-    console.log('[ConnectionManager] Queued operation:', {
+    bridgeLogger.debug('Queued operation:', {
       id: queuedOp.id,
       type: queuedOp.type,
       priority: queuedOp.priority,
@@ -381,7 +382,7 @@ export class ConnectionManager {
 
       this.updateMetrics();
 
-      console.log('[ConnectionManager] State transition:', {
+      bridgeLogger.debug('State transition:', {
         from: previousState,
         to: newState,
         timestamp: new Date().toISOString()
@@ -439,7 +440,7 @@ export class ConnectionManager {
     this.setState('reconnecting');
     this.reconnectionAttempts++;
 
-    console.log('[ConnectionManager] Reconnection attempt', this.reconnectionAttempts);
+    bridgeLogger.debug('Reconnection attempt:', { attempt: this.reconnectionAttempts });
 
     const success = await this.testConnection();
 
@@ -469,7 +470,7 @@ export class ConnectionManager {
   }
 
   private onConnectionRestored(): void {
-    console.log('[ConnectionManager] Connection restored');
+    bridgeLogger.debug('Connection restored');
 
     this.setState('connected');
     this.reconnectionAttempts = 0;
@@ -480,7 +481,7 @@ export class ConnectionManager {
   }
 
   private onConnectionLost(): void {
-    console.log('[ConnectionManager] Connection lost');
+    bridgeLogger.debug('Connection lost');
 
     this.setState('disconnected');
     this.stopHeartbeat();
@@ -662,7 +663,7 @@ export class ConnectionManager {
       // Remove successful operation from queue
       this.operationQueue.shift();
 
-      console.log('[ConnectionManager] Processed queued operation:', {
+      bridgeLogger.debug('Processed queued operation:', {
         id: operation.id,
         type: operation.type,
         remaining: this.operationQueue.length
@@ -689,7 +690,7 @@ export class ConnectionManager {
       case 'database-query':
         // Bridge eliminated - sql.js direct access
         // await webViewBridge.database.execute(operation.data.sql, operation.data.params);
-        console.log('[ConnectionManager] Database operation queued for sql.js:', operation.data);
+        bridgeLogger.debug('Database operation queued for sql.js:', { data: operation.data });
         return;
       case 'live-query-subscribe':
         // Handle live query subscription

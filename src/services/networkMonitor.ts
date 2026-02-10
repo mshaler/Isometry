@@ -36,12 +36,12 @@ export class NetworkMonitor {
     return navigator.onLine ? 'good' : 'offline';
   }
 
-  addEventListener(event: string, callback: Function): void {
-    window.addEventListener(event as any, callback as any);
+  addEventListener(event: string, callback: EventListenerOrEventListenerObject): void {
+    window.addEventListener(event, callback);
   }
 
-  removeEventListener(event: string, callback: Function): void {
-    window.removeEventListener(event as any, callback as any);
+  removeEventListener(event: string, callback: EventListenerOrEventListenerObject): void {
+    window.removeEventListener(event, callback);
   }
 
   onStatusChange(callback: (status: NetworkStatus) => void): () => void {

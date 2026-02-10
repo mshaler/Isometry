@@ -6,6 +6,8 @@
  * since sql.js operates in the same memory space as D3.js.
  */
 
+import { bridgeLogger } from '@/utils/logging/dev-logger';
+
 export interface PerformanceMetrics {
   bridgeLatency: number;
   queryTime: number;
@@ -52,7 +54,7 @@ export class PerformanceMonitor {
    */
   addCallback(_callback: PerformanceCallback): void {
     // No-op: Bridge eliminated, no performance monitoring needed
-    console.log('[PerformanceMonitor] Bridge eliminated - performance callback ignored');
+    bridgeLogger.debug('Bridge eliminated - performance callback ignored');
   }
 
   /**

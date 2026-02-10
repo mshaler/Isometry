@@ -188,11 +188,10 @@ export class ClaudeCodeServer {
     const { command, args = [], input, workingDirectory } = execution.command;
 
     // Prepare command execution
-    let executablePath: string;
+    const executablePath: string = process.env.SHELL || '/bin/zsh';
     let spawnArgs: string[] = [];
 
     // Use the user's shell for all commands to get aliases, history, etc.
-    executablePath = process.env.SHELL || '/bin/zsh';
     spawnArgs = ['-c', `${command} ${args.join(' ')}`];
 
     execution.status = 'running';

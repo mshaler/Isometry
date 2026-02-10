@@ -5,6 +5,8 @@
  * The original bridge database functionality is replaced with direct sql.js access.
  */
 
+import { bridgeLogger } from '@/utils/logging/dev-logger';
+
 export interface DatabaseResult {
   data: any[];
   error?: string;
@@ -33,7 +35,7 @@ export function useBridgeDatabase() {
       lastSync: null
     } as DatabaseConnection,
     query: async (_sql: string, _params?: any[]): Promise<DatabaseResult> => {
-      console.log('[useBridgeDatabase] Bridge eliminated - use useSQLiteQuery instead');
+      bridgeLogger.debug('Bridge eliminated - use useSQLiteQuery instead');
       return {
         data: [],
         error: 'Bridge eliminated - use useSQLiteQuery for direct sql.js access',

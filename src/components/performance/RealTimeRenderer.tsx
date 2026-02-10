@@ -14,6 +14,7 @@ import React, {
   createContext,
   useContext
 } from 'react';
+import { performanceLogger } from '@/utils/logging/dev-logger';
 // d3 is used for type definitions in the utility hook
 
 // Performance metrics and configuration
@@ -431,7 +432,7 @@ export const RealTimeRenderer: React.FC<RealTimeRendererProps> = ({
         }
       );
       // Configure optimizer with performance settings
-      console.debug('Performance settings:', performanceSettings);
+      performanceLogger.debug('Performance settings:', { settings: performanceSettings });
     }
     return optimizerRef.current;
   }, [targetFps, frameBudgetMs, onPerformanceChange, performanceSettings]);
@@ -454,7 +455,7 @@ export const RealTimeRenderer: React.FC<RealTimeRendererProps> = ({
   useEffect(() => {
     if (!debug || !metrics) return;
 
-    console.log('[RealTimeRenderer] Performance Metrics:', {
+    performanceLogger.debug('Performance Metrics:', {
       fps: metrics.fps.toFixed(1),
       avgFps: metrics.averageFps.toFixed(1),
       renderTime: metrics.renderTime.toFixed(2),

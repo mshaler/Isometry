@@ -1,4 +1,4 @@
-// @ts-nocheck
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /**
  * React Hook for Rendering Optimization
  *
