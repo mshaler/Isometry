@@ -30,6 +30,7 @@ import type {
   DensityPerformanceMetrics
 } from '@/types/supergrid';
 import { DEFAULT_JANUS_DENSITY } from '@/types/supergrid';
+import { devLogger } from '../utils/logging';
 
 export interface DatabaseExecutor {
   execute<T = Record<string, unknown>>(sql: string, params?: unknown[]): T[];
@@ -144,7 +145,8 @@ export class SuperDensityService {
     }
 
     if (this.config.enableDebugLogging) {
-      console.log(`[SuperDensity] Changed ${level} density:`, {
+      devLogger.debug('SuperDensity level changed', {
+        level,
         from: level === 'value' ? previousState.valueDensity :
               level === 'extent' ? previousState.extentDensity :
               level === 'view' ? previousState.viewDensity : 'region',
@@ -182,7 +184,7 @@ export class SuperDensityService {
     if (this.config.enableAggregationCache && this.aggregationCache.has(cacheKey)) {
       const cached = this.aggregationCache.get(cacheKey)!;
       if (this.config.enableDebugLogging) {
-        console.log('[SuperDensity] Cache hit:', cacheKey);
+        devLogger.debug('SuperDensity aggregation cache hit', { cacheKey });
       }
       return cached;
     }
@@ -191,7 +193,10 @@ export class SuperDensityService {
     const { sql, parameters } = this.buildAggregationQuery(baseFilters);
 
     if (this.config.enableDebugLogging) {
-      console.log('[SuperDensity] Executing aggregation query:', { sql, parameters });
+      devLogger.debug('SuperDensity executing aggregation query', {
+        sql: sql.replace(/\s+/g, ' ').trim(),
+        parameterCount: parameters.length
+      });
     }
 
     // Execute query
@@ -680,7 +685,9 @@ export class SuperDensityService {
   private clearAggregationCache(): void {
     this.aggregationCache.clear();
     if (this.config.enableDebugLogging) {
-      console.log('[SuperDensity] Aggregation cache cleared');
+      devLogger.debug('SuperDensity aggregation cache cleared', {
+        previousCacheSize: this.aggregationCache.size
+      });
     }
   }
 
