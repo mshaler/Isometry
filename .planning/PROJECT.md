@@ -4,28 +4,26 @@
 **Type:** Native iOS/macOS applications with React prototype bridge
 **Timeline:** Production-ready native implementation
 
-## Previous Milestone: v4.1 SuperGrid Foundation (SHIPPED)
+## Previous Milestones
 
-**Successfully delivered:** Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture
+### v4.1 SuperGrid Foundation (SHIPPED)
+Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture.
 
-**Infrastructure achievements:**
-- Bridge Elimination Architecture with sql.js enabling direct D3.js data binding with zero serialization overhead
-- Janus Density Controls with orthogonal zoom (value) and pan (extent) controls
-- Grid Continuum Views with seamless transitions between Grid, List, and Kanban projections
-- ViewEngine Architecture unifying "D3 renders, React controls" pattern
-- IndexedDB Persistence supporting large datasets (50MB+) with auto-save and quota monitoring
-- PAFV Axis Switching enabling dynamic axis-to-plane remapping
+### v4.2 Three-Canvas Notebook (PAUSED — awaiting Phase 46)
+Unified capture-shell-preview workspace. Phases 43-45 complete (Shell, Preview, TipTap Editor). Phase 46 (Live Data Sync) pending.
 
-## Current Milestone: v4.2 Three-Canvas Notebook
+### v4.3 Navigator Integration (PAUSED — awaiting Phase 51)
+Property classification to Navigator UI. Phase 50 (Foundation) complete. Phase 51 (UI Integration) pending.
 
-**Goal:** Build a unified capture-shell-preview workspace where notebook cards participate fully in PAFV projections
+## Current Milestone: v5.0 Type Safety Restoration
 
-**Target features:**
-- Three-Canvas Notebook layout (Capture, Shell, Preview) with responsive panes
-- Notion-style Capture pane with TipTap editor, slash commands, LATCH properties panel
-- Shell pane with Claude Code API integration for AI-assisted development
-- Preview pane with D3.js visualization rendering (SuperGrid integration)
-- Full LATCH participation for notebook cards in existing projections
+**Goal:** Eliminate all 1,254 TypeScript compilation errors to restore type safety, unblock the pre-commit hook, and establish a clean baseline for future development.
+
+**Target outcomes:**
+- Zero TypeScript errors (`tsc --noEmit` passes clean)
+- Pre-commit hook (`lefthook`) restored — no more `--no-verify` bypasses
+- CI/CD quality gates pass without `continue-on-error` workarounds
+- Clean type foundations for completing v4.2 Phase 46 and v4.3 Phase 51
 
 ## Core Value
 
@@ -202,9 +200,10 @@ Three-component React sidecar application:
 - IndexedDB persistence handles large datasets effectively
 
 **Known issues / technical debt:**
-- ~40 pre-existing TypeScript errors in grid-interaction, grid-selection, logging modules
+- 1,254 TypeScript compilation errors accumulated across v4.1-v4.3 rapid development (v5.0 addresses this)
 - Directory health check failing for src/services (22/15 files)
-- Using --no-verify for commits during Phase 42 due to pre-existing CI failures
+- Pre-commit hook bypassed with --no-verify since Phase 42
+- CI quality gates using continue-on-error as workaround
 
 ## Key Decisions
 

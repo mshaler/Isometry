@@ -1,5 +1,26 @@
 # Project Milestones: Isometry
 
+## v5.0 Type Safety Restoration (In Progress)
+
+**Goal:** Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks, CI quality gates, and type safety across the codebase.
+
+**Phases planned:** 52-55 (4 phases, 12 plans total)
+
+**Error baseline:**
+- 1,254 TypeScript errors across ~170 files
+- Top codes: TS18046 (339), TS2339 (270), TS6133 (103), TS2305 (94)
+- Top domains: src/d3/ (353), src/components/ (233), src/hooks/ (116)
+
+**Phases:**
+- Phase 52: Dead Code & Stale Imports (~251 errors: TS6133, TS6196, TS2305, TS2307)
+- Phase 53: Type Assertions & Annotations (~404 errors: TS18046, TS7006)
+- Phase 54: Interface Alignment (~346 errors: TS2339, TS2322)
+- Phase 55: Function Signatures & Final Verification (~253 errors + zero-error gate)
+
+**Unblocks:** v4.2 Phase 46, v4.3 Phase 51, pre-commit hook, CI quality gates
+
+---
+
 ## v4.1 SuperGrid Foundation (Shipped: 2026-02-10)
 
 **Delivered:** Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture

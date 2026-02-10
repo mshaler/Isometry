@@ -1,7 +1,43 @@
-# Requirements: Isometry v4.2 Three-Canvas Notebook
+# Requirements: Isometry
 
 **Defined:** 2026-02-10
 **Core Value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
+
+## v5.0 Requirements — Type Safety Restoration
+
+Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks and CI quality gates.
+
+### Dead Code & Stale Imports (Phase 52)
+
+Remove unused variables, fix stale exports, and resolve module path errors.
+
+- [ ] **TSFIX-01**: All TS6133 (unused variables) and TS6196 (unused declarations) errors resolved — 121 errors
+- [ ] **TSFIX-02**: All TS2305 (no exported member) errors resolved — 94 errors
+- [ ] **TSFIX-03**: All TS2307 (cannot find module) errors resolved — 36 errors
+
+### Type Assertions & Annotations (Phase 53)
+
+Add proper type annotations where TypeScript infers `unknown` or implicit `any`.
+
+- [ ] **TSFIX-04**: All TS18046 (type 'unknown') errors resolved with proper type guards — 339 errors
+- [ ] **TSFIX-05**: All TS7006 (implicit 'any' parameter) errors resolved with explicit types — 65 errors
+
+### Interface Alignment (Phase 54)
+
+Fix type mismatches between interfaces and actual usage across the codebase.
+
+- [ ] **TSFIX-06**: All TS2339 (property does not exist) errors resolved — 270 errors
+- [ ] **TSFIX-07**: All TS2322 (type not assignable) errors resolved — 76 errors
+
+### Function Signatures & Final Cleanup (Phase 55)
+
+Fix argument mismatches, overload resolution, and remaining errors. Verify zero errors.
+
+- [ ] **TSFIX-08**: All TS2345 (argument not assignable) errors resolved — 59 errors
+- [ ] **TSFIX-09**: All TS2554 (wrong argument count) errors resolved — 33 errors
+- [ ] **TSFIX-10**: All remaining TS errors resolved (TS2353, TS2551, TS2769, TS2304, etc.) — ~161 errors
+- [ ] **TSFIX-11**: `tsc --noEmit` passes with zero errors
+- [ ] **TSFIX-12**: Pre-commit hook (lefthook) passes without --no-verify
 
 ## v4.2 Requirements
 
@@ -101,6 +137,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| TSFIX-01 | Phase 52 | Pending |
+| TSFIX-02 | Phase 52 | Pending |
+| TSFIX-03 | Phase 52 | Pending |
+| TSFIX-04 | Phase 53 | Pending |
+| TSFIX-05 | Phase 53 | Pending |
+| TSFIX-06 | Phase 54 | Pending |
+| TSFIX-07 | Phase 54 | Pending |
+| TSFIX-08 | Phase 55 | Pending |
+| TSFIX-09 | Phase 55 | Pending |
+| TSFIX-10 | Phase 55 | Pending |
+| TSFIX-11 | Phase 55 | Pending |
+| TSFIX-12 | Phase 55 | Pending |
 | SHELL-01 | Phase 43 | Pending |
 | SHELL-02 | Phase 43 | Pending |
 | SHELL-03 | Phase 43 | Pending |
@@ -133,6 +181,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NAV-05 | Phase 51 | Pending |
 
 **Coverage:**
+- v5.0 requirements: 12 total (mapped to phases 52-55)
 - v4.2 requirements: 20 total (mapped to phases 43-46)
 - v4.3 requirements: 10 total (5 complete, 5 pending)
 - Unmapped: 0

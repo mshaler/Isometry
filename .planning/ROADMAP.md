@@ -4,8 +4,9 @@
 
 - **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
 - **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
-- **v4.2 Three-Canvas Notebook** - Phases 43-46 (in progress)
-- **v4.3 Navigator Integration** - Phases 50-51 (in progress)
+- **v4.2 Three-Canvas Notebook** - Phases 43-46 (paused, Phase 46 pending)
+- **v4.3 Navigator Integration** - Phases 50-51 (paused, Phase 51 pending)
+- **v5.0 Type Safety Restoration** - Phases 52-55 (active)
 
 ## Phases
 
@@ -148,14 +149,81 @@ Plans:
 - [ ] 51-01-PLAN.md — DraggableFacet and PlaneDropZone components with type mappings
 - [ ] 51-02-PLAN.md — SimplePAFVNavigator refactor with classification buckets
 
+### v5.0 Type Safety Restoration (Active)
+
+**Milestone Goal:** Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks and CI quality gates
+
+#### Phase 52: Dead Code & Stale Imports
+**Goal**: Remove unused variables/declarations, fix stale exports, and resolve module path errors (~251 errors)
+**Depends on**: None (can start immediately)
+**Requirements**: TSFIX-01, TSFIX-02, TSFIX-03
+**Success Criteria** (what must be TRUE):
+  1. Zero TS6133/TS6196 (unused) errors remain
+  2. Zero TS2305 (no exported member) errors remain
+  3. Zero TS2307 (cannot find module) errors remain
+  4. No behavioral changes — only dead code removal and import fixes
+**Plans**: 3 plans in 1 wave
+
+Plans:
+- [ ] 52-01-PLAN.md — Remove unused variables and declarations (TS6133, TS6196)
+- [ ] 52-02-PLAN.md — Fix stale exports and re-export paths (TS2305)
+- [ ] 52-03-PLAN.md — Fix module resolution errors (TS2307)
+
+#### Phase 53: Type Assertions & Annotations
+**Goal**: Add proper type annotations where TypeScript infers 'unknown' or implicit 'any' (~404 errors)
+**Depends on**: Phase 52
+**Requirements**: TSFIX-04, TSFIX-05
+**Success Criteria** (what must be TRUE):
+  1. Zero TS18046 (type 'unknown') errors remain
+  2. Zero TS7006 (implicit 'any') errors remain
+  3. All type assertions use proper type guards, not blanket `as` casts
+**Plans**: 3 plans in 2 waves
+
+Plans:
+- [ ] 53-01-PLAN.md — Fix TS18046 in D3/visualization layer (src/d3/)
+- [ ] 53-02-PLAN.md — Fix TS18046 in components and hooks
+- [ ] 53-03-PLAN.md — Fix TS7006 implicit any across all remaining files
+
+#### Phase 54: Interface Alignment
+**Goal**: Fix type mismatches between interfaces and actual usage across the codebase (~346 errors)
+**Depends on**: Phase 53
+**Requirements**: TSFIX-06, TSFIX-07
+**Success Criteria** (what must be TRUE):
+  1. Zero TS2339 (property does not exist) errors remain
+  2. Zero TS2322 (type not assignable) errors remain
+  3. Interfaces accurately reflect runtime data shapes
+**Plans**: 3 plans in 2 waves
+
+Plans:
+- [ ] 54-01-PLAN.md — Fix TS2339 in D3/SuperGrid layer
+- [ ] 54-02-PLAN.md — Fix TS2339/TS2322 in components and services
+- [ ] 54-03-PLAN.md — Fix TS2322 in hooks, engine, and remaining files
+
+#### Phase 55: Function Signatures & Final Verification
+**Goal**: Fix argument mismatches, overload resolution, and verify zero total errors (~253 errors)
+**Depends on**: Phase 54
+**Requirements**: TSFIX-08, TSFIX-09, TSFIX-10, TSFIX-11, TSFIX-12
+**Success Criteria** (what must be TRUE):
+  1. Zero TS2345 (argument not assignable) errors remain
+  2. Zero TS2554 (wrong argument count) errors remain
+  3. All remaining error codes resolved (TS2353, TS2551, TS2769, TS2304, etc.)
+  4. `tsc --noEmit` passes with zero errors
+  5. `npm run check:quick` passes (types + lint)
+  6. Pre-commit hook (lefthook) passes without --no-verify
+**Plans**: 3 plans in 2 waves
+
+Plans:
+- [ ] 55-01-PLAN.md — Fix TS2345/TS2554 function signature mismatches
+- [ ] 55-02-PLAN.md — Fix all remaining error codes (TS2353, TS2551, TS2769, etc.)
+- [ ] 55-03-PLAN.md — Final verification: zero errors, pre-commit hook, CI gates
+
 ## Progress
 
 **Execution Order:**
-v4.2 phases execute: 43 -> 44 -> 45 -> 46
-Phase 45 can begin after Phase 43 completes (parallel with Phase 44).
-Phase 46 requires both Phases 44 and 45 complete.
+v5.0 phases execute sequentially: 52 -> 53 -> 54 -> 55
+Each phase reduces error count, and later phases depend on earlier type fixes cascading.
 
-v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
+v4.2 Phase 46 and v4.3 Phase 51 resume after v5.0 completes.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -164,10 +232,14 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 44. Preview Visualization Expansion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 46. Live Data Synchronization | v4.2 | 0/3 | Planned | - |
+| 46. Live Data Synchronization | v4.2 | 0/3 | Paused | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
-| 51. Navigator UI Integration | v4.3 | 0/2 | Planned | - |
+| 51. Navigator UI Integration | v4.3 | 0/2 | Paused | - |
+| 52. Dead Code & Stale Imports | v5.0 | 0/3 | Planned | - |
+| 53. Type Assertions & Annotations | v5.0 | 0/3 | Planned | - |
+| 54. Interface Alignment | v5.0 | 0/3 | Planned | - |
+| 55. Function Signatures & Verification | v5.0 | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (Phase 46 planned)*
+*Last updated: 2026-02-10 (v5.0 Type Safety Restoration added, phases 52-55)*
