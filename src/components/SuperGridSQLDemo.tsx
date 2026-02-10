@@ -87,7 +87,12 @@ export default function SuperGridSQLDemo({
   );
 
   // Keep the PAFV projection for metrics display
-  const { data: projectionData, loading: projectionLoading, error: projectionError, duration: projectionDuration } = usePAFVProjection({
+  const {
+    data: projectionData,
+    loading: projectionLoading,
+    error: projectionError,
+    duration: projectionDuration
+  } = usePAFVProjection({
     xAxis: pafvState.xAxis,
     yAxis: pafvState.yAxis,
     zAxis: pafvState.zAxis,
@@ -428,7 +433,8 @@ export default function SuperGridSQLDemo({
             left: 0,
             width: '100%',
             height: '100%',
-            background: 'linear-gradient(45deg, #f0f0f0 25%, #fff 25%, #fff 50%, #f0f0f0 50%, #f0f0f0 75%, #fff 75%)',
+            background: 'linear-gradient(45deg, #f0f0f0 25%, #fff 25%, #fff 50%, ' +
+              '#f0f0f0 50%, #f0f0f0 75%, #fff 75%)',
             backgroundSize: '20px 20px',
             display: 'flex',
             alignItems: 'center',
@@ -440,7 +446,13 @@ export default function SuperGridSQLDemo({
             🎯 D3.js Grid Placeholder - {d3Nodes.length} nodes ready for PAFV projection
             <br />
             <small style={{ fontSize: '14px', marginTop: '10px', display: 'block' }}>
-              X: {pafvState.xAxis} | Y: {pafvState.yAxis} | Data: {JSON.stringify(d3Nodes.slice(0,2).map(n => ({id: n.id, folder: n.folder, status: n.status})))}
+              X: {pafvState.xAxis} | Y: {pafvState.yAxis} | Data: {
+                JSON.stringify(d3Nodes.slice(0,2).map(n => ({
+                  id: n.id,
+                  folder: n.folder,
+                  status: n.status
+                })))
+              }
             </small>
           </div>
         )}
@@ -473,7 +485,8 @@ export default function SuperGridSQLDemo({
         {!dbLoading && !nodesLoading && !nodesError && d3Nodes.length === 0 && (
           <div className="grid-loading-overlay">
             <div className="loading-spinner">
-              📊 Database ready, but no nodes found. Expected {d3Nodes.length} nodes. dbLoading: {dbLoading.toString()}, nodesLoading: {nodesLoading.toString()}
+              📊 Database ready, but no nodes found. Expected {d3Nodes.length} nodes.
+              dbLoading: {dbLoading.toString()}, nodesLoading: {nodesLoading.toString()}
             </div>
           </div>
         )}
