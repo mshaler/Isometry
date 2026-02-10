@@ -8,6 +8,7 @@
 
 import { backOff } from 'exponential-backoff'
 import { memoryManager } from '../utils/bridge-optimization/memory-manager'
+import { devLogger } from '../utils/logging'
 
 /**
  * Types of sync operations
@@ -556,7 +557,12 @@ export class SyncQueue {
 
     const cleanedCount = originalSize - this.queue.length
     if (cleanedCount > 0) {
-      console.log(`[SyncQueue] Cleaned ${cleanedCount} operations during memory pressure (${originalSize} → ${this.queue.length})`)
+      devLogger.debug('SyncQueue cleaned operations during memory pressure', {
+        cleanedCount,
+        originalSize,
+        newSize: this.queue.length,
+        reduction: `${Math.round((cleanedCount / originalSize) * 100)}%`
+      })
       this.persistQueue()
       this.notifyStateChange()
     }
@@ -582,7 +588,12 @@ export class SyncQueue {
 
     if (oldestIndex >= 0) {
       const dropped = this.queue.splice(oldestIndex, 1)[0]
-      console.log(`[SyncQueue] Dropped operation due to memory pressure: ${dropped.type} (${dropped.priority})`)
+      devLogger.debug('SyncQueue dropped operation due to memory pressure', {
+        operationType: dropped.type,
+        operationPriority: dropped.priority,
+        operationId: dropped.id,
+        ageMs: Date.now() - dropped.timestamp
+      })
       this.persistQueue()
       this.notifyStateChange()
     }
