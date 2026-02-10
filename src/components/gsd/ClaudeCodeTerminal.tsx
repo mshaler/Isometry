@@ -333,7 +333,7 @@ export function ClaudeCodeTerminal({
 
     // Default rendering for text lines
     const isCommand = line.content.startsWith('> ');
-    const isChoice = /^\d+[\.\)]\s+/.test(line.content.trim());
+    const isChoice = /^\d+[.)]\s+/.test(line.content.trim());
 
     return (
       <div className={`py-0.5 ${isCommand ? 'text-blue-300 font-medium' : ''}`}>
