@@ -220,82 +220,87 @@ export const BUILT_IN_PROPERTY_DEFINITIONS: PropertyDefinition[] = [
 
 // Property validation and utility functions
 export function validatePropertyValue(value: unknown, definition: PropertyDefinition): string[] {
-  const errors: string[] = [];
-
-  // Check required fields
-  if (definition.required && (value === null || value === undefined || value === '')) {
-    errors.push(`${definition.name} is required`);
-    return errors; // Don't validate further if required field is empty
+  // Check required fields first
+  if (definition.required && isEmptyValue(value)) {
+    return [`${definition.name} is required`];
   }
 
-  // Type-specific validation
+  // Type-specific validation using focused validators
+  return validateByType(value, definition);
+}
+
+function isEmptyValue(value: unknown): boolean {
+  return value === null || value === undefined || value === '';
+}
+
+function validateByType(value: unknown, definition: PropertyDefinition): string[] {
+  if (isEmptyValue(value)) {
+    return []; // Empty values are valid for non-required fields
+  }
+
   switch (definition.type) {
     case 'text':
-      if (value !== null && value !== undefined && typeof value !== 'string') {
-        errors.push(`${definition.name} must be text`);
-      }
-      break;
-
+      return validateTextProperty(value, definition.name);
     case 'number':
-      if (value !== null && value !== undefined) {
-        const num = Number(value);
-        if (isNaN(num)) {
-          errors.push(`${definition.name} must be a valid number`);
-        }
-      }
-      break;
-
+      return validateNumberProperty(value, definition.name);
     case 'boolean':
-      if (value !== null && value !== undefined && typeof value !== 'boolean') {
-        errors.push(`${definition.name} must be true or false`);
-      }
-      break;
-
+      return validateBooleanProperty(value, definition.name);
     case 'date':
-      if (value !== null && value !== undefined) {
-        const date = new Date(value as string);
-        if (isNaN(date.getTime())) {
-          errors.push(`${definition.name} must be a valid date`);
-        }
-      }
-      break;
-
+      return validateDateProperty(value, definition.name);
     case 'select':
-      if (value !== null && value !== undefined && definition.options) {
-        if (!definition.options.includes(value as string)) {
-          errors.push(`${definition.name} must be one of: ${definition.options.join(', ')}`);
-        }
-      }
-      break;
-
+      return validateSelectProperty(value, definition);
     case 'tag':
-      if (value !== null && value !== undefined) {
-        if (!Array.isArray(value)) {
-          errors.push(`${definition.name} must be an array of tags`);
-        } else {
-          const invalidTags = value.filter(tag => typeof tag !== 'string');
-          if (invalidTags.length > 0) {
-            errors.push(`${definition.name} must contain only text tags`);
-          }
-        }
-      }
-      break;
-
+      return validateTagProperty(value, definition.name);
     case 'reference':
-      if (value !== null && value !== undefined) {
-        if (!Array.isArray(value)) {
-          errors.push(`${definition.name} must be an array of references`);
-        } else {
-          const invalidRefs = value.filter(ref => typeof ref !== 'string' || !ref.trim());
-          if (invalidRefs.length > 0) {
-            errors.push(`${definition.name} must contain only valid node IDs`);
-          }
-        }
-      }
-      break;
+      return validateReferenceProperty(value, definition.name);
+    default:
+      return [];
+  }
+}
+
+function validateTextProperty(value: unknown, name: string): string[] {
+  return typeof value !== 'string' ? [`${name} must be text`] : [];
+}
+
+function validateNumberProperty(value: unknown, name: string): string[] {
+  const num = Number(value);
+  return isNaN(num) ? [`${name} must be a valid number`] : [];
+}
+
+function validateBooleanProperty(value: unknown, name: string): string[] {
+  return typeof value !== 'boolean' ? [`${name} must be true or false`] : [];
+}
+
+function validateDateProperty(value: unknown, name: string): string[] {
+  const date = new Date(value as string);
+  return isNaN(date.getTime()) ? [`${name} must be a valid date`] : [];
+}
+
+function validateSelectProperty(value: unknown, definition: PropertyDefinition): string[] {
+  if (!definition.options) return [];
+
+  const stringValue = value as string;
+  return !definition.options.includes(stringValue)
+    ? [`${definition.name} must be one of: ${definition.options.join(', ')}`]
+    : [];
+}
+
+function validateTagProperty(value: unknown, name: string): string[] {
+  if (!Array.isArray(value)) {
+    return [`${name} must be an array of tags`];
   }
 
-  return errors;
+  const invalidTags = value.filter(tag => typeof tag !== 'string');
+  return invalidTags.length > 0 ? [`${name} must contain only text tags`] : [];
+}
+
+function validateReferenceProperty(value: unknown, name: string): string[] {
+  if (!Array.isArray(value)) {
+    return [`${name} must be an array of references`];
+  }
+
+  const invalidRefs = value.filter(ref => typeof ref !== 'string' || !ref.trim());
+  return invalidRefs.length > 0 ? [`${name} must contain only valid node IDs`] : [];
 }
 
 export function serializePropertyValue(value: unknown, type: PropertyType): unknown {

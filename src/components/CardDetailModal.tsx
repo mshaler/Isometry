@@ -124,189 +124,91 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
 
           {/* Card Content */}
           <div className="space-y-6">
-            {/* Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Name
-              </label>
-              {editMode ? (
-                <input
-                  type="text"
-                  value={editedCard.name || ''}
-                  onChange={(e) => setEditedCard(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Card name"
-                  disabled={isLoading}
-                />
-              ) : (
-                <div className="text-lg font-semibold text-gray-900">
-                  {card.name}
-                </div>
-              )}
-            </div>
+            <CardFormField
+              label="Name"
+              editMode={editMode}
+              isLoading={isLoading}
+              editValue={editedCard.name || ''}
+              displayValue={card.name}
+              onEdit={(value) => setEditedCard(prev => ({ ...prev, name: value }))}
+              type="text"
+              placeholder="Card name"
+              displayClassName="text-lg font-semibold text-gray-900"
+            />
 
-            {/* Folder and Status */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Folder
-                </label>
-                {editMode ? (
-                  <select
-                    value={editedCard.folder || ''}
-                    onChange={(e) => setEditedCard(prev => ({ ...prev, folder: e.target.value || undefined }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isLoading}
-                  >
-                    <option value="">No folder</option>
-                    <option value="work">Work</option>
-                    <option value="personal">Personal</option>
-                    <option value="projects">Projects</option>
-                    <option value="ideas">Ideas</option>
-                    <option value="archive">Archive</option>
-                  </select>
-                ) : (
-                  <div className="text-gray-900">
-                    {card.folder || 'No folder'}
-                  </div>
-                )}
-              </div>
+              <CardFormSelect
+                label="Folder"
+                editMode={editMode}
+                isLoading={isLoading}
+                editValue={editedCard.folder || ''}
+                displayValue={card.folder || 'No folder'}
+                onEdit={(value) => setEditedCard(prev => ({ ...prev, folder: value || undefined }))}
+                options={[
+                  { value: '', label: 'No folder' },
+                  { value: 'work', label: 'Work' },
+                  { value: 'personal', label: 'Personal' },
+                  { value: 'projects', label: 'Projects' },
+                  { value: 'ideas', label: 'Ideas' },
+                  { value: 'archive', label: 'Archive' }
+                ]}
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                {editMode ? (
-                  <select
-                    value={editedCard.status || ''}
-                    onChange={(e) => setEditedCard(prev => ({ ...prev, status: e.target.value || undefined }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isLoading}
-                  >
-                    <option value="">No status</option>
-                    <option value="active">Active</option>
-                    <option value="completed">Completed</option>
-                    <option value="blocked">Blocked</option>
-                    <option value="in_progress">In Progress</option>
-                  </select>
-                ) : (
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{
-                        backgroundColor:
-                          card.status === 'active' ? '#10b981' :
-                          card.status === 'completed' ? '#6b7280' :
-                          card.status === 'blocked' ? '#ef4444' :
-                          card.status === 'in_progress' ? '#f59e0b' : '#9ca3af'
-                      }}
-                    ></div>
-                    <span className="text-gray-900">
-                      {card.status || 'No status'}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <CardStatusField
+                editMode={editMode}
+                isLoading={isLoading}
+                editValue={editedCard.status || ''}
+                displayValue={card.status}
+                onEdit={(value) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
+              />
             </div>
 
-            {/* Priority and Importance */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Priority (1-5)
-                </label>
-                {editMode ? (
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={editedCard.priority || ''}
-                    onChange={(e) => setEditedCard(prev => ({
-                      ...prev,
-                      priority: e.target.value ? parseInt(e.target.value) : undefined
-                    }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isLoading}
-                  />
-                ) : (
-                  <div className="text-gray-900">
-                    {card.priority || 'Not set'}
-                  </div>
-                )}
-              </div>
+              <CardFormField
+                label="Priority (1-5)"
+                editMode={editMode}
+                isLoading={isLoading}
+                editValue={editedCard.priority || ''}
+                displayValue={card.priority || 'Not set'}
+                onEdit={(value) => setEditedCard(prev => ({
+                  ...prev,
+                  priority: value ? parseInt(value) : undefined
+                }))}
+                type="number"
+                min="1"
+                max="5"
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Importance (1-5)
-                </label>
-                {editMode ? (
-                  <input
-                    type="number"
-                    min="1"
-                    max="5"
-                    value={editedCard.importance || ''}
-                    onChange={(e) => setEditedCard(prev => ({
-                      ...prev,
-                      importance: e.target.value ? parseInt(e.target.value) : undefined
-                    }))}
-                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isLoading}
-                  />
-                ) : (
-                  <div className="text-gray-900">
-                    {card.importance || 'Not set'}
-                  </div>
-                )}
-              </div>
+              <CardFormField
+                label="Importance (1-5)"
+                editMode={editMode}
+                isLoading={isLoading}
+                editValue={editedCard.importance || ''}
+                displayValue={card.importance || 'Not set'}
+                onEdit={(value) => setEditedCard(prev => ({
+                  ...prev,
+                  importance: value ? parseInt(value) : undefined
+                }))}
+                type="number"
+                min="1"
+                max="5"
+              />
             </div>
 
-            {/* Summary */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Summary
-              </label>
-              {editMode ? (
-                <textarea
-                  value={editedCard.summary || ''}
-                  onChange={(e) => setEditedCard(prev => ({ ...prev, summary: e.target.value || undefined }))}
-                  rows={4}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Card summary or description"
-                  disabled={isLoading}
-                />
-              ) : (
-                <div className="text-gray-900 whitespace-pre-wrap">
-                  {card.summary || 'No summary'}
-                </div>
-              )}
-            </div>
+            <CardFormField
+              label="Summary"
+              editMode={editMode}
+              isLoading={isLoading}
+              editValue={editedCard.summary || ''}
+              displayValue={card.summary || 'No summary'}
+              onEdit={(value) => setEditedCard(prev => ({ ...prev, summary: value || undefined }))}
+              type="textarea"
+              placeholder="Card summary or description"
+              rows={4}
+              displayClassName="text-gray-900 whitespace-pre-wrap"
+            />
 
-            {/* Metadata */}
-            <div className="border-t pt-4">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Metadata</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-500">ID:</span>
-                  <span className="ml-2 font-mono text-gray-900">{card.id}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Source:</span>
-                  <span className="ml-2 text-gray-900">{card.source || 'Unknown'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Created:</span>
-                  <span className="ml-2 text-gray-900">
-                    {card.created_at ? new Date(card.created_at).toLocaleDateString() : 'Unknown'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-gray-500">Modified:</span>
-                  <span className="ml-2 text-gray-900">
-                    {card.modified_at ? new Date(card.modified_at).toLocaleDateString() : 'Unknown'}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <CardMetadata card={card} />
           </div>
 
           {/* Actions */}
@@ -385,6 +287,182 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function CardFormField({
+  label,
+  editMode,
+  isLoading,
+  editValue,
+  displayValue,
+  onEdit,
+  type = 'text',
+  placeholder,
+  rows,
+  min,
+  max,
+  displayClassName = 'text-gray-900'
+}: CardFormFieldProps) {
+  const inputClass = 'w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500';
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      {editMode ? (
+        type === 'textarea' ? (
+          <textarea
+            value={editValue}
+            onChange={(e) => onEdit(e.target.value)}
+            rows={rows}
+            className={inputClass}
+            placeholder={placeholder}
+            disabled={isLoading}
+          />
+        ) : (
+          <input
+            type={type}
+            value={editValue}
+            onChange={(e) => onEdit(e.target.value)}
+            className={inputClass}
+            placeholder={placeholder}
+            disabled={isLoading}
+            min={min}
+            max={max}
+          />
+        )
+      ) : (
+        <div className={displayClassName}>
+          {displayValue}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CardFormSelect({
+  label,
+  editMode,
+  isLoading,
+  editValue,
+  displayValue,
+  onEdit,
+  options
+}: CardFormSelectProps) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      {editMode ? (
+        <select
+          value={editValue}
+          onChange={(e) => onEdit(e.target.value)}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={isLoading}
+        >
+          {options.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div className="text-gray-900">
+          {displayValue}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CardStatusField({
+  editMode,
+  isLoading,
+  editValue,
+  displayValue,
+  onEdit
+}: CardStatusFieldProps) {
+  const statusOptions = [
+    { value: '', label: 'No status' },
+    { value: 'active', label: 'Active' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'blocked', label: 'Blocked' },
+    { value: 'in_progress', label: 'In Progress' }
+  ];
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'active': return '#10b981';
+      case 'completed': return '#6b7280';
+      case 'blocked': return '#ef4444';
+      case 'in_progress': return '#f59e0b';
+      default: return '#9ca3af';
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Status
+      </label>
+      {editMode ? (
+        <select
+          value={editValue}
+          onChange={(e) => onEdit(e.target.value)}
+          className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          disabled={isLoading}
+        >
+          {statusOptions.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <div className="flex items-center space-x-2">
+          <div
+            className="w-3 h-3 rounded-full"
+            style={{ backgroundColor: getStatusColor(displayValue) }}
+          />
+          <span className="text-gray-900">
+            {displayValue || 'No status'}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CardMetadata({ card }: CardMetadataProps) {
+  return (
+    <div className="border-t pt-4">
+      <h3 className="text-sm font-medium text-gray-700 mb-3">Metadata</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">ID:</span>
+          <span className="ml-2 font-mono text-gray-900">{card.id}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Source:</span>
+          <span className="ml-2 text-gray-900">{card.source || 'Unknown'}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Created:</span>
+          <span className="ml-2 text-gray-900">
+            {card.created_at ? new Date(card.created_at).toLocaleDateString() : 'Unknown'}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-500">Modified:</span>
+          <span className="ml-2 text-gray-900">
+            {card.modified_at ? new Date(card.modified_at).toLocaleDateString() : 'Unknown'}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }

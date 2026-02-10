@@ -22,71 +22,21 @@ import type {
 export function serializeFilters(filters: FilterState): string {
   const parts: string[] = [];
 
-  // Location filter
-  if (filters.location) {
-    const loc = filters.location;
-    if (loc.type === 'point' && loc.latitude !== undefined && loc.longitude !== undefined) {
-      parts.push(`location:point,${loc.latitude},${loc.longitude}`);
-    } else if (loc.type === 'box' && loc.north !== undefined && loc.south !== undefined && loc.east !== undefined && loc.west !== undefined) {
-      parts.push(`location:box,${loc.north},${loc.south},${loc.east},${loc.west}`);
-    } else if (loc.type === 'radius' && loc.centerLat !== undefined && loc.centerLon !== undefined && loc.radiusKm !== undefined) {
-      parts.push(`location:radius,${loc.centerLat},${loc.centerLon},${loc.radiusKm}`);
-    }
-  }
+  // Serialize each filter type using focused helper functions
+  const locationPart = serializeLocationFilter(filters.location);
+  if (locationPart) parts.push(locationPart);
 
-  // Alphabet filter
-  if (filters.alphabet) {
-    const alpha = filters.alphabet;
-    const encodedValue = encodeURIComponent(alpha.value);
-    parts.push(`alphabet:${alpha.type},${encodedValue}`);
-  }
+  const alphabetPart = serializeAlphabetFilter(filters.alphabet);
+  if (alphabetPart) parts.push(alphabetPart);
 
-  // Time filter
-  if (filters.time) {
-    const time = filters.time;
-    if (time.type === 'preset' && time.preset) {
-      parts.push(`time:preset,${time.preset},${time.field}`);
-    } else if (time.type === 'range' && time.start && time.end) {
-      parts.push(`time:range,${time.start},${time.end},${time.field}`);
-    } else if (time.type === 'relative' && time.amount !== undefined && time.unit && time.direction) {
-      parts.push(`time:relative,${time.amount},${time.unit},${time.direction},${time.field}`);
-    }
-  }
+  const timePart = serializeTimeFilter(filters.time);
+  if (timePart) parts.push(timePart);
 
-  // Category filter
-  if (filters.category) {
-    const cat = filters.category;
-    const values: string[] = [];
+  const categoryPart = serializeCategoryFilter(filters.category);
+  if (categoryPart) parts.push(categoryPart);
 
-    if (cat.folders && cat.folders.length > 0) {
-      values.push(`folders=${cat.folders.map(f => encodeURIComponent(f)).join('+')}`);
-    }
-    if (cat.tags && cat.tags.length > 0) {
-      values.push(`tags=${cat.tags.map(t => encodeURIComponent(t)).join('+')}`);
-    }
-    if (cat.statuses && cat.statuses.length > 0) {
-      values.push(`statuses=${cat.statuses.map(s => encodeURIComponent(s)).join('+')}`);
-    }
-    if (cat.nodeTypes && cat.nodeTypes.length > 0) {
-      values.push(`types=${cat.nodeTypes.map(t => encodeURIComponent(t)).join('+')}`);
-    }
-
-    if (values.length > 0) {
-      parts.push(`category:${cat.type},${values.join('&')}`);
-    }
-  }
-
-  // Hierarchy filter
-  if (filters.hierarchy) {
-    const hier = filters.hierarchy;
-    if (hier.type === 'priority' && hier.minPriority !== undefined && hier.maxPriority !== undefined) {
-      parts.push(`hierarchy:priority,${hier.minPriority}-${hier.maxPriority}`);
-    } else if (hier.type === 'top-n' && hier.limit !== undefined && hier.sortBy) {
-      parts.push(`hierarchy:top-n,${hier.limit},${hier.sortBy}`);
-    } else if (hier.type === 'range' && hier.minPriority !== undefined && hier.maxPriority !== undefined && hier.sortBy) {
-      parts.push(`hierarchy:range,${hier.minPriority}-${hier.maxPriority},${hier.sortBy}`);
-    }
-  }
+  const hierarchyPart = serializeHierarchyFilter(filters.hierarchy);
+  if (hierarchyPart) parts.push(hierarchyPart);
 
   return parts.join(';');
 }
@@ -148,6 +98,95 @@ export function deserializeFilters(urlString: string): FilterState {
   }
 
   return filters;
+}
+
+function serializeLocationFilter(location: LocationFilter | null): string | null {
+  if (!location) return null;
+
+  if (location.type === 'point' && location.latitude !== undefined && location.longitude !== undefined) {
+    return `location:point,${location.latitude},${location.longitude}`;
+  }
+
+  if (location.type === 'box' && location.north !== undefined && location.south !== undefined &&
+      location.east !== undefined && location.west !== undefined) {
+    return `location:box,${location.north},${location.south},${location.east},${location.west}`;
+  }
+
+  if (location.type === 'radius' && location.centerLat !== undefined &&
+      location.centerLon !== undefined && location.radiusKm !== undefined) {
+    return `location:radius,${location.centerLat},${location.centerLon},${location.radiusKm}`;
+  }
+
+  return null;
+}
+
+function serializeAlphabetFilter(alphabet: AlphabetFilter | null): string | null {
+  if (!alphabet) return null;
+
+  const encodedValue = encodeURIComponent(alphabet.value);
+  return `alphabet:${alphabet.type},${encodedValue}`;
+}
+
+function serializeTimeFilter(time: TimeFilter | null): string | null {
+  if (!time) return null;
+
+  if (time.type === 'preset' && time.preset) {
+    return `time:preset,${time.preset},${time.field}`;
+  }
+
+  if (time.type === 'range' && time.start && time.end) {
+    return `time:range,${time.start},${time.end},${time.field}`;
+  }
+
+  if (time.type === 'relative' && time.amount !== undefined && time.unit && time.direction) {
+    return `time:relative,${time.amount},${time.unit},${time.direction},${time.field}`;
+  }
+
+  return null;
+}
+
+function serializeCategoryFilter(category: CategoryFilter | null): string | null {
+  if (!category) return null;
+
+  const values: string[] = [];
+
+  if (category.folders && category.folders.length > 0) {
+    values.push(`folders=${category.folders.map(f => encodeURIComponent(f)).join('+')}`);
+  }
+  if (category.tags && category.tags.length > 0) {
+    values.push(`tags=${category.tags.map(t => encodeURIComponent(t)).join('+')}`);
+  }
+  if (category.statuses && category.statuses.length > 0) {
+    values.push(`statuses=${category.statuses.map(s => encodeURIComponent(s)).join('+')}`);
+  }
+  if (category.nodeTypes && category.nodeTypes.length > 0) {
+    values.push(`types=${category.nodeTypes.map(t => encodeURIComponent(t)).join('+')}`);
+  }
+
+  if (values.length > 0) {
+    return `category:${category.type},${values.join('&')}`;
+  }
+
+  return null;
+}
+
+function serializeHierarchyFilter(hierarchy: HierarchyFilter | null): string | null {
+  if (!hierarchy) return null;
+
+  if (hierarchy.type === 'priority' && hierarchy.minPriority !== undefined && hierarchy.maxPriority !== undefined) {
+    return `hierarchy:priority,${hierarchy.minPriority}-${hierarchy.maxPriority}`;
+  }
+
+  if (hierarchy.type === 'top-n' && hierarchy.limit !== undefined && hierarchy.sortBy) {
+    return `hierarchy:top-n,${hierarchy.limit},${hierarchy.sortBy}`;
+  }
+
+  if (hierarchy.type === 'range' && hierarchy.minPriority !== undefined &&
+      hierarchy.maxPriority !== undefined && hierarchy.sortBy) {
+    return `hierarchy:range,${hierarchy.minPriority}-${hierarchy.maxPriority},${hierarchy.sortBy}`;
+  }
+
+  return null;
 }
 
 function parseLocationFilter(value: string): LocationFilter | null {
@@ -532,37 +571,9 @@ export function validateBridgeRoundTrip(filters: FilterState): {
 } {
   const originalSerialized = serializeFilters(filters);
   const deserialized = deserializeFilters(originalSerialized);
-
-  // Also test bridge format
   const bridgeSerialized = bridgeCompatibleSerialization(filters);
 
-  const differences: string[] = [];
-
-  // Compare key fields to detect differences
-  if (JSON.stringify(filters.location) !== JSON.stringify(deserialized.location)) {
-    differences.push('location filter changed during serialization');
-  }
-
-  if (JSON.stringify(filters.alphabet) !== JSON.stringify(deserialized.alphabet)) {
-    differences.push('alphabet filter changed during serialization');
-  }
-
-  if (JSON.stringify(filters.time) !== JSON.stringify(deserialized.time)) {
-    differences.push('time filter changed during serialization');
-  }
-
-  if (JSON.stringify(filters.category) !== JSON.stringify(deserialized.category)) {
-    differences.push('category filter changed during serialization');
-  }
-
-  if (JSON.stringify(filters.hierarchy) !== JSON.stringify(deserialized.hierarchy)) {
-    differences.push('hierarchy filter changed during serialization');
-  }
-
-  // Check bridge format size efficiency
-  if (bridgeSerialized.isCompressed && bridgeSerialized.compressedSize >= bridgeSerialized.originalSize) {
-    differences.push('bridge compression did not reduce size effectively');
-  }
+  const differences = detectSerializationDifferences(filters, deserialized, bridgeSerialized);
 
   return {
     isValid: differences.length === 0,
@@ -570,4 +581,28 @@ export function validateBridgeRoundTrip(filters: FilterState): {
     deserializedFilters: deserialized,
     differences
   };
+}
+
+function detectSerializationDifferences(
+  original: FilterState,
+  deserialized: FilterState,
+  bridgeSerialized: { isCompressed: boolean; compressedSize: number; originalSize: number }
+): string[] {
+  const differences: string[] = [];
+
+  // Compare key fields to detect differences
+  const filterFields: (keyof FilterState)[] = ['location', 'alphabet', 'time', 'category', 'hierarchy'];
+
+  for (const field of filterFields) {
+    if (JSON.stringify(original[field]) !== JSON.stringify(deserialized[field])) {
+      differences.push(`${field} filter changed during serialization`);
+    }
+  }
+
+  // Check bridge format size efficiency
+  if (bridgeSerialized.isCompressed && bridgeSerialized.compressedSize >= bridgeSerialized.originalSize) {
+    differences.push('bridge compression did not reduce size effectively');
+  }
+
+  return differences;
 }
