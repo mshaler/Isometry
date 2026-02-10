@@ -6,6 +6,8 @@
  * with user-derived keys.
  */
 
+import { devLogger } from '../logging/logger';
+
 /**
  * Encryption configuration
  */
@@ -243,7 +245,7 @@ export async function setEncryptedItem<T>(
     return { success: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Failed to store encrypted data:', message);
+    devLogger.error('Failed to store encrypted data', { key, error: message });
 
     return {
       success: false,
@@ -289,7 +291,7 @@ export async function getEncryptedItem<T>(
     return { success: true, data: value };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Failed to retrieve encrypted data:', message);
+    devLogger.error('Failed to retrieve encrypted data', { key, error: message });
 
     return {
       success: false,
@@ -356,7 +358,7 @@ export async function migrateToEncryptedStorage(
     if (result.success) {
       // Remove plain version
       localStorage.removeItem(key);
-      console.log(`Successfully migrated ${key} to encrypted storage`);
+      devLogger.info('Successfully migrated to encrypted storage', { key });
     }
 
     return result;
