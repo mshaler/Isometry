@@ -23,6 +23,7 @@ import { SuperGridProvider, useSuperGrid } from '@/contexts/SuperGridContext';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import type { Node } from '@/types/node';
 import type { SuperGridConfig, SuperGridEventHandlers } from '@/engine/SuperGridEngine';
+import { devLogger } from '@/utils/logging';
 import { GridContinuumController } from './GridContinuumController';
 import { GridContinuumSwitcher } from './GridContinuumSwitcher';
 import type { GridContinuumMode } from '@/types/view';
@@ -276,8 +277,8 @@ function SuperGridCore({
       {isFeatureEnabled('enableSuperSearch') && (
         <div className="supergrid__super-search">
           <SuperSearch
-            onSearch={(query) => console.log('Search:', query)}
-            onHighlight={(cardIds) => console.log('Highlight:', cardIds)}
+            onSearch={(query) => devLogger.debug('SuperSearch query executed', { query })}
+            onHighlight={(cardIds) => devLogger.debug('SuperSearch highlight triggered', { cardIds, count: cardIds.length })}
           />
         </div>
       )}
@@ -286,7 +287,7 @@ function SuperGridCore({
       {isFeatureEnabled('enableSuperCalc') && (
         <div className="supergrid__super-calc">
           <SuperCalc
-            onFormulaExecute={(formula, result) => console.log('Formula:', formula, result)}
+            onFormulaExecute={(formula, result) => devLogger.debug('SuperCalc formula executed', { formula, result })}
           />
         </div>
       )}
@@ -316,8 +317,8 @@ function SuperGridCore({
           <SuperAudit
             cellStates={[]}
             currentMode="highlight"
-            onModeChange={(mode) => console.log('Audit mode:', mode)}
-            onHighlightComputed={(cells) => console.log('Highlight computed:', cells)}
+            onModeChange={(mode) => devLogger.debug('SuperAudit mode changed', { mode })}
+            onHighlightComputed={(cells) => devLogger.debug('SuperAudit highlighting computed cells', { cells, count: cells.length })}
           />
         </div>
       )}
@@ -498,7 +499,7 @@ function SuperGridContent({ gridLayout, gridData, nodes }: SuperGridContentProps
         <SuperDynamic
           xAxis="time"
           yAxis="category"
-          onAxisChange={(axis, newValue) => console.log('Axis change:', axis, newValue)}
+          onAxisChange={(axis, newValue) => devLogger.debug('SuperDynamic axis change', { axis, newValue })}
           availableAxes={[
             { id: 'location', label: 'Location', description: 'Geographic location data' },
             { id: 'alphabet', label: 'Alphabet', description: 'Alphabetical ordering' },
