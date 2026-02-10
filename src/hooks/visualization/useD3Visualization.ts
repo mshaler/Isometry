@@ -4,6 +4,7 @@ import { useNotebook } from '../../contexts/NotebookContext';
 import { parseChartData, detectVisualizationType, extractVisualizationConfig } from '../../utils/d3Parsers';
 import type { ParsedData, VisualizationConfig, VisualizationDirective } from '../../utils/d3Parsers';
 import { debounce } from '../../utils/debounce';
+import { devLogger } from '../../utils/logging';
 
 // Define a proper data interface for D3 visualizations
 interface D3DataItem {
@@ -228,7 +229,10 @@ export function useD3VisualizationWithPerformance(): UseD3VisualizationReturn & 
 
     // Warn if parsing is slow
     if (parseTime > 100) {
-      console.warn(`D3 visualization parsing took ${parseTime.toFixed(2)}ms for ${dataPoints} data points`);
+      devLogger.warn('D3 visualization parsing slow', {
+        parseTimeMs: Math.round(parseTime * 100) / 100,
+        dataPoints
+      });
     }
 
   }, [baseHook]);
