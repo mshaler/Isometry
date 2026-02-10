@@ -74,6 +74,17 @@ Key v4.1 decisions carried forward:
 - LINK edge type in sql.js edges table for graph connectivity
 - queryCardsForSuggestions and createLinkEdge utilities for sql.js interaction
 
+**Phase 44 decisions:**
+- Simulation timeout: 300 ticks OR 3 seconds to save CPU
+- EDGE_TYPE_STYLES with colors and dasharray per GRAPH type
+- Default 100 node limit for performance
+- Node selection updates activeCard for cross-canvas sync
+- DDL blocking in Data Inspector (SELECT only)
+- Auto-LIMIT 1000 for queries without explicit LIMIT
+- Timeline facet default: created_at
+- Event radius: 6px default, 8px on hover
+- Fallback domain: 30 days from now for empty timeline
+
 **Phase 50 decisions:**
 - Hook test mocks require db.exec() method, not empty object
 - Requirement traceability tests tagged with [FOUND-XX] in test names
@@ -81,7 +92,7 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — Phase 45 complete, ready for Phase 44 or 46 planning.
+None — Phase 44 complete, ready for Phase 46 planning.
 
 ### Blockers/Concerns
 
@@ -91,7 +102,7 @@ None — Phase 45 complete, ready for Phase 44 or 46 planning.
 
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
-- Preview pane 50% complete - SuperGrid works, Network/Timeline/Inspector are stubs
+- Preview pane 100% complete - SuperGrid, Network Graph, Timeline, Data Inspector all functional
 - Capture pane now uses TipTap with slash commands, wiki links, and auto-save
 - Critical: Bidirectional sync trigger for notebook_cards ↔ nodes LATCH data (Phase 46)
 - v4.3 property classification now available for Navigator faceted navigation
@@ -99,12 +110,11 @@ None — Phase 45 complete, ready for Phase 44 or 46 planning.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed Phase 45 (TipTap Editor Migration)
+Stopped at: Completed 44-03-PLAN.md (Timeline Visualization)
 Resume file: None
 
 ## Next Steps
 
-1. Run `/gsd:plan-phase 44` to create Phase 44 execution plan (Preview Visualization)
-   - Or run `/gsd:plan-phase 46` for Live Data Synchronization (requires 44+45)
-2. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
-3. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03) - requires 44, 45 complete
+1. Run `/gsd:plan-phase 46` for Live Data Synchronization (all dependencies met)
+2. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03)
+3. v4.2 release after Phase 46 complete
