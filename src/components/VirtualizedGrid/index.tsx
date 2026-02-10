@@ -63,95 +63,44 @@ export interface VirtualizedGridProps<T = unknown> {
 /**
  * High-performance virtual grid component with live data support
  */
-export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(function VirtualizedGrid({
-  items,
-  sql,
-  queryParams = [],
-  liveOptions = {},
-  height = 400,
-  width = 800,
-  columnCount = 3,
-  estimateRowHeight = 200,
-  estimateColumnWidth = 300,
-  renderItem,
-  loading = false,
-  emptyState,
-  className = '',
-  onItemClick,
-  enableDynamicSizing = true,
-  gap = 8
-}, ref) {
-  // Determine if using live data or static data
-  const usingLiveData = Boolean(sql);
+export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(function VirtualizedGrid(props, ref) {
+  const {
+    items,
+    sql,
+    queryParams = [],
+    liveOptions = {},
+    height = 400,
+    width = 800,
+    columnCount = 3,
+    estimateRowHeight = 200,
+    estimateColumnWidth = 300,
+    renderItem,
+    loading = false,
+    emptyState,
+    className = '',
+    onItemClick,
+    enableDynamicSizing = true,
+    gap = 8
+  } = props;
+  // Initialize data sources using helper hooks
+  const dataSource = useGridDataSource({ sql, queryParams, items, loading, liveOptions });
+  const dimensions = useGridDimensions({ height, width, columnCount, gap, estimateRowHeight, estimateColumnWidth });
 
-  // Live query hook for SQL-based data
-  const liveQuery = useVirtualLiveQuery<any>(
-    sql || 'SELECT 1 WHERE 0', // Dummy query when not using live data
-    queryParams,
-    {
-      containerHeight: height,
-      estimateItemSize: estimateRowHeight,
-      enableDynamicSizing,
-      autoStart: usingLiveData,
-      enableCache: usingLiveData,
-      ...liveOptions
-    }
-  );
+  const { finalItems, finalLoading, finalError, usingLiveData, liveQuery } = dataSource;
+  const { actualColumnWidth } = dimensions;
 
-  // Use live data if available, otherwise fall back to static items
-  const finalItems = usingLiveData ? (liveQuery.data || []) : (items || []);
-  const finalLoading = usingLiveData ? liveQuery.loading : loading;
-  const finalError = usingLiveData ? liveQuery.error : null;
-
-  // Calculate column width including gaps
-  const actualColumnWidth = useMemo(() => {
-    const totalGapWidth = (columnCount - 1) * gap;
-    return Math.max((width - totalGapWidth) / columnCount, estimateColumnWidth);
-  }, [width, columnCount, gap, estimateColumnWidth]);
-
-  // Virtual grid hook for static data fallback - need to pass proper grid data structure
-  const staticGridData = useMemo(() => {
-    const rows: any[][] = [];
-    for (let i = 0; i < finalItems.length; i += columnCount) {
-      rows.push(finalItems.slice(i, i + columnCount));
-    }
-    return rows;
-  }, [finalItems, columnCount]);
-
-  const staticVirtualGrid = useVirtualizedGrid(staticGridData, {
-    rowCount: Math.ceil(finalItems.length / columnCount),
+  // Set up virtualization using helper hook
+  const virtualization = useGridVirtualization({
+    finalItems,
     columnCount,
-    containerHeight: height,
-    containerWidth: width,
-    estimatedItemHeight: estimateRowHeight,
-    estimatedItemWidth: actualColumnWidth,
-    enableDynamicSizing
+    height,
+    width,
+    estimateRowHeight,
+    actualColumnWidth,
+    enableDynamicSizing,
+    usingLiveData,
+    liveQuery
   });
-
-  // Use live virtual grid if available, otherwise static virtual grid
-  const virtualGrid = usingLiveData ? {
-    containerRef: liveQuery.containerRef,
-    virtualItems: [], // Will be calculated from virtualItems
-    totalHeight: liveQuery.totalSize,
-    totalWidth: width,
-    scrollToIndex: liveQuery.scrollToIndex,
-    isScrolling: liveQuery.isScrolling
-  } : staticVirtualGrid;
-
-  // Convert live virtual items to grid format if using live data
-  const virtualGridItems = useMemo(() => {
-    if (!usingLiveData) {
-      return staticVirtualGrid.virtualItems;
-    }
-
-    // Convert linear virtual items to grid layout
-    return liveQuery.virtualItems.map((virtualItem) => {
-      const rowIndex = Math.floor(virtualItem.index / columnCount);
-      const columnIndex = virtualItem.index % columnCount;
-
-      return {
-        key: virtualItem.key,
-        rowIndex,
         columnIndex,
         itemIndex: virtualItem.index,
         x: columnIndex * (actualColumnWidth + gap),
@@ -464,4 +413,143 @@ export function EdgeGrid({
       renderItem={safeRenderEdge}
     />
   );
+}
+
+// Helper hooks for reduced complexity
+
+interface GridDataSourceConfig {
+  sql?: string;
+  queryParams: any[];
+  items?: any[];
+  loading: boolean;
+  liveOptions: any;
+}
+
+function useGridDataSource({ sql, queryParams, items, loading, liveOptions }: GridDataSourceConfig) {
+  const usingLiveData = Boolean(sql);
+
+  // Live query hook for SQL-based data
+  const liveQuery = useVirtualLiveQuery<any>(
+    sql || 'SELECT 1 WHERE 0', // Dummy query when not using live data
+    queryParams,
+    {
+      containerHeight: 400, // Default height
+      estimateItemSize: 200,
+      enableDynamicSizing: true,
+      autoStart: usingLiveData,
+      enableCache: usingLiveData,
+      ...liveOptions
+    }
+  );
+
+  const finalItems = usingLiveData ? (liveQuery.data || []) : (items || []);
+  const finalLoading = usingLiveData ? liveQuery.loading : loading;
+  const finalError = usingLiveData ? liveQuery.error : null;
+
+  return {
+    finalItems,
+    finalLoading,
+    finalError,
+    usingLiveData,
+    liveQuery
+  };
+}
+
+interface GridDimensionsConfig {
+  height: number;
+  width: number;
+  columnCount: number;
+  gap: number;
+  estimateRowHeight: number;
+  estimateColumnWidth: number;
+}
+
+function useGridDimensions({ width, columnCount, gap, estimateColumnWidth }: GridDimensionsConfig) {
+  const actualColumnWidth = useMemo(() => {
+    const totalGapWidth = (columnCount - 1) * gap;
+    return Math.max((width - totalGapWidth) / columnCount, estimateColumnWidth);
+  }, [width, columnCount, gap, estimateColumnWidth]);
+
+  return { actualColumnWidth };
+}
+
+interface GridVirtualizationConfig {
+  finalItems: any[];
+  columnCount: number;
+  height: number;
+  width: number;
+  estimateRowHeight: number;
+  actualColumnWidth: number;
+  enableDynamicSizing: boolean;
+  usingLiveData: boolean;
+  liveQuery: any;
+}
+
+function useGridVirtualization({
+  finalItems,
+  columnCount,
+  height,
+  width,
+  estimateRowHeight,
+  actualColumnWidth,
+  enableDynamicSizing,
+  usingLiveData,
+  liveQuery
+}: GridVirtualizationConfig) {
+  // Virtual grid hook for static data fallback
+  const staticGridData = useMemo(() => {
+    const rows: any[][] = [];
+    for (let i = 0; i < finalItems.length; i += columnCount) {
+      rows.push(finalItems.slice(i, i + columnCount));
+    }
+    return rows;
+  }, [finalItems, columnCount]);
+
+  const staticVirtualGrid = useVirtualizedGrid(staticGridData, {
+    rowCount: Math.ceil(finalItems.length / columnCount),
+    columnCount,
+    containerHeight: height,
+    containerWidth: width,
+    estimatedItemHeight: estimateRowHeight,
+    estimatedItemWidth: actualColumnWidth,
+    enableDynamicSizing
+  });
+
+  // Convert live virtual items to grid format if using live data
+  const virtualGridItems = useMemo(() => {
+    if (!usingLiveData) {
+      return staticVirtualGrid.virtualItems;
+    }
+
+    // Convert linear virtual items to grid layout
+    return liveQuery.virtualItems.map((virtualItem: any) => {
+      const rowIndex = Math.floor(virtualItem.index / columnCount);
+      const columnIndex = virtualItem.index % columnCount;
+
+      return {
+        key: virtualItem.key,
+        rowIndex,
+        columnIndex,
+        index: virtualItem.index,
+        start: {
+          row: (rowIndex * estimateRowHeight),
+          column: (columnIndex * (actualColumnWidth + 8)) // gap
+        },
+        size: {
+          row: estimateRowHeight,
+          column: actualColumnWidth
+        }
+      };
+    });
+  }, [usingLiveData, staticVirtualGrid.virtualItems, liveQuery.virtualItems, columnCount, estimateRowHeight, actualColumnWidth]);
+
+  return {
+    virtualGridItems,
+    staticVirtualGrid,
+    containerRef: usingLiveData ? liveQuery.containerRef : staticVirtualGrid.containerRef,
+    totalHeight: usingLiveData ? liveQuery.totalSize : staticVirtualGrid.totalHeight,
+    totalWidth: width,
+    scrollToIndex: usingLiveData ? liveQuery.scrollToIndex : staticVirtualGrid.scrollToIndex,
+    isScrolling: usingLiveData ? liveQuery.isScrolling : staticVirtualGrid.isScrolling
+  };
 }
