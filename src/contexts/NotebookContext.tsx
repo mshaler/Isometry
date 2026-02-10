@@ -4,7 +4,7 @@ import { useSQLite } from '../db/SQLiteProvider';
 import { useNotebookIntegration } from '@/hooks';
 import { useNotebookPerformance } from '../hooks/performance/useNotebookPerformance';
 import { useErrorReporting } from '../services/ErrorReportingService';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 import {
   type NotebookContextType,
   DEFAULT_LAYOUT,

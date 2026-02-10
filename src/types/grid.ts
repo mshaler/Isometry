@@ -136,3 +136,23 @@ export const DEFAULT_RESIZE_CONFIG: ResizeConfig = {
   maxWidth: 400,
   snap: true
 };
+
+// Grid configuration interface
+export interface GridConfig {
+  id: string;
+  columns: ColumnHeaderData[];
+  rows: RowHeaderData[];
+  cells: DataCellData[];
+  coordinateSystem: D3CoordinateSystem;
+  spanConfig: SpanConfig;
+  resizeConfig: ResizeConfig;
+  contentAlignment: ContentAlignment;
+}
+
+// Grid data structure for D3 rendering
+export interface GridData {
+  config: GridConfig;
+  nodes: HeaderNode[];
+  headers: HeaderHierarchy;
+  data: Node[];
+}

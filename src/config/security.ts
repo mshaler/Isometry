@@ -5,7 +5,7 @@
  * routing for production vs development environments.
  */
 
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 
 export interface APIProxyConfig {
   endpoint: string;

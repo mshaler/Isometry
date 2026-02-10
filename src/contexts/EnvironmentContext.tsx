@@ -6,7 +6,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 // Bridge eliminated in v4 - sql.js direct access
 // import { Environment, postMessage } from '../utils/webview/webview-bridge';
 // import { bridgeLogger } from '../utils/logging/logger';

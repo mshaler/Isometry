@@ -13,7 +13,7 @@ import { SuperDensity } from './supergrid/SuperDensity';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { devLogger } from '@/utils/logging';
+import { devLogger } from '@/utils/logging/dev-logger';
 import type { Node } from '@/types/node';
 import type { LATCHAxis } from '@/types/pafv';
 import type { DensityChangeEvent, DensityAggregationResult } from '@/types/supergrid';

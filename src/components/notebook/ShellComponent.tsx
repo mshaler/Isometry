@@ -4,7 +4,7 @@ import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 import { GSDInterface } from '../gsd/GSDInterface';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
-import { devLogger } from '../../utils/logging';
+import { devLogger } from '../../utils/logging/dev-logger';
 // import { getClaudeCodeDispatcher } from '../../services/claudeCodeWebSocketDispatcher';
 
 // Simplified implementations for notebook environment

@@ -7,7 +7,7 @@ import type {
   NotebookCardType,
   LayoutPosition
 } from '../types/notebook';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 
 // Context type definition
 export interface NotebookContextType {

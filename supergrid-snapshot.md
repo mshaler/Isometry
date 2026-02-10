@@ -1,0 +1,89 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "PAFV Axis Mapping" [level=3] [ref=e6]
+      - generic [ref=e7]:
+        - generic [ref=e8]: "X-Axis (Columns):"
+        - combobox "X-Axis (Columns):" [ref=e9]:
+          - option "Folder (Category)" [selected]
+          - option "Status (Category)"
+          - option "Priority (Hierarchy)"
+          - option "Created (Time)"
+          - option "Modified (Time)"
+        - generic [ref=e10]: 3 values
+      - generic [ref=e11]:
+        - generic [ref=e12]: "Y-Axis (Rows):"
+        - combobox "Y-Axis (Rows):" [ref=e13]:
+          - option "Folder (Category)"
+          - option "Status (Category)" [selected]
+          - option "Priority (Hierarchy)"
+          - option "Created (Time)"
+          - option "Modified (Time)"
+        - generic [ref=e14]: 4 values
+    - generic [ref=e15]:
+      - heading "FTS5 Search" [level=3] [ref=e16]
+      - generic [ref=e17]:
+        - 'textbox "Search with FTS5 (try: ''project'' or ''work'')" [ref=e18]'
+        - text: "0"
+      - generic [ref=e19]:
+        - generic [ref=e20]: "View Mode:"
+        - generic [ref=e21]:
+          - button "Projection" [ref=e22] [cursor=pointer]
+          - button "Search" [ref=e23] [cursor=pointer]
+          - button "Hybrid" [ref=e24] [cursor=pointer]
+    - generic [ref=e25]:
+      - heading "Performance Metrics" [level=3] [ref=e26]
+      - generic [ref=e27]:
+        - generic [ref=e28]:
+          - generic [ref=e29]: "Projection Query:"
+          - generic [ref=e30]: 0.5ms
+        - generic [ref=e31]:
+          - generic [ref=e32]: "Search Query:"
+          - generic [ref=e33]: —
+        - generic [ref=e34]:
+          - generic [ref=e35]: "Data Points:"
+          - generic [ref=e36]: 6 cells
+        - generic [ref=e37]:
+          - generic [ref=e38]: "Search Results:"
+          - generic [ref=e39]: 0 cells
+    - generic [ref=e40]:
+      - heading "Database Debug" [level=3] [ref=e41]
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - generic [ref=e44]: "Tables:"
+          - generic [ref=e45]: edges, facets, nodes
+        - generic [ref=e46]:
+          - generic [ref=e47]: "Node Count:"
+          - generic [ref=e48]: "12"
+        - generic [ref=e49]:
+          - generic [ref=e50]: "Sample Nodes:"
+          - generic [ref=e51]: card-1, card-2, card-3
+        - generic [ref=e52]:
+          - generic [ref=e53]: "AllNodes Array:"
+          - generic [ref=e54]: 12 items
+    - generic [ref=e55]:
+      - heading "Alto-Index Import" [level=3] [ref=e56]
+      - generic [ref=e57]:
+        - button "📦 Import Alto-Index Data" [ref=e58] [cursor=pointer]
+        - button "🗑️ Clear Imported" [ref=e59] [cursor=pointer]
+  - generic [ref=e60]:
+    - generic [ref=e61]:
+      - text: 🎯 D3.js Grid Placeholder - 12 nodes ready for PAFV projection
+      - generic [ref=e62]: "X: folder | Y: status | Data: [{\"id\":\"card-1\",\"folder\":\"personal\",\"status\":\"active\"},{\"id\":\"card-2\",\"folder\":\"work\",\"status\":\"in_progress\"}]"
+    - img [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e68]: (unknown)
+        - generic [ref=e72]: (unknown)
+        - generic [ref=e73]:
+          - generic [ref=e76] [cursor=pointer]: Welcome to Isometry
+          - generic [ref=e79] [cursor=pointer]: Project Alpha
+          - generic [ref=e82] [cursor=pointer]: Meeting Notes
+          - generic [ref=e85] [cursor=pointer]: Reading List
+          - generic [ref=e88] [cursor=pointer]: Budget Review
+          - generic [ref=e91] [cursor=pointer]: Vacation Planning
+          - generic [ref=e94] [cursor=pointer]: Code Review
+          - generic [ref=e97] [cursor=pointer]: Gym Routine
+          - generic [ref=e100] [cursor=pointer]: Client Presentation
+          - generic [ref=e103] [cursor=pointer]: Home Improvement
+          - generic [ref=e106] [cursor=pointer]: Team Training
+          - generic [ref=e109] [cursor=pointer]: Research Paper

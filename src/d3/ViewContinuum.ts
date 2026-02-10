@@ -1,26 +1,3 @@
-import * as d3 from 'd3';
-import type {
-  ViewState,
-  ViewAxisMapping,
-  CardPosition,
-  FlipAnimationConfig,
-  ViewTransitionEvent
-} from '../types/views';
-import { ViewType } from '../types/views';
-import type { ViewType as EngineViewType } from '../engine/contracts/ViewConfig';
-import {
-  DEFAULT_FLIP_CONFIG,
-  createDefaultViewState,
-  getViewStateStorageKey
-} from '../types/views';
-import type { Node } from '../types/node';
-import { devLogger as d3Logger } from '../utils/logging/dev-logger';
-import { IsometryViewEngine } from '../engine/IsometryViewEngine';
-import type { ViewConfig } from '../engine/contracts/ViewConfig';
-
-// Re-export CardPosition for external use
-export type { CardPosition };
-
 /**
  * ViewContinuum - Orchestrator for seamless view transitions
  *
@@ -31,27 +8,37 @@ export type { CardPosition };
  * caches query results for consistent projection across view switches.
  */
 
-/**
- * @deprecated ViewRenderer interface replaced by IsometryViewEngine
- * Kept for backward compatibility during transition
- */
-export interface ViewRenderer {
-  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void;
-  getCardPositions(): Map<string, CardPosition>;
-  scrollToCard(cardId: string): void;
-  destroy(): void;
-}
+import * as d3 from 'd3';
+import type {
+  ViewState,
+  ViewAxisMapping,
+  FlipAnimationConfig,
+  ViewTransitionEvent
+} from '../types/views';
+import { ViewType } from '../types/views';
+import type { ViewType as EngineViewType } from '../engine/contracts/ViewConfig';
+import {
+  DEFAULT_FLIP_CONFIG,
+  createDefaultViewState
+} from '../types/views';
+import type { Node } from '../types/node';
+import { devLogger as d3Logger } from '../utils/logging/dev-logger';
+import { IsometryViewEngine } from '../engine/IsometryViewEngine';
+import type { ViewConfig } from '../engine/contracts/ViewConfig';
+
+// Import extracted modules
+import type { ViewRenderer, ViewContinuumCallbacks, CardPosition } from './viewcontinuum/types';
+import { ViewRegistrationManager } from './viewcontinuum/viewRegistrationManager';
+import { DataManager } from './viewcontinuum/dataManager';
+import { ViewContinuumStateManager } from './viewcontinuum/stateManager';
+import { TransitionManager } from './viewcontinuum/transitionManager';
+
+// Re-export types for external use
+export type { CardPosition, ViewRenderer, ViewContinuumCallbacks };
 
 /**
- * Event handlers for ViewContinuum
+ * ViewContinuum main class - now much more focused and delegating to specialized managers
  */
-export interface ViewContinuumCallbacks {
-  onViewChange?: (event: ViewTransitionEvent) => void;
-  onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
-  onCardClick?: (card: Node) => void;
-  onFilterChange?: (filters: any[]) => void;
-}
-
 export class ViewContinuum {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
   private containerElement: HTMLElement;
@@ -59,54 +46,60 @@ export class ViewContinuum {
   private viewState: ViewState;
   private callbacks: ViewContinuumCallbacks;
 
-  // Unified ViewEngine for all rendering
+  // ViewEngine for unified rendering
   private viewEngine: IsometryViewEngine;
   private currentViewConfig: ViewConfig | null = null;
 
-  // Legacy renderer registry (deprecated, for backward compatibility)
-  private viewRenderers: Map<ViewType, ViewRenderer> = new Map();
-  private activeRenderer: ViewRenderer | null = null;
-
-  // Cached query state for consistent projection
-  private cachedCards: Node[] = [];
-  private cachedQueryHash: string = '';
-  private lastActiveFilters: any[] = [];
-
-  // Animation state
+  // Animation configuration
   private animationConfig: FlipAnimationConfig;
-  private isTransitioning: boolean = false;
 
-  // Event emitter for view transition events
+  // Event handling
   private eventTarget: EventTarget = new EventTarget();
 
+  // Specialized managers
+  private registrationManager: ViewRegistrationManager;
+  private dataManager: DataManager;
+  private stateManager: ViewContinuumStateManager;
+  private transitionManager: TransitionManager;
+
   constructor(
-    container: SVGElement,
+    container: HTMLElement | SVGElement,
     canvasId: string,
     callbacks: ViewContinuumCallbacks = {},
     animationConfig: FlipAnimationConfig = DEFAULT_FLIP_CONFIG
   ) {
+    this.containerElement = container as HTMLElement;
     this.container = d3.select(container);
-    this.containerElement = container.parentElement || container as any;
     this.canvasId = canvasId;
     this.callbacks = callbacks;
     this.animationConfig = animationConfig;
 
-    // Initialize unified ViewEngine
+    // Initialize view engine
     this.viewEngine = new IsometryViewEngine();
 
-    // Initialize view state (load from storage or create default)
-    this.viewState = this.loadViewState();
+    // Initialize specialized managers
+    this.stateManager = new ViewContinuumStateManager(canvasId);
+    this.registrationManager = new ViewRegistrationManager();
+    this.dataManager = new DataManager(this.viewEngine, this.containerElement);
+    this.transitionManager = new TransitionManager(
+      this.viewEngine,
+      this.containerElement,
+      this.animationConfig
+    );
 
-    // Set up SVG structure
+    // Load view state
+    this.viewState = this.stateManager.loadViewState();
+
+    // Setup SVG structure
     this.setupSVGStructure();
 
-    // Initialize ViewEngine with container
+    // Initialize ViewEngine
     this.initializeViewEngine();
 
     d3Logger.setup('ViewContinuum initialized with unified ViewEngine', {
-      canvasId: this.canvasId,
+      canvasId,
       currentView: this.viewState.currentView,
-      hasPersistedState: this.viewState.lastModified > 0
+      enableAnimations: this.viewState.config.enableAnimations
     });
   }
 
@@ -118,40 +111,25 @@ export class ViewContinuum {
    * Register a view renderer for a specific view type
    */
   registerViewRenderer(viewType: ViewType, renderer: ViewRenderer): void {
-    this.viewRenderers.set(viewType, renderer);
-
-    d3Logger.setup('View renderer registered', {
+    this.registrationManager.registerViewRenderer(
       viewType,
-      totalRegistered: this.viewRenderers.size
-    });
-
-    // If this is the current view and no active renderer, set it as active
-    if (viewType === this.viewState.currentView && !this.activeRenderer) {
-      this.activeRenderer = renderer;
-      this.restoreViewState();
-    }
+      renderer,
+      this.viewState,
+      (activeRenderer) => {
+        this.stateManager.restoreViewState(
+          this.viewState,
+          activeRenderer,
+          () => this.reprojectCachedData()
+        );
+      }
+    );
   }
 
   /**
    * Unregister a view renderer
    */
   unregisterViewRenderer(viewType: ViewType): void {
-    const renderer = this.viewRenderers.get(viewType);
-    if (renderer) {
-      // If this is the active renderer, clear it
-      if (this.activeRenderer === renderer) {
-        this.activeRenderer = null;
-      }
-
-      // Clean up the renderer
-      renderer.destroy();
-      this.viewRenderers.delete(viewType);
-
-      d3Logger.setup('View renderer unregistered', {
-        viewType,
-        remainingRegistered: this.viewRenderers.size
-      });
-    }
+    this.registrationManager.unregisterViewRenderer(viewType);
   }
 
   // ========================================================================
@@ -166,118 +144,27 @@ export class ViewContinuum {
     trigger: 'user' | 'programmatic' | 'keyboard' = 'programmatic',
     animated: boolean = this.viewState.config.enableAnimations
   ): Promise<void> {
-
-    if (this.isTransitioning) {
-      d3Logger.warn('ViewContinuum switchToView: Transition already in progress, interrupting');
-      this.interruptTransition();
-    }
-
-    const fromView = this.viewState.currentView;
-    if (fromView === targetView) {
-      d3Logger.info('Already on target view', { view: targetView } as any);
-      return;
-    }
-
-    d3Logger.state('View switch initiated', {
-      from: fromView,
-      to: targetView,
+    const result = await this.transitionManager.switchToView(
+      targetView,
+      this.viewState,
+      this.dataManager.getCachedCards(),
+      this.currentViewConfig,
       trigger,
       animated,
-      hasData: this.cachedCards.length > 0
-    });
-
-    // Save current view state
-    this.saveCurrentViewState();
-
-    // Prepare transition event
-    const transitionEvent: ViewTransitionEvent = {
-      fromView,
-      toView: targetView,
-      timestamp: Date.now(),
-      trigger,
-      preservedState: {
-        selectionCount: this.viewState.selectionState.selectedCardIds.size,
-        focusedCardId: this.viewState.selectionState.lastSelectedId,
-        filterCount: this.viewState.activeFilters.length
+      {
+        saveCurrentViewState: () => this.saveCurrentViewState(),
+        createViewConfig: (viewType, axisMapping) => this.createViewConfig(viewType, axisMapping),
+        restoreViewState: () => this.stateManager.restoreViewState(
+          this.viewState,
+          this.registrationManager.getActiveRenderer(),
+          () => this.reprojectCachedData()
+        ),
+        saveViewState: () => this.stateManager.saveViewState(this.viewState),
+        emitViewChangeEvent: (event) => this.emitViewChangeEvent(event)
       }
-    };
+    );
 
-    // Update transition state
-    this.viewState.transitionState = {
-      fromView,
-      toView: targetView,
-      isAnimating: animated,
-      progress: 0,
-      startTime: Date.now()
-    };
-
-    try {
-      this.isTransitioning = true;
-
-      // Create target view configuration
-      const targetMapping = this.viewState.viewStates[targetView].axisMapping;
-      const targetViewConfig = this.createViewConfig(targetView, targetMapping);
-
-      // Use ViewEngine transition if animation enabled, otherwise render directly
-      if (animated && this.currentViewConfig) {
-        await this.viewEngine.transition(
-          this.currentViewConfig,
-          targetViewConfig,
-          this.animationConfig.duration
-        );
-      } else {
-        await this.viewEngine.render(this.containerElement, this.cachedCards, targetViewConfig);
-      }
-
-      // Update current view state
-      this.viewState.currentView = targetView;
-      this.currentViewConfig = targetViewConfig;
-
-      // Load target view state
-      this.restoreViewState();
-
-      // Update state and persist
-      this.viewState.lastModified = Date.now();
-      this.saveViewState();
-
-      // Emit transition event
-      this.emitViewChangeEvent(transitionEvent);
-
-      d3Logger.render('View transition complete', {
-        to: targetView,
-        duration: Date.now() - transitionEvent.timestamp
-      });
-
-    } catch (error) {
-      d3Logger.error('ViewContinuum switchToView transition failed', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      // Rollback on error
-      this.viewState.currentView = fromView;
-
-      throw error;
-    } finally {
-      this.isTransitioning = false;
-      this.viewState.transitionState = undefined;
-    }
-  }
-
-  // [Removed unused performFlipAnimation method - FLIP animation handled by ViewEngine.transition()]
-
-  // [Removed unused animateCardFlip method - FLIP animation handled by ViewEngine.transition()]
-
-  /**
-   * Interrupt current transition
-   */
-  private interruptTransition(): void {
-    this.container.selectAll('*')
-      .interrupt();
-
-    this.isTransitioning = false;
-    this.viewState.transitionState = undefined;
-
-    d3Logger.info('Transition interrupted');
+    this.currentViewConfig = result.newViewConfig;
   }
 
   // ========================================================================
@@ -292,69 +179,35 @@ export class ViewContinuum {
     parameters: any[] = [],
     activeFilters: any[] = []
   ): Node[] {
-    // Generate query hash for cache validation
-    const queryHash = this.generateQueryHash(sql, parameters);
-
-    // Return cached results if query hasn't changed
-    if (queryHash === this.cachedQueryHash && this.cachedCards.length > 0) {
-      d3Logger.state('ViewContinuum.queryAndCache(): Using cached results', {});
-      return this.cachedCards;
-    }
-
-    // TODO: Execute query via DatabaseService
-    // For now, return empty array as placeholder
-    const results: Node[] = [];
-
-    // Cache results
-    this.cachedCards = results;
-    this.cachedQueryHash = queryHash;
-    this.lastActiveFilters = activeFilters;
-
-    // Update cached query in view state
-    this.viewState.cachedQuery = {
+    const result = this.dataManager.queryAndCache(
       sql,
       parameters,
-      results,
-      timestamp: Date.now(),
-      hash: queryHash
-    };
+      activeFilters,
+      this.viewState,
+      this.currentViewConfig,
+      (viewType, axisMapping) => this.createViewConfig(viewType, axisMapping)
+    );
 
-    d3Logger.data('Query and cache', {
-      queryHash,
-      resultCount: results.length,
-      cached: true
-    });
-
-    // Re-render current view with new data using ViewEngine
-    if (this.currentViewConfig) {
-      this.viewEngine.render(this.containerElement, results, this.currentViewConfig);
-    } else {
-      // Create initial view config if none exists
+    if (!this.currentViewConfig) {
       const currentMapping = this.viewState.viewStates[this.viewState.currentView].axisMapping;
       this.currentViewConfig = this.createViewConfig(this.viewState.currentView, currentMapping);
-      this.viewEngine.render(this.containerElement, results, this.currentViewConfig);
     }
 
-    return results;
+    return result.results;
   }
 
   /**
    * Re-project cached data to current view (no re-query)
    */
   reprojectCachedData(): void {
-    if (this.cachedCards.length === 0) {
-      d3Logger.warn('ViewContinuum reprojectCachedData: No cached data available');
-      return;
+    const viewConfig = this.dataManager.reprojectCachedData(
+      this.viewState,
+      (viewType, axisMapping) => this.createViewConfig(viewType, axisMapping)
+    );
+
+    if (viewConfig) {
+      this.currentViewConfig = viewConfig;
     }
-
-    const currentMapping = this.viewState.viewStates[this.viewState.currentView].axisMapping;
-    this.currentViewConfig = this.createViewConfig(this.viewState.currentView, currentMapping);
-    this.viewEngine.render(this.containerElement, this.cachedCards, this.currentViewConfig);
-
-    d3Logger.data('Re-projected data to current view', {
-      viewType: this.viewState.currentView,
-      cardCount: this.cachedCards.length
-    });
   }
 
   // ========================================================================
@@ -362,320 +215,33 @@ export class ViewContinuum {
   // ========================================================================
 
   /**
-   * Update selection state (persists across view switches)
+   * Update card selection state
    */
   updateSelection(selectedIds: string[], focusedId: string | null = null): void {
     this.viewState.selectionState.selectedCardIds = new Set(selectedIds);
-
-    if (focusedId) {
-      this.viewState.selectionState.lastSelectedId = focusedId;
-    }
-
+    this.viewState.selectionState.lastSelectedId = focusedId;
     this.viewState.lastModified = Date.now();
 
-    // Update focused card for current view
-    if (focusedId) {
-      this.viewState.viewStates[this.viewState.currentView].focusedCardId = focusedId;
+    this.stateManager.saveViewState(this.viewState);
+
+    if (this.callbacks.onSelectionChange) {
+      this.callbacks.onSelectionChange(selectedIds, focusedId);
     }
 
-    // Trigger callback
-    this.callbacks.onSelectionChange?.(selectedIds, focusedId);
-
-    d3Logger.data('Update selection', {
-      selectedCount: selectedIds.length,
-      focusedId,
-      viewType: this.viewState.currentView
+    d3Logger.state('Selection updated', {
+      selectionCount: selectedIds.length,
+      focusedId
     });
   }
 
   /**
-   * Get current selection
+   * Get current selection state
    */
   getSelection(): { selectedIds: string[]; focusedId: string | null } {
     return {
       selectedIds: Array.from(this.viewState.selectionState.selectedCardIds),
-      focusedId: this.viewState.selectionState.lastSelectedId || null
+      focusedId: this.viewState.selectionState.lastSelectedId
     };
-  }
-
-  // ========================================================================
-  // State Persistence
-  // ========================================================================
-
-  /**
-   * Load view state from localStorage or create default
-   */
-  private loadViewState(): ViewState {
-    try {
-      const storageKey = getViewStateStorageKey(this.canvasId);
-      const savedState = localStorage.getItem(storageKey);
-
-      if (savedState) {
-        const parsed = JSON.parse(savedState);
-
-        // Restore Set objects from arrays
-        if (parsed.selectionState?.selectedCardIds) {
-          parsed.selectionState.selectedCardIds = new Set(parsed.selectionState.selectedCardIds);
-        }
-
-        // Restore Set objects in view states
-        Object.values(parsed.viewStates || {}).forEach((viewState: any) => {
-          if (viewState.expandedGroups) {
-            viewState.expandedGroups = new Set(viewState.expandedGroups);
-          }
-        });
-
-        d3Logger.state('ViewContinuum: Loaded state from localStorage', {
-          currentView: parsed.currentView,
-          selectionCount: parsed.selectionState?.selectedCardIds?.size || 0
-        });
-
-        return parsed;
-      }
-    } catch (error) {
-      d3Logger.warn('ViewContinuum failed to load state from localStorage', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-
-    // Create default state
-    const defaultState = createDefaultViewState(this.canvasId);
-    d3Logger.debug('ViewContinuum created default view state');
-    return defaultState;
-  }
-
-  /**
-   * Save current view state to localStorage
-   */
-  private saveViewState(): void {
-    try {
-      const storageKey = getViewStateStorageKey(this.canvasId);
-
-      // Convert Sets to arrays for JSON serialization
-      const serializable = {
-        ...this.viewState,
-        selectionState: {
-          ...this.viewState.selectionState,
-          selectedCardIds: Array.from(this.viewState.selectionState.selectedCardIds)
-        },
-        viewStates: Object.fromEntries(
-          Object.entries(this.viewState.viewStates).map(([viewType, state]) => [
-            viewType,
-            {
-              ...state,
-              expandedGroups: state.expandedGroups ? Array.from(state.expandedGroups) : undefined
-            }
-          ])
-        )
-      };
-
-      localStorage.setItem(storageKey, JSON.stringify(serializable));
-
-      d3Logger.state('ViewContinuum: Saved state to localStorage', {
-        currentView: this.viewState.currentView,
-        timestamp: this.viewState.lastModified
-      });
-    } catch (error) {
-      d3Logger.warn('ViewContinuum failed to save state to localStorage', {
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  }
-
-  /**
-   * Save current view-specific state
-   */
-  private saveCurrentViewState(): void {
-    if (!this.activeRenderer) return;
-
-    const currentView = this.viewState.currentView;
-    const viewState = this.viewState.viewStates[currentView];
-
-    // Capture current state from active renderer
-    viewState.lastUpdated = Date.now();
-
-    // TODO: Capture scroll position, zoom state, etc. from renderer
-    // This will be implemented when view renderers support these methods
-
-    d3Logger.state('ViewContinuum.saveCurrentViewState()', {
-      viewType: currentView,
-      timestamp: viewState.lastUpdated
-    });
-  }
-
-  /**
-   * Restore view-specific state for current view
-   */
-  private restoreViewState(): void {
-    const currentView = this.viewState.currentView;
-    const viewState = this.viewState.viewStates[currentView];
-
-    // TODO: Restore scroll position, zoom state, etc. to renderer
-    // This will be implemented when view renderers support these methods
-
-    d3Logger.state('View state restored', {
-      viewType: currentView,
-      lastUpdated: viewState.lastUpdated
-    });
-  }
-
-  // ========================================================================
-  // ViewEngine Integration Methods
-  // ========================================================================
-
-  /**
-   * Initialize ViewEngine with container
-   */
-  private initializeViewEngine(): void {
-    // ViewEngine will be initialized when first render is called
-    d3Logger.setup('ViewEngine ready for rendering');
-  }
-
-  /**
-   * Create ViewConfig from ViewType and axis mapping
-   */
-  private createViewConfig(viewType: ViewType, axisMapping: ViewAxisMapping): ViewConfig {
-    return {
-      viewType: this.mapViewTypeToEngineType(viewType) as any, // TODO: Fix type mapping
-      projection: {
-        x: {
-          axis: this.mapLATCHAbbreviation(axisMapping.xAxis?.latchDimension || 'C'),
-          facet: axisMapping.xAxis?.facet || 'status',
-          dataType: 'string'
-        },
-        y: {
-          axis: this.mapLATCHAbbreviation(axisMapping.yAxis?.latchDimension || 'H'),
-          facet: axisMapping.yAxis?.facet || 'priority',
-          dataType: 'number'
-        }
-      },
-      filters: this.lastActiveFilters as any[] || [],
-      sort: [],
-      zoom: {
-        scale: 1.0,
-        offset: { x: 0, y: 0 },
-        constrained: false
-      },
-      selection: {
-        selectedIds: Array.from(this.viewState.selectionState.selectedCardIds),
-        lastClickedId: this.viewState.selectionState.lastSelectedId,
-        mode: 'multiple'
-      },
-      styling: {
-        colorScheme: 'light', // TODO: Get from theme context
-        animations: {
-          enabled: this.viewState.config.enableAnimations,
-          duration: this.animationConfig.duration,
-          easing: 'ease-out'
-        }
-      },
-      eventHandlers: {
-        onNodeClick: this.callbacks.onCardClick,
-        onSelectionChange: (nodes) => {
-          // Adapt interface: ViewEngine expects nodes, ViewContinuum provides ids
-          const selectedIds = nodes.map(n => n.id || n);
-          this.callbacks.onSelectionChange?.(selectedIds, selectedIds[selectedIds.length - 1] || null);
-        }
-      }
-    };
-  }
-
-  /**
-   * Map ViewContinuum ViewType to ViewEngine viewType
-   */
-  private mapViewTypeToEngineType(viewType: ViewType): EngineViewType {
-    switch (viewType) {
-      case ViewType.GRID:
-      case ViewType.SUPERGRID:
-        return 'grid';
-      case ViewType.LIST:
-        return 'list';
-      case ViewType.KANBAN:
-        return 'kanban';
-      case ViewType.TIMELINE:
-        return 'timeline';
-      case ViewType.NETWORK:
-        return 'graph'; // ViewEngine uses 'graph' instead of 'network'
-      case ViewType.CALENDAR:
-        return 'calendar';
-      default:
-        return 'grid'; // fallback
-    }
-  }
-
-  /**
-   * Map LATCH abbreviation to full name
-   */
-  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): import('../types/pafv').LATCHAxis {
-    switch (abbr) {
-      case 'L':
-        return 'location';
-      case 'A':
-        return 'alphabet';
-      case 'T':
-        return 'time';
-      case 'C':
-        return 'category';
-      case 'H':
-        return 'hierarchy';
-      default:
-        return 'category';
-    }
-  }
-
-  // ========================================================================
-  // Initialization and Setup
-  // ========================================================================
-
-  /**
-   * Set up SVG container structure
-   */
-  private setupSVGStructure(): void {
-    // Clear existing content
-    this.container.selectAll('*').remove();
-
-    // Create main content group
-    this.container.append('g')
-      .attr('class', 'view-continuum-content')
-      .attr('transform', 'translate(0, 0)');
-
-    // Create overlay group for transitions
-    this.container.append('g')
-      .attr('class', 'transition-overlay')
-      .style('pointer-events', 'none');
-
-    d3Logger.setup('SVG structure initialized');
-  }
-
-  // [Removed unused initializeActiveView method - initialization handled by ViewEngine.render()]
-
-  // ========================================================================
-  // Utility Methods
-  // ========================================================================
-
-  /**
-   * Generate hash for query caching
-   */
-  private generateQueryHash(sql: string, parameters: any[]): string {
-    const combined = `${sql}|${JSON.stringify(parameters)}`;
-    // Simple hash function (not cryptographically secure, just for caching)
-    let hash = 0;
-    for (let i = 0; i < combined.length; i++) {
-      const char = combined.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    return hash.toString(36);
-  }
-
-  // [Removed unused getD3Easing method - animation handled by ViewEngine.transition()]
-
-  /**
-   * Emit view change event
-   */
-  private emitViewChangeEvent(event: ViewTransitionEvent): void {
-    this.eventTarget.dispatchEvent(new CustomEvent('viewchange', { detail: event }));
-    this.callbacks.onViewChange?.(event);
   }
 
   // ========================================================================
@@ -683,113 +249,108 @@ export class ViewContinuum {
   // ========================================================================
 
   /**
-   * Get current view type
+   * Get current view state
    */
   getCurrentView(): ViewType {
     return this.viewState.currentView;
   }
 
   /**
-   * Get view state (read-only)
+   * Check if view is currently transitioning
    */
-  getViewState(): Readonly<ViewState> {
-    return this.viewState;
+  isTransitioning(): boolean {
+    return this.transitionManager.getIsTransitioning();
   }
 
   /**
-   * Update view axis mapping for current view
+   * Event listener interface
    */
-  updateAxisMapping(mapping: ViewAxisMapping): void {
-    this.viewState.viewStates[this.viewState.currentView].axisMapping = mapping;
-    this.viewState.lastModified = Date.now();
-
-    // Re-project data with new mapping
-    this.reprojectCachedData();
-
-    d3Logger.state('ViewContinuum updateAxisMapping', {
-      viewType: this.viewState.currentView,
-      mapping
-    });
+  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    this.eventTarget.addEventListener(type, listener);
   }
 
-  /**
-   * Focus on a specific card (view-independent)
-   */
-  focusCard(cardId: string): void {
-    this.viewState.viewStates[this.viewState.currentView].focusedCardId = cardId;
-    this.viewState.selectionState.lastSelectedId = cardId;
-
-    // TODO: Implement card focusing in ViewEngine
-    // this.viewEngine.focusCard(cardId);
-
-    d3Logger.inspect('Focus card', { cardId, viewType: this.viewState.currentView });
+  removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+    this.eventTarget.removeEventListener(type, listener);
   }
 
-  /**
-   * Listen to view change events
-   */
-  addEventListener(event: 'viewchange', handler: (event: CustomEvent<ViewTransitionEvent>) => void): void {
-    this.eventTarget.addEventListener(event, handler as EventListener);
+  // ========================================================================
+  // Private Implementation Methods
+  // ========================================================================
+
+  private saveCurrentViewState(): void {
+    this.stateManager.saveCurrentViewState(
+      this.viewState,
+      this.registrationManager.getActiveRenderer(),
+      () => {}
+    );
   }
 
-  /**
-   * Remove view change event listener
-   */
-  removeEventListener(event: 'viewchange', handler: (event: CustomEvent<ViewTransitionEvent>) => void): void {
-    this.eventTarget.removeEventListener(event, handler as EventListener);
+  private initializeViewEngine(): void {
+    // ViewEngine is already instantiated in constructor
+    // Any additional initialization can go here
   }
 
-  /**
-   * Clear cached data and force re-query
-   */
-  clearCache(): void {
-    this.cachedCards = [];
-    this.cachedQueryHash = '';
-    this.lastActiveFilters = [];
-    this.viewState.cachedQuery = undefined;
+  private createViewConfig(viewType: ViewType, axisMapping: ViewAxisMapping): ViewConfig {
+    const engineViewType = this.mapViewTypeToEngineType(viewType);
 
-    d3Logger.debug('ViewContinuum cache cleared');
+    return {
+      type: engineViewType,
+      dimensions: Object.entries(axisMapping).reduce((acc, [plane, axis]) => {
+        if (axis && axis !== 'None') {
+          acc[plane as 'x' | 'y' | 'z'] = this.mapLATCHAbbreviation(axis as any);
+        }
+        return acc;
+      }, {} as Record<'x' | 'y' | 'z', any>),
+      layout: {
+        cardSize: { width: 200, height: 120 },
+        padding: { x: 10, y: 10 },
+        groupSpacing: 20
+      }
+    };
   }
 
-  /**
-   * Reset view state to defaults
-   */
-  resetState(): void {
-    this.viewState = createDefaultViewState(this.canvasId);
-    this.saveViewState();
-
-    d3Logger.state('State reset to defaults', {});
+  private mapViewTypeToEngineType(viewType: ViewType): EngineViewType {
+    const mapping: Record<ViewType, EngineViewType> = {
+      [ViewType.LIST]: 'list',
+      [ViewType.KANBAN]: 'kanban',
+      [ViewType.SUPERGRID]: 'supergrid',
+      [ViewType.NETWORK]: 'network',
+      [ViewType.TIMELINE]: 'timeline'
+    };
+    return mapping[viewType] || 'list';
   }
 
-  /**
-   * Cleanup resources
-   */
-  destroy(): void {
-    // Interrupt any running transitions
-    this.interruptTransition();
+  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): any {
+    const mapping = {
+      'L': 'location',
+      'A': 'alphabet',
+      'T': 'time',
+      'C': 'category',
+      'H': 'hierarchy'
+    };
+    return mapping[abbr] || 'category';
+  }
 
-    // Clean up ViewEngine
-    this.viewEngine.destroy();
+  private setupSVGStructure(): void {
+    // Ensure we have a proper SVG structure for D3 rendering
+    if (!this.container.select('svg').empty()) return;
 
-    // Clean up legacy renderers (deprecated)
-    this.viewRenderers.forEach((renderer) => {
-      renderer.destroy();
-    });
-    this.viewRenderers.clear();
+    const svg = this.container
+      .append('svg')
+      .attr('width', '100%')
+      .attr('height', '100%')
+      .style('position', 'absolute')
+      .style('top', 0)
+      .style('left', 0)
+      .style('pointer-events', 'none');
 
-    // Clear active renderer
-    this.activeRenderer = null;
-    this.currentViewConfig = null;
+    svg.append('g').attr('class', 'view-container');
+  }
 
-    // Save final state
-    this.saveViewState();
-
-    // Clear SVG content
-    this.container.selectAll('*').remove();
-
-    // Clear cached data
-    this.clearCache();
-
-    d3Logger.setup('ViewContinuum cleanup complete');
+  private emitViewChangeEvent(event: ViewTransitionEvent): void {
+    this.eventTarget.dispatchEvent(new CustomEvent('viewchange', { detail: event }));
+    if (this.callbacks.onViewChange) {
+      this.callbacks.onViewChange(event);
+    }
   }
 }

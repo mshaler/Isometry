@@ -5,7 +5,7 @@
  * replacing hardcoded development paths with environment variables.
  */
 
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 
 /**
  * Environment types

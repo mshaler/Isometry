@@ -11,7 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/webview/connection-manager';
 import { useLiveDataContext } from '../contexts/LiveDataContext';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 
 export interface ConnectionContextValue {
   /** Current connection state */

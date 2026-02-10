@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useMemo } from 'react';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger } from "../utils/logging/dev-logger";
 
 // Types for feature flag system
 export interface FeatureFlag {

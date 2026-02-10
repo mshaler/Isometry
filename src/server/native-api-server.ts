@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { devLogger } from '../utils/logging/logger';
+import { devLogger" from "../utils/logging/dev-logger';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
