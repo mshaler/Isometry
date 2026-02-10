@@ -263,9 +263,14 @@ export class ListRenderer implements ViewRenderer {
 
     const totalHeight = Math.max(
       400,
-      this.flattenedData.length * (this.layout.cardHeight + this.layout.verticalSpacing) + this.layout.padding.top + this.layout.padding.bottom
+      this.flattenedData.length * (this.layout.cardHeight + this.layout.verticalSpacing) +
+        this.layout.padding.top + this.layout.padding.bottom
     );
-    const totalWidth = Math.max(600, this.layout.cardWidth + this.layout.padding.left + this.layout.padding.right + this.getMaxDepth(this.hierarchicalData) * this.layout.nestingIndent);
+    const totalWidth = Math.max(
+      600,
+      this.layout.cardWidth + this.layout.padding.left + this.layout.padding.right +
+        this.getMaxDepth(this.hierarchicalData) * this.layout.nestingIndent
+    );
 
     // Clear container
     d3.select(container).selectAll('*').remove();
@@ -478,7 +483,10 @@ export class ListRenderer implements ViewRenderer {
     return parts.join(' • ') || 'No metadata';
   }
 
-  private truncateText(maxWidth: number, textSelection: d3.Selection<SVGTextElement, HierarchicalListItem, SVGGElement, unknown>): void {
+  private truncateText(
+    maxWidth: number,
+    textSelection: d3.Selection<SVGTextElement, HierarchicalListItem, SVGGElement, unknown>
+  ): void {
     textSelection.each(function(_d) {
       const text = d3.select(this);
       const originalText = text.text();
