@@ -171,7 +171,13 @@ export function useDatabaseService() {
     },
 
     // Header state methods (preserve Phase 36 functionality)
-    saveHeaderState: (datasetId: string, appContext: string, expandedLevels: string[], zoomLevel: string, panLevel: string) => {
+    saveHeaderState: (
+      datasetId: string,
+      appContext: string,
+      expandedLevels: string[],
+      zoomLevel: string,
+      panLevel: string
+    ) => {
       try {
         // Create table if needed
         run(`

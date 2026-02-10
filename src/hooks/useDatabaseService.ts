@@ -41,7 +41,10 @@ export function useDatabaseService(): DatabaseService {
     }
   }, []);
 
-  const execute = useCallback(async (sql: string, params?: any[]): Promise<{ changes: number; lastInsertRowid?: number }> => {
+  const execute = useCallback(async (
+    sql: string,
+    params?: any[]
+  ): Promise<{ changes: number; lastInsertRowid?: number }> => {
     try {
       // In v4, this would use direct sql.js access
       devLogger.debug('DatabaseService execute', { sql, params });
