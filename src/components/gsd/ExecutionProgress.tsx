@@ -8,7 +8,7 @@
  * - Token usage and cost tracking
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -18,7 +18,8 @@ import {
   FileEdit,
   FileX,
   Coins,
-  Timer
+  Timer,
+  Activity
 } from 'lucide-react';
 import { ExecutionProgressProps, GSDPhase } from '../../types/gsd';
 
@@ -38,6 +39,36 @@ export function ExecutionProgress({
   tokenUsage,
   status
 }: ExecutionProgressProps) {
+  // Execution time counter
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (status === 'executing') {
+      // Find when current phase started
+      const currentPhaseEvent = phaseHistory.find(p => p.phase === currentPhase && p.status === 'active');
+      const startTime = currentPhaseEvent?.startedAt ? new Date(currentPhaseEvent.startedAt).getTime() : Date.now();
+
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [status, currentPhase, phaseHistory]);
+
+  // Format elapsed time as mm:ss
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const getPhaseStatus = (phase: GSDPhase) => {
     const phaseEvent = phaseHistory.find(p => p.phase === phase);
 
@@ -131,13 +162,37 @@ export function ExecutionProgress({
         </div>
       </div>
 
-      {/* Current Activity */}
-      {activeToolUse && status === 'executing' && (
-        <div className="bg-gray-800 rounded-md p-3 border border-gray-600">
-          <div className="flex items-center gap-2 text-blue-400">
-            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
-            <span className="text-sm font-medium">Active:</span>
-            <span className="text-sm text-gray-300">{activeToolUse}</span>
+      {/* Current Activity with Activity Indicator */}
+      {status === 'executing' && (
+        <div className="bg-gray-800 rounded-md p-3 border border-blue-600/50 shadow-lg shadow-blue-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-blue-400">
+              {/* Animated cursor indicator */}
+              <div className="relative">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                <div className="absolute inset-0 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-75" />
+              </div>
+              <Activity size={14} className="animate-pulse" />
+              <span className="text-sm font-medium">
+                {activeToolUse || 'Working...'}
+              </span>
+            </div>
+            {/* Execution time counter */}
+            <div className="flex items-center gap-1 text-xs text-gray-400 font-mono">
+              <Timer size={12} />
+              <span>{formatTime(elapsedTime)}</span>
+            </div>
+          </div>
+          {/* Progress indicator bar */}
+          <div className="mt-2 h-1 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full animate-[shimmer_2s_ease-in-out_infinite]"
+              style={{
+                width: '100%',
+                backgroundSize: '200% 100%',
+                animation: 'shimmer 2s ease-in-out infinite'
+              }}
+            />
           </div>
         </div>
       )}

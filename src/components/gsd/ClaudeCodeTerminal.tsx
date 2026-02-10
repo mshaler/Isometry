@@ -19,7 +19,8 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  Code
+  Code,
+  ArrowDown
 } from 'lucide-react';
 import {
   claudeCodeOutputParser,
@@ -64,7 +65,8 @@ export function ClaudeCodeTerminal({
   const [currentPhase, setCurrentPhase] = useState<string | null>(null);
   const [currentToolUse, setCurrentToolUse] = useState<string | null>(null);
   const [showStructured, setShowStructured] = useState(true);
-  const [autoScroll] = useState(true);
+  // Track if user has scrolled up from bottom
+  const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -72,12 +74,21 @@ export function ClaudeCodeTerminal({
   // Unique counter for React keys to prevent duplication
   const lineIdCounterRef = useRef(0);
 
-  // Auto-scroll to bottom
+  // Detect user scroll - check if user has scrolled away from bottom
+  const handleScroll = useCallback(() => {
+    const el = terminalRef.current;
+    if (!el) return;
+    // Consider "at bottom" if within 10px of the bottom
+    const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 10;
+    setIsUserScrolledUp(!isAtBottom);
+  }, []);
+
+  // Auto-scroll on new output (unless user has scrolled up)
   useEffect(() => {
-    if (autoScroll && terminalRef.current) {
+    if (!isUserScrolledUp && terminalRef.current) {
       terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
     }
-  }, [lines, autoScroll]);
+  }, [lines, isUserScrolledUp]);
 
   // Focus input when component mounts
   useEffect(() => {
@@ -454,9 +465,10 @@ Please select an option (1-3):`;
       {/* Terminal Output */}
       <div
         ref={terminalRef}
+        onScroll={handleScroll}
         className="flex-1 overflow-y-auto p-3 font-mono text-sm"
         style={{
-          scrollBehavior: autoScroll ? 'smooth' : 'auto',
+          scrollBehavior: 'smooth',
           fontFamily: 'SF Mono, Monaco, Inconsolata, "Roboto Mono", Consolas, "Courier New", monospace'
         }}
       >
@@ -465,6 +477,23 @@ Please select an option (1-3):`;
             {renderLine(line)}
           </div>
         ))}
+
+        {/* Scroll to bottom indicator (when user has scrolled up) */}
+        {isUserScrolledUp && (
+          <div className="sticky bottom-0 left-0 right-0 flex justify-center pb-2">
+            <button
+              onClick={() => {
+                if (terminalRef.current) {
+                  terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded-full shadow-lg hover:bg-blue-700 transition-colors"
+            >
+              <ArrowDown size={12} />
+              Scroll to bottom
+            </button>
+          </div>
+        )}
 
         {/* Choice Selection Interface */}
         {currentChoices && showStructured && (
