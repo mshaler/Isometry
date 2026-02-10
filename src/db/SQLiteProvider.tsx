@@ -17,6 +17,21 @@ import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
  * - Direct D3.js data binding
  */
 
+/** FTS5 performance test result */
+export interface FTS5PerformanceResult {
+  results: number;
+  timeMs: number;
+  usedFallback: boolean;
+}
+
+/** Storage quota information for UI display */
+export interface StorageQuotaState {
+  used: number;
+  quota: number;
+  percentUsed: number;
+  warning: boolean;
+}
+
 export interface SQLiteContextValue {
   db: Database | null;
   loading: boolean;
@@ -36,6 +51,10 @@ export interface SQLiteContextValue {
   dataVersion: number;
   /** Call after bulk data changes to trigger query invalidation and auto-save */
   notifyDataChanged: () => Promise<void>;
+  /** Test FTS5 search performance - returns timing and result count */
+  testFTS5Performance: (query: string) => FTS5PerformanceResult;
+  /** Current storage quota info - updated periodically */
+  storageQuota: StorageQuotaState | null;
 }
 
 const SQLiteContext = createContext<SQLiteContextValue | null>(null);
@@ -62,6 +81,7 @@ export function SQLiteProvider({
   });
   const [telemetry, setTelemetry] = useState<SQLiteCapabilityError[]>([]);
   const [dataVersion, setDataVersion] = useState(0);
+  const [storageQuota, setStorageQuota] = useState<StorageQuotaState | null>(null);
 
   // IndexedDB persistence - single instances for component lifetime
   const persistenceRef = useRef<IndexedDBPersistence | null>(null);
@@ -492,6 +512,120 @@ export function SQLiteProvider({
     }
   }, [enableLogging, dataVersion]);
 
+  // Test FTS5 performance - measures search query timing
+  const testFTS5Performance = useCallback((query: string): FTS5PerformanceResult => {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    const startTime = performance.now();
+
+    try {
+      // Use nodes_fts virtual table if FTS5 is available
+      if (capabilities.fts5) {
+        const results = db.exec(`
+          SELECT COUNT(*) as count FROM nodes_fts
+          WHERE nodes_fts MATCH ?
+        `, [query]);
+
+        const endTime = performance.now();
+        const count = results[0]?.values[0]?.[0] as number ?? 0;
+        const timeMs = endTime - startTime;
+
+        devLogger.inspect('FTS5 Performance Test', {
+          query,
+          resultCount: count,
+          timeMs: timeMs.toFixed(2),
+          usedFallback: false,
+          target: '<50ms'
+        });
+
+        return {
+          results: count,
+          timeMs,
+          usedFallback: false
+        };
+      } else {
+        // FTS5 not available, fall back to LIKE search with warning
+        devLogger.warn('FTS5 not available, using LIKE fallback (slower)', { query });
+
+        const results = db.exec(`
+          SELECT COUNT(*) as count FROM nodes
+          WHERE name LIKE ? OR content LIKE ?
+        `, [`%${query}%`, `%${query}%`]);
+
+        const endTime = performance.now();
+        const count = results[0]?.values[0]?.[0] as number ?? 0;
+        const timeMs = endTime - startTime;
+
+        devLogger.inspect('LIKE Fallback Performance Test', {
+          query,
+          resultCount: count,
+          timeMs: timeMs.toFixed(2),
+          usedFallback: true,
+          warning: 'FTS5 unavailable - performance may be degraded for large datasets'
+        });
+
+        return {
+          results: count,
+          timeMs,
+          usedFallback: true
+        };
+      }
+    } catch (err) {
+      const endTime = performance.now();
+      devLogger.error('FTS5 performance test failed', { error: err, query });
+
+      // Return timing even on error
+      return {
+        results: 0,
+        timeMs: endTime - startTime,
+        usedFallback: true
+      };
+    }
+  }, [db, capabilities.fts5]);
+
+  // Periodically update storage quota (every 30 seconds)
+  useEffect(() => {
+    const persistence = persistenceRef.current;
+    if (!persistence) return;
+
+    const updateQuota = async () => {
+      try {
+        const quota = await persistence.getStorageQuota();
+
+        if (quota.quota !== null && quota.used !== null) {
+          const quotaState: StorageQuotaState = {
+            used: quota.used,
+            quota: quota.quota,
+            percentUsed: quota.percentUsed ?? 0,
+            warning: (quota.percentUsed ?? 0) > 80
+          };
+
+          setStorageQuota(quotaState);
+
+          // Log warning if quota is high
+          if (quotaState.warning) {
+            devLogger.warn('Storage quota warning', {
+              used: `${(quotaState.used / 1024 / 1024).toFixed(2)}MB`,
+              quota: `${(quotaState.quota / 1024 / 1024).toFixed(2)}MB`,
+              percentUsed: `${quotaState.percentUsed.toFixed(1)}%`
+            });
+          }
+        }
+      } catch (err) {
+        devLogger.error('Failed to check storage quota', { error: err });
+      }
+    };
+
+    // Initial check
+    updateQuota();
+
+    // Update every 30 seconds
+    const interval = setInterval(updateQuota, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
   const contextValue: SQLiteContextValue = {
     db,
     loading,
@@ -505,6 +639,8 @@ export function SQLiteProvider({
     telemetry,
     dataVersion,
     notifyDataChanged,
+    testFTS5Performance,
+    storageQuota,
   };
 
   return (
