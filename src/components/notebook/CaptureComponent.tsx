@@ -144,7 +144,14 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
 
     // Default command execution for templates and formats
     return originalExecuteCommand(commandId);
-  }, [allCommands, filteredCommands, menuState.selectedIndex, originalExecuteCommand, handleSaveCard, handleSendToShell]);
+  }, [
+    allCommands,
+    filteredCommands,
+    menuState.selectedIndex,
+    originalExecuteCommand,
+    handleSaveCard,
+    handleSendToShell
+  ]);
 
   const handleManualSave = useCallback(async () => {
     try {
