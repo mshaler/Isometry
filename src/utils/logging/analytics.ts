@@ -250,13 +250,14 @@ class AnalyticsService {
             (oldAvg * (count - 1) + event.value) / count;
         }
         break;
-      case 'flow_abandoned':
+      case 'flow_abandoned': {
         // Calculate abandonment rate (simple ratio for now)
         const totalFlowAttempts = this.crossCanvasFlow.captureToShellCount;
         const abandonments = event.value || 1;
         this.crossCanvasFlow.abandonmentRate =
           totalFlowAttempts > 0 ? abandonments / totalFlowAttempts : 0;
         break;
+      }
     }
   }
 
