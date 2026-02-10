@@ -7,6 +7,7 @@
 - **v4.2 Three-Canvas Notebook** - Phases 43-46 (paused, Phase 46 pending)
 - **v4.3 Navigator Integration** - Phases 50-51 (paused, Phase 51 pending)
 - **v5.0 Type Safety Restoration** - Phases 52-55 (active)
+- **v4.4 SuperGrid PAFV Projection** - Phases 56-58 (proposed) - see `.planning/milestones/v4.4-SUPERGRID-PAFV-PROJECTION.md`
 
 ## Phases
 
@@ -232,7 +233,7 @@ v4.2 Phase 46 and v4.3 Phase 51 resume after v5.0 completes.
 | 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 44. Preview Visualization Expansion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 46. Live Data Synchronization | v4.2 | 0/3 | Paused | - |
+| 46. Live Data Synchronization | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
 | 51. Navigator UI Integration | v4.3 | 0/2 | Paused | - |
 | 52. Dead Code & Stale Imports | v5.0 | 0/3 | Planned | - |

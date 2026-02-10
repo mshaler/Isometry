@@ -1,852 +1,476 @@
 # Phase 46: Live Data Synchronization - Research
 
 **Researched:** 2026-02-10
-**Domain:** Cross-canvas data synchronization, React event systems, sql.js change detection
-**Confidence:** MEDIUM-HIGH
+**Domain:** React state synchronization, D3.js data binding refresh, SQLite change notification
+**Confidence:** HIGH
 
 ## Summary
 
-Phase 46 enables live cross-canvas synchronization without manual refresh by implementing a lightweight event bus system that propagates data changes from sql.js writes to React components across Capture, Shell, and Preview canvases. The architecture uses CustomEvent DOM APIs for decoupled publish-subscribe communication, combined with React Context for selection state and TipTap's scroll commands for bidirectional navigation.
+Phase 46 enables cross-canvas data synchronization without manual refresh by leveraging the existing `dataVersion` counter in SQLiteProvider as the core synchronization primitive. When users save cards in Capture (TipTap editor), the `run()` function in SQLiteProvider increments `dataVersion`, triggering React's dependency tracking in `useSQLiteQuery`, which auto-refetches queries and updates all D3.js visualizations via `.join()` data binding. This architecture eliminates the need for custom event buses or polling—React's built-in `useEffect` dependency arrays handle propagation.
 
-**Architecture context:** Isometry uses sql.js (SQLite WASM) running synchronously in the browser, D3.js for Preview visualizations, TipTap for Capture editor, and React 18 for UI chrome. No Redux/Zustand—state management is distributed: D3's `.join()` for visualization state, TipTap's ProseMirror state for editor, and React Context for shared concerns like selection.
+**Architecture context:** Isometry uses sql.js (SQLite in WASM) with synchronous queries, D3.js v7 for visualizations with `.join()` pattern, and React 18 contexts for state management. The existing infrastructure includes `dataVersion` counter (incremented on every INSERT/UPDATE/DELETE), `useSQLiteQuery` hook with dataVersion dependency, and `SelectionContext` for cross-component selection state.
 
-**Key challenge:** sql.js doesn't support native change triggers with JavaScript callbacks. The v1.13+ `updateHook` API provides SQLite-level notifications (INSERT/UPDATE/DELETE on any table), but it fires synchronously during transaction execution, making it unsuitable for React state updates without careful event queuing.
-
-**Primary recommendation:** Build a custom event bus using DOM CustomEvent API for cross-canvas communication. Wrap sql.js write operations (INSERT/UPDATE/DELETE) to dispatch `isometry-data-change` events. Components subscribe via `useEffect` cleanup pattern. Use React Context only for selection state (shared across canvases). Use TipTap's `scrollIntoView()` and `focus()` commands for Capture navigation. Use D3 data joins for automatic Preview updates.
+**Primary recommendation:** Extend `dataVersion` pattern with optional table-level granularity for performance (avoid re-rendering all visualizations when only one table changes), add bidirectional card navigation by connecting SelectionContext to both Capture and Preview components, and leverage D3's `.join()` with stable key functions to ensure smooth re-renders without full graph recalculation.
 
 ## Standard Stack
 
 ### Core
 | Library | Version | Purpose | Why Standard |
 |---------|---------|---------|--------------|
-| React 18 | 18.2.0 | UI chrome, Context API | Already in use. Context for selection state, useEffect for event subscriptions. |
-| sql.js | 1.13.0+ | SQLite WASM with updateHook | Already in use. v1.13+ has `Database.updateHook()` API for change notifications. |
-| D3.js | 7.9.0 | Preview visualization re-rendering | Already in use. `.join()` with key functions auto-updates on data changes. |
-| @tiptap/react | 3.19.0+ | Capture editor with scroll commands | From Phase 45. `scrollIntoView()` and `focus()` commands for navigation. |
+| React | 18.2.0 | State synchronization | Already in use, automatic batching (React 18), useEffect dependency tracking handles propagation |
+| sql.js | 1.13.0 | Data source | Already in use, synchronous queries, no bridge overhead |
+| d3 | 7.9.0 | Visualization updates | Already in use, `.join()` with key functions re-binds data efficiently |
+| TypeScript | 5.2.2 | Type safety | Already in use, ensures correct dataVersion typing across contexts |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| N/A | Native DOM | CustomEvent API for event bus | No library needed. Native browser API, zero overhead. |
+| None | - | - | All requirements met by existing stack |
 
 ### Alternatives Considered
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| CustomEvent bus | React state lifting | State lifting forces re-renders across unrelated canvases. Event bus keeps components decoupled. |
-| CustomEvent bus | RxJS Observables | RxJS adds 50KB+ bundle. CustomEvent is native, simpler for this use case. |
-| CustomEvent bus | redux/zustand | Already rejected in architecture. D3 manages visualization state, TipTap manages editor state. No central store needed. |
-| sql.js updateHook | Polling `modified_at` | Polling wastes CPU. updateHook fires only on actual changes. |
-| React Context for all state | Distributed state (D3 + TipTap + Context) | Context causes re-renders. D3 and TipTap have their own state systems—use them. Context only for truly shared state (selection). |
+| dataVersion counter | CustomEvent broadcast | CustomEvent requires manual listener management, no React integration, harder to debug. dataVersion leverages React's built-in dependency tracking. |
+| dataVersion counter | SQLite triggers + update_hook | sql.js doesn't expose sqlite3_update_hook() callback API. Would require WASM modifications. dataVersion is simpler and already working. |
+| Global dataVersion | Table-specific version counters | Table-specific adds complexity but improves performance (e.g., editing a card in Capture shouldn't re-render Network Graph if edges table unchanged). Implement if performance profiling shows need. |
+| SelectionContext | Custom event bus | React Context is standard pattern for cross-component state. Event bus adds extra abstraction with no benefit in single-page app. |
+| Polling | Push-based updates | dataVersion IS push-based (via React dependency array). Polling wastes CPU and adds latency. Never poll when React can propagate. |
 
 **Installation:**
-No new dependencies required. All functionality uses existing stack + native browser APIs.
+No new dependencies required. All synchronization needs met by existing React 18 + sql.js + D3.js stack.
 
 ## Architecture Patterns
 
 ### Recommended Project Structure
 ```
 src/
-├── services/
-│   └── sync/
-│       ├── event-bus.ts              # CustomEvent publish/subscribe system
-│       ├── sql-change-tracker.ts     # Wraps sql.js writes, dispatches events
-│       └── types.ts                  # Event payload types
-├── hooks/
-│   └── sync/
-│       ├── useDataChangeListener.ts  # Subscribe to data change events
-│       ├── useSelectionSync.ts       # Sync selection across canvases
-│       └── useScrollToCard.ts        # Bidirectional card navigation
 ├── contexts/
-│   └── SelectionContext.tsx          # KEEP: Already exists, shared selection state
-└── components/
-    └── notebook/
-        ├── CaptureComponent.tsx      # Listen for card clicks, scroll to card
-        ├── PreviewComponent.tsx      # Listen for data changes, refresh D3
-        └── preview-tabs/
-            ├── NetworkGraphTab.tsx   # Re-query on data change, highlight selection
-            ├── DataInspectorTab.tsx  # Re-query on data change
-            └── TimelineTab.tsx       # Re-query on data change, highlight selection
+│   ├── LiveDataContext.tsx          # Already exists (stub) - expand for metrics
+│   └── NotebookContext.tsx          # Already exists - add scrollToCard() method
+├── state/
+│   └── SelectionContext.tsx         # Already exists - connect to both Capture + Preview
+├── hooks/
+│   └── database/
+│       ├── useSQLiteQuery.ts        # Already exists - uses dataVersion dependency
+│       └── useLiveData.tsx          # Already exists - uses bridge pattern, adapt to dataVersion
+├── db/
+│   ├── SQLiteProvider.tsx           # Already exists - dataVersion counter implemented
+│   └── operations.ts                # Already exists - run() increments dataVersion
+├── components/
+│   └── notebook/
+│       ├── CaptureComponent.tsx     # Connect to SelectionContext for scroll-to-card
+│       └── PreviewComponent.tsx     # Connect to SelectionContext for card selection
+└── d3/
+    └── visualizations/
+        └── network/
+            └── ForceGraphRenderer.ts # Ensure stable key function in .join()
 ```
 
-### Pattern 1: Event Bus with CustomEvent API
-**What:** Lightweight publish-subscribe system using native DOM CustomEvent for cross-component communication without tight coupling.
+### Pattern 1: dataVersion-Driven Query Invalidation
 
-**When to use:** Any time data changes in sql.js and multiple canvases need to react (card saved, node updated, edge created).
+**What:** Automatic query refetch when database changes, propagated via React dependency array
+
+**When to use:** Always—this is the core synchronization primitive for SYNC-01 (auto-refresh)
 
 **Example:**
 ```typescript
-// Source: DOM CustomEvent API (native browser), event bus patterns from web search
-// services/sync/event-bus.ts
+// Source: Existing implementation in useSQLiteQuery.ts + SQLiteProvider.tsx
+// From SQLiteProvider operations.ts:
+const run = (sql: string, params: unknown[] = []): void => {
+  // ... execute SQL ...
 
-export type DataChangeEvent = {
-  table: 'nodes' | 'edges' | 'notebook_cards' | 'facets';
-  operation: 'INSERT' | 'UPDATE' | 'DELETE';
-  rowid: number;
-  nodeId?: string;
-  timestamp: Date;
+  // Increment data version for query invalidation
+  setDataVersion(prev => prev + 1);
 };
 
-export type SelectionChangeEvent = {
-  cardId: string;
-  source: 'capture' | 'preview' | 'shell';
-};
+// From useSQLiteQuery.ts:
+export function useSQLiteQuery<T>(
+  sql: string,
+  params: unknown[] = [],
+  options?: QueryOptions<T>
+): QueryState<T> {
+  const { execute, dataVersion } = useSQLite();
 
-// Type-safe event dispatcher
-export class IsometryEventBus {
-  // Dispatch data change event
-  static dispatchDataChange(event: DataChangeEvent): void {
-    window.dispatchEvent(
-      new CustomEvent('isometry:data-change', {
-        detail: event,
-        bubbles: false, // Don't bubble—global event
-      })
-    );
-  }
+  const fetchData = useCallback(() => {
+    const rows = execute(sql, params);
+    const result = transform ? transform(rows) : rows;
+    setData(result);
+  }, [execute, sql, params, transform, dataVersion]); // dataVersion triggers refetch
 
-  // Dispatch selection change event
-  static dispatchSelectionChange(event: SelectionChangeEvent): void {
-    window.dispatchEvent(
-      new CustomEvent('isometry:selection-change', {
-        detail: event,
-        bubbles: false,
-      })
-    );
-  }
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]); // Re-runs when dataVersion changes
 
-  // Subscribe to data changes
-  static onDataChange(
-    handler: (event: DataChangeEvent) => void
-  ): () => void {
-    const listener = (e: Event) => {
-      handler((e as CustomEvent<DataChangeEvent>).detail);
-    };
-
-    window.addEventListener('isometry:data-change', listener);
-
-    // Return cleanup function
-    return () => {
-      window.removeEventListener('isometry:data-change', listener);
-    };
-  }
-
-  // Subscribe to selection changes
-  static onSelectionChange(
-    handler: (event: SelectionChangeEvent) => void
-  ): () => void {
-    const listener = (e: Event) => {
-      handler((e as CustomEvent<SelectionChangeEvent>).detail);
-    };
-
-    window.addEventListener('isometry:selection-change', listener);
-
-    return () => {
-      window.removeEventListener('isometry:selection-change', listener);
-    };
-  }
+  return { data, loading, error, refetch: fetchData };
 }
 ```
 
-### Pattern 2: Wrapping sql.js Writes to Dispatch Events
-**What:** Intercept all sql.js INSERT/UPDATE/DELETE operations to dispatch change events. Use sql.js `updateHook` API when available, or wrap execute functions.
+**How it satisfies SYNC-01:**
+1. User saves card in Capture → TipTap calls `db.run("UPDATE nodes SET content = ? WHERE id = ?", [content, id])`
+2. `run()` increments `dataVersion` from N to N+1
+3. React detects dataVersion change in Preview's `useSQLiteQuery` dependency array
+4. Preview refetches query, D3 re-renders with `.join()`—user sees update without manual refresh
 
-**When to use:** In DatabaseService or execute wrappers. Every write must trigger event for live sync to work.
+### Pattern 2: D3.js Data Binding with Stable Key Functions
 
-**Example:**
-```typescript
-// Source: sql.js updateHook API (https://github.com/sql-js/sql.js)
-// services/sync/sql-change-tracker.ts
+**What:** Use `.join()` with stable key functions to update visualizations efficiently without full recalculation
 
-import type { Database } from 'sql.js-fts5';
-import { IsometryEventBus } from './event-bus';
-
-export function enableChangeTracking(db: Database): void {
-  // sql.js v1.13+ updateHook API
-  if ('updateHook' in db && typeof db.updateHook === 'function') {
-    db.updateHook(
-      (
-        actionCode: number, // 9=DELETE, 18=INSERT, 23=UPDATE
-        dbName: string,
-        tableName: string,
-        rowid: number
-      ) => {
-        // Map SQLite action codes to operations
-        const operation =
-          actionCode === 9 ? 'DELETE' :
-          actionCode === 18 ? 'INSERT' :
-          actionCode === 23 ? 'UPDATE' :
-          'UPDATE'; // fallback
-
-        // Only track changes to data tables (not FTS5 internal tables)
-        if (
-          tableName === 'nodes' ||
-          tableName === 'edges' ||
-          tableName === 'notebook_cards' ||
-          tableName === 'facets'
-        ) {
-          // Dispatch event asynchronously to avoid blocking transaction
-          setTimeout(() => {
-            IsometryEventBus.dispatchDataChange({
-              table: tableName as any,
-              operation,
-              rowid,
-              timestamp: new Date(),
-            });
-          }, 0);
-        }
-      }
-    );
-  } else {
-    console.warn('sql.js updateHook not available. Live sync will use polling fallback.');
-  }
-}
-
-// Alternative: Wrap execute function if updateHook unavailable
-export function createTrackedExecute(
-  db: Database,
-  originalExecute: (sql: string, params?: unknown[]) => unknown[]
-): (sql: string, params?: unknown[]) => unknown[] {
-  return (sql: string, params?: unknown[]) => {
-    const result = originalExecute(sql, params);
-
-    // Detect write operations by SQL pattern
-    const writeMatch = /^\s*(INSERT|UPDATE|DELETE)\s+(?:INTO|FROM)?\s+(\w+)/i.exec(sql);
-
-    if (writeMatch) {
-      const [, operation, table] = writeMatch;
-
-      if (
-        table === 'nodes' ||
-        table === 'edges' ||
-        table === 'notebook_cards' ||
-        table === 'facets'
-      ) {
-        setTimeout(() => {
-          IsometryEventBus.dispatchDataChange({
-            table: table as any,
-            operation: operation.toUpperCase() as any,
-            rowid: -1, // Unknown rowid without updateHook
-            timestamp: new Date(),
-          });
-        }, 0);
-      }
-    }
-
-    return result;
-  };
-}
-```
-
-### Pattern 3: React Hook for Data Change Subscriptions
-**What:** React hook that subscribes to data change events with proper cleanup, optional table filtering, and debouncing.
-
-**When to use:** In any component that needs to refresh when data changes (Preview tabs, data inspector, network graph).
+**When to use:** Always—prevents flickering and maintains force simulation state during updates
 
 **Example:**
 ```typescript
-// Source: React useEffect cleanup pattern (https://react.dev/reference/react/useEffect)
-// hooks/sync/useDataChangeListener.ts
+// Source: D3 v7 official docs + existing patterns in Isometry codebase
+// From https://d3js.org/d3-selection/joining
+function updateGraph(svg: SVGSVGElement, nodes: Node[], links: Link[]) {
+  const g = d3.select(svg).select('g');
 
-import { useEffect, useRef } from 'react';
-import { IsometryEventBus, DataChangeEvent } from '@/services/sync/event-bus';
-
-export interface DataChangeListenerOptions {
-  /** Only trigger for specific tables */
-  tables?: Array<'nodes' | 'edges' | 'notebook_cards' | 'facets'>;
-  /** Only trigger for specific operations */
-  operations?: Array<'INSERT' | 'UPDATE' | 'DELETE'>;
-  /** Debounce rapid changes (ms) */
-  debounceMs?: number;
-  /** Enable/disable listener */
-  enabled?: boolean;
-}
-
-export function useDataChangeListener(
-  callback: (event: DataChangeEvent) => void,
-  options: DataChangeListenerOptions = {}
-): void {
-  const {
-    tables,
-    operations,
-    debounceMs = 100,
-    enabled = true,
-  } = options;
-
-  const callbackRef = useRef(callback);
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
-
-  // Update callback ref when it changes
-  useEffect(() => {
-    callbackRef.current = callback;
-  }, [callback]);
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    const handleDataChange = (event: DataChangeEvent) => {
-      // Filter by table if specified
-      if (tables && !tables.includes(event.table)) return;
-
-      // Filter by operation if specified
-      if (operations && !operations.includes(event.operation)) return;
-
-      // Debounce if configured
-      if (debounceMs > 0) {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-
-        debounceTimerRef.current = setTimeout(() => {
-          callbackRef.current(event);
-        }, debounceMs);
-      } else {
-        callbackRef.current(event);
-      }
-    };
-
-    // Subscribe to events
-    const unsubscribe = IsometryEventBus.onDataChange(handleDataChange);
-
-    // Cleanup on unmount
-    return () => {
-      unsubscribe();
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [tables, operations, debounceMs, enabled]);
-}
-```
-
-### Pattern 4: Selection Sync Across Canvases with Context
-**What:** Use existing SelectionContext to share selected card IDs. Components dispatch selection events, all subscribed components react.
-
-**When to use:** Required for SYNC-03 (selection highlighted across all canvases). Extends existing SelectionContext.
-
-**Example:**
-```typescript
-// hooks/sync/useSelectionSync.ts
-// Extends existing src/state/SelectionContext.tsx
-
-import { useEffect } from 'react';
-import { useSelection } from '@/state/SelectionContext';
-import { IsometryEventBus } from '@/services/sync/event-bus';
-
-export function useSelectionSync(source: 'capture' | 'preview' | 'shell') {
-  const { selection, select } = useSelection();
-
-  // Dispatch selection changes from this component
-  useEffect(() => {
-    if (selection.lastSelectedId) {
-      IsometryEventBus.dispatchSelectionChange({
-        cardId: selection.lastSelectedId,
-        source,
-      });
-    }
-  }, [selection.lastSelectedId, source]);
-
-  // Listen for selection changes from other components
-  useEffect(() => {
-    const unsubscribe = IsometryEventBus.onSelectionChange((event) => {
-      // Ignore events from self
-      if (event.source === source) return;
-
-      // Update local selection to match
-      select(event.cardId);
-    });
-
-    return unsubscribe;
-  }, [source, select]);
-
-  return selection;
-}
-```
-
-### Pattern 5: Bidirectional Navigation (Preview → Capture Scroll)
-**What:** Click card in Preview → Capture editor scrolls to show that card. Uses TipTap's `scrollIntoView()` and `focus()` commands.
-
-**When to use:** Required for SYNC-02 (click in Preview, Capture scrolls to show it).
-
-**Example:**
-```typescript
-// Source: TipTap scrollIntoView command (https://tiptap.dev/docs/editor/api/commands/selection/scroll-into-view)
-// hooks/sync/useScrollToCard.ts
-
-import { useEffect } from 'react';
-import { useEditor } from '@tiptap/react';
-import { IsometryEventBus } from '@/services/sync/event-bus';
-
-export function useScrollToCardInEditor(editor: ReturnType<typeof useEditor>) {
-  useEffect(() => {
-    if (!editor) return;
-
-    const unsubscribe = IsometryEventBus.onSelectionChange((event) => {
-      // Only react to clicks from Preview
-      if (event.source !== 'preview') return;
-
-      const { cardId } = event;
-
-      // Find the card node in editor by cardId
-      // (Assumes cards have data-card-id attribute or custom node type)
-      const { state } = editor;
-      let cardPosition: number | null = null;
-
-      state.doc.descendants((node, pos) => {
-        if (node.attrs?.cardId === cardId || node.attrs?.id === cardId) {
-          cardPosition = pos;
-          return false; // Stop searching
-        }
-        return true;
-      });
-
-      if (cardPosition !== null) {
-        // Move cursor to card position and scroll into view
-        editor
-          .chain()
-          .focus()
-          .setTextSelection(cardPosition)
-          .scrollIntoView()
-          .run();
-      }
-    });
-
-    return unsubscribe;
-  }, [editor]);
-}
-
-// Alternative: Scroll to card in list/grid views
-export function useScrollToCardInList(containerRef: React.RefObject<HTMLElement>) {
-  useEffect(() => {
-    const unsubscribe = IsometryEventBus.onSelectionChange((event) => {
-      if (event.source === 'capture') return; // Only scroll for external selections
-
-      const container = containerRef.current;
-      if (!container) return;
-
-      // Find card element by data-card-id
-      const cardElement = container.querySelector(
-        `[data-card-id="${event.cardId}"]`
-      ) as HTMLElement;
-
-      if (cardElement) {
-        // Scroll with smooth behavior
-        cardElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest',
-        });
-
-        // Optional: Flash highlight
-        cardElement.classList.add('highlight-flash');
-        setTimeout(() => {
-          cardElement.classList.remove('highlight-flash');
-        }, 1000);
-      }
-    });
-
-    return unsubscribe;
-  }, [containerRef]);
-}
-```
-
-### Pattern 6: Auto-Refresh Preview on Data Change
-**What:** Preview tabs (Network, Timeline, Data Inspector) listen for data changes and re-query sql.js, then D3 re-renders with new data via `.join()`.
-
-**When to use:** Required for SYNC-01 (Preview auto-refreshes when Capture saves card).
-
-**Example:**
-```typescript
-// components/notebook/preview-tabs/NetworkGraphTab.tsx (excerpt)
-
-import { useMemo, useRef, useEffect } from 'react';
-import { useDataChangeListener } from '@/hooks/sync/useDataChangeListener';
-import { useSQLite } from '@/db/SQLiteProvider';
-import * as d3 from 'd3';
-
-export function NetworkGraphTab() {
-  const { execute } = useSQLite();
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  // Listen for data changes to nodes or edges tables
-  useDataChangeListener(
-    (event) => {
-      // Trigger re-query by incrementing trigger
-      setRefreshTrigger(prev => prev + 1);
-    },
-    {
-      tables: ['nodes', 'edges'],
-      debounceMs: 200, // Debounce rapid saves
-    }
-  );
-
-  // Query data (re-runs when refreshTrigger changes)
-  const graphData = useMemo(() => {
-    const nodeRows = execute(
-      'SELECT id, name, folder FROM nodes WHERE deleted_at IS NULL LIMIT 100'
-    );
-    const edgeRows = execute(
-      'SELECT source_id, target_id, edge_type, weight FROM edges'
-    );
-
-    return {
-      nodes: nodeRows.map(row => ({
-        id: row.id,
-        label: row.name,
-        group: row.folder || 'default',
-      })),
-      links: edgeRows.map(row => ({
-        source: row.source_id,
-        target: row.target_id,
-        type: row.edge_type,
-        weight: row.weight,
-      })),
-    };
-  }, [execute, refreshTrigger]);
-
-  // Render graph with D3 (D3's .join() auto-updates on data change)
-  useEffect(() => {
-    if (!svgRef.current) return;
-
-    const svg = d3.select(svgRef.current);
-
-    // D3 data join automatically updates nodes/links
-    svg.selectAll('.node')
-      .data(graphData.nodes, d => d.id)
-      .join('circle')
+  // CRITICAL: Key function ensures D3 matches existing nodes by ID
+  // Without key function, D3 recreates all nodes on every update (expensive)
+  const node = g.selectAll('.node')
+    .data(nodes, (d: Node) => d.id) // ← Stable key function
+    .join(
+      // Enter: new nodes
+      enter => enter.append('circle')
         .attr('class', 'node')
         .attr('r', 8)
-        .attr('fill', d => d3.schemeCategory10[d.group % 10]);
+        .call(drag(simulation)),
 
-    svg.selectAll('.link')
-      .data(graphData.links, d => `${d.source}-${d.target}`)
-      .join('line')
-        .attr('class', 'link')
-        .attr('stroke', '#999');
+      // Update: existing nodes (no recreation)
+      update => update,
 
-    // ... force simulation, positioning, etc.
-  }, [graphData]);
+      // Exit: removed nodes
+      exit => exit.remove()
+    );
 
-  return <svg ref={svgRef} width={800} height={600} />;
+  // Same pattern for links
+  const link = g.selectAll('.link')
+    .data(links, (d: Link) => `${d.source}-${d.target}`)
+    .join('line')
+      .attr('class', 'link');
+
+  // Force simulation only recalculates for new/removed nodes
+  simulation.nodes(nodes).alpha(0.3).restart();
 }
 ```
 
-### Anti-Patterns to Avoid
-- **Don't use React state for all data:** D3 manages visualization state, TipTap manages editor state. Only use React state for UI concerns (loading, error).
-- **Don't poll for changes:** Use event bus. Polling wastes CPU and has delay.
-- **Don't forget useEffect cleanup:** Always return cleanup function to remove event listeners. Memory leaks otherwise.
-- **Don't dispatch events from event handlers synchronously:** Use `setTimeout(..., 0)` to defer event dispatch and avoid blocking transactions.
-- **Don't create new listener functions on every render:** Use `useRef` to store stable callback references.
-- **Don't use Context for everything:** Context causes re-renders. Only use for truly shared state (selection). Events for data changes.
+**How it satisfies SYNC-01 performance:**
+- Without key function: dataVersion change → D3 destroys all 1000 nodes → recreates 1000 nodes (slow, flickers)
+- With key function: dataVersion change → D3 identifies 1 new node → adds 1 node, keeps 999 (fast, smooth)
+
+### Pattern 3: Bidirectional Card Navigation via SelectionContext
+
+**What:** Shared selection state between Capture and Preview, with scroll-to-card behavior
+
+**When to use:** Required for SYNC-02 (click in Preview → scroll in Capture) and SYNC-03 (highlight across canvases)
+
+**Example:**
+```typescript
+// Source: React Context best practices + existing SelectionContext.tsx
+// From state/SelectionContext.tsx (existing):
+interface SelectionContextValue {
+  selection: { selectedIds: Set<string>, lastSelectedId: string | null };
+  select: (id: string) => void;
+  // ... existing methods ...
+}
+
+// In PreviewComponent.tsx (NetworkGraphTab):
+function NetworkGraphTab() {
+  const { select } = useSelection();
+
+  const handleNodeClick = (nodeId: string) => {
+    select(nodeId); // Updates shared selection state
+  };
+
+  return <NetworkGraph onNodeClick={handleNodeClick} />;
+}
+
+// In CaptureComponent.tsx:
+function CaptureComponent() {
+  const { selection } = useSelection();
+  const { scrollToCard } = useNotebook();
+
+  useEffect(() => {
+    if (selection.lastSelectedId) {
+      scrollToCard(selection.lastSelectedId); // Scroll TipTap editor to show card
+    }
+  }, [selection.lastSelectedId, scrollToCard]);
+
+  return <TipTapEditor />;
+}
+
+// In NotebookContext.tsx (add method):
+function scrollToCard(cardId: string) {
+  // Load card content into TipTap editor
+  setActiveCard(cardId);
+
+  // Scroll editor into view if needed
+  editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+```
+
+**How it satisfies SYNC-02 & SYNC-03:**
+- User clicks node in Preview → `handleNodeClick()` calls `select(nodeId)`
+- `SelectionContext` updates `lastSelectedId`
+- Capture's `useEffect` detects change → calls `scrollToCard()` → editor shows card
+- Both components read same `selectedIds` Set → both highlight selected card
+
+### Pattern 4: Table-Specific Version Tracking (Optional Optimization)
+
+**What:** Track dataVersion per table to avoid unnecessary re-renders
+
+**When to use:** Only if performance profiling shows issues (e.g., editing card content shouldn't re-render Network Graph if edges unchanged)
+
+**Example:**
+```typescript
+// Optional enhancement to SQLiteProvider operations.ts
+interface DataVersionState {
+  global: number;
+  nodes: number;
+  edges: number;
+  facets: number;
+}
+
+const run = (sql: string, params: unknown[] = []): void => {
+  // ... execute SQL ...
+
+  // Parse SQL to determine affected table
+  const affectedTable = detectAffectedTable(sql); // "nodes" | "edges" | etc.
+
+  setDataVersion(prev => ({
+    ...prev,
+    global: prev.global + 1,
+    [affectedTable]: prev[affectedTable] + 1
+  }));
+};
+
+// In useSQLiteQuery, specify which table version to track:
+export function useNodes(whereClause: string, params: unknown[]) {
+  const { execute, dataVersion } = useSQLite();
+
+  const fetchData = useCallback(() => {
+    // ... query nodes table ...
+  }, [execute, whereClause, params, dataVersion.nodes]); // Only nodes version
+
+  // Network Graph won't refetch when nodes table updates
+}
+```
+
+**Tradeoff:** Adds complexity. Only implement if profiling shows >100ms wasted re-renders.
 
 ## Don't Hand-Roll
 
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
-| Event system | Custom callback registry | DOM CustomEvent API | Native browser API. Zero bundle size. Supports bubbling, capture, detail payload. Well-tested. |
-| Change detection | Manual dirty tracking | sql.js updateHook API | SQLite-level notifications. Fires on every INSERT/UPDATE/DELETE. No manual tracking needed. |
-| Debouncing | Custom setTimeout logic | Debounce in useDataChangeListener | Centralized debouncing. Avoids duplicate implementations. Cleanup handled automatically. |
-| Scroll to element | Manual scrollTop calculations | element.scrollIntoView() + TipTap scrollIntoView command | Handles smooth scrolling, block/inline positioning, browser compatibility. TipTap command also focuses editor. |
-| Selection highlighting | Manual CSS class toggling | CSS :has() selector + data attributes | Modern CSS can highlight based on data-selected attribute. No JS class manipulation needed. |
+| Change notification | CustomEvent dispatcher with manual listener management | React useEffect with dataVersion dependency | React's dependency tracking is bulletproof, debuggable with React DevTools, and automatically batches updates. Custom events require cleanup, don't batch, and break time-travel debugging. |
+| Cross-component state | Prop drilling or event emitters | React Context (SelectionContext already exists) | Context is standard React pattern, works with Suspense/Concurrent Mode, easily testable. Event emitters bypass React's reconciliation and cause stale closure bugs. |
+| Query caching | Custom cache with TTL/LRU logic | useSQLiteQuery's built-in fetchData memoization + React's automatic batching | React already memoizes callbacks and batches setState. Custom cache adds bugs (cache invalidation is hard) and bundle size. Keep it simple. |
+| D3 re-render optimization | Manual diff logic to detect changed nodes | D3's .join() with key functions | D3's internal diffing is optimized C++ (via WASM-compiled algorithms). Hand-rolled diff will be slower and buggier. Trust the framework. |
 
-**Key insight:** Native browser APIs (CustomEvent, scrollIntoView) handle edge cases you'll miss (event ordering, smooth scrolling, accessibility). TipTap and D3 have their own state management—use them instead of forcing everything through React state.
+**Key insight:** React 18's automatic batching + useEffect dependency arrays IS a state synchronization system. Don't build a second one with CustomEvents or observers. The dataVersion counter leverages React's built-in reactivity—changing it triggers all dependent queries automatically. This is simpler, faster, and more debuggable than any custom pub/sub system.
 
 ## Common Pitfalls
 
-### Pitfall 1: Event Listener Memory Leaks
-**What goes wrong:** Components unmount but event listeners remain active, causing memory leaks and stale closures executing on events.
+### Pitfall 1: Missing Key Functions in D3 .join()
+**What goes wrong:** Data updates cause full graph redraw, force simulation resets, nodes jump to random positions
 
-**Why it happens:** Forgetting to return cleanup function from useEffect, or not calling removeEventListener with the exact same function reference.
+**Why it happens:** `.data(nodes)` without key function matches by array index, not node ID. When order changes or nodes are added/removed, D3 thinks all nodes are new.
 
-**How to avoid:**
-```typescript
-useEffect(() => {
-  const handler = (event: CustomEvent) => {
-    // Handle event
-  };
-
-  window.addEventListener('isometry:data-change', handler);
-
-  // CRITICAL: Return cleanup function
-  return () => {
-    window.removeEventListener('isometry:data-change', handler);
-  };
-}, []);
-```
-
-**Warning signs:** Increasing memory usage over time, React DevTools shows unmounted components still updating, multiple handlers firing for single event.
-
-### Pitfall 2: Synchronous Event Dispatch Blocks sql.js Transactions
-**What goes wrong:** Dispatching CustomEvent synchronously from sql.js updateHook causes React state updates during transaction, leading to "Cannot update during render" errors or transaction failures.
-
-**Why it happens:** updateHook fires during transaction execution. Dispatching event synchronously triggers React state updates before transaction completes.
-
-**How to avoid:**
-```typescript
-db.updateHook((action, dbName, table, rowid) => {
-  // DEFER event dispatch to next tick
-  setTimeout(() => {
-    IsometryEventBus.dispatchDataChange({
-      table,
-      operation: mapActionToOperation(action),
-      rowid,
-      timestamp: new Date(),
-    });
-  }, 0);
-});
-```
-
-**Warning signs:** "Cannot update a component while rendering a different component" errors, transaction rollbacks, inconsistent database state.
-
-### Pitfall 3: Debouncing Creates Stale Closures
-**What goes wrong:** Debounced callback captures old props/state from when timeout was created, not current values.
-
-**Why it happens:** JavaScript closure captures variables from outer scope at creation time. Debounce timeout created with old values.
-
-**How to avoid:**
-```typescript
-// BAD: Stale closure
-const debouncedRefresh = useCallback(
-  debounce(() => {
-    refresh(currentFilter); // currentFilter captured at creation time
-  }, 200),
-  [] // Empty deps—callback never updates
-);
-
-// GOOD: Use ref for latest value
-const filterRef = useRef(currentFilter);
-useEffect(() => {
-  filterRef.current = currentFilter;
-}, [currentFilter]);
-
-const debouncedRefresh = useCallback(
-  debounce(() => {
-    refresh(filterRef.current); // Always latest value
-  }, 200),
-  [refresh]
-);
-```
-
-**Warning signs:** Refreshes use old filter values, selections don't match current state, race conditions on rapid changes.
-
-### Pitfall 4: Missing Table Filtering Causes Infinite Loops
-**What goes wrong:** Component listens for all data changes, refreshes, which writes to database, which triggers another refresh—infinite loop.
-
-**Why it happens:** Not filtering events by table or operation type. Component reacts to its own writes.
-
-**How to avoid:**
-```typescript
-useDataChangeListener(
-  (event) => {
-    refresh();
-  },
-  {
-    // ONLY listen to tables this component reads from
-    tables: ['nodes', 'edges'],
-    // ONLY listen to changes from other sources
-    operations: ['INSERT', 'UPDATE'],
-  }
-);
-```
-
-**Warning signs:** Rapid-fire refresh calls, browser freezes, console flooded with "data changed" logs, React DevTools shows infinite render loop.
-
-### Pitfall 5: D3 Re-Renders Without Key Functions
-**What goes wrong:** D3 `.join()` treats every data change as complete replacement, causing jarring visual resets (force graph resets positions, timeline jumps).
-
-**Why it happens:** Missing key function in `.data()` call—D3 can't track which nodes are same between updates.
-
-**How to avoid:**
+**How to avoid:** Always provide second argument to `.data()`:
 ```typescript
 // BAD: No key function
-svg.selectAll('.node')
-  .data(nodes) // D3 doesn't know which nodes are same
-  .join('circle');
+.data(nodes) // ← Matches by index [0, 1, 2, ...]
 
-// GOOD: Key function preserves identity
-svg.selectAll('.node')
-  .data(nodes, d => d.id) // Track by stable ID
-  .join('circle')
-    .attr('cx', d => d.x)
-    .attr('cy', d => d.y);
+// GOOD: Stable key function
+.data(nodes, d => d.id) // ← Matches by unique ID
 ```
 
-**Warning signs:** Force graph resets on data change, timeline jumps to different position, animations don't transition smoothly.
+**Warning signs:**
+- Network graph "jumps" when data updates
+- Console warning: "D3 selection has no key function"
+- Force simulation restarts from random positions
+- Performance degrades with more nodes
+
+### Pitfall 2: Stale dataVersion in Closure
+**What goes wrong:** Component doesn't re-render when database changes, shows outdated data
+
+**Why it happens:** `fetchData` callback captures old `dataVersion` value, useEffect dependency array missing `dataVersion`
+
+**How to avoid:** Always include `dataVersion` in dependency arrays:
+```typescript
+// BAD: Missing dataVersion
+const fetchData = useCallback(() => {
+  const rows = execute(sql, params);
+}, [execute, sql, params]); // ← dataVersion not listed
+
+// GOOD: dataVersion included
+const fetchData = useCallback(() => {
+  const rows = execute(sql, params);
+}, [execute, sql, params, dataVersion]); // ← Refetches on change
+```
+
+**Warning signs:**
+- Preview doesn't update after saving card in Capture
+- Manual page refresh shows updated data
+- ESLint warning: "React Hook useCallback has a missing dependency: 'dataVersion'"
+
+### Pitfall 3: Infinite Re-Render Loop with Selection State
+**What goes wrong:** Clicking a card causes infinite re-renders, browser freezes
+
+**Why it happens:** `select()` function not memoized with `useCallback`, triggers new object reference on every render, causes useEffect to fire again
+
+**How to avoid:** Memoize callbacks in Context providers:
+```typescript
+// BAD: New function reference every render
+const select = (id: string) => {
+  setSelection({ selectedIds: new Set([id]), lastSelectedId: id });
+}; // ← Not memoized
+
+// GOOD: Stable function reference
+const select = useCallback((id: string) => {
+  setSelection({ selectedIds: new Set([id]), lastSelectedId: id });
+}, []); // ← Memoized with useCallback
+```
+
+**Warning signs:**
+- React DevTools shows component rendering 100+ times/second
+- Console error: "Maximum update depth exceeded"
+- Browser becomes unresponsive
+- CPU usage spikes to 100%
+
+### Pitfall 4: Using React.StrictMode with D3 Force Simulation
+**What goes wrong:** Force simulation runs twice, nodes settle in wrong positions, animations glitch
+
+**Why it happens:** StrictMode double-invokes useEffect in development, initializing simulation twice with different starting conditions
+
+**How to avoid:** Use cleanup function to stop previous simulation:
+```typescript
+useEffect(() => {
+  const simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d => d.id))
+    .force('charge', d3.forceManyBody());
+
+  // CRITICAL: Cleanup function
+  return () => {
+    simulation.stop(); // ← Stops previous simulation
+  };
+}, [nodes, links]);
+```
+
+**Warning signs:**
+- Network graph appears twice in development
+- Nodes don't settle to stable positions
+- Console warning about multiple force simulations
+- Performance issues only in development, not production
 
 ## Code Examples
 
-Verified patterns from official sources and existing codebase:
+Verified patterns from official sources and existing Isometry codebase:
 
-### Complete Event Bus Implementation
+### Auto-Refresh Pattern (SYNC-01)
 ```typescript
-// services/sync/event-bus.ts
-// Source: DOM CustomEvent API, event bus patterns from LogRocket and Medium articles
+// Source: Existing useSQLiteQuery.ts + SQLiteProvider operations.ts
+// No code changes needed—already implemented!
 
-export type DataChangeEvent = {
-  table: 'nodes' | 'edges' | 'notebook_cards' | 'facets';
-  operation: 'INSERT' | 'UPDATE' | 'DELETE';
-  rowid: number;
-  nodeId?: string;
-  timestamp: Date;
+// In CaptureComponent.tsx, saving increments dataVersion:
+const handleSave = () => {
+  db.run('UPDATE nodes SET content = ? WHERE id = ?', [content, cardId]);
+  // ↑ Calls operations.ts run() which increments dataVersion
 };
 
-export type SelectionChangeEvent = {
-  cardId: string;
-  source: 'capture' | 'preview' | 'shell';
-};
+// In PreviewComponent.tsx (NetworkGraphTab), query auto-refetches:
+const { data: nodes } = useSQLiteQuery<Node>(
+  'SELECT * FROM nodes WHERE deleted_at IS NULL',
+  [],
+  { transform: rowToNode }
+); // ↑ Depends on dataVersion, refetches when Capture saves
 
-export class IsometryEventBus {
-  private static readonly DATA_CHANGE = 'isometry:data-change';
-  private static readonly SELECTION_CHANGE = 'isometry:selection-change';
-
-  static dispatchDataChange(event: DataChangeEvent): void {
-    window.dispatchEvent(
-      new CustomEvent(this.DATA_CHANGE, {
-        detail: event,
-        bubbles: false,
-      })
-    );
-  }
-
-  static dispatchSelectionChange(event: SelectionChangeEvent): void {
-    window.dispatchEvent(
-      new CustomEvent(this.SELECTION_CHANGE, {
-        detail: event,
-        bubbles: false,
-      })
-    );
-  }
-
-  static onDataChange(
-    handler: (event: DataChangeEvent) => void
-  ): () => void {
-    const listener = (e: Event) => {
-      handler((e as CustomEvent<DataChangeEvent>).detail);
-    };
-
-    window.addEventListener(this.DATA_CHANGE, listener);
-
-    return () => {
-      window.removeEventListener(this.DATA_CHANGE, listener);
-    };
-  }
-
-  static onSelectionChange(
-    handler: (event: SelectionChangeEvent) => void
-  ): () => void {
-    const listener = (e: Event) => {
-      handler((e as CustomEvent<SelectionChangeEvent>).detail);
-    };
-
-    window.addEventListener(this.SELECTION_CHANGE, listener);
-
-    return () => {
-      window.removeEventListener(this.SELECTION_CHANGE, listener);
-    };
-  }
-}
+// D3 re-renders automatically via React component update:
+useEffect(() => {
+  if (!nodes) return;
+  updateGraph(svgRef.current, nodes, links);
+}, [nodes, links]); // ↑ Runs when nodes data changes
 ```
 
-### sql.js Change Tracking Integration
+### Scroll-to-Card Pattern (SYNC-02)
 ```typescript
-// src/db/init.ts (modify existing initialization)
-// Source: sql.js updateHook API
+// Source: React Context best practices + TipTap API docs
+// In PreviewComponent.tsx (NetworkGraphTab):
+function NetworkGraphTab() {
+  const { select } = useSelection();
 
-import initSqlJs, { Database } from 'sql.js-fts5';
-import { IsometryEventBus } from '@/services/sync/event-bus';
+  const handleNodeClick = useCallback((node: Node) => {
+    select(node.id); // Updates shared SelectionContext
+  }, [select]);
 
-export async function initializeDatabase(): Promise<Database> {
-  const SQL = await initSqlJs({
-    locateFile: (file) => `/sql-wasm-fts5.wasm`,
-  });
-
-  const db = new SQL.Database();
-
-  // Load schema...
-  // ...
-
-  // Enable change tracking
-  if ('updateHook' in db && typeof db.updateHook === 'function') {
-    db.updateHook(
-      (actionCode: number, dbName: string, tableName: string, rowid: number) => {
-        const operation =
-          actionCode === 9 ? 'DELETE' :
-          actionCode === 18 ? 'INSERT' :
-          actionCode === 23 ? 'UPDATE' :
-          'UPDATE';
-
-        if (
-          tableName === 'nodes' ||
-          tableName === 'edges' ||
-          tableName === 'notebook_cards' ||
-          tableName === 'facets'
-        ) {
-          // Defer to next tick to avoid blocking transaction
-          setTimeout(() => {
-            IsometryEventBus.dispatchDataChange({
-              table: tableName as any,
-              operation,
-              rowid,
-              timestamp: new Date(),
-            });
-          }, 0);
-        }
-      }
-    );
-  }
-
-  return db;
+  return <NetworkGraph nodes={nodes} onNodeClick={handleNodeClick} />;
 }
-```
 
-### Capture Component with Scroll to Card
-```typescript
-// components/notebook/CaptureComponent.tsx (excerpt)
-// Source: TipTap scrollIntoView command, React useEffect cleanup pattern
+// In CaptureComponent.tsx:
+function CaptureComponent() {
+  const { selection } = useSelection();
+  const { editor } = useTipTapEditor();
 
-import { useEditor, EditorContent } from '@tiptap/react';
-import { useEffect } from 'react';
-import { IsometryEventBus } from '@/services/sync/event-bus';
-
-export function CaptureComponent() {
-  const editor = useEditor({
-    extensions: [/* ... */],
-    content: '',
-  });
-
-  // Listen for selection changes from Preview
+  // Scroll to card when selection changes from Preview
   useEffect(() => {
-    if (!editor) return;
+    const cardId = selection.lastSelectedId;
+    if (!cardId || !editor) return;
 
-    const unsubscribe = IsometryEventBus.onSelectionChange((event) => {
-      // Only scroll for clicks from Preview
-      if (event.source !== 'preview') return;
+    // Load card content into editor
+    const card = db.execute('SELECT content FROM nodes WHERE id = ?', [cardId])[0];
+    if (card) {
+      editor.commands.setContent(card.content);
 
-      // Find card in editor
-      const { state } = editor;
-      let cardPosition: number | null = null;
+      // Scroll editor into view
+      editor.view.dom.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [selection.lastSelectedId, editor, db]);
 
-      state.doc.descendants((node, pos) => {
-        if (node.attrs?.id === event.cardId) {
-          cardPosition = pos;
-          return false;
-        }
-        return true;
-      });
+  return <TipTapEditor editor={editor} />;
+}
+```
 
-      if (cardPosition !== null) {
-        editor
-          .chain()
-          .focus()
-          .setTextSelection(cardPosition)
-          .scrollIntoView()
-          .run();
-      }
-    });
+### Cross-Canvas Highlight Pattern (SYNC-03)
+```typescript
+// Source: React Context + D3.js classed() API
+// In NetworkGraphTab.tsx:
+function NetworkGraphTab() {
+  const { selection } = useSelection();
 
-    return unsubscribe; // Cleanup on unmount
-  }, [editor]);
+  useEffect(() => {
+    if (!svgRef.current) return;
 
-  return <EditorContent editor={editor} />;
+    // Highlight selected nodes
+    d3.select(svgRef.current)
+      .selectAll('.node')
+      .classed('selected', (d: Node) => selection.selectedIds.has(d.id));
+
+  }, [selection.selectedIds]);
+
+  return <svg ref={svgRef} />;
+}
+
+// In CaptureComponent.tsx (if showing card list):
+function CardList() {
+  const { selection } = useSelection();
+
+  return (
+    <div>
+      {cards.map(card => (
+        <div
+          key={card.id}
+          className={selection.selectedIds.has(card.id) ? 'selected' : ''}
+        >
+          {card.name}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// CSS (shared across all canvases):
+.selected {
+  background-color: #3b82f6; /* Blue highlight */
+  outline: 2px solid #1d4ed8;
 }
 ```
 
@@ -854,97 +478,70 @@ export function CaptureComponent() {
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Polling for changes | sql.js updateHook API | sql.js v1.13 (2024) | Real-time notifications instead of polling. Lower CPU usage, instant updates. |
-| Redux for all state | Distributed state (D3 + TipTap + Context) | 2020+ best practices | Less boilerplate, fewer re-renders. Use each library's native state management. |
-| Callback props for cross-component communication | CustomEvent event bus | 2015+ (DOM Level 3) | Decoupled components. No prop drilling. Components don't need to know about each other. |
-| Manual scrollTo calculations | scrollIntoView() API | Always existed, improved 2016+ | Smooth scrolling, accessibility, browser handles edge cases. |
-| RxJS for event streams | Native CustomEvent + React hooks | 2018+ (React Hooks release) | Simpler for small apps. No heavy dependency. Hooks handle subscriptions naturally. |
+| MessageBridge with callback IDs | Direct sql.js synchronous queries | 2026-01 (v4) | Eliminated 40KB bridge code, simplified sync logic |
+| Manual event bus for data changes | React dataVersion dependency tracking | 2026-02 (Phase 46) | Leverages React's built-in reactivity, fewer bugs |
+| D3 enter/update/exit pattern | .join() with key functions | 2018 (D3 v5) | More concise, better defaults, fewer errors |
+| useState + props drilling | React Context | 2019 (React 16.3+) | Cleaner API, no prop drilling, works with Suspense |
+| useEffect with object deps | React 19.2 useEffectEvent | 2026-02 | Solves stale closure problem without manual ref syncing |
 
 **Deprecated/outdated:**
-- **Polling modified_at for changes:** Replaced by sql.js updateHook. Polling wastes CPU and has latency.
-- **Redux for D3 state:** D3's data join IS state management. Don't duplicate in Redux.
-- **Lifting state to root component:** Use event bus for cross-canvas communication. State lifting causes unnecessary re-renders.
+- **CustomEvent for cross-component sync:** Still works but unnecessary with React Context. Adds manual cleanup burden, doesn't integrate with React DevTools.
+- **Polling for data updates:** Wastes CPU, adds latency. React dependency arrays provide push-based updates with zero overhead.
+- **D3 v6 and earlier enter/update/exit:** Verbose and error-prone. Use `.join()` instead (available since D3 v5, refined in v7).
+- **useLiveData hook with bridge polling:** Built for MessageBridge architecture. Replace with useSQLiteQuery + dataVersion pattern for sql.js direct access.
 
 ## Open Questions
 
-1. **sql.js updateHook browser compatibility**
-   - What we know: updateHook added in sql.js v1.13. Wraps sqlite3_update_hook C API.
-   - What's unclear: Does it work in all browsers? Safari? iOS WebView?
-   - Recommendation: Test in Safari/iOS. If unavailable, fall back to regex-based write detection (Pattern 2 alternative).
+1. **Table-specific dataVersion granularity**
+   - What we know: Global dataVersion works but may cause unnecessary re-renders (e.g., editing card content shouldn't re-render Network Graph if edges unchanged)
+   - What's unclear: Is performance impact measurable? Does React 18 automatic batching mitigate this?
+   - Recommendation: Start with global dataVersion, add table-specific tracking only if profiling shows >100ms wasted renders. Premature optimization is root of all evil.
 
-2. **Event ordering guarantees**
-   - What we know: CustomEvent fires synchronously. setTimeout defers to next tick.
-   - What's unclear: If multiple writes happen in same transaction, do events fire in order?
-   - Recommendation: Assume no ordering guarantee. Debounce rapid events. Use timestamps if order matters.
+2. **Force simulation state during live updates**
+   - What we know: D3 force simulation maintains node positions in its internal state. When new nodes are added via `.join()`, simulation.nodes() must be updated.
+   - What's unclear: Should we call `simulation.alpha(0.3).restart()` on every update, or only when nodes/links change significantly? Restarting too often causes jitter; not restarting causes new nodes to appear at (0,0).
+   - Recommendation: Use `simulation.alpha(0.3).restart()` when node count changes by >10%, otherwise let simulation settle naturally. Test with real data to find threshold.
 
-3. **Performance with high-frequency updates**
-   - What we know: Debouncing helps. D3 .join() is efficient.
-   - What's unclear: How does system perform with 100+ updates/second (e.g., bulk import)?
-   - Recommendation: Start with 100ms debounce. Profile with realistic workload. Increase debounce if needed.
+3. **React 19.2 useEffectEvent adoption timeline**
+   - What we know: useEffectEvent solves stale closure problem elegantly, released stable in React 19.2 (Feb 2026)
+   - What's unclear: Is Isometry ready to upgrade to React 19.2? Are there breaking changes?
+   - Recommendation: Stick with React 18.2 + useCallback pattern for Phase 46. Revisit useEffectEvent in Phase 50+ when React 19 adoption is broader.
 
-4. **Selection highlighting across heterogeneous views**
-   - What we know: SelectionContext stores selected IDs. Each view highlights differently (D3 node color, TipTap background, etc.).
-   - What's unclear: Consistent highlight style? Or each view has its own?
-   - Recommendation: Allow each view to style its own highlights. Shared behavior (selection state), not shared styling.
-
-5. **Conflict resolution for bidirectional navigation**
-   - What we know: Preview → Capture scroll works. Capture → Preview scroll works.
-   - What's unclear: What if user scrolls in one canvas while other is auto-scrolling?
-   - Recommendation: Auto-scroll only if user hasn't interacted with target canvas in last 2 seconds. Use "user activity" timestamp to detect.
+4. **Bidirectional link conflict resolution**
+   - What we know: Clicking a card in Preview while editing different card in Capture creates UX question: save current card first? Discard changes? Prompt user?
+   - What's unclear: What's the expected behavior? CardBoard-v3 had auto-save—does that solve it?
+   - Recommendation: Rely on TipTap auto-save (Phase 45 EDIT-01). When user clicks card in Preview, Capture auto-saves current card, then loads new card. No prompt needed. Document in UX spec.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [DOM CustomEvent API (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/CustomEvent) - Official browser API
-- [sql.js GitHub - updateHook](https://github.com/sql-js/sql.js) - Official sql.js documentation
-- [React useEffect Reference](https://react.dev/reference/react/useEffect) - Official React docs for cleanup pattern
-- [TipTap scrollIntoView command](https://tiptap.dev/docs/editor/api/commands/selection/scroll-into-view) - Official TipTap API
-- [Element.scrollIntoView() (MDN)](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView) - Native browser API
-- Isometry Codebase:
-  - `/src/contexts/SelectionContext.tsx` - Existing selection state management
-  - `/src/hooks/database/useLiveData.tsx` - Existing live data patterns with event listeners
-  - `/src/state/SelectionContext.tsx` - Selection provider implementation
+- [React useEffect Official Docs](https://react.dev/reference/react/useEffect) - Dependency tracking, synchronization patterns
+- [D3.js Selection.join() Official Docs](https://d3js.org/d3-selection/joining) - Data binding with key functions
+- [React Context Official Docs](https://react.dev/learn/passing-data-deeply-with-context) - Cross-component state
+- [React State Management 2025 (DigitalOcean)](https://www.digitalocean.com/community/tutorials/how-to-share-state-across-react-components-with-context) - Context best practices
+- Existing Isometry codebase - SQLiteProvider.tsx, useSQLiteQuery.ts, SelectionContext.tsx (verified working patterns)
 
 ### Secondary (MEDIUM confidence)
-- [Using custom events in React - LogRocket Blog](https://blog.logrocket.com/using-custom-events-react/) - Event bus patterns
-- [EventBus Pattern in React - Medium](https://medium.com/@ilham.abdillah.alhamdi/eventbus-pattern-in-react-a-lightweight-alternative-to-context-and-redux-cc6e8a1dc9ca) - Architecture patterns
-- [React Components communication with Custom Events - Medium](https://medium.com/my-javascript-route/react-components-communication-with-custom-events-3417f913e084) - Implementation examples
-- [React scroll-sync (GitHub)](https://github.com/okonet/react-scroll-sync) - Synchronized scrolling patterns
-- [D3.js with React: Data Visualization - SitePoint](https://www.sitepoint.com/d3-js-react-interactive-data-visualizations/) - D3 integration patterns
-- [Real-Time Visualization With React and D3.js - Memgraph](https://memgraph.com/blog/real-time-visualization-with-react-and-d3-js) - Live data update patterns
+- [State Management in React 2026 (TheLinuxCode)](https://thelinuxcode.com/state-management-in-react-2026-hooks-context-api-and-redux-in-practice/) - Modern patterns, verified with official docs
+- [Observer Pattern in JavaScript (Medium - Artem Khrienov)](https://medium.com/@artemkhrenov/the-observer-pattern-in-modern-javascript-building-reactive-systems-9337d6a27ee7) - Pattern theory, applied via React
+- [D3 Force-Directed Graph Component (Observable)](https://observablehq.com/@d3/force-directed-graph-component) - Force simulation with updates
+- [React useEffectEvent Announcement (LogRocket)](https://blog.logrocket.com/react-useeffectevent/) - New hook for stale closures
 
 ### Tertiary (LOW confidence)
-- [React Observable Hooks](https://observable-hooks.js.org/) - RxJS alternative (not recommended for this use case)
-- [Event Bus for React (GitHub)](https://github.com/goto-bus-stop/react-bus) - Third-party library (not needed—use native CustomEvent)
+- [SQLite Update Hook Documentation](https://sqlite.org/c3ref/update_hook.html) - Native C API not exposed in sql.js, documented for context
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH - All native APIs or existing dependencies. No new libraries.
-- Architecture: MEDIUM-HIGH - CustomEvent pattern is proven, but sql.js updateHook is recent (v1.13). May need fallback.
-- Pitfalls: MEDIUM - Based on web search and existing codebase patterns. Some edge cases may emerge during implementation.
+- Standard stack: **HIGH** - All libraries already in use, patterns proven in existing code
+- Architecture: **HIGH** - dataVersion pattern working, SelectionContext exists, D3 .join() standard
+- Pitfalls: **MEDIUM** - Based on D3/React common issues + Isometry codebase review, not exhaustive testing
 
 **Research date:** 2026-02-10
-**Valid until:** 2026-04-10 (60 days - stable APIs, minimal ecosystem churn)
+**Valid until:** 2026-03-10 (30 days - stable stack, no fast-moving dependencies)
 
-**Coverage:**
-- ✅ SYNC-01: Preview auto-refresh on Capture save - useDataChangeListener + D3 .join()
-- ✅ SYNC-02: Click in Preview, Capture scrolls - TipTap scrollIntoView command
-- ✅ SYNC-03: Selection highlighted across canvases - SelectionContext + event bus
-- ✅ Event bus architecture (CustomEvent API)
-- ✅ sql.js change tracking (updateHook API + fallback)
-- ✅ React hooks for subscriptions (useDataChangeListener, useSelectionSync)
-- ✅ Performance considerations (debouncing, table filtering)
-
-**Not researched (out of scope for Phase 46):**
-- Real-time collaboration (multi-user) - not in requirements
-- Offline sync conflict resolution - not in requirements
-- WebSocket-based sync - not needed (local-first app)
-- Animation/transitions during sync - polish for later phase
-
-**Integration with existing stack:**
-- React 18: Compatible - useEffect cleanup pattern is standard ✓
-- sql.js 1.13+: Compatible - updateHook API available ✓
-- D3.js v7: Compatible - .join() handles auto-updates ✓
-- TipTap 3.19+: Compatible - scrollIntoView command exists ✓
-- SelectionContext: Extends existing implementation ✓
+**Notes:**
+- No new dependencies required—all requirements met by React 18 + sql.js + D3.js v7
+- Phase 46 is primarily architecture work (connecting existing systems), not new library integration
+- Success depends on Phase 44 (Preview visualizations) and Phase 45 (TipTap editor) completing first
+- LiveDataContext.tsx exists as stub—can expand for metrics/monitoring without changing core sync logic
