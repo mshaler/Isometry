@@ -18,6 +18,7 @@ export type { UseCoordinatesResult, UseCoordinatesOptions } from './visualizatio
 
 // UI hooks
 export { useMarkdownEditor } from './ui/useMarkdownEditor';
+export { useTipTapEditor } from './ui/useTipTapEditor';
 export { useSlashCommands } from './ui/useSlashCommands';
 export { useWebPreview } from './ui/useWebPreview';
 
