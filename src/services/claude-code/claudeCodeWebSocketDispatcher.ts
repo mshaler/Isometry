@@ -3,6 +3,12 @@
  *
  * Browser-side dispatcher that communicates with the Claude Code server
  * via WebSocket to execute real CLI commands from the GUI.
+ *
+ * Features:
+ * - Heartbeat mechanism (30s ping, 60s timeout)
+ * - Exponential backoff reconnection (1s-30s)
+ * - Connection status events
+ * - Message queuing during reconnection
  */
 
 import {
@@ -13,26 +19,219 @@ import {
   GSDCommands
 } from './claudeCodeDispatcher';
 import { ServerMessage, ClientMessage, FileChangeEvent } from './claudeCodeServer';
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
+import { ReconnectionService } from '../../utils/webview/reconnection-service';
+import type { ReconnectionConfig } from '../../utils/webview/connection-types';
 
 // Re-export GSDCommands for convenience
 export { GSDCommands };
 
+/** Connection status for the WebSocket dispatcher */
+export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
+
+/** Extended options with status change callback */
+export interface WebSocketDispatcherOptions extends ClaudeCodeDispatcherOptions {
+  onStatusChange?: (status: ConnectionStatus, attemptNumber?: number) => void;
+}
+
+/** Default reconnection configuration */
+const DEFAULT_RECONNECTION_CONFIG: ReconnectionConfig = {
+  enabled: true,
+  baseDelay: 1000,
+  maxDelay: 30000,
+  backoffFactor: 2,
+  jitterRange: 0.1,
+  maxAttempts: 10
+};
+
+/** Heartbeat configuration */
+const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
+const HEARTBEAT_TIMEOUT_MS = 60000; // 60 seconds
+
 /**
  * WebSocket-based Claude Code dispatcher for browser environments
+ *
+ * Production-ready with:
+ * - Heartbeat monitoring (30s ping, 60s pong timeout)
+ * - Automatic reconnection with exponential backoff
+ * - Connection status events
+ * - Message queuing during reconnection
  */
 export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
   private ws: WebSocket | null = null;
   private executions = new Map<string, CommandExecution>();
-  private options: ClaudeCodeDispatcherOptions;
+  private options: WebSocketDispatcherOptions;
   private serverUrl: string;
   private connectionPromise: Promise<void> | null = null;
   private messageQueue: ServerMessage[] = [];
-  private fileMonitoringCallbacks = new Map<string, (fileChange: FileChangeEvent) => void>(); // sessionId -> callback
+  private pendingMessages: ServerMessage[] = []; // Messages queued during reconnection
+  private fileMonitoringCallbacks = new Map<string, (fileChange: FileChangeEvent) => void>();
 
-  constructor(serverUrl: string = 'ws://localhost:8080', options: ClaudeCodeDispatcherOptions = {}) {
+  // Connection state management
+  private connectionStatus: ConnectionStatus = 'disconnected';
+  private reconnectionService: ReconnectionService;
+
+  // Heartbeat tracking
+  private heartbeatInterval: NodeJS.Timeout | null = null;
+  private lastPongReceived: number = 0;
+  private heartbeatCheckInterval: NodeJS.Timeout | null = null;
+
+  constructor(
+    serverUrl: string = 'ws://localhost:8080',
+    options: WebSocketDispatcherOptions = {}
+  ) {
     this.serverUrl = serverUrl;
     this.options = options;
+    this.reconnectionService = new ReconnectionService(DEFAULT_RECONNECTION_CONFIG);
+  }
+
+  /**
+   * Get current connection status
+   */
+  getConnectionStatus(): ConnectionStatus {
+    return this.connectionStatus;
+  }
+
+  /**
+   * Get current reconnection attempt count
+   */
+  getReconnectAttemptCount(): number {
+    return this.reconnectionService.getAttemptCount();
+  }
+
+  /**
+   * Get max reconnection attempts
+   */
+  getMaxReconnectAttempts(): number {
+    return DEFAULT_RECONNECTION_CONFIG.maxAttempts;
+  }
+
+  /**
+   * Update connection status and notify listeners
+   */
+  private setConnectionStatus(status: ConnectionStatus, attemptNumber?: number): void {
+    if (this.connectionStatus !== status) {
+      this.connectionStatus = status;
+      devLogger.debug('Connection status changed', {
+        component: 'WebSocketClaudeCodeDispatcher',
+        status,
+        attemptNumber
+      });
+      this.options.onStatusChange?.(status, attemptNumber);
+    }
+  }
+
+  /**
+   * Start heartbeat mechanism
+   */
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.lastPongReceived = Date.now();
+
+    // Send ping every 30 seconds
+    this.heartbeatInterval = setInterval(() => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.sendPing();
+      }
+    }, HEARTBEAT_INTERVAL_MS);
+
+    // Check for pong timeout every 10 seconds
+    this.heartbeatCheckInterval = setInterval(() => {
+      const timeSinceLastPong = Date.now() - this.lastPongReceived;
+      if (timeSinceLastPong > HEARTBEAT_TIMEOUT_MS) {
+        devLogger.warn('Heartbeat timeout - connection appears dead', {
+          component: 'WebSocketClaudeCodeDispatcher',
+          timeSinceLastPong
+        });
+        this.handleConnectionLost();
+      }
+    }, 10000);
+
+    devLogger.debug('Heartbeat started', { component: 'WebSocketClaudeCodeDispatcher' });
+  }
+
+  /**
+   * Stop heartbeat mechanism
+   */
+  private stopHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval);
+      this.heartbeatInterval = null;
+    }
+    if (this.heartbeatCheckInterval) {
+      clearInterval(this.heartbeatCheckInterval);
+      this.heartbeatCheckInterval = null;
+    }
+  }
+
+  /**
+   * Send ping message
+   */
+  private sendPing(): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      const pingMessage: ServerMessage = { type: 'ping' as any };
+      this.ws.send(JSON.stringify(pingMessage));
+      devLogger.debug('Ping sent', { component: 'WebSocketClaudeCodeDispatcher' });
+    }
+  }
+
+  /**
+   * Handle pong response
+   */
+  private handlePong(): void {
+    this.lastPongReceived = Date.now();
+    devLogger.debug('Pong received', { component: 'WebSocketClaudeCodeDispatcher' });
+  }
+
+  /**
+   * Handle connection lost (timeout or close)
+   */
+  private handleConnectionLost(): void {
+    this.stopHeartbeat();
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.connectionPromise = null;
+    this.attemptReconnection();
+  }
+
+  /**
+   * Attempt to reconnect
+   */
+  private async attemptReconnection(): Promise<void> {
+    if (this.connectionStatus === 'reconnecting') {
+      return; // Already reconnecting
+    }
+
+    this.setConnectionStatus('reconnecting', this.reconnectionService.getAttemptCount() + 1);
+
+    const success = await this.reconnectionService.attemptReconnection(async () => {
+      await this.connectInternal();
+    });
+
+    if (!success) {
+      this.setConnectionStatus('disconnected');
+      devLogger.error('All reconnection attempts failed', {
+        component: 'WebSocketClaudeCodeDispatcher'
+      });
+    }
+  }
+
+  /**
+   * Flush pending messages after reconnection
+   */
+  private flushPendingMessages(): void {
+    while (this.pendingMessages.length > 0) {
+      const message = this.pendingMessages.shift();
+      if (message) {
+        this.sendMessage(message);
+      }
+    }
+    devLogger.debug('Pending messages flushed', {
+      component: 'WebSocketClaudeCodeDispatcher',
+      count: this.pendingMessages.length
+    });
   }
 
   /**
@@ -43,14 +242,33 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
       return this.connectionPromise;
     }
 
-    this.connectionPromise = new Promise((resolve, reject) => {
+    this.setConnectionStatus('connecting');
+    this.connectionPromise = this.connectInternal();
+    return this.connectionPromise;
+  }
+
+  /**
+   * Internal connection logic (used for initial connect and reconnection)
+   */
+  private async connectInternal(): Promise<void> {
+    return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.serverUrl);
 
         this.ws.onopen = () => {
-          devLogger.debug('Connected to Claude Code server', { component: 'WebSocketClaudeCodeDispatcher', serverUrl: this.serverUrl });
+          devLogger.debug('Connected to Claude Code server', {
+            component: 'WebSocketClaudeCodeDispatcher',
+            serverUrl: this.serverUrl
+          });
 
-          // Send any queued messages
+          // Reset reconnection state on successful connect
+          this.reconnectionService.reset();
+          this.setConnectionStatus('connected');
+
+          // Start heartbeat
+          this.startHeartbeat();
+
+          // Send any queued messages from initial connection
           while (this.messageQueue.length > 0) {
             const message = this.messageQueue.shift();
             if (message) {
@@ -58,26 +276,57 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
             }
           }
 
+          // Flush pending messages from reconnection
+          this.flushPendingMessages();
+
           resolve();
         };
 
         this.ws.onmessage = (event) => {
           try {
             const message: ClientMessage = JSON.parse(event.data);
+
+            // Handle pong messages for heartbeat
+            if ((message as any).type === 'pong') {
+              this.handlePong();
+              return;
+            }
+
             this.handleServerMessage(message);
           } catch (error) {
-            devLogger.error('Error parsing server message', { component: 'WebSocketClaudeCodeDispatcher', error, eventData: event.data });
+            devLogger.error('Error parsing server message', {
+              component: 'WebSocketClaudeCodeDispatcher',
+              error,
+              eventData: event.data
+            });
           }
         };
 
-        this.ws.onclose = () => {
-          devLogger.debug('Disconnected from Claude Code server', { component: 'WebSocketClaudeCodeDispatcher' });
+        this.ws.onclose = (event) => {
+          devLogger.debug('Disconnected from Claude Code server', {
+            component: 'WebSocketClaudeCodeDispatcher',
+            code: event.code,
+            reason: event.reason
+          });
+
+          this.stopHeartbeat();
           this.ws = null;
           this.connectionPromise = null;
+
+          // Only attempt reconnection if we were previously connected
+          // and didn't intentionally disconnect
+          if (this.connectionStatus === 'connected') {
+            this.attemptReconnection();
+          } else if (this.connectionStatus !== 'reconnecting') {
+            this.setConnectionStatus('disconnected');
+          }
         };
 
         this.ws.onerror = (error) => {
-          devLogger.error('WebSocket error', { component: 'WebSocketClaudeCodeDispatcher', error });
+          devLogger.error('WebSocket error', {
+            component: 'WebSocketClaudeCodeDispatcher',
+            error
+          });
           reject(new Error('Failed to connect to Claude Code server'));
         };
 
@@ -85,8 +334,6 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         reject(error);
       }
     });
-
-    return this.connectionPromise;
   }
 
   /**
@@ -178,12 +425,21 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
 
   /**
    * Send a message to the server
+   * Messages are queued during reconnection and flushed when connection re-establishes
    */
   private sendMessage(message: ServerMessage): void {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
+    } else if (this.connectionStatus === 'reconnecting') {
+      // Queue messages during reconnection
+      this.pendingMessages.push(message);
+      devLogger.debug('Message queued during reconnection', {
+        component: 'WebSocketClaudeCodeDispatcher',
+        messageType: message.type,
+        queueSize: this.pendingMessages.length
+      });
     } else {
-      // Queue message for when connection is established
+      // Queue message for when connection is established (initial connect)
       this.messageQueue.push(message);
     }
   }
@@ -362,11 +618,23 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
    * Disconnect from server
    */
   disconnect(): void {
+    // Cancel any pending reconnection attempts
+    this.reconnectionService.cancel();
+
+    // Stop heartbeat
+    this.stopHeartbeat();
+
+    // Set status before closing to prevent reconnection attempt
+    this.setConnectionStatus('disconnected');
+
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
     this.connectionPromise = null;
+
+    // Clear pending messages
+    this.pendingMessages = [];
   }
 
   /**
@@ -381,7 +649,7 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
  * Create a WebSocket dispatcher with server detection
  */
 export async function createClaudeCodeDispatcher(
-  options: ClaudeCodeDispatcherOptions = {}
+  options: WebSocketDispatcherOptions = {}
 ): Promise<ClaudeCodeDispatcher> {
   // Try to connect to WebSocket server first
   const wsDispatcher = new WebSocketClaudeCodeDispatcher('ws://localhost:8080', options);
