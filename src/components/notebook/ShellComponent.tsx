@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings } from 'lucide-react';
-import { useTerminal } from '@/hooks';
+import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings, Search } from 'lucide-react';
+import { useTerminal, useCommandHistory } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 import { GSDInterface } from '../gsd/GSDInterface';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
@@ -32,9 +32,8 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     'configured' | 'not-configured'
   >('not-configured');
 
-  // Command history state
-  const [commandHistory, setCommandHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // Command history hook with reverse search
+  const commandHistory = useCommandHistory();
 
   // Terminal output buffer for GSD integration
   const [terminalOutput, setTerminalOutput] = useState<string>('');
@@ -81,38 +80,39 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     { id: 'gsd-gui', icon: Settings, label: 'GSD GUI', description: 'Getting Shit Done interface' }
   ];
 
-  // Command history handlers
-  const handleCommand = (command: string) => {
+  // Command history handlers using useCommandHistory hook
+  const handleCommand = useCallback((command: string) => {
     if (command.trim()) {
-      setCommandHistory(prev => [...prev.slice(-99), command.trim()]); // Keep last 100 commands
-      setHistoryIndex(-1);
+      commandHistory.addEntry(command.trim());
+      commandHistory.resetNavigation();
     }
-  };
+  }, [commandHistory]);
 
-  const handleNavigateHistory = (direction: 'up' | 'down'): string | null => {
-    if (commandHistory.length === 0) return null;
-
-    let newIndex: number;
+  const handleNavigateHistory = useCallback((direction: 'up' | 'down'): string | null => {
     if (direction === 'up') {
-      newIndex = historyIndex + 1;
-      if (newIndex >= commandHistory.length) {
-        return null; // At the beginning of history
-      }
+      return commandHistory.navigateUp();
     } else {
-      newIndex = historyIndex - 1;
-      if (newIndex < -1) {
-        return null; // Past the end of history
-      }
+      return commandHistory.navigateDown();
     }
+  }, [commandHistory]);
 
-    setHistoryIndex(newIndex);
+  // Search mode handlers
+  const handleCtrlR = useCallback(() => {
+    commandHistory.enterSearchMode();
+  }, [commandHistory]);
 
-    if (newIndex === -1) {
-      return ''; // Return to empty line
+  const handleSearchInput = useCallback((char: string) => {
+    if (char === '\x7F') {
+      // Backspace in search mode
+      commandHistory.removeSearchChar();
+    } else {
+      commandHistory.appendSearchChar(char);
     }
+  }, [commandHistory]);
 
-    return commandHistory[commandHistory.length - 1 - newIndex];
-  };
+  const handleExitSearch = useCallback(() => {
+    commandHistory.exitSearchMode();
+  }, [commandHistory]);
 
   // Real-time GSD monitoring status indicator
   const gsdMonitoringStatus = gsdTerminalIntegration.isMonitoring ? 'monitoring' : 'inactive';
@@ -130,6 +130,10 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     onCommand: handleCommand,
     onNavigateHistory: handleNavigateHistory,
     onOutput: handleTerminalOutput,
+    onCtrlR: handleCtrlR,
+    onSearchInput: handleSearchInput,
+    onExitSearch: handleExitSearch,
+    isSearchMode: commandHistory.isSearchMode,
   });
 
   // Initialize terminal when component mounts and claude-code tab is active
@@ -324,7 +328,12 @@ function ShellComponentInner({ className }: ShellComponentProps) {
           </div>
           <div className="text-gray-400">
             {activeTab === 'claude-code' ? (
-              connectionStatus === 'connected' ? (
+              commandHistory.isSearchMode ? (
+                <span className="flex items-center gap-2 text-yellow-400">
+                  <Search size={12} />
+                  <span>(reverse-i-search)`{commandHistory.searchQuery}`: {commandHistory.searchMatch || ''}</span>
+                </span>
+              ) : connectionStatus === 'connected' ? (
                 'Ready for commands'
               ) : (
                 'Initializing...'
