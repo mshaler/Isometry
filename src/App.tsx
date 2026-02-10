@@ -9,6 +9,9 @@ import { NotebookProvider } from './contexts/NotebookContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { FilterProvider } from './contexts/FilterContext';
 import { PAFVProvider } from './state/PAFVContext';
+import { SelectionProvider } from './state/SelectionContext';
+import { AppStateProvider } from './contexts/AppStateContext';
+import { Navigator } from './components/Navigator';
 
 function App() {
   // TEMP: Disabled while imports are broken
@@ -49,14 +52,51 @@ function App() {
   }
 
   if (testMode === 'three-canvas') {
+    // SYNC-03: SelectionProvider enables cross-canvas selection synchronization
+    // All notebook canvases (Capture, Shell, Preview) share the same selection state
     return (
       <SQLiteProvider>
         <FilterProvider>
           <ThemeProvider>
             <PAFVProvider>
-              <NotebookProvider>
-                <NotebookLayout />
-              </NotebookProvider>
+              <SelectionProvider>
+                <NotebookProvider>
+                  <NotebookLayout />
+                </NotebookProvider>
+              </SelectionProvider>
+            </PAFVProvider>
+          </ThemeProvider>
+        </FilterProvider>
+      </SQLiteProvider>
+    );
+  }
+
+  if (testMode === 'navigator') {
+    // Reset IndexedDB if requested
+    // NOTE: Database name is hardcoded in IndexedDBPersistence.ts as 'isometry-db'
+    const resetDb = new URLSearchParams(window.location.search).get('reset') === 'true';
+    if (resetDb) {
+      indexedDB.deleteDatabase('isometry-db');
+      window.location.href = '?test=navigator';
+      return <div className="p-4">Resetting database...</div>;
+    }
+    return (
+      <SQLiteProvider>
+        <FilterProvider>
+          <ThemeProvider>
+            <PAFVProvider>
+              <AppStateProvider>
+                <div className="min-h-screen bg-gray-100">
+                  <Navigator />
+                  <div className="p-4 text-sm text-gray-600">
+                    Click the chevron button to expand/collapse PAFV controls.
+                    <br />
+                    Drag facets from LATCH buckets to plane drop zones (X, Y, Color).
+                    <br /><br />
+                    <a href="?test=navigator&reset=true" className="text-blue-600 underline">Reset database</a> if you see errors.
+                  </div>
+                </div>
+              </AppStateProvider>
             </PAFVProvider>
           </ThemeProvider>
         </FilterProvider>
@@ -77,6 +117,7 @@ function App() {
         <div><a href="?test=supergrid" className="text-blue-600 underline">SuperGrid + sql.js + FTS5</a> - Complete integration demonstration</div>
         <div><a href="?test=cli-test" className="text-blue-600 underline font-bold">🧪 CLI Integration Test</a> - Verify Phase 3 Claude CLI integration</div>
         <div><a href="?test=three-canvas" className="text-blue-600 underline">Three-Canvas Notebook</a> - Complete three-canvas integration demo</div>
+        <div><a href="?test=navigator" className="text-blue-600 underline font-bold">🧭 Navigator Test</a> - Phase 51 Navigator UI Integration</div>
         <div><a href="?test=sqlite" className="text-blue-600 underline">SQLite Test</a> - sql.js integration testing</div>
       </div>
     </div>
