@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useEditor, ReactRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
@@ -6,16 +6,29 @@ import Placeholder from '@tiptap/extension-placeholder';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
 import { useNotebook } from '../../contexts/NotebookContext';
+import { useSQLite } from '../../db/SQLiteProvider';
 import { debounce } from '../../utils/debounce';
 import {
   SlashCommands,
   createSlashCommandSuggestion,
+  WikiLink,
+  createWikiLinkSuggestion,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
 import {
   SlashCommandMenu,
   type SlashCommandMenuRef
 } from '../../components/notebook/editor/SlashCommandMenu';
+import {
+  WikiLinkMenu,
+  type WikiLinkMenuRef
+} from '../../components/notebook/editor/WikiLinkMenu';
+import {
+  queryCardsForSuggestions,
+  queryRecentCards,
+  createLinkEdge,
+  type CardSuggestion
+} from '../../utils/editor/backlinks';
 
 interface UseTipTapEditorOptions {
   autoSaveDelay?: number;
@@ -39,10 +52,29 @@ interface UseTipTapEditorOptions {
 export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
   const { autoSaveDelay = 2000, enableAutoSave = true } = options;
   const { activeCard, updateCard } = useNotebook();
+  const { db } = useSQLite();
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const lastActiveCardIdRef = useRef<string | null>(null);
   const isUpdatingContentRef = useRef(false);
+
+  // Query function for wiki link suggestions
+  const queryCards = useCallback((query: string): CardSuggestion[] => {
+    if (!query) {
+      return queryRecentCards(db, 10);
+    }
+    return queryCardsForSuggestions(db, query, 10);
+  }, [db]);
+
+  // Handler when user selects a card to link
+  const handleLinkSelect = useCallback((item: CardSuggestion, sourceCardId: string | undefined) => {
+    if (sourceCardId && item.id !== sourceCardId) {
+      createLinkEdge(db, sourceCardId, item.id);
+    }
+  }, [db]);
+
+  // Memoize the activeCard nodeId to avoid re-creating extensions on every render
+  const sourceCardId = useMemo(() => activeCard?.nodeId, [activeCard?.nodeId]);
 
   // Debounced save function
   const debouncedSave = useCallback(
@@ -82,7 +114,7 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
         autolink: true, // Auto-detect URLs
       }),
       Placeholder.configure({
-        placeholder: 'Type / for commands...',
+        placeholder: 'Type / for commands, [[ for links...',
       }),
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
@@ -117,6 +149,68 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
                 component?.updateProps({
                   items: props.items,
                   command: (item: SlashCommand) => props.command(item),
+                });
+
+                if (!props.clientRect) return;
+
+                popup?.[0]?.setProps({
+                  getReferenceClientRect: props.clientRect as () => DOMRect,
+                });
+              },
+
+              onKeyDown: (props: SuggestionKeyDownProps) => {
+                if (props.event.key === 'Escape') {
+                  popup?.[0]?.hide();
+                  return true;
+                }
+
+                return component?.ref?.onKeyDown(props) ?? false;
+              },
+
+              onExit: () => {
+                popup?.[0]?.destroy();
+                component?.destroy();
+              },
+            };
+          }
+        ),
+      }),
+      WikiLink.configure({
+        suggestion: createWikiLinkSuggestion(
+          queryCards,
+          handleLinkSelect,
+          sourceCardId,
+          () => {
+            let component: ReactRenderer<WikiLinkMenuRef>;
+            let popup: TippyInstance[];
+
+            return {
+              onStart: (props: SuggestionProps<CardSuggestion>) => {
+                component = new ReactRenderer(WikiLinkMenu, {
+                  props: {
+                    items: props.items,
+                    command: (item: CardSuggestion) => props.command(item),
+                  },
+                  editor: props.editor,
+                });
+
+                if (!props.clientRect) return;
+
+                popup = tippy('body', {
+                  getReferenceClientRect: props.clientRect as () => DOMRect,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: 'manual',
+                  placement: 'bottom-start',
+                });
+              },
+
+              onUpdate: (props: SuggestionProps<CardSuggestion>) => {
+                component?.updateProps({
+                  items: props.items,
+                  command: (item: CardSuggestion) => props.command(item),
                 });
 
                 if (!props.clientRect) return;
