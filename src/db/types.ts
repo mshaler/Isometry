@@ -55,7 +55,7 @@ export type QueryResult = Record<string, unknown>;
  * Tracks sql.js capability failures for automated debugging
  */
 export interface SQLiteCapabilityError {
-  capability: 'fts5' | 'json1' | 'recursive_cte';
+  capability: 'fts5' | 'json1' | 'recursive_cte' | 'storage';
   error: string;
   timestamp: string;
   context: Record<string, unknown>;

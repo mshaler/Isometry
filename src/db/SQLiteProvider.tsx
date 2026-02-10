@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import initSqlJs from 'sql.js';
 import type { Database, SqlJsStatic } from 'sql.js';
 import type { SQLiteCapabilityError } from './types';
 import { devLogger } from '../utils/dev-logger';
+import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
 
 /**
  * SQLiteProvider - Direct sql.js access for Isometry v4
@@ -62,6 +63,18 @@ export function SQLiteProvider({
   const [telemetry, setTelemetry] = useState<SQLiteCapabilityError[]>([]);
   const [dataVersion, setDataVersion] = useState(0);
 
+  // IndexedDB persistence - single instances for component lifetime
+  const persistenceRef = useRef<IndexedDBPersistence | null>(null);
+  const autoSaveRef = useRef<AutoSaveManager | null>(null);
+
+  // Initialize persistence instances once
+  if (!persistenceRef.current) {
+    persistenceRef.current = new IndexedDBPersistence();
+  }
+  if (!autoSaveRef.current) {
+    autoSaveRef.current = new AutoSaveManager(persistenceRef.current);
+  }
+
   // Telemetry logging helper
   const logCapabilityError = useCallback((
     capability: SQLiteCapabilityError['capability'],
@@ -104,42 +117,73 @@ export function SQLiteProvider({
 
         setSQL(sqlInstance);
 
+        // Initialize IndexedDB persistence
+        const persistence = persistenceRef.current!;
+        await persistence.init();
+
         // Try to load existing database or create new one
-        let database: Database;
+        let database: Database | null = null;
 
+        // Priority 1: Try to load from IndexedDB (replaces localStorage backup)
         try {
-          // Try to load existing database file
-          if (enableLogging) {
-            devLogger.inspect('SQLiteProvider: Attempting to load database', { databaseUrl });
-          }
-          const response = await fetch(databaseUrl);
-          if (response.ok) {
-            const arrayBuffer = await response.arrayBuffer();
-            if (enableLogging) {
-              devLogger.data('SQLiteProvider: Downloaded database', { bytes: arrayBuffer.byteLength });
-            }
-
+          const savedData = await persistence.load();
+          if (savedData) {
             // Verify the data looks like a SQLite file
-            const uint8Array = new Uint8Array(arrayBuffer);
-            if (uint8Array.length < 16 ||
-                String.fromCharCode(...uint8Array.slice(0, 16)) !== 'SQLite format 3\0') {
-              throw new Error(`Invalid SQLite file: ${String.fromCharCode(...uint8Array.slice(0, 16))}`);
+            if (savedData.length >= 16 &&
+                String.fromCharCode(...savedData.slice(0, 16)) === 'SQLite format 3\0') {
+              database = new sqlInstance.Database(savedData);
+              if (enableLogging) {
+                devLogger.setup('SQLiteProvider: Loaded database from IndexedDB', { bytes: savedData.length });
+              }
+            } else {
+              console.warn('SQLiteProvider: IndexedDB data invalid, will try other sources');
             }
+          }
+        } catch (idbError) {
+          console.warn('SQLiteProvider: Failed to load from IndexedDB', idbError);
+        }
 
-            database = new sqlInstance.Database(uint8Array);
+        // Priority 2: Try to fetch from databaseUrl
+        if (!database) {
+          try {
             if (enableLogging) {
-              devLogger.setup('SQLiteProvider: Loaded existing database successfully', {});
+              devLogger.inspect('SQLiteProvider: Attempting to load database', { databaseUrl });
             }
-          } else {
-            throw new Error(`Database fetch failed: ${response.status} ${response.statusText}`);
+            const response = await fetch(databaseUrl);
+            if (response.ok) {
+              const arrayBuffer = await response.arrayBuffer();
+              if (enableLogging) {
+                devLogger.data('SQLiteProvider: Downloaded database', { bytes: arrayBuffer.byteLength });
+              }
+
+              // Verify the data looks like a SQLite file
+              const uint8Array = new Uint8Array(arrayBuffer);
+              if (uint8Array.length < 16 ||
+                  String.fromCharCode(...uint8Array.slice(0, 16)) !== 'SQLite format 3\0') {
+                throw new Error(`Invalid SQLite file: ${String.fromCharCode(...uint8Array.slice(0, 16))}`);
+              }
+
+              database = new sqlInstance.Database(uint8Array);
+              if (enableLogging) {
+                devLogger.setup('SQLiteProvider: Loaded existing database successfully', {});
+              }
+            } else {
+              throw new Error(`Database fetch failed: ${response.status} ${response.statusText}`);
+            }
+          } catch (loadError) {
+            // Priority 3: Create new database with schema
+            if (enableLogging) {
+              devLogger.setup('SQLiteProvider: Creating new database', { loadError: String(loadError) });
+            }
+            database = new sqlInstance.Database();
+            await initializeSchema(database, logCapabilityError);
           }
-        } catch (loadError) {
-          // Create new database with schema
-          if (enableLogging) {
-            devLogger.setup('SQLiteProvider: Creating new database', { loadError: String(loadError) });
-          }
-          database = new sqlInstance.Database();
-          await initializeSchema(database, logCapabilityError);
+        }
+
+        // At this point, database is guaranteed to be non-null
+        // (either loaded from IndexedDB, fetched, or created new)
+        if (!database) {
+          throw new Error('Failed to initialize database from any source');
         }
 
         if (!isMounted) return;
@@ -246,6 +290,14 @@ export function SQLiteProvider({
 
     return () => {
       isMounted = false;
+      // Force save any pending changes on unmount
+      const autoSave = autoSaveRef.current;
+      if (autoSave) {
+        autoSave.forceImmediateSave().catch(err => {
+          console.error('Failed to save on unmount:', err);
+        });
+        autoSave.cleanup();
+      }
     };
   }, [databaseUrl, enableLogging]);
 
@@ -326,33 +378,50 @@ export function SQLiteProvider({
     }
   }, [db, enableLogging]);
 
-  // Save database to file (debounced in production)
+  // Save database to IndexedDB (replaces localStorage which has 5-10MB limit)
   const save = useCallback(async (): Promise<void> => {
     if (!db) return;
 
+    const persistence = persistenceRef.current;
+    if (!persistence) {
+      console.error('💥 Database save error: IndexedDB persistence not initialized');
+      return;
+    }
+
     try {
       const data = db.export();
-      // Type assertion for ArrayBuffer compatibility with Blob constructor
-      const blob = new Blob([data.buffer as ArrayBuffer], { type: 'application/x-sqlite3' });
 
-      // In a real app, this would save to the file system
-      // For now, we'll store in localStorage as backup
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          localStorage.setItem('isometry-db-backup', reader.result);
-          if (enableLogging) {
-            devLogger.data('Database saved to localStorage backup', {});
-          }
+      // Get node count for metadata
+      let nodeCount = 0;
+      try {
+        const result = db.exec('SELECT COUNT(*) FROM nodes WHERE deleted_at IS NULL');
+        if (result.length > 0 && result[0].values.length > 0) {
+          nodeCount = result[0].values[0][0] as number;
         }
-      };
-      reader.readAsDataURL(blob);
+      } catch {
+        // Ignore count errors - just use 0
+      }
 
+      await persistence.save(data, nodeCount);
+
+      if (enableLogging) {
+        devLogger.data('Database saved to IndexedDB', { bytes: data.length, nodeCount });
+      }
     } catch (err) {
       console.error('💥 Database save error:', err);
+
+      // Check if quota exceeded
+      if (err instanceof DOMException && err.name === 'QuotaExceededError') {
+        logCapabilityError('storage', err, {
+          operation: 'save',
+          // Don't call db.export() again if we already have an error
+          errorType: 'QuotaExceededError'
+        });
+      }
+
       throw err;
     }
-  }, [db, enableLogging]);
+  }, [db, enableLogging, logCapabilityError]);
 
   // Reset database
   const reset = useCallback(async (): Promise<void> => {
@@ -401,15 +470,27 @@ export function SQLiteProvider({
     }
   }, [SQL, db, enableLogging]);
 
-  // Notify that data has changed - triggers query refetches and auto-save
+  // Set up AutoSaveManager save callback when save function changes
+  useEffect(() => {
+    const autoSave = autoSaveRef.current;
+    if (autoSave) {
+      autoSave.setSaveCallback(save);
+    }
+  }, [save]);
+
+  // Notify that data has changed - triggers query refetches and debounced auto-save
   const notifyDataChanged = useCallback(async (): Promise<void> => {
     setDataVersion(v => v + 1);
     if (enableLogging) {
       devLogger.data('Data changed, triggering query invalidation', { dataVersion: dataVersion + 1 });
     }
-    // Auto-save after data changes
-    await save();
-  }, [save, enableLogging, dataVersion]);
+    // Debounced auto-save (5 second window) prevents "export-every-write" performance death
+    // See 42-RESEARCH.md Pitfall 2
+    const autoSave = autoSaveRef.current;
+    if (autoSave) {
+      autoSave.notifyDataChanged();
+    }
+  }, [enableLogging, dataVersion]);
 
   const contextValue: SQLiteContextValue = {
     db,
