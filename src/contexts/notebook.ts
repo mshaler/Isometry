@@ -26,6 +26,8 @@ export interface NotebookContextType {
   deleteCard: (id: string) => Promise<void>;
   setActiveCard: (card: NotebookCard | null) => void;
   loadCards: () => Promise<void>;
+  /** SYNC-02: Load a card by ID (or node_id) and set it as activeCard */
+  loadCard: (cardId: string) => Promise<void>;
 
   // Template Methods
   createTemplate: (name: string, description: string, fromCard: NotebookCard) => Promise<NotebookTemplate>;
@@ -111,6 +113,8 @@ export interface TemplateManager {
 // Card operations interface
 export interface CardOperations {
   loadCards: () => Promise<NotebookCard[]>;
+  /** SYNC-02: Load a card by ID (or node_id) */
+  loadCardById: (cardId: string) => Promise<NotebookCard | null>;
   createCard: (
     type: NotebookCardType,
     template?: NotebookTemplate,
@@ -232,21 +236,62 @@ export function createCardOperations(
         const endTime = performance.now();
         performanceHook.measureQuery('loadCards', endTime - startTime);
 
-        return result.map((row: unknown) => ({
-          id: row.id,
-          nodeId: row.node_id,
-          markdownContent: row.markdown_content,
-          renderedContent: row.rendered_content,
-          properties: row.properties ? JSON.parse(row.properties) : null,
-          templateId: row.template_id,
-          cardType: row.card_type,
-          layoutPosition: row.layout_position ? JSON.parse(row.layout_position) : null,
-          createdAt: row.created_at,
-          modifiedAt: row.modified_at
+        return result.map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          nodeId: row.node_id as string,
+          markdownContent: row.markdown_content as string | null,
+          renderedContent: row.rendered_content as string | null,
+          properties: row.properties ? JSON.parse(row.properties as string) : null,
+          templateId: row.template_id as string | null,
+          cardType: row.card_type as string,
+          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) : null,
+          createdAt: row.created_at as string,
+          modifiedAt: row.modified_at as string
         }));
       } catch (error) {
         devLogger.error('Failed to load cards', { error });
         return [];
+      }
+    },
+
+    /**
+     * SYNC-02: Load a card by ID (or node_id)
+     */
+    loadCardById: async (cardId: string) => {
+      const startTime = performance.now();
+      try {
+        const result = await execute(
+          `SELECT nc.*, n.name, n.node_type
+           FROM notebook_cards nc
+           JOIN nodes n ON nc.node_id = n.id
+           WHERE (nc.id = ? OR nc.node_id = ?) AND n.deleted_at IS NULL
+           LIMIT 1`,
+          [cardId, cardId]
+        ) as Record<string, unknown>[];
+
+        const endTime = performance.now();
+        performanceHook.measureQuery('loadCardById', endTime - startTime);
+
+        if (result.length === 0) {
+          return null;
+        }
+
+        const row = result[0];
+        return {
+          id: row.id as string,
+          nodeId: row.node_id as string,
+          markdownContent: row.markdown_content as string | null,
+          renderedContent: row.rendered_content as string | null,
+          properties: row.properties ? JSON.parse(row.properties as string) : null,
+          templateId: row.template_id as string | null,
+          cardType: row.card_type as string,
+          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) : null,
+          createdAt: row.created_at as string,
+          modifiedAt: row.modified_at as string
+        };
+      } catch (error) {
+        devLogger.error('Failed to load card by ID', { error });
+        return null;
       }
     },
 

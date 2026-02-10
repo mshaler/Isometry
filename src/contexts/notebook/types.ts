@@ -60,6 +60,8 @@ export interface NotebookContextType {
   deleteCard: (id: string) => Promise<void>;
   setActiveCard: (card: NotebookCard | null) => void;
   loadCards: () => Promise<void>;
+  /** SYNC-02: Load a card by ID (or node_id) and set it as activeCard */
+  loadCard: (cardId: string) => Promise<void>;
 
   // Template Methods
   createTemplate: (name: string, _description: string, fromCard: NotebookCard) => Promise<NotebookTemplate>;

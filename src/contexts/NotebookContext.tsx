@@ -128,6 +128,40 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     }
   }, [db, cardOperations, errorReporting]);
 
+  /**
+   * SYNC-02: Load a card by ID and set it as activeCard
+   * Used when user clicks a card in Preview (NetworkGraph, Timeline) to load it in Capture
+   */
+  const loadCard = useCallback(async (cardId: string) => {
+    if (!db) return;
+
+    try {
+      // Check cache first
+      const cachedCard = cardCache.get(cardId);
+      if (cachedCard) {
+        setActiveCard(cachedCard);
+        return;
+      }
+
+      // Query database for the card
+      const card = await cardOperations.loadCardById(cardId);
+      if (card) {
+        // Update cache
+        if (cardCache.size >= MAX_CACHE_SIZE) {
+          const firstKey = cardCache.keys().next().value;
+          if (firstKey) cardCache.delete(firstKey);
+        }
+        cardCache.set(card.id, card);
+
+        setActiveCard(card);
+      }
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to load card');
+      devLogger.warn('Failed to load card by ID', { cardId, error });
+      // Don't throw - gracefully handle missing cards
+    }
+  }, [db, cardOperations]);
+
   // Integration hook - avoid circular dependency by providing callback
   const integrationState = useNotebookIntegration({
     activeCard: activeCard ? {
@@ -337,6 +371,7 @@ export function NotebookProvider({ children }: { children: ReactNode }) {
     deleteCard,
     setActiveCard,
     loadCards,
+    loadCard,
 
     // Template Methods
     createTemplate,

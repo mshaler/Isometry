@@ -163,8 +163,44 @@ export function createCardOperations(
     }
   };
 
+  /**
+   * Load a single card by ID (notebook_cards.id) or node_id
+   * Used by SYNC-02: When user clicks a card in Preview, load it in Capture
+   */
+  const loadCardById = async (cardId: string): Promise<NotebookCard | null> => {
+    const queryStart = performance.now();
+
+    try {
+      // Query by either notebook_cards.id or node_id to handle both cases
+      const rowsResult = execute(
+        `SELECT nc.*, n.name, n.node_type
+         FROM notebook_cards nc
+         JOIN nodes n ON nc.node_id = n.id
+         WHERE (nc.id = ? OR nc.node_id = ?) AND n.deleted_at IS NULL
+         LIMIT 1`,
+        [cardId, cardId]
+      );
+
+      // Handle both sync (sql.js) and async (native API) execute results
+      const rows = Array.isArray(rowsResult) ? rowsResult : await rowsResult;
+
+      const queryDuration = performance.now() - queryStart;
+      performanceHook.measureQuery('loadCardById', queryDuration);
+
+      if (rows.length === 0) {
+        return null;
+      }
+
+      return rowToNotebookCard(rows[0] as Record<string, unknown>);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Failed to load card by ID');
+      throw error;
+    }
+  };
+
   return {
     loadCards,
+    loadCardById,
     createCard,
     updateCard,
     deleteCard
