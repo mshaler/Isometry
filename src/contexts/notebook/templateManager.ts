@@ -1,6 +1,7 @@
 import type { NotebookTemplate, NotebookCard } from '../../types/notebook';
 import { BUILT_IN_TEMPLATES } from '../../types/notebook';
 import { errorReporting } from '../../services/ErrorReportingService';
+import { devLogger } from '../../utils/logging/logger';
 
 const TEMPLATES_STORAGE_KEY = 'notebook_custom_templates';
 
@@ -24,7 +25,7 @@ export function createTemplateManager() {
         'Template Loading Failed',
         'Using default templates only. Your custom templates could not be loaded.'
       );
-      console.warn('Failed to load custom templates:', err);
+      devLogger.warn('Failed to load custom templates', { error: err });
       return BUILT_IN_TEMPLATES;
     }
   };
@@ -55,7 +56,7 @@ export function createTemplateManager() {
           action: () => {} // No-op
         }
       ]);
-      console.warn('Failed to save custom templates:', err);
+      devLogger.warn('Failed to save custom templates', { error: err });
     }
   };
 
