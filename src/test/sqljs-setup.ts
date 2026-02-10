@@ -69,7 +69,7 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
 
 // Mock WASM file content for test environment
 // Future utility for mocking WASM modules in tests
-// @ts-ignore - Future utility, currently unused
+// @ts-expect-error - Future utility, currently unused
 function createMockWasmModule() {
   // Create a minimal mock that satisfies sql.js initialization
   const mockWasm = new Uint8Array([
