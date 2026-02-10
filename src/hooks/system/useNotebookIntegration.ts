@@ -5,6 +5,7 @@ import { useFilters } from '../../contexts/FilterContext';
 import { usePAFV } from '../data/usePAFV';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSQLite } from '../../db/SQLiteProvider';
+import { devLogger } from '../../utils/logging';
 
 interface NotebookCard {
   id: string;
@@ -129,7 +130,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
       }));
 
     } catch (error) {
-      console.error('Notebook integration sync failed:', error);
+      devLogger.error('Notebook integration sync failed', { error });
       setState(prev => ({
         ...prev,
         syncInProgress: false,
@@ -163,7 +164,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
         changeQueueRef.current.delete(card.id);
 
       } catch (error) {
-        console.error(`Failed to sync card ${card.id}:`, error);
+        devLogger.error('Failed to sync card', { cardId: card.id, error });
       }
     }
   }, [cards, execute]);
@@ -297,7 +298,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
       }));
 
     } catch (error) {
-      console.error(`Failed to resolve conflict for card ${cardId}:`, error);
+      devLogger.error('Failed to resolve conflict for card', { cardId, error });
     }
   }, [cards, execute]);
 
