@@ -5,6 +5,8 @@
  * routing for production vs development environments.
  */
 
+import { devLogger } from '../utils/logging/logger';
+
 export interface APIProxyConfig {
   endpoint: string;
   timeout: number;
@@ -90,10 +92,9 @@ export function getSecureAPIEndpoint(): string {
   }
 
   // Development fallback - direct API access (with warning)
-  console.warn(
-    '🔒 Security Warning: Using direct API access in development.',
-    'API key will be exposed in browser. Use proxy in production.'
-  );
+  devLogger.warn('Security Warning: Using direct API access in development', {
+    message: 'API key will be exposed in browser. Use proxy in production.'
+  });
 
   return 'https://api.anthropic.com';
 }
