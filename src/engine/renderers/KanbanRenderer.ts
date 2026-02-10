@@ -308,7 +308,8 @@ export class KanbanRenderer implements ViewRenderer {
     // Calculate total dimensions
     const totalWidth = Math.max(
       800,
-      this.columns.length * (this.layout.columnWidth + this.layout.columnSpacing) + this.layout.padding.left + this.layout.padding.right
+      this.columns.length * (this.layout.columnWidth + this.layout.columnSpacing) +
+        this.layout.padding.left + this.layout.padding.right
     );
 
     const maxCardsInColumn = Math.max(...this.columns.map(col => col.nodes.length), 1);
