@@ -11,6 +11,7 @@ import { watch, FSWatcher } from 'fs';
 import { stat } from 'fs/promises';
 import { join, relative } from 'path';
 import { ClaudeCodeCommand, CommandExecution } from './claudeCodeDispatcher';
+import { devLogger } from '../utils/logging';
 
 export interface ServerMessage {
   type: 'command' | 'cancel' | 'input' | 'start_file_monitoring' | 'stop_file_monitoring';
@@ -58,15 +59,15 @@ export class ClaudeCodeServer {
    */
   private setupWebSocketHandlers(): void {
     this.wss.on('connection', (ws) => {
-      console.log('GSD client connected');
+      devLogger.debug('GSD client connected', { component: 'ClaudeCodeServer' });
 
       ws.on('message', async (data) => {
         try {
           const message: ServerMessage = JSON.parse(data.toString());
-          console.log(`📨 Received message: ${message.type}, executionId: ${message.executionId || 'none'}`);
+          devLogger.debug('Received message', { component: 'ClaudeCodeServer', messageType: message.type, executionId: message.executionId || 'none' });
           await this.handleMessage(ws, message);
         } catch (error) {
-          console.error('Error handling message:', error);
+          devLogger.error('Error handling message', { component: 'ClaudeCodeServer', error });
           ws.send(JSON.stringify({
             type: 'error',
             data: error instanceof Error ? error.message : 'Unknown error'
@@ -75,29 +76,29 @@ export class ClaudeCodeServer {
       });
 
       ws.on('close', () => {
-        console.log('GSD client disconnected');
+        devLogger.debug('GSD client disconnected', { component: 'ClaudeCodeServer' });
       });
 
       ws.on('error', (error) => {
-        console.error('WebSocket error:', error);
+        devLogger.error('WebSocket error', { component: 'ClaudeCodeServer', error });
       });
     });
 
-    console.log(`Claude Code server listening on port ${this.port}`);
+    devLogger.debug('Claude Code server listening', { component: 'ClaudeCodeServer', port: this.port });
   }
 
   /**
    * Handle incoming WebSocket messages
    */
   private async handleMessage(ws: any, message: ServerMessage): Promise<void> {
-    console.log(`🔄 Processing message type: ${message.type}`);
+    devLogger.debug('Processing message type', { component: 'ClaudeCodeServer', messageType: message.type });
     switch (message.type) {
       case 'command':
         if (message.command) {
-          console.log(`🚀 Executing command: ${message.command.command} ${message.command.args?.join(' ') || ''}`);
+          devLogger.debug('Executing command', { component: 'ClaudeCodeServer', command: message.command.command, args: message.command.args });
           await this.executeCommand(ws, message.command);
         } else {
-          console.log('❌ No command in message');
+          devLogger.debug('No command in message', { component: 'ClaudeCodeServer' });
         }
         break;
 
@@ -196,7 +197,7 @@ export class ClaudeCodeServer {
 
     execution.status = 'running';
 
-    console.log(`💻 Spawning: ${executablePath} with args: [${spawnArgs.join(', ')}]`);
+    devLogger.debug('Spawning process', { component: 'ClaudeCodeServer', executablePath, spawnArgs });
 
     // Spawn the process using the user's shell to get aliases, history, etc.
     const child = spawn(executablePath, spawnArgs, {
@@ -210,14 +211,14 @@ export class ClaudeCodeServer {
       }
     });
 
-    console.log(`🔧 Child process spawned with PID: ${child.pid}`);
+    devLogger.debug('Child process spawned', { component: 'ClaudeCodeServer', pid: child.pid });
 
     execution.process = child;
 
     // Handle stdout
     child.stdout?.on('data', (data: Buffer) => {
       const output = data.toString();
-      console.log(`📤 STDOUT: ${output.trim()}`);
+      devLogger.debug('Process STDOUT', { component: 'ClaudeCodeServer', output: output.trim() });
       execution.output.push(output);
 
       ws.send(JSON.stringify({
@@ -230,7 +231,7 @@ export class ClaudeCodeServer {
     // Handle stderr
     child.stderr?.on('data', (data: Buffer) => {
       const output = data.toString();
-      console.log(`📥 STDERR: ${output.trim()}`);
+      devLogger.debug('Process STDERR', { component: 'ClaudeCodeServer', output: output.trim() });
       execution.output.push(`STDERR: ${output}`);
 
       ws.send(JSON.stringify({
@@ -242,13 +243,13 @@ export class ClaudeCodeServer {
 
     // Send input if provided
     if (input && child.stdin) {
-      console.log(`📝 Sending input: ${input}`);
+      devLogger.debug('Sending input to process', { component: 'ClaudeCodeServer', input });
       child.stdin.write(input + '\n');
     }
 
     // Handle process completion
     child.on('close', (code) => {
-      console.log(`🏁 Process closed with code: ${code}`);
+      devLogger.debug('Process closed', { component: 'ClaudeCodeServer', exitCode: code });
       execution.status = code === 0 ? 'completed' : 'error';
       execution.endTime = new Date();
 
@@ -268,7 +269,7 @@ export class ClaudeCodeServer {
 
     // Handle process errors
     child.on('error', (error) => {
-      console.log(`❌ Process error: ${error.message}`);
+      devLogger.error('Process error', { component: 'ClaudeCodeServer', error: error.message });
       execution.status = 'error';
       execution.error = error.message;
       execution.endTime = new Date();
@@ -388,7 +389,7 @@ export class ClaudeCodeServer {
     for (const path of possiblePaths) {
       try {
         execSync(`which ${path}`, { stdio: 'ignore' });
-        console.log(`Found Claude Code executable at: ${path}`);
+        devLogger.debug('Found Claude Code executable', { component: 'ClaudeCodeServer', path });
         return path;
       } catch (error) {
         // Continue trying
@@ -396,7 +397,7 @@ export class ClaudeCodeServer {
     }
 
     // Default to 'claude' and let the system PATH handle it
-    console.log('Using default Claude Code command: claude');
+    devLogger.debug('Using default Claude Code command', { component: 'ClaudeCodeServer', command: 'claude' });
     return 'claude';
   }
   */
@@ -411,7 +412,7 @@ export class ClaudeCodeServer {
         await this.stopFileMonitoring(ws, sessionId);
       }
 
-      console.log(`🔍 Starting file monitoring for session ${sessionId} at ${projectPath}`);
+      devLogger.debug('Starting file monitoring for session', { component: 'ClaudeCodeServer', sessionId, projectPath });
 
       // Store monitoring info
       this.monitoredPaths.set(sessionId, { path: projectPath, sessionId });
@@ -427,7 +428,7 @@ export class ClaudeCodeServer {
             return;
           }
 
-          console.log(`📁 File change detected: ${eventType} ${relativePath}`);
+          devLogger.inspect('File change detected', { component: 'ClaudeCodeServer', eventType, relativePath, sessionId });
 
           try {
             let changeType: 'create' | 'modify' | 'delete';
@@ -455,7 +456,7 @@ export class ClaudeCodeServer {
             } as ClientMessage));
 
           } catch (error) {
-            console.error('Error processing file change:', error);
+            devLogger.error('Error processing file change', { component: 'ClaudeCodeServer', error, relativePath, sessionId });
           }
         }
       });
@@ -470,7 +471,7 @@ export class ClaudeCodeServer {
       } as ClientMessage));
 
     } catch (error) {
-      console.error('Failed to start file monitoring:', error);
+      devLogger.error('Failed to start file monitoring', { component: 'ClaudeCodeServer', error, sessionId });
       ws.send(JSON.stringify({
         type: 'error',
         sessionId,
@@ -488,7 +489,7 @@ export class ClaudeCodeServer {
       if (watcher) {
         watcher.close();
         this.fileWatchers.delete(sessionId);
-        console.log(`🛑 Stopped file monitoring for session ${sessionId}`);
+        devLogger.debug('Stopped file monitoring for session', { component: 'ClaudeCodeServer', sessionId });
       }
 
       this.monitoredPaths.delete(sessionId);
@@ -500,7 +501,7 @@ export class ClaudeCodeServer {
       } as ClientMessage));
 
     } catch (error) {
-      console.error('Failed to stop file monitoring:', error);
+      devLogger.error('Failed to stop file monitoring', { component: 'ClaudeCodeServer', error, sessionId });
       ws.send(JSON.stringify({
         type: 'error',
         sessionId,
@@ -548,8 +549,8 @@ export class ClaudeCodeServer {
    * Start the server
    */
   start(): void {
-    console.log(`🚀 Claude Code GSD Server started on port ${this.port}`);
-    console.log('Ready to execute Claude Code commands from GSD GUI');
+    devLogger.inspect('Claude Code GSD Server started', { component: 'ClaudeCodeServer', port: this.port });
+    devLogger.inspect('Ready to execute Claude Code commands from GSD GUI', { component: 'ClaudeCodeServer' });
   }
 
   /**
@@ -567,16 +568,16 @@ export class ClaudeCodeServer {
     for (const [sessionId, watcher] of this.fileWatchers) {
       try {
         watcher.close();
-        console.log(`🛑 Closed file watcher for session ${sessionId}`);
+        devLogger.debug('Closed file watcher for session', { component: 'ClaudeCodeServer', sessionId });
       } catch (error) {
-        console.error(`Error closing file watcher for session ${sessionId}:`, error);
+        devLogger.error('Error closing file watcher for session', { component: 'ClaudeCodeServer', sessionId, error });
       }
     }
     this.fileWatchers.clear();
     this.monitoredPaths.clear();
 
     this.wss.close();
-    console.log('Claude Code server stopped');
+    devLogger.debug('Claude Code server stopped', { component: 'ClaudeCodeServer' });
   }
 }
 
@@ -587,13 +588,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   // Handle graceful shutdown
   process.on('SIGINT', () => {
-    console.log('\nShutting down Claude Code server...');
+    devLogger.debug('Shutting down Claude Code server...', { component: 'ClaudeCodeServer', signal: 'SIGINT' });
     server.stop();
     process.exit(0);
   });
 
   process.on('SIGTERM', () => {
-    console.log('\nShutting down Claude Code server...');
+    devLogger.debug('Shutting down Claude Code server...', { component: 'ClaudeCodeServer', signal: 'SIGTERM' });
     server.stop();
     process.exit(0);
   });
