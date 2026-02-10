@@ -25,6 +25,8 @@ export { useWebPreview } from './ui/useWebPreview';
 export { useTerminal } from './system/useTerminal';
 export { useConflictResolution } from './system/useConflictResolution';
 export { useNotebookIntegration } from './system/useNotebookIntegration';
+export { useWebSocketConnection } from './useWebSocketConnection';
+export type { UseWebSocketConnectionResult } from './useWebSocketConnection';
 
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
