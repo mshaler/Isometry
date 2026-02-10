@@ -7,6 +7,7 @@ import type {
   NotebookCardType,
   LayoutPosition
 } from '../types/notebook';
+import { devLogger } from '../utils/logging/logger';
 
 // Context type definition
 export interface NotebookContextType {
@@ -147,7 +148,7 @@ export function createTemplateManager(): TemplateManager {
       try {
         localStorage.setItem('notebook_templates', JSON.stringify(templates));
       } catch (error) {
-        console.warn('Failed to save custom templates:', error);
+        devLogger.warn('Failed to save custom templates', { error });
       }
     },
 
@@ -241,7 +242,7 @@ export function createCardOperations(
           modifiedAt: row.modified_at
         }));
       } catch (error) {
-        console.error('Failed to load cards:', error);
+        devLogger.error('Failed to load cards', { error });
         return [];
       }
     },
@@ -285,7 +286,7 @@ export function createCardOperations(
 
         return newCard;
       } catch (error) {
-        console.error('Failed to create card:', error);
+        devLogger.error('Failed to create card', { error });
         throw error;
       }
     },
@@ -310,7 +311,7 @@ export function createCardOperations(
         const endTime = performance.now();
         performanceHook.measureQuery('updateCard', endTime - startTime);
       } catch (error) {
-        console.error('Failed to update card:', error);
+        devLogger.error('Failed to update card', { error });
         throw error;
       }
     },
@@ -324,7 +325,7 @@ export function createCardOperations(
         const endTime = performance.now();
         performanceHook.measureQuery('deleteCard', endTime - startTime);
       } catch (error) {
-        console.error('Failed to delete card:', error);
+        devLogger.error('Failed to delete card', { error });
         throw error;
       }
     }
@@ -346,7 +347,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState): LayoutM
       try {
         localStorage.setItem('notebook_layout', JSON.stringify(layout));
       } catch (error) {
-        console.warn('Failed to save layout:', error);
+        devLogger.warn('Failed to save layout', { error });
       }
     },
 
@@ -359,7 +360,7 @@ export function createLayoutManager(defaultLayout: NotebookLayoutState): LayoutM
       try {
         localStorage.setItem('notebook_layout', JSON.stringify(newLayout));
       } catch (error) {
-        console.warn('Failed to save layout:', error);
+        devLogger.warn('Failed to save layout', { error });
       }
 
       return newLayout;
