@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useLiveDataContext } from '@/contexts/LiveDataContext';
+import { devLogger } from '@/utils/logging';
 
 // ============================================
 // Types
@@ -57,7 +58,7 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
   // Bridge communication with error handling and timeouts
   const executeQuery = useCallback(async (method: string, params?: unknown): Promise<any> => {
     try {
-      console.log('Executing bridge query:', method, params);
+      devLogger.debug('NotesIntegration executing bridge query', { method, params });
 
       // Use the real bridge communication with 5 second timeout
       const timeoutPromise = new Promise((_, reject) =>
@@ -67,11 +68,11 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
       const queryPromise = bridgeExecuteQuery(method, params || {});
       const result = await Promise.race([queryPromise, timeoutPromise]);
 
-      console.log('Bridge query result:', method, result);
+      devLogger.debug('NotesIntegration bridge query result', { method, result });
       return result;
 
     } catch (error) {
-      console.error('Bridge communication error:', error);
+      devLogger.error('NotesIntegration bridge communication error', { error, method });
 
       // Handle specific error types
       if (error instanceof Error) {
@@ -326,7 +327,10 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
       ];
 
       // TODO: Subscribe to bridge events when bridge supports it
-      console.log('Future bridge subscriptions:', subscriptions);
+      devLogger.debug('NotesIntegration future bridge subscriptions planned', {
+        subscriptions,
+        count: subscriptions.length
+      });
       // subscriptions.forEach(event => bridgeExecuteQuery('subscribe', { event }));
     }
   }, [isOpen, loadPermissionStatus, loadLiveSyncStatus, loadStatistics]);
@@ -584,7 +588,7 @@ export function NotesIntegrationSettings({ isOpen, onClose }: NotesIntegrationSe
                   <span className="font-medium">Active Conflicts</span>
                   {statistics.conflictCount > 0 ? (
                     <button
-                      onClick={() => console.log('Show conflicts modal - to be implemented')}
+                      onClick={() => devLogger.debug('NotesIntegration show conflicts modal requested', { conflictCount: statistics.conflictCount })}
                       className="text-orange-600 hover:text-orange-700 flex items-center gap-1"
                     >
                       {statistics.conflictCount} conflicts
