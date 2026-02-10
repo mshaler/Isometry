@@ -21,6 +21,7 @@
 
 import type { Database } from 'sql.js';
 import EventEmitter from 'events';
+import { devLogger } from '../utils/logging';
 
 // Core Data Types
 export interface Node {
@@ -887,11 +888,13 @@ export class SuperGridEngine extends EventEmitter {
         ORDER BY ${yAxisField}, ${xAxisField}
       `;
 
-      console.log('[SuperGridEngine] Executing query:', dataQuery);
+      devLogger.debug('SuperGridEngine executing query', {
+        queryLength: dataQuery.length
+      });
       const result = this.database.exec(dataQuery);
 
       if (!result[0]?.values) {
-        console.warn('[SuperGridEngine] No data returned from query');
+        devLogger.warn('SuperGridEngine: No data returned from query');
         return;
       }
 
@@ -911,7 +914,9 @@ export class SuperGridEngine extends EventEmitter {
       this.renderAdvanced();
 
     } catch (error) {
-      console.error('[SuperGridEngine] Data loading failed:', error);
+      devLogger.error('SuperGridEngine data loading failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       this.emit('error', { error: error as Error, context: 'loadDataWithSQLFields' });
       throw error;
     }
@@ -1034,7 +1039,9 @@ export class SuperGridEngine extends EventEmitter {
   private renderAdvanced(): void {
     if (!this.svg || !this.gridDataCache) return;
 
-    console.log('[SuperGridEngine] Advanced rendering', this.gridDataCache.cells.length, 'cells');
+    devLogger.render('SuperGridEngine advanced rendering', {
+      cellCount: this.gridDataCache.cells.length
+    });
 
     // Use the existing render method but with gridDataCache
     this.render();
