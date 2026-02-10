@@ -288,18 +288,21 @@ export class IsometryViewEngine implements ViewEngine {
     switch (viewType) {
       case 'grid': {
         // Import GridRenderer dynamically to avoid circular dependencies
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { GridRenderer } = require('./renderers/GridRenderer');
         return new GridRenderer();
       }
 
       case 'list': {
         // Import ListRenderer dynamically to avoid circular dependencies
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { ListRenderer } = require('./renderers/ListRenderer');
         return new ListRenderer();
       }
 
       case 'kanban': {
         // Import KanbanRenderer dynamically to avoid circular dependencies
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { KanbanRenderer } = require('./renderers/KanbanRenderer');
         return new KanbanRenderer();
       }
