@@ -9,6 +9,7 @@ import { IsometryViewEngine } from '../engine/IsometryViewEngine';
 import { DEFAULT_VIEW_CONFIG } from '../engine/contracts/ViewConfig';
 import type { ViewConfig, ViewType } from '../engine/contracts/ViewConfig';
 import type { Node } from '@/types/node';
+import { devLogger } from '../utils/logging';
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
@@ -54,7 +55,11 @@ export function Canvas() {
 
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);
-    console.log('Node clicked:', node);
+    devLogger.debug('Canvas node clicked', {
+      nodeId: node.id,
+      nodeName: node.name,
+      nodeFolder: node.folder
+    });
   }, []);
 
   // Map activeView to ViewType
@@ -78,7 +83,12 @@ export function Canvas() {
         onNodeClick: handleNodeClick,
         onNodeHover: (node, position) => {
           // Handle hover events if needed
-          console.log('Node hover:', node?.name, position);
+          if (node) {
+            devLogger.debug('Canvas node hover', {
+              nodeName: node.name,
+              position: { x: position?.x, y: position?.y }
+            });
+          }
         }
       },
       performance: {
@@ -124,10 +134,15 @@ export function Canvas() {
       .then(() => {
         const renderTime = performance.now() - renderStartTime;
         recordRender(renderTime, nodes.length);
-        console.log(`[Canvas] Rendered ${viewType} view with ${nodes.length} nodes in ${renderTime.toFixed(2)}ms`);
+        devLogger.debug('Canvas ViewEngine render complete', {
+          viewType,
+          nodeCount: nodes.length,
+          renderTime: `${renderTime.toFixed(2)}ms`,
+          performance: renderTime < 16 ? 'excellent' : renderTime < 33 ? 'good' : 'slow'
+        });
       })
       .catch((error) => {
-        console.error('[Canvas] ViewEngine render failed:', error);
+        devLogger.error('Canvas ViewEngine render failed', { error, viewType });
       });
 
   }, [nodes, activeView, mapActiveViewToViewType, createViewConfig, recordRender]);
