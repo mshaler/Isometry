@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useRef, ReactNode, useMemo } from 'react';
+import { devLogger } from '../utils/logging/logger';
 
 // Types for feature flag system
 export interface FeatureFlag {
@@ -104,7 +105,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
           params
         });
       } catch (error) {
-        console.warn('Native communication failed, falling back to local storage:', error);
+        devLogger.warn('Native communication failed, falling back to local storage', { error });
         return null;
       }
     }
@@ -144,7 +145,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load feature flags';
       setError(errorMessage);
-      console.error('Error loading feature flags:', err);
+      devLogger.error('Error loading feature flags', { error: err });
 
       // Load cached flags as fallback
       try {
@@ -154,7 +155,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
           setFlags(cachedFlags);
         }
       } catch (cacheError) {
-        console.error('Failed to load cached flags:', cacheError);
+        devLogger.error('Failed to load cached flags', { error: cacheError });
       }
     } finally {
       setIsLoading(false);
@@ -226,7 +227,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
       // Evaluate flag
       const flag = flags[flagName];
       if (!flag) {
-        console.warn(`Feature flag not found: ${flagName}`);
+        devLogger.warn('Feature flag not found', { flagName });
         return false;
       }
 
@@ -265,7 +266,7 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
           });
         }
       } catch (error) {
-        console.error(`Error evaluating feature flag ${flagName}:`, error);
+        devLogger.error('Error evaluating feature flag', { flagName, error });
         return false;
       }
 
