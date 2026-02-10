@@ -12,9 +12,11 @@ import { useState, useCallback } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { usePAFVProjection, useSearchProjection, useFacets, useAxisValues } from '../hooks/database/usePAFVProjection';
 import { useSQLiteQuery } from '../hooks/database/useSQLiteQuery';
+import { useAltoIndexImport } from '../hooks/useAltoIndexImport';
 import { D3SparsityLayer } from './D3SparsityLayer';
 import type { D3CoordinateSystem } from '../types/grid';
 import type { Node } from '../types/node';
+import { devLogger } from '../utils/logging';
 import './SuperGridSQLDemo.css';
 
 // ============================================================================
@@ -59,6 +61,17 @@ export default function SuperGridSQLDemo({
   // ============================================================================
   // Data Hooks - Bridge Elimination in Action
   // ============================================================================
+
+  // Alto-index import hook
+  const {
+    importFromPublic,
+    getStats,
+    clearData,
+    status: importStatus,
+    progress: importProgress,
+    result: importResult,
+    error: importError
+  } = useAltoIndexImport();
 
   // Get available facets for axis selection
   const { data: facets } = useFacets();
@@ -153,7 +166,11 @@ export default function SuperGridSQLDemo({
 
   // Handle cell clicks
   const handleCellClick = useCallback((node: Node) => {
-    console.log('SuperGrid Cell Click:', { node });
+    devLogger.debug('SuperGrid cell click interaction', {
+      nodeId: node.id,
+      nodeName: node.name,
+      nodeFolder: node.folder
+    });
   }, []);
 
   // For search mode, we could filter allNodes or use a separate search hook
@@ -333,6 +350,71 @@ export default function SuperGridSQLDemo({
               <span>{allNodes?.length || 0} items</span>
             </div>
           </div>
+        </div>
+
+        <div className="controls-section">
+          <h3>Alto-Index Import</h3>
+          <div className="import-controls">
+            <button
+              onClick={() => importFromPublic({ clearExisting: true })}
+              disabled={importStatus === 'loading' || importStatus === 'importing'}
+              className="import-button"
+            >
+              {importStatus === 'loading' ? '📥 Loading...' :
+               importStatus === 'importing' ? `⏳ Importing ${importProgress}%` :
+               '📦 Import Alto-Index Data'}
+            </button>
+            <button
+              onClick={() => clearData()}
+              disabled={importStatus === 'loading' || importStatus === 'importing'}
+              className="clear-button"
+            >
+              🗑️ Clear Imported
+            </button>
+          </div>
+          {importResult && (
+            <div className="metrics" style={{ marginTop: '8px' }}>
+              <div className="metric">
+                <span>Imported:</span>
+                <span>{importResult.imported} nodes</span>
+              </div>
+              <div className="metric">
+                <span>Duration:</span>
+                <span>{(importResult.duration / 1000).toFixed(2)}s</span>
+              </div>
+              {importResult.errors.length > 0 && (
+                <div className="metric" style={{ color: 'red' }}>
+                  <span>Errors:</span>
+                  <span>{importResult.errors.length}</span>
+                </div>
+              )}
+            </div>
+          )}
+          {importError && (
+            <div className="error-message" style={{ color: 'red', marginTop: '8px' }}>
+              ❌ {importError}
+            </div>
+          )}
+          {(() => {
+            const stats = getStats();
+            return stats._total > 0 ? (
+              <div className="metrics" style={{ marginTop: '8px' }}>
+                <div className="metric">
+                  <span>Total imported:</span>
+                  <span>{stats._total}</span>
+                </div>
+                {Object.entries(stats)
+                  .filter(([k]) => k !== '_total')
+                  .slice(0, 4)
+                  .map(([type, count]) => (
+                    <div key={type} className="metric">
+                      <span>{type}:</span>
+                      <span>{count}</span>
+                    </div>
+                  ))}
+              </div>
+            ) : null;
+          })()}
         </div>
       </div>
 
