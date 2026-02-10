@@ -11,6 +11,10 @@ interface UseTerminalOptions {
   onCommand?: (command: string) => void;
   onNavigateHistory?: (direction: 'up' | 'down') => string | null;
   onOutput?: (output: string) => void;
+  onCtrlR?: () => void;
+  onSearchInput?: (char: string) => void;
+  onExitSearch?: () => void;
+  isSearchMode?: boolean;
 }
 
 interface UseTerminalReturn {
@@ -25,6 +29,8 @@ interface UseTerminalReturn {
   setWorkingDirectory: (path: string) => void;
   terminal: Terminal | null;
   isConnected: boolean;
+  handleCopy: () => Promise<boolean>;
+  handlePaste: () => Promise<string | null>;
 }
 
 /**
@@ -50,6 +56,48 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
   // Local reference to working directory (updated via context)
   const currentDirRef = terminalContext.currentWorkingDirectory;
+
+  /**
+   * Handle copy: if text is selected, copy to clipboard; otherwise return false (allow SIGINT)
+   */
+  const handleCopy = useCallback(async (): Promise<boolean> => {
+    const terminal = terminalRef.current;
+    if (!terminal) return false;
+
+    if (terminal.hasSelection()) {
+      const selectedText = terminal.getSelection();
+      try {
+        await navigator.clipboard.writeText(selectedText);
+        terminal.clearSelection();
+        return true; // Copied, don't send SIGINT
+      } catch (err) {
+        devLogger.warn('Failed to copy to clipboard', { component: 'useTerminal', error: err });
+        return false;
+      }
+    }
+    return false; // No selection, allow SIGINT
+  }, []);
+
+  /**
+   * Handle paste: read from clipboard and write to terminal
+   */
+  const handlePaste = useCallback(async (): Promise<string | null> => {
+    const terminal = terminalRef.current;
+    if (!terminal) return null;
+
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        // Filter out control characters for safety
+        const safeText = text.replace(/[\x00-\x1f]/g, '');
+        terminal.write(safeText);
+        return safeText;
+      }
+    } catch (err) {
+      devLogger.warn('Failed to paste from clipboard', { component: 'useTerminal', error: err });
+    }
+    return null;
+  }, []);
 
   const createTerminal = useCallback((containerId: string) => {
     if (terminalRef.current) {
@@ -226,7 +274,69 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     // Handle keyboard input
     let currentLine = '';
 
+    // Set up keyboard event listener for Cmd+C and Cmd+V
+    const container = terminal.element?.parentElement;
+    if (container) {
+      const handleKeydown = async (e: KeyboardEvent) => {
+        // Cmd+C (copy) - metaKey for Mac, ctrlKey for Windows/Linux
+        if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+          const copied = await handleCopy();
+          if (copied) {
+            e.preventDefault();
+          }
+          // If not copied (no selection), let the terminal handle Ctrl+C as SIGINT
+        }
+
+        // Cmd+V (paste) - metaKey for Mac, ctrlKey for Windows/Linux
+        if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+          e.preventDefault();
+          const pastedText = await handlePaste();
+          if (pastedText) {
+            currentLine += pastedText;
+          }
+        }
+      };
+
+      container.addEventListener('keydown', handleKeydown);
+
+      // Store cleanup reference
+      const originalDispose = terminal.dispose.bind(terminal);
+      terminal.dispose = () => {
+        container.removeEventListener('keydown', handleKeydown);
+        originalDispose();
+      };
+    }
+
     terminal.onData((data) => {
+      // Handle Ctrl+R for reverse search
+      if (data === '\x12') { // Ctrl+R
+        options.onCtrlR?.();
+        return;
+      }
+
+      // Handle Escape (exit search mode)
+      if (data === '\x1b' && options.isSearchMode) {
+        options.onExitSearch?.();
+        return;
+      }
+
+      // In search mode, handle input differently
+      if (options.isSearchMode) {
+        if (data === '\r') { // Enter - accept current match
+          options.onExitSearch?.();
+          return;
+        }
+        if (data === '\u007f') { // Backspace in search mode
+          options.onSearchInput?.('\x7F'); // Signal backspace
+          return;
+        }
+        if (data.length === 1 && data.charCodeAt(0) >= 32) {
+          options.onSearchInput?.(data);
+          return;
+        }
+        return;
+      }
+
       if (data === '\r') { // Enter
         executeCommand(currentLine);
         currentLine = '';
@@ -241,7 +351,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         return;
       }
 
-      if (data === '\u0003') { // Ctrl+C
+      if (data === '\u0003') { // Ctrl+C (when no selection - SIGINT)
         terminal.write('^C\r\n');
         showPrompt();
         currentLine = '';
@@ -267,7 +377,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         terminal.write(data);
       }
     });
-  }, [executeCommand, showPrompt, options.onNavigateHistory]);
+  }, [executeCommand, showPrompt, options.onNavigateHistory, options.onCtrlR, options.onSearchInput, options.onExitSearch, options.isSearchMode, handleCopy, handlePaste]);
 
   const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;
@@ -319,6 +429,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     getCurrentWorkingDirectory,
     setWorkingDirectory,
     terminal: terminalRef.current,
-    isConnected: isConnectedRef.current
+    isConnected: isConnectedRef.current,
+    handleCopy,
+    handlePaste
   };
 }

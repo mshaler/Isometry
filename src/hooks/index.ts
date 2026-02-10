@@ -27,6 +27,8 @@ export { useConflictResolution } from './system/useConflictResolution';
 export { useNotebookIntegration } from './system/useNotebookIntegration';
 export { useWebSocketConnection } from './useWebSocketConnection';
 export type { UseWebSocketConnectionResult } from './useWebSocketConnection';
+export { useCommandHistory } from './useCommandHistory';
+export type { UseCommandHistoryResult } from './useCommandHistory';
 
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
