@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.2 Three-Canvas Notebook - Phase 45 (TipTap Editor Migration)
+**Current focus:** v4.3 Navigator Integration - Phase 51 (Navigator UI Integration)
 
 ## Current Position
 
-Phase: 45 of 46 (TipTap Editor Migration)
-Plan: 1 of 3 complete (45-01 TipTap Foundation)
-Status: In progress
-Last activity: 2026-02-10 — Completed 45-01 (TipTap Foundation)
+Phase: 51 (Navigator UI Integration)
+Plan: 0 of 2 complete (planning complete, ready to execute)
+Status: Planned, ready to execute
+Last activity: 2026-02-10 — Completed Phase 51 planning
 
-Progress: [█████░░░░░░░] 42% (Phase 44: 1/4, Phase 45: 1/3)
+Progress: [████████████] 100% Phase 50 complete | Phase 51 planned (0/2)
 
 ## Performance Metrics
 
@@ -25,7 +25,7 @@ Progress: [█████░░░░░░░] 42% (Phase 44: 1/4, Phase 45: 1
 
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
-- Phase 44: 1 plan complete, ~5 minutes execution
+- Phase 44: 2 plans complete, ~12 minutes execution
 - Phase 45: 1 plan complete, ~8 minutes execution
 
 **v4.2 Target:**
@@ -67,6 +67,9 @@ Key v4.1 decisions carried forward:
 - EDGE_TYPE_STYLES with colors and dasharray per GRAPH type
 - Default 100 node limit for performance
 - Node selection updates activeCard for cross-canvas sync
+- DDL blocking in Data Inspector (SELECT only)
+- Auto-LIMIT 1000 for queries without explicit LIMIT
+- Extract sub-components (ResultsTable, Toolbar) for complexity reduction
 
 **Phase 45 decisions:**
 - shouldRerenderOnTransaction: false for TipTap performance (CRITICAL)
@@ -92,7 +95,7 @@ None — 45-01 complete, ready for 45-02.
 
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
-- Preview pane 75% complete - SuperGrid works, Network Graph implemented, Timeline/Inspector are stubs
+- Preview pane 85% complete - SuperGrid works, Network Graph + Data Inspector implemented, Timeline is stub
 - Capture pane now uses TipTap with slash commands and auto-save
 - Markdown serialization using getText() - proper serialization can be added in 45-02
 
@@ -104,7 +107,8 @@ Resume file: None
 
 ## Next Steps
 
-1. Execute 45-02 (Wiki-link autocomplete) if planned
-2. Continue Phase 44: Preview Visualization Expansion (44-02 Timeline)
-3. Complete Phase 45: 45-03 (Markdown syntax highlighting)
-4. Phase 46: Live Data Synchronization (requires 44, 45 complete)
+1. **Execute Phase 51**: Run `/gsd:execute-phase 51` to implement Navigator UI Integration
+   - 51-01 (Wave 1): DraggableFacet and PlaneDropZone components
+   - 51-02 (Wave 2): SimplePAFVNavigator refactor with classification buckets
+2. Verify NAV-01 through NAV-05 requirements
+3. Continue v4.2 phases when ready (44, 45, 46)
