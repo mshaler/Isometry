@@ -5,6 +5,8 @@
  * Bridges between the GSD GUI and the terminal where Claude Code runs.
  */
 
+import { devLogger } from '../utils/logging';
+
 export interface ClaudeCodeCommand {
   command: string;
   args?: string[];
@@ -131,7 +133,7 @@ export class DefaultClaudeCodeDispatcher implements ClaudeCodeDispatcher {
             }
           }, 5000);
         } catch (error) {
-          console.warn('Error terminating child process:', error);
+          devLogger.debug('Error terminating child process', { component: 'ClaudeCodeDispatcher', error });
         }
       }
 
