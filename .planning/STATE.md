@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 ## Current Position
 
 Phase: 43 of 46 (Shell Integration Completion)
-Plan: 2 of 6 complete
+Plan: 3 of 6 complete
 Status: In progress
-Last activity: 2026-02-10 — Completed 43-01-PLAN.md (WebSocket connection & terminal context)
+Last activity: 2026-02-10 — Completed 43-03-PLAN.md (GSD Execution Integration)
 
-Progress: [███░░░░░░░░░] 33% (0/4 phases complete, 2/6 plans in Phase 43)
+Progress: [█████░░░░░░░] 50% (0/4 phases complete, 3/6 plans in Phase 43)
 
 ## Performance Metrics
 
@@ -47,6 +47,12 @@ Key v4.1 decisions carried forward:
 - Queue-based rate limiting for Claude API to prevent 429 errors
 - Split NotebookContext pattern to prevent cascade re-renders
 
+**43-03 decisions:**
+- Toast notifications auto-dismiss after 3 seconds
+- Failed commands loaded into input for retry editing
+- Tool calls collapsed by default with click-to-expand
+- Auto-scroll pauses when user scrolls up, resumes at bottom
+
 ### Pending Todos
 
 None — roadmap planning complete.
@@ -56,10 +62,11 @@ None — roadmap planning complete.
 **Pre-existing Issues (not blocking v4.2):**
 - ~40 TypeScript errors in grid-interaction, grid-selection, logging modules (pre-existing)
 - Directory health check failing for src/services (22/15 files) - pre-existing cleanup needed
+- check-unused failing due to pre-existing unused exports
 
 **v4.2 Implementation Notes:**
 - Existing notebook implementation is ~70% complete (~10,554 lines)
-- Shell pane 35% complete - needs real Claude Code WebSocket
+- Shell pane 50% complete - GSD execution integration done, needs Claude AI WebSocket
 - Preview pane 50% complete - SuperGrid works, other tabs are stubs
 - Capture pane 70% complete - needs TipTap migration
 - Critical: Must implement shouldRerenderOnTransaction: false for TipTap performance
@@ -69,15 +76,14 @@ None — roadmap planning complete.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 43-01 (WebSocket Connection & Terminal Context)
-Resume file: .planning/phases/43-shell-integration-completion/43-03-PLAN.md
+Stopped at: Completed 43-03 (GSD Execution Integration)
+Resume file: .planning/phases/43-shell-integration-completion/43-04-PLAN.md
 
 ## Next Steps
 
-1. Execute 43-03-PLAN.md (Output Parser & GSD Integration)
-2. Execute 43-04-PLAN.md (Claude AI WebSocket Integration)
-3. Execute 43-05-PLAN.md (Terminal Resize & Performance)
-4. Execute 43-06-PLAN.md (Session Persistence)
-5. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
-6. Phase 45: TipTap Editor Migration (EDIT-01 to EDIT-04)
-7. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03)
+1. Execute 43-04-PLAN.md (Claude AI WebSocket Integration)
+2. Execute 43-05-PLAN.md (Terminal Resize & Performance)
+3. Execute 43-06-PLAN.md (Session Persistence)
+4. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
+5. Phase 45: TipTap Editor Migration (EDIT-01 to EDIT-04)
+6. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03)
