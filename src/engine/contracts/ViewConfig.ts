@@ -101,6 +101,39 @@ export interface SelectionState {
 }
 
 /**
+ * Color mapping for node types (alto-index data visualization)
+ */
+export interface NodeColorMap {
+  calendar: string;
+  contact: string;
+  note: string;
+  bookmark: string;
+  task: string;
+  event: string;
+  project: string;
+  resource: string;
+  notebook: string;
+  default: string;
+  [key: string]: string; // Allow additional custom types
+}
+
+/**
+ * Default node type colors for alto-index data
+ */
+export const DEFAULT_NODE_COLORS: NodeColorMap = {
+  calendar: '#f59e0b', // amber for calendar events
+  contact: '#10b981',  // emerald for contacts
+  note: '#3b82f6',     // blue for notes
+  bookmark: '#8b5cf6', // violet for bookmarks
+  task: '#ef4444',     // red for tasks
+  event: '#f97316',    // orange for events
+  project: '#06b6d4',  // cyan for projects
+  resource: '#84cc16', // lime for resources
+  notebook: '#ec4899', // pink for notebooks
+  default: '#6b7280'   // gray for unknown
+};
+
+/**
  * Styling configuration for view appearance
  */
 export interface ViewStyling {
@@ -132,6 +165,9 @@ export interface ViewStyling {
     gridLineColor: string;
     cellBorderRadius: number;
   };
+
+  /** Node type color mapping for alto-index data */
+  nodeColors?: NodeColorMap;
 }
 
 /**

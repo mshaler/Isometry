@@ -389,7 +389,17 @@ export class GridRenderer implements ViewRenderer {
   }
 
   private getCellColor(node: Node): string {
-    // Color cells based on node properties
+    // First, try to color by node type (for alto-index data)
+    const nodeColors = this.config?.styling?.nodeColors;
+    if (nodeColors && node.nodeType) {
+      const typeColor = nodeColors[node.nodeType];
+      if (typeColor) {
+        // Return a lighter version of the type color for cell background
+        return this.lightenColor(typeColor, 0.85);
+      }
+    }
+
+    // Fallback: Color cells based on status
     if (!node.status) return '#f8fafc';
 
     switch (node.status.toLowerCase()) {
@@ -399,6 +409,27 @@ export class GridRenderer implements ViewRenderer {
       case 'blocked': return '#fee2e2'; // Red
       default: return '#f3f4f6'; // Gray
     }
+  }
+
+  /**
+   * Lighten a hex color by a factor (0-1, where 1 = white)
+   */
+  private lightenColor(hex: string, factor: number): string {
+    // Remove # if present
+    const color = hex.replace('#', '');
+
+    // Parse RGB values
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+
+    // Lighten by interpolating towards white
+    const newR = Math.round(r + (255 - r) * factor);
+    const newG = Math.round(g + (255 - g) * factor);
+    const newB = Math.round(b + (255 - b) * factor);
+
+    // Convert back to hex
+    return `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
   }
 
   private wrapText(textSelection: d3.Selection<SVGTextElement, GridCellData, SVGGElement, unknown>): void {

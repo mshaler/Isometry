@@ -126,7 +126,7 @@ export function Canvas() {
     }
   }, []);
 
-  // Create ViewConfig from current state
+  // Create ViewConfig from current state with alto-index node type colors
   const createViewConfig = useCallback((viewType: ViewType, _data: Node[]): ViewConfig => {
     return {
       ...DEFAULT_VIEW_CONFIG,
@@ -150,7 +150,20 @@ export function Canvas() {
       },
       styling: {
         ...DEFAULT_VIEW_CONFIG.styling,
-        colorScheme: theme === 'NeXTSTEP' ? 'light' : 'light' // Could add dark mode support
+        colorScheme: theme === 'NeXTSTEP' ? 'light' : 'light',
+        // Node type color mapping for alto-index data visualization
+        nodeColors: {
+          calendar: '#f59e0b', // amber for calendar events
+          contact: '#10b981',  // emerald for contacts
+          note: '#3b82f6',     // blue for notes
+          bookmark: '#8b5cf6', // violet for bookmarks
+          task: '#ef4444',     // red for tasks
+          event: '#f97316',    // orange for events
+          project: '#06b6d4',  // cyan for projects
+          resource: '#84cc16', // lime for resources
+          notebook: '#ec4899', // pink for notebooks
+          default: '#6b7280'   // gray for unknown types
+        }
       }
     };
   }, [handleNodeClick, theme]);
