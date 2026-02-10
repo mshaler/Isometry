@@ -1,179 +1,269 @@
-# Feature Landscape
+# Feature Research
 
-**Domain:** SuperGrid polymorphic data visualization
-**Researched:** 2026-02-05
+**Domain:** Three-Canvas Notebook for Knowledge Management with Visualization
+**Researched:** 2026-02-10
+**Confidence:** HIGH
 
-## Executive Summary
+## Feature Landscape
 
-SuperGrid polymorphic visualization represents a fundamentally different approach to data grids — rather than building separate view components, it implements a unified coordinate system that can render the same LATCH-filtered dataset through multiple spatial projections. Based on extensive analysis of IsometryKB patterns and existing Isometry v4 architecture, SuperGrid breaks new ground with its Janus Density Model, nested PAFV headers with dimensional spanning, and direct sql.js integration for zero-serialization data binding.
+### Table Stakes (Users Expect These)
 
-The feature landscape divides into foundational table stakes (basic grid functionality), competitive differentiators (unique SuperGrid capabilities), and deliberate anti-features to avoid complexity traps that plague traditional grid systems.
+Features users assume exist. Missing these = product feels incomplete.
 
-## Table Stakes
-
-Features users expect from any modern data grid. Missing = product feels incomplete.
+#### Capture Pane: Block-Based Editor
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Basic Cell Rendering | Fundamental grid display | Low | D3.js data binding with sql.js queries |
-| Row/Column Headers | Grid navigation requirement | Low | Static headers before spanning logic |
-| Cell Selection | User interaction foundation | Medium | Single/multi-select with keyboard nav |
-| Keyboard Navigation | Accessibility & power user expectation | Medium | Arrow keys, Tab, Enter patterns |
-| Scroll Performance | Large dataset usability | High | Virtual scrolling with 10k+ cells |
-| Resize Columns | User customization expectation | Medium | Drag handles with proportional sizing |
-| Sort by Column | Basic data manipulation | Low | SQL ORDER BY integration |
-| Export Data | Data portability requirement | Low | CSV/JSON export from sql.js |
-| Responsive Layout | Mobile/tablet compatibility | Medium | Adaptive cell sizing and header collapse |
-| Undo/Redo | Data editing safety net | High | Operation stack with ACID transactions |
+| Slash command menu | Notion/Obsidian standard, fast content creation | LOW | TipTap has extension ecosystem, type `/` triggers block menu |
+| Block types (heading, paragraph, list, code, quote) | Core markdown equivalents | LOW | TipTap provides 100+ extensions including all standard blocks |
+| Keyboard shortcuts (Cmd+B, Cmd+K, etc.) | Expected in all modern editors | LOW | Standard markdown shortcuts, customizable via TipTap |
+| Live markdown preview | Users expect WYSIWYG, not raw markdown | MEDIUM | TipTap is headless, needs custom renderer integration |
+| Autosave with conflict detection | Users expect "lossless by default" (2026 standard) | MEDIUM | Debounced save to IndexedDB, merge conflicts if concurrent edits |
+| Properties panel (LATCH metadata) | Notion Properties, Obsidian frontmatter standard | MEDIUM | Must integrate with existing LATCH filtering system |
+| Bidirectional links `[[page]]` | Core knowledge management feature (Roam, Obsidian) | MEDIUM | Autocomplete on `[[`, creates edges in LPG on save |
+| Block references/transclusion `![[page#block]]` | Expected for reusing content | HIGH | Requires block-level IDs, live sync when source changes |
 
-## Differentiators
+#### Shell Pane: Terminal Integration
 
-Features that set SuperGrid apart from existing grid systems. Not expected, but valued.
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| ANSI color support | Standard terminal output | LOW | xterm.js provides GPU-accelerated renderer with ANSI support |
+| Command history (up/down arrows) | Basic terminal UX | LOW | xterm.js includes built-in readline support |
+| Copy/paste from terminal | Users expect clipboard integration | LOW | xterm.js addon provides clipboard support |
+| Multi-tab support | Modern developer expectation (Warp, iTerm2) | MEDIUM | React tabs component, multiple xterm.js instances |
+| Process output streaming | Real-time feedback for long commands | LOW | xterm.js designed for live streaming |
+| Command completion | Expected in modern terminals (2026) | HIGH | Requires shell integration, context-aware suggestions |
+
+#### Preview Pane: Visualization Integration
+
+| Feature | Why Expected | Complexity | Notes |
+|---------|--------------|------------|-------|
+| Live update on data change | Users expect reactivity | LOW | Already built: D3.js data joins with sql.js triggers |
+| Multiple visualization tabs | Context switching between views | LOW | React tabs, existing D3 renderers (Grid, Network, Kanban) |
+| Synchronized selection | Click in preview → highlight in capture | MEDIUM | Shared selection state via React Context |
+| Zoom/pan persistence | Users expect view state to persist | LOW | Store viewport state in IndexedDB per card |
+
+### Differentiators (Competitive Advantage)
+
+Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Nested PAFV Headers** | Hierarchical data visualization no one else has | High | Signature SuperGrid feature - visual spanning across hierarchy levels |
-| **Grid Continuum** | Same data, multiple views seamlessly | High | Gallery → List → Kanban → Grid → SuperGrid transitions |
-| **Janus Density Model** | Orthogonal zoom/pan controls | High | Independent value density (zoom) and extent density (pan) |
-| **Dynamic Axis Assignment** | Drag LATCH dimensions between planes | High | Real-time PAFV remapping with smooth transitions |
-| **Direct sql.js Binding** | Zero serialization overhead | Medium | D3.js queries SQLite in same memory space |
-| **Bipolar Origin Mode** | Eisenhower Matrix & 2D semantic grids | Medium | Center-origin coordinates for quadrant semantics |
-| **Anchor Origin Mode** | Traditional spreadsheet layouts | Low | Corner-origin for hierarchical data |
-| **SuperStack Spanning** | Visual header spanning without merged cells | High | Pure CSS/SVG spanning preserves data model |
-| **LATCH-Aware Formulas** | Multidimensional calculations | High | Formula scope respects PAFV context |
-| **SuperZoom Navigation** | Cartographic grid navigation | Medium | Pinned upper-left anchor like Maps.app |
-| **Coordinate Persistence** | Position survives view transitions | Medium | Janus translation layer maintains context |
-| **Four-Quadrant Layout** | MiniNav + Headers + Data separation | Low | Clean rendering boundary definitions |
+| Notebook cards in PAFV grid | Unique: notes ARE data, visualize note relationships spatially | MEDIUM | notebook_cards already in schema, just need PAFV projection mapping |
+| D3 visualization blocks in editor | Embed live charts in notes (not static images) | HIGH | Requires custom TipTap extension, D3 renderer in contentEditable, query context |
+| Shell output → card capture | `@save-card` annotation to capture command output as nodes | MEDIUM | Parse terminal output, detect annotation, create node with properties |
+| Claude Code integration with project context | Shell can read `.planning/` context, execute GSD workflows | HIGH | MCP server integration, file watching, structured output parsing |
+| Bidirectional note-visualization sync | Select nodes in viz → scroll to matching blocks in capture | HIGH | Requires block-level LPG mapping, scroll position tracking |
+| GSD GUI wrapper | Turn Claude Code terminal output into rich UI (progress bars, tables) | HIGH | Parse Claude Code output format, render structured UI components |
+| Formula bar with PAFV functions | Excel-like formulas aware of LATCH dimensions (SUMOVER) | HIGH | Already planned for SuperCalc, integrate with notebook properties |
+| Version history per block | Track changes to individual blocks, not whole notes | HIGH | Requires block-level versioning in SQLite, conflict UI |
 
-## Anti-Features
+### Anti-Features (Commonly Requested, Often Problematic)
 
-Features to explicitly NOT build. Common mistakes in grid systems.
+Features that seem good but create problems.
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| **Merged Data Cells** | Breaks selection, copy/paste, and formula scope | Use visual spanning with CSS/SVG overlays |
-| **Complex ORM Layer** | Performance killer, debugging nightmare | Direct SQL with TypeScript interfaces |
-| **Cell-Level State Management** | Memory explosion with large grids | D3's data join IS state management |
-| **External State Managers** | Redux/Zustand conflicts with D3 patterns | Use D3 data binding + React contexts only |
-| **Native Bridge Complexity** | 40KB overhead, serialization bottleneck | sql.js eliminates all bridge code |
-| **Infinite Scroll** | Poor UX for data grids, breaks keyboard nav | Virtual scrolling with known boundaries |
-| **Real-time Everything** | Performance degradation, battery drain | Selective real-time based on user focus |
-| **Auto-Save Every Keystroke** | Database thrashing, poor performance | Debounced saves with explicit save points |
-| **Complex Drag-Drop Framework** | Over-engineering, poor touch support | Simple PAFV chip movement with snap zones |
-| **Pivot Table UI** | Complexity explosion, poor mobile UX | LATCH filtering with visual aggregation |
-| **Advanced Query Builder** | Scope creep, SQL is better for power users | Direct SQL with syntax highlighting |
-| **Custom Undo Framework** | Reinventing the wheel, edge case bugs | Browser/system undo + SQL transactions |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| Real-time collaborative editing | "Like Google Docs" | CRDT complexity, conflicts with local-first, scope explosion | CloudKit sync with conflict resolution UI (manual merge) |
+| WYSIWYG table editor | "Like Notion databases" | Reinvents SuperGrid, doesn't leverage existing PAFV system | Use properties panel + SuperGrid preview (notes ARE database) |
+| AI autocomplete in editor | "Like Copilot" | Breaks flow, hallucinations in notes dangerous, latency | Explicit `/ai` slash command, deliberate invocation only |
+| Infinite canvas for notes | "Like Muse/Miro" | Conflicts with LATCH filtering, hard to navigate at scale | Use PAFV grid in preview pane, spatial via Location axis |
+| Full-featured terminal emulator | "Like iTerm2" | Scope explosion, reinvents wheel, native terminals better | xterm.js basics + shell integration, delegate complex features |
+| Plugins/extensions marketplace | "Like VS Code" | Maintenance burden, security risk, version conflicts | Curated features only, no third-party plugins (v1) |
 
 ## Feature Dependencies
 
 ```
-Foundation Layer:
-- sql.js Integration → Basic Cell Rendering
-- Basic Cell Rendering → Row/Column Headers
-- Row/Column Headers → Cell Selection
+Block-Based Editor
+    └──requires──> Autosave with Conflict Detection
+    └──requires──> Properties Panel (LATCH metadata)
 
-SuperGrid Core:
-- PAFV Context → Dynamic Axis Assignment
-- Dynamic Axis Assignment → Grid Continuum
-- Grid Continuum → Nested PAFV Headers
-- Coordinate System → Bipolar/Anchor Origins
+Bidirectional Links [[page]]
+    └──requires──> Block-Based Editor
+    └──requires──> LPG Edge Creation (already exists)
+    └──enhances──> Notebook Cards in PAFV Grid
 
-Advanced Features:
-- Nested PAFV Headers → SuperStack Spanning
-- Janus Density Model → SuperZoom Navigation
-- PAFV Context → LATCH-Aware Formulas
+Block References ![[page#block]]
+    └──requires──> Bidirectional Links
+    └──requires──> Block-level IDs
+    └──requires──> Live Sync on Source Change
+
+Shell Integration
+    └──requires──> xterm.js Terminal Emulator
+    └──requires──> Multi-tab Support
+
+Claude Code Integration
+    └──requires──> Shell Integration
+    └──requires──> Project Context (`.planning/` watching)
+    └──enhances──> GSD GUI Wrapper
+
+GSD GUI Wrapper
+    └──requires──> Claude Code Integration
+    └──requires──> Output Parser
+    └──enhances──> Shell Pane
+
+D3 Visualization Blocks
+    └──requires──> Block-Based Editor
+    └──requires──> Custom TipTap Extension
+    └──requires──> D3 Renderer in contentEditable
+    └──conflicts──> Simple Autosave (needs special serialization)
+
+Notebook Cards in PAFV Grid
+    └──requires──> Properties Panel (LATCH metadata)
+    └──requires──> SuperGrid (already exists)
+    └──enhances──> Bidirectional Note-Visualization Sync
+
+Bidirectional Note-Visualization Sync
+    └──requires──> Notebook Cards in PAFV Grid
+    └──requires──> Block-level LPG Mapping
+    └──requires──> Synchronized Selection
 ```
 
-## MVP Recommendation
+### Dependency Notes
 
-For SuperGrid Foundation (v4.1), prioritize:
+- **Block-Based Editor requires Autosave:** Without autosave, users lose work. "Lossless by default" is 2026 table stakes.
+- **Bidirectional Links require LPG Edges:** Links create graph relationships, stored as edges with type `LINK`.
+- **Block References require Live Sync:** If source block changes, all transclusions must update or show conflict.
+- **Claude Code requires Shell Integration:** Terminal is the interface to Claude Code API.
+- **D3 Visualization Blocks conflict with Simple Autosave:** Embedded D3 needs special serialization (store query + config, not DOM).
+- **Notebook Cards in PAFV Grid enhances Bidirectional Sync:** Selecting a card in grid can scroll to matching block in capture.
 
-1. **Direct sql.js Integration** - Proves bridge elimination architecture
-2. **Basic PAFV Headers** - Single-level row/column headers with LATCH mapping
-3. **Dynamic Axis Assignment** - Drag chips between wells (rows/columns/available)
-4. **Anchor Origin Mode** - Traditional grid coordinates (0,0 at top-left)
-5. **Basic Grid Continuum** - Switch between List → Grid views
+## MVP Definition
 
-Defer to post-MVP:
-- **SuperStack Spanning**: Complex visual spanning logic, needs solid foundation first
-- **Janus Density Model**: Advanced UX concept, requires user feedback on basic grid
-- **Bipolar Origin Mode**: Specialized feature, Eisenhower Matrix can wait
-- **LATCH-Aware Formulas**: Formula system is a major feature deserving its own phase
-- **SuperZoom Navigation**: Nice-to-have, not core grid functionality
+### Launch With (v1)
 
-## Competitive Analysis
+Minimum viable product — what's needed to validate the capture-shell-preview workflow.
 
-**Existing Solutions Analyzed:**
-- AG Grid: Industry standard, but heavy and lacks axis assignment
-- React Table: Hooks-based, but no polymorphic view support
-- MUI DataGrid: Good UX, but no grid continuum concept
-- Airtable: Best view switching UX, but proprietary and limited
-- Notion: Great table/board views, but no hierarchical headers
+- [x] **Three-pane layout** — Existing: React layout with resizable panes
+- [x] **SuperGrid in Preview** — Existing: Full PAFV projection system
+- [ ] **Block-based editor in Capture** — Essential: TipTap with slash commands, standard blocks (heading, paragraph, list, code)
+- [ ] **Properties panel (LATCH metadata)** — Essential: Integrates notes with existing filtering system
+- [ ] **Autosave to IndexedDB** — Essential: Debounced save every 2-5 seconds, conflict detection on load
+- [ ] **Bidirectional links `[[page]]`** — Essential: Creates edges in LPG, autocomplete on `[[`
+- [ ] **xterm.js terminal in Shell** — Essential: Basic ANSI support, copy/paste, command history
+- [ ] **Notebook cards in PAFV grid** — Essential: The differentiator, validates the whole concept
+- [ ] **Synchronized selection** — Essential: Click card in grid → highlight in capture
 
-**SuperGrid's Unique Position:**
-- Only system with polymorphic view continuum (same data, multiple projections)
-- Only system with nested PAFV headers across arbitrary dimensions
-- Only system with orthogonal density controls (Janus model)
-- Only system with direct WASM SQLite integration for zero serialization
-- Only system designed specifically for LATCH filtering + GRAPH connectivity
+### Add After Validation (v1.x)
 
-## Implementation Insights from IsometryKB
+Features to add once core workflow is validated.
 
-**Key Patterns Discovered:**
+- [ ] **Multi-tab shell** — Trigger: Users run multiple concurrent commands
+- [ ] **Block references `![[page#block]]`** — Trigger: Users request content reuse across notes
+- [ ] **Command palette (Cmd+K)** — Trigger: Users request faster navigation
+- [ ] **Claude Code integration** — Trigger: Shell usage patterns show need for AI assistance
+- [ ] **Shell output → card capture** — Trigger: Users manually copy terminal output to notes
+- [ ] **Live markdown preview improvements** — Trigger: Users request richer formatting (tables, images)
 
-1. **Four-Grid Architecture**: SuperGrid consists of MiniNav, Column Headers, Row Headers, and Data Cells - each with distinct rendering responsibilities
+### Future Consideration (v2+)
 
-2. **Z-Axis Layer Stack**:
-   - z=0 Sparsity (D3 data floor)
-   - z=1 Density (React controls)
-   - z=2 Overlay (Cards/modals)
+Features to defer until product-market fit is established.
 
-3. **Janus Translation**: Positions recomputed across view transitions rather than preserved literally - maintains semantic meaning while adapting to new coordinate systems
+- [ ] **D3 visualization blocks in editor** — Why defer: High complexity, unclear if users want inline viz vs preview pane
+- [ ] **GSD GUI wrapper** — Why defer: Depends on Claude Code integration patterns, premature optimization
+- [ ] **Formula bar with PAFV functions** — Why defer: Already planned for SuperCalc Phase 45, defer until grid maturity
+- [ ] **Version history per block** — Why defer: Complex conflict UI, unclear user demand for block-level (vs note-level) history
+- [ ] **Bidirectional note-visualization sync** — Why defer: Requires block-level LPG mapping infrastructure, nice-to-have enhancement
 
-4. **Density-Dimensionality Unification**: SuperDensity controls semantic precision (sparse: "January" vs dense: "Q1") without losing fidelity
+## Feature Prioritization Matrix
 
-5. **Grid Continuum Mapping**:
-   - Gallery: 0 explicit axes (position only)
-   - List: 1 axis (vertical)
-   - Kanban: 1 facet (columns)
-   - 2D Grid: 2 axes (x/y)
-   - SuperGrid: n axes (stacked z-headers)
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Block-based editor (TipTap) | HIGH | LOW | P1 |
+| Properties panel (LATCH) | HIGH | MEDIUM | P1 |
+| Autosave to IndexedDB | HIGH | MEDIUM | P1 |
+| Bidirectional links `[[page]]` | HIGH | MEDIUM | P1 |
+| xterm.js terminal | HIGH | LOW | P1 |
+| Notebook cards in PAFV grid | HIGH | MEDIUM | P1 |
+| Synchronized selection | MEDIUM | MEDIUM | P1 |
+| Multi-tab shell | MEDIUM | LOW | P2 |
+| Block references `![[page#block]]` | MEDIUM | HIGH | P2 |
+| Command palette | MEDIUM | LOW | P2 |
+| Claude Code integration | HIGH | HIGH | P2 |
+| Shell output → card capture | MEDIUM | MEDIUM | P2 |
+| D3 visualization blocks | LOW | HIGH | P3 |
+| GSD GUI wrapper | MEDIUM | HIGH | P3 |
+| Formula bar (PAFV functions) | LOW | HIGH | P3 |
+| Version history per block | LOW | HIGH | P3 |
 
-## Technical Architecture Requirements
+**Priority key:**
+- P1: Must have for launch (validates core workflow)
+- P2: Should have, add when possible (enhances workflow)
+- P3: Nice to have, future consideration (advanced features)
 
-**From Existing Isometry Implementation:**
+## Competitor Feature Analysis
 
-- **TypeScript**: Strict mode compliance with comprehensive interfaces
-- **sql.js**: Direct WASM SQLite queries, no bridge serialization
-- **D3.js v7**: Data binding with .join() and key functions always
-- **React 18**: Context providers for PAFV state management
-- **Vitest**: TDD workflow with tests before implementation
-- **Performance**: 60fps rendering with 10k+ cards via virtual scrolling
+| Feature | Notion | Obsidian | Our Approach |
+|---------|--------|----------|--------------|
+| Block-based editing | Slash commands, rich blocks, inline databases | Markdown-first, properties panel | TipTap with slash commands, properties panel integrated with LATCH |
+| Bidirectional links | Page links only, no block refs | `[[page]]` and `[[page#heading]]` support | `[[page]]` creates LPG edges, full graph traversal via GRAPH queries |
+| Terminal integration | None | Community plugins (limited) | First-class shell pane with xterm.js, Claude Code integration |
+| Visualization | Static embeds, rigid database views | Community plugins (Dataview, Charts) | Live D3.js in preview pane, notes participate in PAFV projections |
+| Properties/metadata | Inline properties, database schema per table | YAML frontmatter, properties panel (1.4+) | Properties panel maps to LATCH axes, powers filtering/sorting |
+| Autosave | Automatic, no manual save | Configurable interval, vault-level | Debounced IndexedDB save, conflict detection on concurrent edits |
+| Multi-pane layout | Flexible panes, tabs | Split panes, hover preview | Fixed three-canvas (Capture-Shell-Preview), optimized for workflow |
+| Database integration | Notion databases (rigid schema) | Obsidian Bases (query-based views) | Notebook cards ARE database rows, SuperGrid is the database view |
 
-**SuperGrid-Specific Requirements:**
+### Key Differentiators vs Competitors
 
-- **Coordinate System**: Support both Anchor (0,0 corner) and Bipolar (0,0 center) origins
-- **PAFV Integration**: Hook into existing PAFVContext for axis assignments
-- **LATCH Awareness**: Column/row headers map to LATCH dimensions (Location, Alphabet, Time, Category, Hierarchy)
-- **View Persistence**: Grid state survives transitions to other views (Network, Kanban, Timeline)
+**vs Notion:**
+- Notion lacks graph visualization and terminal integration
+- Notion databases are rigid (pre-defined schema), ours are dynamic (LATCH properties)
+- Notion is cloud-first, ours is local-first with SQLite
+
+**vs Obsidian:**
+- Obsidian lacks first-class shell integration and AI tooling
+- Obsidian plugins are fragmented, we integrate terminal + viz natively
+- Obsidian canvas is free-form, ours is structured via PAFV projections
+
+**vs JupyterLab:**
+- Jupyter is code-first (notebooks are code + output), ours is notes-first (notes can contain code)
+- Jupyter lacks knowledge graph features (bidirectional links, LATCH filtering)
+- Jupyter terminal is basic, ours integrates Claude Code for agentic workflows
 
 ## Sources
 
-**HIGH Confidence (Context7/Official Sources):**
-- IsometryKB/notes/SuperGrid.md - Core architecture specification
-- IsometryKB/notes/supergrid-architecture-v4.md - PAFV implementation details
-- IsometryKB/notes/apple-notes/CardBoard/SuperGrid*.md - Design evolution patterns
-- /Users/mshaler/Developer/Projects/Isometry/src/types/supergrid.ts - Current TypeScript interfaces
-- /Users/mshaler/Developer/Projects/Isometry/src/d3/SuperGrid.ts - Existing D3 implementation
+### Block-Based Editors
+- [Notion slash commands guide](https://www.notion.com/help/guides/using-slash-commands)
+- [Notion blocks explained](https://lilys.ai/en/notes/notion-for-beginners-20251022/notion-blocks-explained-beginners-guide)
+- [TipTap documentation](https://tiptap.dev/docs/editor/getting-started/overview)
+- [Shadcn TipTap editors for modern web apps](https://shadcnstudio.com/blog/shadcn-tiptap-editors)
 
-**MEDIUM Confidence (Web Research Verified):**
-- Modern data grid drag-drop patterns from AG Grid, MUI DataGrid, RevoGrid documentation
-- View switching patterns from Airtable, Notion, project management tools
-- Sparse grid visualization research from academic papers (2025)
+### Properties & Metadata
+- [Obsidian Properties documentation](https://help.obsidian.md/Editing+and+formatting/Properties)
+- [Obsidian Properties brings Notion-like metadata](https://medium.com/obsidian-observer/obsidians-new-properties-feature-brings-a-notion-like-experience-to-metadata-1436e57de373)
+- [Obsidian Bases vs Notion databases](https://www.xda-developers.com/notion-databases-great-but-obsidian-bases-better/)
 
-**LOW Confidence (Flagged for Validation):**
-- Exact performance characteristics of sql.js with large datasets
-- Touch interaction patterns for nested header spanning
-- Memory usage patterns with 10k+ cells in browser environment
+### Terminal Integration
+- [xterm.js GitHub repository](https://github.com/xtermjs/xterm.js)
+- [JupyterLab terminal integration](https://www.programming-helper.com/tech/jupyter-2026-interactive-notebooks-data-science-python)
+- [Warp terminal notebooks and AI integration](https://medium.com/devops-ai-decoded/15-advanced-terminal-tricks-to-boost-developer-productivity-in-2026-e42eb2037925)
 
-This research provides comprehensive foundation for SuperGrid v4.1 implementation, prioritizing proven patterns while identifying unique differentiators that set SuperGrid apart from existing grid systems.
+### Claude Code Integration
+- [Claude Code API documentation](https://platform.claude.com/docs/en/home)
+- [How Claude Code is transforming AI coding in 2026](https://apidog.com/blog/claude-code-coding/)
+- [Claude Code with Anthropic API compatibility](https://ollama.com/blog/claude)
+
+### Workflow Patterns
+- [NotebookLM 2026 update: knowledge database](https://www.lbsocial.net/post/notebooklm-2026-update-knowledge-database)
+- [Mastering NotebookLM workflows](https://dennismfrancis.medium.com/mastering-notebooklm-workflows-from-chatting-to-architecting-systems-7c675695b539)
+- [Developer tool requirements for 2026](https://evilmartians.com/chronicles/six-things-developer-tools-must-have-to-earn-trust-and-adoption)
+
+### Autosave Patterns
+- [Behind the feature: autosave at Figma](https://www.figma.com/blog/behind-the-feature-autosave/)
+- [Autosave patterns in modern web applications](https://medium.com/@brooklyndippo/to-save-or-to-autosave-autosaving-patterns-in-modern-web-applications-39c26061aa6b)
+
+### Bidirectional Links & Transclusion
+- [Obsidian block references](https://help.obsidian.md/How+to/Link+to+blocks)
+- [Roam vs Obsidian block references](https://www.zsolt.blog/2021/05/Addicted-to-block-references.html)
+- [Connecting and transcluding notes in Obsidian](https://thesweetsetup.com/connecting-and-transcluding-notes-in-obsidian/)
+
+### Command Palette UX
+- [Command palette UX patterns](https://medium.com/design-bootcamp/command-palette-ux-patterns-1-d6b6e68f30c1)
+- [VS Code command palette guidelines](https://code.visualstudio.com/api/ux-guidelines/command-palette)
+- [Command palette design variants](https://mobbin.com/glossary/command-palette)
+
+---
+*Feature research for: Three-Canvas Notebook (Capture-Shell-Preview)*
+*Researched: 2026-02-10*
+*Confidence: HIGH (verified with official documentation and 2026 current practices)*
