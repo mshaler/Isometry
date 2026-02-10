@@ -12,6 +12,7 @@ import { useEffect, useCallback, useRef } from 'react';
 import { claudeCodeParser, ParsedOutput } from '../services/claudeCodeParser';
 import { GSDService } from '../services/gsdService';
 import { GSDSessionState } from '../types/gsd';
+import { devLogger } from '../utils/logging';
 
 export interface GSDTerminalIntegrationOptions {
   gsdService: GSDService | null;
@@ -79,7 +80,10 @@ export function useGSDTerminalIntegration(
 
       lastOutputRef.current = output;
     } catch (error) {
-      console.error('Error processing terminal output:', error);
+      devLogger.error('Error processing terminal output', {
+        error: error instanceof Error ? error.message : String(error),
+        sessionId
+      });
       onError?.(error instanceof Error ? error.message : 'Unknown parsing error');
     } finally {
       isProcessingRef.current = false;
@@ -182,7 +186,11 @@ export function useGSDTerminalIntegration(
       }
 
     } catch (error) {
-      console.error('Error handling parsed output:', error);
+      devLogger.error('Error handling parsed output', {
+        error: error instanceof Error ? error.message : String(error),
+        sessionId,
+        parsedKeys: Object.keys(parsed)
+      });
       onError?.(error instanceof Error ? error.message : 'Unknown state update error');
     }
   }, [gsdService, sessionId, onStateUpdate, onChoicePrompt, onError]);
