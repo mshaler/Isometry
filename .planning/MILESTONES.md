@@ -1,5 +1,33 @@
 # Project Milestones: Isometry
 
+## v4.1 SuperGrid Foundation (Shipped: 2026-02-10)
+
+**Delivered:** Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture
+
+**Phases completed:** 34-42 (9 phases, 27 plans total)
+
+**Key accomplishments:**
+
+- Bridge Elimination Architecture achieving sql.js direct D3.js data binding with zero serialization overhead (eliminated 40KB MessageBridge)
+- Janus Density Controls with orthogonal zoom (value density) and pan (extent density) and 300ms smooth animations
+- Grid Continuum Views enabling seamless transitions between Grid, List, and Kanban projections with preserved selection state
+- ViewEngine Architecture unifying "D3 renders, React controls" pattern with GridRenderer, ListRenderer, KanbanRenderer
+- IndexedDB Persistence supporting large datasets (50MB+) with auto-save, quota monitoring, and pre-save checks
+- PAFV Axis Switching enabling dynamic axis-to-plane remapping with real-time grid reorganization
+
+**Stats:**
+
+- 859 files modified (172,092 insertions, 36,956 deletions)
+- 156,240 lines of TypeScript
+- 9 phases, 27 plans
+- 5 days from 2026-02-05 to ship
+
+**Git range:** `feat(34-01)` -> `feat(42-03)`
+
+**What's next:** Three-Canvas Notebook Integration (Capture, Shell, Preview) with Claude Code API integration
+
+---
+
 ## v3.1 Live Database Integration (Shipped: 2026-02-01)
 
 **Delivered:** Connected React frontend to native SQLite backend with real-time data synchronization and performance monitoring
@@ -22,7 +50,7 @@
 - 7 phases, 18 plans, ~150 tasks
 - 3 days from start of Phase 18 to milestone completion
 
-**Git range:** `feat(18-01)` → `docs(27)`
+**Git range:** `feat(18-01)` -> `docs(27)`
 
 **What's next:** Enhanced Apple Integration with live synchronization, real-time change detection, sophisticated conflict resolution, and seamless bidirectional sync with Apple Notes
 
