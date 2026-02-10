@@ -133,7 +133,8 @@ export function FilterProvider({ children }: { children: React.ReactNode }) {
   const bridgeResults = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.filteredNodes || []) : [];
   const bridgeIsLoading = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.isLoading || false) : false;
   const bridgeError = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.error || null) : null;
-  const bridgeSequenceId = bridgeMode && bridgeFilterState ? ((bridgeFilterState as any)?.lastSequenceId || null) : null;
+  const bridgeSequenceId = bridgeMode && bridgeFilterState ?
+    ((bridgeFilterState as any)?.lastSequenceId || null) : null;
 
   // Bridge availability detection and mode management
   useEffect(() => {
