@@ -5,6 +5,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
+import { devLogger } from '../utils/logging';
 
 export interface TauriCapabilities {
   isDesktop: boolean;
@@ -185,7 +186,10 @@ export class TauriService {
    */
   async addRecentFile(filePath: string): Promise<void> {
     // TODO: Implement with window state plugin or local storage
-    console.log('Adding to recent files:', filePath);
+    devLogger.debug('TauriService adding file to recent list', {
+      filePath,
+      fileName: this.extractFileName(filePath)
+    });
   }
 
   // Utility methods
