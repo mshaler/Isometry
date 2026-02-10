@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/webview/connection-manager';
 import { useLiveDataContext } from '../contexts/LiveDataContext';
+import { devLogger } from '../utils/logging/logger';
 
 export interface ConnectionContextValue {
   /** Current connection state */
@@ -108,7 +109,7 @@ export function ConnectionProvider({
       // Coordinate with LiveDataContext
       if (newState === 'connected' && !liveDataContext.state.isConnected) {
         // LiveData context manages its own connections through executeQuery
-        console.log('Connection established, LiveData context available');
+        devLogger.debug('Connection established', { liveDataContextAvailable: true });
       }
     });
 
@@ -151,7 +152,7 @@ export function ConnectionProvider({
   // Test connection manually
   const testConnection = useCallback(async (): Promise<boolean> => {
     if (!connectionManager.current) {
-      console.warn('[ConnectionContext] Connection manager not initialized');
+      devLogger.warn('Connection manager not initialized', { context: 'testConnection' });
       return false;
     }
 
@@ -161,12 +162,12 @@ export function ConnectionProvider({
       // Update live data context if connection test succeeded
       if (result && !liveDataContext.state.isConnected) {
         // LiveData context will handle its own connection state
-        console.log('Test connection successful, LiveData context ready');
+        devLogger.debug('Test connection successful', { liveDataContextReady: true });
       }
 
       return result;
     } catch (error) {
-      console.error('[ConnectionContext] Connection test failed:', error);
+      devLogger.error('Connection test failed', { error });
       return false;
     }
   }, [liveDataContext]);
@@ -174,11 +175,11 @@ export function ConnectionProvider({
   // Force reconnection
   const forceReconnection = useCallback(async (): Promise<boolean> => {
     if (!connectionManager.current) {
-      console.warn('[ConnectionContext] Connection manager not initialized');
+      devLogger.warn('Connection manager not initialized', { context: 'forceReconnection' });
       return false;
     }
 
-    console.log('[ConnectionContext] Forcing reconnection');
+    devLogger.debug('Forcing reconnection');
 
     try {
       const result = await connectionManager.current.forceReconnection();
@@ -186,12 +187,12 @@ export function ConnectionProvider({
       // Sync with live data context on successful reconnection
       if (result) {
         // LiveData context will handle reconnection through executeQuery
-        console.log('Forced reconnection successful, LiveData context ready');
+        devLogger.debug('Forced reconnection successful', { liveDataContextReady: true });
       }
 
       return result;
     } catch (error) {
-      console.error('[ConnectionContext] Force reconnection failed:', error);
+      devLogger.error('Force reconnection failed', { error });
       return false;
     }
   }, [liveDataContext]);
@@ -219,7 +220,7 @@ export function ConnectionProvider({
         maxRetries: operation.maxRetries ?? 3
       });
 
-      console.log('[ConnectionContext] Queued operation:', {
+      devLogger.debug('Queued operation', {
         id: operationId,
         type: operation.type,
         priority: operation.priority
@@ -227,7 +228,7 @@ export function ConnectionProvider({
 
       return operationId;
     } catch (error) {
-      console.error('[ConnectionContext] Failed to queue operation:', error);
+      devLogger.error('Failed to queue operation', { error });
       throw error;
     }
   }, [enableOfflineQueue]);
@@ -235,16 +236,16 @@ export function ConnectionProvider({
   // Cancel queued operation
   const cancelOperation = useCallback((operationId: string): boolean => {
     if (!connectionManager.current) {
-      console.warn('[ConnectionContext] Connection manager not initialized');
+      devLogger.warn('Connection manager not initialized', { context: 'cancelOperation' });
       return false;
     }
 
     const success = connectionManager.current.removeFromQueue(operationId);
 
     if (success) {
-      console.log('[ConnectionContext] Cancelled operation:', operationId);
+      devLogger.debug('Cancelled operation', { operationId });
     } else {
-      console.warn('[ConnectionContext] Failed to cancel operation:', operationId);
+      devLogger.warn('Failed to cancel operation', { operationId });
     }
 
     return success;
@@ -267,20 +268,20 @@ export function ConnectionProvider({
   useEffect(() => {
     const handleFocus = () => {
       if (!isConnected && connectionManager.current) {
-        console.log('[ConnectionContext] Window focused, testing connection');
+        devLogger.debug('Window focused, testing connection');
         testConnection();
       }
     };
 
     const handleOnline = () => {
-      console.log('[ConnectionContext] Network online event detected');
+      devLogger.debug('Network online event detected');
       if (!isConnected && connectionManager.current) {
         testConnection();
       }
     };
 
     const handleOffline = () => {
-      console.log('[ConnectionContext] Network offline event detected');
+      devLogger.debug('Network offline event detected');
       // Connection manager will detect this through heartbeat failures
     };
 
@@ -297,7 +298,7 @@ export function ConnectionProvider({
 
   // Log connection status changes
   useEffect(() => {
-    console.log('[ConnectionContext] Connection status changed:', {
+    devLogger.debug('Connection status changed', {
       isConnected,
       status,
       quality: {
@@ -313,7 +314,7 @@ export function ConnectionProvider({
   // Log quality degradation
   useEffect(() => {
     if (quality.latency > 1000 || quality.reliability < 90 || quality.stability < 80) {
-      console.warn('[ConnectionContext] Connection quality degraded:', {
+      devLogger.warn('Connection quality degraded', {
         latency: Math.round(quality.latency),
         reliability: Math.round(quality.reliability),
         stability: Math.round(quality.stability),
@@ -325,7 +326,7 @@ export function ConnectionProvider({
   // Handle offline queue status
   useEffect(() => {
     if (pendingOperations > 0) {
-      console.log('[ConnectionContext] Pending operations:', pendingOperations);
+      devLogger.debug('Pending operations', { count: pendingOperations });
     }
   }, [pendingOperations]);
 
