@@ -75,7 +75,7 @@ export function useWebSocketConnection(): UseWebSocketConnectionResult {
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Dispatcher not available, stay disconnected
         if (mounted) {
           setStatus('disconnected');
