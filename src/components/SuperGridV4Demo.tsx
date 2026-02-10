@@ -8,6 +8,7 @@ import type {
   LevelGroup
 } from '../types/supergrid';
 import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
+import { devLogger } from '../utils/logging';
 
 interface SuperGridV4DemoProps {
   database?: Database;
@@ -69,19 +70,19 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       // Set up callbacks
       grid.setCallbacks({
         onCellClick: (cell, position) => {
-          console.log('[SuperGrid] Cell clicked:', cell, position);
+          devLogger.debug('Cell clicked', { component: 'SuperGridV4Demo', cell, position });
         },
         onCellHover: (cell) => {
           if (cell) {
-            console.log('[SuperGrid] Cell hover:', cell.cards.length, 'cards');
+            devLogger.debug('Cell hover', { component: 'SuperGridV4Demo', cardCount: cell.cards.length });
           }
         },
         onLevelChange: (newLevels, groupId) => {
-          console.log('[SuperGrid] Level changed:', newLevels, groupId);
+          devLogger.debug('Level changed', { component: 'SuperGridV4Demo', newLevels, groupId });
           setCurrentLevels(newLevels);
         },
         onZoomChange: (zoomLevel, direction) => {
-          console.log('[SuperGrid] Zoom changed:', zoomLevel, direction);
+          devLogger.debug('Zoom changed', { component: 'SuperGridV4Demo', zoomLevel, direction });
         }
       });
 
