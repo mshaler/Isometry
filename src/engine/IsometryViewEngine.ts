@@ -144,7 +144,9 @@ export class IsometryViewEngine implements ViewEngine {
       const isSameViewType = fromConfig.viewType === toConfig.viewType;
       const isPAFVProjectionChange = !this.projectionsEqual(fromConfig.projection, toConfig.projection);
 
-      console.log(`[IsometryViewEngine] Transitioning ${fromConfig.viewType} → ${toConfig.viewType}`, {
+      devLogger.debug('IsometryViewEngine transitioning view', {
+        from: fromConfig.viewType,
+        to: toConfig.viewType,
         sameViewType: isSameViewType,
         projectionChange: isPAFVProjectionChange,
         duration
@@ -163,10 +165,12 @@ export class IsometryViewEngine implements ViewEngine {
 
       // Update performance metrics
       const transitionTime = performance.now() - startTime;
-      console.log(`[IsometryViewEngine] Transition completed in ${transitionTime.toFixed(2)}ms`);
+      devLogger.debug('IsometryViewEngine transition completed', {
+        transitionTimeMs: Math.round(transitionTime * 100) / 100
+      });
 
     } catch (error) {
-      console.error('[IsometryViewEngine] Transition failed:', error);
+      devLogger.error('IsometryViewEngine transition failed', { error });
       throw new ViewEngineError(
         `Transition failed: ${error instanceof Error ? error.message : String(error)}`,
         'TRANSITION_FAILED',
@@ -187,7 +191,7 @@ export class IsometryViewEngine implements ViewEngine {
         try {
           renderer.destroy();
         } catch (error) {
-          console.warn('[IsometryViewEngine] Error destroying renderer:', error);
+          devLogger.warn('IsometryViewEngine error destroying renderer', { error });
         }
       });
       this.renderers.clear();
@@ -201,9 +205,9 @@ export class IsometryViewEngine implements ViewEngine {
       this.currentConfig = null;
       this.isTransitioning = false;
 
-      console.log('[IsometryViewEngine] Destroyed successfully');
+      devLogger.debug('IsometryViewEngine destroyed successfully');
     } catch (error) {
-      console.error('[IsometryViewEngine] Error during destroy:', error);
+      devLogger.error('IsometryViewEngine error during destroy', { error });
     }
   }
 
@@ -226,7 +230,7 @@ export class IsometryViewEngine implements ViewEngine {
    */
   registerRenderer(viewType: string, renderer: ViewRenderer): void {
     this.renderers.set(viewType, renderer);
-    console.log(`[IsometryViewEngine] Registered renderer for ${viewType}`);
+    devLogger.debug('IsometryViewEngine registered renderer', { viewType });
   }
 
   /**
@@ -335,7 +339,7 @@ export class IsometryViewEngine implements ViewEngine {
     duration: number
   ): Promise<void> {
     // FLIP animation for PAFV projection changes
-    console.log('[IsometryViewEngine] PAFV projection transition not yet implemented');
+    devLogger.debug('IsometryViewEngine PAFV projection transition not yet implemented');
 
     // For now, just re-render with new projection
     // TODO: Implement FLIP animation following Phase 37 patterns
@@ -349,7 +353,7 @@ export class IsometryViewEngine implements ViewEngine {
       await new Promise(resolve => setTimeout(resolve, duration));
 
       // renderer.render would be called here with new projection
-      console.log('[IsometryViewEngine] PAFV projection change completed');
+      devLogger.debug('IsometryViewEngine PAFV projection change completed');
     }
   }
 
@@ -429,7 +433,7 @@ export class IsometryViewEngine implements ViewEngine {
     // Set up global error handling for D3 operations
     window.addEventListener('unhandledrejection', (event) => {
       if (event.reason instanceof ViewEngineError) {
-        console.error('[IsometryViewEngine] Unhandled ViewEngine error:', event.reason);
+        devLogger.error('IsometryViewEngine unhandled error', { error: event.reason });
       }
     });
   }
