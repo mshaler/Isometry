@@ -5,6 +5,8 @@
  * replacing hardcoded development paths with environment variables.
  */
 
+import { devLogger } from '../utils/logging/logger';
+
 /**
  * Environment types
  */
@@ -234,7 +236,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
 
     // Log configuration in development
     if (cachedConfig.enableDebugLogging) {
-      console.log('🌍 Environment Configuration:', {
+      devLogger.inspect('Environment Configuration', {
         type: cachedConfig.type,
         securityLevel: cachedConfig.securityLevel,
         apiBaseURL: cachedConfig.apiBaseURL,
