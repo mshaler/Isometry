@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAppState } from '../contexts/AppStateContext';
 import { useCanvasPerformance } from '../hooks/performance/useCanvasPerformance';
@@ -10,6 +10,20 @@ import { DEFAULT_VIEW_CONFIG } from '../engine/contracts/ViewConfig';
 import type { ViewConfig, ViewType } from '../engine/contracts/ViewConfig';
 import type { Node } from '@/types/node';
 import { devLogger } from '../utils/logging';
+import { useSQLite } from '../db/SQLiteProvider';
+
+// Node statistics for alto-index data visibility
+interface NodeStats {
+  total: number;
+  byType: Record<string, number>;
+  types: number;
+  latchCoverage: {
+    location: number;
+    time: number;
+    category: number;
+    hierarchy: number;
+  };
+}
 
 export function Canvas() {
   const [activeTab, setActiveTab] = useState(0);
@@ -18,6 +32,9 @@ export function Canvas() {
   const tabs = ['Tab 1', 'Tab 2', 'Tab 3'];
   const { theme } = useTheme();
   const { activeView } = useAppState();
+
+  // Access storage quota from SQLite context for monitoring
+  const { storageQuota } = useSQLite();
 
   // ViewEngine refs and state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +54,41 @@ export function Canvas() {
       console.error('[Canvas] Live query error:', err);
     }
   });
+
+  // Calculate node statistics for alto-index data visibility
+  const nodeStats: NodeStats | null = useMemo(() => {
+    if (!nodes || nodes.length === 0) return null;
+
+    const byType: Record<string, number> = {};
+    let locationCount = 0;
+    let timeCount = 0;
+    let categoryCount = 0;
+    let hierarchyCount = 0;
+
+    nodes.forEach(node => {
+      // Count by node type (nodeType in TypeScript, node_type in SQLite)
+      const nodeType = node.nodeType || 'unknown';
+      byType[nodeType] = (byType[nodeType] || 0) + 1;
+
+      // LATCH coverage analysis
+      if (node.locationName || node.latitude) locationCount++;
+      if (node.createdAt || node.eventStart) timeCount++;
+      if (node.folder || (node.tags && node.tags.length > 0)) categoryCount++;
+      if (node.priority !== null && node.priority !== undefined) hierarchyCount++;
+    });
+
+    return {
+      total: nodes.length,
+      byType,
+      types: Object.keys(byType).length,
+      latchCoverage: {
+        location: locationCount,
+        time: timeCount,
+        category: categoryCount,
+        hierarchy: hierarchyCount
+      }
+    };
+  }, [nodes]);
 
   // Performance monitoring (unified for all rendering)
   const {
@@ -138,7 +190,9 @@ export function Canvas() {
           viewType,
           nodeCount: nodes.length,
           renderTime: `${renderTime.toFixed(2)}ms`,
-          performance: renderTime < 16 ? 'excellent' : renderTime < 33 ? 'good' : 'slow'
+          performance: renderTime < 16 ? 'excellent' : renderTime < 33 ? 'good' : 'slow',
+          nodeTypes: nodeStats ? Object.keys(nodeStats.byType) : [],
+          withinTarget: renderTime < 50 // Plan success criteria: <50ms
         });
       })
       .catch((error) => {
@@ -147,14 +201,54 @@ export function Canvas() {
 
   }, [nodes, activeView, mapActiveViewToViewType, createViewConfig, recordRender]);
 
-  // Simple container for ViewEngine rendering
+  // Simple container for ViewEngine rendering with empty state handling
   const renderView = () => {
+    // Show empty state when no data loaded
+    if (!nodes || nodes.length === 0) {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
+          <div className="text-gray-500 text-center">
+            <div className="text-lg font-medium mb-2">No data loaded</div>
+            <div className="text-sm">Import alto-index or add nodes to get started</div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div
-        ref={containerRef}
-        className="h-full w-full"
-        style={{ minHeight: '400px' }}
-      />
+      <div className="relative h-full w-full">
+        <div
+          ref={containerRef}
+          className="h-full w-full"
+          style={{ minHeight: '400px' }}
+        />
+
+        {/* Development overlay showing alto-index statistics */}
+        {process.env.NODE_ENV === 'development' && nodeStats && (
+          <div className="absolute top-2 right-2 bg-black/75 text-white text-xs p-2 rounded font-mono max-w-xs">
+            <div className="font-bold mb-1">Alto-Index Stats</div>
+            <div>Nodes: {nodeStats.total.toLocaleString()}</div>
+            <div>Types: {nodeStats.types}</div>
+            <div className="mt-1 text-gray-300">
+              {Object.entries(nodeStats.byType)
+                .sort(([,a], [,b]) => b - a)
+                .map(([type, count]) => (
+                  <div key={type} className="flex justify-between">
+                    <span>{type}:</span>
+                    <span>{count.toLocaleString()}</span>
+                  </div>
+                ))}
+            </div>
+            <div className="mt-1 pt-1 border-t border-gray-500 text-gray-300">
+              <div className="font-bold text-white">LATCH Coverage</div>
+              <div>Location: {nodeStats.latchCoverage.location.toLocaleString()}</div>
+              <div>Time: {nodeStats.latchCoverage.time.toLocaleString()}</div>
+              <div>Category: {nodeStats.latchCoverage.category.toLocaleString()}</div>
+              <div>Hierarchy: {nodeStats.latchCoverage.hierarchy.toLocaleString()}</div>
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
