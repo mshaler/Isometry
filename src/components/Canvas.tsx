@@ -5,6 +5,7 @@ import { useCanvasPerformance } from '../hooks/performance/useCanvasPerformance'
 import DataFlowMonitor from './DataFlowMonitor';
 import { FilterBar } from './FilterBar';
 import { useLiveQuery } from '../hooks/database/useLiveQuery';
+import { useSQLite } from '../db/SQLiteProvider';
 import { IsometryViewEngine } from '../engine/IsometryViewEngine';
 import { DEFAULT_VIEW_CONFIG } from '../engine/contracts/ViewConfig';
 import type { ViewConfig, ViewType } from '../engine/contracts/ViewConfig';
