@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import { useFeatureFlags } from './FeatureFlagProvider';
+import { devLogger } from '../utils/logging/logger';
 
 // Types for A/B testing system
 export interface ABTest {
@@ -166,7 +167,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
           params
         });
       } catch (error) {
-        console.warn('Native A/B testing communication failed:', error);
+        devLogger.warn('Native A/B testing communication failed', { error });
         return null;
       }
     }
@@ -222,7 +223,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load A/B test data';
       setError(errorMessage);
-      console.error('Error loading A/B test data:', err);
+      devLogger.error('Error loading A/B test data', { error: err });
     } finally {
       setIsLoading(false);
     }
@@ -374,7 +375,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
     updateLocalResults(event);
 
     if (enableAnalytics) {
-      console.log('A/B Test Event:', event);
+      devLogger.debug('A/B Test Event', { event });
     }
   };
 
