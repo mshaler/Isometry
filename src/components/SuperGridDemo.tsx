@@ -424,7 +424,17 @@ export function SuperGridDemo() {
       setViewContinuum(null);
       setSuperGrid(null);
     };
-  }, [databaseService, canvasId, currentView, viewContinuumCallbacks, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService]);
+  }, [
+    databaseService,
+    canvasId,
+    currentView,
+    viewContinuumCallbacks,
+    handleCardClick,
+    handleSelectionChange,
+    handleBulkOperation,
+    handleHeaderClick,
+    filterService
+  ]);
 
   // Apply LATCH filters to grid
   useEffect(() => {
