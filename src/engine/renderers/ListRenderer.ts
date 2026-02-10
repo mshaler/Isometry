@@ -18,6 +18,7 @@ import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { ViewRenderer } from '../contracts/ViewEngine';
 import type { ViewConfig } from '../contracts/ViewConfig';
+import { devLogger } from '../../utils/logging';
 
 /**
  * Hierarchical list item data structure for D3 binding
@@ -99,10 +100,15 @@ export class ListRenderer implements ViewRenderer {
       // Set up interactivity
       this.setupEventHandlers();
 
-      console.log(`[ListRenderer] Rendered ${data.length} nodes as hierarchical list with ${this.hierarchicalData.length} root items`);
+      devLogger.render('ListRenderer rendered hierarchical list', {
+        totalNodes: data.length,
+        rootItems: this.hierarchicalData.length
+      });
 
     } catch (error) {
-      console.error('[ListRenderer] Render failed:', error);
+      devLogger.error('ListRenderer render failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw error;
     }
   }
@@ -123,7 +129,7 @@ export class ListRenderer implements ViewRenderer {
     this.flattenedData = [];
     this.config = null;
 
-    console.log('[ListRenderer] Destroyed successfully');
+    devLogger.debug('ListRenderer destroyed successfully');
   }
 
   /**
@@ -199,7 +205,10 @@ export class ListRenderer implements ViewRenderer {
 
     const hierarchy = rootNodes.map(node => buildHierarchicalItem(node));
 
-    console.log(`[ListRenderer] Built hierarchy with ${rootNodes.length} root items, max depth: ${this.getMaxDepth(hierarchy)}`);
+    devLogger.debug('ListRenderer built hierarchy', {
+      rootItems: rootNodes.length,
+      maxDepth: this.getMaxDepth(hierarchy)
+    });
     return hierarchy;
   }
 
@@ -388,7 +397,9 @@ export class ListRenderer implements ViewRenderer {
       .style('opacity', 0)
       .remove();
 
-    console.log(`[ListRenderer] Rendered ${this.flattenedData.length} flattened list items with D3 data binding`);
+    devLogger.render('ListRenderer rendered flattened list items', {
+      flattenedItems: this.flattenedData.length
+    });
   }
 
   private flattenHierarchy(items: HierarchicalListItem[]): HierarchicalListItem[] {
@@ -423,7 +434,10 @@ export class ListRenderer implements ViewRenderer {
     this.flattenedData = this.flattenHierarchy(this.hierarchicalData);
     this.renderHierarchicalList();
 
-    console.log(`[ListRenderer] Toggled expansion for ${item.node.name}: ${item.isExpanded ? 'expanded' : 'collapsed'}`);
+    devLogger.state('ListRenderer toggled expansion', {
+      nodeName: item.node.name,
+      isExpanded: item.isExpanded
+    });
   }
 
   private getMaxDepth(items: HierarchicalListItem[]): number {
@@ -485,7 +499,10 @@ export class ListRenderer implements ViewRenderer {
       .selectAll('.list-item')
       .on('click', (_event, d) => {
         const itemData = d as HierarchicalListItem;
-        console.log('[ListRenderer] Item clicked:', itemData.node.name);
+        devLogger.debug('ListRenderer item clicked', {
+          nodeName: itemData.node.name,
+          nodeId: itemData.node.id
+        });
         this.config?.eventHandlers?.onNodeClick?.(itemData.node, { x: itemData.x, y: itemData.y });
       })
       .on('mouseenter', (event, d) => {
@@ -517,6 +534,6 @@ export class ListRenderer implements ViewRenderer {
         this.toggleExpansion(itemData);
       });
 
-    console.log('[ListRenderer] Event handlers set up for list interactions');
+    devLogger.setup('ListRenderer event handlers configured');
   }
 }
