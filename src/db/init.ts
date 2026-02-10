@@ -7,6 +7,7 @@
 
 import initSqlJs from 'sql.js';
 import type { Database } from 'sql.js';
+import { devLogger } from '../utils/logging';
 
 let dbInstance: Database | null = null;
 let isInitialized = false;
@@ -40,11 +41,16 @@ export async function initDatabase(): Promise<Database> {
     await verifyFTS5Support(dbInstance);
 
     isInitialized = true;
-    console.log('✅ sql.js database initialized with FTS5 support');
+    devLogger.info('sql.js database initialized', {
+      fts5Enabled: true,
+      architecture: 'bridge-eliminated'
+    });
 
     return dbInstance;
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
+    devLogger.error('Database initialization failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     throw error;
   }
 }
@@ -76,9 +82,13 @@ async function verifyFTS5Support(db: Database): Promise<void> {
       db.exec(`
         SELECT * FROM nodes_fts WHERE nodes_fts MATCH 'test' LIMIT 1
       `);
-      console.log('✅ FTS5 verification successful - query executed');
+      devLogger.debug('FTS5 verification successful', {
+        queryExecuted: true
+      });
     } else {
-      console.log('✅ FTS5 available - nodes_fts table will be created by schema');
+      devLogger.debug('FTS5 available', {
+        notesFtsTableExists: false
+      });
     }
 
     // Verify FTS5 extension is actually available
@@ -86,10 +96,12 @@ async function verifyFTS5Support(db: Database): Promise<void> {
       CREATE VIRTUAL TABLE IF NOT EXISTS fts5_test USING fts5(content)
     `);
     db.exec('DROP TABLE IF EXISTS fts5_test');
-    console.log('✅ FTS5 extension confirmed available');
+    devLogger.debug('FTS5 extension confirmed available');
 
   } catch (error) {
-    console.error('❌ FTS5 verification failed:', error);
+    devLogger.error('FTS5 verification failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     throw new Error('FTS5 is required but not available in this sql.js build');
   }
 }
@@ -112,9 +124,13 @@ export async function verifyRecursiveCTE(db: Database): Promise<void> {
       SELECT COUNT(*) as reachable_count FROM reachable
     `);
 
-    console.log('✅ Recursive CTE verification successful:', result);
+    devLogger.debug('Recursive CTE verification successful', {
+      result: result.length > 0 ? result[0].values : []
+    });
   } catch (error) {
-    console.warn('⚠️ Recursive CTE verification failed:', error);
+    devLogger.warn('Recursive CTE verification failed', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     throw error;
   }
 }
@@ -135,9 +151,11 @@ export async function saveDatabase(): Promise<void> {
       const data = dbInstance!.export();
       const base64 = Buffer.from(data).toString('base64');
       localStorage.setItem('isometry-db', base64);
-      console.log('💾 Database saved to localStorage');
+      devLogger.debug('Database saved to localStorage');
     } catch (error) {
-      console.error('❌ Database save failed:', error);
+      devLogger.error('Database save failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }, 1000);
 }
@@ -149,7 +167,9 @@ export async function loadDatabase(): Promise<void> {
   try {
     const base64 = localStorage.getItem('isometry-db');
     if (!base64) {
-      console.log('📄 No saved database found, using schema defaults');
+      devLogger.info('No saved database found', {
+        usingSchemaDefaults: true
+      });
       return;
     }
 
@@ -164,9 +184,11 @@ export async function loadDatabase(): Promise<void> {
     });
 
     dbInstance = new SQL.Database(data);
-    console.log('📂 Database loaded from localStorage');
+    devLogger.info('Database loaded from localStorage');
   } catch (error) {
-    console.error('❌ Database load failed:', error);
+    devLogger.error('Database load failed, falling back to fresh database', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     // Fall back to fresh database
     await initDatabase();
   }
