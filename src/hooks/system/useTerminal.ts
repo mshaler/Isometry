@@ -88,7 +88,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     try {
       const text = await navigator.clipboard.readText();
       if (text) {
-        // Filter out control characters for safety
+        // Filter out control characters for safety (intentional control char range)
+        // eslint-disable-next-line no-control-regex
         const safeText = text.replace(/[\x00-\x1f]/g, '');
         terminal.write(safeText);
         return safeText;
@@ -377,7 +378,17 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         terminal.write(data);
       }
     });
-  }, [executeCommand, showPrompt, options.onNavigateHistory, options.onCtrlR, options.onSearchInput, options.onExitSearch, options.isSearchMode, handleCopy, handlePaste]);
+  }, [
+    executeCommand,
+    showPrompt,
+    options.onNavigateHistory,
+    options.onCtrlR,
+    options.onSearchInput,
+    options.onExitSearch,
+    options.isSearchMode,
+    handleCopy,
+    handlePaste
+  ]);
 
   const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;

@@ -19,6 +19,54 @@ export interface TerminalState {
   isProcessing: boolean;
 }
 
+/** Default project root directory */
+const DEFAULT_DIRECTORY = '/Users/mshaler/Developer/Projects/Isometry';
+
+/**
+ * Format directory path for terminal prompt display
+ * Shows last 2 path segments to prevent prompt overflow
+ *
+ * @example
+ * formatPromptPath('/Users/mshaler/Developer/Projects/Isometry') => 'Projects/Isometry'
+ * formatPromptPath('/Users/mshaler') => 'mshaler'
+ */
+export function formatPromptPath(directory: string): string {
+  const parts = directory.split('/').filter(Boolean);
+  if (parts.length === 0) return '/';
+  if (parts.length === 1) return parts[0];
+  return parts.slice(-2).join('/');
+}
+
+/**
+ * Resolve a path relative to the current directory
+ * Supports: absolute paths, relative paths, .., ~
+ */
+export function resolvePath(currentDir: string, newPath: string): string {
+  // Handle home directory
+  if (newPath === '~' || newPath.startsWith('~/')) {
+    const home = '/Users/mshaler';
+    return newPath === '~' ? home : home + newPath.slice(1);
+  }
+
+  // Handle absolute paths
+  if (newPath.startsWith('/')) {
+    return newPath;
+  }
+
+  // Handle relative paths
+  const currentParts = currentDir.split('/').filter(Boolean);
+
+  for (const part of newPath.split('/')) {
+    if (part === '..') {
+      currentParts.pop();
+    } else if (part !== '.' && part !== '') {
+      currentParts.push(part);
+    }
+  }
+
+  return '/' + currentParts.join('/');
+}
+
 export interface UseTerminalOptions {
   onCommand?: (command: string) => void;
   onNavigateHistory?: (direction: 'up' | 'down') => string | null;
@@ -44,7 +92,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
   } = options;
   const [state, setState] = useState<TerminalState>({
     commands: [],
-    currentDirectory: '/Users/mshaler/Developer/Projects/Isometry',
+    currentDirectory: DEFAULT_DIRECTORY,
     isConnected: false,
     isProcessing: false
   });
@@ -288,9 +336,44 @@ export function useTerminal(options: UseTerminalOptions = {}) {
 
   /**
    * Execute a command via WebSocket dispatcher
+   * Handles cd commands locally to track directory changes
    */
   const executeCommand = useCallback(async (commandText: string) => {
+    const trimmed = commandText.trim();
     const commandId = `cmd_${++commandIdRef.current}`;
+
+    // Handle cd command locally
+    if (trimmed.startsWith('cd ') || trimmed === 'cd') {
+      const pathArg = trimmed === 'cd' ? '~' : trimmed.slice(3).trim();
+      const targetPath = pathArg === '' ? '~' : pathArg;
+      const newPath = resolvePath(state.currentDirectory, targetPath);
+
+      // Add to command history
+      const newCommand: TerminalCommand = {
+        id: commandId,
+        command: commandText,
+        output: '',
+        timestamp: new Date(),
+        exitCode: 0,
+        isComplete: true
+      };
+
+      setState(prev => ({
+        ...prev,
+        commands: [...prev.commands, newCommand],
+        currentDirectory: newPath
+      }));
+
+      // Write new prompt (cd has no output)
+      if (terminalRef.current) {
+        // Need to manually update prompt since state hasn't changed yet
+        const shortPath = formatPromptPath(newPath);
+        const prompt = `\x1b[34m[${shortPath}]\x1b[0m $ `;
+        terminalRef.current.write(prompt);
+      }
+
+      return commandId;
+    }
 
     // Add command to history
     const newCommand: TerminalCommand = {
@@ -309,7 +392,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
 
     try {
       const dispatcher = await getClaudeCodeDispatcher();
-      const [cmd, ...args] = commandText.trim().split(' ');
+      const [cmd, ...args] = trimmed.split(' ');
 
       // Execute command via WebSocket
       const result = await dispatcher.execute({
@@ -373,12 +456,14 @@ export function useTerminal(options: UseTerminalOptions = {}) {
   }, [state.currentDirectory, onOutput]);
 
   /**
-   * Write shell prompt to terminal
+   * Write shell prompt to terminal with working directory
+   * Format: [Projects/Isometry] $
    */
   const writePrompt = useCallback((terminal: Terminal) => {
-    const prompt = `$ `;
+    const shortPath = formatPromptPath(state.currentDirectory);
+    const prompt = `\x1b[34m[${shortPath}]\x1b[0m $ `;
     terminal.write(prompt);
-  }, []);
+  }, [state.currentDirectory]);
 
   /**
    * Attach to a process (simplified simulation for now)
@@ -423,6 +508,16 @@ export function useTerminal(options: UseTerminalOptions = {}) {
     return state.commands[state.commands.length - 1];
   }, [state.commands]);
 
+  /**
+   * Set the current working directory
+   */
+  const setCurrentDirectory = useCallback((path: string) => {
+    setState(prev => ({
+      ...prev,
+      currentDirectory: path
+    }));
+  }, []);
+
   return {
     ...state,
     executeCommand,
@@ -434,6 +529,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
     dispose,
     handleCopy,
     handlePaste,
-    terminalRef
+    terminalRef,
+    setCurrentDirectory
   };
 }
