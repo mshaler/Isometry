@@ -104,11 +104,12 @@ Plans:
   1. User sees Preview auto-refresh when Capture saves a card (no manual refresh required)
   2. User clicks card in Preview and Capture scrolls to show it (bidirectional navigation)
   3. User sees selection highlighted across all three canvases simultaneously
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 46-01: TBD (planned during phase planning)
-- [ ] 46-02: TBD
+- [ ] 46-01-PLAN.md — Event bus infrastructure and sql.js change tracking
+- [ ] 46-02-PLAN.md — useDataChangeListener hook and Preview tab auto-refresh integration
+- [ ] 46-03-PLAN.md — Selection sync and bidirectional navigation (Capture scroll-to-card)
 
 ### v4.3 Navigator Integration (In Progress)
 
@@ -163,10 +164,10 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 44. Preview Visualization Expansion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
+| 46. Live Data Synchronization | v4.2 | 0/3 | Planned | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
 | 51. Navigator UI Integration | v4.3 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (Phase 44 complete)*
+*Last updated: 2026-02-10 (Phase 46 planned)*
