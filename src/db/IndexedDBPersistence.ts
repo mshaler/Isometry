@@ -122,6 +122,29 @@ export class IndexedDBPersistence {
       throw new Error('IndexedDB not initialized. Call init() first.');
     }
 
+    // Pre-save quota check to prevent QuotaExceededError
+    const quota = await this.getStorageQuota();
+
+    // Log warning if storage usage is high (>80%)
+    if (quota.percentUsed !== null && quota.percentUsed > 80) {
+      devLogger.warn('Storage quota warning - approaching limit', {
+        used: quota.used !== null ? `${(quota.used / 1024 / 1024).toFixed(2)}MB` : 'unknown',
+        available: quota.available !== null ? `${(quota.available / 1024 / 1024).toFixed(2)}MB` : 'unknown',
+        percentUsed: `${quota.percentUsed.toFixed(1)}%`,
+        dataSize: `${(data.length / 1024 / 1024).toFixed(2)}MB`
+      });
+    }
+
+    // Check if new data would exceed available space (with 10% safety margin)
+    if (quota.available !== null && data.length > quota.available * 0.9) {
+      const availableMB = (quota.available / 1024 / 1024).toFixed(2);
+      const neededMB = (data.length / 1024 / 1024).toFixed(2);
+      throw new Error(
+        `Insufficient storage: need ${neededMB}MB, only ${availableMB}MB available. ` +
+        `Please clear some browser storage or export your database to a file.`
+      );
+    }
+
     try {
       // Store the database export
       await this.db.put(DATABASE_STORE, data, 'main');
@@ -138,11 +161,16 @@ export class IndexedDBPersistence {
       devLogger.data('Database saved to IndexedDB', {
         bytes: data.length,
         nodeCount: metadata.nodeCount,
+        quotaUsed: quota.percentUsed !== null ? `${quota.percentUsed.toFixed(1)}%` : 'unknown'
       });
     } catch (err) {
-      // Check for quota exceeded
+      // Check for quota exceeded (shouldn't happen with pre-check, but handle gracefully)
       if (err instanceof DOMException && err.name === 'QuotaExceededError') {
-        console.error('IndexedDB quota exceeded:', err);
+        console.error('IndexedDB quota exceeded despite pre-check:', err);
+        devLogger.error('Storage quota exceeded', {
+          dataSize: `${(data.length / 1024 / 1024).toFixed(2)}MB`,
+          quotaInfo: quota
+        });
       }
       throw err;
     }
