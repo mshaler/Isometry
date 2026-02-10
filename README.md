@@ -2,6 +2,15 @@
 
 A polymorphic data visualization platform implementing PAFV + LATCH + GRAPH with real-time visualizations and live data subscriptions.
 
+## Build Status
+
+| Workflow | Status | Purpose |
+|----------|--------|---------|
+| **CI** | [![CI](https://github.com/mshaler/isometry/actions/workflows/ci.yml/badge.svg)](https://github.com/mshaler/isometry/actions/workflows/ci.yml) | Quality gates for PRs and pushes |
+| **GitHub Pages** | [![Deploy to GitHub Pages](https://github.com/mshaler/isometry/actions/workflows/deploy-github-pages.yml/badge.svg)](https://github.com/mshaler/isometry/actions/workflows/deploy-github-pages.yml) | Web app deployment |
+| **App Store** | [![App Store Deployment](https://github.com/mshaler/isometry/actions/workflows/app-store-deployment.yml/badge.svg)](https://github.com/mshaler/isometry/actions/workflows/app-store-deployment.yml) | iOS/macOS distribution |
+| **ETL Testing** | [![ETL Pipeline Testing](https://github.com/mshaler/isometry/actions/workflows/etl-testing.yml/badge.svg)](https://github.com/mshaler/isometry/actions/workflows/etl-testing.yml) | Data pipeline integrity |
+
 ## Quick Start
 
 ### React Prototype (Real-Time Visualizations)

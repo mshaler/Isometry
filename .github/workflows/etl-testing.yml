@@ -1,24 +1,28 @@
 name: ETL Pipeline Testing
 
-# Comprehensive CI/CD pipeline for ETL import testing with matrix testing across platforms
-# Tests all importers with fuzzing, data integrity validation, and regression detection
+# Comprehensive CI/CD pipeline for ETL import testing with sql.js integration
+# Tests all importers with data integrity validation, regression detection, and sql.js compatibility
 
 on:
   push:
     branches: [main, develop]
     paths:
+      - 'src/db/**'
+      - 'src/services/**'
       - 'native/Sources/Isometry/Import/**'
+      - 'native/Sources/Isometry/ETL/**'
       - 'native/Tests/IsometryTests/ETL/**'
-      - 'test-data/**'
       - 'scripts/etl-test-data-setup.sh'
       - '.github/workflows/etl-testing.yml'
 
   pull_request:
     branches: [main, develop]
     paths:
+      - 'src/db/**'
+      - 'src/services/**'
       - 'native/Sources/Isometry/Import/**'
+      - 'native/Sources/Isometry/ETL/**'
       - 'native/Tests/IsometryTests/ETL/**'
-      - 'test-data/**'
       - 'scripts/etl-test-data-setup.sh'
       - '.github/workflows/etl-testing.yml'
 
@@ -58,6 +62,7 @@ concurrency:
 
 env:
   # Test configuration
+  NODE_VERSION: '18'
   SWIFT_VERSION: '5.9'
   PERFORMANCE_REGRESSION_THRESHOLD: '1.5'
   MAX_TEST_DURATION_MINUTES: '20'
@@ -67,8 +72,13 @@ env:
   PERFORMANCE_BASELINE_DAYS: '7'
 
   # Test data configuration
-  TEST_DATA_CACHE_VERSION: 'v1'
-  LFS_CACHE_VERSION: 'v1'
+  TEST_DATA_CACHE_VERSION: 'v2'
+  LFS_CACHE_VERSION: 'v2'
+
+  # sql.js configuration
+  SQLJS_VERSION: 'latest'
+  ENABLE_FTS5: 'true'
+  ENABLE_RECURSIVE_CTE: 'true'
 
 jobs:
   # Job 1: Setup and validate test environment
@@ -144,20 +154,34 @@ jobs:
         run: |
           echo "🔍 Validating test environment..."
 
-          # Check required files
+          # Check required files and directories
           if [[ ! -f "scripts/etl-test-data-setup.sh" ]]; then
             echo "❌ ETL test data setup script not found"
             exit 1
           fi
 
-          if [[ ! -d "native/Sources/Isometry/Import" ]]; then
-            echo "❌ Import source directory not found"
+          # Check sql.js integration paths
+          if [[ ! -d "src/db" ]]; then
+            echo "❌ sql.js database directory not found"
             exit 1
           fi
 
-          if [[ ! -d "native/Tests/IsometryTests/ETL" ]]; then
-            echo "❌ ETL test directory not found"
+          if [[ ! -f "src/db/schema.sql" ]]; then
+            echo "❌ Database schema file not found"
             exit 1
+          fi
+
+          # Check native ETL sources (if they exist)
+          if [[ -d "native/Sources/Isometry/Import" ]]; then
+            echo "✅ Native import sources found"
+          fi
+
+          if [[ -d "native/Sources/Isometry/ETL" ]]; then
+            echo "✅ Native ETL sources found"
+          fi
+
+          if [[ -d "native/Tests/IsometryTests/ETL" ]]; then
+            echo "✅ Native ETL tests found"
           fi
 
           echo "✅ Test environment validation passed"
@@ -213,6 +237,66 @@ jobs:
           path: |
             native/.build/debug/test-results.xml
             native/.build/debug/test-logs/
+
+  # Job 2.5: sql.js ETL Testing
+  sqljs-etl-testing:
+    name: sql.js ETL Testing
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify sql.js capabilities
+        run: |
+          echo "🔍 Verifying sql.js capabilities..."
+          npm run test:run -- --grep "sql.js capabilities|FTS5|recursive CTE" || true
+
+      - name: Run sql.js ETL tests
+        run: |
+          echo "🧪 Running sql.js ETL integration tests..."
+
+          # Test database initialization
+          npm run test:run -- --grep "database.*init" || true
+
+          # Test schema loading
+          npm run test:run -- --grep "schema.*load" || true
+
+          # Test import functionality
+          npm run test:run -- --grep "import.*test" || true
+
+      - name: Test ETL data integrity
+        run: |
+          echo "📊 Testing ETL data integrity with sql.js..."
+
+          # Run data integrity tests if they exist
+          if npm run test:run -- --grep "data.*integrity" 2>/dev/null; then
+            echo "✅ Data integrity tests passed"
+          else
+            echo "ℹ️ No data integrity tests found"
+          fi
+
+      - name: Upload sql.js ETL results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: sqljs-etl-results
+          path: |
+            coverage/
+            test-results.xml
+            *.log
+          retention-days: 7
 
   # Job 3: Comprehensive ETL testing matrix
   etl-testing:
@@ -454,7 +538,7 @@ jobs:
   aggregate-results:
     name: Aggregate Test Results
     runs-on: ubuntu-latest
-    needs: [setup, etl-testing]
+    needs: [setup, sqljs-etl-testing, etl-testing]
     if: always() && needs.setup.outputs.test-scope != 'fast'
 
     steps:

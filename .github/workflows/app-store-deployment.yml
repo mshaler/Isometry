@@ -93,9 +93,22 @@ jobs:
 
       - name: Validate production build
         run: |
+          echo "🔍 Validating production build configuration..."
           cd native
-          chmod +x Scripts/validate-production-build.sh
-          ./Scripts/validate-production-build.sh --verbose
+
+          # Validate required files exist
+          if [[ ! -f "scripts/validate-production-build.sh" ]]; then
+            echo "❌ Production validation script not found"
+            exit 1
+          fi
+
+          if [[ ! -d "IsometryiOS" ]] || [[ ! -d "IsometrymacOS" ]]; then
+            echo "❌ iOS or macOS project directories not found"
+            exit 1
+          fi
+
+          chmod +x scripts/validate-production-build.sh
+          ./scripts/validate-production-build.sh --verbose
 
       - name: Generate build metadata
         run: |

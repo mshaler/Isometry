@@ -65,7 +65,12 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       const svg = d3.select(svgRef.current);
 
       // Create SuperGrid instance - cast SVGSVGElement to SVGElement for compatibility
-      const grid = new SuperGridV4(svg as d3.Selection<SVGElement, unknown, null, undefined>, database, gridConfig, progressiveConfig);
+      const grid = new SuperGridV4(
+        svg as d3.Selection<SVGElement, unknown, null, undefined>,
+        database,
+        gridConfig,
+        progressiveConfig
+      );
 
       // Set up callbacks
       grid.setCallbacks({
