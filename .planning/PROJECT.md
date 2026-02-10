@@ -4,7 +4,7 @@
 **Type:** Native iOS/macOS applications with React prototype bridge
 **Timeline:** Production-ready native implementation
 
-## Current State: v4.1 SuperGrid Foundation (SHIPPED)
+## Previous Milestone: v4.1 SuperGrid Foundation (SHIPPED)
 
 **Successfully delivered:** Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture
 
@@ -16,14 +16,16 @@
 - IndexedDB Persistence supporting large datasets (50MB+) with auto-save and quota monitoring
 - PAFV Axis Switching enabling dynamic axis-to-plane remapping
 
-## Next Milestone Goals: v4.2 Three-Canvas Notebook
+## Current Milestone: v4.2 Three-Canvas Notebook
+
+**Goal:** Build a unified capture-shell-preview workspace where notebook cards participate fully in PAFV projections
 
 **Target features:**
-- Three-Canvas Notebook (Capture, Shell, Preview) integration
-- Claude Code API integration for AI-assisted development
-- TipTap editor for Capture pane with Isometry card properties
-- Terminal emulator for Shell pane with command routing
-- D3.js visualization rendering in Preview pane
+- Three-Canvas Notebook layout (Capture, Shell, Preview) with responsive panes
+- Notion-style Capture pane with TipTap editor, slash commands, LATCH properties panel
+- Shell pane with Claude Code API integration for AI-assisted development
+- Preview pane with D3.js visualization rendering (SuperGrid integration)
+- Full LATCH participation for notebook cards in existing projections
 
 ## Core Value
 
@@ -231,4 +233,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-10 after v4.1 milestone*
+*Last updated: 2026-02-10 after v4.2 milestone start*
