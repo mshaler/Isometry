@@ -5,7 +5,7 @@
  */
 
 import { PERFORMANCE_PRESETS } from '../constants';
-import type { PerformancePreset, OptimizationRecommendation } from '../types';
+import type { OptimizationRecommendation } from '../types';
 
 interface OptimizationTabProps {
   selectedPreset: string;

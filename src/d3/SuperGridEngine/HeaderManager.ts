@@ -13,12 +13,8 @@ import type {
 } from './types';
 
 export class SuperGridHeaderManager {
-  private headerMinWidth: number;
-  private headerMinHeight: number;
-
-  constructor(headerMinWidth: number = 120, headerMinHeight: number = 40) {
-    this.headerMinWidth = headerMinWidth;
-    this.headerMinHeight = headerMinHeight;
+  constructor(_headerMinWidth: number = 120, _headerMinHeight: number = 40) {
+    // Min dimensions stored for future use
   }
 
   /**
@@ -122,9 +118,9 @@ export class SuperGridHeaderManager {
    */
   updateHeaderPositions(
     headerTree: HeaderTree,
-    gridDimensions: GridDimensions,
-    viewportX: number,
-    viewportY: number
+    _gridDimensions: GridDimensions,
+    _viewportX: number,
+    _viewportY: number
   ): HeaderTree {
     // Clone the header tree
     const updatedColumns = headerTree.columns.map(col => ({

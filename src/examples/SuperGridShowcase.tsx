@@ -21,8 +21,8 @@ import { ViewSwitcher, useViewSwitcher } from '../components/ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from '../components/CardDetailModal';
 import { useDatabaseService } from '@/hooks';
-import { LATCHFilterService } from '../services/LATCHFilterService';
-import type { LATCHFilter } from '../services/LATCHFilterService';
+import { LATCHFilterService } from '../services/query/LATCHFilterService';
+import type { LATCHFilter } from '../services/query/LATCHFilterService';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 import { contextLogger } from '../utils/logging/dev-logger';
 

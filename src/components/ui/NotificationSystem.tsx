@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, AlertTriangle, AlertCircle, Info, CheckCircle } from 'lucide-react';
-import { useErrorReporting, type ErrorNotification } from '../../services/ErrorReportingService';
+import { useErrorReporting, type ErrorNotification } from '../../services/system/ErrorReportingService';
 
 interface NotificationItemProps {
   notification: ErrorNotification;

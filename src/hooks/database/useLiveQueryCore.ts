@@ -39,18 +39,18 @@ export function useLiveQuery<T = unknown>(
     params = [],
     queryParams,
     autoStart = true,
-    debounceMs = 100,
+    debounceMs: _debounceMs = 100,
     onError,
     onChange,
-    enableCache = true,
+    enableCache: _enableCache = true,
     cacheKey,
     staleTime = 5 * 60 * 1000, // 5 minutes
     gcTime = 10 * 60 * 1000, // 10 minutes
     invalidationStrategy = 'related',
-    autoInvalidate = true,
+    autoInvalidate: _autoInvalidate = true,
     enableBackgroundSync = true,
     backgroundSyncConfig = {},
-    connectionStateConfig = {}
+    connectionStateConfig: _connectionStateConfig = {}
   } = options;
 
   // Resolve parameters (support both params and queryParams for backward compatibility)
@@ -61,16 +61,16 @@ export function useLiveQuery<T = unknown>(
   
   // Database and live data contexts
   const { db } = useDatabase();
-  const liveDataContext = useLiveDataContext();
-  
+  useLiveDataContext();
+
   // State management
   const [isActive, setIsActive] = useState(autoStart);
-  const [connectionState, setConnectionState] = useState<ConnectionState>('connected');
+  const [connectionState] = useState<ConnectionState>('connected');
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [pendingOperations, setPendingOperations] = useState(0);
-  
+
   // Refs for stable references
-  const optionsRef = useRef(options);
+  useRef(options); // optionsRef - kept for future use
   const cleanupStackRef = useRef(createCleanupStack());
   
   // Generate cache key
@@ -80,7 +80,7 @@ export function useLiveQuery<T = unknown>(
   }, [sql, finalParams, cacheKey]);
   
   // Cache managers
-  const invalidationManager = useMemo(() => 
+  useMemo(() =>
     createCacheInvalidationManager({
       strategy: invalidationStrategy,
       queryClient,
@@ -151,7 +151,7 @@ export function useLiveQuery<T = unknown>(
     setIsActive(false);
   }, []);
   
-  const updateParams = useCallback((newParams: unknown[]) => {
+  const updateParams = useCallback((_newParams: unknown[]) => {
     // This would trigger a re-render with new params
     // Implementation depends on how params are managed
   }, []);

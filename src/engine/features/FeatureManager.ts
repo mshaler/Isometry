@@ -294,7 +294,7 @@ export class FeatureManager {
   /**
    * Check if performance metrics indicate a warning
    */
-  private isPerformanceWarning(feature: string, metrics: unknown): boolean {
+  private isPerformanceWarning(_feature: string, metrics: unknown): boolean {
     const thresholds = {
       renderTime: 100, // ms
       memoryUsage: 50, // MB

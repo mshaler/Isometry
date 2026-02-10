@@ -6,9 +6,8 @@
  */
 
 import type { Node } from '@/types/node';
-import type { LATCHAxis, AxisMapping } from '@/types/pafv';
+import type { AxisMapping } from '@/types/pafv';
 import type {
-  DensityLevel,
   JanusDensityState,
   CartographicState
 } from '@/types/supergrid';
@@ -155,7 +154,6 @@ export class StateManager {
    * Update density configuration
    */
   public updateDensity(density: Partial<JanusDensityState>): void {
-    const oldDensity = this.state.density;
     this.state.density = { ...this.state.density, ...density };
 
     this.recalculateVisibleNodes();
@@ -167,7 +165,6 @@ export class StateManager {
    * Update cartographic state
    */
   public updateCartographic(cartographic: Partial<CartographicState>): void {
-    const oldCartographic = this.state.cartographic;
     this.state.cartographic = { ...this.state.cartographic, ...cartographic };
 
     this.handlers.onCartographicChanged(this.state.cartographic);

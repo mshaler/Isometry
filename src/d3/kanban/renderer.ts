@@ -3,7 +3,6 @@
  */
 
 import * as d3 from 'd3';
-import type { Node } from '../../types/node';
 import type { KanbanColumn, KanbanConfig } from './types';
 import { getPriorityColor, formatCardMetadata, truncateText } from './formatters';
 
@@ -90,7 +89,7 @@ export class KanbanRenderer {
     const allHeaders = headerEnter.merge(headers as any);
 
     allHeaders
-      .attr('transform', (d: KanbanColumn, i: number) =>
+      .attr('transform', (_d: KanbanColumn, i: number) =>
         `translate(${this.config.padding.left + i * (this.config.columnWidth + this.config.columnSpacing)}, ${this.config.padding.top})`
       );
 
@@ -131,7 +130,7 @@ export class KanbanRenderer {
     const allBodies = bodyEnter.merge(bodies as any);
 
     allBodies
-      .attr('transform', (d: KanbanColumn, i: number) =>
+      .attr('transform', (_d: KanbanColumn, i: number) =>
         `translate(${this.config.padding.left + i * (this.config.columnWidth + this.config.columnSpacing)}, ${this.config.padding.top + this.config.headerHeight + 10})`
       )
       .attr('height', (d: KanbanColumn) =>

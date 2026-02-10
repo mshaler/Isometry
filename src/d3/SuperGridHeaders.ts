@@ -12,19 +12,15 @@ import type {
   ResizeHandleConfig,
   ResizeOperationState
 } from '../types/grid';
-import { DEFAULT_RESIZE_CONFIG } from '../types/grid';
-import { HeaderLayoutService } from '../services/HeaderLayoutService';
+import { HeaderLayoutService } from '../services/supergrid/HeaderLayoutService';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
 import { superGridLogger } from '../utils/dev-logger';
 import { SuperStackProgressive } from './SuperStackProgressive';
 import type {
-  ProgressiveDisclosureConfig,
   ProgressiveDisclosureState,
-  LevelGroup,
   LevelPickerTab,
   ZoomControlState
 } from '../types/supergrid';
-import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
 import { HeaderLayoutCalculator } from './header-layout/HeaderLayoutCalculator';
 import { HeaderProgressiveRenderer } from './header-rendering/HeaderProgressiveRenderer';
 import { HeaderAnimationController, type HeaderClickEvent } from './header-interaction/HeaderAnimationController';
@@ -64,12 +60,7 @@ export class SuperGridHeaders {
   private onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
 
   // Column resize functionality (Phase 39)
-  private resizeBehavior: d3.DragBehavior<SVGGElement, HeaderNode, any> | null = null;
-  private resizeConfig: ResizeHandleConfig;
   private resizeState: ResizeOperationState;
-  private animationFrameId: number | null = null;
-  private pendingResizeUpdate: { nodeId: string; newWidth: number } | null = null;
-  private saveColumnWidthsDebounceTimer: NodeJS.Timeout | null = null;
 
   // Re-export the config for compatibility
   private static readonly DEFAULT_CONFIG = DEFAULT_HEADER_CONFIG;
@@ -83,7 +74,7 @@ export class SuperGridHeaders {
       onExpandCollapse?: (nodeId: string, isExpanded: boolean) => void;
     } = {},
     database?: ReturnType<typeof useDatabaseService>,
-    resizeConfig?: Partial<ResizeHandleConfig>
+    _resizeConfig?: Partial<ResizeHandleConfig>
   ) {
     this.container = d3.select(container);
     this.layoutService = layoutService;
@@ -104,7 +95,6 @@ export class SuperGridHeaders {
     );
 
     // Initialize resize configuration
-    this.resizeConfig = { ...DEFAULT_RESIZE_CONFIG, ...resizeConfig };
     this.resizeState = {
       isActive: false,
       targetNodeId: null,
@@ -434,13 +424,13 @@ export class SuperGridHeaders {
 
   private initializeColumnResizeBehavior(): void {
     // Implementation for column resize behavior
-    this.resizeBehavior = d3.drag<SVGGElement, HeaderNode>()
-      .on('start', (event, d) => {
+    d3.drag<SVGGElement, HeaderNode>()
+      .on('start', (_event, d) => {
         this.resizeState.isActive = true;
         this.resizeState.targetNodeId = d.id;
         this.resizeState.startTime = performance.now();
       })
-      .on('drag', (event, d) => {
+      .on('drag', (_event, _d) => {
         // Handle resize logic
       })
       .on('end', () => {

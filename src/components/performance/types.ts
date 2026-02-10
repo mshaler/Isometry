@@ -4,7 +4,7 @@
  * Type definitions for performance monitoring UI components
  */
 
-import type { Viewport, PerformanceAlert } from '../../utils/performance/rendering-performance';
+import type { Viewport } from '../../utils/performance/rendering-performance';
 import type { OptimizationPlan } from '@/hooks';
 
 export interface RenderingMetricsPanelProps {

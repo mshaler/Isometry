@@ -141,7 +141,7 @@ export function applySelectionHighlight(
   } else {
     // Reset all links to default opacity
     container.selectAll<SVGLineElement, GraphLink>('.network-link')
-      .attr('opacity', d => {
+      .attr('opacity', _d => {
         // Use the default opacity from edge type styles
         return 0.8;
       });

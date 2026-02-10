@@ -173,7 +173,6 @@ export class HeaderAnimationController {
   private animateHeaderExpansion(node: HeaderNode): void {
     const transitionId = `toggle-${node.id}-${Date.now()}`;
     this.runningTransitions.add(transitionId);
-    const animationStartTime = performance.now();
 
     try {
       // Find child nodes to animate

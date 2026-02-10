@@ -8,7 +8,7 @@ import type { TransactionOptions } from '../types/service-types';
 export class DatabaseTransactionService {
   constructor(private db: Database) {}
 
-  async begin(options?: TransactionOptions): Promise<void> {
+  async begin(_options?: TransactionOptions): Promise<void> {
     this.db.run('BEGIN TRANSACTION');
   }
 

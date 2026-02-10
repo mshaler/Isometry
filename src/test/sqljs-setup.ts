@@ -7,6 +7,8 @@
 
 import initSqlJs from 'sql.js';
 import type { Database, SqlJsStatic } from 'sql.js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { devLogger } from '../utils/logging';
 
 // Global sql.js instance and utilities for tests
@@ -35,15 +37,22 @@ global.__CLEANUP_TEST_DBS__ = () => {
 
 // WASM file loading for test environment - use real FTS5-enabled WASM
 function wasmLoader() {
-  return {
-    locateFile: (file: string) => {
-      // Use our custom FTS5-enabled WASM files
-      if (file.endsWith('.wasm')) {
-        return `/wasm/${file}`;
-      }
-      return file;
-    },
-  };
+  // Load WASM binary directly for Node.js/Vitest environment
+  const wasmPath = join(process.cwd(), 'public/wasm/sql-wasm.wasm');
+  try {
+    const wasmBinary = readFileSync(wasmPath);
+    return { wasmBinary };
+  } catch {
+    // Fallback to locateFile if direct read fails
+    return {
+      locateFile: (file: string) => {
+        if (file.endsWith('.wasm')) {
+          return join(process.cwd(), 'public/wasm', file);
+        }
+        return file;
+      },
+    };
+  }
 }
 
 // Initialize sql.js for testing

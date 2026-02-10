@@ -22,9 +22,7 @@ import type {
   SelectionState,
   ViewportState,
   ProgressiveState,
-  SuperGridConfig,
-  SuperGridEvent,
-  SuperGridEventData
+  SuperGridConfig
 } from './types';
 
 import { SuperGridDataManager } from './DataManager';
@@ -62,10 +60,6 @@ export class SuperGridEngine extends EventEmitter {
 
   // SuperGridV4 compatibility - migrated state
   private gridDataCache: unknown = null;
-
-  // Performance tracking
-  private renderStartTime = 0;
-  private renderCount = 0;
 
   constructor(database: Database, config: Partial<SuperGridConfig> = {}) {
     super();
@@ -176,8 +170,6 @@ export class SuperGridEngine extends EventEmitter {
     filterClause: string = '',
     groupByClause: string = ''
   ): Promise<void> {
-    this.renderStartTime = performance.now();
-
     try {
       // Execute query using data manager
       const gridData = await this.dataManager.executeGridQuery(

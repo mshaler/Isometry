@@ -111,7 +111,7 @@ export class ExcelProcessor {
   private processExcelSheet(
     worksheet: XLSX.WorkSheet,
     sheetName: string,
-    extractTables: boolean = true
+    _extractTables: boolean = true
   ): ExcelSheetData {
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1:A1');
     const data: (string | number | boolean | null)[][] = [];
@@ -282,7 +282,7 @@ export class ExcelProcessor {
 
       const cells = line.split('|')
         .map(cell => cell.trim())
-        .filter((cell, index, array) => index > 0 && index < array.length - 1); // Remove empty start/end
+        .filter((_cell, index, array) => index > 0 && index < array.length - 1); // Remove empty start/end
 
       // Convert numeric strings to numbers
       const processedCells = cells.map(cell => {

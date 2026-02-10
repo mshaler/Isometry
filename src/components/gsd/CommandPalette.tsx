@@ -14,24 +14,10 @@ import {
   Search,
   Zap,
   PlayCircle,
-  Square,
-  RefreshCw,
   FileText,
-  Layout,
   Code,
-  CheckCircle,
-  GitCommit,
-  Info,
-  History,
-  List,
-  Files,
   HelpCircle,
-  Trash2,
-  Save,
-  Download,
-  Pause,
-  Play,
-  SkipForward
+  Download
 } from 'lucide-react';
 // Remove the import causing the error - we'll add a type-safe fallback
 import { GSDPhase, GSDStatus } from '../../types/gsd';
@@ -62,28 +48,6 @@ const gsdSlashCommands = {
 // Define the icon component type
 type IconComponent = React.ComponentType<{ size?: number; className?: string }>;
 
-const _COMMAND_ICONS: Record<string, IconComponent> = {
-  PlayCircle,
-  Play,
-  Square,
-  RefreshCw,
-  FileText,
-  Layout,
-  Code,
-  CheckCircle,
-  GitCommit,
-  Info,
-  History,
-  List,
-  Files,
-  HelpCircle,
-  Trash2,
-  Save,
-  Download,
-  Pause,
-  SkipForward,
-  Terminal // fallback
-};
 
 interface CommandPaletteProps {
   phase?: GSDPhase;

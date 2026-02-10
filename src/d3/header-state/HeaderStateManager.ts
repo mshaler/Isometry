@@ -5,7 +5,7 @@
  * column widths, and expanded node tracking.
  */
 
-import type { HeaderHierarchy, HeaderNode } from '../../types/grid';
+import type { HeaderHierarchy } from '../../types/grid';
 import type { useDatabaseService } from '../../hooks/database/useDatabaseService';
 import { superGridLogger } from '../../utils/dev-logger';
 

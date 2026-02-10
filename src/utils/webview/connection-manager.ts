@@ -110,7 +110,7 @@ export class DefaultConnectionManager extends EventEmitter implements IConnectio
     this.emit('quality_changed', this.getQuality());
   }
 
-  getHistoricalQuality(timeRange: number): ConnectionQuality[] {
+  getHistoricalQuality(_timeRange: number): ConnectionQuality[] {
     // Mock implementation - would track historical data
     return [this.getQuality()];
   }

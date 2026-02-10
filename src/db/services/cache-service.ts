@@ -23,7 +23,7 @@ export class DatabaseCacheService {
     return entry.data;
   }
 
-  set(key: string, data: unknown, options?: CacheOptions): void {
+  set(key: string, data: unknown, _options?: CacheOptions): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now()

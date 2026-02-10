@@ -95,7 +95,7 @@ export class HeaderAnimationSystem {
    */
   private animateMorphingBoundaries(
     node: HeaderNode,
-    hierarchy: HeaderHierarchy,
+    _hierarchy: HeaderHierarchy,
     transitionId: string
   ): void {
     const headerElement = this.container
@@ -233,7 +233,7 @@ export class HeaderAnimationSystem {
   /**
    * Check if node is expanded
    */
-  private isNodeExpanded(nodeId: string): boolean {
+  private isNodeExpanded(_nodeId: string): boolean {
     // This would need access to the hierarchy - should be injected
     return false; // Placeholder - needs proper implementation
   }

@@ -2,7 +2,7 @@
  * Type definitions for SuperGridDemo
  */
 
-import type { LATCHFilter } from '../../services/LATCHFilterService';
+import type { LATCHFilter } from '../../services/query/LATCHFilterService';
 import type { ZoomLevel, PanLevel } from '../../d3/SuperGridZoom';
 
 export interface FilterChipProps {

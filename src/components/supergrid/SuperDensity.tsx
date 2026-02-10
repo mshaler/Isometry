@@ -29,8 +29,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { usePAFV } from '@/hooks';
 import { useDatabase } from '@/db/DatabaseContext';
-import { SuperDensityService } from '@/services/SuperDensityService';
-import { LATCHFilterService } from '@/services/LATCHFilterService';
+import { SuperDensityService } from '@/services/supergrid/SuperDensityService';
+import { LATCHFilterService } from '@/services/query/LATCHFilterService';
 import { SuperDensityRenderer } from '@/d3/SuperDensityRenderer';
 import { JanusDensityControls } from '@/components/JanusDensityControls';
 import { superGridLogger } from '@/utils/logging/dev-logger';

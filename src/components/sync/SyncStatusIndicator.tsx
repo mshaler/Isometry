@@ -7,7 +7,7 @@
 
 import { useState, useCallback } from 'react';
 import { useCloudKitSync } from '@/hooks/system/useCloudKitSync';
-import { ConflictResolution, ConflictStrategy, type ConflictEvent } from '@/services/CloudKitSyncAdapter';
+import { ConflictResolution, ConflictStrategy, type ConflictEvent } from '@/services/data-sync/CloudKitSyncAdapter';
 import { cn } from '@/lib/utils';
 
 // Component props

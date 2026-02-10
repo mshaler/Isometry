@@ -116,12 +116,10 @@ function PerformancePanel({
 function FilterHeader({
   bridgeStatus,
   bridgeError,
-  _showPerformancePanel,
   onTogglePerformance
 }: {
   bridgeStatus: ReturnType<typeof getBridgeStatus>;
   bridgeError: string | null;
-  _showPerformancePanel: boolean;
   onTogglePerformance: () => void;
 }) {
   const StatusIcon = bridgeStatus.icon;
@@ -269,7 +267,6 @@ export function FilterPanelOverlay({
       <FilterHeader
         bridgeStatus={bridgeStatus}
         bridgeError={bridgeError}
-        showPerformancePanel={showPerformancePanel}
         onTogglePerformance={() => setShowPerformancePanel(!showPerformancePanel)}
       />
 

@@ -234,6 +234,26 @@ export class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 /**
+ * Validate performance targets against current metrics
+ */
+export function validatePerformanceTargets(): {
+  passed: boolean;
+  results: Record<string, { target: number; actual: number; passed: boolean }>;
+} {
+  const fps = performanceMonitor.getFPS();
+  const memory = performanceMonitor.getMemoryUsage();
+
+  const results: Record<string, { target: number; actual: number; passed: boolean }> = {
+    fps: { target: 30, actual: fps, passed: fps >= 30 },
+    memory: { target: 50, actual: memory.used, passed: memory.used <= 50 }
+  };
+
+  const passed = Object.values(results).every(r => r.passed);
+
+  return { passed, results };
+}
+
+/**
  * Simple performance measurement utility for compatibility
  */
 export function measurePerformance<T>(

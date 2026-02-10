@@ -354,7 +354,7 @@ export class WordProcessor {
   /**
    * Package as DOCX ZIP file
    */
-  private async packageAsDocx(wordXML: string, node: Node): Promise<Blob> {
+  private async packageAsDocx(wordXML: string, _node: Node): Promise<Blob> {
     const zip = new JSZip();
 
     // [Content_Types].xml

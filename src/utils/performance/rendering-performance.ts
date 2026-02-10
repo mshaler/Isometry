@@ -313,8 +313,140 @@ export class SimpleMemoryTracker {
 }
 
 // ============================================================================
+// Types used by useRenderingOptimization hook
+// ============================================================================
+
+export interface OptimizationStrategy {
+  targetFPS: number;
+  lodLevel: number;
+  cullingEnabled: boolean;
+  batchSize: number;
+  gpuAcceleration: boolean;
+  memoryStrategy: string;
+}
+
+export interface LODConfiguration {
+  level: number;
+  simplificationRatio: number;
+  renderDistance: number;
+  elementThreshold: number;
+}
+
+export interface MemoryMetrics {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+  leakDetected: boolean;
+}
+
+// ============================================================================
+// Viewport Optimizer
+// ============================================================================
+
+class ViewportOptimizer {
+  async optimizeForDataset(
+    _viewport: Viewport,
+    nodeCount: number,
+    targetFPS: number
+  ): Promise<OptimizationStrategy> {
+    return {
+      targetFPS,
+      lodLevel: nodeCount > 1000 ? 2 : nodeCount > 500 ? 1 : 0,
+      cullingEnabled: nodeCount > 200,
+      batchSize: Math.min(nodeCount, 100),
+      gpuAcceleration: false,
+      memoryStrategy: nodeCount > 2000 ? 'conservative' : 'balanced'
+    };
+  }
+
+  calculateCullingBounds(
+    viewport: Viewport,
+    margin: number
+  ): { minX: number; maxX: number; minY: number; maxY: number } {
+    const marginX = viewport.width * margin;
+    const marginY = viewport.height * margin;
+    return {
+      minX: viewport.x - marginX,
+      maxX: viewport.x + viewport.width + marginX,
+      minY: viewport.y - marginY,
+      maxY: viewport.y + viewport.height + marginY
+    };
+  }
+}
+
+// ============================================================================
+// Memory Usage Tracker (Extended)
+// ============================================================================
+
+class MemoryUsageTracker {
+  private monitorInterval: NodeJS.Timeout | null = null;
+
+  startMonitoring(intervalMs: number = 5000, onUpdate?: (metrics: MemoryMetrics) => void): void {
+    this.monitorInterval = setInterval(() => {
+      const metrics = this.getCurrentMemoryMetrics();
+      if (metrics && onUpdate) {
+        onUpdate(metrics);
+      }
+    }, intervalMs);
+  }
+
+  stopMonitoring(): void {
+    if (this.monitorInterval) {
+      clearInterval(this.monitorInterval);
+      this.monitorInterval = null;
+    }
+  }
+
+  getCurrentMemoryMetrics(): MemoryMetrics | null {
+    const memory = (performance as any).memory;
+    if (!memory) return null;
+    return {
+      usedJSHeapSize: memory.usedJSHeapSize,
+      totalJSHeapSize: memory.totalJSHeapSize,
+      jsHeapSizeLimit: memory.jsHeapSizeLimit || 2147483648,
+      leakDetected: false
+    };
+  }
+
+  forceGarbageCollection(): boolean {
+    if ((window as any).gc) {
+      (window as any).gc();
+      return true;
+    }
+    return false;
+  }
+}
+
+// ============================================================================
+// Batching Optimizer
+// ============================================================================
+
+class BatchingOptimizer {
+  private batchQueue: (() => void)[] = [];
+
+  addToBatch(operation: () => void): void {
+    this.batchQueue.push(operation);
+  }
+
+  processBatch(): void {
+    const batch = [...this.batchQueue];
+    this.batchQueue = [];
+    batch.forEach(op => op());
+  }
+
+  clearBatch(): void {
+    this.batchQueue = [];
+  }
+}
+
+// ============================================================================
 // Global Instances
 // ============================================================================
+
+export const viewportOptimizer = new ViewportOptimizer();
+export const memoryUsageTracker = new MemoryUsageTracker();
+export const batchingOptimizer = new BatchingOptimizer();
+
 
 export const simpleRenderingMonitor = new SimpleRenderingPerformanceMonitor();
 export const simpleMemoryTracker = new SimpleMemoryTracker();

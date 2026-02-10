@@ -9,7 +9,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { HeaderLevelPicker } from '../HeaderLevelPicker';
 import { SuperGridHeaders } from '../../d3/SuperGridHeaders';
-import { HeaderLayoutService } from '../../services/HeaderLayoutService';
+import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import type {
   ProgressiveDisclosureState,
   LevelPickerTab,

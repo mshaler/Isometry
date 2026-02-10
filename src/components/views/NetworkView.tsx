@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useCanvasTheme, useLiveData } from '@/hooks';
 import { createColorScale, setupZoom } from '@/d3/hooks';
 import { getTheme, type ThemeName } from '@/styles/themes';
-import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/GraphAnalyticsAdapter';
+import { graphAnalytics, type ConnectionSuggestion, type GraphMetrics } from '@/services/analytics/GraphAnalyticsAdapter';
 import { devLogger } from '@/utils/logging/dev-logger';
 import type { Node } from '@/types/node';
 import type {

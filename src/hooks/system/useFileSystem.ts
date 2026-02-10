@@ -38,7 +38,7 @@ interface ExportOptions {
 // Stub implementations for bridge elimination
 const fileSystemBridge = {
   listFiles: async () => [],
-  exportData: async (data: unknown, options: ExportOptions) => { devLogger.debug('Bridge eliminated: exportData', { options }); },
+  exportData: async (_data: unknown, options: ExportOptions) => { devLogger.debug('Bridge eliminated: exportData', { options }); },
   readFile: async (path: string, binary: boolean = false) => {
     devLogger.debug('Bridge eliminated: readFile', { path, binary });
     return binary ? new ArrayBuffer(0) : '';

@@ -18,8 +18,7 @@ import type {
 import { ViewType } from '../types/views';
 import type { ViewType as EngineViewType } from '../engine/contracts/ViewConfig';
 import {
-  DEFAULT_FLIP_CONFIG,
-  createDefaultViewState
+  DEFAULT_FLIP_CONFIG
 } from '../types/views';
 import type { Node } from '../types/node';
 import { devLogger as d3Logger } from '../utils/logging/dev-logger';
@@ -42,7 +41,6 @@ export type { CardPosition, ViewRenderer, ViewContinuumCallbacks };
 export class ViewContinuum {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
   private containerElement: HTMLElement;
-  private canvasId: string;
   private viewState: ViewState;
   private callbacks: ViewContinuumCallbacks;
 
@@ -70,7 +68,6 @@ export class ViewContinuum {
   ) {
     this.containerElement = container as HTMLElement;
     this.container = d3.select(container);
-    this.canvasId = canvasId;
     this.callbacks = callbacks;
     this.animationConfig = animationConfig;
 

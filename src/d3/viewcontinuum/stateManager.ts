@@ -130,7 +130,7 @@ export class ViewContinuumStateManager {
    */
   public restoreViewState(
     viewState: ViewState,
-    activeRenderer: unknown,
+    _activeRenderer: unknown,
     reprojectCachedData: () => void
   ): void {
     const currentViewState = viewState.viewStates[viewState.currentView];

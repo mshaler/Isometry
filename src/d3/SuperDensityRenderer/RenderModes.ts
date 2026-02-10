@@ -2,7 +2,6 @@
  * SuperDensityRenderer Render Modes - Grid, Matrix, and Hybrid rendering
  */
 
-import * as d3 from 'd3';
 import type {
   DensityRenderConfig,
   RendererComponents,

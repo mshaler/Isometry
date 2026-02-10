@@ -22,7 +22,7 @@ import type { PAFVState } from '../types/pafv';
 import type { SuperDynamicConfig } from '../types/supergrid';
 import { useDragDrop } from '../hooks/ui/useDragDrop';
 import { createSuperDynamicEngine, DEFAULT_SUPERDYNAMIC_CONFIG } from '../d3/SuperDynamic';
-import { createPAFVAxisService } from '../services/PAFVAxisService';
+import { createPAFVAxisService } from '../services/supergrid/PAFVAxisService';
 import ViewSwitcher from './ViewSwitcher';
 import OriginPatternSelector from './OriginPatternSelector';
 import ZoomControls from './ZoomControls';

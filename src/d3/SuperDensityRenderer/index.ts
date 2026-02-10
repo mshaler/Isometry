@@ -94,7 +94,6 @@ export class SuperDensityRenderer {
       throw new Error('Renderer not initialized. Call initialize() first.');
     }
 
-    const startTime = performance.now();
     this.visualState.isAnimating = true;
 
     try {

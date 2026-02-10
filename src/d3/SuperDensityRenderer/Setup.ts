@@ -5,7 +5,6 @@
 import * as d3 from 'd3';
 import type {
   DensityRenderConfig,
-  DensityVisualState,
   RendererComponents,
   RendererScales,
   DensityAggregatedRow

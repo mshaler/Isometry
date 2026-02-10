@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useTheme } from '@/contexts/ThemeContext';
-import { graphAnalytics } from '@/services/GraphAnalyticsAdapter';
+import { graphAnalytics } from '@/services/analytics/GraphAnalyticsAdapter';
 import type { Node as DataNode } from '@/types/node';
 import type {
   D3ZoomBehavior,

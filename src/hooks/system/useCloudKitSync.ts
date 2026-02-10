@@ -13,7 +13,7 @@ import {
   ConflictResolution,
   ConflictStrategy,
   SyncQueueStatus
-} from '@/services/CloudKitSyncAdapter';
+} from '@/services/data-sync/CloudKitSyncAdapter';
 
 // Hook state interface
 export interface CloudKitSyncState {

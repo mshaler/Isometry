@@ -5,7 +5,7 @@
  */
 
 import type { HeaderNode, HeaderHierarchy } from '../../types/grid';
-import { HeaderLayoutService } from '../../services/HeaderLayoutService';
+import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
 
 export class HeaderLayoutCalculator {

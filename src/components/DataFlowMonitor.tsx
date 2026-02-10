@@ -254,22 +254,6 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = (props) => {
     return () => clearInterval(intervalId);
   }, [realTime, updateIntervalMs]);
 
-  // Position styling
-  const _getPositionStyle = () => {
-    if (position === 'floating') {
-      return 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2';
-    }
-
-    const positions = {
-      'bottom-right': 'fixed bottom-4 right-4',
-      'bottom-left': 'fixed bottom-4 left-4',
-      'top-right': 'fixed top-4 right-4',
-      'top-left': 'fixed top-4 left-4'
-    };
-
-    return positions[position] || positions['bottom-right'];
-  };
-
   // Use focused sub-components for render logic
   if (!visible) {
     return (
@@ -617,21 +601,6 @@ function MonitorHeader({ compact, isConnected, currentTab, onTabChange, onClose 
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-interface MonitorFooterProps {
-  lastSyncTime?: Date;
-  compact: boolean;
-}
-
-function MonitorFooter({ lastSyncTime, compact }: MonitorFooterProps) {
-  if (!lastSyncTime || compact) return null;
-
-  return (
-    <div className="px-3 py-1 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-      Last sync: {lastSyncTime.toLocaleTimeString()}
     </div>
   );
 }

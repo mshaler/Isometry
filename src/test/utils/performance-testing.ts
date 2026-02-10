@@ -133,8 +133,7 @@ export async function runStressTest(
   config: StressTestConfig
 ): Promise<PerformanceReport> {
   devLogger.info(`Running stress test for ${provider}`);
-  
-  const startTime = Date.now();
+
   const metrics: PerformanceMetric[] = [];
   
   // Memory testing
@@ -173,7 +172,7 @@ export async function runStressTest(
 }
 
 // Helper functions
-export async function measureOperationLatency(provider: DatabaseMode): Promise<LatencyResult> {
+export async function measureOperationLatency(_provider: DatabaseMode): Promise<LatencyResult> {
   const samples: number[] = [];
   
   for (let i = 0; i < 100; i++) {
@@ -195,7 +194,7 @@ export async function measureOperationLatency(provider: DatabaseMode): Promise<L
   };
 }
 
-export async function measureThroughput(provider: DatabaseMode): Promise<ThroughputResult> {
+export async function measureThroughput(_provider: DatabaseMode): Promise<ThroughputResult> {
   const duration = 10; // seconds
   let operations = 0;
   const start = Date.now();
@@ -216,7 +215,7 @@ export async function measureThroughput(provider: DatabaseMode): Promise<Through
   };
 }
 
-export async function measureMemoryUsage(provider: DatabaseMode, config: StressTestConfig): Promise<MemoryResult> {
+export async function measureMemoryUsage(_provider: DatabaseMode, _config: StressTestConfig): Promise<MemoryResult> {
   // Mock memory measurement
   return {
     peakMemoryUsage: Math.random() * 100, // MB
@@ -234,7 +233,7 @@ function getThroughputTarget(provider: DatabaseMode): number {
   return provider === 'native' ? 1000 : 100; // ops/sec
 }
 
-function analyzeRegressions(current: PerformanceMetric[], baseline: PerformanceMetric[]): RegressionAnalysis {
+function analyzeRegressions(_current: PerformanceMetric[], _baseline: PerformanceMetric[]): RegressionAnalysis {
   // Mock regression analysis
   return {
     detectedRegressions: [],

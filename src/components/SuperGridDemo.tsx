@@ -7,8 +7,8 @@ import { ViewSwitcher, useViewSwitcher } from './ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from './CardDetailModal';
 import { useDatabaseService, usePAFV } from '@/hooks';
-import { LATCHFilterService } from '../services/LATCHFilterService';
-import type { LATCHFilter } from '../services/LATCHFilterService';
+import { LATCHFilterService } from '../services/query/LATCHFilterService';
+import type { LATCHFilter } from '../services/query/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 import { contextLogger } from '../utils/logging/dev-logger';
@@ -50,7 +50,7 @@ export function SuperGridDemo() {
 
   // Context hooks
   const databaseService = useDatabaseService();
-  const { state: pafvState } = usePAFV();
+  usePAFV();
 
   // Get all handlers from the custom hook
   const handlers = useSuperGridDemoHandlers({

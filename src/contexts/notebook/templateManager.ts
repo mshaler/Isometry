@@ -1,6 +1,6 @@
 import type { NotebookTemplate, NotebookCard } from '../../types/notebook';
 import { BUILT_IN_TEMPLATES } from '../../types/notebook';
-import { errorReporting } from '../../services/ErrorReportingService';
+import { errorReporting } from '../../services/system/ErrorReportingService';
 import { devLogger } from "../../utils/logging/dev-logger";
 
 const TEMPLATES_STORAGE_KEY = 'notebook_custom_templates';

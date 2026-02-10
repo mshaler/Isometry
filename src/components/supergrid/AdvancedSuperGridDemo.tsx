@@ -5,7 +5,7 @@ import { SuperAudit, type CellState, type AuditMode } from './SuperAudit';
 import { SuperCalc } from './SuperCalc';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import type { GridConfig } from '../../types/grid';
-import type { FilterCompilationResult } from '../../services/LATCHFilterService';
+import type { FilterCompilationResult } from '../../services/query/LATCHFilterService';
 import { superGridLogger } from '@/utils/logging/dev-logger';
 
 interface AdvancedSuperGridDemoProps {

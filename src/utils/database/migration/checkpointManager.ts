@@ -182,7 +182,7 @@ export class CheckpointManager {
   /**
    * Find suitable checkpoint for rollback scenario
    */
-  private findSuitableCheckpoint(scenario: RollbackScenario): Checkpoint | undefined {
+  private findSuitableCheckpoint(_scenario: RollbackScenario): Checkpoint | undefined {
     const checkpoints = Array.from(this.checkpoints.values())
       .sort((a, b) => b.timestamp - a.timestamp);
 

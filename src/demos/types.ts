@@ -2,7 +2,7 @@
  * Type definitions for SuperGrid Integration Demo
  */
 
-import type { LATCHFilter } from '../services/LATCHFilterService';
+import type { LATCHFilter } from '../services/query/LATCHFilterService';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 import type { ProgressiveDisclosureState, JanusDensityState } from '../types/supergrid';
 import type { ViewAxisMapping } from '../types/views';

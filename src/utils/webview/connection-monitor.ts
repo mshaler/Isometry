@@ -8,7 +8,6 @@ import { bridgeLogger } from '@/utils/logging/dev-logger';
 import type {
   ConnectionState,
   ConnectionQuality,
-  ConnectionMetrics,
   ConnectionConfig
 } from './connection-types';
 

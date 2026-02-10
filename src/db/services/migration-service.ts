@@ -8,11 +8,11 @@ import type { MigrationOptions } from '../types/service-types';
 export class DatabaseMigrationService {
   constructor(private db: Database) {}
 
-  async migrate(options?: MigrationOptions): Promise<void> {
+  async migrate(_options?: MigrationOptions): Promise<void> {
     // Migration logic would go here
   }
 
-  async rollback(steps?: number): Promise<void> {
+  async rollback(_steps?: number): Promise<void> {
     // Rollback logic would go here
   }
 }

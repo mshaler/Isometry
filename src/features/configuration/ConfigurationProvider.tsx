@@ -13,15 +13,14 @@ import type {
   ConfigurationEnvironment,
   ConfigurationChange,
   ValidationResult,
-  ConfigurationProviderProps,
-  ChangeSource
+  ConfigurationProviderProps
 } from './types';
 
 export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   children,
   initialEnvironment = 'development',
-  enableCloudSync = false,
-  cloudSyncConfig,
+  enableCloudSync: _enableCloudSync = false,
+  cloudSyncConfig: _cloudSyncConfig,
   enableHotReload = false,
   validationMode = 'strict'
 }) => {
@@ -31,7 +30,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error>();
   const [changes, setChanges] = useState<ConfigurationChange[]>([]);
-  const [subscribers, setSubscribers] = useState<Map<string, Set<(value: string) => void>>>(new Map());
+  const [subscribers] = useState<Map<string, Set<(value: string) => void>>>(new Map());
   const [changeSubscribers, setChangeSubscribers] = useState<Set<(change: ConfigurationChange) => void>>(new Set());
   const [hotReloadEnabled, setHotReloadEnabled] = useState(enableHotReload);
 

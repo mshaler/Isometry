@@ -17,7 +17,7 @@ export class DatabaseQueryService {
     }
   }
 
-  async query(sql: string, params?: unknown[], options?: QueryOptions): Promise<any[]> {
+  async query(sql: string, params?: unknown[], _options?: QueryOptions): Promise<any[]> {
     return this.execute(sql, params);
   }
 }

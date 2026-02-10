@@ -230,7 +230,7 @@ export class ProgressiveRenderer {
       .transition()
       .duration(this.config.transitionDuration)
       .style('opacity', 1)
-      .attr('transform', (d, i) => `translate(${i * 110}, 0)`);
+      .attr('transform', (_d, i) => `translate(${i * 110}, 0)`);
 
     // Exit old nodes
     nodeGroups.exit()

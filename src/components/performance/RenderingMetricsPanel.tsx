@@ -14,7 +14,7 @@ import { Environment as _Environment } from '../../utils/webview-bridge';
 // Import focused components and utilities
 import { OverviewTab, MetricsTab, OptimizationTab, MemoryTab, AlertsTab } from './tabs';
 import { PERFORMANCE_PRESETS, OPTIMIZATION_THRESHOLDS as _OPTIMIZATION_THRESHOLDS } from './constants';
-import type { RenderingMetricsPanelProps, PerformancePreset, MetricTrend, OptimizationRecommendation } from './types';
+import type { RenderingMetricsPanelProps, MetricTrend, OptimizationRecommendation } from './types';
 import { generateOptimizationRecommendations } from './utils';
 
 export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({

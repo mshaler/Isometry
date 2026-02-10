@@ -15,7 +15,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MiniNavEnhanced } from '../components/MiniNavEnhanced';
-import { createPAFVAxisService } from '../services/PAFVAxisService';
+import { createPAFVAxisService } from '../services/supergrid/PAFVAxisService';
 import type { ViewAxisMapping } from '../types/views';
 import type { PAFVState } from '../types/pafv';
 import type { CoordinateSystem, OriginPattern } from '../types/coordinates';

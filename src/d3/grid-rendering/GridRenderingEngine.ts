@@ -6,10 +6,9 @@
  */
 
 import * as d3 from 'd3';
-import type { GridData, GridConfig, AxisData } from '../../types/grid';
-import type { FilterCompilationResult } from '../../services/LATCHFilterService';
+import type { GridData, AxisData } from '../../types/grid';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
-import { HeaderLayoutService } from '../../services/HeaderLayoutService';
+import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
 
 export interface RenderingConfig {
@@ -255,7 +254,7 @@ export class GridRenderingEngine {
   /**
    * Render hierarchical headers
    */
-  private renderHierarchicalHeaders(activeFilters: unknown[] = []): void {
+  private renderHierarchicalHeaders(_activeFilters: unknown[] = []): void {
     if (!this.config.enableHeaders || !this.currentData?.cards.length) {
       return;
     }
@@ -327,24 +326,6 @@ export class GridRenderingEngine {
       count: statusCards.length,
       cards: statusCards
     }));
-  }
-
-  /**
-   * Handle hierarchical header clicks
-   */
-  private handleHierarchicalHeaderClick(event: HeaderClickEvent): void {
-    const { action, nodeId, facet, value } = event;
-
-    superGridLogger.debug('Header clicked', { action, nodeId, facet, value });
-
-    if (this.callbacks.onHeaderClick) {
-      this.callbacks.onHeaderClick(event);
-    }
-
-    if (action === 'select') {
-      // Filter logic would go here
-      superGridLogger.debug('Header filter applied', { facet, value });
-    }
   }
 
   /**

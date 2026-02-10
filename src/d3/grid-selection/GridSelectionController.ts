@@ -6,8 +6,8 @@
  */
 
 import * as d3 from 'd3';
-import { SelectionManager } from '../../services/SelectionManager';
-import type { SelectionCallbacks, GridPosition } from '../../services/SelectionManager';
+import { SelectionManager } from '../../services/query/SelectionManager';
+import type { SelectionCallbacks, GridPosition } from '../../services/query/SelectionManager';
 import type { GridData } from '../../types/grid';
 import { superGridLogger } from '../../utils/dev-logger';
 
@@ -333,7 +333,7 @@ export class GridSelectionController {
   /**
    * Find the next card in a given direction
    */
-  private findCardInDirection(currentId: string | null, axis: 'vertical' | 'horizontal', direction: number): unknown {
+  private findCardInDirection(currentId: string | null, _axis: 'vertical' | 'horizontal', direction: number): unknown {
     if (!currentId || !this.currentData) return null;
 
     const cards = this.currentData.cards;

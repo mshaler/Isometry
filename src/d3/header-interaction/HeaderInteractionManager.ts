@@ -8,7 +8,6 @@
 import * as d3 from 'd3';
 import type {
   HeaderNode,
-  HeaderHierarchy,
   ResizeHandleConfig,
   ResizeOperationState
 } from '../../types/grid';
@@ -22,7 +21,6 @@ export interface InteractionCallbacks {
 }
 
 export class HeaderInteractionManager {
-  private container: d3.Selection<SVGElement, unknown, null, undefined>;
   private callbacks: InteractionCallbacks;
   private resizeConfig: ResizeHandleConfig;
   private resizeState: ResizeOperationState;
@@ -33,11 +31,10 @@ export class HeaderInteractionManager {
   private pendingResizeUpdate: (() => void) | null = null;
 
   constructor(
-    container: d3.Selection<SVGElement, unknown, null, undefined>,
+    _container: d3.Selection<SVGElement, unknown, null, undefined>,
     callbacks: InteractionCallbacks = {},
     resizeConfig: Partial<ResizeHandleConfig> = {}
   ) {
-    this.container = container;
     this.callbacks = callbacks;
     this.resizeConfig = { ...DEFAULT_RESIZE_CONFIG, ...resizeConfig };
     this.resizeState = {
@@ -92,7 +89,7 @@ export class HeaderInteractionManager {
   /**
    * Handle mouse enter events
    */
-  private handleMouseEnter(event: MouseEvent, node: HeaderNode): void {
+  private handleMouseEnter(event: MouseEvent, _node: HeaderNode): void {
     // Add hover styling
     d3.select(event.currentTarget as SVGGElement)
       .classed('header-hover', true);

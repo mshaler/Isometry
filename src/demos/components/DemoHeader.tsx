@@ -5,7 +5,7 @@
 import { ViewSwitcher } from '../../components/ViewSwitcher';
 import { FilterChip } from './FilterChip';
 import type { ViewType } from '../../types/views';
-import type { LATCHFilter } from '../../services/LATCHFilterService';
+import type { LATCHFilter } from '../../services/query/LATCHFilterService';
 import type { PerformanceMetrics, ProgressiveDisclosureState, JanusDensityState, ViewAxisMapping } from '../types';
 
 interface DemoHeaderProps {

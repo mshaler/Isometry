@@ -5,7 +5,6 @@
  */
 
 import React, { ComponentType } from 'react';
-import { ConfigurationProvider } from './ConfigurationProvider';
 import { useConfiguration } from './hooks';
 import type { ConfigurationWrapperProps } from './types';
 

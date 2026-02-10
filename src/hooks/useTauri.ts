@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { tauriService, TauriCapabilities, IsometryFile } from '@/services/TauriService';
+import { tauriService, TauriCapabilities, IsometryFile } from '@/services/system/TauriService';
 
 export interface TauriHookState {
   isDesktop: boolean;

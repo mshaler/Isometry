@@ -25,12 +25,12 @@ interface ABTestProviderProps {
 
 export const ABTestProvider: React.FC<ABTestProviderProps> = ({
   children,
-  userId = 'default-user',
-  enableAnalytics = true
+  userId: _userId = 'default-user',
+  enableAnalytics: _enableAnalytics = true
 }) => {
   const [tests, setTests] = useState<ABTest[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error>();
+  useState(false); // isLoading - placeholder for future use
+  useState<Error>(); // error - placeholder for future use
 
   // Core operations
   const createTest = useCallback(async (config: ABTestConfiguration): Promise<ABTest> => {

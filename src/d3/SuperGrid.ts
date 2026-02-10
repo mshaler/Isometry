@@ -11,7 +11,7 @@
 import * as d3 from 'd3';
 import type { useDatabaseService } from '@/hooks';
 import type { GridData, GridConfig } from '../types/grid';
-import type { FilterCompilationResult } from '../services/LATCHFilterService';
+import type { FilterCompilationResult } from '../services/query/LATCHFilterService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 import type { CardPosition } from '../types/views';
 import { superGridLogger } from '../utils/dev-logger';
@@ -341,27 +341,27 @@ export class SuperGrid {
     }
   }
 
-  private handleFocusChange(focusedId: string | null): void {
+  private handleFocusChange(_focusedId: string | null): void {
     // Focus change handling if needed
   }
 
-  private handleDragStart(cardId: string, position: CardPosition): void {
+  private handleDragStart(_cardId: string, _position: CardPosition): void {
     // Drag start handling
   }
 
-  private handleDragMove(cardId: string, position: CardPosition): void {
+  private handleDragMove(_cardId: string, _position: CardPosition): void {
     // Drag move handling
   }
 
-  private handleDragEnd(cardId: string, position: CardPosition): void {
+  private handleDragEnd(_cardId: string, _position: CardPosition): void {
     // Drag end handling
   }
 
-  private handlePositionUpdate(cardId: string, position: CardPosition): void {
+  private handlePositionUpdate(_cardId: string, _position: CardPosition): void {
     // Position update handling
   }
 
-  private handleHeaderClick(event: unknown): void {
+  private handleHeaderClick(_event: unknown): void {
     // Header click handling
   }
 
@@ -370,17 +370,17 @@ export class SuperGrid {
     this.dragDropController.applyDragBehavior(selection);
   }
 
-  private handleGridResize(width: number, height: number): void {
+  private handleGridResize(_width: number, _height: number): void {
     // Grid resize handling
   }
 
-  private handleZoomChange(level: ZoomLevel): void {
+  private handleZoomChange(_level: ZoomLevel): void {
     if (this.currentData) {
       this.render();
     }
   }
 
-  private handlePanChange(level: PanLevel): void {
+  private handlePanChange(_level: PanLevel): void {
     if (this.currentData) {
       this.render();
     }

@@ -336,11 +336,8 @@ export class GridDragDropController {
   /**
    * Handle final positioning for multi-card drag
    */
-  private handleMultiCardDragEnd(draggedCardId: string, newX: number, newY: number, selectedIds: string[]): void {
+  private handleMultiCardDragEnd(_draggedCardId: string, _newX: number, _newY: number, selectedIds: string[]): void {
     const updates: Array<{id: string, x: number, y: number}> = [];
-
-    const deltaX = newX - this.dragStartPosition.x;
-    const deltaY = newY - this.dragStartPosition.y;
 
     selectedIds.forEach(cardId => {
       const currentElement = this.container.select(`[data-card-id="${cardId}"]`);

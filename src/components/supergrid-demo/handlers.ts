@@ -4,8 +4,8 @@
 
 import { useCallback } from 'react';
 import { contextLogger } from '../../utils/logging/dev-logger';
-import type { LATCHFilterService } from '../../services/LATCHFilterService';
-import type { DatabaseService } from '../../services/DatabaseService';
+import type { LATCHFilterService } from '../../services/query/LATCHFilterService';
+import type { DatabaseService } from '../../db/DatabaseService';
 import type { ZoomLevel, PanLevel } from '../../d3/SuperGridZoom';
 import type { SuperGrid } from '../../d3/SuperGrid';
 
@@ -126,31 +126,6 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
 
     } catch (error) {
       contextLogger.error('SuperGridDemo: Bulk status update failed', error);
-    } finally {
-      setIsModalLoading(false);
-    }
-  }, [databaseService, setIsModalLoading, setSelectedCards, setShowBulkActions]);
-
-  const handleBulkFolderMove = useCallback(async (selectedIds: string[], newFolder: string) => {
-    if (!databaseService || selectedIds.length === 0) return;
-
-    try {
-      setIsModalLoading(true);
-      contextLogger.data('SuperGridDemo: Starting bulk folder move', { count: selectedIds.length, newFolder });
-
-      for (const cardId of selectedIds) {
-        const success = await databaseService.updateCard(cardId, { folder: newFolder });
-        if (!success) {
-          contextLogger.error('Failed to move card to folder', { cardId, newFolder });
-        }
-      }
-
-      setSelectedCards([]);
-      setShowBulkActions(false);
-      contextLogger.data('SuperGridDemo: Bulk folder move completed', { count: selectedIds.length, newFolder });
-
-    } catch (error) {
-      contextLogger.error('SuperGridDemo: Bulk folder move failed', error);
     } finally {
       setIsModalLoading(false);
     }

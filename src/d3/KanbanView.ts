@@ -5,7 +5,7 @@ import type { Node } from '../types/node';
 import { devLogger as d3Logger } from '../utils/logging/dev-logger';
 import { KanbanRenderer } from './kanban/renderer';
 import { groupCardsByFacet, flattenCardsWithPositions } from './kanban/data-processor';
-import type { KanbanColumn, KanbanConfig, FlattenedCard } from './kanban/types';
+import type { KanbanColumn, KanbanConfig } from './kanban/types';
 
 /**
  * KanbanView - 1-facet column projection using D3

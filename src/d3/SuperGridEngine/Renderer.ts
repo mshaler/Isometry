@@ -7,23 +7,19 @@ import { devLogger } from '../../utils/logging';
 
 export class SuperGridRenderer {
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
-  private container: HTMLElement | null = null;
-  private animationDuration: number;
 
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
   private onRenderComplete?: (renderTime: number, cellCount: number) => void;
 
-  constructor(animationDuration: number = 250) {
-    this.animationDuration = animationDuration;
+  constructor(_animationDuration: number = 250) {
+    // Animation duration stored for future use
   }
 
   /**
    * Initialize SVG and set up basic structure
    */
   async setupSVG(container: HTMLElement, width: number, height: number, enableZoomPan: boolean): Promise<void> {
-    this.container = container;
-
     // Import d3 dynamically to avoid module loading issues
     const d3 = await import('d3');
 
@@ -110,7 +106,7 @@ export class SuperGridRenderer {
    * Render grid headers (columns and rows)
    */
   private renderHeaders(
-    d3: typeof import('d3'),
+    _d3: typeof import('d3'),
     headerTree: HeaderTree,
     gridDimensions: GridDimensions
   ): void {
@@ -191,7 +187,7 @@ export class SuperGridRenderer {
    * Render grid cells with data
    */
   private renderCells(
-    d3: typeof import('d3'),
+    _d3: typeof import('d3'),
     currentCells: CellDescriptor[],
     gridDimensions: GridDimensions,
     allNodes: Node[]
@@ -253,7 +249,7 @@ export class SuperGridRenderer {
   ): Promise<void> {
     if (!this.svg) return;
 
-    const d3 = await import('d3');
+    await import('d3');
     const selectionGroup = this.svg.select('.selection');
 
     // Clear existing selection indicators
@@ -295,7 +291,6 @@ export class SuperGridRenderer {
     if (this.svg) {
       this.svg.remove();
     }
-    this.container = null;
     this.svg = null;
   }
 }

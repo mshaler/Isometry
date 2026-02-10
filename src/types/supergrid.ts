@@ -49,6 +49,39 @@ export {
   DEFAULT_SUPER_DYNAMIC_CONFIG
 } from './dynamic-interaction';
 
+// Re-export density control types
+export type {
+  DensityLevel,
+  ExtentDensityMode,
+  ValueDensityMode,
+  JanusDensityState,
+  RegionDensityConfig,
+  DensityChangeEvent,
+  DensityPerformanceMetrics,
+  DensityAggregationResult,
+  DensityAggregatedRow
+} from './density-control';
+
+export {
+  DEFAULT_JANUS_DENSITY
+} from './density-control';
+
+// Re-export cartographic types
+export type {
+  CartographicConfig,
+  CartographicState,
+  BoundaryConstraints,
+  CartographicVisualFeedback,
+  CartographicCallbacks,
+  CartographicControlInterface,
+  CartographicPerformanceMetrics
+} from './cartographic';
+
+// Re-export SuperDynamicMetrics from dynamic-axis
+export type {
+  SuperDynamicMetrics
+} from './dynamic-axis';
+
 // Additional types that weren't in the core modules
 // (These would need to be extracted from the original file if they exist)
 

@@ -4,9 +4,10 @@
 
 import { useCallback } from 'react';
 import { SuperGrid } from '../d3/SuperGrid';
-import { LATCHFilterService } from '../services/LATCHFilterService';
+import { LATCHFilterService } from '../services/query/LATCHFilterService';
 import { contextLogger } from '../utils/logging/dev-logger';
-import type { ViewAxisMapping, ProgressiveDisclosureState, JanusDensityState, ZoomLevel, PanLevel } from '../types';
+import type { ViewAxisMapping, ProgressiveDisclosureState, JanusDensityState } from '../types';
+import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 
 interface CallbackHookParams {
   superGrid: SuperGrid | null;

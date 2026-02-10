@@ -11,8 +11,6 @@ import type {
   ConsistencyCheck,
   IntegrityReport,
   CorruptionDetail,
-  TestNode,
-  TestEdge,
   TestDataset,
   ConcurrencyReport
 } from '../types/integrity-types';
@@ -23,7 +21,7 @@ import type {
 export async function validateDataConsistency(
   sourceProvider: DatabaseMode,
   targetProvider: DatabaseMode,
-  sampleSize: number = 100
+  _sampleSize: number = 100
 ): Promise<ConsistencyReport> {
   devLogger.info(`Validating data consistency: ${sourceProvider} → ${targetProvider}`);
   
