@@ -34,7 +34,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
   }
 
   // Use sql.js SQLiteProvider directly - bridge eliminated!
-  const { execute, loading: dbLoading, error: dbError } = useSQLite();
+  const { execute, loading: dbLoading, error: dbError, dataVersion } = useSQLite();
   const { enabled = true, transform } = options;
 
   const [data, setData] = useState<T[] | null>(null);
@@ -110,7 +110,7 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
     } finally {
       setLoading(false);
     }
-  }, [execute, sql, paramsKey, enabled, dbLoading, fallbackData, transform]);
+  }, [execute, sql, paramsKey, enabled, dbLoading, fallbackData, transform, dataVersion]);
 
   useEffect(() => {
     fetchData();

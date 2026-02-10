@@ -44,7 +44,10 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
   const [error, setError] = useState<string | null>(null);
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [commandInputModal, setCommandInputModal] = useState<{ command: SlashCommand; isOpen: boolean }>({ command: null as any, isOpen: false });
+  const [commandInputModal, setCommandInputModal] = useState<{
+    command: SlashCommand;
+    isOpen: boolean;
+  }>({ command: null as any, isOpen: false });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'builder' | 'terminal'>('dashboard');
   const [savedTemplates, setSavedTemplates] = useState<CommandTemplate[]>([]);
 

@@ -10,6 +10,8 @@ import { useSQLite } from '../db/SQLiteProvider';
 import { importAltoFiles, getImportStats, clearAltoIndexData, type ImportResult, type AltoDataType } from '../etl';
 import { devLogger } from '../utils/logging';
 
+// Note: notifyDataChanged is called after import to trigger query invalidation and auto-save
+
 export interface AltoIndexFile {
   path: string;
   content: string;
@@ -41,7 +43,7 @@ export interface UseAltoIndexImportResult {
   /** Get current import statistics */
   getStats: () => Record<string, number>;
   /** Clear all imported alto-index data */
-  clearData: () => number;
+  clearData: () => Promise<number>;
   /** Current import status */
   status: 'idle' | 'loading' | 'importing' | 'done' | 'error';
   /** Import progress (0-100) */
@@ -55,7 +57,7 @@ export interface UseAltoIndexImportResult {
 }
 
 export function useAltoIndexImport(): UseAltoIndexImportResult {
-  const { db, loading: dbLoading } = useSQLite();
+  const { db, loading: dbLoading, notifyDataChanged } = useSQLite();
   const [status, setStatus] = useState<UseAltoIndexImportResult['status']>('idle');
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState('');
@@ -105,6 +107,9 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
         setStatus('done');
         devLogger.info('Alto-index import complete', { importResult });
 
+        // Trigger query invalidation and auto-save to localStorage
+        await notifyDataChanged();
+
         return importResult;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -113,7 +118,7 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
         throw err;
       }
     },
-    [db, dbLoading]
+    [db, dbLoading, notifyDataChanged]
   );
 
   const importFromPublic = useCallback(
@@ -130,15 +135,17 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
     return getImportStats(db);
   }, [db, dbLoading]);
 
-  const clearData = useCallback((): number => {
+  const clearData = useCallback(async (): Promise<number> => {
     if (!db || dbLoading) {
       return 0;
     }
     const count = clearAltoIndexData(db);
     setResult(null);
     setStatus('idle');
+    // Trigger query invalidation and auto-save after clearing
+    await notifyDataChanged();
     return count;
-  }, [db, dbLoading]);
+  }, [db, dbLoading, notifyDataChanged]);
 
   return {
     importFromJSON,

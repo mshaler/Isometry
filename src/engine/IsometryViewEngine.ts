@@ -14,7 +14,8 @@
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { ViewEngine, ViewRenderer, ViewPerformanceMetrics } from './contracts/ViewEngine';
-import type { ViewConfig } from './contracts/ViewConfig';\nimport { devLogger } from '../utils/logging';
+import type { ViewConfig } from './contracts/ViewConfig';
+import { devLogger } from '../utils/logging';
 
 /**
  * Error types for ViewEngine operations

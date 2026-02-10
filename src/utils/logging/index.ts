@@ -6,6 +6,7 @@ export {
 
 // Export from dev-logger (dev implementation)
 export {
+  devLogger,
   bridgeLogger,
   performanceLogger,
   contextLogger,

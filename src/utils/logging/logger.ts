@@ -197,3 +197,6 @@ export const uiLogger = {
   info: (msg: string, ctx?: Record<string, unknown>) => logger.info('ui', msg, ctx),
   debug: (msg: string, ctx?: Record<string, unknown>) => logger.debug('ui', msg, ctx)
 };
+
+// Re-export devLogger from dev-logger for backwards compatibility
+export { devLogger } from './dev-logger';

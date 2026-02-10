@@ -31,6 +31,10 @@ export interface SQLiteContextValue {
     recursiveCte: boolean;
   };
   telemetry: SQLiteCapabilityError[];
+  /** Version counter that increments when data changes - use to trigger query refetches */
+  dataVersion: number;
+  /** Call after bulk data changes to trigger query invalidation and auto-save */
+  notifyDataChanged: () => Promise<void>;
 }
 
 const SQLiteContext = createContext<SQLiteContextValue | null>(null);
@@ -56,6 +60,7 @@ export function SQLiteProvider({
     recursiveCte: false
   });
   const [telemetry, setTelemetry] = useState<SQLiteCapabilityError[]>([]);
+  const [dataVersion, setDataVersion] = useState(0);
 
   // Telemetry logging helper
   const logCapabilityError = useCallback((
@@ -396,6 +401,16 @@ export function SQLiteProvider({
     }
   }, [SQL, db, enableLogging]);
 
+  // Notify that data has changed - triggers query refetches and auto-save
+  const notifyDataChanged = useCallback(async (): Promise<void> => {
+    setDataVersion(v => v + 1);
+    if (enableLogging) {
+      devLogger.data('Data changed, triggering query invalidation', { dataVersion: dataVersion + 1 });
+    }
+    // Auto-save after data changes
+    await save();
+  }, [save, enableLogging, dataVersion]);
+
   const contextValue: SQLiteContextValue = {
     db,
     loading,
@@ -407,6 +422,8 @@ export function SQLiteProvider({
     loadFromFile,
     capabilities,
     telemetry,
+    dataVersion,
+    notifyDataChanged,
   };
 
   return (

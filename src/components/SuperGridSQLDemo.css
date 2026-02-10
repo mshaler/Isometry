@@ -353,6 +353,56 @@
 }
 
 /* ============================================================================
+   Import Controls
+   ============================================================================ */
+
+.import-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.import-button,
+.clear-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.import-button {
+  background: linear-gradient(180deg, #4a90d9 0%, #357abd 100%);
+  color: white;
+  border: 1px solid #2a6aad;
+}
+
+.import-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #5a9fe9 0%, #4585c8 100%);
+}
+
+.import-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clear-button {
+  background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+  color: #333;
+  border: 1px solid #999;
+}
+
+.clear-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f0f0f0 0%, #ddd 100%);
+}
+
+.clear-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ============================================================================
    Responsive Design
    ============================================================================ */
 
