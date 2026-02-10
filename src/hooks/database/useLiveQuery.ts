@@ -22,6 +22,7 @@ import {
 import { useBackgroundSync } from './useBackgroundSync';
 import { useCleanupEffect, createCleanupStack } from '../../utils/memoryManagement';
 import { memoryManager } from '../../utils/bridge-optimization/memory-manager';
+import { devLogger } from '../../utils/logging';
 
 export interface LiveQueryOptions {
   /** Initial query parameters */
@@ -276,7 +277,11 @@ export function useLiveQuery<T = unknown>(
 
     if (newQuality !== connectionQuality) {
       setConnectionQuality(newQuality);
-      console.log(`[useLiveQuery] Connection quality changed: ${connectionQuality} → ${newQuality} (${latency}ms)`);
+      devLogger.debug('useLiveQuery connection quality changed', {
+        from: connectionQuality,
+        to: newQuality,
+        latencyMs: latency
+      });
     }
   }, [connectionStateConfig, isConnected, connectionQuality]);
 
@@ -297,7 +302,10 @@ export function useLiveQuery<T = unknown>(
       if (operationMap.current.has(updateData.correlationId)) {
         const operation = operationMap.current.get(updateData.correlationId)!;
         const latency = Date.now() - operation.timestamp;
-        console.log(`[useLiveQuery] Operation completed: ${operation.operation} in ${latency}ms`);
+        devLogger.debug('useLiveQuery operation completed', {
+          operation: operation.operation,
+          latencyMs: latency
+        });
 
         // Monitor connection quality
         monitorConnectionQuality(latency);
@@ -309,7 +317,7 @@ export function useLiveQuery<T = unknown>(
 
     // Sequence number validation for race condition prevention
     if (updateData.sequenceNumber <= lastSequenceNumber.current) {
-      console.warn('[useLiveQuery] Ignoring out-of-order update:', {
+      devLogger.warn('useLiveQuery ignoring out-of-order update', {
         received: updateData.sequenceNumber,
         last: lastSequenceNumber.current,
         sql: sql.slice(0, 50),
@@ -335,7 +343,9 @@ export function useLiveQuery<T = unknown>(
         const mergedResults = results.map(item => {
           const optimisticUpdate = optimisticUpdates.get((item as any).id);
           if (optimisticUpdate) {
-            console.log('[useLiveQuery] Merging optimistic update for item:', (item as any).id);
+            devLogger.debug('useLiveQuery merging optimistic update for item', {
+              id: (item as any).id
+            });
             return { ...item, ...optimisticUpdate };
           }
           return item;
@@ -362,10 +372,12 @@ export function useLiveQuery<T = unknown>(
         if (connectionQuality === 'slow') {
           // Increase debounce for slow connections
           const adaptiveDebounce = debounceMs * 2;
-          console.log(`[useLiveQuery] Adapted debounce for slow connection: ${adaptiveDebounce}ms`);
+          devLogger.debug('useLiveQuery adapted debounce for slow connection', {
+            debounceMs: adaptiveDebounce
+          });
         } else if (connectionQuality === 'offline') {
           // Queue for later when connection restored
-          console.log('[useLiveQuery] Offline - update queued');
+          devLogger.debug('useLiveQuery offline - update queued');
           return;
         }
       }
@@ -414,7 +426,9 @@ export function useLiveQuery<T = unknown>(
       subscribe(() => {
         // Stub implementation for bridge elimination
         // In v4, D3.js queries sql.js directly
-        console.log(`[LiveQuery] Bridge eliminated - subscription ${subscriptionId} registered as stub`);
+        devLogger.debug('LiveQuery bridge eliminated - subscription registered as stub', {
+          subscriptionId
+        });
       });
 
       // Register bridge callback cleanup with correlation ID
@@ -423,7 +437,9 @@ export function useLiveQuery<T = unknown>(
         cleanup: () => {
           // Use stub callback for unsubscribe tracking
           unsubscribe(() => {
-            console.log(`[LiveQuery] Bridge eliminated - unsubscribing ${subscriptionId}`);
+            devLogger.debug('LiveQuery bridge eliminated - unsubscribing', {
+              subscriptionId
+            });
           });
         }
       });
@@ -431,13 +447,13 @@ export function useLiveQuery<T = unknown>(
       setObservationId(subscriptionId);
       setIsLive(true);
 
-      console.log('[useLiveQuery] Started live observation:', {
+      devLogger.debug('useLiveQuery started live observation', {
         sql: sql.slice(0, 50),
         subscriptionId,
         correlationId
       });
     } catch (err) {
-      console.error('[useLiveQuery] Failed to start live observation:', err);
+      devLogger.error('useLiveQuery failed to start live observation', { error: err });
       const errorMessage = err instanceof Error ? err.message : String(err);
       onError?.(err instanceof Error ? err : new Error(errorMessage));
     }
@@ -457,7 +473,7 @@ export function useLiveQuery<T = unknown>(
       debounceTimer.current = null;
     }
 
-    console.log('[useLiveQuery] Stopped live observation:', observationId);
+    devLogger.debug('useLiveQuery stopped live observation', { observationId });
   }, [isLive, observationId, unsubscribe]);
 
   // Manual refetch - use TanStack Query refetch if cache is enabled
@@ -494,7 +510,7 @@ export function useLiveQuery<T = unknown>(
         );
       }
     } catch (err) {
-      console.error('[useLiveQuery] Cache invalidation failed:', err);
+      devLogger.error('useLiveQuery cache invalidation failed', { error: err });
     }
   }, [autoInvalidate, enableCache, invalidationManager, invalidationStrategy]);
 
@@ -504,7 +520,7 @@ export function useLiveQuery<T = unknown>(
     rollbackKey?: string
   ) => {
     if (!enableCache) {
-      console.warn('[useLiveQuery] Optimistic updates require cache to be enabled');
+      devLogger.warn('useLiveQuery optimistic updates require cache to be enabled');
       return;
     }
 
@@ -529,7 +545,7 @@ export function useLiveQuery<T = unknown>(
         timestamp: Date.now()
       });
 
-      console.log('[useLiveQuery] Applied optimistic update:', {
+      devLogger.debug('useLiveQuery applied optimistic update', {
         id,
         correlationId,
         update
@@ -574,7 +590,10 @@ export function useLiveQuery<T = unknown>(
 
     if (removedId) {
       setOptimisticPendingCount(prev => Math.max(0, prev - 1));
-      console.log('[useLiveQuery] Rolled back optimistic update:', { rollbackKey, id: removedId });
+      devLogger.debug('useLiveQuery rolled back optimistic update', {
+        rollbackKey,
+        id: removedId
+      });
 
       // Refresh data from cache to remove optimistic changes
       queryClient.invalidateQueries({ queryKey: finalCacheKey });
@@ -646,9 +665,9 @@ export function useLiveQuery<T = unknown>(
 
       // Cancel observations during critical memory pressure
       if (metrics.pressureLevel === 'critical' && isLive) {
-        console.warn('[useLiveQuery] Critical memory pressure detected, canceling live observation:', {
+        devLogger.warn('useLiveQuery critical memory pressure detected, canceling live observation', {
           sql: sql.slice(0, 50),
-          usage: `${metrics.usedJSHeapSize.toFixed(1)}MB`,
+          usageMB: Math.round(metrics.usedJSHeapSize * 10) / 10,
           activeCallbacks: activeCallbacks.length
         });
         stopLive();
