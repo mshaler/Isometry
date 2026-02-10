@@ -8,7 +8,7 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
 import { useLiveQuery, type LiveQueryOptions, type LiveQueryResult } from '../database/useLiveQuery';
-// @ts-ignore - memoryManagement exports suppressed for compilation
+// @ts-expect-error - memoryManagement exports need implementation
 import { useCleanupEffect, createCleanupStack } from '../../utils/memoryManagement';
 import { PerformanceMonitor } from '../../utils/bridge-optimization/performance-monitor';
 import { devLogger } from '../../utils/logging';
@@ -215,7 +215,7 @@ export function useVirtualLiveQuery<T = unknown>(
           if (frameDelta > 0) {
             frameRateRef.current = 1000 / frameDelta;
             // Track virtual scrolling frame performance
-            // @ts-ignore - PerformanceMonitor method suppressed for compilation
+            // @ts-expect-error - PerformanceMonitor method needs implementation
             performanceMonitor.trackVirtualScrollingFrame(frameDelta);
           }
           lastFrameTime.current = timestamp;
@@ -284,7 +284,7 @@ export function useVirtualLiveQuery<T = unknown>(
       const totalLatency = queryLatency + virtualUpdateTime + renderTime;
 
       // Track update latency in performance monitor
-      // @ts-ignore - PerformanceMonitor method suppressed for compilation
+      // @ts-expect-error - PerformanceMonitor method needs implementation
       performanceMonitor.trackUpdateLatency(queryLatency, virtualUpdateTime, renderTime);
 
       // Ensure updates appear within 100ms (VLS-03 compliance)
@@ -337,7 +337,7 @@ export function useVirtualLiveQuery<T = unknown>(
 
     // Track cache efficiency with PerformanceMonitor
     if (performanceMonitor && virtualCacheTotal.current > 0) {
-      // @ts-ignore - PerformanceMonitor method suppressed for compilation
+      // @ts-expect-error - PerformanceMonitor method suppressed for compilation
       performanceMonitor.trackCacheEfficiency(
         virtualCacheHits.current,
         queryHitRate,
@@ -383,7 +383,7 @@ export function useVirtualLiveQuery<T = unknown>(
   // Cleanup effect with memory management
   useCleanupEffect(() => {
     // Reset performance counters on unmount
-    // @ts-ignore - CleanupStack method suppressed for compilation
+    // @ts-expect-error - CleanupStack method suppressed for compilation
     cleanupStack.add(() => {
       virtualCacheHits.current = 0;
       virtualCacheTotal.current = 0;
@@ -393,25 +393,25 @@ export function useVirtualLiveQuery<T = unknown>(
 
       // Stop performance monitoring if active
       if (performanceMonitor) {
-        // @ts-ignore - PerformanceMonitor method suppressed for compilation
+        // @ts-expect-error - PerformanceMonitor method suppressed for compilation
         performanceMonitor.stopCollection();
       }
     });
 
     return () => {
-      // @ts-ignore - CleanupStack method suppressed for compilation
+      // @ts-expect-error - CleanupStack method suppressed for compilation
       cleanupStack.destroy();
     };
-    // @ts-ignore - useCleanupEffect argument count suppressed for compilation
+    // @ts-expect-error - useCleanupEffect argument count suppressed for compilation
   }, [cleanupStack, performanceMonitor], 'VirtualLiveQuery:Cleanup');
 
   // Start performance monitoring when available
   useEffect(() => {
     if (performanceMonitor) {
-      // @ts-ignore - PerformanceMonitor method suppressed for compilation
+      // @ts-expect-error - PerformanceMonitor method suppressed for compilation
       performanceMonitor.startCollection();
       return () => {
-        // @ts-ignore - PerformanceMonitor method suppressed for compilation
+        // @ts-expect-error - PerformanceMonitor method suppressed for compilation
         performanceMonitor.stopCollection();
       };
     }
