@@ -89,11 +89,12 @@ Plans:
   2. User can invoke slash commands for card operations (/save-card, /send-to-shell, /insert-viz)
   3. User can create bidirectional links with [[page]] syntax and see autocomplete suggestions
   4. User experiences no lag during typing with shouldRerenderOnTransaction optimization applied
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 45-01: TBD (planned during phase planning)
-- [ ] 45-02: TBD
+- [ ] 45-01-PLAN.md — TipTap foundation with performance config and Markdown persistence
+- [ ] 45-02-PLAN.md — Slash commands extension with @tiptap/suggestion
+- [ ] 45-03-PLAN.md — Wiki links extension with [[page]] syntax and sql.js autocomplete
 
 #### Phase 46: Live Data Synchronization
 **Goal**: Enable cross-canvas data synchronization without manual refresh using sql.js triggers
@@ -145,7 +146,7 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 34-42 | v4.1 | All | Complete | 2026-02-10 |
 | 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 44. Preview Visualization Expansion | v4.2 | 0/3 | Planned | - |
-| 45. TipTap Editor Migration | v4.2 | 0/? | Not started | - |
+| 45. TipTap Editor Migration | v4.2 | 0/3 | Planned | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
 
