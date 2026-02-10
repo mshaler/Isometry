@@ -14,7 +14,7 @@
 import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { ViewEngine, ViewRenderer, ViewPerformanceMetrics } from './contracts/ViewEngine';
-import type { ViewConfig } from './contracts/ViewConfig';
+import type { ViewConfig } from './contracts/ViewConfig';\nimport { devLogger } from '../utils/logging';
 
 /**
  * Error types for ViewEngine operations
@@ -104,10 +104,16 @@ export class IsometryViewEngine implements ViewEngine {
       // Update performance metrics
       this.updatePerformanceMetrics(startTime, data.length);
 
-      console.log(`[IsometryViewEngine] Rendered ${config.viewType} with ${data.length} nodes in ${this.performanceMetrics.lastRenderTime.toFixed(2)}ms`);
+      devLogger.render('IsometryViewEngine rendered', {
+        viewType: config.viewType,
+        nodeCount: data.length,
+        renderTimeMs: this.performanceMetrics.lastRenderTime
+      });
 
     } catch (error) {
-      console.error('[IsometryViewEngine] Render failed:', error);
+      devLogger.error('IsometryViewEngine render failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       throw new ViewEngineError(
         `Render failed: ${error instanceof Error ? error.message : String(error)}`,
         'RENDER_FAILED',
@@ -121,7 +127,7 @@ export class IsometryViewEngine implements ViewEngine {
    */
   async transition(fromConfig: ViewConfig, toConfig: ViewConfig, duration = 300): Promise<void> {
     if (this.isTransitioning) {
-      console.warn('[IsometryViewEngine] Transition already in progress, skipping');
+      devLogger.warn('IsometryViewEngine: Transition already in progress, skipping');
       return;
     }
 
