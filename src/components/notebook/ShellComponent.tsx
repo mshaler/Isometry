@@ -4,6 +4,7 @@ import { useTerminal } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 import { GSDInterface } from '../gsd/GSDInterface';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
+import { devLogger } from '../../utils/logging';
 // import { getClaudeCodeDispatcher } from '../../services/claudeCodeWebSocketDispatcher';
 
 // Simplified implementations for notebook environment
@@ -56,13 +57,13 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     sessionId: null,
     enabled: activeTab === 'gsd-gui', // Only enable when GSD tab is active
     onStateUpdate: (state) => {
-      console.log('GSD state updated:', state);
+      devLogger.debug('GSD state updated', { component: 'ShellComponent', state });
     },
     onChoicePrompt: (choices) => {
-      console.log('GSD choice prompt:', choices);
+      devLogger.debug('GSD choice prompt', { component: 'ShellComponent', choices });
     },
     onError: (error) => {
-      console.error('GSD terminal integration error:', error);
+      devLogger.error('GSD terminal integration error', { component: 'ShellComponent', error });
     }
   });
 
