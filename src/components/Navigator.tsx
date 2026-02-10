@@ -1,10 +1,17 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, MapPin, SortAsc, Clock, Tag, GitBranch, Network } from 'lucide-react';
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAppState, type AppName, type ViewName, type DatasetName } from '@/contexts/AppStateContext';
 import { Dropdown, type DropdownOption } from '@/components/ui/Dropdown';
 import { usePAFV } from '@/state/PAFVContext';
-import type { LATCHAxis, Plane, AxisMapping } from '@/types/pafv';
+import { AccordionSection } from '@/components/ui/AccordionSection';
+import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
+import { DraggableFacet } from '@/components/navigator/DraggableFacet';
+import { PlaneDropZone } from '@/components/navigator/PlaneDropZone';
+import type { PropertyBucket } from '@/services/property-classifier';
+import type { Plane, AxisMapping } from '@/types/pafv';
 
 export function Navigator() {
   const { activeApp, activeView, activeDataset, setActiveApp, setActiveView, setActiveDataset } = useAppState();
@@ -94,129 +101,172 @@ export function Navigator() {
   );
 }
 
-// Simple PAFV Navigator that works with current PAFVContext
+// ============================================================================
+// Constants
+// ============================================================================
+
+/**
+ * Configuration for LATCH+GRAPH bucket rendering.
+ * Maps bucket keys to display labels and icons.
+ */
+const BUCKET_CONFIG: Array<{
+  key: PropertyBucket;
+  label: string;
+  icon: React.ReactNode;
+}> = [
+  { key: 'L', label: 'Location', icon: <MapPin className="w-4 h-4" /> },
+  { key: 'A', label: 'Alphabet', icon: <SortAsc className="w-4 h-4" /> },
+  { key: 'T', label: 'Time', icon: <Clock className="w-4 h-4" /> },
+  { key: 'C', label: 'Category', icon: <Tag className="w-4 h-4" /> },
+  { key: 'H', label: 'Hierarchy', icon: <GitBranch className="w-4 h-4" /> },
+  { key: 'GRAPH', label: 'Graph', icon: <Network className="w-4 h-4" /> },
+];
+
+// ============================================================================
+// SimplePAFVNavigator Component
+// ============================================================================
+
+/**
+ * PAFV Navigator with dynamic LATCH+GRAPH classification.
+ * Renders accordion sections for each property bucket with drag-and-drop facet assignment.
+ */
 function SimplePAFVNavigator() {
   const { theme } = useTheme();
-  const { state, setMapping, removeMapping, setViewMode } = usePAFV();
+  const { state, setViewMode } = usePAFV();
+  const { classification, isLoading, error } = usePropertyClassification();
 
-  const availableAxes: LATCHAxis[] = ['location', 'alphabet', 'time', 'category', 'hierarchy'];
   const availablePlanes: Plane[] = ['x', 'y', 'color'];
 
-  const handleAxisToPlane = (axis: LATCHAxis, plane: Plane) => {
-    // Remove any existing mapping for this plane first
-    const existingMapping = state.mappings.find((m: AxisMapping) => m.plane === plane);
-    if (existingMapping) {
-      removeMapping(plane);
-    }
-
-    // Add new mapping
-    setMapping({ axis, plane, facet: axis.toLowerCase() });
+  const getCurrentMapping = (plane: Plane): AxisMapping | null => {
+    return state.mappings.find((m: AxisMapping) => m.plane === plane) ?? null;
   };
 
-  const handleRemoveMapping = (plane: Plane) => {
-    removeMapping(plane);
-  };
+  // Container styling
+  const containerStyles = `${
+    theme === 'NeXTSTEP'
+      ? 'bg-[#b8b8b8] border-b-2 border-[#505050]'
+      : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
+  }`;
 
-  const getCurrentMapping = (plane: Plane) => {
-    return state.mappings.find((m: AxisMapping) => m.plane === plane);
-  };
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className={containerStyles}>
+        <div className="p-3 text-xs text-gray-500">Loading properties...</div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={containerStyles}>
+        <div className="p-3 text-xs text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  // No classification data
+  if (!classification) {
+    return null;
+  }
 
   return (
-    <div className={`${
-      theme === 'NeXTSTEP'
-        ? 'bg-[#b8b8b8] border-b-2 border-[#505050]'
-        : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
-    }`}>
-      <div className="p-3">
-        {/* View Mode Controls */}
-        <div className="mb-3 flex items-center gap-2">
-          <span className="text-xs font-medium">View Mode:</span>
-          <button
-            onClick={() => setViewMode('grid')}
-            className={`px-3 py-1 text-xs rounded ${
-              state.viewMode === 'grid'
-                ? 'bg-blue-500 text-white'
-                : theme === 'NeXTSTEP'
-                  ? 'bg-[#d4d4d4] border border-[#707070]'
-                  : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            Grid
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`px-3 py-1 text-xs rounded ${
-              state.viewMode === 'list'
-                ? 'bg-blue-500 text-white'
-                : theme === 'NeXTSTEP'
-                  ? 'bg-[#d4d4d4] border border-[#707070]'
-                  : 'bg-gray-100 hover:bg-gray-200'
-            }`}
-          >
-            List
-          </button>
-        </div>
+    <DndProvider backend={HTML5Backend}>
+      <div className={containerStyles}>
+        <div className="p-3">
+          {/* View Mode Controls */}
+          <div className="mb-3 flex items-center gap-2">
+            <span className="text-xs font-medium">View Mode:</span>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1 text-xs rounded ${
+                state.viewMode === 'grid'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1 text-xs rounded ${
+                state.viewMode === 'list'
+                  ? 'bg-blue-500 text-white'
+                  : theme === 'NeXTSTEP'
+                    ? 'bg-[#d4d4d4] border border-[#707070]'
+                    : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              List
+            </button>
+          </div>
 
-        {/* PAFV Axis Assignment */}
-        <div className="grid grid-cols-3 gap-4">
-          {availablePlanes.map(plane => {
-            const mapping = getCurrentMapping(plane);
-            return (
-              <div key={plane} className="space-y-2">
-                <div className="text-xs font-medium capitalize">{plane}-Axis</div>
-                <div className={`min-h-[100px] p-2 rounded border ${
-                  theme === 'NeXTSTEP'
-                    ? 'bg-[#a0a0a0] border-[#606060]'
-                    : 'bg-gray-50 border-gray-300'
-                }`}>
-                  {mapping ? (
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{mapping.axis.charAt(0).toUpperCase() + mapping.axis.slice(1)}</span>
-                      <button
-                        onClick={() => handleRemoveMapping(plane)}
-                        className="text-xs text-red-500 hover:text-red-700"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-gray-500">Drop axis here</div>
-                  )}
-                </div>
+          {/* Two-column layout: Buckets left, Planes right */}
+          <div className="flex gap-4">
+            {/* Left: LATCH+GRAPH Buckets */}
+            <div className="flex-1 space-y-1">
+              {BUCKET_CONFIG.map((bucket) => {
+                const properties = classification[bucket.key];
+                const isEmpty = properties.length === 0;
+                const isGraph = bucket.key === 'GRAPH';
 
-                {/* Available axes to assign */}
-                <div className="space-y-1">
-                  {availableAxes.map(axis => (
-                    <button
-                      key={axis}
-                      onClick={() => handleAxisToPlane(axis, plane)}
-                      className={`w-full text-left px-2 py-1 text-xs rounded ${
-                        mapping?.axis === axis
-                          ? 'bg-blue-100 text-blue-800'
-                          : theme === 'NeXTSTEP'
-                            ? 'bg-[#d4d4d4] hover:bg-[#c0c0c0] border border-[#707070]'
-                            : 'bg-white hover:bg-gray-100 border border-gray-300'
-                      }`}
-                    >
-                      {axis.charAt(0).toUpperCase() + axis.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                return (
+                  <AccordionSection
+                    key={bucket.key}
+                    title={bucket.label}
+                    icon={bucket.icon}
+                    badge={<span className="text-xs text-gray-500">{properties.length}</span>}
+                    defaultExpanded={bucket.key === 'T' || bucket.key === 'C'}
+                  >
+                    {isEmpty ? (
+                      <div className="text-xs text-gray-400 italic">No enabled facets</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {properties.map((property) => (
+                          <DraggableFacet
+                            key={property.id}
+                            property={property}
+                            disabled={isGraph}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {isGraph && (
+                      <div className="mt-2 text-xs text-gray-400 italic">
+                        Graph axis mapping coming soon
+                      </div>
+                    )}
+                  </AccordionSection>
+                );
+              })}
+            </div>
 
-        {/* Current State Display */}
-        <div className="mt-3 pt-3 border-t border-gray-300">
-          <div className="text-xs text-gray-600">
-            Current mappings: {state.mappings.length > 0
-              ? state.mappings.map((m: AxisMapping) => `${m.plane}:${m.axis}`).join(', ')
-              : 'None'
-            }
+            {/* Right: Plane Drop Zones */}
+            <div className="w-48 space-y-3">
+              {availablePlanes.map((plane) => (
+                <PlaneDropZone
+                  key={plane}
+                  plane={plane}
+                  currentMapping={getCurrentMapping(plane)}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Current State Display */}
+          <div className="mt-3 pt-3 border-t border-gray-300">
+            <div className="text-xs text-gray-600">
+              Current mappings: {state.mappings.length > 0
+                ? state.mappings.map((m: AxisMapping) => `${m.plane}:${m.axis}`).join(', ')
+                : 'None'
+              }
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </DndProvider>
   );
 }
