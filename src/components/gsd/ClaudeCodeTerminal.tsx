@@ -340,7 +340,7 @@ export function ClaudeCodeTerminal({
         {isChoice ? (
           <button
             onClick={() => {
-              const match = line.content.match(/^(\d+)[\.\)]/);
+              const match = line.content.match(/^(\d+)[.)]/);
               if (match) {
                 handleChoiceSelect(parseInt(match[1], 10));
               }
@@ -349,7 +349,7 @@ export function ClaudeCodeTerminal({
           >
             <span className="text-yellow-400 font-medium">{line.content.match(/^\d+/)?.[0]}.</span>
             <span className="text-gray-200 ml-1">
-              {line.content.replace(/^\d+[\.\)]\s*/, '')}
+              {line.content.replace(/^\d+[.)]\s*/, '')}
             </span>
           </button>
         ) : (
