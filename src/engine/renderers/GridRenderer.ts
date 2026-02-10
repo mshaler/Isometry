@@ -16,6 +16,7 @@ import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { ViewRenderer } from '../contracts/ViewEngine';
 import type { ViewConfig } from '../contracts/ViewConfig';
+import { devLogger } from '../../utils/logging';
 
 /**
  * Grid cell data structure for D3 binding
@@ -96,10 +97,14 @@ export class GridRenderer implements ViewRenderer {
       // Set up interactivity
       this.setupEventHandlers();
 
-      console.log(`[GridRenderer] Rendered ${data.length} nodes in ${this.layout.columns}x${this.layout.rows} grid`);
+      devLogger.debug('GridRenderer rendered nodes', {
+        nodeCount: data.length,
+        columns: this.layout.columns,
+        rows: this.layout.rows
+      });
 
     } catch (error) {
-      console.error('[GridRenderer] Render failed:', error);
+      devLogger.error('GridRenderer render failed', { error });
       throw error;
     }
   }
@@ -120,7 +125,7 @@ export class GridRenderer implements ViewRenderer {
     this.currentData = [];
     this.config = null;
 
-    console.log('[GridRenderer] Destroyed successfully');
+    devLogger.debug('GridRenderer destroyed successfully');
   }
 
   /**
@@ -173,7 +178,11 @@ export class GridRenderer implements ViewRenderer {
       };
     });
 
-    console.log(`[GridRenderer] Transformed ${data.length} nodes to ${this.layout.columns}x${this.layout.rows} grid`);
+    devLogger.debug('GridRenderer transformed nodes to grid', {
+      nodeCount: data.length,
+      columns: this.layout.columns,
+      rows: this.layout.rows
+    });
     return gridData;
   }
 
@@ -374,7 +383,9 @@ export class GridRenderer implements ViewRenderer {
       .style('opacity', 0)
       .remove();
 
-    console.log(`[GridRenderer] Rendered ${this.currentData.length} grid cells with D3 data binding`);
+    devLogger.debug('GridRenderer rendered cells with D3 data binding', {
+      cellCount: this.currentData.length
+    });
   }
 
   private getCellColor(node: Node): string {
@@ -431,7 +442,7 @@ export class GridRenderer implements ViewRenderer {
       .selectAll('.grid-cell')
       .on('click', (_event, d) => {
         const cellData = d as GridCellData;
-        console.log('[GridRenderer] Cell clicked:', cellData.node.name);
+        devLogger.debug('GridRenderer cell clicked', { nodeName: cellData.node.name });
         this.config?.eventHandlers?.onNodeClick?.(cellData.node, { x: cellData.gridX, y: cellData.gridY });
       })
       .on('mouseenter', (_event, d) => {
@@ -455,6 +466,6 @@ export class GridRenderer implements ViewRenderer {
       })
       .style('cursor', 'pointer');
 
-    console.log('[GridRenderer] Event handlers set up for grid cell interactions');
+    devLogger.debug('GridRenderer event handlers set up for grid cell interactions');
   }
 }
