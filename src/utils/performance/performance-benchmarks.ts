@@ -6,6 +6,7 @@
  */
 
 // No bridge dependencies - direct sql.js access
+import { performanceLogger } from '@/utils/logging/dev-logger';
 
 export interface SimpleBaselineMetrics {
   // Core performance metrics (milliseconds)
@@ -98,7 +99,7 @@ export class SimplePerformanceBenchmarks {
     this.baselines.set(id, baseline);
     this.saveBaselines();
 
-    console.log(`📊 Performance baseline stored: ${id}`);
+    performanceLogger.debug(`Performance baseline stored: ${id}`);
     return id;
   }
 
@@ -149,7 +150,7 @@ export class SimplePerformanceBenchmarks {
   clearBaselines(): void {
     this.baselines.clear();
     this.saveBaselines();
-    console.log('🗑️ All performance baselines cleared');
+    performanceLogger.debug('All performance baselines cleared');
   }
 
   /**
@@ -174,7 +175,7 @@ export class SimplePerformanceBenchmarks {
           this.baselines.set(baseline.id, baseline);
         }
         this.saveBaselines();
-        console.log(`📥 Imported ${parsed.baselines.length} performance baselines`);
+        performanceLogger.debug(`Imported ${parsed.baselines.length} performance baselines`);
       }
     } catch (error) {
       console.error('Failed to import baselines:', error);
@@ -331,7 +332,7 @@ export class SimplePerformanceBenchmarks {
       if (stored) {
         const data = JSON.parse(stored);
         this.baselines = new Map(data.baselines || []);
-        console.log(`📥 Loaded ${this.baselines.size} performance baselines`);
+        performanceLogger.debug(`Loaded ${this.baselines.size} performance baselines`);
       }
     } catch (error) {
       console.warn('Failed to load performance baselines:', error);
@@ -397,7 +398,6 @@ export async function runQuickBenchmark(): Promise<SimpleBaselineMetrics> {
   // Simulate some operations
   const queryTimes: number[] = [];
   const renderTimes: number[] = [];
-  let errorCount = 0;
 
   // Simulate 10 query operations
   for (let i = 0; i < 10; i++) {

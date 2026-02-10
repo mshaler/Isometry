@@ -39,7 +39,6 @@ const createMockSVGContainer = () => {
 // Sample deep hierarchy for testing
 const createDeepHierarchy = (depth: number): HeaderHierarchy => {
   const allNodes: HeaderNode[] = [];
-  let currentId = 0;
 
   // Generate deep hierarchy
   for (let level = 0; level <= depth; level++) {
