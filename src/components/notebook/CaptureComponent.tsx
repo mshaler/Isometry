@@ -1,21 +1,14 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
-  Save, AlertCircle, Hash, Code, Settings
+  Save, AlertCircle, Settings
 } from 'lucide-react';
-import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useMarkdownEditor, useSlashCommands } from '@/hooks';
+import { useTipTapEditor } from '@/hooks';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { useNotebook } from '../../contexts/NotebookContext';
 import PropertyEditor from './PropertyEditor';
-
-type SlashCommand = {
-  id: string;
-  label: string;
-  category: 'isometry' | 'template' | 'format';
-  action: () => void;
-};
+import { TipTapEditor, EditorToolbar } from './editor';
 
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
@@ -39,19 +32,6 @@ function extractShellCommand(content: string): string {
     command = codeBlockMatch[1].trim();
   }
   return command;
-}
-
-function getCommandIcon(category: SlashCommand['category']) {
-  switch (category) {
-    case 'isometry':
-      return <Hash size={14} className="text-blue-500" />;
-    case 'template':
-      return <Edit3 size={14} className="text-green-500" />;
-    case 'format':
-      return <Code size={14} className="text-purple-500" />;
-    default:
-      return null;
-  }
 }
 
 function MinimizedView({ className, theme, isDirty, onMaximize }: {
@@ -100,108 +80,20 @@ function EmptyCardView({ theme }: { theme: string }) {
   );
 }
 
-function SlashCommandMenu({
-  menuState,
-  theme,
-  onExecuteCommand
-}: {
-  menuState: unknown;
-  theme: string;
-  onExecuteCommand: (commandId: string) => void;
-}) {
-  return (
-    <div
-      className={`absolute z-50 ${
-        theme === 'NeXTSTEP'
-          ? 'bg-[#c0c0c0] border-[#707070] shadow-md'
-          : 'bg-white border-gray-300 shadow-lg'
-      } border rounded-lg min-w-[300px] max-h-[300px] overflow-y-auto`}
-      style={{
-        top: menuState.position.y + 20,
-        left: menuState.position.x
-      }}
-    >
-      <div className={`p-2 text-xs text-gray-500 border-b ${
-        theme === 'NeXTSTEP' ? 'border-[#707070] bg-[#d4d4d4]' : 'border-gray-200 bg-gray-50'
-      }`}>
-        <div className="flex items-center gap-1">
-          <span>💡</span>
-          <span>
-            {menuState.query ? `Searching "${menuState.query}"` : 'Choose a command...'}
-          </span>
-        </div>
-      </div>
-      <div className="py-1">
-        {menuState.commands.length > 0 ? (
-          menuState.commands.map((command: unknown, index: number) => (
-            <button
-              key={command.id}
-              onClick={() => onExecuteCommand(command.id)}
-              className={`w-full text-left p-2 flex items-center gap-2 hover:${
-                theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-100'
-              } transition-colors ${
-                index === menuState.selectedIndex
-                  ? theme === 'NeXTSTEP' ? 'bg-[#0066cc] text-white' : 'bg-blue-500 text-white'
-                  : ''
-              }`}
-            >
-              <div className="flex-shrink-0">
-                {getCommandIcon(command.category)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-sm truncate">{command.label}</div>
-                <div className={`text-xs ${
-                  index === menuState.selectedIndex ? 'text-white/80' : 'text-gray-500'
-                } truncate`}>
-                  {command.description}
-                </div>
-              </div>
-              {command.shortcut && (
-                <div className={`text-xs px-1 rounded ${
-                  index === menuState.selectedIndex
-                    ? 'bg-white/20'
-                    : theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-200'
-                }`}>
-                  /{command.shortcut}
-                </div>
-              )}
-            </button>
-          ))
-        ) : (
-          <div className="p-4 text-center text-gray-500 text-sm">
-            <div className="mb-1">No commands found</div>
-            <div className="text-xs">Try typing "pafv", "latch", or "meeting"</div>
-          </div>
-        )}
-      </div>
-      <div className={`p-2 text-xs text-gray-500 border-t ${
-        theme === 'NeXTSTEP' ? 'border-[#707070] bg-[#d4d4d4]' : 'border-gray-200 bg-gray-50'
-      }`}>
-        <div className="flex justify-between">
-          <span>↑↓ Navigate</span>
-          <span>⏎ Select • ⎋ Cancel</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function CaptureComponent({ className }: CaptureComponentProps) {
   const { theme } = useTheme();
   const [isMinimized, setIsMinimized] = useState(false);
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'edit' | 'split' | 'preview'>('split');
   const [propertyUpdateCount, setPropertyUpdateCount] = useState(0);
-  const editorRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Use the new TipTap editor hook with integrated slash commands
   const {
-    content,
-    setContent,
+    editor,
     isDirty,
     isSaving,
     saveNow,
     activeCard
-  } = useMarkdownEditor({
+  } = useTipTapEditor({
     autoSaveDelay: 2000,
     enableAutoSave: true
   });
@@ -209,48 +101,40 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   const { run: dbRun } = useSQLite();
   useNotebook();
 
-  const slashHook = useSlashCommands();
-  const {
-    menuState,
-    registerInsertText,
-    handleKeyDown,
-    handleTextInput,
-    executeCommand: originalExecuteCommand,
-    commands: allCommands,
-    filteredCommands
-  } = slashHook;
-
-  const handleSaveCard = useCallback(async () => {
-    if (!content.trim()) {
+  // Handle /save-card command from slash commands
+  const handleSaveCard = useCallback(async (markdown: string) => {
+    if (!markdown.trim()) {
       alert('No content to save');
       return;
     }
     try {
-      const { title, summary } = extractCardInfo(content);
+      const { title, summary } = extractCardInfo(markdown);
       const nodeId = `card-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const now = new Date().toISOString();
 
       dbRun(
         `INSERT INTO nodes (id, name, summary, markdown_content, created_at, modified_at)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [nodeId, title, summary, content, now, now]
+        [nodeId, title, summary, markdown, now, now]
       );
 
       dbRun(
         `INSERT INTO notebook_cards (node_id, card_type, markdown_content, created_at, modified_at)
          VALUES (?, ?, ?, ?, ?)`,
-        [nodeId, 'capture', content, now, now]
+        [nodeId, 'capture', markdown, now, now]
       );
 
       alert(`Card saved: ${title}`);
-      setContent('');
+      // Clear the editor after saving
+      editor?.commands.clearContent();
     } catch (error) {
       console.error('Failed to save card:', error);
       alert('Failed to save card: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
-  }, [content, dbRun, setContent]);
+  }, [dbRun, editor]);
 
-  const handleSendToShell = useCallback(() => {
+  // Handle /send-to-shell command from slash commands
+  const handleSendToShell = useCallback((content: string) => {
     if (!content.trim()) {
       alert('No content to send to shell');
       return;
@@ -258,33 +142,37 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     try {
       const command = extractShellCommand(content);
       console.warn('Sending to shell:', command);
+      // Dispatch event for ShellComponent to receive
+      window.dispatchEvent(new CustomEvent('isometry:execute-shell-command', {
+        detail: { command }
+      }));
       alert(`Command sent to shell: ${command.substring(0, 50)}...`);
     } catch (error) {
       console.error('Failed to send to shell:', error);
       alert('Failed to send to shell: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
-  }, [content]);
+  }, []);
 
-  const executeCommand = useCallback((commandId?: string) => {
-    const command = commandId
-      ? allCommands.find(cmd => cmd.id === commandId)
-      : filteredCommands[menuState.selectedIndex];
+  // Listen for custom events from slash commands
+  useEffect(() => {
+    const handleSaveCardEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ markdown: string }>;
+      handleSaveCard(customEvent.detail.markdown);
+    };
 
-    if (!command) return originalExecuteCommand(commandId);
+    const handleSendToShellEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<{ content: string }>;
+      handleSendToShell(customEvent.detail.content);
+    };
 
-    if (command.id === 'save-card') {
-      handleSaveCard();
-      return true;
-    }
-    if (command.id === 'send-to-shell') {
-      handleSendToShell();
-      return true;
-    }
-    return originalExecuteCommand(commandId);
-  }, [
-    allCommands, filteredCommands, menuState.selectedIndex,
-    originalExecuteCommand, handleSaveCard, handleSendToShell
-  ]);
+    window.addEventListener('isometry:save-card', handleSaveCardEvent);
+    window.addEventListener('isometry:send-to-shell', handleSendToShellEvent);
+
+    return () => {
+      window.removeEventListener('isometry:save-card', handleSaveCardEvent);
+      window.removeEventListener('isometry:send-to-shell', handleSendToShellEvent);
+    };
+  }, [handleSaveCard, handleSendToShell]);
 
   const handleManualSave = useCallback(async () => {
     try {
@@ -302,47 +190,18 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     }
   }, [saveNow]);
 
+  // Handle keyboard shortcuts
   useEffect(() => {
-    const insertText = (text: string, cursorOffset?: number) => {
-      const textarea = editorRef.current;
-      if (!textarea) return;
-
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const beforeSlash = content.lastIndexOf('/', start - 1);
-      const newContent = content.substring(0, beforeSlash) + text + content.substring(end);
-      setContent(newContent);
-
-      setTimeout(() => {
-        const newCursorPos = beforeSlash + text.length - (cursorOffset || 0);
-        textarea.setSelectionRange(newCursorPos, newCursorPos);
-        textarea.focus();
-      }, 0);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        handleManualSave();
+      }
     };
-    registerInsertText(insertText);
-  }, [content, setContent, registerInsertText]);
 
-  const handleEditorKeyDown = useCallback((event: React.KeyboardEvent) => {
-    const textarea = event.target as HTMLTextAreaElement;
-    const cursorPosition = textarea.selectionStart;
-
-    if (handleKeyDown(event.nativeEvent, content, cursorPosition, textarea)) {
-      return;
-    }
-    if (event.ctrlKey && event.key === 's') {
-      event.preventDefault();
-      handleManualSave();
-    }
-  }, [content, handleKeyDown, handleManualSave]);
-
-  const handleEditorChange = useCallback((value?: string) => {
-    const newContent = value || '';
-    setContent(newContent);
-    const textarea = editorRef.current;
-    if (textarea && menuState.isOpen) {
-      handleTextInput(newContent, textarea.selectionStart, newContent);
-    }
-  }, [setContent, menuState.isOpen, handleTextInput]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleManualSave]);
 
   const handlePropertyUpdate = useCallback((_properties: Record<string, unknown>) => {
     setPropertyUpdateCount(prev => prev + 1);
@@ -377,9 +236,9 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
         <div className="flex items-center gap-2">
           <Edit3 size={16} className="text-gray-600" />
           <span className="font-medium text-sm">
-            {activeCard ? `Card: ${activeCard.nodeId.slice(0, 8)}...` : 'Capture'}
+            {activeCard ? `Card: ${activeCard.id?.slice(0, 8)}...` : 'Capture'}
           </span>
-          <span className="text-xs text-gray-500">•</span>
+          <span className="text-xs text-gray-500">|</span>
           <span className="text-xs text-gray-500">Type / for commands</span>
           {isDirty && <div className="w-2 h-2 bg-orange-500 rounded-full" title="Unsaved changes" />}
           {isSaving && <div className="text-xs text-gray-500">Saving...</div>}
@@ -389,19 +248,10 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
             onClick={handleManualSave}
             disabled={!isDirty || isSaving}
             className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors disabled:opacity-50`}
-            title="Save now (Ctrl+S)"
+            title="Save now (Cmd+S)"
           >
             <Save size={14} className="text-gray-600" />
           </button>
-          <select
-            value={previewMode}
-            onChange={(e) => setPreviewMode(e.target.value as 'edit' | 'split' | 'preview')}
-            className="text-xs p-1 rounded border"
-          >
-            <option value="edit">Edit</option>
-            <option value="split">Split</option>
-            <option value="preview">Preview</option>
-          </select>
           <button
             onClick={() => setIsMinimized(true)}
             className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors`}
@@ -413,26 +263,14 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-2 relative">
+        <div className="flex-1 relative">
           {activeCard ? (
             <>
-              <MDEditor
-                ref={editorRef}
-                value={content}
-                onChange={handleEditorChange}
-                preview={previewMode === 'edit' ? 'edit' : previewMode === 'preview' ? 'preview' : 'live'}
-                hideToolbar={false}
-                height={400}
-                data-color-mode={theme === 'NeXTSTEP' ? 'light' : 'light'}
-                onKeyDown={handleEditorKeyDown}
+              <EditorToolbar editor={editor} theme={theme} />
+              <TipTapEditor
+                editor={editor}
+                className="min-h-[400px] p-2"
               />
-              {menuState.isOpen && (
-                <SlashCommandMenu
-                  menuState={menuState}
-                  theme={theme}
-                  onExecuteCommand={executeCommand}
-                />
-              )}
             </>
           ) : (
             <EmptyCardView theme={theme} />
@@ -479,7 +317,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
                   <label className="text-xs text-gray-600 block mb-1">Card Type</label>
                   <input
                     type="text"
-                    value={activeCard.cardType}
+                    value={activeCard.cardType || 'capture'}
                     readOnly
                     className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
                   />
@@ -488,7 +326,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
                   <label className="text-xs text-gray-600 block mb-1">Node ID</label>
                   <input
                     type="text"
-                    value={activeCard.nodeId}
+                    value={activeCard.nodeId || activeCard.id || ''}
                     readOnly
                     className={`w-full text-xs p-1 border rounded bg-gray-100 font-mono ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
                   />
@@ -497,7 +335,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
                   <label className="text-xs text-gray-600 block mb-1">Created</label>
                   <input
                     type="text"
-                    value={new Date(activeCard.createdAt).toLocaleString()}
+                    value={activeCard.createdAt ? new Date(activeCard.createdAt).toLocaleString() : ''}
                     readOnly
                     className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
                   />
@@ -506,7 +344,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
                   <label className="text-xs text-gray-600 block mb-1">Modified</label>
                   <input
                     type="text"
-                    value={new Date(activeCard.modifiedAt).toLocaleString()}
+                    value={activeCard.modifiedAt ? new Date(activeCard.modifiedAt).toLocaleString() : ''}
                     readOnly
                     className={`w-full text-xs p-1 border rounded bg-gray-100 ${theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300'}`}
                   />
