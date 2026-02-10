@@ -2,15 +2,15 @@
 
 ## Milestones
 
-- ✅ **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
-- ✅ **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
-- 🚧 **v4.2 Three-Canvas Notebook** - Phases 43-46 (in progress)
-- 🚧 **v4.3 Navigator Integration** - Phases 50-51 (in progress)
+- **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
+- **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
+- **v4.2 Three-Canvas Notebook** - Phases 43-46 (in progress)
+- **v4.3 Navigator Integration** - Phases 50-51 (in progress)
 
 ## Phases
 
 <details>
-<summary>✅ v3.1 Live Database Integration (Phases 18-27) - SHIPPED 2026-02-01</summary>
+<summary>v3.1 Live Database Integration (Phases 18-27) - SHIPPED 2026-02-01</summary>
 
 **Milestone Goal:** Connected React frontend to native SQLite backend with real-time data synchronization and performance monitoring
 
@@ -27,7 +27,7 @@
 </details>
 
 <details>
-<summary>✅ v4.1 SuperGrid Foundation (Phases 34-42) - SHIPPED 2026-02-10</summary>
+<summary>v4.1 SuperGrid Foundation (Phases 34-42) - SHIPPED 2026-02-10</summary>
 
 **Milestone Goal:** Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture
 
@@ -43,7 +43,7 @@
 
 </details>
 
-### 🚧 v4.2 Three-Canvas Notebook (In Progress)
+### v4.2 Three-Canvas Notebook (In Progress)
 
 **Milestone Goal:** Build a unified capture-shell-preview workspace where notebook cards participate fully in PAFV projections
 
@@ -110,7 +110,7 @@ Plans:
 - [ ] 46-01: TBD (planned during phase planning)
 - [ ] 46-02: TBD
 
-### 🚧 v4.3 Navigator Integration (In Progress)
+### v4.3 Navigator Integration (In Progress)
 
 **Milestone Goal:** Connect property classification to Navigator UI for dynamic LATCH+GRAPH axis selection with SuperGrid
 
@@ -137,20 +137,20 @@ Plans:
 **Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05
 **Success Criteria** (what must be TRUE):
   1. Navigator displays LATCH buckets from usePropertyClassification() instead of hardcoded axes
-  2. User can expand each LATCH bucket to see individual facets (e.g., Time → created, modified, due)
+  2. User can expand each LATCH bucket to see individual facets (e.g., Time -> created, modified, due)
   3. GRAPH bucket appears in Navigator with 4 edge types and 2 metrics
   4. Dragging a facet to a well updates SuperGrid axis mapping
   5. Facet changes in database reflect in Navigator after refresh
-**Plans**: TBD (created during phase planning)
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 51-01-PLAN.md — TBD
-- [ ] 51-02-PLAN.md — TBD
+- [ ] 51-01-PLAN.md — DraggableFacet and PlaneDropZone components with type mappings
+- [ ] 51-02-PLAN.md — SimplePAFVNavigator refactor with classification buckets
 
 ## Progress
 
 **Execution Order:**
-v4.2 phases execute: 43 → 44 → 45 → 46
+v4.2 phases execute: 43 -> 44 -> 45 -> 46
 Phase 45 can begin after Phase 43 completes (parallel with Phase 44).
 Phase 46 requires both Phases 44 and 45 complete.
 
@@ -165,8 +165,8 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 45. TipTap Editor Migration | v4.2 | 0/3 | Planned | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
-| 51. Navigator UI Integration | v4.3 | 0/? | Not started | - |
+| 51. Navigator UI Integration | v4.3 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (Phase 50 complete)*
+*Last updated: 2026-02-10 (Phase 51 planned)*
