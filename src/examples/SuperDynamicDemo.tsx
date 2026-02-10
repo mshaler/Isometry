@@ -54,7 +54,10 @@ const createMockDatabase = () => {
       if (query.includes('FROM facets')) {
         return [{
           columns: ['id', 'name', 'axis', 'source_column', 'facet_type', 'enabled', 'sort_order', 'node_count'],
-          values: mockData.facets.map(f => [f.id, f.name, f.axis, f.source_column, f.facet_type, f.enabled, f.sort_order, mockData.nodes.length])
+          values: mockData.facets.map(f => [
+            f.id, f.name, f.axis, f.source_column, f.facet_type,
+            f.enabled, f.sort_order, mockData.nodes.length
+          ])
         }];
       }
 
@@ -66,7 +69,10 @@ const createMockDatabase = () => {
       if (query.includes('FROM nodes')) {
         return [{
           columns: ['id', 'name', 'folder', 'status', 'created_at', 'modified_at', 'priority', 'tags', 'location'],
-          values: mockData.nodes.map(n => [n.id, n.name, n.folder, n.status, n.created_at, n.modified_at, n.priority, n.tags, n.location])
+          values: mockData.nodes.map(n => [
+            n.id, n.name, n.folder, n.status, n.created_at,
+            n.modified_at, n.priority, n.tags, n.location
+          ])
         }];
       }
 
@@ -378,7 +384,8 @@ export function SuperDynamicDemo() {
               {isReflowing ? '🔄 Grid Reflowing...' : '✅ SuperDynamic Active'}
             </span>
             <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '2px' }}>
-              Layout: {layoutType} • Cells: {gridCells.length} • Items: {gridCells.reduce((sum, c) => sum + c.items.length, 0)}
+              Layout: {layoutType} • Cells: {gridCells.length} • Items:{' '}
+              {gridCells.reduce((sum, c) => sum + c.items.length, 0)}
             </div>
           </div>
         </div>
