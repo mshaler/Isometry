@@ -156,7 +156,7 @@ export class DefaultClaudeCodeParser implements ClaudeCodeOutputParser {
     const choices: GSDChoice[] = [];
 
     // Look for numbered choice patterns
-    const choicePattern = /^\s*(\d+)[\.)]\s+(.+)$/;
+    const choicePattern = /^\s*(\d+)[.)]\s+(.+)$/;
     let choiceId = 0;
 
     for (const line of lines) {
