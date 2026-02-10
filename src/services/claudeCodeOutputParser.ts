@@ -66,7 +66,7 @@ export interface ClaudeCodeParseResult {
 export class ClaudeCodeOutputParser {
   private static readonly PATTERNS = {
     // Choice prompts: "1. Option text" or "1) Option text"
-    CHOICE_OPTION: /^(\d+)[\.\)]\s+(.+)$/,
+    CHOICE_OPTION: /^(\d+)[.)]\s+(.+)$/,
     CHOICE_PROMPT: /^(Please select|Choose|Select)\s+(an?\s+)?(option|choice)/i,
 
     // Phase transitions: "Starting [phase] phase..." or "Entering [phase]..."
