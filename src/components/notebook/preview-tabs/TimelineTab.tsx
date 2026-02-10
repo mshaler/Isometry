@@ -10,6 +10,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import { Clock, AlertCircle, Loader2, RotateCcw, Calendar, ZoomIn } from 'lucide-react';
 import * as d3 from 'd3';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useSelection } from '../../../state/SelectionContext';
 import { useTimeline, FACET_LABELS } from '../../../hooks/visualization/useTimeline';
 import type { TemporalFacet } from '../../../hooks/visualization/useTimeline';
 import { TimelineRenderer } from '../../../d3/visualizations/timeline';
@@ -47,7 +48,12 @@ export function TimelineTab({
   // Track dimensions for responsive sizing
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
 
-  // Get timeline data from hook
+  // SYNC-03: Selection synchronized across canvases
+  // Clicking an event selects it everywhere
+  // Events selected elsewhere are highlighted here
+  const { selection, select, isSelected } = useSelection();
+
+  // Get timeline data from hook (excluding local selection state which we now get from context)
   const {
     events,
     loading,
@@ -56,11 +62,12 @@ export function TimelineTab({
     setFacet,
     dateRange,
     setDateRange,
-    selectedEventId,
-    setSelectedEventId,
     eventCount,
     refresh,
   } = useTimeline({ maxEvents });
+
+  // SYNC-03: Selected event from shared context
+  const selectedEventId = selection.lastSelectedId;
 
   // Date input state (strings for controlled inputs)
   const [startDateInput, setStartDateInput] = useState('');
@@ -89,17 +96,20 @@ export function TimelineTab({
     setEndDateInput('');
   }, [setDateRange]);
 
-  // Handle event click
+  // Handle event click - SYNC-03: Update shared selection
   const handleEventClick = useCallback((eventId: string) => {
-    // Toggle selection
-    const newSelection = selectedEventId === eventId ? null : eventId;
-    setSelectedEventId(newSelection);
+    const isCurrentlySelected = isSelected(eventId);
+
+    // Always select (no toggle to clear - use clear action elsewhere if needed)
+    if (!isCurrentlySelected) {
+      select(eventId);
+    }
 
     // Call external callback if provided
-    if (onEventSelect && newSelection) {
-      onEventSelect(newSelection);
+    if (onEventSelect && !isCurrentlySelected) {
+      onEventSelect(eventId);
     }
-  }, [selectedEventId, setSelectedEventId, onEventSelect]);
+  }, [isSelected, select, onEventSelect]);
 
   // Handle reset zoom
   const handleResetZoom = useCallback(() => {
