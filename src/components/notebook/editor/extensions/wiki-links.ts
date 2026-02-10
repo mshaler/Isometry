@@ -1,5 +1,6 @@
 import { Mark, mergeAttributes } from '@tiptap/core';
 import Suggestion, { SuggestionOptions, SuggestionProps } from '@tiptap/suggestion';
+import { PluginKey } from '@tiptap/pm/state';
 import type { CardSuggestion } from '@/utils/editor/backlinks';
 
 declare module '@tiptap/core' {
@@ -83,6 +84,7 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
     return [
       Suggestion({
         editor: this.editor,
+        pluginKey: new PluginKey('wikiLinkSuggestion'),
         ...this.options.suggestion,
       }),
     ];

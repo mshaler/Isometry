@@ -7,16 +7,17 @@ See: .planning/PROJECT.md (updated 2026-02-10)
 **Core value:** Eliminate all 1,254 TypeScript compilation errors to restore type safety, unblock the pre-commit hook, and establish a clean baseline for future development.
 **Current focus:** v5.0 Type Safety Restoration - Phase 52 (Dead Code & Stale Imports)
 
-**Parallel work:** Phase 46 (Live Data Synchronization) Plan 01 complete - SYNC-01 verified
+**Parallel work:** Phase 46 (Live Data Synchronization) Plan 02 complete - SYNC-03 verified
+**Completed:** Phase 51 (Navigator UI Integration) - All plans complete
 
 ## Current Position
 
-Phase: 46 of 55 (Live Data Synchronization) - Plan 01 complete
-Plan: 1 of 3 complete
+Phase: 46 of 55 (Live Data Synchronization)
+Plan: 2 of 3 complete
 Status: In progress
-Last activity: 2026-02-10 — Completed 46-01-PLAN.md (SYNC-01 verification)
+Last activity: 2026-02-10 — Completed 46-02-PLAN.md (Preview SelectionContext integration)
 
-Progress (Phase 46): [====--------] 33% (1/3 plans complete)
+Progress (Phase 46): [========----] 67% (2/3 plans complete)
 
 ## Performance Metrics
 
@@ -32,6 +33,7 @@ Progress (Phase 46): [====--------] 33% (1/3 plans complete)
 
 **Phase 46 Progress:**
 - Plan 01: 2 tasks, 3 minutes - verified SYNC-01 dataVersion chain
+- Plan 02: 3 tasks (1 pre-verified), 4 minutes - connected Preview tabs to SelectionContext
 
 **v5.0 Target:**
 - 4 phases (52-55)
@@ -84,6 +86,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 **Phase 46 decisions:**
 - No custom event bus required for SYNC-01 — React's useSQLiteQuery dependency tracking handles auto-refresh
 - DataInspector is query-on-demand, no auto-refresh needed
+- SYNC-03 uses existing SelectionContext — no new infrastructure needed
 
 ### Patterns Established
 
@@ -92,9 +95,14 @@ Decisions are logged in PROJECT.md Key Decisions table.
 operations.run() -> setDataVersion(prev => prev + 1) -> useSQLiteQuery refetch -> component re-render
 ```
 
+**SYNC-03 Cross-canvas selection pattern:**
+```
+click in Tab -> select(id) via SelectionContext -> selection.lastSelectedId updates -> all tabs re-render with new highlight
+```
+
 ### Pending Todos
 
-None — Phase 46 Plan 02 ready for execution.
+None — Phase 46 Plan 03 ready for execution.
 
 ### Blockers/Concerns
 
@@ -108,12 +116,25 @@ None — Phase 46 Plan 02 ready for execution.
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed Phase 46 Plan 01
-Resume file: .planning/phases/46-live-data-synchronization/46-02-PLAN.md
+Stopped at: Completed Phase 46 Plan 02 (Preview SelectionContext integration)
+Resume file: .planning/phases/46-live-data-synchronization/46-03-PLAN.md
+
+### Phase 51 Completion Summary
+
+All Navigator UI Integration requirements verified:
+- NAV-01: Dynamic LATCH buckets from usePropertyClassification() ✅
+- NAV-02: Expandable accordion sections per bucket ✅
+- NAV-03: GRAPH bucket with 4 edge types + 2 metrics ✅
+- NAV-04: Drag-and-drop facet-to-plane mapping ✅
+- NAV-05: PAFV context setMapping via drop handler ✅
+
+Bug fixes applied during verification:
+- Fixed IndexedDB database name mismatch (isometry-v4 → isometry-db)
+- Added schema loading to persistence error fallback path
 
 ## Next Steps
 
-1. Execute Phase 46 Plan 02 (SYNC-02: Cell-level granular updates)
-2. Execute Phase 46 Plan 03 (SYNC-03: SQLite trigger-based node sync)
-3. Run `/gsd:plan-phase 52` for Dead Code & Stale Imports
-4. Measure error reduction after Phase 52
+1. Execute Phase 46 Plan 03 (SYNC-02: Cell-level granular updates with D3 data join)
+2. Run `/gsd:plan-phase 52` for Dead Code & Stale Imports
+3. Measure error reduction after Phase 52
+4. Continue to Phase 53

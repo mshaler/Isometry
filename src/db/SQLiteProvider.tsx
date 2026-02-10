@@ -108,12 +108,13 @@ export function SQLiteProvider({
 
         // Initialize sql.js
         const sqlInstance = await initSqlJs({
-          locateFile: (file: string) => `/sql.js/${file}`
+          locateFile: (file: string) => `/wasm/${file}`
         });
         setSQL(sqlInstance);
 
         // Initialize persistence
-        persistenceRef.current = new IndexedDBPersistence('isometry-v4');
+        // NOTE: IndexedDBPersistence uses hardcoded name 'isometry-db' (see IndexedDBPersistence.ts)
+        persistenceRef.current = new IndexedDBPersistence();
 
         // Try to load existing database
         const persistence = persistenceRef.current!;
@@ -190,6 +191,23 @@ export function SQLiteProvider({
         } catch (persistenceError) {
           devLogger.error('Persistence error, falling back to memory-only database', persistenceError);
           const database = new sqlInstance.Database();
+
+          // Load schema for memory-only database
+          try {
+            const schemaResponse = await fetch('/schema.sql');
+            if (schemaResponse.ok) {
+              const schema = await schemaResponse.text();
+              database.exec(schema);
+              if (enableLogging) {
+                devLogger.setup('Schema loaded for memory-only database');
+              }
+            }
+          } catch (schemaError) {
+            if (enableLogging) {
+              devLogger.warn('Schema file not found for memory-only database');
+            }
+          }
+
           setDb(database);
 
           const { capabilities: dbCapabilities, telemetryErrors } = testDatabaseCapabilities(database);
