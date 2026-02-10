@@ -186,13 +186,31 @@ export function Canvas() {
       .then(() => {
         const renderTime = performance.now() - renderStartTime;
         recordRender(renderTime, nodes.length);
+
+        // 60fps budget warning: 16.67ms per frame
+        const FPS_BUDGET_MS = 16.67;
+        if (renderTime > FPS_BUDGET_MS) {
+          devLogger.warn('Render exceeded 60fps budget', {
+            renderTime: `${renderTime.toFixed(2)}ms`,
+            budget: `${FPS_BUDGET_MS}ms`,
+            nodeCount: nodes.length,
+            viewType,
+            severity: renderTime > 33 ? 'critical' : 'warning'
+          });
+        }
+
+        // Log virtualization effectiveness
+        const visibleElements = containerRef.current?.querySelectorAll('[data-node-id]').length || 0;
         devLogger.debug('Canvas ViewEngine render complete', {
           viewType,
           nodeCount: nodes.length,
+          visibleElements,
+          virtualizationRatio: nodes.length > 0
+            ? `${((1 - visibleElements / nodes.length) * 100).toFixed(1)}% virtualized`
+            : 'N/A',
           renderTime: `${renderTime.toFixed(2)}ms`,
           performance: renderTime < 16 ? 'excellent' : renderTime < 33 ? 'good' : 'slow',
-          nodeTypes: nodeStats ? Object.keys(nodeStats.byType) : [],
-          withinTarget: renderTime < 50 // Plan success criteria: <50ms
+          withinTarget: renderTime < FPS_BUDGET_MS
         });
       })
       .catch((error) => {
@@ -302,6 +320,14 @@ export function Canvas() {
             <div className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
               {mapActiveViewToViewType(activeView).toUpperCase()} View
             </div>
+
+            {/* Storage Quota Warning */}
+            {storageQuota?.warning && (
+              <div className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded border border-yellow-300"
+                   title={`Used: ${(storageQuota.used / 1024 / 1024).toFixed(1)}MB / ${(storageQuota.quota / 1024 / 1024).toFixed(1)}MB`}>
+                Storage: {storageQuota.percentUsed.toFixed(0)}%
+              </div>
+            )}
           </div>
         )}
       </div>
