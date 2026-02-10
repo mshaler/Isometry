@@ -6,6 +6,7 @@
  */
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { devLogger } from '../utils/logging/logger';
 // Bridge eliminated in v4 - sql.js direct access
 // import { Environment, postMessage } from '../utils/webview/webview-bridge';
 // import { bridgeLogger } from '../utils/logging/logger';
@@ -17,10 +18,10 @@ const Environment = {
   info: () => ({ platform: 'browser', version: '4.0', isNative: false })
 };
 const bridgeLogger = {
-  debug: console.debug,
-  info: console.info,
-  warn: console.warn,
-  error: console.error
+  debug: devLogger.debug,
+  info: devLogger.info,
+  warn: devLogger.warn,
+  error: devLogger.error
 };
 const waitForWebViewBridge = async () => false;
 
@@ -173,11 +174,11 @@ export function EnvironmentProvider({
    * Test WebView bridge availability
    */
   const testWebViewBridge = async (): Promise<boolean> => {
-    console.log('🧪 Testing WebView bridge...');
+    devLogger.inspect('Testing WebView bridge...');
 
     // First check if we have webkit object
     if (typeof window.webkit === 'undefined') {
-      console.log('❌ WebView bridge: window.webkit not available');
+      devLogger.debug('WebView bridge test failed', { reason: 'window.webkit not available' });
       return false;
     }
 
@@ -185,7 +186,7 @@ export function EnvironmentProvider({
 
     // Check if messageHandlers is available
     if (typeof window.webkit.messageHandlers === 'undefined') {
-      console.log('❌ WebView bridge: messageHandlers not available');
+      devLogger.debug('WebView bridge test failed', { reason: 'messageHandlers not available' });
       return false;
     }
 
@@ -195,7 +196,7 @@ export function EnvironmentProvider({
 
     // Check if database handler exists
     if (typeof window.webkit.messageHandlers.database === 'undefined') {
-      console.log('❌ WebView bridge: database handler not available');
+      devLogger.debug('WebView bridge test failed', { reason: 'database handler not available' });
       return false;
     }
 
@@ -207,7 +208,7 @@ export function EnvironmentProvider({
       bridgeLogger.debug('WebView bridge: Ping simulated (bridge eliminated)');
       return false; // Bridge no longer exists
     } catch (error) {
-      console.log('❌ WebView bridge: Ping failed:', error);
+      devLogger.debug('WebView bridge test failed', { error: error as Error });
       bridgeLogger.debug('WebView bridge test failed', { error: error as Error });
       return false;
     }
@@ -226,13 +227,15 @@ export function EnvironmentProvider({
 
     if (isNativeUserAgent || hasWebKit || envIsWebView) {
       bridgeLogger.debug('HTTP API test skipped: WebView environment detected', {});
-      console.log(`  - IsometryNative user agent: ${isNativeUserAgent}`);
-      console.log(`  - Has WebKit: ${hasWebKit}`);
-      console.log(`  - Environment.isWebView(): ${envIsWebView}`);
+      devLogger.debug('HTTP API test skipped - WebView environment details', {
+        isNativeUserAgent,
+        hasWebKit,
+        envIsWebView
+      });
       return false;
     }
 
-    console.log('🧪 HTTP API test starting (no WebView indicators found)...');
+    devLogger.inspect('HTTP API test starting (no WebView indicators found)...');
 
     let timeoutId: NodeJS.Timeout | undefined;
 
