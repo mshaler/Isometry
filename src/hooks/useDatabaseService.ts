@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { devLogger } from '../utils/logging';
 
 export interface DatabaseConnection {
   isConnected: boolean;
@@ -32,7 +33,7 @@ export function useDatabaseService(): DatabaseService {
     try {
       // In v4, this would use direct sql.js access
       // For now, return empty results as a stub
-      console.log('[DatabaseService] Query:', sql, params);
+      devLogger.debug('DatabaseService query', { sql, params });
       return [];
     } catch (error: any) {
       setConnection(prev => ({ ...prev, error: error.message }));
@@ -43,7 +44,7 @@ export function useDatabaseService(): DatabaseService {
   const execute = useCallback(async (sql: string, params?: any[]): Promise<{ changes: number; lastInsertRowid?: number }> => {
     try {
       // In v4, this would use direct sql.js access
-      console.log('[DatabaseService] Execute:', sql, params);
+      devLogger.debug('DatabaseService execute', { sql, params });
       return { changes: 0 };
     } catch (error: any) {
       setConnection(prev => ({ ...prev, error: error.message }));
@@ -54,7 +55,7 @@ export function useDatabaseService(): DatabaseService {
   const transaction = useCallback(async (queries: Array<{ sql: string; params?: any[] }>): Promise<any[]> => {
     try {
       // In v4, this would use direct sql.js transactions
-      console.log('[DatabaseService] Transaction:', queries.length, 'queries');
+      devLogger.debug('DatabaseService transaction', { queryCount: queries.length });
       const results: any[] = [];
 
       for (const { sql, params } of queries) {
@@ -77,7 +78,7 @@ export function useDatabaseService(): DatabaseService {
       setConnection(prev => ({ ...prev, error: null }));
 
       // In v4, this would initialize sql.js and load the database
-      console.log('[DatabaseService] Initializing database...');
+      devLogger.debug('DatabaseService initializing database');
 
       setConnection({
         isConnected: true,
@@ -86,7 +87,7 @@ export function useDatabaseService(): DatabaseService {
         lastSync: new Date()
       });
 
-      console.log('[DatabaseService] Database initialized successfully');
+      devLogger.debug('DatabaseService database initialized successfully');
     } catch (error: any) {
       setConnection({
         isConnected: false,
@@ -100,7 +101,7 @@ export function useDatabaseService(): DatabaseService {
 
   const closeConnection = useCallback(async (): Promise<void> => {
     try {
-      console.log('[DatabaseService] Closing database connection...');
+      devLogger.debug('DatabaseService closing database connection');
 
       setConnection({
         isConnected: false,
@@ -118,7 +119,7 @@ export function useDatabaseService(): DatabaseService {
   useEffect(() => {
     if (!connection.isInitialized) {
       initializeDatabase().catch(error => {
-        console.error('[DatabaseService] Auto-initialization failed:', error);
+        devLogger.error('DatabaseService auto-initialization failed', { error });
       });
     }
   }, [connection.isInitialized, initializeDatabase]);
