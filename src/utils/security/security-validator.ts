@@ -6,6 +6,8 @@
  * and environment security.
  */
 
+import { devLogger } from '../logging/logger';
+
 import {
   sanitizeString,
   sanitizeDSLValue,
@@ -644,39 +646,42 @@ export async function validateSecurityMeasures(): Promise<SecurityValidationRepo
 export function logSecurityReport(report: SecurityValidationReport): void {
   const statusEmoji = report.overallStatus === 'pass' ? '✅' : report.overallStatus === 'warning' ? '⚠️' : '❌';
 
-  console.group(`🔒 Security Validation Report ${statusEmoji}`);
-  console.log(`Status: ${report.overallStatus.toUpperCase()}`);
-  console.log(`Score: ${report.score}/100`);
-  console.log(`Tests: ${report.passedTests}/${report.totalTests} passed`);
+  devLogger.inspect('Security Validation Report', {
+    status: report.overallStatus.toUpperCase(),
+    score: `${report.score}/100`,
+    tests: `${report.passedTests}/${report.totalTests} passed`,
+    statusEmoji
+  });
 
   if (report.criticalIssues > 0) {
-    console.error(`❌ Critical issues: ${report.criticalIssues}`);
+    devLogger.error('Critical security issues found', { count: report.criticalIssues });
   }
 
   if (report.warningTests > 0) {
-    console.warn(`⚠️  Warnings: ${report.warningTests}`);
+    devLogger.warn('Security warnings found', { count: report.warningTests });
   }
 
   // Log failed tests
   const failedTests = report.results.filter(r => !r.passed);
 
   if (failedTests.length > 0) {
-    console.group('❌ Failed Tests:');
     failedTests.forEach(test => {
-      console.error(`${test.testName}: ${test.message}`);
-      if (test.details) {
+      devLogger.error('Security test failed', {
+        testName: test.testName,
+        message: test.message,
+        severity: test.severity,
         // Test details suppressed for production
-      }
+        hasDetails: Boolean(test.details)
+      });
     });
-    console.groupEnd();
   }
 
   // Log recommendations
   if (report.recommendations.length > 0) {
-    console.group('📋 Recommendations:');
-    report.recommendations.forEach(rec => console.log(rec));
-    console.groupEnd();
+    devLogger.info('Security recommendations', {
+      recommendations: report.recommendations
+    });
   }
 
-  console.groupEnd();
+  // Security validation report logged
 }
