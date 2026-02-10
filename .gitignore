@@ -22,3 +22,6 @@ dotfiles.txt
 native/build/
 native/build/
 native/.build/
+
+# Large generated data files
+public/alto-index.json
