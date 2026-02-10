@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.2 Three-Canvas Notebook - Phase 45 (TipTap Editor Migration)
+**Current focus:** v4.2 Three-Canvas Notebook - Phase 44 (Preview Visualization Expansion)
 
 ## Current Position
 
-Phase: 45 of 46 (TipTap Editor Migration)
-Plan: 2 of 3 complete (45-02 Slash Commands)
+Phase: 44 of 46 (Preview Visualization Expansion)
+Plan: 1 of 4 complete (44-01 Network Graph)
 Status: In progress
-Last activity: 2026-02-10 — Completed 45-02 (Slash Commands)
+Last activity: 2026-02-10 — Completed 44-01 (Force-Directed Network Graph)
 
-Progress: [████░░░░░░░░] 33% (Phase 45: 2/3 plans complete)
+Progress: [████░░░░░░░░] 33% (Phase 44: 1/4 plans complete, Phase 45: 2/3 complete)
 
 ## Performance Metrics
 
@@ -25,6 +25,7 @@ Progress: [████░░░░░░░░] 33% (Phase 45: 2/3 plans comple
 
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
+- Phase 44: 1 plan complete, ~5 minutes execution
 - Phase 45: 2 plans complete, ~12 minutes execution
 
 **v4.2 Target:**
@@ -61,6 +62,12 @@ Key v4.1 decisions carried forward:
 - Tool calls collapsed by default with click-to-expand
 - Auto-scroll pauses when user scrolls up, resumes at bottom
 
+**Phase 44 decisions:**
+- Simulation timeout: 300 ticks OR 3 seconds to save CPU
+- EDGE_TYPE_STYLES with colors and dasharray per GRAPH type
+- Default 100 node limit for performance
+- Node selection updates activeCard for cross-canvas sync
+
 **Phase 45 decisions:**
 - shouldRerenderOnTransaction: false for TipTap performance
 - @tiptap/suggestion for slash command trigger detection
@@ -74,7 +81,7 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — 45-02 complete, ready for 45-03.
+None — 44-01 complete, ready for 44-02.
 
 ### Blockers/Concerns
 
@@ -84,18 +91,19 @@ None — 45-02 complete, ready for 45-03.
 
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
-- Preview pane 50% complete - SuperGrid works, Network/Timeline/Inspector are stubs
+- Preview pane 75% complete - SuperGrid works, Network Graph implemented, Timeline/Inspector are stubs
 - Capture pane now uses TipTap with slash commands
 - Markdown serialization deferred - using getText() temporarily
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 45-02 (Slash Commands)
+Stopped at: Completed 44-01 (Force-Directed Network Graph)
 Resume file: None
 
 ## Next Steps
 
-1. Continue with 45-03 (Markdown syntax highlighting) if planned
-2. Phase 44: Preview Visualization Expansion (parallel execution)
-3. Phase 46: Live Data Synchronization (requires 44, 45 complete)
+1. Execute 44-02 (Timeline View) if planned
+2. Continue Phase 44: Preview Visualization Expansion
+3. Complete Phase 45: 45-03 (Markdown syntax highlighting)
+4. Phase 46: Live Data Synchronization (requires 44, 45 complete)
