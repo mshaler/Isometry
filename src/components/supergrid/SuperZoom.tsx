@@ -40,6 +40,7 @@ import {
   Navigation
 } from 'lucide-react';
 import { SuperZoomCartographic } from '@/d3/SuperZoomCartographic';
+import { devLogger } from '@/utils/logging';
 import type {
   CartographicConfig,
   CartographicState,
@@ -194,9 +195,12 @@ export function SuperZoom({
         cartographicRef.current.restoreState(initialState as CartographicState);
       }
 
-      console.log('[SuperZoom] Cartographic engine initialized');
+      devLogger.debug('SuperZoom cartographic engine initialized', {
+        hasInitialState: !!initialState,
+        containerDimensions: { width, height }
+      });
     } catch (error) {
-      console.error('[SuperZoom] Failed to initialize cartographic engine:', error);
+      devLogger.error('SuperZoom failed to initialize cartographic engine', { error });
     }
 
     return () => {
