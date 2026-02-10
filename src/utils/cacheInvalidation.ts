@@ -7,6 +7,7 @@
 
 import { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../services/queryClient';
+import { devLogger } from './logging';
 
 /**
  * Cache invalidation strategy types
@@ -341,7 +342,7 @@ export class CacheInvalidationManager {
       this.invalidationHistory.splice(0, this.invalidationHistory.length - 1000);
     }
 
-    console.debug('[CacheInvalidation]', {
+    devLogger.debug('Cache invalidation executed', {
       operation,
       strategy,
       affectedQueries,
@@ -436,7 +437,9 @@ export class OptimisticUpdateManager {
   rollbackOptimisticUpdate(rollbackKey: string): void {
     const originalData = this.rollbackData.get(rollbackKey);
     if (!originalData) {
-      console.warn('[OptimisticUpdateManager] No rollback data found for key:', rollbackKey);
+      devLogger.warn('OptimisticUpdateManager: No rollback data found', {
+        rollbackKey
+      });
       return;
     }
 
