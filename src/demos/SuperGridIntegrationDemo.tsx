@@ -400,7 +400,17 @@ export function SuperGridIntegrationDemo() {
       setViewContinuum(null);
       setSuperGrid(null);
     };
-  }, [databaseService, canvasId, currentView, handleCardClick, handleSelectionChange, handleBulkOperation, handleHeaderClick, filterService, updateFrameRate]);
+  }, [
+    databaseService,
+    canvasId,
+    currentView,
+    handleCardClick,
+    handleSelectionChange,
+    handleBulkOperation,
+    handleHeaderClick,
+    filterService,
+    updateFrameRate
+  ]);
 
   // Apply filters to grid
   useEffect(() => {
