@@ -263,7 +263,10 @@ export function logEnvironmentStatus(): void {
   });
 
   if (!config.cliAvailable) {
-    devLogger.setup('Setup Instructions', {});
-    setupEnvironmentInstructions().forEach(instruction => console.log(instruction));
+    const instructions = setupEnvironmentInstructions();
+    devLogger.setup('Claude CLI Setup Required', {
+      instructionsCount: instructions.length,
+      instructions: instructions.slice(0, 5) // Log first few instructions for context
+    });
   }
 }
