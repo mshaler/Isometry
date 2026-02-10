@@ -19,6 +19,7 @@ import {
   isCellData
 } from '../../types/grid';
 import { PerformanceMonitor } from '../../utils/bridge-optimization/performance-monitor';
+import { devLogger } from '../../utils/logging';
 
 export interface VirtualizedGridOptions {
   /** Total number of rows in the dataset */
@@ -318,7 +319,7 @@ export function useVirtualizedGrid(
   useEffect(() => {
     const totalItems = rowCount * columnCount;
     if (totalItems > 10000 && virtualItems.length > 100) {
-      console.warn('[useVirtualizedGrid] Large dataset with many rendered items:', {
+      devLogger.warn('useVirtualizedGrid large dataset with many rendered items', {
         totalItems,
         renderedItems: virtualItems.length,
         recommendation: 'Consider increasing overscan or adjusting cell size estimates'
@@ -327,7 +328,7 @@ export function useVirtualizedGrid(
 
     // Performance assertion - ensure we maintain 60fps target
     if (enablePerformanceMonitoring && frameRateRef.current < 50) {
-      console.warn('[useVirtualizedGrid] Frame rate below target:', {
+      devLogger.warn('useVirtualizedGrid frame rate below target', {
         currentFPS: frameRateRef.current,
         target: 60,
         droppedFrames: droppedFrames.current,
