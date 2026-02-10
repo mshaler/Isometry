@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { devLogger } from '../../utils/logging';
 // Bridge eliminated in v4 - sql.js direct access
 // import {
 //   fileSystemBridge,
@@ -37,34 +38,34 @@ interface ExportOptions {
 // Stub implementations for bridge elimination
 const fileSystemBridge = {
   listFiles: async () => [],
-  exportData: async (data: any, options: ExportOptions) => { console.log('Bridge eliminated: exportData', data, options); },
+  exportData: async (data: any, options: ExportOptions) => { devLogger.debug('Bridge eliminated: exportData', { options }); },
   readFile: async (path: string, binary: boolean = false) => {
-    console.log('Bridge eliminated: readFile', path, binary);
+    devLogger.debug('Bridge eliminated: readFile', { path, binary });
     return binary ? new ArrayBuffer(0) : '';
   },
   writeFile: async (path: string, content: string | ArrayBuffer) => {
-    console.log('Bridge eliminated: writeFile', path, content);
+    devLogger.debug('Bridge eliminated: writeFile', { path, contentType: typeof content });
   },
   deleteFile: async (path: string) => {
-    console.log('Bridge eliminated: deleteFile', path);
+    devLogger.debug('Bridge eliminated: deleteFile', { path });
   },
   exportFile: async (path: string, options: ExportOptions) => {
-    console.log('Bridge eliminated: exportFile', path, options);
+    devLogger.debug('Bridge eliminated: exportFile', { path, options });
     return { success: true };
   },
   createDirectory: async (path: string) => {
-    console.log('Bridge eliminated: createDirectory', path);
+    devLogger.debug('Bridge eliminated: createDirectory', { path });
   },
   fileExists: async (path: string) => {
-    console.log('Bridge eliminated: fileExists', path);
+    devLogger.debug('Bridge eliminated: fileExists', { path });
     return false;
   },
   getFileInfo: async (path: string) => {
-    console.log('Bridge eliminated: getFileInfo', path);
+    devLogger.debug('Bridge eliminated: getFileInfo', { path });
     return { name: '', size: 0, modified: Date.now(), isDirectory: false, path };
   },
   clearCache: () => {
-    console.log('Bridge eliminated: clearCache');
+    devLogger.debug('Bridge eliminated: clearCache');
   }
 };
 
@@ -125,7 +126,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
   // Error handler
   const handleError = useCallback((error: unknown, operation: string) => {
     const message = error instanceof Error ? error.message : `${operation} failed`;
-    console.error(`File system ${operation} error:`, error);
+    devLogger.error(`File system ${operation} error`, { error });
     updateState({ error: message, isLoading: false });
   }, [updateState]);
 
@@ -254,7 +255,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
     try {
       return await fileSystemBridge.fileExists(path);
     } catch (error) {
-      console.warn('File exists check failed:', error);
+      devLogger.warn('File exists check failed', { error });
       return false;
     }
   }, []);
@@ -264,7 +265,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
     try {
       return await fileSystemBridge.getFileInfo(path);
     } catch (error) {
-      console.warn('Get file info failed:', error);
+      devLogger.warn('Get file info failed', { error });
       return null;
     }
   }, []);
@@ -288,7 +289,7 @@ export function useFileSystem(initialDirectory: string = ''): UseFileSystemResul
   useEffect(() => {
     if (isWebViewEnvironment && state.currentDirectory) {
       listFiles(state.currentDirectory).catch(error => {
-        console.warn('Failed to load initial directory:', error);
+        devLogger.warn('Failed to load initial directory', { error });
       });
     }
   }, [isWebViewEnvironment, state.currentDirectory, listFiles]);
