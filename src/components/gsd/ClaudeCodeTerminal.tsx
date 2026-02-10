@@ -69,6 +69,9 @@ export function ClaudeCodeTerminal({
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Unique counter for React keys to prevent duplication
+  const lineIdCounterRef = useRef(0);
+
   // Auto-scroll to bottom
   useEffect(() => {
     if (autoScroll && terminalRef.current) {
@@ -92,7 +95,7 @@ export function ClaudeCodeTerminal({
 
       const parseResult = claudeCodeOutputParser.parseLine(lineContent);
       const line: TerminalLine = {
-        id: `line-${Date.now()}-${index}`,
+        id: `line-${++lineIdCounterRef.current}`,
         content: lineContent,
         parseResult,
         timestamp: new Date()
