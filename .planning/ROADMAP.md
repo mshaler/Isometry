@@ -55,12 +55,12 @@
   2. User can copy/paste text in terminal with standard keyboard shortcuts (Cmd+C/Cmd+V)
   3. User can navigate command history with up/down arrows and see current working directory
   4. User can execute GSD commands from Command Builder and see execution progress in GSD GUI
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 43-01: TBD (planned during phase planning)
-- [ ] 43-02: TBD
-- [ ] 43-03: TBD
+- [ ] 43-01-PLAN.md — WebSocket connection with heartbeat, reconnection, and working directory display
+- [ ] 43-02-PLAN.md — Terminal copy/paste and command history with reverse search
+- [ ] 43-03-PLAN.md — GSD command execution with live progress and completion notifications
 
 #### Phase 44: Preview Visualization Expansion
 **Goal**: Complete Preview pane from 50% to fully functional with all visualization tabs operational
@@ -120,7 +120,7 @@ Phase 46 requires both Phases 44 and 45 complete.
 |-------|-----------|----------------|--------|-----------|
 | 18-27 | v3.1 | All | Complete | 2026-02-01 |
 | 34-42 | v4.1 | All | Complete | 2026-02-10 |
-| 43. Shell Integration Completion | v4.2 | 0/? | Not started | - |
+| 43. Shell Integration Completion | v4.2 | 0/3 | Planned | - |
 | 44. Preview Visualization Expansion | v4.2 | 0/? | Not started | - |
 | 45. TipTap Editor Migration | v4.2 | 0/? | Not started | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
