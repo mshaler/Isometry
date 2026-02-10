@@ -97,7 +97,7 @@ Plans:
 - [x] 45-03-PLAN.md — Wiki links extension with [[page]] syntax and sql.js autocomplete
 
 #### Phase 46: Live Data Synchronization
-**Goal**: Enable cross-canvas data synchronization without manual refresh using sql.js triggers
+**Goal**: Enable cross-canvas data synchronization without manual refresh using React's dataVersion reactivity
 **Depends on**: Phases 44, 45
 **Requirements**: SYNC-01, SYNC-02, SYNC-03
 **Success Criteria** (what must be TRUE):
@@ -107,9 +107,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 46-01-PLAN.md — Event bus infrastructure and sql.js change tracking
-- [ ] 46-02-PLAN.md — useDataChangeListener hook and Preview tab auto-refresh integration
-- [ ] 46-03-PLAN.md — Selection sync and bidirectional navigation (Capture scroll-to-card)
+- [ ] 46-01-PLAN.md — Verify dataVersion propagation chain for auto-refresh (SYNC-01)
+- [ ] 46-02-PLAN.md — Connect Preview tabs to SelectionContext for cross-canvas selection (SYNC-03)
+- [ ] 46-03-PLAN.md — Bidirectional navigation from Preview to Capture (SYNC-02)
 
 ### v4.3 Navigator Integration (In Progress)
 
