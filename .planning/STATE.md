@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.2 Three-Canvas Notebook - Phase 43
+**Current focus:** v4.2 Three-Canvas Notebook - Phase 44 (Preview Visualization)
 
 ## Current Position
 
-Phase: 43 of 46 (Shell Integration Completion)
-Plan: 3 of 6 complete
-Status: In progress
-Last activity: 2026-02-10 — Completed 43-03-PLAN.md (GSD Execution Integration)
+Phase: 44 of 46 (Preview Visualization Expansion)
+Plan: Ready to plan
+Status: Phase 43 complete
+Last activity: 2026-02-10 — Completed Phase 43 Shell Integration (3/3 plans)
 
-Progress: [█████░░░░░░░] 50% (0/4 phases complete, 3/6 plans in Phase 43)
+Progress: [███░░░░░░░░░] 25% (1/4 phases complete)
 
 ## Performance Metrics
 
@@ -22,10 +22,12 @@ Progress: [█████░░░░░░░] 50% (0/4 phases complete, 3/6 p
 - v3.1: 18 plans, 7 phases, 3 days
 - v4.1: 27 plans, 9 phases, 5 days
 
+**v4.2 Progress:**
+- Phase 43: 3 plans, 2 waves, ~18 minutes execution
+
 **v4.2 Target:**
 - 4 phases (43-46)
 - Estimated ~12-16 plans total
-- Expected ~2 weeks (completion work)
 
 ## Accumulated Context
 
@@ -47,7 +49,11 @@ Key v4.1 decisions carried forward:
 - Queue-based rate limiting for Claude API to prevent 429 errors
 - Split NotebookContext pattern to prevent cascade re-renders
 
-**43-03 decisions:**
+**Phase 43 decisions:**
+- WebSocket heartbeat: 30s ping, 60s pong timeout
+- Exponential backoff: 1s-30s, factor 2, max 10 attempts
+- Terminal prompt shows abbreviated path (last 2 segments)
+- Selection-aware Cmd+C (copy if selected, SIGINT if not)
 - Toast notifications auto-dismiss after 3 seconds
 - Failed commands loaded into input for retry editing
 - Tool calls collapsed by default with click-to-expand
@@ -55,35 +61,30 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — roadmap planning complete.
+None — Phase 43 complete, ready for Phase 44 planning.
 
 ### Blockers/Concerns
 
 **Pre-existing Issues (not blocking v4.2):**
 - ~40 TypeScript errors in grid-interaction, grid-selection, logging modules (pre-existing)
 - Directory health check failing for src/services (22/15 files) - pre-existing cleanup needed
-- check-unused failing due to pre-existing unused exports
 
 **v4.2 Implementation Notes:**
-- Existing notebook implementation is ~70% complete (~10,554 lines)
-- Shell pane 50% complete - GSD execution integration done, needs Claude AI WebSocket
-- Preview pane 50% complete - SuperGrid works, other tabs are stubs
+- Shell pane now functional with WebSocket, copy/paste, history, GSD execution
+- Preview pane 50% complete - SuperGrid works, Network/Timeline/Inspector are stubs
 - Capture pane 70% complete - needs TipTap migration
 - Critical: Must implement shouldRerenderOnTransaction: false for TipTap performance
-- Critical: Queue architecture for Claude API rate limits (prevent cascading 429s)
 - Critical: Bidirectional sync trigger for notebook_cards ↔ nodes LATCH data
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 43-03 (GSD Execution Integration)
-Resume file: .planning/phases/43-shell-integration-completion/43-04-PLAN.md
+Stopped at: Completed Phase 43 (Shell Integration)
+Resume file: None
 
 ## Next Steps
 
-1. Execute 43-04-PLAN.md (Claude AI WebSocket Integration)
-2. Execute 43-05-PLAN.md (Terminal Resize & Performance)
-3. Execute 43-06-PLAN.md (Session Persistence)
-4. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
-5. Phase 45: TipTap Editor Migration (EDIT-01 to EDIT-04)
-6. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03)
+1. Run `/gsd:plan-phase 44` to create Phase 44 execution plan
+2. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
+3. Phase 45: TipTap Editor Migration (EDIT-01 to EDIT-04) - can parallel with 44
+4. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03) - requires 44, 45 complete

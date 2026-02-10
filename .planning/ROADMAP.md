@@ -59,9 +59,9 @@
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 43-01-PLAN.md — WebSocket connection with heartbeat, reconnection, and working directory display
-- [ ] 43-02-PLAN.md — Terminal copy/paste and command history with reverse search
-- [ ] 43-03-PLAN.md — GSD command execution with live progress and completion notifications
+- [x] 43-01-PLAN.md — WebSocket connection with heartbeat, reconnection, and working directory display
+- [x] 43-02-PLAN.md — Terminal copy/paste and command history with reverse search
+- [x] 43-03-PLAN.md — GSD command execution with live progress and completion notifications
 
 #### Phase 44: Preview Visualization Expansion
 **Goal**: Complete Preview pane from 50% to fully functional with all visualization tabs operational
@@ -143,7 +143,7 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 |-------|-----------|----------------|--------|-----------|
 | 18-27 | v3.1 | All | Complete | 2026-02-01 |
 | 34-42 | v4.1 | All | Complete | 2026-02-10 |
-| 43. Shell Integration Completion | v4.2 | 0/3 | Planned | - |
+| 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 44. Preview Visualization Expansion | v4.2 | 0/? | Not started | - |
 | 45. TipTap Editor Migration | v4.2 | 0/? | Not started | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
@@ -151,4 +151,4 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10*
+*Last updated: 2026-02-10 (Phase 43 complete)*
