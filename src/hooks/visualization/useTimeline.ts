@@ -147,7 +147,10 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
     return [opts.maxEvents];
   }, [dateRange, opts.maxEvents]);
 
-  // Query database
+  // SYNC-01: Auto-refresh when database changes via dataVersion dependency
+  // useSQLiteQuery includes dataVersion in its dependency array, so when
+  // operations.run() increments dataVersion (after INSERT/UPDATE/DELETE),
+  // this query automatically refetches and the timeline re-renders.
   const query = useSQLiteQuery<NodeRow>(sql, params, { enabled: opts.enabled });
 
   // Transform rows to TimelineEvent format

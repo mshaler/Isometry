@@ -35,6 +35,15 @@ export interface UseDataInspectorResult {
 
 /**
  * Hook for managing Data Inspector state and operations
+ *
+ * SYNC-01 note: DataInspector is query-on-demand (user presses Ctrl+Enter).
+ * It does NOT need auto-refresh because:
+ * 1. Each runQuery() call reads the current database state via execute()
+ * 2. Users explicitly trigger queries when they want fresh results
+ * 3. Real-time updates would be distracting in a SQL exploration interface
+ *
+ * The execute() function always reads from the live sql.js database,
+ * so results are always current at query time.
  */
 export function useDataInspector(): UseDataInspectorResult {
   // useSQLite provides the `execute` function that runs SQL against sql.js
