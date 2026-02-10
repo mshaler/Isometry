@@ -28,17 +28,21 @@ Progress: [██████████░░] 83% (v4.1 milestone - Phase 42 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 3 (Shell Integration) | 4/4 | COMPLETE | Terminal emulation + Claude CLI integration (90 mins total) |
-| 42 (Large Dataset Persistence) | 3/3 | COMPLETE | IndexedDB persistence + performance verification (8 mins total) |
+| 42 (Large Dataset Persistence) | 3/3 | COMPLETE | IndexedDB persistence + alto-index integration + performance (13 mins total) |
 
 **Recent Trend:**
 - Phase 42-01: IndexedDB persistence layer replacing localStorage (5 min)
+- Phase 42-02: UnifiedApp integration with PAFV axis switching (5 min)
+  - Alto-index node type statistics display in Canvas
+  - Node type color mapping for ViewEngine (calendar, contact, note, etc.)
+  - PAFV axis switching connected to ViewConfig projection
 - Phase 42-03: Performance benchmarks verification (3 min)
   - testFTS5Performance() method for search timing (<50ms target)
   - 60fps render budget monitoring with warnings
   - Pre-save quota check preventing QuotaExceededError
   - Storage quota indicator in Canvas development overlay
 
-*Updated after Phase 42-03 completion - 2026-02-10*
+*Updated after Phase 42-02 completion - 2026-02-10*
 
 ## Accumulated Context
 
@@ -111,6 +115,9 @@ Recent decisions affecting current work:
 - 42-01: Priority loading order: IndexedDB first, then databaseUrl fetch, finally create new
 - 42-01: beforeunload handler to warn about pending changes on page close
 - 42-01: Storage capability type added to telemetry for quota error tracking
+- 42-02: Node type colors defined for alto-index types (calendar, contact, note, bookmark, etc.)
+- 42-02: LATCH axis to facet mapping established (location->locationName, time->createdAt, etc.)
+- 42-02: PAFV mappings integrated into ViewConfig projection for real-time axis switching
 - 42-03: FTS5 fallback to LIKE search when FTS5 unavailable for compatibility
 - 42-03: 80% storage usage threshold for warning display
 - 42-03: 10% safety margin on quota check to prevent edge-case failures
