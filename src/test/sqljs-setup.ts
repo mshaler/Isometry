@@ -7,6 +7,7 @@
 
 import initSqlJs from 'sql.js';
 import type { Database, SqlJsStatic } from 'sql.js';
+import { devLogger } from '../utils/logging';
 
 // Global sql.js instance and utilities for tests
 declare global {
@@ -24,7 +25,9 @@ global.__CLEANUP_TEST_DBS__ = () => {
     try {
       db.close();
     } catch (error) {
-      console.warn('[Test] Error closing database:', error);
+      devLogger.warn('Test database close error', {
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
   global.__TEST_DB_INSTANCES__.clear();
@@ -52,10 +55,14 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
   try {
     // Initialize sql.js with custom FTS5-enabled build
     global.__TEST_SQL__ = await initSqlJs(wasmLoader());
-    console.log('[Test] sql.js initialized successfully (FTS5 enabled)');
+    devLogger.info('sql.js initialized for testing', {
+      fts5Enabled: true
+    });
     return global.__TEST_SQL__;
   } catch (error) {
-    console.error('[Test] Failed to initialize sql.js:', error);
+    devLogger.error('Failed to initialize sql.js for testing', {
+      error: error instanceof Error ? error.message : String(error)
+    });
     throw new Error('Could not initialize sql.js for testing');
   }
 }
@@ -97,10 +104,14 @@ function createMockWasmModule() {
 try {
   // Don't await here - let individual tests handle initialization
   initializeTestSqlJs().catch(error => {
-    console.warn('[Test] sql.js initialization deferred:', error.message);
+    devLogger.warn('sql.js initialization deferred', {
+      reason: error.message
+    });
   });
 } catch (error) {
-  console.warn('[Test] sql.js setup skipped:', error);
+  devLogger.warn('sql.js setup skipped', {
+    error: error instanceof Error ? error.message : String(error)
+  });
 }
 
 // Export initialization function for tests to use
