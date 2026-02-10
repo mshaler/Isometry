@@ -11,6 +11,7 @@ import type {
   LevelGroup
 } from '../types/supergrid';
 import { DEFAULT_PROGRESSIVE_CONFIG } from '../types/supergrid';
+import { devLogger } from '../utils/logging';
 
 /**
  * SuperGrid v4 - Bridge-Free Implementation
@@ -137,7 +138,12 @@ export class SuperGridV4 {
         ORDER BY ${yAxisField}, ${xAxisField}
       `;
 
-      console.log('[SuperGrid] Executing query:', dataQuery);
+      devLogger.debug('SuperGrid executing SQL query', {
+        query: dataQuery.replace(/\s+/g, ' ').trim(),
+        xAxis: xAxisField,
+        yAxis: yAxisField,
+        hasGroupBy: !!groupBy
+      });
       const result = this.database.exec(dataQuery);
 
       if (!result[0]?.values) {
@@ -323,7 +329,12 @@ export class SuperGridV4 {
   private render(): void {
     if (!this.currentData) return;
 
-    console.log('[SuperGrid] Rendering', this.currentData.cells?.length || 0, 'cells');
+    devLogger.debug('SuperGrid rendering cells', {
+      cellCount: this.currentData.cells?.length || 0,
+      hasAxisData: !!this.currentData.xAxis && !!this.currentData.yAxis,
+      xAxisLength: this.currentData.xAxis?.values.length || 0,
+      yAxisLength: this.currentData.yAxis?.values.length || 0
+    });
 
     // Calculate layout dimensions
     const { cellWidth, cellHeight, headerWidth, headerHeight } = this.config;
@@ -396,7 +407,10 @@ export class SuperGridV4 {
 
     // Performance tracking
     const renderTime = performance.now() - this.renderStartTime;
-    console.log('[SuperGrid] Render complete:', renderTime.toFixed(2), 'ms');
+    devLogger.debug('SuperGrid render complete', {
+      renderTime: `${renderTime.toFixed(2)}ms`,
+      performance: renderTime < 16 ? 'excellent' : renderTime < 33 ? 'good' : 'slow'
+    });
   }
 
   private renderHeaders(xAxis: AxisData | AxisData[] | undefined, yAxis: AxisData | AxisData[] | undefined): void {
