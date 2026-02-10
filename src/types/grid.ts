@@ -64,15 +64,41 @@ export interface HeaderNode {
   id: string;
   label: string;
   level: number;
-  children?: HeaderNode[];
+  children: HeaderNode[];
   parent?: HeaderNode;
+  parentId?: string;
   data?: any;
+
+  // Layout properties
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  span: number;
+
+  // State properties
+  isLeaf: boolean;
+  isExpanded: boolean;
+  isVisible: boolean;
+  count: number;
+
+  // Interaction zones
+  clickZones?: {
+    expand: { x: number; y: number; width: number; height: number };
+    resize: { x: number; y: number; width: number; height: number };
+    select: { x: number; y: number; width: number; height: number };
+  };
+
+  // Legacy zones (for compatibility)
+  labelZone?: { x: number; y: number; width: number; height: number };
+  bodyZone?: { x: number; y: number; width: number; height: number };
 }
 
 export interface HeaderHierarchy {
-  nodes: HeaderNode[];
+  rootNodes: HeaderNode[];
+  allNodes: HeaderNode[];
   maxDepth: number;
-  totalNodes: number;
+  totalWidth: number;
 }
 
 // Content alignment enum

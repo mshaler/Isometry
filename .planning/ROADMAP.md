@@ -10,7 +10,7 @@ Implement the core SuperGrid polymorphic data projection system through four pha
 - ✅ **v3.0 Production Deployment** - Phases 13-17 (completed)
 - ✅ **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
 - ✅ **v4.0 Bridge Elimination Foundation** - Phase 33 (shipped 2026-02-06)
-- ✅ **v4.1 SuperGrid Foundation** - Phases 34-41 (completed 2026-02-08)
+- 🚧 **v4.1 SuperGrid Foundation** - Phases 34-42 (in progress)
 
 ## Phases
 
@@ -155,7 +155,7 @@ Plans:
 
 </details>
 
-### ✅ v4.1 SuperGrid Foundation (Completed 2026-02-08)
+### 🚧 v4.1 SuperGrid Foundation (In Progress)
 
 **Milestone Goal:** Implement the core SuperGrid polymorphic data projection system with nested PAFV headers, direct sql.js integration, dynamic axis assignment, grid continuum views, and Janus density controls.
 
@@ -173,6 +173,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 39: Missing Requirement Implementation** - Implementation of missing FOUND-06 column resizing requirement
 - [x] **Phase 40: Tech Debt Cleanup & Integration Polish** - Resolution of identified tech debt and integration TODOs
 - [x] **Phase 41: PAFV Architectural Unification** - Eliminate dual D3/CSS rendering split and establish "D3 renders, React controls" contract
+- [ ] **Phase 42: Large Dataset Persistence & UnifiedApp Integration** - Enable IndexedDB persistence and verify UnifiedApp with alto-index data
 
 #### Phase 34: Foundation Stabilization
 **Goal**: Establish stable sql.js + D3.js integration with basic grid rendering and TypeScript compilation cleanup
@@ -316,10 +317,29 @@ Plans:
 - [x] 41-03-PLAN.md — Legacy Component Cleanup and Event Flow Verification
 - [x] 41-04-PLAN.md — TypeScript Compilation Error Resolution (Gap Closure)
 
+#### Phase 42: Large Dataset Persistence & UnifiedApp Integration
+**Goal**: Enable persistent storage for large datasets (15K+ nodes) and verify SuperGrid integration in UnifiedApp with real alto-index data
+**Depends on**: Phase 41
+**Requirements**: Production-ready data persistence, UnifiedApp integration verification
+**Super* Features**: IndexedDB persistence, alto-index data exploration
+**Success Criteria** (what must be TRUE):
+  1. IndexedDB replaces localStorage for database persistence (supports 50MB+ datasets)
+  2. Alto-index data (15K+ nodes) persists across page refreshes without quota errors
+  3. UnifiedApp renders SuperGrid with alto-index data via ViewEngine
+  4. PAFV axis switching works with real calendar/contacts/notes data
+  5. FTS5 search performs <50ms queries on 15K+ node datasets
+  6. Performance remains at 60fps with real-world data density
+**Plans**: 3 plans
+
+Plans:
+- [ ] 42-01-PLAN.md — IndexedDB Persistence Layer (install idb, create persistence service, integrate with SQLiteProvider)
+- [ ] 42-02-PLAN.md — UnifiedApp SuperGrid Integration (alto-index data display, ViewEngine rendering, PAFV axis switching)
+- [ ] 42-03-PLAN.md — Performance Verification (FTS5 <50ms, 60fps rendering, storage quota monitoring)
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41
+Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -332,3 +352,4 @@ Phases execute in numeric order: 33 → 34 → 35 → 36 → 37 → 38 → 39 �
 | 39. Missing Requirement Implementation | v4.1 | 1/1 | ✅ Complete | 2026-02-08 |
 | 40. Tech Debt Cleanup & Integration Polish | v4.1 | 1/1 | ✅ Complete | 2026-02-08 |
 | 41. PAFV Architectural Unification | v4.1 | 4/4 | ✅ Complete | 2026-02-08 |
+| 42. Large Dataset Persistence & UnifiedApp Integration | v4.1 | 0/3 | 📋 Ready | - |
