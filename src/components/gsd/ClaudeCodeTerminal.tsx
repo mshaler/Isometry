@@ -248,7 +248,7 @@ export function ClaudeCodeTerminal({
             </div>
           );
 
-        case 'tool_use':
+        case 'tool_use': {
           const toolUse = parseResult.structured.toolUse!;
           const statusIcon = {
             started: <Play size={14} className="text-yellow-400" />,
@@ -266,8 +266,9 @@ export function ClaudeCodeTerminal({
               </span>
             </div>
           );
+        }
 
-        case 'progress':
+        case 'progress': {
           const progress = parseResult.structured.progress!;
           const percent = progress.totalSteps
             ? Math.round((progress.completedSteps! / progress.totalSteps) * 100)
@@ -294,8 +295,9 @@ export function ClaudeCodeTerminal({
               )}
             </div>
           );
+        }
 
-        case 'error':
+        case 'error': {
           const error = parseResult.structured.error!;
           return (
             <div className="py-2 px-3 bg-red-900/30 border-l-2 border-red-400 my-1">
@@ -325,6 +327,7 @@ export function ClaudeCodeTerminal({
               )}
             </div>
           );
+        }
       }
     }
 
