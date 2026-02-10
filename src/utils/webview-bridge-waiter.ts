@@ -5,6 +5,8 @@
  * bridge functionality. In the v4 architecture, there is no bridge.
  */
 
+import { devLogger } from './logging';
+
 export interface BridgeStatus {
   isAvailable: boolean;
   isReady: boolean;
@@ -47,5 +49,5 @@ export function getBridgeStatus(): BridgeStatus {
  */
 export async function initializeBridge(): Promise<void> {
   // No-op in v4 - bridge eliminated
-  console.warn('[Bridge] Bridge initialization called but bridge is eliminated in v4');
+  devLogger.warn('Bridge initialization called but bridge is eliminated in v4');
 }
