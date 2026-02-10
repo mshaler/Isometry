@@ -13,6 +13,7 @@ import { SuperDensity } from './supergrid/SuperDensity';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { devLogger } from '@/utils/logging';
 import type { Node } from '@/types/node';
 import type { LATCHAxis } from '@/types/pafv';
 import type { DensityChangeEvent, DensityAggregationResult } from '@/types/supergrid';
@@ -257,7 +258,8 @@ export function SuperDensityDemo() {
   // Handle density change events
   const handleDensityChange = (event: DensityChangeEvent) => {
     setLastChangeEvent(event);
-    console.log('[SuperDensityDemo] Density changed:', {
+    devLogger.debug('Density changed', {
+      component: 'SuperDensityDemo',
       level: event.changedLevel,
       performanceMs: event.metrics.totalTime,
       withinTarget: event.metrics.withinPerformanceTarget
@@ -267,7 +269,8 @@ export function SuperDensityDemo() {
   // Handle aggregation completion
   const handleAggregationComplete = (result: DensityAggregationResult) => {
     setLastAggregation(result);
-    console.log('[SuperDensityDemo] Aggregation completed:', {
+    devLogger.debug('Aggregation completed', {
+      component: 'SuperDensityDemo',
       sourceRows: result.metadata.sourceRowCount,
       aggregatedRows: result.metadata.aggregatedRowCount,
       compressionRatio: result.metadata.compressionRatio,
