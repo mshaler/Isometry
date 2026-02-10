@@ -635,7 +635,12 @@ export class SuperGridEngine extends EventEmitter {
         value: `Column ${i}`,
         axis: 'Alphabet' as LATCHAxis,
         span: 1,
-        position: { x: i * this.gridDimensions.cellWidth, y: 0, width: this.gridDimensions.cellWidth, height: this.gridDimensions.headerHeight },
+        position: {
+          x: i * this.gridDimensions.cellWidth,
+          y: 0,
+          width: this.gridDimensions.cellWidth,
+          height: this.gridDimensions.headerHeight
+        },
         childCount: 0,
         isLeaf: true
       })),
@@ -645,7 +650,12 @@ export class SuperGridEngine extends EventEmitter {
         value: `Row ${i}`,
         axis: 'Hierarchy' as LATCHAxis,
         span: 1,
-        position: { x: 0, y: i * this.gridDimensions.cellHeight, width: this.gridDimensions.headerWidth, height: this.gridDimensions.cellHeight },
+        position: {
+          x: 0,
+          y: i * this.gridDimensions.cellHeight,
+          width: this.gridDimensions.headerWidth,
+          height: this.gridDimensions.cellHeight
+        },
         childCount: 0,
         isLeaf: true
       })),
