@@ -93,7 +93,11 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
       }
 
     } catch (err) {
-      console.error('💥 sql.js Query Error:', { sql, params, error: err });
+      devLogger.error('sql.js Query Error', {
+        sql,
+        params,
+        error: err instanceof Error ? err.message : String(err)
+      });
       setError(err as Error);
 
       // Use fallback data if available when query fails
