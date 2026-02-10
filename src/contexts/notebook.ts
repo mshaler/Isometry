@@ -215,7 +215,10 @@ export function createTemplateManager(): TemplateManager {
 
 export function createCardOperations(
   execute: (query: string, params?: unknown[]) => unknown[] | Promise<unknown[]>,
-  performanceHook: { measureRender: (name: string, duration: number) => void; measureQuery: (name: string, duration: number) => void }
+  performanceHook: {
+    measureRender: (name: string, duration: number) => void;
+    measureQuery: (name: string, duration: number) => void;
+  }
 ): CardOperations {
   return {
     loadCards: async () => {
