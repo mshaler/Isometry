@@ -11,7 +11,7 @@ import { watch, FSWatcher } from 'fs';
 import { stat } from 'fs/promises';
 import { join, relative } from 'path';
 import { ClaudeCodeCommand, CommandExecution } from './claudeCodeDispatcher';
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
 
 export interface ServerMessage {
   type: 'command' | 'cancel' | 'input' | 'start_file_monitoring' | 'stop_file_monitoring';

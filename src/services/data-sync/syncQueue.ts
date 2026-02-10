@@ -7,8 +7,8 @@
  */
 
 import { backOff } from 'exponential-backoff'
-import { memoryManager } from '../utils/bridge-optimization/memory-manager'
-import { devLogger } from '../utils/logging'
+import { memoryManager } from '../../utils/bridge-optimization/memory-manager'
+import { devLogger } from '../../utils/logging'
 
 /**
  * Types of sync operations

@@ -13,7 +13,7 @@ import {
   FileChange,
   GSDPhase,
   GSDStatus
-} from '../types/gsd';
+} from '../../types/gsd';
 
 export class GSDService {
   constructor(private db: Database) {}
@@ -23,7 +23,7 @@ export class GSDService {
    */
   async initializeSchema(): Promise<void> {
     // Read and execute the GSD schema SQL
-    const schemaSQL = await import('../db/gsd-schema.sql?raw');
+    const schemaSQL = await import('../../db/gsd-schema.sql?raw');
     this.db.exec(schemaSQL.default);
   }
 

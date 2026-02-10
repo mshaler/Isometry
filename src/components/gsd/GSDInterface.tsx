@@ -25,13 +25,13 @@ import { CommandPalette, CommandInputModal } from './CommandPalette';
 import { QuickActions } from './QuickActions';
 import { RichCommandBuilder, CommandTemplate, BuiltCommand } from './RichCommandBuilder';
 import { ClaudeCodeTerminal } from './ClaudeCodeTerminal';
-import { GSDService } from '../../services/gsdService';
+import { GSDService } from '../../services/claude-code/gsdService';
 import { GSDSessionState, GSDPhase, FileChange } from '../../types/gsd';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
 import { getClaudeCodeDispatcher, GSDCommands } from '../../services/claudeCodeWebSocketDispatcher';
-import { gsdSlashCommands, SlashCommand } from '../../services/gsdSlashCommands';
-import { FileChangeEvent } from '../../services/claudeCodeServer';
+import { gsdSlashCommands, SlashCommand } from '../../services/claude-code/gsdSlashCommands';
+import { FileChangeEvent } from '../../services/claude-code/claudeCodeServer';
 import { devLogger } from '../../utils/logging';
 
 // Toast notification types

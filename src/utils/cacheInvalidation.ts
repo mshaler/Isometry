@@ -6,7 +6,7 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../services/queryClient';
+import { queryKeys } from '../services/query/queryClient';
 import { devLogger } from './logging';
 
 /**

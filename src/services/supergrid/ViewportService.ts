@@ -16,7 +16,7 @@ import type {
   BoundaryConstraints,
   CartographicConfig,
   CartographicState
-} from '../types/supergrid';
+} from '../../types/supergrid';
 
 export interface ViewportDimensions {
   width: number;

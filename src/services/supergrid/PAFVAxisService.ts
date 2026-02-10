@@ -11,9 +11,9 @@
  * @module services/PAFVAxisService
  */
 
-import type { ViewAxisMapping } from '../types/views';
-import type { LATCHAxis, LATCHAxisAbbr } from '../types/pafv';
-import type { AxisChangeEvent, SuperDynamicMetrics } from '../types/supergrid';
+import type { ViewAxisMapping } from '../../types/views';
+import type { LATCHAxis, LATCHAxisAbbr } from '../../types/pafv';
+import type { AxisChangeEvent, SuperDynamicMetrics } from '../../types/supergrid';
 
 
 /**

@@ -5,7 +5,7 @@
 
 import { invoke } from '@tauri-apps/api/core';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
 
 export interface TauriCapabilities {
   isDesktop: boolean;

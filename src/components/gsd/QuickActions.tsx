@@ -19,7 +19,7 @@ import {
   GitCommit,
   Zap
 } from 'lucide-react';
-import { gsdSlashCommands, SlashCommand } from '../../services/gsdSlashCommands';
+import { gsdSlashCommands, SlashCommand } from '../../services/claude-code/gsdSlashCommands';
 import { GSDPhase, GSDStatus } from '../../types/gsd';
 
 interface QuickActionsProps {

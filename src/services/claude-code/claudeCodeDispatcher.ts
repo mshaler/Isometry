@@ -5,7 +5,7 @@
  * Bridges between the GSD GUI and the terminal where Claude Code runs.
  */
 
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
 
 export interface ClaudeCodeCommand {
   command: string;

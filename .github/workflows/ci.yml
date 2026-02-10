@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
   CI: true
 
 jobs:
@@ -277,11 +277,8 @@ jobs:
           echo "🔒 Running npm security audit..."
           npm audit --audit-level=high || true
 
-      - name: Run CodeQL Analysis (if applicable)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: github/codeql-action/analyze@v3
-        with:
-          languages: javascript
+      # CodeQL disabled: requires init step and security-events permission
+      # Re-enable when security scanning is properly configured
 
   # Job 6: Status Summary
   ci-summary:

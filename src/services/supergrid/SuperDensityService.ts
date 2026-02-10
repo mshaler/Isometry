@@ -17,7 +17,7 @@
  * - State persistence per dataset
  */
 
-import { LATCHFilterService, type LATCHFilter } from './LATCHFilterService';
+import { LATCHFilterService, type LATCHFilter } from '../query/LATCHFilterService';
 import type {
   JanusDensityState,
   DensityLevel,
@@ -30,7 +30,7 @@ import type {
   DensityPerformanceMetrics
 } from '@/types/supergrid';
 import { DEFAULT_JANUS_DENSITY } from '@/types/supergrid';
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
 
 export interface DatabaseExecutor {
   execute<T = Record<string, unknown>>(sql: string, params?: unknown[]): T[];

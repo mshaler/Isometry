@@ -31,7 +31,7 @@ import {
   ClaudeCodeParseResult,
   ClaudeCodeChoice,
   ClaudeCodeParserUtils
-} from '../../services/claudeCodeOutputParser';
+} from '../../services/claude-code/claudeCodeOutputParser';
 
 interface ClaudeCodeTerminalProps {
   sessionId?: string;

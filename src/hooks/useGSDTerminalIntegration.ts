@@ -9,8 +9,8 @@
  */
 
 import { useEffect, useCallback, useRef } from 'react';
-import { claudeCodeParser, ParsedOutput } from '../services/claudeCodeParser';
-import { GSDService } from '../services/gsdService';
+import { claudeCodeParser, ParsedOutput } from '../services/claude-code/claudeCodeParser';
+import { GSDService } from '../services/claude-code/gsdService';
 import { GSDSessionState } from '../types/gsd';
 import { devLogger } from '../utils/logging';
 

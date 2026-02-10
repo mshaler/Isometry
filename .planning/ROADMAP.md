@@ -76,9 +76,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 44-01-PLAN.md — Network graph with force-directed layout, drag/click interactions
-- [ ] 44-02-PLAN.md — Data Inspector with SQL input, sortable table, CSV/JSON export
-- [ ] 44-03-PLAN.md — Timeline visualization with temporal facets and date filtering
+- [x] 44-01-PLAN.md — Network graph with force-directed layout, drag/click interactions
+- [x] 44-02-PLAN.md — Data Inspector with SQL input, sortable table, CSV/JSON export
+- [x] 44-03-PLAN.md — Timeline visualization with temporal facets and date filtering
 
 #### Phase 45: TipTap Editor Migration
 **Goal**: Migrate from MDEditor to TipTap for improved editing experience with slash commands and bidirectional links
@@ -161,7 +161,7 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 18-27 | v3.1 | All | Complete | 2026-02-01 |
 | 34-42 | v4.1 | All | Complete | 2026-02-10 |
 | 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 44. Preview Visualization Expansion | v4.2 | 0/3 | Planned | - |
+| 44. Preview Visualization Expansion | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
@@ -169,4 +169,4 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (Phase 45 complete)*
+*Last updated: 2026-02-10 (Phase 44 complete)*

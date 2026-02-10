@@ -15,8 +15,8 @@ import type {
   HeaderHierarchy,
   SpanCalculationConfig,
   HeaderStateManager
-} from '../types/grid';
-import { DEFAULT_SPAN_CONFIG, ContentAlignment } from '../types/grid';
+} from '../../types/grid';
+import { DEFAULT_SPAN_CONFIG, ContentAlignment } from '../../types/grid';
 
 export class HeaderLayoutService {
   private config: SpanCalculationConfig;

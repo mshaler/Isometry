@@ -7,9 +7,9 @@
  * - Integration with Claude Code CLI
  */
 
-import { GSDPhase, GSDStatus } from '../types/gsd';
+import { GSDPhase, GSDStatus } from '../../types/gsd';
 import { getClaudeCodeDispatcher, GSDCommands } from './claudeCodeWebSocketDispatcher';
-import { devLogger } from '../utils/logging';
+import { devLogger } from '../../utils/logging';
 
 export interface SlashCommand {
   command: string;

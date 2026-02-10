@@ -8,7 +8,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLiveDataContext } from '../../contexts/LiveDataContext';
 import { useDatabase } from '../../db/DatabaseContext';
-import { queryKeys } from '../../services/queryClient';
+import { queryKeys } from '../../services/query/queryClient';
 import {
   createCacheInvalidationManager,
   createOptimisticUpdateManager

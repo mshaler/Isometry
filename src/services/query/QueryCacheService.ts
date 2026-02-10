@@ -1,4 +1,4 @@
-import { graphAnalytics } from './GraphAnalyticsAdapter';
+import { graphAnalytics } from '../analytics/GraphAnalyticsAdapter';
 import { devLogger } from '@/utils/logging/dev-logger';
 
 // Cache entry interface with comprehensive metadata

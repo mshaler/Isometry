@@ -10,7 +10,7 @@
  * - Token usage and cost tracking
  */
 
-import { GSDPhase, GSDStatus, GSDChoice, FileChange, TokenUsage } from '../types/gsd';
+import { GSDPhase, GSDStatus, GSDChoice, FileChange, TokenUsage } from '../../types/gsd';
 
 export interface ParsedOutput {
   phase?: GSDPhase;

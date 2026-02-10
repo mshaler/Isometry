@@ -14,7 +14,7 @@ import {
   NetworkQuality,
   NetworkChangeEvent,
   QualityConfigMap
-} from '../../services/networkMonitor';
+} from '../../services/system/networkMonitor';
 import { useBackgroundSync } from './useBackgroundSync'
 import { useCleanupEffect } from '../../utils/memoryManagement'
 

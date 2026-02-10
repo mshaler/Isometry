@@ -15,7 +15,7 @@ import {
   SyncOperationType,
   SyncPriority,
   QueueState
-} from '../../services/syncQueue'
+} from '../../services/data-sync/syncQueue'
 import { useCleanupEffect } from '../../utils/memoryManagement'
 // Note: Optimistic updates integration available for future enhancement
 import { useTransaction } from './useTransaction'

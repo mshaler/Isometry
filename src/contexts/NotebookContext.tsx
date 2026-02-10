@@ -3,7 +3,7 @@ import type { NotebookCard, NotebookCardType, NotebookTemplate } from '../types/
 import { useSQLite } from '../db/SQLiteProvider';
 import { useNotebookIntegration } from '@/hooks';
 import { useNotebookPerformance } from '../hooks/performance/useNotebookPerformance';
-import { useErrorReporting } from '../services/ErrorReportingService';
+import { useErrorReporting } from '../services/system/ErrorReportingService';
 import { devLogger } from "../utils/logging/dev-logger";
 import {
   type NotebookContextType,
