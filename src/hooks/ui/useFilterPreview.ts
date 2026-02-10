@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useDatabase } from '@/db/DatabaseContext';
 import { compileFilters } from '@/filters/compiler';
 import type { FilterState } from '@/types/filter';
+import { devLogger } from '../../utils/logging';
 
 /**
  * useFilterPreview Hook
@@ -95,7 +96,7 @@ export function useFilterPreview(
 
         setIsLoading(false);
       } catch (err) {
-        console.error('Filter preview query error:', err);
+        devLogger.error('Filter preview query error', { error: err });
         setError(err instanceof Error ? err.message : 'Query failed');
         setIsLoading(false);
       }
