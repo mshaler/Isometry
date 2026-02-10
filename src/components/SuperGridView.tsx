@@ -56,6 +56,170 @@ const AVAILABLE_AXES = [
 /**
  * SuperGrid integration for Unified UI Canvas with complete Super* features
  */
+// Helper functions to reduce main component complexity
+
+/** Get the appropriate data source based on render mode */
+function useDataSource(renderMode: string, sql: string) {
+  const { data: filterNodes, loading: filterLoading, error: filterError } = useFilteredNodes();
+  const { data: queryNodes, error: queryError } = useLiveQuery<Node>(sql, {
+    autoStart: renderMode === 'canvas'
+  });
+
+  return {
+    nodes: renderMode === 'canvas' ? queryNodes : filterNodes,
+    loading: renderMode === 'canvas' ? false : filterLoading,
+    error: renderMode === 'canvas' ? queryError : filterError
+  };
+}
+
+/** Extract current axis mappings from PAFV state */
+function useAxisMappings(pafvState: any) {
+  const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
+  const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
+
+  return {
+    currentXAxis: xMapping?.axis || 'category',
+    currentXFacet: xMapping?.facet || 'folder',
+    currentYAxis: yMapping?.axis || 'time',
+    currentYFacet: yMapping?.facet || 'month'
+  };
+}
+
+/** Render loading state */
+function LoadingState() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-gray-600">
+        Loading SuperGrid with Super* features...
+      </div>
+    </div>
+  );
+}
+
+/** Render error state */
+function ErrorState({ error }: { error: any }) {
+  const errorMessage = typeof error === 'string'
+    ? error
+    : error instanceof Error
+      ? error.message
+      : 'Unknown error';
+
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-red-600">
+        SuperGrid Error: {errorMessage}
+      </div>
+    </div>
+  );
+}
+
+/** Render empty state */
+function EmptyState() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-gray-400 text-center">
+        <div className="text-4xl mb-4">📊</div>
+        <div>No data found for SuperGrid</div>
+        <div className="text-sm mt-2">Connect a data source to begin</div>
+      </div>
+    </div>
+  );
+}
+
+/** Render node count indicator */
+function NodeCountIndicator({ count, mode, color }: { count: number; mode: string; color: string }) {
+  return (
+    <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-sm p-2 text-xs">
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${color}`} />
+        <span>{count} nodes</span>
+        <span className="text-gray-500">|</span>
+        <span>{mode}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Render legacy mode view */
+function LegacyModeView({
+  nodes,
+  d3CoordinateSystem,
+  currentXAxis,
+  currentXFacet,
+  currentYAxis,
+  currentYFacet,
+  originPattern,
+  onCellClick,
+  onZoomChange
+}: {
+  nodes: Node[];
+  d3CoordinateSystem: any;
+  currentXAxis: string;
+  currentXFacet: string;
+  currentYAxis: string;
+  currentYFacet: string;
+  originPattern: OriginPattern;
+  onCellClick: (node: Node) => void;
+  onZoomChange: (transform: ZoomTransform) => void;
+}) {
+  return (
+    <div className="w-full h-full relative">
+      <NodeCountIndicator
+        count={nodes.length}
+        mode="Legacy Mode"
+        color="bg-orange-500"
+      />
+      <D3SparsityLayer
+        data={nodes}
+        coordinateSystem={d3CoordinateSystem}
+        xAxis={currentXAxis}
+        xAxisFacet={currentXFacet}
+        yAxis={currentYAxis}
+        yAxisFacet={currentYFacet}
+        originPattern={originPattern}
+        onCellClick={onCellClick}
+        onZoomChange={onZoomChange}
+        width={window.innerWidth}
+        height={window.innerHeight}
+      />
+    </div>
+  );
+}
+
+/** Render canvas mode view */
+function CanvasModeView({
+  nodes,
+  sql,
+  queryParams,
+  onCellClick
+}: {
+  nodes: Node[];
+  sql: string;
+  queryParams: unknown[];
+  onCellClick: (node: Node) => void;
+}) {
+  return (
+    <div className="w-full h-full relative">
+      <NodeCountIndicator
+        count={nodes.length}
+        mode="D3 Canvas"
+        color="bg-green-500"
+      />
+      <D3Canvas
+        sql={sql}
+        queryParams={queryParams}
+        onNodeClick={onCellClick}
+        className="w-full h-full"
+        enableZoom={true}
+        enableBrush={false}
+        renderMode="svg"
+        maxNodes={1000}
+        debounceMs={100}
+      />
+    </div>
+  );
+}
+
 export function SuperGridView({
   sql = "SELECT * FROM nodes WHERE deleted_at IS NULL",
   queryParams = [],
@@ -86,29 +250,10 @@ export function SuperGridView({
     panOffset: { x: 0, y: 0 }
   });
 
-  // Get PAFV context for axis mappings
+  // Data and PAFV hooks
   const pafv = usePAFV();
-  const pafvState = pafv.state;
-
-  // Data sources
-  const { data: filterNodes, loading: filterLoading, error: filterError } = useFilteredNodes();
-  const { data: queryNodes, error: queryError } = useLiveQuery<Node>(sql, {
-    autoStart: renderMode === 'canvas'
-  });
-
-  // Choose primary data source
-  const primaryNodes = renderMode === 'canvas' ? queryNodes : filterNodes;
-  const primaryLoading = renderMode === 'canvas' ? false : filterLoading;
-  const primaryError = renderMode === 'canvas' ? queryError : filterError;
-
-  // Extract current axis mappings (fallback to dynamic axes if PAFV not configured)
-  const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
-  const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
-
-  const currentXAxis = xMapping?.axis || 'category';
-  const currentXFacet = xMapping?.facet || 'folder';
-  const currentYAxis = yMapping?.axis || 'time';
-  const currentYFacet = yMapping?.facet || 'month';
+  const { nodes: primaryNodes, loading: primaryLoading, error: primaryError } = useDataSource(renderMode, sql);
+  const axisMappings = useAxisMappings(pafv.state);
 
   // Create coordinate system
   const d3CoordinateSystem = useMemo(() =>
@@ -116,27 +261,20 @@ export function SuperGridView({
     [originPattern]
   );
 
-  // SuperCalc formula execution
+  // Event handlers
   const handleFormulaExecute = useCallback((formula: string, result: any) => {
     contextLogger.metrics('SuperGridView: Formula executed', { formula, result });
-    // Could dispatch results to other parts of the UI
   }, []);
 
-  // SuperDynamic axis change
   const handleAxisChange = useCallback((axis: 'x' | 'y' | 'z', value: string) => {
     setDynamicAxes(prev => ({ ...prev, [axis]: value }));
-
-    // Update PAFV context if available
     if (axis === 'x' || axis === 'y') {
       const [axisType, facet] = value.split('-');
-      // TODO: Update PAFV mapping when updateMapping method is available
       contextLogger.state('SuperGridView: Would update PAFV mapping', { axis, axisType, facet });
     }
-  }, [pafv]);
+  }, []);
 
-  // Janus Density configuration
   const handleDensityChange = useCallback((event: DensityChangeEvent) => {
-    // Extract the density configuration from the new state, mapping to legacy structure
     const newDensity = {
       extentMode: (event.newState.extentMode || event.newState.extentDensity || 'sparse') as 'sparse' | 'dense',
       valueMode: (event.newState.valueMode || event.newState.valueDensity || 'leaf') as 'leaf' | 'rolled',
@@ -146,13 +284,11 @@ export function SuperGridView({
     setDensityConfig(newDensity);
   }, []);
 
-  // Node click handling
   const handleCellClick = useCallback((node: Node) => {
     onNodeClick?.(node);
     contextLogger.data('SuperGridView: Cell clicked', { nodeName: node.name });
   }, [onNodeClick]);
 
-  // Zoom handling
   const handleZoomChange = useCallback((transform: ZoomTransform) => {
     setZoomLevel(transform.k);
   }, []);
@@ -172,8 +308,8 @@ export function SuperGridView({
         axes: dynamicAxes,
         density: densityConfig,
         pafv: {
-          x: `${currentXAxis}/${currentXFacet}`,
-          y: `${currentYAxis}/${currentYFacet}`
+          x: `${axisMappings.currentXAxis}/${axisMappings.currentXFacet}`,
+          y: `${axisMappings.currentYAxis}/${axisMappings.currentYFacet}`
         }
       });
     }
@@ -186,109 +322,39 @@ export function SuperGridView({
     showJanusDensity,
     dynamicAxes,
     densityConfig,
-    currentXAxis,
-    currentXFacet,
-    currentYAxis,
-    currentYFacet
+    axisMappings.currentXAxis,
+    axisMappings.currentXFacet,
+    axisMappings.currentYAxis,
+    axisMappings.currentYFacet
   ]);
 
-  // Loading state
-  if (primaryLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-600">
-          Loading SuperGrid with Super* features...
-        </div>
-      </div>
-    );
-  }
+  // Early returns for loading, error, and empty states
+  if (primaryLoading) return <LoadingState />;
+  if (primaryError) return <ErrorState error={primaryError} />;
+  if (!primaryNodes || primaryNodes.length === 0) return <EmptyState />;
 
-  // Error state
-  if (primaryError) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-red-600">
-          SuperGrid Error: {
-            typeof primaryError === 'string'
-              ? primaryError
-              : primaryError instanceof Error
-                ? primaryError.message
-                : 'Unknown error'
-          }
-        </div>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (!primaryNodes || primaryNodes.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-gray-400 text-center">
-          <div className="text-4xl mb-4">📊</div>
-          <div>No data found for SuperGrid</div>
-          <div className="text-sm mt-2">Connect a data source to begin</div>
-        </div>
-      </div>
-    );
-  }
-
-  // Legacy mode - use existing components
+  // Render mode-specific views
   if (renderMode === 'legacy') {
-    return (
-      <div className="w-full h-full relative">
-        <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-sm p-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-orange-500" />
-            <span>{primaryNodes?.length || 0} nodes</span>
-            <span className="text-gray-500">|</span>
-            <span>Legacy Mode</span>
-          </div>
-        </div>
-
-        <D3SparsityLayer
-          data={primaryNodes}
-          coordinateSystem={d3CoordinateSystem}
-          xAxis={currentXAxis}
-          xAxisFacet={currentXFacet}
-          yAxis={currentYAxis}
-          yAxisFacet={currentYFacet}
-          originPattern={originPattern}
-          onCellClick={handleCellClick}
-          onZoomChange={handleZoomChange}
-          width={window.innerWidth}
-          height={window.innerHeight}
-        />
-      </div>
-    );
+    return <LegacyModeView
+      nodes={primaryNodes}
+      d3CoordinateSystem={d3CoordinateSystem}
+      currentXAxis={axisMappings.currentXAxis}
+      currentXFacet={axisMappings.currentXFacet}
+      currentYAxis={axisMappings.currentYAxis}
+      currentYFacet={axisMappings.currentYFacet}
+      originPattern={originPattern}
+      onCellClick={handleCellClick}
+      onZoomChange={handleZoomChange}
+    />;
   }
 
-  // Canvas mode - use D3Canvas
   if (renderMode === 'canvas') {
-    return (
-      <div className="w-full h-full relative">
-        <div className="absolute top-4 left-4 z-10 bg-white rounded-lg shadow-sm p-2 text-xs">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span>{primaryNodes?.length || 0} nodes</span>
-            <span className="text-gray-500">|</span>
-            <span>D3 Canvas</span>
-          </div>
-        </div>
-
-        <D3Canvas
-          sql={sql}
-          queryParams={queryParams}
-          onNodeClick={handleCellClick}
-          className="w-full h-full"
-          enableZoom={true}
-          enableBrush={false}
-          renderMode="svg"
-          maxNodes={1000}
-          debounceMs={100}
-        />
-      </div>
-    );
+    return <CanvasModeView
+      nodes={primaryNodes}
+      sql={sql}
+      queryParams={queryParams}
+      onCellClick={handleCellClick}
+    />;
   }
 
   // SuperGrid mode - Full Super* feature integration

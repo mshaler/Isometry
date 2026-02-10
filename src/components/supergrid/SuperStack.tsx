@@ -196,59 +196,79 @@ export function SuperStack({
   );
 }
 
+// Helper functions for extracting node values by LATCH axis
+
+function extractLocationValue(node: Node, facet: string): string {
+  switch (facet) {
+    case 'location_name': return node.locationName || 'Unknown';
+    case 'latitude': return node.latitude?.toString() || '0';
+    case 'longitude': return node.longitude?.toString() || '0';
+    default: return node.locationName || 'Unknown';
+  }
+}
+
+function extractAlphabetValue(node: Node, facet: string): string {
+  switch (facet) {
+    case 'name': return node.name.charAt(0).toUpperCase();
+    case 'summary': return (node.summary || '').charAt(0).toUpperCase() || 'A';
+    default: return node.name.charAt(0).toUpperCase();
+  }
+}
+
+function extractTimeValue(node: Node, facet: string): string {
+  const date = new Date(node.createdAt);
+  switch (facet) {
+    case 'year': return date.getFullYear().toString();
+    case 'month': return date.toLocaleDateString('en-US', { month: 'long' });
+    case 'quarter': return `Q${Math.floor(date.getMonth() / 3) + 1}`;
+    case 'day': return date.toLocaleDateString('en-US', { weekday: 'long' });
+    default: return date.getFullYear().toString();
+  }
+}
+
+function extractCategoryValue(node: Node, facet: string): string {
+  switch (facet) {
+    case 'folder': return node.folder || 'Uncategorized';
+    case 'status': return node.status || 'None';
+    case 'tags': {
+      const tags = node.tags || [];
+      return Array.isArray(tags) && tags.length > 0 ? tags[0] : 'Untagged';
+    }
+    default: return node.folder || 'Uncategorized';
+  }
+}
+
+function extractHierarchyValue(node: Node, facet: string): string {
+  switch (facet) {
+    case 'priority': {
+      const p = node.priority || 0;
+      if (p >= 3) return 'High';
+      if (p >= 2) return 'Medium';
+      if (p >= 1) return 'Low';
+      return 'None';
+    }
+    case 'importance': {
+      const imp = node.importance || 0;
+      if (imp >= 3) return 'Critical';
+      if (imp >= 2) return 'Important';
+      if (imp >= 1) return 'Normal';
+      return 'Low';
+    }
+    default: return 'None';
+  }
+}
+
 /**
  * Extract value from node for given axis and facet
  * Maps LATCH axes to node properties
  */
 function extractNodeValue(node: Node, axis: LATCHAxis, facet: string): string {
   switch (axis) {
-    case 'location':
-      if (facet === 'location_name') return node.locationName || 'Unknown';
-      if (facet === 'latitude') return node.latitude?.toString() || '0';
-      if (facet === 'longitude') return node.longitude?.toString() || '0';
-      return node.locationName || 'Unknown';
-
-    case 'alphabet':
-      if (facet === 'name') return node.name.charAt(0).toUpperCase();
-      if (facet === 'summary') return (node.summary || '').charAt(0).toUpperCase() || 'A';
-      return node.name.charAt(0).toUpperCase();
-
-    case 'time': {
-      const date = new Date(node.createdAt);
-      if (facet === 'year') return date.getFullYear().toString();
-      if (facet === 'month') return date.toLocaleDateString('en-US', { month: 'long' });
-      if (facet === 'quarter') return `Q${Math.floor(date.getMonth() / 3) + 1}`;
-      if (facet === 'day') return date.toLocaleDateString('en-US', { weekday: 'long' });
-      return date.getFullYear().toString();
-    }
-
-    case 'category':
-      if (facet === 'folder') return node.folder || 'Uncategorized';
-      if (facet === 'status') return node.status || 'None';
-      if (facet === 'tags') {
-        const tags = node.tags || [];
-        return Array.isArray(tags) && tags.length > 0 ? tags[0] : 'Untagged';
-      }
-      return node.folder || 'Uncategorized';
-
-    case 'hierarchy':
-      if (facet === 'priority') {
-        const p = node.priority || 0;
-        if (p >= 3) return 'High';
-        if (p >= 2) return 'Medium';
-        if (p >= 1) return 'Low';
-        return 'None';
-      }
-      if (facet === 'importance') {
-        const imp = node.importance || 0;
-        if (imp >= 3) return 'Critical';
-        if (imp >= 2) return 'Important';
-        if (imp >= 1) return 'Normal';
-        return 'Low';
-      }
-      return 'None';
-
-    default:
-      return 'Unknown';
+    case 'location': return extractLocationValue(node, facet);
+    case 'alphabet': return extractAlphabetValue(node, facet);
+    case 'time': return extractTimeValue(node, facet);
+    case 'category': return extractCategoryValue(node, facet);
+    case 'hierarchy': return extractHierarchyValue(node, facet);
+    default: return 'Unknown';
   }
 }
