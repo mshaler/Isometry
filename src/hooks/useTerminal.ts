@@ -23,13 +23,25 @@ export interface UseTerminalOptions {
   onCommand?: (command: string) => void;
   onNavigateHistory?: (direction: 'up' | 'down') => string | null;
   onOutput?: (output: string) => void;
+  onCtrlR?: () => void;
+  onSearchInput?: (char: string) => void;
+  onExitSearch?: () => void;
+  isSearchMode?: boolean;
 }
 
 /**
  * Hook for managing terminal state and command execution with real WebSocket integration
  */
 export function useTerminal(options: UseTerminalOptions = {}) {
-  const { onCommand, onNavigateHistory, onOutput } = options;
+  const {
+    onCommand,
+    onNavigateHistory,
+    onOutput,
+    onCtrlR,
+    onSearchInput,
+    onExitSearch,
+    isSearchMode
+  } = options;
   const [state, setState] = useState<TerminalState>({
     commands: [],
     currentDirectory: '/Users/mshaler/Developer/Projects/Isometry',
@@ -91,13 +103,114 @@ export function useTerminal(options: UseTerminalOptions = {}) {
   }, []);
 
   /**
+   * Handle copy: if text is selected, copy to clipboard; otherwise send SIGINT
+   */
+  const handleCopy = useCallback(async (terminal: Terminal): Promise<boolean> => {
+    if (terminal.hasSelection()) {
+      const selectedText = terminal.getSelection();
+      try {
+        await navigator.clipboard.writeText(selectedText);
+        terminal.clearSelection();
+        return true; // Copied, don't send SIGINT
+      } catch (err) {
+        console.warn('Failed to copy to clipboard:', err);
+        return false;
+      }
+    }
+    return false; // No selection, allow SIGINT
+  }, []);
+
+  /**
+   * Handle paste: read from clipboard and write to terminal
+   */
+  const handlePaste = useCallback(async (terminal: Terminal): Promise<string | null> => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        // Write pasted text to terminal (filter out control characters)
+        const safeText = text.replace(/[\x00-\x1f]/g, '');
+        terminal.write(safeText);
+        return safeText;
+      }
+    } catch (err) {
+      console.warn('Failed to paste from clipboard:', err);
+    }
+    return null;
+  }, []);
+
+  /**
    * Set up terminal keyboard and interaction handlers
    */
   const setupTerminalInteractions = useCallback((terminal: Terminal) => {
     let currentLine = '';
     let cursorPosition = 0;
 
+    // Set up keyboard event listener for Cmd+C and Cmd+V
+    const container = terminal.element?.parentElement;
+    if (container) {
+      const handleKeydown = async (e: KeyboardEvent) => {
+        // Cmd+C (copy) - metaKey for Mac, ctrlKey for Windows/Linux
+        if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+          const copied = await handleCopy(terminal);
+          if (copied) {
+            e.preventDefault();
+          }
+          // If not copied (no selection), let the terminal handle Ctrl+C as SIGINT
+        }
+
+        // Cmd+V (paste) - metaKey for Mac, ctrlKey for Windows/Linux
+        if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+          e.preventDefault();
+          const pastedText = await handlePaste(terminal);
+          if (pastedText) {
+            currentLine = currentLine.slice(0, cursorPosition) + pastedText + currentLine.slice(cursorPosition);
+            cursorPosition += pastedText.length;
+            currentLineRef.current = currentLine;
+            cursorPositionRef.current = cursorPosition;
+          }
+        }
+      };
+
+      container.addEventListener('keydown', handleKeydown);
+
+      // Store cleanup reference
+      const originalDispose = terminal.dispose.bind(terminal);
+      terminal.dispose = () => {
+        container.removeEventListener('keydown', handleKeydown);
+        originalDispose();
+      };
+    }
+
     terminal.onData((data) => {
+      // Handle Ctrl+R for reverse search
+      if (data === '\x12') { // Ctrl+R
+        onCtrlR?.();
+        return;
+      }
+
+      // Handle Escape (exit search mode)
+      if (data === '\x1b' && isSearchMode) {
+        onExitSearch?.();
+        return;
+      }
+
+      // In search mode, handle input differently
+      if (isSearchMode) {
+        if (data === '\r') { // Enter - accept current match
+          onExitSearch?.();
+          return;
+        }
+        if (data === '\u007F') { // Backspace in search mode
+          onSearchInput?.('\x7F'); // Signal backspace
+          return;
+        }
+        if (data.length === 1 && data.charCodeAt(0) >= 32) {
+          onSearchInput?.(data);
+          return;
+        }
+        return;
+      }
+
       switch (data) {
         case '\r': // Enter
           if (currentLine.trim()) {
@@ -150,6 +263,14 @@ export function useTerminal(options: UseTerminalOptions = {}) {
           }
           break;
 
+        case '\x03': // Ctrl+C (when no selection - SIGINT)
+          // If we reach here, no text was selected (copy handler didn't prevent default)
+          terminal.writeln('^C');
+          currentLine = '';
+          cursorPosition = 0;
+          writePrompt(terminal);
+          break;
+
         default:
           // Handle regular character input
           if (data.length === 1 && data.charCodeAt(0) >= 32) {
@@ -163,7 +284,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
       currentLineRef.current = currentLine;
       cursorPositionRef.current = cursorPosition;
     });
-  }, [onCommand, onNavigateHistory]);
+  }, [onCommand, onNavigateHistory, onCtrlR, onSearchInput, onExitSearch, isSearchMode, handleCopy, handlePaste]);
 
   /**
    * Execute a command via WebSocket dispatcher
@@ -310,6 +431,9 @@ export function useTerminal(options: UseTerminalOptions = {}) {
     createTerminal,
     attachToProcess,
     resizeTerminal,
-    dispose
+    dispose,
+    handleCopy,
+    handlePaste,
+    terminalRef
   };
 }
