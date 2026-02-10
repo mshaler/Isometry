@@ -237,9 +237,12 @@ export class TestDatabaseManager {
     db.exec(`
       INSERT OR IGNORE INTO nodes (id, name, content, summary, folder, status, priority, importance, grid_x, grid_y, created_at) VALUES
         ('test-card-1', 'Test Card 1', 'This is test content for card 1', 'Test summary 1', 'work', 'active', 3, 3, 100, 100, '2024-01-15 10:00:00'),
-        ('test-card-2', 'Test Card 2', 'This is test content for card 2', 'Test summary 2', 'personal', 'completed', 5, 4, 200, 100, '2024-01-16 11:00:00'),
-        ('test-card-3', 'Test Card 3', 'This is test content for card 3', 'Test summary 3', 'work', 'in_progress', 1, 2, 100, 200, '2024-01-17 12:00:00'),
-        ('test-card-4', 'Test Card 4', 'This is test content for card 4', 'Test summary 4', 'projects', 'blocked', 4, 5, 200, 200, '2024-01-18 13:00:00');
+        ('test-card-2', 'Test Card 2', 'This is test content for card 2', 'Test summary 2',
+         'personal', 'completed', 5, 4, 200, 100, '2024-01-16 11:00:00'),
+        ('test-card-3', 'Test Card 3', 'This is test content for card 3', 'Test summary 3',
+         'work', 'in_progress', 1, 2, 100, 200, '2024-01-17 12:00:00'),
+        ('test-card-4', 'Test Card 4', 'This is test content for card 4', 'Test summary 4',
+         'projects', 'blocked', 4, 5, 200, 200, '2024-01-18 13:00:00');
     `);
 
     // Insert sample edges
