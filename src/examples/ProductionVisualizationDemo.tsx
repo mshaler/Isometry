@@ -24,6 +24,7 @@ import { useLiveData, useLiveDataMetrics } from '../hooks/database/useLiveData';
 import { useD3PerformanceWithMonitor } from '@/hooks';
 import { useTheme } from '../contexts/ThemeContext';
 import type { Node, Edge } from '../types';
+import { devLogger } from '../utils/logging';
 
 // Demo configuration interfaces
 interface DemoSection {
@@ -281,7 +282,11 @@ export function ProductionVisualizationDemo() {
     // Simulate rapid filter changes if enabled
     if (scenario.filterChanges) {
       // This would integrate with PAFV to change filters rapidly
-      console.log('Starting rapid filter changes for stress test');
+      devLogger.debug('ProductionDemo starting rapid filter changes for stress test', {
+        scenario: scenario.name,
+        duration: scenario.duration,
+        targetFPS: scenario.targetFPS
+      });
     }
 
     // Progress tracking
