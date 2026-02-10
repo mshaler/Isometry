@@ -39,15 +39,15 @@ class SimpleDevLogger implements DevLogger {
 
   debug(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`🔍 ${message}`, context || '');
+       
+      console.warn(`🔍 ${message}`, context || '');
     }
   }
 
   info(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('info')) {
-      // eslint-disable-next-line no-console
-      console.info(`ℹ️ ${message}`, context || '');
+       
+      console.warn(`ℹ️ ${message}`, context || '');
     }
   }
 
@@ -66,43 +66,43 @@ class SimpleDevLogger implements DevLogger {
   // Extended methods for D3 components (using debug level)
   data(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`📊 DATA: ${message}`, context || '');
+       
+      console.warn(`📊 DATA: ${message}`, context || '');
     }
   }
 
   metrics(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`📈 METRICS: ${message}`, context || '');
+       
+      console.warn(`📈 METRICS: ${message}`, context || '');
     }
   }
 
   setup(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`🔧 SETUP: ${message}`, context || '');
+       
+      console.warn(`🔧 SETUP: ${message}`, context || '');
     }
   }
 
   state(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`🔄 STATE: ${message}`, context || '');
+       
+      console.warn(`🔄 STATE: ${message}`, context || '');
     }
   }
 
   render(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`🎨 RENDER: ${message}`, context || '');
+       
+      console.warn(`🎨 RENDER: ${message}`, context || '');
     }
   }
 
   inspect(message: string, context?: LogContext): void {
     if (this.enabled && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-restricted-syntax
-      console.debug(`🔍 INSPECT: ${message}`, context || '');
+       
+      console.warn(`🔍 INSPECT: ${message}`, context || '');
     }
   }
 

@@ -69,7 +69,7 @@ export function useMarkdownEditor(initialContent = ''): MarkdownEditor {
         isDirty: false,
         lastSaved: new Date()
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       setState(prev => ({
         ...prev,
         error: error.message

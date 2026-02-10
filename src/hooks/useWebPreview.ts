@@ -54,7 +54,7 @@ export function useWebPreview(): WebPreview {
         content,
         lastUpdated: new Date()
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       setState(prev => ({
         ...prev,
         isLoading: false,

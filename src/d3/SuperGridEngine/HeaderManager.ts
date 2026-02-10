@@ -67,7 +67,7 @@ export class SuperGridHeaderManager {
   /**
    * Analyze hierarchy for Progressive Disclosure (migrated from SuperGridV4)
    */
-  analyzeHierarchyFromGridData(gridData: any): LevelGroup[] {
+  analyzeHierarchyFromGridData(gridData: unknown): LevelGroup[] {
     const levelGroups: LevelGroup[] = [];
     const totalNodes = gridData.cells.length;
 
@@ -104,7 +104,7 @@ export class SuperGridHeaderManager {
   /**
    * Apply Progressive Disclosure filtering (migrated from SuperGridV4)
    */
-  applyProgressiveDisclosureToGridData(gridData: any, progressiveState: ProgressiveState): any {
+  applyProgressiveDisclosureToGridData(gridData: unknown, progressiveState: ProgressiveState): unknown {
     // For now, return full data - progressive disclosure logic can be enhanced later
     // This would filter gridData.cells based on progressiveState.visibleLevels
     // and progressiveState.collapsedHeaders

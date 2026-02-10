@@ -48,8 +48,8 @@ const createMockDatabase = () => {
   };
 
   return {
-    exec: (query: string, params: any[] = []) => {
-      console.log('Mock DB Query:', query, params);
+    exec: (query: string, params: unknown[] = []) => {
+      console.warn('Mock DB Query:', query, params);
 
       if (query.includes('FROM facets')) {
         return [{
@@ -78,8 +78,8 @@ const createMockDatabase = () => {
 
       return [];
     },
-    run: (query: string, params: any[] = []) => {
-      console.log('Mock DB Write:', query, params);
+    run: (query: string, params: unknown[] = []) => {
+      console.warn('Mock DB Write:', query, params);
       return { changes: 1, lastInsertRowid: 1 };
     }
   };
@@ -89,7 +89,7 @@ interface DemoGridCell {
   id: string;
   x: number;
   y: number;
-  items: any[];
+  items: unknown[];
   xValue: string;
   yValue: string;
   zValue?: string;
@@ -216,7 +216,7 @@ export function SuperDynamicDemo() {
     setGridCells(Array.from(cellMap.values()));
   };
 
-  const getNodeValue = (node: any[], facet: string): string => {
+  const getNodeValue = (node: unknown[], facet: string): string => {
     const fieldIndex = {
       'folder': 2,
       'status': 3,

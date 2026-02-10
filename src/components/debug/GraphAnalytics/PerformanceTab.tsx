@@ -3,7 +3,7 @@
  */
 
 // PerformanceTab component - no React import needed with new JSX transform
-import type { TabComponentProps } from './types';
+import type { TabComponentProps, GraphMetrics } from './types';
 
 interface PerformanceTabProps extends TabComponentProps {
   chartData: Record<string, {
@@ -14,39 +14,50 @@ interface PerformanceTabProps extends TabComponentProps {
   clearAlerts: () => void;
 }
 
+// Type guard for GraphMetrics
+const isGraphMetrics = (obj: unknown): obj is GraphMetrics => {
+  return obj !== null &&
+         typeof obj === 'object' &&
+         'timestamp' in obj &&
+         'nodeCount' in obj &&
+         'edgeCount' in obj;
+};
+
 export function PerformanceTab({
   graphMetrics,
   state,
   chartData,
   clearAlerts
 }: PerformanceTabProps) {
+  const metrics = isGraphMetrics(graphMetrics) ? graphMetrics : null;
+
   return (
     <div className="space-y-4">
       {/* Key Metrics */}
-      {graphMetrics.performance && (
+      {metrics?.performance && (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
             <div className="text-gray-500 dark:text-gray-400">Avg Latency</div>
             <div className="font-medium">
-              {graphMetrics.performance.suggestionLatency.average.toFixed(1)}ms
+              {metrics.performance.suggestionLatency.average.toFixed(1)}ms
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
             <div className="text-gray-500 dark:text-gray-400">Cache Hit Rate</div>
             <div className="font-medium">
-              {(graphMetrics.performance.cacheHitRate.overall * 100).toFixed(1)}%
+              {(metrics.performance.cacheHitRate.overall * 100).toFixed(1)}%
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
             <div className="text-gray-500 dark:text-gray-400">Memory Usage</div>
             <div className="font-medium">
-              {graphMetrics.performance.memoryUsage.totalMB.toFixed(1)}MB
+              {metrics.performance.memoryUsage.totalMB.toFixed(1)}MB
             </div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
             <div className="text-gray-500 dark:text-gray-400">Throughput</div>
             <div className="font-medium">
-              {graphMetrics.performance.throughput.queriesPerSecond.toFixed(1)}/s
+              {metrics.performance.throughput.queriesPerSecond.toFixed(1)}/s
             </div>
           </div>
         </div>

@@ -176,8 +176,8 @@ export class ViewContinuum {
    */
   queryAndCache(
     sql: string,
-    parameters: any[] = [],
-    activeFilters: any[] = []
+    parameters: unknown[] = [],
+    activeFilters: unknown[] = []
   ): Node[] {
     const result = this.dataManager.queryAndCache(
       sql,
@@ -320,7 +320,7 @@ export class ViewContinuum {
     return mapping[viewType] || 'list';
   }
 
-  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): any {
+  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): unknown {
     const mapping = {
       'L': 'location',
       'A': 'alphabet',

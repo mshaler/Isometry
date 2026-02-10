@@ -237,7 +237,7 @@ export function discoverMarkdownFiles(kbPath: string = '/Users/mshaler/Developer
 /**
  * Convert MarkdownCard to SQL INSERT statement
  */
-export function cardToSQL(card: MarkdownCard): { sql: string; params: any[] } {
+export function cardToSQL(card: MarkdownCard): { sql: string; params: unknown[] } {
   const sql = `
     INSERT OR REPLACE INTO nodes (
       id, name, content, summary,

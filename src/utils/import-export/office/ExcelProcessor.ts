@@ -276,7 +276,7 @@ export class ExcelProcessor {
       const line = lines[i].trim();
 
       // Skip separator line (contains only |, -, and spaces)
-      if (line.match(/^[\|\s\-]+$/)) {
+      if (line.match(/^[|\s-]+$/)) {
         continue;
       }
 
@@ -337,7 +337,7 @@ export class ExcelProcessor {
    */
   private sanitizeSheetName(name: string): string {
     return name
-      .replace(/[\\\/\?\*\[\]]/g, '_') // Replace invalid chars
+      .replace(/[\\/?*[\]]/g, '_') // Replace invalid chars
       .slice(0, 31); // Excel sheet names max 31 chars
   }
 }

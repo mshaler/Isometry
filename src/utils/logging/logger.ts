@@ -103,11 +103,11 @@ class Logger {
           console.warn(prefix, message);
           break;
         case LogLevel.INFO:
-          console.info(prefix, message);
+          console.warn(prefix, message);
           break;
         case LogLevel.DEBUG:
         case LogLevel.TRACE:
-          console.log(prefix, message);
+          console.warn(prefix, message);
           break;
       }
     }

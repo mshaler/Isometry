@@ -267,7 +267,7 @@ export class SelectionManager {
         this.state.focusedId = this.state.selectedIds.values().next().value || null;
       }
 
-      console.log(`SelectionManager: Cleaned up ${invalidIds.length} invalid selections`);
+      console.warn(`SelectionManager: Cleaned up ${invalidIds.length} invalid selections`);
       this.notifySelectionChange();
     }
   }

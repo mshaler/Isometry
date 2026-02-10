@@ -7,7 +7,7 @@ export type { FTS5Result, FTS5SearchState } from './database/useFTS5Search';
 
 // Visualization hooks
 export { useD3, useResizeObserver } from './visualization/useD3';
-// Removed: useD3Canvas, useD3Visualization - these import contexts creating circular deps
+export { useD3Canvas } from './visualization/useD3Canvas';
 export { useD3Zoom } from './visualization/useD3Zoom';
 export { useGridCoordinates } from './visualization/useGridCoordinates';
 export { useCoordinates } from './visualization/useCoordinates';

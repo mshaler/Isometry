@@ -224,7 +224,7 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = (props) => {
     const logEntry = { time: new Date(), level, message };
 
     if (enableConsoleLogging) {
-      console.log(`[DataFlowMonitor] ${level.toUpperCase()}: ${message}`);
+      console.warn(`[DataFlowMonitor] ${level.toUpperCase()}: ${message}`);
     }
 
     setLogs(prev => {
@@ -255,7 +255,7 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = (props) => {
   }, [realTime, updateIntervalMs]);
 
   // Position styling
-  const getPositionStyle = () => {
+  const _getPositionStyle = () => {
     if (position === 'floating') {
       return 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2';
     }
@@ -425,7 +425,7 @@ const DataFlowMonitor: React.FC<DataFlowMonitorProps> = (props) => {
           Last sync: {globalState.lastSyncTime.toLocaleTimeString()}
         </div>
       )}
-    </div>
+    </MonitorContainer>
   );
 };
 

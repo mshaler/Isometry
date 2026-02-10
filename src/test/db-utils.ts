@@ -258,7 +258,7 @@ export class TestDatabaseManager {
       INSERT OR IGNORE INTO notebook_cards (id, node_id, card_type, markdown_content, properties) VALUES
         ('test-nb-1', 'test-card-1', 'capture', '# Test Notebook Card 1', '{"color": "blue"}'),
         ('test-nb-2', 'test-card-2', 'preview', '## Test Notebook Card 2', '{"pinned": true}'),
-        ('test-nb-3', 'test-card-3', 'shell', 'console.log("test");', '{"language": "javascript"}');
+        ('test-nb-3', 'test-card-3', 'shell', 'console.warn("test");', '{"language": "javascript"}');
     `);
 
     // Insert settings
@@ -396,7 +396,7 @@ export async function cleanupTestDB(db: Database): Promise<void> {
 /**
  * Execute a test query and return results in a more convenient format
  */
-export function execTestQuery(db: Database, sql: string, params?: any[]): any[] {
+export function execTestQuery(db: Database, sql: string, params?: unknown[]): unknown[] {
   const results = params ? db.exec(sql, params) : db.exec(sql);
 
   if (results.length === 0) {
@@ -405,7 +405,7 @@ export function execTestQuery(db: Database, sql: string, params?: any[]): any[] 
 
   const { columns, values } = results[0];
   return values.map(row => {
-    const obj: Record<string, any> = {};
+    const obj: Record<string, unknown> = {};
     columns.forEach((col, idx) => {
       obj[col] = row[idx];
     });
@@ -416,7 +416,7 @@ export function execTestQuery(db: Database, sql: string, params?: any[]): any[] 
 /**
  * Insert test data and return the affected row count
  */
-export function insertTestData(db: Database, sql: string, params?: any[]): number {
+export function insertTestData(db: Database, sql: string, params?: unknown[]): number {
   const stmt = params ? db.prepare(sql) : null;
 
   if (stmt && params) {

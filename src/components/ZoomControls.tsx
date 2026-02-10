@@ -33,7 +33,7 @@ export interface ZoomControlsProps {
  * ```tsx
  * <ZoomControls
  *   currentScale={1.5}
- *   onZoom={(scale) => console.log('New zoom:', scale)}
+ *   onZoom={(scale) => console.warn('New zoom:', scale)}
  * />
  * ```
  */

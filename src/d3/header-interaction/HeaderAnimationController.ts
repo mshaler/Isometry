@@ -215,7 +215,7 @@ export class HeaderAnimationController {
   private animateParentSpanChanges(parentNode: HeaderNode, transitionId: string): void {
     const parentElement = this.container
       .selectAll('.header-node')
-      .filter((d: any) => d.id === parentNode.id);
+      .filter((d: unknown) => d.id === parentNode.id);
 
     if (parentElement.empty()) return;
 
@@ -244,7 +244,7 @@ export class HeaderAnimationController {
     childNodes.forEach((childNode, index) => {
       const childElement = this.container
         .selectAll('.header-node')
-        .filter((d: any) => d.id === childNode.id);
+        .filter((d: unknown) => d.id === childNode.id);
 
       if (childElement.empty()) return;
 
@@ -268,7 +268,7 @@ export class HeaderAnimationController {
   private animateExpandIcon(node: HeaderNode, transitionId: string): void {
     const nodeElement = this.container
       .selectAll('.header-node')
-      .filter((d: any) => d.id === node.id);
+      .filter((d: unknown) => d.id === node.id);
 
     if (nodeElement.empty()) return;
 

@@ -18,14 +18,14 @@ interface TestResult {
   phase: string;
   success: boolean;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export function SQLiteP0GateTest() {
   const [results, setResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
   const svgRef = useRef<SVGSVGElement>(null);
-  const [database, setDatabase] = useState<any>(null);
+  const [database, setDatabase] = useState<Database | null>(null);
 
   const addResult = (result: TestResult) => {
     setResults(prev => [...prev, result]);
@@ -43,7 +43,7 @@ export function SQLiteP0GateTest() {
 
       const SQL = await initSqlJs({
         locateFile: (file: string) => {
-          console.log('Loading WASM:', file);
+          console.warn('Loading WASM:', file);
           return `/wasm/${file}`;
         }
       });
@@ -168,7 +168,7 @@ export function SQLiteP0GateTest() {
       }
 
       // Transform SQL result to D3-friendly format
-      const cards = cardsResult[0].values.map((row: any[]) => ({
+      const cards = cardsResult[0].values.map((row: unknown[]) => ({
         id: row[0],
         name: row[1],
         content: row[2],
@@ -185,7 +185,7 @@ export function SQLiteP0GateTest() {
 
         const cardGroups = svg
           .selectAll('.card')
-          .data(cards, (d: any) => d.id) // Key function for proper data binding
+          .data(cards, (d: unknown) => d.id) // Key function for proper data binding
           .join(
             enter => enter.append('g').attr('class', 'card'),
             update => update,
@@ -237,7 +237,7 @@ export function SQLiteP0GateTest() {
         message: '🎉 P0 GATE PASSED: sql.js + D3.js foundation ready for SuperGrid Phase 2!'
       });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       addResult({
         phase: 'ERROR',
         success: false,

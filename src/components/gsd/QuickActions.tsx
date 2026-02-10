@@ -45,7 +45,7 @@ const QUICK_ACTION_COMMANDS = [
   '/commit'
 ];
 
-const COMMAND_ICONS: Record<string, any> = {
+const COMMAND_ICONS: Record<string, unknown> = {
   '/start': PlayCircle,
   '/continue': Play,
   '/abort': Square,

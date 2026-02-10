@@ -288,7 +288,7 @@ export const DEFAULT_CARTOGRAPHIC_CONFIG: CartographicConfig = {
 
 // Type guards
 
-export const isCartographicConfig = (obj: any): obj is CartographicConfig => {
+export const isCartographicConfig = (obj: unknown): obj is CartographicConfig => {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -300,7 +300,7 @@ export const isCartographicConfig = (obj: any): obj is CartographicConfig => {
   );
 };
 
-export const isCartographicState = (obj: any): obj is CartographicState => {
+export const isCartographicState = (obj: unknown): obj is CartographicState => {
   return (
     typeof obj === 'object' &&
     obj !== null &&

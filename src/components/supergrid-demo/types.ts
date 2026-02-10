@@ -11,7 +11,7 @@ export interface FilterChipProps {
 }
 
 export interface SuperGridDemoState {
-  selectedCard: any | null;
+  selectedCard: unknown | null;
   isModalOpen: boolean;
   isModalLoading: boolean;
   activeFilters: LATCHFilter[];

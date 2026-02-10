@@ -40,7 +40,7 @@ export interface ResolutionDecision {
   strategy: 'manual_resolution' | 'field_level_merge' | 'keep_both_versions' | 'last_write_wins';
   selectedRecord?: 'local' | 'server';
   fieldChoices: Record<string, 'local' | 'server' | 'both' | string>; // field -> choice
-  customMerge?: Record<string, any>;
+  customMerge?: Record<string, unknown>;
 }
 
 /**

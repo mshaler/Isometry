@@ -65,7 +65,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       const svg = d3.select(svgRef.current);
 
       // Create SuperGrid instance - cast SVGSVGElement to SVGElement for compatibility
-      const grid = new SuperGridV4(svg as any, database, gridConfig, progressiveConfig);
+      const grid = new SuperGridV4(svg as d3.Selection<SVGElement, unknown, null, undefined>, database, gridConfig, progressiveConfig);
 
       // Set up callbacks
       grid.setCallbacks({
@@ -94,7 +94,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       superGridRef.current = grid;
       setIsInitialized(true);
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[SuperGrid] Initialization failed:', err);
       setError(err.message);
     } finally {
@@ -113,7 +113,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       setIsLoading(true);
       await superGridRef.current.loadData(newAxis.x, newAxis.y);
       setAvailableLevelGroups(superGridRef.current.getAvailableLevelGroups());
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
     } finally {
       setIsLoading(false);

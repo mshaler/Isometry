@@ -9,17 +9,17 @@ import { EnhancedSyncManager, type ConflictResolutionStrategy } from '../enhance
 import { type DataChange, type SyncConflict } from '../sync-manager';
 
 // Type declarations for test environment
-declare const jest: any;
-declare const describe: any;
-declare const beforeEach: any;
-declare const afterEach: any;
-declare const it: any;
-declare const expect: any;
+declare const jest: unknown;
+declare const describe: unknown;
+declare const beforeEach: unknown;
+declare const afterEach: unknown;
+declare const it: unknown;
+declare const expect: unknown;
 
 interface JestMock {
-  mockResolvedValue: (value: any) => JestMock;
-  mockRejectedValue: (value: any) => JestMock;
-  mockReturnValue: (value: any) => JestMock;
+  mockResolvedValue: (value: unknown) => JestMock;
+  mockRejectedValue: (value: unknown) => JestMock;
+  mockReturnValue: (value: unknown) => JestMock;
 }
 
 // Mock localStorage

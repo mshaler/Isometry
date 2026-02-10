@@ -16,10 +16,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as d3 from 'd3';
-import { SuperDynamicD3Engine, createSuperDynamicEngine, DEFAULT_SUPERDYNAMIC_CONFIG } from '../d3/SuperDynamic';
+import { SuperDynamicD3Engine, DEFAULT_SUPERDYNAMIC_CONFIG } from '../d3/SuperDynamic';
 import { createPAFVAxisService } from '../services/PAFVAxisService';
 import type { ViewAxisMapping } from '../types/views';
-import type { SuperDynamicConfig, DragState } from '../types/supergrid';
+import type { DragState } from '../types/supergrid';
 
 // Mock sql.js database
 const mockDatabase = {
@@ -30,7 +30,7 @@ const mockDatabase = {
 describe('SuperDynamic Axis Repositioning', () => {
   let container: HTMLElement;
   let engine: SuperDynamicD3Engine;
-  let axisService: any;
+  let axisService: unknown;
 
   beforeEach(() => {
     // Create test container
@@ -340,7 +340,7 @@ describe('SuperDynamic Axis Repositioning', () => {
     });
 
     it('should maintain 60fps during animations', async () => {
-      const frameCount = 30; // Half second at 60fps
+      // Half second at 60fps frame testing
       const targetFrameTime = 16.67; // 60fps = 16.67ms per frame
 
       const frameTimings: number[] = [];
@@ -453,7 +453,7 @@ describe('SuperDynamic Axis Repositioning', () => {
       const availableAxes = axisService.getAvailableAxes();
       expect(availableAxes).toHaveLength(6);
 
-      const folderAxis = availableAxes.find((a: any) => a.id === 'folder');
+      const folderAxis = availableAxes.find((a: unknown) => a.id === 'folder');
       expect(folderAxis).toMatchObject({
         id: 'folder',
         facet: 'folder',
@@ -559,7 +559,7 @@ describe('SuperDynamic Axis Repositioning', () => {
 });
 
 describe('PAFVAxisService', () => {
-  let axisService: any;
+  let axisService: unknown;
 
   beforeEach(() => {
     mockDatabase.exec.mockReturnValue([{
@@ -586,7 +586,7 @@ describe('PAFVAxisService', () => {
     const axes = axisService.getAvailableAxes();
     expect(axes).toHaveLength(3);
 
-    const folderAxis = axes.find((a: any) => a.id === 'folder');
+    const folderAxis = axes.find((a: unknown) => a.id === 'folder');
     expect(folderAxis).toMatchObject({
       id: 'folder',
       facet: 'folder',

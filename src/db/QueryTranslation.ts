@@ -438,7 +438,7 @@ export function translateQuery(sql: string, params: unknown[] = []): Translation
   const analysis = optimizer.analyzeQuery(sql, params);
 
   if (process.env.NODE_ENV === 'development') {
-    console.log('Query Analysis:', {
+    console.warn('Query Analysis:', {
       sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
       canOptimize: analysis.canOptimize,
       complexity: analysis.complexity,

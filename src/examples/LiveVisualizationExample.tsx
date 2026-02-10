@@ -78,7 +78,7 @@ export function LiveVisualizationExample() {
     setStressTest(prev => ({ ...prev, enabled: false }));
   }, []);
 
-  const updateStressTestOption = useCallback((key: keyof StressTestOptions, value: any) => {
+  const updateStressTestOption = useCallback((key: keyof StressTestOptions, value: unknown) => {
     setStressTest(prev => ({ ...prev, [key]: value }));
   }, []);
 

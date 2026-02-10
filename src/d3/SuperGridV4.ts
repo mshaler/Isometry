@@ -171,7 +171,7 @@ export class SuperGridV4 {
     }
   }
 
-  private transformSQLToGridData(sqlResult: any, xField: string, yField: string): GridData {
+  private transformSQLToGridData(sqlResult: unknown, xField: string, yField: string): GridData {
     const { columns, values } = sqlResult;
 
     // Map column indices
@@ -186,7 +186,7 @@ export class SuperGridV4 {
     };
 
     // Transform to cells array
-    const cells: GridCell[] = values.map((row: any[]) => {
+    const cells: GridCell[] = values.map((row: unknown[]) => {
       const cardIds = row[colIndices.cardIds]?.split(',') || [];
       const cardNames = row[colIndices.cardNames]?.split('|') || [];
 
@@ -208,8 +208,8 @@ export class SuperGridV4 {
     });
 
     // Build axis ranges
-    const xValues = [...new Set(values.map((row: any) => row[colIndices.x]))].sort();
-    const yValues = [...new Set(values.map((row: any) => row[colIndices.y]))].sort();
+    const xValues = [...new Set(values.map((row: unknown) => row[colIndices.x]))].sort();
+    const yValues = [...new Set(values.map((row: unknown) => row[colIndices.y]))].sort();
 
     const xAxisData: AxisData = {
       label: xField,
@@ -298,7 +298,7 @@ export class SuperGridV4 {
     this.progressiveState.availableLevelGroups = levelGroups;
   }
 
-  private calculateHierarchyDepth(values: any[]): number {
+  private calculateHierarchyDepth(values: unknown[]): number {
     // Simple heuristic - could be enhanced with proper hierarchy detection
     if (values.length <= 5) return 1;
     if (values.length <= 20) return 2;
@@ -351,14 +351,14 @@ export class SuperGridV4 {
     // Render cells with proper data binding
     const cellGroups = this.cellsGroup
       .selectAll<SVGGElement, GridCell>('.cell')
-      .data(cells || [], (d: any) => d.id); // Key function for proper data binding
+      .data(cells || [], (d: unknown) => d.id); // Key function for proper data binding
 
     // Enter + Update pattern
     const cellEnter = cellGroups
       .enter()
       .append('g')
       .attr('class', 'cell')
-      .attr('transform', (d: any) => {
+      .attr('transform', (d: unknown) => {
         const xAxisData = Array.isArray(xAxis) ? xAxis[0] : xAxis;
         const yAxisData = Array.isArray(yAxis) ? yAxis[0] : yAxis;
         const xValues = xAxisData?.values || [];
@@ -488,7 +488,7 @@ export class SuperGridV4 {
   private setupCellInteractivity(): void {
     this.cellsGroup
       .selectAll('.cell')
-      .on('click', (_event: any, d: any) => {
+      .on('click', (_event: unknown, d: unknown) => {
         const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
         const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
         const xValues = xAxisData?.values || [];
@@ -499,7 +499,7 @@ export class SuperGridV4 {
         };
         this.callbacks.onCellClick?.(d as GridCell, position);
       })
-      .on('mouseenter', (_event: any, d: any) => {
+      .on('mouseenter', (_event: unknown, d: unknown) => {
         const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
         const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
         const xValues = xAxisData?.values || [];

@@ -307,7 +307,7 @@ class ErrorReportingService {
 
     // Remove global reference
     interface WindowWithErrorReporting extends Window {
-      errorReporting?: any; // Use any to avoid interface compatibility issues
+      errorReporting?: unknown; // Use any to avoid interface compatibility issues
     }
     delete (window as WindowWithErrorReporting).errorReporting;
   }

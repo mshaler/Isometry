@@ -119,6 +119,16 @@ export function Canvas() {
     });
   }, []);
 
+  // Type guard for Node objects
+  const isNode = (obj: unknown): obj is Node => {
+    return obj !== null &&
+           typeof obj === 'object' &&
+           'id' in obj &&
+           'name' in obj &&
+           typeof (obj as Node).id === 'string' &&
+           typeof (obj as Node).name === 'string';
+  };
+
   // Map activeView to ViewType
   const mapActiveViewToViewType = useCallback((view: string): ViewType => {
     switch (view) {
@@ -176,10 +186,14 @@ export function Canvas() {
           : DEFAULT_VIEW_CONFIG.projection.color,
       },
       eventHandlers: {
-        onNodeClick: handleNodeClick,
-        onNodeHover: (node, position) => {
+        onNodeClick: (node: unknown, _position?: { x: number; y: number }) => {
+          if (isNode(node)) {
+            handleNodeClick(node);
+          }
+        },
+        onNodeHover: (node: unknown | null, position?: { x: number; y: number } | null) => {
           // Handle hover events if needed
-          if (node) {
+          if (node && isNode(node)) {
             devLogger.debug('Canvas node hover', {
               nodeName: node.name,
               position: { x: position?.x, y: position?.y }

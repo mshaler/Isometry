@@ -50,7 +50,7 @@ export function UnifiedApp() {
   // Development: Log conflict resolution state changes only
   React.useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('Conflict Resolution State Changed:', {
+      console.warn('Conflict Resolution State Changed:', {
         conflictCount: conflicts.length,
         hasUnresolvedConflicts,
         pendingConflictDiff: !!pendingConflictDiff,

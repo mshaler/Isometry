@@ -49,7 +49,7 @@ export interface SuperGridConfig {
 export interface SuperGridEventHandlers {
   onStateChange?: (state: SuperGridState) => void;
   onFeatureChange?: (feature: keyof SuperFeatureFlags, enabled: boolean) => void;
-  onPerformanceIssue?: (metrics: any) => void;
+  onPerformanceIssue?: (metrics: unknown) => void;
   onError?: (error: Error) => void;
 }
 
@@ -60,7 +60,7 @@ export interface InteractionContext {
   currentFeature: keyof SuperFeatureFlags | null;
   isInteracting: boolean;
   lastInteractionTime: number;
-  interactionData: any;
+  interactionData: unknown;
 }
 
 export class SuperGridEngine {
@@ -221,7 +221,7 @@ export class SuperGridEngine {
   /**
    * Get performance metrics
    */
-  public getPerformanceMetrics(): any {
+  public getPerformanceMetrics(): unknown {
     return {
       features: this.featureManager.getPerformanceMetrics(),
       state: this.stateManager.getState().performance,
@@ -236,7 +236,7 @@ export class SuperGridEngine {
   /**
    * Export configuration and state
    */
-  public exportConfiguration(): any {
+  public exportConfiguration(): unknown {
     return {
       features: this.featureManager.exportConfiguration(),
       state: this.stateManager.exportState(),
@@ -248,7 +248,7 @@ export class SuperGridEngine {
   /**
    * Import configuration and state
    */
-  public importConfiguration(configuration: any): void {
+  public importConfiguration(configuration: unknown): void {
     if (configuration.features) {
       this.featureManager.importConfiguration(configuration.features);
     }
@@ -391,7 +391,7 @@ export class SuperGridEngine {
   /**
    * Handle performance warnings
    */
-  private handlePerformanceWarning(feature: string, metrics: any): void {
+  private handlePerformanceWarning(feature: string, metrics: unknown): void {
     if (this.eventHandlers.onPerformanceIssue) {
       this.eventHandlers.onPerformanceIssue({ feature, metrics });
     }
@@ -402,7 +402,7 @@ export class SuperGridEngine {
   /**
    * Record performance metrics
    */
-  private recordPerformance(feature: string, metrics: any): void {
+  private recordPerformance(feature: string, metrics: unknown): void {
     if (this.config.performanceMonitoring) {
       this.featureManager.recordPerformance(feature, metrics);
     }
@@ -411,7 +411,7 @@ export class SuperGridEngine {
   /**
    * Check performance against thresholds
    */
-  private checkPerformanceThresholds(metrics: any): void {
+  private checkPerformanceThresholds(metrics: unknown): void {
     const thresholds = this.config.performanceThresholds;
 
     if (metrics.renderTime > thresholds.renderTime ||
@@ -424,13 +424,13 @@ export class SuperGridEngine {
   /**
    * Logging methods
    */
-  private logDebug(message: string, data?: any): void {
+  private logDebug(message: string, data?: unknown): void {
     if (this.config.logLevel === 'debug') {
-      console.log(`[SuperGrid] ${message}`, data);
+      console.warn(`[SuperGrid] ${message}`, data);
     }
   }
 
-  private logWarn(message: string, data?: any): void {
+  private logWarn(message: string, data?: unknown): void {
     if (['warn', 'info', 'debug'].includes(this.config.logLevel)) {
       console.warn(`[SuperGrid] ${message}`, data);
     }

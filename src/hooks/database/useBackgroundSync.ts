@@ -172,7 +172,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
    */
   const queueSync = useCallback((
     type: SyncOperationType,
-    data: any,
+    data: unknown,
     options: {
       priority?: SyncPriority
       userInitiated?: boolean
@@ -216,7 +216,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
    */
   const queueNodeSync = useCallback((
     operation: 'create' | 'update' | 'delete',
-    nodeData: any,
+    nodeData: unknown,
     options?: {
       priority?: SyncPriority
       userInitiated?: boolean
@@ -234,7 +234,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
    */
   const queueEdgeSync = useCallback((
     operation: 'create' | 'update' | 'delete',
-    edgeData: any,
+    edgeData: unknown,
     options?: {
       priority?: SyncPriority
       userInitiated?: boolean
@@ -251,7 +251,7 @@ export function useBackgroundSync(config: BackgroundSyncConfig = {}) {
    * Queue a batch of operations
    */
   const queueBatch = useCallback((
-    operations: Array<{ type: SyncOperationType; data: any }>,
+    operations: Array<{ type: SyncOperationType; data: unknown }>,
     options?: {
       priority?: SyncPriority
       userInitiated?: boolean
@@ -360,7 +360,7 @@ export function useSimpleBackgroundSync() {
 
   const queueOperation = useCallback((
     type: SyncOperationType,
-    data: any,
+    data: unknown,
     priority: SyncPriority = 'normal'
   ): string => {
     return syncQueue.enqueue({

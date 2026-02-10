@@ -19,14 +19,14 @@ export interface LATCHFilter {
   axis: 'L' | 'A' | 'T' | 'C' | 'H'; // LATCH axes
   facet: string; // Specific attribute (e.g., 'folder', 'status', 'created_at')
   operator: 'equals' | 'not_equals' | 'contains' | 'starts_with' | 'in_list' | 'range' | 'before' | 'after';
-  value: any; // Filter value(s)
+  value: unknown; // Filter value(s)
   label?: string; // Human-readable display label
   timestamp: number; // When filter was created
 }
 
 export interface FilterCompilationResult {
   whereClause: string;
-  parameters: any[];
+  parameters: unknown[];
   activeFilters: LATCHFilter[];
   isEmpty: boolean;
 }
@@ -48,7 +48,7 @@ export class LATCHFilterService {
   /**
    * Add a new filter or update existing filter with same ID
    */
-  addFilter(axis: LATCHFilter['axis'], facet: string, operator: LATCHFilter['operator'], value: any, label?: string): string {
+  addFilter(axis: LATCHFilter['axis'], facet: string, operator: LATCHFilter['operator'], value: unknown, label?: string): string {
     // Generate unique filter ID based on axis, facet, and operator
     const filterId = `${axis}-${facet}-${operator}-${this.hashValue(value)}`;
 
@@ -152,7 +152,7 @@ export class LATCHFilterService {
     }
 
     const conditions: string[] = ['deleted_at IS NULL']; // Always exclude soft-deleted
-    const parameters: any[] = [];
+    const parameters: unknown[] = [];
 
     // Group filters by axis for logical grouping
     const filtersByAxis = this.groupFiltersByAxis(activeFilters);
@@ -239,7 +239,7 @@ export class LATCHFilterService {
   /**
    * Compile Location (L) filters to SQL
    */
-  private compileLocationFilters(filters: LATCHFilter[], parameters: any[]): string {
+  private compileLocationFilters(filters: LATCHFilter[], parameters: unknown[]): string {
     const conditions: string[] = [];
 
     for (const filter of filters) {
@@ -267,7 +267,7 @@ export class LATCHFilterService {
   /**
    * Compile Alphabet (A) filters to SQL
    */
-  private compileAlphabetFilters(filters: LATCHFilter[], parameters: any[]): string {
+  private compileAlphabetFilters(filters: LATCHFilter[], parameters: unknown[]): string {
     const conditions: string[] = [];
 
     for (const filter of filters) {
@@ -286,7 +286,7 @@ export class LATCHFilterService {
   /**
    * Compile Time (T) filters to SQL
    */
-  private compileTimeFilters(filters: LATCHFilter[], parameters: any[]): string {
+  private compileTimeFilters(filters: LATCHFilter[], parameters: unknown[]): string {
     const conditions: string[] = [];
 
     for (const filter of filters) {
@@ -308,7 +308,7 @@ export class LATCHFilterService {
   /**
    * Compile Category (C) filters to SQL - most common for header clicks
    */
-  private compileCategoryFilters(filters: LATCHFilter[], parameters: any[]): string {
+  private compileCategoryFilters(filters: LATCHFilter[], parameters: unknown[]): string {
     const conditions: string[] = [];
 
     for (const filter of filters) {
@@ -327,7 +327,7 @@ export class LATCHFilterService {
   /**
    * Compile Hierarchy (H) filters to SQL
    */
-  private compileHierarchyFilters(filters: LATCHFilter[], parameters: any[]): string {
+  private compileHierarchyFilters(filters: LATCHFilter[], parameters: unknown[]): string {
     const conditions: string[] = [];
 
     for (const filter of filters) {
@@ -346,7 +346,7 @@ export class LATCHFilterService {
   /**
    * Compile individual facet condition with proper operator handling
    */
-  private compileFacetCondition(filter: LATCHFilter, parameters: any[]): string {
+  private compileFacetCondition(filter: LATCHFilter, parameters: unknown[]): string {
     const { facet, operator, value } = filter;
 
     switch (operator) {
@@ -398,7 +398,7 @@ export class LATCHFilterService {
   /**
    * Generate human-readable display label
    */
-  private generateDisplayLabel(axis: LATCHFilter['axis'], facet: string, operator: LATCHFilter['operator'], value: any): string {
+  private generateDisplayLabel(axis: LATCHFilter['axis'], facet: string, operator: LATCHFilter['operator'], value: unknown): string {
     const axisNames = { L: 'Location', A: 'Alphabet', T: 'Time', C: 'Category', H: 'Hierarchy' };
     const axisName = axisNames[axis];
 
@@ -422,7 +422,7 @@ export class LATCHFilterService {
   /**
    * Generate hash for filter value (for unique ID generation)
    */
-  private hashValue(value: any): string {
+  private hashValue(value: unknown): string {
     if (typeof value === 'string') {
       return value.toLowerCase().replace(/[^a-z0-9]/g, '');
     }

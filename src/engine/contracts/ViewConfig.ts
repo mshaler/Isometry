@@ -15,13 +15,13 @@ import type { PAFVProjection } from './PAFVProjection';
  */
 export interface ViewEventHandlers {
   /** Called when user clicks on a node/cell */
-  onNodeClick?: (node: any, position?: { x: number; y: number }) => void;
+  onNodeClick?: (node: unknown, position?: { x: number; y: number }) => void;
 
   /** Called when user hovers over a node/cell */
-  onNodeHover?: (node: any | null, position?: { x: number; y: number } | null) => void;
+  onNodeHover?: (node: unknown | null, position?: { x: number; y: number } | null) => void;
 
   /** Called when user selects multiple nodes */
-  onSelectionChange?: (nodes: any[]) => void;
+  onSelectionChange?: (nodes: unknown[]) => void;
 
   /** Called when user changes PAFV axis assignment via drag-drop */
   onAxisChange?: (axis: 'x' | 'y' | 'z', facet: string) => void;
@@ -30,7 +30,7 @@ export interface ViewEventHandlers {
   onViewportChange?: (transform: { x: number; y: number; scale: number }) => void;
 
   /** Called when view needs to update filters */
-  onFilterChange?: (filters: any[]) => void;
+  onFilterChange?: (filters: unknown[]) => void;
 }
 
 /**
@@ -270,7 +270,7 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
 /**
  * Type guard for ViewConfig validation
  */
-export const isViewConfig = (obj: any): obj is ViewConfig => {
+export const isViewConfig = (obj: unknown): obj is ViewConfig => {
   return obj &&
     typeof obj.viewType === 'string' &&
     obj.projection &&
@@ -285,7 +285,7 @@ export const isViewConfig = (obj: any): obj is ViewConfig => {
 /**
  * Type guard for LATCHFilter validation
  */
-export const isLATCHFilter = (obj: any): obj is LATCHFilter => {
+export const isLATCHFilter = (obj: unknown): obj is LATCHFilter => {
   return obj &&
     ['L', 'A', 'T', 'C', 'H'].includes(obj.axis) &&
     typeof obj.facet === 'string' &&

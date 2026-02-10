@@ -49,11 +49,11 @@ export class EnhancedSyncManager {
     return Promise.resolve({ connected: false });
   }
 
-  publishChange(_change: any): Promise<void> {
+  publishChange(_change: unknown): Promise<void> {
     return Promise.resolve();
   }
 
-  processOfflineChanges(_changes: any[]): Promise<any[]> {
+  processOfflineChanges(_changes: unknown[]): Promise<any[]> {
     return Promise.resolve([]);
   }
 

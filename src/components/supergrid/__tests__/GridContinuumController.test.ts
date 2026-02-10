@@ -204,7 +204,7 @@ describe('GridContinuumController', () => {
     });
 
     it('should emit transition events', () => {
-      let transitionEvent: any = null;
+      let transitionEvent: unknown = null;
       controller.onModeTransition((event) => {
         transitionEvent = event;
       });

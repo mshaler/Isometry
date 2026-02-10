@@ -602,7 +602,7 @@ describe('System Integration Performance Tests', () => {
             }
 
             const totalTime = performance.now() - startTime;
-            console.log(`10 rapid updates completed in ${totalTime.toFixed(2)}ms`);
+            console.warn(`10 rapid updates completed in ${totalTime.toFixed(2)}ms`);
           };
 
           rapidUpdates();

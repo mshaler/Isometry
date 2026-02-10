@@ -391,7 +391,7 @@ export class AutoSaveManager {
       if (this.hasPendingChanges) {
         // Modern browsers ignore custom messages, but setting returnValue triggers the dialog
         e.preventDefault();
-        // eslint-disable-next-line @typescript-eslint/no-deprecated
+         
         e.returnValue = '';
 
         // Attempt immediate save (may not complete before page closes)

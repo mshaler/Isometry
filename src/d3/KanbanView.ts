@@ -43,7 +43,7 @@ export class KanbanView implements ViewRenderer {
   // ViewRenderer Interface Implementation
   // ========================================================================
 
-  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void {
+  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: unknown[]): void {
     d3Logger.data('KanbanView.render()', {
       cardCount: cards.length,
       axisMapping,

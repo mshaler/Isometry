@@ -68,7 +68,7 @@ export function HeaderBar({ onSidebarToggle, sidebarCollapsed = false }: HeaderB
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement global search functionality
-    console.log('Search query:', searchQuery);
+    console.warn('Search query:', searchQuery);
   };
 
   const headerStyle = theme === 'NeXTSTEP'

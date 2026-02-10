@@ -180,7 +180,7 @@ export function SuperGridIntegrationDemo() {
 
     // Create adapter for SuperGrid
     const superGridAdapter = {
-      render: (cards: any[], _axisMapping: any, activeFilters: any[]) => {
+      render: (cards: unknown[], _axisMapping: unknown, activeFilters: unknown[]) => {
         const start = performance.now();
         superGridRenderer.updateCards(cards);
         superGridRenderer.render(activeFilters);

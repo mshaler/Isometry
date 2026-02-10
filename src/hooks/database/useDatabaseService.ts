@@ -50,8 +50,8 @@ export function useDatabaseService() {
     error: null,
 
     // DatabaseService-compatible interface
-    query: (sql: string, params: any[] = []) => execute(sql, params),
-    run: (sql: string, params: any[] = []) => run(sql, params),
+    query: (sql: string, params: unknown[] = []) => execute(sql, params),
+    run: (sql: string, params: unknown[] = []) => run(sql, params),
 
     // Additional methods SuperGrid needs
     isReady: () => !!db,
@@ -308,7 +308,7 @@ export function useDatabaseService() {
 
         // Convert results to Record<string, number>
         const columnWidths: Record<string, number> = {};
-        results.forEach((row: any) => {
+        results.forEach((row: unknown) => {
           const columnId = row.column_id as string;
           const width = row.width as number;
 
@@ -326,7 +326,7 @@ export function useDatabaseService() {
     },
 
     // Progressive disclosure state persistence methods
-    saveProgressiveState: (datasetId: string, appContext: string, state: any) => {
+    saveProgressiveState: (datasetId: string, appContext: string, state: unknown) => {
       try {
         // Create progressive_state table if not exists
         run(`
@@ -376,7 +376,7 @@ export function useDatabaseService() {
       }
     },
 
-    saveLevelVisibility: (datasetId: string, appContext: string, levelVisibility: any) => {
+    saveLevelVisibility: (datasetId: string, appContext: string, levelVisibility: unknown) => {
       try {
         // Create level_visibility table if not exists
         run(`

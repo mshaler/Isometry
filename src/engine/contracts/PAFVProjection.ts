@@ -287,13 +287,13 @@ export const PAFVProjectionUtils = {
 /**
  * Type guards for PAFV projection types
  */
-export const isPAFVProjection = (obj: any): obj is PAFVProjection => {
+export const isPAFVProjection = (obj: unknown): obj is PAFVProjection => {
   return obj &&
     obj.x && PAFVProjectionUtils.isValidPlaneAssignment(obj.x) &&
     obj.y && PAFVProjectionUtils.isValidPlaneAssignment(obj.y);
 };
 
-export const isPlaneAssignment = (obj: any): obj is PlaneAssignment => {
+export const isPlaneAssignment = (obj: unknown): obj is PlaneAssignment => {
   return obj &&
     typeof obj.axis === 'string' &&
     typeof obj.facet === 'string' &&

@@ -45,7 +45,7 @@ export interface JanusDensityControlsProps {
   /** Current density state */
   densityState: JanusDensityState;
   /** Callback for density changes */
-  onDensityChange: (level: DensityLevel, value: any) => Promise<void>;
+  onDensityChange: (level: DensityLevel, value: unknown) => Promise<void>;
   /** Performance metrics */
   performanceMetrics?: DensityPerformanceMetrics[];
   /** Available LATCH axes for granularity control */
@@ -96,7 +96,7 @@ export function JanusDensityControls({
   /**
    * Handle density level change with performance tracking
    */
-  const handleDensityChange = useCallback(async (level: DensityLevel, value: any) => {
+  const handleDensityChange = useCallback(async (level: DensityLevel, value: unknown) => {
     setIsChanging(true);
     try {
       await onDensityChange(level, value);

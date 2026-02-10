@@ -43,7 +43,7 @@ function TestComponent() {
         onClick={() => {
           try {
             const results = execute('SELECT COUNT(*) as count FROM nodes');
-            console.log('Query results:', results);
+            console.warn('Query results:', results);
           } catch (err) {
             console.error('Query failed:', err);
           }
@@ -93,7 +93,7 @@ describe('SQLiteProvider', () => {
   });
 
   it('should provide synchronous execute function', async () => {
-    const executeResults: any[] = [];
+    const executeResults: unknown[] = [];
 
     function TestExecuteComponent() {
       const { execute, loading } = useSQLite();

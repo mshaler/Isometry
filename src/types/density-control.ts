@@ -143,7 +143,7 @@ export interface DensityAggregationResult {
 export interface DensityAggregatedRow {
   position: { x: number; y: number };
   count: number;
-  values: { [field: string]: any };
+  values: { [field: string]: unknown };
   aggregations: { [functionId: string]: number };
   originalCards: string[]; // Card IDs that were aggregated
   metadata: {
@@ -198,7 +198,7 @@ export const DEFAULT_JANUS_DENSITY: JanusDensityState = {
 
 // Type guards
 
-export const isJanusDensityState = (obj: any): obj is JanusDensityState => {
+export const isJanusDensityState = (obj: unknown): obj is JanusDensityState => {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -209,7 +209,7 @@ export const isJanusDensityState = (obj: any): obj is JanusDensityState => {
   );
 };
 
-export const isDensityChangeEvent = (obj: any): obj is DensityChangeEvent => {
+export const isDensityChangeEvent = (obj: unknown): obj is DensityChangeEvent => {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -219,7 +219,7 @@ export const isDensityChangeEvent = (obj: any): obj is DensityChangeEvent => {
   );
 };
 
-export const isDensityAggregationResult = (obj: any): obj is DensityAggregationResult => {
+export const isDensityAggregationResult = (obj: unknown): obj is DensityAggregationResult => {
   return (
     typeof obj === 'object' &&
     obj !== null &&

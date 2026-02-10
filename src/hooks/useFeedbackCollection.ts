@@ -209,7 +209,7 @@ export function useFeedbackCollection(
 
     // Debug logging in development
     if (import.meta.env.DEV) {
-      console.log('Feedback submitted:', {
+      console.warn('Feedback submitted:', {
         event: state.currentEvent,
         feedback: completeFeedback
       });

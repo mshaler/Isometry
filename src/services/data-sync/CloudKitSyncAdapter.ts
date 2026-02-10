@@ -62,7 +62,7 @@ export interface SyncProgressEvent {
 
 // Bridge communication interface
 interface CloudKitBridge {
-  postMessage(message: any): void;
+  postMessage(message: unknown): void;
 }
 
 // Module augmentation to extend the existing WebKit interface
@@ -84,7 +84,7 @@ declare global {
 interface BridgeResponse {
   id: string;
   success: boolean;
-  result?: any;
+  result?: unknown;
   error?: string;
   timestamp: number;
   duration: number;
@@ -99,7 +99,7 @@ export class CloudKitSyncAdapter {
 
   // Request management
   private pendingRequests = new Map<string, {
-    resolve: (value: any) => void;
+    resolve: (value: unknown) => void;
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
   }>();
@@ -112,7 +112,7 @@ export class CloudKitSyncAdapter {
   } = { status: null, timestamp: 0, ttl: 2000 }; // 2-second TTL
 
   // Event listeners for real-time updates
-  private eventListeners = new Map<string, Set<(event: any) => void>>();
+  private eventListeners = new Map<string, Set<(event: unknown) => void>>();
 
   // Performance and throttling
   private readonly DEFAULT_TIMEOUT = 15000; // 15 seconds for sync operations
@@ -187,7 +187,7 @@ export class CloudKitSyncAdapter {
   /**
    * Send message to CloudKit bridge with promise-based response handling
    */
-  private async sendBridgeMessage<T>(method: string, params: any = {}): Promise<T> {
+  private async sendBridgeMessage<T>(method: string, params: unknown = {}): Promise<T> {
     if (!this.isBridgeAvailable()) {
       throw new Error('CloudKit bridge not available');
     }
@@ -222,7 +222,7 @@ export class CloudKitSyncAdapter {
   /**
    * Execute bridge message without debouncing
    */
-  private async executeBridgeMessage<T>(method: string, params: any): Promise<T> {
+  private async executeBridgeMessage<T>(method: string, params: unknown): Promise<T> {
     const requestId = `cloudkit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     return new Promise<T>((resolve, reject) => {
@@ -517,7 +517,7 @@ export class CloudKitSyncAdapter {
   /**
    * Add event listener for CloudKit sync events
    */
-  addEventListener(event: string, listener: (data: any) => void): void {
+  addEventListener(event: string, listener: (data: unknown) => void): void {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, new Set());
     }
@@ -527,7 +527,7 @@ export class CloudKitSyncAdapter {
   /**
    * Remove event listener
    */
-  removeEventListener(event: string, listener: (data: any) => void): void {
+  removeEventListener(event: string, listener: (data: unknown) => void): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.delete(listener);
@@ -540,7 +540,7 @@ export class CloudKitSyncAdapter {
   /**
    * Emit event to all listeners
    */
-  private emitEvent(event: string, data: any): void {
+  private emitEvent(event: string, data: unknown): void {
     const listeners = this.eventListeners.get(event);
     if (listeners) {
       listeners.forEach(listener => {

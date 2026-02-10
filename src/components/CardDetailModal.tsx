@@ -22,6 +22,44 @@ interface CardDetailModalProps {
   onDelete?: (cardId: string) => void;
 }
 
+interface CardFormFieldProps {
+  label: string;
+  editMode: boolean;
+  isLoading: boolean;
+  editValue: string | number;
+  displayValue: string;
+  onEdit: (value: string) => void;
+  type?: 'text' | 'textarea' | 'number';
+  placeholder?: string;
+  rows?: number;
+  min?: number;
+  max?: number;
+  displayClassName?: string;
+}
+
+interface CardFormSelectProps {
+  label: string;
+  editMode: boolean;
+  isLoading: boolean;
+  editValue: string;
+  displayValue: string;
+  onEdit: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}
+
+interface CardStatusFieldProps {
+  label: string;
+  editMode: boolean;
+  isLoading: boolean;
+  editValue: string;
+  displayValue: string;
+  onEdit: (value: string) => void;
+}
+
+interface CardMetadataProps {
+  card: CardData;
+}
+
 /**
  * Card Detail Modal - Shows rich card information and allows editing
  *
@@ -130,7 +168,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
               isLoading={isLoading}
               editValue={editedCard.name || ''}
               displayValue={card.name}
-              onEdit={(value) => setEditedCard(prev => ({ ...prev, name: value }))}
+              onEdit={(value: string) => setEditedCard(prev => ({ ...prev, name: value }))}
               type="text"
               placeholder="Card name"
               displayClassName="text-lg font-semibold text-gray-900"
@@ -143,7 +181,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                 isLoading={isLoading}
                 editValue={editedCard.folder || ''}
                 displayValue={card.folder || 'No folder'}
-                onEdit={(value) => setEditedCard(prev => ({ ...prev, folder: value || undefined }))}
+                onEdit={(value: string) => setEditedCard(prev => ({ ...prev, folder: value || undefined }))}
                 options={[
                   { value: '', label: 'No folder' },
                   { value: 'work', label: 'Work' },
@@ -159,7 +197,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                 isLoading={isLoading}
                 editValue={editedCard.status || ''}
                 displayValue={card.status}
-                onEdit={(value) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
+                onEdit={(value: string) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
               />
             </div>
 
@@ -170,7 +208,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                 isLoading={isLoading}
                 editValue={editedCard.priority || ''}
                 displayValue={card.priority || 'Not set'}
-                onEdit={(value) => setEditedCard(prev => ({
+                onEdit={(value: string) => setEditedCard(prev => ({
                   ...prev,
                   priority: value ? parseInt(value) : undefined
                 }))}
@@ -185,7 +223,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                 isLoading={isLoading}
                 editValue={editedCard.importance || ''}
                 displayValue={card.importance || 'Not set'}
-                onEdit={(value) => setEditedCard(prev => ({
+                onEdit={(value: string) => setEditedCard(prev => ({
                   ...prev,
                   importance: value ? parseInt(value) : undefined
                 }))}
@@ -201,7 +239,7 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
               isLoading={isLoading}
               editValue={editedCard.summary || ''}
               displayValue={card.summary || 'No summary'}
-              onEdit={(value) => setEditedCard(prev => ({ ...prev, summary: value || undefined }))}
+              onEdit={(value: string) => setEditedCard(prev => ({ ...prev, summary: value || undefined }))}
               type="textarea"
               placeholder="Card summary or description"
               rows={4}
@@ -364,7 +402,7 @@ function CardFormSelect({
           className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={isLoading}
         >
-          {options.map(option => (
+          {options.map((option: { value: string; label: string }) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -416,7 +454,7 @@ function CardStatusField({
           className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={isLoading}
         >
-          {statusOptions.map(option => (
+          {statusOptions.map((option: { value: string; label: string }) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>

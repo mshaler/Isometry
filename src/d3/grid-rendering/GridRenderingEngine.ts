@@ -77,7 +77,7 @@ export class GridRenderingEngine {
   /**
    * Main render method
    */
-  public render(activeFilters: any[] = []): void {
+  public render(activeFilters: unknown[] = []): void {
     this.setupGridStructure();
 
     if (!this.currentData) {
@@ -109,7 +109,7 @@ export class GridRenderingEngine {
   /**
    * Initialize header system with database service
    */
-  public initializeHeaders(database: any): void {
+  public initializeHeaders(database: unknown): void {
     if (this.config.enableHeaders && !this.isHeadersInitialized) {
       this.superGridHeaders = new SuperGridHeaders(
         this.container.select('.headers'),
@@ -255,7 +255,7 @@ export class GridRenderingEngine {
   /**
    * Render hierarchical headers
    */
-  private renderHierarchicalHeaders(activeFilters: any[] = []): void {
+  private renderHierarchicalHeaders(activeFilters: unknown[] = []): void {
     if (!this.config.enableHeaders || !this.currentData?.cards.length) {
       return;
     }
@@ -309,11 +309,11 @@ export class GridRenderingEngine {
   /**
    * Generate headers from card data
    */
-  private generateHeaders(cards: any[]): AxisData[] {
+  private generateHeaders(cards: unknown[]): AxisData[] {
     if (!this.config.enableHeaders) return [];
 
     // Group cards by status for header generation
-    const groups: { [key: string]: any[] } = {};
+    const groups: { [key: string]: unknown[] } = {};
     cards.forEach(card => {
       const status = card.status || 'Unknown';
       if (!groups[status]) groups[status] = [];
@@ -361,7 +361,7 @@ export class GridRenderingEngine {
     // Use D3's data join pattern
     const cardSelection = cardContainer
       .selectAll('.card')
-      .data(this.currentData.cards, (d: any) => d.id);
+      .data(this.currentData.cards, (d: unknown) => d.id);
 
     // Enter new cards
     const cardEnter = cardSelection

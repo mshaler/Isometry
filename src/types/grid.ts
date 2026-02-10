@@ -46,7 +46,7 @@ export interface D3CoordinateSystem {
   originY: number;
   cellWidth: number;
   cellHeight: number;
-  pattern?: any; // OriginPattern type
+  pattern?: unknown; // OriginPattern type
   scale?: number;
   viewportWidth?: number;
   viewportHeight?: number;
@@ -67,7 +67,7 @@ export interface HeaderNode {
   children: HeaderNode[];
   parent?: HeaderNode;
   parentId?: string;
-  data?: any;
+  data?: unknown;
 
   // Layout properties
   x: number;

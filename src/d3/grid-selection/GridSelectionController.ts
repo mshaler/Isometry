@@ -18,7 +18,7 @@ export interface SelectionControllerConfig {
 }
 
 export interface SelectionCallbackHandlers {
-  onCardClick?: (card: any) => void;
+  onCardClick?: (card: unknown) => void;
   onSelectionChange?: (selectedIds: string[]) => void;
   onFocusChange?: (focusedId: string | null) => void;
 }
@@ -73,7 +73,7 @@ export class GridSelectionController {
   /**
    * Handle card click events
    */
-  public handleCardClick(event: MouseEvent, cardData: any): void {
+  public handleCardClick(event: MouseEvent, cardData: unknown): void {
     // Don't process clicks during drag operations
     if ((event.target as any)?.isDragging) {
       return;
@@ -142,7 +142,7 @@ export class GridSelectionController {
   public updateCardSelectionVisuals(selectedIds: string[]): void {
     this.container
       .selectAll('.card')
-      .classed('selected', (d: any) => selectedIds.includes(d.id))
+      .classed('selected', (d: unknown) => selectedIds.includes(d.id))
       .classed('multi-selected', selectedIds.length > 1);
   }
 
@@ -152,7 +152,7 @@ export class GridSelectionController {
   public updateCardFocusVisuals(focusedId: string | null): void {
     this.container
       .selectAll('.card')
-      .classed('focused', (d: any) => d.id === focusedId);
+      .classed('focused', (d: unknown) => d.id === focusedId);
   }
 
   /**
@@ -333,7 +333,7 @@ export class GridSelectionController {
   /**
    * Find the next card in a given direction
    */
-  private findCardInDirection(currentId: string | null, axis: 'vertical' | 'horizontal', direction: number): any {
+  private findCardInDirection(currentId: string | null, axis: 'vertical' | 'horizontal', direction: number): unknown {
     if (!currentId || !this.currentData) return null;
 
     const cards = this.currentData.cards;

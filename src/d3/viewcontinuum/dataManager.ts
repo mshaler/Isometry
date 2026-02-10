@@ -13,7 +13,7 @@ import { devLogger as d3Logger } from '../../utils/logging/dev-logger';
 export class DataManager {
   private cachedCards: Node[] = [];
   private cachedQueryHash: string = '';
-  private lastActiveFilters: any[] = [];
+  private lastActiveFilters: unknown[] = [];
 
   constructor(
     private viewEngine: IsometryViewEngine,
@@ -25,11 +25,11 @@ export class DataManager {
    */
   public queryAndCache(
     sql: string,
-    parameters: any[] = [],
-    activeFilters: any[] = [],
+    parameters: unknown[] = [],
+    activeFilters: unknown[] = [],
     viewState: ViewState,
     currentViewConfig: ViewConfig | null,
-    createViewConfig: (viewType: any, axisMapping: ViewAxisMapping) => ViewConfig
+    createViewConfig: (viewType: unknown, axisMapping: ViewAxisMapping) => ViewConfig
   ): { results: Node[]; queryHash: string } {
     // Generate query hash for cache validation
     const queryHash = this.generateQueryHash(sql, parameters);
@@ -82,7 +82,7 @@ export class DataManager {
    */
   public reprojectCachedData(
     viewState: ViewState,
-    createViewConfig: (viewType: any, axisMapping: ViewAxisMapping) => ViewConfig
+    createViewConfig: (viewType: unknown, axisMapping: ViewAxisMapping) => ViewConfig
   ): ViewConfig | null {
     if (this.cachedCards.length === 0) {
       d3Logger.warn('DataManager reprojectCachedData: No cached data available');
@@ -118,7 +118,7 @@ export class DataManager {
   /**
    * Get last active filters
    */
-  public getLastActiveFilters(): any[] {
+  public getLastActiveFilters(): unknown[] {
     return [...this.lastActiveFilters];
   }
 
@@ -134,7 +134,7 @@ export class DataManager {
   /**
    * Generate query hash for cache validation
    */
-  private generateQueryHash(sql: string, parameters: any[]): string {
+  private generateQueryHash(sql: string, parameters: unknown[]): string {
     const combined = {
       sql,
       parameters,

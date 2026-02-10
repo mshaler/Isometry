@@ -364,8 +364,8 @@ function SuperGridCore({
  * SuperGridContent - The main grid content component
  */
 interface SuperGridContentProps {
-  gridLayout: any;
-  gridData: any;
+  gridLayout: unknown;
+  gridData: unknown;
   nodes: Node[];
 }
 
@@ -444,7 +444,7 @@ function SuperGridContent({ gridLayout, gridData, nodes }: SuperGridContentProps
                 ))
               ) : (
                 // Grid modes: cell-based layout
-                gridData.cells.map((cell: any) => (
+                gridData.cells.map((cell: unknown) => (
                   <div
                     key={cell.id}
                     className={`supergrid__cell ${

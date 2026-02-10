@@ -38,7 +38,7 @@ export interface CommandParameter {
   type: 'string' | 'number' | 'boolean' | 'file' | 'directory' | 'choice' | 'text';
   description: string;
   required: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   choices?: string[];
   placeholder?: string;
   validation?: {
@@ -52,7 +52,7 @@ export interface CommandParameter {
 
 export interface BuiltCommand {
   command: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   finalCommand: string;
   description: string;
 }
@@ -257,7 +257,7 @@ export function RichCommandBuilder({
   className
 }: RichCommandBuilderProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CommandTemplate | null>(null);
-  const [parameterValues, setParameterValues] = useState<Record<string, any>>({});
+  const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({});
   const [isBuilding, setIsBuilding] = useState(false);
   const [builtCommand, setBuiltCommand] = useState<BuiltCommand | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['development']));
@@ -298,7 +298,7 @@ export function RichCommandBuilder({
       const initialValues = selectedTemplate.parameters.reduce((values, param) => {
         values[param.name] = param.defaultValue ?? '';
         return values;
-      }, {} as Record<string, any>);
+      }, {} as Record<string, unknown>);
       setParameterValues(initialValues);
     } else {
       setParameterValues({});
@@ -315,7 +315,7 @@ export function RichCommandBuilder({
     }
   }, [selectedTemplate, parameterValues]);
 
-  const buildCommand = useCallback((template: CommandTemplate, values: Record<string, any>): BuiltCommand => {
+  const buildCommand = useCallback((template: CommandTemplate, values: Record<string, unknown>): BuiltCommand => {
     let finalCommand = template.command;
 
     // Replace parameter placeholders
@@ -335,7 +335,7 @@ export function RichCommandBuilder({
     };
   }, []);
 
-  const handleParameterChange = useCallback((paramName: string, value: any) => {
+  const handleParameterChange = useCallback((paramName: string, value: unknown) => {
     setParameterValues(prev => ({
       ...prev,
       [paramName]: value
@@ -385,7 +385,7 @@ export function RichCommandBuilder({
     });
   }, []);
 
-  const validateParameters = useCallback((template: CommandTemplate, values: Record<string, any>): string[] => {
+  const validateParameters = useCallback((template: CommandTemplate, values: Record<string, unknown>): string[] => {
     const errors: string[] = [];
 
     template.parameters.forEach(param => {

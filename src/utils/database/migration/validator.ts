@@ -4,7 +4,8 @@
  * Handles validation checks for migration safety
  */
 
-import type { DatabaseMode, ValidationDetail } from './types';
+import { DatabaseMode } from './types';
+import type { ValidationDetail } from './types';
 import { Environment } from '../../webview-bridge';
 
 export class MigrationValidationService {

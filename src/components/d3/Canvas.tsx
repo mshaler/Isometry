@@ -47,14 +47,14 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
   // Live data query
   const {
     data: nodes = [],
-    loading,
+    isLoading: loading,
     error: queryError
   } = useLiveQuery<Node>(sql, {
     params: queryParams,
     autoStart: true,
     enableCache: true,
     debounceMs,
-    onError: (err) => {
+    onError: (err: Error) => {
       console.error('[D3Canvas] Query error:', err);
       setError(`Query failed: ${err.message}`);
     }
@@ -149,8 +149,11 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     container: d3.Selection<SVGGElement, unknown, null, undefined>,
     nodeData: Node[]
   ) => {
+    // Type for nodes with position data
+    type PositionedNode = Node & { x?: number; y?: number };
+
     // Position nodes using a simple force simulation or grid layout
-    const simulation = d3.forceSimulation(nodeData as any)
+    const simulation = d3.forceSimulation(nodeData as PositionedNode[])
       .force('charge', d3.forceManyBody().strength(-30))
       .force('center', d3.forceCenter(dimensions.width / 2, dimensions.height / 2))
       .force('collision', d3.forceCollide().radius(20))
@@ -161,18 +164,18 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
 
     // Create node groups
     const nodeGroups = container
-      .selectAll<SVGGElement, Node>('.node')
-      .data(nodeData, (d) => d.id)
+      .selectAll<SVGGElement, PositionedNode>('.node')
+      .data(nodeData as PositionedNode[], (d) => d.id)
       .join(
         (enter) => {
           const group = enter.append('g')
             .attr('class', 'node')
-            .attr('transform', (d: any) => `translate(${d.x || 0}, ${d.y || 0})`);
+            .attr('transform', (d: PositionedNode) => `translate(${d.x || 0}, ${d.y || 0})`);
 
           // Add circle - use nodeType for color mapping
           group.append('circle')
             .attr('r', 0)
-            .attr('fill', (d) => {
+            .attr('fill', (d: PositionedNode) => {
               const colorMap: Record<string, string> = {
                 'note': '#3b82f6',
                 'task': '#ef4444',
@@ -199,7 +202,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
             .style('font-size', '10px')
             .style('font-weight', 'bold')
             .style('pointer-events', 'none')
-            .text((d) => d.name?.charAt(0) || '?');
+            .text((d: PositionedNode) => d.name?.charAt(0) || '?');
 
           // Add hover effects
           group
@@ -215,7 +218,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
                 .duration(150)
                 .attr('r', 8);
             })
-            .on('click', function(_event, d) {
+            .on('click', function(_event, d: PositionedNode) {
               if (onNodeClick) {
                 onNodeClick(d);
               }
@@ -227,7 +230,7 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
           update
             .transition()
             .duration(300)
-            .attr('transform', (d: any) => `translate(${d.x || 0}, ${d.y || 0})`);
+            .attr('transform', (d: PositionedNode) => `translate(${d.x || 0}, ${d.y || 0})`);
 
           return update;
         }
@@ -241,29 +244,33 @@ export const D3Canvas: React.FC<D3CanvasProps> = ({
     container: d3.Selection<SVGGElement, unknown, null, undefined>,
     nodeData: Node[]
   ) => {
+    // Type for positioned nodes
+    type PositionedNode = Node & { x?: number; y?: number };
+    type Connection = { source: PositionedNode; target: PositionedNode };
+
     // For now, just render random connections for demo
     // In practice, this would use edge data from the database
-    const connections: Array<{source: Node, target: Node}> = [];
+    const connections: Connection[] = [];
 
     // Create sample connections for visualization
     if (nodeData.length > 1) {
       for (let i = 0; i < Math.min(5, nodeData.length - 1); i++) {
         connections.push({
-          source: nodeData[i],
-          target: nodeData[i + 1]
+          source: nodeData[i] as PositionedNode,
+          target: nodeData[i + 1] as PositionedNode
         });
       }
     }
 
     container
-      .selectAll<SVGLineElement, typeof connections[0]>('.connection')
+      .selectAll<SVGLineElement, Connection>('.connection')
       .data(connections)
       .join('line')
       .attr('class', 'connection')
-      .attr('x1', (d: any) => d.source.x || 0)
-      .attr('y1', (d: any) => d.source.y || 0)
-      .attr('x2', (d: any) => d.target.x || 0)
-      .attr('y2', (d: any) => d.target.y || 0)
+      .attr('x1', (d: Connection) => d.source.x || 0)
+      .attr('y1', (d: Connection) => d.source.y || 0)
+      .attr('x2', (d: Connection) => d.target.x || 0)
+      .attr('y2', (d: Connection) => d.target.y || 0)
       .attr('stroke', '#94a3b8')
       .attr('stroke-width', 1)
       .attr('opacity', 0.6);

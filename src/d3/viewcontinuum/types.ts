@@ -14,7 +14,7 @@ import type {
  * Kept for backward compatibility during transition
  */
 export interface ViewRenderer {
-  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void;
+  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: unknown[]): void;
   getCardPositions(): Map<string, CardPosition>;
   scrollToCard(cardId: string): void;
   destroy(): void;
@@ -27,7 +27,7 @@ export interface ViewContinuumCallbacks {
   onViewChange?: (event: ViewTransitionEvent) => void;
   onSelectionChange?: (selectedIds: string[], focusedId: string | null) => void;
   onCardClick?: (card: Node) => void;
-  onFilterChange?: (filters: any[]) => void;
+  onFilterChange?: (filters: unknown[]) => void;
 }
 
 // Re-export CardPosition for external use

@@ -37,15 +37,15 @@ export const SuperZoomCartographicDemo: React.FC = () => {
       },
       {
         onZoomChange: (scale, state) => {
-          console.log('Zoom changed:', scale);
+          console.warn('Zoom changed:', scale);
           setState({ ...state });
         },
         onPanChange: (x, y, state) => {
-          console.log('Pan changed:', x, y);
+          console.warn('Pan changed:', x, y);
           setState({ ...state });
         },
         onBoundaryHit: (boundary, _state) => {
-          console.log('Hit boundary:', boundary);
+          console.warn('Hit boundary:', boundary);
         }
       }
     );

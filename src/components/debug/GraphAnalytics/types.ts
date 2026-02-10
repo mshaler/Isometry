@@ -68,9 +68,36 @@ export interface CacheBreakdown {
   efficiency: number;
 }
 
+export interface GraphPerformanceMetrics {
+  suggestionLatency: {
+    average: number;
+    min: number;
+    max: number;
+  };
+  cacheHitRate: {
+    overall: number;
+    recent: number;
+  };
+  memoryUsage: {
+    totalMB: number;
+    peakMB: number;
+  };
+  throughput: {
+    queriesPerSecond: number;
+    suggestionsPerSecond: number;
+  };
+}
+
+export interface GraphMetrics {
+  performance?: GraphPerformanceMetrics;
+  timestamp: number;
+  nodeCount: number;
+  edgeCount: number;
+}
+
 export interface TabComponentProps {
-  graphMetrics: any;
-  debugInfo: any;
+  graphMetrics: unknown;
+  debugInfo: unknown;
   state: DebugPanelState;
   setState: (updater: (prev: DebugPanelState) => DebugPanelState) => void;
 }

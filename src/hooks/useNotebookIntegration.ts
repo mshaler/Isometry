@@ -4,7 +4,7 @@ export interface NotebookCard {
   id: string;
   content: string;
   type: 'capture' | 'shell' | 'preview';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   created_at: Date;
   updated_at: Date;
 }
@@ -43,7 +43,7 @@ export function useNotebookIntegration(): NotebookIntegration {
 
       setCards(prev => [...prev, newCard]);
       return newCard.id;
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
       throw err;
     } finally {
@@ -63,7 +63,7 @@ export function useNotebookIntegration(): NotebookIntegration {
             : card
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
       throw err;
     } finally {
@@ -77,7 +77,7 @@ export function useNotebookIntegration(): NotebookIntegration {
 
     try {
       setCards(prev => prev.filter(card => card.id !== id));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(err.message);
       throw err;
     } finally {

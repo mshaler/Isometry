@@ -5,7 +5,7 @@ import './SuperAudit.css';
 export interface CellState {
   id: string;
   type: 'raw' | 'computed' | 'enriched' | 'crud_created' | 'crud_modified' | 'crud_deleted';
-  value: any;
+  value: unknown;
   formula?: string;
   source?: string;
   crudOperation?: 'CREATE' | 'UPDATE' | 'DELETE';

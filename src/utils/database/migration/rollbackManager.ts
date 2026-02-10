@@ -31,7 +31,7 @@ export class RollbackManager {
       let performanceRestored = false;
 
       switch (strategy.type) {
-        case 'checkpoint-restore':
+        case 'checkpoint-restore': {
           const restoreResult = await onRestoreFromCheckpoint(scenario);
           dataPreserved = restoreResult.dataRestored;
           performanceRestored = restoreResult.success;
@@ -39,8 +39,9 @@ export class RollbackManager {
             errors.push(...restoreResult.errors);
           }
           break;
+        }
 
-        case 'provider-switch':
+        case 'provider-switch': {
           const switchResult = await this.switchProvider(scenario);
           dataPreserved = switchResult.success;
           performanceRestored = await this.validatePerformanceAfterSwitch(scenario.targetProvider!);
@@ -48,8 +49,9 @@ export class RollbackManager {
             errors.push(...switchResult.errors);
           }
           break;
+        }
 
-        case 'data-restore':
+        case 'data-restore': {
           const dataResult = await this.restoreDataOnly(scenario);
           dataPreserved = dataResult.success;
           performanceRestored = true; // Data restore doesn't affect performance directly
@@ -57,8 +59,9 @@ export class RollbackManager {
             errors.push(...dataResult.errors);
           }
           break;
+        }
 
-        case 'configuration-reset':
+        case 'configuration-reset': {
           const configResult = await this.resetConfiguration(scenario);
           dataPreserved = true; // Configuration reset preserves data
           performanceRestored = await this.validatePerformanceAfterReset();
@@ -66,6 +69,7 @@ export class RollbackManager {
             errors.push(...configResult.errors);
           }
           break;
+        }
       }
 
       const duration = Date.now() - startTime;

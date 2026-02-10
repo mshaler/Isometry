@@ -29,7 +29,7 @@ export interface ConnectionMetrics {
 export interface ConnectionEvent {
   type: 'connected' | 'disconnected' | 'reconnecting' | 'error' | 'quality_changed';
   timestamp: Date;
-  data?: any;
+  data?: unknown;
   error?: Error;
 }
 
@@ -75,8 +75,8 @@ export interface ConnectionManager {
   stopMonitoring(): void;
   
   // Event handling
-  on(event: string, handler: (data: any) => void): () => void;
-  emit(event: string, data?: any): void;
+  on(event: string, handler: (data: unknown) => void): () => void;
+  emit(event: string, data?: unknown): void;
   
   // Quality management
   updateQuality(metrics: Partial<ConnectionQuality>): void;

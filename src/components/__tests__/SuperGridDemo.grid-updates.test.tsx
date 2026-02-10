@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock SuperGrid
@@ -57,7 +57,7 @@ describe('SuperGridDemo Grid Updates', () => {
 
   it('shows operation in progress indicator during save', async () => {
     // Mock a card click to open modal
-    const mockCardClick = vi.fn();
+    // const _mockCardClick = vi.fn(); // Reserved for future tests
 
     render(<SuperGridDemo />);
 

@@ -133,7 +133,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   }, [gridData, generateCellStates]);
 
   // SuperGrid event handlers
-  const handleCardClick = useCallback((card: any) => {
+  const handleCardClick = useCallback((card: unknown) => {
     superGridLogger.debug('Card clicked:', { card });
   }, []);
 
@@ -141,7 +141,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
     superGridLogger.debug('Selection changed:', { selectedIds, focusedId });
   }, []);
 
-  const handleCardUpdate = useCallback((card: any) => {
+  const handleCardUpdate = useCallback((card: unknown) => {
     superGridLogger.debug('Card updated:', { card });
 
     // Update cell state to reflect CRUD operation
@@ -152,7 +152,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
     ));
   }, []);
 
-  const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
+  const handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
     superGridLogger.debug('Header clicked:', { axis, facet, value });
   }, []);
 
@@ -249,7 +249,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   }, [cellStates]);
 
   // SuperCalc handlers
-  const handleFormulaExecute = useCallback((formula: string, result: any) => {
+  const handleFormulaExecute = useCallback((formula: string, result: unknown) => {
     superGridLogger.debug('Formula executed:', { formula, result });
 
     // Add computed cells to audit tracking

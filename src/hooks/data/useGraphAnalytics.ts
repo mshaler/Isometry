@@ -509,7 +509,7 @@ interface GraphAnalyticsDebugInfo {
     memoryUsageTrend?: number[];
     throughputTrend?: number[];
   };
-  errorLogs: any[];
+  errorLogs: unknown[];
   operationsInFlight: number;
 }
 

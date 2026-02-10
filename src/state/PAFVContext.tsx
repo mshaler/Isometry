@@ -10,8 +10,8 @@ import { PAFVContext, type PAFVContextValue } from '../hooks/data/usePAFV';
 
 // Stub implementation for bridge elimination
 const pafvBridge = {
-  dispose: () => { console.log('Bridge eliminated: pafvBridge.dispose'); },
-  sendAxisMappingUpdate: (state: any) => { console.log('Bridge eliminated: pafvBridge.sendAxisMappingUpdate', state); }
+  dispose: () => { console.warn('Bridge eliminated: pafvBridge.dispose'); },
+  sendAxisMappingUpdate: (state: unknown) => { console.warn('Bridge eliminated: pafvBridge.sendAxisMappingUpdate', state); }
 };
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {

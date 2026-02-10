@@ -40,7 +40,7 @@ export interface MiniNavEnhancedProps {
   axisMapping: ViewAxisMapping;
 
   /** sql.js database instance for persistence */
-  database?: any;
+  database?: unknown;
 
   /** Canvas/dataset ID for scoped persistence */
   canvasId: string;
@@ -98,8 +98,8 @@ export function MiniNavEnhanced({
   onReflowComplete
 }: MiniNavEnhancedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const superDynamicEngine = useRef<any>(null);
-  const axisService = useRef<any>(null);
+  const superDynamicEngine = useRef<SuperDynamicD3Engine | null>(null);
+  const axisService = useRef<PAFVAxisService | null>(null);
 
   const [availableAxes, setAvailableAxes] = useState<AvailableAxis[]>([]);
   const [stagingAxes, setStagingAxes] = useState<AvailableAxis[]>([]);
@@ -160,7 +160,7 @@ export function MiniNavEnhanced({
         axisMapping.zAxis?.facet
       ].filter(Boolean));
 
-      const mappedAxes = axes.map((axis: any) => ({
+      const mappedAxes = axes.map((axis: unknown) => ({
         ...axis,
         isInUse: assignedFacets.has(axis.facet)
       }));

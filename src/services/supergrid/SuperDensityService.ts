@@ -86,7 +86,7 @@ export class SuperDensityService {
   /**
    * Set density state for specific level
    */
-  async setDensity(level: DensityLevel, value: any): Promise<DensityChangeEvent> {
+  async setDensity(level: DensityLevel, value: unknown): Promise<DensityChangeEvent> {
     const startTime = performance.now();
     const previousState = { ...this.currentState };
 
@@ -531,7 +531,7 @@ export class SuperDensityService {
   /**
    * Process raw SQL results into aggregated rows
    */
-  private processAggregationResults(rawResults: any[]): DensityAggregatedRow[] {
+  private processAggregationResults(rawResults: unknown[]): DensityAggregatedRow[] {
     return rawResults.map((row, index) => ({
       cellId: this.generateCellId(row, index),
       value: row.count || row.id || row.name,
@@ -547,7 +547,7 @@ export class SuperDensityService {
   /**
    * Generate unique cell ID for aggregated row
    */
-  private generateCellId(row: any, index: number): string {
+  private generateCellId(row: unknown, index: number): string {
     const keyParts = [];
 
     for (const key of Object.keys(row)) {
@@ -564,7 +564,7 @@ export class SuperDensityService {
   /**
    * Format display value for aggregated row
    */
-  private formatDisplayValue(row: any): string {
+  private formatDisplayValue(row: unknown): string {
     if (this.currentState.valueDensity === 'leaf') {
       return row.name || row.id || 'Untitled';
     } else {
@@ -581,7 +581,7 @@ export class SuperDensityService {
   /**
    * Generate LATCH dimension path for row
    */
-  private generateDimensionPath(row: any): string {
+  private generateDimensionPath(row: unknown): string {
     const pathParts: string[] = [];
 
     // Extract dimension values based on aggregation columns

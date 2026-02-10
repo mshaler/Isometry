@@ -66,7 +66,7 @@ export interface DataSnapshot {
 }
 
 export interface ConfigurationSnapshot {
-  settings: Record<string, any>;
+  settings: Record<string, unknown>;
   environment: string;
   version: string;
 }
@@ -97,5 +97,5 @@ export interface RollbackScenario {
   preserveData: boolean;
   timeConstraint?: number; // Maximum rollback duration in ms
   userConfirmed: boolean;
-  additionalContext?: Record<string, any>;
+  additionalContext?: Record<string, unknown>;
 }

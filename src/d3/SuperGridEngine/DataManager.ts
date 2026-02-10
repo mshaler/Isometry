@@ -20,13 +20,13 @@ export class SuperGridDataManager {
   /**
    * Transform SQL results to Node array
    */
-  transformSQLToNodes(sqlResult: any): Node[] {
+  transformSQLToNodes(sqlResult: unknown): Node[] {
     if (!sqlResult || !sqlResult.values || sqlResult.values.length === 0) {
       return [];
     }
 
     const columns = sqlResult.columns;
-    return sqlResult.values.map((row: any[], index: number) => {
+    return sqlResult.values.map((row: unknown[], index: number) => {
       const node: Node = {
         id: String(row[0] || `node_${index}`),
         name: String(row[columns.indexOf('name')] || `Node ${index}`),
@@ -126,7 +126,7 @@ export class SuperGridDataManager {
   /**
    * Transform SQL results to GridData format (migrated from SuperGridV4)
    */
-  private transformSQLToGridData(sqlResult: any, xField: string, yField: string, startTime: number): any {
+  private transformSQLToGridData(sqlResult: unknown, xField: string, yField: string, startTime: number): unknown {
     const { columns, values } = sqlResult;
 
     // Map column indices
@@ -141,7 +141,7 @@ export class SuperGridDataManager {
     };
 
     // Transform to cells array using SuperGridV4 format
-    const cells = values.map((row: any[]) => {
+    const cells = values.map((row: unknown[]) => {
       const cardIds = row[colIndices.cardIds]?.split(',') || [];
       const cardNames = row[colIndices.cardNames]?.split('|') || [];
 
@@ -165,8 +165,8 @@ export class SuperGridDataManager {
     });
 
     // Build axis ranges
-    const xValues = [...new Set(values.map((row: any) => row[colIndices.x]))].sort();
-    const yValues = [...new Set(values.map((row: any) => row[colIndices.y]))].sort();
+    const xValues = [...new Set(values.map((row: unknown) => row[colIndices.x]))].sort();
+    const yValues = [...new Set(values.map((row: unknown) => row[colIndices.y]))].sort();
 
     return {
       cells,
@@ -174,7 +174,7 @@ export class SuperGridDataManager {
       yAxis: { field: yField, values: yValues, type: 'categorical', range: { min: 0, max: yValues.length - 1 } },
       metadata: {
         totalCells: cells.length,
-        totalCards: cells.reduce((sum: number, cell: any) => sum + cell.cards.length, 0),
+        totalCards: cells.reduce((sum: number, cell: unknown) => sum + cell.cards.length, 0),
         queryTime: performance.now() - startTime
       }
     };
@@ -183,7 +183,9 @@ export class SuperGridDataManager {
   /**
    * Calculate grid dimensions from current cells
    */
-  calculateGridDimensions(currentCells: CellDescriptor[], headerMinWidth: number, headerMinHeight: number): GridDimensions {
+  calculateGridDimensions(
+    currentCells: CellDescriptor[], headerMinWidth: number, headerMinHeight: number
+  ): GridDimensions {
     const maxX = Math.max(0, ...currentCells.map(c => c.gridX));
     const maxY = Math.max(0, ...currentCells.map(c => c.gridY));
 
@@ -202,14 +204,14 @@ export class SuperGridDataManager {
   /**
    * Convert GridData to engine format
    */
-  convertGridDataToCells(gridData: any): CellDescriptor[] {
-    return gridData.cells.map((cell: any) => ({
+  convertGridDataToCells(gridData: unknown): CellDescriptor[] {
+    return gridData.cells.map((cell: unknown) => ({
       id: cell.id,
       gridX: gridData.xAxis.values.indexOf(cell.x),
       gridY: gridData.yAxis.values.indexOf(cell.y),
       xValue: String(cell.x),
       yValue: String(cell.y),
-      nodeIds: cell.cards.map((c: any) => c.id),
+      nodeIds: cell.cards.map((c: unknown) => c.id),
       nodeCount: cell.cards.length,
       aggregateData: {
         avgPriority: cell.metadata?.avgPriority || 0,

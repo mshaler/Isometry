@@ -33,7 +33,7 @@ export function SuperGridDemo() {
   // Core component references
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
   const [viewContinuum, setViewContinuum] = useState<ViewContinuum | null>(null);
-  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);

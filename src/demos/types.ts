@@ -16,7 +16,7 @@ export interface PerformanceMetrics {
     feature: string;
     timestamp: number;
     duration: number;
-    data?: any;
+    data?: unknown;
   }>;
 }
 
@@ -28,7 +28,7 @@ export interface FilterChipProps {
 // Demo component state
 export interface DemoState {
   // Core state
-  selectedCard: any | null;
+  selectedCard: unknown | null;
   isModalOpen: boolean;
   isModalLoading: boolean;
   selectedCards: string[];
@@ -49,13 +49,13 @@ export interface DemoState {
 // Demo component callbacks
 export interface DemoCallbacks {
   // Performance
-  trackFeatureUsage: (feature: string, data?: any) => void;
+  trackFeatureUsage: (feature: string, data?: unknown) => void;
   updateFrameRate: (fps: number) => void;
 
   // Core SuperGrid
-  handleCardClick: (card: any) => void;
+  handleCardClick: (card: unknown) => void;
   handleSelectionChange: (selectedIds: string[], focusedId: string | null) => void;
-  handleHeaderClick: (axis: string, facet: string, value: any) => void;
+  handleHeaderClick: (axis: string, facet: string, value: unknown) => void;
 
   // SuperStack (Progressive Disclosure)
   handleLevelTabChange: (tabIndex: number) => void;

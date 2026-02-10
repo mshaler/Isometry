@@ -63,7 +63,7 @@ export async function runPerformanceValidation(
     uiResponsiveness: 60
   };
 
-  let metrics = [];
+  const metrics = [];
 
   // Run basic performance validation
   const genericResults = await validateGenericPerformance(provider);

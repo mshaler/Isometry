@@ -111,7 +111,7 @@ export class GridDragDropController {
   public getCardPositions(): Map<string, CardPosition> {
     const positions = new Map<string, CardPosition>();
 
-    this.container.selectAll('.card').each(function(d: any) {
+    this.container.selectAll('.card').each(function(d: unknown) {
       const transform = d3.select(this).attr('transform');
       const match = transform?.match(/translate\(([^,]+),([^)]+)\)/);
 
@@ -176,7 +176,7 @@ export class GridDragDropController {
   /**
    * Handle drag start event
    */
-  private handleDragStart(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+  private handleDragStart(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
     this.isDragging = true;
     this.dragStartPosition = { x: event.x, y: event.y };
 
@@ -202,7 +202,7 @@ export class GridDragDropController {
   /**
    * Handle drag move event
    */
-  private handleDragging(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+  private handleDragging(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
     if (!this.isDragging) return;
 
     let newX = event.x;
@@ -237,7 +237,7 @@ export class GridDragDropController {
   /**
    * Handle drag end event
    */
-  private handleDragEnd(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: any): void {
+  private handleDragEnd(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
     if (!this.isDragging) return;
 
     this.isDragging = false;

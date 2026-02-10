@@ -40,9 +40,9 @@ export interface ABTestVariant {
   name: string;
   description: string;
   allocationPercent: number;
-  configOverrides: Record<string, any>;
+  configOverrides: Record<string, unknown>;
   featureFlags: Record<string, boolean>;
-  customProperties: Record<string, any>;
+  customProperties: Record<string, unknown>;
   isControl: boolean;
 }
 
@@ -60,7 +60,7 @@ export interface UserCriteria {
   type: CriteriaType;
   field: string;
   operator: ComparisonOperator;
-  value: any;
+  value: unknown;
   description: string;
 }
 
@@ -68,7 +68,7 @@ export interface ConversionEvent {
   eventType: string;
   timestamp: Date;
   value: number;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 export interface TestMetrics {

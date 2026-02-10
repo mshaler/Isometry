@@ -32,7 +32,7 @@ export class ViewContinuumStateManager {
         }
 
         // Restore Set objects in view states
-        Object.values(parsed.viewStates || {}).forEach((viewState: any) => {
+        Object.values(parsed.viewStates || {}).forEach((viewState: unknown) => {
           if (viewState.expandedGroups) {
             viewState.expandedGroups = new Set(viewState.expandedGroups);
           }
@@ -100,7 +100,7 @@ export class ViewContinuumStateManager {
    */
   public saveCurrentViewState(
     viewState: ViewState,
-    activeRenderer: any,
+    activeRenderer: unknown,
     onSaveComplete: () => void
   ): void {
     const currentViewState = viewState.viewStates[viewState.currentView];
@@ -130,7 +130,7 @@ export class ViewContinuumStateManager {
    */
   public restoreViewState(
     viewState: ViewState,
-    activeRenderer: any,
+    activeRenderer: unknown,
     reprojectCachedData: () => void
   ): void {
     const currentViewState = viewState.viewStates[viewState.currentView];

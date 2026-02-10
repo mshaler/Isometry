@@ -123,14 +123,14 @@ export interface ViewState {
   activeFilters: Array<{
     latchDimension: 'L' | 'A' | 'T' | 'C' | 'H';
     facet: string;
-    value: any;
+    value: unknown;
     operator: 'equals' | 'contains' | 'range' | 'exists';
   }>;
 
   // Cached query results for consistent projection
   cachedQuery?: {
     sql: string;                                   // SQL query string
-    parameters: any[];                             // Query parameters
+    parameters: unknown[];                             // Query parameters
     results: Node[];                               // Cached card results
     timestamp: number;                             // Cache timestamp
     hash: string;                                  // Query hash for validation
@@ -361,14 +361,14 @@ export const DEFAULT_FLIP_CONFIG: FlipAnimationConfig = {
 /**
  * Type guards for runtime validation
  */
-export const isViewType = (value: any): value is ViewType => {
+export const isViewType = (value: unknown): value is ViewType => {
   return Object.values(ViewType).includes(value);
 };
 
-export const isViewAxisMapping = (obj: any): obj is ViewAxisMapping => {
+export const isViewAxisMapping = (obj: unknown): obj is ViewAxisMapping => {
   if (!obj) return false;
 
-  const hasValidAxis = (axis: any) => {
+  const hasValidAxis = (axis: unknown) => {
     return axis &&
       typeof axis.latchDimension === 'string' &&
       ['L', 'A', 'T', 'C', 'H'].includes(axis.latchDimension) &&
@@ -381,7 +381,7 @@ export const isViewAxisMapping = (obj: any): obj is ViewAxisMapping => {
          (!obj.zAxis || (hasValidAxis(obj.zAxis) && typeof obj.zAxis.depth === 'number'));
 };
 
-export const isViewState = (obj: any): obj is ViewState => {
+export const isViewState = (obj: unknown): obj is ViewState => {
   return obj &&
     isViewType(obj.currentView) &&
     typeof obj.canvasId === 'string' &&

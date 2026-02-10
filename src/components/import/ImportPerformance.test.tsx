@@ -99,7 +99,7 @@ class PerformanceBaseline {
 class ImportWizardPerformanceHarness {
   private metrics = new PerformanceMetrics();
   private baseline = new PerformanceBaseline();
-  private mockImportOfficeFile: any;
+  private mockImportOfficeFile: unknown;
 
   async initialize() {
     const { importOfficeFile } = await import('../../utils/officeDocumentProcessor');

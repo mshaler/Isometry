@@ -67,7 +67,7 @@ export class SimplePerformanceValidator {
    * Run a simple performance test
    */
   public async runSimpleTest(test: SimplePerformanceTest): Promise<SimpleTestResult> {
-    console.log(`🧪 Running simple test: ${test.name}`);
+    console.warn(`🧪 Running simple test: ${test.name}`);
 
 
     // Simulate query performance test

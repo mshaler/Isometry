@@ -10,7 +10,7 @@
  * - Grid Continuum: Gallery → List → Kanban → 2D Grid → nD SuperGrid
  * - Janus Density Model: Value (zoom) × Extent (pan) orthogonal controls
  * - Direct sql.js → D3.js rendering with zero serialization
- * - PAFV axis mapping: any axis maps to any plane
+ * - PAFV axis mapping: unknown axis maps to any plane
  *
  * This component replaces 40KB of MessageBridge with direct SQLite access.
  */

@@ -302,7 +302,7 @@ export const MemoryLeakDetector = {
   /**
    * Track a potential memory leak source
    */
-  track(name: string, _resource?: any): void {
+  track(name: string, _resource?: unknown): void {
     if (process.env.NODE_ENV === 'development') {
       if (!window._isometryMemoryTracker) {
         window._isometryMemoryTracker = new Map()

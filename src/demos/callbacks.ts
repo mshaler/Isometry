@@ -11,8 +11,8 @@ import type { ViewAxisMapping, ProgressiveDisclosureState, JanusDensityState, Zo
 interface CallbackHookParams {
   superGrid: SuperGrid | null;
   filterService: LATCHFilterService;
-  trackFeatureUsage: (feature: string, data?: any) => void;
-  setSelectedCard: (card: any) => void;
+  trackFeatureUsage: (feature: string, data?: unknown) => void;
+  setSelectedCard: (card: unknown) => void;
   setIsModalOpen: (open: boolean) => void;
   setSelectedCards: (cards: string[]) => void;
   setShowBulkActions: (show: boolean) => void;
@@ -43,7 +43,7 @@ export function useDemoCallbacks({
 }: CallbackHookParams) {
 
   // Core SuperGrid callbacks
-  const handleCardClick = useCallback((card: any) => {
+  const handleCardClick = useCallback((card: unknown) => {
     trackFeatureUsage('card-click', { cardId: card.id });
     setSelectedCard(card);
     setIsModalOpen(true);
@@ -55,7 +55,7 @@ export function useDemoCallbacks({
     setShowBulkActions(selectedIds.length > 1);
   }, [trackFeatureUsage, setSelectedCards, setShowBulkActions]);
 
-  const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
+  const handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
     trackFeatureUsage('header-filter', { axis, facet, value });
 
     const existing = filterService.getActiveFilters().find(

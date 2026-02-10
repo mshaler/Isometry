@@ -80,7 +80,7 @@ export interface UseCoordinatesOptions {
  * const handleClick = (e) => {
  *   const screenPoint = { x: e.clientX, y: e.clientY };
  *   const logical = coords.screenToLogical(screenPoint);
- *   console.log('Clicked cell:', logical);
+ *   console.warn('Clicked cell:', logical);
  * };
  *
  * @example

@@ -19,7 +19,7 @@ export function DesktopApp() {
 
   const handleNewFile = useCallback(() => {
     // TODO: Implement new file creation
-    console.log('New file requested');
+    console.warn('New file requested');
     setCurrentView('p0-test'); // Start with P0 test for now
   }, []);
 
@@ -31,17 +31,17 @@ export function DesktopApp() {
 
   const handleSaveFile = useCallback(() => {
     // File saving is handled by DesktopMenu via useTauri
-    console.log('File saved');
+    console.warn('File saved');
   }, []);
 
   const handleSettings = useCallback(() => {
     // TODO: Implement settings dialog
-    console.log('Settings requested');
+    console.warn('Settings requested');
   }, []);
 
   const handleHelp = useCallback(() => {
     // TODO: Implement help system
-    console.log('Help requested');
+    console.warn('Help requested');
   }, []);
 
   const handleToggleView = useCallback((view: 'grid' | 'network' | 'timeline' | 'kanban') => {

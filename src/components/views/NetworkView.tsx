@@ -69,7 +69,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
     {
       trackPerformance: true,
       throttleMs: 100,
-      onPerformanceUpdate: (metrics: any) => {
+      onPerformanceUpdate: (metrics: unknown) => {
         devLogger.debug('NetworkView edges performance:', { metrics });
       }
     }
@@ -219,7 +219,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     const link = linksGroup
       .selectAll('line')
-      .data(links, (d: any) => d.id)
+      .data(links, (d: unknown) => d.id)
       .join(
         enter => enter
           .append('line')
@@ -255,7 +255,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     const linkLabels = linkLabelsGroup
       .selectAll('text')
-      .data(links.filter(l => l.label), (d: any) => d.id)
+      .data(links.filter(l => l.label), (d: unknown) => d.id)
       .join(
         enter => enter
           .append('text')
@@ -362,11 +362,11 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
               d.fx = d.x;
               d.fy = d.y;
             })
-            .on('drag', (event: any, d: SimNode) => {
+            .on('drag', (event: unknown, d: SimNode) => {
               d.fx = event.x;
               d.fy = event.y;
             })
-            .on('end', (event: any, d: SimNode) => {
+            .on('end', (event: unknown, d: SimNode) => {
               if (!event.active) simulation.alphaTarget(0);
               d.fx = null;
               d.fy = null;

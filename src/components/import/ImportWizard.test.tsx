@@ -64,8 +64,8 @@ class ReactTestDataGenerator {
 
 // Enhanced testing utilities
 class ImportWizardTestHarness {
-  private mockImportOfficeFile: any;
-  private mockProps: any;
+  private mockImportOfficeFile: unknown;
+  private mockProps: unknown;
 
   async initialize() {
     const { importOfficeFile } = await import('../../utils/officeDocumentProcessor');

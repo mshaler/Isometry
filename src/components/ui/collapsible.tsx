@@ -21,7 +21,7 @@ export function Collapsible({ open: controlledOpen, onOpenChange, children }: Co
     <div data-state={isOpen ? 'open' : 'closed'} data-open={isOpen}>
       {React.Children.map(children, child =>
         React.isValidElement(child)
-          ? React.cloneElement(child, { onOpenChange: handleOpenChange, open: isOpen } as any)
+          ? React.cloneElement(child, { onOpenChange: handleOpenChange, open: isOpen } as Record<string, unknown>)
           : child
       )}
     </div>

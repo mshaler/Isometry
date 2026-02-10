@@ -8,9 +8,9 @@ import '@testing-library/jest-dom';
 
 // Global type declarations for test environment
 declare global {
-  var webkit: any;
+  var webkit: unknown;
   var __VITEST_UNHANDLED_REJECTIONS__: Array<{
-    reason: any;
+    reason: unknown;
     promise: Promise<any>;
     id: string;
   }>;

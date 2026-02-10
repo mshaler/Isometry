@@ -18,7 +18,7 @@ import type { Node } from '../types/node';
 function SQLiteControls() {
   const { db, loading, error, execute, run } = useSQLite();
   const [queryText, setQueryText] = useState('SELECT COUNT(*) as count FROM nodes');
-  const [queryResult, setQueryResult] = useState<any[]>([]);
+  const [queryResult, setQueryResult] = useState<Record<string, unknown>[]>([]);
 
   const executeCustomQuery = () => {
     if (!db) return;

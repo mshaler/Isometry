@@ -219,7 +219,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     if (!enableRealTimeUpdates) return;
 
     // Progress updates during sync
-    const handleProgressUpdate = (event: any) => {
+    const handleProgressUpdate = (event: unknown) => {
       setSyncStatus(prev => ({
         ...prev,
         syncProgress: event.progress
@@ -227,7 +227,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     };
 
     // Sync completion events
-    const handleSyncComplete = (event: any) => {
+    const handleSyncComplete = (event: unknown) => {
       setSyncStatus(prev => ({
         ...prev,
         syncProgress: 1.0,
@@ -240,7 +240,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     };
 
     // Sync error events
-    const handleSyncError = (event: any) => {
+    const handleSyncError = (event: unknown) => {
       setError(event.error);
       setIsSyncing(false);
     };
@@ -252,7 +252,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     };
 
     // Conflict events
-    const handleConflictDetected = (event: any) => {
+    const handleConflictDetected = (event: unknown) => {
       setConflicts(prev => [...prev, event.conflict]);
       setSyncStatus(prev => ({
         ...prev,
@@ -260,7 +260,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
       }));
     };
 
-    const handleConflictResolved = (event: any) => {
+    const handleConflictResolved = (event: unknown) => {
       setConflicts(prev => prev.filter(c => c.id !== event.conflictId));
       setSyncStatus(prev => ({
         ...prev,
@@ -269,7 +269,7 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     };
 
     // Connection status events
-    const handleConnectionChange = (event: any) => {
+    const handleConnectionChange = (event: unknown) => {
       setSyncStatus(prev => ({
         ...prev,
         isConnected: event.isConnected

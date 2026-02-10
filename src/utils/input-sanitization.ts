@@ -8,7 +8,7 @@ export function sanitizeInput(input: string): string {
 
   // Remove potential SQL injection patterns
   return input
-    .replace(/[;--]/g, '') // Remove semicolons and SQL comments
+    .replace(/[;-]/g, '') // Remove semicolons and hyphens
     .replace(/\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE)\b/gi, '') // Remove dangerous SQL keywords
     .replace(/[<>]/g, '') // Remove HTML brackets
     .trim()
@@ -34,7 +34,7 @@ export function sanitizeOperator(operator: string): string {
   return operator;
 }
 
-export function sanitizeValue(value: any): string {
+export function sanitizeValue(value: unknown): string {
   if (value === null || value === undefined) return '';
 
   const str = String(value);
@@ -48,7 +48,7 @@ export function isSecurityRisk(input: string): boolean {
 
   const dangerousPatterns = [
     /\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)\b/gi,
-    /[;--]/,
+    /[;-]/,
     /<script/gi,
     /javascript:/gi,
     /on\w+\s*=/gi

@@ -18,7 +18,7 @@ import type {
 
 // Mock data generators for demo
 const generateDeepHierarchyData = (maxDepth: number) => {
-  const data: any[] = [];
+  const data: unknown[] = [];
   let id = 1;
 
   // Generate deep hierarchy: Year > Quarter > Month > Week > Day > Hour
@@ -150,7 +150,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
     try {
       const data = generateDeepHierarchyData(selectedDepth);
 
-      console.log(`Generated ${data.length} items with max depth ${selectedDepth}`);
+      console.warn(`Generated ${data.length} items with max depth ${selectedDepth}`);
 
       // Render headers with time axis (deep hierarchy)
       headerSystem.renderHeaders(data, 'time', 'year', 800);
@@ -176,7 +176,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
       setLevelPickerTabs(tabs);
       setZoomState(zoom);
 
-      console.log('Progressive state updated:', {
+      console.warn('Progressive state updated:', {
         isActive: headerSystem.isProgressiveDisclosureActive(),
         currentLevels: progressive.currentLevels,
         tabCount: tabs.length,
@@ -192,7 +192,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
   const handleTabSelect = useCallback((tabIndex: number) => {
     if (!headerSystem) return;
 
-    console.log('Tab selected:', tabIndex);
+    console.warn('Tab selected:', tabIndex);
     headerSystem.selectLevelTab(tabIndex);
     updateStateFromHeaders();
   }, [headerSystem, updateStateFromHeaders]);
@@ -200,7 +200,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
   const handleZoomIn = useCallback(() => {
     if (!headerSystem) return;
 
-    console.log('Zooming in');
+    console.warn('Zooming in');
     headerSystem.zoomIn();
     updateStateFromHeaders();
   }, [headerSystem, updateStateFromHeaders]);
@@ -208,7 +208,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
   const handleZoomOut = useCallback(() => {
     if (!headerSystem) return;
 
-    console.log('Zooming out');
+    console.warn('Zooming out');
     headerSystem.zoomOut();
     updateStateFromHeaders();
   }, [headerSystem, updateStateFromHeaders]);
@@ -216,7 +216,7 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
   const handleStepUp = useCallback(() => {
     if (!headerSystem) return;
 
-    console.log('Stepping up');
+    console.warn('Stepping up');
     headerSystem.stepUp();
     updateStateFromHeaders();
   }, [headerSystem, updateStateFromHeaders]);
@@ -224,14 +224,14 @@ export const SuperStackProgressiveDemo: React.FC<SuperStackProgressiveDemoProps>
   const handleStepDown = useCallback(() => {
     if (!headerSystem) return;
 
-    console.log('Stepping down');
+    console.warn('Stepping down');
     headerSystem.stepDown();
     updateStateFromHeaders();
   }, [headerSystem, updateStateFromHeaders]);
 
   // Handle depth selection change
   const handleDepthChange = useCallback((newDepth: number) => {
-    console.log('Changing depth to:', newDepth);
+    console.warn('Changing depth to:', newDepth);
     setSelectedDepth(newDepth);
   }, []);
 

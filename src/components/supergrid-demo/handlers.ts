@@ -15,7 +15,7 @@ interface HandlerParams {
   superGrid: SuperGrid | null;
   setSelectedCards: (cards: string[]) => void;
   setShowBulkActions: (show: boolean) => void;
-  setSelectedCard: (card: any) => void;
+  setSelectedCard: (card: unknown) => void;
   setIsModalOpen: (open: boolean) => void;
   setIsModalLoading: (loading: boolean) => void;
   setCurrentZoomLevel: (level: ZoomLevel) => void;
@@ -44,14 +44,14 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
   }, [setSelectedCards, setShowBulkActions]);
 
   // Card interaction handlers
-  const handleCardClick = useCallback((card: any) => {
+  const handleCardClick = useCallback((card: unknown) => {
     contextLogger.data('SuperGridDemo: Card clicked', card);
     setSelectedCard(card);
     setIsModalOpen(true);
   }, [setSelectedCard, setIsModalOpen]);
 
   // Header click handler for LATCH filtering
-  const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
+  const handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
     contextLogger.data('SuperGridDemo: Header clicked', { axis, facet, value });
 
     const existing = filterService.getActiveFilters().find(

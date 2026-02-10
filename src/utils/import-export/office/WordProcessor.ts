@@ -211,7 +211,7 @@ export class WordProcessor {
    * Convert HTML to Markdown
    */
   private convertHtmlToMarkdown(html: string): string {
-    let markdown = html
+    const markdown = html
       // Headers
       .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '\n# $1\n\n')
       .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '\n## $1\n\n')
@@ -267,7 +267,7 @@ export class WordProcessor {
    * Convert Markdown to Word-compatible HTML
    */
   private convertMarkdownToWordHTML(markdown: string): string {
-    let html = markdown
+    const html = markdown
       // Headers
       .replace(/^# (.+)$/gm, '<h1>$1</h1>')
       .replace(/^## (.+)$/gm, '<h2>$1</h2>')

@@ -242,7 +242,7 @@ export function SuperGridShowcase({
   }, []);
 
   // Event handlers
-  const handleCardClick = useCallback((card: any) => {
+  const handleCardClick = useCallback((card: unknown) => {
     trackFeature('card-click');
     setSelectedCard(card);
     setIsModalOpen(true);
@@ -253,7 +253,7 @@ export function SuperGridShowcase({
     setSelectedCards(selectedIds);
   }, [trackFeature]);
 
-  const handleHeaderClick = useCallback((axis: string, facet: string, value: any) => {
+  const handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
     trackFeature('header-filter');
     const existing = filterService.getActiveFilters().find(
       filter => filter.facet === facet && filter.value === value
@@ -366,7 +366,7 @@ export function SuperGridShowcase({
     );
 
     const adapter = {
-      render: (cards: any[]) => {
+      render: (cards: unknown[]) => {
         const start = performance.now();
         superGridRenderer.updateCards(cards);
         superGridRenderer.render([]);

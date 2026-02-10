@@ -19,7 +19,7 @@ export function usePerformanceTracking() {
 
   const performanceRef = useRef<number>(0);
 
-  const trackFeatureUsage = useCallback((feature: string, data?: any) => {
+  const trackFeatureUsage = useCallback((feature: string, data?: unknown) => {
     const now = performance.now();
     setPerformanceMetrics(prev => ({
       ...prev,

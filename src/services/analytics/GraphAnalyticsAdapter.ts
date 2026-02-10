@@ -2,15 +2,15 @@
 interface BridgeMessage {
   id: string;
   method: string;
-  params: any;
+  params: unknown;
   timestamp: number;
 }
 
 interface BridgeResponse {
   id: string;
   success: boolean;
-  result?: any;
-  data?: any;
+  result?: unknown;
+  data?: unknown;
   error?: string | { message: string };
   message?: string;
   timestamp: number;
@@ -57,7 +57,7 @@ export interface CacheStats {
 
 export interface QueryResult {
   queryType: string;
-  result: any;
+  result: unknown;
   computeTime: number;
   cached: boolean;
 }
@@ -80,7 +80,7 @@ declare global {
 export class GraphAnalyticsAdapter {
   private static instance: GraphAnalyticsAdapter | null = null;
   private pendingRequests = new Map<string, {
-    resolve: (value: any) => void;
+    resolve: (value: unknown) => void;
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
   }>();
@@ -152,7 +152,7 @@ export class GraphAnalyticsAdapter {
   /**
    * Send message to native bridge with promise-based response handling
    */
-  private async sendBridgeMessage<T>(method: string, params: any = {}): Promise<T> {
+  private async sendBridgeMessage<T>(method: string, params: unknown = {}): Promise<T> {
     if (!this.isBridgeAvailable()) {
       throw new Error('Graph analytics bridge not available');
     }
@@ -343,7 +343,7 @@ export class GraphAnalyticsAdapter {
   /**
    * Run a graph query with caching
    */
-  async runGraphQuery(queryType: string, parameters: Record<string, any> = {}): Promise<QueryResult> {
+  async runGraphQuery(queryType: string, parameters: Record<string, unknown> = {}): Promise<QueryResult> {
     try {
       return await this.sendBridgeMessage<QueryResult>('runGraphQuery', {
         queryType,
@@ -408,7 +408,7 @@ export class GraphAnalyticsAdapter {
   ): ConnectionSuggestion[] {
     // Basic fallback implementation using local graph analysis
     // This would implement simple heuristics when native bridge is unavailable
-    console.info('Using fallback connection suggestion algorithm');
+    console.warn('Using fallback connection suggestion algorithm');
 
     return [
       {

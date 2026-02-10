@@ -28,62 +28,62 @@ class DevLogger {
   }
 
   // Semantic logging methods for specific debugging contexts
-  inspect(label: string, data: any): void {
+  inspect(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🔍 ${label}:`), data);
+      console.warn(this.formatMessage(`🔍 ${label}:`), data);
     }
   }
 
-  state(label: string, data: any): void {
+  state(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🔄 ${label}:`), data);
+      console.warn(this.formatMessage(`🔄 ${label}:`), data);
     }
   }
 
-  render(label: string, data: any): void {
+  render(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🎨 ${label}:`), data);
+      console.warn(this.formatMessage(`🎨 ${label}:`), data);
     }
   }
 
-  metrics(label: string, data: any): void {
+  metrics(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`📊 ${label}:`), data);
+      console.warn(this.formatMessage(`📊 ${label}:`), data);
     }
   }
 
-  data(label: string, data: any): void {
+  data(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🗂️ ${label}:`), data);
+      console.warn(this.formatMessage(`🗂️ ${label}:`), data);
     }
   }
 
-  setup(label: string, data: any): void {
+  setup(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(`🏗️ ${label}:`), data);
+      console.warn(this.formatMessage(`🏗️ ${label}:`), data);
     }
   }
 
   // Standard log levels
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
-      console.log(this.formatMessage(message), data);
+      console.warn(this.formatMessage(message), data);
     }
   }
 
-  info(message: string, data?: any): void {
+  info(message: string, data?: unknown): void {
     if (this.shouldLog('info')) {
-      console.info(this.formatMessage(message), data);
+      console.warn(this.formatMessage(message), data);
     }
   }
 
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: unknown): void {
     if (this.shouldLog('warn')) {
       console.warn(this.formatMessage(message), data);
     }
   }
 
-  error(message: string, data?: any): void {
+  error(message: string, data?: unknown): void {
     if (this.shouldLog('error')) {
       console.error(this.formatMessage(message), data);
     }

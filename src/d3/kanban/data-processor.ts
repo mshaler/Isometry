@@ -138,7 +138,10 @@ export function applySortToColumns(columns: KanbanColumn[], axisMapping: ViewAxi
  */
 export function flattenCardsWithPositions(
   columns: KanbanColumn[],
-  config: { cardWidth: number; cardHeight: number; columnWidth: number; columnSpacing: number; cardSpacing: number; padding: any }
+  config: {
+    cardWidth: number; cardHeight: number; columnWidth: number;
+    columnSpacing: number; cardSpacing: number; padding: unknown
+  }
 ): FlattenedCard[] {
   const flattened: FlattenedCard[] = [];
 
@@ -164,7 +167,7 @@ export function flattenCardsWithPositions(
 /**
  * Get value for a specific facet from a card
  */
-export function getCardFacetValue(card: Node, facet: string): any {
+export function getCardFacetValue(card: Node, facet: string): unknown {
   return (card as any)[facet] || null;
 }
 

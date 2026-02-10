@@ -23,7 +23,7 @@ export interface UseD3ZoomOptions {
  *   const svgRef = useD3Zoom({
  *     minZoom: 0.1,
  *     maxZoom: 10,
- *     onZoom: (transform) => console.log('Zoom:', transform.k)
+ *     onZoom: (transform) => console.warn('Zoom:', transform.k)
  *   });
  *
  * @param options - Configuration for zoom behavior

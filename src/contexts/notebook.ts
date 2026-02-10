@@ -232,7 +232,7 @@ export function createCardOperations(
         const endTime = performance.now();
         performanceHook.measureQuery('loadCards', endTime - startTime);
 
-        return result.map((row: any) => ({
+        return result.map((row: unknown) => ({
           id: row.id,
           nodeId: row.node_id,
           markdownContent: row.markdown_content,

@@ -186,7 +186,7 @@ export interface SuperDynamicMetrics {
 
 // Type guards
 
-export const isSuperDynamicConfig = (obj: any): obj is SuperDynamicConfig => {
+export const isSuperDynamicConfig = (obj: unknown): obj is SuperDynamicConfig => {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -196,7 +196,7 @@ export const isSuperDynamicConfig = (obj: any): obj is SuperDynamicConfig => {
   );
 };
 
-export const isDragState = (obj: any): obj is DragState => {
+export const isDragState = (obj: unknown): obj is DragState => {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -205,7 +205,7 @@ export const isDragState = (obj: any): obj is DragState => {
   );
 };
 
-export const isAxisChangeEvent = (obj: any): obj is AxisChangeEvent => {
+export const isAxisChangeEvent = (obj: unknown): obj is AxisChangeEvent => {
   return (
     typeof obj === 'object' &&
     obj !== null &&

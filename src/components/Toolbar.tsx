@@ -26,7 +26,7 @@ export function Toolbar() {
     {
       label: 'Isometry',
       items: [
-        { label: 'About Isometry', action: () => console.log('About') },
+        { label: 'About Isometry', action: () => console.warn('About') },
         { separator: true },
         { 
           label: 'Settings',
@@ -41,55 +41,55 @@ export function Toolbar() {
           ]
         },
         { separator: true },
-        { label: 'Quit Isometry', action: () => console.log('Quit') },
+        { label: 'Quit Isometry', action: () => console.warn('Quit') },
       ]
     },
     {
       label: 'File',
       items: [
-        { label: 'New…', action: () => console.log('New') },
-        { label: 'Open…', action: () => console.log('Open') },
+        { label: 'New…', action: () => console.warn('New') },
+        { label: 'Open…', action: () => console.warn('Open') },
         { separator: true },
         { label: 'Import JSON…', action: () => setImportWizardOpen(true) },
         { label: 'Import Markdown…', action: () => setImportWizardOpen(true) },
         { label: 'Import Office Docs…', action: () => setImportWizardOpen(true) },
         { label: 'Import Web Page…', action: () => setImportWizardOpen(true) },
         { separator: true },
-        { label: 'Save As…', action: () => console.log('Save As') },
+        { label: 'Save As…', action: () => console.warn('Save As') },
       ]
     },
     {
       label: 'Edit',
       items: [
-        { label: 'Undo', action: () => console.log('Undo') },
-        { label: 'Redo', action: () => console.log('Redo') },
+        { label: 'Undo', action: () => console.warn('Undo') },
+        { label: 'Redo', action: () => console.warn('Redo') },
         { separator: true },
-        { label: 'Cut', action: () => console.log('Cut') },
-        { label: 'Copy', action: () => console.log('Copy') },
-        { label: 'Paste', action: () => console.log('Paste') },
+        { label: 'Cut', action: () => console.warn('Cut') },
+        { label: 'Copy', action: () => console.warn('Copy') },
+        { label: 'Paste', action: () => console.warn('Paste') },
       ]
     },
     {
       label: 'View',
       items: [
-        { label: 'Workbench', action: () => console.log('Workbench') },
-        { label: 'Apps', action: () => console.log('Apps') },
-        { label: 'Datasets', action: () => console.log('Datasets') },
+        { label: 'Workbench', action: () => console.warn('Workbench') },
+        { label: 'Apps', action: () => console.warn('Apps') },
+        { label: 'Datasets', action: () => console.warn('Datasets') },
       ]
     },
   ];
 
   const commandButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: FileText, label: 'New', action: () => console.log('New') },
-    { icon: FolderOpen, label: 'Open', action: () => console.log('Open') },
-    { icon: Save, label: 'Save', action: () => console.log('Save') },
-    { icon: Download, label: 'Export', action: () => console.log('Export') },
+    { icon: FileText, label: 'New', action: () => console.warn('New') },
+    { icon: FolderOpen, label: 'Open', action: () => console.warn('Open') },
+    { icon: Save, label: 'Save', action: () => console.warn('Save') },
+    { icon: Download, label: 'Export', action: () => console.warn('Export') },
   ];
 
   const appLauncherButtons: { icon: LucideIcon; label: string; action: () => void }[] = [
-    { icon: LayoutGrid, label: 'Grid View', action: () => console.log('Grid View') },
-    { icon: Layers, label: 'Dimensions', action: () => console.log('Dimensions') },
-    { icon: BarChart3, label: 'Charts', action: () => console.log('Charts') },
+    { icon: LayoutGrid, label: 'Grid View', action: () => console.warn('Grid View') },
+    { icon: Layers, label: 'Dimensions', action: () => console.warn('Dimensions') },
+    { icon: BarChart3, label: 'Charts', action: () => console.warn('Charts') },
   ];
 
   return (
@@ -200,7 +200,7 @@ export function Toolbar() {
         isOpen={importWizardOpen}
         onClose={() => setImportWizardOpen(false)}
         onImportComplete={(nodes) => {
-          console.log('Import completed:', { count: nodes.length, nodes });
+          console.warn('Import completed:', { count: nodes.length, nodes });
           // TODO: Integrate with database context to persist imported nodes
           setImportWizardOpen(false);
         }}

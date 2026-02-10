@@ -101,7 +101,7 @@ export interface AxisData {
  * ```
  */
 export interface GridData {
-  cards: any[];                  // Card data (TODO: replace with proper Card type)
+  cards: unknown[];                  // Card data (TODO: replace with proper Card type)
   xAxis: AxisData;              // Column axis configuration
   yAxis: AxisData;              // Row axis configuration
   zAxis?: AxisData;             // Optional third axis for 3D grids
@@ -134,10 +134,10 @@ export interface GridData {
  */
 export interface GridCell {
   position: CellPosition;       // Logical grid coordinates
-  xValue: any;                  // Value from x-axis for this cell
-  yValue: any;                  // Value from y-axis for this cell
-  zValue?: any;                 // Optional z-axis value
-  cards: any[];                 // Cards in this cell
+  xValue: unknown;                  // Value from x-axis for this cell
+  yValue: unknown;                  // Value from y-axis for this cell
+  zValue?: unknown;                 // Optional z-axis value
+  cards: unknown[];                 // Cards in this cell
   count: number;                // Number of cards (cards.length)
   isEmpty: boolean;             // Whether cell has any cards
   screenX: number;              // Screen x position for rendering
@@ -149,7 +149,7 @@ export interface GridCell {
   isDragTarget?: boolean;       // Whether cell is a valid drag target
 
   // Metadata
-  metadata?: Record<string, any>; // Additional cell-specific data
+  metadata?: Record<string, unknown>; // Additional cell-specific data
 }
 
 /**

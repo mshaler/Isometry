@@ -86,8 +86,8 @@ const createDeepHierarchy = (depth: number): HeaderHierarchy => {
 
 describe('SuperStackProgressive', () => {
   let progressive: SuperStackProgressive;
-  let mockContainer: any;
-  let mockDatabase: any;
+  let mockContainer: unknown;
+  let mockDatabase: unknown;
 
   beforeEach(() => {
     // Setup mocks

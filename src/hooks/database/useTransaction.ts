@@ -287,7 +287,7 @@ async function executeOperationWithContext<T>(
 /**
  * Send transaction message via WebView bridge
  */
-async function sendTransactionMessage(method: string, params: any): Promise<any> {
+async function sendTransactionMessage(method: string, params: unknown): Promise<any> {
   try {
     const correlationId = params.correlationId;
 

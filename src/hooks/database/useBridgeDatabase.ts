@@ -8,7 +8,7 @@
 import { bridgeLogger } from '@/utils/logging/dev-logger';
 
 export interface DatabaseResult {
-  data: any[];
+  data: unknown[];
   error?: string;
   loading: boolean;
   metadata?: {
@@ -34,7 +34,7 @@ export function useBridgeDatabase() {
       bridge: null,
       lastSync: null
     } as DatabaseConnection,
-    query: async (_sql: string, _params?: any[]): Promise<DatabaseResult> => {
+    query: async (_sql: string, _params?: unknown[]): Promise<DatabaseResult> => {
       bridgeLogger.debug('Bridge eliminated - use useSQLiteQuery instead');
       return {
         data: [],

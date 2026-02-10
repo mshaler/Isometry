@@ -639,16 +639,16 @@ export function logQueryPerformance(
 export function logPerformanceReport(): void {
   if (process.env.NODE_ENV === 'development') {
     const report = performanceMonitor.getPerformanceReport();
-    console.group('📊 Performance Report');
-    console.log('Total Operations:', report.totalOperations);
-    console.log('Average Duration:', `${report.averageDuration.toFixed(2)}ms`);
-    console.log('Error Rate:', `${report.errorRate.toFixed(1)}%`);
-    console.table(report.methodBreakdown);
+    console.warn('📊 Performance Report:');
+    console.warn('Total Operations:', report.totalOperations);
+    console.warn('Average Duration:', `${report.averageDuration.toFixed(2)}ms`);
+    console.warn('Error Rate:', `${report.errorRate.toFixed(1)}%`);
+    console.warn('Method Breakdown:', report.methodBreakdown);
     if (report.slowestOperations.length > 0) {
-      console.log('Slowest Operations:', report.slowestOperations.slice(0, 5));
+      console.warn('Slowest Operations:', report.slowestOperations.slice(0, 5));
     }
-    console.log('Recommendations:');
-    report.recommendations.forEach(rec => console.log(`  • ${rec}`));
-    console.groupEnd();
+    console.warn('Recommendations:');
+    report.recommendations.forEach(rec => console.warn(`  • ${rec}`));
+    console.warn('--- End Performance Report ---');
   }
 }

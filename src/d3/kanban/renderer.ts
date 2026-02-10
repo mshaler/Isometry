@@ -35,7 +35,7 @@ export class KanbanRenderer {
     // Bind data to column headers
     const headers = this.contentGroup
       .selectAll('.column-header')
-      .data(columnData, (d: any) => d.id);
+      .data(columnData, (d: unknown) => d.id);
 
     const headerEnter = headers
       .enter()
@@ -113,7 +113,7 @@ export class KanbanRenderer {
     // Bind data to column bodies
     const bodies = this.contentGroup
       .selectAll('.column-body')
-      .data(columnData, (d: any) => d.id);
+      .data(columnData, (d: unknown) => d.id);
 
     const bodyEnter = bodies
       .enter()
@@ -152,16 +152,18 @@ export class KanbanRenderer {
         card,
         columnIndex,
         cardIndex,
-        x: this.config.padding.left + columnIndex * (this.config.columnWidth + this.config.columnSpacing) +
+        x: this.config.padding.left +
+           columnIndex * (this.config.columnWidth + this.config.columnSpacing) +
            (this.config.columnWidth - this.config.cardWidth) / 2,
-        y: this.config.padding.top + this.config.headerHeight + 20 + cardIndex * (this.config.cardHeight + this.config.cardSpacing)
+        y: this.config.padding.top + this.config.headerHeight + 20 +
+           cardIndex * (this.config.cardHeight + this.config.cardSpacing)
       }))
     );
 
     // Data binding with key function
     const cards = this.contentGroup
       .selectAll('.kanban-card')
-      .data(flatCards, (d: any) => d.card.id);
+      .data(flatCards, (d: unknown) => d.card.id);
 
     const cardEnter = cards
       .enter()
@@ -237,29 +239,29 @@ export class KanbanRenderer {
     allCards
       .transition()
       .duration(300)
-      .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+      .attr('transform', (d: unknown) => `translate(${d.x}, ${d.y})`);
 
     allCards
       .select('.card-title')
-      .text((d: any) => truncateText(d.card.title || 'Untitled', 25));
+      .text((d: unknown) => truncateText(d.card.title || 'Untitled', 25));
 
     allCards
       .select('.card-metadata')
-      .text((d: any) => formatCardMetadata(d.card));
+      .text((d: unknown) => formatCardMetadata(d.card));
 
     allCards
       .select('.priority-indicator')
-      .attr('fill', (d: any) => getPriorityColor(d.card.priority));
+      .attr('fill', (d: unknown) => getPriorityColor(d.card.priority));
 
     // Show/hide tags indicator based on whether card has tags
     allCards
       .select('.tags-indicator')
-      .style('display', (d: any) => (d.card.tags && d.card.tags.length > 0) ? null : 'none');
+      .style('display', (d: unknown) => (d.card.tags && d.card.tags.length > 0) ? null : 'none');
 
     allCards
       .select('.tags-count')
-      .style('display', (d: any) => (d.card.tags && d.card.tags.length > 0) ? null : 'none')
-      .text((d: any) => d.card.tags ? Math.min(d.card.tags.length, 9) : '');
+      .style('display', (d: unknown) => (d.card.tags && d.card.tags.length > 0) ? null : 'none')
+      .text((d: unknown) => d.card.tags ? Math.min(d.card.tags.length, 9) : '');
 
     // Remove old cards with animation
     cards

@@ -321,7 +321,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             enableDragDrop={true}
             onCellClick={(node) => {
               // Handle cell selection - update activeCard to trigger cross-canvas updates
-              console.log('SuperGrid cell clicked:', node);
+              console.warn('SuperGrid cell clicked:', node);
               const card = cards.find(c => c.nodeId === node.id);
               if (card) {
                 setActiveCard(card);
@@ -329,7 +329,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             }}
             onHeaderClick={(level, value, axis) => {
               // Handle header filtering
-              console.log('SuperGrid header clicked:', { level, value, axis });
+              console.warn('SuperGrid header clicked:', { level, value, axis });
             }}
           />
         ) : activeTab === 'network' ? (

@@ -6,7 +6,7 @@
 
 import type { MetricTrend, PerformancePreset } from '../types';
 import type { PerformanceAlert } from '../../../utils/performance/rendering-performance';
-import type { OptimizationPlan } from '@/hooks';
+import type { OptimizationPlan as _OptimizationPlan } from '@/hooks';
 
 interface OverviewTabProps {
   metricTrends: {

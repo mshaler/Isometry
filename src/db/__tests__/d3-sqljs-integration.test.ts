@@ -92,11 +92,11 @@ describe('D3.js + sql.js Synchronous Integration', () => {
 
       const cards = d3Selection
         .selectAll('.card')
-        .data(nodes, (d: any) => d.id) // Key function for proper data binding
+        .data(nodes, (d: unknown) => d.id) // Key function for proper data binding
         .join('div')
           .attr('class', 'card')
-          .attr('data-id', (d: any) => d.id)
-          .text((d: any) => d.name);
+          .attr('data-id', (d: unknown) => d.id)
+          .text((d: unknown) => d.name);
 
       const bindTime = performance.now() - bindStartTime;
 
@@ -117,10 +117,10 @@ describe('D3.js + sql.js Synchronous Integration', () => {
 
       let cards = d3Selection
         .selectAll('.card')
-        .data(nodes, (d: any) => d.id)
+        .data(nodes, (d: unknown) => d.id)
         .join('div')
           .attr('class', 'card')
-          .text((d: any) => d.name);
+          .text((d: unknown) => d.name);
 
       expect(cards.size()).toBe(4);
 
@@ -138,14 +138,14 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       const rebindTime = performance.now();
       cards = d3Selection
         .selectAll('.card')
-        .data(nodes, (d: any) => d.id)
+        .data(nodes, (d: unknown) => d.id)
         .join(
-          enter => enter.append('div').attr('class', 'card').attr('data-id', (d: any) => d.id),
+          enter => enter.append('div').attr('class', 'card').attr('data-id', (d: unknown) => d.id),
           update => update,
           exit => exit.remove()
         )
-        .attr('data-id', (d: any) => d.id)
-        .text((d: any) => d.name);
+        .attr('data-id', (d: unknown) => d.id)
+        .text((d: unknown) => d.name);
       const rebindDuration = performance.now() - rebindTime;
 
       // Verify update worked without bridge overhead
@@ -186,7 +186,7 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       // Create nested D3.js selection based on hierarchy levels
       const levelGroups = d3Selection
         .selectAll('.level-group')
-        .data(d3.group(hierarchyData, (d: any) => d.level))
+        .data(d3.group(hierarchyData, (d: unknown) => d.level))
         .join('div')
           .attr('class', 'level-group')
           .attr('data-level', ([level]: [number, any[]]) => level);
@@ -195,12 +195,12 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       levelGroups.each(function([level, levelNodes]: [number, any[]]) {
         d3.select(this)
           .selectAll('.hierarchy-node')
-          .data(levelNodes, (d: any) => d.id)
+          .data(levelNodes, (d: unknown) => d.id)
           .join('div')
             .attr('class', 'hierarchy-node')
             .attr('data-level', level)
-            .attr('data-id', (d: any) => d.id)
-            .text((d: any) => `L${d.level}: ${d.name}`);
+            .attr('data-id', (d: unknown) => d.id)
+            .text((d: unknown) => `L${d.level}: ${d.name}`);
       });
 
       // Verify hierarchical DOM structure
@@ -231,7 +231,7 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       // Create D3.js force simulation (this would normally run in browser)
       // For test purposes, we'll verify the data structure is correct
       const simulation = d3.forceSimulation(nodesData)
-        .force('link', d3.forceLink(edgesData).id((d: any) => d.id))
+        .force('link', d3.forceLink(edgesData).id((d: unknown) => d.id))
         .force('charge', d3.forceManyBody().strength(-100))
         .force('center', d3.forceCenter(400, 300));
 
@@ -246,14 +246,14 @@ describe('D3.js + sql.js Synchronous Integration', () => {
         .data(edgesData)
         .join('line')
           .attr('class', 'link')
-          .attr('data-type', (d: any) => d.edge_type);
+          .attr('data-type', (d: unknown) => d.edge_type);
 
       const nodeCircles = svg.selectAll('.node')
-        .data(nodesData, (d: any) => d.id)
+        .data(nodesData, (d: unknown) => d.id)
         .join('circle')
           .attr('class', 'node')
-          .attr('r', (d: any) => 5 + d.priority)
-          .attr('data-id', (d: any) => d.id);
+          .attr('r', (d: unknown) => 5 + d.priority)
+          .attr('data-id', (d: unknown) => d.id);
 
       // Verify network elements were created
       expect(links.size()).toBe(3);
@@ -293,11 +293,11 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       const bindStart = performance.now();
       const cards = d3Selection
         .selectAll('.perf-card')
-        .data(allNodes, (d: any) => d.id)
+        .data(allNodes, (d: unknown) => d.id)
         .join('div')
           .attr('class', 'perf-card')
-          .attr('data-priority', (d: any) => d.priority)
-          .text((d: any) => d.name);
+          .attr('data-priority', (d: unknown) => d.priority)
+          .text((d: unknown) => d.name);
       const bindTime = performance.now() - bindStart;
 
       const totalTime = performance.now() - startTime;
@@ -338,7 +338,7 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       // Bind filtered results to D3.js grouped layout
       const priorityGroups = d3Selection
         .selectAll('.priority-group')
-        .data(d3.group(filteredNodes, (d: any) => d.priority_group))
+        .data(d3.group(filteredNodes, (d: unknown) => d.priority_group))
         .join('div')
           .attr('class', 'priority-group')
           .attr('data-priority-group', ([group]: [string, any[]]) => group);
@@ -346,10 +346,10 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       priorityGroups.each(function([group, groupNodes]: [string, any[]]) {
         d3.select(this)
           .selectAll('.filtered-card')
-          .data(groupNodes, (d: any) => d.id)
+          .data(groupNodes, (d: unknown) => d.id)
           .join('div')
             .attr('class', 'filtered-card')
-            .text((d: any) => `${group}: ${d.name}`);
+            .text((d: unknown) => `${group}: ${d.name}`);
       });
 
       // Verify grouped layout
@@ -403,10 +403,10 @@ describe('D3.js + sql.js Synchronous Integration', () => {
       const bindStart = performance.now();
       const complexCards = d3Selection
         .selectAll('.complex-card')
-        .data(parsedData, (d: any) => d.id)
+        .data(parsedData, (d: unknown) => d.id)
         .join('div')
           .attr('class', 'complex-card')
-          .html((d: any) => {
+          .html((d: unknown) => {
             const metadata = d.parsed.metadata;
             return `
               <h3>${d.name}</h3>

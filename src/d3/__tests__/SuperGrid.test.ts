@@ -265,7 +265,7 @@ describe('SuperGrid Foundation', () => {
       const originalData = d3.selection.prototype.data;
       let keyFunctionUsed = false;
 
-      d3.selection.prototype.data = function(data: any, key?: any) {
+      d3.selection.prototype.data = function(data: unknown, key?: unknown) {
         if (typeof key === 'function') {
           keyFunctionUsed = true;
         }

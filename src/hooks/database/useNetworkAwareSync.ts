@@ -284,7 +284,7 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
    */
   const queueOptimizedSync = useCallback((
     type: Parameters<typeof queueSync>[0],
-    data: any,
+    data: unknown,
     options: Parameters<typeof queueSync>[2] = {}
   ) => {
     if (!networkQuality) {
@@ -330,10 +330,10 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
    * Optimize payload for network conditions
    */
   const optimizePayloadForNetwork = useCallback((
-    data: any,
+    data: unknown,
     maxSize: number,
     quality: ConnectionQuality
-  ): any => {
+  ): unknown => {
     // Simple payload optimization strategies
     let optimized = { ...data }
 

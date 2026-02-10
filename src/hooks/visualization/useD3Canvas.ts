@@ -544,7 +544,7 @@ export function useD3Canvas(_containerRef?: React.RefObject<HTMLElement>): {
   // Development logging
   useEffect(() => {
     if (process.env.NODE_ENV === 'development' && canvasState.performance.totalPipeline > 0) {
-      console.log('D3 Canvas Pipeline Performance:', {
+      console.warn('D3 Canvas Pipeline Performance:', {
         total: `${canvasState.performance.totalPipeline.toFixed(2)}ms`,
         stages: {
           transform: `${canvasState.performance.dataTransform.toFixed(2)}ms`,

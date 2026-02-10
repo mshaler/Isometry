@@ -19,7 +19,7 @@ export interface GSDTerminalIntegrationOptions {
   sessionId: string | null;
   enabled?: boolean;
   onStateUpdate?: (state: GSDSessionState) => void;
-  onChoicePrompt?: (choices: any[]) => void;
+  onChoicePrompt?: (choices: unknown[]) => void;
   onError?: (error: string) => void;
 }
 
@@ -219,10 +219,10 @@ export function useGSDTerminalIntegration(
 export function useGSDTerminalConnector(
   gsdService: GSDService | null,
   sessionId: string | null,
-  terminalContext: any, // Replace with proper terminal context type
+  terminalContext: unknown, // Replace with proper terminal context type
   options?: {
     onStateUpdate?: (state: GSDSessionState) => void;
-    onChoicePrompt?: (choices: any[]) => void;
+    onChoicePrompt?: (choices: unknown[]) => void;
     onError?: (error: string) => void;
   }
 ) {

@@ -362,8 +362,8 @@ export function useConflictResolution() {
         setConflicts(prev => [...prev, testConflict]);
         setPendingConflictDiff(testDiff);
 
-        console.log('Test conflict created:', testConflict);
-        console.log('Test diff prepared:', testDiff);
+        console.warn('Test conflict created:', testConflict);
+        console.warn('Test diff prepared:', testDiff);
       };
     }
 

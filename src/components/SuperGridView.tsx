@@ -73,7 +73,7 @@ function useDataSource(renderMode: string, sql: string) {
 }
 
 /** Extract current axis mappings from PAFV state */
-function useAxisMappings(pafvState: any) {
+function useAxisMappings(pafvState: unknown) {
   const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
   const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
 
@@ -97,7 +97,7 @@ function LoadingState() {
 }
 
 /** Render error state */
-function ErrorState({ error }: { error: any }) {
+function ErrorState({ error }: { error: unknown }) {
   const errorMessage = typeof error === 'string'
     ? error
     : error instanceof Error
@@ -153,7 +153,7 @@ function LegacyModeView({
   onZoomChange
 }: {
   nodes: Node[];
-  d3CoordinateSystem: any;
+  d3CoordinateSystem: unknown;
   currentXAxis: string;
   currentXFacet: string;
   currentYAxis: string;
@@ -262,7 +262,7 @@ export function SuperGridView({
   );
 
   // Event handlers
-  const handleFormulaExecute = useCallback((formula: string, result: any) => {
+  const handleFormulaExecute = useCallback((formula: string, result: unknown) => {
     contextLogger.metrics('SuperGridView: Formula executed', { formula, result });
   }, []);
 

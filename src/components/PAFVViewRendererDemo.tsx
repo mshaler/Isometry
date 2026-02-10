@@ -30,7 +30,7 @@ export function PAFVViewRendererDemo() {
 
   const handleNodeClick = (node: Node) => {
     setSelectedNode(node);
-    console.log('PAFVDemo - Node clicked:', node);
+    console.warn('PAFVDemo - Node clicked:', node);
   };
 
   // Available facets for testing

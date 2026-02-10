@@ -232,3 +232,16 @@ export class PerformanceMonitor {
 }
 
 export const performanceMonitor = new PerformanceMonitor();
+
+/**
+ * Simple performance measurement utility for compatibility
+ */
+export function measurePerformance<T>(
+  name: string,
+  fn: () => T
+): { result: T; duration: number } {
+  performanceMonitor.startMetric(name);
+  const result = fn();
+  const duration = performanceMonitor.endMetric(name);
+  return { result, duration };
+}

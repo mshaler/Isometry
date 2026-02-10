@@ -27,7 +27,7 @@ export interface SyncOperation {
   id: string
   type: SyncOperationType
   priority: SyncPriority
-  data: any
+  data: unknown
   correlationId?: string
   timestamp: number
   attempts: number
@@ -41,10 +41,10 @@ export interface SyncOperation {
  */
 export interface SyncResult {
   success: boolean
-  data?: any
+  data?: unknown
   error?: string
   serverTimestamp?: number
-  conflictData?: any
+  conflictData?: unknown
 }
 
 /**
@@ -307,7 +307,7 @@ export class SyncQueue {
         timeMultiple: this.retryConfig.timeMultiplier,
         maxDelay: this.retryConfig.maxDelay,
         jitter: this.retryConfig.jitter,
-        retry: (error: any, _attemptNumber: number) => {
+        retry: (error: unknown, _attemptNumber: number) => {
           // Don't retry for client errors (4xx)
           if (error?.status >= 400 && error?.status < 500) {
             return false

@@ -4,8 +4,8 @@ import { devLogger } from '../utils/logging';
 export interface DataConflict {
   id: string;
   type: 'create' | 'update' | 'delete';
-  localData: any;
-  remoteData: any;
+  localData: unknown;
+  remoteData: unknown;
   timestamp: Date;
   resolved: boolean;
 }

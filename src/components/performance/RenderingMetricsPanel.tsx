@@ -5,15 +5,15 @@
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useRenderingOptimization, type OptimizationPlan } from '@/hooks';
-import { renderingPerformanceMonitor } from '../../utils/performance/rendering-performance';
-import type { Viewport, RenderingMetrics, PerformanceAlert } from '../../utils/performance/rendering-performance';
+import { useRenderingOptimization, type OptimizationPlan as _OptimizationPlan } from '@/hooks';
+import { renderingPerformanceMonitor as _renderingPerformanceMonitor } from '../../utils/performance/rendering-performance';
+import type { Viewport as _Viewport, RenderingMetrics as _RenderingMetrics, PerformanceAlert } from '../../utils/performance/rendering-performance';
 // Bridge eliminated in v4 - sql.js direct access
-import { Environment } from '../../utils/webview-bridge';
+import { Environment as _Environment } from '../../utils/webview-bridge';
 
 // Import focused components and utilities
 import { OverviewTab, MetricsTab, OptimizationTab, MemoryTab, AlertsTab } from './tabs';
-import { PERFORMANCE_PRESETS, OPTIMIZATION_THRESHOLDS } from './constants';
+import { PERFORMANCE_PRESETS, OPTIMIZATION_THRESHOLDS as _OPTIMIZATION_THRESHOLDS } from './constants';
 import type { RenderingMetricsPanelProps, PerformancePreset, MetricTrend, OptimizationRecommendation } from './types';
 import { generateOptimizationRecommendations } from './utils';
 
@@ -86,7 +86,11 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
       );
       setRecommendations(recs);
     }
-  }, [renderingOptimization.performanceMetrics, renderingOptimization.performanceAlerts, renderingOptimization.nativeRecommendations]);
+  }, [
+    renderingOptimization.performanceMetrics,
+    renderingOptimization.performanceAlerts,
+    renderingOptimization.nativeRecommendations
+  ]);
 
   // Pass optimization changes to parent
   useEffect(() => {
@@ -253,7 +257,8 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={`bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`bg-gray-50 dark:bg-gray-900 rounded-lg shadow-lg
+      border border-gray-200 dark:border-gray-700 ${className}`}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">

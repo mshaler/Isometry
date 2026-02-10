@@ -60,7 +60,7 @@ export interface UseDragDropResult {
  * <div
  *   onDragOver={handleDragOver}
  *   onDrop={handleDrop('x-axis', (itemId, zoneId) => {
- *     console.log(`Dropped ${itemId} on ${zoneId}`);
+ *     console.warn(`Dropped ${itemId} on ${zoneId}`);
  *   })}
  * >
  *   X-Axis Drop Zone

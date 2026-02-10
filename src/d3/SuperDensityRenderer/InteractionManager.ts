@@ -138,9 +138,9 @@ export class InteractionManager {
   private updateCellSelection(): void {
     // Add selection styling to selected cells
     this.components.gridGroup.selectAll('.grid-cells, .matrix-cells, .hybrid-grid-cells, .hybrid-matrix-cells')
-      .classed('selected', (d: any) => this.visualState.selectedCells.has(d.cellId))
-      .style('stroke', (d: any) => this.visualState.selectedCells.has(d.cellId) ? '#007acc' : '#ffffff')
-      .style('stroke-width', (d: any) => this.visualState.selectedCells.has(d.cellId) ? 3 : 1);
+      .classed('selected', (d: unknown) => this.visualState.selectedCells.has(d.cellId))
+      .style('stroke', (d: unknown) => this.visualState.selectedCells.has(d.cellId) ? '#007acc' : '#ffffff')
+      .style('stroke-width', (d: unknown) => this.visualState.selectedCells.has(d.cellId) ? 3 : 1);
   }
 
   /**

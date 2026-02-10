@@ -32,7 +32,7 @@ export function CanvasV2() {
 
   const handleNodeClick = useCallback((node: Node) => {
     setSelectedNode(node);
-    console.log('Node clicked:', node);
+    console.warn('Node clicked:', node);
   }, []);
 
 

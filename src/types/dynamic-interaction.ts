@@ -51,7 +51,7 @@ export interface DragState {
   dragStartPosition: { x: number; y: number }; // Initial mouse/touch position
   currentPosition: { x: number; y: number }; // Current drag position
   validDropZones: DropZone[];               // Currently valid drop targets
-  previewLayoutData: any | null;            // Preview data for layout changes
+  previewLayoutData: unknown | null;            // Preview data for layout changes
   dragStartTime: number;                    // Timestamp when drag started
 }
 

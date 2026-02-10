@@ -28,7 +28,7 @@ export async function validateDataConsistency(
   devLogger.info(`Validating data consistency: ${sourceProvider} → ${targetProvider}`);
   
   const checks: ConsistencyCheck[] = [];
-  let passedChecks = 0;
+  const passedChecks = 0;
   
   // Add consistency validation logic here
   const totalChecks = checks.length;

@@ -609,7 +609,7 @@ export const TEST_SCENARIOS = {
 export async function loadTestScenario(
   db: Database,
   scenario: keyof typeof TEST_SCENARIOS,
-  options?: any
+  options?: unknown
 ): Promise<void> {
   const scenarioData = TEST_SCENARIOS[scenario];
 

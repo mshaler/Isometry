@@ -111,12 +111,13 @@ function validateType(value: string, type: ConfigurationType): ValidationResult 
       }
       break;
 
-    case 'email':
+    case 'email': {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         errors.push('Value must be a valid email address');
       }
       break;
+    }
 
     case 'array':
       try {
@@ -157,19 +158,21 @@ function validateRule(value: string, rule: ValidationRule): ValidationResult {
       }
       break;
 
-    case 'minLength':
+    case 'minLength': {
       const minLength = parseInt(rule.parameter || '0');
       if (value.length < minLength) {
         errors.push(rule.message || `Value must be at least ${minLength} characters`);
       }
       break;
+    }
 
-    case 'maxLength':
+    case 'maxLength': {
       const maxLength = parseInt(rule.parameter || '255');
       if (value.length > maxLength) {
         errors.push(rule.message || `Value must be no more than ${maxLength} characters`);
       }
       break;
+    }
 
     case 'pattern':
       if (rule.parameter) {
@@ -198,12 +201,13 @@ function validateRule(value: string, rule: ValidationRule): ValidationResult {
       }
       break;
 
-    case 'email':
+    case 'email': {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         errors.push(rule.message || 'Value must be a valid email address');
       }
       break;
+    }
 
     case 'json':
       try {

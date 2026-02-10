@@ -17,7 +17,7 @@ export interface PersistenceOperations {
  */
 export function createPersistenceOperations(
   db: Database | null,
-  SQL: any,
+  SQL: unknown,
   setDb: (db: Database) => void,
   setDataVersion: (version: number) => void,
   persistenceRef: React.MutableRefObject<IndexedDBPersistence | null>,

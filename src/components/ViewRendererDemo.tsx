@@ -37,7 +37,7 @@ export function ViewRendererDemo() {
 
   const handleNodeClick = (node: Node) => {
     setSelectedNode(node);
-    console.log('ViewRendererDemo - Node clicked:', node);
+    console.warn('ViewRendererDemo - Node clicked:', node);
   };
 
   const handleViewChange = (viewType: ViewType) => {
@@ -49,7 +49,7 @@ export function ViewRendererDemo() {
       totalTransitions: prev.totalTransitions + 1
     }));
 
-    console.log('ViewRendererDemo - View changed to:', viewType);
+    console.warn('ViewRendererDemo - View changed to:', viewType);
   };
 
   // Render loading state

@@ -8,7 +8,7 @@ import type { QueryOptions } from '../types/service-types';
 export class DatabaseQueryService {
   constructor(private db: Database) {}
 
-  async execute(sql: string, params?: any[]): Promise<any[]> {
+  async execute(sql: string, params?: unknown[]): Promise<any[]> {
     try {
       const result = this.db.exec(sql, params);
       return result[0]?.values || [];
@@ -17,7 +17,7 @@ export class DatabaseQueryService {
     }
   }
 
-  async query(sql: string, params?: any[], options?: QueryOptions): Promise<any[]> {
+  async query(sql: string, params?: unknown[], options?: QueryOptions): Promise<any[]> {
     return this.execute(sql, params);
   }
 }

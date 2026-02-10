@@ -21,7 +21,7 @@ export interface OptimisticOperation {
   type: 'create' | 'update' | 'delete' | 'batch';
   table: string;
   primaryKey?: string | number;
-  optimisticData: any;
+  optimisticData: unknown;
   actualOperation: () => Promise<any>;
   timestamp: number;
   retryCount: number;
@@ -84,7 +84,7 @@ export interface OptimisticUpdateResult<T = any> {
  */
 export function useOptimisticUpdates<T = any>(
   sql: string,
-  liveQueryParams: any[] = [],
+  liveQueryParams: unknown[] = [],
   options: OptimisticUpdateOptions = {}
 ): OptimisticUpdateResult<T> {
   const {
@@ -135,7 +135,7 @@ export function useOptimisticUpdates<T = any>(
 
         case 'update':
           if (op.primaryKey !== undefined) {
-            const index = result.findIndex((item: any) =>
+            const index = result.findIndex((item: unknown) =>
               item.id === op.primaryKey || item[op.table + '_id'] === op.primaryKey
             );
             if (index >= 0) {
@@ -146,7 +146,7 @@ export function useOptimisticUpdates<T = any>(
 
         case 'delete':
           if (op.primaryKey !== undefined) {
-            result = result.filter((item: any) =>
+            result = result.filter((item: unknown) =>
               item.id !== op.primaryKey && item[op.table + '_id'] !== op.primaryKey
             );
           }

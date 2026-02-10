@@ -36,7 +36,7 @@ export interface LiveDataOptions {
   /** Callback for performance events */
   onPerformanceUpdate?: (metrics: LiveDataPerformanceMetrics) => void;
   /** Callback for data updates (backward compatibility) */
-  onUpdate?: (...args: any[]) => void;
+  onUpdate?: (...args: unknown[]) => void;
 }
 
 export interface LiveDataPerformanceMetrics {

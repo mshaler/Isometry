@@ -155,7 +155,7 @@ export class SuperGridHeaders {
    * Render hierarchical headers from flat data
    */
   public renderHeaders(
-    flatData: any[],
+    flatData: unknown[],
     axis: string,
     facetField: string = 'status',
     totalWidth: number = 800

@@ -411,7 +411,7 @@ export interface TestSuiteResults {
 }
 
 export const runComprehensiveTestSuite = async (): Promise<TestSuiteResults> => {
-  console.log('🧪 Starting comprehensive D3 Canvas test suite...');
+  console.warn('🧪 Starting comprehensive D3 Canvas test suite...');
 
   // Run all test categories
   const pafvTests = runPAFVValidationSuite();

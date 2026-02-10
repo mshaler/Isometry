@@ -81,7 +81,7 @@ export function CacheInvalidationProvider({ children }: { children: ReactNode })
     });
 
     if (import.meta.env.DEV && refetchFunctions.size > 0) {
-      console.log('Cache invalidation:', {
+      console.warn('Cache invalidation:', {
         tags,
         refetchCount: refetchFunctions.size
       });

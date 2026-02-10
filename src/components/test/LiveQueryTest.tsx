@@ -42,16 +42,15 @@ export function LiveQueryTest() {
   // Live query for testing - SELECT first 5 nodes
   const {
     data: nodes,
-    loading,
+    isLoading: loading,
     error,
-    isLive,
-    startLive,
-    stopLive,
-    observationId,
-    updateOptimistically,
+    isActive: isLive,
+    start: startLive,
+    stop: stopLive,
+    optimisticUpdate: updateOptimistically,
     rollbackOptimisticUpdate,
-    queueBackgroundSync,
-    backgroundSyncState
+    toggleBackgroundSync: queueBackgroundSync,
+    syncStatus: backgroundSyncState
   } = useLiveQuery<TestNode>(
     'SELECT id, name, content, created_at, updated_at FROM nodes ORDER BY created_at DESC LIMIT 5',
     {
@@ -129,7 +128,7 @@ export function LiveQueryTest() {
     } catch (error) {
       addTestResult(`❌ Basic live query test failed: ${error}`);
     }
-  }, [isLive, startLive, observationId, nodes, addTestResult]);
+  }, [isLive, startLive, nodes, addTestResult]);
 
   // Test 2: Database mutation testing with latency measurement
   const testDatabaseMutation = useCallback(async () => {
@@ -345,7 +344,7 @@ export function LiveQueryTest() {
             Nodes: {nodes?.length || 0}
           </div>
           <div className="text-sm text-gray-600">
-            Observer: {observationId ? observationId.slice(0, 8) + '...' : 'None'}
+            Observer: {isLive ? 'Active' : 'None'}
           </div>
         </div>
 

@@ -209,11 +209,11 @@ export function useD3PerformanceWithMonitor(
   target?: SVGElement | HTMLElement,
   subscriptionId?: string
 ): D3PerformanceMetrics & {
-  reportToMonitor: (additionalData?: Record<string, any>) => void;
+  reportToMonitor: (additionalData?: Record<string, unknown>) => void;
 } {
   const baseMetrics = useD3Performance(target);
 
-  const reportToMonitor = useCallback((additionalData?: Record<string, any>) => {
+  const reportToMonitor = useCallback((additionalData?: Record<string, unknown>) => {
     if (subscriptionId) {
       // Dispatch custom event for DataFlowMonitor
       window.dispatchEvent(new CustomEvent('d3-performance-update', {

@@ -169,7 +169,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
           const clusterResult = await graphAnalytics.runGraphQuery('clusterAnalysis', {
             depth: 3
           });
-          console.log('Cluster analysis result:', clusterResult.result);
+          console.warn('Cluster analysis result:', clusterResult.result);
         } catch (error) {
           console.warn('Cluster analysis failed:', error);
         }

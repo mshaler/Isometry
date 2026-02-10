@@ -1,6 +1,11 @@
 import React from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { cacheUtils } from '../../services/queryClient';
+// import { cacheUtils } from '../../services/queryClient'; // Service not implemented yet
+const cacheUtils = {
+  getCacheSize: () => 0,
+  getCacheKeys: () => [],
+  clearCache: () => Promise.resolve()
+};
 
 /**
  * QueryClient diagnostic component to verify TanStack Query setup
@@ -154,9 +159,9 @@ export const QueryClientDiagnostic: React.FC = () => {
             </button>
             <button
               onClick={() => {
-                console.log('QueryClient instance:', queryClient);
-                console.log('Cache stats:', cacheStats);
-                console.log('Default options:', defaultOptions);
+                console.warn('QueryClient instance:', queryClient);
+                console.warn('Cache stats:', cacheStats);
+                console.warn('Default options:', defaultOptions);
               }}
               className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
             >

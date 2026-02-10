@@ -31,7 +31,7 @@ function fullToAbbr(full: LATCHAxis): LATCHAxisAbbr {
 
 export interface PAFVAxisServiceConfig {
   /** Database instance for persistence */
-  database: any; // sql.js database instance
+  database: unknown; // sql.js database instance
 
   /** Debounce delay for persistence operations (ms) */
   persistenceDelay: number;
@@ -114,7 +114,7 @@ export class PAFVAxisService {
       }
 
       const rows = results[0];
-      this.availableAxes = rows.values.map((row: any) => {
+      this.availableAxes = rows.values.map((row: unknown) => {
         const [id, facet, latchDimension, , facetType, enabled, , nodeCount] = row;
 
         return {
@@ -128,7 +128,7 @@ export class PAFVAxisService {
         };
       });
 
-      console.log(`PAFVAxisService: Loaded ${this.availableAxes.length} available axes`);
+      console.warn(`PAFVAxisService: Loaded ${this.availableAxes.length} available axes`);
 
     } catch (error) {
       console.error('PAFVAxisService: Failed to load available axes', error);
@@ -197,7 +197,7 @@ export class PAFVAxisService {
       }
     ];
 
-    console.log('PAFVAxisService: Using default axes (database unavailable)');
+    console.warn('PAFVAxisService: Using default axes (database unavailable)');
   }
 
   private generateAxisLabel(facet: string, latchDimension: string): string {
@@ -271,7 +271,7 @@ export class PAFVAxisService {
       if (results.length > 0 && results[0].values.length > 0) {
         const mappingJson = results[0].values[0][0];
         this.currentMapping = JSON.parse(String(mappingJson));
-        console.log('PAFVAxisService: Loaded persisted axis mapping');
+        console.warn('PAFVAxisService: Loaded persisted axis mapping');
       }
 
     } catch (error) {
@@ -381,7 +381,7 @@ export class PAFVAxisService {
     // Persist change
     await this.persistMapping();
 
-    console.log(`PAFVAxisService: Assigned ${axis.label} to ${plane.toUpperCase()}-axis`);
+    console.warn(`PAFVAxisService: Assigned ${axis.label} to ${plane.toUpperCase()}-axis`);
     return true;
   }
 
@@ -403,7 +403,7 @@ export class PAFVAxisService {
     // Persist change
     await this.persistMapping();
 
-    console.log(`PAFVAxisService: Cleared ${plane.toUpperCase()}-axis`);
+    console.warn(`PAFVAxisService: Cleared ${plane.toUpperCase()}-axis`);
   }
 
   /**
@@ -445,7 +445,7 @@ export class PAFVAxisService {
     // Persist change
     await this.persistMapping();
 
-    console.log(`PAFVAxisService: Swapped ${fromPlane} ↔ ${toPlane} axes`);
+    console.warn(`PAFVAxisService: Swapped ${fromPlane} ↔ ${toPlane} axes`);
     return true;
   }
 
@@ -467,7 +467,7 @@ export class PAFVAxisService {
     // Persist change
     await this.persistMapping();
 
-    console.log(`PAFVAxisService: Handled ${trigger} axis change on ${changedAxis}-axis`);
+    console.warn(`PAFVAxisService: Handled ${trigger} axis change on ${changedAxis}-axis`);
   }
 
   private convertToViewAxisMapping(
@@ -503,8 +503,8 @@ export class PAFVAxisService {
 
   private updateMetrics(
     trigger: 'drag' | 'programmatic',
-    oldMapping: any,
-    newMapping: any
+    oldMapping: unknown,
+    newMapping: unknown
   ): void {
     if (!this.config.enableMetrics) return;
 
@@ -535,7 +535,7 @@ export class PAFVAxisService {
     this.metrics.interactionPatterns.averageSessionSwaps = sessionSwaps;
   }
 
-  private detectAxisSwap(oldMapping: any, newMapping: any): { from: string; to: string } | null {
+  private detectAxisSwap(oldMapping: unknown, newMapping: unknown): { from: string; to: string } | null {
     // Detect axis movement patterns for analytics
     // This is a simplified implementation
     const oldAxes = Object.keys(oldMapping).filter(k => oldMapping[k]);
@@ -581,7 +581,7 @@ export class PAFVAxisService {
           '1.0.0'
         ]);
 
-        console.log('PAFVAxisService: Persisted axis mapping');
+        console.warn('PAFVAxisService: Persisted axis mapping');
 
       } catch (error) {
         console.error('PAFVAxisService: Failed to persist mapping', error);
@@ -678,7 +678,7 @@ export class PAFVAxisService {
  * Factory function to create PAFVAxisService instance
  */
 export function createPAFVAxisService(
-  database: any,
+  database: unknown,
   canvasId: string,
   options: Partial<PAFVAxisServiceConfig> = {}
 ): PAFVAxisService {

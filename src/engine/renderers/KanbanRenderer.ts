@@ -549,7 +549,7 @@ export class KanbanRenderer implements ViewRenderer {
     });
   }
 
-  private getNodeFacetValue(node: Node, facet: string): any {
+  private getNodeFacetValue(node: Node, facet: string): unknown {
     return (node as any)[facet] || null;
   }
 

@@ -114,7 +114,7 @@ export class HeaderLayoutService {
    * Generate header hierarchy from flat LATCH data using d3-hierarchy
    */
   public generateHeaderHierarchy(
-    flatData: any[],
+    flatData: unknown[],
     axis: string,
     facetField: string = 'status'
   ): HeaderHierarchy {
@@ -254,11 +254,11 @@ export class HeaderLayoutService {
    * Generate progressive hierarchy with level grouping for deep structures
    */
   public generateProgressiveHierarchy(
-    flatData: any[],
+    flatData: unknown[],
     axis: string,
     facetField: string = 'status',
     maxVisibleLevels: number = 3
-  ): HeaderHierarchy & { levelGroups: any[]; recommendedLevels: number[] } {
+  ): HeaderHierarchy & { levelGroups: unknown[]; recommendedLevels: number[] } {
     const baseHierarchy = this.generateHeaderHierarchy(flatData, axis, facetField);
 
     // If hierarchy is shallow, return as-is
@@ -284,7 +284,7 @@ export class HeaderLayoutService {
   /**
    * Analyze hierarchy structure for level grouping opportunities
    */
-  public analyzeLevelGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): any[] {
+  public analyzeLevelGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): unknown[] {
     const groups = [];
 
     // Check for semantic patterns first
@@ -303,8 +303,8 @@ export class HeaderLayoutService {
   /**
    * Find semantic grouping patterns in hierarchy levels
    */
-  public findSemanticLevelGroups(hierarchy: HeaderHierarchy): any[] {
-    const groups: any[] = [];
+  public findSemanticLevelGroups(hierarchy: HeaderHierarchy): unknown[] {
+    const groups: unknown[] = [];
     const facetsByLevel = this.groupFacetsByLevel(hierarchy);
 
     // Common semantic patterns
@@ -358,8 +358,8 @@ export class HeaderLayoutService {
   /**
    * Create data density-based groups as fallback
    */
-  public createDataDensityGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): any[] {
-    const groups: any[] = [];
+  public createDataDensityGroups(hierarchy: HeaderHierarchy, maxVisibleLevels: number): unknown[] {
+    const groups: unknown[] = [];
     const nodeCountsByLevel = this.getNodeCountsByLevel(hierarchy);
     const levels = Object.keys(nodeCountsByLevel).map(Number).sort((a, b) => a - b);
 
@@ -500,7 +500,7 @@ export class HeaderLayoutService {
   // Private helper methods
 
   private transformToHeaderNodes(
-    flatData: any[],
+    flatData: unknown[],
     axis: string,
     facetField: string
   ): HeaderNode[] {
@@ -565,11 +565,11 @@ export class HeaderLayoutService {
     return headerNodes;
   }
 
-  private calculateLayout(root: any): void {
+  private calculateLayout(root: unknown): void {
     // Traverse hierarchy and calculate positions
     let currentX = 0;
 
-    root.eachBefore((node: any) => {
+    root.eachBefore((node: unknown) => {
       const data = node.data as HeaderNode;
 
       if (node.depth === 0) {
@@ -600,22 +600,22 @@ export class HeaderLayoutService {
     });
   }
 
-  private calculateMaxDepth(root: any): number {
+  private calculateMaxDepth(root: unknown): number {
     let maxDepth = 0;
-    root.eachAfter((node: any) => {
+    root.eachAfter((node: unknown) => {
       maxDepth = Math.max(maxDepth, node.depth);
     });
     return maxDepth;
   }
 
-  private calculateTotalWidth(root: any): number {
+  private calculateTotalWidth(root: unknown): number {
     const leafNodes = root.leaves();
-    return leafNodes.reduce((total: number, leaf: any) =>
+    return leafNodes.reduce((total: number, leaf: unknown) =>
       total + (leaf.data.width || 100), 0
     );
   }
 
-  private calculateTotalHeight(root: any): number {
+  private calculateTotalHeight(root: unknown): number {
     return (this.calculateMaxDepth(root) + 1) * 40; // 40px per level
   }
 
@@ -638,7 +638,7 @@ export const calculateSpanWidths = (
 };
 
 export const generateHeaderHierarchy = (
-  flatData: any[],
+  flatData: unknown[],
   axis: string,
   facetField?: string,
   config?: SpanCalculationConfig

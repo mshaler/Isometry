@@ -34,7 +34,7 @@ export class ListView implements ViewRenderer {
   // ViewRenderer Interface Implementation
   // ========================================================================
 
-  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: any[]): void {
+  render(cards: Node[], axisMapping: ViewAxisMapping, activeFilters: unknown[]): void {
     d3Logger.render('ListView.render()', {
       cardCount: cards.length,
       axisMapping,
@@ -85,7 +85,7 @@ export class ListView implements ViewRenderer {
   scrollToCard(cardId: string): void {
     const cardElement = this.contentGroup
       .selectAll('.list-item')
-      .filter((d: any) => d.card?.id === cardId);
+      .filter((d: unknown) => d.card?.id === cardId);
 
     if (!cardElement.empty()) {
       const transform = cardElement.attr('transform');

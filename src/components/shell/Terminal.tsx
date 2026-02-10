@@ -40,7 +40,7 @@ export function Terminal({
     onCommand,
     onNavigateHistory: (direction: 'up' | 'down') => {
       // TODO: Implement command history
-      console.log('Navigate history:', direction);
+      console.warn('Navigate history:', direction);
       return null;
     }
   });

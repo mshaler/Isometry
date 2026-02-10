@@ -46,7 +46,7 @@ export class DatabaseService {
     this.cache = new DatabaseCacheService(db);
   }
 
-  async execute(sql: string, params?: any[]): Promise<any[]> {
+  async execute(sql: string, params?: unknown[]): Promise<any[]> {
     return this.query.execute(sql, params);
   }
 

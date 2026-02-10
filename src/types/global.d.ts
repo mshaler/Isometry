@@ -4,7 +4,7 @@
 
 declare global {
   interface Window {
-    __TAURI_INTERNALS__?: any;
+    __TAURI_INTERNALS__?: unknown;
   }
 }
 

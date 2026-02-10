@@ -11,7 +11,7 @@ export interface DataChange {
   table: string;
   recordId: string;
   operation: 'insert' | 'update' | 'delete';
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
 

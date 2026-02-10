@@ -78,7 +78,7 @@ export interface StateEventHandlers {
   onFeatureToggled: (feature: keyof SuperFeatureFlags, enabled: boolean) => void;
   onSelectionChanged: (selectedIds: Set<string>) => void;
   onError: (error: string) => void;
-  onPerformanceUpdate: (metrics: any) => void;
+  onPerformanceUpdate: (metrics: unknown) => void;
 }
 
 /**
@@ -283,7 +283,7 @@ export class StateManager {
   /**
    * Export current state for serialization
    */
-  public exportState(): any {
+  public exportState(): unknown {
     return {
       ...this.state,
       // Convert Sets and Maps to serializable format
@@ -302,7 +302,7 @@ export class StateManager {
   /**
    * Import state from serialized data
    */
-  public importState(serializedState: any): void {
+  public importState(serializedState: unknown): void {
     const importedState = {
       ...serializedState,
       // Convert arrays back to Sets and objects back to Maps
@@ -455,7 +455,7 @@ export class StateManager {
   /**
    * Filter state based on persistence configuration
    */
-  private filterStateForPersistence(): any {
+  private filterStateForPersistence(): unknown {
     const state = this.exportState();
 
     if (!this.persistenceConfig.includeNodes) {

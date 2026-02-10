@@ -17,7 +17,8 @@ function isNode(item: unknown): item is Node {
 }
 
 function isEdge(item: unknown): item is Edge {
-  return typeof item === 'object' && item !== null && 'id' in item && 'edgeType' in item && 'sourceId' in item && 'targetId' in item;
+  return typeof item === 'object' && item !== null &&
+    'id' in item && 'edgeType' in item && 'sourceId' in item && 'targetId' in item;
 }
 
 export interface VirtualizedGridProps<T = unknown> {
@@ -101,6 +102,12 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
     usingLiveData,
     liveQuery
   });
+
+  // Memoize grid virtual items
+  const virtualGridItems = useMemo(() => {
+    return virtualization.virtualItems?.map((virtualItem: any, index: number) => {
+      const columnIndex = index % columnCount;
+      return {
         columnIndex,
         itemIndex: virtualItem.index,
         x: columnIndex * (actualColumnWidth + gap),
@@ -108,8 +115,8 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
         width: actualColumnWidth,
         height: virtualItem.size
       };
-    });
-  }, [usingLiveData, liveQuery.virtualItems, staticVirtualGrid.virtualItems, columnCount, actualColumnWidth, gap]);
+    }) || [];
+  }, [virtualization.virtualItems, columnCount, actualColumnWidth, gap]);
 
   // Handle item click
   const handleItemClick = useCallback((itemIndex: number) => {
@@ -187,7 +194,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
           width: virtualGrid.totalWidth
         }}
       >
-        {virtualGridItems.map((virtualItem: any) => {
+        {virtualGridItems.map((virtualItem: unknown) => {
           const item = finalItems[virtualItem.itemIndex];
           if (!item) return null;
 
@@ -262,7 +269,8 @@ export function NodeGrid({
 
     const node = item;
     return (
-      <div className="h-full w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
+      <div className="h-full w-full bg-white border border-gray-200 rounded-lg
+        shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
         {/* Node header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
@@ -354,7 +362,8 @@ export function EdgeGrid({
 
     const edge = item;
     return (
-      <div className="h-full w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
+      <div className="h-full w-full bg-white border border-gray-200 rounded-lg
+        shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col">
         {/* Edge header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0">
@@ -419,10 +428,10 @@ export function EdgeGrid({
 
 interface GridDataSourceConfig {
   sql?: string;
-  queryParams: any[];
-  items?: any[];
+  queryParams: unknown[];
+  items?: unknown[];
   loading: boolean;
-  liveOptions: any;
+  liveOptions: unknown;
 }
 
 function useGridDataSource({ sql, queryParams, items, loading, liveOptions }: GridDataSourceConfig) {
@@ -474,7 +483,7 @@ function useGridDimensions({ width, columnCount, gap, estimateColumnWidth }: Gri
 }
 
 interface GridVirtualizationConfig {
-  finalItems: any[];
+  finalItems: unknown[];
   columnCount: number;
   height: number;
   width: number;
@@ -482,7 +491,7 @@ interface GridVirtualizationConfig {
   actualColumnWidth: number;
   enableDynamicSizing: boolean;
   usingLiveData: boolean;
-  liveQuery: any;
+  liveQuery: unknown;
 }
 
 function useGridVirtualization({
@@ -498,7 +507,7 @@ function useGridVirtualization({
 }: GridVirtualizationConfig) {
   // Virtual grid hook for static data fallback
   const staticGridData = useMemo(() => {
-    const rows: any[][] = [];
+    const rows: unknown[][] = [];
     for (let i = 0; i < finalItems.length; i += columnCount) {
       rows.push(finalItems.slice(i, i + columnCount));
     }
@@ -522,7 +531,7 @@ function useGridVirtualization({
     }
 
     // Convert linear virtual items to grid layout
-    return liveQuery.virtualItems.map((virtualItem: any) => {
+    return liveQuery.virtualItems.map((virtualItem: unknown) => {
       const rowIndex = Math.floor(virtualItem.index / columnCount);
       const columnIndex = virtualItem.index % columnCount;
 
@@ -541,7 +550,10 @@ function useGridVirtualization({
         }
       };
     });
-  }, [usingLiveData, staticVirtualGrid.virtualItems, liveQuery.virtualItems, columnCount, estimateRowHeight, actualColumnWidth]);
+  }, [
+    usingLiveData, staticVirtualGrid.virtualItems, liveQuery.virtualItems,
+    columnCount, estimateRowHeight, actualColumnWidth
+  ]);
 
   return {
     virtualGridItems,

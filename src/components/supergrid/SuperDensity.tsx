@@ -160,7 +160,7 @@ export function SuperDensity({
   }, [onDensityChange, debug]);
 
   // Handle density level changes from controls
-  const handleDensityLevelChange = useCallback(async (level: DensityLevel, value: any) => {
+  const handleDensityLevelChange = useCallback(async (level: DensityLevel, value: unknown) => {
     if (!densityServiceRef.current) return;
 
     setIsProcessing(true);

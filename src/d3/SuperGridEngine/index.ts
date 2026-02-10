@@ -61,7 +61,7 @@ export class SuperGridEngine extends EventEmitter {
   private progressiveState!: ProgressiveState;
 
   // SuperGridV4 compatibility - migrated state
-  private gridDataCache: any = null;
+  private gridDataCache: unknown = null;
 
   // Performance tracking
   private renderStartTime = 0;
@@ -496,7 +496,7 @@ export class SuperGridEngine extends EventEmitter {
     );
   }
 
-  private updateEngineFromGridData(gridData: any): void {
+  private updateEngineFromGridData(gridData: unknown): void {
     this.gridDataCache = gridData;
 
     // Convert GridData to engine format
@@ -514,7 +514,7 @@ export class SuperGridEngine extends EventEmitter {
   /**
    * Set callbacks (SuperGridV4 compatible)
    */
-  setCallbacksV4(callbacks: any): void {
+  setCallbacksV4(callbacks: unknown): void {
     if (callbacks.onCellClick) {
       this.removeAllListeners('cellClick');
       this.on('cellClick', (data) => {
@@ -528,7 +528,7 @@ export class SuperGridEngine extends EventEmitter {
   /**
    * Get current grid data (SuperGridV4 compatible)
    */
-  getCurrentDataV4(): any {
+  getCurrentDataV4(): unknown {
     return this.gridDataCache;
   }
 

@@ -67,7 +67,7 @@ function PerformancePanel({
   executionTime: number | null;
   currentBackend: string;
   isBridgeMode: boolean;
-  bridgeResults: any[];
+  bridgeResults: unknown[];
   count: number | null;
   bridgeSequenceId: string | undefined;
   onClose: () => void;
@@ -116,12 +116,12 @@ function PerformancePanel({
 function FilterHeader({
   bridgeStatus,
   bridgeError,
-  showPerformancePanel,
+  _showPerformancePanel,
   onTogglePerformance
 }: {
   bridgeStatus: ReturnType<typeof getBridgeStatus>;
   bridgeError: string | null;
-  showPerformancePanel: boolean;
+  _showPerformancePanel: boolean;
   onTogglePerformance: () => void;
 }) {
   const StatusIcon = bridgeStatus.icon;
@@ -176,7 +176,7 @@ function PreviewCount({
   bridgeIsLoading: boolean;
   executionTime: number | null;
   count: number | null;
-  bridgeResults: any[];
+  bridgeResults: unknown[];
 }) {
   if (isLoading || bridgeIsLoading) {
     return (

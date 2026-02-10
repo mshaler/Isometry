@@ -151,7 +151,7 @@ export abstract class BaseViewRenderer implements ViewRenderer {
 
   // Default event handlers (can be overridden)
   onCardClick?(node: Node, _event: MouseEvent): void {
-    console.log('Card clicked:', node.name);
+    console.warn('Card clicked:', node.name);
   }
 
   onCardHover?(_node: Node | null): void {

@@ -40,7 +40,7 @@ export class SuperGrid {
   private readonly headerHeight = 40;
 
   // Callbacks
-  private onCardClick?: (card: any) => void;
+  private onCardClick?: (card: unknown) => void;
   private onSelectionChange?: (selectedIds: string[]) => void;
 
   constructor(
@@ -172,9 +172,9 @@ export class SuperGrid {
         const result = this.database.getDatabase().exec(sql, filterCompilationResult.parameters);
 
         if (result.length > 0) {
-          const cards = result[0].values.map((row: any[]) => {
+          const cards = result[0].values.map((row: unknown[]) => {
             const columns = result[0].columns;
-            const card: any = {};
+            const card: unknown = {};
             columns.forEach((col, index) => {
               card[col] = row[index];
             });
@@ -190,9 +190,9 @@ export class SuperGrid {
         const result = this.database.getDatabase().exec('SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY created_at DESC');
 
         if (result.length > 0) {
-          const cards = result[0].values.map((row: any[]) => {
+          const cards = result[0].values.map((row: unknown[]) => {
             const columns = result[0].columns;
-            const card: any = {};
+            const card: unknown = {};
             columns.forEach((col, index) => {
               card[col] = row[index];
             });
@@ -218,7 +218,7 @@ export class SuperGrid {
   /**
    * Render the grid with current data
    */
-  public render(activeFilters: any[] = []): void {
+  public render(activeFilters: unknown[] = []): void {
     this.renderingEngine.render(activeFilters);
   }
 
@@ -250,7 +250,7 @@ export class SuperGrid {
     this.renderingEngine.scrollToCard(cardId);
   }
 
-  public updateCards(cards: any[]): void {
+  public updateCards(cards: unknown[]): void {
     if (this.currentData) {
       this.currentData.cards = cards;
       this.updateModulesWithData();
@@ -291,7 +291,7 @@ export class SuperGrid {
     this.render();
   }
 
-  public getStats(): any {
+  public getStats(): unknown {
     return {
       cardCount: this.currentData?.cards.length || 0,
       selectedCount: this.selectionController.getSelection().selectedIds.length
@@ -326,7 +326,7 @@ export class SuperGrid {
 
   // Event handlers
 
-  private handleCardClick(card: any): void {
+  private handleCardClick(card: unknown): void {
     if (this.onCardClick) {
       this.onCardClick(card);
     }
@@ -361,11 +361,11 @@ export class SuperGrid {
     // Position update handling
   }
 
-  private handleHeaderClick(event: any): void {
+  private handleHeaderClick(event: unknown): void {
     // Header click handling
   }
 
-  private handleCardRender(selection: any): void {
+  private handleCardRender(selection: unknown): void {
     // Apply drag behavior to rendered cards
     this.dragDropController.applyDragBehavior(selection);
   }
@@ -405,7 +405,7 @@ export class SuperGrid {
 
   // Setters for external callbacks
 
-  public setOnCardClick(callback: (card: any) => void): void {
+  public setOnCardClick(callback: (card: unknown) => void): void {
     this.onCardClick = callback;
   }
 

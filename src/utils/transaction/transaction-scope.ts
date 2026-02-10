@@ -299,7 +299,7 @@ export class TransactionScope {
     }
   }
 
-  private async sendTransactionMessage(_method: string, _params: any): Promise<any> {
+  private async sendTransactionMessage(_method: string, _params: unknown): Promise<any> {
     // This will be integrated with the WebView bridge in Task 3
     // For now, return a mock successful response
     return { success: true };

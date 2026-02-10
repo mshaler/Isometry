@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+ 
 /**
  * React Hook for Rendering Optimization
  *
@@ -77,7 +77,7 @@ export interface RenderingOptimizationState {
 
 export interface RenderingOptimizationActions {
   // Optimization control
-  optimizeForDataset: (nodes: any[]) => Promise<OptimizationPlan>;
+  optimizeForDataset: (nodes: unknown[]) => Promise<OptimizationPlan>;
   updateViewport: (viewport: Partial<Viewport>) => void;
   setTargetFPS: (fps: number) => void;
 
@@ -157,7 +157,7 @@ export function useRenderingOptimization(
       renderingPerformanceMonitor.startMonitoring();
 
       if (config.memoryMonitoring) {
-        memoryUsageTracker.startMonitoring(5000, (metrics: any) => {
+        memoryUsageTracker.startMonitoring(5000, (metrics: unknown) => {
           if (metrics.leakDetected) {
             setState(prev => ({
               ...prev,
@@ -219,7 +219,7 @@ export function useRenderingOptimization(
   // Actions
   // ========================================================================
 
-  const optimizeForDataset = useCallback(async (nodes: any[]): Promise<OptimizationPlan> => {
+  const optimizeForDataset = useCallback(async (nodes: unknown[]): Promise<OptimizationPlan> => {
     setState(prev => ({ ...prev, isOptimizing: true }));
 
     try {

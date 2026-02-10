@@ -7,7 +7,7 @@ import { contextLogger } from '../utils/dev-logger';
  */
 export function SQLiteDebugConsole() {
   const { db, loading, error, execute, capabilities, telemetry } = useSQLite();
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     if (!db || loading) return;
@@ -104,7 +104,7 @@ export function SQLiteDebugConsole() {
 
         {debugInfo.tables && (
           <div>
-            <strong>Tables:</strong> {debugInfo.tables.map((t: any) => t.name).join(', ')}
+            <strong>Tables:</strong> {debugInfo.tables.map((t: unknown) => t.name).join(', ')}
           </div>
         )}
 

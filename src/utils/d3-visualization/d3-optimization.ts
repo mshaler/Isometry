@@ -428,7 +428,7 @@ export function createPerformantSimulation<T>(
 /**
  * Debounce data updates to prevent excessive re-renders
  */
-export function debounceDataUpdates<T extends (...args: any[]) => any>(
+export function debounceDataUpdates<T extends (...args: unknown[]) => any>(
   func: T,
   delay: number = 100
 ): T {

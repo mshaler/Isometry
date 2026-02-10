@@ -10,9 +10,9 @@ export interface DatabaseConnection {
 
 export interface DatabaseService {
   connection: DatabaseConnection;
-  query: (sql: string, params?: any[]) => Promise<any[]>;
-  execute: (sql: string, params?: any[]) => Promise<{ changes: number; lastInsertRowid?: number }>;
-  transaction: (queries: Array<{ sql: string; params?: any[] }>) => Promise<any[]>;
+  query: (sql: string, params?: unknown[]) => Promise<any[]>;
+  execute: (sql: string, params?: unknown[]) => Promise<{ changes: number; lastInsertRowid?: number }>;
+  transaction: (queries: Array<{ sql: string; params?: unknown[] }>) => Promise<any[]>;
   initializeDatabase: () => Promise<void>;
   closeConnection: () => Promise<void>;
 }
@@ -29,13 +29,13 @@ export function useDatabaseService(): DatabaseService {
     lastSync: null
   });
 
-  const query = useCallback(async (sql: string, params?: any[]): Promise<any[]> => {
+  const query = useCallback(async (sql: string, params?: unknown[]): Promise<any[]> => {
     try {
       // In v4, this would use direct sql.js access
       // For now, return empty results as a stub
       devLogger.debug('DatabaseService query', { sql, params });
       return [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnection(prev => ({ ...prev, error: error.message }));
       throw error;
     }
@@ -43,23 +43,23 @@ export function useDatabaseService(): DatabaseService {
 
   const execute = useCallback(async (
     sql: string,
-    params?: any[]
+    params?: unknown[]
   ): Promise<{ changes: number; lastInsertRowid?: number }> => {
     try {
       // In v4, this would use direct sql.js access
       devLogger.debug('DatabaseService execute', { sql, params });
       return { changes: 0 };
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnection(prev => ({ ...prev, error: error.message }));
       throw error;
     }
   }, []);
 
-  const transaction = useCallback(async (queries: Array<{ sql: string; params?: any[] }>): Promise<any[]> => {
+  const transaction = useCallback(async (queries: Array<{ sql: string; params?: unknown[] }>): Promise<any[]> => {
     try {
       // In v4, this would use direct sql.js transactions
       devLogger.debug('DatabaseService transaction', { queryCount: queries.length });
-      const results: any[] = [];
+      const results: unknown[] = [];
 
       for (const { sql, params } of queries) {
         if (sql.toLowerCase().startsWith('select')) {
@@ -70,7 +70,7 @@ export function useDatabaseService(): DatabaseService {
       }
 
       return results;
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnection(prev => ({ ...prev, error: error.message }));
       throw error;
     }
@@ -91,7 +91,7 @@ export function useDatabaseService(): DatabaseService {
       });
 
       devLogger.debug('DatabaseService database initialized successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnection({
         isConnected: false,
         isInitialized: false,
@@ -112,7 +112,7 @@ export function useDatabaseService(): DatabaseService {
         error: null,
         lastSync: null
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       setConnection(prev => ({ ...prev, error: error.message }));
       throw error;
     }

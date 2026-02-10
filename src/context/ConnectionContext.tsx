@@ -35,7 +35,7 @@ export interface ConnectionContextValue {
   /** Queue operation for offline execution */
   queueOperation: (operation: {
     type: string;
-    data: any;
+    data: unknown;
     priority?: 'low' | 'normal' | 'high' | 'critical';
     maxRetries?: number;
   }) => string;
@@ -99,7 +99,7 @@ export function ConnectionProvider({
     connectionManager.current = getConnectionManager(managerOptions);
 
     // Set up state change listener
-    connectionManager.current.onStateChange((newState: ConnectionState, metrics: any) => {
+    connectionManager.current.onStateChange((newState: ConnectionState, metrics: unknown) => {
       setStatus(newState);
       setIsConnected(newState === 'connected' || newState === 'degraded' || newState === 'syncing');
       setUptime(metrics.uptime);
@@ -200,7 +200,7 @@ export function ConnectionProvider({
   // Queue operation for offline execution
   const queueOperation = useCallback((operation: {
     type: string;
-    data: any;
+    data: unknown;
     priority?: 'low' | 'normal' | 'high' | 'critical';
     maxRetries?: number;
   }): string => {

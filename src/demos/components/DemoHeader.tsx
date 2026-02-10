@@ -27,7 +27,7 @@ interface DemoHeaderProps {
   onFilterRemove: (filterId: string) => void;
   onClearAllFilters: () => void;
   onViewChange: (newView: ViewType) => void;
-  trackFeatureUsage: (feature: string, data?: any) => void;
+  trackFeatureUsage: (feature: string, data?: unknown) => void;
 }
 
 export function DemoHeader({

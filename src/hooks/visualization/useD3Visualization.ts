@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+ 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { parseChartData, detectVisualizationType, extractVisualizationConfig } from '../../utils/d3Parsers';

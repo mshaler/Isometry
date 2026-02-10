@@ -173,9 +173,9 @@ export function PerformanceBaseline({
 
     // Collect measurements every second
     measurementIntervalRef.current = setInterval(() => {
-      const avgCacheHit = liveDataMetrics.reduce((sum: number, m: any) => sum + m.cacheHitRate, 0)
+      const avgCacheHit = liveDataMetrics.reduce((sum: number, m: unknown) => sum + m.cacheHitRate, 0)
         / Math.max(1, liveDataMetrics.length);
-      const totalErrors = liveDataMetrics.reduce((sum: number, m: any) => sum + m.errorCount, 0);
+      const totalErrors = liveDataMetrics.reduce((sum: number, m: unknown) => sum + m.errorCount, 0);
 
       setCurrentMeasurements(prev => ({
         fps: [...prev.fps, d3Performance.currentFps],
@@ -237,7 +237,7 @@ export function PerformanceBaseline({
       onBaselineEstablished(baseline);
     }
 
-    console.log('Performance baseline established:', baseline);
+    console.warn('Performance baseline established:', baseline);
   }, [currentMeasurements, dataSize, currentQuality, onBaselineEstablished]);
 
   // Performance trend analysis

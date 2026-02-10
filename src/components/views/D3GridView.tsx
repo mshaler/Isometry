@@ -91,7 +91,7 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
   // Bridge state for gesture coordination
   const [performanceMetrics, setPerformanceMetrics] = useState<{
     native?: NativeRenderingMetrics;
-    comparison?: any;
+    comparison?: unknown;
   }>({});
 
   const containerRef = useRef<HTMLDivElement>(null);

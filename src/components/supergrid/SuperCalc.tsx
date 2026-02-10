@@ -2,8 +2,8 @@ import React, { useState, useRef, useCallback } from 'react';
 import './SuperCalc.css';
 
 interface SuperCalcProps {
-  onFormulaExecute: (formula: string, result: any) => void;
-  gridData?: any[];
+  onFormulaExecute: (formula: string, result: unknown) => void;
+  gridData?: unknown[];
   pafvState?: {
     xAxis: string;
     yAxis: string;
@@ -14,7 +14,7 @@ interface SuperCalcProps {
 
 interface ParsedFormula {
   function: string;
-  args: any[];
+  args: unknown[];
   rawFormula: string;
   isValid: boolean;
   error?: string;
@@ -139,7 +139,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const groups = groupByAxis(gridData, axisField);
         const results = Object.entries(groups).map(([key, items]) => ({
           [axisField]: key,
-          sum: (items as any[]).reduce((sum: number, item: any) => sum + (Number(item[field]) || 0), 0),
+          sum: (items as any[]).reduce((sum: number, item: unknown) => sum + (Number(item[field]) || 0), 0),
           count: (items as any[]).length
         }));
         return { type: 'table', data: results, summary: `Sum of ${field} over ${axis}` };
@@ -162,7 +162,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const groups = groupByAxis(gridData, axisField);
         const results = Object.entries(groups).map(([key, items]) => ({
           [axisField]: key,
-          average: (items as any[]).reduce((sum: number, item: any) => sum + (Number(item[field]) || 0), 0)
+          average: (items as any[]).reduce((sum: number, item: unknown) => sum + (Number(item[field]) || 0), 0)
             / (items as any[]).length,
           count: (items as any[]).length
         }));
@@ -175,7 +175,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const groups = groupByAxis(gridData, axisField);
         const results = Object.entries(groups).map(([key, items]) => ({
           [axisField]: key,
-          maximum: Math.max(...(items as any[]).map((item: any) => Number(item[field]) || 0)),
+          maximum: Math.max(...(items as any[]).map((item: unknown) => Number(item[field]) || 0)),
           count: (items as any[]).length
         }));
         return { type: 'table', data: results, summary: `Maximum of ${field} over ${axis}` };
@@ -187,7 +187,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const groups = groupByAxis(gridData, axisField);
         const results = Object.entries(groups).map(([key, items]) => ({
           [axisField]: key,
-          minimum: Math.min(...(items as any[]).map((item: any) => Number(item[field]) || 0)),
+          minimum: Math.min(...(items as any[]).map((item: unknown) => Number(item[field]) || 0)),
           count: (items as any[]).length
         }));
         return { type: 'table', data: results, summary: `Minimum of ${field} over ${axis}` };
@@ -200,7 +200,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         const results = Object.entries(groups).map(([key, items]) => ({
           group: key,
           [aggregateFunc.toLowerCase()]: aggregateFunc === 'COUNT' ? (items as any[]).length :
-                                        aggregateFunc === 'SUM' ? (items as any[]).reduce((s: number, i: any) => s + (Number(i.value) || 0), 0) :
+                                        aggregateFunc === 'SUM' ? (items as any[]).reduce((s: number, i: unknown) => s + (Number(i.value) || 0), 0) :
                                         (items as any[]).length
         }));
         return { type: 'table', data: results, summary: `Group by ${axis} with ${aggregateFunc}` };
@@ -279,7 +279,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     return 'folder'; // default
   };
 
-  const groupByAxis = (data: any[], field: string) => {
+  const groupByAxis = (data: unknown[], field: string) => {
     return data.reduce((groups, item) => {
       const key = item[field] || 'Unknown';
       if (!groups[key]) groups[key] = [];
@@ -288,7 +288,9 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     }, {} as Record<string, any[]>);
   };
 
-  const createPivotTable = (data: any[], xField: string, yField: string, valueField: string, aggregation: string) => {
+  const createPivotTable = (
+    data: unknown[], xField: string, yField: string, valueField: string, aggregation: string
+  ) => {
     const pivot: Record<string, Record<string, number>> = {};
 
     data.forEach(item => {
@@ -315,7 +317,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     return pivot;
   };
 
-  const filterData = (data: any[], condition: string) => {
+  const filterData = (data: unknown[], condition: string) => {
     // Simple condition parsing: "field=value", "field>value", etc.
     const match = condition.match(/(\w+)\s*([=<>!]+)\s*(.+)/);
     if (!match) return data;
@@ -432,7 +434,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
           <div className="supercalc__result supercalc__result--table">
             <div className="supercalc__result-summary">{executionResult.summary}</div>
             <div className="supercalc__table">
-              {executionResult.data.slice(0, 10).map((row: any, i: number) => (
+              {executionResult.data.slice(0, 10).map((row: unknown, i: number) => (
                 <div key={i} className="supercalc__table-row">
                   {Object.entries(row).map(([key, value]) => (
                     <div key={key} className="supercalc__table-cell">

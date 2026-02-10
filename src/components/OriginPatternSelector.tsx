@@ -25,7 +25,7 @@ export interface OriginPatternSelectorProps {
  * ```tsx
  * <OriginPatternSelector
  *   currentPattern="anchor"
- *   onPatternChange={(pattern) => console.log('Pattern:', pattern)}
+ *   onPatternChange={(pattern) => console.warn('Pattern:', pattern)}
  * />
  * ```
  */

@@ -1,5 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight, Save, AlertCircle, Hash, Code, Settings } from 'lucide-react';
+import {
+  Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
+  Save, AlertCircle, Hash, Code, Settings
+} from 'lucide-react';
 import MDEditor from '@uiw/react-md-editor';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useMarkdownEditor, useSlashCommands } from '@/hooks';
@@ -58,8 +61,12 @@ function MinimizedView({ className, theme, isDirty, onMaximize }: {
   onMaximize: () => void;
 }) {
   return (
-    <div className={`${className} ${theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'} border rounded-lg`}>
-      <div className={`flex items-center justify-between p-2 ${theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'} rounded-t-lg border-b`}>
+    <div className={`${className} ${
+      theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'
+    } border rounded-lg`}>
+      <div className={`flex items-center justify-between p-2 ${
+        theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'
+      } rounded-t-lg border-b`}>
         <div className="flex items-center gap-2">
           <Edit3 size={16} className="text-gray-600" />
           <span className="font-medium text-sm">Capture</span>
@@ -67,7 +74,9 @@ function MinimizedView({ className, theme, isDirty, onMaximize }: {
         </div>
         <button
           onClick={onMaximize}
-          className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors`}
+          className={`p-1 rounded hover:${
+            theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'
+          } transition-colors`}
           title="Maximize"
         >
           <Maximize2 size={14} className="text-gray-600" />
@@ -79,7 +88,9 @@ function MinimizedView({ className, theme, isDirty, onMaximize }: {
 
 function EmptyCardView({ theme }: { theme: string }) {
   return (
-    <div className={`h-full ${theme === 'NeXTSTEP' ? 'bg-white border-[#707070]' : 'bg-gray-50 border-gray-200'} border rounded flex items-center justify-center text-gray-500`}>
+    <div className={`h-full ${
+      theme === 'NeXTSTEP' ? 'bg-white border-[#707070]' : 'bg-gray-50 border-gray-200'
+    } border rounded flex items-center justify-center text-gray-500`}>
       <div className="text-center">
         <AlertCircle size={24} className="mx-auto mb-2 text-gray-400" />
         <p className="text-sm">No card selected</p>
@@ -94,7 +105,7 @@ function SlashCommandMenu({
   theme,
   onExecuteCommand
 }: {
-  menuState: any;
+  menuState: unknown;
   theme: string;
   onExecuteCommand: (commandId: string) => void;
 }) {
@@ -122,7 +133,7 @@ function SlashCommandMenu({
       </div>
       <div className="py-1">
         {menuState.commands.length > 0 ? (
-          menuState.commands.map((command: any, index: number) => (
+          menuState.commands.map((command: unknown, index: number) => (
             <button
               key={command.id}
               onClick={() => onExecuteCommand(command.id)}
@@ -246,7 +257,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     }
     try {
       const command = extractShellCommand(content);
-      console.log('Sending to shell:', command);
+      console.warn('Sending to shell:', command);
       alert(`Command sent to shell: ${command.substring(0, 50)}...`);
     } catch (error) {
       console.error('Failed to send to shell:', error);
@@ -270,7 +281,10 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       return true;
     }
     return originalExecuteCommand(commandId);
-  }, [allCommands, filteredCommands, menuState.selectedIndex, originalExecuteCommand, handleSaveCard, handleSendToShell]);
+  }, [
+    allCommands, filteredCommands, menuState.selectedIndex,
+    originalExecuteCommand, handleSaveCard, handleSendToShell
+  ]);
 
   const handleManualSave = useCallback(async () => {
     try {
@@ -354,8 +368,12 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   }
 
   return (
-    <div className={`${className} ${theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'} border rounded-lg flex flex-col min-w-[300px]`}>
-      <div className={`flex items-center justify-between p-2 ${theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'} rounded-t-lg border-b`}>
+    <div className={`${className} ${
+      theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'
+    } border rounded-lg flex flex-col min-w-[300px]`}>
+      <div className={`flex items-center justify-between p-2 ${
+        theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'
+      } rounded-t-lg border-b`}>
         <div className="flex items-center gap-2">
           <Edit3 size={16} className="text-gray-600" />
           <span className="font-medium text-sm">

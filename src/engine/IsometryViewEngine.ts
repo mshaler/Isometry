@@ -21,7 +21,7 @@ import { devLogger } from '../utils/logging';
  * Error types for ViewEngine operations
  */
 export class ViewEngineError extends Error {
-  constructor(message: string, public readonly code: string, public readonly details?: any) {
+  constructor(message: string, public readonly code: string, public readonly details?: unknown) {
     super(message);
     this.name = 'ViewEngineError';
   }
@@ -331,7 +331,7 @@ export class IsometryViewEngine implements ViewEngine {
     );
   }
 
-  private projectionsEqual(a: any, b: any): boolean {
+  private projectionsEqual(a: unknown, b: unknown): boolean {
     // Simple comparison - could be enhanced with deep comparison
     return (
       a.x?.axis === b.x?.axis && a.x?.facet === b.x?.facet &&

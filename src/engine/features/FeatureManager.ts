@@ -71,9 +71,9 @@ interface SuperAuditConfig {
  */
 export interface FeatureEvents {
   onFeatureToggled: (feature: keyof SuperFeatureFlags, enabled: boolean) => void;
-  onConfigChanged: (feature: string, config: any) => void;
+  onConfigChanged: (feature: string, config: unknown) => void;
   onFeatureError: (feature: string, error: Error) => void;
-  onPerformanceWarning: (feature: string, metrics: any) => void;
+  onPerformanceWarning: (feature: string, metrics: unknown) => void;
 }
 
 export class FeatureManager {
@@ -181,7 +181,7 @@ export class FeatureManager {
   /**
    * Record performance metrics for a feature
    */
-  public recordPerformance(feature: string, metrics: any): void {
+  public recordPerformance(feature: string, metrics: unknown): void {
     this.performanceMetrics.set(feature, {
       ...this.performanceMetrics.get(feature),
       ...metrics,
@@ -294,7 +294,7 @@ export class FeatureManager {
   /**
    * Check if performance metrics indicate a warning
    */
-  private isPerformanceWarning(feature: string, metrics: any): boolean {
+  private isPerformanceWarning(feature: string, metrics: unknown): boolean {
     const thresholds = {
       renderTime: 100, // ms
       memoryUsage: 50, // MB
