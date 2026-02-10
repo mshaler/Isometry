@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { devLogger } from '../utils/logging';
 
 export interface MarkdownEditorState {
   content: string;
@@ -61,7 +62,7 @@ export function useMarkdownEditor(initialContent = ''): MarkdownEditor {
 
     try {
       // In v4, this would save to sql.js database
-      console.log('[MarkdownEditor] Saving content...');
+      devLogger.debug('MarkdownEditor saving content');
 
       setState(prev => ({
         ...prev,
