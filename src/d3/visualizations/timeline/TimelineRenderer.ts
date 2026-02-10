@@ -172,7 +172,7 @@ export function createTimeline(
           .attr('stroke', 'white')
           .attr('stroke-width', 1.5)
           .attr('cursor', 'pointer')
-          .on('mouseenter', function (event, d) {
+          .on('mouseenter', function (_event, d) {
             d3.select(this)
               .transition()
               .duration(150)

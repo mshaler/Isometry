@@ -1,20 +1,19 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database } from 'lucide-react';
+import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database, Clock } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useWebPreview } from '@/hooks';
 import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-export/exportUtils';
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import { SuperGrid } from '../supergrid/SuperGrid';
-import { DataInspectorTab } from './preview-tabs/DataInspectorTab';
-import { NetworkGraphTab } from './preview-tabs/NetworkGraphTab';
+import { NetworkGraphTab, DataInspectorTab, TimelineTab } from './preview-tabs';
 import MDEditor from '@uiw/react-md-editor';
 
 interface PreviewComponentProps {
   className?: string;
 }
 
-type PreviewTab = 'supergrid' | 'network' | 'data-inspector' | 'web-preview' | 'd3-visualization';
+type PreviewTab = 'supergrid' | 'network' | 'timeline' | 'data-inspector' | 'web-preview' | 'd3-visualization';
 
 export function PreviewComponent({ className }: PreviewComponentProps) {
   const { theme } = useTheme();
@@ -106,6 +105,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const tabs: Array<{ id: PreviewTab; icon: typeof Grid3x3; label: string; description: string }> = [
     { id: 'supergrid', icon: Grid3x3, label: 'SuperGrid', description: 'Polymorphic data projection' },
     { id: 'network', icon: Network, label: 'Network', description: 'Graph visualization' },
+    { id: 'timeline', icon: Clock, label: 'Timeline', description: 'Temporal visualization' },
     { id: 'data-inspector', icon: Database, label: 'Inspector', description: 'Data explorer' },
     { id: 'web-preview', icon: Globe, label: 'Web', description: 'Web content preview' },
     { id: 'd3-visualization', icon: BarChart3, label: 'D3 Viz', description: 'Interactive charts' }
@@ -292,6 +292,12 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
               graph://nodes+edges?layout=force-directed
             </div>
           </div>
+        ) : activeTab === 'timeline' ? (
+          <div className="flex items-center gap-2 p-2">
+            <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
+              timeline://nodes?facet=created_at
+            </div>
+          </div>
         ) : activeTab === 'data-inspector' ? (
           <div className="flex items-center gap-2 p-2">
             <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
@@ -341,6 +347,18 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             onNodeSelect={(nodeId) => {
               // Find the card associated with this node
               const card = cards.find(c => c.nodeId === nodeId);
+              if (card) {
+                setActiveCard(card);
+              }
+            }}
+          />
+        ) : activeTab === 'timeline' ? (
+          /* Timeline Tab - Temporal LATCH visualization */
+          <TimelineTab
+            className="h-full"
+            onEventSelect={(eventId) => {
+              // Find the card associated with this event
+              const card = cards.find(c => c.nodeId === eventId);
               if (card) {
                 setActiveCard(card);
               }
@@ -451,6 +469,8 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
               `SuperGrid • Polymorphic data projection${dataPointCount > 0 ? ` • ${dataPointCount} nodes` : ''}`
             ) : activeTab === 'network' ? (
               'Network Graph • Graph visualization'
+            ) : activeTab === 'timeline' ? (
+              'Timeline • Temporal visualization'
             ) : activeTab === 'data-inspector' ? (
               'Data Inspector • SQLite browser'
             ) : activeTab === 'd3-visualization' ? (
