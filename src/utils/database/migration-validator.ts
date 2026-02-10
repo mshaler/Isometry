@@ -246,7 +246,11 @@ export class MigrationValidator {
       if (dataPreserved && performanceRestored && errors.length === 0) {
         devLogger.metrics('Rollback completed successfully', {});
       } else {
-        console.warn('⚠️ Rollback completed with issues');
+        devLogger.warn('Rollback completed with issues', {
+          dataPreserved,
+          performanceRestored,
+          errorCount: errors.length
+        });
       }
 
       return {
@@ -285,7 +289,7 @@ export class MigrationValidator {
     reason: CheckpointMetadata['reason'] = 'pre-migration',
     description: string = 'Automated checkpoint before migration'
   ): Promise<Checkpoint> {
-    console.log(`📸 Creating migration checkpoint: ${reason}`);
+    devLogger.inspect('Creating migration checkpoint', { reason, description });
 
     const id = this.generateCheckpointId();
     const timestamp = new Date().toISOString();
@@ -331,7 +335,7 @@ export class MigrationValidator {
    * Restore from checkpoint
    */
   async restoreFromCheckpoint(scenario: RollbackScenario): Promise<RestoreResult> {
-    console.log(`📼 Restoring from checkpoint...`);
+    devLogger.inspect('Restoring from checkpoint', { scenarioType: scenario.type });
 
     const errors: string[] = [];
 
@@ -692,7 +696,7 @@ export class MigrationValidator {
 
     if (checkpointsToDelete.length > 0) {
       this.saveCheckpoints();
-      console.log(`🧹 Cleaned up ${checkpointsToDelete.length} old checkpoints`);
+      devLogger.debug('Cleaned up old checkpoints', { count: checkpointsToDelete.length });
     }
   }
 
@@ -712,7 +716,7 @@ export class MigrationValidator {
         this.checkpoints = new Map(data);
       }
     } catch (error) {
-      console.warn('Failed to load migration checkpoints:', error);
+      devLogger.warn('Failed to load migration checkpoints', { error });
       this.checkpoints = new Map();
     }
   }
@@ -722,7 +726,7 @@ export class MigrationValidator {
       const data = Array.from(this.checkpoints.entries());
       localStorage.setItem('migration-checkpoints', JSON.stringify(data));
     } catch (error) {
-      console.warn('Failed to save migration checkpoints:', error);
+      devLogger.warn('Failed to save migration checkpoints', { error });
     }
   }
 
