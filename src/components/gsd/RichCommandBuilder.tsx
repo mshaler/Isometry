@@ -8,7 +8,7 @@
  * - Saved command templates
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play,
   Save,
@@ -61,6 +61,11 @@ interface RichCommandBuilderProps {
   onCommandExecute: (command: BuiltCommand) => void;
   onSaveTemplate: (template: CommandTemplate) => void;
   savedTemplates: CommandTemplate[];
+  isExecuting?: boolean;
+  commandPaletteOpen?: boolean;
+  setCommandPaletteOpen?: (open: boolean) => void;
+  retryCommand?: string;
+  onRetryCommandClear?: () => void;
   className?: string;
 }
 
@@ -254,6 +259,11 @@ export function RichCommandBuilder({
   onCommandExecute,
   onSaveTemplate,
   savedTemplates,
+  isExecuting = false,
+  commandPaletteOpen = false,
+  setCommandPaletteOpen,
+  retryCommand,
+  onRetryCommandClear,
   className
 }: RichCommandBuilderProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<CommandTemplate | null>(null);
@@ -263,6 +273,32 @@ export function RichCommandBuilder({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['development']));
   const [searchQuery, setSearchQuery] = useState('');
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [quickCommand, setQuickCommand] = useState('');
+  const [showQuickInput, setShowQuickInput] = useState(false);
+
+  const quickInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle command palette open state
+  useEffect(() => {
+    if (commandPaletteOpen) {
+      setShowQuickInput(true);
+      // Auto-focus the quick input when palette opens
+      setTimeout(() => {
+        quickInputRef.current?.focus();
+      }, 100);
+    }
+  }, [commandPaletteOpen]);
+
+  // Handle retry command from failed execution
+  useEffect(() => {
+    if (retryCommand) {
+      setQuickCommand(retryCommand);
+      setShowQuickInput(true);
+      setTimeout(() => {
+        quickInputRef.current?.focus();
+      }, 100);
+    }
+  }, [retryCommand]);
 
   // Combine default and saved templates
   const allTemplates = [...DEFAULT_TEMPLATES, ...savedTemplates];
@@ -343,18 +379,54 @@ export function RichCommandBuilder({
   }, []);
 
   const handleExecuteCommand = useCallback(() => {
-    if (builtCommand && selectedTemplate) {
+    if (builtCommand && selectedTemplate && !isExecuting) {
       setIsBuilding(true);
       onCommandExecute(builtCommand);
 
       // Update usage count
       selectedTemplate.usage += 1;
 
-      setTimeout(() => {
-        setIsBuilding(false);
-      }, 1000);
+      // Clear retry command if any
+      onRetryCommandClear?.();
     }
-  }, [builtCommand, selectedTemplate, onCommandExecute]);
+  }, [builtCommand, selectedTemplate, onCommandExecute, isExecuting, onRetryCommandClear]);
+
+  // Handle quick command execution (direct text input)
+  const handleQuickCommandExecute = useCallback(() => {
+    if (quickCommand.trim() && !isExecuting) {
+      const command: BuiltCommand = {
+        command: quickCommand,
+        parameters: {},
+        finalCommand: quickCommand,
+        description: 'Quick command'
+      };
+      onCommandExecute(command);
+      setQuickCommand('');
+      setShowQuickInput(false);
+      setCommandPaletteOpen?.(false);
+      onRetryCommandClear?.();
+    }
+  }, [quickCommand, isExecuting, onCommandExecute, setCommandPaletteOpen, onRetryCommandClear]);
+
+  // Handle escape to close quick input
+  const handleQuickInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleQuickCommandExecute();
+    } else if (e.key === 'Escape') {
+      setShowQuickInput(false);
+      setQuickCommand('');
+      setCommandPaletteOpen?.(false);
+      onRetryCommandClear?.();
+    }
+  }, [handleQuickCommandExecute, setCommandPaletteOpen, onRetryCommandClear]);
+
+  // Reset isBuilding when execution state changes
+  useEffect(() => {
+    if (!isExecuting) {
+      setIsBuilding(false);
+    }
+  }, [isExecuting]);
 
   const handleSaveAsTemplate = useCallback(() => {
     if (builtCommand) {
@@ -507,8 +579,29 @@ export function RichCommandBuilder({
           <h3 className="font-medium text-gray-200 flex items-center gap-2">
             <Settings size={20} className="text-blue-400" />
             Rich Command Builder
+            {isExecuting && (
+              <span className="flex items-center gap-1 text-xs text-blue-400">
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                Executing...
+              </span>
+            )}
           </h3>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setShowQuickInput(!showQuickInput);
+                if (!showQuickInput) {
+                  setTimeout(() => quickInputRef.current?.focus(), 100);
+                }
+              }}
+              className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${
+                showQuickInput ? 'bg-blue-600 text-white' : 'bg-gray-600 text-gray-300 hover:bg-gray-500'
+              }`}
+              title="Quick command (Cmd+K)"
+            >
+              <Play size={12} />
+              Quick
+            </button>
             <button
               onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
               className={`px-2 py-1 text-xs rounded ${
@@ -519,6 +612,36 @@ export function RichCommandBuilder({
             </button>
           </div>
         </div>
+
+        {/* Quick Command Input */}
+        {showQuickInput && (
+          <div className="mb-4">
+            <div className="flex items-center gap-2">
+              <input
+                ref={quickInputRef}
+                type="text"
+                value={quickCommand}
+                onChange={(e) => setQuickCommand(e.target.value)}
+                onKeyDown={handleQuickInputKeyDown}
+                placeholder="Enter command directly... (Enter to execute, Esc to cancel)"
+                disabled={isExecuting}
+                className="flex-1 px-3 py-2 bg-gray-900 border border-blue-500 rounded-md text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+              <button
+                onClick={handleQuickCommandExecute}
+                disabled={!quickCommand.trim() || isExecuting}
+                className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isExecuting ? 'Running...' : 'Run'}
+              </button>
+            </div>
+            {retryCommand && (
+              <div className="mt-2 text-xs text-yellow-400">
+                Failed command loaded for retry. Edit and re-run.
+              </div>
+            )}
+          </div>
+        )}
 
         <input
           type="text"
@@ -659,11 +782,20 @@ export function RichCommandBuilder({
               <div className="flex items-center gap-3 pt-4 border-t border-gray-700">
                 <button
                   onClick={handleExecuteCommand}
-                  disabled={!isValid || isBuilding}
+                  disabled={!isValid || isBuilding || isExecuting}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Play size={16} />
-                  {isBuilding ? 'Executing...' : 'Execute'}
+                  {(isBuilding || isExecuting) ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Executing...
+                    </>
+                  ) : (
+                    <>
+                      <Play size={16} />
+                      Execute
+                    </>
+                  )}
                 </button>
 
                 <button

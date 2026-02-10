@@ -5,7 +5,7 @@
  * Manages GSD session state, displays progress, and handles user interactions.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   PlayCircle,
   Square,
@@ -15,7 +15,9 @@ import {
   AlertCircle,
   Sparkles,
   Terminal,
-  Zap
+  Zap,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { ExecutionProgress } from './ExecutionProgress';
 import { ChoicePrompt } from './ChoicePrompt';
@@ -31,6 +33,14 @@ import { getClaudeCodeDispatcher, GSDCommands } from '../../services/claudeCodeW
 import { gsdSlashCommands, SlashCommand } from '../../services/gsdSlashCommands';
 import { FileChangeEvent } from '../../services/claudeCodeServer';
 import { devLogger } from '../../utils/logging';
+
+// Toast notification types
+interface Toast {
+  id: string;
+  type: 'success' | 'error' | 'info';
+  message: string;
+  details?: string;
+}
 
 interface GSDInterfaceProps {
   className?: string;
@@ -50,6 +60,24 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
   }>({ command: null as any, isOpen: false });
   const [activeTab, setActiveTab] = useState<'dashboard' | 'builder' | 'terminal'>('dashboard');
   const [savedTemplates, setSavedTemplates] = useState<CommandTemplate[]>([]);
+
+  // Execution state tracking for command builder
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [activeToolUse, setActiveToolUse] = useState<string | null>(null);
+  const [commandBuilderInput, setCommandBuilderInput] = useState<string>('');
+  const executionStartTimeRef = useRef<number | null>(null);
+
+  // Toast notifications
+  const [toasts, setToasts] = useState<Toast[]>([]);
+
+  // Show toast notification
+  const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
+    const id = Date.now().toString();
+    setToasts(prev => [...prev, { ...toast, id }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 3000);
+  }, []);
 
   // Initialize GSD service when database is available
   useEffect(() => {
@@ -363,8 +391,56 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
     setCommandInputModal({ command: null as any, isOpen: false });
   }, []);
 
-  // Rich Command Builder handlers
+  // Parse execution output for phase transitions and tool uses
+  const handleExecutionOutput = useCallback((chunk: string) => {
+    // Parse for phase transitions
+    const phasePatterns = [
+      { pattern: /starting spec/i, phase: 'spec' },
+      { pattern: /spec.*complete|planning/i, phase: 'plan' },
+      { pattern: /implementing|implementation/i, phase: 'implement' },
+      { pattern: /testing|running tests/i, phase: 'test' },
+      { pattern: /committing|commit complete/i, phase: 'commit' }
+    ];
+
+    for (const { pattern, phase } of phasePatterns) {
+      if (pattern.test(chunk)) {
+        if (sessionState && gsdService) {
+          gsdService.updateSessionState(sessionState.sessionId, {
+            phase: phase as GSDPhase
+          });
+          const updatedState = gsdService.getSessionState(sessionState.sessionId);
+          if (updatedState) {
+            setSessionState(updatedState);
+          }
+        }
+        break;
+      }
+    }
+
+    // Parse for tool uses
+    const toolPatterns = [
+      { pattern: /Reading\s+(.+?)(?:\.\.\.|$)/i, type: 'Read' },
+      { pattern: /Writing\s+(.+?)(?:\.\.\.|$)/i, type: 'Write' },
+      { pattern: /Running\s+(.+?)(?:\.\.\.|$)/i, type: 'Bash' },
+      { pattern: /Searching\s+(.+?)(?:\.\.\.|$)/i, type: 'Grep' },
+      { pattern: /Finding\s+(.+?)(?:\.\.\.|$)/i, type: 'Glob' }
+    ];
+
+    for (const { pattern, type } of toolPatterns) {
+      const match = chunk.match(pattern);
+      if (match) {
+        setActiveToolUse(`${type}: ${match[1]}`);
+        break;
+      }
+    }
+  }, [sessionState, gsdService]);
+
+  // Rich Command Builder handlers - with real execution tracking
   const handleBuiltCommandExecute = useCallback(async (command: BuiltCommand) => {
+    setIsExecuting(true);
+    setActiveToolUse(null);
+    executionStartTimeRef.current = Date.now();
+
     try {
       const claudeCommand = {
         command: 'claude',
@@ -376,11 +452,72 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
       const execution = await dispatcher.executeAsync(claudeCommand);
       setCurrentExecutionId(execution.id);
 
-      devLogger.debug('Rich command executed', { component: 'GSDInterface', finalCommand: command.finalCommand, executionId: execution.id });
+      // Subscribe to output for live updates
+      if ('options' in dispatcher) {
+        const wsDispatcher = dispatcher as any;
+        if (wsDispatcher.options) {
+          const originalOnOutput = wsDispatcher.options.onOutput;
+          wsDispatcher.options.onOutput = (chunk: string, execId: string) => {
+            if (execId === execution.id) {
+              handleExecutionOutput(chunk);
+            }
+            originalOnOutput?.(chunk, execId);
+          };
+
+          const originalOnComplete = wsDispatcher.options.onComplete;
+          wsDispatcher.options.onComplete = (execId: string) => {
+            if (execId === execution.id) {
+              const duration = executionStartTimeRef.current
+                ? Date.now() - executionStartTimeRef.current
+                : 0;
+              showToast({
+                type: 'success',
+                message: 'Task completed successfully',
+                details: `Duration: ${Math.round(duration / 1000)}s`
+              });
+              setIsExecuting(false);
+              setActiveToolUse(null);
+              setCommandBuilderInput(''); // Clear input on success
+            }
+            originalOnComplete?.(execId);
+          };
+
+          const originalOnError = wsDispatcher.options.onError;
+          wsDispatcher.options.onError = (errorMsg: string, execId: string) => {
+            if (execId === execution.id) {
+              showToast({
+                type: 'error',
+                message: 'Command execution failed',
+                details: errorMsg
+              });
+              setIsExecuting(false);
+              setActiveToolUse(null);
+              // Load failed command into input for retry editing
+              setCommandBuilderInput(command.finalCommand);
+            }
+            originalOnError?.(errorMsg, execId);
+          };
+        }
+      }
+
+      devLogger.debug('Rich command executed', {
+        component: 'GSDInterface',
+        finalCommand: command.finalCommand,
+        executionId: execution.id
+      });
     } catch (error) {
-      setError(`Failed to execute command: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      showToast({
+        type: 'error',
+        message: 'Failed to execute command',
+        details: errorMessage
+      });
+      setError(`Failed to execute command: ${errorMessage}`);
+      // Load failed command into input for retry editing
+      setCommandBuilderInput(command.finalCommand);
+      setIsExecuting(false);
     }
-  }, [sessionState]);
+  }, [sessionState, handleExecutionOutput, showToast]);
 
   const handleSaveTemplate = useCallback((template: CommandTemplate) => {
     setSavedTemplates(prev => [...prev, template]);
@@ -453,10 +590,11 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
     }
   }, [gsdService, sessionState]);
 
-  // Keyboard shortcuts for command palette
+  // Keyboard shortcuts for command palette (Cmd+K on Mac, Ctrl+K on Windows/Linux)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === 'k') {
+      // Cmd+K (Mac) or Ctrl+K (Windows/Linux) to open command palette
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
         event.preventDefault();
         setShowCommandPalette(true);
       }
@@ -651,14 +789,14 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
             <ExecutionProgress
               currentPhase={displayState.phase}
               phaseHistory={displayState.phaseHistory}
-              activeToolUse={displayState.status === 'executing' ? 'Writing SuperGrid component with D3.js data binding...' : null}
+              activeToolUse={isExecuting ? (activeToolUse || 'Working...') : null}
               fileChanges={{
                 created: displayState.fileChanges.filter(f => f.type === 'create').length,
                 modified: displayState.fileChanges.filter(f => f.type === 'modify').length,
                 deleted: displayState.fileChanges.filter(f => f.type === 'delete').length
               }}
               tokenUsage={displayState.tokenUsage}
-              status={displayState.status}
+              status={isExecuting ? 'executing' : displayState.status}
             />
 
             {/* Choice Prompt Section */}
@@ -693,6 +831,11 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
               onCommandExecute={handleBuiltCommandExecute}
               onSaveTemplate={handleSaveTemplate}
               savedTemplates={savedTemplates}
+              isExecuting={isExecuting}
+              commandPaletteOpen={showCommandPalette}
+              setCommandPaletteOpen={setShowCommandPalette}
+              retryCommand={commandBuilderInput}
+              onRetryCommandClear={() => setCommandBuilderInput('')}
               className="h-full"
             />
           </div>
@@ -708,6 +851,32 @@ export function GSDInterface({ className }: GSDInterfaceProps) {
             />
           </div>
         )}
+      </div>
+
+      {/* Toast Notifications */}
+      <div className="fixed bottom-4 right-4 z-50 space-y-2">
+        {toasts.map(toast => (
+          <div
+            key={toast.id}
+            className={`flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-in slide-in-from-right ${
+              toast.type === 'success'
+                ? 'bg-green-900 border border-green-700 text-green-100'
+                : toast.type === 'error'
+                ? 'bg-red-900 border border-red-700 text-red-100'
+                : 'bg-blue-900 border border-blue-700 text-blue-100'
+            }`}
+          >
+            {toast.type === 'success' && <CheckCircle size={20} className="text-green-400 flex-shrink-0 mt-0.5" />}
+            {toast.type === 'error' && <XCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />}
+            {toast.type === 'info' && <AlertCircle size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />}
+            <div>
+              <div className="font-medium">{toast.message}</div>
+              {toast.details && (
+                <div className="text-sm opacity-80 mt-0.5">{toast.details}</div>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
