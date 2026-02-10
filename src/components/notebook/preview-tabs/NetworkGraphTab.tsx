@@ -9,6 +9,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { Network, AlertCircle, Loader2 } from 'lucide-react';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { useSelection } from '../../../state/SelectionContext';
 import { useForceGraph } from '../../../hooks/visualization/useForceGraph';
 import { ForceGraphRenderer } from '../../../d3/visualizations/network';
 import type { ForceGraphCallbacks, ForceGraphConfig } from '../../../d3/visualizations/network';
@@ -46,29 +47,38 @@ export function NetworkGraphTab({
   // Hover state for tooltip
   const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
-  // Get graph data from hook
+  // SYNC-03: Selection synchronized via SelectionContext
+  // When user clicks node here, selection updates everywhere
+  // When selection changes elsewhere, node highlight updates here
+  const { selection, select, clear, isSelected } = useSelection();
+
+  // Get graph data from hook (excluding local selection state which we now get from context)
   const {
     nodes,
     links,
     loading,
     error,
-    selectedNodeId,
-    setSelectedNodeId,
     nodeCount,
     linkCount,
   } = useForceGraph({ maxNodes });
 
-  // Handle node click
+  // SYNC-03: Selected node from shared context
+  const selectedNodeId = selection.lastSelectedId;
+
+  // Handle node click - SYNC-03: Toggle selection via shared context
   const handleNodeClick = useCallback((nodeId: string) => {
-    // Toggle selection
-    const newSelection = selectedNodeId === nodeId ? null : nodeId;
-    setSelectedNodeId(newSelection);
+    const isCurrentlySelected = isSelected(nodeId);
+    if (isCurrentlySelected) {
+      clear();
+    } else {
+      select(nodeId);
+    }
 
     // Call external callback if provided
-    if (onNodeSelect && newSelection) {
-      onNodeSelect(newSelection);
+    if (onNodeSelect && !isCurrentlySelected) {
+      onNodeSelect(nodeId);
     }
-  }, [selectedNodeId, setSelectedNodeId, onNodeSelect]);
+  }, [isSelected, select, clear, onNodeSelect]);
 
   // Handle hover
   const handleNodeHover = useCallback((nodeId: string | null) => {

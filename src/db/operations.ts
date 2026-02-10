@@ -2,7 +2,7 @@
  * Database operations for SQLiteProvider
  */
 
-import type { Database } from 'sql.js';
+import type { Database, BindParams } from 'sql.js';
 import { devLogger } from '../utils/dev-logger';
 
 export interface DatabaseOperations {
@@ -11,11 +11,21 @@ export interface DatabaseOperations {
 }
 
 /**
+ * React state setter type for dataVersion
+ * Accepts either a direct number or a functional update
+ */
+type DataVersionSetter = React.Dispatch<React.SetStateAction<number>>;
+
+/**
  * Create database operation functions
+ *
+ * SYNC-01: These operations support live data synchronization.
+ * When run() modifies data, it increments dataVersion which triggers
+ * useSQLiteQuery refetches across all components using the hook.
  */
 export function createDatabaseOperations(
   db: Database | null,
-  setDataVersion: (version: number) => void
+  setDataVersion: DataVersionSetter
 ): DatabaseOperations {
 
   // Synchronous execute function - core CLAUDE.md requirement
@@ -65,7 +75,7 @@ export function createDatabaseOperations(
       devLogger.data('SQLiteProvider.run()', { sql, paramCount: params.length });
 
       const stmt = db.prepare(sql);
-      stmt.run(params);
+      stmt.run(params as BindParams);
       stmt.free();
 
       // Increment data version for query invalidation

@@ -102,14 +102,17 @@ export function useForceGraph(options: UseForceGraphOptions = {}): UseForceGraph
   // Selection state
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
-  // Query nodes
+  // SYNC-01: Auto-refresh when database changes via dataVersion dependency
+  // useSQLiteQuery includes dataVersion in its dependency array, so when
+  // operations.run() increments dataVersion (after INSERT/UPDATE/DELETE),
+  // these queries automatically refetch and the graph re-renders.
   const nodesQuery = useSQLiteQuery<NodeRow>(
     NODES_QUERY,
     [opts.maxNodes],
     { enabled: opts.enabled }
   );
 
-  // Query edges
+  // SYNC-01: Edges also auto-refresh when data changes
   const edgesQuery = useSQLiteQuery<EdgeRow>(
     EDGES_QUERY,
     [],
