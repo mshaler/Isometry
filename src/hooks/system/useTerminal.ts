@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useTerminalContext } from '../../context/TerminalContext';
+import { devLogger } from '../../utils/logging';
 
 interface UseTerminalOptions {
   workingDirectory?: string;
@@ -57,7 +58,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
     const container = document.getElementById(containerId);
     if (!container) {
-      console.error(`Terminal container element with id "${containerId}" not found`);
+      devLogger.error(`Terminal container element not found`, { component: 'useTerminal', containerId });
       return null;
     }
 
