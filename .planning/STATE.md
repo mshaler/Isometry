@@ -26,7 +26,7 @@ Progress: [████████████] 100% Phase 50 complete | Phase 
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
 - Phase 44: 2 plans complete, ~12 minutes execution
-- Phase 45: 1 plan complete, ~8 minutes execution
+- Phase 45: 2 plans complete (45-01, 45-03), ~12 minutes execution
 
 **v4.2 Target:**
 - 4 phases (43-46)
@@ -77,6 +77,9 @@ Key v4.1 decisions carried forward:
 - tippy.js for popup positioning
 - Custom window events for cross-component command execution
 - useEditorState with selector for minimal toolbar re-renders
+- WikiLink as Mark extension for inline [[ link syntax
+- LINK edge type in sql.js edges table for graph connectivity
+- [[ trigger for wiki links (standard Obsidian/Roam syntax)
 
 **Phase 50 decisions:**
 - Hook test mocks require db.exec() method, not empty object
@@ -85,7 +88,7 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — 45-01 complete, ready for 45-02.
+None - 45-03 complete, ready for 45-04 (Markdown Serialization).
 
 ### Blockers/Concerns
 
@@ -96,13 +99,14 @@ None — 45-01 complete, ready for 45-02.
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
 - Preview pane 85% complete - SuperGrid works, Network Graph + Data Inspector implemented, Timeline is stub
-- Capture pane now uses TipTap with slash commands and auto-save
-- Markdown serialization using getText() - proper serialization can be added in 45-02
+- Capture pane now uses TipTap with slash commands, wiki links, and auto-save
+- Wiki links: [[ triggers autocomplete, creates LINK edges in sql.js
+- Markdown serialization using getText() - proper serialization can be added in 45-04
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 45-01 (TipTap Foundation)
+Stopped at: Completed 45-03 (Wiki Links)
 Resume file: None
 
 ## Next Steps
