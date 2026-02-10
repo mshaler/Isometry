@@ -65,7 +65,7 @@ interface KanbanLayout {
  */
 export class KanbanRenderer implements ViewRenderer {
   // TODO: Implement container usage in render lifecycle
-  // @ts-ignore - Future implementation
+  // @ts-expect-error - Future implementation
   private container: HTMLElement | null = null;
   private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
   private kanbanGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
