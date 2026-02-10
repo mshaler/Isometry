@@ -60,8 +60,10 @@ import { usePropertyClassification } from '../usePropertyClassification';
 describe('usePropertyClassification Hook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset loading state for each test
-    mockSQLiteContext.loading = false;
+    // Reset mutable state for each test
+    mockState.loading = false;
+    mockState.dataVersion = 1;
+    mockState.error = null;
 
     // Default mock response: simulate facets table query via db.exec()
     // The classifyProperties service calls db.exec() directly, not execute()
@@ -150,15 +152,12 @@ describe('usePropertyClassification Hook', () => {
 
   test('handles loading state correctly', () => {
     // Set loading state
-    mockSQLiteContext.loading = true;
+    mockState.loading = true;
 
     const { result } = renderHook(() => usePropertyClassification());
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.classification).toBeNull();
-
-    // Reset for other tests
-    mockSQLiteContext.loading = false;
   });
 
   test('handles error state correctly', async () => {
@@ -175,5 +174,80 @@ describe('usePropertyClassification Hook', () => {
 
     expect(result.current.error).toBe('Database query failed');
     expect(result.current.classification).toBeNull();
+  });
+
+  describe('cache invalidation with dataVersion', () => {
+    test('[FOUND-03] uses cached result when dataVersion unchanged', async () => {
+      const { result, rerender } = renderHook(() => usePropertyClassification());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      const firstResult = result.current.classification;
+      const callCountBefore = mockDbExec.mock.calls.length;
+
+      // Rerender without changing dataVersion
+      rerender();
+
+      // Should use cache, not call exec again
+      expect(mockDbExec.mock.calls.length).toBe(callCountBefore);
+      expect(result.current.classification).toBe(firstResult);
+    });
+
+    test('[FOUND-03] reloads when dataVersion changes', async () => {
+      const { result, rerender } = renderHook(() => usePropertyClassification());
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      const callCountBefore = mockDbExec.mock.calls.length;
+
+      // Simulate dataVersion change (database mutation)
+      mockState.dataVersion = 2;
+      rerender();
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Should have called exec again due to version change
+      expect(mockDbExec.mock.calls.length).toBeGreaterThan(callCountBefore);
+    });
+  });
+
+  describe('Phase 50 Requirements Traceability', () => {
+    test('[FOUND-03] provides cached, refreshable access to classification', async () => {
+      const { result, rerender } = renderHook(() => usePropertyClassification());
+
+      // Wait for initial load
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Verify classification is returned
+      expect(result.current.classification).not.toBeNull();
+
+      // Verify refresh function exists
+      expect(typeof result.current.refresh).toBe('function');
+
+      // Verify caching works (rerender returns same object)
+      const firstClassification = result.current.classification;
+      rerender();
+      expect(result.current.classification).toBe(firstClassification);
+
+      // Verify refresh invalidates cache
+      act(() => {
+        result.current.refresh();
+      });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Classification should be fresh (may or may not be same reference depending on data)
+      expect(result.current.classification).not.toBeNull();
+    });
   });
 });
