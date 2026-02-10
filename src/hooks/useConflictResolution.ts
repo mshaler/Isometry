@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { devLogger } from '../utils/logging';
 
 export interface DataConflict {
   id: string;
@@ -42,12 +43,12 @@ export function useConflictResolution(): ConflictResolution {
         )
       );
 
-      console.log(`[ConflictResolution] Resolved conflict ${conflictId} using ${resolution} strategy`);
+      devLogger.debug('ConflictResolution resolved conflict', { conflictId, resolution });
 
       // Simulate resolution delay
       await new Promise(resolve => setTimeout(resolve, 100));
     } catch (error) {
-      console.error('[ConflictResolution] Failed to resolve conflict:', error);
+      devLogger.error('ConflictResolution failed to resolve conflict', { error, conflictId });
       throw error;
     } finally {
       setIsResolving(false);
@@ -66,9 +67,9 @@ export function useConflictResolution(): ConflictResolution {
         await resolveConflict(conflict.id, resolution);
       }
 
-      console.log(`[ConflictResolution] Resolved all conflicts using ${resolution} strategy`);
+      devLogger.debug('ConflictResolution resolved all conflicts', { resolution, count: unresolvedConflicts.length });
     } catch (error) {
-      console.error('[ConflictResolution] Failed to resolve all conflicts:', error);
+      devLogger.error('ConflictResolution failed to resolve all conflicts', { error });
       throw error;
     } finally {
       setIsResolving(false);
