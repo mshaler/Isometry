@@ -7,6 +7,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useTipTapEditor } from '@/hooks';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { useNotebook } from '../../contexts/NotebookContext';
+import { useSelection } from '../../state/SelectionContext';
 import PropertyEditor from './PropertyEditor';
 import { TipTapEditor, EditorToolbar } from './editor';
 
@@ -99,7 +100,34 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   });
 
   const { run: dbRun } = useSQLite();
-  useNotebook();
+  const { loadCard } = useNotebook();
+  const { selection } = useSelection();
+
+  // SYNC-02: When user clicks card in Preview, load it in Capture
+  // This effect reacts to selection changes from NetworkGraph, Timeline, etc.
+  // Note: SYNC-03 (selection highlighting across canvases) is handled by Plan 02
+  useEffect(() => {
+    const selectedId = selection.lastSelectedId;
+    if (!selectedId) return;
+
+    // Don't reload if this is already the current card
+    if (activeCard?.id === selectedId || activeCard?.nodeId === selectedId) {
+      return;
+    }
+
+    // Auto-save current card before loading new one (if dirty)
+    if (isDirty) {
+      saveNow().then(() => {
+        loadCard(selectedId);
+      }).catch(error => {
+        console.error('Auto-save before card switch failed:', error);
+        // Still try to load the new card even if save failed
+        loadCard(selectedId);
+      });
+    } else {
+      loadCard(selectedId);
+    }
+  }, [selection.lastSelectedId, activeCard?.id, activeCard?.nodeId, isDirty, saveNow, loadCard]);
 
   // Handle /save-card command from slash commands
   const handleSaveCard = useCallback(async (markdown: string) => {
