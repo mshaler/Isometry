@@ -11,6 +11,7 @@ import { useLiveQuery, type LiveQueryOptions, type LiveQueryResult } from '../da
 // @ts-ignore - memoryManagement exports suppressed for compilation
 import { useCleanupEffect, createCleanupStack } from '../../utils/memoryManagement';
 import { PerformanceMonitor } from '../../utils/bridge-optimization/performance-monitor';
+import { devLogger } from '../../utils/logging';
 
 export interface VirtualLiveQueryOptions extends LiveQueryOptions {
   /** Estimated size of each virtual item */
@@ -260,7 +261,7 @@ export function useVirtualLiveQuery<T = unknown>(
 
     // Performance assertion for large datasets
     if (itemCount > 10000 && items.length > 100) {
-      console.warn('[useVirtualLiveQuery] Large dataset with many rendered items:', {
+      devLogger.warn('useVirtualLiveQuery large dataset with many rendered items', {
         totalItems: itemCount,
         renderedItems: items.length,
         recommendation: 'Consider increasing overscan or reducing viewport size'
@@ -288,14 +289,14 @@ export function useVirtualLiveQuery<T = unknown>(
 
       // Ensure updates appear within 100ms (VLS-03 compliance)
       if (totalLatency > 100) {
-        console.warn('[useVirtualLiveQuery] Update pipeline exceeded 100ms:', {
+        devLogger.warn('useVirtualLiveQuery update pipeline exceeded 100ms', {
           latency: totalLatency,
           sql: sql.slice(0, 50)
         });
       }
 
       // Log performance metrics for monitoring
-      console.debug('[useVirtualLiveQuery] Update pipeline:', {
+      devLogger.debug('useVirtualLiveQuery update pipeline', {
         queryToVirtual: queryLatency,
         virtualUpdate: virtualUpdateTime,
         renderToScreen: renderTime,
