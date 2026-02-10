@@ -5,7 +5,7 @@
 - ✅ **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
 - ✅ **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
 - 🚧 **v4.2 Three-Canvas Notebook** - Phases 43-46 (in progress)
-- ✅ **v4.3 Navigator Foundation** - Phase 50 (shipped 2026-02-10)
+- 🚧 **v4.3 Navigator Integration** - Phases 50-51 (in progress)
 
 ## Phases
 
@@ -110,9 +110,9 @@ Plans:
 - [ ] 46-01: TBD (planned during phase planning)
 - [ ] 46-02: TBD
 
-### 🚧 v4.3 Navigator Foundation (In Progress)
+### 🚧 v4.3 Navigator Integration (In Progress)
 
-**Milestone Goal:** Build schema-on-read property classification for Navigator faceted navigation
+**Milestone Goal:** Connect property classification to Navigator UI for dynamic LATCH+GRAPH axis selection with SuperGrid
 
 #### Phase 50: Foundation (Schema-on-Read Classification)
 **Goal**: Build property classification service that reads facets table and produces LATCH+GRAPH bucketed property list
@@ -130,6 +130,22 @@ Plans:
 Plans:
 - [x] 50-01-PLAN.md — Property classification service validation with tests
 - [x] 50-02-PLAN.md — usePropertyClassification hook caching validation
+
+#### Phase 51: Navigator UI Integration
+**Goal**: Connect usePropertyClassification hook to Navigator UI, replacing hardcoded axes with dynamic LATCH+GRAPH buckets
+**Depends on**: Phase 50 (property classification complete)
+**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05
+**Success Criteria** (what must be TRUE):
+  1. Navigator displays LATCH buckets from usePropertyClassification() instead of hardcoded axes
+  2. User can expand each LATCH bucket to see individual facets (e.g., Time → created, modified, due)
+  3. GRAPH bucket appears in Navigator with 4 edge types and 2 metrics
+  4. Dragging a facet to a well updates SuperGrid axis mapping
+  5. Facet changes in database reflect in Navigator after refresh
+**Plans**: TBD (created during phase planning)
+
+Plans:
+- [ ] 51-01-PLAN.md — TBD
+- [ ] 51-02-PLAN.md — TBD
 
 ## Progress
 
@@ -149,6 +165,7 @@ v4.3 Phase 50 can execute in parallel with v4.2 (no dependencies on 43-46).
 | 45. TipTap Editor Migration | v4.2 | 0/3 | Planned | - |
 | 46. Live Data Synchronization | v4.2 | 0/? | Not started | - |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
+| 51. Navigator UI Integration | v4.3 | 0/? | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*

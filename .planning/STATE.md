@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.2 Three-Canvas Notebook - Phase 44 (Preview Visualization)
+**Current focus:** v4.2 Three-Canvas Notebook - Phase 45 (TipTap Editor Migration)
 
 ## Current Position
 
-Phase: 44 of 46 (Preview Visualization Expansion)
-Plan: Ready to plan
-Status: Phase 50 complete (v4.3 milestone shipped)
-Last activity: 2026-02-10 — Completed Phase 50 Foundation (2/2 plans)
+Phase: 45 of 46 (TipTap Editor Migration)
+Plan: 2 of 3 complete (45-02 Slash Commands)
+Status: In progress
+Last activity: 2026-02-10 — Completed 45-02 (Slash Commands)
 
-Progress: [███░░░░░░░░░] 25% (1/4 v4.2 phases complete)
+Progress: [████░░░░░░░░] 33% (Phase 45: 2/3 plans complete)
 
 ## Performance Metrics
 
@@ -25,6 +25,7 @@ Progress: [███░░░░░░░░░] 25% (1/4 v4.2 phases complete)
 
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
+- Phase 45: 2 plans complete, ~12 minutes execution
 
 **v4.2 Target:**
 - 4 phases (43-46)
@@ -60,6 +61,12 @@ Key v4.1 decisions carried forward:
 - Tool calls collapsed by default with click-to-expand
 - Auto-scroll pauses when user scrolls up, resumes at bottom
 
+**Phase 45 decisions:**
+- shouldRerenderOnTransaction: false for TipTap performance
+- @tiptap/suggestion for slash command trigger detection
+- tippy.js for popup positioning
+- Custom window events for cross-component command execution
+
 **Phase 50 decisions:**
 - Hook test mocks require db.exec() method, not empty object
 - Requirement traceability tests tagged with [FOUND-XX] in test names
@@ -67,31 +74,28 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — Phase 50 complete, Phase 44 ready for planning.
+None — 45-02 complete, ready for 45-03.
 
 ### Blockers/Concerns
 
 **Pre-existing Issues (not blocking v4.2):**
-- ~40 TypeScript errors in grid-interaction, grid-selection, logging modules (pre-existing)
+- ~1252 TypeScript errors in various modules (pre-existing, documented)
 - Directory health check failing for src/services (22/15 files) - pre-existing cleanup needed
 
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
 - Preview pane 50% complete - SuperGrid works, Network/Timeline/Inspector are stubs
-- Capture pane 70% complete - needs TipTap migration
-- Critical: Must implement shouldRerenderOnTransaction: false for TipTap performance
-- Critical: Bidirectional sync trigger for notebook_cards ↔ nodes LATCH data
-- v4.3 property classification now available for Navigator faceted navigation
+- Capture pane now uses TipTap with slash commands
+- Markdown serialization deferred - using getText() temporarily
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed Phase 50 (v4.3 Navigator Foundation)
+Stopped at: Completed 45-02 (Slash Commands)
 Resume file: None
 
 ## Next Steps
 
-1. Run `/gsd:plan-phase 44` to create Phase 44 execution plan
-2. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
-3. Phase 45: TipTap Editor Migration (EDIT-01 to EDIT-04) - can parallel with 44
-4. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03) - requires 44, 45 complete
+1. Continue with 45-03 (Markdown syntax highlighting) if planned
+2. Phase 44: Preview Visualization Expansion (parallel execution)
+3. Phase 46: Live Data Synchronization (requires 44, 45 complete)

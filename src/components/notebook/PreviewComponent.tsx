@@ -6,6 +6,7 @@ import { useWebPreview } from '@/hooks';
 import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-export/exportUtils';
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import { SuperGrid } from '../supergrid/SuperGrid';
+import { DataInspectorTab } from './preview-tabs/DataInspectorTab';
 import MDEditor from '@uiw/react-md-editor';
 
 interface PreviewComponentProps {
@@ -342,14 +343,8 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             </div>
           </div>
         ) : activeTab === 'data-inspector' ? (
-          /* Data Inspector Tab */
-          <div className="h-full flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <Database size={48} className="mx-auto mb-2" />
-              <div className="font-medium mb-1">Data Inspector</div>
-              <div className="text-sm">SQLite schema & data explorer coming soon...</div>
-            </div>
-          </div>
+          /* Data Inspector Tab - SQL query interface */
+          <DataInspectorTab className="h-full" />
         ) : activeTab === 'd3-visualization' ? (
           /* D3 Visualization Tab */
           <D3VisualizationRenderer
