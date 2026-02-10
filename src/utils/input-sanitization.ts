@@ -8,7 +8,7 @@ export function sanitizeInput(input: string): string {
 
   // Remove potential SQL injection patterns
   return input
-    .replace(/[;\-\-]/g, '') // Remove semicolons and SQL comments
+    .replace(/[;--]/g, '') // Remove semicolons and SQL comments
     .replace(/\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE)\b/gi, '') // Remove dangerous SQL keywords
     .replace(/[<>]/g, '') // Remove HTML brackets
     .trim()
@@ -20,7 +20,7 @@ export function sanitizeFieldName(fieldName: string): string {
 
   // Only allow alphanumeric, underscore, and dot
   return fieldName
-    .replace(/[^a-zA-Z0-9_\.]/g, '')
+    .replace(/[^a-zA-Z0-9_.]/g, '')
     .substring(0, 100);
 }
 
@@ -48,7 +48,7 @@ export function isSecurityRisk(input: string): boolean {
 
   const dangerousPatterns = [
     /\b(DROP|DELETE|INSERT|UPDATE|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE)\b/gi,
-    /[;\-\-]/,
+    /[;--]/,
     /<script/gi,
     /javascript:/gi,
     /on\w+\s*=/gi
