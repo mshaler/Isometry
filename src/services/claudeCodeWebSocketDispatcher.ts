@@ -13,6 +13,7 @@ import {
   GSDCommands
 } from './claudeCodeDispatcher';
 import { ServerMessage, ClientMessage, FileChangeEvent } from './claudeCodeServer';
+import { devLogger } from '../utils/logging';
 
 // Re-export GSDCommands for convenience
 export { GSDCommands };
@@ -47,7 +48,7 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         this.ws = new WebSocket(this.serverUrl);
 
         this.ws.onopen = () => {
-          console.log('Connected to Claude Code server');
+          devLogger.debug('Connected to Claude Code server', { component: 'WebSocketClaudeCodeDispatcher', serverUrl: this.serverUrl });
 
           // Send any queued messages
           while (this.messageQueue.length > 0) {
@@ -65,18 +66,18 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
             const message: ClientMessage = JSON.parse(event.data);
             this.handleServerMessage(message);
           } catch (error) {
-            console.error('Error parsing server message:', error);
+            devLogger.error('Error parsing server message', { component: 'WebSocketClaudeCodeDispatcher', error, eventData: event.data });
           }
         };
 
         this.ws.onclose = () => {
-          console.log('Disconnected from Claude Code server');
+          devLogger.debug('Disconnected from Claude Code server', { component: 'WebSocketClaudeCodeDispatcher' });
           this.ws = null;
           this.connectionPromise = null;
         };
 
         this.ws.onerror = (error) => {
-          console.error('WebSocket error:', error);
+          devLogger.error('WebSocket error', { component: 'WebSocketClaudeCodeDispatcher', error });
           reject(new Error('Failed to connect to Claude Code server'));
         };
 
@@ -100,13 +101,13 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
 
     // Handle execution-related messages
     if (!message.executionId) {
-      console.warn('Received execution message without executionId:', message.type);
+      devLogger.debug('Received execution message without executionId', { component: 'WebSocketClaudeCodeDispatcher', messageType: message.type });
       return;
     }
 
     const execution = this.executions.get(message.executionId);
     if (!execution) {
-      console.warn('Received message for unknown execution:', message.executionId);
+      devLogger.debug('Received message for unknown execution', { component: 'WebSocketClaudeCodeDispatcher', executionId: message.executionId });
       return;
     }
 
@@ -144,7 +145,7 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         break;
 
       default:
-        console.warn('Unknown message type:', message.type);
+        devLogger.debug('Unknown message type', { component: 'WebSocketClaudeCodeDispatcher', messageType: message.type });
     }
   }
 
@@ -163,15 +164,15 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         break;
 
       case 'monitoring_started':
-        console.log(`📁 File monitoring started for session ${message.sessionId}`);
+        devLogger.inspect('File monitoring started for session', { component: 'WebSocketClaudeCodeDispatcher', sessionId: message.sessionId });
         break;
 
       case 'monitoring_stopped':
-        console.log(`🛑 File monitoring stopped for session ${message.sessionId}`);
+        devLogger.inspect('File monitoring stopped for session', { component: 'WebSocketClaudeCodeDispatcher', sessionId: message.sessionId });
         break;
 
       default:
-        console.warn('Unknown non-execution message type:', message.type);
+        devLogger.debug('Unknown non-execution message type', { component: 'WebSocketClaudeCodeDispatcher', messageType: message.type });
     }
   }
 
@@ -394,11 +395,11 @@ export async function createClaudeCodeDispatcher(
       )
     ]);
 
-    console.log('✅ Connected to Claude Code server - real CLI execution available');
+    devLogger.inspect('Connected to Claude Code server - real CLI execution available', { component: 'WebSocketClaudeCodeDispatcher' });
     return wsDispatcher;
 
   } catch (error) {
-    console.log('⚠️ Claude Code server not available - falling back to simulation');
+    devLogger.inspect('Claude Code server not available - falling back to simulation', { component: 'WebSocketClaudeCodeDispatcher', error });
     wsDispatcher.disconnect();
 
     // Fall back to the default dispatcher (simulation)
@@ -429,7 +430,7 @@ export async function getClaudeCodeDispatcher(): Promise<ClaudeCodeDispatcher> {
     _claudeCodeDispatcher = dispatcher;
     return dispatcher;
   }).catch(error => {
-    console.error('Failed to initialize Claude Code dispatcher:', error);
+    devLogger.error('Failed to initialize Claude Code dispatcher', { component: 'WebSocketClaudeCodeDispatcher', error });
     _dispatcherInitialization = null;
     throw error;
   });
