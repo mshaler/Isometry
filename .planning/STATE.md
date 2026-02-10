@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.3 Navigator Integration - Phase 51 (Navigator UI Integration)
+**Current focus:** v4.2 Three-Canvas Notebook - Phase 46 (Live Data Synchronization)
 
 ## Current Position
 
-Phase: 51 (Navigator UI Integration)
-Plan: 1 of 2 complete
-Status: In progress
-Last activity: 2026-02-10 — Completed 51-01-PLAN.md (DnD Foundation)
+Phase: 44 of 46 (Preview Visualization Expansion)
+Plan: 3 of 3 complete
+Status: Phase 44 complete
+Last activity: 2026-02-10 — Completed 44-03-PLAN.md (Timeline Visualization)
 
-Progress: [██████░░░░░░] 50% Phase 51 (1/2 plans complete)
+Progress: [████████░░░░] 75% v4.2 (3/4 phases complete)
 
 ## Performance Metrics
 
@@ -25,8 +25,8 @@ Progress: [██████░░░░░░] 50% Phase 51 (1/2 plans complet
 
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
-- Phase 44: 2 plans complete, ~12 minutes execution
-- Phase 45: 2 plans complete (45-01, 45-03), ~12 minutes execution
+- Phase 44: 3 plans, 2 waves, ~18 minutes execution
+- Phase 45: 3 plans, 2 waves, ~18 minutes execution
 
 **v4.2 Target:**
 - 4 phases (43-46)
@@ -62,61 +62,49 @@ Key v4.1 decisions carried forward:
 - Tool calls collapsed by default with click-to-expand
 - Auto-scroll pauses when user scrolls up, resumes at bottom
 
-**Phase 44 decisions:**
-- Simulation timeout: 300 ticks OR 3 seconds to save CPU
-- EDGE_TYPE_STYLES with colors and dasharray per GRAPH type
-- Default 100 node limit for performance
-- Node selection updates activeCard for cross-canvas sync
-- DDL blocking in Data Inspector (SELECT only)
-- Auto-LIMIT 1000 for queries without explicit LIMIT
-- Extract sub-components (ResultsTable, Toolbar) for complexity reduction
-
 **Phase 45 decisions:**
 - shouldRerenderOnTransaction: false for TipTap performance (CRITICAL)
-- @tiptap/suggestion for slash command trigger detection
+- immediatelyRender: true for instant editor rendering
+- @tiptap/suggestion for slash command and wiki link triggers
 - tippy.js for popup positioning
-- Custom window events for cross-component command execution
+- Custom window events (isometry:save-card, isometry:send-to-shell) for cross-component communication
 - useEditorState with selector for minimal toolbar re-renders
+- getText() for markdown extraction (simpler than storage.markdown.getMarkdown)
 - WikiLink as Mark extension for inline [[ link syntax
 - LINK edge type in sql.js edges table for graph connectivity
-- [[ trigger for wiki links (standard Obsidian/Roam syntax)
+- queryCardsForSuggestions and createLinkEdge utilities for sql.js interaction
 
 **Phase 50 decisions:**
 - Hook test mocks require db.exec() method, not empty object
 - Requirement traceability tests tagged with [FOUND-XX] in test names
 - dataVersion-based cache invalidation for hook refresh behavior
 
-**Phase 51 decisions:**
-- GRAPH bucket facets are disabled in MVP - visible but not draggable
-- Use sourceColumn from ClassifiedProperty as facet field in AxisMapping
-- Theme styling follows existing PAFVNavigator NeXTSTEP/Modern patterns
-
 ### Pending Todos
 
-None - 45-03 complete, ready for 45-04 (Markdown Serialization).
+None — Phase 45 complete, ready for Phase 44 or 46 planning.
 
 ### Blockers/Concerns
 
 **Pre-existing Issues (not blocking v4.2):**
-- ~1252 TypeScript errors in various modules (pre-existing, documented)
+- ~40 TypeScript errors in grid-interaction, grid-selection, logging modules (pre-existing)
 - Directory health check failing for src/services (22/15 files) - pre-existing cleanup needed
 
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
-- Preview pane 85% complete - SuperGrid works, Network Graph + Data Inspector implemented, Timeline is stub
+- Preview pane 50% complete - SuperGrid works, Network/Timeline/Inspector are stubs
 - Capture pane now uses TipTap with slash commands, wiki links, and auto-save
-- Wiki links: [[ triggers autocomplete, creates LINK edges in sql.js
-- Markdown serialization using getText() - proper serialization can be added in 45-04
+- Critical: Bidirectional sync trigger for notebook_cards ↔ nodes LATCH data (Phase 46)
+- v4.3 property classification now available for Navigator faceted navigation
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 51-01 (DnD Foundation)
+Stopped at: Completed Phase 45 (TipTap Editor Migration)
 Resume file: None
 
 ## Next Steps
 
-1. **Execute 51-02**: Run `/gsd:execute-phase 51` to complete Navigator UI Integration
-   - 51-02 (Wave 2): SimplePAFVNavigator refactor with classification buckets
-2. Verify NAV-01 through NAV-05 requirements
-3. Continue v4.2 phases when ready (44, 45, 46)
+1. Run `/gsd:plan-phase 44` to create Phase 44 execution plan (Preview Visualization)
+   - Or run `/gsd:plan-phase 46` for Live Data Synchronization (requires 44+45)
+2. Phase 44: Preview Visualization Expansion (PREV-01 to PREV-07)
+3. Phase 46: Live Data Synchronization (SYNC-01 to SYNC-03) - requires 44, 45 complete
