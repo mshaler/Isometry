@@ -12,7 +12,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Terminal,
-  Play,
   Square,
   Copy,
   RefreshCw,
@@ -20,7 +19,12 @@ import {
   AlertCircle,
   Clock,
   Code,
-  ArrowDown
+  ArrowDown,
+  ChevronRight,
+  FileText,
+  Edit3,
+  TerminalSquare,
+  Wrench
 } from 'lucide-react';
 import {
   claudeCodeOutputParser,
@@ -50,6 +54,99 @@ interface ChoiceGroup {
   selected?: number[];
 }
 
+/** Tool call data structure for collapsed display */
+interface ToolCall {
+  id: string;
+  type: 'Read' | 'Write' | 'Bash' | 'Grep' | 'Glob' | 'Edit';
+  path?: string;
+  command?: string;
+  output: string;
+  timestamp: Date;
+  status: 'started' | 'in_progress' | 'completed' | 'error';
+}
+
+/** Collapsed tool call renderer component */
+function ToolCallRenderer({ toolCall }: { toolCall: ToolCall }) {
+  const [collapsed, setCollapsed] = useState(true);
+
+  const getToolIcon = () => {
+    switch (toolCall.type) {
+      case 'Read':
+        return <FileText size={14} className="text-blue-400" />;
+      case 'Write':
+      case 'Edit':
+        return <Edit3 size={14} className="text-green-400" />;
+      case 'Bash':
+        return <TerminalSquare size={14} className="text-yellow-400" />;
+      case 'Grep':
+      case 'Glob':
+        return <Code size={14} className="text-purple-400" />;
+      default:
+        return <Code size={14} className="text-gray-400" />;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (toolCall.status) {
+      case 'completed':
+        return 'border-green-500';
+      case 'error':
+        return 'border-red-500';
+      case 'in_progress':
+        return 'border-blue-500';
+      default:
+        return 'border-yellow-500';
+    }
+  };
+
+  const getSummary = () => {
+    if (toolCall.path) {
+      return toolCall.path.length > 50
+        ? `...${toolCall.path.slice(-47)}`
+        : toolCall.path;
+    }
+    if (toolCall.command) {
+      return toolCall.command.length > 50
+        ? `${toolCall.command.slice(0, 47)}...`
+        : toolCall.command;
+    }
+    return 'Processing...';
+  };
+
+  return (
+    <div className={`border-l-2 ${getStatusColor()} pl-2 my-1`}>
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-2 w-full text-left hover:bg-gray-700/30 px-1 py-0.5 rounded transition-colors"
+      >
+        <ChevronRight
+          size={14}
+          className={`text-gray-400 transition-transform duration-200 ${
+            collapsed ? '' : 'rotate-90'
+          }`}
+        />
+        {getToolIcon()}
+        <span className="text-gray-200 font-medium text-sm">{toolCall.type}</span>
+        <span className="text-gray-400 text-sm truncate flex-1">{getSummary()}</span>
+        {toolCall.status === 'in_progress' && (
+          <RefreshCw size={12} className="text-blue-400 animate-spin" />
+        )}
+        {toolCall.status === 'completed' && (
+          <CheckCircle size={12} className="text-green-400" />
+        )}
+        {toolCall.status === 'error' && (
+          <AlertCircle size={12} className="text-red-400" />
+        )}
+      </button>
+      {!collapsed && toolCall.output && (
+        <pre className="mt-1 p-2 bg-gray-800 rounded text-xs text-gray-300 overflow-x-auto max-h-48 overflow-y-auto">
+          {toolCall.output}
+        </pre>
+      )}
+    </div>
+  );
+}
+
 export function ClaudeCodeTerminal({
   sessionId,
   onChoiceSelect,
@@ -67,6 +164,8 @@ export function ClaudeCodeTerminal({
   const [showStructured, setShowStructured] = useState(true);
   // Track if user has scrolled up from bottom
   const [isUserScrolledUp, setIsUserScrolledUp] = useState(false);
+  // Track tool calls for collapsed display
+  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
 
   const terminalRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -125,10 +224,42 @@ export function ClaudeCodeTerminal({
       setCurrentPhase(phase);
     }
 
-    // Check for tool use
+    // Check for tool use and track tool calls for collapsed display
     const toolUse = claudeCodeOutputParser.getCurrentToolUse(allParseResults);
     if (toolUse) {
       setCurrentToolUse(ClaudeCodeParserUtils.formatToolUse(toolUse));
+
+      // Add or update tool call for collapsed display
+      const toolCallType = toolUse.toolName as ToolCall['type'];
+      const toolCallId = `tool-${toolUse.toolName}-${Date.now()}`;
+
+      setToolCalls(prev => {
+        // Check if we have an in-progress tool call of this type
+        const existingIndex = prev.findIndex(
+          tc => tc.type === toolCallType && tc.status === 'in_progress'
+        );
+
+        if (existingIndex >= 0) {
+          // Update existing tool call
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            output: updated[existingIndex].output + '\n' + (toolUse.action || ''),
+            status: toolUse.status === 'completed' ? 'completed' : 'in_progress'
+          };
+          return updated;
+        } else {
+          // Add new tool call
+          return [...prev, {
+            id: toolCallId,
+            type: toolCallType,
+            path: toolUse.action,
+            output: toolUse.action || '',
+            timestamp: new Date(),
+            status: toolUse.status === 'completed' ? 'completed' : 'in_progress'
+          }];
+        }
+      });
     }
 
     // Check for choices
@@ -238,6 +369,7 @@ export function ClaudeCodeTerminal({
     setCurrentChoices(null);
     setCurrentPhase(null);
     setCurrentToolUse(null);
+    setToolCalls([]);
   }, []);
 
   const renderLine = useCallback((line: TerminalLine) => {
@@ -261,22 +393,16 @@ export function ClaudeCodeTerminal({
 
         case 'tool_use': {
           const toolUse = parseResult.structured.toolUse!;
-          const statusIcon = {
-            started: <Play size={14} className="text-yellow-400" />,
-            in_progress: <RefreshCw size={14} className="text-blue-400 animate-spin" />,
-            completed: <CheckCircle size={14} className="text-green-400" />,
-            error: <AlertCircle size={14} className="text-red-400" />
-          }[toolUse.status];
-
-          return (
-            <div className="flex items-center gap-2 py-1 px-2 bg-gray-700/50 border-l-2 border-yellow-400 my-1">
-              {statusIcon}
-              <Code size={14} className="text-gray-400" />
-              <span className="text-gray-200">
-                <span className="font-medium text-yellow-300">{toolUse.toolName}</span>: {toolUse.action}
-              </span>
-            </div>
-          );
+          // Use ToolCallRenderer for collapsed display (default collapsed)
+          const toolCall: ToolCall = {
+            id: `tool-${toolUse.toolName}-${line.id}`,
+            type: toolUse.toolName as ToolCall['type'],
+            path: toolUse.action,
+            output: toolUse.action || '',
+            timestamp: parseResult.timestamp,
+            status: toolUse.status as ToolCall['status']
+          };
+          return <ToolCallRenderer toolCall={toolCall} />;
         }
 
         case 'progress': {
@@ -415,6 +541,14 @@ Please select an option (1-3):`;
           {currentPhase && (
             <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded">
               {currentPhase}
+            </span>
+          )}
+
+          {/* Tool calls summary */}
+          {toolCalls.length > 0 && (
+            <span className="flex items-center gap-1 text-xs px-2 py-1 bg-gray-700 text-gray-300 rounded" title={`${toolCalls.length} tool calls`}>
+              <Wrench size={12} />
+              {toolCalls.length}
             </span>
           )}
 
