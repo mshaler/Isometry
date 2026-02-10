@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
-**Current focus:** v4.2 Three-Canvas Notebook - Phase 44 (Preview Visualization Expansion)
+**Current focus:** v4.2 Three-Canvas Notebook - Phase 45 (TipTap Editor Migration)
 
 ## Current Position
 
-Phase: 44 of 46 (Preview Visualization Expansion)
-Plan: 1 of 4 complete (44-01 Network Graph)
+Phase: 45 of 46 (TipTap Editor Migration)
+Plan: 1 of 3 complete (45-01 TipTap Foundation)
 Status: In progress
-Last activity: 2026-02-10 — Completed 44-01 (Force-Directed Network Graph)
+Last activity: 2026-02-10 — Completed 45-01 (TipTap Foundation)
 
-Progress: [████░░░░░░░░] 33% (Phase 44: 1/4 plans complete, Phase 45: 2/3 complete)
+Progress: [█████░░░░░░░] 42% (Phase 44: 1/4, Phase 45: 1/3)
 
 ## Performance Metrics
 
@@ -26,7 +26,7 @@ Progress: [████░░░░░░░░] 33% (Phase 44: 1/4 plans comple
 **v4.2 Progress:**
 - Phase 43: 3 plans, 2 waves, ~18 minutes execution
 - Phase 44: 1 plan complete, ~5 minutes execution
-- Phase 45: 2 plans complete, ~12 minutes execution
+- Phase 45: 1 plan complete, ~8 minutes execution
 
 **v4.2 Target:**
 - 4 phases (43-46)
@@ -69,10 +69,11 @@ Key v4.1 decisions carried forward:
 - Node selection updates activeCard for cross-canvas sync
 
 **Phase 45 decisions:**
-- shouldRerenderOnTransaction: false for TipTap performance
+- shouldRerenderOnTransaction: false for TipTap performance (CRITICAL)
 - @tiptap/suggestion for slash command trigger detection
 - tippy.js for popup positioning
 - Custom window events for cross-component command execution
+- useEditorState with selector for minimal toolbar re-renders
 
 **Phase 50 decisions:**
 - Hook test mocks require db.exec() method, not empty object
@@ -81,7 +82,7 @@ Key v4.1 decisions carried forward:
 
 ### Pending Todos
 
-None — 44-01 complete, ready for 44-02.
+None — 45-01 complete, ready for 45-02.
 
 ### Blockers/Concerns
 
@@ -92,18 +93,18 @@ None — 44-01 complete, ready for 44-02.
 **v4.2 Implementation Notes:**
 - Shell pane now functional with WebSocket, copy/paste, history, GSD execution
 - Preview pane 75% complete - SuperGrid works, Network Graph implemented, Timeline/Inspector are stubs
-- Capture pane now uses TipTap with slash commands
-- Markdown serialization deferred - using getText() temporarily
+- Capture pane now uses TipTap with slash commands and auto-save
+- Markdown serialization using getText() - proper serialization can be added in 45-02
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed 44-01 (Force-Directed Network Graph)
+Stopped at: Completed 45-01 (TipTap Foundation)
 Resume file: None
 
 ## Next Steps
 
-1. Execute 44-02 (Timeline View) if planned
-2. Continue Phase 44: Preview Visualization Expansion
+1. Execute 45-02 (Wiki-link autocomplete) if planned
+2. Continue Phase 44: Preview Visualization Expansion (44-02 Timeline)
 3. Complete Phase 45: 45-03 (Markdown syntax highlighting)
 4. Phase 46: Live Data Synchronization (requires 44, 45 complete)

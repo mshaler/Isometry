@@ -7,6 +7,7 @@ import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-expo
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import { SuperGrid } from '../supergrid/SuperGrid';
 import { DataInspectorTab } from './preview-tabs/DataInspectorTab';
+import { NetworkGraphTab } from './preview-tabs/NetworkGraphTab';
 import MDEditor from '@uiw/react-md-editor';
 
 interface PreviewComponentProps {
@@ -334,14 +335,17 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             }}
           />
         ) : activeTab === 'network' ? (
-          /* Network Graph Tab */
-          <div className="h-full flex items-center justify-center text-gray-500">
-            <div className="text-center">
-              <Network size={48} className="mx-auto mb-2" />
-              <div className="font-medium mb-1">Network Graph View</div>
-              <div className="text-sm">Graph visualization coming soon...</div>
-            </div>
-          </div>
+          /* Network Graph Tab - Force-directed GRAPH visualization */
+          <NetworkGraphTab
+            className="h-full"
+            onNodeSelect={(nodeId) => {
+              // Find the card associated with this node
+              const card = cards.find(c => c.nodeId === nodeId);
+              if (card) {
+                setActiveCard(card);
+              }
+            }}
+          />
         ) : activeTab === 'data-inspector' ? (
           /* Data Inspector Tab - SQL query interface */
           <DataInspectorTab className="h-full" />
