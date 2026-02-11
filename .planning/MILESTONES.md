@@ -1,23 +1,31 @@
 # Project Milestones: Isometry
 
-## v5.0 Type Safety Restoration (In Progress)
+## v5.0 Type Safety Restoration (Shipped: 2026-02-10)
 
-**Goal:** Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks, CI quality gates, and type safety across the codebase.
+**Delivered:** Eliminated all TypeScript compilation errors, restored pre-commit hooks and CI quality gates
 
-**Phases planned:** 52-55 (4 phases, 12 plans total)
+**Original plan:** 52-55 (4 phases, 12 plans)
+**Actual execution:** 3-wave parallel agent strategy (bypassed phased plan)
 
-**Error baseline:**
-- 1,254 TypeScript errors across ~170 files
-- Top codes: TS18046 (339), TS2339 (270), TS6133 (103), TS2305 (94)
-- Top domains: src/d3/ (353), src/components/ (233), src/hooks/ (116)
+**Error baseline:** 1,347 TypeScript errors across ~141 files
 
-**Phases:**
-- Phase 52: Dead Code & Stale Imports (~251 errors: TS6133, TS6196, TS2305, TS2307)
-- Phase 53: Type Assertions & Annotations (~404 errors: TS18046, TS7006)
-- Phase 54: Interface Alignment (~346 errors: TS2339, TS2322)
-- Phase 55: Function Signatures & Final Verification (~253 errors + zero-error gate)
+**Execution:**
+- Wave 1 (8 agents by directory): 1,347 → 853 errors (494 eliminated)
+- Wave 2 (6 agents targeting clusters): 853 → 339 errors (514 eliminated)
+- Wave 3 (4 agents final cleanup): 339 → 0 errors
 
-**Unblocks:** v4.2 Phase 46, v4.3 Phase 51, pre-commit hook, CI quality gates
+**Stats:**
+- 140 files changed (2,938 insertions, 1,544 deletions)
+- Single commit: `23de1fa5`
+- Pre-commit hook: fully restored (5/5 checks passing)
+- knip baseline: `--max-issues 1000` (pre-existing unused exports)
+
+**Key decisions:**
+- Parallel wave strategy over sequential phases — much faster for mechanical fixes
+- Local interface extensions over global type changes — avoids cascading breaks
+- knip ratchet at 1000 — tolerate pre-existing unused exports, clean up incrementally
+
+**Unblocked:** Pre-commit hook, CI quality gates, future milestone development
 
 ---
 
