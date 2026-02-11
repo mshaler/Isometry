@@ -1,12 +1,14 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import initSqlJs from 'sql.js';
 import type { Database, SqlJsStatic } from 'sql.js';
 import type { SQLiteCapabilityError } from './types';
 import { devLogger } from '../utils/dev-logger';
+import { useRenderLoopGuard } from '../hooks/debug/useRenderLoopGuard';
 import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
 import { createDatabaseOperations } from './operations';
 import { testDatabaseCapabilities, type DatabaseCapabilities } from './capabilities';
 import { createPersistenceOperations } from './persistence';
+import { SAMPLE_DATA_SQL } from './sample-data';
 
 /**
  * SQLiteProvider - Direct sql.js access for Isometry v4
@@ -67,6 +69,9 @@ export function SQLiteProvider({
   databaseUrl = '/isometry.db',
   enableLogging = true
 }: SQLiteProviderProps) {
+  // Render loop guard - warns if provider renders >10x/second (indicates infinite loop)
+  useRenderLoopGuard({ componentName: 'SQLiteProvider' });
+
   const [SQL, setSQL] = useState<SqlJsStatic | null>(null);
   const [db, setDb] = useState<Database | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,18 +89,26 @@ export function SQLiteProvider({
   const persistenceRef = useRef<IndexedDBPersistence | null>(null);
   const autoSaveRef = useRef<AutoSaveManager | null>(null);
 
-  // Create database operations
-  const { execute, run } = createDatabaseOperations(db, setDataVersion);
+  // Create memoized database operations to prevent infinite re-renders
+  // CRITICAL: Without useMemo, new function references are created on every render,
+  // causing useSQLiteQuery consumers to re-fetch continuously (infinite loop)
+  const { execute, run } = useMemo(
+    () => createDatabaseOperations(db, setDataVersion),
+    [db] // setDataVersion is stable from useState
+  );
 
-  // Create persistence operations
-  const { save, reset, loadFromFile } = createPersistenceOperations(
-    db,
-    SQL,
-    setDb,
-    setDataVersion,
-    persistenceRef,
-    autoSaveRef,
-    enableLogging
+  // Create memoized persistence operations
+  const { save, reset, loadFromFile } = useMemo(
+    () => createPersistenceOperations(
+      db,
+      SQL,
+      setDb,
+      setDataVersion,
+      persistenceRef,
+      autoSaveRef,
+      enableLogging
+    ),
+    [db, SQL, enableLogging] // setDb/setDataVersion stable from useState, refs stable
   );
 
   // Initialize database
@@ -115,13 +128,23 @@ export function SQLiteProvider({
         // Initialize persistence
         // NOTE: IndexedDBPersistence uses hardcoded name 'isometry-db' (see IndexedDBPersistence.ts)
         persistenceRef.current = new IndexedDBPersistence();
+        await persistenceRef.current.init();
 
         // Try to load existing database
         const persistence = persistenceRef.current!;
         try {
           const savedData = await persistence.load();
           if (savedData) {
-            const database = new sqlInstance.Database(savedData);
+            let database: Database;
+            try {
+              database = new sqlInstance.Database(savedData);
+            } catch (dbError) {
+              // Corrupt database detected - clear and recreate
+              console.error('Corrupt database in IndexedDB, clearing and recreating:', dbError);
+              devLogger.error('Database corruption detected, clearing IndexedDB', dbError);
+              await persistence.clear();
+              throw new Error('Database corrupted - cleared IndexedDB, will recreate');
+            }
             setDb(database);
 
             // Test capabilities
@@ -161,14 +184,20 @@ export function SQLiteProvider({
               // Fall back to empty database
               database = new sqlInstance.Database();
 
-              // Try to load schema
+              // Try to load schema and sample data
               try {
                 const schemaResponse = await fetch('/schema.sql');
                 if (schemaResponse.ok) {
                   const schema = await schemaResponse.text();
                   database.exec(schema);
+
+                  // Insert sample data for development
+                  database.exec(SAMPLE_DATA_SQL);
+
                   if (enableLogging) {
-                    devLogger.setup('Empty database created with schema', {});
+                    devLogger.setup('Empty database created with schema and sample data', {
+                      sampleDataInserted: true
+                    });
                   }
                 }
               } catch (schemaError) {
@@ -192,14 +221,20 @@ export function SQLiteProvider({
           devLogger.error('Persistence error, falling back to memory-only database', persistenceError);
           const database = new sqlInstance.Database();
 
-          // Load schema for memory-only database
+          // Load schema and sample data for memory-only database
           try {
             const schemaResponse = await fetch('/schema.sql');
             if (schemaResponse.ok) {
               const schema = await schemaResponse.text();
               database.exec(schema);
+
+              // Insert sample data for development
+              database.exec(SAMPLE_DATA_SQL);
+
               if (enableLogging) {
-                devLogger.setup('Schema loaded for memory-only database', {});
+                devLogger.setup('Schema and sample data loaded for memory-only database', {
+                  sampleDataInserted: true
+                });
               }
             }
           } catch (schemaError) {
@@ -255,8 +290,8 @@ export function SQLiteProvider({
     };
   }, [databaseUrl, enableLogging]);
 
-  // Test FTS5 performance
-  const testFTS5Performance = async (): Promise<FTS5PerformanceResult> => {
+  // Test FTS5 performance (memoized to prevent context churn)
+  const testFTS5Performance = useCallback(async (): Promise<FTS5PerformanceResult> => {
     if (!db || !capabilities.fts5) {
       return { results: 0, timeMs: 0, usedFallback: true };
     }
@@ -275,9 +310,10 @@ export function SQLiteProvider({
       devLogger.warn('FTS5 performance test failed', error);
       return { results: 0, timeMs: 0, usedFallback: true };
     }
-  };
+  }, [db, capabilities.fts5, execute]);
 
-  const contextValue: SQLiteContextValue = {
+  // Memoize context value to prevent unnecessary consumer re-renders
+  const contextValue: SQLiteContextValue = useMemo(() => ({
     db,
     loading,
     error,
@@ -291,7 +327,10 @@ export function SQLiteProvider({
     dataVersion,
     storageQuota,
     testFTS5Performance
-  };
+  }), [
+    db, loading, error, execute, run, save, reset, loadFromFile,
+    capabilities, telemetry, dataVersion, storageQuota, testFTS5Performance
+  ]);
 
   return (
     <SQLiteContext.Provider value={contextValue}>

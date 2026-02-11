@@ -81,16 +81,9 @@ export function useSQLiteQuery<T = Record<string, unknown>>(
 
       setDuration(queryDuration);
 
-      // Log performance in development mode
-      if (import.meta.env.DEV) {
-        devLogger.data('sql.js Query', {
-          sql: sql.substring(0, 100) + (sql.length > 100 ? '...' : ''),
-          params: params.length > 0 ? params : undefined,
-          duration: `${queryDuration.toFixed(2)}ms`,
-          rowCount: rows.length,
-          synchronous: true,
-        });
-      }
+      // NOTE: Query logging removed to prevent console flooding.
+      // Enable manually for debugging: uncomment the devLogger call below
+      // devLogger.data('sql.js Query', { sql: sql.substring(0, 100), duration: queryDuration, rowCount: rows.length });
 
     } catch (err) {
       devLogger.error('sql.js Query Error', {

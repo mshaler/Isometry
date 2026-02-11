@@ -1,7 +1,17 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import type { PAFVState, AxisMapping, Plane, LATCHAxis } from '../types/pafv';
+import React, { useCallback, useEffect, useRef, useMemo } from 'react';
+import { useRenderLoopGuard } from '../hooks/debug/useRenderLoopGuard';
+import type { PAFVState, AxisMapping, Plane, LATCHAxis, DensityLevel, EncodingConfig } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
-import { setMapping as setMappingUtil, removeMapping, getMappingForPlane, getPlaneForAxis } from '../utils/pafv-serialization';
+import {
+  setMapping as setMappingUtil,
+  removeMapping,
+  getMappingForPlane,
+  getPlaneForAxis,
+  addMappingToPlane as addMappingUtil,
+  removeFacetFromPlane as removeFacetUtil,
+  reorderMappingsInPlane as reorderMappingsUtil,
+  getMappingsForPlane as getMappingsUtil,
+} from '../utils/pafv-serialization';
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
 import { useURLState } from '../hooks/ui/useURLState';
 import { PAFVContext, type PAFVContextValue } from '../hooks/data/usePAFV';
@@ -15,6 +25,9 @@ const pafvBridge = {
 };
 
 export function PAFVProvider({ children }: { children: React.ReactNode }) {
+  // Render loop guard - warns if provider renders >10x/second (indicates infinite loop)
+  useRenderLoopGuard({ componentName: 'PAFVProvider' });
+
   // Use URL state for persistence
   const [state, setState] = useURLState<PAFVState>(
     'pafv',
@@ -63,6 +76,34 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     pafvBridge.sendAxisMappingUpdate(newState);
   }, [state, setState]);
 
+  const addMappingToPlaneCallback = useCallback((mapping: AxisMapping) => {
+    const newState = addMappingUtil(state, mapping);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const removeFacetFromPlaneCallback = useCallback((plane: Plane, facet: string) => {
+    const newState = removeFacetUtil(state, plane, facet);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const reorderMappingsInPlaneCallback = useCallback((plane: Plane, fromIndex: number, toIndex: number) => {
+    const newState = reorderMappingsUtil(state, plane, fromIndex, toIndex);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const getMappingsForPlaneCallback = useCallback((plane: Plane): AxisMapping[] => {
+    return getMappingsUtil(state, plane);
+  }, [state]);
+
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
     let newState: PAFVState;
 
@@ -81,6 +122,9 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
         mappings: lastGridMappings.current.length > 0
           ? lastGridMappings.current
           : DEFAULT_PAFV.mappings,
+        densityLevel: state.densityLevel, // Preserve density level
+        colorEncoding: state.colorEncoding, // Preserve encoding
+        sizeEncoding: state.sizeEncoding,
       };
       setState(newState);
       pafvBridge.sendAxisMappingUpdate(newState);
@@ -94,6 +138,9 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
         mappings: lastListMappings.current.length > 0
           ? lastListMappings.current
           : state.mappings, // Preserve current mappings if no list history
+        densityLevel: state.densityLevel, // Preserve density level
+        colorEncoding: state.colorEncoding, // Preserve encoding
+        sizeEncoding: state.sizeEncoding,
       };
       setState(newState);
       pafvBridge.sendAxisMappingUpdate(newState);
@@ -121,15 +168,64 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     return getPlaneForAxis(state, axis);
   }, [state]);
 
-  const value: PAFVContextValue = {
+  const setDensityLevel = useCallback((level: DensityLevel) => {
+    const newState: PAFVState = { ...state, densityLevel: level };
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const setColorEncoding = useCallback((encoding: EncodingConfig | null) => {
+    const newState: PAFVState = { ...state, colorEncoding: encoding };
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const setSizeEncoding = useCallback((encoding: EncodingConfig | null) => {
+    const newState: PAFVState = { ...state, sizeEncoding: encoding };
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  // CRITICAL: Memoize context value to prevent infinite render loops
+  // Without useMemo, a new object is created every render, causing all consumers
+  // to re-render even when values haven't changed (see Phase 59-01 for details)
+  const value: PAFVContextValue = useMemo(() => ({
     state,
     setMapping,
     removeMapping: removeMappingCallback,
+    addMappingToPlane: addMappingToPlaneCallback,
+    removeFacetFromPlane: removeFacetFromPlaneCallback,
+    reorderMappingsInPlane: reorderMappingsInPlaneCallback,
+    getMappingsForPlane: getMappingsForPlaneCallback,
     setViewMode,
+    setDensityLevel,
+    setColorEncoding,
+    setSizeEncoding,
     resetToDefaults,
     getAxisForPlane,
     getPlaneForAxis: getPlaneForAxisCallback,
-  };
+  }), [
+    state,
+    setMapping,
+    removeMappingCallback,
+    addMappingToPlaneCallback,
+    removeFacetFromPlaneCallback,
+    reorderMappingsInPlaneCallback,
+    getMappingsForPlaneCallback,
+    setViewMode,
+    setDensityLevel,
+    setColorEncoding,
+    setSizeEncoding,
+    resetToDefaults,
+    getAxisForPlane,
+    getPlaneForAxisCallback,
+  ]);
 
   return (
     <PAFVContext.Provider value={value}>

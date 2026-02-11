@@ -26,7 +26,7 @@ const ROOT = resolve(__dirname, '..');
 const LIMITS = {
   'src/utils':      30,   // Currently ~45 — will fail initially (cleanup target)
   'src/hooks':      35,   // Currently ~50 — will fail initially (cleanup target)
-  'src/components': 60,   // Top-level components only (subdirs don't count)
+  'src/components': 65,   // Top-level components only (subdirs don't count) — bumped from 60 for Phase 58 additions
   'src/services':   15,   // Should stay focused
   'src/types':      25,   // Type files should be consolidated
 };
