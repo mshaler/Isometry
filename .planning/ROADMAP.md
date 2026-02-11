@@ -4,10 +4,10 @@
 
 - **v3.1 Live Database Integration** - Phases 18-27 (shipped 2026-02-01)
 - **v4.1 SuperGrid Foundation** - Phases 34-42 (shipped 2026-02-10)
-- **v4.2 Three-Canvas Notebook** - Phases 43-46 (paused, Phase 46 pending)
-- **v4.3 Navigator Integration** - Phases 50-51 (paused, Phase 51 pending)
-- **v5.0 Type Safety Restoration** - Phases 52-55 (active)
-- **v4.4 SuperGrid PAFV Projection** - Phases 56-58 (proposed) - see `.planning/milestones/v4.4-SUPERGRID-PAFV-PROJECTION.md`
+- **v4.2 Three-Canvas Notebook** - Phases 43-46 (shipped 2026-02-10)
+- **v4.3 Navigator Integration** - Phases 50-51 (shipped 2026-02-10)
+- **v5.0 Type Safety Restoration** - Phases 52-55 (shipped 2026-02-10)
+- **v4.4 SuperGrid PAFV Projection** - Phases 56-58 (active)
 
 ## Phases
 
@@ -45,7 +45,8 @@
 
 </details>
 
-### v4.2 Three-Canvas Notebook (In Progress)
+<details>
+<summary>v4.2 Three-Canvas Notebook (Phases 43-46) - SHIPPED 2026-02-10</summary>
 
 **Milestone Goal:** Build a unified capture-shell-preview workspace where notebook cards participate fully in PAFV projections
 
@@ -109,11 +110,14 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 46-01-PLAN.md — Verify dataVersion propagation chain for auto-refresh (SYNC-01)
-- [ ] 46-02-PLAN.md — Connect Preview tabs to SelectionContext for cross-canvas selection (SYNC-03)
-- [ ] 46-03-PLAN.md — Bidirectional navigation from Preview to Capture (SYNC-02)
+- [x] 46-01-PLAN.md — Verify dataVersion propagation chain for auto-refresh (SYNC-01)
+- [x] 46-02-PLAN.md — Connect Preview tabs to SelectionContext for cross-canvas selection (SYNC-03)
+- [x] 46-03-PLAN.md — Bidirectional navigation from Preview to Capture (SYNC-02)
 
-### v4.3 Navigator Integration (In Progress)
+</details>
+
+<details>
+<summary>v4.3 Navigator Integration (Phases 50-51) - SHIPPED 2026-02-10</summary>
 
 **Milestone Goal:** Connect property classification to Navigator UI for dynamic LATCH+GRAPH axis selection with SuperGrid
 
@@ -147,84 +151,83 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 51-01-PLAN.md — DraggableFacet and PlaneDropZone components with type mappings
-- [ ] 51-02-PLAN.md — SimplePAFVNavigator refactor with classification buckets
+- [x] 51-01-PLAN.md — DraggableFacet and PlaneDropZone components with type mappings
+- [x] 51-02-PLAN.md — SimplePAFVNavigator refactor with classification buckets
 
-### v5.0 Type Safety Restoration (Active)
+</details>
 
-**Milestone Goal:** Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks and CI quality gates
+<details>
+<summary>v5.0 Type Safety Restoration (Phases 52-55) - SHIPPED 2026-02-10</summary>
 
-#### Phase 52: Dead Code & Stale Imports
-**Goal**: Remove unused variables/declarations, fix stale exports, and resolve module path errors (~251 errors)
-**Depends on**: None (can start immediately)
-**Requirements**: TSFIX-01, TSFIX-02, TSFIX-03
+**Milestone Goal:** Eliminate all TypeScript compilation errors to restore pre-commit hooks and CI quality gates
+
+**Approach:** Instead of executing the planned 4-phase sequential approach (Phases 52-55, 12 plans), used a 3-wave parallel agent strategy that eliminated all 1,347 errors in a single session:
+- Wave 1 (8 agents by directory): 1,347 → 853 errors (37% reduction)
+- Wave 2 (6 agents targeting clusters): 853 → 339 errors (60% of remaining)
+- Wave 3 (4 agents final cleanup): 339 → 0 errors
+
+**Key accomplishments:**
+- Zero TypeScript compilation errors (`tsc --noEmit` passes clean)
+- Pre-commit hook fully restored (all 5 checks passing)
+- knip baseline ratchet set at `--max-issues 1000` for pre-existing unused exports
+- Local interface extension pattern established for competing type definitions
+
+**Stats:** 140 files changed (2,938 insertions, 1,544 deletions), single commit `23de1fa5`
+
+</details>
+
+## v4.4 SuperGrid PAFV Projection (Active)
+
+**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
+
+### Phase 56: PAFV Projection Core
+**Goal**: Wire SuperGrid to consume PAFV axis mappings and compute 2D card positions
+**Depends on**: Phase 51 (Navigator Integration complete), v5.0 (Type Safety Restoration complete)
+**Requirements**: PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05
 **Success Criteria** (what must be TRUE):
-  1. Zero TS6133/TS6196 (unused) errors remain
-  2. Zero TS2305 (no exported member) errors remain
-  3. Zero TS2307 (cannot find module) errors remain
-  4. No behavioral changes — only dead code removal and import fixes
-**Plans**: 3 plans in 1 wave
-
-Plans:
-- [ ] 52-01-PLAN.md — Remove unused variables and declarations (TS6133, TS6196)
-- [ ] 52-02-PLAN.md — Fix stale exports and re-export paths (TS2305)
-- [ ] 52-03-PLAN.md — Fix module resolution errors (TS2307)
-
-#### Phase 53: Type Assertions & Annotations
-**Goal**: Add proper type annotations where TypeScript infers 'unknown' or implicit 'any' (~404 errors)
-**Depends on**: Phase 52
-**Requirements**: TSFIX-04, TSFIX-05
-**Success Criteria** (what must be TRUE):
-  1. Zero TS18046 (type 'unknown') errors remain
-  2. Zero TS7006 (implicit 'any') errors remain
-  3. All type assertions use proper type guards, not blanket `as` casts
+  1. User drags facet to X-axis well in Navigator and SuperGrid columns reorganize based on that facet's unique values
+  2. User drags facet to Y-axis well in Navigator and SuperGrid rows reorganize based on that facet's unique values
+  3. Cards with identical X and Y facet values appear in the same grid cell (multiple cards per cell supported)
+  4. Cards with null/undefined facet values appear in "Unassigned" bucket row or column
+  5. SuperGrid reads axis mappings from PAFVContext without breaking existing LATCH filtering
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 53-01-PLAN.md — Fix TS18046 in D3/visualization layer (src/d3/)
-- [ ] 53-02-PLAN.md — Fix TS18046 in components and hooks
-- [ ] 53-03-PLAN.md — Fix TS7006 implicit any across all remaining files
+- [ ] 56-01: Wire usePAFV hook to SuperGrid and pass axis mappings to GridRenderingEngine
+- [ ] 56-02: Compute unique X/Y axis values and generate header arrays with null handling
+- [ ] 56-03: Calculate 2D cell positions for cards and update D3 data binding
 
-#### Phase 54: Interface Alignment
-**Goal**: Fix type mismatches between interfaces and actual usage across the codebase (~346 errors)
-**Depends on**: Phase 53
-**Requirements**: TSFIX-06, TSFIX-07
+### Phase 57: Header Generation
+**Goal**: Dynamic row and column headers from actual axis values in the dataset
+**Depends on**: Phase 56
+**Requirements**: HDR-01, HDR-02, HDR-03
 **Success Criteria** (what must be TRUE):
-  1. Zero TS2339 (property does not exist) errors remain
-  2. Zero TS2322 (type not assignable) errors remain
-  3. Interfaces accurately reflect runtime data shapes
-**Plans**: 3 plans in 2 waves
+  1. Column headers display unique X-axis facet values extracted from current filtered dataset
+  2. Row headers display unique Y-axis facet values extracted from current filtered dataset
+  3. Date facets render as formatted dates (e.g., "Jan 15, 2026" not "2026-01-15T00:00:00Z")
+  4. Category facets render with proper labels (e.g., "In Progress" not "in_progress")
+**Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 54-01-PLAN.md — Fix TS2339 in D3/SuperGrid layer
-- [ ] 54-02-PLAN.md — Fix TS2339/TS2322 in components and services
-- [ ] 54-03-PLAN.md — Fix TS2322 in hooks, engine, and remaining files
+- [ ] 57-01: Generate column and row header elements from computed unique axis values
+- [ ] 57-02: Apply facet type formatting (date formatting, category label mapping)
 
-#### Phase 55: Function Signatures & Final Verification
-**Goal**: Fix argument mismatches, overload resolution, and verify zero total errors (~253 errors)
-**Depends on**: Phase 54
-**Requirements**: TSFIX-08, TSFIX-09, TSFIX-10, TSFIX-11, TSFIX-12
+### Phase 58: Transitions & Polish
+**Goal**: Smooth D3 transitions when axis mappings change and empty cell handling
+**Depends on**: Phase 57
+**Requirements**: TRANS-01, TRANS-02, TRANS-03
 **Success Criteria** (what must be TRUE):
-  1. Zero TS2345 (argument not assignable) errors remain
-  2. Zero TS2554 (wrong argument count) errors remain
-  3. All remaining error codes resolved (TS2353, TS2551, TS2769, TS2304, etc.)
-  4. `tsc --noEmit` passes with zero errors
-  5. `npm run check:quick` passes (types + lint)
-  6. Pre-commit hook (lefthook) passes without --no-verify
-**Plans**: 3 plans in 2 waves
+  1. User changes X or Y axis mapping and cards animate smoothly to new positions (300ms D3 transition)
+  2. New cells fade in and removed cells fade out during axis changes (D3 enter/exit with opacity transitions)
+  3. User toggles sparse mode and sees full Cartesian grid with empty cells visible
+  4. User toggles dense mode and sees only populated cells (empty cells hidden)
+**Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 55-01-PLAN.md — Fix TS2345/TS2554 function signature mismatches
-- [ ] 55-02-PLAN.md — Fix all remaining error codes (TS2353, TS2551, TS2769, etc.)
-- [ ] 55-03-PLAN.md — Final verification: zero errors, pre-commit hook, CI gates
+- [ ] 58-01: Implement D3 FLIP transitions for card repositioning with enter/exit animations
+- [ ] 58-02: Add sparse/dense mode toggle for empty cell visibility
 
 ## Progress
-
-**Execution Order:**
-v5.0 phases execute sequentially: 52 -> 53 -> 54 -> 55
-Each phase reduces error count, and later phases depend on earlier type fixes cascading.
-
-v4.2 Phase 46 and v4.3 Phase 51 resume after v5.0 completes.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -235,12 +238,12 @@ v4.2 Phase 46 and v4.3 Phase 51 resume after v5.0 completes.
 | 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 46. Live Data Synchronization | v4.2 | 3/3 | Complete | 2026-02-10 |
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
-| 51. Navigator UI Integration | v4.3 | 0/2 | Paused | - |
-| 52. Dead Code & Stale Imports | v5.0 | 0/3 | Planned | - |
-| 53. Type Assertions & Annotations | v5.0 | 0/3 | Planned | - |
-| 54. Interface Alignment | v5.0 | 0/3 | Planned | - |
-| 55. Function Signatures & Verification | v5.0 | 0/3 | Planned | - |
+| 51. Navigator UI Integration | v4.3 | 2/2 | Complete | 2026-02-10 |
+| 52-55. Type Safety Restoration | v5.0 | N/A (wave strategy) | Complete | 2026-02-10 |
+| 56. PAFV Projection Core | v4.4 | 0/3 | Not started | - |
+| 57. Header Generation | v4.4 | 0/2 | Not started | - |
+| 58. Transitions & Polish | v4.4 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (v5.0 Type Safety Restoration added, phases 52-55)*
+*Last updated: 2026-02-10 (v4.4 milestone added — Phases 56-58)*
