@@ -224,8 +224,36 @@ Plans:
 **Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 58-01: Implement D3 FLIP transitions for card repositioning with enter/exit animations
-- [ ] 58-02: Add sparse/dense mode toggle for empty cell visibility
+- [x] 58-01: Implement D3 FLIP transitions for card repositioning with enter/exit animations
+- [x] 58-02: Navigator Redesign (LatchNavigator + PafvNavigator layout)
+
+### Phase 59: Stability & Memoization
+**Goal**: Fix infinite render loops and add memoization safeguards
+**Depends on**: Phase 58
+**Requirements**: STAB-01
+**Success Criteria** (what must be TRUE):
+  1. Context values properly memoized to prevent infinite re-renders
+  2. useRenderLoopGuard development safeguard added
+**Plans**: 1 plan in 1 wave
+
+Plans:
+- [x] 59-01: Context Memoization (SQLiteProvider + PAFVContext)
+
+### Phase 60: SuperGrid Stacked/Nested Headers
+**Goal**: Implement spreadsheet-style hierarchical headers with visual spanning for multi-axis projections
+**Depends on**: Phase 59
+**Requirements**: STACK-01, STACK-02, STACK-03
+**Success Criteria** (what must be TRUE):
+  1. Multi-level header hierarchy renders when multiple facets assigned to same plane (stacked axes)
+  2. Parent header cells span across their child headers (like Excel pivot table headers)
+  3. Headers integrate with existing HeaderLayoutService span calculation algorithm
+  4. Header clicks allow sorting by that level of the hierarchy
+**Plans**: 3 plans in 3 waves
+
+Plans:
+- [ ] 60-01-PLAN.md — Extend types and generate multi-facet hierarchies
+- [ ] 60-02-PLAN.md — Render stacked headers with visual spanning
+- [ ] 60-03-PLAN.md — Header click sorting at hierarchy levels
 
 ## Progress
 
@@ -240,10 +268,12 @@ Plans:
 | 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
 | 51. Navigator UI Integration | v4.3 | 2/2 | Complete | 2026-02-10 |
 | 52-55. Type Safety Restoration | v5.0 | N/A (wave strategy) | Complete | 2026-02-10 |
-| 56. PAFV Projection Core | v4.4 | 0/3 | Not started | - |
-| 57. Header Generation | v4.4 | 0/2 | Not started | - |
-| 58. Transitions & Polish | v4.4 | 0/2 | Not started | - |
+| 56. PAFV Projection Core | v4.4 | 3/3 | Complete | 2026-02-11 |
+| 57. Header Generation | v4.4 | 3/3 | Complete | 2026-02-11 |
+| 58. Transitions & Polish | v4.4 | 2/2 | Complete | 2026-02-11 |
+| 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
+| 60. Stacked/Nested Headers | v4.4 | 0/3 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-10 (v4.4 milestone added — Phases 56-58)*
+*Last updated: 2026-02-11 (Phase 60 planning complete)*
