@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-10)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** Phase 60 SuperGrid Stacked/Nested Headers — Plan 60-02 COMPLETE (Stacked Header Rendering)
+**Current focus:** Phase 60 SuperGrid Stacked/Nested Headers — COMPLETE (All 3 plans executed)
 
 ## Current Position
 
 Phase: 60 of 60 (SuperGrid Stacked/Nested Headers)
-Plan: 02 of 03 (Stacked Header Rendering)
-Status: Phase 60-02 complete (Multi-level header rendering with D3 join pattern)
-Last activity: 2026-02-11 — Phase 60-02 executed (renderStackedHeaders + GridRenderingEngine integration)
+Plan: 03 of 03 (Header Click Sorting)
+Status: Phase 60 COMPLETE (All plans executed - types, rendering, interaction)
+Last activity: 2026-02-11 — Phase 60-03 executed (Header click sorting with visual indicators)
 
-Progress (v4.5): [##............] ~67% (2/3 plans in Phase 60)
+Progress (v4.5): [################] 100% (3/3 plans in Phase 60)
 
 ## Performance Metrics
 
@@ -26,13 +26,19 @@ Progress (v4.5): [##............] ~67% (2/3 plans in Phase 60)
 - v5.0: 3-wave parallel (bypassed phased plan), same day
 - v4.4: 9 plans, 4 phases (56-59), same day
 
-**v4.5 (Phase 60):**
-- Phase 60-01: COMPLETE (3m 14s)
-- Phase 60-02: COMPLETE (6m 3s)
+**v4.5 (Phase 60) - COMPLETE:**
+- Phase 60-01: COMPLETE (3m 14s) — PAFV Stacked Axis Types
+- Phase 60-02: COMPLETE (6m 3s) — Stacked Header Rendering
+- Phase 60-03: COMPLETE (15m 42s) — Header Click Sorting
 
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 60-03 decisions:**
+- SORT-01: Sort state stored in PAFVContext for global access (not just D3)
+- SORT-02: Three-state toggle cycle: asc -> desc -> null (clear)
+- SORT-03: Sort not persisted to URL (sortConfig: null in serialization)
 
 **Phase 60-02 decisions:**
 - RENDER-01: Stacked detection via facets array length (>1 = stacked)
@@ -56,7 +62,7 @@ Progress (v4.5): [##............] ~67% (2/3 plans in Phase 60)
 - Category chips grouped by facet (folder/tags/status) with multi-select
 - LATCHFilterService uses addFilter(axis, facet, operator, value) signature
 
-### What's Wired (Phase 56 + 57-01 + 57-02 + 57-03 + 60-01 + 60-02 Complete)
+### What's Wired (Phase 60 COMPLETE)
 
 ```
 Navigator -> PAFVContext -> SuperGrid -> GridRenderingEngine -> 2D render
@@ -67,6 +73,8 @@ Transpose   densityLevel  setDensityLevel  Janus zoom/pan
    +           +             +              +
 Encoding   colorEncoding setColorEncoding  color scale -> card fill
 Dropdowns  sizeEncoding  setSizeEncoding   size multiplier
+   +           +
+Sort       sortConfig    setSortBy        (NEW in 60-03)
    +
 LATCHSliders -> LATCHFilterService -> SuperGrid.query() -> filtered results
    +
@@ -77,60 +85,73 @@ Phase 60-01:
 AxisProjection.facets? -> StackedAxisConfig -> generateStackedHierarchy() -> HeaderHierarchy
 (multi-facet stacked axis support with d3.stratify and bottom-up span calculation)
 
-NEW in 60-02:
+Phase 60-02:
 GridRenderingEngine.renderProjectionHeaders()
   -> detects facets?.length > 1
   -> renderStackedProjectionHeaders()
   -> SuperGridHeaders.renderStackedHeaders()
   -> HeaderProgressiveRenderer.renderMultiLevel()
   -> D3 enter/update/exit multi-level rendering
+
+Phase 60-03 (NEW):
+SuperGridHeaders.setupStackedHeaderInteractions()
+  -> handleHeaderSortClick() with toggle cycle
+  -> HeaderAnimationController.animateSortIndicator()
+  -> PAFVContext.setSortBy() for external handling
+  -> StackedHeaderClickEvent with sortDirection
 ```
 
-Key files modified in Phase 60-02:
-- `src/d3/SuperGridHeaders.ts` — Added renderStackedHeaders(), renderHeadersWithConfig(), StackedHeaderClickEvent
-- `src/d3/header-rendering/HeaderProgressiveRenderer.ts` — Added renderMultiLevel() with D3 join pattern
-- `src/d3/grid-rendering/GridRenderingEngine.ts` — Added renderStackedProjectionHeaders(), stacked axis detection
+Key files modified in Phase 60-03:
+- `src/types/pafv.ts` — Added SortDirection, SortConfig types, sortConfig field
+- `src/state/PAFVContext.tsx` — Added setSortBy action
+- `src/hooks/data/usePAFV.ts` — Added setSortBy to interface
+- `src/d3/SuperGridHeaders.ts` — Added handleHeaderSortClick(), SortState, hover/click interactions
+- `src/d3/header-interaction/HeaderAnimationController.ts` — Added animateSortIndicator(), clearSortIndicators()
+- `src/utils/pafv-serialization.ts` — Added sortConfig: null to deserialized state
 
 ### Pending Todos
 
 - [x] Phase 60-01: PAFV Stacked Axis Types COMPLETE
 - [x] Phase 60-02: Stacked Header Rendering COMPLETE
-- [ ] Phase 60-03: Visual verification and integration testing
+- [x] Phase 60-03: Header Click Sorting COMPLETE
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
 
 ### Blockers/Concerns
 
-None — Phase 60-02 complete. Ready for Phase 60-03 (Visual Verification).
+None — Phase 60 complete. Ready for next milestone.
 
 ## Session Continuity
 
 Last session: 2026-02-11
-Stopped at: Phase 60-02 complete
-Resume file: `.planning/phases/60-supergrid-stacked-headers/60-03-PLAN.md`
+Stopped at: Phase 60-03 complete (Phase 60 COMPLETE)
+Resume file: None — Phase 60 complete. Start new milestone planning.
 
 ## Resume Instructions
 
-To verify Phase 60-02 rendering infrastructure:
+Phase 60 (SuperGrid Stacked/Nested Headers) is complete. To verify:
 ```bash
-npm run typecheck  # Should pass (pre-existing errors in other files expected)
-grep -n "renderStackedHeaders" src/d3/SuperGridHeaders.ts  # Should find method
-grep -n "renderMultiLevel" src/d3/header-rendering/HeaderProgressiveRenderer.ts  # Should find method
+npm run typecheck  # Should pass
+grep -n "sortConfig" src/types/pafv.ts  # Should find SortConfig type
+grep -n "handleHeaderSortClick" src/d3/SuperGridHeaders.ts  # Should find method
+grep -n "animateSortIndicator" src/d3/header-interaction/HeaderAnimationController.ts  # Should find method
 ```
 
-Next: Execute Phase 60-03 for visual verification and integration testing.
+Next: Plan next milestone or start new feature work.
 
-## Phase 60-02 Completion Summary
+## Phase 60-03 Completion Summary
 
-All 3 tasks executed (Stacked Header Rendering):
-1. **Task 1 & 2**: Added renderStackedHeaders() to SuperGridHeaders, renderMultiLevel() to HeaderProgressiveRenderer
-2. **Task 3**: Integrated stacked header detection with GridRenderingEngine
-
-Key files modified in Phase 60-02:
-- `src/d3/SuperGridHeaders.ts` — MODIFIED: renderStackedHeaders(), StackedHeaderClickEvent interface
-- `src/d3/header-rendering/HeaderProgressiveRenderer.ts` — MODIFIED: renderMultiLevel(), MultiLevelConfig
-- `src/d3/grid-rendering/GridRenderingEngine.ts` — MODIFIED: renderStackedProjectionHeaders(), stacked detection
+All 3 tasks executed (Header Click Sorting):
+1. **Task 1**: Added SortConfig type and setSortBy action to PAFVContext
+2. **Task 2**: Added handleHeaderSortClick() with toggle cycle to SuperGridHeaders
+3. **Task 3**: Added animateSortIndicator() and clearSortIndicators() to HeaderAnimationController
 
 Commits:
-- c2c3f094: feat(60-02): add stacked header rendering to SuperGrid
-- 067f167b: feat(60-02): integrate stacked headers with GridRenderingEngine
+- f9fa505a: feat(60-03): add sort state to PAFVContext
+- 7ec48460: feat(60-03): implement header click sorting with visual indicators
+
+Deviations (4 auto-fixed, all Rule 3 - Blocking):
+1. Fixed incomplete PAFVState in SuperDynamicDemo.tsx
+2. Fixed DensityLevel name collision in types/index.ts barrel export
+3. Fixed missing sortConfig in pafv-serialization.ts
+4. Fixed no-this-alias ESLint error (refactored to arrow functions)
