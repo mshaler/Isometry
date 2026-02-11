@@ -12,7 +12,7 @@ import type {
   ResizeHandleConfig,
   ResizeOperationState
 } from '../types/grid';
-import type { StackedAxisConfig } from '../types/pafv';
+import type { StackedAxisConfig, SortDirection } from '../types/pafv';
 import { HeaderLayoutService } from '../services/supergrid/HeaderLayoutService';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
 import { superGridLogger } from '../utils/dev-logger';
@@ -32,6 +32,15 @@ export type { HeaderClickEvent } from './header-interaction/HeaderAnimationContr
 export type { SuperGridHeadersConfig } from './header-types';
 
 /**
+ * Internal sort state for tracking current sort configuration
+ */
+interface SortState {
+  facet: string;
+  direction: SortDirection;
+  nodeId: string;
+}
+
+/**
  * Stacked header click event details
  */
 export interface StackedHeaderClickEvent {
@@ -39,6 +48,7 @@ export interface StackedHeaderClickEvent {
   facet: string;
   value: string;
   level: number;
+  sortDirection?: SortDirection;
   event: MouseEvent;
 }
 
@@ -81,6 +91,10 @@ export class SuperGridHeaders {
 
   // Column resize functionality (Phase 39)
   private resizeState: ResizeOperationState;
+
+  // Sort state for header click sorting (Phase 60-03)
+  private currentSortState: SortState | null = null;
+  private stackedCallbacks: StackedHeaderCallbacks | undefined;
 
   // Re-export the config for compatibility
   private static readonly DEFAULT_CONFIG = DEFAULT_HEADER_CONFIG;
@@ -292,31 +306,123 @@ export class SuperGridHeaders {
   }
 
   /**
-   * Setup click interactions for stacked headers
+   * Handle header click for sorting
+   * Toggle through asc -> desc -> null cycle
+   */
+  private handleHeaderSortClick(node: HeaderNode): void {
+    const facet = node.facet || node.label;
+
+    // Determine new sort direction
+    let newDirection: SortDirection;
+    if (this.currentSortState?.facet === facet) {
+      // Toggle: asc -> desc -> null
+      if (this.currentSortState.direction === 'asc') {
+        newDirection = 'desc';
+      } else if (this.currentSortState.direction === 'desc') {
+        newDirection = null;
+      } else {
+        newDirection = 'asc';
+      }
+    } else {
+      // New facet, start with ascending
+      newDirection = 'asc';
+    }
+
+    // Update internal state
+    if (newDirection === null) {
+      this.currentSortState = null;
+    } else {
+      this.currentSortState = {
+        facet,
+        direction: newDirection,
+        nodeId: node.id
+      };
+    }
+
+    // Update visual indicator via animation controller
+    this.animationController.animateSortIndicator(
+      node.id,
+      newDirection
+    );
+
+    // Emit event for external handling
+    if (this.stackedCallbacks?.onHeaderClick) {
+      this.stackedCallbacks.onHeaderClick({
+        nodeId: node.id,
+        facet,
+        value: node.label,
+        level: node.level,
+        sortDirection: newDirection,
+        event: new MouseEvent('click')
+      });
+    }
+
+    superGridLogger.debug('Header sort clicked', {
+      facet,
+      direction: newDirection,
+      level: node.level
+    });
+  }
+
+  /**
+   * Setup click interactions for stacked headers with sort behavior
    * Each level can be clicked for sorting/filtering
    */
   private setupStackedHeaderInteractions(
     hierarchy: HeaderHierarchy,
     callbacks?: StackedHeaderCallbacks
   ): void {
-    const headerNodes = this.container.selectAll('.header-node');
+    // Store callbacks for use in handleHeaderSortClick
+    this.stackedCallbacks = callbacks;
 
-    headerNodes.on('click', (event: MouseEvent, d: unknown) => {
-      const node = d as HeaderNode;
-      if (callbacks?.onHeaderClick) {
-        callbacks.onHeaderClick({
-          nodeId: node.id,
-          facet: node.facet || '',
-          value: node.label,
-          level: node.level,
-          event
-        });
-      }
-    });
+    // Select all header nodes and attach click handler
+    // Using arrow functions for click to access class instance
+    // Using regular functions for mouseenter/leave to access DOM element via d3.select
+    this.container
+      .selectAll<SVGGElement, HeaderNode>('.header-node')
+      .style('cursor', 'pointer')
+      .on('click', (_event: MouseEvent, d: HeaderNode) => {
+        _event.stopPropagation();
+        this.handleHeaderSortClick(d);
+      })
+      .on('mouseenter', function() {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias -- D3 callback requires DOM element access
+        const element = this;
+        d3.select(element).select('.header-bg')
+          .transition()
+          .duration(150)
+          .attr('fill', '#e2e8f0'); // Hover highlight
+      })
+      .on('mouseleave', (_event: MouseEvent, d: HeaderNode) => {
+        // Use event.currentTarget instead of this for DOM element
+        const element = _event.currentTarget as SVGGElement;
+        const isSelected = this.currentSortState?.nodeId === d.id;
+        d3.select(element).select('.header-bg')
+          .transition()
+          .duration(150)
+          .attr('fill', isSelected ? '#dbeafe' : '#f8fafc');
+      });
 
     superGridLogger.debug('Stacked header interactions setup', {
       nodeCount: hierarchy.allNodes.length
     });
+  }
+
+  /**
+   * Get the current sort state
+   */
+  public getSortState(): SortState | null {
+    return this.currentSortState ? { ...this.currentSortState } : null;
+  }
+
+  /**
+   * Clear the current sort state
+   */
+  public clearSortState(): void {
+    if (this.currentSortState) {
+      this.animationController.clearSortIndicators();
+      this.currentSortState = null;
+    }
   }
 
   /**

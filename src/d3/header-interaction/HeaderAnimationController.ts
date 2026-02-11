@@ -323,4 +323,105 @@ export class HeaderAnimationController {
   updateConfig(config: Partial<SuperGridHeadersConfig>): void {
     this.config = { ...this.config, ...config };
   }
+
+  /**
+   * Animate sort indicator on header cell
+   * Shows chevron/arrow indicating sort direction
+   *
+   * @param nodeId - ID of the header node
+   * @param direction - Sort direction ('asc', 'desc', or null to remove)
+   */
+  public animateSortIndicator(
+    nodeId: string,
+    direction: 'asc' | 'desc' | null
+  ): void {
+    const node = this.container.select(`[data-node-id="${nodeId}"]`);
+    if (node.empty()) {
+      // Try alternative selector using class and finding by data
+      const allNodes = this.container.selectAll('.header-node');
+      if (allNodes.empty()) return;
+    }
+
+    // Remove existing sort indicators from all headers
+    this.container
+      .selectAll('.sort-indicator')
+      .transition()
+      .duration(150)
+      .attr('opacity', 0)
+      .remove();
+
+    // Remove selected state from all headers
+    this.container
+      .selectAll('.header-bg, .header-background')
+      .transition()
+      .duration(150)
+      .attr('fill', '#f8fafc');
+
+    if (direction === null) {
+      return; // Sort cleared, nothing more to do
+    }
+
+    // Find the header node by ID
+    const targetNode = this.container
+      .selectAll('.header-node')
+      .filter(function(d: unknown) {
+        const headerNode = d as HeaderNode;
+        return headerNode?.id === nodeId;
+      });
+
+    if (targetNode.empty()) return;
+
+    // Highlight the sorted header
+    targetNode.select('.header-bg, .header-background')
+      .transition()
+      .duration(200)
+      .attr('fill', '#dbeafe'); // Light blue for selected
+
+    // Get header dimensions for positioning
+    const rect = targetNode.select('.header-bg, .header-background').node() as SVGRectElement | null;
+    if (!rect) return;
+
+    const width = parseFloat(rect.getAttribute('width') || '0');
+    const height = parseFloat(rect.getAttribute('height') || '0');
+
+    // Create sort indicator (triangle/chevron)
+    const indicator = targetNode.append('g')
+      .attr('class', 'sort-indicator')
+      .attr('transform', `translate(${width - 16}, ${height / 2})`)
+      .attr('opacity', 0);
+
+    // Triangle path: up for asc, down for desc
+    const trianglePath = direction === 'asc'
+      ? 'M0,4 L4,0 L8,4 Z'   // Up arrow
+      : 'M0,0 L4,4 L8,0 Z';  // Down arrow
+
+    indicator.append('path')
+      .attr('d', trianglePath)
+      .attr('fill', '#3b82f6')
+      .attr('transform', 'translate(-4, -2)');
+
+    // Animate in
+    indicator
+      .transition()
+      .duration(200)
+      .attr('opacity', 1);
+  }
+
+  /**
+   * Clear all sort indicators
+   */
+  public clearSortIndicators(): void {
+    this.container
+      .selectAll('.sort-indicator')
+      .transition()
+      .duration(150)
+      .attr('opacity', 0)
+      .remove();
+
+    this.container
+      .selectAll('.header-bg, .header-background')
+      .transition()
+      .duration(150)
+      .attr('fill', '#f8fafc');
+  }
 }
