@@ -4,71 +4,35 @@
 
 See: .planning/PROJECT.md (updated 2026-02-10)
 
-**Core value:** Eliminate all 1,254 TypeScript compilation errors to restore type safety, unblock the pre-commit hook, and establish a clean baseline for future development.
-**Current focus:** v5.0 Type Safety Restoration - Phase 52 (Dead Code & Stale Imports)
-
-**Parallel work:** Phase 46 (Live Data Synchronization) COMPLETE - All SYNC requirements verified
-**Completed:** Phase 51 (Navigator UI Integration) - All plans complete
+**Core value:** Polymorphic data projection platform with PAFV spatial projection system
+**Current focus:** v4.4 SuperGrid PAFV Projection — Defining requirements
 
 ## Current Position
 
-Phase: 52 of 55 (Dead Code & Stale Imports)
-Plan: 0 of 3 complete
-Status: Ready to start
-Last activity: 2026-02-10 — Completed Phase 46 (Live Data Synchronization)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-10 — Milestone v4.4 started
 
-Progress (v5.0): [            ] 0% (0/12 plans complete)
+Progress (v4.4): [            ] 0%
 
 ## Performance Metrics
 
 **Previous Milestones:**
 - v3.1: 18 plans, 7 phases, 3 days
 - v4.1: 27 plans, 9 phases, 5 days
-- v4.3: 2 plans, 1 phase, ~5 minutes execution
+- v4.2: 12 plans, 4 phases, same day
+- v4.3: 4 plans, 2 phases, same day
 
-**v4.2 Progress (paused):**
-- Phase 43: 3 plans, 2 waves, ~18 minutes execution
-- Phase 44: 3 plans, 2 waves, ~18 minutes execution
-- Phase 45: 3 plans, 2 waves, ~18 minutes execution
-
-**Phase 46 Progress (COMPLETE):**
-- Plan 01: 2 tasks, 3 minutes - verified SYNC-01 dataVersion chain
-- Plan 02: 3 tasks (1 pre-verified), 4 minutes - connected Preview tabs to SelectionContext
-- Plan 03: 2 tasks, 6 minutes - SYNC-02 Capture selection loading
-
-**v5.0 Target:**
-- 4 phases (52-55)
-- 12 plans total
-- Error baseline: 1,254 errors
-
-## Error Landscape
-
-**By error code (top 10):**
-| Code | Count | Description |
-|------|-------|-------------|
-| TS18046 | 339 | Type 'unknown' — need type guards |
-| TS2339 | 270 | Property does not exist — missing interface fields |
-| TS6133 | 103 | Declared but never used — dead code |
-| TS2305 | 94 | No exported member — stale imports |
-| TS2322 | 76 | Type not assignable — type mismatches |
-| TS7006 | 65 | Implicit 'any' parameter — missing types |
-| TS2345 | 59 | Argument not assignable — wrong arg types |
-| TS2307 | 36 | Cannot find module — missing paths |
-| TS2554 | 33 | Wrong argument count |
-| TS2353 | 29 | Extra properties on object literal |
-
-**By domain (top 10):**
-| Directory | Errors |
-|-----------|--------|
-| src/d3/ | 353 |
-| src/components/ | 233 |
-| src/hooks/ | 116 |
-| src/services/ | 92 |
-| src/engine/ | 71 |
-| src/types/ | 57 |
-| src/demos/ | 26 |
-| src/db/ | 24 |
-| src/contexts/ | 34 |
+**v5.0 Completion Stats:**
+- Baseline: 1,347 TypeScript errors across ~141 files
+- Strategy: 3-wave parallel agent approach (bypassed phased GSD plan)
+- Wave 1 (8 agents): 1,347 → 853 errors (494 eliminated, 37%)
+- Wave 2 (6 agents): 853 → 339 errors (514 eliminated, 60% of remaining)
+- Wave 3 (4 agents): 339 → 0 errors (100% of remaining)
+- Total: 140 files changed, 2,938 insertions, 1,544 deletions
+- Commit: `23de1fa5 fix(types): eliminate all 1,347 TypeScript compilation errors`
+- Pre-commit hook: fully restored (all 5 checks passing)
 
 ## Accumulated Context
 
@@ -76,78 +40,36 @@ Progress (v5.0): [            ] 0% (0/12 plans complete)
 
 Decisions are logged in PROJECT.md Key Decisions table.
 
-**v5.0 decisions:**
-- Fix by error type, not by directory — cascading fixes are more efficient
-- Phase 52 targets mechanical fixes (unused vars, stale imports, module paths)
-- Phase 53 targets type assertions — the largest single category (339 errors)
-- Phase 54 aligns interfaces to actual usage patterns
-- Phase 55 fixes function signatures and verifies zero errors
-- No behavioral changes — type-only fixes throughout
-
-**Phase 46 decisions:**
-- No custom event bus required for SYNC-01 — React's useSQLiteQuery dependency tracking handles auto-refresh
-- DataInspector is query-on-demand, no auto-refresh needed
-- SYNC-03 uses existing SelectionContext — no new infrastructure needed
-- SYNC-02 uses loadCard function in NotebookContext with cache optimization
+**v5.0 decisions (carried forward):**
+- Local interface extensions over global type definition changes — avoids cascading breaks
+- knip `--max-issues 1000` baseline ratchet — pre-existing unused exports tolerated
 
 ### Patterns Established
 
-**SYNC-01 Auto-refresh pattern:**
-```
-operations.run() -> setDataVersion(prev => prev + 1) -> useSQLiteQuery refetch -> component re-render
-```
-
-**SYNC-02 Selection-driven loading pattern:**
-```
-click in Preview -> select(id) via SelectionContext -> CaptureComponent useEffect -> loadCard(id) -> activeCard updates -> TipTap re-renders
-```
-
-**SYNC-03 Cross-canvas selection pattern:**
-```
-click in Tab -> select(id) via SelectionContext -> selection.lastSelectedId updates -> all tabs re-render with new highlight
-```
+**Local interface extension pattern:**
+When competing type definitions exist (grid.ts vs grid-core.ts), extend locally at point of use rather than modifying global definitions.
 
 ### Pending Todos
 
-None — Phase 46 complete. Ready for Phase 52.
+- Define v4.4 requirements and roadmap
+- Knip unused exports cleanup (ratchet from 1000 down over time)
+- Directory health: src/services (22/15 files)
 
 ### Blockers/Concerns
 
-**Active Issues:**
-- 1,254 TypeScript errors blocking pre-commit hook
-- CI quality gates using continue-on-error as workaround
-- Directory health check failing for src/services (22/15 files) — not in v5.0 scope
+**None blocking v4.4.**
 
-**Risk:** Some TS2305/TS2307 errors may indicate code that was generated but never integrated. May need to decide between fixing interfaces vs deleting dead modules.
+Open question from proposal: Use `/src/state/PAFVContext.tsx` (AxisMapping-based) vs `/src/contexts/PAFVContext.tsx` (Wells-based)?
+- Recommendation: `/src/state/` version has the AxisMapping type needed
 
 ## Session Continuity
 
 Last session: 2026-02-10
-Stopped at: Completed Phase 46 (Live Data Synchronization) - all 3 plans
-Resume file: N/A - Phase 46 complete
-
-### Phase 46 Completion Summary
-
-All Live Data Synchronization requirements verified:
-- SYNC-01: Auto-refresh on data changes via dataVersion chain
-- SYNC-02: Click card in Preview -> Capture loads that card (this plan)
-- SYNC-03: Selection highlighting across all canvases via SelectionContext
-
-### Phase 51 Completion Summary
-
-All Navigator UI Integration requirements verified:
-- NAV-01: Dynamic LATCH buckets from usePropertyClassification()
-- NAV-02: Expandable accordion sections per bucket
-- NAV-03: GRAPH bucket with 4 edge types + 2 metrics
-- NAV-04: Drag-and-drop facet-to-plane mapping
-- NAV-05: PAFV context setMapping via drop handler
-
-Bug fixes applied during verification:
-- Fixed IndexedDB database name mismatch (isometry-v4 -> isometry-db)
-- Added schema loading to persistence error fallback path
+Stopped at: v4.4 milestone initialization — defining requirements
+Resume file: N/A
 
 ## Next Steps
 
-1. Run `/gsd:plan-phase 52` to create plans for Dead Code & Stale Imports
-2. Run `/gsd:execute-phase 52` to fix ~251 errors (TS6133, TS6196, TS2305, TS2307)
-3. Measure error reduction, continue to Phase 53
+1. Define v4.4 requirements
+2. Create v4.4 roadmap
+3. `/gsd:plan-phase 56` to start execution

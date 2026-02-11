@@ -9,21 +9,25 @@
 ### v4.1 SuperGrid Foundation (SHIPPED)
 Core SuperGrid polymorphic data projection system with bridge elimination, Janus density controls, and unified ViewEngine architecture.
 
-### v4.2 Three-Canvas Notebook (PAUSED — awaiting Phase 46)
-Unified capture-shell-preview workspace. Phases 43-45 complete (Shell, Preview, TipTap Editor). Phase 46 (Live Data Sync) pending.
+### v4.2 Three-Canvas Notebook (SHIPPED)
+Unified capture-shell-preview workspace with Shell, Preview, TipTap Editor, and Live Data Synchronization.
 
-### v4.3 Navigator Integration (PAUSED — awaiting Phase 51)
-Property classification to Navigator UI. Phase 50 (Foundation) complete. Phase 51 (UI Integration) pending.
+### v4.3 Navigator Integration (SHIPPED)
+Property classification to Navigator UI with dynamic LATCH+GRAPH buckets and drag-and-drop facet-to-plane mapping.
 
-## Current Milestone: v5.0 Type Safety Restoration
+### v5.0 Type Safety Restoration (SHIPPED)
+Eliminated all 1,347 TypeScript compilation errors. Pre-commit hook fully restored. 140 files changed via 3-wave parallel agent strategy.
 
-**Goal:** Eliminate all 1,254 TypeScript compilation errors to restore type safety, unblock the pre-commit hook, and establish a clean baseline for future development.
+## Current Milestone: v4.4 SuperGrid PAFV Projection
 
-**Target outcomes:**
-- Zero TypeScript errors (`tsc --noEmit` passes clean)
-- Pre-commit hook (`lefthook`) restored — no more `--no-verify` bypasses
-- CI/CD quality gates pass without `continue-on-error` workarounds
-- Clean type foundations for completing v4.2 Phase 46 and v4.3 Phase 51
+**Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
+
+**Target features:**
+- SuperGrid consumes PAFV axis mappings from context to determine column/row layout
+- 2D cell positioning: cards placed at intersection of X-axis (column) and Y-axis (row) facet values
+- Dynamic header generation from unique facet values in the dataset
+- Smooth D3 transitions when axis mappings change (drag new facet to Navigator well)
+- Empty cell handling: sparse mode (full Cartesian) vs dense mode (populated only)
 
 ## Core Value
 
@@ -176,11 +180,11 @@ Three-component React sidecar application:
 
 ### Active
 
-- [ ] Three-Canvas Notebook layout with Capture, Shell, Preview panes
-- [ ] TipTap markdown editor with Isometry card properties integration
-- [ ] Claude Code API integration for AI-assisted terminal
-- [ ] D3.js visualization rendering in Preview pane
-- [ ] Notebook cards integration with existing PAFV projections
+- [ ] SuperGrid consuming PAFV axis mappings from PAFVContext
+- [ ] 2D cell positioning based on X-axis (column) and Y-axis (row) facet values
+- [ ] Dynamic header generation from unique axis values
+- [ ] View transitions when axis mappings change
+- [ ] Empty cell handling (sparse vs dense mode)
 
 ### Out of Scope
 
@@ -200,10 +204,10 @@ Three-component React sidecar application:
 - IndexedDB persistence handles large datasets effectively
 
 **Known issues / technical debt:**
-- 1,254 TypeScript compilation errors accumulated across v4.1-v4.3 rapid development (v5.0 addresses this)
+- ~~1,347 TypeScript compilation errors~~ → 0 (v5.0 shipped)
+- ~~Pre-commit hook bypassed~~ → Fully restored (5/5 checks passing)
 - Directory health check failing for src/services (22/15 files)
-- Pre-commit hook bypassed with --no-verify since Phase 42
-- CI quality gates using continue-on-error as workaround
+- knip reports 275 unused files — baseline ratchet at 1000, needs cleanup
 
 ## Key Decisions
 
@@ -232,4 +236,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-10 after v4.2 milestone start*
+*Last updated: 2026-02-10 after v4.4 milestone start*
