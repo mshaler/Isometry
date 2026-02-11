@@ -91,9 +91,8 @@ export const WikiLink = Mark.create<WikiLinkOptions>({
   },
 });
 
-export interface WikiLinkSuggestionProps extends SuggestionProps<CardSuggestion> {
-  // Extend if needed
-}
+// Type alias for wiki link suggestion props
+export type WikiLinkSuggestionProps = SuggestionProps<CardSuggestion>;
 
 export function createWikiLinkSuggestion(
   queryFn: (query: string) => CardSuggestion[],

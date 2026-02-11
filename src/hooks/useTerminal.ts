@@ -176,6 +176,7 @@ export function useTerminal(options: UseTerminalOptions = {}) {
       const text = await navigator.clipboard.readText();
       if (text) {
         // Write pasted text to terminal (filter out control characters)
+        // eslint-disable-next-line no-control-regex
         const safeText = text.replace(/[\x00-\x1f]/g, '');
         terminal.write(safeText);
         return safeText;
