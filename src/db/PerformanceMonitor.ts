@@ -5,6 +5,8 @@
  * Provides insights for optimization and performance validation.
  */
 
+import { getHealthCheckURL } from '../config/endpoints';
+
 export interface PerformanceMetric {
   operation: string;
   method: 'native' | 'native-api' | 'optimized' | 'webview-bridge';
@@ -368,7 +370,7 @@ export class PerformanceMonitor {
     try {
       const startTime = performance.now();
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}/health`,
+        getHealthCheckURL(),
         { method: 'GET' }
       );
 

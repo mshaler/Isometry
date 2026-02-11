@@ -8,6 +8,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { logger } from '../../utils/logging/logger';
 import { ConfigurationContext } from './context';
 import { validateConfigurationValue, validateAllConfigurations } from './validation';
+import { getAPIBaseURL } from '../../config/endpoints';
 import type {
   ConfigurationItem,
   ConfigurationEnvironment,
@@ -252,7 +253,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
         {
           id: '1',
           key: 'api.endpoint',
-          value: 'http://localhost:3000',
+          value: getAPIBaseURL(),
           type: 'url',
           category: 'api',
           description: 'API endpoint URL',

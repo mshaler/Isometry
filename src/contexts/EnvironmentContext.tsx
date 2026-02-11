@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { devLogger } from "../utils/logging/dev-logger";
+import { getAPIBaseURL } from '../config/endpoints';
 // Bridge eliminated in v4 - sql.js direct access
 // import { Environment, postMessage } from '../utils/webview/webview-bridge';
 // import { bridgeLogger } from '../utils/logging/logger';
@@ -240,7 +241,7 @@ export function EnvironmentProvider({
     let timeoutId: NodeJS.Timeout | undefined;
 
     try {
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+      const baseURL = getAPIBaseURL();
 
       // Use AbortController for timeout with proper cleanup tracking
       const controller = new AbortController();

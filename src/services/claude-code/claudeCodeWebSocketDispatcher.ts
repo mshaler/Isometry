@@ -22,6 +22,7 @@ import { ServerMessage, ClientMessage, FileChangeEvent } from './claudeCodeServe
 import { devLogger } from '../../utils/logging';
 import { ReconnectionService } from '../../utils/webview/reconnection-service';
 import type { ReconnectionConfig } from '../../utils/webview/connection-types';
+import { getWebSocketURL } from '../../config/endpoints';
 
 // Re-export GSDCommands for convenience
 export { GSDCommands };
@@ -77,7 +78,7 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
   private heartbeatCheckInterval: NodeJS.Timeout | null = null;
 
   constructor(
-    serverUrl: string = 'ws://localhost:8080',
+    serverUrl: string = getWebSocketURL(),
     options: WebSocketDispatcherOptions = {}
   ) {
     this.serverUrl = serverUrl;
@@ -652,7 +653,7 @@ export async function createClaudeCodeDispatcher(
   options: WebSocketDispatcherOptions = {}
 ): Promise<ClaudeCodeDispatcher> {
   // Try to connect to WebSocket server first
-  const wsDispatcher = new WebSocketClaudeCodeDispatcher('ws://localhost:8080', options);
+  const wsDispatcher = new WebSocketClaudeCodeDispatcher(getWebSocketURL(), options);
 
   try {
     // Try connecting with a short timeout

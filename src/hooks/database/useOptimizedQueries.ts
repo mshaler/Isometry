@@ -10,6 +10,7 @@ import { useSQLite } from '../../db/SQLiteProvider';
 import { translateQuery, OptimizedCall, SQLCall } from '../../db/QueryTranslation';
 import { rowToNode, Node } from '../../types/node';
 import { useQueryCacheRegistration, useCacheInvalidation, CacheTags, type CacheTag } from './useCacheInvalidation';
+import { buildAPIURL } from '../../config/endpoints';
 
 // Environment variable detection for API mode
 const USE_NATIVE_API = process.env.REACT_APP_USE_NATIVE_API === 'true';
@@ -106,7 +107,7 @@ export function useNodes(options: NodesQueryOptions = {}): OptimizedQueryState<N
         if (translation.type === 'endpoint') {
           // Use optimized endpoint
           const apiCall = translation as OptimizedCall;
-          const response = await fetch(`http://localhost:8080${apiCall.url}`, {
+          const response = await fetch(buildAPIURL(apiCall.url), {
             method: apiCall.method,
             headers: apiCall.body ? { 'Content-Type': 'application/json' } : undefined,
             body: apiCall.body ? JSON.stringify(apiCall.body) : undefined,
@@ -229,7 +230,7 @@ export function useNotebookCards(
         if (translation.type === 'endpoint') {
           // Use optimized endpoint
           const apiCall = translation as OptimizedCall;
-          const response = await fetch(`http://localhost:8080${apiCall.url}`, {
+          const response = await fetch(buildAPIURL(apiCall.url), {
             method: apiCall.method,
             headers: apiCall.body ? { 'Content-Type': 'application/json' } : undefined,
             body: apiCall.body ? JSON.stringify(apiCall.body) : undefined,
@@ -359,7 +360,7 @@ export function useSearch(query: string, options: SearchOptions = {}): Optimized
         if (translation.type === 'endpoint') {
           // Use optimized search endpoint
           const apiCall = translation as OptimizedCall;
-          const response = await fetch(`http://localhost:8080${apiCall.url}`, {
+          const response = await fetch(buildAPIURL(apiCall.url), {
             method: apiCall.method,
             headers: apiCall.body ? { 'Content-Type': 'application/json' } : undefined,
             body: apiCall.body ? JSON.stringify(apiCall.body) : undefined,

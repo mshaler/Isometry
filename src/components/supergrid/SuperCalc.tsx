@@ -1,6 +1,16 @@
 import React, { useState, useRef, useCallback } from 'react';
 import './SuperCalc.css';
 
+/** Local type for grid data items used throughout SuperCalc formula execution */
+type GridDataItem = Record<string, unknown>;
+
+/** Structured result from formula execution */
+interface ExecutionResult {
+  type: 'scalar' | 'table' | 'pivot' | 'error';
+  data: unknown;
+  summary: string;
+}
+
 interface SuperCalcProps {
   onFormulaExecute: (formula: string, result: unknown) => void;
   gridData?: unknown[];
@@ -49,7 +59,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [executionResult, setExecutionResult] = useState<any>(null);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +72,10 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
   ];
 
   const AXIS_SUGGESTIONS = ['x_axis', 'y_axis', 'z_axis', 'category', 'time', 'hierarchy', 'location', 'alphabet'];
+
+  /** Safely cast an unknown arg to string */
+  const asString = (val: unknown, fallback = ''): string =>
+    typeof val === 'string' ? val : fallback;
 
   // Parse formula string into structured format
   const parseFormula = useCallback((formulaStr: string): ParsedFormula => {
@@ -124,136 +138,6 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     }
   }, []);
 
-  // Execute PAFV formula
-  const executeFormula = useCallback(async (parsedFormula: ParsedFormula) => {
-    if (!parsedFormula.isValid) {
-      throw new Error(parsedFormula.error || 'Invalid formula');
-    }
-
-    const { function: func, args } = parsedFormula;
-
-    switch (func) {
-      case 'SUMOVER': {
-        const [axis, field = 'value'] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          [axisField]: key,
-          sum: (items as any[]).reduce((sum: number, item: unknown) => sum + (Number(item[field]) || 0), 0),
-          count: (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Sum of ${field} over ${axis}` };
-      }
-
-      case 'COUNTOVER': {
-        const [axis] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          [axisField]: key,
-          count: (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Count over ${axis}` };
-      }
-
-      case 'AVGOVER': {
-        const [axis, field = 'value'] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          [axisField]: key,
-          average: (items as any[]).reduce((sum: number, item: unknown) => sum + (Number(item[field]) || 0), 0)
-            / (items as any[]).length,
-          count: (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Average of ${field} over ${axis}` };
-      }
-
-      case 'MAXOVER': {
-        const [axis, field = 'value'] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          [axisField]: key,
-          maximum: Math.max(...(items as any[]).map((item: unknown) => Number(item[field]) || 0)),
-          count: (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Maximum of ${field} over ${axis}` };
-      }
-
-      case 'MINOVER': {
-        const [axis, field = 'value'] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          [axisField]: key,
-          minimum: Math.min(...(items as any[]).map((item: unknown) => Number(item[field]) || 0)),
-          count: (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Minimum of ${field} over ${axis}` };
-      }
-
-      case 'GROUPBY': {
-        const [axis, aggregateFunc = 'COUNT'] = args;
-        const axisField = getAxisField(axis);
-        const groups = groupByAxis(gridData, axisField);
-        const results = Object.entries(groups).map(([key, items]) => ({
-          group: key,
-          [aggregateFunc.toLowerCase()]: aggregateFunc === 'COUNT' ? (items as any[]).length :
-                                        aggregateFunc === 'SUM' ? (items as any[]).reduce((s: number, i: unknown) => s + (Number(i.value) || 0), 0) :
-                                        (items as any[]).length
-        }));
-        return { type: 'table', data: results, summary: `Group by ${axis} with ${aggregateFunc}` };
-      }
-
-      case 'PIVOT': {
-        const [xAxisArg, yAxisArg, valueField = 'value', aggregation = 'SUM'] = args;
-        const xField = getAxisField(xAxisArg);
-        const yField = getAxisField(yAxisArg);
-
-        const pivot = createPivotTable(gridData, xField, yField, valueField, aggregation);
-        return { type: 'pivot', data: pivot, summary: `Pivot: ${xAxisArg} × ${yAxisArg} (${aggregation} of ${valueField})` };
-      }
-
-      case 'FILTER': {
-        const [condition] = args;
-        const filtered = filterData(gridData, condition);
-        return { type: 'table', data: filtered, summary: `Filtered: ${condition} (${filtered.length} items)` };
-      }
-
-      case 'SORT': {
-        const [field, direction = 'ASC'] = args;
-        const sorted = [...gridData].sort((a, b) => {
-          const aVal = a[field];
-          const bVal = b[field];
-          const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
-          return direction.toUpperCase() === 'DESC' ? -comparison : comparison;
-        });
-        return { type: 'table', data: sorted, summary: `Sorted by ${field} ${direction}` };
-      }
-
-      case 'SUM': {
-        const [field = 'value'] = args;
-        const sum = gridData.reduce((total, item) => total + (Number(item[field]) || 0), 0);
-        return { type: 'scalar', data: sum, summary: `Sum of ${field}: ${sum}` };
-      }
-
-      case 'COUNT': {
-        return { type: 'scalar', data: gridData.length, summary: `Total count: ${gridData.length}` };
-      }
-
-      case 'AVG': {
-        const [field = 'value'] = args;
-        const sum = gridData.reduce((total, item) => total + (Number(item[field]) || 0), 0);
-        const avg = sum / gridData.length;
-        return { type: 'scalar', data: avg, summary: `Average of ${field}: ${avg.toFixed(2)}` };
-      }
-
-      default:
-        throw new Error(`Unknown function: ${func}`);
-    }
-  }, [gridData]);
-
   // Helper functions
   const getAxisField = (axis: string): string => {
     switch (axis.toLowerCase()) {
@@ -279,13 +163,14 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     return 'folder'; // default
   };
 
-  const groupByAxis = (data: unknown[], field: string) => {
-    return data.reduce((groups, item) => {
-      const key = item[field] || 'Unknown';
+  const groupByAxis = (data: unknown[], field: string): Record<string, GridDataItem[]> => {
+    return data.reduce<Record<string, GridDataItem[]>>((groups, rawItem) => {
+      const item = rawItem as GridDataItem;
+      const key = String(item[field] ?? 'Unknown');
       if (!groups[key]) groups[key] = [];
       groups[key].push(item);
       return groups;
-    }, {} as Record<string, any[]>);
+    }, {});
   };
 
   const createPivotTable = (
@@ -293,9 +178,10 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
   ) => {
     const pivot: Record<string, Record<string, number>> = {};
 
-    data.forEach(item => {
-      const xVal = item[xField] || 'Unknown';
-      const yVal = item[yField] || 'Unknown';
+    data.forEach(rawItem => {
+      const item = rawItem as GridDataItem;
+      const xVal = String(item[xField] ?? 'Unknown');
+      const yVal = String(item[yField] ?? 'Unknown');
       const value = Number(item[valueField]) || 0;
 
       if (!pivot[yVal]) pivot[yVal] = {};
@@ -317,7 +203,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     return pivot;
   };
 
-  const filterData = (data: unknown[], condition: string) => {
+  const filterData = (data: unknown[], condition: string): unknown[] => {
     // Simple condition parsing: "field=value", "field>value", etc.
     const match = condition.match(/(\w+)\s*([=<>!]+)\s*(.+)/);
     if (!match) return data;
@@ -325,7 +211,8 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     const [, field, operator, value] = match;
     const cleanValue = value.replace(/"/g, '');
 
-    return data.filter(item => {
+    return data.filter(rawItem => {
+      const item = rawItem as GridDataItem;
       const itemValue = item[field];
       switch (operator) {
         case '=': return itemValue === cleanValue;
@@ -338,6 +225,153 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
       }
     });
   };
+
+  // Execute PAFV formula
+  const executeFormula = useCallback(async (parsedFormula: ParsedFormula): Promise<ExecutionResult> => {
+    if (!parsedFormula.isValid) {
+      throw new Error(parsedFormula.error || 'Invalid formula');
+    }
+
+    const { function: func, args } = parsedFormula;
+
+    switch (func) {
+      case 'SUMOVER': {
+        const axis = asString(args[0]);
+        const field = asString(args[1], 'value');
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          [axisField]: key,
+          sum: items.reduce((s: number, item: GridDataItem) => s + (Number(item[field]) || 0), 0),
+          count: items.length
+        }));
+        return { type: 'table', data: results, summary: `Sum of ${field} over ${axis}` };
+      }
+
+      case 'COUNTOVER': {
+        const axis = asString(args[0]);
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          [axisField]: key,
+          count: items.length
+        }));
+        return { type: 'table', data: results, summary: `Count over ${axis}` };
+      }
+
+      case 'AVGOVER': {
+        const axis = asString(args[0]);
+        const field = asString(args[1], 'value');
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          [axisField]: key,
+          average: items.reduce((s: number, item: GridDataItem) => s + (Number(item[field]) || 0), 0)
+            / items.length,
+          count: items.length
+        }));
+        return { type: 'table', data: results, summary: `Average of ${field} over ${axis}` };
+      }
+
+      case 'MAXOVER': {
+        const axis = asString(args[0]);
+        const field = asString(args[1], 'value');
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          [axisField]: key,
+          maximum: Math.max(...items.map((item: GridDataItem) => Number(item[field]) || 0)),
+          count: items.length
+        }));
+        return { type: 'table', data: results, summary: `Maximum of ${field} over ${axis}` };
+      }
+
+      case 'MINOVER': {
+        const axis = asString(args[0]);
+        const field = asString(args[1], 'value');
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          [axisField]: key,
+          minimum: Math.min(...items.map((item: GridDataItem) => Number(item[field]) || 0)),
+          count: items.length
+        }));
+        return { type: 'table', data: results, summary: `Minimum of ${field} over ${axis}` };
+      }
+
+      case 'GROUPBY': {
+        const axis = asString(args[0]);
+        const aggregateFunc = asString(args[1], 'COUNT');
+        const axisField = getAxisField(axis);
+        const groups = groupByAxis(gridData, axisField);
+        const results = Object.entries(groups).map(([key, items]) => ({
+          group: key,
+          [aggregateFunc.toLowerCase()]: aggregateFunc === 'COUNT' ? items.length :
+                                        aggregateFunc === 'SUM' ? items.reduce((s: number, i: GridDataItem) => s + (Number(i['value']) || 0), 0) :
+                                        items.length
+        }));
+        return { type: 'table', data: results, summary: `Group by ${axis} with ${aggregateFunc}` };
+      }
+
+      case 'PIVOT': {
+        const xAxisArg = asString(args[0]);
+        const yAxisArg = asString(args[1]);
+        const valueField = asString(args[2], 'value');
+        const aggregation = asString(args[3], 'SUM');
+        const xField = getAxisField(xAxisArg);
+        const yField = getAxisField(yAxisArg);
+
+        const pivot = createPivotTable(gridData, xField, yField, valueField, aggregation);
+        return { type: 'pivot', data: pivot, summary: `Pivot: ${xAxisArg} x ${yAxisArg} (${aggregation} of ${valueField})` };
+      }
+
+      case 'FILTER': {
+        const condition = asString(args[0]);
+        const filtered = filterData(gridData, condition);
+        return { type: 'table', data: filtered, summary: `Filtered: ${condition} (${filtered.length} items)` };
+      }
+
+      case 'SORT': {
+        const field = asString(args[0]);
+        const direction = asString(args[1], 'ASC');
+        const sorted = [...gridData].sort((rawA, rawB) => {
+          const a = rawA as GridDataItem;
+          const b = rawB as GridDataItem;
+          const aVal = String(a[field] ?? '');
+          const bVal = String(b[field] ?? '');
+          const comparison = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+          return direction.toUpperCase() === 'DESC' ? -comparison : comparison;
+        });
+        return { type: 'table', data: sorted, summary: `Sorted by ${field} ${direction}` };
+      }
+
+      case 'SUM': {
+        const field = asString(args[0], 'value');
+        const sum = gridData.reduce<number>((total, rawItem) => {
+          const item = rawItem as GridDataItem;
+          return total + (Number(item[field]) || 0);
+        }, 0);
+        return { type: 'scalar', data: sum, summary: `Sum of ${field}: ${sum}` };
+      }
+
+      case 'COUNT': {
+        return { type: 'scalar', data: gridData.length, summary: `Total count: ${gridData.length}` };
+      }
+
+      case 'AVG': {
+        const field = asString(args[0], 'value');
+        const sum = gridData.reduce<number>((total, rawItem) => {
+          const item = rawItem as GridDataItem;
+          return total + (Number(item[field]) || 0);
+        }, 0);
+        const avg = sum / gridData.length;
+        return { type: 'scalar', data: avg, summary: `Average of ${field}: ${avg.toFixed(2)}` };
+      }
+
+      default:
+        throw new Error(`Unknown function: ${func}`);
+    }
+  }, [gridData]);
 
   // Handle formula execution
   const handleExecute = useCallback(async () => {
@@ -377,17 +411,17 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
     if (value.includes('(') && !value.endsWith(')')) {
       const funcMatch = value.match(/=([A-Z]+)\(/);
       if (funcMatch) {
-        const suggestions = AXIS_SUGGESTIONS.filter(s =>
+        const filteredSuggestions = AXIS_SUGGESTIONS.filter(s =>
           s.toLowerCase().includes(value.split('(')[1].toLowerCase())
         );
-        setSuggestions(suggestions);
-        setShowSuggestions(suggestions.length > 0);
+        setSuggestions(filteredSuggestions);
+        setShowSuggestions(filteredSuggestions.length > 0);
       }
     } else if (value.startsWith('=')) {
       const partial = value.slice(1).toUpperCase();
-      const suggestions = PAFV_FUNCTIONS.filter(f => f.startsWith(partial));
-      setSuggestions(suggestions);
-      setShowSuggestions(suggestions.length > 0);
+      const filteredSuggestions = PAFV_FUNCTIONS.filter(f => f.startsWith(partial));
+      setSuggestions(filteredSuggestions);
+      setShowSuggestions(filteredSuggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
@@ -424,7 +458,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
       case 'scalar':
         return (
           <div className="supercalc__result supercalc__result--scalar">
-            <div className="supercalc__result-value">{executionResult.data}</div>
+            <div className="supercalc__result-value">{String(executionResult.data)}</div>
             <div className="supercalc__result-summary">{executionResult.summary}</div>
           </div>
         );
@@ -434,7 +468,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
           <div className="supercalc__result supercalc__result--table">
             <div className="supercalc__result-summary">{executionResult.summary}</div>
             <div className="supercalc__table">
-              {executionResult.data.slice(0, 10).map((row: unknown, i: number) => (
+              {(executionResult.data as GridDataItem[]).slice(0, 10).map((row: GridDataItem, i: number) => (
                 <div key={i} className="supercalc__table-row">
                   {Object.entries(row).map(([key, value]) => (
                     <div key={key} className="supercalc__table-cell">
@@ -453,7 +487,9 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
           <div className="supercalc__result supercalc__result--pivot">
             <div className="supercalc__result-summary">{executionResult.summary}</div>
             <div className="supercalc__pivot-grid">
-              {Object.entries(executionResult.data).slice(0, 5).map(([rowKey, cols]: [string, any]) => (
+              {Object.entries(
+                executionResult.data as Record<string, Record<string, number>>
+              ).slice(0, 5).map(([rowKey, cols]) => (
                 <div key={rowKey} className="supercalc__pivot-row">
                   <div className="supercalc__pivot-row-header">{rowKey}</div>
                   {Object.entries(cols).slice(0, 5).map(([colKey, value]) => (
