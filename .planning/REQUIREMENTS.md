@@ -1,111 +1,55 @@
 # Requirements: Isometry
 
 **Defined:** 2026-02-10
-**Core Value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
+**Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
-## v5.0 Requirements — Type Safety Restoration
+## v4.4 Requirements — SuperGrid PAFV Projection
 
-Eliminate all 1,254 TypeScript compilation errors to restore pre-commit hooks and CI quality gates.
+Wire SuperGrid to consume PAFV axis mappings for 2D card positioning with dynamic headers and smooth transitions.
 
-### Dead Code & Stale Imports (Phase 52)
+### Projection Core
 
-Remove unused variables, fix stale exports, and resolve module path errors.
+- [ ] **PROJ-01**: SuperGrid reads current axis mappings from PAFVContext and uses them to determine grid layout
+- [ ] **PROJ-02**: X-axis mapping determines column headers — unique facet values become columns
+- [ ] **PROJ-03**: Y-axis mapping determines row headers — unique facet values become rows
+- [ ] **PROJ-04**: Cards position at the intersection of their X and Y facet values (same X+Y → same cell)
+- [ ] **PROJ-05**: Cards with null/undefined facet values appear in an "Unassigned" bucket row or column
 
-- [ ] **TSFIX-01**: All TS6133 (unused variables) and TS6196 (unused declarations) errors resolved — 121 errors
-- [ ] **TSFIX-02**: All TS2305 (no exported member) errors resolved — 94 errors
-- [ ] **TSFIX-03**: All TS2307 (cannot find module) errors resolved — 36 errors
+### Header Generation
 
-### Type Assertions & Annotations (Phase 53)
+- [ ] **HDR-01**: Column headers are dynamically generated from unique X-axis facet values in the dataset
+- [ ] **HDR-02**: Row headers are dynamically generated from unique Y-axis facet values in the dataset
+- [ ] **HDR-03**: Headers respect facet type formatting (dates formatted, categories labeled)
 
-Add proper type annotations where TypeScript infers `unknown` or implicit `any`.
+### Transitions
 
-- [ ] **TSFIX-04**: All TS18046 (type 'unknown') errors resolved with proper type guards — 339 errors
-- [ ] **TSFIX-05**: All TS7006 (implicit 'any' parameter) errors resolved with explicit types — 65 errors
+- [ ] **TRANS-01**: Changing axis mapping triggers animated card repositioning (D3 transitions)
+- [ ] **TRANS-02**: New cells animate in (enter), removed cells animate out (exit) during transitions
+- [ ] **TRANS-03**: Empty cells toggle between sparse mode (full Cartesian) and dense mode (populated only)
 
-### Interface Alignment (Phase 54)
+## Validated Requirements (Shipped)
 
-Fix type mismatches between interfaces and actual usage across the codebase.
+### v5.0 Type Safety Restoration (shipped 2026-02-10)
 
-- [ ] **TSFIX-06**: All TS2339 (property does not exist) errors resolved — 270 errors
-- [ ] **TSFIX-07**: All TS2322 (type not assignable) errors resolved — 76 errors
+- [x] **TSFIX-01 through TSFIX-12**: All 1,347 TypeScript compilation errors eliminated — v5.0
 
-### Function Signatures & Final Cleanup (Phase 55)
+### v4.2 Three-Canvas Notebook (shipped 2026-02-10)
 
-Fix argument mismatches, overload resolution, and remaining errors. Verify zero errors.
+- [x] **SHELL-01 through SHELL-06**: Shell integration complete — v4.2
+- [x] **PREV-01 through PREV-07**: Preview visualization complete — v4.2
+- [x] **EDIT-01 through EDIT-04**: TipTap editor migration complete — v4.2
+- [x] **SYNC-01 through SYNC-03**: Live data synchronization complete — v4.2
 
-- [ ] **TSFIX-08**: All TS2345 (argument not assignable) errors resolved — 59 errors
-- [ ] **TSFIX-09**: All TS2554 (wrong argument count) errors resolved — 33 errors
-- [ ] **TSFIX-10**: All remaining TS errors resolved (TS2353, TS2551, TS2769, TS2304, etc.) — ~161 errors
-- [ ] **TSFIX-11**: `tsc --noEmit` passes with zero errors
-- [ ] **TSFIX-12**: Pre-commit hook (lefthook) passes without --no-verify
+### v4.3 Navigator Integration (shipped 2026-02-10)
 
-## v4.2 Requirements
+- [x] **FOUND-01 through FOUND-05**: Property classification foundation complete — v4.3
+- [x] **NAV-01 through NAV-05**: Navigator UI integration complete — v4.3
 
-Requirements for completing the Three-Canvas Notebook integration. Existing implementation is ~70% complete; these requirements cover remaining functionality.
+## Future Requirements
 
-### Shell Integration
+Deferred to future releases. Tracked but not in current roadmap.
 
-Complete Shell pane from 35% to functional (Claude AI tab deferred to v4.3).
-
-- [ ] **SHELL-01**: User can execute Claude Code commands via real WebSocket connection
-- [ ] **SHELL-02**: User can copy/paste text in terminal with Cmd+C/Cmd+V
-- [ ] **SHELL-03**: User can access command history with up/down arrows
-- [ ] **SHELL-04**: User can see working directory context in terminal
-- [ ] **SHELL-05**: User can execute GSD commands from Command Builder UI
-- [ ] **SHELL-06**: User can see real-time execution progress in GSD GUI
-
-### Preview Visualization
-
-Complete Preview pane from 50% to fully functional with all visualization tabs.
-
-- [ ] **PREV-01**: User can view GRAPH relationships as D3 force-directed network
-- [ ] **PREV-02**: User can interact with network nodes (click to select, drag to rearrange)
-- [ ] **PREV-03**: User can query SQLite via Data Inspector with SQL input
-- [ ] **PREV-04**: User can view query results in table format with sorting
-- [ ] **PREV-05**: User can export query results as JSON/CSV
-- [ ] **PREV-06**: User can view cards on Timeline by temporal LATCH facets
-- [ ] **PREV-07**: User can filter timeline by date range
-
-### Editor Enhancement
-
-Migrate from MDEditor to TipTap for improved editing experience.
-
-- [ ] **EDIT-01**: User edits content via TipTap editor with slash commands
-- [ ] **EDIT-02**: User experiences smooth editing with 10,000+ character documents
-- [ ] **EDIT-03**: User can create bidirectional links with [[page]] syntax
-- [ ] **EDIT-04**: User sees autocomplete suggestions when typing [[
-
-### Live Sync
-
-Enable cross-canvas data synchronization without manual refresh.
-
-- [ ] **SYNC-01**: User sees Preview auto-refresh when Capture saves a card
-- [ ] **SYNC-02**: User clicks card in Preview, Capture scrolls to show it
-- [ ] **SYNC-03**: User sees selection highlighted across all three canvases
-
-## v4.3 Requirements
-
-Navigator integration with SuperGrid. Phase 50 (Foundation) complete; Phase 51 connects to UI.
-
-### Navigator UI Integration
-
-Connect property classification to Navigator for dynamic LATCH+GRAPH axis selection.
-
-- [ ] **NAV-01**: Navigator displays LATCH buckets from usePropertyClassification() instead of hardcoded axes
-- [ ] **NAV-02**: User can expand each LATCH bucket to see individual facets (e.g., Time → created, modified, due)
-- [ ] **NAV-03**: GRAPH bucket appears in Navigator with 4 edge types (LINK, NEST, SEQUENCE, AFFINITY) and 2 metrics (degree, weight)
-- [ ] **NAV-04**: Dragging a facet to a PAFV well updates SuperGrid axis mapping
-- [ ] **NAV-05**: Facet changes in database reflect in Navigator after refresh() call
-
-### Foundation (Complete)
-
-- [x] **FOUND-01**: classifyProperties(db) returns PropertyClassification with correct LATCH+GRAPH buckets
-- [x] **FOUND-02**: GRAPH bucket contains 4 edge types + 2 metrics
-- [x] **FOUND-03**: usePropertyClassification hook provides cached, refreshable access
-- [x] **FOUND-04**: Disabled facets are excluded from classification
-- [x] **FOUND-05**: Sort order is respected within each bucket
-
-### Shell AI Integration (Deferred)
+### Shell AI Integration
 
 - **SHAI-01**: User can chat with Claude AI in dedicated Shell tab
 - **SHAI-02**: User sees streaming responses with typing indicator
@@ -118,18 +62,22 @@ Connect property classification to Navigator for dynamic LATCH+GRAPH axis select
 - **AEDT-02**: User can see version history per block
 - **AEDT-03**: User can use formula bar with PAFV-aware functions
 
-## Out of Scope
+### Advanced Projection
 
-Explicitly excluded from v4.2. Documented to prevent scope creep.
+- **APROJ-01**: Color plane projection (cards colored by facet value)
+- **APROJ-02**: Size plane projection (cards sized by facet value)
+- **APROJ-03**: GRAPH bucket axis support (position by graph metrics)
+- **APROJ-04**: SuperStack nested headers (multi-level hierarchy)
+
+## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Real-time collaboration | Single-user local-first app, not a priority |
-| Claude AI streaming tab | Deferred to v4.3 to focus on core workflow |
-| D3 viz blocks in editor | High complexity, unclear demand, defer to v4.3+ |
-| GSD GUI rich output parsing | Depends on Claude Code patterns stabilizing |
-| Version history per block | Complex conflict UI, defer to future |
-| Formula bar (SuperCalc) | Already planned for Phase 45 |
+| Color/Size/Shape plane projections | Future phase — focus on X/Y positioning first |
+| GRAPH bucket axis support | Needs research on how to position by graph metrics |
+| SuperStack nested headers | Separate feature, not needed for basic PAFV projection |
+| SuperDensity Janus controls integration | Already implemented, just needs wiring (not new feature) |
+| Real-time collaboration | Single-user local-first app |
 
 ## Traceability
 
@@ -137,55 +85,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TSFIX-01 | Phase 52 | Pending |
-| TSFIX-02 | Phase 52 | Pending |
-| TSFIX-03 | Phase 52 | Pending |
-| TSFIX-04 | Phase 53 | Pending |
-| TSFIX-05 | Phase 53 | Pending |
-| TSFIX-06 | Phase 54 | Pending |
-| TSFIX-07 | Phase 54 | Pending |
-| TSFIX-08 | Phase 55 | Pending |
-| TSFIX-09 | Phase 55 | Pending |
-| TSFIX-10 | Phase 55 | Pending |
-| TSFIX-11 | Phase 55 | Pending |
-| TSFIX-12 | Phase 55 | Pending |
-| SHELL-01 | Phase 43 | Pending |
-| SHELL-02 | Phase 43 | Pending |
-| SHELL-03 | Phase 43 | Pending |
-| SHELL-04 | Phase 43 | Pending |
-| SHELL-05 | Phase 43 | Pending |
-| SHELL-06 | Phase 43 | Pending |
-| PREV-01 | Phase 44 | Pending |
-| PREV-02 | Phase 44 | Pending |
-| PREV-03 | Phase 44 | Pending |
-| PREV-04 | Phase 44 | Pending |
-| PREV-05 | Phase 44 | Pending |
-| PREV-06 | Phase 44 | Pending |
-| PREV-07 | Phase 44 | Pending |
-| EDIT-01 | Phase 45 | Pending |
-| EDIT-02 | Phase 45 | Pending |
-| EDIT-03 | Phase 45 | Pending |
-| EDIT-04 | Phase 45 | Pending |
-| SYNC-01 | Phase 46 | Pending |
-| SYNC-02 | Phase 46 | Pending |
-| SYNC-03 | Phase 46 | Pending |
-| FOUND-01 | Phase 50 | Complete |
-| FOUND-02 | Phase 50 | Complete |
-| FOUND-03 | Phase 50 | Complete |
-| FOUND-04 | Phase 50 | Complete |
-| FOUND-05 | Phase 50 | Complete |
-| NAV-01 | Phase 51 | Pending |
-| NAV-02 | Phase 51 | Pending |
-| NAV-03 | Phase 51 | Pending |
-| NAV-04 | Phase 51 | Pending |
-| NAV-05 | Phase 51 | Pending |
+| PROJ-01 | Phase 56 | Pending |
+| PROJ-02 | Phase 56 | Pending |
+| PROJ-03 | Phase 56 | Pending |
+| PROJ-04 | Phase 56 | Pending |
+| PROJ-05 | Phase 56 | Pending |
+| HDR-01 | Phase 57 | Pending |
+| HDR-02 | Phase 57 | Pending |
+| HDR-03 | Phase 57 | Pending |
+| TRANS-01 | Phase 58 | Pending |
+| TRANS-02 | Phase 58 | Pending |
+| TRANS-03 | Phase 58 | Pending |
 
 **Coverage:**
-- v5.0 requirements: 12 total (mapped to phases 52-55)
-- v4.2 requirements: 20 total (mapped to phases 43-46)
-- v4.3 requirements: 10 total (5 complete, 5 pending)
-- Unmapped: 0
+- v4.4 requirements: 11 total
+- Mapped to phases: 11
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 (added v4.3 Navigator requirements NAV-01 to NAV-05)*
+*Last updated: 2026-02-10 after v4.4 milestone start*
