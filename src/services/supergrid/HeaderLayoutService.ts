@@ -17,6 +17,7 @@ import type {
   HeaderStateManager
 } from '../../types/grid';
 import { ContentAlignment } from '../../types/grid';
+import type { StackedAxisConfig } from '../../types/pafv';
 
 /**
  * Extended HeaderNode with optional facet and value fields used internally
@@ -468,6 +469,159 @@ export class HeaderLayoutService {
 
     // Calculate widths for visible nodes only
     return this.calculateSpanWidths(visibleNodes, totalAvailableWidth);
+  }
+
+  // ============================================================================
+  // Stacked Hierarchy Generation (Multi-facet support)
+  // ============================================================================
+
+  /**
+   * Generate header hierarchy from multiple stacked facets
+   * @param cards - Array of card records
+   * @param stackedConfig - Axis with ordered facets (parent to child)
+   * @returns HeaderHierarchy with computed spans and positions
+   */
+  public generateStackedHierarchy(
+    cards: unknown[],
+    stackedConfig: StackedAxisConfig
+  ): HeaderHierarchy {
+    const flatNodes: HeaderNode[] = [];
+    const { axis, facets } = stackedConfig;
+
+    // Root node
+    flatNodes.push(this.createHeaderNode({
+      id: `${axis}-root`,
+      label: axis.toUpperCase(),
+      parentId: undefined,
+      level: 0,
+      facet: axis,
+      span: 0, // Will be computed
+    }));
+
+    // Build nodes for each facet level
+    facets.forEach((facet, levelIndex) => {
+      const uniqueValues = this.extractUniqueFacetValues(cards, facet);
+      uniqueValues.forEach(value => {
+        const parentId = levelIndex > 0
+          ? this.findParentNodeId(cards, facets, levelIndex, value, axis)
+          : `${axis}-root`;
+        flatNodes.push(this.createHeaderNode({
+          id: `${axis}-${facet}-${value}`,
+          label: this.formatLabel(value, facet),
+          parentId,
+          level: levelIndex + 1,
+          facet,
+          span: 1, // Leaf default
+        }));
+      });
+    });
+
+    // Use d3.stratify to build hierarchy
+    const stratifyFn = stratify<HeaderNode>()
+      .id(d => d.id)
+      .parentId(d => d.parentId);
+    const root = stratifyFn(flatNodes);
+
+    // Calculate spans bottom-up
+    this.calculateStackedSpans(root);
+
+    return this.buildHeaderHierarchyResult(root, axis, flatNodes);
+  }
+
+  /** Extract unique values for a facet from cards */
+  private extractUniqueFacetValues(cards: unknown[], facet: string): string[] {
+    const values = new Set<string>();
+    cards.forEach(card => {
+      const value = (card as Record<string, unknown>)[facet];
+      if (value != null) values.add(String(value));
+    });
+    return Array.from(values).sort();
+  }
+
+  /** Find parent node ID for a child value at given level */
+  private findParentNodeId(
+    cards: unknown[],
+    facets: string[],
+    levelIndex: number,
+    childValue: string,
+    axis: string
+  ): string {
+    const parentFacet = facets[levelIndex - 1];
+    const childFacet = facets[levelIndex];
+    // Find a card with this child value and get its parent value
+    const card = cards.find(c =>
+      String((c as Record<string, unknown>)[childFacet]) === childValue
+    );
+    if (card) {
+      const parentValue = (card as Record<string, unknown>)[parentFacet];
+      return `${axis}-${parentFacet}-${parentValue}`;
+    }
+    return `${axis}-root`;
+  }
+
+  /** Calculate spans bottom-up using d3-hierarchy eachAfter */
+  private calculateStackedSpans(root: HierarchyNode<HeaderNode>): void {
+    root.eachAfter(node => {
+      if (!node.children || node.children.length === 0) {
+        node.data.span = 1; // Leaf nodes have span of 1
+      } else {
+        node.data.span = node.children.reduce((sum, child) => sum + child.data.span, 0);
+      }
+    });
+  }
+
+  /** Format value for display (date formatting, etc.) */
+  private formatLabel(value: string, _facet: string): string {
+    // Basic formatting - could be enhanced for dates
+    return value;
+  }
+
+  /** Build final HeaderHierarchy result object */
+  private buildHeaderHierarchyResult(
+    root: HierarchyNode<HeaderNode>,
+    axis: string,
+    flatNodes: HeaderNode[]
+  ): HeaderHierarchy {
+    return {
+      axis,
+      rootNodes: root.children?.map(c => c.data) || [],
+      allNodes: flatNodes,
+      maxDepth: root.height,
+      totalWidth: this.calculateTotalWidth(root),
+      totalHeight: (root.height + 1) * 40,
+      expandedNodeIds: new Set(),
+      collapsedSubtrees: new Set(),
+      config: this.config,
+      lastUpdated: Date.now()
+    };
+  }
+
+  /** Create a HeaderNode with all required fields */
+  private createHeaderNode(partial: {
+    id: string;
+    label: string;
+    parentId: string | undefined;
+    level: number;
+    facet: string;
+    span: number;
+  }): HeaderNode {
+    return {
+      id: partial.id,
+      label: partial.label,
+      parentId: partial.parentId,
+      level: partial.level,
+      facet: partial.facet,
+      span: partial.span,
+      children: [],
+      x: 0,
+      y: partial.level * 40,
+      width: 0,
+      height: 40,
+      isLeaf: true, // Will be updated based on children
+      isExpanded: true,
+      isVisible: true,
+      count: 0,
+    };
   }
 
   // Private helper methods for progressive features
