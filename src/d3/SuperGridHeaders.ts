@@ -12,6 +12,7 @@ import type {
   ResizeHandleConfig,
   ResizeOperationState
 } from '../types/grid';
+import type { StackedAxisConfig } from '../types/pafv';
 import { HeaderLayoutService } from '../services/supergrid/HeaderLayoutService';
 import type { useDatabaseService } from '../hooks/database/useDatabaseService';
 import { superGridLogger } from '../utils/dev-logger';
@@ -29,6 +30,24 @@ import { type SuperGridHeadersConfig, DEFAULT_HEADER_CONFIG } from './header-typ
 // Re-export types from extracted modules
 export type { HeaderClickEvent } from './header-interaction/HeaderAnimationController';
 export type { SuperGridHeadersConfig } from './header-types';
+
+/**
+ * Stacked header click event details
+ */
+export interface StackedHeaderClickEvent {
+  nodeId: string;
+  facet: string;
+  value: string;
+  level: number;
+  event: MouseEvent;
+}
+
+/**
+ * Callbacks for stacked header interactions
+ */
+export interface StackedHeaderCallbacks {
+  onHeaderClick?: (event: StackedHeaderClickEvent) => void;
+}
 
 export class SuperGridHeaders {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
@@ -200,6 +219,104 @@ export class SuperGridHeaders {
     }
 
     superGridLogger.render('Header rendering complete', {});
+  }
+
+  /**
+   * Render hierarchical headers from flat data with stacked axis support
+   * Detects StackedAxisConfig and delegates to stacked rendering
+   */
+  public renderHeadersWithConfig(
+    flatData: unknown[],
+    axis: string,
+    facetFieldOrConfig: string | StackedAxisConfig = 'status',
+    totalWidth: number = 800
+  ): void {
+    // Check if this is a stacked axis configuration
+    if (typeof facetFieldOrConfig === 'object' && 'facets' in facetFieldOrConfig) {
+      // Stacked axis - generate multi-level hierarchy
+      const stackedHierarchy = this.layoutService.generateStackedHierarchy(
+        flatData,
+        facetFieldOrConfig
+      );
+      this.renderStackedHeaders(stackedHierarchy, axis as 'x' | 'y', totalWidth);
+      return;
+    }
+
+    // Single facet - existing behavior
+    this.renderHeaders(flatData, axis, facetFieldOrConfig, totalWidth);
+  }
+
+  /**
+   * Render stacked (multi-level) headers from hierarchy
+   * Used when PAFV axis has multiple facets assigned
+   *
+   * @param hierarchy - Pre-computed HeaderHierarchy from generateStackedHierarchy
+   * @param orientation - 'x' for column headers, 'y' for row headers
+   * @param totalWidth - Available width for header rendering
+   * @param callbacks - Optional callbacks for header interactions
+   */
+  public renderStackedHeaders(
+    hierarchy: HeaderHierarchy,
+    orientation: 'x' | 'y',
+    totalWidth: number,
+    callbacks?: StackedHeaderCallbacks
+  ): void {
+    superGridLogger.render('Stacked header rendering starting', {
+      orientation,
+      maxDepth: hierarchy.maxDepth,
+      totalNodes: hierarchy.allNodes.length,
+      totalWidth
+    });
+
+    this.currentHierarchy = hierarchy;
+
+    // Calculate span widths for all nodes
+    this.layoutCalculator.calculateHierarchyWidths(hierarchy, totalWidth);
+
+    // Delegate to progressive renderer for multi-level rendering
+    this.progressiveRenderer.renderMultiLevel(
+      hierarchy,
+      orientation,
+      {
+        levelHeight: this.config.defaultHeaderHeight,
+        animationDuration: this.config.progressiveDisclosure.transitionDuration
+      }
+    );
+
+    // Wire up click handlers for each level
+    this.setupStackedHeaderInteractions(hierarchy, callbacks);
+
+    superGridLogger.render('Stacked header rendering complete', {
+      levelsRendered: hierarchy.maxDepth + 1
+    });
+  }
+
+  /**
+   * Setup click interactions for stacked headers
+   * Each level can be clicked for sorting/filtering
+   */
+  private setupStackedHeaderInteractions(
+    hierarchy: HeaderHierarchy,
+    callbacks?: StackedHeaderCallbacks
+  ): void {
+    const headerNodes = this.container.selectAll('.header-node');
+
+    headerNodes.on('click', (event: MouseEvent, d: unknown) => {
+      const node = d as HeaderNode;
+      if (callbacks?.onHeaderClick) {
+        callbacks.onHeaderClick({
+          nodeId: node.id,
+          facet: node.facet || '',
+          value: node.label,
+          level: node.level,
+          event
+        });
+      }
+    });
+
+    superGridLogger.debug('Stacked header interactions setup', {
+      nodeCount: hierarchy.allNodes.length
+    });
   }
 
   /**

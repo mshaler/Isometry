@@ -2,12 +2,21 @@
  * HeaderProgressiveRenderer - Handles progressive rendering of SuperGrid headers
  *
  * Separated from SuperGridHeaders to focus on rendering optimization logic.
+ * Supports both single-level and multi-level (stacked) header rendering.
  */
 
 import * as d3 from 'd3';
 import type { HeaderNode, HeaderHierarchy } from '../../types/grid';
 import type { SuperGridHeadersConfig } from '../header-types';
 import { superGridLogger } from '../../utils/dev-logger';
+
+/**
+ * Configuration for multi-level rendering
+ */
+export interface MultiLevelConfig {
+  levelHeight: number;
+  animationDuration: number;
+}
 
 export class HeaderProgressiveRenderer {
   private container: d3.Selection<SVGGElement, unknown, null, undefined>;
@@ -214,5 +223,187 @@ export class HeaderProgressiveRenderer {
    */
   updateConfig(config: Partial<SuperGridHeadersConfig>): void {
     this.config = { ...this.config, ...config };
+  }
+
+  // ============================================================================
+  // Multi-Level (Stacked) Header Rendering
+  // ============================================================================
+
+  /**
+   * Render multi-level headers with visual spanning
+   * Creates one row per hierarchy level, with parent cells spanning child widths
+   *
+   * @param hierarchy - HeaderHierarchy with computed spans and positions
+   * @param orientation - 'x' for column headers (horizontal), 'y' for row headers (vertical)
+   * @param config - Rendering configuration
+   */
+  public renderMultiLevel(
+    hierarchy: HeaderHierarchy,
+    orientation: 'x' | 'y',
+    config: MultiLevelConfig
+  ): void {
+    const { levelHeight, animationDuration } = config;
+    const levels = d3.range(0, hierarchy.maxDepth + 1);
+
+    superGridLogger.render('Multi-level rendering starting', {
+      orientation,
+      levelCount: levels.length,
+      nodeCount: hierarchy.allNodes.length
+    });
+
+    // Get or create header container for stacked headers
+    let headerContainer = this.container.select<SVGGElement>('.stacked-headers');
+    if (headerContainer.empty()) {
+      headerContainer = this.container.append('g')
+        .attr('class', 'stacked-headers');
+    } else {
+      // Clear existing content
+      headerContainer.selectAll('*').remove();
+    }
+
+    // Create/update level groups
+    const levelGroups = headerContainer
+      .selectAll<SVGGElement, number>('.header-level')
+      .data(levels, d => String(d))
+      .join(
+        enter => enter.append('g')
+          .attr('class', 'header-level')
+          .attr('data-level', d => d),
+        update => update,
+        exit => exit.remove()
+      );
+
+    // Position level groups based on orientation
+    if (orientation === 'x') {
+      // Column headers: stack vertically
+      levelGroups.attr('transform', d => `translate(0, ${d * levelHeight})`);
+    } else {
+      // Row headers: also stack vertically but for left-side headers
+      levelGroups.attr('transform', d => `translate(0, ${d * levelHeight})`);
+    }
+
+    // Render nodes within each level
+    levels.forEach(level => {
+      const nodesAtLevel = hierarchy.allNodes.filter(n => n.level === level);
+      const levelGroup = levelGroups.filter((d: number) => d === level);
+
+      this.renderLevelNodes(levelGroup, nodesAtLevel, {
+        orientation,
+        levelHeight,
+        animationDuration
+      });
+    });
+
+    // Add visual dividers between levels
+    this.addLevelDividers(headerContainer, levels.length, levelHeight, orientation);
+
+    superGridLogger.render('Multi-level rendering complete', {
+      levelsRendered: levels.length
+    });
+  }
+
+  /**
+   * Render header nodes within a single level
+   */
+  private renderLevelNodes(
+    levelGroup: d3.Selection<SVGGElement, number, SVGGElement, unknown>,
+    nodes: HeaderNode[],
+    config: { orientation: 'x' | 'y'; levelHeight: number; animationDuration: number }
+  ): void {
+    const { levelHeight, animationDuration } = config;
+
+    levelGroup
+      .selectAll<SVGGElement, HeaderNode>('.header-node')
+      .data(nodes, d => d.id)
+      .join(
+        enter => {
+          const g = enter.append('g')
+            .attr('class', 'header-node')
+            .attr('data-node-id', d => d.id)
+            .attr('transform', d => `translate(${d.x}, 0)`)
+            .attr('opacity', 0);
+
+          // Background rect with span width
+          g.append('rect')
+            .attr('class', 'header-bg')
+            .attr('width', d => d.width)
+            .attr('height', levelHeight)
+            .attr('fill', '#f8fafc')
+            .attr('stroke', '#e2e8f0')
+            .attr('stroke-width', 1)
+            .attr('rx', 2);
+
+          // Label text centered
+          g.append('text')
+            .attr('class', 'header-label')
+            .attr('x', d => d.width / 2)
+            .attr('y', levelHeight / 2)
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .attr('font-size', '12px')
+            .attr('font-weight', d => d.level === 0 ? '600' : '400')
+            .attr('fill', '#334155')
+            .text(d => d.label);
+
+          // Fade in animation
+          g.transition()
+            .duration(animationDuration)
+            .attr('opacity', 1);
+
+          return g;
+        },
+
+        update => {
+          update
+            .transition()
+            .duration(animationDuration)
+            .attr('transform', d => `translate(${d.x}, 0)`)
+            .attr('opacity', 1);
+
+          update.select('.header-bg')
+            .transition()
+            .duration(animationDuration)
+            .attr('width', d => d.width);
+
+          update.select('.header-label')
+            .transition()
+            .duration(animationDuration)
+            .attr('x', d => d.width / 2)
+            .text(d => d.label);
+
+          return update;
+        },
+
+        exit => exit
+          .transition()
+          .duration(animationDuration / 2)
+          .attr('opacity', 0)
+          .remove()
+      );
+  }
+
+  /**
+   * Add visual dividers between hierarchy levels
+   */
+  private addLevelDividers(
+    container: d3.Selection<SVGGElement, unknown, null, undefined>,
+    levelCount: number,
+    levelHeight: number,
+    _orientation: 'x' | 'y'
+  ): void {
+    const dividerData = d3.range(1, levelCount);
+
+    container
+      .selectAll<SVGLineElement, number>('.level-divider')
+      .data(dividerData)
+      .join('line')
+      .attr('class', 'level-divider')
+      .attr('x1', 0)
+      .attr('x2', '100%')
+      .attr('y1', d => d * levelHeight)
+      .attr('y2', d => d * levelHeight)
+      .attr('stroke', '#cbd5e1')
+      .attr('stroke-width', 1)
+      .attr('stroke-dasharray', '2,2');
   }
 }
