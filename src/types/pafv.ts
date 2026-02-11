@@ -79,6 +79,8 @@ export interface PAFVState {
   colorEncoding: EncodingConfig | null;
   /** Size encoding configuration (numeric property → card size) */
   sizeEncoding: EncodingConfig | null;
+  /** Current sort configuration (null = no sort applied) */
+  sortConfig: SortConfig | null;
 }
 
 // Default PAFV state
@@ -97,12 +99,26 @@ export const DEFAULT_PAFV: PAFVState = {
   densityLevel: 2, // Default to Extent Density (populated-only)
   colorEncoding: null,
   sizeEncoding: null,
+  sortConfig: null,
 };
 
 /** Configuration for multi-facet stacked axis hierarchy */
 export interface StackedAxisConfig {
   axis: LATCHAxis;
   facets: string[]; // Ordered from parent to child (e.g., ['year', 'quarter', 'month'])
+}
+
+/** Sort direction for grid sorting */
+export type SortDirection = 'asc' | 'desc' | null;
+
+/** Sort configuration for header-based sorting */
+export interface SortConfig {
+  /** Facet column to sort by (e.g., 'quarter', 'year') */
+  facet: string;
+  /** Sort direction */
+  direction: SortDirection;
+  /** Hierarchy level where sort was initiated (for visual indicator) */
+  level: number;
 }
 
 // Legacy state for backward compatibility

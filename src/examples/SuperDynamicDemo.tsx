@@ -114,7 +114,11 @@ export function SuperDynamicDemo() {
       { plane: 'x', axis: 'category', facet: 'folder' },
       { plane: 'y', axis: 'time', facet: 'created_at' }
     ],
-    viewMode: 'grid'
+    viewMode: 'grid',
+    densityLevel: 2,
+    colorEncoding: null,
+    sizeEncoding: null,
+    sortConfig: null
   });
 
   const [coordinateSystem, setCoordinateSystem] = useState<CoordinateSystem>({

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useMemo } from 'react';
 import { useRenderLoopGuard } from '../hooks/debug/useRenderLoopGuard';
-import type { PAFVState, AxisMapping, Plane, LATCHAxis, DensityLevel, EncodingConfig } from '../types/pafv';
+import type { PAFVState, AxisMapping, Plane, LATCHAxis, DensityLevel, EncodingConfig, SortConfig } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
 import {
   setMapping as setMappingUtil,
@@ -125,6 +125,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
         densityLevel: state.densityLevel, // Preserve density level
         colorEncoding: state.colorEncoding, // Preserve encoding
         sizeEncoding: state.sizeEncoding,
+        sortConfig: state.sortConfig, // Preserve sort config
       };
       setState(newState);
       pafvBridge.sendAxisMappingUpdate(newState);
@@ -141,6 +142,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
         densityLevel: state.densityLevel, // Preserve density level
         colorEncoding: state.colorEncoding, // Preserve encoding
         sizeEncoding: state.sizeEncoding,
+        sortConfig: state.sortConfig, // Preserve sort config
       };
       setState(newState);
       pafvBridge.sendAxisMappingUpdate(newState);
@@ -192,6 +194,14 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     pafvBridge.sendAxisMappingUpdate(newState);
   }, [state, setState]);
 
+  const setSortBy = useCallback((sortConfig: SortConfig | null) => {
+    const newState: PAFVState = { ...state, sortConfig };
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
   // CRITICAL: Memoize context value to prevent infinite render loops
   // Without useMemo, a new object is created every render, causing all consumers
   // to re-render even when values haven't changed (see Phase 59-01 for details)
@@ -207,6 +217,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     setDensityLevel,
     setColorEncoding,
     setSizeEncoding,
+    setSortBy,
     resetToDefaults,
     getAxisForPlane,
     getPlaneForAxis: getPlaneForAxisCallback,
@@ -222,6 +233,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     setDensityLevel,
     setColorEncoding,
     setSizeEncoding,
+    setSortBy,
     resetToDefaults,
     getAxisForPlane,
     getPlaneForAxisCallback,
