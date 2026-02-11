@@ -7,7 +7,7 @@
 - **v4.2 Three-Canvas Notebook** - Phases 43-46 (shipped 2026-02-10)
 - **v4.3 Navigator Integration** - Phases 50-51 (shipped 2026-02-10)
 - **v5.0 Type Safety Restoration** - Phases 52-55 (shipped 2026-02-10)
-- **v4.4 SuperGrid PAFV Projection** - Phases 56-58 (active)
+- **v4.4 SuperGrid PAFV Projection** - Phases 56-60 (shipped 2026-02-11)
 
 ## Phases
 
@@ -176,7 +176,25 @@ Plans:
 
 </details>
 
-## v4.4 SuperGrid PAFV Projection (Active)
+<details>
+<summary>v4.4 SuperGrid PAFV Projection (Phases 56-60) - SHIPPED 2026-02-11</summary>
+
+**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers, smooth transitions, and hierarchical header support.
+
+**Key Accomplishments:**
+- PAFV Projection Core connecting Navigator axis mappings to GridRenderingEngine for 2D card positioning
+- Dynamic header generation from dataset values with date/category formatting
+- Stacked/nested hierarchical headers with d3.stratify for multi-facet axes (Excel pivot table style)
+- Parent header cells visually spanning across children with bottom-up span calculation
+- Header click sorting with visual indicators (asc/desc/none toggle cycle)
+- Infinite render loop fix with comprehensive context memoization
+- useRenderLoopGuard development safeguard
+
+**Stats:** 5 phases (56-60), 12 plans, ~25 minutes execution time
+
+</details>
+
+## Future Milestones
 
 **Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
 
@@ -251,9 +269,9 @@ Plans:
 **Plans**: 3 plans in 3 waves
 
 Plans:
-- [ ] 60-01-PLAN.md — Extend types and generate multi-facet hierarchies
-- [ ] 60-02-PLAN.md — Render stacked headers with visual spanning
-- [ ] 60-03-PLAN.md — Header click sorting at hierarchy levels
+- [x] 60-01-PLAN.md — Extend types and generate multi-facet hierarchies
+- [x] 60-02-PLAN.md — Render stacked headers with visual spanning
+- [x] 60-03-PLAN.md — Header click sorting at hierarchy levels
 
 ## Progress
 
@@ -272,8 +290,8 @@ Plans:
 | 57. Header Generation | v4.4 | 3/3 | Complete | 2026-02-11 |
 | 58. Transitions & Polish | v4.4 | 2/2 | Complete | 2026-02-11 |
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
-| 60. Stacked/Nested Headers | v4.4 | 0/3 | Planned | - |
+| 60. Stacked/Nested Headers | v4.4 | 3/3 | Complete | 2026-02-11 |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-11 (Phase 60 planning complete)*
+*Last updated: 2026-02-11 (v4.4 milestone complete - Phase 60 shipped)*

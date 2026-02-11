@@ -23,9 +23,15 @@ Wire SuperGrid to consume PAFV axis mappings for 2D card positioning with dynami
 
 ### Transitions
 
-- [ ] **TRANS-01**: Changing axis mapping triggers animated card repositioning (D3 transitions)
-- [ ] **TRANS-02**: New cells animate in (enter), removed cells animate out (exit) during transitions
-- [ ] **TRANS-03**: Empty cells toggle between sparse mode (full Cartesian) and dense mode (populated only)
+- [x] **TRANS-01**: Changing axis mapping triggers animated card repositioning (D3 transitions)
+- [x] **TRANS-02**: New cells animate in (enter), removed cells animate out (exit) during transitions
+- [x] **TRANS-03**: Empty cells toggle between sparse mode (full Cartesian) and dense mode (populated only)
+
+### Stacked/Nested Headers (Phase 60)
+
+- [ ] **STACK-01**: Multi-level header hierarchy renders when multiple facets assigned to same plane (stacked axes)
+- [ ] **STACK-02**: Parent header cells visually span across their child headers (Excel pivot table style)
+- [ ] **STACK-03**: Header clicks allow sorting by that level of the hierarchy
 
 ## Validated Requirements (Shipped)
 
@@ -73,10 +79,9 @@ Deferred to future releases. Tracked but not in current roadmap.
 
 | Feature | Reason |
 |---------|--------|
-| Color/Size/Shape plane projections | Future phase — focus on X/Y positioning first |
+| Color/Size/Shape plane projections | Shipped in Phase 57-03 |
 | GRAPH bucket axis support | Needs research on how to position by graph metrics |
-| SuperStack nested headers | Separate feature, not needed for basic PAFV projection |
-| SuperDensity Janus controls integration | Already implemented, just needs wiring (not new feature) |
+| SuperDensity Janus controls integration | Shipped in Phase 57-01 |
 | Real-time collaboration | Single-user local-first app |
 
 ## Traceability
@@ -85,23 +90,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROJ-01 | Phase 56 | Pending |
-| PROJ-02 | Phase 56 | Pending |
-| PROJ-03 | Phase 56 | Pending |
-| PROJ-04 | Phase 56 | Pending |
-| PROJ-05 | Phase 56 | Pending |
-| HDR-01 | Phase 57 | Pending |
-| HDR-02 | Phase 57 | Pending |
-| HDR-03 | Phase 57 | Pending |
-| TRANS-01 | Phase 58 | Pending |
-| TRANS-02 | Phase 58 | Pending |
-| TRANS-03 | Phase 58 | Pending |
+| PROJ-01 | Phase 56 | Complete |
+| PROJ-02 | Phase 56 | Complete |
+| PROJ-03 | Phase 56 | Complete |
+| PROJ-04 | Phase 56 | Complete |
+| PROJ-05 | Phase 56 | Complete |
+| HDR-01 | Phase 57 | Complete |
+| HDR-02 | Phase 57 | Complete |
+| HDR-03 | Phase 57 | Complete |
+| TRANS-01 | Phase 58 | Complete |
+| TRANS-02 | Phase 58 | Complete |
+| TRANS-03 | Phase 58 | Complete |
+| STACK-01 | Phase 60 | Pending |
+| STACK-02 | Phase 60 | Pending |
+| STACK-03 | Phase 60 | Pending |
 
 **Coverage:**
-- v4.4 requirements: 11 total
-- Mapped to phases: 11
+- v4.4 requirements: 14 total
+- Mapped to phases: 14
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-10 after v4.4 milestone start*
+*Last updated: 2026-02-11 (Phase 60 requirements added)*
