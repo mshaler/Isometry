@@ -417,7 +417,8 @@ import type { LATCHAxis, Plane } from './pafv';
  */
 export interface AxisProjection {
   axis: LATCHAxis;
-  facet: string; // Column name in database (e.g., 'created_at', 'folder')
+  facet: string; // Primary facet - column name in database (e.g., 'created_at', 'folder')
+  facets?: string[]; // Optional array for stacked hierarchy (e.g., ['year', 'quarter', 'month'])
 }
 
 /**
@@ -450,19 +451,24 @@ export interface GridHeaders {
 
 /**
  * Convert AxisMapping array to PAFVProjection
+ * Supports stacked axis configurations when facets array is present
  */
 export function mappingsToProjection(
-  mappings: Array<{ plane: Plane; axis: LATCHAxis; facet: string }>
+  mappings: Array<{ plane: Plane; axis: LATCHAxis; facet: string; facets?: string[] }>
 ): PAFVProjection {
   const xMapping = mappings.find((m) => m.plane === 'x');
   const yMapping = mappings.find((m) => m.plane === 'y');
   const colorMapping = mappings.find((m) => m.plane === 'color');
 
   return {
-    xAxis: xMapping ? { axis: xMapping.axis, facet: xMapping.facet } : null,
-    yAxis: yMapping ? { axis: yMapping.axis, facet: yMapping.facet } : null,
+    xAxis: xMapping
+      ? { axis: xMapping.axis, facet: xMapping.facet, facets: xMapping.facets }
+      : null,
+    yAxis: yMapping
+      ? { axis: yMapping.axis, facet: yMapping.facet, facets: yMapping.facets }
+      : null,
     colorAxis: colorMapping
-      ? { axis: colorMapping.axis, facet: colorMapping.facet }
+      ? { axis: colorMapping.axis, facet: colorMapping.facet, facets: colorMapping.facets }
       : null,
   };
 }
