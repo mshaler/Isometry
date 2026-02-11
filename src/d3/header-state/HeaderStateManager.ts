@@ -5,7 +5,7 @@
  * column widths, and expanded node tracking.
  */
 
-import type { HeaderHierarchy } from '../../types/grid';
+import type { HeaderHierarchy, HeaderNode } from '../../types/grid';
 import type { useDatabaseService } from '../../hooks/database/useDatabaseService';
 import { superGridLogger } from '../../utils/dev-logger';
 
@@ -89,7 +89,7 @@ export class HeaderStateManager {
    * Restore header state from database
    */
   public async restoreHeaderState(): Promise<HeaderState | null> {
-    const db = this.database?.getDatabase();
+    const db = this.database?.getRawDatabase();
     if (!db) return null;
 
     try {
@@ -127,16 +127,18 @@ export class HeaderStateManager {
   public applyStateToHierarchy(hierarchy: HeaderHierarchy, state: HeaderState): void {
     // Restore expanded states
     state.expandedNodes.forEach(nodeId => {
-      const node = hierarchy.getNode(nodeId);
+      const node = hierarchy.allNodes.find(n => n.id === nodeId);
       if (node && !node.isLeaf) {
-        hierarchy.expandedNodeIds.add(nodeId);
+        if (hierarchy.expandedNodeIds) {
+          hierarchy.expandedNodeIds.add(nodeId);
+        }
         node.isExpanded = true;
       }
     });
 
     // Restore column widths
     Object.entries(state.columnWidths).forEach(([nodeId, width]) => {
-      const node = hierarchy.getNode(nodeId);
+      const node = hierarchy.allNodes.find(n => n.id === nodeId);
       if (node) {
         node.width = width;
       }
@@ -161,14 +163,14 @@ export class HeaderStateManager {
     const columnWidths: Record<string, number> = {};
 
     // Collect all node widths
-    hierarchy.getAllNodes().forEach(node => {
+    hierarchy.allNodes.forEach((node: HeaderNode) => {
       if (node.width !== undefined) {
         columnWidths[node.id] = node.width;
       }
     });
 
     return {
-      expandedNodes: new Set(hierarchy.expandedNodeIds),
+      expandedNodes: new Set(hierarchy.expandedNodeIds ?? []),
       columnWidths,
       totalWidth: hierarchy.totalWidth,
       lastModified: Date.now()
@@ -192,7 +194,7 @@ export class HeaderStateManager {
   /**
    * Perform the actual state save operation
    */
-  private async performStateSave(hierarchy: HeaderHierarchy): void {
+  private async performStateSave(hierarchy: HeaderHierarchy): Promise<void> {
     if (!this.database || !hierarchy) return;
 
     try {
@@ -204,8 +206,9 @@ export class HeaderStateManager {
         lastModified: stateSnapshot.lastModified
       });
 
-      const db = this.database.getDatabase();
-      const result = db.run(`
+      const db = this.database.getRawDatabase();
+      if (!db) return;
+      db.run(`
         INSERT OR REPLACE INTO header_states
         (dataset_id, app_context, state_data, created_at)
         VALUES (?, ?, ?, ?)
@@ -216,7 +219,8 @@ export class HeaderStateManager {
         Date.now()
       ]);
 
-      if (result && result.changes > 0) {
+      const changes = db.getRowsModified();
+      if (changes > 0) {
         superGridLogger.debug('Header state saved successfully', {
           datasetId: this.currentDatasetId,
           appContext: this.currentAppContext,
@@ -232,13 +236,13 @@ export class HeaderStateManager {
   /**
    * Perform the actual column width save operation
    */
-  private async performColumnWidthSave(hierarchy: HeaderHierarchy): void {
-    const db = this.database?.getDatabase();
+  private async performColumnWidthSave(hierarchy: HeaderHierarchy): Promise<void> {
+    const db = this.database?.getRawDatabase();
     if (!db || !hierarchy) return;
 
     try {
       const columnWidths: Record<string, number> = {};
-      hierarchy.getAllNodes().forEach(node => {
+      hierarchy.allNodes.forEach((node: HeaderNode) => {
         if (node.width !== undefined) {
           columnWidths[node.id] = node.width;
         }
@@ -246,7 +250,7 @@ export class HeaderStateManager {
 
       const widthData = JSON.stringify(columnWidths);
 
-      const result = db.run(`
+      db.run(`
         INSERT OR REPLACE INTO column_widths
         (dataset_id, app_context, width_data, created_at)
         VALUES (?, ?, ?, ?)
@@ -257,7 +261,8 @@ export class HeaderStateManager {
         Date.now()
       ]);
 
-      if (result?.changes > 0) {
+      const changes = db.getRowsModified();
+      if (changes > 0) {
         superGridLogger.debug('Column widths saved successfully', {
           datasetId: this.currentDatasetId,
           appContext: this.currentAppContext,

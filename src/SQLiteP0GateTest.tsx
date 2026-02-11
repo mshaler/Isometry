@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { SuperGridV4Demo } from './components/SuperGridV4Demo';
+import type { Database } from 'sql.js';
 
 /**
  * P0 Gate Test: sql.js + D3.js Direct Integration
@@ -19,6 +20,16 @@ interface TestResult {
   success: boolean;
   message: string;
   data?: unknown;
+}
+
+interface CardData {
+  id: unknown;
+  name: unknown;
+  content: unknown;
+  x: number;
+  y: number;
+  status: unknown;
+  priority: unknown;
 }
 
 export function SQLiteP0GateTest() {
@@ -168,12 +179,12 @@ export function SQLiteP0GateTest() {
       }
 
       // Transform SQL result to D3-friendly format
-      const cards = cardsResult[0].values.map((row: unknown[]) => ({
+      const cards: CardData[] = cardsResult[0].values.map((row: unknown[]) => ({
         id: row[0],
         name: row[1],
         content: row[2],
-        x: row[3],
-        y: row[4],
+        x: row[3] as number,
+        y: row[4] as number,
         status: row[5],
         priority: row[6]
       }));
@@ -185,7 +196,7 @@ export function SQLiteP0GateTest() {
 
         const cardGroups = svg
           .selectAll('.card')
-          .data(cards, (d: unknown) => d.id) // Key function for proper data binding
+          .data(cards, (d) => (d as CardData).id as string) // Key function for proper data binding
           .join(
             enter => enter.append('g').attr('class', 'card'),
             update => update,
@@ -220,7 +231,7 @@ export function SQLiteP0GateTest() {
           .attr('text-anchor', 'middle')
           .attr('font-size', '10px')
           .attr('fill', 'white')
-          .text(d => d.name);
+          .text(d => String(d.name));
 
         addResult({
           phase: 'D3 Binding',
@@ -241,7 +252,7 @@ export function SQLiteP0GateTest() {
       addResult({
         phase: 'ERROR',
         success: false,
-        message: `❌ P0 Gate Failed: ${error.message}`
+        message: `❌ P0 Gate Failed: ${error instanceof Error ? error.message : String(error)}`
       });
     } finally {
       setIsRunning(false);
@@ -291,14 +302,14 @@ export function SQLiteP0GateTest() {
               >
                 <div className="font-medium">{result.phase}</div>
                 <div className="text-sm">{result.message}</div>
-                {result.data && (
+                {result.data != null ? (
                   <details className="text-xs mt-1">
                     <summary>Data</summary>
                     <pre className="mt-1 p-2 bg-white rounded text-gray-600">
                       {JSON.stringify(result.data, null, 2)}
                     </pre>
                   </details>
-                )}
+                ) : null}
               </div>
             ))}
           </div>

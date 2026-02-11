@@ -295,11 +295,13 @@ export class PerformanceMonitor {
 
     try {
       // Test if WebView bridge is available
-      if (typeof window !== 'undefined' && window.webkit?.messageHandlers?.database) {
+      const handlers = window.webkit?.messageHandlers as
+        Record<string, { postMessage: (data: unknown) => void }> | undefined;
+      if (typeof window !== 'undefined' && handlers?.database) {
         // Simple ping test
         await new Promise((resolve, reject) => {
           const timeout = setTimeout(() => reject(new Error('Bridge timeout')), 1000);
-          window.webkit!.messageHandlers!.database!.postMessage({
+          handlers.database.postMessage({
             action: 'ping',
             data: {}
           });

@@ -3,6 +3,7 @@
 
 import type {
   NotebookCard,
+  NotebookCardProperties,
   NotebookTemplate,
   NotebookCardType,
   LayoutPosition
@@ -236,15 +237,15 @@ export function createCardOperations(
         const endTime = performance.now();
         performanceHook.measureQuery('loadCards', endTime - startTime);
 
-        return result.map((row: Record<string, unknown>) => ({
+        return result.map((row: Record<string, unknown>): NotebookCard => ({
           id: row.id as string,
           nodeId: row.node_id as string,
           markdownContent: row.markdown_content as string | null,
           renderedContent: row.rendered_content as string | null,
-          properties: row.properties ? JSON.parse(row.properties as string) : null,
+          properties: row.properties ? JSON.parse(row.properties as string) as NotebookCardProperties : null,
           templateId: row.template_id as string | null,
-          cardType: row.card_type as string,
-          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) : null,
+          cardType: row.card_type as NotebookCardType,
+          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) as LayoutPosition : null,
           createdAt: row.created_at as string,
           modifiedAt: row.modified_at as string
         }));
@@ -277,18 +278,19 @@ export function createCardOperations(
         }
 
         const row = result[0];
-        return {
+        const card: NotebookCard = {
           id: row.id as string,
           nodeId: row.node_id as string,
           markdownContent: row.markdown_content as string | null,
           renderedContent: row.rendered_content as string | null,
-          properties: row.properties ? JSON.parse(row.properties as string) : null,
+          properties: row.properties ? JSON.parse(row.properties as string) as NotebookCardProperties : null,
           templateId: row.template_id as string | null,
-          cardType: row.card_type as string,
-          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) : null,
+          cardType: row.card_type as NotebookCardType,
+          layoutPosition: row.layout_position ? JSON.parse(row.layout_position as string) as LayoutPosition : null,
           createdAt: row.created_at as string,
           modifiedAt: row.modified_at as string
         };
+        return card;
       } catch (error) {
         devLogger.error('Failed to load card by ID', { error });
         return null;

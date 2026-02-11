@@ -57,7 +57,7 @@ export function D3VisualizationRenderer({
           const headers = lines[0].split(delimiter);
           const parsedData = lines.slice(1).map(line => {
             const values = line.split(delimiter);
-            const row: unknown = {};
+            const row: Record<string, string | number> = {};
             headers.forEach((header, i) => {
               row[header.trim()] = isNaN(Number(values[i])) ? values[i]?.trim() : Number(values[i]);
             });

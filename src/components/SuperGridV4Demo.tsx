@@ -39,12 +39,20 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 
   // Grid configuration
   const gridConfig: GridConfig = {
-    xAxisRange: { min: 0, max: 10, count: 11 },
-    yAxisRange: { min: 0, max: 10, count: 11 },
-    cellWidth: 80,
-    cellHeight: 60,
-    headerWidth: 120,
-    headerHeight: 40
+    columnsPerRow: 11,
+    enableHeaders: true,
+    enableColumnResizing: false,
+    enableProgressiveDisclosure: true,
+    enableCartographicZoom: false,
+    showEmptyCells: true,
+    showCellBorders: true,
+    showAxisLabels: true,
+    allowCellSelection: true,
+    allowMultiSelection: true,
+    allowCardDragging: false,
+    defaultCellWidth: 80,
+    defaultCellHeight: 60,
+    defaultPadding: 4
   };
 
   const progressiveConfig: ProgressiveDisclosureConfig = {
@@ -66,7 +74,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 
       // Create SuperGrid instance - cast SVGSVGElement to SVGElement for compatibility
       const grid = new SuperGridV4(
-        svg as d3.Selection<SVGElement, unknown, null, undefined>,
+        svg as unknown as d3.Selection<SVGElement, unknown, null, undefined>,
         database,
         gridConfig,
         progressiveConfig
@@ -101,7 +109,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 
     } catch (err: unknown) {
       console.error('[SuperGrid] Initialization failed:', err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +127,7 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
       await superGridRef.current.loadData(newAxis.x, newAxis.y);
       setAvailableLevelGroups(superGridRef.current.getAvailableLevelGroups());
     } catch (err: unknown) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsLoading(false);
     }

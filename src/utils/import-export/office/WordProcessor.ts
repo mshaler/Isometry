@@ -176,7 +176,7 @@ export class WordProcessor {
       nodeType = 'document',
       folder,
       source = 'word-import',
-      preserveFormatting = true
+      preserveFormatting: _preserveFormatting = true
     } = options;
 
     // Generate summary
@@ -184,26 +184,31 @@ export class WordProcessor {
 
     return {
       id: `word_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      nodeType: nodeType as Node['nodeType'],
       name: fileName.replace(/\.(docx|doc)$/i, ''),
       content: docData.content,
       summary,
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
       folder: folder || 'imported',
       tags: ['word', 'document', 'imported', nodeType],
-      status: 'active',
+      status: 'active' as Node['status'],
       priority: 1,
-      location: '',
-      created_at: new Date().toISOString(),
-      modified_at: new Date().toISOString(),
+      importance: 0,
+      sortOrder: 0,
       source,
-      source_id: fileName,
-      metadata: {
-        originalFileName: fileName,
-        wordCount: this.countWords(docData.content),
-        imageCount: docData.images.length,
-        preserveFormatting,
-        extractedStyles: Object.keys(docData.styles),
-        importedAt: new Date().toISOString()
-      }
+      sourceId: fileName,
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     };
   }
 

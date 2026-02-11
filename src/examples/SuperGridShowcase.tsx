@@ -15,8 +15,12 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import * as d3 from 'd3';
 import { SuperGrid } from '../d3/SuperGrid';
 import { ViewContinuum } from '../d3/ViewContinuum';
+import type { ViewRenderer } from '../d3/viewcontinuum/types';
+import type { CardPosition, ViewAxisMapping } from '../types/views';
+import type { Node } from '../types/node';
 import { ViewSwitcher, useViewSwitcher } from '../components/ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from '../components/CardDetailModal';
@@ -349,24 +353,22 @@ export function SuperGridShowcase({
     );
 
     const superGridRenderer = new SuperGrid(
-      svgRef.current,
+      d3.select(svgRef.current) as unknown as d3.Selection<SVGElement, unknown, null, undefined>,
       mockDatabase,
       {
         columnsPerRow: 6,
         enableHeaders: true,
         enableSelection: true,
         enableKeyboardNavigation: true,
-        enableColumnResizing: true
-      } as any,
-      {
+        enableColumnResizing: true,
         onCardClick: handleCardClick,
         onSelectionChange: handleSelectionChange,
         onHeaderClick: handleHeaderClick
-      }
+      } as any
     );
 
-    const adapter = {
-      render: (cards: unknown[]) => {
+    const adapter: ViewRenderer = {
+      render: (cards) => {
         const start = performance.now();
         superGridRenderer.updateCards(cards);
         superGridRenderer.render([]);
@@ -377,7 +379,7 @@ export function SuperGridShowcase({
           frameRate: Math.min(60, 1000 / duration)
         }));
       },
-      getCardPositions: () => superGridRenderer.getCardPositions(),
+      getCardPositions: () => superGridRenderer.getCardPositions() as unknown as Map<string, CardPosition>,
       scrollToCard: (cardId: string) => superGridRenderer.scrollToCard(cardId),
       destroy: () => superGridRenderer.destroy()
     };
@@ -389,10 +391,10 @@ export function SuperGridShowcase({
     setViewContinuum(continuum);
 
     // Load scenario data
-    adapter.render(scenarioData.nodes);
+    adapter.render(scenarioData.nodes as unknown as Node[], {} as ViewAxisMapping, []);
 
     return () => {
-      continuum.destroy();
+      // ViewContinuum does not have a destroy method; clean up references
       if (guideTimeoutRef.current) {
         clearTimeout(guideTimeoutRef.current);
       }

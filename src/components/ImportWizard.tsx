@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, File, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { importOfficeFile, type OfficeImportResult, type OfficeImportOptions } from '../utils/import-export/officeDocumentProcessor';
+import { officeProcessor, type OfficeImportResult, type OfficeImportOptions, isExcelFile } from '../utils/import-export/officeDocumentProcessor';
 import type { Node } from '../types/node';
 
 interface ImportWizardProps {
@@ -88,7 +88,9 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, folder }: Impo
       ));
 
       try {
-        const result = await importOfficeFile(fileStatus.file, importOptions);
+        const result = isExcelFile(fileStatus.file)
+          ? await officeProcessor.importExcel(fileStatus.file, importOptions)
+          : await officeProcessor.importWord(fileStatus.file, importOptions);
 
         // Update status to success
         setFiles(prev => prev.map((f, idx) =>

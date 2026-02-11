@@ -6,6 +6,30 @@ import type { Database } from 'sql.js';
 import { devLogger } from '../../utils/logging';
 import type { Node, CellDescriptor, GridDimensions } from './types';
 
+/** Shape of a single result set from sql.js db.exec() */
+interface SQLResultSet {
+  columns: string[];
+  values: unknown[][];
+}
+
+/** Shape of grid cell data returned from transformSQLToGridData */
+interface GridCellData {
+  id: string;
+  x: unknown;
+  y: unknown;
+  value: unknown;
+  cards: Array<{ id: string; name: string; priority: unknown; status: unknown }>;
+  metadata: { avgPriority: unknown; status: unknown; cardCount: unknown };
+}
+
+/** Shape of the grid data returned from executeGridQuery */
+interface TransformedGridData {
+  cells: GridCellData[];
+  xAxis: { field: string; values: unknown[]; type: string; range: { min: number; max: number } };
+  yAxis: { field: string; values: unknown[]; type: string; range: { min: number; max: number } };
+  metadata: { totalCells: number; totalCards: number; queryTime: number };
+}
+
 export class SuperGridDataManager {
   private database: Database;
   private cellMinWidth: number;
@@ -21,12 +45,13 @@ export class SuperGridDataManager {
    * Transform SQL results to Node array
    */
   transformSQLToNodes(sqlResult: unknown): Node[] {
-    if (!sqlResult || !sqlResult.values || sqlResult.values.length === 0) {
+    const result = sqlResult as SQLResultSet | null | undefined;
+    if (!result || !result.values || result.values.length === 0) {
       return [];
     }
 
-    const columns = sqlResult.columns;
-    return sqlResult.values.map((row: unknown[], index: number) => {
+    const columns = result.columns;
+    return result.values.map((row: unknown[], index: number) => {
       const node: Node = {
         id: String(row[0] || `node_${index}`),
         name: String(row[columns.indexOf('name')] || `Node ${index}`),
@@ -126,8 +151,13 @@ export class SuperGridDataManager {
   /**
    * Transform SQL results to GridData format (migrated from SuperGridV4)
    */
-  private transformSQLToGridData(sqlResult: unknown, xField: string, yField: string, startTime: number): unknown {
-    const { columns, values } = sqlResult;
+  private transformSQLToGridData(
+    sqlResult: unknown,
+    xField: string,
+    yField: string,
+    startTime: number
+  ): TransformedGridData {
+    const { columns, values } = sqlResult as SQLResultSet;
 
     // Map column indices
     const colIndices = {
@@ -142,8 +172,10 @@ export class SuperGridDataManager {
 
     // Transform to cells array using SuperGridV4 format
     const cells = values.map((row: unknown[]) => {
-      const cardIds = row[colIndices.cardIds]?.split(',') || [];
-      const cardNames = row[colIndices.cardNames]?.split('|') || [];
+      const cardIdsRaw = row[colIndices.cardIds];
+      const cardNamesRaw = row[colIndices.cardNames];
+      const cardIds = (typeof cardIdsRaw === 'string' ? cardIdsRaw.split(',') : []);
+      const cardNames = (typeof cardNamesRaw === 'string' ? cardNamesRaw.split('|') : []);
 
       return {
         id: `${row[colIndices.x]}-${row[colIndices.y]}`,
@@ -165,8 +197,8 @@ export class SuperGridDataManager {
     });
 
     // Build axis ranges
-    const xValues = [...new Set(values.map((row: unknown) => row[colIndices.x]))].sort();
-    const yValues = [...new Set(values.map((row: unknown) => row[colIndices.y]))].sort();
+    const xValues = [...new Set(values.map((row: unknown[]) => row[colIndices.x]))].sort();
+    const yValues = [...new Set(values.map((row: unknown[]) => row[colIndices.y]))].sort();
 
     return {
       cells,
@@ -174,7 +206,7 @@ export class SuperGridDataManager {
       yAxis: { field: yField, values: yValues, type: 'categorical', range: { min: 0, max: yValues.length - 1 } },
       metadata: {
         totalCells: cells.length,
-        totalCards: cells.reduce((sum: number, cell: unknown) => sum + cell.cards.length, 0),
+        totalCards: cells.reduce((sum: number, cell: GridCellData) => sum + cell.cards.length, 0),
         queryTime: performance.now() - startTime
       }
     };
@@ -204,18 +236,18 @@ export class SuperGridDataManager {
   /**
    * Convert GridData to engine format
    */
-  convertGridDataToCells(gridData: unknown): CellDescriptor[] {
-    return gridData.cells.map((cell: unknown) => ({
+  convertGridDataToCells(gridData: TransformedGridData): CellDescriptor[] {
+    return gridData.cells.map((cell: GridCellData) => ({
       id: cell.id,
       gridX: gridData.xAxis.values.indexOf(cell.x),
       gridY: gridData.yAxis.values.indexOf(cell.y),
       xValue: String(cell.x),
       yValue: String(cell.y),
-      nodeIds: cell.cards.map((c: unknown) => c.id),
+      nodeIds: cell.cards.map((c) => c.id),
       nodeCount: cell.cards.length,
       aggregateData: {
-        avgPriority: cell.metadata?.avgPriority || 0,
-        statusCounts: { [cell.metadata?.status || 'unknown']: cell.cards.length },
+        avgPriority: (cell.metadata?.avgPriority as number) || 0,
+        statusCounts: { [String(cell.metadata?.status || 'unknown')]: cell.cards.length },
         tagCounts: {}
       }
     }));

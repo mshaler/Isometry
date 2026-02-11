@@ -51,6 +51,79 @@ export interface ConstraintResult {
   bounceStrength?: number;
 }
 
+/**
+ * Local boundary representation used internally by ViewportService.
+ * Maps directional boundary edges for constraint calculations.
+ * Distinct from the upstream BoundaryConstraints type which uses
+ * a bounds rectangle with min/max coordinates.
+ */
+interface DirectionalBounds {
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  topOffset: number;
+  leftOffset: number;
+}
+
+/**
+ * Extended CartographicConfig for ViewportService integration.
+ * Adds viewport/grid dimension properties not yet in the upstream type.
+ */
+interface ViewportCartographicConfig extends CartographicConfig {
+  viewportDimensions?: ViewportDimensions;
+  gridDimensions?: GridDimensions;
+  elasticBounds?: Partial<ElasticBehavior>;
+}
+
+/**
+ * Extract directional transform from CartographicState.
+ * CartographicState uses translateX/translateY; this helper provides
+ * a uniform {x, y} accessor.
+ */
+function getTransformFromState(
+  state: CartographicState
+): { x: number; y: number } {
+  return { x: state.translateX, y: state.translateY };
+}
+
+/**
+ * Convert upstream BoundaryConstraints to directional bounds used internally.
+ * Falls back to zeros if bounds are not applicable.
+ */
+export function toDirectionalBounds(
+  constraints: BoundaryConstraints
+): DirectionalBounds {
+  return {
+    left: constraints.bounds.minX,
+    right: constraints.bounds.maxX,
+    top: constraints.bounds.minY,
+    bottom: constraints.bounds.maxY,
+    topOffset: 0,
+    leftOffset: 0
+  };
+}
+
+/**
+ * Convert directional bounds back to upstream BoundaryConstraints.
+ */
+export function fromDirectionalBounds(
+  bounds: DirectionalBounds
+): BoundaryConstraints {
+  return {
+    enabled: true,
+    bounds: {
+      minX: bounds.left,
+      minY: bounds.top,
+      maxX: bounds.right,
+      maxY: bounds.bottom
+    },
+    mode: 'elastic',
+    elasticStrength: 0.3,
+    maxElasticDistance: 50
+  };
+}
+
 export class ViewportService {
   private viewport: ViewportDimensions;
   private grid: GridDimensions;
@@ -58,7 +131,7 @@ export class ViewportService {
   private elasticBehavior: ElasticBehavior;
 
   // Cached boundary constraints for performance
-  private cachedConstraints: BoundaryConstraints | null = null;
+  private cachedConstraints: DirectionalBounds | null = null;
   private cacheTimestamp: number = 0;
   private readonly CACHE_DURATION = 100; // ms
 
@@ -84,9 +157,10 @@ export class ViewportService {
   // ========================================================================
 
   /**
-   * Calculate boundary constraints for given scale
+   * Calculate boundary constraints for given scale.
+   * Returns DirectionalBounds with left/right/top/bottom edges.
    */
-  calculateBoundaryConstraints(scale: number = 1.0): BoundaryConstraints {
+  calculateBoundaryConstraints(scale: number = 1.0): DirectionalBounds {
     const now = performance.now();
 
     // Use cached constraints if still valid and scale hasn't changed significantly
@@ -107,7 +181,7 @@ export class ViewportService {
 
     // Calculate boundaries
     // Grid should not pan beyond viewport edges
-    const constraints: BoundaryConstraints = {
+    const constraints: DirectionalBounds = {
       // Left: Grid's right edge should not go past viewport's left edge
       left: Math.min(0, effectiveViewport.width - scaledGridWidth),
 
@@ -194,7 +268,7 @@ export class ViewportService {
   private applyElasticResistance(
     x: number,
     y: number,
-    constraints: BoundaryConstraints
+    constraints: DirectionalBounds
   ): { x: number; y: number; resistance: number } {
     let resistanceX = x;
     let resistanceY = y;
@@ -251,12 +325,13 @@ export class ViewportService {
   } {
     const constraints = this.calculateBoundaryConstraints(state.scale);
     const tolerance = 1; // pixel tolerance for boundary detection
+    const transform = getTransformFromState(state);
 
     return {
-      atLeftBoundary: Math.abs(state.transform.x - constraints.left) < tolerance,
-      atRightBoundary: Math.abs(state.transform.x - constraints.right) < tolerance,
-      atTopBoundary: Math.abs(state.transform.y - constraints.top) < tolerance,
-      atBottomBoundary: Math.abs(state.transform.y - constraints.bottom) < tolerance
+      atLeftBoundary: Math.abs(transform.x - constraints.left) < tolerance,
+      atRightBoundary: Math.abs(transform.x - constraints.right) < tolerance,
+      atTopBoundary: Math.abs(transform.y - constraints.top) < tolerance,
+      atBottomBoundary: Math.abs(transform.y - constraints.bottom) < tolerance
     };
   }
 
@@ -356,12 +431,17 @@ export class ViewportService {
   // ========================================================================
 
   /**
-   * Create ViewportService from CartographicConfig
+   * Create ViewportService from CartographicConfig.
+   * Accepts ViewportCartographicConfig which extends the base config
+   * with optional viewportDimensions, gridDimensions, and elasticBounds.
    */
-  static fromCartographicConfig(config: CartographicConfig): ViewportService {
+  static fromCartographicConfig(config: ViewportCartographicConfig): ViewportService {
+    const defaultDimensions: ViewportDimensions = { width: 800, height: 600 };
+    const defaultGrid: GridDimensions = { width: 1600, height: 1200 };
+
     return new ViewportService(
-      config.viewportDimensions,
-      config.gridDimensions,
+      config.viewportDimensions ?? defaultDimensions,
+      config.gridDimensions ?? defaultGrid,
       { top: 0, left: 0, right: 0, bottom: 0 },
       {
         enabled: true,
@@ -440,7 +520,7 @@ export class ViewportService {
     viewport: ViewportDimensions;
     grid: GridDimensions;
     offsets: LayoutOffsets;
-    constraints: BoundaryConstraints;
+    constraints: DirectionalBounds;
     elasticBehavior: ElasticBehavior;
     cacheStatus: { valid: boolean; age: number };
   } {

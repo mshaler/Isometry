@@ -2,7 +2,7 @@
  * Database persistence utilities for SQLiteProvider
  */
 
-import type { Database } from 'sql.js';
+import type { Database, SqlJsStatic } from 'sql.js';
 import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
 import { devLogger } from '../utils/dev-logger';
 
@@ -17,7 +17,7 @@ export interface PersistenceOperations {
  */
 export function createPersistenceOperations(
   db: Database | null,
-  SQL: unknown,
+  SQL: SqlJsStatic | null,
   setDb: (db: Database) => void,
   setDataVersion: (version: number) => void,
   persistenceRef: React.MutableRefObject<IndexedDBPersistence | null>,
@@ -71,7 +71,7 @@ export function createPersistenceOperations(
           const schema = await response.text();
           newDb.exec(schema);
           if (enableLogging) {
-            devLogger.setup('Fresh database created with schema');
+            devLogger.setup('Fresh database created with schema', {});
           }
         }
       } catch (schemaError) {
@@ -82,7 +82,7 @@ export function createPersistenceOperations(
       setDataVersion(0);
 
       if (enableLogging) {
-        devLogger.lifecycle('Database reset completed');
+        devLogger.info('Database reset completed');
       }
     } catch (error) {
       devLogger.error('Failed to reset database', error);
@@ -114,8 +114,8 @@ export function createPersistenceOperations(
       // Restart auto-save
       const autoSave = autoSaveRef.current;
       if (autoSave) {
-        autoSave.stop();
-        const newAutoSave = new AutoSaveManager(newDb, persistence!, 30000);
+        autoSave.cleanup();
+        const newAutoSave = new AutoSaveManager(persistence!);
         autoSaveRef.current = newAutoSave;
       }
 

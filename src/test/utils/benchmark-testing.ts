@@ -185,7 +185,7 @@ function getBaseExecutionTime(scenario: MigrationScenario): number {
 }
 
 function getProviderMultiplier(provider: DatabaseMode): number {
-  return provider === 'native' ? 0.5 : 1.0;
+  return provider === DatabaseMode.WEBVIEW_BRIDGE ? 0.5 : 1.0;
 }
 
 function getComplexityMultiplier(complexity: MigrationScenario['complexity']): number {

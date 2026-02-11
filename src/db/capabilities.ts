@@ -39,11 +39,13 @@ export function testDatabaseCapabilities(db: Database): CapabilityTestResult {
     const telemetryError: SQLiteCapabilityError = {
       capability,
       error: errorMessage,
-      testQuery,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      webWorkerSupport: typeof Worker !== 'undefined',
-      indexedDBSupport: typeof indexedDB !== 'undefined'
+      context: {
+        testQuery,
+        userAgent: navigator.userAgent,
+        webWorkerSupport: typeof Worker !== 'undefined',
+        indexedDBSupport: typeof indexedDB !== 'undefined'
+      }
     };
 
     telemetryErrors.push(telemetryError);
@@ -56,7 +58,7 @@ export function testDatabaseCapabilities(db: Database): CapabilityTestResult {
     db.exec(testQuery);
     db.exec("DROP TABLE test_fts");
     capabilities.fts5 = true;
-    devLogger.setup('SQLite FTS5 capability confirmed');
+    devLogger.setup('SQLite FTS5 capability confirmed', {});
   } catch (error) {
     logCapabilityError('fts5', error as Error, "CREATE VIRTUAL TABLE test_fts USING fts5(content)");
   }
@@ -66,14 +68,14 @@ export function testDatabaseCapabilities(db: Database): CapabilityTestResult {
     const testQuery = "SELECT json('{}') as test";
     db.exec(testQuery);
     capabilities.json1 = true;
-    devLogger.setup('SQLite JSON1 capability confirmed');
+    devLogger.setup('SQLite JSON1 capability confirmed', {});
   } catch (error) {
     logCapabilityError('json1', error as Error, "SELECT json('{}') as test");
   }
 
   // Test Recursive CTEs
-  try {
-    const testQuery = `
+  {
+    const cteTestQuery = `
       WITH RECURSIVE test_cte(n) AS (
         SELECT 1
         UNION ALL
@@ -81,11 +83,13 @@ export function testDatabaseCapabilities(db: Database): CapabilityTestResult {
       )
       SELECT COUNT(*) FROM test_cte
     `;
-    db.exec(testQuery);
-    capabilities.recursiveCte = true;
-    devLogger.setup('SQLite Recursive CTE capability confirmed');
-  } catch (error) {
-    logCapabilityError('recursiveCte', error as Error, testQuery);
+    try {
+      db.exec(cteTestQuery);
+      capabilities.recursiveCte = true;
+      devLogger.setup('SQLite Recursive CTE capability confirmed', {});
+    } catch (error) {
+      logCapabilityError('recursive_cte', error as Error, cteTestQuery);
+    }
   }
 
   return { capabilities, telemetryErrors };

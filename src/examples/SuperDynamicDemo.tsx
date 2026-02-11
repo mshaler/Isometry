@@ -217,7 +217,7 @@ export function SuperDynamicDemo() {
   };
 
   const getNodeValue = (node: unknown[], facet: string): string => {
-    const fieldIndex = {
+    const fieldIndexMap: Record<string, number> = {
       'folder': 2,
       'status': 3,
       'created_at': 4,
@@ -226,18 +226,19 @@ export function SuperDynamicDemo() {
       'tags': 7,
       'location': 8,
       'name': 1
-    }[facet] || 1;
+    };
+    const fieldIndex = fieldIndexMap[facet] ?? 1;
 
     const value = node[fieldIndex];
 
     // Format dates
     if (facet.includes('_at') && value) {
-      return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+      return new Date(value as string | number).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
     }
 
     // Format priority
     if (facet === 'priority') {
-      return ['Low', 'Medium', 'High', 'Critical', 'Urgent'][value] || 'Low';
+      return ['Low', 'Medium', 'High', 'Critical', 'Urgent'][value as number] || 'Low';
     }
 
     return String(value || 'Unknown');

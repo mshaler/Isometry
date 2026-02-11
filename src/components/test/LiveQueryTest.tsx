@@ -105,14 +105,9 @@ export function LiveQueryTest() {
         addTestResult('ℹ️ Live observation already active');
       }
 
-      if (observationId) {
-        addTestResult(`✅ Observation ID: ${observationId}`);
-
-        // Add correlation ID to metrics
-        setPerformanceMetrics(prev => ({
-          ...prev,
-          correlationIds: [...prev.correlationIds, observationId]
-        }));
+      // Observation tracking (live query active state)
+      if (isLive) {
+        addTestResult(`✅ Live query is active`);
       }
 
       // Test initial data load
@@ -144,7 +139,8 @@ export function LiveQueryTest() {
       // Create new node through WebView bridge
       addTestResult(`📝 Creating test node: "${testName}"`);
 
-      const newNode = await webViewBridge.database.createNode({
+      const db = webViewBridge.database as { createNode: (data: Record<string, string>) => Promise<{ id: string }> };
+      const newNode = await db.createNode({
         name: testName,
         content: testContent
       });
@@ -177,14 +173,13 @@ export function LiveQueryTest() {
       }
 
       const testNode = nodes[0];
-      const rollbackKey = `test-${Date.now()}`;
+      // Rollback key for tracking (optimistic updates now use function-based API)
 
       // Apply optimistic update
       addTestResult(`📝 Applying optimistic update to node: ${testNode.name}`);
-      updateOptimistically({
-        id: testNode.id,
-        name: `[OPTIMISTIC] ${testNode.name}`
-      }, rollbackKey);
+      updateOptimistically((current) =>
+        current?.map(n => n.id === testNode.id ? { ...n, name: `[OPTIMISTIC] ${testNode.name}` } : n) ?? null
+      );
 
       addTestResult('✅ Optimistic update applied (should show immediately)');
 
@@ -192,7 +187,8 @@ export function LiveQueryTest() {
       setTimeout(async () => {
         try {
           // Update node on server
-          await webViewBridge.database.updateNode({
+          const db = webViewBridge.database as { updateNode: (data: Record<string, string>) => Promise<void> };
+          await db.updateNode({
             id: testNode.id,
             name: `Updated ${testNode.name}`
           });
@@ -201,7 +197,7 @@ export function LiveQueryTest() {
 
         } catch (error) {
           addTestResult(`❌ Server update failed, rolling back optimistic: ${error}`);
-          rollbackOptimisticUpdate(rollbackKey);
+          rollbackOptimisticUpdate();
         }
       }, 2000);
 
@@ -221,11 +217,8 @@ export function LiveQueryTest() {
     // Queue background sync while offline
     try {
       if (nodes && nodes.length > 0) {
-        const syncId = queueBackgroundSync('node', 'update', {
-          id: nodes[0].id,
-          name: 'Updated while offline'
-        });
-        addTestResult(`✅ Background sync queued: ${syncId}`);
+        queueBackgroundSync(true);
+        addTestResult(`✅ Background sync enabled`);
       }
     } catch (error) {
       addTestResult(`❌ Background sync failed: ${error}`);
@@ -251,7 +244,8 @@ export function LiveQueryTest() {
 
     try {
       // Get live data statistics
-      const stats = await webViewBridge.liveData.getObservationStatistics();
+      const liveData = webViewBridge.liveData as { getObservationStatistics: () => Promise<unknown> };
+      const stats = await liveData.getObservationStatistics();
 
       addTestResult(`✅ Live data statistics retrieved`);
       addTestResult(`   Active observations: ${JSON.stringify(stats)}`);
@@ -361,7 +355,7 @@ export function LiveQueryTest() {
           </div>
           {backgroundSyncState && (
             <div className="text-sm text-gray-600">
-              Sync Queue: {backgroundSyncState.pending}
+              Sync Status: {backgroundSyncState}
             </div>
           )}
         </div>
@@ -425,7 +419,7 @@ export function LiveQueryTest() {
         <h3 className="font-semibold text-gray-700 mb-2">Current Live Data</h3>
         <div className="bg-gray-50 p-4 rounded-lg">
           {loading && <div className="text-blue-600">Loading...</div>}
-          {error && <div className="text-red-600">Error: {error}</div>}
+          {error && <div className="text-red-600">Error: {error instanceof Error ? error.message : String(error)}</div>}
           {nodes && nodes.length > 0 ? (
             <div className="space-y-2">
               {nodes.map((node, index) => (

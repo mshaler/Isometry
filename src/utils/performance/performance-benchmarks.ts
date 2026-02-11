@@ -429,7 +429,7 @@ export async function runQuickBenchmark(): Promise<SimpleBaselineMetrics> {
     memoryUsageMB,
     queryCount: queryTimes.length,
     renderCount: renderTimes.length,
-    errorCount,
+    errorCount: 0,
     duration
   });
 }

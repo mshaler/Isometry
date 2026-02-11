@@ -615,7 +615,7 @@ export async function loadTestScenario(
 
   if ('generateNodes' in scenarioData) {
     // Handle generated scenarios like PERFORMANCE_LARGE
-    const count = options?.nodeCount || 100;
+    const count = (options as { nodeCount?: number } | undefined)?.nodeCount || 100;
     const nodes = scenarioData.generateNodes(count);
 
     const stmt = db.prepare(`

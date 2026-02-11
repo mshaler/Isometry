@@ -277,7 +277,7 @@ export function FilterPanelOverlay({
           isBridgeMode={isBridgeMode}
           bridgeResults={bridgeResults}
           count={count}
-          bridgeSequenceId={bridgeSequenceId}
+          bridgeSequenceId={bridgeSequenceId ?? undefined}
           onClose={() => setShowPerformancePanel(false)}
         />
       )}

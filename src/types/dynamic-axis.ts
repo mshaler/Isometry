@@ -187,31 +187,34 @@ export interface SuperDynamicMetrics {
 // Type guards
 
 export const isSuperDynamicConfig = (obj: unknown): obj is SuperDynamicConfig => {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    typeof obj.enableAxisDragDrop === 'boolean' &&
-    typeof obj.enableAxisSwapping === 'boolean' &&
-    typeof obj.reflowGrid === 'boolean'
+    typeof record.enableAxisDragDrop === 'boolean' &&
+    typeof record.enableAxisSwapping === 'boolean' &&
+    typeof record.reflowGrid === 'boolean'
   );
 };
 
 export const isDragState = (obj: unknown): obj is DragState => {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    typeof obj.isDragging === 'boolean' &&
-    (obj.draggedAxisId === null || typeof obj.draggedAxisId === 'string')
+    typeof record.isDragging === 'boolean' &&
+    (record.draggedAxisId === null || typeof record.draggedAxisId === 'string')
   );
 };
 
 export const isAxisChangeEvent = (obj: unknown): obj is AxisChangeEvent => {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    ['move', 'swap', 'insert', 'remove'].includes(obj.type) &&
-    typeof obj.axisId === 'string' &&
-    ['x', 'y', 'z'].includes(obj.oldPlane) &&
-    ['x', 'y', 'z'].includes(obj.newPlane)
+    ['move', 'swap', 'insert', 'remove'].includes(record.type as string) &&
+    typeof record.axisId === 'string' &&
+    ['x', 'y', 'z'].includes(record.oldPlane as string) &&
+    ['x', 'y', 'z'].includes(record.newPlane as string)
   );
 };

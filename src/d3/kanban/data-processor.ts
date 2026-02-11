@@ -120,8 +120,8 @@ export function applySortToColumns(columns: KanbanColumn[], axisMapping: ViewAxi
 
       // Handle date sorting
       if (sortFacet.includes('date') || sortFacet.includes('At')) {
-        const aDate = new Date(aValue || 0);
-        const bDate = new Date(bValue || 0);
+        const aDate = new Date((aValue as string | number) || 0);
+        const bDate = new Date((bValue as string | number) || 0);
         return bDate.getTime() - aDate.getTime(); // Newest first
       }
 
@@ -140,7 +140,8 @@ export function flattenCardsWithPositions(
   columns: KanbanColumn[],
   config: {
     cardWidth: number; cardHeight: number; columnWidth: number;
-    columnSpacing: number; cardSpacing: number; padding: unknown
+    columnSpacing: number; cardSpacing: number;
+    padding: { top: number; right: number; bottom: number; left: number }
   }
 ): FlattenedCard[] {
   const flattened: FlattenedCard[] = [];

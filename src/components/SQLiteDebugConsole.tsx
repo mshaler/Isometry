@@ -7,7 +7,14 @@ import { contextLogger } from '../utils/dev-logger';
  */
 export function SQLiteDebugConsole() {
   const { db, loading, error, execute, capabilities, telemetry } = useSQLite();
-  const [debugInfo, setDebugInfo] = useState<Record<string, unknown> | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{
+    hasDatabase?: boolean;
+    nodeCount?: unknown;
+    tables?: Array<{ name: string }>;
+    sampleNodes?: unknown[];
+    error?: string;
+    [key: string]: unknown;
+  } | null>(null);
 
   useEffect(() => {
     if (!db || loading) return;
@@ -31,7 +38,7 @@ export function SQLiteDebugConsole() {
         setDebugInfo({
           nodeCount: countResult,
           sampleNodes,
-          tables,
+          tables: tables as unknown as Array<{ name: string }>,
           capabilities,
           telemetry,
           hasDatabase: !!db,
@@ -96,7 +103,7 @@ export function SQLiteDebugConsole() {
           <strong>Status:</strong> {debugInfo.hasDatabase ? '✅ Connected' : '❌ No Database'}
         </div>
 
-        {debugInfo.nodeCount && (
+        {debugInfo.nodeCount != null && (
           <div>
             <strong>Node Count:</strong> {JSON.stringify(debugInfo.nodeCount)}
           </div>
@@ -104,7 +111,7 @@ export function SQLiteDebugConsole() {
 
         {debugInfo.tables && (
           <div>
-            <strong>Tables:</strong> {debugInfo.tables.map((t: unknown) => t.name).join(', ')}
+            <strong>Tables:</strong> {debugInfo.tables.map((t) => t.name).join(', ')}
           </div>
         )}
 

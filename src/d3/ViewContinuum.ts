@@ -67,7 +67,7 @@ export class ViewContinuum {
     animationConfig: FlipAnimationConfig = DEFAULT_FLIP_CONFIG
   ) {
     this.containerElement = container as HTMLElement;
-    this.container = d3.select(container);
+    this.container = d3.select(container) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     this.callbacks = callbacks;
     this.animationConfig = animationConfig;
 
@@ -182,7 +182,7 @@ export class ViewContinuum {
       activeFilters,
       this.viewState,
       this.currentViewConfig,
-      (viewType, axisMapping) => this.createViewConfig(viewType, axisMapping)
+      (viewType, axisMapping) => this.createViewConfig(viewType as ViewType, axisMapping)
     );
 
     if (!this.currentViewConfig) {
@@ -199,7 +199,7 @@ export class ViewContinuum {
   reprojectCachedData(): void {
     const viewConfig = this.dataManager.reprojectCachedData(
       this.viewState,
-      (viewType, axisMapping) => this.createViewConfig(viewType, axisMapping)
+      (viewType, axisMapping) => this.createViewConfig(viewType as ViewType, axisMapping)
     );
 
     if (viewConfig) {
@@ -216,7 +216,7 @@ export class ViewContinuum {
    */
   updateSelection(selectedIds: string[], focusedId: string | null = null): void {
     this.viewState.selectionState.selectedCardIds = new Set(selectedIds);
-    this.viewState.selectionState.lastSelectedId = focusedId;
+    this.viewState.selectionState.lastSelectedId = focusedId ?? undefined;
     this.viewState.lastModified = Date.now();
 
     this.stateManager.saveViewState(this.viewState);
@@ -237,7 +237,7 @@ export class ViewContinuum {
   getSelection(): { selectedIds: string[]; focusedId: string | null } {
     return {
       selectedIds: Array.from(this.viewState.selectionState.selectedCardIds),
-      focusedId: this.viewState.selectionState.lastSelectedId
+      focusedId: this.viewState.selectionState.lastSelectedId ?? null
     };
   }
 
@@ -287,22 +287,21 @@ export class ViewContinuum {
     // Any additional initialization can go here
   }
 
-  private createViewConfig(viewType: ViewType, axisMapping: ViewAxisMapping): ViewConfig {
+  private createViewConfig(viewType: ViewType, _axisMapping: ViewAxisMapping): ViewConfig {
     const engineViewType = this.mapViewTypeToEngineType(viewType);
 
     return {
-      type: engineViewType,
-      dimensions: Object.entries(axisMapping).reduce((acc, [plane, axis]) => {
-        if (axis && axis !== 'None') {
-          acc[plane as 'x' | 'y' | 'z'] = this.mapLATCHAbbreviation(axis as any);
-        }
-        return acc;
-      }, {} as Record<'x' | 'y' | 'z', any>),
-      layout: {
-        cardSize: { width: 200, height: 120 },
-        padding: { x: 10, y: 10 },
-        groupSpacing: 20
-      }
+      viewType: engineViewType,
+      projection: {
+        x: { axis: 'category', facet: 'folder' },
+        y: { axis: 'time', facet: 'modified_at' },
+      },
+      filters: [],
+      sort: [],
+      zoom: { scale: 1, offset: { x: 0, y: 0 }, constrained: true },
+      selection: { selectedIds: [], mode: 'multiple' },
+      styling: { colorScheme: 'light' },
+      eventHandlers: {}
     };
   }
 
@@ -311,21 +310,12 @@ export class ViewContinuum {
       [ViewType.LIST]: 'list',
       [ViewType.KANBAN]: 'kanban',
       [ViewType.SUPERGRID]: 'supergrid',
-      [ViewType.NETWORK]: 'network',
-      [ViewType.TIMELINE]: 'timeline'
+      [ViewType.GRID]: 'grid',
+      [ViewType.NETWORK]: 'graph',
+      [ViewType.TIMELINE]: 'timeline',
+      [ViewType.CALENDAR]: 'calendar'
     };
     return mapping[viewType] || 'list';
-  }
-
-  private mapLATCHAbbreviation(abbr: 'L' | 'A' | 'T' | 'C' | 'H'): unknown {
-    const mapping = {
-      'L': 'location',
-      'A': 'alphabet',
-      'T': 'time',
-      'C': 'category',
-      'H': 'hierarchy'
-    };
-    return mapping[abbr] || 'category';
   }
 
   private setupSVGStructure(): void {

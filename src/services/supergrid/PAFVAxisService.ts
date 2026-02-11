@@ -13,7 +13,42 @@
 
 import type { ViewAxisMapping } from '../../types/views';
 import type { LATCHAxis, LATCHAxisAbbr } from '../../types/pafv';
-import type { AxisChangeEvent, SuperDynamicMetrics } from '../../types/supergrid';
+
+/**
+ * sql.js database interface for the subset of methods used by this service
+ */
+interface SqlJsDatabase {
+  exec(sql: string, params?: unknown[]): Array<{ columns: string[]; values: unknown[][] }>;
+  run(sql: string, params?: unknown[]): void;
+}
+
+/**
+ * Local metrics interface matching what PAFVAxisService actually tracks.
+ * This differs from the formal SuperDynamicMetrics in dynamic-axis.ts
+ * because this service tracks a simpler set of interaction patterns.
+ */
+interface PAFVMetrics {
+  averageReflowTime: number;
+  peakReflowTime: number;
+  lastFrameDrops: number;
+  totalRepositions: number;
+  interactionPatterns: {
+    mostUsedAxisSwaps: Array<{ from: string; to: string; count: number }>;
+    averageSessionSwaps: number;
+    cancelRate: number;
+  };
+}
+
+/**
+ * Local axis change event interface for PAFVAxisService.
+ * Contains the mapping-based change data that this service processes.
+ */
+interface PAFVAxisChangeEvent {
+  oldMapping: Record<string, string | null>;
+  newMapping: Record<string, string | null>;
+  changedAxis: string;
+  trigger: 'drag' | 'programmatic';
+}
 
 
 /**
@@ -30,8 +65,8 @@ function fullToAbbr(full: LATCHAxis): LATCHAxisAbbr {
 }
 
 export interface PAFVAxisServiceConfig {
-  /** Database instance for persistence */
-  database: unknown; // sql.js database instance
+  /** Database instance for persistence (sql.js database) */
+  database: SqlJsDatabase | null;
 
   /** Debounce delay for persistence operations (ms) */
   persistenceDelay: number;
@@ -59,7 +94,7 @@ export class PAFVAxisService {
   private currentMapping: ViewAxisMapping = {};
   private availableAxes: AvailableAxis[] = [];
   private persistenceTimeout: number | null = null;
-  private metrics: SuperDynamicMetrics;
+  private metrics: PAFVMetrics;
   private changeListeners: ((mapping: ViewAxisMapping) => void)[] = [];
 
   constructor(config: PAFVAxisServiceConfig) {
@@ -69,7 +104,7 @@ export class PAFVAxisService {
     this.loadPersistedMapping();
   }
 
-  private initializeMetrics(): SuperDynamicMetrics {
+  private initializeMetrics(): PAFVMetrics {
     return {
       averageReflowTime: 0,
       peakReflowTime: 0,
@@ -114,7 +149,7 @@ export class PAFVAxisService {
       }
 
       const rows = results[0];
-      this.availableAxes = rows.values.map((row: unknown) => {
+      this.availableAxes = rows.values.map((row: unknown[]) => {
         const [id, facet, latchDimension, , facetType, enabled, , nodeCount] = row;
 
         return {
@@ -452,7 +487,7 @@ export class PAFVAxisService {
   /**
    * Handle axis change from SuperDynamic drag-drop
    */
-  async handleAxisChange(event: AxisChangeEvent): Promise<void> {
+  async handleAxisChange(event: PAFVAxisChangeEvent): Promise<void> {
     const { oldMapping, newMapping, changedAxis, trigger } = event;
 
     // Update internal mapping
@@ -471,7 +506,7 @@ export class PAFVAxisService {
   }
 
   private convertToViewAxisMapping(
-    axisMapping: Record<'x' | 'y' | 'z', string | null>
+    axisMapping: Record<string, string | null>
   ): ViewAxisMapping {
     const result: ViewAxisMapping = {};
 
@@ -535,11 +570,16 @@ export class PAFVAxisService {
     this.metrics.interactionPatterns.averageSessionSwaps = sessionSwaps;
   }
 
-  private detectAxisSwap(oldMapping: unknown, newMapping: unknown): { from: string; to: string } | null {
+  private detectAxisSwap(
+    oldMapping: Record<string, string | null> | unknown,
+    newMapping: Record<string, string | null> | unknown
+  ): { from: string; to: string } | null {
     // Detect axis movement patterns for analytics
     // This is a simplified implementation
-    const oldAxes = Object.keys(oldMapping).filter(k => oldMapping[k]);
-    const newAxes = Object.keys(newMapping).filter(k => newMapping[k]);
+    const oldRecord = oldMapping as Record<string, unknown>;
+    const newRecord = newMapping as Record<string, unknown>;
+    const oldAxes = Object.keys(oldRecord).filter(k => oldRecord[k]);
+    const newAxes = Object.keys(newRecord).filter(k => newRecord[k]);
 
     if (oldAxes.length > 0 && newAxes.length > 0) {
       return { from: oldAxes[0], to: newAxes[0] };
@@ -565,7 +605,7 @@ export class PAFVAxisService {
         const now = Date.now();
 
         // Upsert view state
-        this.config.database.run(`
+        this.config.database!.run(`
           INSERT OR REPLACE INTO view_state (
             canvas_id,
             current_view,
@@ -619,7 +659,7 @@ export class PAFVAxisService {
   /**
    * Get performance metrics
    */
-  getMetrics(): SuperDynamicMetrics {
+  getMetrics(): PAFVMetrics {
     return { ...this.metrics };
   }
 
@@ -678,7 +718,7 @@ export class PAFVAxisService {
  * Factory function to create PAFVAxisService instance
  */
 export function createPAFVAxisService(
-  database: unknown,
+  database: SqlJsDatabase | null,
   canvasId: string,
   options: Partial<PAFVAxisServiceConfig> = {}
 ): PAFVAxisService {

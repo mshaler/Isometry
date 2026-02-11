@@ -306,10 +306,7 @@ class ErrorReportingService {
     this.listeners = [];
 
     // Remove global reference
-    interface WindowWithErrorReporting extends Window {
-      errorReporting?: unknown; // Use any to avoid interface compatibility issues
-    }
-    delete (window as WindowWithErrorReporting).errorReporting;
+    delete (window as unknown as Record<string, unknown>).errorReporting;
   }
 
   // User feedback methods

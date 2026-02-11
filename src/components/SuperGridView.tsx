@@ -21,7 +21,8 @@ import type { DensityChangeEvent } from '@/types/supergrid';
 import { createD3CoordinateSystem } from '@/utils/coordinate-system/coordinates';
 import { useFilteredNodes, useLiveQuery, usePAFV } from '@/hooks';
 import type { Node } from '@/types/node';
-import type { AxisMapping } from '@/types/pafv';
+import type { AxisMapping, PAFVState, LATCHAxis } from '@/types/pafv';
+import type { D3CoordinateSystem } from '@/types/grid';
 import type { OriginPattern } from '@/types/coordinates';
 import type { ZoomTransform } from '@/hooks/visualization/useD3Zoom';
 
@@ -73,7 +74,7 @@ function useDataSource(renderMode: string, sql: string) {
 }
 
 /** Extract current axis mappings from PAFV state */
-function useAxisMappings(pafvState: unknown) {
+function useAxisMappings(pafvState: PAFVState) {
   const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
   const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
 
@@ -153,10 +154,10 @@ function LegacyModeView({
   onZoomChange
 }: {
   nodes: Node[];
-  d3CoordinateSystem: unknown;
-  currentXAxis: string;
+  d3CoordinateSystem: D3CoordinateSystem;
+  currentXAxis: LATCHAxis | undefined;
   currentXFacet: string;
-  currentYAxis: string;
+  currentYAxis: LATCHAxis | undefined;
   currentYFacet: string;
   originPattern: OriginPattern;
   onCellClick: (node: Node) => void;
@@ -276,10 +277,10 @@ export function SuperGridView({
 
   const handleDensityChange = useCallback((event: DensityChangeEvent) => {
     const newDensity = {
-      extentMode: (event.newState.extentMode || event.newState.extentDensity || 'sparse') as 'sparse' | 'dense',
-      valueMode: (event.newState.valueMode || event.newState.valueDensity || 'leaf') as 'leaf' | 'rolled',
-      zoomLevel: event.newState.zoomLevel || 3,
-      panOffset: event.newState.panOffset || { x: 0, y: 0 }
+      extentMode: (event.newState.extentDensity || 'sparse') as 'sparse' | 'dense',
+      valueMode: (event.newState.valueDensity || 'leaf') as 'leaf' | 'rolled',
+      zoomLevel: 3,
+      panOffset: { x: 0, y: 0 }
     };
     setDensityConfig(newDensity);
   }, []);

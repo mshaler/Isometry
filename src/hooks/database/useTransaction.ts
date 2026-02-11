@@ -165,7 +165,7 @@ export function useTransaction(): UseTransactionResult {
           correlationId: scope.getCorrelationId()
         });
 
-        await scope.start(transactionId);
+        await scope.start(transactionId as string);
 
         // Execute operation with timeout
         const operationPromise = executeOperationWithContext(operation, scope);
@@ -285,26 +285,46 @@ async function executeOperationWithContext<T>(
 }
 
 /**
+ * Transaction message parameters
+ */
+interface TransactionMessageParams {
+  correlationId: string;
+  transactionId?: string;
+}
+
+/**
+ * Bridge transaction interface
+ */
+interface BridgeTransactionAPI {
+  beginTransaction: (correlationId: string) => Promise<string>;
+  commitTransaction: (transactionId: string) => Promise<void>;
+  rollbackTransaction: (transactionId: string) => Promise<void>;
+}
+
+/**
  * Send transaction message via WebView bridge
  */
-async function sendTransactionMessage(method: string, params: unknown): Promise<any> {
+async function sendTransactionMessage(method: string, params: TransactionMessageParams): Promise<unknown> {
   try {
     const correlationId = params.correlationId;
+    const bridge = webViewBridge.transaction as BridgeTransactionAPI | undefined;
 
     // Use the transaction-specific bridge methods
     switch (method) {
       case 'beginTransaction':
-        return await webViewBridge.transaction.beginTransaction(correlationId);
+        return bridge ? await bridge.beginTransaction(correlationId) : null;
 
       case 'commitTransaction':
-        return await webViewBridge.transaction.commitTransaction(params.transactionId);
+        return bridge && params.transactionId ? await bridge.commitTransaction(params.transactionId) : null;
 
       case 'rollbackTransaction':
-        return await webViewBridge.transaction.rollbackTransaction(params.transactionId);
+        return bridge && params.transactionId ? await bridge.rollbackTransaction(params.transactionId) : null;
 
       default:
         // Fallback to generic transaction message
-        return await webViewBridge.sendTransactionMessage({ method, params, correlationId });
+        return webViewBridge.sendTransactionMessage
+          ? await webViewBridge.sendTransactionMessage({ method, params, correlationId })
+          : null;
     }
 
   } catch (error) {

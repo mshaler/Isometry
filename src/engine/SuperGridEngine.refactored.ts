@@ -64,11 +64,11 @@ export interface InteractionContext {
 }
 
 export class SuperGridEngine {
-  private featureManager: FeatureManager;
-  private stateManager: StateManager;
+  private featureManager!: FeatureManager;
+  private stateManager!: StateManager;
   private config: SuperGridConfig;
   private eventHandlers: SuperGridEventHandlers;
-  private interactionContext: InteractionContext;
+  private interactionContext!: InteractionContext;
 
   constructor(
     config: Partial<SuperGridConfig> = {},
@@ -249,11 +249,15 @@ export class SuperGridEngine {
    * Import configuration and state
    */
   public importConfiguration(configuration: unknown): void {
-    if (configuration.features) {
-      this.featureManager.importConfiguration(configuration.features);
+    const config = configuration as Record<string, unknown>;
+    if (config.features) {
+      this.featureManager.importConfiguration(config.features as {
+        features: Partial<SuperFeatureFlags>;
+        configs: Partial<Record<string, unknown>>;
+      });
     }
-    if (configuration.state) {
-      this.stateManager.importState(configuration.state);
+    if (config.state) {
+      this.stateManager.importState(config.state);
     }
     this.logDebug('Configuration imported');
   }
@@ -413,10 +417,11 @@ export class SuperGridEngine {
    */
   private checkPerformanceThresholds(metrics: unknown): void {
     const thresholds = this.config.performanceThresholds;
+    const m = metrics as Record<string, number>;
 
-    if (metrics.renderTime > thresholds.renderTime ||
-        metrics.frameRate < thresholds.frameRate ||
-        metrics.memoryUsage > thresholds.memoryUsage) {
+    if (m.renderTime > thresholds.renderTime ||
+        m.frameRate < thresholds.frameRate ||
+        m.memoryUsage > thresholds.memoryUsage) {
       this.handlePerformanceWarning('engine', metrics);
     }
   }

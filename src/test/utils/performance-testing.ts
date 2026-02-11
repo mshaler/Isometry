@@ -226,11 +226,11 @@ export async function measureMemoryUsage(_provider: DatabaseMode, _config: Stres
 }
 
 function getGenericLatencyTarget(provider: DatabaseMode): number {
-  return provider === 'native' ? 10 : 50; // ms
+  return provider === DatabaseMode.WEBVIEW_BRIDGE ? 10 : 50; // ms
 }
 
 function getThroughputTarget(provider: DatabaseMode): number {
-  return provider === 'native' ? 1000 : 100; // ops/sec
+  return provider === DatabaseMode.WEBVIEW_BRIDGE ? 1000 : 100; // ops/sec
 }
 
 function analyzeRegressions(_current: PerformanceMetric[], _baseline: PerformanceMetric[]): RegressionAnalysis {

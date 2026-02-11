@@ -99,7 +99,7 @@ export class SuperDensityService {
         this.currentState.extentDensity = value as ExtentDensityMode;
         break;
       case 'view':
-        this.currentState.viewDensity = value;
+        this.currentState.viewDensity = value as string;
         break;
       case 'region':
         if (Array.isArray(value)) {
@@ -531,13 +531,13 @@ export class SuperDensityService {
   /**
    * Process raw SQL results into aggregated rows
    */
-  private processAggregationResults(rawResults: unknown[]): DensityAggregatedRow[] {
+  private processAggregationResults(rawResults: Record<string, unknown>[]): DensityAggregatedRow[] {
     return rawResults.map((row, index) => ({
       cellId: this.generateCellId(row, index),
       value: row.count || row.id || row.name,
       displayValue: this.formatDisplayValue(row),
-      sourceCount: row.count || 1,
-      sourceIds: row.id ? [row.id] : [],
+      sourceCount: (row.count as number) || 1,
+      sourceIds: row.id ? [String(row.id)] : [],
       aggregationFunction: this.currentState.aggregationPreferences.defaultFunction,
       dimensionPath: this.generateDimensionPath(row),
       isLeaf: this.currentState.valueDensity === 'leaf'
@@ -547,8 +547,8 @@ export class SuperDensityService {
   /**
    * Generate unique cell ID for aggregated row
    */
-  private generateCellId(row: unknown, index: number): string {
-    const keyParts = [];
+  private generateCellId(row: Record<string, unknown>, index: number): string {
+    const keyParts: string[] = [];
 
     for (const key of Object.keys(row)) {
       if (key !== 'count' && row[key] != null) {
@@ -564,9 +564,9 @@ export class SuperDensityService {
   /**
    * Format display value for aggregated row
    */
-  private formatDisplayValue(row: unknown): string {
+  private formatDisplayValue(row: Record<string, unknown>): string {
     if (this.currentState.valueDensity === 'leaf') {
-      return row.name || row.id || 'Untitled';
+      return String(row.name || row.id || 'Untitled');
     } else {
       const count = row.count || 1;
       const mainValue = Object.keys(row)
@@ -581,7 +581,7 @@ export class SuperDensityService {
   /**
    * Generate LATCH dimension path for row
    */
-  private generateDimensionPath(row: unknown): string {
+  private generateDimensionPath(row: Record<string, unknown>): string {
     const pathParts: string[] = [];
 
     // Extract dimension values based on aggregation columns

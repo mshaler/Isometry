@@ -6,7 +6,8 @@ import { useCallback } from 'react';
 import { SuperGrid } from '../d3/SuperGrid';
 import { LATCHFilterService } from '../services/query/LATCHFilterService';
 import { contextLogger } from '../utils/logging/dev-logger';
-import type { ViewAxisMapping, ProgressiveDisclosureState, JanusDensityState } from '../types';
+import type { ProgressiveDisclosureState, JanusDensityState } from '../types';
+import type { ViewAxisMapping } from '../types/views';
 import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 
 interface CallbackHookParams {
@@ -45,7 +46,7 @@ export function useDemoCallbacks({
 
   // Core SuperGrid callbacks
   const handleCardClick = useCallback((card: unknown) => {
-    trackFeatureUsage('card-click', { cardId: card.id });
+    trackFeatureUsage('card-click', { cardId: (card as Record<string, unknown>).id });
     setSelectedCard(card);
     setIsModalOpen(true);
   }, [trackFeatureUsage, setSelectedCard, setIsModalOpen]);

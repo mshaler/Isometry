@@ -103,7 +103,7 @@ export function SQLiteProvider({
     const initDatabase = async () => {
       try {
         if (enableLogging) {
-          devLogger.setup('SQLiteProvider: Starting initialization');
+          devLogger.setup('SQLiteProvider: Starting initialization', {});
         }
 
         // Initialize sql.js
@@ -130,7 +130,7 @@ export function SQLiteProvider({
             setTelemetry(telemetryErrors);
 
             // Start auto-save
-            autoSaveRef.current = new AutoSaveManager(database, persistence, 30000);
+            autoSaveRef.current = new AutoSaveManager(persistence);
 
             if (enableLogging) {
               devLogger.setup('Database loaded from IndexedDB', {
@@ -168,7 +168,7 @@ export function SQLiteProvider({
                   const schema = await schemaResponse.text();
                   database.exec(schema);
                   if (enableLogging) {
-                    devLogger.setup('Empty database created with schema');
+                    devLogger.setup('Empty database created with schema', {});
                   }
                 }
               } catch (schemaError) {
@@ -186,7 +186,7 @@ export function SQLiteProvider({
             setTelemetry(telemetryErrors);
 
             // Start auto-save
-            autoSaveRef.current = new AutoSaveManager(database, persistence, 30000);
+            autoSaveRef.current = new AutoSaveManager(persistence);
           }
         } catch (persistenceError) {
           devLogger.error('Persistence error, falling back to memory-only database', persistenceError);
@@ -199,7 +199,7 @@ export function SQLiteProvider({
               const schema = await schemaResponse.text();
               database.exec(schema);
               if (enableLogging) {
-                devLogger.setup('Schema loaded for memory-only database');
+                devLogger.setup('Schema loaded for memory-only database', {});
               }
             }
           } catch (schemaError) {
@@ -232,7 +232,7 @@ export function SQLiteProvider({
         setLoading(false);
 
         if (enableLogging) {
-          devLogger.setup('SQLiteProvider initialization complete');
+          devLogger.setup('SQLiteProvider initialization complete', {});
         }
       } catch (error) {
         const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -247,7 +247,7 @@ export function SQLiteProvider({
     // Cleanup
     return () => {
       if (autoSaveRef.current) {
-        autoSaveRef.current.stop();
+        autoSaveRef.current.cleanup();
       }
       if (db) {
         db.close();

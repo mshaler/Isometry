@@ -249,7 +249,7 @@ export const SuperAudit: React.FC<SuperAuditProps> = ({
                 {computedCells.slice(0, 10).map(cell => (
                   <div key={cell.id} className="super-audit__formula-item">
                     <code className="super-audit__formula">{cell.formula}</code>
-                    <span className="super-audit__formula-result">→ {cell.value}</span>
+                    <span className="super-audit__formula-result">→ {String(cell.value)}</span>
                   </div>
                 ))}
                 {computedCells.length > 10 && (
@@ -289,7 +289,7 @@ export const SuperAudit: React.FC<SuperAuditProps> = ({
                     <span className={`super-audit__crud-operation super-audit__crud-operation--${cell.crudOperation?.toLowerCase()}`}>
                       {cell.crudOperation}
                     </span>
-                    <span className="super-audit__crud-value">{cell.value}</span>
+                    <span className="super-audit__crud-value">{String(cell.value)}</span>
                     <span className="super-audit__crud-time">
                       {new Date(cell.lastModified).toLocaleTimeString()}
                     </span>

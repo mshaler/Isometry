@@ -68,7 +68,7 @@ export class ConnectionMonitor {
       this.updateLatency(latency);
       
     } catch (error) {
-      bridgeLogger.error('Heartbeat failed:', error);
+      bridgeLogger.error('Heartbeat failed', { error: error instanceof Error ? error.message : String(error) });
       this.updateConnectionFailure();
     }
   }

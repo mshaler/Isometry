@@ -474,7 +474,7 @@ export class SuperGridEngine extends EventEmitter {
     if (!this.gridDataCache) return;
 
     devLogger.render('SuperGridEngine advanced rendering', {
-      cellCount: this.gridDataCache.cells.length
+      cellCount: (this.gridDataCache as Record<string, unknown[]>).cells?.length ?? 0
     });
 
     await this.render();
@@ -492,7 +492,9 @@ export class SuperGridEngine extends EventEmitter {
     this.gridDataCache = gridData;
 
     // Convert GridData to engine format
-    this.currentCells = this.dataManager.convertGridDataToCells(gridData);
+    this.currentCells = this.dataManager.convertGridDataToCells(
+      gridData as Parameters<typeof this.dataManager.convertGridDataToCells>[0]
+    );
 
     // Update grid dimensions and header tree
     this.calculateGridDimensions();
@@ -507,12 +509,14 @@ export class SuperGridEngine extends EventEmitter {
    * Set callbacks (SuperGridV4 compatible)
    */
   setCallbacksV4(callbacks: unknown): void {
-    if (callbacks.onCellClick) {
+    const cb = callbacks as Record<string, ((...args: unknown[]) => void) | undefined>;
+    if (cb.onCellClick) {
       this.removeAllListeners('cellClick');
+      const onCellClick = cb.onCellClick;
       this.on('cellClick', (data) => {
         const { cell } = data;
         const position = { x: 0, y: 0 }; // Simplified for compatibility
-        callbacks.onCellClick(cell, position);
+        onCellClick(cell, position);
       });
     }
   }

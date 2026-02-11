@@ -39,16 +39,18 @@ import {
   Settings,
   Navigation
 } from 'lucide-react';
-import { SuperZoomCartographic } from '@/d3/SuperZoomCartographic';
-import { devLogger } from '@/utils/logging';
+import {
+  SuperZoomCartographic,
+} from '@/d3/SuperZoomCartographic';
 import type {
   CartographicConfig,
   CartographicState,
-  CartographicControlInterface,
   CartographicVisualFeedback,
+} from '@/d3/SuperZoomCartographic';
+import { devLogger } from '@/utils/logging';
+import type {
   JanusDensityState
 } from '@/types/supergrid';
-import { DEFAULT_CARTOGRAPHIC_CONFIG } from '@/types/supergrid';
 
 export interface SuperZoomProps {
   /** Container dimensions */
@@ -103,12 +105,12 @@ export function SuperZoom({
   showPerformanceMonitor = true,
   enableKeyboardShortcuts = true,
   className = '',
-  datasetId
+  datasetId: _datasetId
 }: SuperZoomProps) {
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const cartographicRef = useRef<CartographicControlInterface | null>(null);
+  const cartographicRef = useRef<SuperZoomCartographic | null>(null);
 
   // State
   const [currentState, setCurrentState] = useState<CartographicState | null>(null);
@@ -122,13 +124,11 @@ export function SuperZoom({
     grade: 'A'
   });
 
-  // Configuration with defaults
-  const fullConfig: CartographicConfig = {
-    ...DEFAULT_CARTOGRAPHIC_CONFIG,
+  // Configuration with overrides (constructor merges with defaults)
+  const fullConfig: Partial<CartographicConfig> = {
     ...config,
     gridDimensions: { width: gridWidth, height: gridHeight },
-    viewportDimensions: { width, height },
-    datasetId
+    viewportDimensions: { width, height }
   };
 
   /**
@@ -181,11 +181,8 @@ export function SuperZoom({
               }));
             }, 500);
           },
-          onAnimationToggle: (isAnimating) => {
-            setVisualFeedback(prev => ({
-              ...prev,
-              showPanGuides: isAnimating
-            }));
+          onAnimationToggle: (_isAnimating) => {
+            // Animation toggle feedback handled internally
           }
         }
       );
@@ -448,8 +445,8 @@ export function SuperZoom({
                     <Slider
                       value={[currentScale]}
                       onValueChange={([value]) => handleZoomToScale(value)}
-                      min={fullConfig.zoomExtent[0]}
-                      max={fullConfig.zoomExtent[1]}
+                      min={fullConfig.zoomExtent?.[0] ?? 0.1}
+                      max={fullConfig.zoomExtent?.[1] ?? 10}
                       step={0.1}
                       className="w-full"
                     />

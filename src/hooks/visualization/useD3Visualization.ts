@@ -18,7 +18,7 @@ export interface D3VisualizationState {
   directive: VisualizationDirective | null;
   isLoading: boolean;
   error: string | null;
-  parsedData: ParsedData | null;
+  parsedData: ParsedData[] | null;
 }
 
 export interface UseD3VisualizationReturn extends D3VisualizationState {
@@ -113,8 +113,8 @@ export function useD3Visualization(): UseD3VisualizationReturn {
       setState(prev => ({
         ...prev,
         data: parsedData as unknown as D3DataItem[],
-        vizType: finalConfig.type as any,
-        config: finalConfig,
+        vizType: finalConfig.type as VisualizationConfig['type'],
+        config: finalConfig as VisualizationConfig,
         directive,
         isLoading: false,
         error: null,

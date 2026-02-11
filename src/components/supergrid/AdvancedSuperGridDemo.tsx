@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import * as d3 from 'd3';
 import { SuperGrid } from '../../d3/SuperGrid';
 import { SuperSearch } from './SuperSearch';
 import { SuperAudit, type CellState, type AuditMode } from './SuperAudit';
 import { SuperCalc } from './SuperCalc';
 import { useDatabaseService, usePAFV } from '@/hooks';
-import type { GridConfig } from '../../types/grid';
+import type { GridConfig } from '../../types/grid-core';
 import type { FilterCompilationResult } from '../../services/query/LATCHFilterService';
 import { superGridLogger } from '@/utils/logging/dev-logger';
 
@@ -43,7 +44,7 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   useEffect(() => {
     if (!containerRef.current || !database) return;
 
-    const gridConfig: GridConfig = {
+    const gridConfig: Partial<GridConfig> = {
       columnsPerRow: 4,
       enableHeaders: true,
       enableColumnResizing: true,
@@ -51,18 +52,12 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
       enableCartographicZoom: true
     };
 
-    const callbacks = {
-      onCardClick: handleCardClick,
-      onSelectionChange: handleSelectionChange,
-      onCardUpdate: handleCardUpdate,
-      onHeaderClick: handleHeaderClick
-    };
-
+    const svgSelection = d3.select(containerRef.current) as unknown as
+      d3.Selection<SVGElement, unknown, null, undefined>;
     superGridRef.current = new SuperGrid(
-      containerRef.current,
+      svgSelection,
       database,
-      gridConfig,
-      callbacks
+      gridConfig
     );
 
     // Initial data load
@@ -132,29 +127,36 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
     generateCellStates();
   }, [gridData, generateCellStates]);
 
-  // SuperGrid event handlers
-  const handleCardClick = useCallback((card: unknown) => {
+  // SuperGrid event handlers (available for future callback registration)
+  const _handleCardClick = useCallback((card: unknown) => {
     superGridLogger.debug('Card clicked:', { card });
   }, []);
 
-  const handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
+  const _handleSelectionChange = useCallback((selectedIds: string[], focusedId: string | null) => {
     superGridLogger.debug('Selection changed:', { selectedIds, focusedId });
   }, []);
 
-  const handleCardUpdate = useCallback((card: unknown) => {
+  const _handleCardUpdate = useCallback((card: unknown) => {
     superGridLogger.debug('Card updated:', { card });
 
+    const cardRecord = card as Record<string, unknown>;
     // Update cell state to reflect CRUD operation
     setCellStates(prev => prev.map(cell =>
-      cell.id === card.id
-        ? { ...cell, type: 'crud_modified', crudOperation: 'UPDATE', lastModified: new Date().toISOString() }
+      cell.id === cardRecord.id
+        ? { ...cell, type: 'crud_modified' as const, crudOperation: 'UPDATE' as const, lastModified: new Date().toISOString() }
         : cell
     ));
   }, []);
 
-  const handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
+  const _handleHeaderClick = useCallback((axis: string, facet: string, value: unknown) => {
     superGridLogger.debug('Header clicked:', { axis, facet, value });
   }, []);
+
+  // Suppress unused variable warnings
+  void _handleCardClick;
+  void _handleSelectionChange;
+  void _handleCardUpdate;
+  void _handleHeaderClick;
 
   // SuperSearch handlers
   const handleSearch = useCallback((query: string) => {
@@ -252,12 +254,13 @@ export const AdvancedSuperGridDemo: React.FC<AdvancedSuperGridDemoProps> = ({
   const handleFormulaExecute = useCallback((formula: string, result: unknown) => {
     superGridLogger.debug('Formula executed:', { formula, result });
 
+    const resultRecord = result as Record<string, unknown>;
     // Add computed cells to audit tracking
-    if (result.type === 'table' || result.type === 'pivot') {
+    if (resultRecord.type === 'table' || resultRecord.type === 'pivot') {
       const newCellState: CellState = {
         id: `computed-${Date.now()}`,
         type: 'computed',
-        value: result.summary,
+        value: resultRecord.summary,
         formula: formula,
         lastModified: new Date().toISOString()
       };

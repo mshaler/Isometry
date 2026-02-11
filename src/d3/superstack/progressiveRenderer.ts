@@ -221,7 +221,7 @@ export class ProgressiveRenderer {
       .attr('y', 20)
       .attr('text-anchor', 'middle')
       .attr('font-size', '12px')
-      .text(d => d.label || d.facet);
+      .text(d => d.label || d.facet || '');
 
     // Update all nodes (enter + existing)
     const allNodes = enterGroups.merge(nodeGroups);

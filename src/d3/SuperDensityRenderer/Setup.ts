@@ -59,7 +59,13 @@ export class RendererSetup {
       .style('pointer-events', 'none')
       .style('opacity', 0);
 
-    return { svg, container, gridGroup, overlayGroup, tooltipDiv };
+    return {
+      svg,
+      container,
+      gridGroup,
+      overlayGroup,
+      tooltipDiv: tooltipDiv as unknown as d3.Selection<HTMLDivElement, unknown, null, undefined>
+    };
   }
 
   /**
@@ -130,8 +136,8 @@ export class RendererSetup {
    * Create tooltip
    */
   createTooltip(): d3.Selection<HTMLDivElement, unknown, null, undefined> {
-    return d3.select('body')
-      .append('div')
+    return (d3.select('body')
+      .append('div') as unknown as d3.Selection<HTMLDivElement, unknown, null, undefined>)
       .attr('class', 'super-density-tooltip')
       .style('position', 'absolute')
       .style('padding', '8px')

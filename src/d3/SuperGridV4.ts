@@ -172,7 +172,8 @@ export class SuperGridV4 {
   }
 
   private transformSQLToGridData(sqlResult: unknown, xField: string, yField: string): GridData {
-    const { columns, values } = sqlResult;
+    const sqlResultObj = sqlResult as { columns: string[]; values: unknown[][] };
+    const { columns, values } = sqlResultObj;
 
     // Map column indices
     const colIndices = {
@@ -187,57 +188,70 @@ export class SuperGridV4 {
 
     // Transform to cells array
     const cells: GridCell[] = values.map((row: unknown[]) => {
-      const cardIds = row[colIndices.cardIds]?.split(',') || [];
-      const cardNames = row[colIndices.cardNames]?.split('|') || [];
+      const cardIdsRaw = String(row[colIndices.cardIds] ?? '');
+      const cardNamesRaw = String(row[colIndices.cardNames] ?? '');
+      const cardIds = cardIdsRaw ? cardIdsRaw.split(',') : [];
+      const cardNames = cardNamesRaw ? cardNamesRaw.split('|') : [];
+
+      const xVal = row[colIndices.x];
+      const yVal = row[colIndices.y];
 
       return {
-        position: { x: row[colIndices.x], y: row[colIndices.y] },
-        value: row[colIndices.count] || 0,
-        nodeId: parseInt(cardIds[0]) || 0,
-        colPath: `${xField}/${row[colIndices.x]}`,
-        rowPath: `${yField}/${row[colIndices.y]}`,
+        position: { x: Number(xVal) || 0, y: Number(yVal) || 0 },
+        xValue: xVal,
+        yValue: yVal,
         cards: cardIds.map((id: string, i: number) => ({
           id: id.trim(),
           name: cardNames[i]?.trim() || `Card ${id}`,
           priority: row[colIndices.avgPriority] || 1,
           status: row[colIndices.status] || 'active'
         })),
-        x: row[colIndices.x],
-        y: row[colIndices.y]
-      } as GridCell;
+        count: cardIds.length,
+        isEmpty: cardIds.length === 0,
+        screenX: 0,
+        screenY: 0
+      } as unknown as GridCell;
     });
 
     // Build axis ranges
-    const xValues = [...new Set(values.map((row: unknown) => row[colIndices.x]))].sort();
-    const yValues = [...new Set(values.map((row: unknown) => row[colIndices.y]))].sort();
+    const xValues = [...new Set(values.map(
+      (row: unknown[]) => String(row[colIndices.x] ?? '')
+    ))].sort();
+    const yValues = [...new Set(values.map(
+      (row: unknown[]) => String(row[colIndices.y] ?? '')
+    ))].sort();
 
     const xAxisData: AxisData = {
-      label: xField,
-      accessor: xField,
+      axis: 'x',
+      field: xField,
       values: xValues,
-      type: 'x',
+      isComputed: false,
       range: { min: 0, max: xValues.length - 1, count: xValues.length }
     };
 
     const yAxisData: AxisData = {
-      label: yField,
-      accessor: yField,
+      axis: 'y',
+      field: yField,
       values: yValues,
-      type: 'y',
+      isComputed: false,
       range: { min: 0, max: yValues.length - 1, count: yValues.length }
     };
 
     return {
-      rows: [cells] as any,
+      cards: cells.flatMap(cell => cell.cards),
+      rows: [cells],
       columns: xAxisData,
       rowAxis: yAxisData,
       xAxis: xAxisData,
       yAxis: yAxisData,
       cells: cells,
+      totalWidth: 800,
+      totalHeight: 600,
+      lastUpdated: Date.now(),
       metadata: {
         totalCells: cells.length,
         filledCells: cells.filter(cell => cell.cards.length > 0).length,
-        density: cells.filter(cell => cell.cards.length > 0).length / cells.length
+        density: cells.filter(cell => cell.cards.length > 0).length / Math.max(cells.length, 1)
       }
     };
   }
@@ -259,7 +273,9 @@ export class SuperGridV4 {
         levels: [0, 1],
         nodeCount: Math.min(xValueDepth + yValueDepth, 10),
         pattern: 'temporal',
-        isRecommended: true
+        isRecommended: true,
+        isCollapsed: false,
+        hasComputedNodes: false
       });
 
       levelGroups.push({
@@ -268,7 +284,9 @@ export class SuperGridV4 {
         type: 'semantic',
         levels: [0, 1, 2, 3],
         nodeCount: xValueDepth + yValueDepth,
-        pattern: 'temporal'
+        pattern: 'temporal',
+        isCollapsed: false,
+        hasComputedNodes: false
       });
     }
 
@@ -282,7 +300,9 @@ export class SuperGridV4 {
         levels: [0, 1],
         nodeCount: Math.min(20, totalNodes),
         density: 0.3,
-        isRecommended: totalNodes > 100
+        isRecommended: totalNodes > 100,
+        isCollapsed: false,
+        hasComputedNodes: false
       });
 
       levelGroups.push({
@@ -291,7 +311,9 @@ export class SuperGridV4 {
         type: 'density',
         levels: [0, 1, 2, 3, 4],
         nodeCount: totalNodes,
-        density: 1.0
+        density: 1.0,
+        isCollapsed: false,
+        hasComputedNodes: false
       });
     }
 
@@ -337,7 +359,10 @@ export class SuperGridV4 {
     });
 
     // Calculate layout dimensions
-    const { cellWidth, cellHeight, headerWidth, headerHeight } = this.config;
+    const cellWidth = this.config.cellWidth ?? 200;
+    const cellHeight = this.config.cellHeight ?? 120;
+    const headerWidth = this.config.headerWidth ?? 120;
+    const headerHeight = this.config.headerHeight ?? 40;
     const { xAxis, yAxis, cells } = this.currentData;
 
     if (!xAxis || !yAxis || !cells) {
@@ -349,22 +374,26 @@ export class SuperGridV4 {
     this.renderHeaders(xAxis, yAxis);
 
     // Render cells with proper data binding
+    type CellRecord = Record<string, unknown>;
     const cellGroups = this.cellsGroup
-      .selectAll<SVGGElement, GridCell>('.cell')
-      .data(cells || [], (d: unknown) => d.id); // Key function for proper data binding
+      .selectAll<SVGGElement, CellRecord>('.cell')
+      .data(
+        (cells || []) as unknown as CellRecord[],
+        (d: CellRecord) => String(d.position ?? d.xValue ?? '')
+      );
 
     // Enter + Update pattern
     const cellEnter = cellGroups
       .enter()
       .append('g')
       .attr('class', 'cell')
-      .attr('transform', (d: unknown) => {
+      .attr('transform', (d: CellRecord) => {
         const xAxisData = Array.isArray(xAxis) ? xAxis[0] : xAxis;
         const yAxisData = Array.isArray(yAxis) ? yAxis[0] : yAxis;
         const xValues = xAxisData?.values || [];
         const yValues = yAxisData?.values || [];
-        const x = xValues.indexOf(d.x) * cellWidth + headerWidth;
-        const y = yValues.indexOf(d.y) * cellHeight + headerHeight;
+        const x = xValues.indexOf(String(d.xValue ?? '')) * cellWidth + headerWidth;
+        const y = yValues.indexOf(String(d.yValue ?? '')) * cellHeight + headerHeight;
         return `translate(${x}, ${y})`;
       });
 
@@ -374,7 +403,7 @@ export class SuperGridV4 {
       .attr('width', cellWidth - 2)
       .attr('height', cellHeight - 2)
       .attr('rx', 4)
-      .attr('fill', d => this.getCellColor(d))
+      .attr('fill', (d: CellRecord) => this.getCellColor(d as unknown as GridCell))
       .attr('stroke', '#e2e8f0')
       .attr('stroke-width', 1);
 
@@ -388,16 +417,16 @@ export class SuperGridV4 {
       .attr('font-size', '12px')
       .attr('font-weight', 'bold')
       .attr('fill', '#1f2937')
-      .text(d => d.cards.length);
+      .text((d: CellRecord) => ((d.cards as unknown[]) || []).length);
 
     // Update existing cells
     cellGroups
       .select('rect')
-      .attr('fill', d => this.getCellColor(d));
+      .attr('fill', (d: CellRecord) => this.getCellColor(d as unknown as GridCell));
 
     cellGroups
       .select('text')
-      .text(d => d.cards.length);
+      .text((d: CellRecord) => ((d.cards as unknown[]) || []).length);
 
     // Remove exited cells
     cellGroups.exit().remove();
@@ -415,7 +444,10 @@ export class SuperGridV4 {
 
   private renderHeaders(xAxis: AxisData | AxisData[] | undefined, yAxis: AxisData | AxisData[] | undefined): void {
     if (!xAxis || !yAxis) return;
-    const { cellWidth, cellHeight, headerWidth, headerHeight } = this.config;
+    const cellWidth = this.config.cellWidth ?? 200;
+    const cellHeight = this.config.cellHeight ?? 120;
+    const headerWidth = this.config.headerWidth ?? 120;
+    const headerHeight = this.config.headerHeight ?? 40;
 
     // Clear existing headers
     this.headerGroup.selectAll('*').remove();
@@ -489,24 +521,32 @@ export class SuperGridV4 {
     this.cellsGroup
       .selectAll('.cell')
       .on('click', (_event: unknown, d: unknown) => {
+        const cellRecord = d as Record<string, unknown>;
         const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
         const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
         const xValues = xAxisData?.values || [];
         const yValues = yAxisData?.values || [];
+        const xIdx = xValues.indexOf(String(cellRecord.xValue ?? ''));
+        const yIdx = yValues.indexOf(String(cellRecord.yValue ?? ''));
         const position: GridPosition = {
-          x: xValues.indexOf(d.x),
-          y: yValues.indexOf(d.y)
+          cell: { x: xIdx, y: yIdx },
+          x: xIdx,
+          y: yIdx
         };
         this.callbacks.onCellClick?.(d as GridCell, position);
       })
       .on('mouseenter', (_event: unknown, d: unknown) => {
+        const cellRecord = d as Record<string, unknown>;
         const xAxisData = Array.isArray(this.currentData?.xAxis) ? this.currentData.xAxis[0] : this.currentData?.xAxis;
         const yAxisData = Array.isArray(this.currentData?.yAxis) ? this.currentData.yAxis[0] : this.currentData?.yAxis;
         const xValues = xAxisData?.values || [];
         const yValues = yAxisData?.values || [];
+        const xIdx = xValues.indexOf(String(cellRecord.xValue ?? ''));
+        const yIdx = yValues.indexOf(String(cellRecord.yValue ?? ''));
         const position: GridPosition = {
-          x: xValues.indexOf(d.x),
-          y: yValues.indexOf(d.y)
+          cell: { x: xIdx, y: yIdx },
+          x: xIdx,
+          y: yIdx
         };
         this.callbacks.onCellHover?.(d as GridCell, position);
       })

@@ -5,7 +5,7 @@
  * Displays context-aware actions based on current session state.
  */
 
-import { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import {
   PlayCircle,
   Square,
@@ -45,18 +45,19 @@ const QUICK_ACTION_COMMANDS = [
   '/commit'
 ];
 
-const COMMAND_ICONS: Record<string, unknown> = {
-  '/start': PlayCircle,
-  '/continue': Play,
-  '/abort': Square,
-  '/restart': RefreshCw,
-  '/pause': Pause,
-  '/resume': Play,
-  '/spec': FileText,
-  '/plan': Layout,
-  '/implement': Code,
-  '/test': CheckCircle,
-  '/commit': GitCommit
+type IconComponent = React.ComponentType<{ size?: number; className?: string }>;
+const COMMAND_ICONS: Record<string, IconComponent> = {
+  '/start': PlayCircle as unknown as IconComponent,
+  '/continue': Play as unknown as IconComponent,
+  '/abort': Square as unknown as IconComponent,
+  '/restart': RefreshCw as unknown as IconComponent,
+  '/pause': Pause as unknown as IconComponent,
+  '/resume': Play as unknown as IconComponent,
+  '/spec': FileText as unknown as IconComponent,
+  '/plan': Layout as unknown as IconComponent,
+  '/implement': Code as unknown as IconComponent,
+  '/test': CheckCircle as unknown as IconComponent,
+  '/commit': GitCommit as unknown as IconComponent
 };
 
 export function QuickActions({

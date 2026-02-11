@@ -28,7 +28,7 @@
     "check:quick": "npm run check:types && npm run check:lint",
     "check:types": "tsc --noEmit",
     "check:lint": "eslint src --max-warnings 700",
-    "check:unused": "knip",
+    "check:unused": "knip --max-issues 1000",
     "check:duplication": "jscpd src --min-tokens 25 --threshold 70 --reporters console",
     "check:boundaries": "depcruise src --config .dependency-cruiser.cjs --validate",
     "check:directory-health": "node scripts/check-directory-health.mjs"

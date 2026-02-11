@@ -124,12 +124,12 @@ export class HeaderAnimationSystem {
     if (parentElement.empty()) return;
 
     // Calculate new span width based on visible children
-    const children = hierarchy.getChildren(parentNode.id);
-    const visibleChildren = children.filter(child =>
+    const children = parentNode.children || [];
+    const visibleChildren = children.filter((child: HeaderNode) =>
       this.isNodeVisible(child, hierarchy)
     );
 
-    const totalChildWidth = visibleChildren.reduce((sum, child) => sum + child.width, 0);
+    const totalChildWidth = visibleChildren.reduce((sum: number, child: HeaderNode) => sum + child.width, 0);
     const newSpanWidth = Math.max(parentNode.width, totalChildWidth);
 
     parentElement
@@ -201,7 +201,7 @@ export class HeaderAnimationSystem {
    */
   private getChildNodesRecursive(parentNode: HeaderNode, hierarchy: HeaderHierarchy): HeaderNode[] {
     const children: HeaderNode[] = [];
-    const directChildren = hierarchy.getChildren(parentNode.id);
+    const directChildren = parentNode.children || [];
 
     for (const child of directChildren) {
       children.push(child);
@@ -221,7 +221,7 @@ export class HeaderAnimationSystem {
 
     let currentNode = node;
     while (currentNode.parentId) {
-      const parent = hierarchy.getNode(currentNode.parentId);
+      const parent = hierarchy.allNodes.find(n => n.id === currentNode.parentId);
       if (!parent || !parent.isExpanded) {
         return false;
       }

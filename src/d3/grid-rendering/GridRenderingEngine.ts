@@ -6,7 +6,13 @@
  */
 
 import * as d3 from 'd3';
-import type { GridData, AxisData } from '../../types/grid';
+import type {
+  GridData,
+} from '../../types/grid-core';
+import type {
+  PAFVProjection,
+  GridHeaders,
+} from '../../types/grid';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
@@ -38,6 +44,8 @@ export class GridRenderingEngine {
 
   // Current rendering state
   private currentData: GridData | null = null;
+  private currentProjection: PAFVProjection | null = null;
+  private currentHeaders: GridHeaders | null = null;
   private isHeadersInitialized = false;
 
   constructor(
@@ -74,6 +82,157 @@ export class GridRenderingEngine {
   }
 
   /**
+   * Set PAFV projection for axis-based layout
+   * This will be used in Plan 56-02 for position computation
+   */
+  public setProjection(projection: PAFVProjection | null): void {
+    this.currentProjection = projection;
+    superGridLogger.debug('GridRenderingEngine: projection set', {
+      xAxis: projection?.xAxis?.facet || 'none',
+      yAxis: projection?.yAxis?.facet || 'none',
+    });
+  }
+
+  /**
+   * Get current projection
+   */
+  public getProjection(): PAFVProjection | null {
+    return this.currentProjection;
+  }
+
+  /**
+   * Get current computed headers
+   */
+  public getHeaders(): GridHeaders | null {
+    return this.currentHeaders;
+  }
+
+  /**
+   * Generate column and row headers from card data and projection
+   */
+  private generateProjectionHeaders(cards: unknown[]): GridHeaders {
+    if (!this.currentProjection) {
+      return { columns: [], rows: [] };
+    }
+
+    const xFacet = this.currentProjection.xAxis?.facet;
+    const yFacet = this.currentProjection.yAxis?.facet;
+
+    // Extract unique X-axis values
+    const columns: string[] = xFacet
+      ? [
+          ...new Set(
+            cards
+              .map((c) => (c as Record<string, unknown>)[xFacet])
+              .filter((v) => v != null)
+              .map((v) => String(v))
+          ),
+        ].sort()
+      : [];
+
+    // Extract unique Y-axis values
+    const rows: string[] = yFacet
+      ? [
+          ...new Set(
+            cards
+              .map((c) => (c as Record<string, unknown>)[yFacet])
+              .filter((v) => v != null)
+              .map((v) => String(v))
+          ),
+        ].sort()
+      : [];
+
+    // Add "Unassigned" bucket if there are cards with null values
+    if (
+      xFacet &&
+      cards.some((c) => (c as Record<string, unknown>)[xFacet] == null)
+    ) {
+      columns.push('Unassigned');
+    }
+    if (
+      yFacet &&
+      cards.some((c) => (c as Record<string, unknown>)[yFacet] == null)
+    ) {
+      rows.push('Unassigned');
+    }
+
+    superGridLogger.debug('Generated projection headers:', {
+      columns: columns.length,
+      rows: rows.length,
+    });
+
+    return { columns, rows };
+  }
+
+  /**
+   * Compute cell position for a card based on projection
+   */
+  private computeCellPosition(
+    card: unknown,
+    headers: GridHeaders
+  ): { row: number; col: number } {
+    if (!this.currentProjection) {
+      return { row: -1, col: -1 };
+    }
+
+    const xFacet = this.currentProjection.xAxis?.facet;
+    const yFacet = this.currentProjection.yAxis?.facet;
+    const cardRecord = card as Record<string, unknown>;
+
+    // Get X position
+    let col = -1;
+    if (xFacet) {
+      const xValue = cardRecord[xFacet];
+      col =
+        xValue != null
+          ? headers.columns.indexOf(String(xValue))
+          : headers.columns.indexOf('Unassigned');
+    }
+
+    // Get Y position
+    let row = -1;
+    if (yFacet) {
+      const yValue = cardRecord[yFacet];
+      row =
+        yValue != null
+          ? headers.rows.indexOf(String(yValue))
+          : headers.rows.indexOf('Unassigned');
+    }
+
+    return { row, col };
+  }
+
+  /**
+   * Compute positions for all cards based on projection
+   */
+  private computeAllPositions(cards: unknown[]): void {
+    if (!this.currentProjection) {
+      return;
+    }
+
+    // Generate headers from unique values
+    this.currentHeaders = this.generateProjectionHeaders(cards);
+
+    // Compute position for each card
+    cards.forEach((card) => {
+      const pos = this.computeCellPosition(card, this.currentHeaders!);
+      const cardRecord = card as Record<string, unknown>;
+      cardRecord._projectedRow = pos.row;
+      cardRecord._projectedCol = pos.col;
+    });
+
+    superGridLogger.debug('Computed positions for cards:', {
+      total: cards.length,
+      withPosition: cards.filter((c) => {
+        const r = c as Record<string, unknown>;
+        return (
+          (r._projectedRow as number) >= 0 || (r._projectedCol as number) >= 0
+        );
+      }).length,
+    });
+  }
+
+  /**
    * Main render method
    */
   public render(activeFilters: unknown[] = []): void {
@@ -84,9 +243,17 @@ export class GridRenderingEngine {
       return;
     }
 
+    // Compute positions from projection
+    if (this.currentProjection && this.currentData.cards) {
+      this.computeAllPositions(this.currentData.cards);
+    }
+
     this.updateGridLayout();
 
-    if (this.config.enableHeaders) {
+    // Use projection headers if available, else fallback
+    if (this.currentProjection && this.currentHeaders) {
+      this.renderProjectionHeaders();
+    } else if (this.config.enableHeaders) {
       this.renderHierarchicalHeaders(activeFilters);
     } else {
       this.renderSimpleFallbackHeader();
@@ -108,15 +275,14 @@ export class GridRenderingEngine {
   /**
    * Initialize header system with database service
    */
-  public initializeHeaders(database: unknown): void {
+  public initializeHeaders(_database: unknown): void {
     if (this.config.enableHeaders && !this.isHeadersInitialized) {
-      this.superGridHeaders = new SuperGridHeaders(
-        this.container.select('.headers'),
-        this.headerLayoutService
-      );
-
-      if (database) {
-        this.superGridHeaders.setDatabase(database);
+      const headerNode = this.container.select('.headers').node() as SVGElement | null;
+      if (headerNode) {
+        this.superGridHeaders = new SuperGridHeaders(
+          headerNode,
+          this.headerLayoutService
+        );
       }
 
       this.isHeadersInitialized = true;
@@ -167,13 +333,10 @@ export class GridRenderingEngine {
    * Cleanup rendering resources
    */
   public destroy(): void {
-    if (this.superGridHeaders) {
-      this.superGridHeaders.clear();
-      this.superGridHeaders = null;
-    }
+    this.superGridHeaders = null;
 
     if (this.headerLayoutService) {
-      this.headerLayoutService.clear();
+      this.headerLayoutService.clearCache();
     }
 
     this.container.selectAll('*').remove();
@@ -186,7 +349,9 @@ export class GridRenderingEngine {
   private getGridWidth(): number {
     if (!this.currentData || !this.currentData.cards.length) return 800; // Default width
 
-    const maxX = Math.max(...this.currentData.cards.map(card => card.x || 0));
+    const maxX = Math.max(...this.currentData.cards.map(
+      card => ((card as Record<string, unknown>).x as number) || 0
+    ));
     return maxX + this.config.cardWidth + this.config.padding * 2;
   }
 
@@ -210,18 +375,30 @@ export class GridRenderingEngine {
   private updateGridLayout(): void {
     if (!this.currentData) return;
 
-    // Calculate positions for cards if they don't have them
-    const cardsPerRow = Math.floor((this.getGridWidth() - this.config.padding) /
-                                  (this.config.cardWidth + this.config.padding));
+    // If we have projection and headers, use 2D grid layout
+    if (this.currentProjection && this.currentHeaders) {
+      this.updateProjectedGridLayout();
+      return;
+    }
 
-    this.currentData.cards.forEach((card, index) => {
-      if (card.x === undefined || card.y === undefined) {
+    // Calculate positions for cards if they don't have them
+    const cardsPerRow = Math.floor(
+      (this.getGridWidth() - this.config.padding) /
+        (this.config.cardWidth + this.config.padding)
+    );
+
+    this.currentData.cards?.forEach((card: unknown, index: number) => {
+      const cardRecord = card as Record<string, unknown>;
+      if (cardRecord.x === undefined || cardRecord.y === undefined) {
         const row = Math.floor(index / cardsPerRow);
         const col = index % cardsPerRow;
 
-        card.x = this.config.padding + col * (this.config.cardWidth + this.config.padding);
-        card.y = this.config.headerHeight + this.config.padding +
-                 row * (this.config.cardHeight + this.config.padding);
+        cardRecord.x =
+          this.config.padding + col * (this.config.cardWidth + this.config.padding);
+        cardRecord.y =
+          this.config.headerHeight +
+          this.config.padding +
+          row * (this.config.cardHeight + this.config.padding);
       }
     });
 
@@ -230,6 +407,136 @@ export class GridRenderingEngine {
     if (this.callbacks.onGridResize) {
       this.callbacks.onGridResize(dimensions.width, dimensions.height);
     }
+  }
+
+  /**
+   * Update layout using projection-computed positions
+   */
+  private updateProjectedGridLayout(): void {
+    if (!this.currentData?.cards || !this.currentHeaders) return;
+
+    const headerOffset = this.config.headerHeight + this.config.padding;
+    const rowHeaderWidth = 120; // Width for row labels
+
+    this.currentData.cards.forEach((card: unknown) => {
+      const cardRecord = card as Record<string, unknown>;
+      const row = cardRecord._projectedRow as number;
+      const col = cardRecord._projectedCol as number;
+
+      // Calculate position in grid
+      if (col >= 0) {
+        cardRecord.x =
+          rowHeaderWidth +
+          this.config.padding +
+          col * (this.config.cardWidth + this.config.padding);
+      }
+      if (row >= 0) {
+        cardRecord.y =
+          headerOffset + row * (this.config.cardHeight + this.config.padding);
+      }
+    });
+
+    // Update grid dimensions
+    const numCols = this.currentHeaders.columns.length || 1;
+    const numRows = this.currentHeaders.rows.length || 1;
+
+    const gridWidth =
+      rowHeaderWidth +
+      numCols * (this.config.cardWidth + this.config.padding) +
+      this.config.padding;
+    const gridHeight =
+      headerOffset +
+      numRows * (this.config.cardHeight + this.config.padding) +
+      this.config.padding;
+
+    if (this.callbacks.onGridResize) {
+      this.callbacks.onGridResize(gridWidth, gridHeight);
+    }
+
+    superGridLogger.debug('Projected grid layout:', {
+      columns: numCols,
+      rows: numRows,
+      gridWidth,
+      gridHeight,
+    });
+  }
+
+  /**
+   * Render headers from projection (column + row labels)
+   */
+  private renderProjectionHeaders(): void {
+    if (!this.currentHeaders) return;
+
+    const headerContainer = this.container.select('.headers');
+    headerContainer.selectAll('*').remove();
+
+    const rowHeaderWidth = 120;
+    const { columns, rows } = this.currentHeaders;
+    const config = this.config;
+
+    // Render column headers
+    headerContainer
+      .selectAll<SVGGElement, string>('.col-header')
+      .data(columns)
+      .join('g')
+      .attr('class', 'col-header')
+      .attr(
+        'transform',
+        (_, i) =>
+          `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`
+      )
+      .each(function (d) {
+        const g = d3.select(this);
+        g.selectAll('*').remove();
+        g.append('rect')
+          .attr('width', config.cardWidth)
+          .attr('height', config.headerHeight)
+          .attr('fill', '#f0f0f0')
+          .attr('stroke', '#ddd')
+          .attr('rx', 4);
+        g.append('text')
+          .attr('x', config.cardWidth / 2)
+          .attr('y', config.headerHeight / 2 + 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '12px')
+          .attr('fill', '#333')
+          .text(d);
+      });
+
+    // Render row headers
+    const headerOffset = config.headerHeight + config.padding;
+    headerContainer
+      .selectAll<SVGGElement, string>('.row-header')
+      .data(rows)
+      .join('g')
+      .attr('class', 'row-header')
+      .attr(
+        'transform',
+        (_, i) =>
+          `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`
+      )
+      .each(function (d) {
+        const g = d3.select(this);
+        g.selectAll('*').remove();
+        g.append('rect')
+          .attr('width', rowHeaderWidth - 4)
+          .attr('height', config.cardHeight)
+          .attr('fill', '#f5f5f5')
+          .attr('stroke', '#ddd')
+          .attr('rx', 4);
+        g.append('text')
+          .attr('x', (rowHeaderWidth - 4) / 2)
+          .attr('y', config.cardHeight / 2 + 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px')
+          .attr('fill', '#666')
+          .text(d);
+      });
+
+    superGridLogger.debug('Rendered projection headers:', {
+      columns: columns.length,
+      rows: rows.length,
+    });
   }
 
   /**
@@ -261,15 +568,16 @@ export class GridRenderingEngine {
 
     try {
       // Generate headers from current data
-      const headerData = this.generateHeaders(this.currentData.cards);
-
-      if (headerData.length > 0 && this.superGridHeaders) {
-        const hierarchy = this.headerLayoutService.buildHierarchy(headerData);
-        this.superGridHeaders.renderHeaders(hierarchy);
+      if (this.superGridHeaders && this.currentData.cards.length > 0) {
+        this.superGridHeaders.renderHeaders(
+          this.currentData.cards,
+          'x',
+          'status',
+          this.getGridWidth()
+        );
 
         superGridLogger.debug('Headers rendered', {
-          headerCount: headerData.length,
-          maxDepth: hierarchy.maxDepth
+          cardCount: this.currentData.cards.length
         });
       } else {
         this.renderSimpleFallbackHeader();
@@ -300,33 +608,12 @@ export class GridRenderingEngine {
       .attr('font-family', 'system-ui, sans-serif')
       .attr('font-size', '14px')
       .attr('fill', '#333')
-      .text(`${this.currentData?.cards.length || 0} cards`);
+      .text(`${this.currentData?.cards?.length || 0} cards`);
 
     superGridLogger.debug('Fallback header rendered');
   }
 
-  /**
-   * Generate headers from card data
-   */
-  private generateHeaders(cards: unknown[]): AxisData[] {
-    if (!this.config.enableHeaders) return [];
-
-    // Group cards by status for header generation
-    const groups: { [key: string]: unknown[] } = {};
-    cards.forEach(card => {
-      const status = card.status || 'Unknown';
-      if (!groups[status]) groups[status] = [];
-      groups[status].push(card);
-    });
-
-    // Convert groups to header data
-    return Object.entries(groups).map(([status, statusCards]) => ({
-      facet: 'status',
-      value: status,
-      count: statusCards.length,
-      cards: statusCards
-    }));
-  }
+  // generateAxisData removed - header generation delegated to SuperGridHeaders.renderHeaders
 
   /**
    * Render grid cards
@@ -339,18 +626,25 @@ export class GridRenderingEngine {
       return;
     }
 
+    type CardRecord = Record<string, unknown>;
+
     // Use D3's data join pattern
     const cardSelection = cardContainer
-      .selectAll('.card')
-      .data(this.currentData.cards, (d: unknown) => d.id);
+      .selectAll<SVGGElement, CardRecord>('.card')
+      .data(
+        this.currentData.cards as CardRecord[],
+        (d: CardRecord) => String(d.id)
+      );
 
     // Enter new cards
     const cardEnter = cardSelection
       .enter()
       .append('g')
       .attr('class', 'card')
-      .attr('data-card-id', d => d.id)
-      .attr('transform', d => `translate(${d.x || 0}, ${d.y || 0})`);
+      .attr('data-card-id', (d: CardRecord) => String(d.id))
+      .attr('transform', (d: CardRecord) =>
+        `translate(${(d.x as number) || 0}, ${(d.y as number) || 0})`
+      );
 
     // Add card background
     cardEnter
@@ -371,7 +665,9 @@ export class GridRenderingEngine {
       .attr('font-size', '14px')
       .attr('font-weight', '500')
       .attr('fill', '#1a1a1a')
-      .text(d => d.title || d.name || `Card ${d.id}`);
+      .text((d: CardRecord) =>
+        String(d.title || d.name || `Card ${d.id}`)
+      );
 
     // Add card content
     cardEnter
@@ -381,11 +677,15 @@ export class GridRenderingEngine {
       .attr('font-family', 'system-ui, sans-serif')
       .attr('font-size', '12px')
       .attr('fill', '#666')
-      .text(d => d.description || d.content || '');
+      .text((d: CardRecord) =>
+        String(d.description || d.content || '')
+      );
 
     // Update existing cards
     const cardUpdate = cardSelection
-      .attr('transform', d => `translate(${d.x || 0}, ${d.y || 0})`);
+      .attr('transform', (d: CardRecord) =>
+        `translate(${(d.x as number) || 0}, ${(d.y as number) || 0})`
+      );
 
     // Remove old cards
     cardSelection

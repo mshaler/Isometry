@@ -309,7 +309,8 @@ export class SyncQueue {
         jitter: this.retryConfig.jitter,
         retry: (error: unknown, _attemptNumber: number) => {
           // Don't retry for client errors (4xx)
-          if (error?.status >= 400 && error?.status < 500) {
+          const status = (error as Record<string, unknown> | null)?.status;
+          if (typeof status === 'number' && status >= 400 && status < 500) {
             return false
           }
 

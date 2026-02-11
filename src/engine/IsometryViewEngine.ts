@@ -333,10 +333,12 @@ export class IsometryViewEngine implements ViewEngine {
 
   private projectionsEqual(a: unknown, b: unknown): boolean {
     // Simple comparison - could be enhanced with deep comparison
+    const projA = a as Record<string, Record<string, unknown> | undefined>;
+    const projB = b as Record<string, Record<string, unknown> | undefined>;
     return (
-      a.x?.axis === b.x?.axis && a.x?.facet === b.x?.facet &&
-      a.y?.axis === b.y?.axis && a.y?.facet === b.y?.facet &&
-      a.color?.axis === b.color?.axis && a.color?.facet === b.color?.facet
+      projA.x?.axis === projB.x?.axis && projA.x?.facet === projB.x?.facet &&
+      projA.y?.axis === projB.y?.axis && projA.y?.facet === projB.y?.facet &&
+      projA.color?.axis === projB.color?.axis && projA.color?.facet === projB.color?.facet
     );
   }
 

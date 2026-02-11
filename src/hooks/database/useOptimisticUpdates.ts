@@ -130,25 +130,27 @@ export function useOptimisticUpdates<T = any>(
     for (const op of operations) {
       switch (op.type) {
         case 'create':
-          result.push(op.optimisticData);
+          result.push(op.optimisticData as T);
           break;
 
         case 'update':
           if (op.primaryKey !== undefined) {
-            const index = result.findIndex((item: unknown) =>
-              item.id === op.primaryKey || item[op.table + '_id'] === op.primaryKey
-            );
+            const index = result.findIndex((item) => {
+              const record = item as Record<string, unknown>;
+              return record.id === op.primaryKey || record[op.table + '_id'] === op.primaryKey;
+            });
             if (index >= 0) {
-              result[index] = { ...result[index], ...op.optimisticData };
+              result[index] = { ...result[index], ...(op.optimisticData as Record<string, unknown>) } as T;
             }
           }
           break;
 
         case 'delete':
           if (op.primaryKey !== undefined) {
-            result = result.filter((item: unknown) =>
-              item.id !== op.primaryKey && item[op.table + '_id'] !== op.primaryKey
-            );
+            result = result.filter((item) => {
+              const record = item as Record<string, unknown>;
+              return record.id !== op.primaryKey && record[op.table + '_id'] !== op.primaryKey;
+            });
           }
           break;
 
@@ -419,15 +421,15 @@ export function useOptimisticUpdates<T = any>(
     if (liveQuery.error) {
       setOptimisticState(prev => ({
         ...prev,
-        lastError: liveQuery.error
+        lastError: liveQuery.error?.message ?? null
       }));
     }
   }, [liveQuery.error]);
 
   return {
     data: optimisticState.hasOptimisticChanges ? optimisticState.optimisticData : liveQuery.data,
-    loading: liveQuery.loading || optimisticState.rollbackInProgress,
-    error: optimisticState.lastError || liveQuery.error,
+    loading: liveQuery.isLoading || optimisticState.rollbackInProgress,
+    error: optimisticState.lastError || (liveQuery.error?.message ?? null),
     hasOptimisticChanges: optimisticState.hasOptimisticChanges,
     rollbackInProgress: optimisticState.rollbackInProgress,
     applyOptimisticUpdate,
@@ -457,8 +459,9 @@ export function useOptimisticCrud<T = any>(
         const columns = Object.keys(data).join(', ');
         const placeholders = Object.keys(data).map(() => '?').join(', ');
         const values = Object.values(data);
+        const bridge = webViewBridge.database as { execute: (sql: string, params: unknown[]) => Promise<unknown> };
 
-        return webViewBridge.database.execute(
+        return bridge.execute(
           `INSERT INTO ${tableName} (${columns}) VALUES (${placeholders})`,
           values
         );
@@ -476,8 +479,9 @@ export function useOptimisticCrud<T = any>(
       actualOperation: async () => {
         const setPairs = Object.keys(data).map(key => `${key} = ?`).join(', ');
         const values = [...Object.values(data), id];
+        const bridge = webViewBridge.database as { execute: (sql: string, params: unknown[]) => Promise<unknown> };
 
-        return webViewBridge.database.execute(
+        return bridge.execute(
           `UPDATE ${tableName} SET ${setPairs} WHERE id = ?`,
           values
         );
@@ -493,7 +497,8 @@ export function useOptimisticCrud<T = any>(
       primaryKey: id,
       optimisticData: null,
       actualOperation: async () => {
-        return webViewBridge.database.execute(
+        const bridge = webViewBridge.database as { execute: (sql: string, params: unknown[]) => Promise<unknown> };
+        return bridge.execute(
           `DELETE FROM ${tableName} WHERE id = ?`,
           [id]
         );

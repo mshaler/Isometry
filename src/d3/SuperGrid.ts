@@ -10,10 +10,11 @@
 
 import * as d3 from 'd3';
 import type { useDatabaseService } from '@/hooks';
-import type { GridData, GridConfig } from '../types/grid';
+import type { GridData, GridConfig } from '../types/grid-core';
+import type { PAFVProjection } from '../types/grid';
 import type { FilterCompilationResult } from '../services/query/LATCHFilterService';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
-import type { CardPosition } from '../types/views';
+// CardPosition from views.ts has additional fields (width, height); drag operations use simplified position
 import { superGridLogger } from '../utils/dev-logger';
 
 // Import extracted modules
@@ -24,14 +25,15 @@ import { GridRenderingEngine, type RenderingConfig, type RenderingCallbacks } fr
 export class SuperGrid {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
   private database: ReturnType<typeof useDatabaseService>;
-  private config: GridConfig;
+  private config: Partial<GridConfig>;
   private currentData: GridData | null = null;
+  private currentProjection: PAFVProjection | null = null;
 
   // Extracted module instances
-  private selectionController: GridSelectionController;
-  private dragDropController: GridDragDropController;
-  private renderingEngine: GridRenderingEngine;
-  private superGridZoom: SuperGridZoom;
+  private selectionController!: GridSelectionController;
+  private dragDropController!: GridDragDropController;
+  private renderingEngine!: GridRenderingEngine;
+  private superGridZoom!: SuperGridZoom;
 
   // Grid dimensions
   private readonly cardWidth = 220;
@@ -71,9 +73,9 @@ export class SuperGrid {
   private initializeModules(): void {
     // Selection controller configuration
     const selectionConfig: SelectionControllerConfig = {
-      enableKeyboardNavigation: this.config.enableKeyboardNavigation,
-      enableMultiSelect: this.config.enableSelection,
-      selectionMode: this.config.selectionMode
+      enableKeyboardNavigation: this.config.enableKeyboardNavigation ?? true,
+      enableMultiSelect: this.config.enableSelection ?? true,
+      selectionMode: this.config.selectionMode ?? 'multi'
     };
 
     const selectionCallbacks: SelectionCallbackHandlers = {
@@ -90,7 +92,7 @@ export class SuperGrid {
 
     // Drag and drop controller configuration
     const dragDropConfig: DragDropConfig = {
-      enableDragDrop: this.config.enableDragDrop,
+      enableDragDrop: this.config.enableDragDrop ?? true,
       snapToGrid: true,
       gridSnapSize: 10,
       enableMultiCardDrag: true,
@@ -119,7 +121,7 @@ export class SuperGrid {
       cardHeight: this.cardHeight,
       padding: this.padding,
       headerHeight: this.headerHeight,
-      enableHeaders: this.config.enableHeaders,
+      enableHeaders: this.config.enableHeaders ?? true,
       enableAnimations: true,
       animationDuration: 300
     };
@@ -144,10 +146,14 @@ export class SuperGrid {
    * Setup zoom and density control system
    */
   private setupZoomSystem(): void {
-    this.superGridZoom = new SuperGridZoom(this.container, {
+    const containerNode = this.container.node();
+    if (!containerNode) {
+      throw new Error('SuperGrid: container has no DOM node');
+    }
+    this.superGridZoom = new SuperGridZoom(containerNode, {}, {
       onZoomChange: (level) => this.handleZoomChange(level),
       onPanChange: (level) => this.handlePanChange(level),
-      onJanusStateChange: (state) => this.handleJanusStateChange(state)
+      onStateChange: (state) => this.handleJanusStateChange(state)
     });
 
     // Restore saved zoom/pan state
@@ -159,49 +165,54 @@ export class SuperGrid {
    */
   public query(filterCompilationResult?: FilterCompilationResult): void {
     try {
+      const db = this.database.getRawDatabase();
+      if (!db) {
+        superGridLogger.error('Grid query failed: database not available');
+        this.currentData = this.createEmptyGridData();
+        this.updateModulesWithData();
+        return;
+      }
+
       if (filterCompilationResult && !filterCompilationResult.isEmpty) {
         const sql = `
           SELECT DISTINCT n.*
           FROM nodes n
-          ${filterCompilationResult.joins}
-          ${filterCompilationResult.whereClause}
-          ${filterCompilationResult.orderClause}
-          ${filterCompilationResult.limitClause}
+          WHERE ${filterCompilationResult.whereClause}
         `;
 
-        const result = this.database.getDatabase().exec(sql, filterCompilationResult.parameters);
+        const result = db.exec(sql, filterCompilationResult.parameters as (string | number | null | Uint8Array)[]);
 
         if (result.length > 0) {
-          const cards = result[0].values.map((row: unknown[]) => {
+          const cards = result[0].values.map((row) => {
             const columns = result[0].columns;
-            const card: unknown = {};
+            const card: Record<string, unknown> = {};
             columns.forEach((col, index) => {
               card[col] = row[index];
             });
             return card;
           });
 
-          this.currentData = { cards };
+          this.currentData = this.createGridDataWithCards(cards);
         } else {
-          this.currentData = { cards: [] };
+          this.currentData = this.createEmptyGridData();
         }
       } else {
         // Fetch all nodes
-        const result = this.database.getDatabase().exec('SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY created_at DESC');
+        const result = db.exec('SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY created_at DESC');
 
         if (result.length > 0) {
-          const cards = result[0].values.map((row: unknown[]) => {
+          const cards = result[0].values.map((row) => {
             const columns = result[0].columns;
-            const card: unknown = {};
+            const card: Record<string, unknown> = {};
             columns.forEach((col, index) => {
               card[col] = row[index];
             });
             return card;
           });
 
-          this.currentData = { cards };
+          this.currentData = this.createGridDataWithCards(cards);
         } else {
-          this.currentData = { cards: [] };
+          this.currentData = this.createEmptyGridData();
         }
       }
 
@@ -210,9 +221,61 @@ export class SuperGrid {
 
     } catch (error) {
       superGridLogger.error('Grid query failed:', error);
-      this.currentData = { cards: [] };
+      this.currentData = this.createEmptyGridData();
       this.updateModulesWithData();
     }
+  }
+
+  private createEmptyGridData(): GridData {
+    return {
+      cards: [],
+      xAxis: { axis: 'x', field: '', values: [], isComputed: false },
+      yAxis: { axis: 'y', field: '', values: [], isComputed: false },
+      totalWidth: 800,
+      totalHeight: 600,
+      lastUpdated: Date.now()
+    };
+  }
+
+  private createGridDataWithCards(cards: unknown[]): GridData {
+    return {
+      cards,
+      xAxis: { axis: 'x', field: '', values: [], isComputed: false },
+      yAxis: { axis: 'y', field: '', values: [], isComputed: false },
+      totalWidth: 800,
+      totalHeight: 600,
+      lastUpdated: Date.now()
+    };
+  }
+
+  /**
+   * Set PAFV projection configuration
+   * Updates how cards are positioned based on axis mappings
+   */
+  public setProjection(projection: PAFVProjection | null): void {
+    const hasChanged =
+      JSON.stringify(this.currentProjection) !== JSON.stringify(projection);
+    this.currentProjection = projection;
+
+    if (hasChanged) {
+      superGridLogger.debug('PAFV projection updated:', {
+        xAxis: projection?.xAxis?.facet || 'none',
+        yAxis: projection?.yAxis?.facet || 'none',
+      });
+
+      // Re-render with new projection if we have data
+      if (this.currentData) {
+        this.updateModulesWithData();
+        this.render();
+      }
+    }
+  }
+
+  /**
+   * Get current PAFV projection
+   */
+  public getProjection(): PAFVProjection | null {
+    return this.currentProjection;
   }
 
   /**
@@ -242,7 +305,7 @@ export class SuperGrid {
     this.selectionController.focus();
   }
 
-  public getCardPositions(): Map<string, CardPosition> {
+  public getCardPositions(): Map<string, { x: number; y: number; cardId: string }> {
     return this.dragDropController.getCardPositions();
   }
 
@@ -252,7 +315,7 @@ export class SuperGrid {
 
   public updateCards(cards: unknown[]): void {
     if (this.currentData) {
-      this.currentData.cards = cards;
+      this.currentData = { ...this.currentData, cards };
       this.updateModulesWithData();
     }
   }
@@ -268,11 +331,11 @@ export class SuperGrid {
   }
 
   public getJanusState(): JanusState {
-    return this.superGridZoom.getJanusState();
+    return this.superGridZoom.getState();
   }
 
   public restoreJanusState(state: JanusState): void {
-    this.superGridZoom.restoreJanusState(state);
+    this.superGridZoom.restoreState(state);
   }
 
   public getCurrentZoomLevel(): ZoomLevel {
@@ -284,7 +347,7 @@ export class SuperGrid {
   }
 
   public resetZoomPan(): void {
-    this.superGridZoom.resetZoomPan();
+    this.superGridZoom.reset();
   }
 
   public refresh(): void {
@@ -293,7 +356,7 @@ export class SuperGrid {
 
   public getStats(): unknown {
     return {
-      cardCount: this.currentData?.cards.length || 0,
+      cardCount: this.currentData?.cards?.length || 0,
       selectedCount: this.selectionController.getSelection().selectedIds.length
     };
   }
@@ -320,7 +383,13 @@ export class SuperGrid {
     if (this.currentData) {
       this.selectionController.setGridData(this.currentData);
       this.dragDropController.setGridData(this.currentData);
-      this.renderingEngine.setGridData(this.currentData);
+      // GridRenderingEngine uses GridData from grid-core (same structural type)
+      this.renderingEngine.setGridData(this.currentData as Parameters<typeof this.renderingEngine.setGridData>[0]);
+
+      // Pass projection to rendering engine
+      if (this.currentProjection) {
+        this.renderingEngine.setProjection(this.currentProjection);
+      }
     }
   }
 
@@ -345,19 +414,19 @@ export class SuperGrid {
     // Focus change handling if needed
   }
 
-  private handleDragStart(_cardId: string, _position: CardPosition): void {
+  private handleDragStart(_cardId: string, _position: { x: number; y: number; cardId: string }): void {
     // Drag start handling
   }
 
-  private handleDragMove(_cardId: string, _position: CardPosition): void {
+  private handleDragMove(_cardId: string, _position: { x: number; y: number; cardId: string }): void {
     // Drag move handling
   }
 
-  private handleDragEnd(_cardId: string, _position: CardPosition): void {
+  private handleDragEnd(_cardId: string, _position: { x: number; y: number; cardId: string }): void {
     // Drag end handling
   }
 
-  private handlePositionUpdate(_cardId: string, _position: CardPosition): void {
+  private handlePositionUpdate(_cardId: string, _position: { x: number; y: number; cardId: string }): void {
     // Position update handling
   }
 
@@ -365,7 +434,8 @@ export class SuperGrid {
     // Header click handling
   }
 
-  private handleCardRender(selection: unknown): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private handleCardRender(selection: d3.Selection<any, any, any, any>): void {
     // Apply drag behavior to rendered cards
     this.dragDropController.applyDragBehavior(selection);
   }
@@ -396,7 +466,7 @@ export class SuperGrid {
       const savedStateStr = localStorage.getItem('supergrid-janus-state');
       if (savedStateStr) {
         const savedState = JSON.parse(savedStateStr) as JanusState;
-        this.superGridZoom.restoreJanusState(savedState);
+        this.superGridZoom.restoreState(savedState);
       }
     } catch (error) {
       superGridLogger.warn('Failed to restore Janus state:', error);

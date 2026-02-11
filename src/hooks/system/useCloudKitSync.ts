@@ -220,20 +220,22 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
 
     // Progress updates during sync
     const handleProgressUpdate = (event: unknown) => {
+      const e = event as { progress: number };
       setSyncStatus(prev => ({
         ...prev,
-        syncProgress: event.progress
+        syncProgress: e.progress
       }));
     };
 
     // Sync completion events
     const handleSyncComplete = (event: unknown) => {
+      const e = event as { lastSyncAt: Date | null; pendingChanges: number; conflictCount: number };
       setSyncStatus(prev => ({
         ...prev,
         syncProgress: 1.0,
-        lastSync: event.lastSyncAt,
-        pendingChanges: event.pendingChanges,
-        conflictCount: event.conflictCount
+        lastSync: e.lastSyncAt,
+        pendingChanges: e.pendingChanges,
+        conflictCount: e.conflictCount
       }));
 
       setIsSyncing(false);
@@ -241,7 +243,8 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
 
     // Sync error events
     const handleSyncError = (event: unknown) => {
-      setError(event.error);
+      const e = event as { error: string };
+      setError(e.error);
       setIsSyncing(false);
     };
 
@@ -253,7 +256,8 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
 
     // Conflict events
     const handleConflictDetected = (event: unknown) => {
-      setConflicts(prev => [...prev, event.conflict]);
+      const e = event as { conflict: ConflictEvent };
+      setConflicts(prev => [...prev, e.conflict]);
       setSyncStatus(prev => ({
         ...prev,
         conflictCount: prev.conflictCount + 1
@@ -261,7 +265,8 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
     };
 
     const handleConflictResolved = (event: unknown) => {
-      setConflicts(prev => prev.filter(c => c.id !== event.conflictId));
+      const e = event as { conflictId: string };
+      setConflicts(prev => prev.filter(c => c.id !== e.conflictId));
       setSyncStatus(prev => ({
         ...prev,
         conflictCount: Math.max(0, prev.conflictCount - 1)
@@ -270,9 +275,10 @@ export function useCloudKitSync(options: CloudKitSyncOptions = {}): CloudKitSync
 
     // Connection status events
     const handleConnectionChange = (event: unknown) => {
+      const e = event as { isConnected: boolean };
       setSyncStatus(prev => ({
         ...prev,
-        isConnected: event.isConnected
+        isConnected: e.isConnected
       }));
     };
 

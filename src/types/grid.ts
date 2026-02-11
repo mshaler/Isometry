@@ -69,6 +69,9 @@ export interface HeaderNode {
   parentId?: string;
   data?: unknown;
 
+  /** Facet identifier for semantic grouping (e.g., 'year', 'category') */
+  facet?: string;
+
   // Layout properties
   x: number;
   y: number;
@@ -106,6 +109,11 @@ export interface HeaderHierarchy {
   collapsedSubtrees?: Set<string>;
   config?: unknown;
   lastUpdated?: number;
+
+  // Helper methods for node lookup (optional -- implemented by concrete classes)
+  getNode?: (nodeId: string) => HeaderNode | undefined;
+  getChildren?: (nodeId: string) => HeaderNode[];
+  getAllNodes?: () => HeaderNode[];
 }
 
 // Content alignment enum
@@ -179,6 +187,12 @@ export interface ResizeHandleConfig {
   minWidth: number;
   maxWidth: number;
   snap: boolean;
+  /** Width of the resize handle zone in pixels */
+  handleWidth?: number;
+  /** Cursor style when hovering the resize handle */
+  cursor?: string;
+  /** Enable smooth resizing with requestAnimationFrame */
+  enableSmoothing?: boolean;
 }
 
 /**
@@ -242,6 +256,8 @@ export interface CellData {
   rowKey: string;
   colKey: string;
   isEmpty: boolean;
+  /** Current density level for Janus density model (0-4 scale) */
+  densityLevel?: number;
 }
 
 /**
@@ -266,6 +282,12 @@ export interface DensityMorphConfig {
     singleCard: number;
     multiCard: number;
     aggregate: number;
+    /** Card count threshold: sparse -> group transition */
+    sparseToGroup: number;
+    /** Card count threshold: group -> rollup transition */
+    groupToRollup: number;
+    /** Card count threshold: rollup -> collapse transition */
+    rollupToCollapse: number;
   };
   transitions: {
     duration: number;
@@ -276,6 +298,14 @@ export interface DensityMorphConfig {
     minOpacity: number;
     maxOpacity: number;
     borderRadius: number;
+    /** Maximum number of cards visible in a stack */
+    cardStackMaxVisible: number;
+    /** Pixel offset between stacked cards */
+    cardStackOffset: number;
+    /** Maximum badge size for count display */
+    countBadgeMaxSize: number;
+    /** Minimum badge size for count display */
+    countBadgeMinSize: number;
   };
 }
 
@@ -286,7 +316,10 @@ export const DEFAULT_DENSITY_CONFIG: DensityMorphConfig = {
   thresholds: {
     singleCard: 1,
     multiCard: 5,
-    aggregate: 20
+    aggregate: 20,
+    sparseToGroup: 5,
+    groupToRollup: 15,
+    rollupToCollapse: 50
   },
   transitions: {
     duration: 300,
@@ -296,7 +329,11 @@ export const DEFAULT_DENSITY_CONFIG: DensityMorphConfig = {
   visual: {
     minOpacity: 0.3,
     maxOpacity: 1.0,
-    borderRadius: 4
+    borderRadius: 4,
+    cardStackMaxVisible: 4,
+    cardStackOffset: 4,
+    countBadgeMaxSize: 32,
+    countBadgeMinSize: 16
   }
 };
 
@@ -309,6 +346,16 @@ export interface CellTransitionState {
   toMode: string;
   progress: number;
   isAnimating: boolean;
+  /** Whether a density transition is in progress */
+  isTransitioning?: boolean;
+  /** Source density level for transition */
+  fromDensity?: number;
+  /** Target density level for transition */
+  toDensity?: number;
+  /** Easing function name */
+  easing?: string;
+  /** Transition duration in ms */
+  duration?: number;
 }
 
 // ============================================================================
@@ -358,3 +405,64 @@ export const DEFAULT_GRID_LAYOUT: GridLayoutConfig = {
     threshold: 100
   }
 };
+
+// ============================================================================
+// PAFV Projection types for axis-based grid layout
+// ============================================================================
+
+import type { LATCHAxis, Plane } from './pafv';
+
+/**
+ * Single axis configuration from PAFV mapping
+ */
+export interface AxisProjection {
+  axis: LATCHAxis;
+  facet: string; // Column name in database (e.g., 'created_at', 'folder')
+}
+
+/**
+ * Complete PAFV projection configuration for SuperGrid
+ * Defines which facets map to which visual planes
+ */
+export interface PAFVProjection {
+  xAxis: AxisProjection | null; // Column headers
+  yAxis: AxisProjection | null; // Row headers
+  colorAxis?: AxisProjection | null; // Future: color encoding
+}
+
+/**
+ * Cell position computed from PAFV projection
+ */
+export interface ProjectedCellPosition {
+  row: number; // Y-axis index (-1 = unassigned)
+  col: number; // X-axis index (-1 = unassigned)
+  rowValue: string | null; // Actual facet value for row
+  colValue: string | null; // Actual facet value for column
+}
+
+/**
+ * Generated headers from unique facet values
+ */
+export interface GridHeaders {
+  columns: string[]; // Unique X-axis values
+  rows: string[]; // Unique Y-axis values
+}
+
+/**
+ * Convert AxisMapping array to PAFVProjection
+ */
+export function mappingsToProjection(
+  mappings: Array<{ plane: Plane; axis: LATCHAxis; facet: string }>
+): PAFVProjection {
+  const xMapping = mappings.find((m) => m.plane === 'x');
+  const yMapping = mappings.find((m) => m.plane === 'y');
+  const colorMapping = mappings.find((m) => m.plane === 'color');
+
+  return {
+    xAxis: xMapping ? { axis: xMapping.axis, facet: xMapping.facet } : null,
+    yAxis: yMapping ? { axis: yMapping.axis, facet: yMapping.facet } : null,
+    colorAxis: colorMapping
+      ? { axis: colorMapping.axis, facet: colorMapping.facet }
+      : null,
+  };
+}

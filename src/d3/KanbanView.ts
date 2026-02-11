@@ -70,16 +70,11 @@ export class KanbanView implements ViewRenderer {
 
     for (const item of flattenedCards) {
       positions.set(item.card.id, {
+        cardId: item.card.id,
         x: item.x,
         y: item.y,
         width: this.config.cardWidth,
-        height: this.config.cardHeight,
-        zIndex: 1,
-        metadata: {
-          columnIndex: item.columnIndex,
-          cardIndex: item.cardIndex,
-          view: 'kanban'
-        }
+        height: this.config.cardHeight
       });
     }
 
@@ -88,7 +83,7 @@ export class KanbanView implements ViewRenderer {
   }
 
   scrollToCard(cardId: string): void {
-    d3Logger.interaction('KanbanView.scrollToCard()', { cardId });
+    d3Logger.debug('KanbanView.scrollToCard()', { cardId });
 
     const cardElement = this.contentGroup.select(`[data-card-id="${cardId}"]`);
     if (cardElement.empty()) {
@@ -110,7 +105,7 @@ export class KanbanView implements ViewRenderer {
   }
 
   destroy(): void {
-    d3Logger.lifecycle('KanbanView.destroy()');
+    d3Logger.setup('KanbanView.destroy()', {});
 
     // Remove all event listeners and D3 selections
     this.contentGroup.selectAll('*').remove();

@@ -6,20 +6,23 @@ import type { Database } from 'sql.js-fts5';
 import type { CacheOptions } from '../types/service-types';
 
 export class DatabaseCacheService {
-  private cache = new Map<string, { data: unknown; timestamp: number }>;
+  private cache = new Map<string, { data: unknown; timestamp: number }>();
 
-  constructor(private db: Database) {}
+  // Database reference kept for future cache invalidation on schema changes
+  constructor(_db: Database) {
+    void _db;
+  }
 
   get(key: string): unknown {
     const entry = this.cache.get(key);
     if (!entry) return null;
-    
+
     // Check TTL
     if (Date.now() - entry.timestamp > 300000) { // 5 minutes default
       this.cache.delete(key);
       return null;
     }
-    
+
     return entry.data;
   }
 

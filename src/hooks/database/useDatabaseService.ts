@@ -308,9 +308,10 @@ export function useDatabaseService() {
 
         // Convert results to Record<string, number>
         const columnWidths: Record<string, number> = {};
-        results.forEach((row: unknown) => {
-          const columnId = row.column_id as string;
-          const width = row.width as number;
+        results.forEach((row) => {
+          const record = row as Record<string, unknown>;
+          const columnId = record.column_id as string;
+          const width = record.width as number;
 
           // Validate loaded width
           if (typeof width === 'number' && width >= 0 && width <= 2000) {
@@ -340,12 +341,13 @@ export function useDatabaseService() {
           )
         `);
 
+        const stateRecord = state as Record<string, unknown>;
         // Upsert state
         run(`
           INSERT OR REPLACE INTO progressive_state (
             dataset_id, app_context, visible_levels, current_tab, last_updated
           ) VALUES (?, ?, ?, ?, datetime('now'))
-        `, [datasetId, appContext, JSON.stringify(state.visibleLevels), state.currentTab]);
+        `, [datasetId, appContext, JSON.stringify(stateRecord.visibleLevels), stateRecord.currentTab]);
 
         return { success: true };
       } catch (error) {
@@ -389,12 +391,13 @@ export function useDatabaseService() {
           )
         `);
 
+        const visibilityRecord = levelVisibility as Record<string, unknown>;
         // Upsert visibility state
         run(`
           INSERT OR REPLACE INTO level_visibility (
             dataset_id, app_context, visible_levels, last_updated
           ) VALUES (?, ?, ?, datetime('now'))
-        `, [datasetId, appContext, JSON.stringify(levelVisibility.visibleLevels)]);
+        `, [datasetId, appContext, JSON.stringify(visibilityRecord.visibleLevels)]);
 
         return { success: true };
       } catch (error) {

@@ -144,7 +144,7 @@ export function GraphAnalyticsDebugPanel({
   }, []);
 
   // Chart data for trends
-  const chartData = useMemo(() => {
+  const chartData = useMemo((): Record<string, { label: string; values: number[]; color: string }> => {
     if (!graphMetrics.performance) return {};
 
     return {

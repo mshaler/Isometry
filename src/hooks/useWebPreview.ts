@@ -58,7 +58,7 @@ export function useWebPreview(): WebPreview {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }));
     }
   }, []);

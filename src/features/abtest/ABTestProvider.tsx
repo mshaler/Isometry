@@ -29,8 +29,8 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
   enableAnalytics: _enableAnalytics = true
 }) => {
   const [tests, setTests] = useState<ABTest[]>([]);
-  useState(false); // isLoading - placeholder for future use
-  useState<Error>(); // error - placeholder for future use
+  const [isLoading] = useState(false);
+  const [error] = useState<Error | undefined>(undefined);
 
   // Core operations
   const createTest = useCallback(async (config: ABTestConfiguration): Promise<ABTest> => {
@@ -45,7 +45,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
     };
     
     setTests(prev => [...prev, newTest]);
-    devLogger.info('Created A/B test:', newTest.id);
+    devLogger.info('Created A/B test', { action: newTest.id });
     
     return newTest;
   }, []);
@@ -56,7 +56,7 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
         ? { ...test, status: 'active', startedAt: new Date() }
         : test
     ));
-    devLogger.info('Started A/B test:', testId);
+    devLogger.info('Started A/B test', { action: testId });
   }, []);
 
   const stopTest = useCallback(async (testId: string) => {
@@ -65,12 +65,12 @@ export const ABTestProvider: React.FC<ABTestProviderProps> = ({
         ? { ...test, status: 'stopped', stoppedAt: new Date() }
         : test
     ));
-    devLogger.info('Stopped A/B test:', testId);
+    devLogger.info('Stopped A/B test', { action: testId });
   }, []);
 
   const deleteTest = useCallback(async (testId: string) => {
     setTests(prev => prev.filter(test => test.id !== testId));
-    devLogger.info('Deleted A/B test:', testId);
+    devLogger.info('Deleted A/B test', { action: testId });
   }, []);
 
   // User assignment

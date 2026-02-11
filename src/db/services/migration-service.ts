@@ -6,7 +6,10 @@ import type { Database } from 'sql.js-fts5';
 import type { MigrationOptions } from '../types/service-types';
 
 export class DatabaseMigrationService {
-  constructor(private db: Database) {}
+  // Database reference kept for future migration execution
+  constructor(_db: Database) {
+    void _db;
+  }
 
   async migrate(_options?: MigrationOptions): Promise<void> {
     // Migration logic would go here

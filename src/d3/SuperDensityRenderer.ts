@@ -5,6 +5,19 @@
  * in the SuperDensityRenderer/ directory for better maintainability.
  */
 
-// Re-export everything from the modular implementation
-export * from './SuperDensityRenderer';
-export { SuperDensityRenderer as default } from './SuperDensityRenderer';
+// Re-export from the modular implementation
+// Named re-exports for types
+export type {
+  DensityRenderConfig,
+  DensityVisualState,
+  DensityAggregationResult,
+  DensityAggregatedRow,
+  JanusDensityState,
+  RenderTiming,
+  RendererComponents,
+  RendererScales
+} from './SuperDensityRenderer/index';
+
+// Import and re-export the class as named export only
+import { SuperDensityRenderer } from './SuperDensityRenderer/index';
+export { SuperDensityRenderer };

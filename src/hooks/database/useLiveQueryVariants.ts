@@ -63,7 +63,7 @@ export function useLiveQueryOptimized<T = unknown>(
     debounceMs: 50, // Faster updates
     staleTime: 1 * 60 * 1000, // 1 minute
     gcTime: 5 * 60 * 1000, // 5 minutes
-    invalidationStrategy: 'aggressive'
+    invalidationStrategy: 'graph-wide'
   });
 }
 

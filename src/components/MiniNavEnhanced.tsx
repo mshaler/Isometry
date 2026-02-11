@@ -19,10 +19,9 @@ import type { CoordinateSystem, OriginPattern } from '../types/coordinates';
 import type { ViewAxisMapping } from '../types/views';
 import { ViewType } from '../types/views';
 import type { PAFVState } from '../types/pafv';
-import type { SuperDynamicConfig } from '../types/supergrid';
 import { useDragDrop } from '../hooks/ui/useDragDrop';
-import { createSuperDynamicEngine, DEFAULT_SUPERDYNAMIC_CONFIG } from '../d3/SuperDynamic';
-import { createPAFVAxisService } from '../services/supergrid/PAFVAxisService';
+import { createSuperDynamicEngine, type SuperDynamicEngine, DEFAULT_SUPERDYNAMIC_CONFIG } from '../d3/SuperDynamic';
+import { createPAFVAxisService, PAFVAxisService } from '../services/supergrid/PAFVAxisService';
 import ViewSwitcher from './ViewSwitcher';
 import OriginPatternSelector from './OriginPatternSelector';
 import ZoomControls from './ZoomControls';
@@ -98,7 +97,7 @@ export function MiniNavEnhanced({
   onReflowComplete
 }: MiniNavEnhancedProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const superDynamicEngine = useRef<SuperDynamicD3Engine | null>(null);
+  const superDynamicEngine = useRef<SuperDynamicEngine | null>(null);
   const axisService = useRef<PAFVAxisService | null>(null);
 
   const [availableAxes, setAvailableAxes] = useState<AvailableAxis[]>([]);
@@ -146,7 +145,7 @@ export function MiniNavEnhanced({
     if (!containerRef.current || !database) return;
 
     // Initialize PAFV Axis Service
-    axisService.current = createPAFVAxisService(database, canvasId, {
+    axisService.current = createPAFVAxisService(database as Parameters<typeof createPAFVAxisService>[0], canvasId, {
       enableMetrics: true,
       persistenceDelay: 500
     });
@@ -160,10 +159,17 @@ export function MiniNavEnhanced({
         axisMapping.zAxis?.facet
       ].filter(Boolean));
 
-      const mappedAxes = axes.map((axis: unknown) => ({
-        ...axis,
-        isInUse: assignedFacets.has(axis.facet)
-      }));
+      const mappedAxes: AvailableAxis[] = axes.map((axis) => {
+        const axisRecord = axis as unknown as Record<string, unknown>;
+        return {
+          id: String(axisRecord.id ?? ''),
+          facet: String(axisRecord.facet ?? ''),
+          label: String(axisRecord.label ?? ''),
+          description: String(axisRecord.description ?? ''),
+          latchDimension: String(axisRecord.latchDimension ?? ''),
+          isInUse: assignedFacets.has(String(axisRecord.facet ?? ''))
+        };
+      });
 
       setAvailableAxes(mappedAxes);
     };
@@ -180,18 +186,9 @@ export function MiniNavEnhanced({
     // Initialize SuperDynamic engine
     const dynamicContainer = containerRef.current.querySelector('.superdynamic-container');
     if (dynamicContainer) {
-      const config: SuperDynamicConfig = {
-        ...DEFAULT_SUPERDYNAMIC_CONFIG,
-        axisSlots: {
-          x: { x: axisSlots[0].position.x, y: axisSlots[0].position.y, width: 160, height: 50 },
-          y: { x: axisSlots[1].position.x, y: axisSlots[1].position.y, width: 160, height: 50 },
-          z: { x: axisSlots[2].position.x, y: axisSlots[2].position.y, width: 160, height: 50 }
-        }
-      };
-
       superDynamicEngine.current = createSuperDynamicEngine(
         dynamicContainer as HTMLElement,
-        config
+        DEFAULT_SUPERDYNAMIC_CONFIG
       );
 
       // Set up event handlers

@@ -1,4 +1,3 @@
-// TODO: Fix network monitoring types - file needs comprehensive type definitions
 /**
  * Network-Aware Sync Hook
  *
@@ -11,36 +10,54 @@ import {
   NetworkMonitor,
   getNetworkMonitor,
   ConnectionQuality,
-  NetworkQuality,
   NetworkChangeEvent,
-  QualityConfigMap
 } from '../../services/system/networkMonitor';
 import { useBackgroundSync } from './useBackgroundSync'
 import { useCleanupEffect } from '../../utils/memoryManagement'
+
+/**
+ * Local quality-keyed config map for network-aware sync.
+ * Maps high/medium/low quality levels to a typed value.
+ */
+interface LocalQualityConfig<T> {
+  high: T
+  medium: T
+  low: T
+  [key: string]: T
+}
+
+/**
+ * Shape used when optimizing unknown payloads.
+ * Allows property access on the spread result.
+ */
+interface PayloadRecord {
+  [key: string]: unknown
+  id?: unknown
+  metadata?: unknown
+  description?: string
+  type?: unknown
+  title?: unknown
+}
 
 /**
  * Network-aware sync configuration
  */
 interface NetworkAwareSyncConfig {
   // Quality-based sync behavior
-  enableRealTimeSync?: {
-    high: boolean
-    medium: boolean
-    low: boolean
-  }
+  enableRealTimeSync?: LocalQualityConfig<boolean>
 
   // Sync frequency by quality (milliseconds)
-  syncFrequency?: QualityConfigMap<number>
+  syncFrequency?: LocalQualityConfig<number>
 
   // Payload optimization
   enablePayloadOptimization?: boolean
-  maxPayloadSizes?: QualityConfigMap<number>
+  maxPayloadSizes?: LocalQualityConfig<number>
 
   // Concurrency limits
-  maxConcurrentOperations?: QualityConfigMap<number>
+  maxConcurrentOperations?: LocalQualityConfig<number>
 
   // Compression settings
-  compressionThresholds?: QualityConfigMap<number>
+  compressionThresholds?: LocalQualityConfig<number>
 
   // Auto-adapt behavior
   autoAdjustPriority?: boolean
@@ -109,7 +126,7 @@ interface NetworkAdaptationMetrics {
  */
 export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
   const fullConfig = { ...DEFAULT_CONFIG, ...config }
-  const [networkQuality, setNetworkQuality] = useState<NetworkQuality | null>(null)
+  const [networkQuality, setNetworkQuality] = useState<ConnectionQuality | null>(null)
   const [metrics, setMetrics] = useState<NetworkAdaptationMetrics | null>(null)
   const [adaptationHistory, setAdaptationHistory] = useState<Array<{
     timestamp: number
@@ -118,7 +135,7 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
   }>>([])
 
   const networkMonitorRef = useRef<NetworkMonitor | null>(null)
-  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const adaptationCountRef = useRef(0)
   const bandwidthSavingsRef = useRef(0)
 
@@ -137,32 +154,34 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
    */
   useEffect(() => {
     if (!networkMonitorRef.current) {
-      networkMonitorRef.current = getNetworkMonitor({
-        highQualityDownlink: 2.0,
-        mediumQualityDownlink: 0.5,
-        enablePolling: true,
-        respectSaveData: true
-      })
+      networkMonitorRef.current = getNetworkMonitor()
 
-      // Set initial quality
-      setNetworkQuality(networkMonitorRef.current?.getQuality() || 'offline')
+      // Set initial quality — getQuality() returns ConnectionQuality (a string)
+      const initialQuality = networkMonitorRef.current?.getQuality()
+      setNetworkQuality(initialQuality || 'offline')
     }
+  }, [])
+
+  /**
+   * Helper to look up a value from a LocalQualityConfig by quality key
+   */
+  const getQualityValue = useCallback(<T,>(
+    configMap: LocalQualityConfig<T>,
+    quality: ConnectionQuality,
+    fallback: T
+  ): T => {
+    return configMap[quality] ?? fallback
   }, [])
 
   /**
    * Calculate current adaptation metrics
    */
   const calculateMetrics = useCallback((quality: ConnectionQuality): NetworkAdaptationMetrics => {
-    // Type-safe quality-based configuration access
-    const getQualityConfig = <T>(config: QualityConfigMap<T>, fallback: T): T => {
-      return config[quality] ?? fallback
-    }
-
     const qualityConfig = {
-      syncFrequency: getQualityConfig(fullConfig.syncFrequency, 15000),
-      maxPayload: getQualityConfig(fullConfig.maxPayloadSizes, 2 * 1024 * 1024),
-      concurrency: getQualityConfig(fullConfig.maxConcurrentOperations, 3),
-      compressionThreshold: getQualityConfig(fullConfig.compressionThresholds, 512 * 1024)
+      syncFrequency: getQualityValue(fullConfig.syncFrequency, quality, 15000),
+      maxPayload: getQualityValue(fullConfig.maxPayloadSizes, quality, 2 * 1024 * 1024),
+      concurrency: getQualityValue(fullConfig.maxConcurrentOperations, quality, 3),
+      compressionThreshold: getQualityValue(fullConfig.compressionThresholds, quality, 512 * 1024)
     }
 
     return {
@@ -171,13 +190,13 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
       adaptedMaxPayload: qualityConfig.maxPayload,
       adaptedConcurrency: qualityConfig.concurrency,
       compressionEnabled: fullConfig.enablePayloadOptimization,
-      realTimeSyncEnabled: getQualityConfig(fullConfig.enableRealTimeSync, true),
+      realTimeSyncEnabled: getQualityValue(fullConfig.enableRealTimeSync, quality, true),
       totalAdaptations: adaptationCountRef.current,
       bandwidthSavings: bandwidthSavingsRef.current,
       performanceImpact: quality === 'high' ? 'positive' :
                         quality === 'medium' ? 'neutral' : 'negative'
     }
-  }, [fullConfig])
+  }, [fullConfig, getQualityValue])
 
   /**
    * Adapt sync behavior to network quality
@@ -234,18 +253,27 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
   }, [syncQueue, calculateMetrics, fullConfig])
 
   /**
-   * Listen for network quality changes
+   * Listen for network quality changes.
+   * NetworkMonitor.addEventListener expects (event: string, callback).
+   * NetworkChangeEvent has { type, quality?, timestamp }.
    */
   useCleanupEffect(() => {
     if (!networkMonitorRef.current) return
 
-    const unsubscribe = networkMonitorRef.current.addEventListener((event: NetworkChangeEvent) => {
-      setNetworkQuality(event.current)
-      adaptToNetworkQuality(event.current.quality, event.previous.quality)
-    })
+    const handler = ((evt: Event) => {
+      const event = evt as unknown as NetworkChangeEvent
+      const newQuality = event.quality || 'offline'
+      const previousQuality = networkQuality || undefined
+      setNetworkQuality(newQuality)
+      adaptToNetworkQuality(newQuality, previousQuality)
+    }) as EventListener
 
-    return unsubscribe
-  }, [adaptToNetworkQuality], 'NetworkAwareSync:QualityListener')
+    networkMonitorRef.current.addEventListener('quality-change', handler)
+
+    return () => {
+      networkMonitorRef.current?.removeEventListener('quality-change', handler)
+    }
+  }, [adaptToNetworkQuality, networkQuality])
 
   /**
    * Setup adaptive sync interval
@@ -253,15 +281,11 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
   useCleanupEffect(() => {
     if (!networkQuality) return
 
-    const getQualityConfig = <T>(config: QualityConfigMap<T>, fallback: T): T => {
-      return config[networkQuality.quality] ?? fallback
-    }
-
-    if (!getQualityConfig(fullConfig.enableRealTimeSync, true)) {
+    if (!getQualityValue(fullConfig.enableRealTimeSync, networkQuality, true)) {
       return
     }
 
-    const frequency = getQualityConfig(fullConfig.syncFrequency, 15000)
+    const frequency = getQualityValue(fullConfig.syncFrequency, networkQuality, 15000)
 
     syncIntervalRef.current = setInterval(() => {
       // Trigger background sync for pending operations
@@ -277,7 +301,7 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
         syncIntervalRef.current = null
       }
     }
-  }, [networkQuality, queueState.pending, fullConfig], 'NetworkAwareSync:SyncInterval')
+  }, [networkQuality, queueState.pending, fullConfig, getQualityValue])
 
   /**
    * Queue operation with network-aware optimization
@@ -291,16 +315,13 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
       return queueSync(type, data, options)
     }
 
-    const quality = networkQuality.quality
+    const quality = networkQuality
     const qualityConfig = fullConfig
 
     // Adapt payload size if optimization enabled
     let optimizedData = data
     if (qualityConfig.enablePayloadOptimization) {
-      const getQualityConfig = <T>(config: QualityConfigMap<T>, fallback: T): T => {
-        return config[quality] ?? fallback
-      }
-      const maxSize = getQualityConfig(qualityConfig.maxPayloadSizes, 2 * 1024 * 1024)
+      const maxSize = getQualityValue(qualityConfig.maxPayloadSizes, quality, 2 * 1024 * 1024)
       const currentSize = JSON.stringify(data).length
 
       if (currentSize > maxSize) {
@@ -316,15 +337,15 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
     // Adapt priority based on network quality
     const adaptedOptions = { ...options }
     if (qualityConfig.autoAdjustPriority) {
-      if (quality === 'low' && options.priority === 'high') {
+      if (quality === 'low' && options?.priority === 'high') {
         adaptedOptions.priority = 'normal'
-      } else if (quality === 'high' && options.priority === 'low') {
+      } else if (quality === 'high' && options?.priority === 'low') {
         adaptedOptions.priority = 'normal'
       }
     }
 
     return queueSync(type, optimizedData, adaptedOptions)
-  }, [queueSync, networkQuality, fullConfig])
+  }, [queueSync, networkQuality, fullConfig, getQualityValue])
 
   /**
    * Optimize payload for network conditions
@@ -334,8 +355,9 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
     maxSize: number,
     quality: ConnectionQuality
   ): unknown => {
-    // Simple payload optimization strategies
-    let optimized = { ...data }
+    // Cast to record for property access on unknown data
+    const dataRecord = (typeof data === 'object' && data !== null ? data : {}) as PayloadRecord
+    let optimized: PayloadRecord = { ...dataRecord }
 
     // Remove non-essential fields for slow connections
     if (quality === 'low') {
@@ -365,28 +387,32 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
   }, [])
 
   /**
-   * Get current network quality
+   * Get current network quality.
+   * networkQuality is already a ConnectionQuality string (or null).
    */
   const getCurrentQuality = useCallback((): ConnectionQuality | null => {
-    return networkQuality?.quality || null
+    return networkQuality || null
   }, [networkQuality])
 
   /**
-   * Get bandwidth recommendations for current network
+   * Get bandwidth recommendations for current network.
+   * NetworkMonitor stub does not expose getBandwidthRecommendation,
+   * so we return a basic status from getStatus().
    */
   const getBandwidthRecommendations = useCallback(() => {
     if (!networkMonitorRef.current) return null
-    return networkMonitorRef.current.getBandwidthRecommendation()
+    return networkMonitorRef.current.getStatus()
   }, [])
 
   /**
-   * Force network quality check
+   * Force network quality check.
+   * getQuality() returns ConnectionQuality directly (a string).
    */
   const checkNetworkQuality = useCallback(() => {
     if (networkMonitorRef.current) {
-      const quality = networkMonitorRef.current.getCurrentQuality()
+      const quality = networkMonitorRef.current.getQuality()
       setNetworkQuality(quality)
-      adaptToNetworkQuality(quality.quality)
+      adaptToNetworkQuality(quality)
     }
   }, [adaptToNetworkQuality])
 
@@ -398,7 +424,7 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
 
     return {
       ...syncMetrics,
-      networkQuality: networkQuality?.quality || 'unknown',
+      networkQuality: networkQuality || 'unknown',
       adaptationMetrics: metrics,
       adaptationHistory: adaptationHistory.slice(-5), // Last 5 adaptations
       bandwidthOptimization: {
@@ -412,9 +438,9 @@ export function useNetworkAwareSync(config: NetworkAwareSyncConfig = {}) {
 
   return {
     // Network state
-    networkQuality: networkQuality?.quality || 'medium',
+    networkQuality: networkQuality || 'medium',
     networkDetails: networkQuality,
-    isOnline: networkQuality?.quality !== 'offline',
+    isOnline: networkQuality !== 'offline',
 
     // Adaptation metrics
     adaptationMetrics: metrics,
@@ -444,14 +470,21 @@ export function useNetworkQuality() {
 
   useEffect(() => {
     const monitor = getNetworkMonitor()
-    setQuality(monitor.getQuality().quality)
+    // getQuality() returns ConnectionQuality directly (a string)
+    setQuality(monitor.getQuality())
 
-    const unsubscribe = monitor.addEventListener((event: NetworkChangeEvent) => {
-      setQuality(event.current.quality)
-      setIsOnline(event.current.quality !== 'offline')
-    })
+    const handler = ((evt: Event) => {
+      const event = evt as unknown as NetworkChangeEvent
+      const newQuality = event.quality || 'offline'
+      setQuality(newQuality)
+      setIsOnline(newQuality !== 'offline')
+    }) as EventListener
 
-    return unsubscribe
+    monitor.addEventListener('quality-change', handler)
+
+    return () => {
+      monitor.removeEventListener('quality-change', handler)
+    }
   }, [])
 
   return {

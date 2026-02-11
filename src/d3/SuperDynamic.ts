@@ -12,12 +12,42 @@
 
 import * as d3 from 'd3';
 import type { ViewAxisMapping } from '../types/views';
-import type {
-  SuperDynamicConfig,
-  DragState,
-  GridReflowOptions
-} from '../types/supergrid';
 import { devLogger } from '../utils/logging';
+
+/** Axis slot position configuration for SuperDynamic drop zones */
+interface AxisSlotPosition {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Grid reflow options for animated layout transitions */
+interface GridReflowOptions {
+  duration: number;
+  easing: string;
+  enablePreview: boolean;
+  preserveSelection: boolean;
+}
+
+/** SuperDynamic-specific configuration with layout dimensions */
+interface SuperDynamicConfig {
+  width: number;
+  height: number;
+  enableReflowPreview: boolean;
+  axisSlots: Record<'x' | 'y' | 'z', AxisSlotPosition>;
+  defaultReflowOptions: GridReflowOptions;
+}
+
+/** Drag state for SuperDynamic axis reallocation */
+interface DragState {
+  axisId: string;
+  sourceSlot: 'x' | 'y' | 'z';
+  startPosition: { x: number; y: number };
+  currentPosition: { x: number; y: number };
+  isDragging: boolean;
+  startTime: number;
+}
 
 export interface SuperDynamicEngine {
   /** Initialize the engine with container and config */
@@ -34,6 +64,15 @@ export interface SuperDynamicEngine {
 
   /** Cancel current drag operation */
   cancelDrag(): void;
+
+  /** Set handler for axis mapping changes */
+  setAxisChangeHandler(handler: (mapping: ViewAxisMapping) => void): void;
+
+  /** Set handler for reflow animation start */
+  setReflowStartHandler(handler: () => void): void;
+
+  /** Set handler for reflow animation completion */
+  setReflowCompleteHandler(handler: () => void): void;
 
   /** Destroy the engine and clean up */
   destroy(): void;

@@ -46,7 +46,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     const config = configurations.find(c => c.key === key);
     
     if (!config) {
-      logger.error(`Configuration key not found: ${key}`);
+      logger.error('configuration', `Configuration key not found: ${key}`);
       return;
     }
 
@@ -95,7 +95,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     }
     changeSubscribers.forEach(callback => callback(change));
 
-    logger.info(`Configuration updated: ${key} = ${value} (${env})`);
+    logger.info('configuration', `Configuration updated: ${key} = ${value} (${env})`);
   }, [configurations, currentEnvironment, validationMode, subscribers, changeSubscribers]);
 
   const getValue = useCallback(<T = unknown>(key: string, environment?: string): T | undefined => {
@@ -124,7 +124,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
           return value as unknown as T;
       }
     } catch (error) {
-      logger.error(`Error parsing configuration value for ${key}:`, error);
+      logger.error('configuration', `Error parsing configuration value for ${key}`, { error: error as Record<string, unknown> });
       return value as unknown as T;
     }
   }, [configurations, currentEnvironment]);
@@ -140,7 +140,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     };
     setChanges(prev => [change, ...prev.slice(0, 99)]);
     
-    logger.info(`Configuration deleted: ${key}`);
+    logger.info('configuration', `Configuration deleted: ${key}`);
   }, []);
 
   // Validation functions
@@ -187,7 +187,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   // Environment management
   const switchEnvironment = useCallback((environment: ConfigurationEnvironment) => {
     setCurrentEnvironment(environment);
-    logger.info(`Switched to environment: ${environment}`);
+    logger.info('configuration', `Switched to environment: ${environment}`);
   }, []);
 
   const getEnvironments = useCallback((): ConfigurationEnvironment[] => {
@@ -206,7 +206,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
     }
     
     await setValue(change.key, change.oldValue, change.environment);
-    logger.info(`Rolled back change: ${change.key}`);
+    logger.info('configuration', `Rolled back change: ${change.key}`);
   }, [changes, setValue]);
 
   // Subscription
@@ -238,7 +238,7 @@ export const ConfigurationProvider: React.FC<ConfigurationProviderProps> = ({
   // Hot reload
   const enableHotReloadFunc = useCallback((enabled: boolean) => {
     setHotReloadEnabled(enabled);
-    logger.info(`Hot reload ${enabled ? 'enabled' : 'disabled'}`);
+    logger.info('configuration', `Hot reload ${enabled ? 'enabled' : 'disabled'}`);
   }, []);
 
   const isHotReloadEnabled = useCallback(() => hotReloadEnabled, [hotReloadEnabled]);

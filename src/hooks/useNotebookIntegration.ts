@@ -44,7 +44,7 @@ export function useNotebookIntegration(): NotebookIntegration {
       setCards(prev => [...prev, newCard]);
       return newCard.id;
     } catch (err: unknown) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setIsLoading(false);
@@ -64,7 +64,7 @@ export function useNotebookIntegration(): NotebookIntegration {
         )
       );
     } catch (err: unknown) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setIsLoading(false);
@@ -78,7 +78,7 @@ export function useNotebookIntegration(): NotebookIntegration {
     try {
       setCards(prev => prev.filter(card => card.id !== id));
     } catch (err: unknown) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : String(err));
       throw err;
     } finally {
       setIsLoading(false);

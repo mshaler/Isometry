@@ -47,7 +47,7 @@ export class DatabaseService {
   }
 
   async execute(sql: string, params?: unknown[]): Promise<any[]> {
-    return this.query.execute(sql, params);
+    return this.query.execute(sql, params as import('sql.js').BindParams);
   }
 
   close(): void {

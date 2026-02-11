@@ -18,6 +18,9 @@ export type {
   GridConfig
 } from './grid-core';
 
+// Value imports for use in constants/defaults below
+import type { CellPosition, GridConfig } from './grid-core';
+
 // Re-export progressive disclosure types
 export type {
   ProgressiveDisclosureConfig,
@@ -56,10 +59,12 @@ export type {
   ValueDensityMode,
   JanusDensityState,
   RegionDensityConfig,
+  AggregationPreferences,
   DensityChangeEvent,
   DensityPerformanceMetrics,
   DensityAggregationResult,
-  DensityAggregatedRow
+  DensityAggregatedRow,
+  DensityAggregationMetadata
 } from './density-control';
 
 export {
@@ -77,6 +82,10 @@ export type {
   CartographicPerformanceMetrics
 } from './cartographic';
 
+export {
+  DEFAULT_CARTOGRAPHIC_CONFIG
+} from './cartographic';
+
 // Re-export SuperDynamicMetrics from dynamic-axis
 export type {
   SuperDynamicMetrics
@@ -88,7 +97,7 @@ export type {
 /**
  * View state for SuperGrid rendering and interaction
  */
-export interface ViewState {
+export interface SuperGridViewState {
   // View configuration
   currentView: 'grid' | 'kanban' | 'timeline' | 'network';
   gridMode: 'anchor' | 'bipolar';           // Grid coordinate system mode
@@ -141,7 +150,7 @@ export const DEFAULT_GRID_CONFIG: GridConfig = {
   defaultPadding: 8
 };
 
-export const DEFAULT_VIEW_STATE: ViewState = {
+export const DEFAULT_VIEW_STATE: SuperGridViewState = {
   currentView: 'grid',
   gridMode: 'anchor',
   zoomLevel: 1.0,

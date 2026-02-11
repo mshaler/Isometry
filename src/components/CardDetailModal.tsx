@@ -193,10 +193,11 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
               />
 
               <CardStatusField
+                label="Status"
                 editMode={editMode}
                 isLoading={isLoading}
                 editValue={editedCard.status || ''}
-                displayValue={card.status}
+                displayValue={card.status || ''}
                 onEdit={(value: string) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
               />
             </div>
@@ -206,30 +207,30 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
                 label="Priority (1-5)"
                 editMode={editMode}
                 isLoading={isLoading}
-                editValue={editedCard.priority || ''}
-                displayValue={card.priority || 'Not set'}
+                editValue={editedCard.priority ?? ''}
+                displayValue={card.priority != null ? String(card.priority) : 'Not set'}
                 onEdit={(value: string) => setEditedCard(prev => ({
                   ...prev,
                   priority: value ? parseInt(value) : undefined
                 }))}
                 type="number"
-                min="1"
-                max="5"
+                min={1}
+                max={5}
               />
 
               <CardFormField
                 label="Importance (1-5)"
                 editMode={editMode}
                 isLoading={isLoading}
-                editValue={editedCard.importance || ''}
-                displayValue={card.importance || 'Not set'}
+                editValue={editedCard.importance ?? ''}
+                displayValue={card.importance != null ? String(card.importance) : 'Not set'}
                 onEdit={(value: string) => setEditedCard(prev => ({
                   ...prev,
                   importance: value ? parseInt(value) : undefined
                 }))}
                 type="number"
-                min="1"
-                max="5"
+                min={1}
+                max={5}
               />
             </div>
 

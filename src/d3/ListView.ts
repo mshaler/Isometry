@@ -85,7 +85,7 @@ export class ListView implements ViewRenderer {
   scrollToCard(cardId: string): void {
     const cardElement = this.contentGroup
       .selectAll('.list-item')
-      .filter((d: unknown) => d.card?.id === cardId);
+      .filter((d: unknown) => (d as HierarchicalListItem).card?.id === cardId);
 
     if (!cardElement.empty()) {
       const transform = cardElement.attr('transform');

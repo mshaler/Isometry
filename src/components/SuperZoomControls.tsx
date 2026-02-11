@@ -13,15 +13,15 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
+import type { SuperZoomCartographic } from '../d3/SuperZoomCartographic';
 import type {
   CartographicState,
-  CartographicControlInterface,
   CartographicVisualFeedback
-} from '../types/supergrid';
+} from '../d3/SuperZoomCartographic';
 
 export interface SuperZoomControlsProps {
   /** Cartographic navigation engine instance */
-  cartographic: CartographicControlInterface;
+  cartographic: SuperZoomCartographic;
 
   /** Show/hide individual control sections */
   showZoomControls?: boolean;
@@ -52,7 +52,7 @@ function formatPosition(x: number, y: number): string {
   return `(${Math.round(x)}, ${Math.round(y)})`;
 }
 
-function useKeyboardShortcuts(cartographic: CartographicControlInterface, enabled: boolean) {
+function useKeyboardShortcuts(cartographic: SuperZoomCartographic, enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
 
@@ -104,7 +104,7 @@ function useKeyboardShortcuts(cartographic: CartographicControlInterface, enable
 }
 
 interface ZoomControlsProps {
-  cartographic: CartographicControlInterface;
+  cartographic: SuperZoomCartographic;
   state: CartographicState;
   compact: boolean;
 }
@@ -201,7 +201,7 @@ function ZoomControls({ cartographic, state, compact }: ZoomControlsProps) {
 }
 
 interface PanControlsProps {
-  cartographic: CartographicControlInterface;
+  cartographic: SuperZoomCartographic;
   compact: boolean;
 }
 

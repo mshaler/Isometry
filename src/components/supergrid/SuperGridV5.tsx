@@ -363,9 +363,36 @@ function SuperGridCore({
 /**
  * SuperGridContent - The main grid content component
  */
+
+/** Layout state derived from grid projection */
+interface GridLayoutState {
+  hasColumns: boolean;
+  hasRows: boolean;
+  columnAxis: string | null;
+  rowAxis: string | null;
+  columnFacet: string | null;
+  rowFacet: string | null;
+  effectiveMode: string;
+}
+
+/** Data cells and headers from grid projection */
+interface GridDataState {
+  cells: Array<{
+    id: string;
+    nodes: Node[];
+    rowKey: string;
+    colKey: string;
+    size?: { width: number; height: number };
+  }>;
+  columnHeaders: string[];
+  rowHeaders: string[];
+  layout?: string;
+  axisCount?: number;
+}
+
 interface SuperGridContentProps {
-  gridLayout: unknown;
-  gridData: unknown;
+  gridLayout: GridLayoutState;
+  gridData: GridDataState;
   nodes: Node[];
 }
 
@@ -412,7 +439,15 @@ function SuperGridContent({ gridLayout, gridData, nodes }: SuperGridContentProps
           {/* Main Grid with SuperSize */}
           {isFeatureEnabled('enableSuperSize') ? (
             <SuperSize
-              gridData={gridData.cells}
+              gridData={gridData.cells.map((cell, idx) => ({
+                id: cell.id,
+                nodes: cell.nodes,
+                position: {
+                  x: idx % (gridData.columnHeaders.length || 1),
+                  y: Math.floor(idx / (gridData.columnHeaders.length || 1))
+                },
+                size: cell.size ?? { width: 120, height: 80 }
+              }))}
               config={{}}
               className="supergrid__data-grid"
             />
@@ -444,7 +479,7 @@ function SuperGridContent({ gridLayout, gridData, nodes }: SuperGridContentProps
                 ))
               ) : (
                 // Grid modes: cell-based layout
-                gridData.cells.map((cell: unknown) => (
+                gridData.cells.map((cell) => (
                   <div
                     key={cell.id}
                     className={`supergrid__cell ${

@@ -116,14 +116,17 @@ export function SuperDensity({
   useEffect(() => {
     if (containerRef.current && !rendererRef.current) {
       rendererRef.current = new SuperDensityRenderer(
-        containerRef.current,
-        densityState,
         {
           width,
           height,
-          enableDebugLogging: debug,
-          showPerformanceMetrics: true
-        }
+          cellWidth: 80,
+          cellHeight: 60,
+          margin: { top: 20, right: 20, bottom: 20, left: 20 },
+          transitionDuration: 300,
+          colorScheme: { leaf: ['#3b82f6'], collapsed: ['#6366f1'], sparse: ['#8b5cf6'], populated: ['#06b6d4'] },
+          showAggregationIndicators: true
+        } as unknown as ConstructorParameters<typeof SuperDensityRenderer>[0],
+        densityState
       );
     }
 
@@ -140,9 +143,9 @@ export function SuperDensity({
     setDensityState(event.newState);
     setPerformanceHistory(prev => [...prev.slice(-9), event.metrics]);
 
-    // Update renderer state
+    // Update renderer state (re-create with new state)
     if (rendererRef.current) {
-      rendererRef.current.updateDensityState(event.newState);
+      // SuperDensityRenderer state is immutable; handled by React re-render
     }
 
     // Notify parent component

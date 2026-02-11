@@ -40,7 +40,7 @@ export class ReconnectionService {
           this.reset();
           resolve(true);
         } catch (error) {
-          bridgeLogger.error(`Reconnection attempt ${this.attemptCount} failed:`, error);
+          bridgeLogger.error(`Reconnection attempt ${this.attemptCount} failed`, { error: error instanceof Error ? error.message : String(error) });
           this.isReconnecting = false;
           // Try again if we haven't reached max attempts
           if (this.attemptCount < this.config.maxAttempts) {

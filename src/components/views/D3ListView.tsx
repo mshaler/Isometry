@@ -92,7 +92,7 @@ export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3
   // Live query for real-time data updates (only if no direct data provided)
   const {
     data: queryData,
-    loading: isLoading,
+    isLoading,
     error
   } = useLiveQuery<Node>(data ? '' : enhancedSql, {
     params: queryParams,
@@ -467,7 +467,7 @@ export function D3ListView({ sql = '', queryParams = [], data, onNodeClick }: D3
     return (
       <div className="d3-list-view w-full h-full flex flex-col bg-white">
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-red-500">Error loading list data: {error}</div>
+          <div className="text-red-500">Error loading list data: {error instanceof Error ? error.message : String(error)}</div>
         </div>
       </div>
     );

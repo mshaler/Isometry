@@ -3,7 +3,16 @@ import { useQueryClient, useQuery } from '@tanstack/react-query';
 // import { cacheUtils } from '../../services/queryClient'; // Service not implemented yet
 const cacheUtils = {
   getCacheSize: () => 0,
-  getCacheKeys: () => [],
+  getCacheKeys: () => [] as string[],
+  getCacheStats: () => ({
+    size: 0,
+    keys: [] as string[],
+    hitRate: 0,
+    totalQueries: 0,
+    activeQueries: 0,
+    staleQueries: 0,
+    cachedQueries: 0
+  }),
   clearCache: () => Promise.resolve()
 };
 

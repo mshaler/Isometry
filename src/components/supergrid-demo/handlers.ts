@@ -5,13 +5,13 @@
 import { useCallback } from 'react';
 import { contextLogger } from '../../utils/logging/dev-logger';
 import type { LATCHFilterService } from '../../services/query/LATCHFilterService';
-import type { DatabaseService } from '../../db/DatabaseService';
+import type { useDatabaseService } from '../../hooks';
 import type { ZoomLevel, PanLevel } from '../../d3/SuperGridZoom';
 import type { SuperGrid } from '../../d3/SuperGrid';
 
 interface HandlerParams {
   filterService: LATCHFilterService;
-  databaseService: DatabaseService | null;
+  databaseService: ReturnType<typeof useDatabaseService>;
   superGrid: SuperGrid | null;
   setSelectedCards: (cards: string[]) => void;
   setShowBulkActions: (show: boolean) => void;
@@ -45,7 +45,7 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
 
   // Card interaction handlers
   const handleCardClick = useCallback((card: unknown) => {
-    contextLogger.data('SuperGridDemo: Card clicked', card);
+    contextLogger.data('SuperGridDemo: Card clicked', card as Record<string, unknown>);
     setSelectedCard(card);
     setIsModalOpen(true);
   }, [setSelectedCard, setIsModalOpen]);
@@ -82,15 +82,16 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
 
   // Bulk operation handlers
   const handleBulkDelete = useCallback(async (selectedIds: string[]) => {
-    if (!databaseService || selectedIds.length === 0) return;
+    if (!databaseService.isReady() || selectedIds.length === 0) return;
 
     try {
       setIsModalLoading(true);
       contextLogger.data('SuperGridDemo: Starting bulk delete', { count: selectedIds.length });
 
       for (const cardId of selectedIds) {
-        const success = await databaseService.deleteCard(cardId);
-        if (!success) {
+        try {
+          databaseService.run('UPDATE nodes SET deleted_at = datetime(\'now\') WHERE id = ?', [cardId]);
+        } catch {
           contextLogger.error('Failed to delete card', { cardId });
         }
       }
@@ -100,22 +101,23 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
       contextLogger.data('SuperGridDemo: Bulk delete completed', { count: selectedIds.length });
 
     } catch (error) {
-      contextLogger.error('SuperGridDemo: Bulk delete failed', error);
+      contextLogger.error('SuperGridDemo: Bulk delete failed', error as Record<string, unknown>);
     } finally {
       setIsModalLoading(false);
     }
   }, [databaseService, setIsModalLoading, setSelectedCards, setShowBulkActions]);
 
   const handleBulkStatusUpdate = useCallback(async (selectedIds: string[], newStatus: string) => {
-    if (!databaseService || selectedIds.length === 0) return;
+    if (!databaseService.isReady() || selectedIds.length === 0) return;
 
     try {
       setIsModalLoading(true);
       contextLogger.data('SuperGridDemo: Starting bulk status update', { count: selectedIds.length, newStatus });
 
       for (const cardId of selectedIds) {
-        const success = await databaseService.updateCard(cardId, { status: newStatus });
-        if (!success) {
+        try {
+          databaseService.run('UPDATE nodes SET status = ? WHERE id = ?', [newStatus, cardId]);
+        } catch {
           contextLogger.error('Failed to update card status', { cardId, newStatus });
         }
       }
@@ -125,7 +127,7 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
       contextLogger.data('SuperGridDemo: Bulk status update completed', { count: selectedIds.length, newStatus });
 
     } catch (error) {
-      contextLogger.error('SuperGridDemo: Bulk status update failed', error);
+      contextLogger.error('SuperGridDemo: Bulk status update failed', error as Record<string, unknown>);
     } finally {
       setIsModalLoading(false);
     }
@@ -160,46 +162,50 @@ export function useSuperGridDemoHandlers(params: HandlerParams) {
   }, [setIsModalOpen, setSelectedCard, setIsModalLoading]);
 
   const handleCardSave = useCallback(async (updatedCard: Partial<any>) => {
-    if (!databaseService || !updatedCard.id) return;
+    if (!databaseService.isReady() || !updatedCard.id) return;
 
     try {
       setIsModalLoading(true);
       contextLogger.data('SuperGridDemo: Saving card', updatedCard);
 
-      const success = await databaseService.updateCard(updatedCard.id, updatedCard);
+      const fields = Object.entries(updatedCard)
+        .filter(([key]) => key !== 'id')
+        .map(([key]) => `${key} = ?`);
+      const values = Object.entries(updatedCard)
+        .filter(([key]) => key !== 'id')
+        .map(([, val]) => val);
 
-      if (success) {
-        contextLogger.data('SuperGridDemo: Card saved successfully', updatedCard.id);
-        setIsModalOpen(false);
-        setSelectedCard(null);
-      } else {
-        contextLogger.error('SuperGridDemo: Failed to save card', updatedCard.id);
+      if (fields.length > 0) {
+        databaseService.run(
+          `UPDATE nodes SET ${fields.join(', ')} WHERE id = ?`,
+          [...values, updatedCard.id]
+        );
       }
+
+      contextLogger.data('SuperGridDemo: Card saved successfully', { id: updatedCard.id });
+      setIsModalOpen(false);
+      setSelectedCard(null);
     } catch (error) {
-      contextLogger.error('SuperGridDemo: Card save error', error);
+      contextLogger.error('SuperGridDemo: Card save error', error as Record<string, unknown>);
     } finally {
       setIsModalLoading(false);
     }
   }, [databaseService, setIsModalLoading, setIsModalOpen, setSelectedCard]);
 
   const handleCardDelete = useCallback(async (cardId: string) => {
-    if (!databaseService) return;
+    if (!databaseService.isReady()) return;
 
     try {
       setIsModalLoading(true);
       contextLogger.data('SuperGridDemo: Deleting card', { cardId });
 
-      const success = await databaseService.deleteCard(cardId);
+      databaseService.run('UPDATE nodes SET deleted_at = datetime(\'now\') WHERE id = ?', [cardId]);
 
-      if (success) {
-        contextLogger.data('SuperGridDemo: Card deleted successfully', { cardId });
-        setIsModalOpen(false);
-        setSelectedCard(null);
-      } else {
-        contextLogger.error('SuperGridDemo: Failed to delete card', { cardId });
-      }
+      contextLogger.data('SuperGridDemo: Card deleted successfully', { cardId });
+      setIsModalOpen(false);
+      setSelectedCard(null);
     } catch (error) {
-      contextLogger.error('SuperGridDemo: Card delete error', error);
+      contextLogger.error('SuperGridDemo: Card delete error', error as Record<string, unknown>);
     } finally {
       setIsModalLoading(false);
     }

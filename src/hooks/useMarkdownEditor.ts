@@ -72,7 +72,7 @@ export function useMarkdownEditor(initialContent = ''): MarkdownEditor {
     } catch (error: unknown) {
       setState(prev => ({
         ...prev,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       }));
       throw error;
     }

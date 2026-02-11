@@ -45,6 +45,7 @@ export class SuperGridHeaders {
   // Progressive disclosure system
   private progressiveSystem: SuperStackProgressive;
   private progressiveState: ProgressiveDisclosureState;
+  private maxZoomLevel: number = 3;
 
   // Performance tracking for lazy fallback
   private renderStartTime: number = 0;
@@ -97,11 +98,11 @@ export class SuperGridHeaders {
     // Initialize resize configuration
     this.resizeState = {
       isActive: false,
-      targetNodeId: null,
-      startTime: 0,
-      frameCount: 0,
-      lastFrameTime: 0,
-      pendingUpdate: null
+      targetNodeId: '',
+      startX: 0,
+      startY: 0,
+      startWidth: 0,
+      affectedNodes: []
     };
 
     // Initialize progressive disclosure system
@@ -125,10 +126,10 @@ export class SuperGridHeaders {
       availableLevelGroups: [],
       activeLevelTab: 0,
       zoomLevel: 0,
-      maxZoomLevel: 3,
       isTransitioning: false,
       lastTransitionTime: 0
     };
+    this.maxZoomLevel = 3;
 
     this.progressiveRenderer.initializeStructure();
     this.initializeColumnResizeBehavior();
@@ -229,7 +230,7 @@ export class SuperGridHeaders {
       this.saveHeaderState();
     }
 
-    superGridLogger.interaction('Node toggled', {
+    superGridLogger.debug('Node toggled', {
       nodeId,
       isExpanded: node.isExpanded,
       childrenCount: node.children?.length || 0
@@ -272,10 +273,11 @@ export class SuperGridHeaders {
 
   public getLevelPickerTabs(): LevelPickerTab[] {
     return this.progressiveState.availableLevelGroups.map((group, index) => ({
+      id: group.id,
       index,
-      label: group.label,
+      label: group.semanticContext || group.id,
+      levels: group.levels,
       isActive: index === this.progressiveState.activeLevelTab,
-      levelRange: group.levelRange,
       nodeCount: group.nodeCount
     }));
   }
@@ -283,9 +285,10 @@ export class SuperGridHeaders {
   public getZoomControlState(): ZoomControlState {
     return {
       currentLevel: this.progressiveState.zoomLevel,
-      maxLevel: this.progressiveState.maxZoomLevel,
-      canZoomIn: this.progressiveState.zoomLevel < this.progressiveState.maxZoomLevel,
-      canZoomOut: this.progressiveState.zoomLevel > 0
+      maxLevel: this.maxZoomLevel,
+      canZoomIn: this.progressiveState.zoomLevel < this.maxZoomLevel,
+      canZoomOut: this.progressiveState.zoomLevel > 0,
+      levelLabels: Array.from({ length: this.maxZoomLevel + 1 }, (_, i) => `Level ${i}`)
     };
   }
 
@@ -297,16 +300,20 @@ export class SuperGridHeaders {
   }
 
   public zoomIn(): void {
-    if (this.progressiveState.zoomLevel < this.progressiveState.maxZoomLevel) {
+    if (this.progressiveState.zoomLevel < this.maxZoomLevel) {
       this.progressiveState.zoomLevel++;
-      this.progressiveSystem.setZoomLevel(this.progressiveState.zoomLevel);
+      this.progressiveSystem.setVisibleLevels(
+        Array.from({ length: this.progressiveState.zoomLevel + 1 }, (_, i) => i)
+      );
     }
   }
 
   public zoomOut(): void {
     if (this.progressiveState.zoomLevel > 0) {
       this.progressiveState.zoomLevel--;
-      this.progressiveSystem.setZoomLevel(this.progressiveState.zoomLevel);
+      this.progressiveSystem.setVisibleLevels(
+        Array.from({ length: this.progressiveState.zoomLevel + 1 }, (_, i) => i)
+      );
     }
   }
 
@@ -321,9 +328,9 @@ export class SuperGridHeaders {
   }
 
   public isProgressiveDisclosureActive(): boolean {
-    return this.config.progressiveDisclosure.enabled &&
+    return this.config.enableProgressiveRendering &&
            this.currentHierarchy !== null &&
-           this.currentHierarchy.allNodes.length > this.config.progressiveDisclosure.autoActivationThreshold;
+           this.currentHierarchy.allNodes.length > this.config.progressiveDisclosure.autoGroupThreshold;
   }
 
   // Private helper methods
@@ -357,7 +364,7 @@ export class SuperGridHeaders {
     // Calculate running average
     this.averageRenderTime = ((this.averageRenderTime * (this.renderCount - 1)) + renderTime) / this.renderCount;
 
-    superGridLogger.performance('Render performance tracked', {
+    superGridLogger.metrics('Render performance tracked', {
       currentRenderTime: renderTime,
       averageRenderTime: this.averageRenderTime,
       renderCount: this.renderCount,
@@ -428,14 +435,15 @@ export class SuperGridHeaders {
       .on('start', (_event, d) => {
         this.resizeState.isActive = true;
         this.resizeState.targetNodeId = d.id;
-        this.resizeState.startTime = performance.now();
+        this.resizeState.startX = _event.x;
+        this.resizeState.startY = _event.y;
       })
       .on('drag', (_event, _d) => {
         // Handle resize logic
       })
       .on('end', () => {
         this.resizeState.isActive = false;
-        this.resizeState.targetNodeId = null;
+        this.resizeState.targetNodeId = '';
       });
   }
 }

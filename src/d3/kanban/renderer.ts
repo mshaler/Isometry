@@ -3,7 +3,7 @@
  */
 
 import * as d3 from 'd3';
-import type { KanbanColumn, KanbanConfig } from './types';
+import type { KanbanColumn, KanbanConfig, FlattenedCard } from './types';
 import { getPriorityColor, formatCardMetadata, truncateText } from './formatters';
 
 export class KanbanRenderer {
@@ -34,7 +34,7 @@ export class KanbanRenderer {
     // Bind data to column headers
     const headers = this.contentGroup
       .selectAll('.column-header')
-      .data(columnData, (d: unknown) => d.id);
+      .data(columnData, (d: unknown) => (d as KanbanColumn).id);
 
     const headerEnter = headers
       .enter()
@@ -112,7 +112,7 @@ export class KanbanRenderer {
     // Bind data to column bodies
     const bodies = this.contentGroup
       .selectAll('.column-body')
-      .data(columnData, (d: unknown) => d.id);
+      .data(columnData, (d: unknown) => (d as KanbanColumn).id);
 
     const bodyEnter = bodies
       .enter()
@@ -162,7 +162,7 @@ export class KanbanRenderer {
     // Data binding with key function
     const cards = this.contentGroup
       .selectAll('.kanban-card')
-      .data(flatCards, (d: unknown) => d.card.id);
+      .data(flatCards, (d: unknown) => (d as FlattenedCard).card.id);
 
     const cardEnter = cards
       .enter()
@@ -238,29 +238,41 @@ export class KanbanRenderer {
     allCards
       .transition()
       .duration(300)
-      .attr('transform', (d: unknown) => `translate(${d.x}, ${d.y})`);
+      .attr('transform', (d: unknown) => {
+        const fc = d as FlattenedCard & { x: number; y: number };
+        return `translate(${fc.x}, ${fc.y})`;
+      });
 
     allCards
       .select('.card-title')
-      .text((d: unknown) => truncateText(d.card.title || 'Untitled', 25));
+      .text((d: unknown) => truncateText((d as FlattenedCard).card.name || 'Untitled', 25));
 
     allCards
       .select('.card-metadata')
-      .text((d: unknown) => formatCardMetadata(d.card));
+      .text((d: unknown) => formatCardMetadata((d as FlattenedCard).card));
 
     allCards
       .select('.priority-indicator')
-      .attr('fill', (d: unknown) => getPriorityColor(d.card.priority));
+      .attr('fill', (d: unknown) => getPriorityColor(String((d as FlattenedCard).card.priority)));
 
     // Show/hide tags indicator based on whether card has tags
     allCards
       .select('.tags-indicator')
-      .style('display', (d: unknown) => (d.card.tags && d.card.tags.length > 0) ? null : 'none');
+      .style('display', (d: unknown) => {
+        const card = (d as FlattenedCard).card;
+        return (card.tags && card.tags.length > 0) ? null : 'none';
+      });
 
     allCards
       .select('.tags-count')
-      .style('display', (d: unknown) => (d.card.tags && d.card.tags.length > 0) ? null : 'none')
-      .text((d: unknown) => d.card.tags ? Math.min(d.card.tags.length, 9) : '');
+      .style('display', (d: unknown) => {
+        const card = (d as FlattenedCard).card;
+        return (card.tags && card.tags.length > 0) ? null : 'none';
+      })
+      .text((d: unknown) => {
+        const card = (d as FlattenedCard).card;
+        return card.tags ? Math.min(card.tags.length, 9) : '';
+      });
 
     // Remove old cards with animation
     cards

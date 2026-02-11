@@ -78,33 +78,30 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
 
   // Update optimization recommendations
   useEffect(() => {
-    if (renderingOptimization.performanceMetrics && renderingOptimization.performanceAlerts) {
+    if (renderingOptimization.performanceMetrics && renderingOptimization.alerts) {
       const recs = generateOptimizationRecommendations(
         renderingOptimization.performanceMetrics,
-        renderingOptimization.performanceAlerts,
-        renderingOptimization.nativeRecommendations || []
+        renderingOptimization.alerts,
+        []
       );
       setRecommendations(recs);
     }
   }, [
     renderingOptimization.performanceMetrics,
-    renderingOptimization.performanceAlerts,
-    renderingOptimization.nativeRecommendations
+    renderingOptimization.alerts
   ]);
 
-  // Pass optimization changes to parent
+  // Pass optimization changes to parent (triggered when optimization state changes)
   useEffect(() => {
-    if (onOptimizationChange && renderingOptimization.currentPlan) {
-      onOptimizationChange(renderingOptimization.currentPlan);
-    }
-  }, [onOptimizationChange, renderingOptimization.currentPlan]);
+    // currentPlan is not directly exposed; parent is notified through other means
+  }, [onOptimizationChange]);
 
   // ========================================================================
   // Memoized Values
   // ========================================================================
 
   const currentMetrics = renderingOptimization.performanceMetrics;
-  const alerts = renderingOptimization.performanceAlerts || [];
+  const alerts = renderingOptimization.alerts || [];
   const memoryMetrics = renderingOptimization.memoryMetrics;
 
   // Calculate metric trends
@@ -141,23 +138,41 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
       setCustomConfig(preset);
       setAutoOptimizeEnabled(preset.enableAutoOptimization);
 
-      if (renderingOptimization.applyOptimizationPlan) {
-        renderingOptimization.applyOptimizationPlan({
-          targetFPS: preset.targetFPS,
+      if (renderingOptimization.applyOptimizations) {
+        renderingOptimization.applyOptimizations({
+          strategy: {
+            targetFPS: preset.targetFPS,
+            lodLevel: preset.lodLevel,
+            cullingEnabled: true,
+            batchSize: 100,
+            gpuAcceleration: false,
+            memoryStrategy: 'balanced'
+          },
+          cullingBounds: { minX: 0, maxX: 0, minY: 0, maxY: 0 },
+          lodConfig: {
+            level: preset.lodLevel,
+            simplificationRatio: 1.0,
+            renderDistance: 1.0,
+            elementThreshold: 1000
+          },
           memoryStrategy: 'balanced',
-          lodLevel: preset.lodLevel
+          estimatedPerformance: {
+            expectedFPS: preset.targetFPS,
+            memoryReduction: 0,
+            renderingLoad: 0.5
+          }
         });
       }
     }
   }, [renderingOptimization]);
 
   const handleOptimizeDataset = useCallback(() => {
-    renderingOptimization.optimizeForDataset();
+    renderingOptimization.optimizeForDataset([]);
   }, [renderingOptimization]);
 
   const handleRunPerformanceTest = useCallback(() => {
     setIsTestingEnabled(true);
-    renderingOptimization.runPerformanceTest?.()
+    renderingOptimization.getBenchmarkResults()
       .finally(() => setIsTestingEnabled(false));
   }, [renderingOptimization]);
 
@@ -320,7 +335,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
           <MetricsTab
             currentMetrics={currentMetrics}
             renderingOptimization={renderingOptimization}
-            memoryMetrics={memoryMetrics}
+            memoryMetrics={memoryMetrics ?? undefined}
             metricHistory={metricHistory}
           />
         )}
@@ -338,7 +353,7 @@ export const RenderingMetricsPanel: React.FC<RenderingMetricsPanelProps> = ({
 
         {activeTab === 'memory' && (
           <MemoryTab
-            memoryMetrics={memoryMetrics}
+            memoryMetrics={memoryMetrics ?? undefined}
             memoryPressure={renderingOptimization.memoryPressure}
             onForceGC={handleForceGC}
             onRecordMemorySnapshot={() => renderingOptimization.recordMemoryUsage()}

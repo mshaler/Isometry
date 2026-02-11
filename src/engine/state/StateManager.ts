@@ -300,21 +300,22 @@ export class StateManager {
    * Import state from serialized data
    */
   public importState(serializedState: unknown): void {
+    const s = serializedState as Record<string, Record<string, unknown> | undefined>;
     const importedState = {
-      ...serializedState,
+      ...(s as object),
       // Convert arrays back to Sets and objects back to Maps
       audit: {
-        ...serializedState.audit,
-        highlightedCells: new Set(serializedState.audit?.highlightedCells || []),
-        computedCells: new Map(Object.entries(serializedState.audit?.computedCells || {}))
+        ...(s.audit || {}),
+        highlightedCells: new Set((s.audit?.highlightedCells as string[]) || []),
+        computedCells: new Map(Object.entries((s.audit?.computedCells as Record<string, unknown>) || {}))
       },
       ui: {
-        ...serializedState.ui,
-        selectedCards: new Set(serializedState.ui?.selectedCards || [])
+        ...(s.ui || {}),
+        selectedCards: new Set((s.ui?.selectedCards as string[]) || [])
       }
     };
 
-    this.updateState(importedState);
+    this.updateState(importedState as Partial<SuperGridState>);
   }
 
   /**
@@ -344,7 +345,7 @@ export class StateManager {
     }
 
     // Apply density filter
-    if (this.state.density.extentMode === 'populated-only') {
+    if (this.state.density.extentDensity === 'populated-only') {
       // Filter based on density settings
       visible = this.applyDensityFiltering(visible);
     }
@@ -367,7 +368,7 @@ export class StateManager {
   private executeSearch(query: string): void {
     // Implement FTS search logic
     const results = this.state.nodes.filter(node =>
-      node.title?.toLowerCase().includes(query.toLowerCase()) ||
+      node.name?.toLowerCase().includes(query.toLowerCase()) ||
       node.content?.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -453,7 +454,7 @@ export class StateManager {
    * Filter state based on persistence configuration
    */
   private filterStateForPersistence(): unknown {
-    const state = this.exportState();
+    const state = this.exportState() as Record<string, unknown>;
 
     if (!this.persistenceConfig.includeNodes) {
       delete state.nodes;
@@ -465,8 +466,9 @@ export class StateManager {
     }
 
     if (!this.persistenceConfig.includeSelection) {
-      delete state.ui.selectedCards;
-      delete state.ui.focusedCard;
+      const ui = state.ui as Record<string, unknown>;
+      delete ui.selectedCards;
+      delete ui.focusedCard;
     }
 
     return state;
@@ -496,17 +498,17 @@ export class StateManager {
         analytics: false
       },
       density: {
-        extentMode: 'populated-only',
-        extentLevel: 5,
-        sparsityThreshold: 0.1,
-        valueMode: 'leaf',
-        valueLevel: 7,
-        aggregationThreshold: 10,
-        densityLevel: 'view',
-        isOptimal: true,
-        renderTime: 0,
-        cellCount: 0,
-        cardCount: 0
+        valueDensity: 'leaf',
+        extentDensity: 'populated-only',
+        viewDensity: 'spreadsheet',
+        regionConfig: [],
+        axisGranularity: {},
+        aggregationPreferences: {
+          defaultFunction: 'count',
+          facetAggregations: {},
+          preservePrecision: true,
+          showAggregationSource: true
+        }
       },
       cartographic: {
         scale: 1,
@@ -531,10 +533,10 @@ export class StateManager {
       },
       cellExpansion: {
         expandedCells: new Set(),
-        defaultExpanded: false,
-        animationDuration: 200,
-        maxExpandedCells: 5,
-        expandOnHover: false
+        cellSizes: new Map(),
+        cellCounts: new Map(),
+        autoSizedCells: new Set(),
+        animatingCells: new Set()
       },
       search: {
         query: '',
@@ -542,9 +544,9 @@ export class StateManager {
         isActive: false
       },
       axisMapping: {
-        x: { axis: 'Location', facet: 'city' },
-        y: { axis: 'Time', facet: 'created_at' },
-        z: { axis: 'Category', facet: 'status' }
+        plane: 'x',
+        axis: 'location',
+        facet: 'city'
       },
       audit: {
         enabled: false,

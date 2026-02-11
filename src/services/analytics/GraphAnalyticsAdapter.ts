@@ -176,22 +176,29 @@ export class GraphAnalyticsAdapter {
         reject(new Error(`Graph analytics request timeout: ${method}`));
       }, this.DEFAULT_TIMEOUT);
 
-      // Store pending request
-      this.pendingRequests.set(requestId, { resolve, reject, timeout });
+      // Store pending request (cast resolve to unknown handler for storage)
+      this.pendingRequests.set(requestId, {
+        resolve: resolve as (value: unknown) => void,
+        reject,
+        timeout
+      });
 
       // Send message
+      const paramsObj = (typeof params === 'object' && params !== null) ? params as Record<string, unknown> : {};
       const message: BridgeMessage = {
         id: requestId,
         method,
         params: {
-          ...params,
+          ...paramsObj,
           sequenceId: Date.now()
         },
         timestamp: Date.now()
       };
 
       try {
-        window.webkit!.messageHandlers.graphAnalytics.postMessage(message);
+        const handlers = window.webkit?.messageHandlers as
+          Record<string, { postMessage: (data: unknown) => void }> | undefined;
+        handlers?.graphAnalytics?.postMessage(message);
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(requestId);

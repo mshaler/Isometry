@@ -135,16 +135,16 @@ export class SuperGridRenderer {
 
     const mergedColumns = (columnHeaders as any).merge(columnEnter as any) as any;
     mergedColumns
-      .attr('transform', (d: unknown) => `translate(${d.position.x + gridDimensions.headerWidth}, ${d.position.y})`);
+      .attr('transform', (d: HeaderDescriptor) => `translate(${d.position.x + gridDimensions.headerWidth}, ${d.position.y})`);
 
     (mergedColumns.select('rect') as any)
-      .attr('width', (d: unknown) => d.position.width)
-      .attr('height', (d: unknown) => d.position.height);
+      .attr('width', (d: HeaderDescriptor) => d.position.width)
+      .attr('height', (d: HeaderDescriptor) => d.position.height);
 
     (mergedColumns.select('text') as any)
-      .attr('x', (d: unknown) => d.position.width / 2)
-      .attr('y', (d: unknown) => d.position.height / 2)
-      .text((d: unknown) => d.value);
+      .attr('x', (d: HeaderDescriptor) => d.position.width / 2)
+      .attr('y', (d: HeaderDescriptor) => d.position.height / 2)
+      .text((d: HeaderDescriptor) => d.value);
 
     columnHeaders.exit().remove();
 
@@ -169,16 +169,16 @@ export class SuperGridRenderer {
 
     const mergedRows = (rowHeaders as any).merge(rowEnter as any) as any;
     mergedRows
-      .attr('transform', (d: unknown) => `translate(${d.position.x}, ${d.position.y + gridDimensions.headerHeight})`);
+      .attr('transform', (d: HeaderDescriptor) => `translate(${d.position.x}, ${d.position.y + gridDimensions.headerHeight})`);
 
     (mergedRows.select('rect') as any)
-      .attr('width', (d: unknown) => d.position.width)
-      .attr('height', (d: unknown) => d.position.height);
+      .attr('width', (d: HeaderDescriptor) => d.position.width)
+      .attr('height', (d: HeaderDescriptor) => d.position.height);
 
     (mergedRows.select('text') as any)
-      .attr('x', (d: unknown) => d.position.width / 2)
-      .attr('y', (d: unknown) => d.position.height / 2)
-      .text((d: unknown) => d.value);
+      .attr('x', (d: HeaderDescriptor) => d.position.width / 2)
+      .attr('y', (d: HeaderDescriptor) => d.position.height / 2)
+      .text((d: HeaderDescriptor) => d.value);
 
     rowHeaders.exit().remove();
   }

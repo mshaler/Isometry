@@ -58,7 +58,7 @@ export class SuperDensityRenderer {
     this.renderModes = null as any;
     this.interactionManager = null as any;
 
-    superGridLogger.lifecycle('SuperDensityRenderer initialized');
+    superGridLogger.setup('SuperDensityRenderer initialized', {});
   }
 
   /**
@@ -83,7 +83,7 @@ export class SuperDensityRenderer {
       }
     );
 
-    superGridLogger.lifecycle('SuperDensityRenderer DOM initialized');
+    superGridLogger.setup('SuperDensityRenderer DOM initialized', {});
   }
 
   /**
@@ -98,8 +98,8 @@ export class SuperDensityRenderer {
 
     try {
       // Update state and data
-      this.currentState = aggregationResult.janusState;
-      this.currentData = aggregationResult.aggregatedRows;
+      this.currentState = aggregationResult.janusState ?? this.currentState;
+      this.currentData = aggregationResult.aggregatedRows ?? aggregationResult.data;
 
       // Update scales with new data
       this.setup.updateScales(this.currentData, this.scales);
@@ -159,7 +159,7 @@ export class SuperDensityRenderer {
     if (!this.components || !this.interactionManager) return;
 
     // Setup interactions on all cell types
-    const allCells = this.components.gridGroup.selectAll(
+    const allCells = this.components.gridGroup.selectAll<SVGElement, DensityAggregatedRow>(
       '.grid-cells, .matrix-cells, .hybrid-grid-cells, .hybrid-matrix-cells'
     );
 
@@ -196,8 +196,8 @@ export class SuperDensityRenderer {
     labelsUpdate
       .transition()
       .duration(this.config.transitionDuration)
-      .attr('x', d => this.scales!.xScale(d.x) + this.config.cellWidth / 2)
-      .attr('y', d => this.scales!.yScale(d.y) + this.config.cellHeight / 2)
+      .attr('x', d => this.scales!.xScale(d.x ?? 0) + this.config.cellWidth / 2)
+      .attr('y', d => this.scales!.yScale(d.y ?? 0) + this.config.cellHeight / 2)
       .text(d => this.renderModes!.formatCellLabel(d))
       .style('opacity', 1);
 
@@ -286,7 +286,7 @@ export class SuperDensityRenderer {
       this.components.tooltipDiv.remove();
     }
 
-    superGridLogger.lifecycle('SuperDensityRenderer destroyed');
+    superGridLogger.setup('SuperDensityRenderer destroyed', {});
   }
 }
 

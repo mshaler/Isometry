@@ -19,31 +19,11 @@ import {
   HelpCircle,
   Download
 } from 'lucide-react';
-// Remove the import causing the error - we'll add a type-safe fallback
 import { GSDPhase, GSDStatus } from '../../types/gsd';
+import { GSDSlashCommandProcessor, SlashCommand } from '../../services/claude-code/gsdSlashCommands';
 
-// Define SlashCommand interface since import is missing
-interface SlashCommand {
-  command: string;
-  description: string;
-  category: 'workflow' | 'data' | 'output' | 'utility';
-  requiresInput?: boolean;
-  shortcut?: string;
-  dangerous?: boolean;
-}
-
-// Fallback command data since import is missing
-const fallbackCommands: SlashCommand[] = [
-  { command: '/start', description: 'Start a new task', category: 'workflow' },
-  { command: '/status', description: 'Check current status', category: 'utility' },
-  { command: '/export', description: 'Export data', category: 'output' },
-  { command: '/import', description: 'Import data', category: 'data' }
-];
-
-// Fallback service since import is missing
-const gsdSlashCommands = {
-  getCommandsByCategory: () => ({ workflow: fallbackCommands })
-};
+// Create a processor instance for command palette
+const gsdSlashCommands = new GSDSlashCommandProcessor();
 
 // Define the icon component type
 type IconComponent = React.ComponentType<{ size?: number; className?: string }>;
@@ -156,15 +136,15 @@ export function CommandPalette({
     // Simple icon mapping based on command category
     switch (command.category) {
       case 'workflow':
-        return PlayCircle;
-      case 'data':
-        return FileText;
-      case 'output':
-        return Download;
+        return PlayCircle as unknown as IconComponent;
+      case 'phase':
+        return FileText as unknown as IconComponent;
+      case 'navigation':
+        return Download as unknown as IconComponent;
       case 'utility':
-        return Code;
+        return Code as unknown as IconComponent;
       default:
-        return Terminal;
+        return Terminal as unknown as IconComponent;
     }
   }, []);
 
@@ -181,8 +161,12 @@ export function CommandPalette({
         return `${baseStyle} bg-blue-900/20 border-blue-600 text-blue-200 hover:bg-blue-900/30 hover:border-blue-500`;
       case 'phase':
         return `${baseStyle} bg-green-900/20 border-green-600 text-green-200 hover:bg-green-900/30 hover:border-green-500`;
+      case 'navigation':
+        return `${baseStyle} bg-purple-900/20 border-purple-600 text-purple-200 hover:bg-purple-900/30 hover:border-purple-500`;
       case 'control':
         return `${baseStyle} bg-orange-900/20 border-orange-600 text-orange-200 hover:bg-orange-900/30 hover:border-orange-500`;
+      case 'utility':
+        return `${baseStyle} bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500`;
       default:
         return `${baseStyle} bg-gray-800 border-gray-600 text-gray-200 hover:bg-gray-700 hover:border-gray-500`;
     }

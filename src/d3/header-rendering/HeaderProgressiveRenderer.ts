@@ -53,7 +53,7 @@ export class HeaderProgressiveRenderer {
 
     const useProgressive = estimatedRenderTime > this.config.performanceBudgetMs;
 
-    superGridLogger.performance('Progressive rendering decision', {
+    superGridLogger.metrics('Progressive rendering decision', {
       nodeCount,
       estimatedRenderTime,
       budget: this.config.performanceBudgetMs,

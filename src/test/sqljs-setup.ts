@@ -63,7 +63,8 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
 
   try {
     // Initialize sql.js with custom FTS5-enabled build
-    global.__TEST_SQL__ = await initSqlJs(wasmLoader());
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    global.__TEST_SQL__ = await initSqlJs(wasmLoader() as any);
     devLogger.info('sql.js initialized for testing', {
       fts5Enabled: true
     });

@@ -11,7 +11,17 @@ import type {
   ResizeHandleConfig,
   ResizeOperationState
 } from '../../types/grid';
-import { DEFAULT_RESIZE_CONFIG } from '../../types/grid';
+
+/** Default resize handle config for header interactions */
+const DEFAULT_HEADER_RESIZE_CONFIG: ResizeHandleConfig = {
+  enabled: true,
+  minWidth: 60,
+  maxWidth: 400,
+  snap: true,
+  handleWidth: 8,
+  cursor: 'col-resize',
+  enableSmoothing: true
+};
 import { superGridLogger } from '../../utils/dev-logger';
 
 export interface InteractionCallbacks {
@@ -36,7 +46,7 @@ export class HeaderInteractionManager {
     resizeConfig: Partial<ResizeHandleConfig> = {}
   ) {
     this.callbacks = callbacks;
-    this.resizeConfig = { ...DEFAULT_RESIZE_CONFIG, ...resizeConfig };
+    this.resizeConfig = { ...DEFAULT_HEADER_RESIZE_CONFIG, ...resizeConfig };
     this.resizeState = {
       isActive: false,
       startX: 0,
@@ -108,7 +118,7 @@ export class HeaderInteractionManager {
   private updateCursorForZone(event: MouseEvent, node: HeaderNode): void {
     const rect = (event.currentTarget as SVGGElement).getBoundingClientRect();
     const mouseX = event.clientX - rect.left;
-    const isInResizeZone = mouseX >= node.width - this.resizeConfig.handleWidth;
+    const isInResizeZone = mouseX >= node.width - (this.resizeConfig.handleWidth ?? 8);
 
     if (isInResizeZone) {
       d3.select(event.currentTarget as SVGGElement)
@@ -175,7 +185,7 @@ export class HeaderInteractionManager {
    */
   private isResizeZone(event: d3.D3DragEvent<SVGGElement, HeaderNode, any>, node: HeaderNode): boolean {
     const mouseX = event.sourceEvent.offsetX;
-    return mouseX >= node.width - this.resizeConfig.handleWidth;
+    return mouseX >= node.width - (this.resizeConfig.handleWidth ?? 8);
   }
 
   /**
@@ -188,7 +198,7 @@ export class HeaderInteractionManager {
       startY: event.y,
       startWidth: node.width,
       targetNodeId: node.id,
-      affectedNodes: [node]
+      affectedNodes: [node.id]
     };
 
     superGridLogger.debug('Resize started', {

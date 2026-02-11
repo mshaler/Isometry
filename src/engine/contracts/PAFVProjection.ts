@@ -288,14 +288,20 @@ export const PAFVProjectionUtils = {
  * Type guards for PAFV projection types
  */
 export const isPAFVProjection = (obj: unknown): obj is PAFVProjection => {
-  return obj &&
-    obj.x && PAFVProjectionUtils.isValidPlaneAssignment(obj.x) &&
-    obj.y && PAFVProjectionUtils.isValidPlaneAssignment(obj.y);
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    !!o.x && PAFVProjectionUtils.isValidPlaneAssignment(o.x as PlaneAssignment) &&
+    !!o.y && PAFVProjectionUtils.isValidPlaneAssignment(o.y as PlaneAssignment)
+  );
 };
 
 export const isPlaneAssignment = (obj: unknown): obj is PlaneAssignment => {
-  return obj &&
-    typeof obj.axis === 'string' &&
-    typeof obj.facet === 'string' &&
-    ['location', 'alphabet', 'time', 'category', 'hierarchy'].includes(obj.axis);
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    typeof o.axis === 'string' &&
+    typeof o.facet === 'string' &&
+    ['location', 'alphabet', 'time', 'category', 'hierarchy'].includes(o.axis as string)
+  );
 };

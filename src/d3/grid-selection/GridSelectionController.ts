@@ -7,8 +7,8 @@
 
 import * as d3 from 'd3';
 import { SelectionManager } from '../../services/query/SelectionManager';
-import type { SelectionCallbacks, GridPosition } from '../../services/query/SelectionManager';
-import type { GridData } from '../../types/grid';
+import type { SelectionCallbacks } from '../../services/query/SelectionManager';
+import type { GridData } from '../../types/grid-core';
 import { superGridLogger } from '../../utils/dev-logger';
 
 export interface SelectionControllerConfig {
@@ -79,12 +79,15 @@ export class GridSelectionController {
       return;
     }
 
-    const { x, y } = this.getEventPosition(event);
+    // Event position available for future spatial selection logic
+    this.getEventPosition(event);
+    const cardRecord = cardData as Record<string, unknown>;
 
     const selectionMode = this.config.selectionMode;
     const isMultiSelect = event.ctrlKey || event.metaKey || selectionMode === 'multi';
 
-    this.selectionManager.handleClick(cardData.id, { x, y }, isMultiSelect);
+    const cardId = String(cardRecord.id ?? '');
+    this.selectionManager.selectCard(cardId, isMultiSelect ? 'add' : 'single');
 
     // Handle single selection callback
     if (selectionMode === 'single' && this.callbacks.onCardClick) {
@@ -92,7 +95,7 @@ export class GridSelectionController {
     }
 
     superGridLogger.debug('Card clicked', {
-      cardId: cardData.id,
+      cardId,
       isMultiSelect,
       selectionMode
     });
@@ -103,8 +106,8 @@ export class GridSelectionController {
    */
   public getSelection(): { selectedIds: string[]; focusedId: string | null } {
     return {
-      selectedIds: this.selectionManager.getSelectedIds(),
-      focusedId: this.selectionManager.getFocusedId()
+      selectedIds: this.selectionManager.getSelectedCards(),
+      focusedId: this.selectionManager.getFocusedCard()
     };
   }
 
@@ -112,7 +115,8 @@ export class GridSelectionController {
    * Set selection programmatically
    */
   public setSelection(cardIds: string[]): void {
-    this.selectionManager.setSelection(cardIds);
+    this.selectionManager.clearSelection();
+    cardIds.forEach(id => this.selectionManager.selectCard(id, 'add'));
   }
 
   /**
@@ -142,7 +146,7 @@ export class GridSelectionController {
   public updateCardSelectionVisuals(selectedIds: string[]): void {
     this.container
       .selectAll('.card')
-      .classed('selected', (d: unknown) => selectedIds.includes(d.id))
+      .classed('selected', (d: unknown) => selectedIds.includes(String((d as Record<string, unknown>).id)))
       .classed('multi-selected', selectedIds.length > 1);
   }
 
@@ -152,7 +156,7 @@ export class GridSelectionController {
   public updateCardFocusVisuals(focusedId: string | null): void {
     this.container
       .selectAll('.card')
-      .classed('focused', (d: unknown) => d.id === focusedId);
+      .classed('focused', (d: unknown) => (d as Record<string, unknown>).id === focusedId);
   }
 
   /**
@@ -160,7 +164,7 @@ export class GridSelectionController {
    */
   public destroy(): void {
     if (this.selectionManager) {
-      this.selectionManager.destroy();
+      this.selectionManager.clearSelection();
     }
 
     // Remove keyboard event listeners
@@ -257,21 +261,23 @@ export class GridSelectionController {
    */
   private navigateVertically(direction: number, extendSelection: boolean): void {
     // Implementation would depend on grid layout
-    const currentFocus = this.selectionManager.getFocusedId();
+    const currentFocus = this.selectionManager.getFocusedCard();
     const cards = this.currentData?.cards || [];
 
     if (!currentFocus && cards.length > 0) {
-      this.selectionManager.setFocus(cards[0].id);
+      const firstCard = cards[0] as Record<string, unknown>;
+      this.selectionManager.setFocus(String(firstCard.id));
       return;
     }
 
     // Find next card in vertical direction
     const nextCard = this.findCardInDirection(currentFocus, 'vertical', direction);
     if (nextCard) {
-      this.selectionManager.setFocus(nextCard.id);
+      const nextCardRecord = nextCard as Record<string, unknown>;
+      this.selectionManager.setFocus(String(nextCardRecord.id));
 
       if (extendSelection) {
-        this.selectionManager.addToSelection(nextCard.id);
+        this.selectionManager.selectCard(String(nextCardRecord.id), 'add');
       }
     }
   }
@@ -280,21 +286,23 @@ export class GridSelectionController {
    * Navigate horizontally through the grid
    */
   private navigateHorizontally(direction: number, extendSelection: boolean): void {
-    const currentFocus = this.selectionManager.getFocusedId();
+    const currentFocus = this.selectionManager.getFocusedCard();
     const cards = this.currentData?.cards || [];
 
     if (!currentFocus && cards.length > 0) {
-      this.selectionManager.setFocus(cards[0].id);
+      const firstCard = cards[0] as Record<string, unknown>;
+      this.selectionManager.setFocus(String(firstCard.id));
       return;
     }
 
     // Find next card in horizontal direction
     const nextCard = this.findCardInDirection(currentFocus, 'horizontal', direction);
     if (nextCard) {
-      this.selectionManager.setFocus(nextCard.id);
+      const nextCardRecord = nextCard as Record<string, unknown>;
+      this.selectionManager.setFocus(String(nextCardRecord.id));
 
       if (extendSelection) {
-        this.selectionManager.addToSelection(nextCard.id);
+        this.selectionManager.selectCard(String(nextCardRecord.id), 'add');
       }
     }
   }
@@ -303,9 +311,9 @@ export class GridSelectionController {
    * Toggle selection of currently focused item
    */
   private toggleCurrentFocusSelection(): void {
-    const focusedId = this.selectionManager.getFocusedId();
+    const focusedId = this.selectionManager.getFocusedCard();
     if (focusedId) {
-      this.selectionManager.toggleSelection(focusedId);
+      this.selectionManager.selectCard(focusedId, 'add');
     }
   }
 
@@ -313,9 +321,11 @@ export class GridSelectionController {
    * Activate/click the currently focused item
    */
   private activateCurrentFocus(): void {
-    const focusedId = this.selectionManager.getFocusedId();
+    const focusedId = this.selectionManager.getFocusedCard();
     if (focusedId && this.callbacks.onCardClick) {
-      const card = this.currentData?.cards.find(c => c.id === focusedId);
+      const card = this.currentData?.cards.find(
+        c => (c as Record<string, unknown>).id === focusedId
+      );
       if (card) {
         this.callbacks.onCardClick(card);
       }
@@ -326,8 +336,11 @@ export class GridSelectionController {
    * Select all cards
    */
   private selectAll(): void {
-    const allIds = this.currentData?.cards.map(card => card.id) || [];
-    this.selectionManager.setSelection(allIds);
+    const allIds = this.currentData?.cards.map(
+      card => String((card as Record<string, unknown>).id)
+    ) || [];
+    this.selectionManager.clearSelection();
+    allIds.forEach(id => this.selectionManager.selectCard(id, 'add'));
   }
 
   /**
@@ -337,7 +350,9 @@ export class GridSelectionController {
     if (!currentId || !this.currentData) return null;
 
     const cards = this.currentData.cards;
-    const currentIndex = cards.findIndex(card => card.id === currentId);
+    const currentIndex = cards.findIndex(
+      card => (card as Record<string, unknown>).id === currentId
+    );
 
     if (currentIndex === -1) return null;
 
@@ -354,7 +369,7 @@ export class GridSelectionController {
   /**
    * Get event position relative to container
    */
-  private getEventPosition(event: MouseEvent): GridPosition {
+  private getEventPosition(event: MouseEvent): { x: number; y: number } {
     const containerRect = (this.container.node() as SVGElement).getBoundingClientRect();
     return {
       x: event.clientX - containerRect.left,

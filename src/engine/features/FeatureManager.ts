@@ -182,9 +182,10 @@ export class FeatureManager {
    * Record performance metrics for a feature
    */
   public recordPerformance(feature: string, metrics: unknown): void {
+    const metricsObj = (typeof metrics === 'object' && metrics !== null) ? metrics : {};
     this.performanceMetrics.set(feature, {
       ...this.performanceMetrics.get(feature),
-      ...metrics,
+      ...(metricsObj as Record<string, unknown>),
       timestamp: Date.now()
     });
 
@@ -301,11 +302,12 @@ export class FeatureManager {
       frameRate: 30 // fps
     };
 
+    const m = metrics as Record<string, number>;
     return (
-      (metrics.renderTime && metrics.renderTime > thresholds.renderTime) ||
-      (metrics.memoryUsage && metrics.memoryUsage > thresholds.memoryUsage) ||
-      (metrics.frameRate && metrics.frameRate < thresholds.frameRate)
-    );
+      (m.renderTime && m.renderTime > thresholds.renderTime) ||
+      (m.memoryUsage && m.memoryUsage > thresholds.memoryUsage) ||
+      (m.frameRate && m.frameRate < thresholds.frameRate)
+    ) as boolean;
   }
 
   /**

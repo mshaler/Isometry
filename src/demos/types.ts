@@ -7,6 +7,10 @@ import type { ZoomLevel, PanLevel } from '../d3/SuperGridZoom';
 import type { ProgressiveDisclosureState, JanusDensityState } from '../types/supergrid';
 import type { ViewAxisMapping } from '../types/views';
 
+// Re-export types used by demo sub-components
+export type { ProgressiveDisclosureState, JanusDensityState } from '../types/supergrid';
+export type { ViewAxisMapping } from '../types/views';
+
 // Performance monitoring
 export interface PerformanceMetrics {
   lastRenderTime: number;

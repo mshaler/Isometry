@@ -271,25 +271,31 @@ export const DEFAULT_VIEW_CONFIG: ViewConfig = {
  * Type guard for ViewConfig validation
  */
 export const isViewConfig = (obj: unknown): obj is ViewConfig => {
-  return obj &&
-    typeof obj.viewType === 'string' &&
-    obj.projection &&
-    Array.isArray(obj.filters) &&
-    Array.isArray(obj.sort) &&
-    obj.zoom &&
-    obj.selection &&
-    obj.styling &&
-    obj.eventHandlers;
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    typeof o.viewType === 'string' &&
+    !!o.projection &&
+    Array.isArray(o.filters) &&
+    Array.isArray(o.sort) &&
+    !!o.zoom &&
+    !!o.selection &&
+    !!o.styling &&
+    !!o.eventHandlers
+  );
 };
 
 /**
  * Type guard for LATCHFilter validation
  */
 export const isLATCHFilter = (obj: unknown): obj is LATCHFilter => {
-  return obj &&
-    ['L', 'A', 'T', 'C', 'H'].includes(obj.axis) &&
-    typeof obj.facet === 'string' &&
-    typeof obj.operator === 'string' &&
-    obj.value !== undefined &&
-    typeof obj.enabled === 'boolean';
+  if (typeof obj !== 'object' || obj === null) return false;
+  const o = obj as Record<string, unknown>;
+  return (
+    ['L', 'A', 'T', 'C', 'H'].includes(o.axis as string) &&
+    typeof o.facet === 'string' &&
+    typeof o.operator === 'string' &&
+    o.value !== undefined &&
+    typeof o.enabled === 'boolean'
+  );
 };

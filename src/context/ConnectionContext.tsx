@@ -9,9 +9,20 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { ConnectionManager, ConnectionState, ConnectionQuality, getConnectionManager } from '../utils/webview/connection-manager';
+import type { ConnectionState, ConnectionQuality, ConnectionMetrics } from '../utils/webview/connection-manager';
+import { DefaultConnectionManager, DEFAULT_CONNECTION_CONFIG } from '../utils/webview/connection-manager';
 import { useLiveDataContext } from '../contexts/LiveDataContext';
 import { devLogger } from "../utils/logging/dev-logger";
+
+/** Shape of a queued offline operation */
+interface QueuedOperation {
+  id: string;
+  type: string;
+  data: unknown;
+  priority: 'low' | 'normal' | 'high' | 'critical';
+  maxRetries: number;
+  timestamp: number;
+}
 
 export interface ConnectionContextValue {
   /** Current connection state */
@@ -66,6 +77,11 @@ export interface ConnectionProviderProps {
   enableOfflineQueue?: boolean;
 }
 
+/** Generate a unique operation ID */
+function generateOperationId(): string {
+  return `op_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function ConnectionProvider({
   children,
   managerOptions,
@@ -87,66 +103,119 @@ export function ConnectionProvider({
   const [reconnectionAttempts, setReconnectionAttempts] = useState(0);
   const [pendingOperations, setPendingOperations] = useState(0);
 
-  // Connection manager instance
-  const connectionManager = useRef<ConnectionManager | null>(null);
-  const metricsUpdateTimer = useRef<NodeJS.Timeout | null>(null);
+  // Connection manager instance (DefaultConnectionManager extends EventEmitter)
+  const connectionManager = useRef<DefaultConnectionManager | null>(null);
+  const metricsUpdateTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Local offline operation queue
+  const operationQueue = useRef<Map<string, QueuedOperation>>(new Map());
 
   // Live data context integration
   const liveDataContext = useLiveDataContext();
 
+  /** Sync local state from the connection manager's metrics */
+  const syncMetrics = useCallback((mgr: DefaultConnectionManager) => {
+    const metrics: ConnectionMetrics = mgr.getMetrics();
+    setUptime(metrics.uptime);
+    setReconnectionAttempts(metrics.reconnectCount);
+    setLastHeartbeat(Date.now());
+  }, []);
+
+  /** Update connection status from a state value */
+  const applyState = useCallback((newState: ConnectionState) => {
+    setStatus(newState);
+    setIsConnected(
+      newState === 'connected' || newState === 'degraded' || newState === 'syncing'
+    );
+  }, []);
+
   // Initialize connection manager
   useEffect(() => {
-    connectionManager.current = getConnectionManager(managerOptions);
+    const config = {
+      ...DEFAULT_CONNECTION_CONFIG,
+      ...(managerOptions?.heartbeatInterval != null && {
+        heartbeatInterval: managerOptions.heartbeatInterval
+      }),
+      ...(managerOptions?.connectionTimeout != null && {
+        heartbeatTimeout: managerOptions.connectionTimeout
+      }),
+      reconnection: {
+        ...DEFAULT_CONNECTION_CONFIG.reconnection,
+        ...(managerOptions?.maxReconnectionAttempts != null && {
+          maxAttempts: managerOptions.maxReconnectionAttempts
+        })
+      }
+    };
 
-    // Set up state change listener
-    connectionManager.current.onStateChange((newState: ConnectionState, metrics: unknown) => {
-      setStatus(newState);
-      setIsConnected(newState === 'connected' || newState === 'degraded' || newState === 'syncing');
-      setUptime(metrics.uptime);
-      setLastHeartbeat(metrics.lastHeartbeat);
-      setReconnectionAttempts(metrics.reconnectionAttempts);
+    const mgr = new DefaultConnectionManager(config);
+    connectionManager.current = mgr;
+
+    // Listen for connection lifecycle events
+    mgr.on('connected', () => {
+      applyState('connected');
+      syncMetrics(mgr);
 
       // Coordinate with LiveDataContext
-      if (newState === 'connected' && !liveDataContext.state.isConnected) {
-        // LiveData context manages its own connections through executeQuery
+      if (!liveDataContext.state.isConnected) {
         devLogger.debug('Connection established', { liveDataContextAvailable: true });
       }
     });
 
-    // Set up quality change listener
-    connectionManager.current.onQualityChange((newQuality: ConnectionQuality) => {
-      setQuality(newQuality);
+    mgr.on('disconnected', () => {
+      applyState('disconnected');
+      syncMetrics(mgr);
+    });
+
+    mgr.on('reconnecting', () => {
+      applyState('reconnecting');
+      syncMetrics(mgr);
+    });
+
+    mgr.on('error', () => {
+      applyState('error');
+      syncMetrics(mgr);
+    });
+
+    // Listen for quality changes
+    mgr.on('quality_changed', (data: unknown) => {
+      if (data && typeof data === 'object' && 'latency' in data) {
+        setQuality(data as ConnectionQuality);
+      } else {
+        setQuality(mgr.getQuality());
+      }
     });
 
     // Start monitoring if requested
     if (autoStart) {
-      connectionManager.current.start();
+      void mgr.connect();
+      mgr.startMonitoring();
     }
 
     return () => {
       if (connectionManager.current) {
-        connectionManager.current.stop();
+        void connectionManager.current.disconnect();
+        connectionManager.current.stopMonitoring();
         connectionManager.current.removeAllListeners();
       }
     };
-  }, [autoStart, managerOptions, liveDataContext]);
+  }, [autoStart, managerOptions, liveDataContext, applyState, syncMetrics]);
 
   // Set up metrics update timer
   useEffect(() => {
-    if (connectionManager.current) {
-      metricsUpdateTimer.current = setInterval(() => {
-        if (connectionManager.current) {
-          const queueStatus = connectionManager.current.getQueueStatus();
-          setPendingOperations(queueStatus.count);
-        }
-      }, 1000); // Update every second
+    metricsUpdateTimer.current = setInterval(() => {
+      if (connectionManager.current) {
+        const metrics = connectionManager.current.getMetrics();
+        setPendingOperations(
+          metrics.queuedMessages + operationQueue.current.size
+        );
+      }
+    }, 1000);
 
-      return () => {
-        if (metricsUpdateTimer.current) {
-          clearInterval(metricsUpdateTimer.current);
-        }
-      };
-    }
+    return () => {
+      if (metricsUpdateTimer.current) {
+        clearInterval(metricsUpdateTimer.current);
+      }
+    };
   }, []);
 
   // Test connection manually
@@ -157,11 +226,12 @@ export function ConnectionProvider({
     }
 
     try {
-      const result = await connectionManager.current.testConnection();
+      await connectionManager.current.connect();
+      const state = connectionManager.current.getState();
+      const result = state === 'connected';
 
       // Update live data context if connection test succeeded
       if (result && !liveDataContext.state.isConnected) {
-        // LiveData context will handle its own connection state
         devLogger.debug('Test connection successful', { liveDataContextReady: true });
       }
 
@@ -182,11 +252,11 @@ export function ConnectionProvider({
     devLogger.debug('Forcing reconnection');
 
     try {
-      const result = await connectionManager.current.forceReconnection();
+      await connectionManager.current.reconnect();
+      const state = connectionManager.current.getState();
+      const result = state === 'connected';
 
-      // Sync with live data context on successful reconnection
       if (result) {
-        // LiveData context will handle reconnection through executeQuery
         devLogger.debug('Forced reconnection successful', { liveDataContextReady: true });
       }
 
@@ -197,7 +267,7 @@ export function ConnectionProvider({
     }
   }, [liveDataContext]);
 
-  // Queue operation for offline execution
+  // Queue operation for offline execution (managed locally)
   const queueOperation = useCallback((operation: {
     type: string;
     data: unknown;
@@ -212,37 +282,34 @@ export function ConnectionProvider({
       throw new Error('Offline queue is disabled');
     }
 
-    try {
-      const operationId = connectionManager.current.queueOperation({
-        type: operation.type,
-        data: operation.data,
-        priority: operation.priority ?? 'normal',
-        maxRetries: operation.maxRetries ?? 3
-      });
+    const operationId = generateOperationId();
+    const entry: QueuedOperation = {
+      id: operationId,
+      type: operation.type,
+      data: operation.data,
+      priority: operation.priority ?? 'normal',
+      maxRetries: operation.maxRetries ?? 3,
+      timestamp: Date.now()
+    };
 
-      devLogger.debug('Queued operation', {
-        id: operationId,
-        type: operation.type,
-        priority: operation.priority
-      });
+    operationQueue.current.set(operationId, entry);
+    setPendingOperations(operationQueue.current.size);
 
-      return operationId;
-    } catch (error) {
-      devLogger.error('Failed to queue operation', { error });
-      throw error;
-    }
+    devLogger.debug('Queued operation', {
+      id: operationId,
+      type: operation.type,
+      priority: entry.priority
+    });
+
+    return operationId;
   }, [enableOfflineQueue]);
 
   // Cancel queued operation
   const cancelOperation = useCallback((operationId: string): boolean => {
-    if (!connectionManager.current) {
-      devLogger.warn('Connection manager not initialized', { context: 'cancelOperation' });
-      return false;
-    }
-
-    const success = connectionManager.current.removeFromQueue(operationId);
+    const success = operationQueue.current.delete(operationId);
 
     if (success) {
+      setPendingOperations(operationQueue.current.size);
       devLogger.debug('Cancelled operation', { operationId });
     } else {
       devLogger.warn('Failed to cancel operation', { operationId });
@@ -253,15 +320,27 @@ export function ConnectionProvider({
 
   // Get queue status
   const getQueueStatus = useCallback(() => {
-    if (!connectionManager.current) {
+    const queue = operationQueue.current;
+
+    if (queue.size === 0) {
       return {
         count: 0,
-        byPriority: { low: 0, normal: 0, high: 0, critical: 0 },
+        byPriority: { low: 0, normal: 0, high: 0, critical: 0 } as Record<string, number>,
         oldestTimestamp: null
       };
     }
 
-    return connectionManager.current.getQueueStatus();
+    const byPriority: Record<string, number> = { low: 0, normal: 0, high: 0, critical: 0 };
+    let oldestTimestamp: number | null = null;
+
+    for (const op of queue.values()) {
+      byPriority[op.priority] = (byPriority[op.priority] ?? 0) + 1;
+      if (oldestTimestamp === null || op.timestamp < oldestTimestamp) {
+        oldestTimestamp = op.timestamp;
+      }
+    }
+
+    return { count: queue.size, byPriority, oldestTimestamp };
   }, []);
 
   // Handle window focus events for connection retry
@@ -269,14 +348,14 @@ export function ConnectionProvider({
     const handleFocus = () => {
       if (!isConnected && connectionManager.current) {
         devLogger.debug('Window focused, testing connection');
-        testConnection();
+        void testConnection();
       }
     };
 
     const handleOnline = () => {
       devLogger.debug('Network online event detected');
       if (!isConnected && connectionManager.current) {
-        testConnection();
+        void testConnection();
       }
     };
 

@@ -365,21 +365,24 @@ export class SuperGridEngine {
       },
       cartographic: {
         scale: 1.0,
-        transform: { x: 0, y: 0, k: 1.0 },
-        anchorPoint: { x: 0, y: 0 },
+        translateX: 0,
+        translateY: 0,
+        rotation: 0,
+        zoomLevel: 1,
+        zoomCenter: { x: 0, y: 0 },
+        zoomAnchor: 'center',
+        panVelocity: { x: 0, y: 0 },
+        isPanning: false,
+        lastPanTime: 0,
+        isZooming: false,
+        isDragging: false,
+        lastInteractionTime: 0,
+        viewportBounds: { left: 0, top: 0, right: 1000, bottom: 1000 },
+        contentBounds: { left: 0, top: 0, right: 1000, bottom: 1000 },
         isAnimating: false,
-        boundaryStatus: {
-          atLeftBoundary: false,
-          atRightBoundary: false,
-          atTopBoundary: false,
-          atBottomBoundary: false
-        },
-        performance: {
-          lastOperationDuration: 0,
-          averageFrameRate: 60,
-          frameDrops: 0
-        },
-        lastUpdated: Date.now(),
+        animationStartTime: 0,
+        animationDuration: 0,
+        animationTarget: {},
         ...partial.cartographic
       },
       search: {
@@ -421,11 +424,12 @@ export class SuperGridEngine {
         ...partial.size
       },
       zoom: {
-        zoomExtent: [0.1, 5.0],
-        anchorMode: 'upper-left',
-        enableBoundaryConstraints: true,
-        animationDuration: 300,
-        enableSmoothing: true,
+        minZoomLevel: 0.1,
+        maxZoomLevel: 5.0,
+        zoomAnchor: 'upper-left',
+        constrainToBounds: true,
+        zoomAnimationDuration: 300,
+        smoothZoom: true,
         ...partial.zoom
       },
       dynamic: {

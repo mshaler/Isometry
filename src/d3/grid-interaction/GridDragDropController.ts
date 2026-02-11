@@ -6,10 +6,22 @@
  */
 
 import * as d3 from 'd3';
-import type { GridData } from '../../types/grid';
-import type { CardPosition } from '../../types/views';
+import type { GridData } from '../../types/grid-core';
 import type { useDatabaseService } from '../../hooks/database/useDatabaseService';
 import { superGridLogger } from '../../utils/dev-logger';
+
+/** Simplified card position for drag operations */
+interface DragCardPosition {
+  x: number;
+  y: number;
+  cardId: string;
+}
+
+/** Card data shape bound to D3 elements */
+interface CardDatum {
+  id: string;
+  [key: string]: unknown;
+}
 
 export interface DragDropConfig {
   enableDragDrop: boolean;
@@ -20,10 +32,10 @@ export interface DragDropConfig {
 }
 
 export interface DragDropCallbacks {
-  onDragStart?: (cardId: string, position: CardPosition) => void;
-  onDragMove?: (cardId: string, position: CardPosition) => void;
-  onDragEnd?: (cardId: string, position: CardPosition) => void;
-  onPositionUpdate?: (cardId: string, position: CardPosition) => void;
+  onDragStart?: (cardId: string, position: DragCardPosition) => void;
+  onDragMove?: (cardId: string, position: DragCardPosition) => void;
+  onDragEnd?: (cardId: string, position: DragCardPosition) => void;
+  onPositionUpdate?: (cardId: string, position: DragCardPosition) => void;
 }
 
 export class GridDragDropController {
@@ -108,10 +120,10 @@ export class GridDragDropController {
   /**
    * Get current card positions from the grid
    */
-  public getCardPositions(): Map<string, CardPosition> {
-    const positions = new Map<string, CardPosition>();
+  public getCardPositions(): Map<string, DragCardPosition> {
+    const positions = new Map<string, DragCardPosition>();
 
-    this.container.selectAll('.card').each(function(d: unknown) {
+    this.container.selectAll<SVGGElement, CardDatum>('.card').each(function(d) {
       const transform = d3.select(this).attr('transform');
       const match = transform?.match(/translate\(([^,]+),([^)]+)\)/);
 
@@ -130,7 +142,7 @@ export class GridDragDropController {
   /**
    * Update card positions programmatically
    */
-  public updateCardPositions(positions: Map<string, CardPosition>): void {
+  public updateCardPositions(positions: Map<string, DragCardPosition>): void {
     positions.forEach((position, cardId) => {
       const cardElement = this.container.select(`[data-card-id="${cardId}"]`);
       if (!cardElement.empty()) {
@@ -176,7 +188,7 @@ export class GridDragDropController {
   /**
    * Handle drag start event
    */
-  private handleDragStart(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
+  private handleDragStart(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: CardDatum): void {
     this.isDragging = true;
     this.dragStartPosition = { x: event.x, y: event.y };
 
@@ -202,7 +214,7 @@ export class GridDragDropController {
   /**
    * Handle drag move event
    */
-  private handleDragging(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
+  private handleDragging(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: CardDatum): void {
     if (!this.isDragging) return;
 
     let newX = event.x;
@@ -237,7 +249,7 @@ export class GridDragDropController {
   /**
    * Handle drag end event
    */
-  private handleDragEnd(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: unknown): void {
+  private handleDragEnd(event: d3.D3DragEvent<SVGGElement, any, any>, cardData: CardDatum): void {
     if (!this.isDragging) return;
 
     this.isDragging = false;
@@ -299,7 +311,8 @@ export class GridDragDropController {
   private handleMultiCardDrag(draggedCardId: string, newX: number, newY: number, selectedIds: string[]): void {
     if (!this.currentData) return;
 
-    const draggedCardOriginal = this.currentData.cards.find(c => c.id === draggedCardId);
+    const cards = this.currentData.cards as CardDatum[];
+    const draggedCardOriginal = cards.find(c => c.id === draggedCardId);
     if (!draggedCardOriginal) return;
 
     const deltaX = newX - this.dragStartPosition.x;
@@ -308,7 +321,8 @@ export class GridDragDropController {
     selectedIds.forEach(cardId => {
       if (cardId === draggedCardId) return; // Already handled
 
-      const card = this.currentData!.cards.find(c => c.id === cardId);
+      const allCards = this.currentData!.cards as CardDatum[];
+      const card = allCards.find(c => c.id === cardId);
       if (!card) return;
 
       // Get current position or use default
@@ -362,15 +376,18 @@ export class GridDragDropController {
    */
   private async persistCardPosition(cardId: string, x: number, y: number): Promise<void> {
     try {
-      const result = await this.database?.persistCardPosition(cardId, x, y);
-      if (result && typeof result === 'object' && 'success' in result && !result.success) {
-        superGridLogger.error('Failed to persist card position:', result);
-      } else {
-        superGridLogger.debug('Card position persisted', { cardId, x, y });
+      if (this.database) {
+        // Use the database run method to persist position
+        this.database.run(
+          'UPDATE nodes SET location_x = ?, location_y = ? WHERE id = ?',
+          [x, y, cardId]
+        );
+      }
 
-        if (this.callbacks.onPositionUpdate) {
-          this.callbacks.onPositionUpdate(cardId, { x, y, cardId });
-        }
+      superGridLogger.debug('Card position persisted', { cardId, x, y });
+
+      if (this.callbacks.onPositionUpdate) {
+        this.callbacks.onPositionUpdate(cardId, { x, y, cardId });
       }
     } catch (error) {
       superGridLogger.error('Error persisting card position:', error);
@@ -383,23 +400,28 @@ export class GridDragDropController {
   private async batchUpdateCardPositions(updates: Array<{id: string, x: number, y: number}>): Promise<void> {
     try {
       if (this.database) {
-        const result = await this.database.batchUpdateCardPositions(updates);
-        if (result && !result.success) {
-          superGridLogger.error('Batch position update failed:', result);
-        } else {
-          superGridLogger.debug('Batch position update completed', { count: updates.length });
-
-          // Trigger callbacks for each update
+        // Use transaction for batch updates
+        this.database.transaction(() => {
           updates.forEach(update => {
-            if (this.callbacks.onPositionUpdate) {
-              this.callbacks.onPositionUpdate(update.id, {
-                x: update.x,
-                y: update.y,
-                cardId: update.id
-              });
-            }
+            this.database!.run(
+              'UPDATE nodes SET location_x = ?, location_y = ? WHERE id = ?',
+              [update.x, update.y, update.id]
+            );
           });
-        }
+        });
+
+        superGridLogger.debug('Batch position update completed', { count: updates.length });
+
+        // Trigger callbacks for each update
+        updates.forEach(update => {
+          if (this.callbacks.onPositionUpdate) {
+            this.callbacks.onPositionUpdate(update.id, {
+              x: update.x,
+              y: update.y,
+              cardId: update.id
+            });
+          }
+        });
       }
     } catch (error) {
       superGridLogger.error('Error in batch position update:', error);

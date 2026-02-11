@@ -108,6 +108,13 @@ export interface GridData {
   totalWidth: number;           // Total grid width in pixels
   totalHeight: number;          // Total grid height in pixels
   lastUpdated: number;          // Timestamp of last data update
+
+  // Extended properties for V4 rendering
+  cells?: GridCell[];           // Pre-computed grid cells
+  rows?: unknown[];             // Row data for grid layout
+  columns?: AxisData;           // Column axis (alias for xAxis in some views)
+  rowAxis?: AxisData;           // Row axis (alias for yAxis in some views)
+  metadata?: Record<string, unknown>; // Additional grid metadata
 }
 
 /**
@@ -182,4 +189,16 @@ export interface GridConfig {
   defaultCellWidth: number;                 // Default cell width in pixels
   defaultCellHeight: number;                // Default cell height in pixels
   defaultPadding: number;                   // Default spacing between cells
+
+  // Extended properties for SuperGrid module integration
+  enableSelection?: boolean;                // Enable card selection (alias for allowCellSelection)
+  enableDragDrop?: boolean;                 // Enable drag and drop (alias for allowCardDragging)
+  enableKeyboardNavigation?: boolean;       // Enable keyboard navigation
+  selectionMode?: 'single' | 'multi';      // Selection mode
+
+  // Cell/header dimensions for V4 rendering
+  cellWidth?: number;                       // Cell width in pixels
+  cellHeight?: number;                      // Cell height in pixels
+  headerWidth?: number;                     // Header width in pixels
+  headerHeight?: number;                    // Header height in pixels
 }

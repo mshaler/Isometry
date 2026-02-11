@@ -99,7 +99,7 @@ export const VirtualizedList = forwardRef<HTMLDivElement, VirtualizedListProps>(
 
   // Use live data if available, otherwise fall back to static items
   const finalItems = usingLiveData ? (liveQuery.data || []) : (items || []);
-  const finalLoading = usingLiveData ? liveQuery.loading : loading;
+  const finalLoading = usingLiveData ? liveQuery.isLoading : loading;
   const finalError = usingLiveData ? liveQuery.error : null;
 
   // Virtual list hook for static data fallback
@@ -141,7 +141,7 @@ export const VirtualizedList = forwardRef<HTMLDivElement, VirtualizedListProps>(
           <div className="text-xl">⚠️</div>
           <div className="text-center">
             <p className="text-sm font-medium">Query Error</p>
-            <p className="text-xs text-gray-500">{finalError}</p>
+            <p className="text-xs text-gray-500">{finalError instanceof Error ? finalError.message : String(finalError)}</p>
           </div>
         </div>
       </div>
@@ -254,7 +254,7 @@ export const VirtualizedList = forwardRef<HTMLDivElement, VirtualizedListProps>(
       {virtualList.isScrolling && (
         <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
           Scrolling...
-          {usingLiveData && liveQuery.isLive && (
+          {usingLiveData && liveQuery.isActive && (
             <span className="ml-1 text-green-400">● Live</span>
           )}
         </div>

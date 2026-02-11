@@ -92,7 +92,7 @@ export class LevelGroupManager {
     // Group levels by facet patterns
     const facetsByLevel = hierarchy.allNodes.reduce((acc, node) => {
       if (!acc[node.level]) acc[node.level] = new Set();
-      acc[node.level].add(node.facet);
+      if (node.facet) acc[node.level].add(node.facet);
       return acc;
     }, {} as Record<number, Set<string>>);
 

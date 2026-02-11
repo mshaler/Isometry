@@ -160,26 +160,31 @@ export class ExcelProcessor {
 
     return {
       id: `excel_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      nodeType: nodeType as Node['nodeType'],
       name: `${fileName} - ${sheetName}`,
       content: markdownContent,
       summary,
+      latitude: null,
+      longitude: null,
+      locationName: null,
+      locationAddress: null,
+      createdAt: new Date().toISOString(),
+      modifiedAt: new Date().toISOString(),
+      dueAt: null,
+      completedAt: null,
+      eventStart: null,
+      eventEnd: null,
       folder: folder || 'imported',
       tags: ['excel', 'imported', nodeType],
-      status: 'active',
+      status: 'active' as Node['status'],
       priority: 1,
-      location: '',
-      created_at: new Date().toISOString(),
-      modified_at: new Date().toISOString(),
+      importance: 0,
+      sortOrder: 0,
       source,
-      source_id: `${fileName}_${sheetName}`,
-      metadata: {
-        originalFileName: fileName,
-        sheetName,
-        rowCount: sheetData.rowCount,
-        colCount: sheetData.colCount,
-        cellRange: sheetData.range,
-        importedAt: new Date().toISOString()
-      }
+      sourceId: `${fileName}_${sheetName}`,
+      sourceUrl: null,
+      deletedAt: null,
+      version: 1
     };
   }
 
@@ -311,8 +316,8 @@ export class ExcelProcessor {
       ['Status:', node.status || ''],
       ['Priority:', String(node.priority || '')],
       ['Tags:', (node.tags || []).join(', ')],
-      ['Created:', node.created_at || ''],
-      ['Modified:', node.modified_at || '']
+      ['Created:', node.createdAt || ''],
+      ['Modified:', node.modifiedAt || '']
     ];
 
     metadata.forEach((row, index) => {

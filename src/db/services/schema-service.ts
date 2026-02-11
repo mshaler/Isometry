@@ -5,7 +5,10 @@
 import type { Database } from 'sql.js-fts5';
 
 export class DatabaseSchemaService {
-  constructor(private db: Database) {}
+  // Database reference kept for future schema operations
+  constructor(_db: Database) {
+    void _db;
+  }
 
   async createTables(): Promise<void> {
     // Schema creation logic would go here

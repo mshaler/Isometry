@@ -7,9 +7,11 @@
  */
 
 import React, { useCallback, forwardRef, useMemo } from 'react';
-import { useVirtualizedGrid } from '@/hooks';
+import { useVirtualizedGrid } from '@/hooks/performance/useVirtualizedGrid';
 import { useVirtualLiveQuery, type VirtualLiveQueryOptions } from '@/hooks';
+import type { VirtualLiveQueryResult } from '@/hooks/performance/useVirtualLiveQuery';
 import { Node, Edge } from '../../types/node';
+import type { CellData } from '../../types/grid';
 
 // Type guard functions for safe type casting
 function isNode(item: unknown): item is Node {
@@ -103,20 +105,36 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
     liveQuery
   });
 
+  /** Shape of items displayed in the outer grid */
+  interface DisplayVirtualItem {
+    key: string;
+    columnIndex: number;
+    itemIndex: number;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+
   // Memoize grid virtual items
-  const virtualGridItems = useMemo(() => {
-    return virtualization.virtualItems?.map((virtualItem: any, index: number) => {
+  const virtualGridItems: DisplayVirtualItem[] = useMemo(() => {
+    const rawItems = virtualization.virtualGridItems;
+    if (!rawItems || !Array.isArray(rawItems)) return [];
+
+    return rawItems.map((rawItem: unknown, index: number) => {
+      const item = rawItem as Record<string, unknown>;
       const columnIndex = index % columnCount;
       return {
+        key: `grid-item-${index}`,
         columnIndex,
-        itemIndex: virtualItem.index,
+        itemIndex: typeof item.index === 'number' ? item.index : index,
         x: columnIndex * (actualColumnWidth + gap),
-        y: virtualItem.start,
+        y: typeof item.start === 'number' ? item.start : 0,
         width: actualColumnWidth,
-        height: virtualItem.size
+        height: typeof item.size === 'number' ? item.size : 200
       };
-    }) || [];
-  }, [virtualization.virtualItems, columnCount, actualColumnWidth, gap]);
+    });
+  }, [virtualization.virtualGridItems, columnCount, actualColumnWidth, gap]);
 
   // Handle item click
   const handleItemClick = useCallback((itemIndex: number) => {
@@ -137,7 +155,7 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
           <div className="text-xl">⚠️</div>
           <div className="text-center">
             <p className="text-sm font-medium">Query Error</p>
-            <p className="text-xs text-gray-500">{finalError}</p>
+            <p className="text-xs text-gray-500">{finalError instanceof Error ? finalError.message : String(finalError)}</p>
           </div>
         </div>
       </div>
@@ -187,14 +205,14 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
       style={{ height, width }}
     >
       <div
-        ref={virtualGrid.containerRef}
+        ref={virtualization.containerRef}
         className="relative"
         style={{
-          height: virtualGrid.totalHeight,
-          width: virtualGrid.totalWidth
+          height: virtualization.totalHeight,
+          width: virtualization.totalWidth
         }}
       >
-        {virtualGridItems.map((virtualItem: unknown) => {
+        {virtualGridItems.map((virtualItem) => {
           const item = finalItems[virtualItem.itemIndex];
           if (!item) return null;
 
@@ -209,9 +227,6 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
                 padding: gap / 2
               }}
               onClick={() => handleItemClick(virtualItem.itemIndex)}
-              ref={liveQuery.measureElement ? (el) => {
-                if (el) liveQuery.measureElement!(el);
-              } : undefined}
             >
               <div className="h-full w-full">
                 {renderItem(item, virtualItem.itemIndex)}
@@ -222,10 +237,10 @@ export const VirtualizedGrid = forwardRef<HTMLDivElement, VirtualizedGridProps>(
       </div>
 
       {/* Scrolling indicator with live data status */}
-      {virtualGrid.isScrolling && (
+      {virtualization.isScrolling && (
         <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
           Scrolling...
-          {usingLiveData && liveQuery.isLive && (
+          {usingLiveData && liveQuery.isActive && (
             <span className="ml-1 text-green-400">● Live</span>
           )}
         </div>
@@ -438,7 +453,7 @@ function useGridDataSource({ sql, queryParams, items, loading, liveOptions }: Gr
   const usingLiveData = Boolean(sql);
 
   // Live query hook for SQL-based data
-  const liveQuery = useVirtualLiveQuery<any>(
+  const liveQuery = useVirtualLiveQuery<Record<string, unknown>>(
     sql || 'SELECT 1 WHERE 0', // Dummy query when not using live data
     queryParams,
     {
@@ -447,12 +462,12 @@ function useGridDataSource({ sql, queryParams, items, loading, liveOptions }: Gr
       enableDynamicSizing: true,
       autoStart: usingLiveData,
       enableCache: usingLiveData,
-      ...liveOptions
+      ...(typeof liveOptions === 'object' && liveOptions !== null ? liveOptions as Record<string, unknown> : {})
     }
   );
 
   const finalItems = usingLiveData ? (liveQuery.data || []) : (items || []);
-  const finalLoading = usingLiveData ? liveQuery.loading : loading;
+  const finalLoading = usingLiveData ? liveQuery.isLoading : loading;
   const finalError = usingLiveData ? liveQuery.error : null;
 
   return {
@@ -491,7 +506,7 @@ interface GridVirtualizationConfig {
   actualColumnWidth: number;
   enableDynamicSizing: boolean;
   usingLiveData: boolean;
-  liveQuery: unknown;
+  liveQuery: VirtualLiveQueryResult<Record<string, unknown>>;
 }
 
 function useGridVirtualization({
@@ -507,9 +522,22 @@ function useGridVirtualization({
 }: GridVirtualizationConfig) {
   // Virtual grid hook for static data fallback
   const staticGridData = useMemo(() => {
-    const rows: unknown[][] = [];
+    const rows: CellData[][] = [];
     for (let i = 0; i < finalItems.length; i += columnCount) {
-      rows.push(finalItems.slice(i, i + columnCount));
+      const rowItems = finalItems.slice(i, i + columnCount);
+      // Convert raw items to CellData format
+      const cellRow: CellData[] = rowItems.map((item, colIdx) => ({
+        id: `cell-${Math.floor(i / columnCount)}-${colIdx}`,
+        x: colIdx,
+        y: Math.floor(i / columnCount),
+        width: 120,
+        height: 80,
+        cards: [],
+        rowKey: `row-${Math.floor(i / columnCount)}`,
+        colKey: `col-${colIdx}`,
+        isEmpty: item == null
+      }));
+      rows.push(cellRow);
     }
     return rows;
   }, [finalItems, columnCount]);
@@ -531,7 +559,7 @@ function useGridVirtualization({
     }
 
     // Convert linear virtual items to grid layout
-    return liveQuery.virtualItems.map((virtualItem: unknown) => {
+    return liveQuery.virtualItems.map((virtualItem) => {
       const rowIndex = Math.floor(virtualItem.index / columnCount);
       const columnIndex = virtualItem.index % columnCount;
 
@@ -561,7 +589,11 @@ function useGridVirtualization({
     containerRef: usingLiveData ? liveQuery.containerRef : staticVirtualGrid.containerRef,
     totalHeight: usingLiveData ? liveQuery.totalSize : staticVirtualGrid.totalHeight,
     totalWidth: width,
-    scrollToIndex: usingLiveData ? liveQuery.scrollToIndex : staticVirtualGrid.scrollToIndex,
+    scrollToIndex: usingLiveData
+      ? liveQuery.scrollToIndex
+      : staticVirtualGrid.scrollToCell
+        ? (index: number) => staticVirtualGrid.scrollToCell(Math.floor(index / columnCount), index % columnCount)
+        : () => { /* noop */ },
     isScrolling: usingLiveData ? liveQuery.isScrolling : staticVirtualGrid.isScrolling
   };
 }

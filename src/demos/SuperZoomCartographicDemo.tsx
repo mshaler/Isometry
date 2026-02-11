@@ -8,12 +8,12 @@
 import React, { useRef, useEffect, useState } from 'react';
 import * as d3 from 'd3';
 import { SuperZoomCartographic } from '../d3/SuperZoomCartographic';
+import type { CartographicState } from '../d3/SuperZoomCartographic';
 import { SuperZoomControls } from '../components/SuperZoomControls';
-import type { CartographicState, CartographicControlInterface } from '../types/supergrid';
 
 export const SuperZoomCartographicDemo: React.FC = () => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [cartographicEngine, setCartographicEngine] = useState<CartographicControlInterface | null>(null);
+  const [cartographicEngine, setCartographicEngine] = useState<SuperZoomCartographic | null>(null);
   const [state, setState] = useState<CartographicState | null>(null);
 
   useEffect(() => {
@@ -31,20 +31,19 @@ export const SuperZoomCartographicDemo: React.FC = () => {
         enableSmoothing: true,
         elasticBounds: {
           enabled: true,
-          resistance: 0.3,
-          bounceStrength: 0.5
+          resistance: 0.3
         }
       },
       {
-        onZoomChange: (scale, state) => {
+        onZoomChange: (scale: number, state: CartographicState) => {
           console.warn('Zoom changed:', scale);
           setState({ ...state });
         },
-        onPanChange: (x, y, state) => {
+        onPanChange: (x: number, y: number, state: CartographicState) => {
           console.warn('Pan changed:', x, y);
           setState({ ...state });
         },
-        onBoundaryHit: (boundary, _state) => {
+        onBoundaryHit: (boundary: string, _state: CartographicState) => {
           console.warn('Hit boundary:', boundary);
         }
       }

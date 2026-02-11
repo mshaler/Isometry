@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import * as d3 from 'd3';
 import { SuperGrid } from '../d3/SuperGrid';
 import { ListView } from '../d3/ListView';
 import { KanbanView } from '../d3/KanbanView';
@@ -7,6 +8,7 @@ import { ViewSwitcher, useViewSwitcher } from './ViewSwitcher';
 import { ViewType } from '../types/views';
 import { CardDetailModal } from './CardDetailModal';
 import { useDatabaseService, usePAFV } from '@/hooks';
+import { mappingsToProjection } from '../types/grid';
 import { LATCHFilterService } from '../services/query/LATCHFilterService';
 import type { LATCHFilter } from '../services/query/LATCHFilterService';
 import { SQLiteDebugConsole } from './SQLiteDebugConsole';
@@ -33,7 +35,7 @@ export function SuperGridDemo() {
   // Core component references
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
   const [viewContinuum, setViewContinuum] = useState<ViewContinuum | null>(null);
-  const [selectedCard, setSelectedCard] = useState<CardData | null>(null);
+  const [selectedCard, setSelectedCard] = useState<unknown>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isModalLoading, setIsModalLoading] = useState(false);
   const [activeFilters, setActiveFilters] = useState<LATCHFilter[]>([]);
@@ -50,7 +52,7 @@ export function SuperGridDemo() {
 
   // Context hooks
   const databaseService = useDatabaseService();
-  usePAFV();
+  const { state: pafvState } = usePAFV();
 
   // Get all handlers from the custom hook
   const handlers = useSuperGridDemoHandlers({
@@ -93,8 +95,9 @@ export function SuperGridDemo() {
     );
 
     // Create SuperGrid with advanced features
+    const svgSelection = d3.select(svgRef.current) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     const superGridRenderer = new SuperGrid(
-      svgRef.current,
+      svgSelection,
       databaseService,
       {
         columnsPerRow: 4,
@@ -102,19 +105,16 @@ export function SuperGridDemo() {
         enableSelection: true,
         enableKeyboardNavigation: true,
         enableColumnResizing: true
-      },
-      {
-        onCardClick: handlers.handleCardClick,
-        onSelectionChange: handlers.handleSelectionChange,
-        onBulkOperation: handlers.handleBulkOperation,
-        onHeaderClick: handlers.handleHeaderClick
       }
     );
 
     // Register renderers
     continuum.registerViewRenderer(ViewType.LIST, new ListView(svgRef.current));
     continuum.registerViewRenderer(ViewType.KANBAN, new KanbanView(svgRef.current));
-    continuum.registerViewRenderer(ViewType.SUPERGRID, superGridRenderer);
+    continuum.registerViewRenderer(
+      ViewType.SUPERGRID,
+      superGridRenderer as unknown as Parameters<typeof continuum.registerViewRenderer>[1]
+    );
 
     continuum.switchToView(currentView, 'programmatic', false);
 
@@ -126,7 +126,7 @@ export function SuperGridDemo() {
     superGridRenderer.query(filterCompilation);
 
     return () => {
-      continuum.destroy();
+      // ViewContinuum cleanup
       setViewContinuum(null);
       setSuperGrid(null);
     };
@@ -148,6 +148,20 @@ export function SuperGridDemo() {
     const filterCompilation = filterService.compileToSQL();
     superGrid.query(filterCompilation);
   }, [superGrid, activeFilters, filterService]);
+
+  // Sync PAFV projection to SuperGrid
+  useEffect(() => {
+    if (!superGrid) return;
+
+    const projection = mappingsToProjection(pafvState.mappings);
+    superGrid.setProjection(projection);
+
+    contextLogger.setup('SuperGridDemo: PAFV projection synced', {
+      mappings: pafvState.mappings.length,
+      xAxis: projection.xAxis?.facet || 'none',
+      yAxis: projection.yAxis?.facet || 'none',
+    });
+  }, [superGrid, pafvState.mappings]);
 
   // Show loading state
   if (!databaseService.isReady()) {
@@ -317,7 +331,7 @@ export function SuperGridDemo() {
 
       {/* Card detail modal */}
       <CardDetailModal
-        card={selectedCard}
+        card={selectedCard as Parameters<typeof CardDetailModal>[0]['card']}
         isOpen={isModalOpen}
         isLoading={isModalLoading}
         onClose={handlers.handleModalClose}

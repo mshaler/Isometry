@@ -84,7 +84,7 @@ export class InteractionManager {
       this.onCellHover(row);
     }
 
-    superGridLogger.interaction('Cell hover enter', { cellId: row.cellId });
+    superGridLogger.debug('Cell hover enter', { action: 'interaction', cellId: row.cellId });
   }
 
   /**
@@ -126,7 +126,8 @@ export class InteractionManager {
       this.onSelectionChange(new Set(this.visualState.selectedCells));
     }
 
-    superGridLogger.interaction('Cell clicked', {
+    superGridLogger.debug('Cell clicked', {
+      action: 'interaction',
       cellId: row.cellId,
       selectedCount: this.visualState.selectedCells.size
     });
@@ -138,9 +139,9 @@ export class InteractionManager {
   private updateCellSelection(): void {
     // Add selection styling to selected cells
     this.components.gridGroup.selectAll('.grid-cells, .matrix-cells, .hybrid-grid-cells, .hybrid-matrix-cells')
-      .classed('selected', (d: unknown) => this.visualState.selectedCells.has(d.cellId))
-      .style('stroke', (d: unknown) => this.visualState.selectedCells.has(d.cellId) ? '#007acc' : '#ffffff')
-      .style('stroke-width', (d: unknown) => this.visualState.selectedCells.has(d.cellId) ? 3 : 1);
+      .classed('selected', (d: unknown) => this.visualState.selectedCells.has((d as DensityAggregatedRow).cellId))
+      .style('stroke', (d: unknown) => this.visualState.selectedCells.has((d as DensityAggregatedRow).cellId) ? '#007acc' : '#ffffff')
+      .style('stroke-width', (d: unknown) => this.visualState.selectedCells.has((d as DensityAggregatedRow).cellId) ? 3 : 1);
   }
 
   /**
@@ -156,7 +157,7 @@ export class InteractionManager {
       parts.push(`<div class="tooltip-field">Label: ${row.label}</div>`);
     }
 
-    parts.push(`<div class="tooltip-field">Density: ${(row.sparsityRatio * 100).toFixed(1)}%</div>`);
+    parts.push(`<div class="tooltip-field">Density: ${((row.sparsityRatio ?? 0) * 100).toFixed(1)}%</div>`);
 
     if (row.metadata?.totalValue !== undefined) {
       parts.push(`<div class="tooltip-field">Total: ${row.metadata.totalValue}</div>`);

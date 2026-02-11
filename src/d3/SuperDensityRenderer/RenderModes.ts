@@ -43,7 +43,7 @@ export class RenderModes {
       mode: 'grid'
     };
 
-    superGridLogger.performance('Grid mode render complete', timing);
+    superGridLogger.metrics('Grid mode render complete', timing);
     return timing;
   }
 
@@ -64,7 +64,7 @@ export class RenderModes {
       mode: 'matrix'
     };
 
-    superGridLogger.performance('Matrix mode render complete', timing);
+    superGridLogger.metrics('Matrix mode render complete', timing);
     return timing;
   }
 
@@ -75,8 +75,8 @@ export class RenderModes {
     const startTime = performance.now();
 
     // Split data based on aggregation level
-    const gridData = data.filter(row => row.aggregationCount <= 5);
-    const matrixData = data.filter(row => row.aggregationCount > 5);
+    const gridData = data.filter(row => (row.aggregationCount ?? 0) <= 5);
+    const matrixData = data.filter(row => (row.aggregationCount ?? 0) > 5);
 
     // Render both modes
     await Promise.all([
@@ -93,7 +93,7 @@ export class RenderModes {
       mode: 'hybrid'
     };
 
-    superGridLogger.performance('Hybrid mode render complete', timing);
+    superGridLogger.metrics('Hybrid mode render complete', timing);
     return timing;
   }
 
@@ -108,8 +108,8 @@ export class RenderModes {
     const cellEnter = cells.enter()
       .append('rect')
       .attr('class', className)
-      .attr('x', d => this.scales.xScale(d.x))
-      .attr('y', d => this.scales.yScale(d.y))
+      .attr('x', d => this.scales.xScale(d.x ?? 0))
+      .attr('y', d => this.scales.yScale(d.y ?? 0))
       .attr('width', 0)
       .attr('height', 0)
       .attr('fill', d => this.getColorValue(d))
@@ -123,8 +123,8 @@ export class RenderModes {
     cellUpdate
       .transition()
       .duration(this.config.transitionDuration)
-      .attr('x', d => this.scales.xScale(d.x))
-      .attr('y', d => this.scales.yScale(d.y))
+      .attr('x', d => this.scales.xScale(d.x ?? 0))
+      .attr('y', d => this.scales.yScale(d.y ?? 0))
       .attr('width', d => this.config.cellWidth * this.getSizeMultiplier(d))
       .attr('height', d => this.config.cellHeight * this.getSizeMultiplier(d))
       .attr('fill', d => this.getColorValue(d));
@@ -149,8 +149,8 @@ export class RenderModes {
     const cellEnter = cells.enter()
       .append('circle')
       .attr('class', className)
-      .attr('cx', d => this.scales.xScale(d.x) + this.config.cellWidth / 2)
-      .attr('cy', d => this.scales.yScale(d.y) + this.config.cellHeight / 2)
+      .attr('cx', d => this.scales.xScale(d.x ?? 0) + this.config.cellWidth / 2)
+      .attr('cy', d => this.scales.yScale(d.y ?? 0) + this.config.cellHeight / 2)
       .attr('r', 0)
       .attr('fill', d => this.getColorValue(d))
       .attr('stroke', '#ffffff')
@@ -163,8 +163,8 @@ export class RenderModes {
     cellUpdate
       .transition()
       .duration(this.config.transitionDuration)
-      .attr('cx', d => this.scales.xScale(d.x) + this.config.cellWidth / 2)
-      .attr('cy', d => this.scales.yScale(d.y) + this.config.cellHeight / 2)
+      .attr('cx', d => this.scales.xScale(d.x ?? 0) + this.config.cellWidth / 2)
+      .attr('cy', d => this.scales.yScale(d.y ?? 0) + this.config.cellHeight / 2)
       .attr('r', d => Math.min(this.config.cellWidth, this.config.cellHeight) / 3 * this.getSizeMultiplier(d))
       .attr('fill', d => this.getColorValue(d));
 
@@ -180,9 +180,11 @@ export class RenderModes {
    * Get color value for a row based on aggregation state
    */
   private getColorValue(row: DensityAggregatedRow): string {
-    if (row.aggregationCount === 1) return this.scales.colorScale('leaf');
-    if (row.aggregationCount <= 5) return this.scales.colorScale('collapsed');
-    if (row.sparsityRatio < 0.5) return this.scales.colorScale('populated');
+    const count = row.aggregationCount ?? 0;
+    const sparsity = row.sparsityRatio ?? 1;
+    if (count === 1) return this.scales.colorScale('leaf');
+    if (count <= 5) return this.scales.colorScale('collapsed');
+    if (sparsity < 0.5) return this.scales.colorScale('populated');
     return this.scales.colorScale('sparse');
   }
 
@@ -190,7 +192,7 @@ export class RenderModes {
    * Get size multiplier based on aggregation count
    */
   private getSizeMultiplier(row: DensityAggregatedRow): number {
-    return this.scales.sizeScale(row.aggregationCount);
+    return this.scales.sizeScale(row.aggregationCount ?? 0);
   }
 
   /**
@@ -214,18 +216,21 @@ export class RenderModes {
    * Check if labels should be shown for a row
    */
   shouldShowLabel(row: DensityAggregatedRow): boolean {
+    const count = row.aggregationCount ?? 0;
+    const sparsity = row.sparsityRatio ?? 1;
     // Show labels only for single items or important aggregations
-    return row.aggregationCount === 1 ||
-           (row.aggregationCount <= 3 && row.sparsityRatio < 0.3);
+    return count === 1 ||
+           (count <= 3 && sparsity < 0.3);
   }
 
   /**
    * Format cell label
    */
   formatCellLabel(row: DensityAggregatedRow): string {
-    if (row.aggregationCount === 1) {
-      return row.label || `(${row.x}, ${row.y})`;
+    const count = row.aggregationCount ?? 0;
+    if (count === 1) {
+      return row.label || `(${row.x ?? 0}, ${row.y ?? 0})`;
     }
-    return `${row.aggregationCount} items`;
+    return `${count} items`;
   }
 }

@@ -55,7 +55,7 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
   // Live query for real-time data updates (only if no direct data provided)
   const {
     data: queryData,
-    loading: isLoading,
+    isLoading,
     error
   } = useLiveQuery<Node>(data ? '' : sql, {
     params: queryParams,
@@ -154,7 +154,10 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
     // Get performance comparison
     const datasetSize = nodes.length;
     const complexity = calculateDatasetComplexity(nodes);
-    const comparison = performanceMonitor.getPerformanceComparison(datasetSize, complexity);
+    const comparison = (performanceMonitor as unknown as {
+      getPerformanceComparison: (size: number, complexity: number) =>
+        { recommendation: string; expectedImprovement: number } | null
+    }).getPerformanceComparison(datasetSize, complexity);
 
     setPerformanceMetrics({ native: metrics, comparison });
 
@@ -289,7 +292,7 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
   if (error) {
     return (
       <div className="d3-grid-view w-full h-full relative flex items-center justify-center">
-        <div className="text-red-500">Error loading grid data: {error}</div>
+        <div className="text-red-500">Error loading grid data: {error instanceof Error ? error.message : String(error)}</div>
       </div>
     );
   }
@@ -465,12 +468,17 @@ export function D3GridView({ sql = '', queryParams = [], data, onNodeClick }: D3
               <div>Cache: {(performanceMetrics.native.cacheHitRate * 100).toFixed(1)}%</div>
             </div>
           )}
-          {performanceMetrics.comparison && (
+          {performanceMetrics.comparison != null ? (
             <div className="mt-1 pt-1 border-t border-gray-600">
-              <div>Recommendation: {performanceMetrics.comparison.recommendation}</div>
-              <div>Improvement: {performanceMetrics.comparison.expectedImprovement.toFixed(1)}%</div>
+              <div>
+                Recommendation: {String((performanceMetrics.comparison as Record<string, unknown>).recommendation)}
+              </div>
+              <div>
+                Improvement:{' '}
+                {Number((performanceMetrics.comparison as Record<string, unknown>).expectedImprovement).toFixed(1)}%
+              </div>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

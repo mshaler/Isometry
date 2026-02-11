@@ -8,7 +8,6 @@
 import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual';
 import { useLiveQuery, type LiveQueryOptions, type LiveQueryResult } from '../database/useLiveQuery';
-// @ts-expect-error - memoryManagement exports need implementation
 import { useCleanupEffect, createCleanupStack } from '../../utils/memoryManagement';
 import { PerformanceMonitor } from '../../utils/bridge-optimization/performance-monitor';
 import { devLogger } from '../../utils/logging';
@@ -273,7 +272,7 @@ export function useVirtualLiveQuery<T = unknown>(
 
   // Real-time update integration - track pipeline latency
   useEffect(() => {
-    if (liveQuery.isLive && performanceMonitoring && performanceMonitor) {
+    if (liveQuery.isActive && performanceMonitoring && performanceMonitor) {
       updateStartTime.current = performance.now();
 
       // Track the full update pipeline latency
@@ -306,7 +305,7 @@ export function useVirtualLiveQuery<T = unknown>(
       });
     }
   }, [
-    liveQuery.data, liveQuery.isLive, performanceMonitoring,
+    liveQuery.data, liveQuery.isActive, performanceMonitoring,
     performanceMonitor, sql, itemCount, virtualItems.length
   ]);
 
@@ -330,7 +329,9 @@ export function useVirtualLiveQuery<T = unknown>(
   const performanceMetrics = useMemo((): VirtualScrollingMetrics | undefined => {
     if (!performanceMonitoring) return undefined;
 
-    const queryHitRate = liveQuery.cacheHitRate || 0;
+    const queryHitRate = (liveQuery.getCacheInfo().hitCount > 0 ?
+      (liveQuery.getCacheInfo().hitCount /
+        (liveQuery.getCacheInfo().hitCount + liveQuery.getCacheInfo().missCount)) * 100 : 0) || 0;
     const virtualHitRate = virtualCacheTotal.current > 0
       ? (virtualCacheHits.current / virtualCacheTotal.current) * 100
       : 100;
@@ -374,7 +375,9 @@ export function useVirtualLiveQuery<T = unknown>(
   }, [
     performanceMonitoring,
     performanceMonitor,
-    liveQuery.cacheHitRate,
+    (liveQuery.getCacheInfo().hitCount > 0 ?
+      (liveQuery.getCacheInfo().hitCount /
+        (liveQuery.getCacheInfo().hitCount + liveQuery.getCacheInfo().missCount)) * 100 : 0),
     virtualItems.length,
     itemCount,
     frameRateRef.current

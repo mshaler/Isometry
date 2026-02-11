@@ -15,19 +15,143 @@
 
 import * as d3 from 'd3';
 import type {
-  CartographicConfig,
-  CartographicState,
-  CartographicCallbacks,
-  CartographicControlInterface,
-  BoundaryConstraints,
-  CartographicVisualFeedback,
-  CartographicPerformanceMetrics,
   ValueDensityMode,
   ExtentDensityMode
 } from '../types/supergrid';
-import { DEFAULT_CARTOGRAPHIC_CONFIG } from '../types/supergrid';
 
-export class SuperZoomCartographic implements CartographicControlInterface {
+// ---------------------------------------------------------------------------
+// Local type definitions matching the implementation's expectations.
+// These extend or replace the shared cartographic types from types/supergrid
+// which have a different shape designed for a more generic interface.
+// ---------------------------------------------------------------------------
+
+/** Transform representation used by D3 zoom */
+interface ZoomTransform {
+  x: number;
+  y: number;
+  k: number;
+}
+
+/** Boundary status flags */
+interface BoundaryStatus {
+  atLeftBoundary: boolean;
+  atRightBoundary: boolean;
+  atTopBoundary: boolean;
+  atBottomBoundary: boolean;
+}
+
+/** Per-operation performance snapshot */
+interface PerformanceSnapshot {
+  lastOperationDuration: number;
+  averageFrameRate: number;
+  frameDrops: number;
+}
+
+/** Density integration state from SuperDensity */
+interface DensityIntegration {
+  valueDensity: ValueDensityMode;
+  extentDensity: ExtentDensityMode;
+}
+
+/** Header integration state from SuperStack */
+interface HeaderIntegration {
+  totalHeight: number;
+  isExpanded: boolean;
+  levels: number;
+}
+
+/** Current state of cartographic navigation */
+export interface CartographicState {
+  scale: number;
+  transform: ZoomTransform;
+  anchorPoint: { x: number; y: number };
+  isAnimating: boolean;
+  boundaryStatus: BoundaryStatus;
+  performance: PerformanceSnapshot;
+  lastUpdated: number;
+  elasticResistance?: number;
+  densityIntegration?: DensityIntegration;
+  headerIntegration?: HeaderIntegration;
+}
+
+/** Dimensions helper */
+interface Dimensions {
+  width: number;
+  height: number;
+}
+
+/** Elastic bounds configuration */
+interface ElasticBoundsConfig {
+  enabled: boolean;
+  resistance: number;
+}
+
+/** Configuration for cartographic navigation system */
+export interface CartographicConfig {
+  zoomExtent: [number, number];
+  anchorMode: 'upper-left' | 'center' | 'cursor';
+  enableSmoothing: boolean;
+  animationDuration: number;
+  enableBoundaryConstraints: boolean;
+  gridDimensions: Dimensions;
+  viewportDimensions: Dimensions;
+  elasticBounds?: ElasticBoundsConfig;
+}
+
+/** Boundary constraints for pan operations */
+export interface BoundaryConstraints {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  topOffset: number;
+  leftOffset: number;
+}
+
+/** Visual feedback state */
+export interface CartographicVisualFeedback {
+  showBoundaryIndicators: boolean;
+  bounceDirection?: 'left' | 'right' | 'top' | 'bottom';
+}
+
+/** Callback functions for cartographic events */
+export interface CartographicCallbacks {
+  onZoomChange?: (scale: number, state: CartographicState) => void;
+  onPanChange?: (x: number, y: number, state: CartographicState) => void;
+  onBoundaryHit?: (
+    direction: 'left' | 'right' | 'top' | 'bottom',
+    state: CartographicState
+  ) => void;
+  onAnimationToggle?: (isAnimating: boolean) => void;
+  onStateChange?: (state: CartographicState) => void;
+}
+
+/** Performance metrics for cartographic operations */
+export interface CartographicPerformanceMetrics {
+  averageOperationTime: number;
+  peakOperationTime: number;
+  animationFrameRate: number;
+  droppedFrames: number;
+  totalZoomOperations: number;
+  totalPanOperations: number;
+  boundaryHitsPerSession: number;
+  animationInterruptRate: number;
+  lastOperationDuration: number;
+}
+
+/** Default configuration for cartographic navigation */
+const DEFAULT_CARTOGRAPHIC_CONFIG: CartographicConfig = {
+  zoomExtent: [0.1, 10],
+  anchorMode: 'upper-left',
+  enableSmoothing: true,
+  animationDuration: 200,
+  enableBoundaryConstraints: true,
+  gridDimensions: { width: 2000, height: 2000 },
+  viewportDimensions: { width: 800, height: 600 },
+  elasticBounds: { enabled: true, resistance: 0.3 }
+};
+
+export class SuperZoomCartographic {
   private container: d3.Selection<SVGElement, unknown, null, undefined>;
   private config: CartographicConfig;
   private callbacks: CartographicCallbacks;

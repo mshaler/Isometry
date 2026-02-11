@@ -44,6 +44,7 @@ interface StressTestScenario {
   updateFrequency: number; // updates per second
   filterChanges: boolean; // enable rapid filter changes
   duration: number; // seconds
+  targetFPS?: number; // target frames per second
 }
 
 interface PerformanceMetrics {

@@ -6,7 +6,7 @@
  */
 
 import { spawn, ChildProcess } from 'child_process';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { watch, FSWatcher } from 'fs';
 import { stat } from 'fs/promises';
 import { join, relative } from 'path';
@@ -90,7 +90,7 @@ export class ClaudeCodeServer {
   /**
    * Handle incoming WebSocket messages
    */
-  private async handleMessage(ws: unknown, message: ServerMessage): Promise<void> {
+  private async handleMessage(ws: WebSocket, message: ServerMessage): Promise<void> {
     devLogger.debug('Processing message type', { component: 'ClaudeCodeServer', messageType: message.type });
     switch (message.type) {
       case 'command':
@@ -137,7 +137,7 @@ export class ClaudeCodeServer {
   /**
    * Execute a Claude Code command
    */
-  private async executeCommand(ws: unknown, command: ClaudeCodeCommand): Promise<void> {
+  private async executeCommand(ws: WebSocket, command: ClaudeCodeCommand): Promise<void> {
     const executionId = this.generateExecutionId();
 
     const execution: CommandExecution & { process?: ChildProcess } = {
@@ -182,7 +182,7 @@ export class ClaudeCodeServer {
    * Spawn the actual process (Claude Code or other commands)
    */
   private async spawnClaudeProcess(
-    ws: unknown,
+    ws: WebSocket,
     execution: CommandExecution & { process?: ChildProcess }
   ): Promise<void> {
     const { command, args = [], input, workingDirectory } = execution.command;
@@ -304,7 +304,7 @@ export class ClaudeCodeServer {
   /**
    * Cancel a running execution
    */
-  private async cancelExecution(ws: unknown, executionId: string): Promise<void> {
+  private async cancelExecution(ws: WebSocket, executionId: string): Promise<void> {
     const execution = this.executions.get(executionId);
 
     if (!execution) {
@@ -341,7 +341,7 @@ export class ClaudeCodeServer {
   /**
    * Send input to a running process
    */
-  private async sendInput(ws: unknown, executionId: string, input: string): Promise<void> {
+  private async sendInput(ws: WebSocket, executionId: string, input: string): Promise<void> {
     const execution = this.executions.get(executionId);
 
     if (!execution) {
@@ -404,7 +404,7 @@ export class ClaudeCodeServer {
   /**
    * Start file monitoring for a GSD session
    */
-  private async startFileMonitoring(ws: unknown, sessionId: string, projectPath: string): Promise<void> {
+  private async startFileMonitoring(ws: WebSocket, sessionId: string, projectPath: string): Promise<void> {
     try {
       // Stop any existing monitoring for this session
       if (this.fileWatchers.has(sessionId)) {
@@ -482,7 +482,7 @@ export class ClaudeCodeServer {
   /**
    * Stop file monitoring for a session
    */
-  private async stopFileMonitoring(ws: unknown, sessionId: string): Promise<void> {
+  private async stopFileMonitoring(ws: WebSocket, sessionId: string): Promise<void> {
     try {
       const watcher = this.fileWatchers.get(sessionId);
       if (watcher) {

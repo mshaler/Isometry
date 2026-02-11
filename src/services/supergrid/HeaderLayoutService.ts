@@ -9,21 +9,46 @@
  * This mirrors how Numbers and modern pivot tables handle column sizing.
  */
 
-import { stratify } from 'd3-hierarchy';
+import { stratify, type HierarchyNode } from 'd3-hierarchy';
 import type {
   HeaderNode,
   HeaderHierarchy,
   SpanCalculationConfig,
   HeaderStateManager
 } from '../../types/grid';
-import { DEFAULT_SPAN_CONFIG, ContentAlignment } from '../../types/grid';
+import { ContentAlignment } from '../../types/grid';
+
+/**
+ * Extended HeaderNode with optional facet and value fields used internally
+ * by HeaderLayoutService for hierarchy generation from LATCH data.
+ */
+interface HeaderNodeWithFacet extends HeaderNode {
+  facet: string;
+  value: string | null;
+  textAlign: ContentAlignment;
+}
+
+/** Default SpanCalculationConfig for HeaderLayoutService */
+const DEFAULT_LAYOUT_CONFIG: SpanCalculationConfig = {
+  enabled: true,
+  maxSpan: 5,
+  autoCollapse: true,
+  minWidthPerCharacter: 8,
+  absoluteMinWidth: 60,
+  absoluteMaxWidth: 400,
+  dataProportionalWeight: 0.7,
+  useEqualFallback: true,
+  uniformDataThreshold: 0.2,
+  iconWidth: 24,
+  enableCaching: true
+};
 
 export class HeaderLayoutService {
   private config: SpanCalculationConfig;
   private stateManager: HeaderStateManager | null = null;
-  private calculationCache: Map<string, any> = new Map();
+  private calculationCache: Map<string, Map<string, number>> = new Map();
 
-  constructor(config: SpanCalculationConfig = DEFAULT_SPAN_CONFIG) {
+  constructor(config: SpanCalculationConfig = DEFAULT_LAYOUT_CONFIG) {
     this.config = config;
   }
 
@@ -41,7 +66,7 @@ export class HeaderLayoutService {
     const cacheKey = this.generateCacheKey(headerNodes, totalAvailableWidth);
 
     if (this.config.enableCaching && this.calculationCache.has(cacheKey)) {
-      return this.calculationCache.get(cacheKey);
+      return this.calculationCache.get(cacheKey)!;
     }
 
     const widthMap = new Map<string, number>();
@@ -167,9 +192,9 @@ export class HeaderLayoutService {
       return ContentAlignment.RIGHT;
     }
 
-    // Date content always left-aligns with special treatment
+    // Date content always left-aligns
     if (contentType === 'date') {
-      return ContentAlignment.DATE_LEFT;
+      return ContentAlignment.LEFT;
     }
 
     // Text content: center for short spans, left for long spans
@@ -192,9 +217,12 @@ export class HeaderLayoutService {
    * Save current expansion state
    */
   public saveExpansionState(hierarchy: HeaderHierarchy): void {
-    if (this.stateManager) {
-      this.stateManager.expandedNodes[hierarchy.axis] = hierarchy.expandedNodeIds;
-      this.stateManager.saveState();
+    if (this.stateManager && hierarchy.expandedNodeIds) {
+      // Sync expanded nodes from hierarchy into state manager
+      const currentExpanded = this.stateManager.getExpandedNodeIds();
+      // Reset all, then set the ones from hierarchy
+      currentExpanded.forEach(id => this.stateManager!.setNodeExpanded(id, false));
+      hierarchy.expandedNodeIds.forEach(id => this.stateManager!.setNodeExpanded(id, true));
     }
   }
 
@@ -202,9 +230,12 @@ export class HeaderLayoutService {
    * Load saved expansion state
    */
   public loadExpansionState(hierarchy: HeaderHierarchy): HeaderHierarchy {
-    if (this.stateManager && this.stateManager.expandedNodes[hierarchy.axis]) {
-      hierarchy.expandedNodeIds = this.stateManager.expandedNodes[hierarchy.axis];
-      hierarchy.lastUpdated = Date.now();
+    if (this.stateManager) {
+      const expandedIds = this.stateManager.getExpandedNodeIds();
+      if (expandedIds.size > 0) {
+        hierarchy.expandedNodeIds = expandedIds;
+        hierarchy.lastUpdated = Date.now();
+      }
     }
     return hierarchy;
   }
@@ -444,7 +475,8 @@ export class HeaderLayoutService {
   private groupFacetsByLevel(hierarchy: HeaderHierarchy): Record<number, Set<string>> {
     return hierarchy.allNodes.reduce((acc, node) => {
       if (!acc[node.level]) acc[node.level] = new Set();
-      acc[node.level].add(node.facet);
+      const facet = (node as HeaderNodeWithFacet).facet ?? node.label;
+      acc[node.level].add(facet);
       return acc;
     }, {} as Record<number, Set<string>>);
   }
@@ -505,8 +537,9 @@ export class HeaderLayoutService {
     facetField: string
   ): HeaderNode[] {
     // Group data by the specified facet
-    const groups = flatData.reduce((acc: Record<string, any[]>, item) => {
-      const value = item[facetField] || 'Unknown';
+    const groups = flatData.reduce((acc: Record<string, unknown[]>, item: unknown) => {
+      const record = item as Record<string, unknown>;
+      const value = String(record[facetField] ?? 'Unknown');
       if (!acc[value]) acc[value] = [];
       acc[value].push(item);
       return acc;
@@ -521,18 +554,18 @@ export class HeaderLayoutService {
       id: rootId,
       label: axis.toUpperCase(),
       parentId: undefined,
-      facet: facetField,
-      value: null,
+      children: [],
       count: flatData.length,
       level: 0,
       span: Object.keys(groups).length,
       isExpanded: true,
       isLeaf: false,
+      isVisible: true,
       x: 0,
       y: 0,
       width: 0,
       height: 40,
-      textAlign: ContentAlignment.CENTER,
+      data: { facet: facetField, value: null, textAlign: ContentAlignment.CENTER },
       labelZone: { x: 0, y: 0, width: 32, height: 40 },
       bodyZone: { x: 32, y: 0, width: 0, height: 40 }
     });
@@ -545,18 +578,18 @@ export class HeaderLayoutService {
         id: nodeId,
         label: value.charAt(0).toUpperCase() + value.slice(1),
         parentId: rootId,
-        facet: facetField,
-        value: value,
+        children: [],
         count: items.length,
         level: 1,
         span: 1,
         isExpanded: false,
         isLeaf: true,
+        isVisible: true,
         x: 0,
         y: 40,
         width: 0,
         height: 40,
-        textAlign: this.getContentAlignment(value, 1, 'text'),
+        data: { facet: facetField, value, textAlign: this.getContentAlignment(value, 1, 'text') },
         labelZone: { x: 0, y: 0, width: 32, height: 40 },
         bodyZone: { x: 32, y: 0, width: 0, height: 40 }
       });
@@ -565,12 +598,12 @@ export class HeaderLayoutService {
     return headerNodes;
   }
 
-  private calculateLayout(root: unknown): void {
+  private calculateLayout(root: HierarchyNode<HeaderNode>): void {
     // Traverse hierarchy and calculate positions
     let currentX = 0;
 
-    root.eachBefore((node: unknown) => {
-      const data = node.data as HeaderNode;
+    root.eachBefore((node: HierarchyNode<HeaderNode>) => {
+      const data = node.data;
 
       if (node.depth === 0) {
         // Root positioning
@@ -600,22 +633,22 @@ export class HeaderLayoutService {
     });
   }
 
-  private calculateMaxDepth(root: unknown): number {
+  private calculateMaxDepth(root: HierarchyNode<HeaderNode>): number {
     let maxDepth = 0;
-    root.eachAfter((node: unknown) => {
+    root.eachAfter((node: HierarchyNode<HeaderNode>) => {
       maxDepth = Math.max(maxDepth, node.depth);
     });
     return maxDepth;
   }
 
-  private calculateTotalWidth(root: unknown): number {
+  private calculateTotalWidth(root: HierarchyNode<HeaderNode>): number {
     const leafNodes = root.leaves();
-    return leafNodes.reduce((total: number, leaf: unknown) =>
+    return leafNodes.reduce((total: number, leaf: HierarchyNode<HeaderNode>) =>
       total + (leaf.data.width || 100), 0
     );
   }
 
-  private calculateTotalHeight(root: unknown): number {
+  private calculateTotalHeight(root: HierarchyNode<HeaderNode>): number {
     return (this.calculateMaxDepth(root) + 1) * 40; // 40px per level
   }
 

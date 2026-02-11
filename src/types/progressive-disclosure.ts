@@ -53,6 +53,15 @@ export interface LevelGroup {
   semanticContext?: string;          // Semantic meaning (e.g., "temporal", "geographical")
   isCollapsed: boolean;              // Whether group is collapsed in UI
   hasComputedNodes: boolean;         // Whether group contains computed/aggregated nodes
+
+  // Extended properties for V4 progressive disclosure
+  name?: string;                     // Display name for the group
+  type?: string;                     // Group type (e.g., 'semantic', 'density')
+  density?: number;                  // Data density metric (0-1)
+  pattern?: string;                  // Pattern type (e.g., 'temporal')
+  isRecommended?: boolean;           // Whether this group is recommended
+  label?: string;                    // Short label for UI tabs
+  levelRange?: [number, number];     // Level range [min, max]
 }
 
 /**

@@ -22,7 +22,7 @@ export function useFilteredNodes(): QueryState<Node> {
     const conditions: string[] = [];
     const filterParams: (string | number | boolean)[] = [];
 
-    activeFilters.forEach((filter: unknown) => {
+    activeFilters.forEach((filter) => {
       const field = filter.field;
       const op = filter.operator;
       const value = filter.value;
@@ -89,7 +89,7 @@ export function useFilterSummary(): {
       return 'no filters';
     }
 
-    const parts = filters.map((filter: unknown) =>
+    const parts = filters.map((filter) =>
       `${filter.field} ${filter.operator} ${filter.value}`
     );
 

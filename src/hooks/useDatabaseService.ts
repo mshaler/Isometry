@@ -36,7 +36,7 @@ export function useDatabaseService(): DatabaseService {
       devLogger.debug('DatabaseService query', { sql, params });
       return [];
     } catch (error: unknown) {
-      setConnection(prev => ({ ...prev, error: error.message }));
+      setConnection(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       throw error;
     }
   }, []);
@@ -50,7 +50,7 @@ export function useDatabaseService(): DatabaseService {
       devLogger.debug('DatabaseService execute', { sql, params });
       return { changes: 0 };
     } catch (error: unknown) {
-      setConnection(prev => ({ ...prev, error: error.message }));
+      setConnection(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       throw error;
     }
   }, []);
@@ -71,7 +71,7 @@ export function useDatabaseService(): DatabaseService {
 
       return results;
     } catch (error: unknown) {
-      setConnection(prev => ({ ...prev, error: error.message }));
+      setConnection(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       throw error;
     }
   }, [query, execute]);
@@ -95,7 +95,7 @@ export function useDatabaseService(): DatabaseService {
       setConnection({
         isConnected: false,
         isInitialized: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         lastSync: null
       });
       throw error;
@@ -113,7 +113,7 @@ export function useDatabaseService(): DatabaseService {
         lastSync: null
       });
     } catch (error: unknown) {
-      setConnection(prev => ({ ...prev, error: error.message }));
+      setConnection(prev => ({ ...prev, error: error instanceof Error ? error.message : String(error) }));
       throw error;
     }
   }, []);

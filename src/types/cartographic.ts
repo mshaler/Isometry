@@ -289,26 +289,28 @@ export const DEFAULT_CARTOGRAPHIC_CONFIG: CartographicConfig = {
 // Type guards
 
 export const isCartographicConfig = (obj: unknown): obj is CartographicConfig => {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    typeof obj.enableZoom === 'boolean' &&
-    typeof obj.enablePan === 'boolean' &&
-    typeof obj.minZoomLevel === 'number' &&
-    typeof obj.maxZoomLevel === 'number' &&
-    ['upper-left', 'center', 'cursor'].includes(obj.zoomAnchor)
+    typeof record.enableZoom === 'boolean' &&
+    typeof record.enablePan === 'boolean' &&
+    typeof record.minZoomLevel === 'number' &&
+    typeof record.maxZoomLevel === 'number' &&
+    ['upper-left', 'center', 'cursor'].includes(record.zoomAnchor as string)
   );
 };
 
 export const isCartographicState = (obj: unknown): obj is CartographicState => {
+  const record = obj as Record<string, unknown>;
   return (
     typeof obj === 'object' &&
     obj !== null &&
-    typeof obj.scale === 'number' &&
-    typeof obj.translateX === 'number' &&
-    typeof obj.translateY === 'number' &&
-    typeof obj.zoomLevel === 'number' &&
-    typeof obj.viewportBounds === 'object' &&
-    typeof obj.contentBounds === 'object'
+    typeof record.scale === 'number' &&
+    typeof record.translateX === 'number' &&
+    typeof record.translateY === 'number' &&
+    typeof record.zoomLevel === 'number' &&
+    typeof record.viewportBounds === 'object' &&
+    typeof record.contentBounds === 'object'
   );
 };

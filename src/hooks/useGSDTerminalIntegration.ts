@@ -248,11 +248,15 @@ export function useGSDTerminalConnector(
     };
 
     // Example connection (adjust based on actual terminal context API)
-    if (terminalContext.onData) {
-      terminalContext.onData(handleTerminalData);
+    const ctx = terminalContext as {
+      onData?: (cb: (data: string) => void) => void;
+      offData?: (cb: (data: string) => void) => void;
+    };
+    if (ctx.onData) {
+      ctx.onData(handleTerminalData);
 
       return () => {
-        terminalContext.offData?.(handleTerminalData);
+        ctx.offData?.(handleTerminalData);
       };
     }
   }, [integration, terminalContext]);

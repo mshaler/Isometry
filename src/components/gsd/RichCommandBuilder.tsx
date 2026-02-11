@@ -513,7 +513,7 @@ export function RichCommandBuilder({
         return (
           <input
             type="checkbox"
-            checked={value || false}
+            checked={Boolean(value) || false}
             onChange={(e) => handleParameterChange(param.name, e.target.checked)}
             className="rounded border-gray-600 bg-gray-700"
           />
@@ -522,7 +522,7 @@ export function RichCommandBuilder({
       case 'choice':
         return (
           <select
-            value={value || ''}
+            value={String(value ?? '')}
             onChange={(e) => handleParameterChange(param.name, e.target.value)}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -538,7 +538,7 @@ export function RichCommandBuilder({
       case 'text':
         return (
           <textarea
-            value={value || ''}
+            value={String(value ?? '')}
             onChange={(e) => handleParameterChange(param.name, e.target.value)}
             placeholder={param.placeholder}
             rows={3}
@@ -550,7 +550,7 @@ export function RichCommandBuilder({
         return (
           <input
             type="number"
-            value={value || ''}
+            value={String(value ?? '')}
             onChange={(e) => handleParameterChange(param.name, parseFloat(e.target.value))}
             placeholder={param.placeholder}
             min={param.validation?.min}
@@ -563,7 +563,7 @@ export function RichCommandBuilder({
         return (
           <input
             type="text"
-            value={value || ''}
+            value={String(value ?? '')}
             onChange={(e) => handleParameterChange(param.name, e.target.value)}
             placeholder={param.placeholder}
             className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-200 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"

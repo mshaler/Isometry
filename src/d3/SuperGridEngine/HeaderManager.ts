@@ -65,7 +65,7 @@ export class SuperGridHeaderManager {
    */
   analyzeHierarchyFromGridData(gridData: unknown): LevelGroup[] {
     const levelGroups: LevelGroup[] = [];
-    const totalNodes = gridData.cells.length;
+    const totalNodes = (gridData as Record<string, unknown[]>).cells?.length ?? 0;
 
     if (totalNodes > 50) {
       levelGroups.push({

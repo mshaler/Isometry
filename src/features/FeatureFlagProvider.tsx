@@ -98,9 +98,10 @@ export const FeatureFlagProvider: React.FC<FeatureFlagProviderProps> = ({
 
   // Bridge communication for native integration
   const communicateWithNative = async (method: string, params: unknown = {}) => {
-    if (typeof window !== 'undefined' && window.webkit?.messageHandlers?.featureFlags) {
+    if (typeof window !== 'undefined' && (window.webkit?.messageHandlers as Record<string, unknown>)?.featureFlags) {
       try {
-        return await window.webkit.messageHandlers.featureFlags.postMessage({
+        return await ((window.webkit?.messageHandlers as Record<string, unknown>)?.featureFlags as
+          { postMessage: (data: unknown) => Promise<unknown> }).postMessage({
           method,
           params
         });

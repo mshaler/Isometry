@@ -57,7 +57,7 @@ export interface UseAltoIndexImportResult {
 }
 
 export function useAltoIndexImport(): UseAltoIndexImportResult {
-  const { db, loading: dbLoading, notifyDataChanged } = useSQLite();
+  const { db, loading: dbLoading, save } = useSQLite();
   const [status, setStatus] = useState<UseAltoIndexImportResult['status']>('idle');
   const [progress, setProgress] = useState(0);
   const [currentFile, setCurrentFile] = useState('');
@@ -107,8 +107,8 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
         setStatus('done');
         devLogger.info('Alto-index import complete', { importResult });
 
-        // Trigger query invalidation and auto-save to localStorage
-        await notifyDataChanged();
+        // Trigger auto-save to localStorage
+        await save();
 
         return importResult;
       } catch (err) {
@@ -118,7 +118,7 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
         throw err;
       }
     },
-    [db, dbLoading, notifyDataChanged]
+    [db, dbLoading, save]
   );
 
   const importFromPublic = useCallback(
@@ -142,10 +142,10 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
     const count = clearAltoIndexData(db);
     setResult(null);
     setStatus('idle');
-    // Trigger query invalidation and auto-save after clearing
-    await notifyDataChanged();
+    // Trigger auto-save after clearing
+    await save();
     return count;
-  }, [db, dbLoading, notifyDataChanged]);
+  }, [db, dbLoading, save]);
 
   return {
     importFromJSON,

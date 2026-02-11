@@ -36,23 +36,28 @@ function useCellDensityInternal(
   cellData: CellData,
   morphConfig: DensityMorphConfig = DEFAULT_DENSITY_CONFIG
 ) {
-  const previousDensity = useRef<number>(cellData.densityLevel);
+  const currentDensity = cellData.densityLevel ?? 0;
+  const previousDensity = useRef<number>(currentDensity);
   const transitionState = useRef<CellTransitionState | null>(null);
 
   // Detect density changes and initiate transitions
   useEffect(() => {
-    if (previousDensity.current !== cellData.densityLevel) {
+    if (previousDensity.current !== currentDensity) {
       transitionState.current = {
+        cellId: cellData.id,
+        fromMode: String(previousDensity.current),
+        toMode: String(currentDensity),
+        isAnimating: true,
         isTransitioning: true,
         fromDensity: previousDensity.current,
-        toDensity: cellData.densityLevel,
+        toDensity: currentDensity,
         progress: 0,
         easing: 'ease-out',
         duration: morphConfig.transitions.duration
       };
-      previousDensity.current = cellData.densityLevel;
+      previousDensity.current = currentDensity;
     }
-  }, [cellData.densityLevel, morphConfig.transitions.duration]);
+  }, [currentDensity, cellData.id, morphConfig.transitions.duration]);
 
   // Determine render mode based on card count and density level
   const renderMode = useMemo(() => {

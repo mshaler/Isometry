@@ -46,7 +46,7 @@ export class SuperStackProgressive {
     database: ReturnType<typeof useDatabaseService> | null = null
   ) {
     this.config = { ...DEFAULT_SUPERSTACK_CONFIG, ...config };
-    this.container = d3.select(container);
+    this.container = d3.select(container) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
 
     // Initialize specialized managers
     this.levelGroupManager = new LevelGroupManager();

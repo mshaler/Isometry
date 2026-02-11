@@ -75,8 +75,8 @@ export interface ConnectionManager {
   stopMonitoring(): void;
   
   // Event handling
-  on(event: string, handler: (data: unknown) => void): () => void;
-  emit(event: string, data?: unknown): void;
+  on(event: string, handler: (data: unknown) => void): unknown;
+  emit(event: string, data?: unknown): unknown;
   
   // Quality management
   updateQuality(metrics: Partial<ConnectionQuality>): void;

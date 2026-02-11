@@ -88,7 +88,7 @@ export function createMockSQLiteContext(options: {
     });
   }
 
-  const execute: MockedFunction<SQLiteContextValue['execute']> = vi.fn((sql: string, params: unknown[] = []) => {
+  const execute = vi.fn((sql: string, params: unknown[] = []): Record<string, unknown>[] => {
     queryHistory.push({ sql, params });
 
     if (mockError) {
@@ -101,11 +101,11 @@ export function createMockSQLiteContext(options: {
 
     // If we have a real database, use it
     if (mockDatabase) {
-      return execTestQuery(mockDatabase, sql, params);
+      return execTestQuery(mockDatabase, sql, params) as Record<string, unknown>[];
     }
 
     // Otherwise, return mock data based on the query
-    return mockQueryResults(sql, params);
+    return mockQueryResults(sql, params) as Record<string, unknown>[];
   });
 
   const run: MockedFunction<SQLiteContextValue['run']> = vi.fn((sql: string, params: unknown[] = []) => {
@@ -148,6 +148,9 @@ export function createMockSQLiteContext(options: {
       recursiveCte: capabilities?.recursiveCte ?? true,
     },
     telemetry: [],
+    dataVersion: 0,
+    storageQuota: null,
+    testFTS5Performance: vi.fn().mockResolvedValue({ queryTimeMs: 0, resultCount: 0, isWorking: true }),
 
     // Test utilities
     __testUtils: {

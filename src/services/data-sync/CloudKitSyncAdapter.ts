@@ -57,19 +57,15 @@ export interface SyncProgressEvent {
   timestamp: number;
 }
 
-// Import type for module augmentation (used in declare module below)
-// import type { WebKitMessageHandlers } from '../utils/webview/webview-bridge';
-
 // Bridge communication interface
 interface CloudKitBridge {
   postMessage(message: unknown): void;
 }
 
-// Module augmentation to extend the existing WebKit interface
-declare module '../utils/webview-bridge' {
-  interface WebKitMessageHandlers {
-    cloudkit: CloudKitBridge;
-  }
+/** Extended webkit messageHandlers type for CloudKit */
+interface CloudKitMessageHandlers {
+  cloudkit?: CloudKitBridge;
+  [key: string]: { postMessage: (data: unknown) => void } | undefined;
 }
 
 declare global {
@@ -180,8 +176,9 @@ export class CloudKitSyncAdapter {
    * Check if CloudKit bridge is available
    */
   private isBridgeAvailable(): boolean {
+    const handlers = window.webkit?.messageHandlers as CloudKitMessageHandlers | undefined;
     return typeof window !== 'undefined' &&
-           window.webkit?.messageHandlers?.cloudkit != null;
+           handlers?.cloudkit != null;
   }
 
   /**
@@ -233,8 +230,12 @@ export class CloudKitSyncAdapter {
         reject(new Error(`CloudKit ${method} request timeout`));
       }, this.DEFAULT_TIMEOUT);
 
-      // Store pending request
-      this.pendingRequests.set(requestId, { resolve, reject, timeout });
+      // Store pending request (cast resolve to unknown handler for storage)
+      this.pendingRequests.set(requestId, {
+        resolve: resolve as (value: unknown) => void,
+        reject,
+        timeout
+      });
 
       // Track sync operations
       if (method === 'sync') {
@@ -242,17 +243,19 @@ export class CloudKitSyncAdapter {
       }
 
       // Send message via existing webViewBridge infrastructure
+      const paramsObj = (typeof params === 'object' && params !== null) ? params as Record<string, unknown> : {};
       const message = {
         id: requestId,
         method,
         params: {
-          ...params,
+          ...paramsObj,
           sequenceId: Date.now()
         }
       };
 
       try {
-        window.webkit!.messageHandlers.cloudkit.postMessage(message);
+        const handlers = window.webkit?.messageHandlers as CloudKitMessageHandlers | undefined;
+        handlers?.cloudkit?.postMessage(message);
       } catch (error) {
         clearTimeout(timeout);
         this.pendingRequests.delete(requestId);

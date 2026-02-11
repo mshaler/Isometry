@@ -219,12 +219,12 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     const link = linksGroup
       .selectAll('line')
-      .data(links, (d: unknown) => d.id)
+      .data(links, (d: unknown) => (d as { id: string }).id)
       .join(
         enter => enter
           .append('line')
           .attr('stroke', themeValues.chart.grid)
-          .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
+          .attr('stroke-width', (d: unknown) => Math.sqrt((d as { weight: number }).weight) * 1.5)
           .attr('stroke-opacity', 0)
           .attr('marker-end', 'url(#arrow)')
           .call(enter => enter
@@ -236,7 +236,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
           .call(update => update
             .transition()
             .duration(200)
-            .attr('stroke-width', d => Math.sqrt(d.weight) * 1.5)
+            .attr('stroke-width', (d: unknown) => Math.sqrt((d as { weight: number }).weight) * 1.5)
           ),
         exit => exit
           .call(exit => exit
@@ -255,7 +255,7 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
 
     const linkLabels = linkLabelsGroup
       .selectAll('text')
-      .data(links.filter(l => l.label), (d: unknown) => d.id)
+      .data(links.filter(l => l.label), (d: unknown) => (d as { id: string }).id)
       .join(
         enter => enter
           .append('text')
@@ -362,11 +362,11 @@ export function NetworkView({ data, onNodeClick }: NetworkViewProps) {
               d.fx = d.x;
               d.fy = d.y;
             })
-            .on('drag', (event: unknown, d: SimNode) => {
+            .on('drag', (event: d3.D3DragEvent<SVGGElement, SimNode, SimNode>, d: SimNode) => {
               d.fx = event.x;
               d.fy = event.y;
             })
-            .on('end', (event: unknown, d: SimNode) => {
+            .on('end', (event: d3.D3DragEvent<SVGGElement, SimNode, SimNode>, d: SimNode) => {
               if (!event.active) simulation.alphaTarget(0);
               d.fx = null;
               d.fy = null;

@@ -362,36 +362,45 @@ export const DEFAULT_FLIP_CONFIG: FlipAnimationConfig = {
  * Type guards for runtime validation
  */
 export const isViewType = (value: unknown): value is ViewType => {
-  return Object.values(ViewType).includes(value);
+  return typeof value === 'string' &&
+    (Object.values(ViewType) as string[]).includes(value);
 };
 
 export const isViewAxisMapping = (obj: unknown): obj is ViewAxisMapping => {
-  if (!obj) return false;
+  if (!obj || typeof obj !== 'object') return false;
 
-  const hasValidAxis = (axis: unknown) => {
-    return axis &&
-      typeof axis.latchDimension === 'string' &&
-      ['L', 'A', 'T', 'C', 'H'].includes(axis.latchDimension) &&
-      typeof axis.facet === 'string' &&
-      typeof axis.label === 'string';
+  const record = obj as Record<string, unknown>;
+
+  const hasValidAxis = (axis: unknown): boolean => {
+    if (!axis || typeof axis !== 'object') return false;
+    const a = axis as Record<string, unknown>;
+    return typeof a.latchDimension === 'string' &&
+      ['L', 'A', 'T', 'C', 'H'].includes(a.latchDimension) &&
+      typeof a.facet === 'string' &&
+      typeof a.label === 'string';
   };
 
-  return (!obj.xAxis || hasValidAxis(obj.xAxis)) &&
-         (!obj.yAxis || hasValidAxis(obj.yAxis)) &&
-         (!obj.zAxis || (hasValidAxis(obj.zAxis) && typeof obj.zAxis.depth === 'number'));
+  return (!record.xAxis || hasValidAxis(record.xAxis)) &&
+         (!record.yAxis || hasValidAxis(record.yAxis)) &&
+         (!record.zAxis || (hasValidAxis(record.zAxis) &&
+           typeof (record.zAxis as Record<string, unknown>).depth === 'number'));
 };
 
 export const isViewState = (obj: unknown): obj is ViewState => {
-  return obj &&
-    isViewType(obj.currentView) &&
-    typeof obj.canvasId === 'string' &&
-    obj.viewStates &&
-    obj.selectionState &&
-    obj.selectionState.selectedCardIds instanceof Set &&
-    Array.isArray(obj.activeFilters) &&
-    obj.config &&
-    typeof obj.lastModified === 'number' &&
-    typeof obj.version === 'string';
+  if (!obj || typeof obj !== 'object') return false;
+
+  const record = obj as Record<string, unknown>;
+  const selectionState = record.selectionState as Record<string, unknown> | undefined;
+
+  return isViewType(record.currentView) &&
+    typeof record.canvasId === 'string' &&
+    !!record.viewStates &&
+    !!selectionState &&
+    selectionState.selectedCardIds instanceof Set &&
+    Array.isArray(record.activeFilters) &&
+    !!record.config &&
+    typeof record.lastModified === 'number' &&
+    typeof record.version === 'string';
 };
 
 /**

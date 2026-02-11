@@ -117,12 +117,9 @@ export function useRenderingOptimization(
     performanceMetrics: {
       frameRate: 0,
       renderTime: 0,
-      memoryUsage: 0,
-      culledElements: 0,
-      renderedElements: 0,
-      lodLevel: 1,
-      gpuUtilization: 0,
-      performance60FPS: false
+      memoryUsageMB: 0,
+      elementsRendered: 0,
+      queryTime: 0
     },
     alerts: [],
 
@@ -157,7 +154,7 @@ export function useRenderingOptimization(
       renderingPerformanceMonitor.startMonitoring();
 
       if (config.memoryMonitoring) {
-        memoryUsageTracker.startMonitoring(5000, (metrics: unknown) => {
+        memoryUsageTracker.startMonitoring(5000, (metrics: MemoryMetrics) => {
           if (metrics.leakDetected) {
             setState(prev => ({
               ...prev,
@@ -244,7 +241,9 @@ export function useRenderingOptimization(
 
       if (state.bridgeConnected) {
         try {
-          const lodResult = await webViewBridge.d3rendering.updateLOD({
+          const bridge = webViewBridge.d3rendering as
+            { updateLOD: (params: unknown) => Promise<{ lodConfiguration: LODConfiguration }> };
+          const lodResult = await bridge.updateLOD({
             zoomLevel: configRef.current.viewport.scale,
             nodeCount: nodes.length
           });
@@ -313,18 +312,18 @@ export function useRenderingOptimization(
     renderingPerformanceMonitor.recordFrame(renderTime);
   }, []);
 
-  const recordMemoryUsage = useCallback(() => {
-    const metrics = renderingPerformanceMonitor.recordMemoryUsage();
+  const recordMemoryUsage = useCallback((): MemoryMetrics | null => {
+    const memMetrics = memoryUsageTracker.getCurrentMemoryMetrics();
 
-    if (metrics) {
+    if (memMetrics) {
       setState(prev => ({
         ...prev,
-        memoryMetrics: metrics,
-        memoryPressure: Math.min(1, metrics.usedJSHeapSize / metrics.jsHeapSizeLimit)
+        memoryMetrics: memMetrics,
+        memoryPressure: Math.min(1, memMetrics.usedJSHeapSize / memMetrics.jsHeapSizeLimit)
       }));
     }
 
-    return metrics;
+    return memMetrics;
   }, []);
 
   const clearAlerts = useCallback(() => {
@@ -341,7 +340,7 @@ export function useRenderingOptimization(
       optimizedViewport: prev.optimizedViewport // Keep current viewport
     }));
 
-    devLogger.state('Applied optimization plan', plan);
+    devLogger.state('Applied optimization plan', plan as unknown as Record<string, unknown>);
   }, []);
 
   const resetOptimizations = useCallback(() => {
@@ -373,18 +372,17 @@ export function useRenderingOptimization(
   const getBenchmarkResults = useCallback(async (): Promise<RenderingMetrics> => {
     if (state.bridgeConnected) {
       try {
-        const result = await webViewBridge.d3rendering.getBenchmarkResults({});
-        const report = result.performanceReport as any;
+        const bridge = webViewBridge.d3rendering as
+          { getBenchmarkResults: (params: unknown) => Promise<{ performanceReport: Record<string, unknown> }> };
+        const result = await bridge.getBenchmarkResults({});
+        const report = result.performanceReport;
         // Ensure the bridge report has all required RenderingMetrics properties
         return {
-          frameRate: report.frameRate || 0,
-          renderTime: report.renderTime || 0,
-          memoryUsage: report.memoryUsage || 0,
-          culledElements: report.culledElements || 0,
-          renderedElements: report.renderedElements || 0,
-          lodLevel: report.lodLevel || 1,
-          gpuUtilization: report.gpuUtilization || 0,
-          performance60FPS: report.performance60FPS || false
+          frameRate: (report.frameRate as number) || 0,
+          renderTime: (report.renderTime as number) || 0,
+          memoryUsageMB: (report.memoryUsageMB as number) || 0,
+          elementsRendered: (report.elementsRendered as number) || 0,
+          queryTime: (report.queryTime as number) || 0
         };
       } catch (error) {
         console.warn('Failed to get native benchmark results:', error);
@@ -397,7 +395,9 @@ export function useRenderingOptimization(
   const getOptimizationRecommendations = useCallback(async (): Promise<string[]> => {
     if (state.bridgeConnected) {
       try {
-        const result = await webViewBridge.d3rendering.getOptimizationRecommendations({});
+        const bridge = webViewBridge.d3rendering as
+          { getOptimizationRecommendations: (params: unknown) => Promise<{ recommendations: string[] }> };
+        const result = await bridge.getOptimizationRecommendations({});
         return result.recommendations;
       } catch (error) {
         console.warn('Failed to get native optimization recommendations:', error);
@@ -517,15 +517,15 @@ function estimateRenderingLoad(strategy: OptimizationStrategy, nodeCount: number
 function generateLocalRecommendations(metrics: RenderingMetrics, config: RenderingOptimizationConfig): string[] {
   const recommendations: string[] = [];
 
-  if (!metrics.performance60FPS) {
+  if (metrics.frameRate < 60) {
     recommendations.push('Enable viewport culling to improve frame rate');
   }
 
-  if (metrics.memoryUsage > 100 * 1024 * 1024) { // > 100MB
+  if (metrics.memoryUsageMB > 100) { // > 100MB
     recommendations.push('High memory usage detected - consider memory optimizations');
   }
 
-  if (config.nodeCount > 1000 && metrics.lodLevel === 0) {
+  if (config.nodeCount > 1000 && metrics.elementsRendered === 0) {
     recommendations.push('Large dataset detected - enable LOD management');
   }
 

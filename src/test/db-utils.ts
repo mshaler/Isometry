@@ -397,7 +397,7 @@ export async function cleanupTestDB(db: Database): Promise<void> {
  * Execute a test query and return results in a more convenient format
  */
 export function execTestQuery(db: Database, sql: string, params?: unknown[]): unknown[] {
-  const results = params ? db.exec(sql, params) : db.exec(sql);
+  const results = params ? db.exec(sql, params as (string | number | Uint8Array | null)[]) : db.exec(sql);
 
   if (results.length === 0) {
     return [];
@@ -420,7 +420,7 @@ export function insertTestData(db: Database, sql: string, params?: unknown[]): n
   const stmt = params ? db.prepare(sql) : null;
 
   if (stmt && params) {
-    stmt.run(params);
+    stmt.run(params as (string | number | Uint8Array | null)[]);
     stmt.free();
     return 1; // Return 1 for successful insert
   } else {

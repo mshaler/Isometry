@@ -425,8 +425,9 @@ export class OptimisticUpdateManager {
     // Also update in nodes list if present
     this.queryClient.setQueryData(queryKeys.nodes, (old: T[] | undefined) => {
       if (!old) return old;
-      return old.map((item: unknown) =>
-        item.id === nodeId ? { ...item, ...update } : item
+      return old.map((item) =>
+        (item as Record<string, unknown>).id === nodeId ?
+          { ...(item as Record<string, unknown>), ...update } as T : item
       );
     });
   }
@@ -455,8 +456,8 @@ export class OptimisticUpdateManager {
       // Also restore in nodes list
       this.queryClient.setQueryData(queryKeys.nodes, (old: unknown[] | undefined) => {
         if (!old || !originalData) return old;
-        return old.map((item: unknown) =>
-          item.id === nodeId ? originalData : item
+        return old.map((item) =>
+          (item as Record<string, unknown>).id === nodeId ? originalData : item
         );
       });
     }

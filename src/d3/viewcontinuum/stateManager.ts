@@ -33,8 +33,9 @@ export class ViewContinuumStateManager {
 
         // Restore Set objects in view states
         Object.values(parsed.viewStates || {}).forEach((viewState: unknown) => {
-          if (viewState.expandedGroups) {
-            viewState.expandedGroups = new Set(viewState.expandedGroups);
+          const vs = viewState as Record<string, unknown>;
+          if (vs.expandedGroups) {
+            vs.expandedGroups = new Set(vs.expandedGroups as Iterable<string>);
           }
         });
 
@@ -105,10 +106,11 @@ export class ViewContinuumStateManager {
   ): void {
     const currentViewState = viewState.viewStates[viewState.currentView];
 
-    if (activeRenderer?.getCardPositions) {
+    const renderer = activeRenderer as Record<string, unknown> | null;
+    if (renderer && typeof renderer.getCardPositions === 'function') {
       // Save card positions from the active renderer
-      const positions = activeRenderer.getCardPositions();
-      currentViewState.cardPositions = positions;
+      const positions = renderer.getCardPositions() as Map<string, unknown>;
+      (currentViewState as unknown as Record<string, unknown>).cardPositions = positions;
     }
 
     // Update timestamp
@@ -117,9 +119,12 @@ export class ViewContinuumStateManager {
     // Save to localStorage
     this.saveViewState(viewState);
 
+    const savedPositions =
+      (currentViewState as unknown as Record<string, unknown>).cardPositions as
+        Map<string, unknown> | undefined;
     d3Logger.state('Current view state saved', {
       viewType: viewState.currentView,
-      positionCount: currentViewState.cardPositions?.size || 0
+      positionCount: savedPositions?.size || 0
     });
 
     onSaveComplete();
@@ -139,8 +144,8 @@ export class ViewContinuumStateManager {
     if (currentViewState.scrollPosition) {
       // For now, just log the scroll position - actual restoration depends on view type
       d3Logger.state('ViewContinuum: Restoring scroll position', {
-        x: currentViewState.scrollPosition.x,
-        y: currentViewState.scrollPosition.y
+        semanticAnchor: currentViewState.scrollPosition.semanticAnchor,
+        offsetRatio: currentViewState.scrollPosition.offsetRatio
       });
     }
 

@@ -196,7 +196,7 @@ export function EnvironmentProvider({
     });
 
     // Check if database handler exists
-    if (typeof window.webkit.messageHandlers.database === 'undefined') {
+    if (typeof (window.webkit.messageHandlers as Record<string, unknown>).database === 'undefined') {
       devLogger.debug('WebView bridge test failed', { reason: 'database handler not available' });
       return false;
     }
@@ -380,7 +380,7 @@ export function EnvironmentProvider({
       if (isMountedRef.current) {
         const errorMessage = err instanceof Error ? err.message : 'Environment detection failed';
         setError(errorMessage);
-        bridgeLogger.error('Environment initialization failed', {}, err as Error);
+        bridgeLogger.error('Environment initialization failed', { error: err instanceof Error ? err.message : String(err) });
 
         // Fall back to FALLBACK mode on error
         setEnvironment(createEnvironmentInfo(DatabaseMode.FALLBACK));

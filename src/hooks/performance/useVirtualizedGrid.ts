@@ -187,17 +187,18 @@ export function useVirtualizedGrid(
 
         if (cellDataForPosition && isCellData(cellDataForPosition)) {
           const virtualItem: VirtualGridCell = {
-            virtualIndex: rowIndex * columnCount + colIndex,
-            realIndex: rowIndex * columnCount + colIndex,
-            cellData: {
+            rowIndex,
+            columnIndex: colIndex,
+            data: {
               ...cellDataForPosition,
               x: vCol.start,
-              y: vRow.start,
-              row: rowIndex,
-              column: colIndex
+              y: vRow.start
             },
             isVisible: true,
-            estimatedSize: estimatedItemHeight
+            top: vRow.start,
+            left: vCol.start,
+            width: estimatedItemWidth,
+            height: estimatedItemHeight
           };
 
           items.push(virtualItem);
