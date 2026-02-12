@@ -31,10 +31,11 @@ Progress (v4.8): [###############...............] 50% (3/6 phases)
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
 - Phase 69-06: COMPLETE (~5m) — ExcelImporter with SheetJS multi-sheet support
-- Phase 69-04: COMPLETE (~6m) — HtmlImporter with native DOMParser
 - Phase 69-05: COMPLETE (~6m) — WordImporter with mammoth.js for DOCX to HTML
+- Phase 69-04: COMPLETE (~6m) — HtmlImporter with native DOMParser
 - Phase 69-03: COMPLETE (~7m) — CsvImporter with PapaParse RFC 4180 compliance
 - Phase 69-02: COMPLETE (~4m) — JsonImporter with flexible LATCH mapping
+- Phase 69-01: COMPLETE (~7m) — MarkdownImporter with gray-matter + marked HTML
 
 **Recent completions (Phase 68 - v4.8 ETL Consolidation):**
 - Phase 68-01: COMPLETE (~5m) — Import Coordinator with extension-based routing
@@ -63,6 +64,12 @@ Progress (v4.8): [###############...............] 50% (3/6 phases)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 69-01 decisions (MarkdownImporter):**
+- MD-DEC-01: Tests use toMatch() for ISO dates due to gray-matter Date object parsing
+- MD-DEC-02: Flexible key detection supports created/createdAt/created_at variations
+- MD-DEC-03: Unknown frontmatter keys stored in properties with originalFormat marker
+
 **Phase 69-06 decisions (ExcelImporter):**
 - EXCEL-DEC-01: Sheet name used as folder for organizational hierarchy
 - EXCEL-DEC-02: No fallback to arbitrary column values for name - use sheet+row number format
@@ -301,5 +308,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 69-03 complete (CsvImporter with PapaParse)
-Resume file: .planning/phases/69-file-importers/69-03-SUMMARY.md
+Stopped at: Phase 69-01 SUMMARY complete
+Resume file: .planning/phases/69-file-importers/69-01-SUMMARY.md
