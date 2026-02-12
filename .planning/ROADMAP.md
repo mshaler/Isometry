@@ -365,7 +365,11 @@ Plans:
   1. window.isometryETL.importFile() exposes ETL API for Swift bridge
   2. Alto-importer uses CanonicalNode pipeline
   3. Database insertion handles all CanonicalNode fields correctly
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [ ] 70-01-PLAN.md — Database insertion utilities and window.isometryETL bridge
+- [ ] 70-02-PLAN.md — Alto-importer migration to CanonicalNode pipeline
 
 ### Phase 71: Swift Bridge
 **Goal**: Enable Swift to delegate file processing to JS
