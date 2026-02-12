@@ -1,0 +1,525 @@
+/**
+ * PafvNavigator Component
+ *
+ * 6-column horizontal layout for PAFV axis assignment via drag-and-drop.
+ * All columns equal width (16.67%) with consistent two-line titles.
+ *
+ * Layout:
+ * ┌───────────┬───────────┬───────────┬───────────┬───────────┬───────────┐
+ * │ Available │  X-Plane  │  Y-Plane  │  Z-Plane  │ Encoding  │  Density  │
+ * │Properties │  Columns  │   Rows    │   Depth   │Color/Size │Sparse/Dens│
+ * ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
+ * │  [chip]   │  [axis]   │  [axis]   │  [axis]   │  Color:   │  SPARSE   │
+ * │  [chip]   │  [axis]   │  [axis]   │  [axis]   │  Size:    │    |||    │
+ * │  [chip]   │           │           │           │           │   DENSE   │
+ * └───────────┴───────────┴───────────┴───────────┴───────────┴───────────┘
+ */
+
+import { useDrag, useDrop } from 'react-dnd';
+import { GripVertical, X } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { usePAFV } from '@/state/PAFVContext';
+import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
+import type { Plane, AxisMapping, DensityLevel } from '@/types/pafv';
+import type { ClassifiedProperty, PropertyBucket, LATCHBucket } from '@/services/property-classifier';
+import { EncodingDropdown } from './EncodingDropdown';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const PAFV_ITEM_TYPE = 'PAFV_CHIP';
+
+const BUCKET_TO_AXIS: Record<LATCHBucket, AxisMapping['axis']> = {
+  L: 'location',
+  A: 'alphabet',
+  T: 'time',
+  C: 'category',
+  H: 'hierarchy',
+};
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface DragItem {
+  id: string;
+  name: string;
+  bucket: PropertyBucket;
+  sourceColumn: string;
+  sourceWell: 'available' | 'x' | 'y' | 'z';
+}
+
+// ============================================================================
+// DraggablePropertyChip Component
+// ============================================================================
+
+interface DraggablePropertyChipProps {
+  property: ClassifiedProperty;
+  sourceWell: 'available' | 'x' | 'y' | 'z';
+}
+
+function DraggablePropertyChip({ property, sourceWell }: DraggablePropertyChipProps) {
+  const { theme } = useTheme();
+  const isNeXTSTEP = theme === 'NeXTSTEP';
+
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: PAFV_ITEM_TYPE,
+    item: {
+      id: property.id,
+      name: property.name,
+      bucket: property.bucket,
+      sourceColumn: property.sourceColumn,
+      sourceWell,
+    } as DragItem,
+    canDrag: property.bucket !== 'GRAPH',
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }), [property, sourceWell]);
+
+  const isGraph = property.bucket === 'GRAPH';
+
+  return (
+    <div
+      ref={isGraph ? undefined : drag}
+      className={`
+        flex items-center gap-1.5 h-7 px-2 rounded text-[11px]
+        ${isGraph ? 'cursor-not-allowed opacity-50' : 'cursor-grab active:cursor-grabbing'}
+        ${isDragging ? 'opacity-40 scale-95' : ''}
+        transition-all
+        ${isNeXTSTEP
+          ? 'bg-[#3A3A3A] hover:bg-[#454545]'
+          : 'bg-white border border-gray-200 hover:bg-gray-50'
+        }
+      `}
+      title={isGraph ? 'GRAPH properties not yet supported' : property.name}
+    >
+      {!isGraph && <GripVertical className={`w-3 h-3 flex-shrink-0 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`} />}
+      <span className={`truncate ${isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-700'}`}>
+        {property.name}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================================
+// AxisChip Component (for assigned axes in wells)
+// ============================================================================
+
+interface AxisChipProps {
+  mapping: AxisMapping;
+  onRemove: () => void;
+}
+
+function AxisChip({ mapping, onRemove }: AxisChipProps) {
+  const { theme } = useTheme();
+  const isNeXTSTEP = theme === 'NeXTSTEP';
+
+  const capitalizeFirst = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+
+  return (
+    <div
+      className={`
+        flex items-center justify-between gap-1 h-7 px-2 rounded text-[11px]
+        ${isNeXTSTEP
+          ? 'bg-[#4A90D9] text-white'
+          : 'bg-blue-100 text-blue-800 border border-blue-200'
+        }
+      `}
+    >
+      <span className="truncate flex-1">
+        {capitalizeFirst(mapping.axis)}
+        {mapping.facet && (
+          <span className="opacity-70 ml-1">({mapping.facet})</span>
+        )}
+      </span>
+      <button
+        onClick={onRemove}
+        className={`
+          p-0.5 rounded transition-colors
+          ${isNeXTSTEP ? 'hover:bg-[#5A9FE9]' : 'hover:bg-blue-200'}
+        `}
+        type="button"
+        title="Remove axis"
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// DropWell Component
+// ============================================================================
+
+interface DropWellProps {
+  wellId: 'available' | 'x' | 'y' | 'z';
+  label: string;
+  sublabel?: string;
+  width: string;
+  children: React.ReactNode;
+  onDrop: (item: DragItem) => void;
+  acceptFrom?: ('available' | 'x' | 'y' | 'z')[];
+}
+
+function DropWell({ wellId, label, sublabel, width, children, onDrop, acceptFrom }: DropWellProps) {
+  const { theme } = useTheme();
+  const isNeXTSTEP = theme === 'NeXTSTEP';
+
+  const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    accept: PAFV_ITEM_TYPE,
+    drop: (item: DragItem) => {
+      // Don't drop on same well
+      if (item.sourceWell === wellId) return;
+      onDrop(item);
+    },
+    canDrop: (item: DragItem) => {
+      // Don't accept GRAPH items
+      if (item.bucket === 'GRAPH') return false;
+      // If acceptFrom specified, only accept from those wells
+      if (acceptFrom && !acceptFrom.includes(item.sourceWell)) return false;
+      // Don't drop on same well
+      return item.sourceWell !== wellId;
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  }), [wellId, onDrop, acceptFrom]);
+
+  return (
+    <div className={`${width} flex flex-col`}>
+      {/* Well Header - consistent h-[32px] for all columns */}
+      <div className="mb-1 px-1 h-[32px] flex flex-col justify-end">
+        <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+          isNeXTSTEP ? 'text-[#999]' : 'text-gray-500'
+        }`}>
+          {label}
+        </div>
+        <div className={`text-[9px] ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+          {sublabel || '\u00A0'}
+        </div>
+      </div>
+
+      {/* Well Content */}
+      <div
+        ref={drop}
+        className={`
+          flex-1 min-h-[140px] max-h-[200px] p-1.5 rounded overflow-y-auto
+          border-2 transition-all
+          ${isNeXTSTEP
+            ? `bg-[#2D2D2D] ${isOver && canDrop ? 'border-[#4A90D9] bg-[#3A4A5A]' : 'border-[#3A3A3A]'}`
+            : `bg-gray-50 ${isOver && canDrop ? 'border-blue-400 bg-blue-50' : 'border-gray-200'}`
+          }
+        `}
+      >
+        <div className="flex flex-col gap-1">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// DensityColumnEqual Component (accepts width prop for equal-width layout)
+// ============================================================================
+
+interface DensityColumnEqualProps {
+  densityLevel: DensityLevel;
+  onDensityChange: (level: DensityLevel) => void;
+  width: string;
+}
+
+function DensityColumnEqual({ densityLevel, onDensityChange, width }: DensityColumnEqualProps) {
+  const { theme } = useTheme();
+  const isNeXTSTEP = theme === 'NeXTSTEP';
+
+  return (
+    <div className={`${width} flex flex-col`}>
+      {/* Header - consistent height with other columns */}
+      <div className="mb-1 px-1 h-[32px] flex flex-col justify-end">
+        <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+          isNeXTSTEP ? 'text-[#999]' : 'text-gray-500'
+        }`}>
+          Density
+        </div>
+        <div className={`text-[9px] ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+          Sparse/Dense
+        </div>
+      </div>
+
+      {/* Slider Container */}
+      <div className={`
+        flex-1 min-h-[140px] p-2 rounded flex flex-col items-center justify-between
+        border-2
+        ${isNeXTSTEP ? 'bg-[#2D2D2D] border-[#3A3A3A]' : 'bg-gray-50 border-gray-200'}
+      `}>
+        {/* Sparse Label */}
+        <div className={`text-[9px] font-semibold uppercase ${isNeXTSTEP ? 'text-[#999]' : 'text-gray-400'}`}>
+          Sparse
+        </div>
+
+        {/* Vertical Slider */}
+        <div className="flex-1 flex items-center justify-center py-2">
+          <input
+            type="range"
+            min="1"
+            max="4"
+            step="1"
+            value={densityLevel}
+            onChange={(e) => onDensityChange(Number(e.target.value) as DensityLevel)}
+            className="h-20 appearance-none cursor-pointer"
+            style={{
+              writingMode: 'vertical-lr',
+              direction: 'rtl',
+              width: '8px',
+            }}
+          />
+        </div>
+
+        {/* Dense Label */}
+        <div className={`text-[9px] font-semibold uppercase ${isNeXTSTEP ? 'text-[#999]' : 'text-gray-400'}`}>
+          Dense
+        </div>
+
+        {/* Level Indicator */}
+        <div className={`mt-1 text-[11px] font-mono ${isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-700'}`}>
+          L{densityLevel}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// PafvNavigator Component
+// ============================================================================
+
+export function PafvNavigator() {
+  const { theme } = useTheme();
+  const { classification } = usePropertyClassification();
+  const {
+    state: pafvState,
+    addMappingToPlane,
+    removeFacetFromPlane,
+    getMappingsForPlane,
+    setDensityLevel,
+    setColorEncoding,
+    setSizeEncoding,
+  } = usePAFV();
+
+  const isNeXTSTEP = theme === 'NeXTSTEP';
+
+  // Get available properties (all LATCH, exclude those assigned to X/Y/Z)
+  const getAllLatchProperties = (): ClassifiedProperty[] => {
+    if (!classification) return [];
+    return [
+      ...classification.L,
+      ...classification.A,
+      ...classification.T,
+      ...classification.C,
+      ...classification.H,
+    ];
+  };
+
+  // Get assigned facets for filtering
+  const xMappings = getMappingsForPlane('x');
+  const yMappings = getMappingsForPlane('y');
+  const zMappings = getMappingsForPlane('z');
+  const assignedFacets = new Set([
+    ...xMappings.map(m => m.facet),
+    ...yMappings.map(m => m.facet),
+    ...zMappings.map(m => m.facet),
+  ]);
+
+  // Available = all LATCH properties not assigned to X/Y
+  const availableProperties = getAllLatchProperties().filter(
+    p => !assignedFacets.has(p.sourceColumn)
+  );
+
+  // Handle drop on X/Y/Z wells - use addMappingToPlane for stacking
+  const handleDropOnPlane = (plane: Plane) => (item: DragItem) => {
+    // If coming from another plane, remove from there first
+    if (item.sourceWell === 'x' || item.sourceWell === 'y' || item.sourceWell === 'z') {
+      removeFacetFromPlane(item.sourceWell as Plane, item.sourceColumn);
+    }
+
+    // Map bucket to axis
+    if (item.bucket === 'GRAPH') return;
+    const axis = BUCKET_TO_AXIS[item.bucket as LATCHBucket];
+
+    // Create mapping
+    const mapping: AxisMapping = {
+      plane,
+      axis,
+      facet: item.sourceColumn,
+    };
+
+    // Use addMappingToPlane for stacking (multiple facets on same plane)
+    addMappingToPlane(mapping);
+  };
+
+  // Handle drop back to Available
+  const handleDropOnAvailable = (item: DragItem) => {
+    if (item.sourceWell === 'x' || item.sourceWell === 'y' || item.sourceWell === 'z') {
+      removeFacetFromPlane(item.sourceWell as Plane, item.sourceColumn);
+    }
+  };
+
+  // Container styling
+  const containerClasses = `
+    w-full p-2
+    ${isNeXTSTEP
+      ? 'bg-[#252525] border-b border-[#3A3A3A]'
+      : 'bg-white/50 backdrop-blur-xl border-b border-gray-200'
+    }
+  `;
+
+  // Equal width for all 6 columns
+  const columnWidth = 'w-[16.67%]';
+
+  return (
+    <div className={containerClasses.trim().replace(/\s+/g, ' ')}>
+      <div className="flex gap-2">
+          {/* Available Properties Well */}
+          <DropWell
+            wellId="available"
+            label="Available"
+            sublabel="Properties"
+            width={columnWidth}
+            onDrop={handleDropOnAvailable}
+            acceptFrom={['x', 'y', 'z']}
+          >
+            {availableProperties.length === 0 ? (
+              <div className={`text-[10px] italic p-1 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+                All assigned
+              </div>
+            ) : (
+              availableProperties.map(prop => (
+                <DraggablePropertyChip
+                  key={prop.id}
+                  property={prop}
+                  sourceWell="available"
+                />
+              ))
+            )}
+          </DropWell>
+
+          {/* X-Plane Well */}
+          <DropWell
+            wellId="x"
+            label="X-Plane"
+            sublabel="Columns"
+            width={columnWidth}
+            onDrop={handleDropOnPlane('x')}
+          >
+            {xMappings.length === 0 ? (
+              <div className={`text-[10px] italic p-1 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+                Drop facet
+              </div>
+            ) : (
+              xMappings.map(mapping => (
+                <AxisChip
+                  key={`${mapping.axis}-${mapping.facet}`}
+                  mapping={mapping}
+                  onRemove={() => removeFacetFromPlane('x', mapping.facet)}
+                />
+              ))
+            )}
+          </DropWell>
+
+          {/* Y-Plane Well */}
+          <DropWell
+            wellId="y"
+            label="Y-Plane"
+            sublabel="Rows"
+            width={columnWidth}
+            onDrop={handleDropOnPlane('y')}
+          >
+            {yMappings.length === 0 ? (
+              <div className={`text-[10px] italic p-1 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+                Drop facet
+              </div>
+            ) : (
+              yMappings.map(mapping => (
+                <AxisChip
+                  key={`${mapping.axis}-${mapping.facet}`}
+                  mapping={mapping}
+                  onRemove={() => removeFacetFromPlane('y', mapping.facet)}
+                />
+              ))
+            )}
+          </DropWell>
+
+          {/* Z-Plane Well (Depth) */}
+          <DropWell
+            wellId="z"
+            label="Z-Plane"
+            sublabel="Depth"
+            width={columnWidth}
+            onDrop={handleDropOnPlane('z')}
+          >
+            {zMappings.length === 0 ? (
+              <div className={`text-[10px] italic p-1 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+                Drop facet
+              </div>
+            ) : (
+              zMappings.map(mapping => (
+                <AxisChip
+                  key={`${mapping.axis}-${mapping.facet}`}
+                  mapping={mapping}
+                  onRemove={() => removeFacetFromPlane('z', mapping.facet)}
+                />
+              ))
+            )}
+          </DropWell>
+
+          {/* Encoding Column */}
+          <div className={`${columnWidth} flex flex-col`}>
+            <div className="mb-1 px-1 h-[32px] flex flex-col justify-end">
+              <div className={`text-[10px] font-semibold uppercase tracking-wide ${
+                isNeXTSTEP ? 'text-[#999]' : 'text-gray-500'
+              }`}>
+                Encoding
+              </div>
+              <div className={`text-[9px] ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`}>
+                Color/Size
+              </div>
+            </div>
+            <div className={`
+              flex-1 min-h-[140px] p-1.5 rounded flex flex-col gap-2
+              border-2
+              ${isNeXTSTEP ? 'bg-[#2D2D2D] border-[#3A3A3A]' : 'bg-gray-50 border-gray-200'}
+            `}>
+              {/* Color Encoding */}
+              <EncodingDropdown
+                label="Color"
+                value={pafvState.colorEncoding}
+                availableProperties={getAllLatchProperties()}
+                onChange={setColorEncoding}
+                encodingType="color"
+              />
+
+              {/* Size Encoding */}
+              <EncodingDropdown
+                label="Size"
+                value={pafvState.sizeEncoding}
+                availableProperties={getAllLatchProperties()}
+                onChange={setSizeEncoding}
+                encodingType="size"
+              />
+            </div>
+          </div>
+
+          {/* Density Column */}
+          <DensityColumnEqual
+            densityLevel={pafvState.densityLevel}
+            onDensityChange={setDensityLevel}
+            width={columnWidth}
+          />
+        </div>
+      </div>
+  );
+}

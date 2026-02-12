@@ -15,7 +15,7 @@ export type LATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarc
 export type LATCHAxisAbbr = 'L' | 'A' | 'T' | 'C' | 'H';
 
 // Plane types (visual dimensions)
-export type Plane = 'x' | 'y' | 'color' | 'size' | 'shape';
+export type Plane = 'x' | 'y' | 'z' | 'color' | 'size' | 'shape';
 
 export type FacetType = 'text' | 'number' | 'date' | 'select' | 'multi_select' | 'location';
 

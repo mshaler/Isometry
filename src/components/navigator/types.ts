@@ -6,14 +6,17 @@
  */
 
 import type { LATCHBucket, PropertyBucket } from '@/services/property-classifier';
-import type { LATCHAxis } from '@/types/pafv';
+import type { LATCHAxis, Plane } from '@/types/pafv';
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-/** Drag item type identifier for react-dnd */
+/** Drag item type identifier for react-dnd (facets from LATCH buckets) */
 export const FACET_ITEM_TYPE = 'FACET';
+
+/** Drag item type identifier for chips within a well (for reordering) */
+export const WELL_CHIP_ITEM_TYPE = 'WELL_CHIP';
 
 /**
  * Maps single-letter LATCH buckets to full axis names.
@@ -46,4 +49,19 @@ export interface DraggedFacetItem {
   sourceColumn: string;
   /** Type: text, number, date, select, multi_select, location, edge_type, computed */
   facetType: string;
+}
+
+/**
+ * Data transferred during a within-well chip drag operation.
+ * Used for reordering chips within the same plane.
+ */
+export interface DraggedWellChipItem {
+  /** Index of the chip in the plane's mappings array */
+  index: number;
+  /** The plane this chip belongs to */
+  plane: Plane;
+  /** The facet name */
+  facet: string;
+  /** The LATCH axis */
+  axis: string;
 }
