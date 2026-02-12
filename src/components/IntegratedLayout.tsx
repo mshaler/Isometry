@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { LatchNavigator } from './navigator/LatchNavigator';
 import { PafvNavigator } from './navigator/PafvNavigator';
+import { LatchGraphSliders, useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
 import { SuperGrid } from '../d3/SuperGrid';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import { mappingsToProjection } from '../types/grid';
@@ -53,6 +54,27 @@ export function IntegratedLayout() {
     status: importStatus,
     progress: importProgress,
   } = useAltoIndexImport();
+
+  // Current data for slider filter generation
+  const [currentData, setCurrentData] = useState<Array<Record<string, unknown>>>([]);
+
+  // Convert PropertyClassification to SliderClassification format
+  const sliderClassification: SliderClassification | null = useMemo(() => {
+    if (!classification) return null;
+    return {
+      T: classification.T.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
+      H: classification.H.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
+    };
+  }, [classification]);
+
+  // Slider filters hook
+  const {
+    filters: sliderFilters,
+    setFilterValue,
+    buildWhereClause,
+    resetFilters,
+  } = useSliderFilters(currentData, sliderClassification);
+
 
   // SuperGrid refs and state
   const svgRef = useRef<SVGSVGElement>(null);
@@ -135,6 +157,11 @@ export function IntegratedLayout() {
       dataset: datasetId,
     });
   }, [refreshClassification]);
+
+  // Handle slider filter change - re-query SuperGrid with filter constraints
+  const handleSliderFilterChange = useCallback((filterId: string, value: [number, number]) => {
+    setFilterValue(filterId, value);
+  }, [setFilterValue]);
 
   // Theme-aware colors
   const isNeXTSTEP = theme === 'NeXTSTEP';
@@ -223,7 +250,7 @@ export function IntegratedLayout() {
 
   // Load data when SuperGrid initializes or dataset changes
   useEffect(() => {
-    if (!superGrid || !altoImported || !svgRef.current) {
+    if (!superGrid || !altoImported || !svgRef.current || !databaseService?.isReady()) {
       return;
     }
 
@@ -238,6 +265,17 @@ export function IntegratedLayout() {
 
     contextLogger.debug('[IntegratedLayout] Loading dataset', { activeDataset, nodeType });
 
+    // Reset slider filters when dataset changes
+    resetFilters();
+
+    // Load current data for slider filter generation
+    // Note: Using string interpolation because execute() doesn't bind params (see operations.ts)
+    const dataResult = databaseService.query(
+      `SELECT * FROM nodes WHERE node_type = '${nodeType}' AND deleted_at IS NULL LIMIT 5000`,
+      []
+    );
+    setCurrentData(dataResult || []);
+
     // Query the nodes table filtered by node_type (alto-index data)
     superGrid.query({
       whereClause: `node_type = ? AND deleted_at IS NULL`,
@@ -250,7 +288,38 @@ export function IntegratedLayout() {
       dataset: activeDataset,
       nodeType,
     });
-  }, [superGrid, activeDataset, altoImported, databaseService]);
+  }, [superGrid, activeDataset, altoImported, databaseService, resetFilters]);
+
+  // Re-query SuperGrid when slider filters change
+  useEffect(() => {
+    if (!superGrid || !svgRef.current || !altoImported) return;
+
+    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
+    const nodeType = dataset?.nodeType || 'notes';
+
+    // Build the combined WHERE clause
+    const { clause: filterClause, params: filterParams } = buildWhereClause();
+
+    let whereClause = `node_type = ? AND deleted_at IS NULL`;
+    const parameters: (string | number)[] = [nodeType];
+
+    if (filterClause) {
+      whereClause += ` AND ${filterClause}`;
+      parameters.push(...filterParams);
+    }
+
+    superGrid.query({
+      whereClause,
+      parameters,
+      activeFilters: [],
+      isEmpty: false,
+    });
+
+    contextLogger.debug('[IntegratedLayout] Slider filters applied', {
+      filterClause,
+      filterParams,
+    });
+  }, [superGrid, activeDataset, altoImported, buildWhereClause]);
 
   // Sync PAFV projection to SuperGrid
   useEffect(() => {
@@ -371,6 +440,12 @@ export function IntegratedLayout() {
 
         {/* PafvNavigator (5-well axis assignment with density) */}
         <PafvNavigator enabledProperties={enabledProperties} />
+
+        {/* LATCH*GRAPH Sliders for filtering/tuning */}
+        <LatchGraphSliders
+          filters={sliderFilters}
+          onFilterChange={handleSliderFilterChange}
+        />
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
