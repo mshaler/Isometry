@@ -6,8 +6,31 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import { queryKeys } from '../services/query/queryClient';
 import { devLogger } from './logging';
+
+// Query key factory for consistent cache key patterns
+// Moved from services/query/queryClient.ts (only used here)
+export const queryKeys = {
+  // Node-related keys
+  node: (nodeId: string) => ['node', nodeId] as const,
+  nodes: ['nodes'] as const,
+  nodesByType: (nodeType: string) => ['nodes', 'type', nodeType] as const,
+  nodesByFolder: (folder: string) => ['nodes', 'folder', folder] as const,
+  nodesWithTags: (tags: string[]) => ['nodes', 'tags', tags] as const,
+
+  // Edge-related keys
+  edge: (edgeId: string) => ['edge', edgeId] as const,
+  edges: ['edges'] as const,
+  edgesByNode: (nodeId: string) => ['edges', 'node', nodeId] as const,
+  edgesByType: (edgeType: string) => ['edges', 'type', edgeType] as const,
+
+  // Graph-related keys
+  graph: ['graph'] as const,
+  graphNeighbors: (nodeId: string) => ['graph', 'neighbors', nodeId] as const,
+
+  // Search keys
+  search: ['search'] as const
+};
 
 /**
  * Cache invalidation strategy types

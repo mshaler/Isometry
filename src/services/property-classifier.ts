@@ -312,23 +312,4 @@ export function classifyProperties(db: Database): PropertyClassification {
 /**
  * Get all properties as a flat array (useful for iteration)
  */
-export function flattenClassification(classification: PropertyClassification): ClassifiedProperty[] {
-  return [
-    ...classification.L,
-    ...classification.A,
-    ...classification.T,
-    ...classification.C,
-    ...classification.H,
-    ...classification.GRAPH,
-  ];
-}
-
-/**
- * Get properties for a specific bucket
- */
-export function getPropertiesForBucket(
-  classification: PropertyClassification,
-  bucket: PropertyBucket
-): ClassifiedProperty[] {
-  return classification[bucket];
-}
+// Removed unused utility functions flattenClassification and getPropertiesForBucket

@@ -9,7 +9,7 @@ export interface NetworkStatus {
 }
 
 export type ConnectionQuality = 'good' | 'fair' | 'poor' | 'offline' | 'high' | 'medium' | 'low';
-export type NetworkQuality = ConnectionQuality;
+// NetworkQuality removed - unused type alias, use ConnectionQuality directly
 
 export interface NetworkChangeEvent {
   type: 'online' | 'offline' | 'quality-change';
@@ -17,11 +17,7 @@ export interface NetworkChangeEvent {
   timestamp: Date;
 }
 
-export type QualityConfigMap = Record<string, {
-  bandwidth: number;
-  latency: number;
-  reliability: number;
-}>;
+// QualityConfigMap removed - unused type
 
 export class NetworkMonitor {
   getStatus(): NetworkStatus {

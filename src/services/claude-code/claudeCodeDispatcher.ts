@@ -435,7 +435,5 @@ export const GSDCommands = {
   }
 };
 
-/**
- * Default dispatcher instance
- */
-export const claudeCodeDispatcher = new DefaultClaudeCodeDispatcher();
+// Removed unused default dispatcher instance
+// Use getClaudeCodeDispatcher() from claudeCodeWebSocketDispatcher.ts instead

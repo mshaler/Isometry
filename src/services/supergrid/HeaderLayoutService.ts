@@ -949,22 +949,4 @@ export class HeaderLayoutService {
   }
 }
 
-// Export utility functions for external use
-export const calculateSpanWidths = (
-  headerNodes: HeaderNode[],
-  totalWidth: number,
-  config?: SpanCalculationConfig
-): Map<string, number> => {
-  const service = new HeaderLayoutService(config);
-  return service.calculateSpanWidths(headerNodes, totalWidth);
-};
-
-export const generateHeaderHierarchy = (
-  flatData: unknown[],
-  axis: string,
-  facetField?: string,
-  config?: SpanCalculationConfig
-): HeaderHierarchy => {
-  const service = new HeaderLayoutService(config);
-  return service.generateHeaderHierarchy(flatData, axis, facetField);
-};
+// Removed unused utility wrappers - use HeaderLayoutService class methods directly

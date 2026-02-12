@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { getClaudeCodeDispatcher } from '../services/claudeCodeWebSocketDispatcher';
+import { getClaudeCodeDispatcher } from '../services/claude-code/claudeCodeWebSocketDispatcher';
 
 export interface TerminalCommand {
   id: string;

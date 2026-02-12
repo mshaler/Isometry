@@ -29,7 +29,7 @@ import { GSDService } from '../../services/claude-code/gsdService';
 import { GSDSessionState, GSDPhase, FileChange } from '../../types/gsd';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
-import { getClaudeCodeDispatcher, GSDCommands } from '../../services/claudeCodeWebSocketDispatcher';
+import { getClaudeCodeDispatcher, GSDCommands } from '../../services/claude-code/claudeCodeWebSocketDispatcher';
 import { gsdSlashCommands, SlashCommand } from '../../services/claude-code/gsdSlashCommands';
 import { FileChangeEvent } from '../../services/claude-code/claudeCodeServer';
 import { devLogger } from '../../utils/logging';

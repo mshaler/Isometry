@@ -707,15 +707,4 @@ export async function getClaudeCodeDispatcher(): Promise<ClaudeCodeDispatcher> {
   return _dispatcherInitialization;
 }
 
-/**
- * Reset the singleton (for testing purposes)
- */
-export function resetClaudeCodeDispatcher(): void {
-  if (_claudeCodeDispatcher) {
-    if ('disconnect' in _claudeCodeDispatcher) {
-      (_claudeCodeDispatcher as any).disconnect();
-    }
-    _claudeCodeDispatcher = null;
-  }
-  _dispatcherInitialization = null;
-}
+// Removed unused resetClaudeCodeDispatcher function

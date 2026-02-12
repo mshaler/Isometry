@@ -10,7 +10,7 @@ import {
   getClaudeCodeDispatcher,
   WebSocketClaudeCodeDispatcher,
   ConnectionStatus
-} from '../services/claudeCodeWebSocketDispatcher';
+} from '../services/claude-code/claudeCodeWebSocketDispatcher';
 
 export interface UseWebSocketConnectionResult {
   /** Current connection status */
