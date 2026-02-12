@@ -28,6 +28,9 @@ Progress (v4.7): [####################] 50% (4/8 requirements)
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
+**Recent completions (Phase 66 - parallel):**
+- Phase 66-01: COMPLETE (~15m) — SuperGrid spreadsheet-like scroll behavior
+
 **Recent completions (Phase 64):**
 - Phase 64-01: COMPLETE (2m 34s) — gray-matter + yaml + SHA-256 source_id
 
@@ -49,6 +52,12 @@ Progress (v4.7): [####################] 50% (4/8 requirements)
 - ROADMAP-02: Phase 63 foundation (schema+query), Phase 64 ETL, Phase 65 UI surface
 - ROADMAP-03: Dependency chain: 63 → 64 → 65 (table → parser → discovery)
 - ROADMAP-04: v4.6 Phase 62 deferred to v4.8 (density filtering deprioritized)
+
+**Phase 66-01 decisions (parallel - scroll fix):**
+- SCROLL-01: CSS sticky positioning for headers (single scroll container)
+- SCROLL-02: D3 zoom scale-only mode (translateExtent locked to 0,0)
+- SCROLL-03: CSS native scroll handles all panning (panTo deprecated)
+- SCROLL-04: Corner cell sticky at top+left with z-index: 3 for header intersection
 
 **Phase 64-01 decisions:**
 - YAML-01: Use yaml package as gray-matter engine for full YAML 1.2 spec support

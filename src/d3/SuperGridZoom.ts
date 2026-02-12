@@ -105,15 +105,25 @@ export class SuperGridZoom implements JanusControls {
   }
 
   /**
-   * Initialize D3 zoom behavior with orthogonal controls
-   * Uses translateExtent to pin upper-left corner (SuperZoom spec)
+   * Initialize D3 zoom behavior with scale-only mode
+   * Pan is handled by CSS native scroll (Phase 66 - spreadsheet behavior)
+   *
+   * SCROLL-05: D3 zoom is scale-only, CSS scroll handles pan
    */
   private initializeZoomBehavior(): void {
     this.zoomBehavior = d3.zoom<SVGElement, unknown>()
       .scaleExtent([this.config.minZoom, this.config.maxZoom])
-      // Pin upper-left corner: only allow panning that keeps (0,0) in view
-      // translateExtent [[minX, minY], [maxX, maxY]] constrains the viewport
-      .translateExtent([[-50, -50], [10000, 10000]]) // Allow slight negative for padding
+      // Lock translate to (0,0) - CSS scroll handles panning
+      .translateExtent([[0, 0], [0, 0]])
+      // Disable drag panning - only wheel zoom allowed
+      .filter((event) => {
+        // Allow wheel events for zoom
+        if (event.type === 'wheel') return true;
+        // Allow programmatic zoom calls
+        if (event.type === 'start' || event.type === 'zoom' || event.type === 'end') return true;
+        // Block drag/touch pan (CSS scroll handles it)
+        return false;
+      })
       .on('start', (event) => this.handleZoomStart(event))
       .on('zoom', (event) => this.handleZoom(event))
       .on('end', (event) => this.handleZoomEnd(event));
@@ -188,15 +198,25 @@ export class SuperGridZoom implements JanusControls {
   }
 
   /**
-   * Pan to specific coordinates maintaining current zoom
+   * Pan to specific coordinates using CSS native scroll
+   * SCROLL-05: D3 no longer handles panning - use CSS scroll instead
+   *
+   * @deprecated Use CSS scrollTo() on the scroll container instead.
+   * This method now delegates to the container's native scroll behavior.
    */
   panTo(x: number, y: number): void {
-    const targetTransform = d3.zoomIdentity
-      .translate(x, y)
-      .scale(this.currentTransform.k);
+    // Find the scroll container (parent of the SVG)
+    const containerNode = this.container.node();
+    const scrollContainer = containerNode?.parentElement;
 
-    // Apply transform with smooth animation
-    this.animateToTransform(targetTransform);
+    if (scrollContainer) {
+      // Use CSS native scroll for panning
+      scrollContainer.scrollTo({
+        left: Math.abs(x), // Convert negative coords to positive scroll offset
+        top: Math.abs(y),
+        behavior: 'smooth'
+      });
+    }
   }
 
   /**
@@ -260,24 +280,31 @@ export class SuperGridZoom implements JanusControls {
   }
 
   /**
-   * Handle zoom event with orthogonal control logic
-   * Applies transform to both grid-content AND headers to keep them aligned
+   * Handle zoom event with scale-only behavior
+   * SCROLL-05: Only apply scale, not translate (CSS scroll handles pan)
+   * Transform origin is upper-left (0,0) for spreadsheet behavior
    */
   private handleZoom(event: d3.D3ZoomEvent<SVGElement, unknown>): void {
     const { transform } = event;
 
-    // Update current transform
+    // Store the full transform but only use scale for rendering
+    // Translate is locked to (0,0) via translateExtent
     this.currentTransform = transform;
 
-    // Apply transform to BOTH headers and grid-content to keep them aligned
-    // This is critical for spreadsheet-like cell/header alignment
+    // Apply scale-only transform (no translate) to content
+    // Headers don't scale - they maintain fixed size like a spreadsheet
+    const scaleOnly = `scale(${transform.k})`;
+
     this.container.selectAll('.grid-wrapper')
-      .attr('transform', transform.toString());
+      .attr('transform', scaleOnly)
+      .style('transform-origin', '0 0'); // Upper-left anchor
 
     // Fallback: if no wrapper, apply to individual groups (backward compatibility)
     if (this.container.select('.grid-wrapper').empty()) {
-      this.container.selectAll('.grid-content, .headers')
-        .attr('transform', transform.toString());
+      this.container.selectAll('.grid-content')
+        .attr('transform', scaleOnly)
+        .style('transform-origin', '0 0');
+      // Note: Headers (.headers) don't get transformed in scale-only mode
     }
 
     // Update zoom level based on scale if not manually set

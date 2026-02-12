@@ -5,7 +5,7 @@
  * Supports NeXTSTEP and Modern themes.
  */
 
-/* SuperGrid Container - Spreadsheet Style */
+/* SuperGrid Container - Spreadsheet Style with Sticky Headers */
 .supergrid {
   display: grid;
   gap: 0;
@@ -14,42 +14,55 @@
   background: var(--surface-color);
   border: 1px solid var(--border-color);
   border-radius: 0; /* Sharp corners like a spreadsheet */
-  overflow: hidden;
+  overflow: auto; /* SINGLE scroll container for spreadsheet behavior */
   position: relative;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
-}
-
-/* Grid Layout Structure */
-.supergrid {
+  /* CSS Grid for sticky header layout */
   grid-template-areas:
-    "column-headers column-headers"
+    "corner column-headers"
     "row-headers data-grid";
   grid-template-columns: auto 1fr;
   grid-template-rows: auto 1fr;
 }
 
-/* Column Headers Area - Spreadsheet Style */
+/* Corner Cell - Sticky at both top and left */
+.supergrid__corner {
+  grid-area: corner;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 3; /* Above all headers */
+  background: var(--surface-secondary, #f5f5f5);
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  min-width: 120px;
+  min-height: 40px;
+}
+
+/* Column Headers Area - Sticky at top */
 .supergrid__column-headers {
   grid-area: column-headers;
+  position: sticky;
+  top: 0;
+  z-index: 2; /* Below corner, above row headers */
   border-bottom: 1px solid var(--border-color);
   background: var(--surface-secondary, #f5f5f5);
   font-weight: 500;
   font-size: 12px;
 }
 
-/* Content Container */
+/* Content Container - wrapper for backward compatibility */
 .supergrid__content {
-  display: grid;
-  grid-template-areas: "row-headers data-grid";
-  grid-template-columns: auto 1fr;
-  grid-template-rows: 1fr;
-  height: 100%;
+  display: contents; /* Remove from layout, children participate in parent grid */
 }
 
-/* Row Headers Area - Spreadsheet Style */
+/* Row Headers Area - Sticky at left */
 .supergrid__row-headers {
   grid-area: row-headers;
+  position: sticky;
+  left: 0;
+  z-index: 1; /* Below corner and column headers */
   border-right: 1px solid var(--border-color);
   background: var(--surface-secondary, #f5f5f5);
   min-width: 120px;
@@ -57,14 +70,16 @@
   font-size: 12px;
 }
 
-/* Data Grid Area */
+/* Data Grid Area - no own scroll, parent handles it */
 .supergrid__data-grid {
   grid-area: data-grid;
   display: grid;
   gap: 1px;
   background: var(--border-light);
-  overflow: auto;
+  overflow: visible; /* Parent handles scroll */
   padding: 0;
+  /* Zoom transform origin for upper-left anchor */
+  transform-origin: 0 0;
 }
 
 /* Grid Mode Variants */
@@ -98,6 +113,7 @@
   /* Grid dimensions set dynamically via inline styles */
   gap: 0; /* No gap - spreadsheet uses borders only */
   background: var(--border-color); /* Border color shows between cells */
+  overflow: visible; /* Parent supergrid handles scroll */
 }
 
 /* Cell Styling - Spreadsheet Aesthetic */

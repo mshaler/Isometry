@@ -228,7 +228,12 @@ export function SuperGrid({
       data-columns={gridLayout.hasColumns}
       data-rows={gridLayout.hasRows}
     >
-      {/* Column Headers (Top) */}
+      {/* Corner Cell - Sticky at top-left intersection */}
+      {enableSuperStack && gridLayout.hasColumns && gridLayout.hasRows && (
+        <div className="supergrid__corner" aria-hidden="true" />
+      )}
+
+      {/* Column Headers (Top) - Sticky at top */}
       {enableSuperStack && gridLayout.hasColumns && (
         <div className="supergrid__column-headers">
           <SuperStack

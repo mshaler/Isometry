@@ -10,10 +10,14 @@
  * - T (Time): created, modified, start_date, end_date, due_date
  * - C (Category): folder, calendar, node_type, tags
  * - H (Hierarchy): priority, importance (derived from status)
+ *
+ * Phase 64-02: Integrated deterministic source_id and property storage.
  */
 
 import type { Database } from 'sql.js';
-import { parseAltoFile, generateSourceId, type ParsedAltoFile, type AltoDataType } from './alto-parser';
+import { parseAltoFile, type ParsedAltoFile, type AltoDataType } from './alto-parser';
+import { generateDeterministicSourceId } from './id-generation/deterministic';
+import { storeNodeProperties } from './storage/property-storage';
 import { v4 as uuidv4 } from 'uuid';
 
 // ============================================================================
@@ -72,11 +76,25 @@ export interface NodeRecord {
 // ============================================================================
 
 /**
- * Map a parsed alto file to a node record for sql.js insertion
+ * Map a parsed alto file to a node record for sql.js insertion.
+ *
+ * @param parsed - Parsed alto file with frontmatter and content
+ * @param filePath - Original file path for deterministic ID generation
+ * @param rawFrontmatter - Raw frontmatter object for property storage
  */
-export function mapToNodeRecord(parsed: ParsedAltoFile): NodeRecord {
+export function mapToNodeRecord(
+  parsed: ParsedAltoFile,
+  filePath: string,
+  rawFrontmatter: Record<string, unknown>
+): NodeRecord {
   const { frontmatter, content, tags, dataType } = parsed;
-  const sourceId = generateSourceId(dataType, frontmatter);
+
+  // Use deterministic ID based on file path and frontmatter
+  const sourceId = generateDeterministicSourceId(
+    filePath,
+    rawFrontmatter,
+    'alto-index'
+  );
 
   // Base node with defaults
   const node: NodeRecord = {
@@ -299,7 +317,10 @@ export function importAltoFiles(
         continue;
       }
 
-      const node = mapToNodeRecord(parsed);
+      // Preserve raw frontmatter for property storage
+      const rawFrontmatter = parsed.frontmatter as unknown as Record<string, unknown>;
+
+      const node = mapToNodeRecord(parsed, file.path, rawFrontmatter);
 
       // Check if already exists
       const existing = db.exec(
@@ -340,6 +361,9 @@ export function importAltoFiles(
         node.deleted_at,
         node.version,
       ]);
+
+      // Store unknown frontmatter keys in node_properties
+      storeNodeProperties(db, node.id, rawFrontmatter);
 
       result.imported++;
 
