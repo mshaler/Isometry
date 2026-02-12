@@ -5,16 +5,17 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** v4.7 Schema-on-Read — Dynamic YAML property discovery
+**Current focus:** v4.8 ETL Consolidation — Canonical schema and multi-format importers
 
 ## Current Position
 
-Phase: 64 of 65 (ETL Pipeline Upgrade)
-Plan: 02 of 03 COMPLETE
-Status: In progress
-Last activity: 2026-02-12 — Completed 64-02-PLAN.md (Pipeline Integration)
+Phase: 67 of 72 (Canonical Schema)
+Plan: 01 of 01 COMPLETE
+Status: Phase complete ✓
+Last activity: 2026-02-12 — Completed Phase 67-01 (Canonical Schema with Zod)
 
 Progress (v4.7): [#########################.....] 75% (6/8 requirements)
+Progress (v4.8): [####..........................] 17% (1/6 phases)
 
 ## Performance Metrics
 
@@ -27,6 +28,9 @@ Progress (v4.7): [#########################.....] 75% (6/8 requirements)
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 67 - v4.8 ETL Consolidation):**
+- Phase 67-01: COMPLETE (~10m) — Canonical Node Schema with Zod validation
 
 **Recent completions (Phase 66 - parallel):**
 - Phase 66-01: COMPLETE (~15m) — SuperGrid spreadsheet-like scroll behavior
@@ -47,6 +51,17 @@ Progress (v4.7): [#########################.....] 75% (6/8 requirements)
 ## Accumulated Context
 
 ### Decisions
+
+**v4.8 ETL Consolidation (Phases 67-72):**
+- Canonical schema + Zod validation + multi-format importers
+- TypeScript-based file ETL, Swift for native frameworks
+- 6 phases: Schema -> Coordinator -> Importers -> Integration -> Bridge -> Quality
+
+**Phase 67-01 decisions (Canonical Schema):**
+- SCHEMA-DEC-01: Used Zod 3.x (stable) for schema validation
+- SCHEMA-DEC-02: Included gridX/gridY for SuperGrid positioning compatibility
+- SCHEMA-DEC-03: Properties stored in EAV table (node_properties), not JSON column
+- SCHEMA-DEC-04: Tags array converted to JSON string for SQL storage
 
 **v4.7 Roadmap Structure:**
 - ROADMAP-01: 3 phases derived from 8 requirements (SCHEMA, QUERY, ETL, FACET)
@@ -174,18 +189,18 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 
 - [x] Phase 62: Density Filtering (COMPLETE - executed in parallel with 63)
 - [x] Phase 63: Schema & Query Safety (COMPLETE)
-- [~] Phase 64: YAML ETL Parser (IN PROGRESS - 64-01, 64-02 complete, 64-03 remaining)
-- [ ] Phase 65: Facet Discovery UI
+- [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
+- [ ] Phase 65: Facet Discovery UI (next action)
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
 - [ ] Nested header repositioning animation (deferred from 61-01)
 
 ### Blockers/Concerns
 
-None — Phase 64-02 complete, ready for Phase 64-03 (Verification).
+None — Phase 64 complete, ready for Phase 65 (Facet Discovery UI).
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 64-02 complete, ready for Phase 64-03 (Verification)
-Resume file: .planning/phases/64-etl-pipeline-upgrade/64-02-SUMMARY.md
+Stopped at: Phase 64 complete, ready for Phase 65 (Facet Discovery UI)
+Resume file: .planning/phases/64-etl-pipeline-upgrade/64-VERIFICATION.md
