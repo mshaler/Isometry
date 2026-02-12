@@ -111,18 +111,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STACK-01 | Phase 60 | Complete |
 | STACK-02 | Phase 60 | Complete |
 | STACK-03 | Phase 60 | Complete |
-| TRANS-01 | Phase 61+ | Pending |
-| TRANS-02 | Phase 61+ | Pending |
-| TRANS-03 | Phase 61+ | Pending |
-| DENS-01 | Phase 61+ | Pending |
-| DENS-02 | Phase 61+ | Pending |
-| DENS-03 | Phase 61+ | Pending |
+| TRANS-01 | Phase 61 | Pending |
+| TRANS-02 | Phase 61 | Pending |
+| TRANS-03 | Phase 61 | Pending |
+| DENS-01 | Phase 62 | Pending |
+| DENS-02 | Phase 62 | Pending |
+| DENS-03 | Phase 62 | Pending |
 
 **Coverage:**
 - v4.4/v4.5 shipped: 11 requirements
 - v4.6 requirements: 6 total
-- Mapped to phases: TBD (roadmap pending)
+- Mapped to phases: 6/6 (100% coverage)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-12 (v4.6 requirements added, v4.4/v4.5 shipped)*
+*Last updated: 2026-02-12 (v4.6 roadmap created - Phases 61-62 mapped)*

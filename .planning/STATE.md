@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for v4.6 SuperGrid Polish
-Last activity: 2026-02-12 — Milestone v4.6 started
+Phase: 61 of 62 (View Transitions)
+Plan: Not yet planned
+Status: Ready to plan
+Last activity: 2026-02-12 — Roadmap created for v4.6 SuperGrid Polish
 
-Progress (v4.6): [                ] 0% (requirements phase)
+Progress (v4.6): [                ] 0% (2 phases, 0 complete)
 
 ## Performance Metrics
 
@@ -25,8 +25,9 @@ Progress (v4.6): [                ] 0% (requirements phase)
 - v4.3: 4 plans, 2 phases, same day
 - v5.0: 3-wave parallel (bypassed phased plan), same day
 - v4.4: 9 plans, 4 phases (56-59), same day
+- v4.5: 3 plans, 1 phase (60), ~25 minutes
 
-**v4.5 (Phase 60) - COMPLETE:**
+**Recent completions (Phase 60):**
 - Phase 60-01: COMPLETE (3m 14s) — PAFV Stacked Axis Types
 - Phase 60-02: COMPLETE (6m 3s) — Stacked Header Rendering
 - Phase 60-03: COMPLETE (15m 42s) — Header Click Sorting
@@ -34,6 +35,12 @@ Progress (v4.6): [                ] 0% (requirements phase)
 ## Accumulated Context
 
 ### Decisions
+
+**v4.6 Milestone Structure:**
+- ROADMAP-01: Split into 2 phases (View Transitions + Density Filtering)
+- ROADMAP-02: Phase 61 before Phase 62 (transitions don't depend on density)
+- ROADMAP-03: Both phases touch GridRenderingEngine, sequential execution
+- ROADMAP-04: Coverage = 6/6 requirements (TRANS-01/02/03, DENS-01/02/03)
 
 **Phase 60-03 decisions:**
 - SORT-01: Sort state stored in PAFVContext for global access (not just D3)
@@ -45,22 +52,11 @@ Progress (v4.6): [                ] 0% (requirements phase)
 - RENDER-02: Level groups positioned vertically, nodes positioned by x within each level
 - RENDER-03: Leaf node labels used for card position computation after stacked rendering
 
-**Phase 60-01 decisions:**
-- STACK-01: Use d3.stratify for hierarchy construction (already imported, proven pattern)
-- STACK-02: Bottom-up span calculation via eachAfter (spans computed after children exist)
-
 **v4.4 decisions (from execution):**
 - `mappingsToProjection()` function in `src/types/grid.ts` converts AxisMapping[] to PAFVProjection
 - SuperGrid receives projection via `setProjection()` and passes to GridRenderingEngine
 - GridRenderingEngine computes card positions with `_projectedRow` and `_projectedCol` annotations
 - "Unassigned" bucket handles null facet values
-- Navigator at `?test=navigator`, SuperGrid at `?test=supergrid`, Integrated at `?test=integrated`
-
-**Phase 57-02 decisions:**
-- Custom RangeSlider component replaces broken overlapping input[type=range] pattern
-- Time histogram auto-selects granularity based on date span (year/quarter/month/week/day)
-- Category chips grouped by facet (folder/tags/status) with multi-select
-- LATCHFilterService uses addFilter(axis, facet, operator, value) signature
 
 ### What's Wired (Phase 60 COMPLETE)
 
@@ -81,73 +77,50 @@ LATCHSliders -> LATCHFilterService -> SuperGrid.query() -> filtered results
 Within-well -> getMappingsForPlane -> stacked axis support -> reorderMappingsInPlane
 reorder       addMappingToPlane
 
-Phase 60-01:
+Phase 60 Stacked Headers:
 AxisProjection.facets? -> StackedAxisConfig -> generateStackedHierarchy() -> HeaderHierarchy
-(multi-facet stacked axis support with d3.stratify and bottom-up span calculation)
-
-Phase 60-02:
-GridRenderingEngine.renderProjectionHeaders()
-  -> detects facets?.length > 1
+  -> GridRenderingEngine.renderProjectionHeaders()
   -> renderStackedProjectionHeaders()
   -> SuperGridHeaders.renderStackedHeaders()
   -> HeaderProgressiveRenderer.renderMultiLevel()
-  -> D3 enter/update/exit multi-level rendering
-
-Phase 60-03 (NEW):
-SuperGridHeaders.setupStackedHeaderInteractions()
   -> handleHeaderSortClick() with toggle cycle
   -> HeaderAnimationController.animateSortIndicator()
-  -> PAFVContext.setSortBy() for external handling
-  -> StackedHeaderClickEvent with sortDirection
 ```
 
-Key files modified in Phase 60-03:
-- `src/types/pafv.ts` — Added SortDirection, SortConfig types, sortConfig field
-- `src/state/PAFVContext.tsx` — Added setSortBy action
-- `src/hooks/data/usePAFV.ts` — Added setSortBy to interface
-- `src/d3/SuperGridHeaders.ts` — Added handleHeaderSortClick(), SortState, hover/click interactions
-- `src/d3/header-interaction/HeaderAnimationController.ts` — Added animateSortIndicator(), clearSortIndicators()
-- `src/utils/pafv-serialization.ts` — Added sortConfig: null to deserialized state
+### v4.6 Requirements Coverage
+
+**Total requirements:** 6
+- TRANS-01: Animated card repositioning (300ms D3 transitions) → Phase 61
+- TRANS-02: Header elements animate with cards → Phase 61
+- TRANS-03: Selection state preserved during transitions → Phase 61
+- DENS-01: Sparse mode renders full Cartesian grid → Phase 62
+- DENS-02: Dense mode hides empty cells → Phase 62
+- DENS-03: Janus pan control triggers filtering → Phase 62
+
+**Coverage:** 6/6 mapped (100%)
 
 ### Pending Todos
 
-- [x] Phase 60-01: PAFV Stacked Axis Types COMPLETE
-- [x] Phase 60-02: Stacked Header Rendering COMPLETE
-- [x] Phase 60-03: Header Click Sorting COMPLETE
+- [ ] Phase 61: Plan View Transitions (next action)
+- [ ] Phase 62: Plan Density Filtering (after Phase 61)
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
 
 ### Blockers/Concerns
 
-None — Phase 60 complete. Ready for next milestone.
+None — Phase 60 complete, Phase 61 ready to plan.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Milestone v4.6 started, defining requirements
-Resume file: None — at milestone definition stage
+Stopped at: Roadmap created for v4.6 SuperGrid Polish (Phases 61-62)
+Resume file: None
 
 ## Resume Instructions
 
-Milestone v4.6 SuperGrid Polish started. Two features to implement:
-1. D3 animated transitions when axis mappings change
-2. Sparse/dense cell filtering based on DensityLevel
+Next action: `/gsd:plan-phase 61`
 
-Next: Complete requirements definition, then `/gsd:plan-phase 61`
-
-## Phase 60-03 Completion Summary
-
-All 3 tasks executed (Header Click Sorting):
-1. **Task 1**: Added SortConfig type and setSortBy action to PAFVContext
-2. **Task 2**: Added handleHeaderSortClick() with toggle cycle to SuperGridHeaders
-3. **Task 3**: Added animateSortIndicator() and clearSortIndicators() to HeaderAnimationController
-
-Commits:
-- f9fa505a: feat(60-03): add sort state to PAFVContext
-- 7ec48460: feat(60-03): implement header click sorting with visual indicators
-
-Deviations (4 auto-fixed, all Rule 3 - Blocking):
-1. Fixed incomplete PAFVState in SuperDynamicDemo.tsx
-2. Fixed DensityLevel name collision in types/index.ts barrel export
-3. Fixed missing sortConfig in pafv-serialization.ts
-4. Fixed no-this-alias ESLint error (refactored to arrow functions)
+v4.6 milestone roadmap complete:
+- Phase 61: View Transitions (TRANS-01, TRANS-02, TRANS-03)
+- Phase 62: Density Filtering (DENS-01, DENS-02, DENS-03)
+- 100% requirement coverage verified

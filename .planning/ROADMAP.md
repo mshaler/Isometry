@@ -7,7 +7,9 @@
 - **v4.2 Three-Canvas Notebook** - Phases 43-46 (shipped 2026-02-10)
 - **v4.3 Navigator Integration** - Phases 50-51 (shipped 2026-02-10)
 - **v5.0 Type Safety Restoration** - Phases 52-55 (shipped 2026-02-10)
-- **v4.4 SuperGrid PAFV Projection** - Phases 56-60 (shipped 2026-02-11)
+- **v4.4 SuperGrid PAFV Projection** - Phases 56-59 (shipped 2026-02-11)
+- **v4.5 Stacked/Nested Headers** - Phase 60 (shipped 2026-02-11)
+- 🚧 **v4.6 SuperGrid Polish** - Phases 61-62 (in progress)
 
 ## Phases
 
@@ -177,87 +179,33 @@ Plans:
 </details>
 
 <details>
-<summary>v4.4 SuperGrid PAFV Projection (Phases 56-60) - SHIPPED 2026-02-11</summary>
+<summary>v4.4 SuperGrid PAFV Projection (Phases 56-59) - SHIPPED 2026-02-11</summary>
 
-**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers, smooth transitions, and hierarchical header support.
+**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
 
 **Key Accomplishments:**
 - PAFV Projection Core connecting Navigator axis mappings to GridRenderingEngine for 2D card positioning
 - Dynamic header generation from dataset values with date/category formatting
-- Stacked/nested hierarchical headers with d3.stratify for multi-facet axes (Excel pivot table style)
-- Parent header cells visually spanning across children with bottom-up span calculation
-- Header click sorting with visual indicators (asc/desc/none toggle cycle)
 - Infinite render loop fix with comprehensive context memoization
 - useRenderLoopGuard development safeguard
 
-**Stats:** 5 phases (56-60), 12 plans, ~25 minutes execution time
+**Stats:** 4 phases (56-59), 9 plans, ~20 minutes execution time
 
 </details>
 
-## Future Milestones
+<details>
+<summary>v4.5 Stacked/Nested Headers (Phase 60) - SHIPPED 2026-02-11</summary>
 
-**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
+**Milestone Goal:** Implement spreadsheet-style hierarchical headers with visual spanning for multi-axis projections
 
-### Phase 56: PAFV Projection Core
-**Goal**: Wire SuperGrid to consume PAFV axis mappings and compute 2D card positions
-**Depends on**: Phase 51 (Navigator Integration complete), v5.0 (Type Safety Restoration complete)
-**Requirements**: PROJ-01, PROJ-02, PROJ-03, PROJ-04, PROJ-05
-**Success Criteria** (what must be TRUE):
-  1. User drags facet to X-axis well in Navigator and SuperGrid columns reorganize based on that facet's unique values
-  2. User drags facet to Y-axis well in Navigator and SuperGrid rows reorganize based on that facet's unique values
-  3. Cards with identical X and Y facet values appear in the same grid cell (multiple cards per cell supported)
-  4. Cards with null/undefined facet values appear in "Unassigned" bucket row or column
-  5. SuperGrid reads axis mappings from PAFVContext without breaking existing LATCH filtering
-**Plans**: 3 plans in 2 waves
+**Key Accomplishments:**
+- Stacked/nested hierarchical headers with d3.stratify for multi-facet axes (Excel pivot table style)
+- Parent header cells visually spanning across children with bottom-up span calculation
+- Header click sorting with visual indicators (asc/desc/none toggle cycle)
 
-Plans:
-- [ ] 56-01: Wire usePAFV hook to SuperGrid and pass axis mappings to GridRenderingEngine
-- [ ] 56-02: Compute unique X/Y axis values and generate header arrays with null handling
-- [ ] 56-03: Calculate 2D cell positions for cards and update D3 data binding
+**Stats:** 1 phase (60), 3 plans, ~25 minutes execution time
 
-### Phase 57: Header Generation
-**Goal**: Dynamic row and column headers from actual axis values in the dataset
-**Depends on**: Phase 56
-**Requirements**: HDR-01, HDR-02, HDR-03
-**Success Criteria** (what must be TRUE):
-  1. Column headers display unique X-axis facet values extracted from current filtered dataset
-  2. Row headers display unique Y-axis facet values extracted from current filtered dataset
-  3. Date facets render as formatted dates (e.g., "Jan 15, 2026" not "2026-01-15T00:00:00Z")
-  4. Category facets render with proper labels (e.g., "In Progress" not "in_progress")
-**Plans**: 2 plans in 1 wave
-
-Plans:
-- [ ] 57-01: Generate column and row header elements from computed unique axis values
-- [ ] 57-02: Apply facet type formatting (date formatting, category label mapping)
-
-### Phase 58: Transitions & Polish
-**Goal**: Smooth D3 transitions when axis mappings change and empty cell handling
-**Depends on**: Phase 57
-**Requirements**: TRANS-01, TRANS-02, TRANS-03
-**Success Criteria** (what must be TRUE):
-  1. User changes X or Y axis mapping and cards animate smoothly to new positions (300ms D3 transition)
-  2. New cells fade in and removed cells fade out during axis changes (D3 enter/exit with opacity transitions)
-  3. User toggles sparse mode and sees full Cartesian grid with empty cells visible
-  4. User toggles dense mode and sees only populated cells (empty cells hidden)
-**Plans**: 2 plans in 1 wave
-
-Plans:
-- [x] 58-01: Implement D3 FLIP transitions for card repositioning with enter/exit animations
-- [x] 58-02: Navigator Redesign (LatchNavigator + PafvNavigator layout)
-
-### Phase 59: Stability & Memoization
-**Goal**: Fix infinite render loops and add memoization safeguards
-**Depends on**: Phase 58
-**Requirements**: STAB-01
-**Success Criteria** (what must be TRUE):
-  1. Context values properly memoized to prevent infinite re-renders
-  2. useRenderLoopGuard development safeguard added
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 59-01: Context Memoization (SQLiteProvider + PAFVContext)
-
-### Phase 60: SuperGrid Stacked/Nested Headers
+#### Phase 60: SuperGrid Stacked/Nested Headers
 **Goal**: Implement spreadsheet-style hierarchical headers with visual spanning for multi-axis projections
 **Depends on**: Phase 59
 **Requirements**: STACK-01, STACK-02, STACK-03
@@ -272,6 +220,41 @@ Plans:
 - [x] 60-01-PLAN.md — Extend types and generate multi-facet hierarchies
 - [x] 60-02-PLAN.md — Render stacked headers with visual spanning
 - [x] 60-03-PLAN.md — Header click sorting at hierarchy levels
+
+</details>
+
+## 🚧 v4.6 SuperGrid Polish (In Progress)
+
+**Milestone Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
+
+### Phase 61: View Transitions
+**Goal**: Cards and headers animate smoothly when axis mappings change
+**Depends on**: Phase 60 (Stacked/Nested Headers complete)
+**Requirements**: TRANS-01, TRANS-02, TRANS-03
+**Success Criteria** (what must be TRUE):
+  1. User changes axis mapping in Navigator and sees cards smoothly transition to new positions (300ms animation)
+  2. User changes axis mapping and sees header elements smoothly transition with cards
+  3. User has cards selected, changes axis mapping, and selected cards remain selected after transition
+**Plans**: TBD
+
+Plans:
+- [ ] 61-01: TBD
+- [ ] 61-02: TBD
+
+### Phase 62: Density Filtering
+**Goal**: User controls whether empty cells display via density controls
+**Depends on**: Phase 61 (View Transitions complete)
+**Requirements**: DENS-01, DENS-02, DENS-03
+**Success Criteria** (what must be TRUE):
+  1. User sets pan level to sparse and sees full Cartesian grid including empty cells
+  2. User sets pan level to dense and sees only populated cells (empty cells hidden)
+  3. User adjusts pan slider and sees cell filtering respond immediately
+  4. Density changes preserve existing card positions and selection state
+**Plans**: TBD
+
+Plans:
+- [ ] 62-01: TBD
+- [ ] 62-02: TBD
 
 ## Progress
 
@@ -290,8 +273,10 @@ Plans:
 | 57. Header Generation | v4.4 | 3/3 | Complete | 2026-02-11 |
 | 58. Transitions & Polish | v4.4 | 2/2 | Complete | 2026-02-11 |
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
-| 60. Stacked/Nested Headers | v4.4 | 3/3 | Complete | 2026-02-11 |
+| 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
+| 61. View Transitions | v4.6 | 0/TBD | Not started | - |
+| 62. Density Filtering | v4.6 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-11 (v4.4 milestone complete - Phase 60 shipped)*
+*Last updated: 2026-02-12 (v4.6 milestone roadmap created - Phases 61-62)*
