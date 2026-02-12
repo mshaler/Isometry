@@ -109,6 +109,13 @@ export class GridDragDropController {
   }
 
   /**
+   * Update the container reference when React creates a new SVG element
+   */
+  public updateContainer(container: d3.Selection<SVGElement, unknown, null, undefined>): void {
+    this.container = container;
+  }
+
+  /**
    * Apply drag behavior to card selection
    */
   public applyDragBehavior(cardSelection: d3.Selection<SVGGElement, any, any, any>): void {

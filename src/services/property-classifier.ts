@@ -124,12 +124,14 @@ export function classifyProperties(db: Database): PropertyClassification {
     }
   }
 
-  // Add GRAPH edge types
+  // Add GRAPH edge types (display as Capitalized, not UPPERCASE)
   let sortOrder = 0;
   for (const edgeType of GRAPH_EDGE_TYPES) {
+    // Convert "LINK" → "Link", "NEST" → "Nest", etc.
+    const displayName = edgeType.charAt(0) + edgeType.slice(1).toLowerCase();
     classification.GRAPH.push({
       id: `edge_type_${edgeType}`,
-      name: edgeType,
+      name: displayName,
       bucket: 'GRAPH',
       sourceColumn: 'edge_type',
       facetType: 'edge_type',

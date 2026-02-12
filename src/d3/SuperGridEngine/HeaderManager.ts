@@ -18,43 +18,75 @@ export class SuperGridHeaderManager {
   }
 
   /**
-   * Generate header tree from current cells - simple skeleton implementation
+   * Generate header tree from current cells using actual axis values
+   *
+   * Per spec: "Extract actual axis values from cells (cell.xValue, cell.yValue)
+   * and create headers with real labels"
    */
   generateHeaderTree(currentCells: CellDescriptor[], gridDimensions: GridDimensions): HeaderTree {
-    const colCount = Math.max(1, Math.max(...currentCells.map(c => c.gridX)) + 1);
-    const rowCount = Math.max(1, Math.max(...currentCells.map(c => c.gridY)) + 1);
+    if (currentCells.length === 0) {
+      return {
+        columns: [],
+        rows: [],
+        maxColumnLevels: 0,
+        maxRowLevels: 0
+      };
+    }
+
+    // Step 1: Extract unique X and Y values with their grid positions
+    const xValueMap = new Map<number, string>(); // gridX -> xValue
+    const yValueMap = new Map<number, string>(); // gridY -> yValue
+
+    currentCells.forEach(cell => {
+      if (!xValueMap.has(cell.gridX)) {
+        xValueMap.set(cell.gridX, cell.xValue);
+      }
+      if (!yValueMap.has(cell.gridY)) {
+        yValueMap.set(cell.gridY, cell.yValue);
+      }
+    });
+
+    // Step 2: Sort by grid position and create headers with actual values
+    const sortedXEntries = Array.from(xValueMap.entries()).sort((a, b) => a[0] - b[0]);
+    const sortedYEntries = Array.from(yValueMap.entries()).sort((a, b) => a[0] - b[0]);
+
+    // Step 3: Generate column headers with real axis values
+    const columns: HeaderDescriptor[] = sortedXEntries.map(([gridX, xValue]) => ({
+      id: `col_${gridX}_${xValue}`,
+      level: 0,
+      value: xValue || 'Unassigned',
+      axis: 'Category' as LATCHAxis, // Default - could be overridden by PAFV config
+      span: 1,
+      position: {
+        x: gridX * gridDimensions.cellWidth,
+        y: 0,
+        width: gridDimensions.cellWidth,
+        height: gridDimensions.headerHeight
+      },
+      childCount: currentCells.filter(c => c.gridX === gridX).reduce((sum, c) => sum + c.nodeCount, 0),
+      isLeaf: true
+    }));
+
+    // Step 4: Generate row headers with real axis values
+    const rows: HeaderDescriptor[] = sortedYEntries.map(([gridY, yValue]) => ({
+      id: `row_${gridY}_${yValue}`,
+      level: 0,
+      value: yValue || 'Unassigned',
+      axis: 'Category' as LATCHAxis, // Default - could be overridden by PAFV config
+      span: 1,
+      position: {
+        x: 0,
+        y: gridY * gridDimensions.cellHeight,
+        width: gridDimensions.headerWidth,
+        height: gridDimensions.cellHeight
+      },
+      childCount: currentCells.filter(c => c.gridY === gridY).reduce((sum, c) => sum + c.nodeCount, 0),
+      isLeaf: true
+    }));
 
     return {
-      columns: Array.from({ length: colCount }, (_, i) => ({
-        id: `col_${i}`,
-        level: 0,
-        value: `Column ${i}`,
-        axis: 'Alphabet' as LATCHAxis,
-        span: 1,
-        position: {
-          x: i * gridDimensions.cellWidth,
-          y: 0,
-          width: gridDimensions.cellWidth,
-          height: gridDimensions.headerHeight
-        },
-        childCount: 0,
-        isLeaf: true
-      })),
-      rows: Array.from({ length: rowCount }, (_, i) => ({
-        id: `row_${i}`,
-        level: 0,
-        value: `Row ${i}`,
-        axis: 'Hierarchy' as LATCHAxis,
-        span: 1,
-        position: {
-          x: 0,
-          y: i * gridDimensions.cellHeight,
-          width: gridDimensions.headerWidth,
-          height: gridDimensions.cellHeight
-        },
-        childCount: 0,
-        isLeaf: true
-      })),
+      columns,
+      rows,
       maxColumnLevels: 1,
       maxRowLevels: 1
     };

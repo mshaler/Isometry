@@ -19,6 +19,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import { GripVertical, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV } from '@/state/PAFVContext';
+import { devLogger } from '@/utils/dev-logger';
 import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
 import type { Plane, AxisMapping, DensityLevel } from '@/types/pafv';
 import type { ClassifiedProperty, PropertyBucket, LATCHBucket } from '@/services/property-classifier';
@@ -104,30 +105,85 @@ function DraggablePropertyChip({ property, sourceWell }: DraggablePropertyChipPr
 }
 
 // ============================================================================
-// AxisChip Component (for assigned axes in wells)
+// AxisChip Component (for assigned axes in wells) - DRAGGABLE & DROPPABLE
 // ============================================================================
+
+interface ReorderDragItem extends DragItem {
+  index: number;
+}
 
 interface AxisChipProps {
   mapping: AxisMapping;
+  sourceWell: 'x' | 'y' | 'z';
+  index: number;
   onRemove: () => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }
 
-function AxisChip({ mapping, onRemove }: AxisChipProps) {
+function AxisChip({ mapping, sourceWell, index, onRemove, onReorder }: AxisChipProps) {
   const { theme } = useTheme();
   const isNeXTSTEP = theme === 'NeXTSTEP';
 
+  // Make the chip draggable for cross-plane movement AND reordering
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: PAFV_ITEM_TYPE,
+    item: {
+      id: `${mapping.axis}-${mapping.facet}`,
+      name: mapping.facet,
+      bucket: mapping.axis.charAt(0).toUpperCase(),
+      sourceColumn: mapping.facet,
+      sourceWell,
+      index, // Include index for reordering
+    } as ReorderDragItem,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }), [mapping, sourceWell, index]);
+
+  // Make the chip a drop target for reordering within the same well
+  const [{ isOver }, drop] = useDrop(() => ({
+    accept: PAFV_ITEM_TYPE,
+    hover: (item: ReorderDragItem) => {
+      // Only reorder within same well
+      if (item.sourceWell !== sourceWell) return;
+      if (item.index === index) return;
+      // Call reorder
+      onReorder(item.index, index);
+      // Update the item's index for subsequent hovers
+      item.index = index;
+    },
+    canDrop: (item: ReorderDragItem) => {
+      return item.sourceWell === sourceWell && item.index !== index;
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver() && monitor.canDrop(),
+    }),
+  }), [sourceWell, index, onReorder]);
+
   const capitalizeFirst = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+
+  // Combine drag and drop refs
+  const ref = (node: HTMLDivElement | null) => {
+    drag(node);
+    drop(node);
+  };
 
   return (
     <div
+      ref={ref}
       className={`
         flex items-center justify-between gap-1 h-7 px-2 rounded text-[11px]
+        cursor-grab active:cursor-grabbing
+        ${isDragging ? 'opacity-40 scale-95' : ''}
+        ${isOver ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
+        transition-all
         ${isNeXTSTEP
           ? 'bg-[#4A90D9] text-white'
           : 'bg-blue-100 text-blue-800 border border-blue-200'
         }
       `}
     >
+      <GripVertical className={`w-3 h-3 flex-shrink-0 ${isNeXTSTEP ? 'text-white/60' : 'text-blue-400'}`} />
       <span className="truncate flex-1">
         {capitalizeFirst(mapping.axis)}
         {mapping.facet && (
@@ -135,7 +191,10 @@ function AxisChip({ mapping, onRemove }: AxisChipProps) {
         )}
       </span>
       <button
-        onClick={onRemove}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
         className={`
           p-0.5 rounded transition-colors
           ${isNeXTSTEP ? 'hover:bg-[#5A9FE9]' : 'hover:bg-blue-200'}
@@ -297,7 +356,12 @@ function DensityColumnEqual({ densityLevel, onDensityChange, width }: DensityCol
 // PafvNavigator Component
 // ============================================================================
 
-export function PafvNavigator() {
+export interface PafvNavigatorProps {
+  /** Set of enabled property IDs (from LatchNavigator checkboxes) */
+  enabledProperties?: Set<string>;
+}
+
+export function PafvNavigator({ enabledProperties }: PafvNavigatorProps = {}) {
   const { theme } = useTheme();
   const { classification } = usePropertyClassification();
   const {
@@ -305,6 +369,8 @@ export function PafvNavigator() {
     addMappingToPlane,
     removeFacetFromPlane,
     getMappingsForPlane,
+    reorderMappingsInPlane,
+    moveFacetToPlane,
     setDensityLevel,
     setColorEncoding,
     setSizeEncoding,
@@ -334,30 +400,40 @@ export function PafvNavigator() {
     ...zMappings.map(m => m.facet),
   ]);
 
-  // Available = all LATCH properties not assigned to X/Y
-  const availableProperties = getAllLatchProperties().filter(
-    p => !assignedFacets.has(p.sourceColumn)
-  );
-
-  // Handle drop on X/Y/Z wells - use addMappingToPlane for stacking
-  const handleDropOnPlane = (plane: Plane) => (item: DragItem) => {
-    // If coming from another plane, remove from there first
-    if (item.sourceWell === 'x' || item.sourceWell === 'y' || item.sourceWell === 'z') {
-      removeFacetFromPlane(item.sourceWell as Plane, item.sourceColumn);
+  // Available = LATCH properties that are:
+  // 1. Enabled in LatchNavigator (if enabledProperties is provided)
+  // 2. Not already assigned to X/Y/Z planes
+  const availableProperties = getAllLatchProperties().filter(p => {
+    // If enabledProperties is provided, only include enabled properties
+    if (enabledProperties && !enabledProperties.has(p.id)) {
+      return false;
     }
+    // Exclude properties already assigned to planes
+    return !assignedFacets.has(p.sourceColumn);
+  });
+
+  // Handle drop on X/Y/Z wells - use atomic moveFacetToPlane for cross-plane moves
+  const handleDropOnPlane = (plane: Plane) => (item: DragItem) => {
+    devLogger.debug('[PafvNavigator] handleDropOnPlane called', { plane, item: item.sourceColumn, from: item.sourceWell });
 
     // Map bucket to axis
     if (item.bucket === 'GRAPH') return;
     const axis = BUCKET_TO_AXIS[item.bucket as LATCHBucket];
 
-    // Create mapping
+    // If coming from another plane, use atomic move (prevents copy bug)
+    if (item.sourceWell === 'x' || item.sourceWell === 'y' || item.sourceWell === 'z') {
+      devLogger.debug('[PafvNavigator] Moving between planes', { from: item.sourceWell, to: plane });
+      moveFacetToPlane(item.sourceWell as Plane, plane, item.sourceColumn, axis);
+      return;
+    }
+
+    // Coming from Available well - just add (STACKING happens here)
+    devLogger.debug('[PafvNavigator] Adding from Available to plane', { plane });
     const mapping: AxisMapping = {
       plane,
       axis,
       facet: item.sourceColumn,
     };
-
-    // Use addMappingToPlane for stacking (multiple facets on same plane)
     addMappingToPlane(mapping);
   };
 
@@ -411,7 +487,7 @@ export function PafvNavigator() {
           <DropWell
             wellId="x"
             label="X-Plane"
-            sublabel="Columns"
+            sublabel="Rows"
             width={columnWidth}
             onDrop={handleDropOnPlane('x')}
           >
@@ -420,11 +496,14 @@ export function PafvNavigator() {
                 Drop facet
               </div>
             ) : (
-              xMappings.map(mapping => (
+              xMappings.map((mapping, index) => (
                 <AxisChip
                   key={`${mapping.axis}-${mapping.facet}`}
                   mapping={mapping}
+                  sourceWell="x"
+                  index={index}
                   onRemove={() => removeFacetFromPlane('x', mapping.facet)}
+                  onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('x', fromIndex, toIndex)}
                 />
               ))
             )}
@@ -434,7 +513,7 @@ export function PafvNavigator() {
           <DropWell
             wellId="y"
             label="Y-Plane"
-            sublabel="Rows"
+            sublabel="Columns"
             width={columnWidth}
             onDrop={handleDropOnPlane('y')}
           >
@@ -443,11 +522,14 @@ export function PafvNavigator() {
                 Drop facet
               </div>
             ) : (
-              yMappings.map(mapping => (
+              yMappings.map((mapping, index) => (
                 <AxisChip
                   key={`${mapping.axis}-${mapping.facet}`}
                   mapping={mapping}
+                  sourceWell="y"
+                  index={index}
                   onRemove={() => removeFacetFromPlane('y', mapping.facet)}
+                  onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('y', fromIndex, toIndex)}
                 />
               ))
             )}
@@ -466,11 +548,14 @@ export function PafvNavigator() {
                 Drop facet
               </div>
             ) : (
-              zMappings.map(mapping => (
+              zMappings.map((mapping, index) => (
                 <AxisChip
                   key={`${mapping.axis}-${mapping.facet}`}
                   mapping={mapping}
+                  sourceWell="z"
+                  index={index}
                   onRemove={() => removeFacetFromPlane('z', mapping.facet)}
+                  onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('z', fromIndex, toIndex)}
                 />
               ))
             )}

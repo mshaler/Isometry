@@ -451,22 +451,40 @@ export interface GridHeaders {
 
 /**
  * Convert AxisMapping array to PAFVProjection
- * Supports stacked axis configurations when facets array is present
+ * Supports stacked axis configurations - multiple mappings per plane become facets array
  */
 export function mappingsToProjection(
   mappings: Array<{ plane: Plane; axis: LATCHAxis; facet: string; facets?: string[] }>
 ): PAFVProjection {
-  const xMapping = mappings.find((m) => m.plane === 'x');
-  const yMapping = mappings.find((m) => m.plane === 'y');
+  // Get ALL mappings for each plane (stacked axes)
+  const xMappings = mappings.filter((m) => m.plane === 'x');
+  const yMappings = mappings.filter((m) => m.plane === 'y');
   const colorMapping = mappings.find((m) => m.plane === 'color');
 
+  // Build projection with stacked facets
+  let xAxis: AxisProjection | null = null;
+  if (xMappings.length > 0) {
+    const allFacets = xMappings.map(m => m.facet);
+    xAxis = {
+      axis: xMappings[0].axis,
+      facet: xMappings[0].facet, // Primary facet
+      facets: allFacets.length > 1 ? allFacets : undefined, // Stacked facets if multiple
+    };
+  }
+
+  let yAxis: AxisProjection | null = null;
+  if (yMappings.length > 0) {
+    const allFacets = yMappings.map(m => m.facet);
+    yAxis = {
+      axis: yMappings[0].axis,
+      facet: yMappings[0].facet, // Primary facet
+      facets: allFacets.length > 1 ? allFacets : undefined, // Stacked facets if multiple
+    };
+  }
+
   return {
-    xAxis: xMapping
-      ? { axis: xMapping.axis, facet: xMapping.facet, facets: xMapping.facets }
-      : null,
-    yAxis: yMapping
-      ? { axis: yMapping.axis, facet: yMapping.facet, facets: yMapping.facets }
-      : null,
+    xAxis,
+    yAxis,
     colorAxis: colorMapping
       ? { axis: colorMapping.axis, facet: colorMapping.facet, facets: colorMapping.facets }
       : null,

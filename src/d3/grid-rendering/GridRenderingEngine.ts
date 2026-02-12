@@ -91,6 +91,13 @@ export class GridRenderingEngine {
   }
 
   /**
+   * Update the container reference when React creates a new SVG element
+   */
+  public updateContainer(container: d3.Selection<SVGElement, unknown, null, undefined>): void {
+    this.container = container;
+  }
+
+  /**
    * Set PAFV projection for axis-based layout
    * This will be used in Plan 56-02 for position computation
    */
@@ -465,6 +472,13 @@ export class GridRenderingEngine {
    * Main render method
    */
   public render(activeFilters: unknown[] = []): void {
+    // Verify container is valid and in document (guards against React StrictMode detached SVG)
+    const containerNode = this.container.node();
+    if (!containerNode || !document.body.contains(containerNode)) {
+      superGridLogger.warn('[GridRenderingEngine.render] Container detached, skipping');
+      return;
+    }
+
     this.setupGridStructure();
 
     if (!this.currentData) {
@@ -625,6 +639,17 @@ export class GridRenderingEngine {
    */
   private updateGridLayout(): void {
     if (!this.currentData) return;
+
+    // DIAGNOSTIC: Log what we have for layout decision
+    console.log('[GridRenderingEngine.updateGridLayout]', {
+      hasProjection: !!this.currentProjection,
+      hasHeaders: !!this.currentHeaders,
+      cardCount: this.currentData?.cards?.length ?? 0,
+      projectionX: this.currentProjection?.xAxis?.facet || 'none',
+      projectionY: this.currentProjection?.yAxis?.facet || 'none',
+      headerRows: this.currentHeaders?.rows?.length ?? 0,
+      headerCols: this.currentHeaders?.columns?.length ?? 0,
+    });
 
     // If we have projection and headers, use 2D grid layout
     if (this.currentProjection && this.currentHeaders) {
@@ -1272,6 +1297,13 @@ export class GridRenderingEngine {
       return;
     }
 
+    // Verify container is valid and in document (guards against React StrictMode detached SVG)
+    const containerNode = this.container.node();
+    if (cardContainer.empty() || !containerNode || !document.body.contains(containerNode)) {
+      superGridLogger.warn('Card container invalid or detached from DOM');
+      return;
+    }
+
     type CardRecord = Record<string, unknown>;
 
     // Use D3's data join pattern
@@ -1367,7 +1399,8 @@ export class GridRenderingEngine {
     superGridLogger.debug('Cards rendered', {
       total: this.currentData.cards.length,
       entered: cardEnter.size(),
-      existing: cardSelection.size()
+      updated: cardSelection.size(),
+      merged: cardMerged.size()
     });
   }
 

@@ -275,6 +275,19 @@ export class SuperGridHeaders {
     totalWidth: number,
     callbacks?: StackedHeaderCallbacks
   ): void {
+    console.log('[SuperGridHeaders.renderStackedHeaders] Starting...', {
+      orientation,
+      maxDepth: hierarchy?.maxDepth,
+      totalNodes: hierarchy?.allNodes?.length,
+      totalWidth
+    });
+
+    // Validate hierarchy
+    if (!hierarchy || !hierarchy.allNodes || hierarchy.allNodes.length === 0) {
+      console.warn('[SuperGridHeaders.renderStackedHeaders] Empty or invalid hierarchy, skipping render');
+      return;
+    }
+
     superGridLogger.render('Stacked header rendering starting', {
       orientation,
       maxDepth: hierarchy.maxDepth,
@@ -282,27 +295,36 @@ export class SuperGridHeaders {
       totalWidth
     });
 
-    this.currentHierarchy = hierarchy;
+    try {
+      this.currentHierarchy = hierarchy;
 
-    // Calculate span widths for all nodes
-    this.layoutCalculator.calculateHierarchyWidths(hierarchy, totalWidth);
+      // Calculate span widths for all nodes
+      console.log('[SuperGridHeaders.renderStackedHeaders] Calculating widths...');
+      this.layoutCalculator.calculateHierarchyWidths(hierarchy, totalWidth);
 
-    // Delegate to progressive renderer for multi-level rendering
-    this.progressiveRenderer.renderMultiLevel(
-      hierarchy,
-      orientation,
-      {
-        levelHeight: this.config.defaultHeaderHeight,
-        animationDuration: this.config.progressiveDisclosure.transitionDuration
-      }
-    );
+      // Delegate to progressive renderer for multi-level rendering
+      console.log('[SuperGridHeaders.renderStackedHeaders] Rendering multi-level...');
+      this.progressiveRenderer.renderMultiLevel(
+        hierarchy,
+        orientation,
+        {
+          levelHeight: this.config.defaultHeaderHeight,
+          animationDuration: this.config.progressiveDisclosure.transitionDuration
+        }
+      );
 
-    // Wire up click handlers for each level
-    this.setupStackedHeaderInteractions(hierarchy, callbacks);
+      // Wire up click handlers for each level
+      console.log('[SuperGridHeaders.renderStackedHeaders] Setting up interactions...');
+      this.setupStackedHeaderInteractions(hierarchy, callbacks);
 
-    superGridLogger.render('Stacked header rendering complete', {
-      levelsRendered: hierarchy.maxDepth + 1
-    });
+      console.log('[SuperGridHeaders.renderStackedHeaders] Complete');
+      superGridLogger.render('Stacked header rendering complete', {
+        levelsRendered: hierarchy.maxDepth + 1
+      });
+    } catch (error) {
+      console.error('[SuperGridHeaders.renderStackedHeaders] ERROR:', error);
+      this.renderFallback();
+    }
   }
 
   /**

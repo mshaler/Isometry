@@ -1,44 +1,140 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-import { NavigatorToolbar } from './NavigatorToolbar';
 import { LatchNavigator } from './navigator/LatchNavigator';
 import { PafvNavigator } from './navigator/PafvNavigator';
 import { SuperGrid } from '../d3/SuperGrid';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import { mappingsToProjection } from '../types/grid';
 import { useTheme } from '@/contexts/ThemeContext';
-import { LATCHFilterService } from '../services/query/LATCHFilterService';
 import { contextLogger } from '../utils/logging/dev-logger';
+import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
+import { useAltoIndexImport } from '@/hooks/useAltoIndexImport';
+
+/**
+ * Alto-index dataset definitions for the dataset switcher
+ * nodeType matches the node_type field from alto-index import
+ */
+const ALTO_DATASETS = [
+  { id: 'notes', label: 'Notes', icon: '📝', nodeType: 'notes' },
+  { id: 'contacts', label: 'Contacts', icon: '👤', nodeType: 'contacts' },
+  { id: 'safari', label: 'Safari', icon: '🧭', nodeType: 'safari-history' },
+  { id: 'calendars', label: 'Calendars', icon: '📅', nodeType: 'calendar' },
+  { id: 'reminders', label: 'Reminders', icon: '✅', nodeType: 'reminders' },
+  { id: 'messages', label: 'Messages', icon: '💬', nodeType: 'messages' },
+] as const;
 
 /**
  * IntegratedLayout - Unified Navigator + SuperGrid layout
  *
- * Vertical stack layout matching Figma design:
+ * Layout (revised):
  * ┌─────────────────────────────────────────────┐
- * │ Toolbar (Apps/Views/Datasets)               │
+ * │ Command Bar (top)                           │
+ * ├─────────────────────────────────────────────┤
+ * │ Dataset Switcher (Notes|Contacts|Safari...) │
  * ├─────────────────────────────────────────────┤
  * │ LatchNavigator (6-column LATCH+GRAPH grid)  │
  * ├─────────────────────────────────────────────┤
  * │ PafvNavigator (5-well axis assignment)      │
  * ├─────────────────────────────────────────────┤
  * │ SuperGrid (D3 canvas) ← MAXIMIZED           │
- * ├─────────────────────────────────────────────┤
- * │ Command Bar                                 │
  * └─────────────────────────────────────────────┘
- *
- * Phase 58-02: Navigator redesign to match Figma specs
  */
 export function IntegratedLayout() {
   const { theme } = useTheme();
-  const { state: pafvState } = usePAFV();
+  const { state: pafvState, clearFacetFromAllPlanes } = usePAFV();
   const databaseService = useDatabaseService();
+  const { classification, refresh: refreshClassification } = usePropertyClassification();
+
+  // Alto-index import hook
+  const {
+    importFromPublic,
+    status: importStatus,
+    progress: importProgress,
+  } = useAltoIndexImport();
 
   // SuperGrid refs and state
   const svgRef = useRef<SVGSVGElement>(null);
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
-  const [filterService] = useState(() => new LATCHFilterService());
+  const superGridRef = useRef<SuperGrid | null>(null); // Stable ref to avoid losing grid during re-renders
+  const [altoImported, setAltoImported] = useState(false);
+  const importStartedRef = useRef(false);
+
+  // Cleanup SuperGrid on unmount
+  useEffect(() => {
+    return () => {
+      if (superGridRef.current) {
+        superGridRef.current.destroy();
+        superGridRef.current = null;
+      }
+    };
+  }, []);
+
+  // Dataset switcher state - default to 'notes' (the sample data table)
+  const [activeDataset, setActiveDataset] = useState<string>('notes');
+
+  // Shared state: enabled properties synced between LatchNavigator and PafvNavigator
+  // Initialize with ALL properties enabled by default
+  const [enabledProperties, setEnabledProperties] = useState<Set<string>>(() => new Set());
+
+  // Initialize enabled properties when classification loads
+  useEffect(() => {
+    if (!classification) return;
+    // Enable all LATCH properties by default
+    const allPropertyIds = [
+      ...classification.L,
+      ...classification.A,
+      ...classification.T,
+      ...classification.C,
+      ...classification.H,
+    ].map(p => p.id);
+    setEnabledProperties(new Set(allPropertyIds));
+  }, [classification]);
+
+  // Handle property toggle from LatchNavigator
+  const handlePropertyToggle = useCallback((propertyId: string, enabled: boolean) => {
+    // Update enabled state
+    setEnabledProperties(prev => {
+      const next = new Set(prev);
+      if (enabled) {
+        next.add(propertyId);
+      } else {
+        next.delete(propertyId);
+      }
+      return next;
+    });
+
+    // When disabling, also remove from any assigned planes
+    // Uses atomic clearFacetFromAllPlanes to avoid stale closure issues
+    if (!enabled && classification) {
+      const allProperties = [
+        ...classification.L,
+        ...classification.A,
+        ...classification.T,
+        ...classification.C,
+        ...classification.H,
+      ];
+      const property = allProperties.find(p => p.id === propertyId);
+      if (property) {
+        // Atomic removal from ALL planes (x, y, z) in single state update
+        clearFacetFromAllPlanes(property.sourceColumn);
+      }
+    }
+  }, [classification, clearFacetFromAllPlanes]);
+
+  // Handle dataset switch
+  const handleDatasetSwitch = useCallback((datasetId: string) => {
+    setActiveDataset(datasetId);
+
+    // Refresh property classification for new dataset
+    // (properties may differ between tables)
+    refreshClassification?.();
+
+    contextLogger.setup('IntegratedLayout: Dataset switched', {
+      dataset: datasetId,
+    });
+  }, [refreshClassification]);
 
   // Theme-aware colors
   const isNeXTSTEP = theme === 'NeXTSTEP';
@@ -47,11 +143,35 @@ export function IntegratedLayout() {
   const textColor = isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-900';
   const mutedColor = isNeXTSTEP ? 'text-[#999]' : 'text-gray-500';
   const panelBg = isNeXTSTEP ? 'bg-[#252525]' : 'bg-white';
+  const activeBtnBg = isNeXTSTEP ? 'bg-[#4A90D9]' : 'bg-blue-500';
+  const inactiveBtnBg = isNeXTSTEP ? 'bg-[#3A3A3A]' : 'bg-gray-200';
+  const activeBtnText = 'text-white';
+  const inactiveBtnText = isNeXTSTEP ? 'text-[#999]' : 'text-gray-600';
 
   // Initialize SuperGrid
   useEffect(() => {
-    if (!svgRef.current || !databaseService) return;
+    // CRITICAL: Must check isReady() to ensure we don't create SuperGrid with loading stub
+    // The loading stub has a broken database that returns empty results
+    if (!svgRef.current || !databaseService?.isReady()) return;
 
+    // Check if existing SuperGrid's container is still in the document
+    // React StrictMode unmounts/remounts, creating new DOM elements
+    // The old D3 selection would point to a detached SVG
+    if (superGridRef.current) {
+      const existingContainer = superGridRef.current.getContainer?.()?.node?.();
+      const containerInDocument = existingContainer && document.body.contains(existingContainer);
+
+      if (containerInDocument) {
+        setSuperGrid(superGridRef.current);
+        return;
+      } else {
+        // Container is detached - destroy old SuperGrid and create new one
+        superGridRef.current.destroy();
+        superGridRef.current = null;
+      }
+    }
+
+    contextLogger.debug('[IntegratedLayout] Creating SuperGrid instance');
     const svgSelection = d3.select(svgRef.current) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
     const superGridRenderer = new SuperGrid(
       svgSelection,
@@ -65,25 +185,84 @@ export function IntegratedLayout() {
       }
     );
 
+    superGridRef.current = superGridRenderer;
     setSuperGrid(superGridRenderer);
 
-    // Load initial data
-    const filterCompilation = filterService.compileToSQL();
-    superGridRenderer.query(filterCompilation);
-
     return () => {
-      setSuperGrid(null);
+      // Only cleanup on actual unmount, not on re-renders
+      // The ref keeps the instance alive
     };
-  }, [databaseService, filterService]);
+  }, [databaseService]);
+
+  // Import alto-index data on mount (after database is ready)
+  useEffect(() => {
+    // Prevent multiple imports using ref (avoids re-render race conditions)
+    if (importStartedRef.current) return;
+    // Wait for database to be ready before importing
+    if (!databaseService?.isReady()) return;
+    if (altoImported) return;
+
+    // Mark as started immediately to prevent re-entry
+    importStartedRef.current = true;
+
+    // Limit import to 2000 records for performance
+    importFromPublic({ clearExisting: true, limit: 2000 })
+      .then((result) => {
+        setAltoImported(true);
+        contextLogger.debug('[IntegratedLayout] Alto-index import complete', {
+          imported: result.imported,
+          skipped: result.skipped,
+          errors: result.errors.length,
+        });
+      })
+      .catch((err) => {
+        importStartedRef.current = false; // Allow retry on error
+        contextLogger.warn('[IntegratedLayout] Alto-index import failed', { error: err.message });
+      });
+  }, [databaseService, altoImported, importFromPublic]);
+
+  // Load data when SuperGrid initializes or dataset changes
+  useEffect(() => {
+    if (!superGrid || !altoImported || !svgRef.current) {
+      return;
+    }
+
+    // CRITICAL: Ensure SuperGrid container points to current SVG element
+    // React may have created a new SVG element, but SuperGrid's D3 selection
+    // would still point to the old (now detached) element
+    superGrid.updateContainer(svgRef.current);
+
+    // Find the dataset configuration
+    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
+    const nodeType = dataset?.nodeType || 'notes';
+
+    contextLogger.debug('[IntegratedLayout] Loading dataset', { activeDataset, nodeType });
+
+    // Query the nodes table filtered by node_type (alto-index data)
+    superGrid.query({
+      whereClause: `node_type = ? AND deleted_at IS NULL`,
+      parameters: [nodeType],
+      activeFilters: [],
+      isEmpty: false,
+    });
+
+    contextLogger.setup('IntegratedLayout: Dataset loaded', {
+      dataset: activeDataset,
+      nodeType,
+    });
+  }, [superGrid, activeDataset, altoImported, databaseService]);
 
   // Sync PAFV projection to SuperGrid
   useEffect(() => {
-    if (!superGrid) return;
+    if (!superGrid || !svgRef.current) return;
+
+    // Ensure container is current before any operation
+    superGrid.updateContainer(svgRef.current);
 
     const projection = mappingsToProjection(pafvState.mappings);
     superGrid.setProjection(projection);
 
-    contextLogger.setup('IntegratedLayout: PAFV projection synced', {
+    contextLogger.debug('[IntegratedLayout] PAFV projection synced', {
       mappings: pafvState.mappings.length,
       xAxis: projection.xAxis?.facet || 'none',
       yAxis: projection.yAxis?.facet || 'none',
@@ -126,12 +305,18 @@ export function IntegratedLayout() {
   }, [superGrid, pafvState.sizeEncoding]);
 
   // Loading state
-  if (!databaseService?.isReady()) {
+  if (!databaseService?.isReady() || importStatus === 'loading' || importStatus === 'importing') {
+    const loadingMessage = importStatus === 'importing'
+      ? `Importing alto-index data... ${importProgress}%`
+      : importStatus === 'loading'
+        ? 'Loading alto-index data...'
+        : 'Loading Integrated Layout...';
+
     return (
       <div className={`h-screen ${bgColor} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className={mutedColor}>Loading Integrated Layout...</p>
+          <p className={mutedColor}>{loadingMessage}</p>
         </div>
       </div>
     );
@@ -140,14 +325,52 @@ export function IntegratedLayout() {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className={`h-screen flex flex-col ${bgColor} ${textColor}`}>
-        {/* Toolbar (Apps/Views/Datasets dropdowns) */}
-        <NavigatorToolbar />
+        {/* Command Bar (top) */}
+        <div className={`h-8 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-2`}>
+          <span className={`text-xs font-mono ${mutedColor}`}>⌘</span>
+          <input
+            type="text"
+            placeholder="Command palette..."
+            className={`
+              flex-1 ${isNeXTSTEP ? 'bg-[#2D2D2D]' : 'bg-gray-100'}
+              text-xs ${textColor} px-2 py-0.5
+              border ${borderColor} rounded
+              outline-none focus:border-[#4A90D9]
+            `}
+          />
+          <span className={`text-[10px] ${mutedColor}`}>
+            L{pafvState.densityLevel} | {pafvState.mappings.length} axes
+          </span>
+        </div>
+
+        {/* Dataset Switcher */}
+        <div className={`h-10 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-1`}>
+          {ALTO_DATASETS.map((dataset) => (
+            <button
+              key={dataset.id}
+              onClick={() => handleDatasetSwitch(dataset.id)}
+              className={`
+                px-3 py-1 rounded text-xs font-medium transition-colors
+                ${activeDataset === dataset.id
+                  ? `${activeBtnBg} ${activeBtnText}`
+                  : `${inactiveBtnBg} ${inactiveBtnText} hover:opacity-80`
+                }
+              `}
+            >
+              <span className="mr-1">{dataset.icon}</span>
+              {dataset.label}
+            </button>
+          ))}
+        </div>
 
         {/* LatchNavigator (6-column LATCH+GRAPH property grid) */}
-        <LatchNavigator />
+        <LatchNavigator
+          enabledProperties={enabledProperties}
+          onPropertyToggle={handlePropertyToggle}
+        />
 
         {/* PafvNavigator (5-well axis assignment with density) */}
-        <PafvNavigator />
+        <PafvNavigator enabledProperties={enabledProperties} />
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
@@ -167,23 +390,6 @@ export function IntegratedLayout() {
           )}
         </div>
 
-        {/* Command Bar */}
-        <div className={`h-8 ${panelBg} border-t ${borderColor} flex items-center px-4 gap-2`}>
-          <span className={`text-xs font-mono ${mutedColor}`}>⌘</span>
-          <input
-            type="text"
-            placeholder="Command palette..."
-            className={`
-              flex-1 ${isNeXTSTEP ? 'bg-[#2D2D2D]' : 'bg-gray-100'}
-              text-xs ${textColor} px-2 py-0.5
-              border ${borderColor} rounded
-              outline-none focus:border-[#4A90D9]
-            `}
-          />
-          <span className={`text-[10px] ${mutedColor}`}>
-            L{pafvState.densityLevel} | {pafvState.mappings.length} axes
-          </span>
-        </div>
       </div>
     </DndProvider>
   );

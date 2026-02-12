@@ -443,7 +443,15 @@ export class SuperGridEngine extends EventEmitter {
   }
 
   private generateCellsFromData(): void {
-    this.currentCells = this.dataManager.generateCellsFromNodes(this.nodes);
+    // Extract axis facet fields from PAFV configuration
+    const xAxisField = this.pafvConfig.xMapping?.facet ?? 'node_type';
+    const yAxisField = this.pafvConfig.yMapping?.facet ?? 'folder';
+
+    this.currentCells = this.dataManager.generateCellsFromNodes(
+      this.nodes,
+      xAxisField,
+      yAxisField
+    );
   }
 
   private generateHeaderTree(): void {

@@ -16,7 +16,7 @@ import { useSQLite } from '../../db/SQLiteProvider';
  * dependencies to trigger re-runs endlessly.
  */
 export function useDatabaseService() {
-  const { db, execute, run } = useSQLite();
+  const { db, loading, execute, run } = useSQLite();
 
   // Memoized loading stub - prevents infinite loops when db is not ready
   const loadingStub = useMemo(() => ({
@@ -61,7 +61,9 @@ export function useDatabaseService() {
     run: (sql: string, params: unknown[] = []) => run(sql, params),
 
     // Additional methods SuperGrid needs
-    isReady: () => !!db,
+    // CRITICAL: Must check both db exists AND loading is complete
+    // to avoid race condition where db is set before loading is false
+    isReady: () => !!db && !loading,
     getRawDatabase: () => db,
     export: () => db.export(),
     close: () => db.close(),
@@ -434,7 +436,7 @@ export function useDatabaseService() {
       }
     }
   };
-  }, [db, execute, run]); // Only recreate when these change
+  }, [db, loading, execute, run]); // Only recreate when these change
 
   // Return memoized service or loading stub
   return service || loadingStub;

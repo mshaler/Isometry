@@ -32,7 +32,7 @@ const LATCH_COLUMNS: Array<{
   color: string;
 }> = [
   { key: 'L', label: 'Location', icon: <MapPin className="w-3.5 h-3.5" />, color: '#22C55E' },
-  { key: 'A', label: 'Alphabet', icon: <SortAsc className="w-3.5 h-3.5" />, color: '#3B82F6' },
+  { key: 'A', label: 'Alphanumeric', icon: <SortAsc className="w-3.5 h-3.5" />, color: '#3B82F6' },
   { key: 'T', label: 'Time', icon: <Clock className="w-3.5 h-3.5" />, color: '#8B5CF6' },
   { key: 'C', label: 'Category', icon: <Tag className="w-3.5 h-3.5" />, color: '#F59E0B' },
   { key: 'H', label: 'Hierarchy', icon: <GitBranch className="w-3.5 h-3.5" />, color: '#EF4444' },
@@ -213,7 +213,7 @@ export function LatchNavigator({ onPropertyToggle, enabledProperties }: LatchNav
                   <span className={`text-[10px] font-bold uppercase tracking-wide ${
                     isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-700'
                   }`}>
-                    {column.key === 'GRAPH' ? 'G' : column.key}
+                    {column.label}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">

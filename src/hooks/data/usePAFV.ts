@@ -13,6 +13,10 @@ export interface PAFVContextValue {
   removeFacetFromPlane: (plane: Plane, facet: string) => void;
   /** Reorder mappings within a plane (for stacked axes) */
   reorderMappingsInPlane: (plane: Plane, fromIndex: number, toIndex: number) => void;
+  /** Move a facet from one plane to another atomically (prevents copy bug) */
+  moveFacetToPlane: (fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => void;
+  /** Remove a facet from ALL planes atomically (x, y, z) - used when unchecking in LatchNavigator */
+  clearFacetFromAllPlanes: (facet: string) => void;
   /** Get all mappings for a plane (for stacked axes) */
   getMappingsForPlane: (plane: Plane) => AxisMapping[];
   setViewMode: (mode: 'grid' | 'list') => void;

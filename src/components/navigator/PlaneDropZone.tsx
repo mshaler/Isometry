@@ -211,7 +211,7 @@ export function PlaneDropZone({ plane, currentMapping }: PlaneDropZoneProps) {
 
       // GRAPH facets are not yet supported for axis mapping
       if (facetItem.bucket === 'GRAPH') {
-        console.log('GRAPH facets not yet supported for axis mapping');
+        console.warn('GRAPH facets not yet supported for axis mapping');
         return;
       }
 

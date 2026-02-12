@@ -75,23 +75,104 @@ export class SuperGridDataManager {
   }
 
   /**
-   * Generate cells from nodes - simple flat grid layout
+   * Generate cells from nodes grouped by axis field values
+   *
+   * Per spec: "Group nodes by xAxisField and yAxisField values,
+   * compute gridX/gridY from value-to-index mappings"
+   *
+   * @param nodes - Array of nodes to position
+   * @param xAxisField - Field name for X-axis grouping (e.g., 'node_type')
+   * @param yAxisField - Field name for Y-axis grouping (e.g., 'folder')
+   * @returns Array of CellDescriptor with proper grid positions
    */
-  generateCellsFromNodes(nodes: Node[]): CellDescriptor[] {
-    return nodes.map((node, index) => ({
-      id: `cell_${node.id}`,
-      gridX: index % 10, // Simple 10-column layout for skeleton
-      gridY: Math.floor(index / 10),
-      xValue: String(index % 10),
-      yValue: String(Math.floor(index / 10)),
-      nodeIds: [node.id],
-      nodeCount: 1,
-      aggregateData: {
-        avgPriority: node.priority,
-        statusCounts: { [node.status]: 1 },
-        tagCounts: (node.tags || []).reduce((acc, tag) => ({ ...acc, [tag]: 1 }), {})
+  generateCellsFromNodes(
+    nodes: Node[],
+    xAxisField: string = 'node_type',
+    yAxisField: string = 'folder'
+  ): CellDescriptor[] {
+    if (nodes.length === 0) return [];
+
+    // Step 1: Extract unique axis values and create index mappings
+    const xValues = new Set<string>();
+    const yValues = new Set<string>();
+
+    nodes.forEach(node => {
+      const record = node as unknown as Record<string, unknown>;
+      const xVal = String(record[xAxisField] ?? 'Unassigned');
+      const yVal = String(record[yAxisField] ?? 'Unassigned');
+      xValues.add(xVal);
+      yValues.add(yVal);
+    });
+
+    // Step 2: Sort and create value-to-index mappings
+    const sortedXValues = Array.from(xValues).sort();
+    const sortedYValues = Array.from(yValues).sort();
+
+    const xIndexMap = new Map<string, number>();
+    const yIndexMap = new Map<string, number>();
+
+    sortedXValues.forEach((val, idx) => xIndexMap.set(val, idx));
+    sortedYValues.forEach((val, idx) => yIndexMap.set(val, idx));
+
+    // Step 3: Group nodes into cells by grid position
+    const cellMap = new Map<string, {
+      nodes: Node[];
+      xValue: string;
+      yValue: string;
+      gridX: number;
+      gridY: number;
+    }>();
+
+    nodes.forEach(node => {
+      const record = node as unknown as Record<string, unknown>;
+      const xVal = String(record[xAxisField] ?? 'Unassigned');
+      const yVal = String(record[yAxisField] ?? 'Unassigned');
+      const gridX = xIndexMap.get(xVal) ?? 0;
+      const gridY = yIndexMap.get(yVal) ?? 0;
+      const cellKey = `${gridX}-${gridY}`;
+
+      if (!cellMap.has(cellKey)) {
+        cellMap.set(cellKey, {
+          nodes: [],
+          xValue: xVal,
+          yValue: yVal,
+          gridX,
+          gridY
+        });
       }
-    }));
+      cellMap.get(cellKey)!.nodes.push(node);
+    });
+
+    // Step 4: Convert to CellDescriptor array
+    return Array.from(cellMap.values()).map(cell => {
+      const avgPriority = cell.nodes.reduce((sum, n) => sum + (n.priority || 0), 0) / cell.nodes.length;
+      const statusCounts: Record<string, number> = {};
+      const tagCounts: Record<string, number> = {};
+
+      cell.nodes.forEach(n => {
+        const status = n.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+        (n.tags || []).forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      });
+
+      return {
+        id: `cell_${cell.xValue}-${cell.yValue}`,
+        gridX: cell.gridX,
+        gridY: cell.gridY,
+        xValue: cell.xValue,
+        yValue: cell.yValue,
+        nodeIds: cell.nodes.map(n => n.id),
+        nodeCount: cell.nodes.length,
+        aggregateData: {
+          avgPriority,
+          statusCounts,
+          tagCounts
+        }
+      };
+    });
   }
 
   /**

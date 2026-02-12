@@ -38,11 +38,12 @@ export class SuperGrid {
   private renderingEngine!: GridRenderingEngine;
   private superGridZoom!: SuperGridZoom;
 
-  // Grid dimensions
-  private readonly cardWidth = 220;
-  private readonly cardHeight = 100;
-  private readonly padding = 20;
+  // Grid dimensions (from supergrid-layout-spec.json)
+  private readonly cardWidth = 200;
+  private readonly cardHeight = 120;
+  private readonly padding = 8;
   private readonly headerHeight = 40;
+  private readonly rowHeaderWidth = 140;
 
   // Callbacks
   private onCardClick?: (card: unknown) => void;
@@ -118,12 +119,13 @@ export class SuperGrid {
     // Set database for position persistence
     this.dragDropController.setDatabase(this.database);
 
-    // Rendering engine configuration
+    // Rendering engine configuration (from supergrid-layout-spec.json)
     const renderingConfig: RenderingConfig = {
       cardWidth: this.cardWidth,
       cardHeight: this.cardHeight,
       padding: this.padding,
       headerHeight: this.headerHeight,
+      rowHeaderWidth: this.rowHeaderWidth,
       enableHeaders: this.config.enableHeaders ?? true,
       enableAnimations: true,
       animationDuration: 300
@@ -183,7 +185,18 @@ export class SuperGrid {
           WHERE ${filterCompilationResult.whereClause}
         `;
 
+        superGridLogger.debug('[SuperGrid.query] Executing SQL', {
+          sql,
+          parameters: filterCompilationResult.parameters,
+        });
+
         const result = db.exec(sql, filterCompilationResult.parameters as (string | number | null | Uint8Array)[]);
+
+        superGridLogger.debug('[SuperGrid.query] Result', {
+          resultLength: result.length,
+          rowCount: result[0]?.values?.length ?? 0,
+          columns: result[0]?.columns ?? [],
+        });
 
         if (result.length > 0) {
           const cards = result[0].values.map((row) => {
@@ -243,6 +256,10 @@ export class SuperGrid {
   }
 
   private createGridDataWithCards(cards: unknown[]): GridData {
+    superGridLogger.debug('[SuperGrid.createGridDataWithCards] Creating GridData', {
+      cardCount: cards.length,
+      firstCard: cards[0],
+    });
     return {
       cards,
       xAxis: { axis: 'x', field: '', values: [], isComputed: false },
@@ -287,10 +304,73 @@ export class SuperGrid {
    * Render the grid with current data
    */
   public render(activeFilters: unknown[] = []): void {
+    // Verify container is in document (guards against React StrictMode detached SVG)
+    const containerNode = this.container.node();
+    if (!containerNode || !document.body.contains(containerNode)) {
+      superGridLogger.warn('[SuperGrid.render] Container detached from DOM, skipping render');
+      return;
+    }
+    superGridLogger.debug('[SuperGrid.render] Starting render', {
+      cardCount: this.currentData?.cards?.length ?? 0,
+    });
+
     this.renderingEngine.render(activeFilters);
+
+    // Pin SuperGrid to upper-left by resetting transform directly (no state notification)
+    // This prevents the grid from "flying away" on state changes without triggering re-render
+    this.resetZoomTransformOnly();
+  }
+
+  /**
+   * Reset zoom transform without triggering state change callbacks
+   * Prevents infinite render loop while pinning grid to upper-left
+   */
+  private resetZoomTransformOnly(): void {
+    const zoomBehavior = this.superGridZoom?.getZoomBehavior();
+    if (zoomBehavior) {
+      // Apply identity transform directly without animation or callbacks
+      this.container.call(zoomBehavior.transform, d3.zoomIdentity);
+    }
   }
 
   // Public API methods delegating to modules
+
+  /**
+   * Get the D3 container selection
+   * Used to check if the container is still in the document (StrictMode resilience)
+   */
+  public getContainer(): d3.Selection<SVGElement, unknown, null, undefined> {
+    return this.container;
+  }
+
+  /**
+   * Update the container selection to a new SVG element
+   * Called when React re-renders and creates a new SVG element (StrictMode resilience)
+   * Returns true if the container was updated, false if it was already current
+   */
+  public updateContainer(newSvgElement: SVGSVGElement): boolean {
+    const currentNode = this.container.node();
+
+    // If already pointing to the same element, no update needed
+    if (currentNode === newSvgElement) {
+      return false;
+    }
+
+    superGridLogger.debug('[SuperGrid.updateContainer] Container element changed');
+
+    // Create new D3 selection for the new SVG element
+    this.container = d3.select(newSvgElement) as unknown as d3.Selection<SVGElement, unknown, null, undefined>;
+
+    // Update all module containers
+    this.selectionController.updateContainer(this.container);
+    this.dragDropController.updateContainer(this.container);
+    this.renderingEngine.updateContainer(this.container);
+    if (this.superGridZoom) {
+      this.superGridZoom.updateContainer(this.container);
+    }
+
+    return true;
+  }
 
   public getSelection(): { selectedIds: string[]; focusedId: string | null } {
     return this.selectionController.getSelection();

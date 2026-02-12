@@ -11,6 +11,8 @@ import {
   removeFacetFromPlane as removeFacetUtil,
   reorderMappingsInPlane as reorderMappingsUtil,
   getMappingsForPlane as getMappingsUtil,
+  moveFacetToPlane as moveFacetUtil,
+  clearFacetFromAllPlanes as clearFacetUtil,
 } from '../utils/pafv-serialization';
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
 import { useURLState } from '../hooks/ui/useURLState';
@@ -94,6 +96,22 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
 
   const reorderMappingsInPlaneCallback = useCallback((plane: Plane, fromIndex: number, toIndex: number) => {
     const newState = reorderMappingsUtil(state, plane, fromIndex, toIndex);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const moveFacetToPlaneCallback = useCallback((fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => {
+    const newState = moveFacetUtil(state, fromPlane, toPlane, facet, axis);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const clearFacetFromAllPlanesCallback = useCallback((facet: string) => {
+    const newState = clearFacetUtil(state, facet);
     setState(newState);
 
     // Send to native bridge
@@ -212,6 +230,8 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     addMappingToPlane: addMappingToPlaneCallback,
     removeFacetFromPlane: removeFacetFromPlaneCallback,
     reorderMappingsInPlane: reorderMappingsInPlaneCallback,
+    moveFacetToPlane: moveFacetToPlaneCallback,
+    clearFacetFromAllPlanes: clearFacetFromAllPlanesCallback,
     getMappingsForPlane: getMappingsForPlaneCallback,
     setViewMode,
     setDensityLevel,
@@ -228,6 +248,8 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     addMappingToPlaneCallback,
     removeFacetFromPlaneCallback,
     reorderMappingsInPlaneCallback,
+    moveFacetToPlaneCallback,
+    clearFacetFromAllPlanesCallback,
     getMappingsForPlaneCallback,
     setViewMode,
     setDensityLevel,

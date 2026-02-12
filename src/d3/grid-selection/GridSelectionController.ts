@@ -71,6 +71,13 @@ export class GridSelectionController {
   }
 
   /**
+   * Update the container reference when React creates a new SVG element
+   */
+  public updateContainer(container: d3.Selection<SVGElement, unknown, null, undefined>): void {
+    this.container = container;
+  }
+
+  /**
    * Handle card click events
    */
   public handleCardClick(event: MouseEvent, cardData: unknown): void {

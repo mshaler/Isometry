@@ -18,6 +18,7 @@ import type {
 } from '../../types/grid';
 import { ContentAlignment } from '../../types/grid';
 import type { StackedAxisConfig } from '../../types/pafv';
+import { devLogger } from '../../utils/dev-logger';
 
 /**
  * Extended HeaderNode with optional facet and value fields used internally
@@ -175,7 +176,7 @@ export class HeaderLayoutService {
       return hierarchy;
 
     } catch (error) {
-      console.error('Error generating header hierarchy:', error);
+      devLogger.error('Error generating header hierarchy', { error });
       throw new Error(`Failed to generate header hierarchy: ${error}`);
     }
   }
@@ -485,57 +486,156 @@ export class HeaderLayoutService {
     cards: unknown[],
     stackedConfig: StackedAxisConfig
   ): HeaderHierarchy {
+    devLogger.debug('[generateStackedHierarchy] START', {
+      cardsCount: cards?.length ?? 0,
+      axis: stackedConfig?.axis,
+      facets: stackedConfig?.facets,
+    });
+
+    // Validate inputs
+    if (!cards || cards.length === 0) {
+      devLogger.warn('[generateStackedHierarchy] No cards provided, returning empty hierarchy');
+      return this.createEmptyHierarchy(stackedConfig?.axis || 'unknown');
+    }
+
+    if (!stackedConfig?.facets || stackedConfig.facets.length === 0) {
+      devLogger.warn('[generateStackedHierarchy] No facets in config, returning empty hierarchy');
+      return this.createEmptyHierarchy(stackedConfig?.axis || 'unknown');
+    }
+
     const flatNodes: HeaderNode[] = [];
     const { axis, facets } = stackedConfig;
 
-    // Root node
-    flatNodes.push(this.createHeaderNode({
-      id: `${axis}-root`,
-      label: axis.toUpperCase(),
-      parentId: undefined,
-      level: 0,
-      facet: axis,
-      span: 0, // Will be computed
-    }));
+    try {
+      // Root node
+      devLogger.debug('[generateStackedHierarchy] Creating root node');
+      flatNodes.push(this.createHeaderNode({
+        id: `${axis}-root`,
+        label: axis.toUpperCase(),
+        parentId: undefined,
+        level: 0,
+        facet: axis,
+        span: 0, // Will be computed
+      }));
 
-    // Build nodes for each facet level
-    facets.forEach((facet, levelIndex) => {
-      const uniqueValues = this.extractUniqueFacetValues(cards, facet);
-      uniqueValues.forEach(value => {
-        const parentId = levelIndex > 0
-          ? this.findParentNodeId(cards, facets, levelIndex, value, axis)
-          : `${axis}-root`;
-        flatNodes.push(this.createHeaderNode({
-          id: `${axis}-${facet}-${value}`,
-          label: this.formatLabel(value, facet),
-          parentId,
-          level: levelIndex + 1,
-          facet,
-          span: 1, // Leaf default
-        }));
+      // Build nodes for each facet level
+      devLogger.debug('[generateStackedHierarchy] Building nodes', { facetCount: facets.length });
+      facets.forEach((facet, levelIndex) => {
+        devLogger.debug('[generateStackedHierarchy] Processing facet', { facet, levelIndex });
+        const uniqueValues = this.extractUniqueFacetValues(cards, facet);
+        devLogger.debug('[generateStackedHierarchy] Found unique values', { facet, count: uniqueValues.length, sample: uniqueValues.slice(0, 5) });
+
+        if (uniqueValues.length === 0) {
+          devLogger.warn('[generateStackedHierarchy] No values found for facet', { facet, hint: 'facet might not exist in cards' });
+          // Log sample card keys to help debug
+          if (cards[0]) {
+            devLogger.debug('[generateStackedHierarchy] Sample card keys', { keys: Object.keys(cards[0] as Record<string, unknown>) });
+          }
+        }
+
+        uniqueValues.forEach(value => {
+          const parentId = levelIndex > 0
+            ? this.findParentNodeId(cards, facets, levelIndex, value, axis)
+            : `${axis}-root`;
+
+          flatNodes.push(this.createHeaderNode({
+            id: `${axis}-${facet}-${value}`,
+            label: this.formatLabel(value, facet),
+            parentId,
+            level: levelIndex + 1,
+            facet,
+            span: 1, // Leaf default
+          }));
+        });
       });
-    });
 
-    // Use d3.stratify to build hierarchy
-    const stratifyFn = stratify<HeaderNode>()
-      .id(d => d.id)
-      .parentId(d => d.parentId);
-    const root = stratifyFn(flatNodes);
+      devLogger.debug('[generateStackedHierarchy] Created flat nodes', { count: flatNodes.length });
 
-    // Calculate spans bottom-up
-    this.calculateStackedSpans(root);
+      // Validate nodes before stratify
+      const nodeIds = flatNodes.map(n => n.id);
+      const duplicateIds = nodeIds.filter((id, idx) => nodeIds.indexOf(id) !== idx);
+      if (duplicateIds.length > 0) {
+        devLogger.error('[generateStackedHierarchy] Duplicate node IDs found', { duplicateIds });
+      }
 
-    return this.buildHeaderHierarchyResult(root, axis, flatNodes);
+      const orphanNodes = flatNodes.filter(n => n.parentId && !nodeIds.includes(n.parentId));
+      if (orphanNodes.length > 0) {
+        devLogger.error('[generateStackedHierarchy] Orphan nodes (missing parent)', { orphans: orphanNodes.map(n => ({ id: n.id, parentId: n.parentId })) });
+      }
+
+      // Use d3.stratify to build hierarchy
+      devLogger.debug('[generateStackedHierarchy] Running d3.stratify');
+      const stratifyFn = stratify<HeaderNode>()
+        .id(d => d.id)
+        .parentId(d => d.parentId);
+
+      const root = stratifyFn(flatNodes);
+      devLogger.debug('[generateStackedHierarchy] Stratify complete', { rootHeight: root.height });
+
+      // Calculate spans bottom-up
+      devLogger.debug('[generateStackedHierarchy] Calculating spans');
+      this.calculateStackedSpans(root);
+
+      const result = this.buildHeaderHierarchyResult(root, axis, flatNodes);
+      devLogger.debug('[generateStackedHierarchy] SUCCESS', {
+        maxDepth: result.maxDepth,
+        totalNodes: result.allNodes.length,
+      });
+
+      return result;
+    } catch (error) {
+      devLogger.error('[generateStackedHierarchy] FAILED', { error, flatNodesCount: flatNodes.length });
+      // Return empty hierarchy to prevent crash
+      return this.createEmptyHierarchy(axis);
+    }
+  }
+
+  /**
+   * Create an empty hierarchy for error cases
+   */
+  private createEmptyHierarchy(axis: string): HeaderHierarchy {
+    return {
+      axis,
+      rootNodes: [],
+      allNodes: [],
+      maxDepth: 0,
+      totalWidth: 0,
+      totalHeight: 40,
+      expandedNodeIds: new Set(),
+      collapsedSubtrees: new Set(),
+      config: this.config,
+      lastUpdated: Date.now()
+    };
   }
 
   /** Extract unique values for a facet from cards */
   private extractUniqueFacetValues(cards: unknown[], facet: string): string[] {
     const values = new Set<string>();
-    cards.forEach(card => {
-      const value = (card as Record<string, unknown>)[facet];
-      if (value != null) values.add(String(value));
+
+    if (!facet) {
+      devLogger.warn('[extractUniqueFacetValues] No facet provided');
+      return [];
+    }
+
+    cards.forEach((card, idx) => {
+      if (!card) return;
+
+      const record = card as Record<string, unknown>;
+      const value = record[facet];
+
+      // Log first card's structure for debugging
+      if (idx === 0) {
+        devLogger.debug('[extractUniqueFacetValues] First card', { keys: Object.keys(record).slice(0, 10), facet, value });
+      }
+
+      if (value != null && value !== '') {
+        values.add(String(value));
+      }
     });
-    return Array.from(values).sort();
+
+    const result = Array.from(values).sort();
+    devLogger.debug('[extractUniqueFacetValues] Found unique values', { facet, count: result.length });
+    return result;
   }
 
   /** Find parent node ID for a child value at given level */
@@ -582,6 +682,20 @@ export class HeaderLayoutService {
     axis: string,
     flatNodes: HeaderNode[]
   ): HeaderHierarchy {
+    // CRITICAL: Populate children arrays from d3 hierarchy structure
+    // The d3.stratify creates a tree but doesn't update the original flatNodes' children arrays
+    this.populateChildrenFromHierarchy(root);
+
+    // Update isLeaf status based on actual children
+    flatNodes.forEach(node => {
+      node.isLeaf = node.children.length === 0;
+    });
+
+    devLogger.debug('[buildHeaderHierarchyResult] Children populated', {
+      nodesWithChildren: flatNodes.filter(n => n.children.length > 0).length,
+      leafNodes: flatNodes.filter(n => n.isLeaf).length
+    });
+
     return {
       axis,
       rootNodes: root.children?.map(c => c.data) || [],
@@ -594,6 +708,27 @@ export class HeaderLayoutService {
       config: this.config,
       lastUpdated: Date.now()
     };
+  }
+
+  /**
+   * Populate children arrays on HeaderNode data objects from d3 hierarchy
+   * d3.stratify creates a tree structure but doesn't update the original node objects
+   */
+  private populateChildrenFromHierarchy(node: HierarchyNode<HeaderNode>): void {
+    if (node.children && node.children.length > 0) {
+      // Populate this node's data.children array with child node data objects
+      node.data.children = node.children.map(child => child.data);
+
+      // Recursively process children
+      node.children.forEach(child => {
+        // Set parent reference
+        child.data.parent = node.data;
+        this.populateChildrenFromHierarchy(child);
+      });
+    } else {
+      // Leaf node - ensure empty array
+      node.data.children = [];
+    }
   }
 
   /** Create a HeaderNode with all required fields */

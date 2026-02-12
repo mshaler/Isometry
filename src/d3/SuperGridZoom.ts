@@ -96,6 +96,15 @@ export class SuperGridZoom implements JanusControls {
   }
 
   /**
+   * Update the container reference when React creates a new SVG element
+   */
+  updateContainer(container: d3.Selection<SVGElement, unknown, null, undefined>): void {
+    this.container = container;
+    // Re-apply zoom behavior to new container
+    this.setupZoomBehavior();
+  }
+
+  /**
    * Initialize D3 zoom behavior with orthogonal controls
    * Uses translateExtent to pin upper-left corner (SuperZoom spec)
    */

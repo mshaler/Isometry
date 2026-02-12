@@ -89,6 +89,14 @@ export function SQLiteProvider({
   const persistenceRef = useRef<IndexedDBPersistence | null>(null);
   const autoSaveRef = useRef<AutoSaveManager | null>(null);
 
+  // Initialization guard - prevents double initialization in React.StrictMode
+  // StrictMode runs effects twice, which would create duplicate database instances
+  const initializationRef = useRef<{
+    started: boolean;
+    completed: boolean;
+    database: Database | null;
+  }>({ started: false, completed: false, database: null });
+
   // Create memoized database operations to prevent infinite re-renders
   // CRITICAL: Without useMemo, new function references are created on every render,
   // causing useSQLiteQuery consumers to re-fetch continuously (infinite loop)
@@ -114,6 +122,18 @@ export function SQLiteProvider({
   // Initialize database
   useEffect(() => {
     const initDatabase = async () => {
+      // Guard against double initialization (React.StrictMode runs effects twice)
+      if (initializationRef.current.started) {
+        console.log('[SQLiteProvider] Skipping duplicate initialization (StrictMode guard)');
+        // If we already have a database from previous init, use it
+        if (initializationRef.current.database && initializationRef.current.completed) {
+          setDb(initializationRef.current.database);
+          setLoading(false);
+        }
+        return;
+      }
+      initializationRef.current.started = true;
+
       try {
         if (enableLogging) {
           devLogger.setup('SQLiteProvider: Starting initialization', {});
@@ -222,6 +242,9 @@ export function SQLiteProvider({
 
         console.log('[SQLiteProvider] Database ready, setting state...');
 
+        // Store database in ref for StrictMode resilience
+        initializationRef.current.database = database;
+
         // Ensure facets table exists and is seeded (handles stale IndexedDB data)
         try {
           const facetCheck = database.exec("SELECT COUNT(*) as count FROM facets");
@@ -278,6 +301,7 @@ export function SQLiteProvider({
         }
 
         console.log('[SQLiteProvider] ✅ Initialization complete');
+        initializationRef.current.completed = true;
         setLoading(false);
       } catch (error) {
         console.error('[SQLiteProvider] Initialization failed:', error);
@@ -289,16 +313,39 @@ export function SQLiteProvider({
 
     initDatabase();
 
-    // Cleanup
+    // Cleanup - DO NOT close database in StrictMode cleanup cycle
+    // StrictMode unmounts/remounts components to test for side effects
+    // We preserve the database across this cycle to avoid data loss
     return () => {
+      // Only cleanup auto-save, not the database itself
+      // Database is preserved in initializationRef for StrictMode resilience
       if (autoSaveRef.current) {
         autoSaveRef.current.cleanup();
       }
-      if (db) {
-        db.close();
-      }
+      // Note: We intentionally do NOT close the database here
+      // to preserve it across StrictMode remounts
+      console.log('[SQLiteProvider] Cleanup called (database preserved in ref)');
     };
   }, [databaseUrl, enableLogging]);
+
+  // Proper cleanup on page unload (not React lifecycle)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      console.log('[SQLiteProvider] Page unloading, closing database...');
+      if (initializationRef.current.database) {
+        try {
+          initializationRef.current.database.close();
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   // Test FTS5 performance (memoized to prevent context churn)
   const testFTS5Performance = useCallback(async (): Promise<FTS5PerformanceResult> => {

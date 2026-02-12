@@ -96,7 +96,7 @@ export class IndexedDBPersistence {
 
       const openPromise = openDB<IsometryDBSchema>(DB_NAME, DB_VERSION, {
         upgrade(db) {
-          console.log('[IndexedDB] Running upgrade handler...');
+          devLogger.debug('[IndexedDB] Running upgrade handler...');
           // Create stores if they don't exist
           if (!db.objectStoreNames.contains(DATABASE_STORE)) {
             db.createObjectStore(DATABASE_STORE);

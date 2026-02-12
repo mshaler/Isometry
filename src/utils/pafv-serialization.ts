@@ -1,5 +1,6 @@
 import type { PAFVState, AxisMapping, Plane, LATCHAxis, DensityLevel, EncodingConfig } from '../types/pafv';
 import { DEFAULT_PAFV } from '../types/pafv';
+import { devLogger } from './dev-logger';
 
 /**
  * Serialize PAFV state to URL-safe string
@@ -202,6 +203,21 @@ export function getMappingsForPlane(state: PAFVState, plane: Plane): AxisMapping
 }
 
 /**
+ * Remove a facet from ALL planes atomically (x, y, z)
+ * Used when unchecking a property in LatchNavigator
+ *
+ * @param state - Current PAFV state
+ * @param facet - Facet to remove from all planes
+ * @returns Updated PAFV state
+ */
+export function clearFacetFromAllPlanes(state: PAFVState, facet: string): PAFVState {
+  return {
+    ...state,
+    mappings: state.mappings.filter(m => m.facet !== facet),
+  };
+}
+
+/**
  * Add a mapping to a plane without replacing existing (for stacked axes)
  *
  * @param state - Current PAFV state
@@ -214,13 +230,61 @@ export function addMappingToPlane(state: PAFVState, mapping: AxisMapping): PAFVS
     m => m.plane === mapping.plane && m.axis === mapping.axis && m.facet === mapping.facet
   );
 
+  // DIAGNOSTIC: Log add operation
+  devLogger.debug('[addMappingToPlane]', {
+    adding: `${mapping.plane}:${mapping.facet}`,
+    currentMappings: state.mappings.map(m => `${m.plane}:${m.facet}`),
+    alreadyExists: exists,
+  });
+
   if (exists) {
     return state;
   }
 
+  const newMappings = [...state.mappings, mapping];
+  devLogger.debug('[addMappingToPlane] New mappings array', { mappings: newMappings.map(m => `${m.plane}:${m.facet}`) });
+
   return {
     ...state,
-    mappings: [...state.mappings, mapping],
+    mappings: newMappings,
+  };
+}
+
+/**
+ * Move a facet from one plane to another atomically (remove + add in single update)
+ *
+ * @param state - Current PAFV state
+ * @param fromPlane - Source plane to remove from
+ * @param toPlane - Target plane to add to
+ * @param facet - Facet name being moved
+ * @param axis - Axis type for the mapping
+ * @returns Updated PAFV state
+ */
+export function moveFacetToPlane(
+  state: PAFVState,
+  fromPlane: Plane,
+  toPlane: Plane,
+  facet: string,
+  axis: LATCHAxis
+): PAFVState {
+  // Remove from source plane
+  const filteredMappings = state.mappings.filter(
+    m => !(m.plane === fromPlane && m.facet === facet)
+  );
+
+  // Check if mapping already exists in target
+  const existsInTarget = filteredMappings.some(
+    m => m.plane === toPlane && m.facet === facet
+  );
+
+  if (existsInTarget) {
+    return { ...state, mappings: filteredMappings };
+  }
+
+  // Add to target plane
+  return {
+    ...state,
+    mappings: [...filteredMappings, { plane: toPlane, axis, facet }],
   };
 }
 
