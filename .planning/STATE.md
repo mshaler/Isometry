@@ -9,13 +9,13 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 65 of 72 (Facet Discovery)
-Plan: 02 of 02 COMPLETE
-Status: Phase complete ✓ — v4.7 Schema-on-Read MILESTONE COMPLETE
-Last activity: 2026-02-12 — Completed Phase 65-02 (Dynamic Property Navigator UI)
+Phase: 69 of 72 (File Importers)
+Plan: 02 of 06 COMPLETE
+Status: In progress — Phase 69 Wave 1 parallel execution
+Last activity: 2026-02-12 — Completed Phase 69-02 (JsonImporter)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [########......................] 33% (2/6 phases)
+Progress (v4.8): [##########....................] 40% (2/6 phases + 1 importer)
 
 ## Performance Metrics
 
@@ -28,6 +28,9 @@ Progress (v4.8): [########......................] 33% (2/6 phases)
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 69 - v4.8 File Importers):**
+- Phase 69-02: COMPLETE (~4m) — JsonImporter with flexible LATCH mapping
 
 **Recent completions (Phase 68 - v4.8 ETL Consolidation):**
 - Phase 68-01: COMPLETE (~5m) — Import Coordinator with extension-based routing
@@ -56,6 +59,12 @@ Progress (v4.8): [########......................] 33% (2/6 phases)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 69-02 decisions (JsonImporter):**
+- JSON-DEC-01: Use native JSON.parse (no dependencies)
+- JSON-DEC-02: Array items map to multiple nodes with index-based sourceId
+- JSON-DEC-03: Flexible key detection for LATCH (name/title/subject, created/createdAt/date, etc.)
+- JSON-DEC-04: Priority string mapping (high=5, medium=3, low=1)
 
 **Phase 68-01 decisions (Import Coordinator):**
 - DEC-68-01: Extension-based format detection with path.extname() and lowercase normalization
@@ -265,5 +274,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 65-02 complete (Dynamic Property Navigator UI) — v4.7 Schema-on-Read MILESTONE COMPLETE ✅
-Resume file: .planning/phases/65-facet-discovery/65-02-SUMMARY.md
+Stopped at: Phase 69-02 complete (JsonImporter with flexible LATCH mapping)
+Resume file: .planning/phases/69-file-importers/69-02-SUMMARY.md

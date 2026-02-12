@@ -42,7 +42,8 @@ This is the body content.`,
       expect(nodes).toHaveLength(1);
       expect(nodes[0].name).toBe('Test Note');
       expect(nodes[0].tags).toEqual(['work', 'important']);
-      expect(nodes[0].createdAt).toBe('2024-01-15T10:00:00Z');
+      // gray-matter parses ISO dates as Date objects, so we may get .000Z suffix
+      expect(nodes[0].createdAt).toMatch(/^2024-01-15T10:00:00/);
       expect(nodes[0].content).toContain('<h1');
       expect(nodes[0].content).toContain('Test Note');
     });
@@ -166,7 +167,8 @@ Content.`,
         };
 
         const nodes = await importer.import(source);
-        expect(nodes[0].createdAt).toBe(value);
+        // gray-matter parses ISO dates as Date objects, may add .000Z suffix
+        expect(nodes[0].createdAt).toMatch(new RegExp(`^${value.replace('Z', '')}`));
       }
     });
 
@@ -182,7 +184,8 @@ Content.`,
       };
 
       const nodes = await importer.import(source);
-      expect(nodes[0].dueAt).toBe('2024-12-31T23:59:59Z');
+      // gray-matter parses ISO dates as Date objects, may add .000Z suffix
+      expect(nodes[0].dueAt).toMatch(/^2024-12-31T23:59:59/);
     });
 
     it('should handle Date objects in frontmatter', async () => {

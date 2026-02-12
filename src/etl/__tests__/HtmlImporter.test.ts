@@ -238,4 +238,45 @@ describe('HtmlImporter', () => {
       expect(() => CanonicalNodeSchema.parse(nodes[0])).not.toThrow();
     });
   });
+
+  describe('integration', () => {
+    it('should work with ImportCoordinator', async () => {
+      const { ImportCoordinator } = await import('../coordinator/ImportCoordinator');
+      const coordinator = new ImportCoordinator();
+      coordinator.registerImporter(['.html', '.htm'], new HtmlImporter());
+
+      const html = `<html>
+<head><title>Integration Test</title></head>
+<body><main><p>Test content</p></main></body>
+</html>`;
+
+      const nodes = await coordinator.importFile({
+        filename: 'integration.html',
+        content: html,
+      });
+
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].name).toBe('Integration Test');
+      expect(() => CanonicalNodeSchema.parse(nodes[0])).not.toThrow();
+    });
+
+    it('should work with .htm extension', async () => {
+      const { ImportCoordinator } = await import('../coordinator/ImportCoordinator');
+      const coordinator = new ImportCoordinator();
+      coordinator.registerImporter(['.html', '.htm'], new HtmlImporter());
+
+      const html = `<html>
+<head><title>HTM File</title></head>
+<body><p>Content</p></body>
+</html>`;
+
+      const nodes = await coordinator.importFile({
+        filename: 'legacy.htm',
+        content: html,
+      });
+
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].name).toBe('HTM File');
+    });
+  });
 });
