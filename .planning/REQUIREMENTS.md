@@ -3,6 +3,30 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
+## v4.7 Requirements — Schema-on-Read
+
+Dynamic YAML property discovery and storage for true schema-on-read semantics.
+
+### Schema Storage
+
+- [ ] **SCHEMA-01**: System stores arbitrary YAML frontmatter keys in `node_properties` table
+- [ ] **SCHEMA-02**: Properties linked to nodes via foreign key with cascade delete
+
+### Query Safety
+
+- [ ] **QUERY-01**: SQL queries use `stmt.bind(params)` instead of string interpolation
+
+### ETL Pipeline
+
+- [ ] **ETL-01**: YAML parser handles full YAML spec (replace custom parser with `yaml` package)
+- [ ] **ETL-02**: Unknown frontmatter keys preserved into `node_properties` table
+- [ ] **ETL-03**: `source_id` generation is deterministic with collision-free fallback (filePath + frontmatter hash)
+
+### Facet Discovery
+
+- [ ] **FACET-01**: Property classifier queries `node_properties` for distinct keys
+- [ ] **FACET-02**: Dynamic properties appear as available facets in Navigator
+
 ## v4.4 Requirements — SuperGrid PAFV Projection
 
 Wire SuperGrid to consume PAFV axis mappings for 2D card positioning with dynamic headers and smooth transitions.
@@ -31,11 +55,11 @@ Wire SuperGrid to consume PAFV axis mappings for 2D card positioning with dynami
 
 Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
 
-### View Transitions
+### View Transitions (Shipped Phase 61)
 
-- [ ] **TRANS-01**: Changing axis mapping triggers animated card repositioning (300ms D3 transitions)
-- [ ] **TRANS-02**: Header elements animate when plane assignment changes
-- [ ] **TRANS-03**: Selection state is preserved during view transitions (selected cards stay selected)
+- [x] **TRANS-01**: Changing axis mapping triggers animated card repositioning (300ms D3 transitions) — v4.6
+- [x] **TRANS-02**: Header elements animate when plane assignment changes — v4.6
+- [x] **TRANS-03**: Selection state is preserved during view transitions (selected cards stay selected) — v4.6
 
 ### Density Filtering
 
@@ -111,18 +135,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STACK-01 | Phase 60 | Complete |
 | STACK-02 | Phase 60 | Complete |
 | STACK-03 | Phase 60 | Complete |
-| TRANS-01 | Phase 61 | Pending |
-| TRANS-02 | Phase 61 | Pending |
-| TRANS-03 | Phase 61 | Pending |
+| TRANS-01 | Phase 61 | Complete |
+| TRANS-02 | Phase 61 | Complete |
+| TRANS-03 | Phase 61 | Complete |
 | DENS-01 | Phase 62 | Pending |
 | DENS-02 | Phase 62 | Pending |
 | DENS-03 | Phase 62 | Pending |
+| SCHEMA-01 | TBD | Pending |
+| SCHEMA-02 | TBD | Pending |
+| QUERY-01 | TBD | Pending |
+| ETL-01 | TBD | Pending |
+| ETL-02 | TBD | Pending |
+| ETL-03 | TBD | Pending |
+| FACET-01 | TBD | Pending |
+| FACET-02 | TBD | Pending |
 
 **Coverage:**
 - v4.4/v4.5 shipped: 11 requirements
-- v4.6 requirements: 6 total
-- Mapped to phases: 6/6 (100% coverage)
+- v4.6 requirements: 6 total (3 shipped, 3 pending Phase 62)
+- v4.7 requirements: 8 total (not yet mapped)
+- Mapped to phases: 6/14 active (v4.7 roadmap pending)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-12 (v4.6 roadmap created - Phases 61-62 mapped)*
+*Last updated: 2026-02-12 (v4.7 requirements added)*
