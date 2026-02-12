@@ -1,10 +1,148 @@
 /**
  * SuperGridEngine Data Manager - Handles data transformation and SQL queries
+ *
+ * SuperDensity Controls (Janus Model):
+ * - Value Density (Zoom): Collapse leaf values into parents via SQL GROUP BY
+ * - Extent Density (Pan): Hide/show empty cells (dense/sparse/ultra-sparse)
  */
 
 import type { Database } from 'sql.js';
 import { devLogger } from '../../utils/logging';
 import type { Node, CellDescriptor, GridDimensions } from './types';
+
+/**
+ * Extent density modes for cell filtering
+ * - dense: Only show populated cells (nodeCount > 0)
+ * - sparse: Show populated cells + immediate neighbors
+ * - ultra-sparse: Show full Cartesian product (all cells)
+ */
+export type ExtentMode = 'dense' | 'sparse' | 'ultra-sparse';
+
+/**
+ * Generate SQL query with GROUP BY for value density aggregation
+ *
+ * Value density collapses leaf values into parent levels:
+ * - Level 0: No aggregation (leaf values: Jan, Feb, Mar)
+ * - Level 1: Collapse to parent (Month -> Quarter: Q1)
+ * - Level 2: Collapse to grandparent (Week -> Quarter)
+ *
+ * @param baseQuery - Original SQL query
+ * @param densityLevel - Collapse level (0 = no collapse)
+ * @param axisHierarchy - Hierarchy from root to leaf ['quarter', 'month', 'week']
+ * @returns Modified query with GROUP BY and aggregations
+ */
+export function generateDensityQuery(
+  baseQuery: string,
+  densityLevel: number,
+  axisHierarchy: string[]
+): string {
+  // Level 0 or empty hierarchy = no aggregation
+  if (densityLevel === 0 || axisHierarchy.length === 0) {
+    return baseQuery;
+  }
+
+  // Calculate which level to group by (from the end of hierarchy)
+  // Level 1: group by second-to-last (parent of leaf)
+  // Level 2: group by third-to-last (grandparent)
+  // Clamp to available hierarchy depth
+  const groupByIndex = Math.max(
+    0,
+    axisHierarchy.length - 1 - densityLevel
+  );
+  const groupByField = axisHierarchy[groupByIndex];
+
+  // Check if query has WHERE clause to determine how to modify
+  const hasWhere = baseQuery.toUpperCase().includes('WHERE');
+  const upperQuery = baseQuery.toUpperCase();
+
+  // Extract the FROM clause to get the table name
+  const fromMatch = upperQuery.match(/FROM\s+(\w+)/);
+  const tableName = fromMatch ? baseQuery.substring(fromMatch.index! + 5).match(/\s+(\w+)/)?.[1] || 'nodes' : 'nodes';
+
+  // Build aggregated query preserving original WHERE conditions
+  let whereConditions = '';
+  if (hasWhere) {
+    // Extract everything after WHERE up to ORDER BY, GROUP BY, or end
+    const whereMatch = baseQuery.match(/WHERE\s+(.+?)(?:\s+ORDER\s+BY|\s+GROUP\s+BY|$)/i);
+    if (whereMatch) {
+      whereConditions = `WHERE ${whereMatch[1].trim()}`;
+    }
+  }
+
+  // Generate aggregated query with COUNT and AVG
+  const aggregatedQuery = `SELECT ${groupByField}, COUNT(*) AS node_count, AVG(priority) AS avg_priority FROM ${tableName} ${whereConditions} GROUP BY ${groupByField}`;
+
+  return aggregatedQuery;
+}
+
+/**
+ * Filter cells based on extent density mode
+ *
+ * Janus extent density controls how much of the data space to show:
+ * - dense: Only populated cells (nodeCount > 0)
+ * - sparse: Populated cells + immediate grid neighbors
+ * - ultra-sparse: Full Cartesian product (no filtering)
+ *
+ * @param cells - Array of CellDescriptor to filter
+ * @param mode - Extent density mode
+ * @returns Filtered array of cells
+ */
+export function filterEmptyCells(
+  cells: CellDescriptor[],
+  mode: ExtentMode
+): CellDescriptor[] {
+  if (cells.length === 0) {
+    return [];
+  }
+
+  // Ultra-sparse: return all cells (full Cartesian product)
+  if (mode === 'ultra-sparse') {
+    return cells;
+  }
+
+  // Find populated cells
+  const populatedCells = cells.filter(c => c.nodeCount > 0);
+
+  // Dense: return only populated cells
+  if (mode === 'dense') {
+    return populatedCells;
+  }
+
+  // Sparse: return populated cells + immediate neighbors
+  if (mode === 'sparse') {
+    if (populatedCells.length === 0) {
+      return [];
+    }
+
+    // Build set of populated positions
+    const populatedPositions = new Set<string>();
+    populatedCells.forEach(c => {
+      populatedPositions.add(`${c.gridX},${c.gridY}`);
+    });
+
+    // Build set of neighbor positions (adjacent cells)
+    const neighborPositions = new Set<string>();
+    populatedCells.forEach(c => {
+      // Add all 8 neighboring positions (including diagonals)
+      for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+          if (dx !== 0 || dy !== 0) {
+            neighborPositions.add(`${c.gridX + dx},${c.gridY + dy}`);
+          }
+        }
+      }
+    });
+
+    // Filter cells: include populated + neighbors
+    return cells.filter(c => {
+      const pos = `${c.gridX},${c.gridY}`;
+      return populatedPositions.has(pos) || neighborPositions.has(pos);
+    });
+  }
+
+  // Default fallback: return all cells
+  return cells;
+}
 
 /** Shape of a single result set from sql.js db.exec() */
 interface SQLResultSet {
