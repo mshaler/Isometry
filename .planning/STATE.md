@@ -9,14 +9,13 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 73 of 76 (SuperGrid Phase A)
-Plan: 01 of 04 READY
-Status: Phase 73 PLANNING — GSD milestone created for SuperGrid MVP
-Last activity: 2026-02-12 — Created Phase 73 milestone for SuperGrid Phase A
+Phase: 70 of 72 (Integration)
+Plan: 01 of 03 COMPLETE
+Status: Phase 70 IN PROGRESS — Plan 01 (Database Insertion & Window Bridge) complete
+Last activity: 2026-02-12 — Completed 70-01 (insertCanonicalNodes + window.isometryETL)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [###############...............] 50% (3/6 phases)
-Progress (v5.0 SuperGrid): [..............................] 0% (0/4 plans)
+Progress (v4.8): [###################...........] 66% (4/6 phases)
 
 ## Performance Metrics
 
@@ -29,6 +28,9 @@ Progress (v5.0 SuperGrid): [..............................] 0% (0/4 plans)
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 70 - v4.8 Integration):**
+- Phase 70-01: COMPLETE (~5m) — insertCanonicalNodes() + window.isometryETL bridge
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
 - Phase 69-06: COMPLETE (~5m) — ExcelImporter with SheetJS multi-sheet support
@@ -65,6 +67,11 @@ Progress (v5.0 SuperGrid): [..............................] 0% (0/4 plans)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 70-01 decisions (Integration - Database Insertion):**
+- INT-DEC-01: Direct db.run() for properties instead of storeNodeProperties (already-filtered node.properties)
+- INT-DEC-02: Transaction default true with atomic rollback on any failure
+- INT-DEC-03: Format validation via detectFormat but routing via filename in coordinator
 
 **Phase 69-01 decisions (MarkdownImporter):**
 - MD-DEC-01: Tests use toMatch() for ISO dates due to gray-matter Date object parsing
@@ -274,10 +281,11 @@ node_properties table (EAV)
 - Phase 71: Swift Bridge (BRIDGE-01, BRIDGE-02)
 - Phase 72: Quality & Docs (QUAL-01, QUAL-02, QUAL-03)
 
-**Coverage:** 3/6 phases complete (50%)
+**Coverage:** 4/6 phases in progress (66%)
 - [x] Phase 67: Canonical Schema — Zod validation, JSON Schema, SQL mapping
 - [x] Phase 68: Import Coordinator — Extension-based routing, Template Method pattern, validation infrastructure
 - [x] Phase 69: File Importers — 6 importers (MD, JSON, CSV, HTML, Word, Excel) with TDD
+- [~] Phase 70: Integration — Plan 01 complete (insertCanonicalNodes + window bridge)
 
 ### Pending Todos
 
@@ -291,19 +299,9 @@ node_properties table (EAV)
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
-- [ ] Phase 70: Integration — deferred
-- [ ] Phase 71: Swift Bridge — deferred
-- [ ] Phase 72: Quality & Docs — deferred
-
-**v5.0 (SuperGrid MVP):**
-- [ ] Phase 73: SuperGrid Phase A — CURRENT FOCUS
-  - [ ] 73-01: SuperStack Multi-Level Headers (P0)
-  - [ ] 73-02: SuperDensity Controls (P0)
-  - [ ] 73-03: SuperZoom Upper-Left Anchor (P1)
-  - [ ] 73-04: Header Click Zones (P0)
-- [ ] Phase 74: SuperGrid Phase B — TBD
-- [ ] Phase 75: SuperGrid Phase C — TBD
-- [ ] Phase 76: SuperGrid Polish — TBD
+- [~] Phase 70: Integration — IN PROGRESS (Plan 01 complete, Plans 02-03 pending)
+- [ ] Phase 71: Swift Bridge
+- [ ] Phase 72: Quality & Docs
 
 **Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
@@ -312,7 +310,7 @@ node_properties table (EAV)
 
 ### Blockers/Concerns
 
-None — v4.7 milestone complete (Schema-on-Read). Phase 69 complete, ready for Phase 70 (Integration).
+None — Phase 70-01 complete, ready for Phase 70-02 (Importer Registration).
 
 **v4.7 Milestone Achievement:**
 Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with sparkle icons, dashed borders, and node count badges for complete visual feedback loop.
@@ -320,6 +318,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 73 PLANNING — SuperGrid Phase A milestone created
-Resume file: .planning/phases/73-supergrid-phase-a/73-01-PLAN.md
-Next action: Execute 73-01 (SuperStack Multi-Level Headers)
+Stopped at: Phase 70-01 COMPLETE — insertCanonicalNodes + window.isometryETL bridge
+Resume file: .planning/phases/70-integration/70-02-PLAN.md
+Next action: Execute 70-02 (if exists) or continue Phase 70
