@@ -234,6 +234,9 @@ export class SuperGrid {
 
       // Update all modules with new data and render
       this.updateModulesWithData();
+      // Sync selection state to rendering engine for initial render
+      const currentSelection = this.selectionController.getSelection().selectedIds;
+      this.renderingEngine.setSelectedIds(new Set(currentSelection));
       this.render();
 
     } catch (error) {
@@ -288,6 +291,9 @@ export class SuperGrid {
       // Re-render with new projection if we have data
       if (this.currentData) {
         this.updateModulesWithData();
+        // Sync selection state to rendering engine before render
+        const currentSelection = this.selectionController.getSelection().selectedIds;
+        this.renderingEngine.setSelectedIds(new Set(currentSelection));
         this.render();
       }
     }
@@ -585,6 +591,9 @@ export class SuperGrid {
   private handleSelectionChange(selectedIds: string[]): void {
     // Update drag controller with selected cards
     this.dragDropController.setSelectedCards(selectedIds);
+
+    // Update rendering engine so transitions preserve selection state
+    this.renderingEngine.setSelectedIds(new Set(selectedIds));
 
     if (this.onSelectionChange) {
       this.onSelectionChange(selectedIds);

@@ -57,6 +57,9 @@ export class GridRenderingEngine {
   // Color scales for encoding
   private colorScale: d3.ScaleOrdinal<string, string> | d3.ScaleSequential<string> | null = null;
 
+  // Selection state for view transition persistence
+  private selectedIds: Set<string> = new Set();
+
   constructor(
     container: d3.Selection<SVGElement, unknown, null, undefined>,
     config: RenderingConfig,
@@ -137,6 +140,17 @@ export class GridRenderingEngine {
     superGridLogger.debug('GridRenderingEngine: size encoding set', {
       property: encoding?.property || 'none',
       type: encoding?.type || 'none',
+    });
+  }
+
+  /**
+   * Set selected card IDs for visual highlighting
+   * Called from SuperGrid when SelectionContext changes
+   */
+  public setSelectedIds(selectedIds: Set<string>): void {
+    this.selectedIds = selectedIds;
+    superGridLogger.debug('GridRenderingEngine: selected IDs set', {
+      count: selectedIds.size,
     });
   }
 
@@ -1470,21 +1484,40 @@ export class GridRenderingEngine {
         String(d.description || d.content || '')
       );
 
-    // Animate enter cards fading in
+    // Capture selectedIds for use in transition callbacks
+    const selectedIds = this.selectedIds;
+
+    // Animate enter cards fading in with selection state applied on completion
     cardEnter
       .transition()
       .duration(this.config.animationDuration)
       .ease(d3.easeCubicOut)
-      .attr('opacity', 1);
+      .attr('opacity', 1)
+      .on('end', function (d: CardRecord) {
+        const card = d3.select(this);
+        const isSelected = selectedIds.has(String(d.id));
+        card.classed('selected', isSelected);
+        card.select('.card-bg')
+          .attr('stroke', isSelected ? '#2563eb' : '#e1e5e9')
+          .attr('stroke-width', isSelected ? 2 : 1);
+      });
 
-    // Update existing cards with FLIP animation
+    // Update existing cards with FLIP animation and selection state
     cardSelection
       .transition()
-      .duration(300)
+      .duration(this.config.animationDuration)
       .ease(d3.easeCubicOut)
       .attr('transform', (d: CardRecord) =>
         `translate(${(d.x as number) || 0}, ${(d.y as number) || 0})`
-      );
+      )
+      .on('end', function (d: CardRecord) {
+        const card = d3.select(this);
+        const isSelected = selectedIds.has(String(d.id));
+        card.classed('selected', isSelected);
+        card.select('.card-bg')
+          .attr('stroke', isSelected ? '#2563eb' : '#e1e5e9')
+          .attr('stroke-width', isSelected ? 2 : 1);
+      });
 
     // Update card background fill on existing cards
     cardSelection.select('.card-bg')
