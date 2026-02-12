@@ -30,8 +30,10 @@ export interface DevLogger {
 }
 
 class SimpleDevLogger implements DevLogger {
-  private level: LogLevel = 'info';
-  public enabled = process.env.NODE_ENV === 'development';
+  // Set to 'error' to prevent console flood. Change to 'debug' when actively debugging.
+  private level: LogLevel = 'error';
+  // Use import.meta.env.DEV for Vite compatibility
+  public enabled = typeof import.meta !== 'undefined' ? import.meta.env?.DEV : process.env.NODE_ENV === 'development';
 
   setLevel(level: LogLevel): void {
     this.level = level;

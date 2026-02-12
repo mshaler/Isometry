@@ -99,7 +99,7 @@ export class SuperGridV4 {
       .scaleExtent([0.1, 10])
       .on('zoom', (event) => {
         const { transform } = event;
-        this.gridGroup.attr('transform', transform);
+        this.gridGroup.attr('transform', transform.toString());
       });
 
     this.container.call(this.zoomBehavior);

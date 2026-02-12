@@ -125,129 +125,142 @@ export function SQLiteProvider({
         });
         setSQL(sqlInstance);
 
-        // Initialize persistence
+        // Initialize persistence (with fallback to memory-only if IndexedDB fails)
         // NOTE: IndexedDBPersistence uses hardcoded name 'isometry-db' (see IndexedDBPersistence.ts)
-        persistenceRef.current = new IndexedDBPersistence();
-        await persistenceRef.current.init();
-
-        // Try to load existing database
-        const persistence = persistenceRef.current!;
+        let persistence: IndexedDBPersistence | null = null;
         try {
-          const savedData = await persistence.load();
-          if (savedData) {
-            let database: Database;
-            try {
-              database = new sqlInstance.Database(savedData);
-            } catch (dbError) {
-              // Corrupt database detected - clear and recreate
-              console.error('Corrupt database in IndexedDB, clearing and recreating:', dbError);
-              devLogger.error('Database corruption detected, clearing IndexedDB', dbError);
-              await persistence.clear();
-              throw new Error('Database corrupted - cleared IndexedDB, will recreate');
-            }
-            setDb(database);
+          persistenceRef.current = new IndexedDBPersistence();
+          await persistenceRef.current.init();
+          persistence = persistenceRef.current;
+        } catch (persistenceInitError) {
+          console.warn('[SQLiteProvider] IndexedDB init failed, using memory-only mode:', persistenceInitError);
+          persistenceRef.current = null;
+        }
 
-            // Test capabilities
-            const { capabilities: dbCapabilities, telemetryErrors } = testDatabaseCapabilities(database);
-            setCapabilities(dbCapabilities);
-            setTelemetry(telemetryErrors);
-
-            // Start auto-save
-            autoSaveRef.current = new AutoSaveManager(persistence);
-
-            if (enableLogging) {
-              devLogger.setup('Database loaded from IndexedDB', {
-                sizeBytes: savedData.length,
-                capabilities: dbCapabilities
-              });
-            }
-          } else {
-            // No saved database, create fresh one or load from URL
-            let database: Database;
-            try {
-              const response = await fetch(databaseUrl);
-              if (response.ok) {
-                const arrayBuffer = await response.arrayBuffer();
-                database = new sqlInstance.Database(new Uint8Array(arrayBuffer));
-                await persistence.save(new Uint8Array(arrayBuffer));
-
-                if (enableLogging) {
-                  devLogger.setup('Database loaded from URL and saved', {
-                    url: databaseUrl,
-                    sizeBytes: arrayBuffer.byteLength
-                  });
-                }
-              } else {
-                throw new Error(`Failed to fetch database: ${response.status}`);
-              }
-            } catch (fetchError) {
-              // Fall back to empty database
-              database = new sqlInstance.Database();
-
-              // Try to load schema and sample data
-              try {
-                const schemaResponse = await fetch('/schema.sql');
-                if (schemaResponse.ok) {
-                  const schema = await schemaResponse.text();
-                  database.exec(schema);
-
-                  // Insert sample data for development
-                  database.exec(SAMPLE_DATA_SQL);
-
-                  if (enableLogging) {
-                    devLogger.setup('Empty database created with schema and sample data', {
-                      sampleDataInserted: true
-                    });
-                  }
-                }
-              } catch (schemaError) {
-                if (enableLogging) {
-                  devLogger.warn('Schema file not found, created empty database');
-                }
-              }
-            }
-
-            setDb(database);
-
-            // Test capabilities
-            const { capabilities: dbCapabilities, telemetryErrors } = testDatabaseCapabilities(database);
-            setCapabilities(dbCapabilities);
-            setTelemetry(telemetryErrors);
-
-            // Start auto-save
-            autoSaveRef.current = new AutoSaveManager(persistence);
-          }
-        } catch (persistenceError) {
-          devLogger.error('Persistence error, falling back to memory-only database', persistenceError);
-          const database = new sqlInstance.Database();
-
-          // Load schema and sample data for memory-only database
+        // Try to load existing database (if persistence available)
+        let savedData: Uint8Array | null = null;
+        if (persistence) {
           try {
-            const schemaResponse = await fetch('/schema.sql');
-            if (schemaResponse.ok) {
-              const schema = await schemaResponse.text();
-              database.exec(schema);
+            savedData = await persistence.load();
+          } catch (loadError) {
+            console.warn('[SQLiteProvider] Failed to load from IndexedDB:', loadError);
+            savedData = null;
+          }
+        }
 
-              // Insert sample data for development
-              database.exec(SAMPLE_DATA_SQL);
+        let database: Database | null = null;
+
+        if (savedData) {
+          // Load from saved data
+          try {
+            database = new sqlInstance.Database(savedData);
+            // Verify database is valid
+            database.exec("SELECT 1");
+          } catch (dbError) {
+            // Corrupt database detected - clear and recreate
+            console.error('[SQLiteProvider] Corrupt database detected, clearing IndexedDB');
+            if (persistence) {
+              try {
+                await persistence.clear();
+              } catch (clearError) {
+                console.error('[SQLiteProvider] Failed to clear IndexedDB:', clearError);
+              }
+            }
+            savedData = null;
+            database = null;
+          }
+        }
+
+        if (!database) {
+          // No saved database, create fresh one or load from URL
+          try {
+            const response = await fetch(databaseUrl);
+            const contentType = response.headers.get('content-type') || '';
+
+            // Only try to load as database if it's actually a binary file, not HTML fallback
+            if (response.ok && !contentType.includes('text/html')) {
+              const arrayBuffer = await response.arrayBuffer();
+
+              // Verify it's a valid SQLite file (starts with "SQLite format 3")
+              const header = new Uint8Array(arrayBuffer.slice(0, 16));
+              const headerStr = String.fromCharCode(...header);
+              if (!headerStr.startsWith('SQLite format 3')) {
+                throw new Error('Not a valid SQLite database file');
+              }
+
+              database = new sqlInstance.Database(new Uint8Array(arrayBuffer));
+              if (persistence) {
+                await persistence.save(new Uint8Array(arrayBuffer));
+              }
 
               if (enableLogging) {
-                devLogger.setup('Schema and sample data loaded for memory-only database', {
-                  sampleDataInserted: true
+                devLogger.setup('Database loaded from URL and saved', {
+                  url: databaseUrl,
+                  sizeBytes: arrayBuffer.byteLength
                 });
               }
+            } else {
+              throw new Error(`Invalid response: status=${response.status}, contentType=${contentType}`);
             }
-          } catch (schemaError) {
-            if (enableLogging) {
-              devLogger.warn('Schema file not found for memory-only database');
+          } catch (fetchError) {
+            // Fall back to empty database with schema + sample data
+            console.log('[SQLiteProvider] Creating fresh database with schema...');
+            database = new sqlInstance.Database();
+            try {
+              const schemaResponse = await fetch('/schema.sql');
+              if (schemaResponse.ok) {
+                const schema = await schemaResponse.text();
+                database.exec(schema);
+                database.exec(SAMPLE_DATA_SQL);
+                console.log('[SQLiteProvider] Schema and sample data loaded');
+              }
+            } catch (schemaError) {
+              console.error('[SQLiteProvider] Schema load failed:', schemaError);
             }
           }
+        }
 
-          setDb(database);
+        console.log('[SQLiteProvider] Database ready, setting state...');
 
-          const { capabilities: dbCapabilities, telemetryErrors } = testDatabaseCapabilities(database);
-          setCapabilities(dbCapabilities);
-          setTelemetry(telemetryErrors);
+        // Ensure facets table exists and is seeded (handles stale IndexedDB data)
+        try {
+          const facetCheck = database.exec("SELECT COUNT(*) as count FROM facets");
+          const facetCount = facetCheck[0]?.values[0]?.[0] as number || 0;
+          if (facetCount === 0) {
+            console.log('[SQLiteProvider] Facets table empty, seeding...');
+            const { FACETS_SEED_SQL } = await import('./sample-data');
+            database.exec(FACETS_SEED_SQL);
+            console.log('[SQLiteProvider] Facets seeded');
+          }
+        } catch (facetError) {
+          console.warn('[SQLiteProvider] Facets check/seed failed:', facetError);
+          // Table might not exist - try creating and seeding
+          try {
+            const { FACETS_SEED_SQL } = await import('./sample-data');
+            database.exec(FACETS_SEED_SQL);
+            console.log('[SQLiteProvider] Facets table created and seeded');
+          } catch (createError) {
+            console.error('[SQLiteProvider] Failed to create facets:', createError);
+          }
+        }
+
+        setDb(database);
+
+        // Test capabilities
+        const { capabilities: dbCapabilities, telemetryErrors } = testDatabaseCapabilities(database);
+        setCapabilities(dbCapabilities);
+        setTelemetry(telemetryErrors);
+
+        // Start auto-save (if persistence available)
+        if (persistence) {
+          autoSaveRef.current = new AutoSaveManager(persistence);
+        }
+
+        if (enableLogging && savedData) {
+          devLogger.setup('Database loaded from IndexedDB', {
+            sizeBytes: savedData.length,
+            capabilities: dbCapabilities
+          });
         }
 
         // Check storage quota
@@ -264,16 +277,13 @@ export function SQLiteProvider({
           }
         }
 
+        console.log('[SQLiteProvider] ✅ Initialization complete');
         setLoading(false);
-
-        if (enableLogging) {
-          devLogger.setup('SQLiteProvider initialization complete', {});
-        }
       } catch (error) {
+        console.error('[SQLiteProvider] Initialization failed:', error);
         const errorObj = error instanceof Error ? error : new Error(String(error));
         setError(errorObj);
         setLoading(false);
-        devLogger.error('SQLiteProvider initialization failed', errorObj);
       }
     };
 

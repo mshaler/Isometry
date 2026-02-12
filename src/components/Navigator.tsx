@@ -10,7 +10,9 @@ import { AccordionSection } from '@/components/ui/AccordionSection';
 import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
 import { DraggableFacet } from '@/components/navigator/DraggableFacet';
 import { PlaneDropZone } from '@/components/navigator/PlaneDropZone';
-import type { PropertyBucket } from '@/services/property-classifier';
+import { TransposeButton } from '@/components/navigator/TransposeButton';
+import { EncodingDropdown } from '@/components/navigator/EncodingDropdown';
+import type { PropertyBucket, ClassifiedProperty } from '@/services/property-classifier';
 import type { Plane, AxisMapping } from '@/types/pafv';
 
 export function Navigator() {
@@ -122,6 +124,24 @@ const BUCKET_CONFIG: Array<{
   { key: 'GRAPH', label: 'Graph', icon: <Network className="w-4 h-4" /> },
 ];
 
+/**
+ * Get all properties from classification (excluding GRAPH)
+ */
+function getAllProperties(
+  classification: Record<PropertyBucket, ClassifiedProperty[]> | null
+): ClassifiedProperty[] {
+  if (!classification) return [];
+
+  // Combine all LATCH buckets (not GRAPH)
+  return [
+    ...classification.L,
+    ...classification.A,
+    ...classification.T,
+    ...classification.C,
+    ...classification.H,
+  ];
+}
+
 // ============================================================================
 // SimplePAFVNavigator Component
 // ============================================================================
@@ -132,10 +152,8 @@ const BUCKET_CONFIG: Array<{
  */
 function SimplePAFVNavigator() {
   const { theme } = useTheme();
-  const { state, setViewMode } = usePAFV();
+  const { state, setViewMode, setColorEncoding, setSizeEncoding } = usePAFV();
   const { classification, isLoading, error } = usePropertyClassification();
-
-  const availablePlanes: Plane[] = ['x', 'y', 'color'];
 
   const getCurrentMapping = (plane: Plane): AxisMapping | null => {
     return state.mappings.find((m: AxisMapping) => m.plane === plane) ?? null;
@@ -180,7 +198,7 @@ function SimplePAFVNavigator() {
             <span className="text-xs font-medium">View Mode:</span>
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-1 text-xs rounded ${
+              className={`px-3 py-1 text-xs rounded transition-colors duration-150 ${
                 state.viewMode === 'grid'
                   ? 'bg-blue-500 text-white'
                   : theme === 'NeXTSTEP'
@@ -192,7 +210,7 @@ function SimplePAFVNavigator() {
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-xs rounded ${
+              className={`px-3 py-1 text-xs rounded transition-colors duration-150 ${
                 state.viewMode === 'list'
                   ? 'bg-blue-500 text-white'
                   : theme === 'NeXTSTEP'
@@ -244,15 +262,47 @@ function SimplePAFVNavigator() {
               })}
             </div>
 
-            {/* Right: Plane Drop Zones */}
-            <div className="w-48 space-y-3">
-              {availablePlanes.map((plane) => (
-                <PlaneDropZone
-                  key={plane}
-                  plane={plane}
-                  currentMapping={getCurrentMapping(plane)}
+            {/* Right: Plane Drop Zones with Transpose Button */}
+            <div className="w-48 space-y-2">
+              {/* X-Plane (Columns) */}
+              <PlaneDropZone
+                plane="x"
+                currentMapping={getCurrentMapping('x')}
+              />
+
+              {/* Transpose Button (between X and Y) */}
+              <div className="flex justify-center">
+                <TransposeButton />
+              </div>
+
+              {/* Y-Plane (Rows) */}
+              <PlaneDropZone
+                plane="y"
+                currentMapping={getCurrentMapping('y')}
+              />
+
+              {/* Encoding Controls */}
+              <div className={`pt-2 mt-2 space-y-2 border-t ${
+                theme === 'NeXTSTEP' ? 'border-[#909090]' : 'border-gray-300'
+              }`}>
+                {/* Color Encoding */}
+                <EncodingDropdown
+                  label="Color"
+                  value={state.colorEncoding}
+                  availableProperties={getAllProperties(classification)}
+                  onChange={setColorEncoding}
+                  encodingType="color"
                 />
-              ))}
+
+                {/* Size Encoding */}
+                <EncodingDropdown
+                  label="Size"
+                  value={state.sizeEncoding}
+                  availableProperties={getAllProperties(classification)}
+                  onChange={setSizeEncoding}
+                  encodingType="size"
+                />
+              </div>
             </div>
           </div>
 

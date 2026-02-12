@@ -1,5 +1,25 @@
 # Isometry v4 — Claude Code Operating Instructions
 
+## ⚠️ MANDATORY: GSD Workflow (Non-Negotiable)
+
+**ALL work in this repository MUST be formalized as GSD milestones.** No exceptions unless the user explicitly says otherwise.
+
+Before starting ANY implementation work:
+1. **Check if a milestone exists** — Read `.planning/PROJECT.md` and `.planning/STATE.md`
+2. **If no milestone** — Run `/gsd:new-milestone` to create one BEFORE writing code
+3. **If milestone exists but no phase plan** — Run `/gsd:plan-phase` BEFORE writing code
+4. **Never skip GSD artifacts** — ROADMAP.md, REQUIREMENTS.md, phase folders are required
+
+**Violation indicators (STOP and formalize if you catch yourself):**
+- Writing code without a phase plan in `.planning/phases/`
+- Using a basic todo list instead of GSD task tracking
+- Creating files without REQ-IDs mapped in REQUIREMENTS.md
+- Starting "exploration" that turns into implementation
+
+**The rule:** If you're about to write production code, there MUST be a GSD plan for it.
+
+---
+
 ## Identity
 
 **Isometry** is a polymorphic data projection platform. The same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline — with view transitions that change the SQL projection, not the data. The keystone feature is **SuperGrid**: nested dimensional headers, orthogonal density controls, and direct sql.js→D3.js rendering with zero serialization.

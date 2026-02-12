@@ -12,6 +12,7 @@ import { PAFVProvider } from './state/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { Navigator } from './components/Navigator';
+import { IntegratedLayout } from './components/IntegratedLayout';
 
 function App() {
   // TEMP: Disabled while imports are broken
@@ -104,6 +105,22 @@ function App() {
     );
   }
 
+  // Phase 57: Integrated Navigator + SuperGrid + DensitySlider layout
+  if (testMode === 'integrated') {
+    return (
+      <SQLiteProvider>
+        <FilterProvider>
+          <ThemeProvider>
+            <PAFVProvider>
+              <AppStateProvider>
+                <IntegratedLayout />
+              </AppStateProvider>
+            </PAFVProvider>
+          </ThemeProvider>
+        </FilterProvider>
+      </SQLiteProvider>
+    );
+  }
 
   // TEMP: Redirect to P0 test until TypeScript cleanup is complete
   return (
@@ -113,6 +130,7 @@ function App() {
         TypeScript cleanup in progress. Available tests:
       </p>
       <div className="space-y-2">
+        <div><a href="?test=integrated" className="text-blue-600 underline font-bold">🎯 Integrated Layout</a> - Phase 57 Navigator + SuperGrid + Density</div>
         <div><a href="?test=p0" className="text-blue-600 underline">P0 Gate Test</a> - Foundation verification + SuperGrid v4 demo</div>
         <div><a href="?test=supergrid" className="text-blue-600 underline">SuperGrid + sql.js + FTS5</a> - Complete integration demonstration</div>
         <div><a href="?test=cli-test" className="text-blue-600 underline font-bold">🧪 CLI Integration Test</a> - Verify Phase 3 Claude CLI integration</div>

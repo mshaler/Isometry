@@ -160,7 +160,7 @@ export function setupZoom(
   const zoom = d3.zoom<SVGSVGElement, unknown>()
     .scaleExtent(scaleExtent)
     .on('zoom', (event) => {
-      container.attr('transform', event.transform);
+      container.attr('transform', event.transform.toString());
       onZoom?.(event.transform);
     });
 

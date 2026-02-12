@@ -52,6 +52,10 @@ export { useAllTags as useTagColors } from './data/useTagColors';
 export { usePAFV } from './data/usePAFV';
 // Removed: usePAFVLiveData - imports contexts creating circular deps
 export { useFilteredNodes } from './data/useFilteredNodes';
+export { useTimeDistribution } from './data/useTimeDistribution';
+export type { TimeBucket, TimeDistribution } from './data/useTimeDistribution';
+export { useFacetValues } from './data/useFacetValues';
+export type { FacetValue, FacetValuesResult } from './data/useFacetValues';
 
 // Database hooks (additional)
 export { useDatabaseService } from './database/useDatabaseService';

@@ -91,8 +91,12 @@ export class IndexedDBPersistence {
 
   private async doInit(): Promise<void> {
     try {
-      this.db = await openDB<IsometryDBSchema>(DB_NAME, DB_VERSION, {
+      // Add timeout to prevent infinite hang when another tab blocks the upgrade
+      const INIT_TIMEOUT_MS = 5000;
+
+      const openPromise = openDB<IsometryDBSchema>(DB_NAME, DB_VERSION, {
         upgrade(db) {
+          console.log('[IndexedDB] Running upgrade handler...');
           // Create stores if they don't exist
           if (!db.objectStoreNames.contains(DATABASE_STORE)) {
             db.createObjectStore(DATABASE_STORE);
@@ -101,7 +105,23 @@ export class IndexedDBPersistence {
             db.createObjectStore(METADATA_STORE);
           }
         },
+        blocked() {
+          // Called when another tab has the database open with an older version
+          console.warn('[IndexedDB] Database blocked by another tab. Close other Isometry tabs.');
+        },
+        blocking() {
+          // Called when this connection is blocking another tab's upgrade
+          console.warn('[IndexedDB] This tab is blocking another tab. Closing connection...');
+        },
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error(`IndexedDB init timed out after ${INIT_TIMEOUT_MS}ms. Close other browser tabs and retry.`));
+        }, INIT_TIMEOUT_MS);
+      });
+
+      this.db = await Promise.race([openPromise, timeoutPromise]);
 
       devLogger.setup('IndexedDB initialized', { name: DB_NAME, version: DB_VERSION });
     } catch (err) {

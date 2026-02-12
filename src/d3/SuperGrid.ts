@@ -13,6 +13,7 @@ import type { useDatabaseService } from '@/hooks';
 import type { GridData, GridConfig } from '../types/grid-core';
 import type { PAFVProjection } from '../types/grid';
 import type { FilterCompilationResult } from '../services/query/LATCHFilterService';
+import type { EncodingConfig } from '../types/pafv';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 // CardPosition from views.ts has additional fields (width, height); drag operations use simplified position
 import { superGridLogger } from '../utils/dev-logger';
@@ -28,6 +29,8 @@ export class SuperGrid {
   private config: Partial<GridConfig>;
   private currentData: GridData | null = null;
   private currentProjection: PAFVProjection | null = null;
+  private colorEncoding: EncodingConfig | null = null;
+  private sizeEncoding: EncodingConfig | null = null;
 
   // Extracted module instances
   private selectionController!: GridSelectionController;
@@ -216,13 +219,15 @@ export class SuperGrid {
         }
       }
 
-      // Update all modules with new data
+      // Update all modules with new data and render
       this.updateModulesWithData();
+      this.render();
 
     } catch (error) {
       superGridLogger.error('Grid query failed:', error);
       this.currentData = this.createEmptyGridData();
       this.updateModulesWithData();
+      this.render();
     }
   }
 
@@ -346,8 +351,104 @@ export class SuperGrid {
     return this.superGridZoom.getCurrentPanLevel();
   }
 
+  /**
+   * Set density level from PAFV context (1-4 scale)
+   * Maps to Janus zoom/pan system:
+   * - Level 1 (Value Sparsity): sparse + leaf (full Cartesian)
+   * - Level 2 (Extent Density): dense + leaf (populated-only)
+   * - Level 3 (View Density): dense + collapsed (aggregation)
+   * - Level 4 (Region Density): mixed (future implementation)
+   */
+  public setDensityLevel(level: 1 | 2 | 3 | 4): void {
+    superGridLogger.debug('Setting density level:', level);
+
+    switch (level) {
+      case 1: // Value Sparsity — show all intersections
+        this.superGridZoom.setPanLevel('sparse');
+        this.superGridZoom.setZoomLevel('leaf');
+        break;
+      case 2: // Extent Density — hide empty rows/columns
+        this.superGridZoom.setPanLevel('dense');
+        this.superGridZoom.setZoomLevel('leaf');
+        break;
+      case 3: // View Density — aggregation mode
+        this.superGridZoom.setPanLevel('dense');
+        this.superGridZoom.setZoomLevel('collapsed');
+        break;
+      case 4: // Region Density — mixed (stub for now)
+        // Level 4 requires more complex logic - stub for Phase 57-02
+        superGridLogger.debug('Level 4 (Region Density) not fully implemented yet');
+        this.superGridZoom.setPanLevel('dense');
+        this.superGridZoom.setZoomLevel('collapsed');
+        break;
+    }
+
+    // Re-render with new density settings
+    if (this.currentData) {
+      this.render();
+    }
+  }
+
   public resetZoomPan(): void {
     this.superGridZoom.reset();
+  }
+
+  /**
+   * Set color encoding configuration
+   * Maps a property to color gradients on cards
+   */
+  public setColorEncoding(encoding: EncodingConfig | null): void {
+    const hasChanged = JSON.stringify(this.colorEncoding) !== JSON.stringify(encoding);
+    this.colorEncoding = encoding;
+
+    if (hasChanged) {
+      superGridLogger.debug('Color encoding updated:', {
+        property: encoding?.property || 'none',
+        type: encoding?.type || 'none',
+      });
+
+      // Pass to rendering engine and re-render if we have data
+      this.renderingEngine.setColorEncoding(encoding);
+      if (this.currentData) {
+        this.render();
+      }
+    }
+  }
+
+  /**
+   * Get current color encoding
+   */
+  public getColorEncoding(): EncodingConfig | null {
+    return this.colorEncoding;
+  }
+
+  /**
+   * Set size encoding configuration
+   * Maps a numeric property to card sizes
+   */
+  public setSizeEncoding(encoding: EncodingConfig | null): void {
+    const hasChanged = JSON.stringify(this.sizeEncoding) !== JSON.stringify(encoding);
+    this.sizeEncoding = encoding;
+
+    if (hasChanged) {
+      superGridLogger.debug('Size encoding updated:', {
+        property: encoding?.property || 'none',
+        type: encoding?.type || 'none',
+      });
+
+      // Pass to rendering engine and re-render if we have data
+      this.renderingEngine.setSizeEncoding(encoding);
+      if (this.currentData) {
+        this.render();
+      }
+    }
+  }
+
+  /**
+   * Get current size encoding
+   */
+  public getSizeEncoding(): EncodingConfig | null {
+    return this.sizeEncoding;
   }
 
   public refresh(): void {

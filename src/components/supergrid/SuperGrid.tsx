@@ -28,6 +28,8 @@ interface SuperGridProps {
   sql?: string;
   /** Query parameters */
   params?: unknown[];
+  /** Preloaded nodes to avoid duplicate queries */
+  nodes?: Node[];
   /** Grid continuum mode */
   mode?: 'gallery' | 'list' | 'kanban' | 'grid' | 'supergrid';
   /** Enable SuperStack headers */
@@ -55,6 +57,7 @@ interface SuperGridProps {
 export function SuperGrid({
   sql = "SELECT * FROM nodes WHERE deleted_at IS NULL LIMIT 100",
   params = [],
+  nodes: nodesProp,
   mode = 'supergrid',
   enableSuperStack = true,
   enableDragDrop = true,
@@ -66,7 +69,15 @@ export function SuperGrid({
   const { state: pafvState } = usePAFV();
 
   // Load nodes from SQLite with direct sql.js access
-  const { data: nodes, loading, error } = useSQLiteQuery<Node>(sql, params);
+  const queryEnabled = nodesProp == null;
+  const { data: queryNodes, loading: queryLoading, error: queryError } = useSQLiteQuery<Node>(
+    sql,
+    params,
+    { enabled: queryEnabled }
+  );
+  const nodes = nodesProp ?? queryNodes;
+  const loading = queryEnabled ? queryLoading : false;
+  const error = queryEnabled ? queryError : null;
 
   // Determine grid layout based on PAFV mappings and mode
   const gridLayout = useMemo(() => {

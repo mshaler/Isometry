@@ -46,11 +46,12 @@ export function DraggableFacet({ property, disabled = false }: DraggableFacetPro
     }),
   });
 
-  // Theme-aware styling
+  // Theme-aware styling with transitions
   const baseClasses = `
     flex items-center gap-1.5 h-7 px-2.5 text-xs w-full
-    ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-move'}
-    ${isDragging ? 'opacity-50' : ''}
+    transition-all duration-200 ease-in-out
+    ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-move hover:scale-[1.02]'}
+    ${isDragging ? 'opacity-50 scale-95' : ''}
   `;
 
   const themeClasses =

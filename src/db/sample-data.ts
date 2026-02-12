@@ -185,7 +185,37 @@ function generateAllData(): SampleNote[] {
 
 const ALL_NODES = generateAllData();
 
-export const SAMPLE_DATA_SQL = ALL_NODES.map(node => {
+// Ensure facets table exists and is seeded (in case schema didn't load or IndexedDB is stale)
+export const FACETS_SEED_SQL = `
+-- Create facets table if not exists
+CREATE TABLE IF NOT EXISTS facets (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    facet_type TEXT NOT NULL,
+    axis TEXT NOT NULL,
+    source_column TEXT NOT NULL,
+    options TEXT,
+    icon TEXT,
+    color TEXT,
+    enabled INTEGER DEFAULT 1,
+    sort_order INTEGER DEFAULT 0
+);
+
+-- Seed facets (INSERT OR IGNORE ensures idempotency)
+INSERT OR IGNORE INTO facets (id, name, facet_type, axis, source_column) VALUES
+    ('folder', 'Folder', 'select', 'C', 'folder'),
+    ('tags', 'Tags', 'multi_select', 'C', 'tags'),
+    ('status', 'Status', 'select', 'C', 'status'),
+    ('priority', 'Priority', 'number', 'H', 'priority'),
+    ('created', 'Created', 'date', 'T', 'created_at'),
+    ('modified', 'Modified', 'date', 'T', 'modified_at'),
+    ('due', 'Due Date', 'date', 'T', 'due_at'),
+    ('name', 'Name', 'text', 'A', 'name'),
+    ('location', 'Location', 'location', 'L', 'location_name');
+`;
+
+// Node data SQL
+const NODES_SQL = ALL_NODES.map(node => {
   // Determine node type from ID prefix
   let nodeType = 'note';
   if (node.id.startsWith('c')) nodeType = 'contact';
@@ -205,5 +235,8 @@ VALUES (
   '${generateDate(Math.max(0, node.createdDaysAgo - Math.floor(Math.random() * 3)))}'
 );`;
 }).join('\n');
+
+// Combined sample data: facets + nodes
+export const SAMPLE_DATA_SQL = FACETS_SEED_SQL + '\n' + NODES_SQL;
 
 export { ALL_NODES as SAMPLE_NOTES };

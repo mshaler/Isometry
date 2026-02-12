@@ -90,18 +90,21 @@ class DevLogger {
   }
 }
 
-// Default logger instance
-export const devLogger = new DevLogger();
+// Default logger instance - disable debug level to prevent console flood
+// Re-enable debug when actively debugging: ['debug', 'info', 'warn', 'error']
+export const devLogger = new DevLogger({ enabledLevels: ['warn', 'error'] });
 
-// Specialized loggers for different modules
-export const superGridLogger = new DevLogger({ prefix: '[SuperGrid]' });
-export const d3Logger = new DevLogger({ prefix: '[D3]' });
-export const contextLogger = new DevLogger({ prefix: '[Context]' });
-export const hookLogger = new DevLogger({ prefix: '[Hook]' });
-export const componentLogger = new DevLogger({ prefix: '[Component]' });
-export const utilLogger = new DevLogger({ prefix: '[Util]' });
+// Specialized loggers for different modules - all limited to warn/error to prevent flood
+// Re-enable debug when actively debugging specific modules
+const quietLevels: Array<'debug' | 'info' | 'warn' | 'error'> = ['warn', 'error'];
+export const superGridLogger = new DevLogger({ prefix: '[SuperGrid]', enabledLevels: quietLevels });
+export const d3Logger = new DevLogger({ prefix: '[D3]', enabledLevels: quietLevels });
+export const contextLogger = new DevLogger({ prefix: '[Context]', enabledLevels: quietLevels });
+export const hookLogger = new DevLogger({ prefix: '[Hook]', enabledLevels: quietLevels });
+export const componentLogger = new DevLogger({ prefix: '[Component]', enabledLevels: quietLevels });
+export const utilLogger = new DevLogger({ prefix: '[Util]', enabledLevels: quietLevels });
 
 // Bridge logger with limited methods (matching existing bridge logger interface)
-export const bridgeLogger = new DevLogger({ prefix: '[Bridge]' });
+export const bridgeLogger = new DevLogger({ prefix: '[Bridge]', enabledLevels: quietLevels });
 
 export default devLogger;

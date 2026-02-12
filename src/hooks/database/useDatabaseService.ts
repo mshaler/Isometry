@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useSQLite } from '../../db/SQLiteProvider';
 
 /**
@@ -9,41 +10,47 @@ import { useSQLite } from '../../db/SQLiteProvider';
  *
  * Architecture: Provides DatabaseService-compatible interface while using
  * SQLiteProvider internally for zero-serialization sql.js access.
+ *
+ * CRITICAL: Return value is memoized to prevent infinite render loops in consumers.
+ * Without useMemo, a new object is created on every render, causing useEffect
+ * dependencies to trigger re-runs endlessly.
  */
 export function useDatabaseService() {
-  const { db, execute, run, loading } = useSQLite();
+  const { db, execute, run } = useSQLite();
 
-  // Return loading state instead of throwing error
-  if (!db) {
+  // Memoized loading stub - prevents infinite loops when db is not ready
+  const loadingStub = useMemo(() => ({
+    db: null,
+    loading: true,
+    error: null,
+    query: () => [],
+    run: () => {},
+    isReady: () => false,
+    getRawDatabase: () => null,
+    export: () => new Uint8Array(),
+    close: () => {},
+    transaction: <T>(fn: () => T): T => fn(),
+    updateCardPosition: () => {},
+    updateCardData: () => {},
+    addCard: () => null,
+    deleteCard: () => {},
+    getFilteredCards: () => [],
+    saveHeaderState: () => {},
+    getHeaderState: () => null,
+    getStats: () => ({ totalCards: 0, totalEdges: 0 }),
+    saveProgressiveState: () => ({ success: false }),
+    loadProgressiveState: () => null,
+    saveLevelVisibility: () => ({ success: false }),
+    loadLevelVisibility: () => null,
+    saveColumnWidths: () => ({ success: false }),
+    loadColumnWidths: () => null
+  }), []);
+
+  // Memoized service object - only recreates when db/execute/run change
+  const service = useMemo(() => {
+    if (!db) return null;
+
     return {
-      db: null,
-      loading: loading,
-      error: null,
-      query: () => [],
-      run: () => {},
-      isReady: () => false,
-      getRawDatabase: () => null,
-      export: () => new Uint8Array(),
-      close: () => {},
-      transaction: <T>(fn: () => T): T => fn(),
-      updateCardPosition: () => {},
-      updateCardData: () => {},
-      addCard: () => null,
-      deleteCard: () => {},
-      getFilteredCards: () => [],
-      saveHeaderState: () => {},
-      getHeaderState: () => null,
-      getStats: () => ({ totalCards: 0, totalEdges: 0 }),
-      saveProgressiveState: () => ({ success: false }),
-      loadProgressiveState: () => null,
-      saveLevelVisibility: () => ({ success: false }),
-      loadLevelVisibility: () => null,
-      saveColumnWidths: () => ({ success: false }),
-      loadColumnWidths: () => null
-    };
-  }
-
-  return {
     // Direct database access for zero serialization
     db,
     loading: false,
@@ -427,4 +434,8 @@ export function useDatabaseService() {
       }
     }
   };
+  }, [db, execute, run]); // Only recreate when these change
+
+  // Return memoized service or loading stub
+  return service || loadingStub;
 }

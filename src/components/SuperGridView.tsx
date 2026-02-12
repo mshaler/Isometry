@@ -475,6 +475,7 @@ export function SuperGridView({
             <SuperGrid
               sql={sql}
               params={queryParams}
+              nodes={primaryNodes}
               mode={activeView}
               enableSuperStack={true}
               enableDragDrop={showSuperDynamic}
