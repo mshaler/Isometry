@@ -285,11 +285,11 @@ Plans:
   2. Unknown frontmatter keys flow into node_properties table without schema changes
   3. source_id generation is deterministic (filePath + frontmatter hash) with collision detection
   4. ETL pipeline preserves all YAML frontmatter regardless of whether keys are recognized
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 64-01: TBD
-- [ ] 64-02: TBD
+- [ ] 64-01-PLAN.md — Install gray-matter/yaml dependencies, create frontmatter parser and deterministic ID modules
+- [ ] 64-02-PLAN.md — Wire modules into alto-parser and alto-importer with property storage integration
 
 ### Phase 65: Facet Discovery
 **Goal**: Surface dynamic properties from node_properties as available Navigator facets
@@ -327,9 +327,9 @@ Plans:
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
-| 64. ETL Pipeline Upgrade | v4.7 | 0/TBD | Not started | - |
+| 64. ETL Pipeline Upgrade | v4.7 | 0/2 | Not started | - |
 | 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 62 complete, v4.6 shipped)*
+*Last updated: 2026-02-12 (Phase 64 planned)*
