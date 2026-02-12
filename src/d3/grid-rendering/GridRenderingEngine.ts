@@ -13,17 +13,17 @@ import type {
   PAFVProjection,
   GridHeaders,
 } from '../../types/grid';
-import type { EncodingConfig, StackedAxisConfig } from '../../types/pafv';
+import type { EncodingConfig } from '../../types/pafv';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
-import type { HeaderHierarchy } from '../../types/grid';
 
 export interface RenderingConfig {
   cardWidth: number;
   cardHeight: number;
   padding: number;
   headerHeight: number;
+  rowHeaderWidth: number;
   enableHeaders: boolean;
   enableAnimations: boolean;
   animationDuration: number;
@@ -179,11 +179,13 @@ export class GridRenderingEngine {
       return { columns: [], rows: [] };
     }
 
+    // NOTE: X-Plane (labeled "Rows" in Navigator) → rows (vertical headers on left)
+    //       Y-Plane (labeled "Columns" in Navigator) → columns (horizontal headers at top)
     const xFacet = this.currentProjection.xAxis?.facet;
     const yFacet = this.currentProjection.yAxis?.facet;
 
-    // Extract unique X-axis values
-    const columns: string[] = xFacet
+    // X-Plane → rows (vertical headers on left side)
+    const rows: string[] = xFacet
       ? [
           ...new Set(
             cards
@@ -194,8 +196,8 @@ export class GridRenderingEngine {
         ].sort()
       : [];
 
-    // Extract unique Y-axis values
-    const rows: string[] = yFacet
+    // Y-Plane → columns (horizontal headers at top)
+    const columns: string[] = yFacet
       ? [
           ...new Set(
             cards
@@ -239,28 +241,30 @@ export class GridRenderingEngine {
       return { row: -1, col: -1 };
     }
 
+    // NOTE: X-Plane (labeled "Rows" in Navigator) → row position
+    //       Y-Plane (labeled "Columns" in Navigator) → col position
     const xFacet = this.currentProjection.xAxis?.facet;
     const yFacet = this.currentProjection.yAxis?.facet;
     const cardRecord = card as Record<string, unknown>;
 
-    // Get X position
-    let col = -1;
+    // X-Plane → row position (vertical axis)
+    let row = -1;
     if (xFacet) {
       const xValue = cardRecord[xFacet];
-      col =
+      row =
         xValue != null
-          ? headers.columns.indexOf(String(xValue))
-          : headers.columns.indexOf('Unassigned');
+          ? headers.rows.indexOf(String(xValue))
+          : headers.rows.indexOf('Unassigned');
     }
 
-    // Get Y position
-    let row = -1;
+    // Y-Plane → col position (horizontal axis)
+    let col = -1;
     if (yFacet) {
       const yValue = cardRecord[yFacet];
-      row =
+      col =
         yValue != null
-          ? headers.rows.indexOf(String(yValue))
-          : headers.rows.indexOf('Unassigned');
+          ? headers.columns.indexOf(String(yValue))
+          : headers.columns.indexOf('Unassigned');
     }
 
     return { row, col };
@@ -268,22 +272,44 @@ export class GridRenderingEngine {
 
   /**
    * Compute positions for all cards based on projection
+   * Handles both single-facet and stacked (multi-facet) axes
    */
   private computeAllPositions(cards: unknown[]): void {
     if (!this.currentProjection) {
       return;
     }
 
-    // Generate headers from unique values
-    this.currentHeaders = this.generateProjectionHeaders(cards);
+    // Check if axes are stacked (multiple facets)
+    const xFacets = this.currentProjection.xAxis?.facets;
+    const yFacets = this.currentProjection.yAxis?.facets;
+    const xIsStacked = xFacets && xFacets.length > 1;
+    const yIsStacked = yFacets && yFacets.length > 1;
 
-    // Compute position for each card
-    cards.forEach((card) => {
-      const pos = this.computeCellPosition(card, this.currentHeaders!);
-      const cardRecord = card as Record<string, unknown>;
-      cardRecord._projectedRow = pos.row;
-      cardRecord._projectedCol = pos.col;
+    // DIAGNOSTIC: Log stacked axis detection
+    superGridLogger.debug('[computeAllPositions] Stacked axis detection:', {
+      xIsStacked,
+      yIsStacked,
+      xFacets,
+      yFacets,
+      xFacet: this.currentProjection.xAxis?.facet,
+      yFacet: this.currentProjection.yAxis?.facet,
     });
+
+    // For stacked axes, compute positions based on composite keys
+    if (xIsStacked || yIsStacked) {
+      this.computeStackedPositions(cards, xFacets, yFacets);
+    } else {
+      // Single-facet axes: use existing header generation
+      this.currentHeaders = this.generateProjectionHeaders(cards);
+
+      // Compute position for each card
+      cards.forEach((card) => {
+        const pos = this.computeCellPosition(card, this.currentHeaders!);
+        const cardRecord = card as Record<string, unknown>;
+        cardRecord._projectedRow = pos.row;
+        cardRecord._projectedCol = pos.col;
+      });
+    }
 
     superGridLogger.debug('Computed positions for cards:', {
       total: cards.length,
@@ -294,6 +320,125 @@ export class GridRenderingEngine {
         );
       }).length,
     });
+  }
+
+  /**
+   * Compute positions for stacked (multi-facet) axes
+   * Creates composite keys from all facet values and positions cards at leaf nodes
+   *
+   * NOTE: X-Plane (labeled "Rows" in Navigator) → rows (vertical axis)
+   *       Y-Plane (labeled "Columns" in Navigator) → columns (horizontal axis)
+   */
+  private computeStackedPositions(
+    cards: unknown[],
+    xFacets: string[] | undefined,
+    yFacets: string[] | undefined
+  ): void {
+    // Build composite keys for rows (X-Plane → "Rows" in Navigator)
+    const rowKeys = new Map<string, number>();
+    if (xFacets && xFacets.length > 0) {
+      const uniqueRowKeys = new Set<string>();
+      cards.forEach((card) => {
+        const key = this.buildCompositeKey(card, xFacets);
+        uniqueRowKeys.add(key);
+      });
+      // Sort keys for consistent ordering
+      const sortedKeys = Array.from(uniqueRowKeys).sort();
+      sortedKeys.forEach((key, index) => {
+        rowKeys.set(key, index);
+      });
+    } else if (this.currentProjection?.xAxis?.facet) {
+      // Single facet fallback
+      const facet = this.currentProjection.xAxis.facet;
+      const uniqueValues = new Set<string>();
+      cards.forEach((card) => {
+        const value = (card as Record<string, unknown>)[facet];
+        uniqueValues.add(value != null ? String(value) : 'Unassigned');
+      });
+      Array.from(uniqueValues).sort().forEach((value, index) => {
+        rowKeys.set(value, index);
+      });
+    }
+
+    // Build composite keys for columns (Y-Plane → "Columns" in Navigator)
+    const columnKeys = new Map<string, number>();
+    if (yFacets && yFacets.length > 0) {
+      const uniqueColumnKeys = new Set<string>();
+      cards.forEach((card) => {
+        const key = this.buildCompositeKey(card, yFacets);
+        uniqueColumnKeys.add(key);
+      });
+      // Sort keys for consistent ordering
+      const sortedKeys = Array.from(uniqueColumnKeys).sort();
+      sortedKeys.forEach((key, index) => {
+        columnKeys.set(key, index);
+      });
+    } else if (this.currentProjection?.yAxis?.facet) {
+      // Single facet fallback
+      const facet = this.currentProjection.yAxis.facet;
+      const uniqueValues = new Set<string>();
+      cards.forEach((card) => {
+        const value = (card as Record<string, unknown>)[facet];
+        uniqueValues.add(value != null ? String(value) : 'Unassigned');
+      });
+      Array.from(uniqueValues).sort().forEach((value, index) => {
+        columnKeys.set(value, index);
+      });
+    }
+
+    // DIAGNOSTIC: Log computed keys
+    superGridLogger.debug('[computeStackedPositions] Computed keys:', {
+      rowKeys: Array.from(rowKeys.entries()),
+      columnKeys: Array.from(columnKeys.entries()),
+    });
+
+    // Update currentHeaders with leaf values
+    this.currentHeaders = {
+      rows: Array.from(rowKeys.keys()),
+      columns: Array.from(columnKeys.keys()),
+    };
+
+    // Compute position for each card based on composite keys
+    cards.forEach((card) => {
+      const cardRecord = card as Record<string, unknown>;
+
+      // Row position (X-Plane → rows)
+      if (xFacets && xFacets.length > 0) {
+        const xKey = this.buildCompositeKey(card, xFacets);
+        cardRecord._projectedRow = rowKeys.get(xKey) ?? -1;
+      } else if (this.currentProjection?.xAxis?.facet) {
+        const value = cardRecord[this.currentProjection.xAxis.facet];
+        const key = value != null ? String(value) : 'Unassigned';
+        cardRecord._projectedRow = rowKeys.get(key) ?? -1;
+      } else {
+        cardRecord._projectedRow = 0;
+      }
+
+      // Column position (Y-Plane → columns)
+      if (yFacets && yFacets.length > 0) {
+        const yKey = this.buildCompositeKey(card, yFacets);
+        cardRecord._projectedCol = columnKeys.get(yKey) ?? -1;
+      } else if (this.currentProjection?.yAxis?.facet) {
+        const value = cardRecord[this.currentProjection.yAxis.facet];
+        const key = value != null ? String(value) : 'Unassigned';
+        cardRecord._projectedCol = columnKeys.get(key) ?? -1;
+      } else {
+        cardRecord._projectedCol = 0;
+      }
+    });
+  }
+
+  /**
+   * Build a composite key from multiple facet values
+   * Used for positioning cards in stacked axis hierarchies
+   */
+  private buildCompositeKey(card: unknown, facets: string[]): string {
+    const cardRecord = card as Record<string, unknown>;
+    const parts = facets.map((facet) => {
+      const value = cardRecord[facet];
+      return value != null ? String(value) : 'Unassigned';
+    });
+    return parts.join('|');
   }
 
   /**
@@ -519,27 +664,57 @@ export class GridRenderingEngine {
    * Update layout using projection-computed positions
    */
   private updateProjectedGridLayout(): void {
-    if (!this.currentData?.cards || !this.currentHeaders) return;
+    if (!this.currentData?.cards || !this.currentHeaders) {
+      console.warn('[updateProjectedGridLayout] Missing data or headers:', {
+        hasCards: !!this.currentData?.cards,
+        cardsLength: this.currentData?.cards?.length,
+        hasHeaders: !!this.currentHeaders,
+        columns: this.currentHeaders?.columns?.length,
+        rows: this.currentHeaders?.rows?.length,
+      });
+      return;
+    }
 
     const headerOffset = this.config.headerHeight + this.config.padding;
-    const rowHeaderWidth = 120; // Width for row labels
+    const rowHeaderWidth = this.config.rowHeaderWidth;
+    const cellWidth = this.config.cardWidth + this.config.padding;
+    const cellHeight = this.config.cardHeight + this.config.padding;
 
+    // DIAGNOSTIC: Log first card's position computation
+    const firstCard = this.currentData.cards[0] as Record<string, unknown> | undefined;
+    if (firstCard) {
+      superGridLogger.debug('[updateProjectedGridLayout] First card positioning:', {
+        id: firstCard.id,
+        name: firstCard.name,
+        _projectedRow: firstCard._projectedRow,
+        _projectedCol: firstCard._projectedCol,
+        headerOffset,
+        rowHeaderWidth,
+        cellWidth,
+        cellHeight,
+      });
+    }
+
+    let positionedCount = 0;
     this.currentData.cards.forEach((card: unknown) => {
       const cardRecord = card as Record<string, unknown>;
-      const row = cardRecord._projectedRow as number;
-      const col = cardRecord._projectedCol as number;
+      const row = cardRecord._projectedRow as number ?? -1;
+      const col = cardRecord._projectedCol as number ?? -1;
 
-      // Calculate position in grid
-      if (col >= 0) {
-        cardRecord.x =
-          rowHeaderWidth +
-          this.config.padding +
-          col * (this.config.cardWidth + this.config.padding);
+      // Calculate position in grid (default to 0 if not positioned)
+      cardRecord.x = rowHeaderWidth + this.config.padding + Math.max(0, col) * cellWidth;
+      cardRecord.y = headerOffset + Math.max(0, row) * cellHeight;
+
+      if (row >= 0 && col >= 0) {
+        positionedCount++;
       }
-      if (row >= 0) {
-        cardRecord.y =
-          headerOffset + row * (this.config.cardHeight + this.config.padding);
-      }
+    });
+
+    superGridLogger.debug('[updateProjectedGridLayout] Positioned cards:', {
+      total: this.currentData.cards.length,
+      positioned: positionedCount,
+      columns: this.currentHeaders.columns.length,
+      rows: this.currentHeaders.rows.length,
     });
 
     // Update grid dimensions
@@ -577,6 +752,17 @@ export class GridRenderingEngine {
     const xAxisStacked = (this.currentProjection.xAxis?.facets?.length ?? 0) > 1;
     const yAxisStacked = (this.currentProjection.yAxis?.facets?.length ?? 0) > 1;
 
+    // DIAGNOSTIC: Log stacked header detection (always visible)
+    superGridLogger.debug('[SuperGrid Headers]', {
+      xAxis: this.currentProjection.xAxis?.facet || 'none',
+      xFacets: this.currentProjection.xAxis?.facets || [],
+      xAxisStacked,
+      yAxis: this.currentProjection.yAxis?.facet || 'none',
+      yFacets: this.currentProjection.yAxis?.facets || [],
+      yAxisStacked,
+      willRenderStacked: xAxisStacked || yAxisStacked,
+    });
+
     if (xAxisStacked || yAxisStacked) {
       this.renderStackedProjectionHeaders(xAxisStacked, yAxisStacked);
       return;
@@ -588,7 +774,7 @@ export class GridRenderingEngine {
     const headerContainer = this.container.select('.headers');
     headerContainer.selectAll('*').remove();
 
-    const rowHeaderWidth = 120;
+    const rowHeaderWidth = this.config.rowHeaderWidth;
     const { columns, rows } = this.currentHeaders;
     const config = this.config;
 
@@ -659,101 +845,344 @@ export class GridRenderingEngine {
 
   /**
    * Render stacked (hierarchical) headers for multi-facet axes
-   * Used when PAFV projection has multiple facets per axis (e.g., year > quarter > month)
+   * Supports both flat and nested header rendering based on axis configuration
    */
   private renderStackedProjectionHeaders(
     xAxisStacked: boolean,
     yAxisStacked: boolean
   ): void {
-    if (!this.currentData?.cards || !this.currentProjection) return;
+    if (!this.currentHeaders) {
+      console.warn('[renderStackedProjectionHeaders] No currentHeaders available');
+      this.renderSimpleFallbackHeader();
+      return;
+    }
+
+    superGridLogger.debug('[renderStackedProjectionHeaders] Rendering headers:', {
+      xAxisStacked,
+      yAxisStacked,
+      columns: this.currentHeaders.columns.length,
+      rows: this.currentHeaders.rows.length,
+    });
 
     const headerContainer = this.container.select('.headers');
     headerContainer.selectAll('*').remove();
 
-    // Initialize SuperGridHeaders if needed
-    if (!this.superGridHeaders) {
-      const headerNode = headerContainer.node() as SVGElement;
-      if (headerNode) {
-        this.superGridHeaders = new SuperGridHeaders(
-          headerNode,
-          this.headerLayoutService
-        );
+    // NOTE: X-Plane (labeled "Rows" in Navigator) → row headers (vertical, left side)
+    //       Y-Plane (labeled "Columns" in Navigator) → column headers (horizontal, top)
+
+    // Render row headers (X-Plane → "Rows")
+    if (this.currentHeaders.rows.length > 0) {
+      if (xAxisStacked) {
+        this.renderNestedAxisHeaders('y', this.currentHeaders.rows);
+      } else {
+        this.renderSimpleAxisHeaders('y', this.currentHeaders.rows);
       }
     }
 
-    // Render stacked column headers if X-axis has multiple facets
-    if (xAxisStacked && this.currentProjection.xAxis?.facets) {
-      const stackedConfig: StackedAxisConfig = {
-        axis: this.currentProjection.xAxis.axis,
-        facets: this.currentProjection.xAxis.facets
-      };
-
-      const hierarchy = this.headerLayoutService.generateStackedHierarchy(
-        this.currentData.cards,
-        stackedConfig
-      );
-
-      this.superGridHeaders?.renderStackedHeaders(
-        hierarchy,
-        'x',
-        this.getGridWidth()
-      );
-
-      // Update currentHeaders based on leaf nodes for card positioning
-      this.updateHeadersFromHierarchy(hierarchy, 'columns');
+    // Render column headers (Y-Plane → "Columns")
+    if (this.currentHeaders.columns.length > 0) {
+      if (yAxisStacked) {
+        this.renderNestedAxisHeaders('x', this.currentHeaders.columns);
+      } else {
+        this.renderSimpleAxisHeaders('x', this.currentHeaders.columns);
+      }
     }
 
-    // Render stacked row headers if Y-axis has multiple facets
-    if (yAxisStacked && this.currentProjection.yAxis?.facets) {
-      const stackedConfig: StackedAxisConfig = {
-        axis: this.currentProjection.yAxis.axis,
-        facets: this.currentProjection.yAxis.facets
-      };
-
-      const hierarchy = this.headerLayoutService.generateStackedHierarchy(
-        this.currentData.cards,
-        stackedConfig
-      );
-
-      this.superGridHeaders?.renderStackedHeaders(
-        hierarchy,
-        'y',
-        this.getGridHeight()
-      );
-
-      // Update currentHeaders based on leaf nodes for card positioning
-      this.updateHeadersFromHierarchy(hierarchy, 'rows');
-    }
-
-    superGridLogger.debug('Rendered stacked projection headers', {
-      xAxisStacked,
-      yAxisStacked,
-      columns: this.currentHeaders?.columns.length || 0,
-      rows: this.currentHeaders?.rows.length || 0
+    superGridLogger.debug('[renderStackedProjectionHeaders] Complete - rendered', {
+      columns: this.currentHeaders.columns.length,
+      rows: this.currentHeaders.rows.length,
     });
   }
 
   /**
-   * Update currentHeaders from hierarchy leaf nodes
-   * Used for computing card positions after stacked header rendering
+   * Render nested (hierarchical) headers for stacked axes
+   * Parses composite keys and renders parent headers that span children
+   *
+   * For Y-axis (rows): Parent headers span multiple rows, children indented
+   * For X-axis (columns): Parent headers span multiple columns, stacked vertically
    */
-  private updateHeadersFromHierarchy(
-    hierarchy: HeaderHierarchy,
-    target: 'columns' | 'rows'
+  private renderNestedAxisHeaders(
+    axis: 'x' | 'y',
+    compositeKeys: string[]
   ): void {
-    const leafLabels = hierarchy.allNodes
-      .filter(n => n.isLeaf)
-      .map(n => n.label);
+    const headerContainer = this.container.select('.headers');
+    const config = this.config;
+    const rowHeaderWidth = config.rowHeaderWidth;
 
-    if (!this.currentHeaders) {
-      this.currentHeaders = { columns: [], rows: [] };
-    }
+    // Parse composite keys into hierarchy
+    // Example: ["Personal|Active", "Personal|Complete", "Work|Active"]
+    // Becomes: { "Personal": ["Active", "Complete"], "Work": ["Active"] }
+    const hierarchy = new Map<string, { children: string[]; startIndex: number }>();
+    const leafValues: string[] = [];
 
-    if (target === 'columns') {
-      this.currentHeaders.columns = leafLabels;
+    compositeKeys.forEach((key, index) => {
+      const parts = key.split('|');
+      if (parts.length >= 2) {
+        const [parent, ...rest] = parts;
+        const child = rest.join('|'); // Handle deeper nesting
+
+        if (!hierarchy.has(parent)) {
+          hierarchy.set(parent, { children: [], startIndex: index });
+        }
+        hierarchy.get(parent)!.children.push(child);
+        leafValues.push(child);
+      } else {
+        // Single value, treat as leaf
+        leafValues.push(parts[0]);
+      }
+    });
+
+    superGridLogger.debug('[renderNestedAxisHeaders] Parsed hierarchy:', {
+      axis,
+      totalKeys: compositeKeys.length,
+      parentCount: hierarchy.size,
+      leafCount: leafValues.length,
+      parents: Array.from(hierarchy.keys()),
+    });
+
+    if (axis === 'y') {
+      // ROWS: Parent headers span multiple rows vertically, children indented
+      const headerOffset = config.headerHeight + config.padding;
+      const cellHeight = config.cardHeight + config.padding;
+
+      // Render parent headers (level 0)
+      let rowIndex = 0;
+      hierarchy.forEach((data, parent) => {
+        const span = data.children.length;
+        const yPos = headerOffset + rowIndex * cellHeight;
+        const height = span * cellHeight - config.padding;
+
+        // Parent header group
+        const parentGroup = headerContainer
+          .append('g')
+          .attr('class', 'row-header row-header--parent')
+          .attr('transform', `translate(0, ${yPos})`);
+
+        // Parent background (spans multiple rows)
+        parentGroup
+          .append('rect')
+          .attr('width', rowHeaderWidth / 2 - 2)
+          .attr('height', height)
+          .attr('fill', '#e2e8f0')
+          .attr('stroke', '#cbd5e1')
+          .attr('rx', 4);
+
+        // Parent label (vertically centered)
+        parentGroup
+          .append('text')
+          .attr('x', (rowHeaderWidth / 2 - 2) / 2)
+          .attr('y', height / 2 + 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px')
+          .attr('font-weight', '600')
+          .attr('fill', '#334155')
+          .text(parent);
+
+        // Render child headers (level 1)
+        data.children.forEach((child, childIndex) => {
+          const childYPos = childIndex * cellHeight;
+          const childWidth = rowHeaderWidth / 2 - 4;
+          const childXPos = rowHeaderWidth / 2 + 2;
+
+          const childGroup = headerContainer
+            .append('g')
+            .attr('class', 'row-header row-header--child')
+            .attr('transform', `translate(${childXPos}, ${yPos + childYPos})`);
+
+          // Child background
+          childGroup
+            .append('rect')
+            .attr('width', childWidth)
+            .attr('height', config.cardHeight)
+            .attr('fill', '#f1f5f9')
+            .attr('stroke', '#e2e8f0')
+            .attr('rx', 4);
+
+          // Child label
+          childGroup
+            .append('text')
+            .attr('x', childWidth / 2)
+            .attr('y', config.cardHeight / 2 + 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '10px')
+            .attr('fill', '#64748b')
+            .text(child);
+        });
+
+        rowIndex += span;
+      });
+
+      // Handle single-level values (no pipe separator)
+      const singleLevelKeys = compositeKeys.filter(key => !key.includes('|'));
+      if (singleLevelKeys.length > 0 && hierarchy.size === 0) {
+        // Fall back to simple rendering if no hierarchy detected
+        this.renderSimpleAxisHeaders('y', compositeKeys);
+      }
+
     } else {
-      this.currentHeaders.rows = leafLabels;
+      // COLUMNS: Parent headers span multiple columns horizontally, stacked vertically
+      const parentHeaderHeight = config.headerHeight * 0.6;
+      const childHeaderHeight = config.headerHeight * 0.5;
+
+      // Render parent headers (level 0) - top row
+      let colIndex = 0;
+      hierarchy.forEach((data, parent) => {
+        const span = data.children.length;
+        const xPos = rowHeaderWidth + config.padding + colIndex * (config.cardWidth + config.padding);
+        const width = span * (config.cardWidth + config.padding) - config.padding;
+
+        // Parent header group
+        const parentGroup = headerContainer
+          .append('g')
+          .attr('class', 'col-header col-header--parent')
+          .attr('transform', `translate(${xPos}, 0)`);
+
+        // Parent background (spans multiple columns)
+        parentGroup
+          .append('rect')
+          .attr('width', width)
+          .attr('height', parentHeaderHeight)
+          .attr('fill', '#e2e8f0')
+          .attr('stroke', '#cbd5e1')
+          .attr('rx', 4);
+
+        // Parent label
+        parentGroup
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', parentHeaderHeight / 2 + 4)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px')
+          .attr('font-weight', '600')
+          .attr('fill', '#334155')
+          .text(parent);
+
+        // Render child headers (level 1) - bottom row
+        data.children.forEach((child, childIndex) => {
+          const childXPos = childIndex * (config.cardWidth + config.padding);
+
+          const childGroup = headerContainer
+            .append('g')
+            .attr('class', 'col-header col-header--child')
+            .attr('transform', `translate(${xPos + childXPos}, ${parentHeaderHeight + 2})`);
+
+          // Child background
+          childGroup
+            .append('rect')
+            .attr('width', config.cardWidth)
+            .attr('height', childHeaderHeight)
+            .attr('fill', '#f1f5f9')
+            .attr('stroke', '#e2e8f0')
+            .attr('rx', 4);
+
+          // Child label
+          childGroup
+            .append('text')
+            .attr('x', config.cardWidth / 2)
+            .attr('y', childHeaderHeight / 2 + 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '10px')
+            .attr('fill', '#64748b')
+            .text(child);
+        });
+
+        colIndex += span;
+      });
+
+      // Handle single-level values (no pipe separator)
+      const singleLevelKeys = compositeKeys.filter(key => !key.includes('|'));
+      if (singleLevelKeys.length > 0 && hierarchy.size === 0) {
+        // Fall back to simple rendering if no hierarchy detected
+        this.renderSimpleAxisHeaders('x', compositeKeys);
+      }
     }
+
+    superGridLogger.debug('[renderNestedAxisHeaders] Rendered nested headers:', {
+      axis,
+      parentCount: hierarchy.size,
+    });
+  }
+
+  // NOTE: updateHeadersFromHierarchy removed - using simplified approach
+  // that computes headers in computeStackedPositions() instead
+
+  /**
+   * Render simple (single-level) headers for a single axis
+   * Used when one axis is stacked and the other is not
+   */
+  private renderSimpleAxisHeaders(
+    axis: 'x' | 'y',
+    values: string[]
+  ): void {
+    const headerContainer = this.container.select('.headers');
+    const rowHeaderWidth = this.config.rowHeaderWidth;
+    const config = this.config;
+
+    if (axis === 'x') {
+      // Render column headers
+      headerContainer
+        .selectAll<SVGGElement, string>('.col-header')
+        .data(values)
+        .join('g')
+        .attr('class', 'col-header')
+        .attr(
+          'transform',
+          (_, i) =>
+            `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`
+        )
+        .each(function (d) {
+          const g = d3.select(this);
+          g.selectAll('*').remove();
+          g.append('rect')
+            .attr('width', config.cardWidth)
+            .attr('height', config.headerHeight)
+            .attr('fill', '#f0f0f0')
+            .attr('stroke', '#ddd')
+            .attr('rx', 4);
+          g.append('text')
+            .attr('x', config.cardWidth / 2)
+            .attr('y', config.headerHeight / 2 + 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '12px')
+            .attr('fill', '#333')
+            .text(d);
+        });
+    } else {
+      // Render row headers
+      const headerOffset = config.headerHeight + config.padding;
+      headerContainer
+        .selectAll<SVGGElement, string>('.row-header')
+        .data(values)
+        .join('g')
+        .attr('class', 'row-header')
+        .attr(
+          'transform',
+          (_, i) =>
+            `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`
+        )
+        .each(function (d) {
+          const g = d3.select(this);
+          g.selectAll('*').remove();
+          g.append('rect')
+            .attr('width', rowHeaderWidth - 4)
+            .attr('height', config.cardHeight)
+            .attr('fill', '#f5f5f5')
+            .attr('stroke', '#ddd')
+            .attr('rx', 4);
+          g.append('text')
+            .attr('x', (rowHeaderWidth - 4) / 2)
+            .attr('y', config.cardHeight / 2 + 4)
+            .attr('text-anchor', 'middle')
+            .attr('font-size', '11px')
+            .attr('fill', '#666')
+            .text(d);
+        });
+    }
+
+    superGridLogger.debug('Rendered simple axis headers:', {
+      axis,
+      count: values.length,
+    });
   }
 
   /**

@@ -80,24 +80,42 @@ export function SuperGrid({
   const error = queryEnabled ? queryError : null;
 
   // Determine grid layout based on PAFV mappings and mode
+  // Supports stacked facets (multiple mappings per plane)
   const gridLayout = useMemo(() => {
-    const xMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'x');
-    const yMapping = pafvState.mappings.find((m: AxisMapping) => m.plane === 'y');
+    // Get ALL mappings for each plane (stacked axes support)
+    const xMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'x');
+    const yMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'y');
 
     return {
-      hasColumns: !!xMapping,
-      hasRows: !!yMapping,
-      columnAxis: xMapping?.axis,
-      rowAxis: yMapping?.axis,
-      columnFacet: xMapping?.facet,
-      rowFacet: yMapping?.facet,
-      effectiveMode: mode === 'supergrid' && (!xMapping && !yMapping) ? 'gallery' : mode
+      hasColumns: xMappings.length > 0,
+      hasRows: yMappings.length > 0,
+      // Single facet (legacy compatibility)
+      columnAxis: xMappings[0]?.axis,
+      rowAxis: yMappings[0]?.axis,
+      columnFacet: xMappings[0]?.facet,
+      rowFacet: yMappings[0]?.facet,
+      // Stacked facets (multiple per plane)
+      columnMappings: xMappings,
+      rowMappings: yMappings,
+      columnFacets: xMappings.map((m: AxisMapping) => m.facet),
+      rowFacets: yMappings.map((m: AxisMapping) => m.facet),
+      isColumnStacked: xMappings.length > 1,
+      isRowStacked: yMappings.length > 1,
+      effectiveMode: mode === 'supergrid' && (xMappings.length === 0 && yMappings.length === 0) ? 'gallery' : mode
     };
   }, [pafvState.mappings, mode]);
 
   // Group nodes by grid coordinates
+  // Supports stacked facets using composite keys (e.g., "folder|status")
   const gridData = useMemo(() => {
-    if (!nodes?.length) return { cells: [], columnHeaders: [], rowHeaders: [] };
+    if (!nodes?.length) {
+      return {
+        cells: [],
+        columnHeaders: [],
+        rowHeaders: [],
+        isStacked: { columns: false, rows: false }
+      };
+    }
 
     const cells = new Map<string, Node[]>();
     const columnValues = new Set<string>();
@@ -107,15 +125,29 @@ export function SuperGrid({
       let colKey = 'default';
       let rowKey = 'default';
 
-      // Extract column value
-      if (gridLayout.hasColumns && gridLayout.columnAxis && gridLayout.columnFacet) {
-        colKey = extractNodeValue(node, gridLayout.columnAxis, gridLayout.columnFacet);
+      // Extract column value (supports stacked facets)
+      if (gridLayout.hasColumns) {
+        if (gridLayout.isColumnStacked && gridLayout.columnMappings.length > 0) {
+          // Build composite key from all column facets
+          colKey = gridLayout.columnMappings
+            .map((m: AxisMapping) => extractNodeValue(node, m.axis, m.facet))
+            .join('|');
+        } else if (gridLayout.columnAxis && gridLayout.columnFacet) {
+          colKey = extractNodeValue(node, gridLayout.columnAxis, gridLayout.columnFacet);
+        }
         columnValues.add(colKey);
       }
 
-      // Extract row value
-      if (gridLayout.hasRows && gridLayout.rowAxis && gridLayout.rowFacet) {
-        rowKey = extractNodeValue(node, gridLayout.rowAxis, gridLayout.rowFacet);
+      // Extract row value (supports stacked facets)
+      if (gridLayout.hasRows) {
+        if (gridLayout.isRowStacked && gridLayout.rowMappings.length > 0) {
+          // Build composite key from all row facets
+          rowKey = gridLayout.rowMappings
+            .map((m: AxisMapping) => extractNodeValue(node, m.axis, m.facet))
+            .join('|');
+        } else if (gridLayout.rowAxis && gridLayout.rowFacet) {
+          rowKey = extractNodeValue(node, gridLayout.rowAxis, gridLayout.rowFacet);
+        }
         rowValues.add(rowKey);
       }
 
@@ -132,7 +164,11 @@ export function SuperGrid({
         return { rowKey, colKey, nodes: cellNodes };
       }),
       columnHeaders: Array.from(columnValues).sort(),
-      rowHeaders: Array.from(rowValues).sort()
+      rowHeaders: Array.from(rowValues).sort(),
+      isStacked: {
+        columns: gridLayout.isColumnStacked,
+        rows: gridLayout.isRowStacked
+      }
     };
   }, [nodes, gridLayout]);
 
@@ -316,42 +352,88 @@ export function SuperGrid({
 
 /**
  * Extract value from node for given axis and facet
- * Same logic as SuperStack but centralized for reuse
+ * Supports both camelCase (JS) and snake_case (DB) field names
+ * Also handles alto-index specific fields (node_type, type, path)
  */
 function extractNodeValue(node: Node, axis: LATCHAxis, facet: string): string {
+  // Cast to record for dynamic property access
+  const record = node as unknown as Record<string, unknown>;
+
+  // Direct field access (handles snake_case from DB and alto-index fields)
+  // Try exact facet name first, then common variations
+  const directValue = record[facet] ??
+    record[facet.replace(/_/g, '')] ??  // node_type -> nodetype
+    record[facet.replace(/([A-Z])/g, '_$1').toLowerCase()]; // nodeType -> node_type
+
+  if (directValue !== undefined && directValue !== null && directValue !== '') {
+    return String(directValue);
+  }
+
+  // Axis-specific extraction with fallbacks
   switch (axis) {
     case 'location':
-      if (facet === 'location_name') return node.locationName || 'Unknown';
-      return node.locationName || 'Unknown';
+      if (facet === 'location_name' || facet === 'locationName') {
+        return String(record.location_name ?? record.locationName ?? node.locationName ?? 'Unknown');
+      }
+      return String(record.location ?? node.locationName ?? 'Unknown');
 
     case 'alphabet':
-      if (facet === 'name') return node.name.charAt(0).toUpperCase();
-      return node.name.charAt(0).toUpperCase();
+      if (facet === 'name') {
+        const name = String(record.name ?? node.name ?? '');
+        return name.charAt(0).toUpperCase() || 'Unknown';
+      }
+      return (node.name ?? 'U').charAt(0).toUpperCase();
 
     case 'time': {
-      const date = new Date(node.createdAt);
-      if (facet === 'year') return date.getFullYear().toString();
-      if (facet === 'month') return date.toLocaleDateString('en-US', { month: 'long' });
-      if (facet === 'quarter') return `Q${Math.floor(date.getMonth() / 3) + 1}`;
+      // Support multiple date field names
+      const dateStr = String(
+        record[facet] ??
+        record.created_at ?? record.createdAt ??
+        record.modified_at ?? record.modifiedAt ??
+        node.createdAt ?? new Date().toISOString()
+      );
+      const date = new Date(dateStr);
+
+      if (isNaN(date.getTime())) return 'Unknown';
+
+      if (facet === 'year' || facet.includes('year')) return date.getFullYear().toString();
+      if (facet === 'month' || facet.includes('month')) return date.toLocaleDateString('en-US', { month: 'long' });
+      if (facet === 'quarter' || facet.includes('quarter')) return `Q${Math.floor(date.getMonth() / 3) + 1}`;
+      if (facet === 'day' || facet.includes('day')) return date.toLocaleDateString('en-US', { weekday: 'long' });
       return date.getFullYear().toString();
     }
 
     case 'category':
-      if (facet === 'folder') return node.folder || 'Uncategorized';
-      if (facet === 'status') return node.status || 'None';
-      return node.folder || 'Uncategorized';
+      // Handle node_type / type (common in alto-index)
+      if (facet === 'node_type' || facet === 'type') {
+        return String(record.node_type ?? record.type ?? 'Unknown');
+      }
+      if (facet === 'folder') {
+        return String(record.folder ?? node.folder ?? 'Uncategorized');
+      }
+      if (facet === 'status') {
+        return String(record.status ?? node.status ?? 'None');
+      }
+      if (facet === 'tags') {
+        const tags = record.tags ?? node.tags;
+        if (Array.isArray(tags)) return tags[0] || 'Untagged';
+        if (typeof tags === 'string') return tags.split(',')[0] || 'Untagged';
+        return 'Untagged';
+      }
+      return String(record[facet] ?? node.folder ?? 'Uncategorized');
 
     case 'hierarchy':
       if (facet === 'priority') {
-        const p = node.priority || 0;
+        const p = Number(record.priority ?? node.priority ?? 0);
         if (p >= 3) return 'High';
         if (p >= 2) return 'Medium';
         if (p >= 1) return 'Low';
         return 'None';
       }
-      return 'None';
+      return String(record[facet] ?? 'None');
 
     default:
-      return 'Unknown';
+      // Fallback: try direct property access
+      return String(record[facet] ?? 'Unknown');
   }
 }
