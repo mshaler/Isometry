@@ -27,11 +27,25 @@ Multi-facet stacked axis support with d3.stratify hierarchy, multi-level header 
 ### v4.6 SuperGrid Polish (IN PROGRESS)
 D3 animated view transitions with selection persistence. Phase 61 complete, Phase 62 (Density Filtering) pending.
 
-## Current Milestone: v4.7 Schema-on-Read
+## Current Milestone: v5.0 SuperGrid MVP
+
+**Goal:** Implement the four critical SuperGrid features that bring MVP from 30% → 70% completion.
+
+**Phase A Target Features:**
+- **SuperStack Multi-Level Headers** — Nested headers with visual spanning
+- **SuperDensity Controls** — Value (GROUP BY) + Extent (empty cell filtering)
+- **SuperZoom Upper-Left Anchor** — Pin zoom to top-left corner
+- **Header Click Zones** — Zone-based hit testing and cursor feedback
+
+**Reference Documents:**
+- `SuperGrid-GSD-Implementation-Plan.md` — Implementation guidance
+- `specs/SuperGrid-Specification.md` — Full feature specification
+
+## Previous Milestone: v4.7 Schema-on-Read (COMPLETE)
 
 **Goal:** Dynamic YAML property discovery and storage for true schema-on-read semantics.
 
-**Target features:**
+**Delivered features:**
 - Dynamic `node_properties` table for arbitrary YAML frontmatter storage
 - Query parameter binding fix (sql.js `execute()` ignores params)
 - Upgraded YAML parser (replace custom parser with `yaml` package)
