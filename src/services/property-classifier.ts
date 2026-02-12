@@ -39,6 +39,10 @@ export interface ClassifiedProperty {
   sortOrder: number;
   /** True for GRAPH bucket items that represent edge properties */
   isEdgeProperty: boolean;
+  /** True for properties discovered from node_properties table */
+  isDynamic?: boolean;
+  /** Count of nodes with this property (for UI badge) */
+  nodeCount?: number;
 }
 
 /** Complete property classification by bucket */
@@ -49,6 +53,14 @@ export interface PropertyClassification {
   C: ClassifiedProperty[]; // Category
   H: ClassifiedProperty[]; // Hierarchy
   GRAPH: ClassifiedProperty[]; // Edge types + metrics
+}
+
+/** Dynamic property discovered from node_properties table */
+interface DynamicProperty {
+  key: string;
+  valueType: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
+  nodeCount: number;
+  sampleValue: string;
 }
 
 // ============================================================================
@@ -67,6 +79,100 @@ const GRAPH_METRICS = [
 // ============================================================================
 // Implementation
 // ============================================================================
+
+/**
+ * Discover dynamic properties from node_properties table.
+ * Returns properties that appear in at least 3 nodes.
+ *
+ * @param db - sql.js Database instance
+ * @returns Array of discovered dynamic properties
+ */
+function discoverDynamicProperties(db: Database): DynamicProperty[] {
+  const result = db.exec(`
+    SELECT
+      key,
+      value_type,
+      COUNT(DISTINCT node_id) as node_count,
+      MIN(value) as sample_value
+    FROM node_properties
+    GROUP BY key, value_type
+    HAVING node_count >= 3
+    ORDER BY node_count DESC
+    LIMIT 50
+  `);
+
+  if (result.length === 0 || !result[0].values) {
+    return [];
+  }
+
+  const columns = result[0].columns;
+  const keyIdx = columns.indexOf('key');
+  const valueTypeIdx = columns.indexOf('value_type');
+  const nodeCountIdx = columns.indexOf('node_count');
+  const sampleValueIdx = columns.indexOf('sample_value');
+
+  return result[0].values.map((row) => ({
+    key: row[keyIdx] as string,
+    valueType: row[valueTypeIdx] as DynamicProperty['valueType'],
+    nodeCount: row[nodeCountIdx] as number,
+    sampleValue: row[sampleValueIdx] as string,
+  }));
+}
+
+/**
+ * Infer LATCH bucket from value type and key name.
+ *
+ * @param valueType - Type of the value (string, number, boolean, array, object, null)
+ * @param key - Property key name
+ * @param sampleValue - Optional sample value for pattern detection
+ * @returns The inferred LATCH bucket
+ */
+function inferLATCHBucket(
+  valueType: string,
+  key: string,
+  sampleValue?: string
+): LATCHBucket {
+  // Time (T): Date-related keys or ISO date values
+  if (
+    valueType === 'string' &&
+    (/date|time|created|modified|due|start|end/i.test(key) ||
+      (sampleValue && /^\d{4}-\d{2}-\d{2}/.test(sampleValue)))
+  ) {
+    return 'T';
+  }
+
+  // Location (L): Location-related keys
+  if (/location|address|city|country|lat|lon|place/i.test(key)) {
+    return 'L';
+  }
+
+  // Hierarchy (H): Numeric values
+  if (valueType === 'number') {
+    return 'H';
+  }
+
+  // Category (C): Arrays or booleans
+  if (valueType === 'array' || valueType === 'boolean') {
+    return 'C';
+  }
+
+  // Alphabet (A): Default for remaining strings
+  return 'A';
+}
+
+/**
+ * Convert property key to human-readable name.
+ * Example: "contact_email" -> "Contact Email"
+ *
+ * @param key - Property key
+ * @returns Humanized display name
+ */
+function humanizeKey(key: string): string {
+  return key
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 /**
  * Classify properties from the facets table into LATCH+GRAPH buckets.
@@ -93,6 +199,9 @@ export function classifyProperties(db: Database): PropertyClassification {
     ORDER BY axis, sort_order
   `);
 
+  // Track existing schema facet source columns for collision detection
+  const schemaSourceColumns = new Set<string>();
+
   // Process facet rows
   if (result.length > 0 && result[0].values) {
     const columns = result[0].columns;
@@ -106,11 +215,14 @@ export function classifyProperties(db: Database): PropertyClassification {
 
     for (const row of result[0].values) {
       const axis = row[axisIdx] as string;
+      const sourceColumn = row[sourceColumnIdx] as string;
+      schemaSourceColumns.add(sourceColumn);
+
       const property: ClassifiedProperty = {
         id: row[idIdx] as string,
         name: row[nameIdx] as string,
         bucket: axis as LATCHBucket,
-        sourceColumn: row[sourceColumnIdx] as string,
+        sourceColumn,
         facetType: row[facetTypeIdx] as string,
         enabled: (row[enabledIdx] as number) === 1,
         sortOrder: row[sortOrderIdx] as number,
@@ -122,6 +234,45 @@ export function classifyProperties(db: Database): PropertyClassification {
         classification[axis].push(property);
       }
     }
+  }
+
+  // Discover and add dynamic properties from node_properties table
+  const dynamicProperties = discoverDynamicProperties(db);
+  for (const dynProp of dynamicProperties) {
+    const bucket = inferLATCHBucket(dynProp.valueType, dynProp.key, dynProp.sampleValue);
+    let name = humanizeKey(dynProp.key);
+
+    // Check for collision with existing schema facets
+    if (schemaSourceColumns.has(dynProp.key)) {
+      name += ' (custom)';
+    }
+
+    // Determine facet type based on value type
+    let facetType = 'text';
+    if (dynProp.valueType === 'number') {
+      facetType = 'number';
+    } else if (dynProp.valueType === 'boolean') {
+      facetType = 'select';
+    } else if (dynProp.valueType === 'array') {
+      facetType = 'multi_select';
+    } else if (/date|time/i.test(dynProp.key)) {
+      facetType = 'date';
+    }
+
+    const property: ClassifiedProperty = {
+      id: `dynamic-${dynProp.key}`,
+      name,
+      bucket,
+      sourceColumn: `node_properties.${dynProp.key}`,
+      facetType,
+      enabled: true,
+      sortOrder: 1000 + classification[bucket].length,
+      isEdgeProperty: false,
+      isDynamic: true,
+      nodeCount: dynProp.nodeCount,
+    };
+
+    classification[bucket].push(property);
   }
 
   // Add GRAPH edge types (display as Capitalized, not UPPERCASE)
