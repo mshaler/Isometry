@@ -225,11 +225,9 @@ Plans:
 </details>
 
 <details>
-<summary>v4.6 SuperGrid Polish (Phases 61-62) - PARTIAL (61 complete, 62 deferred)</summary>
+<summary>v4.6 SuperGrid Polish (Phases 61-62) - SHIPPED 2026-02-12</summary>
 
 **Milestone Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
-
-**Deferred Note:** Phase 62 (Density Filtering) deferred in favor of v4.7 Schema-on-Read priority work.
 
 ### Phase 61: View Transitions
 **Goal**: Cards and headers animate smoothly when axis mappings change
@@ -256,7 +254,7 @@ Plans:
 **Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 62-01-PLAN.md — Wire Janus extent density controls to GridRenderingEngine for sparse/dense cell filtering
+- [x] 62-01-PLAN.md — Wire Janus extent density controls to GridRenderingEngine for sparse/dense cell filtering
 
 </details>
 
@@ -327,11 +325,11 @@ Plans:
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
 | 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
-| 62. Density Filtering | v4.6 | 0/1 | Planned | - |
+| 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
 | 64. ETL Pipeline Upgrade | v4.7 | 0/TBD | Not started | - |
 | 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (v4.7 Schema-on-Read phases 63-65 added)*
+*Last updated: 2026-02-12 (Phase 62 complete, v4.6 shipped)*
