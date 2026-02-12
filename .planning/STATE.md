@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 67 of 72 (Canonical Schema)
+Phase: 65 of 72 (Facet Discovery)
 Plan: 01 of 01 COMPLETE
 Status: Phase complete ✓
-Last activity: 2026-02-12 — Completed Phase 67-01 (Canonical Schema with Zod)
+Last activity: 2026-02-12 — Completed Phase 65-01 (Dynamic Property Discovery)
 
-Progress (v4.7): [#########################.....] 75% (6/8 requirements)
+Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [####..........................] 17% (1/6 phases)
 
 ## Performance Metrics
@@ -28,6 +28,9 @@ Progress (v4.8): [####..........................] 17% (1/6 phases)
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 65 - v4.7 Schema-on-Read - MILESTONE COMPLETE):**
+- Phase 65-01: COMPLETE (~4m) — Dynamic property discovery with LATCH inference
 
 **Recent completions (Phase 67 - v4.8 ETL Consolidation):**
 - Phase 67-01: COMPLETE (~10m) — Canonical Node Schema with Zod validation
@@ -51,6 +54,12 @@ Progress (v4.8): [####..........................] 17% (1/6 phases)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 65-01 decisions (Dynamic Property Discovery):**
+- FACET-DEC-01: Node count threshold = 3 (properties in <3 nodes filtered out to reduce UI noise)
+- FACET-DEC-02: LATCH inference priority: Time (date patterns) -> Location (address patterns) -> default Alphabet
+- FACET-DEC-03: Collision handling adds "(custom)" suffix rather than skip/override schema facets
+- FACET-DEC-04: sourceColumn format "node_properties.{key}" signals query builders to JOIN EAV table
 
 **v4.8 ETL Consolidation (Phases 67-72):**
 - Canonical schema + Zod validation + multi-format importers
@@ -175,15 +184,15 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 - FACET-01: Query node_properties for dynamic facets -> Phase 65
 - FACET-02: Dynamic properties in Navigator UI -> Phase 65
 
-**Coverage:** 8/8 mapped (100%), 6/8 implemented (75%)
+**Coverage:** 8/8 mapped (100%), 8/8 implemented (100%) ✅ MILESTONE COMPLETE
 - [x] SCHEMA-01: node_properties table (Phase 63-01)
 - [x] SCHEMA-02: Foreign key with cascade delete (Phase 63-01)
 - [x] QUERY-01: stmt.bind(params) in execute() (Phase 63-01)
 - [x] ETL-01: yaml package parser (Phase 64-01 - parseFrontmatter with gray-matter)
 - [x] ETL-02: Unknown keys to node_properties (Phase 64-02 - storeNodeProperties)
 - [x] ETL-03: Deterministic source_id (Phase 64-01/02 - generateDeterministicSourceId wired)
-- [ ] FACET-01: Query node_properties for facets (Phase 65)
-- [ ] FACET-02: Dynamic properties in Navigator (Phase 65)
+- [x] FACET-01: Query node_properties for facets (Phase 65-01 - discoverDynamicProperties + inferLATCHBucket)
+- [x] FACET-02: Dynamic properties in Navigator (Phase 65-01 - isDynamic flag + nodeCount in classification)
 
 ### v4.8 Requirements Coverage
 
@@ -200,11 +209,11 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 
 ### Pending Todos
 
-**v4.7 (Schema-on-Read):**
+**v4.7 (Schema-on-Read): ✅ COMPLETE**
 - [x] Phase 62: Density Filtering (COMPLETE - executed in parallel with 63)
 - [x] Phase 63: Schema & Query Safety (COMPLETE)
 - [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
-- [ ] Phase 65: Facet Discovery UI (v4.7 completion)
+- [x] Phase 65: Facet Discovery (COMPLETE - 1 plan, ~4 minutes)
 
 **v4.8 (ETL Consolidation):**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
@@ -221,10 +230,13 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 
 ### Blockers/Concerns
 
-None — Phase 67 complete, ready for Phase 68 (Import Coordinator).
+None — v4.7 milestone complete (Schema-on-Read). Phase 67 complete, ready for Phase 68 (Import Coordinator).
+
+**v4.7 Milestone Achievement:**
+Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with isDynamic flag and nodeCount badges.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 67-01 complete (Canonical Schema)
-Resume file: .planning/phases/67-canonical-schema/67-01-SUMMARY.md
+Stopped at: Phase 65-01 complete (Dynamic Property Discovery) — v4.7 Schema-on-Read MILESTONE COMPLETE ✅
+Resume file: .planning/phases/65-facet-discovery/65-01-SUMMARY.md
