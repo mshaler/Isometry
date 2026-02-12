@@ -242,25 +242,6 @@ export function IntegratedLayout() {
           errors: result.errors.length,
         });
 
-        // Diagnostic: dump database state after import
-        if (databaseService?.isReady()) {
-          try {
-            const nodeCount = databaseService.query('SELECT COUNT(*) as count FROM nodes')[0]?.count;
-            const columns = databaseService.query('PRAGMA table_info(nodes)');
-            const sampleNode = databaseService.query('SELECT * FROM nodes LIMIT 1')[0];
-            const nodeTypes = databaseService.query(
-              'SELECT node_type, COUNT(*) as count FROM nodes GROUP BY node_type'
-            );
-            console.log('[Alto Import] Database state after import:', {
-              nodeCount,
-              columns: columns.map((c: Record<string, unknown>) => `${c.name} (${c.type})`),
-              sampleNode,
-              nodeTypes,
-            });
-          } catch (diagErr) {
-            console.error('[Alto Import] Diagnostic query failed:', diagErr);
-          }
-        }
       })
       .catch((err) => {
         importStartedRef.current = false; // Allow retry on error
@@ -353,14 +334,6 @@ export function IntegratedLayout() {
     }
 
     const projection = mappingsToProjection(pafvState.mappings);
-
-    // DEBUG: Trace projection flow
-    console.log('[IntegratedLayout] PAFV projection sync:', {
-      mappingsCount: pafvState.mappings.length,
-      xAxisFacet: projection.xAxis?.facet,
-      yAxisFacet: projection.yAxis?.facet,
-    });
-
     superGrid.setProjection(projection);
 
     contextLogger.debug('[IntegratedLayout] PAFV projection synced', {
