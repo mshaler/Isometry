@@ -496,6 +496,15 @@ export class GridRenderingEngine {
       return;
     }
 
+    // Debug: trace projection and card properties for schema-on-read verification
+    console.log('[GridRenderingEngine.render]', {
+      hasProjection: !!this.currentProjection,
+      xAxis: this.currentProjection?.xAxis?.facet,
+      yAxis: this.currentProjection?.yAxis?.facet,
+      cardCount: this.currentData?.cards?.length,
+      firstCardProps: this.currentData?.cards?.[0] ? Object.keys(this.currentData.cards[0] as object) : [],
+    });
+
     // Interrupt any ongoing transitions to prevent animation buildup during rapid axis changes
     this.container.selectAll('.card').interrupt();
     this.container.selectAll('.col-header').interrupt();
