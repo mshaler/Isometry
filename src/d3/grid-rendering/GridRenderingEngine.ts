@@ -14,6 +14,7 @@ import type {
   GridHeaders,
 } from '../../types/grid';
 import type { EncodingConfig } from '../../types/pafv';
+import type { JanusDensityState, ExtentDensityMode } from '../../types/density-control';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
@@ -59,6 +60,9 @@ export class GridRenderingEngine {
 
   // Selection state for view transition persistence
   private selectedIds: Set<string> = new Set();
+
+  // Density state for sparse/dense filtering
+  private densityState: JanusDensityState | null = null;
 
   constructor(
     container: d3.Selection<SVGElement, unknown, null, undefined>,
@@ -152,6 +156,160 @@ export class GridRenderingEngine {
     superGridLogger.debug('GridRenderingEngine: selected IDs set', {
       count: selectedIds.size,
     });
+  }
+
+  /**
+   * Map PAFVContext densityLevel (1-4) to ExtentDensityMode
+   * Per REQUIREMENTS.md:
+   *   - DensityLevel 1: sparse (full Cartesian grid)
+   *   - DensityLevel 2+: populated-only (dense mode)
+   */
+  public static mapDensityLevelToExtent(level: number): ExtentDensityMode {
+    return level === 1 ? 'sparse' : 'populated-only';
+  }
+
+  /**
+   * Set current density state for extent filtering
+   */
+  public setDensityState(state: JanusDensityState): void {
+    this.densityState = state;
+    superGridLogger.debug('GridRenderingEngine: density state set', {
+      extentDensity: state.extentDensity,
+      valueDensity: state.valueDensity,
+    });
+  }
+
+  /**
+   * Check if a card/cell is populated (has meaningful data)
+   * Empty placeholders will have _isEmpty: true
+   */
+  private isPopulated(card: unknown): boolean {
+    const c = card as Record<string, unknown>;
+    if (c._isEmpty) return false;
+    return !!(
+      (c.name && c.name !== '') ||
+      c.folder ||
+      c.status ||
+      c.priority ||
+      c.tags ||
+      c.created_at
+    );
+  }
+
+  /**
+   * Compute the full range of values for each axis (for sparse mode headers)
+   * Returns all possible header values, not just those with data
+   */
+  private computeFullDimensionRange(cards: unknown[]): {
+    columns: string[];
+    rows: string[];
+  } {
+    // Extract all unique values for column and row axes
+    const columnSet = new Set<string>();
+    const rowSet = new Set<string>();
+
+    cards.forEach(card => {
+      const c = card as Record<string, unknown>;
+      if (c._projectedCol != null) columnSet.add(String(c._projectedCol));
+      if (c._projectedRow != null) rowSet.add(String(c._projectedRow));
+    });
+
+    // Sort for consistent ordering
+    return {
+      columns: Array.from(columnSet).sort(),
+      rows: Array.from(rowSet).sort()
+    };
+  }
+
+  /**
+   * Generate full Cartesian grid with empty cell placeholders
+   * For sparse mode: creates cells for ALL row x column intersections
+   */
+  private generateCartesianGrid(
+    cards: unknown[],
+    columns: string[],
+    rows: string[]
+  ): unknown[] {
+    // Build lookup map of existing cards by position
+    const positionMap = new Map<string, unknown>();
+    cards.forEach(card => {
+      const c = card as Record<string, unknown>;
+      const key = `${c._projectedCol}:${c._projectedRow}`;
+      if (!positionMap.has(key)) {
+        positionMap.set(key, card);
+      }
+    });
+
+    // Generate full Cartesian product
+    const result: unknown[] = [];
+    for (const row of rows) {
+      for (const col of columns) {
+        const key = `${col}:${row}`;
+        const existingCard = positionMap.get(key);
+        if (existingCard) {
+          result.push(existingCard);
+        } else {
+          // Create empty placeholder
+          result.push({
+            _isEmpty: true,
+            _projectedCol: col,
+            _projectedRow: row,
+            id: `empty-${col}-${row}`,
+            name: ''
+          });
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Filter cards based on extent density setting
+   * Dense mode: only populated cells (removes empty placeholders)
+   */
+  private filterCardsByDensity(cards: unknown[]): unknown[] {
+    if (!this.densityState || this.densityState.extentDensity === 'sparse') {
+      return cards;
+    }
+    // Dense mode: filter to populated-only
+    return cards.filter(card => this.isPopulated(card));
+  }
+
+  /**
+   * Compute which row/column values have data (for dense mode header filtering)
+   */
+  private computePopulatedDimensions(cards: unknown[]): {
+    columns: Set<string>;
+    rows: Set<string>;
+  } {
+    const columns = new Set<string>();
+    const rows = new Set<string>();
+
+    cards.forEach(card => {
+      const c = card as Record<string, unknown>;
+      if (!c._isEmpty) {
+        if (c._projectedCol != null) columns.add(String(c._projectedCol));
+        if (c._projectedRow != null) rows.add(String(c._projectedRow));
+      }
+    });
+
+    return { columns, rows };
+  }
+
+  /**
+   * Generate Cartesian grid for sparse mode, pass through for dense mode
+   * Called at the start of render() before card positioning
+   */
+  private prepareCardsForDensity(cards: unknown[]): unknown[] {
+    const { columns, rows } = this.computeFullDimensionRange(cards);
+
+    if (this.densityState?.extentDensity === 'sparse') {
+      // Sparse: generate ALL cells including empty placeholders
+      return this.generateCartesianGrid(cards, columns, rows);
+    }
+    // Dense: pass through for filtering
+    return cards;
   }
 
   /**
@@ -525,6 +683,22 @@ export class GridRenderingEngine {
         // Fallback: simple grid layout when no projection
         this.computeSimpleGridPositions(this.currentData.cards);
       }
+
+      // Step 1: Prepare cards based on density (sparse generates empty cells)
+      const preparedCards = this.prepareCardsForDensity(this.currentData.cards);
+
+      // Step 2: Filter based on density (removes empty in dense mode, no-op in sparse)
+      const visibleCards = this.filterCardsByDensity(preparedCards);
+
+      // Update currentData with visible cards for downstream rendering
+      this.currentData = { ...this.currentData, cards: visibleCards };
+
+      superGridLogger.debug('GridRenderingEngine: render with density filtering', {
+        extentDensity: this.densityState?.extentDensity,
+        totalCards: preparedCards.length,
+        visibleCards: visibleCards.length,
+        selectedIds: this.selectedIds.size,
+      });
     }
 
     this.updateGridLayout();
@@ -805,6 +979,28 @@ export class GridRenderingEngine {
   private renderProjectionHeaders(): void {
     if (!this.currentProjection) return;
 
+    // Store original cards before any density filtering for header computation
+    const originalCards = this.currentData?.cards || [];
+
+    // Density-based header expansion/contraction
+    if (this.densityState?.extentDensity === 'sparse') {
+      // SPARSE: EXPAND headers to full dimension range (all possible values)
+      const fullRange = this.computeFullDimensionRange(originalCards);
+      this.currentHeaders = {
+        columns: fullRange.columns,
+        rows: fullRange.rows
+      };
+    } else if (this.densityState?.extentDensity === 'populated-only') {
+      // DENSE: CONTRACT headers to populated-only
+      const populated = this.computePopulatedDimensions(originalCards);
+      if (this.currentHeaders) {
+        this.currentHeaders = {
+          columns: this.currentHeaders.columns.filter(h => populated.columns.has(h)),
+          rows: this.currentHeaders.rows.filter(h => populated.rows.has(h))
+        };
+      }
+    }
+
     // Check if X-axis has stacked facets (multiple facets assigned)
     const xAxisStacked = (this.currentProjection.xAxis?.facets?.length ?? 0) > 1;
     const yAxisStacked = (this.currentProjection.yAxis?.facets?.length ?? 0) > 1;
@@ -818,6 +1014,7 @@ export class GridRenderingEngine {
       yFacets: this.currentProjection.yAxis?.facets || [],
       yAxisStacked,
       willRenderStacked: xAxisStacked || yAxisStacked,
+      densityMode: this.densityState?.extentDensity || 'default',
     });
 
     if (xAxisStacked || yAxisStacked) {

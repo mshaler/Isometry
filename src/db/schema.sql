@@ -62,6 +62,22 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_nodes_source ON nodes(source, source_id) W
 CREATE INDEX IF NOT EXISTS idx_nodes_name ON nodes(name);
 CREATE INDEX IF NOT EXISTS idx_nodes_content ON nodes(content);
 
+-- Node Properties: Dynamic key-value storage for arbitrary YAML frontmatter
+CREATE TABLE IF NOT EXISTS node_properties (
+    id TEXT PRIMARY KEY,
+    node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT,  -- JSON-encoded value (preserves type information)
+    value_type TEXT NOT NULL DEFAULT 'string',  -- string, number, boolean, array, object, null
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(node_id, key)  -- One value per key per node
+);
+
+-- Indexes for efficient property queries
+CREATE INDEX IF NOT EXISTS idx_node_properties_node_id ON node_properties(node_id);
+CREATE INDEX IF NOT EXISTS idx_node_properties_key ON node_properties(key);
+CREATE INDEX IF NOT EXISTS idx_node_properties_lookup ON node_properties(node_id, key);
+
 -- FTS5 virtual table for full-text search
 CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
     name,
