@@ -5,17 +5,18 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** v4.8 ETL Consolidation — Canonical schema and multi-format importers
+**Current focus:** v5.0 SuperGrid MVP — Multi-level headers, density controls, zoom anchoring
 
 ## Current Position
 
-Phase: 70 of 72 (Integration)
-Plan: 01 of 03 COMPLETE
-Status: Phase 70 IN PROGRESS — Plan 01 (Database Insertion & Window Bridge) complete
-Last activity: 2026-02-12 — Completed 70-01 (insertCanonicalNodes + window.isometryETL)
+Phase: 73 of 76 (SuperGrid Phase A)
+Plan: 01 of 04 COMPLETE
+Status: Phase 73 IN PROGRESS — Plan 01 (SuperStack Multi-Level Headers) complete
+Last activity: 2026-02-12 — Completed 73-01 (HeaderNode hierarchy, buildHeaderHierarchy, header click selection)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [###################...........] 66% (4/6 phases)
+Progress (v4.8): [###################...........] 66% (4/6 phases) — deferred for SuperGrid
+Progress (v5.0 SuperGrid): [#######.......................] 25% (1/4 plans in Phase A)
 
 ## Performance Metrics
 
@@ -29,7 +30,10 @@ Progress (v4.8): [###################...........] 66% (4/6 phases)
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
-**Recent completions (Phase 70 - v4.8 Integration):**
+**Recent completions (Phase 73 - v5.0 SuperGrid Phase A):**
+- Phase 73-01: COMPLETE (~6m) — SuperStack multi-level headers with hierarchy building
+
+**Previous completions (Phase 70 - v4.8 Integration):**
 - Phase 70-01: COMPLETE (~5m) — insertCanonicalNodes() + window.isometryETL bridge
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
@@ -67,6 +71,12 @@ Progress (v4.8): [###################...........] 66% (4/6 phases)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 73-01 decisions (SuperStack Multi-Level Headers):**
+- STACK-DEC-01: Pipe-delimited format for multi-level values (e.g., "Q1|Jan|Week 1")
+- STACK-DEC-02: HeaderNode type with span calculated from leaf descendants
+- STACK-DEC-03: Visual differentiation: parent headers #e8e8e8, leaf headers #f5f5f5
+- STACK-DEC-04: Header click selects all cells within header's span range
 
 **Phase 70-01 decisions (Integration - Database Insertion):**
 - INT-DEC-01: Direct db.run() for properties instead of storeNodeProperties (already-filtered node.properties)
@@ -295,13 +305,22 @@ node_properties table (EAV)
 - [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
 - [x] Phase 65: Facet Discovery (COMPLETE - 2 plans, ~7 minutes total)
 
-**v4.8 (ETL Consolidation):**
+**v4.8 (ETL Consolidation): DEFERRED**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
-- [~] Phase 70: Integration — IN PROGRESS (Plan 01 complete, Plans 02-03 pending)
+- [~] Phase 70: Integration — PAUSED (Plan 01 complete, SuperGrid prioritized)
 - [ ] Phase 71: Swift Bridge
 - [ ] Phase 72: Quality & Docs
+
+**v5.0 (SuperGrid MVP) — CURRENT FOCUS:**
+- [x] Phase 73-01: SuperStack Multi-Level Headers (COMPLETE - ~6 minutes)
+- [ ] Phase 73-02: SuperDensity Controls
+- [ ] Phase 73-03: SuperZoom Upper-Left Anchor
+- [ ] Phase 73-04: Header Click Zones
+- [ ] Phase 74: SuperGrid Phase B (TBD)
+- [ ] Phase 75: SuperGrid Phase C (TBD)
+- [ ] Phase 76: SuperGrid Polish (TBD)
 
 **Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
@@ -310,7 +329,7 @@ node_properties table (EAV)
 
 ### Blockers/Concerns
 
-None — Phase 70-01 complete, ready for Phase 70-02 (Importer Registration).
+None — Phase 73-01 complete, ready for Phase 73-02 (SuperDensity Controls).
 
 **v4.7 Milestone Achievement:**
 Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with sparkle icons, dashed borders, and node count badges for complete visual feedback loop.
@@ -318,6 +337,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 70-01 COMPLETE — insertCanonicalNodes + window.isometryETL bridge
-Resume file: .planning/phases/70-integration/70-02-PLAN.md
-Next action: Execute 70-02 (if exists) or continue Phase 70
+Stopped at: Phase 73-01 COMPLETE — SuperStack multi-level headers
+Resume file: .planning/phases/73-supergrid-phase-a/73-02-PLAN.md
+Next action: Execute 73-02 (SuperDensity Controls)
