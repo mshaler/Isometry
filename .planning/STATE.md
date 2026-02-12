@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-12)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** v4.6 SuperGrid Polish — Animated transitions + sparse/dense filtering
+**Current focus:** v4.7 Schema-on-Read — Dynamic YAML property discovery
 
 ## Current Position
 
-Phase: 61 of 62 (View Transitions)
-Plan: 01 of 01 COMPLETE
-Status: Phase complete
-Last activity: 2026-02-12 — Completed Phase 61-01 View Transitions
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-12 — Milestone v4.7 started
 
-Progress (v4.6): [########        ] 50% (2 phases, 1 complete)
+Progress (v4.7): [                ] 0% (requirements phase)
 
 ## Performance Metrics
 
@@ -138,8 +138,15 @@ Resume file: None
 
 ## Resume Instructions
 
-Next action: `/gsd:plan-phase 62`
+Next action: Define requirements for v4.7
 
 v4.6 milestone progress:
 - Phase 61: View Transitions (TRANS-01, TRANS-02, TRANS-03) - COMPLETE
-- Phase 62: Density Filtering (DENS-01, DENS-02, DENS-03) - Not yet planned
+- Phase 62: Density Filtering - Deferred (v4.6 not shipped)
+
+v4.7 milestone focus (Schema-on-Read):
+- Dynamic property storage (node_properties table)
+- Query parameter binding fix
+- Full YAML parser upgrade
+- Dynamic facet discovery
+- Deterministic ETL identity

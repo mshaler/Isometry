@@ -24,13 +24,19 @@ PAFV context integration, 2D cell positioning with _projectedRow/_projectedCol, 
 ### v4.5 Stacked/Nested Headers (SHIPPED)
 Multi-facet stacked axis support with d3.stratify hierarchy, multi-level header rendering, header click sorting with visual indicators. Phase 60.
 
-## Current Milestone: v4.6 SuperGrid Polish
+### v4.6 SuperGrid Polish (IN PROGRESS)
+D3 animated view transitions with selection persistence. Phase 61 complete, Phase 62 (Density Filtering) pending.
 
-**Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
+## Current Milestone: v4.7 Schema-on-Read
+
+**Goal:** Dynamic YAML property discovery and storage for true schema-on-read semantics.
 
 **Target features:**
-- D3 animated transitions when axis mappings change (integrate existing SuperDynamic infrastructure)
-- Sparse/dense cell filtering based on DensityLevel (wire Janus controls to GridRenderingEngine)
+- Dynamic `node_properties` table for arbitrary YAML frontmatter storage
+- Query parameter binding fix (sql.js `execute()` ignores params)
+- Upgraded YAML parser (replace custom parser with `yaml` package)
+- Dynamic facet discovery (surface YAML keys as Navigator facets)
+- Deterministic ETL identity (harden `source_id` generation)
 
 ## Core Value
 
@@ -186,8 +192,13 @@ Three-component React sidecar application:
 - [x] SuperGrid consuming PAFV axis mappings from PAFVContext - v4.4
 - [x] 2D cell positioning based on X-axis (column) and Y-axis (row) facet values - v4.4
 - [x] Dynamic header generation from unique axis values - v4.4
-- [ ] D3 animated transitions when axis mappings change (infrastructure exists, not integrated)
-- [ ] Sparse/dense cell filtering based on density level (type system exists, not implemented)
+- [x] D3 animated transitions when axis mappings change - v4.6
+- [ ] Sparse/dense cell filtering based on density level - v4.6 (Phase 62 pending)
+- [ ] Dynamic property storage for arbitrary YAML frontmatter keys
+- [ ] Query parameter binding via stmt.bind() instead of string interpolation
+- [ ] Full YAML parser with unknown key preservation
+- [ ] Dynamic facet discovery from node_properties table
+- [ ] Deterministic source_id generation with collision-free fallback
 
 ### Out of Scope
 
@@ -239,4 +250,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-10 after v4.4 milestone start*
+*Last updated: 2026-02-12 after v4.7 milestone start*
