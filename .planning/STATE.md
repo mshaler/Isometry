@@ -273,9 +273,10 @@ node_properties table (EAV)
 - Phase 71: Swift Bridge (BRIDGE-01, BRIDGE-02)
 - Phase 72: Quality & Docs (QUAL-01, QUAL-02, QUAL-03)
 
-**Coverage:** 2/6 phases complete (33%)
+**Coverage:** 3/6 phases complete (50%)
 - [x] Phase 67: Canonical Schema — Zod validation, JSON Schema, SQL mapping
 - [x] Phase 68: Import Coordinator — Extension-based routing, Template Method pattern, validation infrastructure
+- [x] Phase 69: File Importers — 6 importers (MD, JSON, CSV, HTML, Word, Excel) with TDD
 
 ### Pending Todos
 
@@ -288,8 +289,8 @@ node_properties table (EAV)
 **v4.8 (ETL Consolidation):**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
-- [ ] Phase 69: File Importers (MD, XLSX, DOCX, JSON, HTML, CSV) — next action
-- [ ] Phase 70: Integration
+- [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
+- [ ] Phase 70: Integration — next action
 - [ ] Phase 71: Swift Bridge
 - [ ] Phase 72: Quality & Docs
 
@@ -300,7 +301,7 @@ node_properties table (EAV)
 
 ### Blockers/Concerns
 
-None — v4.7 milestone complete (Schema-on-Read). Phase 67 and 68 complete, ready for Phase 69 (File Importers).
+None — v4.7 milestone complete (Schema-on-Read). Phase 69 complete, ready for Phase 70 (Integration).
 
 **v4.7 Milestone Achievement:**
 Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with sparkle icons, dashed borders, and node count badges for complete visual feedback loop.
@@ -308,5 +309,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 69-01 SUMMARY complete
-Resume file: .planning/phases/69-file-importers/69-01-SUMMARY.md
+Stopped at: Phase 69 COMPLETE — all 6 file importers implemented
+Resume file: .planning/phases/69-file-importers/69-VERIFICATION.md
