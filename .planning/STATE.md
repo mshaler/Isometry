@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 69 of 72 (File Importers)
-Plan: 02 of 06 COMPLETE
+Plan: 05 of 06 COMPLETE
 Status: In progress — Phase 69 Wave 1 parallel execution
-Last activity: 2026-02-12 — Completed Phase 69-02 (JsonImporter)
+Last activity: 2026-02-12 — Completed Phase 69-05 (WordImporter)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [##########....................] 40% (2/6 phases + 1 importer)
+Progress (v4.8): [############..................] 50% (2/6 phases + 4 importers)
 
 ## Performance Metrics
 
@@ -30,6 +30,7 @@ Progress (v4.8): [##########....................] 40% (2/6 phases + 1 importer)
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
+- Phase 69-05: COMPLETE (~6m) — WordImporter with mammoth.js for DOCX to HTML
 - Phase 69-02: COMPLETE (~4m) — JsonImporter with flexible LATCH mapping
 
 **Recent completions (Phase 68 - v4.8 ETL Consolidation):**
@@ -59,6 +60,12 @@ Progress (v4.8): [##########....................] 40% (2/6 phases + 1 importer)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 69-05 decisions (WordImporter):**
+- WORD-DEC-01: Mock mammoth for unit tests (simpler than creating real DOCX)
+- WORD-DEC-02: Extract title from first H1/H2/H3 heading with regex
+- WORD-DEC-03: Store conversion warnings in properties.conversionWarnings
+- WORD-DEC-04: Support both base64 and UTF-8 encoding via toBuffer()
 
 **Phase 69-02 decisions (JsonImporter):**
 - JSON-DEC-01: Use native JSON.parse (no dependencies)
@@ -274,5 +281,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 69-02 complete (JsonImporter with flexible LATCH mapping)
-Resume file: .planning/phases/69-file-importers/69-02-SUMMARY.md
+Stopped at: Phase 69-05 complete (WordImporter with mammoth.js for DOCX to HTML)
+Resume file: .planning/phases/69-file-importers/69-05-SUMMARY.md
