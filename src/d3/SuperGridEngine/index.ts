@@ -18,6 +18,7 @@ import type {
   PAFVConfiguration,
   CellDescriptor,
   HeaderTree,
+  HeaderDescriptor,
   GridDimensions,
   SelectionState,
   ViewportState,
@@ -381,6 +382,64 @@ export class SuperGridEngine extends EventEmitter {
     this.emit('selectionChange', { selection: this.getSelection() });
   }
 
+  /**
+   * Select all cells that belong to a header's descendants.
+   * When clicking a parent header (e.g., "Q1"), selects all cells
+   * in columns/rows that fall within that header's span.
+   *
+   * @param header The header that was clicked
+   */
+  selectHeaderChildren(header: HeaderDescriptor): void {
+    // Add header to selected headers
+    this.selectionState.selectedHeaders.add(header.id);
+
+    // Find all cells that fall within this header's span
+    const isColumnHeader = header.id.startsWith('column_');
+    const isRowHeader = header.id.startsWith('row_');
+
+    // Get leaf indices covered by this header (startIndex to endIndex)
+    // For multi-level headers, the position encodes the span
+    const startIdx = Math.floor(
+      isColumnHeader
+        ? header.position.x / this.gridDimensions.cellWidth
+        : header.position.y / this.gridDimensions.cellHeight
+    );
+    const spanCount = Math.round(
+      isColumnHeader
+        ? header.position.width / this.gridDimensions.cellWidth
+        : header.position.height / this.gridDimensions.cellHeight
+    );
+    const endIdx = startIdx + spanCount - 1;
+
+    // Select all cells in the range
+    for (const cell of this.currentCells) {
+      const cellIdx = isColumnHeader ? cell.gridX : cell.gridY;
+      if (cellIdx >= startIdx && cellIdx <= endIdx) {
+        this.selectionState.selectedCells.add(cell.id);
+      }
+    }
+
+    this.updateSelection();
+    this.emit('selectionChange', { selection: this.getSelection() });
+  }
+
+  /**
+   * Select a header and all its descendant headers.
+   * This is useful for progressive disclosure where collapsing
+   * a parent should also collapse its children.
+   *
+   * @param headerId The ID of the header to select
+   */
+  selectHeaderWithDescendants(headerId: string): void {
+    // Find the header
+    const allHeaders = [...this.headerTree.columns, ...this.headerTree.rows];
+    const header = allHeaders.find(h => h.id === headerId);
+
+    if (header) {
+      this.selectHeaderChildren(header);
+    }
+  }
+
   // ========================================================================
   // Private Implementation Methods
   // ========================================================================
@@ -435,6 +494,10 @@ export class SuperGridEngine extends EventEmitter {
     this.renderer.setCallbacks({
       onCellClick: (cell, nodes) => {
         this.emit('cellClick', { cell, nodes });
+      },
+      onHeaderClick: (header) => {
+        this.selectHeaderChildren(header);
+        this.emit('headerClick', { header });
       },
       onRenderComplete: (renderTime, cellCount) => {
         this.emit('renderComplete', { renderTime, cellCount });

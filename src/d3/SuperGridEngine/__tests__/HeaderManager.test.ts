@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { SuperGridHeaderManager, buildHeaderHierarchy, calculateHeaderDimensions } from '../HeaderManager';
-import type { CellDescriptor, HeaderNode } from '../types';
+import type { CellDescriptor, HeaderDescriptor, HeaderNode } from '../types';
 
 describe('HeaderManager', () => {
   describe('buildHeaderHierarchy', () => {
@@ -317,6 +317,73 @@ describe('HeaderManager', () => {
 
       expect(result.maxColumnLevels).toBe(1);
       expect(result.maxRowLevels).toBe(1);
+    });
+  });
+
+  describe('header selection with children', () => {
+    it('should calculate cells within header span for parent header click', () => {
+      // Simulate what selectHeaderChildren does:
+      // Given a header with position and span, calculate which cells are covered
+      const header: HeaderDescriptor = {
+        id: 'column_0_Q1_0',
+        level: 0,
+        value: 'Q1',
+        axis: 'Category',
+        span: 3, // Q1 spans 3 leaf columns
+        position: { x: 0, y: 0, width: 300, height: 40 }, // 3 * 100 = 300
+        childCount: 2,
+        isLeaf: false,
+      };
+
+      const cellWidth = 100;
+
+      // Calculate start and end indices from header position
+      const startIdx = Math.floor(header.position.x / cellWidth);
+      const spanCount = Math.round(header.position.width / cellWidth);
+      const endIdx = startIdx + spanCount - 1;
+
+      expect(startIdx).toBe(0);
+      expect(spanCount).toBe(3);
+      expect(endIdx).toBe(2);
+
+      // Cells at gridX 0, 1, 2 would be selected
+      const cells: CellDescriptor[] = [
+        { id: 'c0', gridX: 0, gridY: 0, xValue: 'a', yValue: 'b', nodeIds: [], nodeCount: 0 },
+        { id: 'c1', gridX: 1, gridY: 0, xValue: 'a', yValue: 'b', nodeIds: [], nodeCount: 0 },
+        { id: 'c2', gridX: 2, gridY: 0, xValue: 'a', yValue: 'b', nodeIds: [], nodeCount: 0 },
+        { id: 'c3', gridX: 3, gridY: 0, xValue: 'a', yValue: 'b', nodeIds: [], nodeCount: 0 }, // Outside Q1
+      ];
+
+      const selectedIds = cells
+        .filter(c => c.gridX >= startIdx && c.gridX <= endIdx)
+        .map(c => c.id);
+
+      expect(selectedIds).toEqual(['c0', 'c1', 'c2']);
+      expect(selectedIds).not.toContain('c3');
+    });
+
+    it('should calculate cells for row header click', () => {
+      const header: HeaderDescriptor = {
+        id: 'row_0_Q1_0',
+        level: 0,
+        value: 'Q1',
+        axis: 'Category',
+        span: 2, // Q1 spans 2 leaf rows
+        position: { x: 0, y: 0, width: 120, height: 160 }, // 2 * 80 = 160
+        childCount: 2,
+        isLeaf: false,
+      };
+
+      const cellHeight = 80;
+
+      // For row headers, use y position and height
+      const startIdx = Math.floor(header.position.y / cellHeight);
+      const spanCount = Math.round(header.position.height / cellHeight);
+      const endIdx = startIdx + spanCount - 1;
+
+      expect(startIdx).toBe(0);
+      expect(spanCount).toBe(2);
+      expect(endIdx).toBe(1);
     });
   });
 });
