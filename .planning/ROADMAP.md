@@ -276,7 +276,7 @@ Plans:
 **Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 63-01-PLAN.md — Add node_properties table to schema and fix execute() parameter binding
+- [x] 63-01-PLAN.md — Add node_properties table to schema and fix execute() parameter binding
 
 ### Phase 64: ETL Pipeline Upgrade
 **Goal**: Replace custom YAML parser with full-spec parser and harden source_id generation
@@ -328,7 +328,7 @@ Plans:
 | 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 62. Density Filtering | v4.6 | 0/1 | Planned | - |
-| 63. Schema & Query Safety | v4.7 | 0/TBD | Not started | - |
+| 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
 | 64. ETL Pipeline Upgrade | v4.7 | 0/TBD | Not started | - |
 | 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
 
