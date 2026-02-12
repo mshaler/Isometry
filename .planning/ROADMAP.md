@@ -235,11 +235,10 @@ Plans:
   1. User changes axis mapping in Navigator and sees cards smoothly transition to new positions (300ms animation)
   2. User changes axis mapping and sees header elements smoothly transition with cards
   3. User has cards selected, changes axis mapping, and selected cards remain selected after transition
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 61-01: TBD
-- [ ] 61-02: TBD
+- [ ] 61-01-PLAN.md — Card/header transitions with selection preservation
 
 ### Phase 62: Density Filtering
 **Goal**: User controls whether empty cells display via density controls
@@ -274,9 +273,9 @@ Plans:
 | 58. Transitions & Polish | v4.4 | 2/2 | Complete | 2026-02-11 |
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
 | 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
-| 61. View Transitions | v4.6 | 0/TBD | Not started | - |
+| 61. View Transitions | v4.6 | 0/1 | Planned | - |
 | 62. Density Filtering | v4.6 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (v4.6 milestone roadmap created - Phases 61-62)*
+*Last updated: 2026-02-12 (Phase 61 planned - 1 plan)*
