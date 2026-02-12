@@ -10,6 +10,7 @@ export class SuperGridRenderer {
 
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
+  private onHeaderClick?: (header: HeaderDescriptor) => void;
   private onRenderComplete?: (renderTime: number, cellCount: number) => void;
 
   constructor(_animationDuration: number = 250) {
@@ -62,9 +63,11 @@ export class SuperGridRenderer {
    */
   setCallbacks(callbacks: {
     onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
+    onHeaderClick?: (header: HeaderDescriptor) => void;
     onRenderComplete?: (renderTime: number, cellCount: number) => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
+    this.onHeaderClick = callbacks.onHeaderClick;
     this.onRenderComplete = callbacks.onRenderComplete;
   }
 
@@ -103,7 +106,26 @@ export class SuperGridRenderer {
   }
 
   /**
-   * Render grid headers (columns and rows)
+   * Get fill color based on header level for visual hierarchy.
+   * Deeper levels get lighter shades.
+   */
+  private getHeaderFillByLevel(level: number): string {
+    const fills = ['#e0e0e0', '#ebebeb', '#f5f5f5', '#fafafa'];
+    return fills[Math.min(level, fills.length - 1)];
+  }
+
+  /**
+   * Get font size based on header level.
+   * Root headers are larger, deeper levels are smaller.
+   */
+  private getHeaderFontSize(level: number): string {
+    const sizes = ['13px', '12px', '11px', '10px'];
+    return sizes[Math.min(level, sizes.length - 1)];
+  }
+
+  /**
+   * Render grid headers (columns and rows) using D3 .join() pattern.
+   * Supports multi-level nested headers with visual spanning.
    */
   private renderHeaders(
     _d3: typeof import('d3'),
@@ -113,74 +135,113 @@ export class SuperGridRenderer {
     if (!this.svg) return;
 
     const headersGroup = this.svg.select('.headers');
+    const onHeaderClick = this.onHeaderClick;
 
-    // Column headers
-    const columnHeaders = headersGroup
-      .selectAll<SVGRectElement, HeaderDescriptor>('.column-header')
-      .data(headerTree.columns, d => d.id);
+    // Calculate total header height for multi-level columns
+    const totalColumnHeaderHeight = headerTree.maxColumnLevels > 1
+      ? gridDimensions.headerHeight
+      : gridDimensions.headerHeight;
 
-    const columnEnter = columnHeaders.enter()
-      .append('g')
-      .attr('class', 'column-header');
+    // Calculate total header width for multi-level rows
+    const totalRowHeaderWidth = headerTree.maxRowLevels > 1
+      ? gridDimensions.headerWidth
+      : gridDimensions.headerWidth;
 
-    columnEnter.append('rect')
-      .attr('fill', '#f0f0f0')
-      .attr('stroke', '#ccc')
-      .attr('stroke-width', 1);
+    // Column headers - using .join() pattern
+    headersGroup
+      .selectAll<SVGGElement, HeaderDescriptor>('.column-header')
+      .data(headerTree.columns, d => d.id)
+      .join(
+        enter => {
+          const g = enter.append('g')
+            .attr('class', 'column-header')
+            .style('cursor', 'pointer');
 
-    columnEnter.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .style('font-size', '12px');
+          g.append('rect')
+            .attr('stroke', '#bbb')
+            .attr('stroke-width', 1);
 
-    const mergedColumns = (columnHeaders as any).merge(columnEnter as any) as any;
-    mergedColumns
-      .attr('transform', (d: HeaderDescriptor) => `translate(${d.position.x + gridDimensions.headerWidth}, ${d.position.y})`);
+          g.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .style('user-select', 'none');
 
-    (mergedColumns.select('rect') as any)
-      .attr('width', (d: HeaderDescriptor) => d.position.width)
-      .attr('height', (d: HeaderDescriptor) => d.position.height);
+          // Add click handler for header selection
+          g.on('click', (_event, d) => {
+            if (onHeaderClick) {
+              onHeaderClick(d);
+            }
+          });
 
-    (mergedColumns.select('text') as any)
-      .attr('x', (d: HeaderDescriptor) => d.position.width / 2)
-      .attr('y', (d: HeaderDescriptor) => d.position.height / 2)
-      .text((d: HeaderDescriptor) => d.value);
+          return g;
+        },
+        update => update,
+        exit => exit.remove()
+      )
+      .attr('transform', d => `translate(${d.position.x + totalRowHeaderWidth}, ${d.position.y})`)
+      .each(function(d) {
+        const g = _d3.select(this);
 
-    columnHeaders.exit().remove();
+        g.select('rect')
+          .attr('width', d.position.width)
+          .attr('height', d.position.height)
+          .attr('fill', d.isLeaf ? '#f5f5f5' : '#e8e8e8');
 
-    // Row headers
-    const rowHeaders = headersGroup
-      .selectAll<SVGRectElement, HeaderDescriptor>('.row-header')
-      .data(headerTree.rows, d => d.id);
+        g.select('text')
+          .attr('x', d.position.width / 2)
+          .attr('y', d.position.height / 2)
+          .style('font-size', d.isLeaf ? '11px' : '12px')
+          .style('font-weight', d.isLeaf ? 'normal' : '500')
+          .text(d.value);
+      });
 
-    const rowEnter = rowHeaders.enter()
-      .append('g')
-      .attr('class', 'row-header');
+    // Row headers - using .join() pattern
+    headersGroup
+      .selectAll<SVGGElement, HeaderDescriptor>('.row-header')
+      .data(headerTree.rows, d => d.id)
+      .join(
+        enter => {
+          const g = enter.append('g')
+            .attr('class', 'row-header')
+            .style('cursor', 'pointer');
 
-    rowEnter.append('rect')
-      .attr('fill', '#f0f0f0')
-      .attr('stroke', '#ccc')
-      .attr('stroke-width', 1);
+          g.append('rect')
+            .attr('stroke', '#bbb')
+            .attr('stroke-width', 1);
 
-    rowEnter.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .style('font-size', '12px');
+          g.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'middle')
+            .style('user-select', 'none');
 
-    const mergedRows = (rowHeaders as any).merge(rowEnter as any) as any;
-    mergedRows
-      .attr('transform', (d: HeaderDescriptor) => `translate(${d.position.x}, ${d.position.y + gridDimensions.headerHeight})`);
+          // Add click handler for header selection
+          g.on('click', (_event, d) => {
+            if (onHeaderClick) {
+              onHeaderClick(d);
+            }
+          });
 
-    (mergedRows.select('rect') as any)
-      .attr('width', (d: HeaderDescriptor) => d.position.width)
-      .attr('height', (d: HeaderDescriptor) => d.position.height);
+          return g;
+        },
+        update => update,
+        exit => exit.remove()
+      )
+      .attr('transform', d => `translate(${d.position.x}, ${d.position.y + totalColumnHeaderHeight})`)
+      .each(function(d) {
+        const g = _d3.select(this);
 
-    (mergedRows.select('text') as any)
-      .attr('x', (d: HeaderDescriptor) => d.position.width / 2)
-      .attr('y', (d: HeaderDescriptor) => d.position.height / 2)
-      .text((d: HeaderDescriptor) => d.value);
+        g.select('rect')
+          .attr('width', d.position.width)
+          .attr('height', d.position.height)
+          .attr('fill', d.isLeaf ? '#f5f5f5' : '#e8e8e8');
 
-    rowHeaders.exit().remove();
+        g.select('text')
+          .attr('x', d.position.width / 2)
+          .attr('y', d.position.height / 2)
+          .style('font-size', d.isLeaf ? '11px' : '12px')
+          .style('font-weight', d.isLeaf ? 'normal' : '500')
+          .text(d.value);
+      });
   }
 
   /**
