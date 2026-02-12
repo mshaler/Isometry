@@ -15,11 +15,14 @@
  * This component replaces 40KB of MessageBridge with direct SQLite access.
  */
 
-import { useMemo, useCallback, useRef } from 'react';
+import { useMemo, useCallback, useRef, useState } from 'react';
 import { SuperStack } from './SuperStack';
+import { DensityControls } from './DensityControls';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
+import { filterEmptyCells, type ExtentMode } from '@/d3/SuperGridEngine/DataManager';
 import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
+import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
 import './SuperStack.css';
 import './SuperGrid.css';
 
@@ -38,10 +41,18 @@ interface SuperGridProps {
   enableDragDrop?: boolean;
   /** Maximum nesting levels in headers */
   maxHeaderLevels?: number;
+  /** Enable density controls UI */
+  enableDensityControls?: boolean;
+  /** Initial value density level */
+  initialValueDensity?: number;
+  /** Initial extent density mode */
+  initialExtentDensity?: ExtentMode;
   /** Callback when cell is clicked */
   onCellClick?: (node: Node) => void;
   /** Callback when header is clicked */
   onHeaderClick?: (level: number, value: string, axis: LATCHAxis) => void;
+  /** Callback when density changes */
+  onDensityChange?: (valueDensity: number, extentDensity: ExtentMode) => void;
 }
 
 /**
@@ -62,11 +73,30 @@ export function SuperGrid({
   enableSuperStack = true,
   enableDragDrop = true,
   maxHeaderLevels = 4,
+  enableDensityControls = true,
+  initialValueDensity = 0,
+  initialExtentDensity = 'dense',
   onCellClick,
-  onHeaderClick
+  onHeaderClick,
+  onDensityChange
 }: SuperGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const { state: pafvState } = usePAFV();
+
+  // Janus Density State
+  const [valueDensity, setValueDensity] = useState(initialValueDensity);
+  const [extentDensity, setExtentDensity] = useState<ExtentMode>(initialExtentDensity);
+
+  // Handle density control changes
+  const handleValueDensityChange = useCallback((level: number) => {
+    setValueDensity(level);
+    onDensityChange?.(level, extentDensity);
+  }, [extentDensity, onDensityChange]);
+
+  const handleExtentDensityChange = useCallback((mode: ExtentMode) => {
+    setExtentDensity(mode);
+    onDensityChange?.(valueDensity, mode);
+  }, [valueDensity, onDensityChange]);
 
   // Load nodes from SQLite with direct sql.js access
   const queryEnabled = nodesProp == null;
@@ -158,19 +188,43 @@ export function SuperGrid({
       cells.get(cellKey)!.push(node);
     });
 
+    // Convert to cell descriptors for density filtering
+    const sortedColumns = Array.from(columnValues).sort();
+    const sortedRows = Array.from(rowValues).sort();
+
+    const allCells: CellDescriptor[] = Array.from(cells.entries()).map(([key, cellNodes]) => {
+      const [rowKey, colKey] = key.split(':');
+      return {
+        id: `cell-${rowKey}-${colKey}`,
+        gridX: sortedColumns.indexOf(colKey),
+        gridY: sortedRows.indexOf(rowKey),
+        xValue: colKey,
+        yValue: rowKey,
+        nodeIds: cellNodes.map(n => n.id),
+        nodeCount: cellNodes.length,
+      };
+    });
+
+    // Apply extent density filtering
+    const filteredCells = filterEmptyCells(allCells, extentDensity);
+
+    // Map back to display format with original nodes
+    const displayCells = filteredCells.map(cell => ({
+      rowKey: cell.yValue,
+      colKey: cell.xValue,
+      nodes: cells.get(`${cell.yValue}:${cell.xValue}`) || []
+    }));
+
     return {
-      cells: Array.from(cells.entries()).map(([key, cellNodes]) => {
-        const [rowKey, colKey] = key.split(':');
-        return { rowKey, colKey, nodes: cellNodes };
-      }),
-      columnHeaders: Array.from(columnValues).sort(),
-      rowHeaders: Array.from(rowValues).sort(),
+      cells: displayCells,
+      columnHeaders: sortedColumns,
+      rowHeaders: sortedRows,
       isStacked: {
         columns: gridLayout.isColumnStacked,
         rows: gridLayout.isRowStacked
       }
     };
-  }, [nodes, gridLayout]);
+  }, [nodes, gridLayout, extentDensity]);
 
   // Handle cell click
   const handleCellClick = useCallback((node: Node) => {
@@ -228,6 +282,19 @@ export function SuperGrid({
       data-columns={gridLayout.hasColumns}
       data-rows={gridLayout.hasRows}
     >
+      {/* Density Controls - Above the grid */}
+      {enableDensityControls && (
+        <div className="supergrid__density-controls">
+          <DensityControls
+            valueDensity={valueDensity}
+            maxValueLevel={maxHeaderLevels}
+            extentDensity={extentDensity}
+            onValueDensityChange={handleValueDensityChange}
+            onExtentDensityChange={handleExtentDensityChange}
+          />
+        </div>
+      )}
+
       {/* Corner Cell - Sticky at top-left intersection */}
       {enableSuperStack && gridLayout.hasColumns && gridLayout.hasRows && (
         <div className="supergrid__corner" aria-hidden="true" />
