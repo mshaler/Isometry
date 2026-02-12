@@ -65,7 +65,9 @@ Note 2\tPersonal\tlow-priority`;
       });
 
       expect(nodes[0].name).toBe('Task, with comma');
-      expect(nodes[0].content).toContain('Description with "quotes" inside');
+      // Content is JSON stringified, so quotes are escaped
+      const parsedContent = JSON.parse(nodes[0].content!);
+      expect(parsedContent.description).toBe('Description with "quotes" inside');
     });
 
     it('should skip empty rows', async () => {
