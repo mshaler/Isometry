@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 69 of 72 (File Importers)
-Plan: 05 of 06 COMPLETE
-Status: In progress — Phase 69 Wave 1 parallel execution
-Last activity: 2026-02-12 — Completed Phase 69-05 (WordImporter)
+Plan: 06 of 06 COMPLETE
+Status: Phase 69 COMPLETE — All 6 file importers implemented
+Last activity: 2026-02-12 — Completed Phase 69-06 (ExcelImporter)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [############..................] 50% (2/6 phases + 4 importers)
+Progress (v4.8): [###############...............] 50% (3/6 phases)
 
 ## Performance Metrics
 
@@ -30,6 +30,8 @@ Progress (v4.8): [############..................] 50% (2/6 phases + 4 importers)
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
+- Phase 69-06: COMPLETE (~5m) — ExcelImporter with SheetJS multi-sheet support
+- Phase 69-04: COMPLETE (~6m) — HtmlImporter with native DOMParser
 - Phase 69-05: COMPLETE (~6m) — WordImporter with mammoth.js for DOCX to HTML
 - Phase 69-02: COMPLETE (~4m) — JsonImporter with flexible LATCH mapping
 
@@ -60,6 +62,17 @@ Progress (v4.8): [############..................] 50% (2/6 phases + 4 importers)
 ## Accumulated Context
 
 ### Decisions
+**Phase 69-06 decisions (ExcelImporter):**
+- EXCEL-DEC-01: Sheet name used as folder for organizational hierarchy
+- EXCEL-DEC-02: No fallback to arbitrary column values for name - use sheet+row number format
+
+
+**Phase 69-04 decisions (HtmlImporter):**
+- HTML-DEC-01: Use native DOMParser (zero dependencies, jsdom in tests)
+- HTML-DEC-02: Title fallback: <title> -> <h1> -> filename
+- HTML-DEC-03: Meta tag mapping: description->summary, keywords->tags, author->properties
+- HTML-DEC-04: Semantic content priority: <main> > <article> > <body>
+- HTML-DEC-05: Preserve HTML formatting in content field (not strip tags)
 
 **Phase 69-05 decisions (WordImporter):**
 - WORD-DEC-01: Mock mammoth for unit tests (simpler than creating real DOCX)
