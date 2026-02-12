@@ -30,13 +30,19 @@ export function createDatabaseOperations(
 
   // Synchronous execute function - core CLAUDE.md requirement
   // NOTE: Logging removed to prevent console flooding. Use browser DevTools for SQL debugging.
-  const execute = (sql: string, _params: unknown[] = []): Record<string, unknown>[] => {
+  const execute = (sql: string, params: unknown[] = []): Record<string, unknown>[] => {
     if (!db) {
       throw new Error('Database not initialized');
     }
 
     try {
       const stmt = db.prepare(sql);
+
+      // Bind parameters before stepping through results (prevents SQL injection)
+      if (params.length > 0) {
+        stmt.bind(params as BindParams);
+      }
+
       const results: Record<string, unknown>[] = [];
 
       while (stmt.step()) {
