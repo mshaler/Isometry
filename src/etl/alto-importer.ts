@@ -11,14 +11,25 @@
  * - C (Category): folder, calendar, node_type, tags
  * - H (Hierarchy): priority, importance (derived from status)
  *
- * Phase 64-02: Integrated deterministic source_id and property storage.
+ * Phase 70-02: Refactored to extend BaseImporter and return CanonicalNode[].
  */
 
 import type { Database } from 'sql.js';
-import { parseAltoFile, type ParsedAltoFile, type AltoDataType } from './alto-parser';
-import { generateDeterministicSourceId } from './id-generation/deterministic';
-import { storeNodeProperties } from './storage/property-storage';
 import { v4 as uuidv4 } from 'uuid';
+import { BaseImporter, type FileSource } from './importers/BaseImporter';
+import { CanonicalNode, CanonicalNodeSchema, SQL_COLUMN_MAP } from './types/canonical';
+import { parseFrontmatter } from './parsers/frontmatter';
+import { generateDeterministicSourceId } from './id-generation/deterministic';
+import { insertCanonicalNodes } from './database/insertion';
+import {
+  parseAltoFile,
+  detectDataType,
+  extractTags,
+  type ParsedAltoFile,
+  type AltoDataType,
+  type AltoFrontmatter,
+} from './alto-parser';
+import { storeNodeProperties } from './storage/property-storage';
 
 // ============================================================================
 // Types
@@ -72,15 +83,366 @@ export interface NodeRecord {
 }
 
 // ============================================================================
-// Mapping Functions
+// AltoImporter Class (extends BaseImporter)
+// ============================================================================
+
+interface ParsedAltoContent {
+  frontmatter: Record<string, unknown>;
+  body: string;
+  tags: string[];
+  dataType: AltoDataType;
+  filename: string;
+}
+
+/**
+ * Alto-Index Importer - Extends BaseImporter for CanonicalNode pipeline.
+ *
+ * Parses alto.index markdown files and converts to CanonicalNode format.
+ * Supports diverse data types: notes, contacts, messages, calendar, reminders,
+ * safari-history, safari-bookmarks, and voice-memos.
+ */
+export class AltoImporter extends BaseImporter {
+  protected async parse(source: FileSource): Promise<ParsedAltoContent> {
+    const parsed = parseFrontmatter(source.content);
+
+    if (!parsed) {
+      throw new Error('Failed to parse frontmatter');
+    }
+
+    const { frontmatter, body } = parsed;
+    const altoFrontmatter = frontmatter as unknown as AltoFrontmatter;
+    const dataType = detectDataType(source.filename, altoFrontmatter);
+
+    // Extract tags from attachments (notes-specific)
+    const attachments = altoFrontmatter.attachments || [];
+    const tags = extractTags(attachments);
+
+    return {
+      frontmatter,
+      body,
+      tags,
+      dataType,
+      filename: source.filename,
+    };
+  }
+
+  protected async transform(data: unknown): Promise<CanonicalNode[]> {
+    const { frontmatter, body, tags, dataType, filename } =
+      data as ParsedAltoContent;
+
+    const node = this.mapToCanonicalNode(frontmatter, body, tags, dataType, filename);
+
+    // Validate against schema
+    const validated = CanonicalNodeSchema.safeParse(node);
+    if (!validated.success) {
+      throw new Error(`Validation failed: ${validated.error.message}`);
+    }
+
+    return [validated.data];
+  }
+
+  private mapToCanonicalNode(
+    frontmatter: Record<string, unknown>,
+    body: string,
+    tags: string[],
+    dataType: AltoDataType,
+    filename: string
+  ): CanonicalNode {
+    const id = uuidv4();
+    const sourceId = generateDeterministicSourceId(filename, frontmatter, 'alto');
+
+    // Extract values with type coercion
+    const title = String(frontmatter.title || frontmatter.name || filename);
+    const now = new Date().toISOString();
+
+    // Location extraction (calendar events, contacts)
+    let locationName: string | null = null;
+    let locationAddress: string | null = null;
+    if (frontmatter.location) {
+      const loc = String(frontmatter.location);
+      locationAddress = loc;
+      locationName = loc.split('\n')[0] || null;
+    }
+
+    // Folder extraction (type-specific)
+    let folder = this.extractFolder(frontmatter, dataType);
+
+    // Status extraction (reminders specific)
+    let status = frontmatter.status ? String(frontmatter.status) : null;
+    if (dataType === 'reminders' && frontmatter.is_flagged) {
+      status = 'flagged';
+    }
+
+    // Summary extraction
+    const summary = this.extractSummary(body, frontmatter);
+
+    return {
+      id,
+      nodeType: dataType,
+      name: title,
+      content: body || null,
+      summary,
+      source: 'alto-index',
+      sourceId,
+      sourceUrl: this.extractSourceUrl(frontmatter),
+
+      // Location
+      latitude: null,
+      longitude: null,
+      locationName,
+      locationAddress,
+
+      // Time (ISO 8601 strings)
+      createdAt: this.extractDate(frontmatter, [
+        'created',
+        'created_date',
+        'first_message',
+        'start_date',
+      ]) || now,
+      modifiedAt: this.extractDate(frontmatter, [
+        'modified',
+        'modified_date',
+        'last_modified',
+        'last_message',
+      ]) || now,
+      dueAt: this.extractDate(frontmatter, ['due_date', 'due']) || null,
+      completedAt: null,
+      eventStart: this.extractDate(frontmatter, ['start_date', 'start']) || null,
+      eventEnd: this.extractDate(frontmatter, ['end_date', 'end']) || null,
+
+      // Category
+      folder,
+      tags: tags.length > 0 ? tags : [],
+      status,
+
+      // Hierarchy
+      priority: this.extractPriority(frontmatter),
+      importance: this.extractImportance(frontmatter, dataType),
+      sortOrder: 0,
+
+      // Grid
+      gridX: 0,
+      gridY: 0,
+
+      // Lifecycle
+      version: 1,
+      deletedAt: null,
+
+      // Dynamic properties (keys not in SQL_COLUMN_MAP)
+      properties: this.extractUnknownProperties(frontmatter),
+    };
+  }
+
+  private extractFolder(
+    frontmatter: Record<string, unknown>,
+    dataType: AltoDataType
+  ): string | null {
+    if (frontmatter.folder) return String(frontmatter.folder);
+    if (frontmatter.calendar) return String(frontmatter.calendar);
+    if (frontmatter.list) return String(frontmatter.list);
+    if (frontmatter.organization) return String(frontmatter.organization);
+
+    // Type-specific defaults
+    switch (dataType) {
+      case 'contacts':
+        return 'Contacts';
+      case 'messages':
+        return frontmatter.is_group ? 'Group Chats' : 'Messages';
+      case 'calendar':
+        return 'Calendar';
+      case 'reminders':
+        return 'Reminders';
+      case 'safari-history':
+        return 'History';
+      case 'safari-bookmarks':
+        return 'Bookmarks';
+      default:
+        return dataType;
+    }
+  }
+
+  private extractSummary(
+    content: string | null,
+    frontmatter: Record<string, unknown>
+  ): string | null {
+    // Messages get participants as summary
+    if (Array.isArray(frontmatter.participants)) {
+      return (frontmatter.participants as string[]).join(', ');
+    }
+
+    if (!content) return null;
+
+    // Get first non-empty line that isn't a heading
+    const lines = content.split('\n').filter((line) => {
+      const trimmed = line.trim();
+      return trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('---');
+    });
+
+    return lines[0]?.slice(0, 200) || null;
+  }
+
+  private extractDate(
+    frontmatter: Record<string, unknown>,
+    keys: string[]
+  ): string | null {
+    for (const key of keys) {
+      const val = frontmatter[key];
+      if (val) {
+        if (val instanceof Date) return val.toISOString();
+        if (typeof val === 'string') {
+          // If already ISO, return as-is
+          if (/^\d{4}-\d{2}-\d{2}T/.test(val)) return val;
+          // Try to parse and convert
+          const parsed = new Date(val);
+          if (!isNaN(parsed.getTime())) return parsed.toISOString();
+        }
+      }
+    }
+    return null;
+  }
+
+  private extractSourceUrl(frontmatter: Record<string, unknown>): string | null {
+    const url = frontmatter.source || frontmatter.link || frontmatter.url;
+    if (!url) return null;
+
+    // Validate it's a valid URL
+    const urlStr = String(url);
+    try {
+      new URL(urlStr);
+      return urlStr;
+    } catch {
+      return null; // Invalid URL format
+    }
+  }
+
+  private extractPriority(frontmatter: Record<string, unknown>): number {
+    const p = frontmatter.priority;
+    if (typeof p === 'number') return Math.min(5, Math.max(0, p));
+    if (typeof p === 'string') {
+      const lower = p.toLowerCase();
+      if (lower === 'high') return 5;
+      if (lower === 'medium') return 3;
+      if (lower === 'low') return 1;
+      const num = parseInt(p, 10);
+      if (!isNaN(num)) return Math.min(5, Math.max(0, num));
+    }
+    if (frontmatter.is_flagged) return 4;
+    return 0;
+  }
+
+  private extractImportance(
+    frontmatter: Record<string, unknown>,
+    dataType: AltoDataType
+  ): number {
+    if (frontmatter.is_flagged) return 4;
+    const attendees = frontmatter.attendees as unknown[] | undefined;
+    if (attendees && attendees.length > 3) return 3;
+    if (dataType === 'calendar') return 2;
+    if (dataType === 'reminders') return 2;
+    return 1;
+  }
+
+  private extractUnknownProperties(
+    frontmatter: Record<string, unknown>
+  ): Record<string, unknown> {
+    // Use SQL_COLUMN_MAP to get complete list of canonical fields
+    const canonicalKeys = new Set(Object.keys(SQL_COLUMN_MAP));
+
+    // Plus the explicit frontmatter key aliases that map to canonical fields
+    const frontmatterAliases = new Set([
+      'title', // -> name
+      'created', // -> createdAt
+      'created_date',
+      'first_message',
+      'modified', // -> modifiedAt
+      'modified_date',
+      'last_modified',
+      'last_message',
+      'due', // -> dueAt
+      'due_date',
+      'start', // -> eventStart
+      'start_date',
+      'end', // -> eventEnd
+      'end_date',
+      'location', // -> locationName/Address
+      'calendar', // -> folder
+      'list', // -> folder
+      'organization', // -> folder
+      'participants', // -> summary (messages)
+      'is_group', // -> folder (messages)
+      'is_flagged', // -> priority/status
+      'link', // -> sourceUrl
+      'url', // -> sourceUrl
+      'attachments', // -> tags extraction
+      'attendees', // -> importance
+    ]);
+
+    const unknown: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(frontmatter)) {
+      // Skip if it's a canonical field OR a known alias
+      if (!canonicalKeys.has(key) && !frontmatterAliases.has(key)) {
+        unknown[key] = value;
+      }
+    }
+
+    return unknown; // Return empty object rather than undefined (schema default is {})
+  }
+}
+
+// ============================================================================
+// Backward-Compatible Wrappers
+// ============================================================================
+
+/**
+ * Import a single alto-index file and insert into database.
+ *
+ * ARCHITECTURE NOTE: This wrapper exists for backward compatibility only.
+ * The clean architecture is:
+ *   AltoImporter.import() -> CanonicalNode[] -> caller handles insertion
+ *
+ * New code should use:
+ *   const importer = new AltoImporter();
+ *   const nodes = await importer.import({ filename, content });
+ *   await insertCanonicalNodes(db, nodes);
+ *
+ * @deprecated Use AltoImporter class directly for new code
+ */
+export async function importAltoFile(
+  db: Database,
+  filename: string,
+  content: string
+): Promise<{ nodeId: string; errors: string[] }> {
+  const importer = new AltoImporter();
+
+  try {
+    const nodes = await importer.import({ filename, content });
+
+    if (nodes.length > 0) {
+      // Insert using new utility
+      const insertResult = await insertCanonicalNodes(db, nodes);
+      return {
+        nodeId: nodes[0].id,
+        errors: insertResult.errors.map((e) => e.error),
+      };
+    }
+
+    return { nodeId: '', errors: ['No nodes imported'] };
+  } catch (error) {
+    return {
+      nodeId: '',
+      errors: [error instanceof Error ? error.message : String(error)],
+    };
+  }
+}
+
+// ============================================================================
+// Legacy Mapping Functions (preserved for batch import)
 // ============================================================================
 
 /**
  * Map a parsed alto file to a node record for sql.js insertion.
  *
- * @param parsed - Parsed alto file with frontmatter and content
- * @param filePath - Original file path for deterministic ID generation
- * @param rawFrontmatter - Raw frontmatter object for property storage
+ * @deprecated Use AltoImporter.import() which returns CanonicalNode[]
  */
 export function mapToNodeRecord(
   parsed: ParsedAltoFile,
@@ -163,7 +525,7 @@ function extractSummary(content: string | null): string | null {
   if (!content) return null;
 
   // Get first non-empty line that isn't a heading
-  const lines = content.split('\n').filter(line => {
+  const lines = content.split('\n').filter((line) => {
     const trimmed = line.trim();
     return trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('---');
   });
@@ -192,7 +554,10 @@ function getModifiedDate(frontmatter: ParsedAltoFile['frontmatter']): string {
   );
 }
 
-function getFolder(frontmatter: ParsedAltoFile['frontmatter'], dataType: AltoDataType): string {
+function getFolder(
+  frontmatter: ParsedAltoFile['frontmatter'],
+  dataType: AltoDataType
+): string {
   return frontmatter.folder || frontmatter.calendar || frontmatter.list || dataType;
 }
 
@@ -204,7 +569,10 @@ function getPriority(frontmatter: ParsedAltoFile['frontmatter']): number {
   return 0;
 }
 
-function getImportance(frontmatter: ParsedAltoFile['frontmatter'], dataType: AltoDataType): number {
+function getImportance(
+  frontmatter: ParsedAltoFile['frontmatter'],
+  dataType: AltoDataType
+): number {
   // Derive importance from data type and attributes
   if (frontmatter.is_flagged) return 4;
   if (frontmatter.attendees && frontmatter.attendees.length > 3) return 3;
@@ -214,12 +582,14 @@ function getImportance(frontmatter: ParsedAltoFile['frontmatter'], dataType: Alt
 }
 
 // ============================================================================
-// Import Functions
+// Batch Import Functions (legacy - uses direct SQL insertion)
 // ============================================================================
 
 /**
  * Import alto-index files from provided file contents
  * This is the browser-compatible version that takes pre-loaded content
+ *
+ * NOTE: For new code, consider using AltoImporter with insertCanonicalNodes.
  */
 export function importAltoFiles(
   db: Database,
@@ -256,7 +626,6 @@ export function importAltoFiles(
   `;
 
   // Stratified sampling: if limit is set, sample proportionally from each data type
-  // to ensure all datasets are represented
   let filesToProcess: Array<{ path: string; content: string }>;
   if (limit && limit < files.length) {
     // Group files by data type (detected from path)
@@ -288,10 +657,16 @@ export function importAltoFiles(
         const typeFiles = byType.get(type)!;
         const alreadyTaken = Math.min(minPerType, typeFiles.length);
         const remainingInType = typeFiles.length - alreadyTaken;
-        const proportion = remainingInType / (files.length - filesToProcess.length + remainingInType);
-        const additional = Math.min(Math.floor(remaining * proportion), remainingInType);
+        const proportion =
+          remainingInType / (files.length - filesToProcess.length + remainingInType);
+        const additional = Math.min(
+          Math.floor(remaining * proportion),
+          remainingInType
+        );
         if (additional > 0) {
-          filesToProcess.push(...typeFiles.slice(alreadyTaken, alreadyTaken + additional));
+          filesToProcess.push(
+            ...typeFiles.slice(alreadyTaken, alreadyTaken + additional)
+          );
         }
       }
     }
@@ -318,7 +693,10 @@ export function importAltoFiles(
       }
 
       // Preserve raw frontmatter for property storage
-      const rawFrontmatter = parsed.frontmatter as unknown as Record<string, unknown>;
+      const rawFrontmatter = parsed.frontmatter as unknown as Record<
+        string,
+        unknown
+      >;
 
       const node = mapToNodeRecord(parsed, file.path, rawFrontmatter);
 
