@@ -321,17 +321,23 @@ Plans:
   1. CanonicalNodeSchema validates all LATCH dimensions and provenance fields
   2. JSON Schema exports for Swift interop
   3. SQL_COLUMN_MAP maps camelCase to snake_case for database insertion
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+Plans:
+- [x] 67-01-PLAN.md — Canonical Node Schema with Zod validation
 
 ### Phase 68: Import Coordinator
 **Goal**: Create central router for file imports with format detection
-**Depends on**: Phase 67
+**Depends on**: Phase 67 (Canonical Schema complete)
 **Requirements**: COORD-01, COORD-02, COORD-03
 **Success Criteria** (what must be TRUE):
   1. ImportCoordinator routes files to appropriate importers by extension
   2. BaseImporter interface defines import/parse/validate/transform contract
   3. Format detection works for all supported extensions
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+Plans:
+- [ ] 68-01-PLAN.md — BaseImporter abstract class and ImportCoordinator router
 
 ### Phase 69: File Importers
 **Goal**: Implement importers for MD, XLSX, DOCX, JSON, HTML, CSV
@@ -359,7 +365,7 @@ Plans:
 **Requirements**: BRIDGE-01, BRIDGE-02
 **Success Criteria** (what must be TRUE):
   1. ETLBridge.swift delegates file parsing to JS via WKWebView
-  2. Round-trip Swift → JS → sql.js → Swift works correctly
+  2. Round-trip Swift -> JS -> sql.js -> Swift works correctly
   3. Native adapters exist for EventKit, Contacts, Notes
 **Plans**: TBD
 
@@ -395,9 +401,9 @@ Plans:
 | 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
 | 64. ETL Pipeline Upgrade | v4.7 | 2/2 | Complete | 2026-02-12 |
-| 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
-| 67. Canonical Schema | v4.8 | 0/TBD | Planned | - |
-| 68. Import Coordinator | v4.8 | 0/TBD | Planned | - |
+| 65. Facet Discovery | v4.7 | 0/2 | Not started | - |
+| 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
+| 68. Import Coordinator | v4.8 | 0/1 | Planned | - |
 | 69. File Importers | v4.8 | 0/TBD | Planned | - |
 | 70. Integration | v4.8 | 0/TBD | Planned | - |
 | 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
@@ -405,4 +411,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 64 complete)*
+*Last updated: 2026-02-12 (Phase 68 planned)*
