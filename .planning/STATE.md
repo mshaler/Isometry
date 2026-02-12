@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 63 of 65 (Schema & Query Safety)
-Plan: 01 of 01 COMPLETE
-Status: Phase complete
-Last activity: 2026-02-12 — Completed 63-01-PLAN.md (Schema & Query Safety)
+Phase: 64 of 65 (ETL Pipeline Upgrade)
+Plan: 01 of 03 COMPLETE
+Status: In progress
+Last activity: 2026-02-12 — Completed 64-01-PLAN.md (Foundation Dependencies)
 
-Progress (v4.7): [################] 37.5% (3/8 requirements)
+Progress (v4.7): [####################] 50% (4/8 requirements)
 
 ## Performance Metrics
 
@@ -28,7 +28,10 @@ Progress (v4.7): [################] 37.5% (3/8 requirements)
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
-**Recent completions (Phase 63):**
+**Recent completions (Phase 64):**
+- Phase 64-01: COMPLETE (2m 34s) — gray-matter + yaml + SHA-256 source_id
+
+**Previous (Phase 63):**
 - Phase 63-01: COMPLETE (2m 27s) — EAV table + SQL injection fix
 
 **Phase 62 (parallel execution):**
@@ -46,6 +49,11 @@ Progress (v4.7): [################] 37.5% (3/8 requirements)
 - ROADMAP-02: Phase 63 foundation (schema+query), Phase 64 ETL, Phase 65 UI surface
 - ROADMAP-03: Dependency chain: 63 → 64 → 65 (table → parser → discovery)
 - ROADMAP-04: v4.6 Phase 62 deferred to v4.8 (density filtering deprioritized)
+
+**Phase 64-01 decisions:**
+- YAML-01: Use yaml package as gray-matter engine for full YAML 1.2 spec support
+- ID-01: SHA-256 truncated to 16 chars for human-readable collision-resistant IDs
+- ID-02: Sort frontmatter keys before JSON stringification for key-order independence
 
 **Phase 63-01 decisions:**
 - SCHEMA-01: Use EAV table (node_properties) per roadmap spec rather than JSON column
@@ -130,13 +138,13 @@ PAFVContext.densityLevel -> SuperGrid.setDensityLevel()
 - FACET-01: Query node_properties for dynamic facets -> Phase 65
 - FACET-02: Dynamic properties in Navigator UI -> Phase 65
 
-**Coverage:** 8/8 mapped (100%), 3/8 implemented (37.5%)
+**Coverage:** 8/8 mapped (100%), 4/8 implemented (50%)
 - [x] SCHEMA-01: node_properties table (Phase 63-01)
 - [x] SCHEMA-02: Foreign key with cascade delete (Phase 63-01)
 - [x] QUERY-01: stmt.bind(params) in execute() (Phase 63-01)
-- [ ] ETL-01: yaml package parser (Phase 64)
-- [ ] ETL-02: Unknown keys to node_properties (Phase 64)
-- [ ] ETL-03: Deterministic source_id (Phase 64)
+- [x] ETL-01: yaml package parser (Phase 64-01 - parseFrontmatter with gray-matter)
+- [ ] ETL-02: Unknown keys to node_properties (Phase 64-02/03)
+- [x] ETL-03: Deterministic source_id (Phase 64-01 - generateDeterministicSourceId)
 - [ ] FACET-01: Query node_properties for facets (Phase 65)
 - [ ] FACET-02: Dynamic properties in Navigator (Phase 65)
 
@@ -144,7 +152,7 @@ PAFVContext.densityLevel -> SuperGrid.setDensityLevel()
 
 - [x] Phase 62: Density Filtering (COMPLETE - executed in parallel with 63)
 - [x] Phase 63: Schema & Query Safety (COMPLETE)
-- [ ] Phase 64: YAML ETL Parser (next action)
+- [~] Phase 64: YAML ETL Parser (IN PROGRESS - 64-01 complete, 64-02/03 remaining)
 - [ ] Phase 65: Facet Discovery UI
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
@@ -152,10 +160,10 @@ PAFVContext.densityLevel -> SuperGrid.setDensityLevel()
 
 ### Blockers/Concerns
 
-None — Phase 63 complete, ready for Phase 64.
+None — Phase 64-01 complete, ready for Phase 64-02.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 63-01 complete, ready for Phase 64 (YAML ETL Parser)
-Resume file: .planning/phases/63-schema-query-safety/63-01-SUMMARY.md
+Stopped at: Phase 64-01 complete, ready for Phase 64-02 (YAML Field Mapping)
+Resume file: .planning/phases/64-etl-pipeline-upgrade/64-01-SUMMARY.md
