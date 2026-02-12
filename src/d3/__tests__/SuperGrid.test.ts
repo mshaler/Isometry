@@ -1,7 +1,7 @@
-import { initDatabase, getDatabase } from '@/db/init';
+import { createTestDB, cleanupTestDB } from '@/test/db-utils';
 import * as d3 from 'd3';
 import { beforeEach, describe, it, expect, afterEach } from 'vitest';
-import type { Database } from 'sql.js';
+import type { Database } from 'sql.js-fts5';
 
 /**
  * SuperGrid D3-sql.js Integration Tests
@@ -22,16 +22,19 @@ describe('SuperGrid Foundation', () => {
   let svg: SVGElement;
 
   beforeEach(async () => {
-    // Setup test database with sql.js
-    db = await initDatabase();
+    // Setup test database with sql.js using test utilities
+    db = await createTestDB({ loadSampleData: false });
 
     // Setup SVG container for D3.js rendering
     document.body.innerHTML = '<svg id="test-svg"></svg>';
     svg = document.getElementById('test-svg') as SVGElement;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     document.body.innerHTML = '';
+    if (db) {
+      await cleanupTestDB(db);
+    }
   });
 
   describe('Core Bridge Elimination Validation', () => {

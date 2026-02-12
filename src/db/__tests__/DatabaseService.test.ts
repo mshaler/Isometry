@@ -1,30 +1,46 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DatabaseService } from '../DatabaseService';
+import { createTestDB, cleanupTestDB } from '@/test/db-utils';
 import { devLogger } from '@/utils/logging/dev-logger';
+import type { Database } from 'sql.js-fts5';
 
+/**
+ * Database capabilities test suite
+ *
+ * Tests raw sql.js capabilities directly rather than through DatabaseService
+ * since DatabaseService is now a thin wrapper that requires a pre-initialized database.
+ */
 describe('DatabaseService', () => {
-  let db: DatabaseService;
+  let db: Database;
 
   beforeEach(async () => {
-    db = new DatabaseService();
-    await db.initialize(); // In-memory for tests
+    db = await createTestDB({ loadSampleData: false });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     if (db) {
-      try {
-        db.close();
-      } catch (e) {
-        // Ignore close errors in tests
-      }
+      await cleanupTestDB(db);
     }
   });
+
+  // Helper to convert sql.js results to typed array
+  function query<T>(sql: string, params?: unknown[]): T[] {
+    const results = params
+      ? db.exec(sql, params as (string | number | Uint8Array | null)[])
+      : db.exec(sql);
+    if (results.length === 0) return [];
+    const { columns, values } = results[0];
+    return values.map(row => {
+      const obj: Record<string, unknown> = {};
+      columns.forEach((col, idx) => { obj[col] = row[idx]; });
+      return obj as T;
+    });
+  }
 
   describe('FTS5 support verification', () => {
     it('verifies FTS5 support is available or documents limitation', () => {
       // CRITICAL: This gates everything per CLAUDE.md
       try {
-        const result = db.query<{fts5_version: string}>("SELECT fts5_version()");
+        const result = query<{fts5_version: string}>("SELECT fts5_version()");
         expect(result[0].fts5_version).toMatch(/^\d+\.\d+\.\d+$/);
         devLogger.inspect(`FTS5 available: ${result[0].fts5_version}`);
       } catch (error) {
@@ -39,7 +55,7 @@ describe('DatabaseService', () => {
         db.run(`CREATE VIRTUAL TABLE test_fts USING fts5(content, title)`);
         db.run(`INSERT INTO test_fts(content, title) VALUES ('hello world', 'test')`);
 
-        const results = db.query<{content: string, title: string}>(`
+        const results = query<{content: string, title: string}>(`
           SELECT content, title FROM test_fts WHERE test_fts MATCH 'hello'
         `);
         expect(results).toHaveLength(1);
@@ -51,7 +67,7 @@ describe('DatabaseService', () => {
         db.run(`CREATE TABLE test_text_search (content TEXT, title TEXT)`);
         db.run(`INSERT INTO test_text_search(content, title) VALUES ('hello world', 'test')`);
 
-        const results = db.query<{content: string, title: string}>(`
+        const results = query<{content: string, title: string}>(`
           SELECT content, title FROM test_text_search WHERE content LIKE '%hello%'
         `);
         expect(results).toHaveLength(1);
@@ -63,7 +79,7 @@ describe('DatabaseService', () => {
   describe('JSON1 support verification', () => {
     it('verifies JSON1 support is available', () => {
       expect(() => {
-        const result = db.query("SELECT json('{\"test\": true}')");
+        const result = query("SELECT json('{\"test\": true}')");
         expect(result[0]).toBeDefined();
       }).not.toThrow();
     });
@@ -72,7 +88,7 @@ describe('DatabaseService', () => {
       db.run(`CREATE TABLE test_json (id INTEGER, data TEXT)`);
       db.run(`INSERT INTO test_json(id, data) VALUES (1, json('{"name": "test", "value": 42}'))`);
 
-      const results = db.query<{id: number, name: string, value: number}>(`
+      const results = query<{id: number, name: string, value: number}>(`
         SELECT id, json_extract(data, '$.name') as name, json_extract(data, '$.value') as value
         FROM test_json WHERE id = 1
       `);
@@ -85,23 +101,23 @@ describe('DatabaseService', () => {
 
   describe('recursive CTEs for graph traversal', () => {
     it('executes recursive CTEs for graph traversal', () => {
-      // Setup test data for graph traversal
-      db.run(`CREATE TABLE nodes (id INTEGER PRIMARY KEY, name TEXT)`);
-      db.run(`CREATE TABLE edges (source_id INTEGER, target_id INTEGER)`);
+      // Setup test data for graph traversal (using test_graph_* to avoid conflict with schema's nodes table)
+      db.run(`CREATE TABLE test_graph_nodes (id INTEGER PRIMARY KEY, name TEXT)`);
+      db.run(`CREATE TABLE test_graph_edges (source_id INTEGER, target_id INTEGER)`);
 
       // Insert test graph: 1 -> 2 -> 3, 1 -> 4
-      db.run(`INSERT INTO nodes(id, name) VALUES (1, 'root'), (2, 'child1'), (3, 'grandchild'), (4, 'child2')`);
-      db.run(`INSERT INTO edges(source_id, target_id) VALUES (1, 2), (2, 3), (1, 4)`);
+      db.run(`INSERT INTO test_graph_nodes(id, name) VALUES (1, 'root'), (2, 'child1'), (3, 'grandchild'), (4, 'child2')`);
+      db.run(`INSERT INTO test_graph_edges(source_id, target_id) VALUES (1, 2), (2, 3), (1, 4)`);
 
       // Test recursive CTE that finds all reachable nodes from node 1
-      const results = db.query<{id: number, name: string, depth: number}>(`
+      const results = query<{id: number, name: string, depth: number}>(`
         WITH RECURSIVE reachable(id, name, depth) AS (
-          SELECT id, name, 0 FROM nodes WHERE id = 1
+          SELECT id, name, 0 FROM test_graph_nodes WHERE id = 1
           UNION ALL
           SELECT n.id, n.name, r.depth + 1
           FROM reachable r
-          JOIN edges e ON e.source_id = r.id
-          JOIN nodes n ON n.id = e.target_id
+          JOIN test_graph_edges e ON e.source_id = r.id
+          JOIN test_graph_nodes n ON n.id = e.target_id
           WHERE r.depth < 10
         )
         SELECT id, name, depth FROM reachable ORDER BY depth, id
@@ -124,7 +140,7 @@ describe('DatabaseService', () => {
       db.run(`INSERT INTO cycle_edges(source_id, target_id) VALUES (1, 2), (2, 3), (3, 1)`);
 
       // Should respect depth limit to avoid infinite recursion
-      const results = db.query<{id: number, depth: number}>(`
+      const results = query<{id: number, depth: number}>(`
         WITH RECURSIVE path(id, depth, path) AS (
           SELECT id, 0, CAST(id AS TEXT) FROM cycle_nodes WHERE id = 1
           UNION ALL
@@ -148,7 +164,7 @@ describe('DatabaseService', () => {
       db.run(`INSERT INTO test_sync(value) VALUES ('test1'), ('test2')`);
 
       // Query should be synchronous - no promises
-      const results = db.query<{id: number, value: string}>(`SELECT id, value FROM test_sync ORDER BY id`);
+      const results = query<{id: number, value: string}>(`SELECT id, value FROM test_sync ORDER BY id`);
 
       expect(results).toHaveLength(2);
       expect(results[0].value).toBe('test1');
@@ -162,13 +178,13 @@ describe('DatabaseService', () => {
       // Mutation should be immediately visible
       db.run(`UPDATE test_immediate SET counter = counter + 1 WHERE id = 1`);
 
-      const result = db.query<{counter: number}>(`SELECT counter FROM test_immediate WHERE id = 1`);
+      const result = query<{counter: number}>(`SELECT counter FROM test_immediate WHERE id = 1`);
       expect(result[0].counter).toBe(1);
 
       // Multiple mutations should be immediately visible
       db.run(`UPDATE test_immediate SET counter = counter + 5 WHERE id = 1`);
 
-      const result2 = db.query<{counter: number}>(`SELECT counter FROM test_immediate WHERE id = 1`);
+      const result2 = query<{counter: number}>(`SELECT counter FROM test_immediate WHERE id = 1`);
       expect(result2[0].counter).toBe(6);
     });
 
@@ -179,7 +195,7 @@ describe('DatabaseService', () => {
       db.run(`INSERT INTO test_params(name, age) VALUES (?, ?)`, ['Alice', 25]);
       db.run(`INSERT INTO test_params(name, age) VALUES (?, ?)`, ['Bob; DROP TABLE test_params; --', 30]);
 
-      const results = db.query<{name: string, age: number}>(`
+      const results = query<{name: string, age: number}>(`
         SELECT name, age FROM test_params WHERE age > ? ORDER BY id
       `, [20]);
 
@@ -206,19 +222,31 @@ describe('DatabaseService', () => {
       db.run(`CREATE TABLE roundtrip_test (id INTEGER PRIMARY KEY, value TEXT, created DATETIME DEFAULT CURRENT_TIMESTAMP)`);
       db.run(`INSERT INTO roundtrip_test(value) VALUES ('original'), ('data')`);
 
-      const originalData = db.query<{id: number, value: string}>(`SELECT id, value FROM roundtrip_test ORDER BY id`);
+      const originalData = query<{id: number, value: string}>(`SELECT id, value FROM roundtrip_test ORDER BY id`);
       expect(originalData).toHaveLength(2);
 
       // Export
       const exported = db.export();
-      db.close();
 
-      // Import into new database
-      const db2 = new DatabaseService();
-      await db2.initialize(exported.buffer);
+      // Import into new database using test utilities
+      const { initializeTestSqlJs } = await import('@/test/sqljs-setup');
+      const SQL = await initializeTestSqlJs();
+      const db2 = new SQL.Database(exported);
+
+      // Helper for db2 queries
+      function queryDb2<T>(sql: string): T[] {
+        const results = db2.exec(sql);
+        if (results.length === 0) return [];
+        const { columns, values } = results[0];
+        return values.map(row => {
+          const obj: Record<string, unknown> = {};
+          columns.forEach((col, idx) => { obj[col] = row[idx]; });
+          return obj as T;
+        });
+      }
 
       // Verify data integrity
-      const importedData = db2.query<{id: number, value: string}>(`SELECT id, value FROM roundtrip_test ORDER BY id`);
+      const importedData = queryDb2<{id: number, value: string}>(`SELECT id, value FROM roundtrip_test ORDER BY id`);
       expect(importedData).toEqual(originalData);
 
       db2.close();
@@ -228,13 +256,13 @@ describe('DatabaseService', () => {
   describe('error handling and edge cases', () => {
     it('handles SQL syntax errors gracefully', () => {
       expect(() => {
-        db.query("INVALID SQL SYNTAX");
+        query("INVALID SQL SYNTAX");
       }).toThrow();
     });
 
     it('handles empty result sets', () => {
       db.run(`CREATE TABLE empty_test (id INTEGER)`);
-      const results = db.query(`SELECT * FROM empty_test`);
+      const results = query(`SELECT * FROM empty_test`);
       expect(results).toEqual([]);
     });
 
@@ -247,11 +275,11 @@ describe('DatabaseService', () => {
         db.run(insertStmt, [i, `data_${i}`]);
       }
 
-      const count = db.query<{count: number}>(`SELECT COUNT(*) as count FROM large_test`);
+      const count = query<{count: number}>(`SELECT COUNT(*) as count FROM large_test`);
       expect(count[0].count).toBe(1000);
 
       // Query large subset should be efficient
-      const subset = db.query<{id: number}>(`SELECT id FROM large_test WHERE id % 100 = 0 ORDER BY id`);
+      const subset = query<{id: number}>(`SELECT id FROM large_test WHERE id % 100 = 0 ORDER BY id`);
       expect(subset).toHaveLength(10);
       expect(subset[0].id).toBe(100);
       expect(subset[9].id).toBe(1000);

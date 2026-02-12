@@ -109,6 +109,42 @@ Object.defineProperty(global, 'crypto', {
   },
 });
 
+// Mock IndexedDB for persistence layer testing
+// This prevents "indexedDB is not defined" errors in jsdom environment
+const mockIndexedDB = {
+  open: () => ({
+    result: {
+      objectStoreNames: { contains: () => false },
+      createObjectStore: () => ({}),
+      transaction: () => ({
+        objectStore: () => ({
+          get: () => ({ result: null }),
+          put: () => ({}),
+          delete: () => ({}),
+        }),
+      }),
+    },
+    onerror: null,
+    onsuccess: null,
+    onupgradeneeded: null,
+  }),
+  deleteDatabase: () => ({
+    result: undefined,
+    onerror: null,
+    onsuccess: null,
+  }),
+};
+
+Object.defineProperty(global, 'indexedDB', {
+  writable: true,
+  value: mockIndexedDB,
+});
+
+Object.defineProperty(window, 'indexedDB', {
+  writable: true,
+  value: mockIndexedDB,
+});
+
 // Define interfaces for WebKit message handling
 interface WebKitMessage {
   id: string;
