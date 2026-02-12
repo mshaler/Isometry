@@ -33,6 +33,7 @@ Progress (v4.8): [###############...............] 50% (3/6 phases)
 - Phase 69-06: COMPLETE (~5m) — ExcelImporter with SheetJS multi-sheet support
 - Phase 69-04: COMPLETE (~6m) — HtmlImporter with native DOMParser
 - Phase 69-05: COMPLETE (~6m) — WordImporter with mammoth.js for DOCX to HTML
+- Phase 69-03: COMPLETE (~7m) — CsvImporter with PapaParse RFC 4180 compliance
 - Phase 69-02: COMPLETE (~4m) — JsonImporter with flexible LATCH mapping
 
 **Recent completions (Phase 68 - v4.8 ETL Consolidation):**
@@ -65,6 +66,12 @@ Progress (v4.8): [###############...............] 50% (3/6 phases)
 **Phase 69-06 decisions (ExcelImporter):**
 - EXCEL-DEC-01: Sheet name used as folder for organizational hierarchy
 - EXCEL-DEC-02: No fallback to arbitrary column values for name - use sheet+row number format
+
+**Phase 69-03 decisions (CsvImporter):**
+- CSV-DEC-01: Use PapaParse for RFC 4180 compliance (handles quoted fields, commas in values)
+- CSV-DEC-02: Store raw row as JSON in content field for debugging
+- CSV-DEC-03: Case-insensitive column header matching for flexibility
+- CSV-DEC-04: Priority string mapping (high=5, medium=3, low=1)
 
 
 **Phase 69-04 decisions (HtmlImporter):**
@@ -294,5 +301,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 69-05 complete (WordImporter with mammoth.js for DOCX to HTML)
-Resume file: .planning/phases/69-file-importers/69-05-SUMMARY.md
+Stopped at: Phase 69-03 complete (CsvImporter with PapaParse)
+Resume file: .planning/phases/69-file-importers/69-03-SUMMARY.md
