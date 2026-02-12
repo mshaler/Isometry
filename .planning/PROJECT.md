@@ -18,16 +18,19 @@ Property classification to Navigator UI with dynamic LATCH+GRAPH buckets and dra
 ### v5.0 Type Safety Restoration (SHIPPED)
 Eliminated all 1,347 TypeScript compilation errors. Pre-commit hook fully restored. 140 files changed via 3-wave parallel agent strategy.
 
-## Current Milestone: v4.4 SuperGrid PAFV Projection
+### v4.4 SuperGrid PAFV Projection (SHIPPED)
+PAFV context integration, 2D cell positioning with _projectedRow/_projectedCol, dynamic header generation from unique facet values. Phases 56-59.
 
-**Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
+### v4.5 Stacked/Nested Headers (SHIPPED)
+Multi-facet stacked axis support with d3.stratify hierarchy, multi-level header rendering, header click sorting with visual indicators. Phase 60.
+
+## Current Milestone: v4.6 SuperGrid Polish
+
+**Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
 
 **Target features:**
-- SuperGrid consumes PAFV axis mappings from context to determine column/row layout
-- 2D cell positioning: cards placed at intersection of X-axis (column) and Y-axis (row) facet values
-- Dynamic header generation from unique facet values in the dataset
-- Smooth D3 transitions when axis mappings change (drag new facet to Navigator well)
-- Empty cell handling: sparse mode (full Cartesian) vs dense mode (populated only)
+- D3 animated transitions when axis mappings change (integrate existing SuperDynamic infrastructure)
+- Sparse/dense cell filtering based on DensityLevel (wire Janus controls to GridRenderingEngine)
 
 ## Core Value
 
@@ -180,11 +183,11 @@ Three-component React sidecar application:
 
 ### Active
 
-- [ ] SuperGrid consuming PAFV axis mappings from PAFVContext
-- [ ] 2D cell positioning based on X-axis (column) and Y-axis (row) facet values
-- [ ] Dynamic header generation from unique axis values
-- [ ] View transitions when axis mappings change
-- [ ] Empty cell handling (sparse vs dense mode)
+- [x] SuperGrid consuming PAFV axis mappings from PAFVContext - v4.4
+- [x] 2D cell positioning based on X-axis (column) and Y-axis (row) facet values - v4.4
+- [x] Dynamic header generation from unique axis values - v4.4
+- [ ] D3 animated transitions when axis mappings change (infrastructure exists, not integrated)
+- [ ] Sparse/dense cell filtering based on density level (type system exists, not implemented)
 
 ### Out of Scope
 
