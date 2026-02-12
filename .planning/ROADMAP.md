@@ -273,11 +273,10 @@ Plans:
   2. Arbitrary YAML keys can be stored as key-value pairs linked to node_id
   3. All SQL queries use stmt.bind(params) instead of string interpolation for injection safety
   4. execute() function in db/operations.ts correctly passes params to sql.js stmt.bind()
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 63-01: TBD
-- [ ] 63-02: TBD
+- [ ] 63-01-PLAN.md — Add node_properties table to schema and fix execute() parameter binding
 
 ### Phase 64: ETL Pipeline Upgrade
 **Goal**: Replace custom YAML parser with full-spec parser and harden source_id generation
