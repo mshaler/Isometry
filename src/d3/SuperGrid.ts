@@ -14,6 +14,7 @@ import type { GridData, GridConfig } from '../types/grid-core';
 import type { PAFVProjection } from '../types/grid';
 import type { FilterCompilationResult } from '../services/query/LATCHFilterService';
 import type { EncodingConfig } from '../types/pafv';
+import type { JanusDensityState } from '../types/density-control';
 import { SuperGridZoom, type ZoomLevel, type PanLevel, type JanusState } from './SuperGridZoom';
 // CardPosition from views.ts has additional fields (width, height); drag operations use simplified position
 import { superGridLogger } from '../utils/dev-logger';
@@ -469,10 +470,39 @@ export class SuperGrid {
         break;
     }
 
+    // Construct JanusDensityState and pass to rendering engine
+    // SuperGrid owns the mapping: calls GridRenderingEngine.mapDensityLevelToExtent()
+    const densityState = this.constructDensityState(level);
+    this.renderingEngine.setDensityState(densityState);
+
     // Re-render with new density settings
     if (this.currentData) {
       this.render();
     }
+  }
+
+  /**
+   * Construct JanusDensityState from PAFVContext.densityLevel
+   * SuperGrid owns the mapping: calls GridRenderingEngine.mapDensityLevelToExtent()
+   * then builds the full JanusDensityState and passes to setDensityState()
+   */
+  private constructDensityState(densityLevel: number): JanusDensityState {
+    // SuperGrid calls the mapping function - per REQUIREMENTS.md: level 1 = sparse, level 2+ = dense
+    const extentDensity = GridRenderingEngine.mapDensityLevelToExtent(densityLevel);
+
+    return {
+      valueDensity: densityLevel <= 2 ? 'leaf' : 'collapsed',
+      extentDensity,
+      viewDensity: 'spreadsheet',
+      regionConfig: [],
+      axisGranularity: {},
+      aggregationPreferences: {
+        defaultFunction: 'count',
+        facetAggregations: {},
+        preservePrecision: true,
+        showAggregationSource: true
+      }
+    };
   }
 
   public resetZoomPan(): void {
