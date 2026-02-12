@@ -5,6 +5,7 @@
 import type {
   HeaderTree,
   HeaderDescriptor,
+  HeaderNode,
   LATCHAxis,
   CellDescriptor,
   GridDimensions,
@@ -12,16 +13,178 @@ import type {
   LevelGroup
 } from './types';
 
+/**
+ * Build a hierarchical tree from multi-level axis values.
+ *
+ * Takes an array of axis value arrays (e.g., [['Q1', 'Jan', 'Week 1'], ['Q1', 'Jan', 'Week 2'], ...])
+ * and constructs a nested HeaderNode tree where:
+ * - Root nodes are the unique values at level 0
+ * - Each node's children are the unique values at the next level that share the same parent path
+ * - Spans are calculated based on the number of leaf descendants
+ *
+ * @param axisValues Array of string arrays, each representing a path from root to leaf
+ * @returns Array of root HeaderNode objects forming the hierarchy
+ */
+export function buildHeaderHierarchy(axisValues: string[][]): HeaderNode[] {
+  if (axisValues.length === 0) {
+    return [];
+  }
+
+  // Find the maximum depth
+  const maxDepth = Math.max(...axisValues.map(v => v.length));
+
+  // Build the tree recursively
+  const buildLevel = (
+    values: string[][],
+    level: number,
+    startIdx: number
+  ): { nodes: HeaderNode[]; leafCount: number } => {
+    if (level >= maxDepth || values.length === 0) {
+      return { nodes: [], leafCount: 0 };
+    }
+
+    // Group values by their value at this level
+    const groups = new Map<string, string[][]>();
+    const groupOrder: string[] = [];
+
+    for (const path of values) {
+      const key = path[level] ?? '';
+      if (!groups.has(key)) {
+        groups.set(key, []);
+        groupOrder.push(key);
+      }
+      groups.get(key)!.push(path);
+    }
+
+    const nodes: HeaderNode[] = [];
+    let currentLeafIdx = startIdx;
+
+    for (const key of groupOrder) {
+      const groupValues = groups.get(key)!;
+
+      // Recursively build children
+      const childResult = buildLevel(groupValues, level + 1, currentLeafIdx);
+
+      // If no children, this is a leaf node
+      const isLeaf = childResult.nodes.length === 0;
+      const leafCount = isLeaf ? 1 : childResult.leafCount;
+
+      const node: HeaderNode = {
+        value: key,
+        level,
+        span: leafCount,
+        children: childResult.nodes,
+        startIndex: currentLeafIdx,
+        endIndex: currentLeafIdx + leafCount - 1,
+        isCollapsed: false,
+      };
+
+      nodes.push(node);
+      currentLeafIdx += leafCount;
+    }
+
+    const totalLeafCount = nodes.reduce((sum, n) => sum + n.span, 0);
+    return { nodes, leafCount: totalLeafCount };
+  };
+
+  const result = buildLevel(axisValues, 0, 0);
+  return result.nodes;
+}
+
+/**
+ * Flatten a HeaderNode hierarchy into HeaderDescriptor array with pixel positions.
+ *
+ * Traverses the tree and calculates x/y/width/height for each node based on:
+ * - For columns: x = startIndex * cellSize, width = span * cellSize, y = level * headerDepth
+ * - For rows: y = startIndex * cellSize, height = span * cellSize, x = level * headerDepth
+ *
+ * @param headers Array of root HeaderNode objects
+ * @param cellSize Size of each cell (width for columns, height for rows)
+ * @param headerDepth Size of each header level (height for columns, width for rows)
+ * @param orientation 'column' or 'row' determines position calculation
+ * @returns Flat array of HeaderDescriptor with pixel positions
+ */
+export function calculateHeaderDimensions(
+  headers: HeaderNode[],
+  cellSize: number,
+  headerDepth: number,
+  orientation: 'column' | 'row'
+): HeaderDescriptor[] {
+  const result: HeaderDescriptor[] = [];
+
+  const traverse = (node: HeaderNode) => {
+    const position =
+      orientation === 'column'
+        ? {
+            x: node.startIndex * cellSize,
+            y: node.level * headerDepth,
+            width: node.span * cellSize,
+            height: headerDepth,
+          }
+        : {
+            x: node.level * headerDepth,
+            y: node.startIndex * cellSize,
+            width: headerDepth,
+            height: node.span * cellSize,
+          };
+
+    const descriptor: HeaderDescriptor = {
+      id: `${orientation}_${node.level}_${node.value}_${node.startIndex}`,
+      level: node.level,
+      value: node.value,
+      axis: 'Category' as LATCHAxis, // Default, can be overridden
+      span: node.span,
+      position,
+      childCount: node.children.length,
+      isLeaf: node.children.length === 0,
+    };
+
+    result.push(descriptor);
+
+    for (const child of node.children) {
+      traverse(child);
+    }
+  };
+
+  for (const root of headers) {
+    traverse(root);
+  }
+
+  return result;
+}
+
+/**
+ * Parse a pipe-delimited multi-level value into an array.
+ * E.g., "Q1|Jan|Week 1" -> ["Q1", "Jan", "Week 1"]
+ */
+function parseMultiLevelValue(value: string): string[] {
+  if (!value || !value.includes('|')) {
+    return [value || 'Unassigned'];
+  }
+  return value.split('|').map(v => v.trim());
+}
+
+/**
+ * Calculate the maximum depth from an array of multi-level values.
+ */
+function getMaxDepth(axisValues: string[][]): number {
+  if (axisValues.length === 0) return 0;
+  return Math.max(...axisValues.map(v => v.length));
+}
+
 export class SuperGridHeaderManager {
   constructor(_headerMinWidth: number = 120, _headerMinHeight: number = 40) {
     // Min dimensions stored for future use
   }
 
   /**
-   * Generate header tree from current cells using actual axis values
+   * Generate header tree from current cells using actual axis values.
    *
    * Per spec: "Extract actual axis values from cells (cell.xValue, cell.yValue)
    * and create headers with real labels"
+   *
+   * Supports multi-level headers via pipe-delimited values (e.g., "Q1|Jan|Week 1").
+   * When multi-level values are detected, builds a nested hierarchy with proper spans.
    */
   generateHeaderTree(currentCells: CellDescriptor[], gridDimensions: GridDimensions): HeaderTree {
     if (currentCells.length === 0) {
@@ -46,49 +209,91 @@ export class SuperGridHeaderManager {
       }
     });
 
-    // Step 2: Sort by grid position and create headers with actual values
+    // Step 2: Sort by grid position
     const sortedXEntries = Array.from(xValueMap.entries()).sort((a, b) => a[0] - b[0]);
     const sortedYEntries = Array.from(yValueMap.entries()).sort((a, b) => a[0] - b[0]);
 
-    // Step 3: Generate column headers with real axis values
-    const columns: HeaderDescriptor[] = sortedXEntries.map(([gridX, xValue]) => ({
-      id: `col_${gridX}_${xValue}`,
-      level: 0,
-      value: xValue || 'Unassigned',
-      axis: 'Category' as LATCHAxis, // Default - could be overridden by PAFV config
-      span: 1,
-      position: {
-        x: gridX * gridDimensions.cellWidth,
-        y: 0,
-        width: gridDimensions.cellWidth,
-        height: gridDimensions.headerHeight
-      },
-      childCount: currentCells.filter(c => c.gridX === gridX).reduce((sum, c) => sum + c.nodeCount, 0),
-      isLeaf: true
-    }));
+    // Step 3: Parse multi-level values
+    const xAxisValues = sortedXEntries.map(([, value]) => parseMultiLevelValue(value));
+    const yAxisValues = sortedYEntries.map(([, value]) => parseMultiLevelValue(value));
 
-    // Step 4: Generate row headers with real axis values
-    const rows: HeaderDescriptor[] = sortedYEntries.map(([gridY, yValue]) => ({
-      id: `row_${gridY}_${yValue}`,
-      level: 0,
-      value: yValue || 'Unassigned',
-      axis: 'Category' as LATCHAxis, // Default - could be overridden by PAFV config
-      span: 1,
-      position: {
-        x: 0,
-        y: gridY * gridDimensions.cellHeight,
-        width: gridDimensions.headerWidth,
-        height: gridDimensions.cellHeight
-      },
-      childCount: currentCells.filter(c => c.gridY === gridY).reduce((sum, c) => sum + c.nodeCount, 0),
-      isLeaf: true
-    }));
+    // Step 4: Calculate max depths
+    const maxXDepth = getMaxDepth(xAxisValues);
+    const maxYDepth = getMaxDepth(yAxisValues);
+
+    // Step 5: Calculate header depth per level
+    const columnHeaderDepth = maxXDepth > 1
+      ? gridDimensions.headerHeight / maxXDepth
+      : gridDimensions.headerHeight;
+    const rowHeaderDepth = maxYDepth > 1
+      ? gridDimensions.headerWidth / maxYDepth
+      : gridDimensions.headerWidth;
+
+    // Step 6: Build hierarchies and calculate dimensions
+    let columns: HeaderDescriptor[];
+    let rows: HeaderDescriptor[];
+
+    if (maxXDepth > 1) {
+      // Multi-level column headers
+      const xHierarchy = buildHeaderHierarchy(xAxisValues);
+      columns = calculateHeaderDimensions(
+        xHierarchy,
+        gridDimensions.cellWidth,
+        columnHeaderDepth,
+        'column'
+      );
+    } else {
+      // Single-level column headers (original behavior)
+      columns = sortedXEntries.map(([gridX, xValue]) => ({
+        id: `col_${gridX}_${xValue}`,
+        level: 0,
+        value: xValue || 'Unassigned',
+        axis: 'Category' as LATCHAxis,
+        span: 1,
+        position: {
+          x: gridX * gridDimensions.cellWidth,
+          y: 0,
+          width: gridDimensions.cellWidth,
+          height: gridDimensions.headerHeight
+        },
+        childCount: currentCells.filter(c => c.gridX === gridX).reduce((sum, c) => sum + c.nodeCount, 0),
+        isLeaf: true
+      }));
+    }
+
+    if (maxYDepth > 1) {
+      // Multi-level row headers
+      const yHierarchy = buildHeaderHierarchy(yAxisValues);
+      rows = calculateHeaderDimensions(
+        yHierarchy,
+        gridDimensions.cellHeight,
+        rowHeaderDepth,
+        'row'
+      );
+    } else {
+      // Single-level row headers (original behavior)
+      rows = sortedYEntries.map(([gridY, yValue]) => ({
+        id: `row_${gridY}_${yValue}`,
+        level: 0,
+        value: yValue || 'Unassigned',
+        axis: 'Category' as LATCHAxis,
+        span: 1,
+        position: {
+          x: 0,
+          y: gridY * gridDimensions.cellHeight,
+          width: gridDimensions.headerWidth,
+          height: gridDimensions.cellHeight
+        },
+        childCount: currentCells.filter(c => c.gridY === gridY).reduce((sum, c) => sum + c.nodeCount, 0),
+        isLeaf: true
+      }));
+    }
 
     return {
       columns,
       rows,
-      maxColumnLevels: 1,
-      maxRowLevels: 1
+      maxColumnLevels: maxXDepth,
+      maxRowLevels: maxYDepth
     };
   }
 

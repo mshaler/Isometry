@@ -119,6 +119,24 @@ export interface LevelGroup {
   description?: string;
 }
 
+// Multi-level Header Hierarchy Types (SuperStack)
+export interface HeaderNode {
+  /** The display value for this header (e.g., "Q1", "Jan", "Week 1") */
+  value: string;
+  /** Hierarchy level (0 = root, 1 = child of root, etc.) */
+  level: number;
+  /** Number of leaf cells this header spans */
+  span: number;
+  /** Child header nodes */
+  children: HeaderNode[];
+  /** Index of the first leaf this header contains (0-based) */
+  startIndex: number;
+  /** Index of the last leaf this header contains (0-based) */
+  endIndex: number;
+  /** Whether this header's children are collapsed */
+  isCollapsed: boolean;
+}
+
 // Event Types
 export type SuperGridEvent =
   | 'cellClick'
