@@ -63,6 +63,24 @@ describe('Property Classifier Service', () => {
         ('due', 'Due Date', 'date', 'T', 'due_at', 2),
         ('name', 'Name', 'text', 'A', 'name', 0),
         ('location', 'Location', 'location', 'L', 'location_name', 0);
+
+      -- Set up nodes table for dynamic property tests
+      CREATE TABLE IF NOT EXISTS nodes (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      -- Set up node_properties table for dynamic property tests
+      CREATE TABLE IF NOT EXISTS node_properties (
+        id TEXT PRIMARY KEY,
+        node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+        key TEXT NOT NULL,
+        value TEXT,
+        value_type TEXT NOT NULL DEFAULT 'string',
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(node_id, key)
+      );
     `);
   });
 
@@ -184,6 +202,247 @@ describe('Property Classifier Service', () => {
   });
 
   /**
+   * Dynamic Property Discovery Tests (Phase 65)
+   *
+   * Tests for schema-on-read dynamic property discovery from node_properties table.
+   */
+  describe('Dynamic Property Discovery', () => {
+    test('classifyProperties includes dynamic properties from node_properties', () => {
+      // Setup: Create test nodes with custom properties
+      db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', ['node-1', 'Test Node 1']);
+      db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', ['node-2', 'Test Node 2']);
+      db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', ['node-3', 'Test Node 3']);
+
+      // Add custom properties (3 nodes with same key to meet threshold)
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['prop-1', 'node-1', 'contact_email', '"user@example.com"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['prop-2', 'node-2', 'contact_email', '"admin@example.com"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['prop-3', 'node-3', 'contact_email', '"test@example.com"', 'string']
+      );
+
+      const classification = classifyProperties(db);
+
+      // Should find the dynamic property
+      const dynamicProps = [
+        ...classification.L,
+        ...classification.A,
+        ...classification.T,
+        ...classification.C,
+        ...classification.H,
+      ].filter((p) => p.isDynamic);
+
+      expect(dynamicProps.length).toBeGreaterThan(0);
+
+      const contactEmail = dynamicProps.find((p) => p.id === 'dynamic-contact_email');
+      expect(contactEmail).toBeDefined();
+      expect(contactEmail!.name).toBe('Contact Email');
+      expect(contactEmail!.isDynamic).toBe(true);
+      expect(contactEmail!.nodeCount).toBe(3);
+      expect(contactEmail!.sourceColumn).toBe('node_properties.contact_email');
+      expect(contactEmail!.bucket).toBe('A'); // String defaults to Alphabet
+    });
+
+    test('dynamic properties are filtered by node count threshold', () => {
+      // Setup: One property with 5 nodes, one with only 1 node
+      for (let i = 1; i <= 5; i++) {
+        db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', [`node-${i}`, `Node ${i}`]);
+        db.run(
+          'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+          [`prop-popular-${i}`, `node-${i}`, 'popular_field', '"value"', 'string']
+        );
+      }
+
+      // Only 1 node with rare_field
+      db.run('INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)', [
+        'prop-rare-1',
+        'node-1',
+        'rare_field',
+        '"rare"',
+        'string',
+      ]);
+
+      const classification = classifyProperties(db);
+
+      const allDynamicProps = [
+        ...classification.L,
+        ...classification.A,
+        ...classification.T,
+        ...classification.C,
+        ...classification.H,
+      ].filter((p) => p.isDynamic);
+
+      // Should find popular_field (5 nodes >= 3 threshold)
+      const popularProp = allDynamicProps.find((p) => p.id === 'dynamic-popular_field');
+      expect(popularProp).toBeDefined();
+      expect(popularProp!.nodeCount).toBe(5);
+
+      // Should NOT find rare_field (1 node < 3 threshold)
+      const rareProp = allDynamicProps.find((p) => p.id === 'dynamic-rare_field');
+      expect(rareProp).toBeUndefined();
+    });
+
+    test('inferLATCHBucket maps value types correctly', () => {
+      // Create test nodes
+      for (let i = 1; i <= 3; i++) {
+        db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', [`node-${i}`, `Node ${i}`]);
+      }
+
+      // Number -> H
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['num-1', 'node-1', 'score', '100', 'number']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['num-2', 'node-2', 'score', '95', 'number']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['num-3', 'node-3', 'score', '88', 'number']
+      );
+
+      // Array -> C
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['arr-1', 'node-1', 'categories', '["a","b"]', 'array']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['arr-2', 'node-2', 'categories', '["c"]', 'array']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['arr-3', 'node-3', 'categories', '["d","e"]', 'array']
+      );
+
+      // Boolean -> C
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['bool-1', 'node-1', 'is_active', 'true', 'boolean']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['bool-2', 'node-2', 'is_active', 'false', 'boolean']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['bool-3', 'node-3', 'is_active', 'true', 'boolean']
+      );
+
+      // String with date key -> T
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['date-1', 'node-1', 'created_date', '"2024-01-15"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['date-2', 'node-2', 'created_date', '"2024-01-16"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['date-3', 'node-3', 'created_date', '"2024-01-17"', 'string']
+      );
+
+      // String with location key -> L
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['loc-1', 'node-1', 'address', '"123 Main St"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['loc-2', 'node-2', 'address', '"456 Oak Ave"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['loc-3', 'node-3', 'address', '"789 Elm Blvd"', 'string']
+      );
+
+      // Default string -> A
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['str-1', 'node-1', 'custom_field', '"value1"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['str-2', 'node-2', 'custom_field', '"value2"', 'string']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['str-3', 'node-3', 'custom_field', '"value3"', 'string']
+      );
+
+      const classification = classifyProperties(db);
+
+      // Verify bucket assignments
+      const scoreProp = classification.H.find((p) => p.id === 'dynamic-score');
+      expect(scoreProp).toBeDefined();
+      expect(scoreProp!.bucket).toBe('H');
+
+      const categoriesProp = classification.C.find((p) => p.id === 'dynamic-categories');
+      expect(categoriesProp).toBeDefined();
+      expect(categoriesProp!.bucket).toBe('C');
+
+      const isActiveProp = classification.C.find((p) => p.id === 'dynamic-is_active');
+      expect(isActiveProp).toBeDefined();
+      expect(isActiveProp!.bucket).toBe('C');
+
+      const createdDateProp = classification.T.find((p) => p.id === 'dynamic-created_date');
+      expect(createdDateProp).toBeDefined();
+      expect(createdDateProp!.bucket).toBe('T');
+
+      const addressProp = classification.L.find((p) => p.id === 'dynamic-address');
+      expect(addressProp).toBeDefined();
+      expect(addressProp!.bucket).toBe('L');
+
+      const customFieldProp = classification.A.find((p) => p.id === 'dynamic-custom_field');
+      expect(customFieldProp).toBeDefined();
+      expect(customFieldProp!.bucket).toBe('A');
+    });
+
+    test('dynamic property with collision gets renamed', () => {
+      // Create test nodes
+      for (let i = 1; i <= 3; i++) {
+        db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', [`node-${i}`, `Node ${i}`]);
+      }
+
+      // Add "priority" as a dynamic property (collides with schema facet "priority")
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['dyn-pri-1', 'node-1', 'priority', '10', 'number']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['dyn-pri-2', 'node-2', 'priority', '20', 'number']
+      );
+      db.run(
+        'INSERT INTO node_properties (id, node_id, key, value, value_type) VALUES (?, ?, ?, ?, ?)',
+        ['dyn-pri-3', 'node-3', 'priority', '30', 'number']
+      );
+
+      const classification = classifyProperties(db);
+
+      // Schema priority should be unchanged
+      const schemaPriority = classification.H.find((p) => p.id === 'priority');
+      expect(schemaPriority).toBeDefined();
+      expect(schemaPriority!.name).toBe('Priority');
+      expect(schemaPriority!.isDynamic).toBeUndefined();
+
+      // Dynamic priority should have "(custom)" suffix
+      const dynamicPriority = classification.H.find((p) => p.id === 'dynamic-priority');
+      expect(dynamicPriority).toBeDefined();
+      expect(dynamicPriority!.name).toBe('Priority (custom)');
+      expect(dynamicPriority!.isDynamic).toBe(true);
+    });
+  });
+
+  /**
    * Phase 50 Requirements Traceability
    *
    * These tests explicitly map to Phase 50 FOUND-XX requirements to ensure
@@ -219,8 +478,8 @@ describe('Property Classifier Service', () => {
       const edgeTypes = classification.GRAPH.filter((p) => p.isEdgeProperty);
       const metrics = classification.GRAPH.filter((p) => !p.isEdgeProperty);
 
-      // 4 edge types: LINK, NEST, SEQUENCE, AFFINITY
-      expect(edgeTypes.map((e) => e.name)).toEqual(['LINK', 'NEST', 'SEQUENCE', 'AFFINITY']);
+      // 4 edge types: Link, Nest, Sequence, Affinity (display names are capitalized)
+      expect(edgeTypes.map((e) => e.name)).toEqual(['Link', 'Nest', 'Sequence', 'Affinity']);
 
       // 2 metrics: Degree, Weight
       expect(metrics.map((m) => m.name)).toEqual(['Degree', 'Weight']);
