@@ -9,13 +9,13 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 65 of 72 (Facet Discovery)
+Phase: 68 of 72 (Import Coordinator)
 Plan: 01 of 01 COMPLETE
 Status: Phase complete ✓
-Last activity: 2026-02-12 — Completed Phase 65-01 (Dynamic Property Discovery)
+Last activity: 2026-02-12 — Completed Phase 68-01 (Import Coordinator)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [####..........................] 17% (1/6 phases)
+Progress (v4.8): [########......................] 33% (2/6 phases)
 
 ## Performance Metrics
 
@@ -29,11 +29,12 @@ Progress (v4.8): [####..........................] 17% (1/6 phases)
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
+**Recent completions (Phase 68 - v4.8 ETL Consolidation):**
+- Phase 68-01: COMPLETE (~5m) — Import Coordinator with extension-based routing
+- Phase 67-01: COMPLETE (~10m) — Canonical Node Schema with Zod validation
+
 **Recent completions (Phase 65 - v4.7 Schema-on-Read - MILESTONE COMPLETE):**
 - Phase 65-01: COMPLETE (~4m) — Dynamic property discovery with LATCH inference
-
-**Recent completions (Phase 67 - v4.8 ETL Consolidation):**
-- Phase 67-01: COMPLETE (~10m) — Canonical Node Schema with Zod validation
 
 **Recent completions (Phase 66 - parallel):**
 - Phase 66-01: COMPLETE (~15m) — SuperGrid spreadsheet-like scroll behavior
@@ -54,6 +55,12 @@ Progress (v4.8): [####..........................] 17% (1/6 phases)
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 68-01 decisions (Import Coordinator):**
+- DEC-68-01: Extension-based format detection with path.extname() and lowercase normalization
+- DEC-68-02: Sequential batch import (for-of loop) for simpler error handling vs parallelization
+- DEC-68-03: Mandatory validation of all nodes with CanonicalNodeSchema.parse() in importFile()
+- DEC-68-04: Template Method pattern for importers (parse → validate → transform pipeline)
 
 **Phase 65-01 decisions (Dynamic Property Discovery):**
 - FACET-DEC-01: Node count threshold = 3 (properties in <3 nodes filtered out to reduce UI noise)
@@ -204,8 +211,9 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 - Phase 71: Swift Bridge (BRIDGE-01, BRIDGE-02)
 - Phase 72: Quality & Docs (QUAL-01, QUAL-02, QUAL-03)
 
-**Coverage:** 1/6 phases complete (17%)
+**Coverage:** 2/6 phases complete (33%)
 - [x] Phase 67: Canonical Schema — Zod validation, JSON Schema, SQL mapping
+- [x] Phase 68: Import Coordinator — Extension-based routing, Template Method pattern, validation infrastructure
 
 ### Pending Todos
 
@@ -217,8 +225,8 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 
 **v4.8 (ETL Consolidation):**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
-- [ ] Phase 68: Import Coordinator (next action)
-- [ ] Phase 69: File Importers (MD, XLSX, DOCX, JSON, HTML, CSV)
+- [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
+- [ ] Phase 69: File Importers (MD, XLSX, DOCX, JSON, HTML, CSV) — next action
 - [ ] Phase 70: Integration
 - [ ] Phase 71: Swift Bridge
 - [ ] Phase 72: Quality & Docs
@@ -230,7 +238,7 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 
 ### Blockers/Concerns
 
-None — v4.7 milestone complete (Schema-on-Read). Phase 67 complete, ready for Phase 68 (Import Coordinator).
+None — v4.7 milestone complete (Schema-on-Read). Phase 67 and 68 complete, ready for Phase 69 (File Importers).
 
 **v4.7 Milestone Achievement:**
 Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with isDynamic flag and nodeCount badges.
@@ -238,5 +246,5 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 65-01 complete (Dynamic Property Discovery) — v4.7 Schema-on-Read MILESTONE COMPLETE ✅
-Resume file: .planning/phases/65-facet-discovery/65-01-SUMMARY.md
+Stopped at: Phase 68-01 complete (Import Coordinator) — v4.8 ETL Consolidation 33% complete
+Resume file: .planning/phases/68-import-coordinator/68-01-SUMMARY.md
