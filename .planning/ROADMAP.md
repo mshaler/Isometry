@@ -10,7 +10,7 @@
 - **v4.4 SuperGrid PAFV Projection** - Phases 56-59 (shipped 2026-02-11)
 - **v4.5 Stacked/Nested Headers** - Phase 60 (shipped 2026-02-11)
 - **v4.6 SuperGrid Polish** - Phases 61-62 (partial: 61 complete, 62 deferred)
-- 🚧 **v4.7 Schema-on-Read** - Phases 63-65 (in progress)
+- **v4.7 Schema-on-Read** - Phases 63-65 (shipped 2026-02-12)
 - 📋 **v4.8 ETL Consolidation** - Phases 67-72 (planned)
 
 ## Phases
@@ -304,8 +304,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 65-01-PLAN.md — Extend property classifier with dynamic property discovery from node_properties
-- [ ] 65-02-PLAN.md — Add visual distinction for dynamic properties in Navigator UI
+- [x] 65-01-PLAN.md — Extend property classifier with dynamic property discovery from node_properties
+- [x] 65-02-PLAN.md — Add visual distinction for dynamic properties in Navigator UI
 
 ## 📋 v4.8 ETL Consolidation (Planned)
 
@@ -401,7 +401,7 @@ Plans:
 | 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
 | 64. ETL Pipeline Upgrade | v4.7 | 2/2 | Complete | 2026-02-12 |
-| 65. Facet Discovery | v4.7 | 0/2 | Not started | - |
+| 65. Facet Discovery | v4.7 | 2/2 | Complete | 2026-02-12 |
 | 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 69. File Importers | v4.8 | 0/TBD | Planned | - |
@@ -411,4 +411,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 68 complete)*
+*Last updated: 2026-02-12 (Phase 65 complete — v4.7 milestone shipped)*
