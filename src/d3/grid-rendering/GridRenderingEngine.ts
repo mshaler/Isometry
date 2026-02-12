@@ -216,22 +216,25 @@ export class GridRenderingEngine {
       : [];
 
     // Add "Unassigned" bucket if there are cards with null values
+    // NOTE: xFacet → rows (X-Plane labeled "Rows"), yFacet → columns (Y-Plane labeled "Columns")
     if (
       xFacet &&
       cards.some((c) => (c as Record<string, unknown>)[xFacet] == null)
     ) {
-      columns.push('Unassigned');
+      rows.push('Unassigned'); // Fixed: xFacet null values go to rows, not columns
     }
     if (
       yFacet &&
       cards.some((c) => (c as Record<string, unknown>)[yFacet] == null)
     ) {
-      rows.push('Unassigned');
+      columns.push('Unassigned'); // Fixed: yFacet null values go to columns, not rows
     }
 
     superGridLogger.debug('Generated projection headers:', {
-      columns: columns.length,
+      xFacet,
+      yFacet,
       rows: rows.length,
+      columns: columns.length,
     });
 
     return { columns, rows };
@@ -478,6 +481,11 @@ export class GridRenderingEngine {
       superGridLogger.warn('[GridRenderingEngine.render] Container detached, skipping');
       return;
     }
+
+    // Interrupt any ongoing transitions to prevent animation buildup during rapid axis changes
+    this.container.selectAll('.card').interrupt();
+    this.container.selectAll('.col-header').interrupt();
+    this.container.selectAll('.row-header').interrupt();
 
     this.setupGridStructure();
 
@@ -764,6 +772,7 @@ export class GridRenderingEngine {
       rows: numRows,
       gridWidth,
       gridHeight,
+      positionedCount,
     });
   }
 
@@ -1364,7 +1373,8 @@ export class GridRenderingEngine {
     // Animate enter cards fading in
     cardEnter
       .transition()
-      .duration(200)
+      .duration(this.config.animationDuration)
+      .ease(d3.easeCubicOut)
       .attr('opacity', 1);
 
     // Update existing cards with FLIP animation
@@ -1384,7 +1394,8 @@ export class GridRenderingEngine {
     cardSelection
       .exit()
       .transition()
-      .duration(200)
+      .duration(this.config.animationDuration)
+      .ease(d3.easeCubicOut)
       .attr('opacity', 0)
       .remove();
 
