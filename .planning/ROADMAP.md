@@ -11,6 +11,7 @@
 - **v4.5 Stacked/Nested Headers** - Phase 60 (shipped 2026-02-11)
 - **v4.6 SuperGrid Polish** - Phases 61-62 (partial: 61 complete, 62 deferred)
 - 🚧 **v4.7 Schema-on-Read** - Phases 63-65 (in progress)
+- 📋 **v4.8 ETL Consolidation** - Phases 67-72 (planned)
 
 ## Phases
 
@@ -306,6 +307,72 @@ Plans:
 - [ ] 65-01: TBD
 - [ ] 65-02: TBD
 
+## 📋 v4.8 ETL Consolidation (Planned)
+
+**Milestone Goal:** Consolidate file-based ETL in TypeScript with canonical schema validation and multi-format importers.
+
+**Source:** etl-consolidation-plan.md
+
+### Phase 67: Canonical Schema
+**Goal**: Create Zod-validated canonical Node schema with JSON Schema export
+**Depends on**: v4.7 complete (Phase 65)
+**Requirements**: SCHEMA-01, SCHEMA-02, SCHEMA-03
+**Success Criteria** (what must be TRUE):
+  1. CanonicalNodeSchema validates all LATCH dimensions and provenance fields
+  2. JSON Schema exports for Swift interop
+  3. SQL_COLUMN_MAP maps camelCase to snake_case for database insertion
+**Plans**: TBD
+
+### Phase 68: Import Coordinator
+**Goal**: Create central router for file imports with format detection
+**Depends on**: Phase 67
+**Requirements**: COORD-01, COORD-02, COORD-03
+**Success Criteria** (what must be TRUE):
+  1. ImportCoordinator routes files to appropriate importers by extension
+  2. BaseImporter interface defines import/parse/validate/transform contract
+  3. Format detection works for all supported extensions
+**Plans**: TBD
+
+### Phase 69: File Importers
+**Goal**: Implement importers for MD, XLSX, DOCX, JSON, HTML, CSV
+**Depends on**: Phase 68
+**Requirements**: IMP-01 through IMP-06
+**Success Criteria** (what must be TRUE):
+  1. Each importer produces valid CanonicalNode[] from input files
+  2. All importers handle edge cases and malformed input gracefully
+  3. Test coverage >80% for each importer
+**Plans**: TBD
+
+### Phase 70: Integration
+**Goal**: Wire importers to sql.js and migrate alto-importer
+**Depends on**: Phase 69
+**Requirements**: INT-01, INT-02, INT-03
+**Success Criteria** (what must be TRUE):
+  1. window.isometryETL.importFile() exposes ETL API for Swift bridge
+  2. Alto-importer uses CanonicalNode pipeline
+  3. Database insertion handles all CanonicalNode fields correctly
+**Plans**: TBD
+
+### Phase 71: Swift Bridge
+**Goal**: Enable Swift to delegate file processing to JS
+**Depends on**: Phase 70
+**Requirements**: BRIDGE-01, BRIDGE-02
+**Success Criteria** (what must be TRUE):
+  1. ETLBridge.swift delegates file parsing to JS via WKWebView
+  2. Round-trip Swift → JS → sql.js → Swift works correctly
+  3. Native adapters exist for EventKit, Contacts, Notes
+**Plans**: TBD
+
+### Phase 72: Quality & Documentation
+**Goal**: Achieve test coverage targets and document architecture
+**Depends on**: Phase 71
+**Requirements**: QUAL-01, QUAL-02, QUAL-03
+**Success Criteria** (what must be TRUE):
+  1. ETL module has >80% test coverage
+  2. Schema validation at every import
+  3. CLAUDE.md updated with ETL architecture
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -327,9 +394,15 @@ Plans:
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
 | 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
-| 64. ETL Pipeline Upgrade | v4.7 | 0/2 | Not started | - |
+| 64. ETL Pipeline Upgrade | v4.7 | 2/3 | In progress | - |
 | 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
+| 67. Canonical Schema | v4.8 | 0/TBD | Planned | - |
+| 68. Import Coordinator | v4.8 | 0/TBD | Planned | - |
+| 69. File Importers | v4.8 | 0/TBD | Planned | - |
+| 70. Integration | v4.8 | 0/TBD | Planned | - |
+| 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
+| 72. Quality & Docs | v4.8 | 0/TBD | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 64 planned)*
+*Last updated: 2026-02-12 (v4.8 ETL Consolidation added)*
