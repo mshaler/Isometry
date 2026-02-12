@@ -812,64 +812,98 @@ export class GridRenderingEngine {
     const { columns, rows } = this.currentHeaders;
     const config = this.config;
 
-    // Render column headers
+    // Render column headers with animated transitions
     headerContainer
       .selectAll<SVGGElement, string>('.col-header')
       .data(columns)
-      .join('g')
-      .attr('class', 'col-header')
-      .attr(
-        'transform',
-        (_, i) =>
-          `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`
-      )
-      .each(function (d) {
-        const g = d3.select(this);
-        g.selectAll('*').remove();
-        g.append('rect')
-          .attr('width', config.cardWidth)
-          .attr('height', config.headerHeight)
-          .attr('fill', '#f0f0f0')
-          .attr('stroke', '#ddd')
-          .attr('rx', 4);
-        g.append('text')
-          .attr('x', config.cardWidth / 2)
-          .attr('y', config.headerHeight / 2 + 4)
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '12px')
-          .attr('fill', '#333')
-          .text(d);
-      });
+      .join(
+        enter => enter.append('g')
+          .attr('class', 'col-header')
+          .attr('transform', (_, i) =>
+            `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, -20)`)
+          .attr('opacity', 0)
+          .each(function (d) {
+            const g = d3.select(this);
+            g.append('rect')
+              .attr('width', config.cardWidth)
+              .attr('height', config.headerHeight)
+              .attr('fill', '#f0f0f0')
+              .attr('stroke', '#ddd')
+              .attr('rx', 4);
+            g.append('text')
+              .attr('x', config.cardWidth / 2)
+              .attr('y', config.headerHeight / 2 + 4)
+              .attr('text-anchor', 'middle')
+              .attr('font-size', '12px')
+              .attr('fill', '#333')
+              .text(d);
+          })
+          .call(g => g.transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('transform', (_, i) =>
+              `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`)
+            .attr('opacity', 1)),
+        update => update
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('transform', (_, i) =>
+            `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`),
+        exit => exit
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('opacity', 0)
+          .remove()
+      );
 
-    // Render row headers
+    // Render row headers with animated transitions
     const headerOffset = config.headerHeight + config.padding;
     headerContainer
       .selectAll<SVGGElement, string>('.row-header')
       .data(rows)
-      .join('g')
-      .attr('class', 'row-header')
-      .attr(
-        'transform',
-        (_, i) =>
-          `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`
-      )
-      .each(function (d) {
-        const g = d3.select(this);
-        g.selectAll('*').remove();
-        g.append('rect')
-          .attr('width', rowHeaderWidth - 4)
-          .attr('height', config.cardHeight)
-          .attr('fill', '#f5f5f5')
-          .attr('stroke', '#ddd')
-          .attr('rx', 4);
-        g.append('text')
-          .attr('x', (rowHeaderWidth - 4) / 2)
-          .attr('y', config.cardHeight / 2 + 4)
-          .attr('text-anchor', 'middle')
-          .attr('font-size', '11px')
-          .attr('fill', '#666')
-          .text(d);
-      });
+      .join(
+        enter => enter.append('g')
+          .attr('class', 'row-header')
+          .attr('transform', (_, i) =>
+            `translate(-20, ${headerOffset + i * (config.cardHeight + config.padding)})`)
+          .attr('opacity', 0)
+          .each(function (d) {
+            const g = d3.select(this);
+            g.append('rect')
+              .attr('width', rowHeaderWidth - 4)
+              .attr('height', config.cardHeight)
+              .attr('fill', '#f5f5f5')
+              .attr('stroke', '#ddd')
+              .attr('rx', 4);
+            g.append('text')
+              .attr('x', (rowHeaderWidth - 4) / 2)
+              .attr('y', config.cardHeight / 2 + 4)
+              .attr('text-anchor', 'middle')
+              .attr('font-size', '11px')
+              .attr('fill', '#666')
+              .text(d);
+          })
+          .call(g => g.transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('transform', (_, i) =>
+              `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`)
+            .attr('opacity', 1)),
+        update => update
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('transform', (_, i) =>
+            `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`),
+        exit => exit
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('opacity', 0)
+          .remove()
+      );
 
     superGridLogger.debug('Rendered projection headers:', {
       columns: columns.length,
@@ -986,11 +1020,12 @@ export class GridRenderingEngine {
         const yPos = headerOffset + rowIndex * cellHeight;
         const height = span * cellHeight - config.padding;
 
-        // Parent header group
+        // Parent header group - with opacity fade-in animation
         const parentGroup = headerContainer
           .append('g')
           .attr('class', 'row-header row-header--parent')
-          .attr('transform', `translate(0, ${yPos})`);
+          .attr('transform', `translate(0, ${yPos})`)
+          .attr('opacity', 0);
 
         // Parent background (spans multiple rows)
         parentGroup
@@ -1012,6 +1047,13 @@ export class GridRenderingEngine {
           .attr('fill', '#334155')
           .text(parent);
 
+        // Animate opacity fade-in
+        parentGroup
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('opacity', 1);
+
         // Render child headers (level 1)
         data.children.forEach((child, childIndex) => {
           const childYPos = childIndex * cellHeight;
@@ -1021,7 +1063,8 @@ export class GridRenderingEngine {
           const childGroup = headerContainer
             .append('g')
             .attr('class', 'row-header row-header--child')
-            .attr('transform', `translate(${childXPos}, ${yPos + childYPos})`);
+            .attr('transform', `translate(${childXPos}, ${yPos + childYPos})`)
+            .attr('opacity', 0);
 
           // Child background
           childGroup
@@ -1041,6 +1084,13 @@ export class GridRenderingEngine {
             .attr('font-size', '10px')
             .attr('fill', '#64748b')
             .text(child);
+
+          // Animate opacity fade-in
+          childGroup
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('opacity', 1);
         });
 
         rowIndex += span;
@@ -1065,11 +1115,12 @@ export class GridRenderingEngine {
         const xPos = rowHeaderWidth + config.padding + colIndex * (config.cardWidth + config.padding);
         const width = span * (config.cardWidth + config.padding) - config.padding;
 
-        // Parent header group
+        // Parent header group - with opacity fade-in animation
         const parentGroup = headerContainer
           .append('g')
           .attr('class', 'col-header col-header--parent')
-          .attr('transform', `translate(${xPos}, 0)`);
+          .attr('transform', `translate(${xPos}, 0)`)
+          .attr('opacity', 0);
 
         // Parent background (spans multiple columns)
         parentGroup
@@ -1091,6 +1142,13 @@ export class GridRenderingEngine {
           .attr('fill', '#334155')
           .text(parent);
 
+        // Animate opacity fade-in
+        parentGroup
+          .transition()
+          .duration(config.animationDuration)
+          .ease(d3.easeCubicOut)
+          .attr('opacity', 1);
+
         // Render child headers (level 1) - bottom row
         data.children.forEach((child, childIndex) => {
           const childXPos = childIndex * (config.cardWidth + config.padding);
@@ -1098,7 +1156,8 @@ export class GridRenderingEngine {
           const childGroup = headerContainer
             .append('g')
             .attr('class', 'col-header col-header--child')
-            .attr('transform', `translate(${xPos + childXPos}, ${parentHeaderHeight + 2})`);
+            .attr('transform', `translate(${xPos + childXPos}, ${parentHeaderHeight + 2})`)
+            .attr('opacity', 0);
 
           // Child background
           childGroup
@@ -1118,6 +1177,13 @@ export class GridRenderingEngine {
             .attr('font-size', '10px')
             .attr('fill', '#64748b')
             .text(child);
+
+          // Animate opacity fade-in
+          childGroup
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('opacity', 1);
         });
 
         colIndex += span;
@@ -1153,64 +1219,98 @@ export class GridRenderingEngine {
     const config = this.config;
 
     if (axis === 'x') {
-      // Render column headers
+      // Render column headers with animated transitions
       headerContainer
         .selectAll<SVGGElement, string>('.col-header')
         .data(values)
-        .join('g')
-        .attr('class', 'col-header')
-        .attr(
-          'transform',
-          (_, i) =>
-            `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`
-        )
-        .each(function (d) {
-          const g = d3.select(this);
-          g.selectAll('*').remove();
-          g.append('rect')
-            .attr('width', config.cardWidth)
-            .attr('height', config.headerHeight)
-            .attr('fill', '#f0f0f0')
-            .attr('stroke', '#ddd')
-            .attr('rx', 4);
-          g.append('text')
-            .attr('x', config.cardWidth / 2)
-            .attr('y', config.headerHeight / 2 + 4)
-            .attr('text-anchor', 'middle')
-            .attr('font-size', '12px')
-            .attr('fill', '#333')
-            .text(d);
-        });
+        .join(
+          enter => enter.append('g')
+            .attr('class', 'col-header')
+            .attr('transform', (_, i) =>
+              `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, -20)`)
+            .attr('opacity', 0)
+            .each(function (d) {
+              const g = d3.select(this);
+              g.append('rect')
+                .attr('width', config.cardWidth)
+                .attr('height', config.headerHeight)
+                .attr('fill', '#f0f0f0')
+                .attr('stroke', '#ddd')
+                .attr('rx', 4);
+              g.append('text')
+                .attr('x', config.cardWidth / 2)
+                .attr('y', config.headerHeight / 2 + 4)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '12px')
+                .attr('fill', '#333')
+                .text(d);
+            })
+            .call(g => g.transition()
+              .duration(config.animationDuration)
+              .ease(d3.easeCubicOut)
+              .attr('transform', (_, i) =>
+                `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`)
+              .attr('opacity', 1)),
+          update => update
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('transform', (_, i) =>
+              `translate(${rowHeaderWidth + config.padding + i * (config.cardWidth + config.padding)}, 0)`),
+          exit => exit
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('opacity', 0)
+            .remove()
+        );
     } else {
-      // Render row headers
+      // Render row headers with animated transitions
       const headerOffset = config.headerHeight + config.padding;
       headerContainer
         .selectAll<SVGGElement, string>('.row-header')
         .data(values)
-        .join('g')
-        .attr('class', 'row-header')
-        .attr(
-          'transform',
-          (_, i) =>
-            `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`
-        )
-        .each(function (d) {
-          const g = d3.select(this);
-          g.selectAll('*').remove();
-          g.append('rect')
-            .attr('width', rowHeaderWidth - 4)
-            .attr('height', config.cardHeight)
-            .attr('fill', '#f5f5f5')
-            .attr('stroke', '#ddd')
-            .attr('rx', 4);
-          g.append('text')
-            .attr('x', (rowHeaderWidth - 4) / 2)
-            .attr('y', config.cardHeight / 2 + 4)
-            .attr('text-anchor', 'middle')
-            .attr('font-size', '11px')
-            .attr('fill', '#666')
-            .text(d);
-        });
+        .join(
+          enter => enter.append('g')
+            .attr('class', 'row-header')
+            .attr('transform', (_, i) =>
+              `translate(-20, ${headerOffset + i * (config.cardHeight + config.padding)})`)
+            .attr('opacity', 0)
+            .each(function (d) {
+              const g = d3.select(this);
+              g.append('rect')
+                .attr('width', rowHeaderWidth - 4)
+                .attr('height', config.cardHeight)
+                .attr('fill', '#f5f5f5')
+                .attr('stroke', '#ddd')
+                .attr('rx', 4);
+              g.append('text')
+                .attr('x', (rowHeaderWidth - 4) / 2)
+                .attr('y', config.cardHeight / 2 + 4)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '11px')
+                .attr('fill', '#666')
+                .text(d);
+            })
+            .call(g => g.transition()
+              .duration(config.animationDuration)
+              .ease(d3.easeCubicOut)
+              .attr('transform', (_, i) =>
+                `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`)
+              .attr('opacity', 1)),
+          update => update
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('transform', (_, i) =>
+              `translate(0, ${headerOffset + i * (config.cardHeight + config.padding)})`),
+          exit => exit
+            .transition()
+            .duration(config.animationDuration)
+            .ease(d3.easeCubicOut)
+            .attr('opacity', 0)
+            .remove()
+        );
     }
 
     superGridLogger.debug('Rendered simple axis headers:', {
