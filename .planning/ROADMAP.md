@@ -368,8 +368,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 70-01-PLAN.md — Database insertion utilities and window.isometryETL bridge
-- [ ] 70-02-PLAN.md — Alto-importer migration to CanonicalNode pipeline
+- [x] 70-01-PLAN.md — Database insertion utilities and window.isometryETL bridge
+- [x] 70-02-PLAN.md — Alto-importer migration to CanonicalNode pipeline
 
 ### Phase 71: Swift Bridge
 **Goal**: Enable Swift to delegate file processing to JS
@@ -417,10 +417,10 @@ Plans:
 | 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 69. File Importers | v4.8 | 6/6 | Complete | 2026-02-12 |
-| 70. Integration | v4.8 | 0/TBD | Planned | - |
+| 70. Integration | v4.8 | 2/2 | Complete | 2026-02-12 |
 | 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
 | 72. Quality & Docs | v4.8 | 0/TBD | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 69 complete — 6 file importers shipped)*
+*Last updated: 2026-02-12 (Phase 70 complete — ETL integration with sql.js and Alto-importer migration)*
