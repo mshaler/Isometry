@@ -126,11 +126,17 @@ describe('SQL.js Capabilities Verification (P0 Gate)', () => {
       expect(phraseResults[0].values[0][0]).toBe('This is a complete phrase');
     });
 
-    test('should verify FTS5 is not available yet', () => {
-      // This test documents current state - FTS5 is not compiled in
+    test('should verify FTS5 is available', () => {
+      // FTS5 is now available via vendored sql.js-fts5 build
       expect(() => {
         db.exec('CREATE VIRTUAL TABLE test_fts5 USING fts5(content)');
-      }).toThrow(/no such module: fts5/);
+      }).not.toThrow();
+
+      // Verify FTS5 search works
+      db.exec(`INSERT INTO test_fts5(content) VALUES ('Hello world'), ('Test content')`);
+      const results = db.exec(`SELECT * FROM test_fts5 WHERE test_fts5 MATCH 'world'`);
+      expect(results[0].values).toHaveLength(1);
+      expect(results[0].values[0][0]).toBe('Hello world');
     });
   });
 
