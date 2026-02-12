@@ -7,7 +7,14 @@
  *
  * Adapted from CardBoard-v3's alto-parser.ts with extensions for
  * diverse data types and LATCH field mapping.
+ *
+ * Phase 64-02: Refactored to use gray-matter via parsers/frontmatter module.
  */
+import { parseFrontmatter as parseYamlFrontmatter, type ParsedFrontmatter } from './parsers/frontmatter';
+
+// Re-export parseFrontmatter for backwards compatibility
+export { parseYamlFrontmatter as parseFrontmatter };
+export type { ParsedFrontmatter };
 
 // ============================================================================
 // Types
@@ -116,122 +123,8 @@ export type AltoDataType =
   | 'voice-memos';
 
 // ============================================================================
-// YAML Frontmatter Parser
+// Tag Extraction
 // ============================================================================
-
-/**
- * Parse YAML frontmatter from markdown content.
- * Uses a simple line-by-line parser that handles the alto-index format.
- */
-export function parseFrontmatter(
-  content: string
-): { frontmatter: Record<string, unknown>; body: string } | null {
-  const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
-  if (!match) return null;
-
-  const [, yamlContent, body] = match;
-  const frontmatter: Record<string, unknown> = {};
-
-  let currentKey = '';
-  let inArray = false;
-  let arrayItems: unknown[] = [];
-  let inMultilineString = false;
-  let multilineValue = '';
-
-  for (const line of yamlContent!.split('\n')) {
-    // Handle multiline strings (location with newlines)
-    if (inMultilineString) {
-      if (line.startsWith('  ') && !line.startsWith('  - ')) {
-        multilineValue += '\n' + line.trim();
-        continue;
-      } else {
-        frontmatter[currentKey] = multilineValue;
-        inMultilineString = false;
-        multilineValue = '';
-      }
-    }
-
-    // Array item
-    if (line.startsWith('  - ')) {
-      if (inArray) {
-        const value = line.slice(4).trim();
-        if (value.includes(': ')) {
-          // Start of object in array
-          const obj: Record<string, string> = {};
-          const colonIdx = value.indexOf(': ');
-          const key = value.slice(0, colonIdx).trim();
-          const val = value.slice(colonIdx + 2).replace(/^["']|["']$/g, '').trim();
-          obj[key] = val;
-          arrayItems.push(obj);
-        } else {
-          // Simple string value
-          arrayItems.push(value.replace(/^["']|["']$/g, ''));
-        }
-      }
-      continue;
-    }
-
-    // Object property within array item
-    if (line.startsWith('    ') && inArray && arrayItems.length > 0) {
-      const trimmed = line.trim();
-      if (trimmed.includes(': ')) {
-        const colonIdx = trimmed.indexOf(': ');
-        const key = trimmed.slice(0, colonIdx).trim();
-        const val = trimmed.slice(colonIdx + 2).replace(/^["']|["']$/g, '').trim();
-        const lastItem = arrayItems[arrayItems.length - 1];
-        if (typeof lastItem === 'object' && lastItem !== null) {
-          (lastItem as Record<string, string>)[key] = val;
-        }
-      }
-      continue;
-    }
-
-    // End of array
-    if (inArray && !line.startsWith('  ') && line.trim() !== '') {
-      frontmatter[currentKey] = arrayItems;
-      inArray = false;
-      arrayItems = [];
-    }
-
-    // Key-value pair
-    const kvMatch = line.match(/^([a-zA-Z_]+):\s*(.*)$/);
-    if (kvMatch) {
-      const [, key, value] = kvMatch;
-      currentKey = key!;
-
-      if (value === '' || value === '[]') {
-        // Start of array or empty array
-        inArray = value !== '[]';
-        arrayItems = [];
-        if (value === '[]') {
-          frontmatter[currentKey] = [];
-        }
-      } else if (value?.startsWith('"') && !value.endsWith('"')) {
-        // Start of multiline string
-        inMultilineString = true;
-        multilineValue = value.slice(1);
-      } else {
-        // Simple value - handle numbers and booleans
-        let parsedValue: unknown = value!.replace(/^["']|["']$/g, '').trim();
-
-        if (parsedValue === 'true') parsedValue = true;
-        else if (parsedValue === 'false') parsedValue = false;
-        else if (/^\d+$/.test(parsedValue as string)) {
-          parsedValue = parseInt(parsedValue as string, 10);
-        }
-
-        frontmatter[currentKey] = parsedValue;
-      }
-    }
-  }
-
-  // Handle trailing array
-  if (inArray) {
-    frontmatter[currentKey] = arrayItems;
-  }
-
-  return { frontmatter, body: body || '' };
-}
 
 /**
  * Extract hashtags from attachments (notes-specific)
@@ -312,10 +205,11 @@ function hashString(str: string): string {
 }
 
 /**
- * Parse a single alto-index markdown file content
+ * Parse a single alto-index markdown file content.
+ * Uses gray-matter via parsers/frontmatter for full YAML 1.2 spec support.
  */
 export function parseAltoFile(content: string, filePath: string = ''): ParsedAltoFile | null {
-  const parsed = parseFrontmatter(content);
+  const parsed = parseYamlFrontmatter(content);
   if (!parsed) return null;
 
   const { frontmatter: rawFrontmatter, body } = parsed;
