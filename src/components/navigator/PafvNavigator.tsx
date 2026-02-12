@@ -22,8 +22,9 @@ import { usePAFV } from '@/state/PAFVContext';
 import { devLogger } from '@/utils/dev-logger';
 import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
 import type { Plane, AxisMapping, DensityLevel } from '@/types/pafv';
-import type { ClassifiedProperty, PropertyBucket, LATCHBucket } from '@/services/property-classifier';
+import type { ClassifiedProperty, LATCHBucket } from '@/services/property-classifier';
 import { EncodingDropdown } from './EncodingDropdown';
+import { DraggablePropertyChip, type DragItem } from './DraggablePropertyChip';
 
 // ============================================================================
 // Constants
@@ -43,66 +44,7 @@ const BUCKET_TO_AXIS: Record<LATCHBucket, AxisMapping['axis']> = {
 // Types
 // ============================================================================
 
-interface DragItem {
-  id: string;
-  name: string;
-  bucket: PropertyBucket;
-  sourceColumn: string;
-  sourceWell: 'available' | 'x' | 'y' | 'z';
-}
-
-// ============================================================================
-// DraggablePropertyChip Component
-// ============================================================================
-
-interface DraggablePropertyChipProps {
-  property: ClassifiedProperty;
-  sourceWell: 'available' | 'x' | 'y' | 'z';
-}
-
-function DraggablePropertyChip({ property, sourceWell }: DraggablePropertyChipProps) {
-  const { theme } = useTheme();
-  const isNeXTSTEP = theme === 'NeXTSTEP';
-
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: PAFV_ITEM_TYPE,
-    item: {
-      id: property.id,
-      name: property.name,
-      bucket: property.bucket,
-      sourceColumn: property.sourceColumn,
-      sourceWell,
-    } as DragItem,
-    canDrag: property.bucket !== 'GRAPH',
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  }), [property, sourceWell]);
-
-  const isGraph = property.bucket === 'GRAPH';
-
-  return (
-    <div
-      ref={isGraph ? undefined : drag}
-      className={`
-        flex items-center gap-1.5 h-7 px-2 rounded text-[11px]
-        ${isGraph ? 'cursor-not-allowed opacity-50' : 'cursor-grab active:cursor-grabbing'}
-        ${isDragging ? 'opacity-40 scale-95' : ''}
-        transition-all
-        ${isNeXTSTEP
-          ? 'bg-[#3A3A3A] hover:bg-[#454545]'
-          : 'bg-white border border-gray-200 hover:bg-gray-50'
-        }
-      `}
-      title={isGraph ? 'GRAPH properties not yet supported' : property.name}
-    >
-      {!isGraph && <GripVertical className={`w-3 h-3 flex-shrink-0 ${isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'}`} />}
-      <span className={`truncate ${isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-700'}`}>
-        {property.name}
-      </span>
-    </div>
-  );
-}
+// DragItem is now imported from DraggablePropertyChip
 
 // ============================================================================
 // AxisChip Component (for assigned axes in wells) - DRAGGABLE & DROPPABLE
