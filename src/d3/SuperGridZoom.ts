@@ -97,10 +97,14 @@ export class SuperGridZoom implements JanusControls {
 
   /**
    * Initialize D3 zoom behavior with orthogonal controls
+   * Uses translateExtent to pin upper-left corner (SuperZoom spec)
    */
   private initializeZoomBehavior(): void {
     this.zoomBehavior = d3.zoom<SVGElement, unknown>()
       .scaleExtent([this.config.minZoom, this.config.maxZoom])
+      // Pin upper-left corner: only allow panning that keeps (0,0) in view
+      // translateExtent [[minX, minY], [maxX, maxY]] constrains the viewport
+      .translateExtent([[-50, -50], [10000, 10000]]) // Allow slight negative for padding
       .on('start', (event) => this.handleZoomStart(event))
       .on('zoom', (event) => this.handleZoom(event))
       .on('end', (event) => this.handleZoomEnd(event));
@@ -220,8 +224,13 @@ export class SuperGridZoom implements JanusControls {
     this.currentZoomLevel = state.zoomLevel;
     this.currentPanLevel = state.panLevel;
 
-    // Apply transform immediately (no animation for restoration)
-    this.currentTransform = state.zoomTransform;
+    // Reconstruct ZoomTransform from serialized state (JSON loses prototype methods)
+    // state.zoomTransform may be a plain object {x, y, k} after JSON.parse
+    const savedTransform = state.zoomTransform;
+    this.currentTransform = d3.zoomIdentity
+      .translate(savedTransform.x ?? 0, savedTransform.y ?? 0)
+      .scale(savedTransform.k ?? 1);
+
     if (this.zoomBehavior) {
       this.container.call(
         this.zoomBehavior.transform,
@@ -243,6 +252,7 @@ export class SuperGridZoom implements JanusControls {
 
   /**
    * Handle zoom event with orthogonal control logic
+   * Applies transform to both grid-content AND headers to keep them aligned
    */
   private handleZoom(event: d3.D3ZoomEvent<SVGElement, unknown>): void {
     const { transform } = event;
@@ -250,9 +260,16 @@ export class SuperGridZoom implements JanusControls {
     // Update current transform
     this.currentTransform = transform;
 
-    // Apply transform to container content
-    this.container.selectAll('.grid-content')
+    // Apply transform to BOTH headers and grid-content to keep them aligned
+    // This is critical for spreadsheet-like cell/header alignment
+    this.container.selectAll('.grid-wrapper')
       .attr('transform', transform.toString());
+
+    // Fallback: if no wrapper, apply to individual groups (backward compatibility)
+    if (this.container.select('.grid-wrapper').empty()) {
+      this.container.selectAll('.grid-content, .headers')
+        .attr('transform', transform.toString());
+    }
 
     // Update zoom level based on scale if not manually set
     this.updateZoomLevelFromScale(transform.k);
