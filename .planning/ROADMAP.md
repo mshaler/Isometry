@@ -301,11 +301,11 @@ Plans:
   2. Dynamic properties appear as draggable facets in Navigator alongside schema-defined facets
   3. Navigator UI distinguishes dynamic vs schema facets (different styling or section)
   4. Dragging dynamic property to plane updates axis mapping and SuperGrid renders it
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 65-01: TBD
-- [ ] 65-02: TBD
+- [ ] 65-01-PLAN.md — Extend property classifier with dynamic property discovery from node_properties
+- [ ] 65-02-PLAN.md — Add visual distinction for dynamic properties in Navigator UI
 
 ## 📋 v4.8 ETL Consolidation (Planned)
 
