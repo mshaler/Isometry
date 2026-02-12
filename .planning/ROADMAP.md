@@ -337,7 +337,7 @@ Plans:
 **Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 68-01-PLAN.md — BaseImporter abstract class and ImportCoordinator router
+- [x] 68-01-PLAN.md — BaseImporter abstract class and ImportCoordinator router
 
 ### Phase 69: File Importers
 **Goal**: Implement importers for MD, XLSX, DOCX, JSON, HTML, CSV
@@ -403,7 +403,7 @@ Plans:
 | 64. ETL Pipeline Upgrade | v4.7 | 2/2 | Complete | 2026-02-12 |
 | 65. Facet Discovery | v4.7 | 0/2 | Not started | - |
 | 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
-| 68. Import Coordinator | v4.8 | 0/1 | Planned | - |
+| 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 69. File Importers | v4.8 | 0/TBD | Planned | - |
 | 70. Integration | v4.8 | 0/TBD | Planned | - |
 | 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
@@ -411,4 +411,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 68 planned)*
+*Last updated: 2026-02-12 (Phase 68 complete)*

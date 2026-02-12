@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 68 of 72 (Import Coordinator)
-Plan: 01 of 01 COMPLETE
-Status: Phase complete ✓
-Last activity: 2026-02-12 — Completed Phase 68-01 (Import Coordinator)
+Phase: 65 of 72 (Facet Discovery)
+Plan: 02 of 02 COMPLETE
+Status: Phase complete ✓ — v4.7 Schema-on-Read MILESTONE COMPLETE
+Last activity: 2026-02-12 — Completed Phase 65-02 (Dynamic Property Navigator UI)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [########......................] 33% (2/6 phases)
@@ -34,6 +34,7 @@ Progress (v4.8): [########......................] 33% (2/6 phases)
 - Phase 67-01: COMPLETE (~10m) — Canonical Node Schema with Zod validation
 
 **Recent completions (Phase 65 - v4.7 Schema-on-Read - MILESTONE COMPLETE):**
+- Phase 65-02: COMPLETE (~3m) — Dynamic property Navigator UI with visual distinction
 - Phase 65-01: COMPLETE (~4m) — Dynamic property discovery with LATCH inference
 
 **Recent completions (Phase 66 - parallel):**
@@ -61,6 +62,12 @@ Progress (v4.8): [########......................] 33% (2/6 phases)
 - DEC-68-02: Sequential batch import (for-of loop) for simpler error handling vs parallelization
 - DEC-68-03: Mandatory validation of all nodes with CanonicalNodeSchema.parse() in importFile()
 - DEC-68-04: Template Method pattern for importers (parse → validate → transform pipeline)
+
+**Phase 65-02 decisions (Dynamic Property Navigator UI):**
+- UI-DEC-01: Sparkles icon for dynamic properties (visual distinction from schema-defined)
+- UI-DEC-02: Dashed border styling for subtle differentiation
+- UI-DEC-03: Node count badge shows data coverage (only when isDynamic && nodeCount > 0)
+- UI-DEC-04: Theme-specific yellow tones (NeXTSTEP yellow-400, Modern yellow-500)
 
 **Phase 65-01 decisions (Dynamic Property Discovery):**
 - FACET-DEC-01: Node count threshold = 3 (properties in <3 nodes filtered out to reduce UI noise)
@@ -171,12 +178,24 @@ PAFVContext.densityLevel -> SuperGrid.setDensityLevel()
     -> renderProjectionHeaders() - expands/contracts headers based on density
     -> renderCards() - filters visible cards with transitions
 
-Phase 64 ETL Pipeline (NEW):
+Phase 64 ETL Pipeline:
 File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
   -> mapToNodeRecord(parsed, filePath, rawFrontmatter)
   -> generateDeterministicSourceId(filePath, frontmatter, 'alto-index') [SHA-256]
   -> db.run(INSERT nodes)
   -> storeNodeProperties(db, nodeId, rawFrontmatter) [unknown keys -> EAV]
+
+Phase 65 Schema-on-Read (COMPLETE):
+node_properties table (EAV)
+  -> discoverDynamicProperties() [nodeCount >= 3 threshold]
+  -> inferLATCHBucket() [smart type routing]
+  -> ClassifiedProperty[] with isDynamic=true & nodeCount
+  -> usePropertyClassification()
+  -> PafvNavigator.getAllLatchProperties()
+  -> DraggablePropertyChip renders:
+    - Sparkles icon (yellow-400/500)
+    - Dashed border
+    - Node count badge
 ```
 
 ### v4.7 Requirements Coverage
@@ -199,7 +218,7 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 - [x] ETL-02: Unknown keys to node_properties (Phase 64-02 - storeNodeProperties)
 - [x] ETL-03: Deterministic source_id (Phase 64-01/02 - generateDeterministicSourceId wired)
 - [x] FACET-01: Query node_properties for facets (Phase 65-01 - discoverDynamicProperties + inferLATCHBucket)
-- [x] FACET-02: Dynamic properties in Navigator (Phase 65-01 - isDynamic flag + nodeCount in classification)
+- [x] FACET-02: Dynamic properties in Navigator (Phase 65-02 - DraggablePropertyChip with sparkle icon, dashed border, node count badge)
 
 ### v4.8 Requirements Coverage
 
@@ -221,7 +240,7 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 - [x] Phase 62: Density Filtering (COMPLETE - executed in parallel with 63)
 - [x] Phase 63: Schema & Query Safety (COMPLETE)
 - [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
-- [x] Phase 65: Facet Discovery (COMPLETE - 1 plan, ~4 minutes)
+- [x] Phase 65: Facet Discovery (COMPLETE - 2 plans, ~7 minutes total)
 
 **v4.8 (ETL Consolidation):**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
@@ -241,10 +260,10 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 None — v4.7 milestone complete (Schema-on-Read). Phase 67 and 68 complete, ready for Phase 69 (File Importers).
 
 **v4.7 Milestone Achievement:**
-Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with isDynamic flag and nodeCount badges.
+Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with sparkle icons, dashed borders, and node count badges for complete visual feedback loop.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 68-01 complete (Import Coordinator) — v4.8 ETL Consolidation 33% complete
-Resume file: .planning/phases/68-import-coordinator/68-01-SUMMARY.md
+Stopped at: Phase 65-02 complete (Dynamic Property Navigator UI) — v4.7 Schema-on-Read MILESTONE COMPLETE ✅
+Resume file: .planning/phases/65-facet-discovery/65-02-SUMMARY.md
