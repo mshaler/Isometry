@@ -640,6 +640,9 @@ export class GridRenderingEngine {
 
       cardRecord.x = padding + col * (cardWidth + gapX);
       cardRecord.y = headerHeight + padding + row * (cardHeight + gapY);
+      // Set projection fields for density filtering compatibility
+      cardRecord._projectedCol = col;
+      cardRecord._projectedRow = row;
     });
   }
 
@@ -699,6 +702,23 @@ export class GridRenderingEngine {
         visibleCards: visibleCards.length,
         selectedIds: this.selectedIds.size,
       });
+
+      // Debug: if dense mode filtered out all cards, log sample card for diagnosis
+      if (visibleCards.length === 0 && preparedCards.length > 0) {
+        const sampleCard = preparedCards[0] as Record<string, unknown>;
+        console.warn('[GridRenderingEngine] All cards filtered out in dense mode! Sample card:', {
+          name: sampleCard.name,
+          folder: sampleCard.folder,
+          status: sampleCard.status,
+          priority: sampleCard.priority,
+          tags: sampleCard.tags,
+          created_at: sampleCard.created_at,
+          _isEmpty: sampleCard._isEmpty,
+          _projectedCol: sampleCard._projectedCol,
+          _projectedRow: sampleCard._projectedRow,
+          allKeys: Object.keys(sampleCard),
+        });
+      }
     }
 
     this.updateGridLayout();
