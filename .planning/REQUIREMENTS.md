@@ -7,31 +7,41 @@
 
 Wire SuperGrid to consume PAFV axis mappings for 2D card positioning with dynamic headers and smooth transitions.
 
-### Projection Core
+### Projection Core (Shipped v4.4)
 
-- [ ] **PROJ-01**: SuperGrid reads current axis mappings from PAFVContext and uses them to determine grid layout
-- [ ] **PROJ-02**: X-axis mapping determines column headers — unique facet values become columns
-- [ ] **PROJ-03**: Y-axis mapping determines row headers — unique facet values become rows
-- [ ] **PROJ-04**: Cards position at the intersection of their X and Y facet values (same X+Y → same cell)
-- [ ] **PROJ-05**: Cards with null/undefined facet values appear in an "Unassigned" bucket row or column
+- [x] **PROJ-01**: SuperGrid reads current axis mappings from PAFVContext and uses them to determine grid layout — v4.4
+- [x] **PROJ-02**: X-axis mapping determines column headers — unique facet values become columns — v4.4
+- [x] **PROJ-03**: Y-axis mapping determines row headers — unique facet values become rows — v4.4
+- [x] **PROJ-04**: Cards position at the intersection of their X and Y facet values (same X+Y → same cell) — v4.4
+- [x] **PROJ-05**: Cards with null/undefined facet values appear in an "Unassigned" bucket row or column — v4.4
 
-### Header Generation
+### Header Generation (Shipped v4.4)
 
-- [ ] **HDR-01**: Column headers are dynamically generated from unique X-axis facet values in the dataset
-- [ ] **HDR-02**: Row headers are dynamically generated from unique Y-axis facet values in the dataset
-- [ ] **HDR-03**: Headers respect facet type formatting (dates formatted, categories labeled)
+- [x] **HDR-01**: Column headers are dynamically generated from unique X-axis facet values in the dataset — v4.4
+- [x] **HDR-02**: Row headers are dynamically generated from unique Y-axis facet values in the dataset — v4.4
+- [x] **HDR-03**: Headers respect facet type formatting (dates formatted, categories labeled) — v4.4
 
-### Transitions
+### Stacked/Nested Headers (Shipped v4.5)
 
-- [x] **TRANS-01**: Changing axis mapping triggers animated card repositioning (D3 transitions)
-- [x] **TRANS-02**: New cells animate in (enter), removed cells animate out (exit) during transitions
-- [x] **TRANS-03**: Empty cells toggle between sparse mode (full Cartesian) and dense mode (populated only)
+- [x] **STACK-01**: Multi-level header hierarchy renders when multiple facets assigned to same plane (stacked axes) — v4.5
+- [x] **STACK-02**: Parent header cells visually span across their child headers (Excel pivot table style) — v4.5
+- [x] **STACK-03**: Header clicks allow sorting by that level of the hierarchy — v4.5
 
-### Stacked/Nested Headers (Phase 60)
+## v4.6 Requirements — SuperGrid Polish
 
-- [ ] **STACK-01**: Multi-level header hierarchy renders when multiple facets assigned to same plane (stacked axes)
-- [ ] **STACK-02**: Parent header cells visually span across their child headers (Excel pivot table style)
-- [ ] **STACK-03**: Header clicks allow sorting by that level of the hierarchy
+Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
+
+### View Transitions
+
+- [ ] **TRANS-01**: Changing axis mapping triggers animated card repositioning (300ms D3 transitions)
+- [ ] **TRANS-02**: Header elements animate when plane assignment changes
+- [ ] **TRANS-03**: Selection state is preserved during view transitions (selected cards stay selected)
+
+### Density Filtering
+
+- [ ] **DENS-01**: Sparse mode (DensityLevel 1) renders full Cartesian grid including empty cells
+- [ ] **DENS-02**: Dense mode (DensityLevel 2) hides empty cells, shows only populated intersections
+- [ ] **DENS-03**: Janus pan control triggers sparse/dense filtering in GridRenderingEngine
 
 ## Validated Requirements (Shipped)
 
@@ -98,18 +108,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HDR-01 | Phase 57 | Complete |
 | HDR-02 | Phase 57 | Complete |
 | HDR-03 | Phase 57 | Complete |
-| TRANS-01 | Phase 58 | Complete |
-| TRANS-02 | Phase 58 | Complete |
-| TRANS-03 | Phase 58 | Complete |
-| STACK-01 | Phase 60 | Pending |
-| STACK-02 | Phase 60 | Pending |
-| STACK-03 | Phase 60 | Pending |
+| STACK-01 | Phase 60 | Complete |
+| STACK-02 | Phase 60 | Complete |
+| STACK-03 | Phase 60 | Complete |
+| TRANS-01 | Phase 61+ | Pending |
+| TRANS-02 | Phase 61+ | Pending |
+| TRANS-03 | Phase 61+ | Pending |
+| DENS-01 | Phase 61+ | Pending |
+| DENS-02 | Phase 61+ | Pending |
+| DENS-03 | Phase 61+ | Pending |
 
 **Coverage:**
-- v4.4 requirements: 14 total
-- Mapped to phases: 14
-- Unmapped: 0 ✓
+- v4.4/v4.5 shipped: 11 requirements
+- v4.6 requirements: 6 total
+- Mapped to phases: TBD (roadmap pending)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-11 (Phase 60 requirements added)*
+*Last updated: 2026-02-12 (v4.6 requirements added, v4.4/v4.5 shipped)*
