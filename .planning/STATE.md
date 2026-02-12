@@ -185,22 +185,46 @@ File.content -> parseAltoFile() -> parseFrontmatter() [gray-matter]
 - [ ] FACET-01: Query node_properties for facets (Phase 65)
 - [ ] FACET-02: Dynamic properties in Navigator (Phase 65)
 
+### v4.8 Requirements Coverage
+
+**Total phases:** 6 (Phases 67-72)
+- Phase 67: Canonical Schema (SCHEMA-01, SCHEMA-02, SCHEMA-03)
+- Phase 68: Import Coordinator (COORD-01, COORD-02, COORD-03)
+- Phase 69: File Importers (IMP-01 through IMP-06)
+- Phase 70: Integration (INT-01, INT-02, INT-03)
+- Phase 71: Swift Bridge (BRIDGE-01, BRIDGE-02)
+- Phase 72: Quality & Docs (QUAL-01, QUAL-02, QUAL-03)
+
+**Coverage:** 1/6 phases complete (17%)
+- [x] Phase 67: Canonical Schema — Zod validation, JSON Schema, SQL mapping
+
 ### Pending Todos
 
+**v4.7 (Schema-on-Read):**
 - [x] Phase 62: Density Filtering (COMPLETE - executed in parallel with 63)
 - [x] Phase 63: Schema & Query Safety (COMPLETE)
 - [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
-- [ ] Phase 65: Facet Discovery UI (next action)
+- [ ] Phase 65: Facet Discovery UI (v4.7 completion)
+
+**v4.8 (ETL Consolidation):**
+- [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
+- [ ] Phase 68: Import Coordinator (next action)
+- [ ] Phase 69: File Importers (MD, XLSX, DOCX, JSON, HTML, CSV)
+- [ ] Phase 70: Integration
+- [ ] Phase 71: Swift Bridge
+- [ ] Phase 72: Quality & Docs
+
+**Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
 - [ ] Nested header repositioning animation (deferred from 61-01)
 
 ### Blockers/Concerns
 
-None — Phase 64 complete, ready for Phase 65 (Facet Discovery UI).
+None — Phase 67 complete, ready for Phase 68 (Import Coordinator).
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 64 complete, ready for Phase 65 (Facet Discovery UI)
-Resume file: .planning/phases/64-etl-pipeline-upgrade/64-VERIFICATION.md
+Stopped at: Phase 67-01 complete (Canonical Schema)
+Resume file: .planning/phases/67-canonical-schema/67-01-SUMMARY.md

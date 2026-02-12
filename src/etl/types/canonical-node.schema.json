@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://isometry.app/schemas/canonical-node.json",
+  "title": "CanonicalNode",
+  "description": "Canonical Node schema for Isometry ETL - single source of truth for imported data",
+  "type": "object",
+  "required": ["id", "name", "createdAt", "modifiedAt"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique node identifier"
+    },
+    "nodeType": {
+      "type": "string",
+      "minLength": 1,
+      "default": "note",
+      "description": "Type of node (note, calendar, contact, etc.)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Node title/name (LATCH-A primary sort key)"
+    },
+    "content": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Full content body"
+    },
+    "summary": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Brief summary or excerpt"
+    },
+    "latitude": {
+      "type": ["number", "null"],
+      "default": null,
+      "description": "LATCH-L: Geographic latitude"
+    },
+    "longitude": {
+      "type": ["number", "null"],
+      "default": null,
+      "description": "LATCH-L: Geographic longitude"
+    },
+    "locationName": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "LATCH-L: Named location"
+    },
+    "locationAddress": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "LATCH-L: Full address"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "LATCH-T: Creation timestamp (ISO 8601)"
+    },
+    "modifiedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "LATCH-T: Last modification timestamp (ISO 8601)"
+    },
+    "dueAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null,
+      "description": "LATCH-T: Due date for tasks"
+    },
+    "completedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null,
+      "description": "LATCH-T: Completion timestamp"
+    },
+    "eventStart": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null,
+      "description": "LATCH-T: Event start time"
+    },
+    "eventEnd": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null,
+      "description": "LATCH-T: Event end time"
+    },
+    "folder": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "LATCH-C: Folder/collection name"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "default": [],
+      "description": "LATCH-C: Tag labels"
+    },
+    "status": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "LATCH-C: Status (active, completed, archived)"
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "default": 0,
+      "description": "LATCH-H: Priority level (0-5)"
+    },
+    "importance": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 5,
+      "default": 0,
+      "description": "LATCH-H: Importance level (0-5)"
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0,
+      "description": "LATCH-H: Manual sort order"
+    },
+    "gridX": {
+      "type": "number",
+      "default": 0,
+      "description": "SuperGrid X position"
+    },
+    "gridY": {
+      "type": "number",
+      "default": 0,
+      "description": "SuperGrid Y position"
+    },
+    "source": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Data source identifier (alto-index, apple-notes, etc.)"
+    },
+    "sourceId": {
+      "type": ["string", "null"],
+      "default": null,
+      "description": "Unique ID within source system"
+    },
+    "sourceUrl": {
+      "type": ["string", "null"],
+      "format": "uri",
+      "default": null,
+      "description": "URL link to source"
+    },
+    "deletedAt": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "default": null,
+      "description": "Soft delete timestamp"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Optimistic concurrency version"
+    },
+    "properties": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Extension point for format-specific metadata"
+    }
+  }
+}
