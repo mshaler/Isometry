@@ -237,7 +237,49 @@ export function importAltoFiles(
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
-  const filesToProcess = limit ? files.slice(0, limit) : files;
+  // Stratified sampling: if limit is set, sample proportionally from each data type
+  // to ensure all datasets are represented
+  let filesToProcess: Array<{ path: string; content: string }>;
+  if (limit && limit < files.length) {
+    // Group files by data type (detected from path)
+    const byType = new Map<string, Array<{ path: string; content: string }>>();
+    for (const file of files) {
+      const pathParts = file.path.replace(/^\//, '').split('/');
+      const type = pathParts[0] || 'unknown';
+      if (!byType.has(type)) byType.set(type, []);
+      byType.get(type)!.push(file);
+    }
+
+    // Calculate proportional samples per type (minimum 50 per type if available)
+    const types = Array.from(byType.keys());
+    const minPerType = Math.min(50, Math.floor(limit / types.length));
+    let remaining = limit;
+    filesToProcess = [];
+
+    // First pass: ensure minimum representation from each type
+    for (const type of types) {
+      const typeFiles = byType.get(type)!;
+      const toTake = Math.min(minPerType, typeFiles.length, remaining);
+      filesToProcess.push(...typeFiles.slice(0, toTake));
+      remaining -= toTake;
+    }
+
+    // Second pass: distribute remaining slots proportionally
+    if (remaining > 0) {
+      for (const type of types) {
+        const typeFiles = byType.get(type)!;
+        const alreadyTaken = Math.min(minPerType, typeFiles.length);
+        const remainingInType = typeFiles.length - alreadyTaken;
+        const proportion = remainingInType / (files.length - filesToProcess.length + remainingInType);
+        const additional = Math.min(Math.floor(remaining * proportion), remainingInType);
+        if (additional > 0) {
+          filesToProcess.push(...typeFiles.slice(alreadyTaken, alreadyTaken + additional));
+        }
+      }
+    }
+  } else {
+    filesToProcess = files;
+  }
   const total = filesToProcess.length;
 
   for (let i = 0; i < filesToProcess.length; i++) {

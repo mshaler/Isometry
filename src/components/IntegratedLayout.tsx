@@ -205,8 +205,8 @@ export function IntegratedLayout() {
     // Mark as started immediately to prevent re-entry
     importStartedRef.current = true;
 
-    // Limit import to 2000 records for performance
-    importFromPublic({ clearExisting: true, limit: 2000 })
+    // Import with stratified sampling across all data types (500 per type minimum)
+    importFromPublic({ clearExisting: true, limit: 5000 })
       .then((result) => {
         setAltoImported(true);
         contextLogger.debug('[IntegratedLayout] Alto-index import complete', {
