@@ -34,6 +34,7 @@ Progress (v5.0 SuperGrid): [#######.......................] 25% (1/4 plans in Ph
 - Phase 73-01: COMPLETE (~6m) — SuperStack multi-level headers with hierarchy building
 
 **Previous completions (Phase 70 - v4.8 Integration):**
+- Phase 70-02: COMPLETE (~5m) — AltoImporter extends BaseImporter, CanonicalNode[] output
 - Phase 70-01: COMPLETE (~5m) — insertCanonicalNodes() + window.isometryETL bridge
 
 **Recent completions (Phase 69 - v4.8 File Importers):**
@@ -77,6 +78,11 @@ Progress (v5.0 SuperGrid): [#######.......................] 25% (1/4 plans in Ph
 - STACK-DEC-02: HeaderNode type with span calculated from leaf descendants
 - STACK-DEC-03: Visual differentiation: parent headers #e8e8e8, leaf headers #f5f5f5
 - STACK-DEC-04: Header click selects all cells within header's span range
+
+**Phase 70-02 decisions (Integration - AltoImporter Migration):**
+- ALTO-DEC-01: Keep legacy mapToNodeRecord() for batch import compatibility
+- ALTO-DEC-02: Use frontmatterAliases set for alto-specific field name variations
+- ALTO-DEC-03: sourceUrl validated with URL constructor to filter invalid URLs
 
 **Phase 70-01 decisions (Integration - Database Insertion):**
 - INT-DEC-01: Direct db.run() for properties instead of storeNodeProperties (already-filtered node.properties)
@@ -309,7 +315,7 @@ node_properties table (EAV)
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
-- [~] Phase 70: Integration — PAUSED (Plan 01 complete, SuperGrid prioritized)
+- [~] Phase 70: Integration — PAUSED (Plans 01-02 complete, SuperGrid prioritized)
 - [ ] Phase 71: Swift Bridge
 - [ ] Phase 72: Quality & Docs
 
