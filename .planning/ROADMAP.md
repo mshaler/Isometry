@@ -9,7 +9,8 @@
 - **v5.0 Type Safety Restoration** - Phases 52-55 (shipped 2026-02-10)
 - **v4.4 SuperGrid PAFV Projection** - Phases 56-59 (shipped 2026-02-11)
 - **v4.5 Stacked/Nested Headers** - Phase 60 (shipped 2026-02-11)
-- 🚧 **v4.6 SuperGrid Polish** - Phases 61-62 (in progress)
+- **v4.6 SuperGrid Polish** - Phases 61-62 (partial: 61 complete, 62 deferred)
+- 🚧 **v4.7 Schema-on-Read** - Phases 63-65 (in progress)
 
 ## Phases
 
@@ -223,9 +224,12 @@ Plans:
 
 </details>
 
-## 🚧 v4.6 SuperGrid Polish (In Progress)
+<details>
+<summary>v4.6 SuperGrid Polish (Phases 61-62) - PARTIAL (61 complete, 62 deferred)</summary>
 
 **Milestone Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
+
+**Deferred Note:** Phase 62 (Density Filtering) deferred in favor of v4.7 Schema-on-Read priority work.
 
 ### Phase 61: View Transitions
 **Goal**: Cards and headers animate smoothly when axis mappings change
@@ -240,7 +244,7 @@ Plans:
 Plans:
 - [x] 61-01-PLAN.md — Card/header transitions with selection preservation
 
-### Phase 62: Density Filtering
+### Phase 62: Density Filtering (DEFERRED)
 **Goal**: User controls whether empty cells display via density controls
 **Depends on**: Phase 61 (View Transitions complete)
 **Requirements**: DENS-01, DENS-02, DENS-03
@@ -249,11 +253,59 @@ Plans:
   2. User sets pan level to dense and sees only populated cells (empty cells hidden)
   3. User adjusts pan slider and sees cell filtering respond immediately
   4. Density changes preserve existing card positions and selection state
+**Status**: Deferred to v4.8
+**Plans**: TBD
+
+</details>
+
+## 🚧 v4.7 Schema-on-Read (In Progress)
+
+**Milestone Goal:** Dynamic YAML property discovery and storage for true schema-on-read semantics.
+
+### Phase 63: Schema & Query Safety
+**Goal**: Add node_properties table and fix query parameter binding for arbitrary YAML frontmatter storage
+**Depends on**: Phase 61 (View Transitions complete)
+**Requirements**: SCHEMA-01, SCHEMA-02, QUERY-01
+**Success Criteria** (what must be TRUE):
+  1. Database contains node_properties table with foreign key to nodes and cascade delete
+  2. Arbitrary YAML keys can be stored as key-value pairs linked to node_id
+  3. All SQL queries use stmt.bind(params) instead of string interpolation for injection safety
+  4. execute() function in db/operations.ts correctly passes params to sql.js stmt.bind()
 **Plans**: TBD
 
 Plans:
-- [ ] 62-01: TBD
-- [ ] 62-02: TBD
+- [ ] 63-01: TBD
+- [ ] 63-02: TBD
+
+### Phase 64: ETL Pipeline Upgrade
+**Goal**: Replace custom YAML parser with full-spec parser and harden source_id generation
+**Depends on**: Phase 63 (Schema & Query Safety complete)
+**Requirements**: ETL-01, ETL-02, ETL-03
+**Success Criteria** (what must be TRUE):
+  1. YAML parser uses npm yaml package instead of custom regex-based parser
+  2. Unknown frontmatter keys flow into node_properties table without schema changes
+  3. source_id generation is deterministic (filePath + frontmatter hash) with collision detection
+  4. ETL pipeline preserves all YAML frontmatter regardless of whether keys are recognized
+**Plans**: TBD
+
+Plans:
+- [ ] 64-01: TBD
+- [ ] 64-02: TBD
+
+### Phase 65: Facet Discovery
+**Goal**: Surface dynamic properties from node_properties as available Navigator facets
+**Depends on**: Phase 64 (ETL Pipeline Upgrade complete)
+**Requirements**: FACET-01, FACET-02
+**Success Criteria** (what must be TRUE):
+  1. Property classifier queries node_properties for distinct keys and includes them in classification
+  2. Dynamic properties appear as draggable facets in Navigator alongside schema-defined facets
+  3. Navigator UI distinguishes dynamic vs schema facets (different styling or section)
+  4. Dragging dynamic property to plane updates axis mapping and SuperGrid renders it
+**Plans**: TBD
+
+Plans:
+- [ ] 65-01: TBD
+- [ ] 65-02: TBD
 
 ## Progress
 
@@ -274,8 +326,11 @@ Plans:
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
 | 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
-| 62. Density Filtering | v4.6 | 0/TBD | Not started | - |
+| 62. Density Filtering | v4.6 | N/A | Deferred to v4.8 | - |
+| 63. Schema & Query Safety | v4.7 | 0/TBD | Not started | - |
+| 64. ETL Pipeline Upgrade | v4.7 | 0/TBD | Not started | - |
+| 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 61 planned - 1 plan)*
+*Last updated: 2026-02-12 (v4.7 Schema-on-Read phases 63-65 added)*

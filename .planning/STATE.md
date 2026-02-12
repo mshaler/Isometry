@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-12 — Milestone v4.7 started
+Phase: 63 of 65 (Schema & Query Safety)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-12 — v4.7 roadmap created (3 phases: 63-65)
 
-Progress (v4.7): [                ] 0% (requirements phase)
+Progress (v4.7): [                ] 0% (0/8 requirements)
 
 ## Performance Metrics
 
@@ -26,45 +26,30 @@ Progress (v4.7): [                ] 0% (requirements phase)
 - v5.0: 3-wave parallel (bypassed phased plan), same day
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
+- v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
 **Recent completions (Phase 61):**
 - Phase 61-01: COMPLETE (6m 4s) — View Transitions with selection persistence
 
-**Prior completions (Phase 60):**
-- Phase 60-01: COMPLETE (3m 14s) — PAFV Stacked Axis Types
-- Phase 60-02: COMPLETE (6m 3s) — Stacked Header Rendering
-- Phase 60-03: COMPLETE (15m 42s) — Header Click Sorting
-
 ## Accumulated Context
 
 ### Decisions
+
+**v4.7 Roadmap Structure:**
+- ROADMAP-01: 3 phases derived from 8 requirements (SCHEMA, QUERY, ETL, FACET)
+- ROADMAP-02: Phase 63 foundation (schema+query), Phase 64 ETL, Phase 65 UI surface
+- ROADMAP-03: Dependency chain: 63 → 64 → 65 (table → parser → discovery)
+- ROADMAP-04: v4.6 Phase 62 deferred to v4.8 (density filtering deprioritized)
 
 **Phase 61-01 decisions:**
 - TRANS-IMPL-01: Use transition interruption at render start to prevent animation buildup
 - TRANS-IMPL-02: Nested headers use opacity fade-in only; repositioning deferred
 - TRANS-IMPL-03: Selection styling applied in transition .on('end') callback
 
-**v4.6 Milestone Structure:**
-- ROADMAP-01: Split into 2 phases (View Transitions + Density Filtering)
-- ROADMAP-02: Phase 61 before Phase 62 (transitions don't depend on density)
-- ROADMAP-03: Both phases touch GridRenderingEngine, sequential execution
-- ROADMAP-04: Coverage = 6/6 requirements (TRANS-01/02/03, DENS-01/02/03)
-
 **Phase 60-03 decisions:**
 - SORT-01: Sort state stored in PAFVContext for global access (not just D3)
 - SORT-02: Three-state toggle cycle: asc -> desc -> null (clear)
 - SORT-03: Sort not persisted to URL (sortConfig: null in serialization)
-
-**Phase 60-02 decisions:**
-- RENDER-01: Stacked detection via facets array length (>1 = stacked)
-- RENDER-02: Level groups positioned vertically, nodes positioned by x within each level
-- RENDER-03: Leaf node labels used for card position computation after stacked rendering
-
-**v4.4 decisions (from execution):**
-- `mappingsToProjection()` function in `src/types/grid.ts` converts AxisMapping[] to PAFVProjection
-- SuperGrid receives projection via `setProjection()` and passes to GridRenderingEngine
-- GridRenderingEngine computes card positions with `_projectedRow` and `_projectedCol` annotations
-- "Unassigned" bucket handles null facet values
 
 ### What's Wired (Phase 61 COMPLETE)
 
@@ -86,7 +71,7 @@ Within-well -> getMappingsForPlane -> stacked axis support -> reorderMappingsInP
 reorder       addMappingToPlane
 
 Phase 60 Stacked Headers:
-AxisProjection.facets? -> StackedAxisConfig -> generateStackedHierarchy() -> HeaderHierarchy
+ AxisProjection.facets? -> StackedAxisConfig -> generateStackedHierarchy() -> HeaderHierarchy
   -> GridRenderingEngine.renderProjectionHeaders()
   -> renderStackedProjectionHeaders()
   -> SuperGridHeaders.renderStackedHeaders()
@@ -94,7 +79,7 @@ AxisProjection.facets? -> StackedAxisConfig -> generateStackedHierarchy() -> Hea
   -> handleHeaderSortClick() with toggle cycle
   -> HeaderAnimationController.animateSortIndicator()
 
-Phase 61 View Transitions (NEW):
+Phase 61 View Transitions:
 GridRenderingEngine.render()
   -> interrupt() existing transitions
   -> renderProjectionHeaders() with .join() enter/update/exit
@@ -107,46 +92,34 @@ SelectionContext -> SuperGrid.handleSelectionChange()
   -> transitions preserve selection state
 ```
 
-### v4.6 Requirements Coverage
+### v4.7 Requirements Coverage
 
-**Total requirements:** 6
-- TRANS-01: Animated card repositioning (300ms D3 transitions) -> Phase 61 COMPLETE
-- TRANS-02: Header elements animate with cards -> Phase 61 COMPLETE
-- TRANS-03: Selection state preserved during transitions -> Phase 61 COMPLETE
-- DENS-01: Sparse mode renders full Cartesian grid -> Phase 62
-- DENS-02: Dense mode hides empty cells -> Phase 62
-- DENS-03: Janus pan control triggers filtering -> Phase 62
+**Total requirements:** 8
+- SCHEMA-01: Store arbitrary YAML keys in node_properties -> Phase 63
+- SCHEMA-02: Foreign key with cascade delete -> Phase 63
+- QUERY-01: Use stmt.bind(params) instead of interpolation -> Phase 63
+- ETL-01: Replace custom parser with yaml package -> Phase 64
+- ETL-02: Preserve unknown keys to node_properties -> Phase 64
+- ETL-03: Deterministic source_id generation -> Phase 64
+- FACET-01: Query node_properties for dynamic facets -> Phase 65
+- FACET-02: Dynamic properties in Navigator UI -> Phase 65
 
-**Coverage:** 6/6 mapped (100%), 3/6 implemented (50%)
+**Coverage:** 8/8 mapped (100%), 0/8 implemented (0%)
 
 ### Pending Todos
 
-- [ ] Phase 62: Plan Density Filtering (next action)
+- [ ] Phase 63: Plan Schema & Query Safety (next action)
+- [ ] Phase 62: Density Filtering (deferred to v4.8)
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
 - [ ] Directory health: src/services (22/15 files)
 - [ ] Nested header repositioning animation (deferred from 61-01)
 
 ### Blockers/Concerns
 
-None — Phase 61 complete, Phase 62 ready to plan.
+None — v4.7 roadmap approved and ready to plan.
 
 ## Session Continuity
 
 Last session: 2026-02-12
-Stopped at: Phase 61 complete, ready for Phase 62
+Stopped at: v4.7 roadmap created (phases 63-65), ready to plan Phase 63
 Resume file: None
-
-## Resume Instructions
-
-Next action: Define requirements for v4.7
-
-v4.6 milestone progress:
-- Phase 61: View Transitions (TRANS-01, TRANS-02, TRANS-03) - COMPLETE
-- Phase 62: Density Filtering - Deferred (v4.6 not shipped)
-
-v4.7 milestone focus (Schema-on-Read):
-- Dynamic property storage (node_properties table)
-- Query parameter binding fix
-- Full YAML parser upgrade
-- Dynamic facet discovery
-- Deterministic ETL identity

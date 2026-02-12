@@ -61,7 +61,7 @@ Complete SuperGrid projection system with animated view transitions and sparse/d
 - [x] **TRANS-02**: Header elements animate when plane assignment changes — v4.6
 - [x] **TRANS-03**: Selection state is preserved during view transitions (selected cards stay selected) — v4.6
 
-### Density Filtering
+### Density Filtering (Deferred to v4.8)
 
 - [ ] **DENS-01**: Sparse mode (DensityLevel 1) renders full Cartesian grid including empty cells
 - [ ] **DENS-02**: Dense mode (DensityLevel 2) hides empty cells, shows only populated intersections
@@ -138,24 +138,24 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TRANS-01 | Phase 61 | Complete |
 | TRANS-02 | Phase 61 | Complete |
 | TRANS-03 | Phase 61 | Complete |
-| DENS-01 | Phase 62 | Pending |
-| DENS-02 | Phase 62 | Pending |
-| DENS-03 | Phase 62 | Pending |
-| SCHEMA-01 | TBD | Pending |
-| SCHEMA-02 | TBD | Pending |
-| QUERY-01 | TBD | Pending |
-| ETL-01 | TBD | Pending |
-| ETL-02 | TBD | Pending |
-| ETL-03 | TBD | Pending |
-| FACET-01 | TBD | Pending |
-| FACET-02 | TBD | Pending |
+| DENS-01 | Phase 62 | Deferred (v4.8) |
+| DENS-02 | Phase 62 | Deferred (v4.8) |
+| DENS-03 | Phase 62 | Deferred (v4.8) |
+| SCHEMA-01 | Phase 63 | Pending |
+| SCHEMA-02 | Phase 63 | Pending |
+| QUERY-01 | Phase 63 | Pending |
+| ETL-01 | Phase 64 | Pending |
+| ETL-02 | Phase 64 | Pending |
+| ETL-03 | Phase 64 | Pending |
+| FACET-01 | Phase 65 | Pending |
+| FACET-02 | Phase 65 | Pending |
 
 **Coverage:**
 - v4.4/v4.5 shipped: 11 requirements
-- v4.6 requirements: 6 total (3 shipped, 3 pending Phase 62)
-- v4.7 requirements: 8 total (not yet mapped)
-- Mapped to phases: 6/14 active (v4.7 roadmap pending)
+- v4.6 requirements: 6 total (3 shipped Phase 61, 3 deferred Phase 62)
+- v4.7 requirements: 8 total (mapped to phases 63-65)
+- Mapped to phases: 8/8 active v4.7 requirements (100% coverage)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-12 (v4.7 requirements added)*
+*Last updated: 2026-02-12 (v4.7 requirements mapped to phases 63-65)*
