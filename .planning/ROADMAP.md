@@ -350,12 +350,12 @@ Plans:
 **Plans**: 6 plans in 2 waves
 
 Plans:
-- [ ] 69-01-PLAN.md — MarkdownImporter with gray-matter + marked (TDD)
-- [ ] 69-02-PLAN.md — JsonImporter with native parsing (TDD)
-- [ ] 69-03-PLAN.md — CsvImporter with PapaParse (TDD)
-- [ ] 69-04-PLAN.md — HtmlImporter with DOMParser (TDD)
-- [ ] 69-05-PLAN.md — WordImporter with mammoth (TDD)
-- [ ] 69-06-PLAN.md — ExcelImporter with SheetJS (TDD)
+- [x] 69-01-PLAN.md — MarkdownImporter with gray-matter + marked (TDD)
+- [x] 69-02-PLAN.md — JsonImporter with native parsing (TDD)
+- [x] 69-03-PLAN.md — CsvImporter with PapaParse (TDD)
+- [x] 69-04-PLAN.md — HtmlImporter with DOMParser (TDD)
+- [x] 69-05-PLAN.md — WordImporter with mammoth (TDD)
+- [x] 69-06-PLAN.md — ExcelImporter with SheetJS (TDD)
 
 ### Phase 70: Integration
 **Goal**: Wire importers to sql.js and migrate alto-importer
@@ -416,11 +416,11 @@ Plans:
 | 65. Facet Discovery | v4.7 | 2/2 | Complete | 2026-02-12 |
 | 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
-| 69. File Importers | v4.8 | 0/TBD | Planned | - |
+| 69. File Importers | v4.8 | 6/6 | Complete | 2026-02-12 |
 | 70. Integration | v4.8 | 0/TBD | Planned | - |
 | 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
 | 72. Quality & Docs | v4.8 | 0/TBD | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 65 complete — v4.7 milestone shipped)*
+*Last updated: 2026-02-12 (Phase 69 complete — 6 file importers shipped)*
