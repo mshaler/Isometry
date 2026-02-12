@@ -347,7 +347,15 @@ Plans:
   1. Each importer produces valid CanonicalNode[] from input files
   2. All importers handle edge cases and malformed input gracefully
   3. Test coverage >80% for each importer
-**Plans**: TBD
+**Plans**: 6 plans in 2 waves
+
+Plans:
+- [ ] 69-01-PLAN.md — MarkdownImporter with gray-matter + marked (TDD)
+- [ ] 69-02-PLAN.md — JsonImporter with native parsing (TDD)
+- [ ] 69-03-PLAN.md — CsvImporter with PapaParse (TDD)
+- [ ] 69-04-PLAN.md — HtmlImporter with DOMParser (TDD)
+- [ ] 69-05-PLAN.md — WordImporter with mammoth (TDD)
+- [ ] 69-06-PLAN.md — ExcelImporter with SheetJS (TDD)
 
 ### Phase 70: Integration
 **Goal**: Wire importers to sql.js and migrate alto-importer
