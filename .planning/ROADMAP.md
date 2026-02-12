@@ -244,7 +244,7 @@ Plans:
 Plans:
 - [x] 61-01-PLAN.md — Card/header transitions with selection preservation
 
-### Phase 62: Density Filtering (DEFERRED)
+### Phase 62: Density Filtering
 **Goal**: User controls whether empty cells display via density controls
 **Depends on**: Phase 61 (View Transitions complete)
 **Requirements**: DENS-01, DENS-02, DENS-03
@@ -253,8 +253,10 @@ Plans:
   2. User sets pan level to dense and sees only populated cells (empty cells hidden)
   3. User adjusts pan slider and sees cell filtering respond immediately
   4. Density changes preserve existing card positions and selection state
-**Status**: Deferred to v4.8
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
+
+Plans:
+- [ ] 62-01-PLAN.md — Wire Janus extent density controls to GridRenderingEngine for sparse/dense cell filtering
 
 </details>
 
@@ -326,7 +328,7 @@ Plans:
 | 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
 | 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
 | 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
-| 62. Density Filtering | v4.6 | N/A | Deferred to v4.8 | - |
+| 62. Density Filtering | v4.6 | 0/1 | Planned | - |
 | 63. Schema & Query Safety | v4.7 | 0/TBD | Not started | - |
 | 64. ETL Pipeline Upgrade | v4.7 | 0/TBD | Not started | - |
 | 65. Facet Discovery | v4.7 | 0/TBD | Not started | - |
