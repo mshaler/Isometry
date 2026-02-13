@@ -210,7 +210,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   };
 
   return (
-    <div className={`${className} bg-gray-900 border border-gray-700 rounded-lg flex flex-col min-w-[300px]`}>
+    <div className={`${className} bg-gray-900 border border-gray-700 rounded-lg flex flex-col`}>
       {/* Header */}
       <div className="flex items-center justify-between p-2 bg-gray-800 rounded-t-lg border-b border-gray-700">
         <div className="flex items-center gap-3">

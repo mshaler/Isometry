@@ -59,11 +59,6 @@ function NotebookLayoutInner() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [focusComponent]);
 
-  // Simple divider component (visual only, no resize for stability)
-  const renderDivider = () => (
-    <div className="w-px h-full bg-gray-300 flex-shrink-0" />
-  );
-
   if (screenSize === 'mobile') {
     // Mobile: Stack vertically
     return (
@@ -112,48 +107,43 @@ function NotebookLayoutInner() {
     );
   }
 
-  // Desktop: Three equal columns side-by-side (stable layout)
+  // Desktop: Three equal columns using CSS Grid (truly equal widths)
   return (
     <div
       ref={containerRef}
-      className="h-full flex gap-0 p-1 overflow-hidden"
+      className="h-full grid gap-px p-1 overflow-hidden"
+      style={{ gridTemplateColumns: '1fr 1fr 1fr' }}
     >
       {/* Capture Component - 1/3 */}
       <ErrorBoundary level="feature" name="CaptureComponent">
         <div
           ref={captureRef}
-          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
+          className="relative focusable-component overflow-hidden min-w-0"
           tabIndex={0}
         >
-          <CaptureComponent className="h-full" />
+          <CaptureComponent className="h-full w-full" />
         </div>
       </ErrorBoundary>
-
-      {/* Divider */}
-      {renderDivider()}
 
       {/* Shell Component - 1/3 */}
       <ErrorBoundary level="feature" name="ShellComponent">
         <div
           ref={shellRef}
-          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
+          className="relative focusable-component overflow-hidden min-w-0"
           tabIndex={0}
         >
-          <ShellComponent className="h-full" />
+          <ShellComponent className="h-full w-full" />
         </div>
       </ErrorBoundary>
-
-      {/* Divider */}
-      {renderDivider()}
 
       {/* Preview Component - 1/3 */}
       <ErrorBoundary level="feature" name="PreviewComponent">
         <div
           ref={previewRef}
-          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
+          className="relative focusable-component overflow-hidden min-w-0"
           tabIndex={0}
         >
-          <PreviewComponent className="h-full" />
+          <PreviewComponent className="h-full w-full" />
         </div>
       </ErrorBoundary>
     </div>

@@ -257,7 +257,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   return (
     <div className={`${className} ${
       theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'
-    } border rounded-lg flex flex-col min-w-[300px]`}>
+    } border rounded-lg flex flex-col`}>
       <div className={`flex items-center justify-between p-2 ${
         theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'
       } rounded-t-lg border-b`}>
