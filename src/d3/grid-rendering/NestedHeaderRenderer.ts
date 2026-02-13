@@ -132,7 +132,9 @@ export function buildNestedHeaderData(
         startIndex: startIdx >= 0 ? startIdx : leafIndex,
         parentKey: parentPathKey ? `${axis}_${effectiveLevel - 1}_${parentPathKey}` : null,
         isCollapsed,
-        originalLevels: isCollapsed ? Array.from({ length: collapsedCount }, (_, i) => collapsedLevelStart + i) : undefined,
+        originalLevels: isCollapsed
+          ? Array.from({ length: collapsedCount }, (_, i) => collapsedLevelStart + i)
+          : undefined,
         axis,
       };
 

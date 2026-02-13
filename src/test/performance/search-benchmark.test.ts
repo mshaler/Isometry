@@ -88,7 +88,8 @@ describe('Search Performance Benchmarks', () => {
         const duration = performance.now() - start;
 
         expect(duration).toBeLessThan(FTS5_THRESHOLD_MS);
-        console.log(`FTS5 search "${term}": ${duration.toFixed(2)}ms (threshold: ${FTS5_THRESHOLD_MS}ms), results: ${results[0]?.values.length || 0}`);
+        const resultCount = results[0]?.values.length || 0;
+        console.log(`FTS5 search "${term}": ${duration.toFixed(2)}ms (threshold: ${FTS5_THRESHOLD_MS}ms), results: ${resultCount}`);
       }
     });
 
