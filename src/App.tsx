@@ -13,6 +13,21 @@ import { SelectionProvider } from './state/SelectionContext';
 import { AppStateProvider } from './contexts/AppStateContext';
 import { Navigator } from './components/Navigator';
 import { IntegratedLayout } from './components/IntegratedLayout';
+import { useNodeDeepLink } from './hooks/ui/useNodeDeepLink';
+
+/**
+ * DeepLinkHandler - Component that handles node deep linking via URL params
+ *
+ * This must be inside SQLiteProvider and SelectionProvider to access:
+ * - db from SQLiteProvider (to validate node exists)
+ * - select/scrollToNode from SelectionProvider (to select and scroll to node)
+ *
+ * @see Phase 78-01: URL Deep Linking
+ */
+function DeepLinkHandler({ children }: { children: React.ReactNode }) {
+  useNodeDeepLink();
+  return <>{children}</>;
+}
 
 function App() {
   // TEMP: Disabled while imports are broken
@@ -55,15 +70,18 @@ function App() {
   if (testMode === 'three-canvas') {
     // SYNC-03: SelectionProvider enables cross-canvas selection synchronization
     // All notebook canvases (Capture, Shell, Preview) share the same selection state
+    // Phase 78-01: Deep linking via ?nodeId= parameter
     return (
       <SQLiteProvider>
         <FilterProvider>
           <ThemeProvider>
             <PAFVProvider>
               <SelectionProvider>
-                <NotebookProvider>
-                  <NotebookLayout />
-                </NotebookProvider>
+                <DeepLinkHandler>
+                  <NotebookProvider>
+                    <NotebookLayout />
+                  </NotebookProvider>
+                </DeepLinkHandler>
               </SelectionProvider>
             </PAFVProvider>
           </ThemeProvider>
@@ -112,9 +130,13 @@ function App() {
         <FilterProvider>
           <ThemeProvider>
             <PAFVProvider>
-              <AppStateProvider>
-                <IntegratedLayout />
-              </AppStateProvider>
+              <SelectionProvider>
+                <AppStateProvider>
+                  <DeepLinkHandler>
+                    <IntegratedLayout />
+                  </DeepLinkHandler>
+                </AppStateProvider>
+              </SelectionProvider>
             </PAFVProvider>
           </ThemeProvider>
         </FilterProvider>
@@ -123,14 +145,19 @@ function App() {
   }
 
   // Default: IntegratedLayout (no ?test= param required)
+  // Phase 78-01: Deep linking via ?nodeId= parameter
   return (
     <SQLiteProvider>
       <FilterProvider>
         <ThemeProvider>
           <PAFVProvider>
-            <AppStateProvider>
-              <IntegratedLayout />
-            </AppStateProvider>
+            <SelectionProvider>
+              <AppStateProvider>
+                <DeepLinkHandler>
+                  <IntegratedLayout />
+                </DeepLinkHandler>
+              </AppStateProvider>
+            </SelectionProvider>
           </PAFVProvider>
         </ThemeProvider>
       </FilterProvider>
