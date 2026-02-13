@@ -34,6 +34,7 @@ import { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeR
 import { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection } from './SelectManager';
 import { PositionManager, derivePositionFromNode } from './PositionManager';
 import { SortManager, type SortLevel, type MultiSortState } from './SortManager';
+import { FilterManager, type HeaderFilter, compileHeaderFiltersToSQL } from './FilterManager';
 
 // Re-export types for external use
 export * from './types';
@@ -42,6 +43,7 @@ export { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeR
 export { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection };
 export { PositionManager, derivePositionFromNode };
 export { SortManager, type SortLevel, type MultiSortState };
+export { FilterManager, type HeaderFilter, compileHeaderFiltersToSQL };
 
 /**
  * SuperGridEngine - The single D3 rendering authority for grid views
@@ -60,6 +62,7 @@ export class SuperGridEngine extends EventEmitter {
   private headerManager: SuperGridHeaderManager;
   private positionManager: PositionManager;
   private sortManager: SortManager;
+  private filterManager: FilterManager;
 
   // Core state (D3 owns this)
   private nodes: Node[] = [];
@@ -106,11 +109,20 @@ export class SuperGridEngine extends EventEmitter {
     );
     this.positionManager = new PositionManager();
     this.sortManager = new SortManager();
+    this.filterManager = new FilterManager({
+      onFilterChange: (filters) => {
+        // Re-render to update filter icon states
+        this.render();
+        // Emit event for external listeners
+        this.emit('filterChange', { filters, filterSQL: compileHeaderFiltersToSQL(filters) });
+      },
+    });
 
     this.initializeState();
     this.setupRendererCallbacks();
-    // Set up SortManager in renderer for visual indicators
+    // Set up SortManager and FilterManager in renderer for visual indicators
     this.renderer.setSortManager(this.sortManager);
+    this.renderer.setFilterManager(this.filterManager);
   }
 
   // ========================================================================
@@ -408,6 +420,72 @@ export class SuperGridEngine extends EventEmitter {
   }
 
   // ========================================================================
+  // Filter Methods (SuperFilter)
+  // ========================================================================
+
+  /**
+   * Get FilterManager instance for direct access to filter state
+   */
+  getFilterManager(): FilterManager {
+    return this.filterManager;
+  }
+
+  /**
+   * Get active header filters
+   */
+  getActiveFilters(): HeaderFilter[] {
+    return this.filterManager.getActiveFilters();
+  }
+
+  /**
+   * Get compiled SQL WHERE clause from current filter state
+   */
+  getFilterSQL(): string {
+    return compileHeaderFiltersToSQL(this.filterManager.getActiveFilters());
+  }
+
+  /**
+   * Clear all header filters
+   */
+  clearAllFilters(): void {
+    this.filterManager.clearAllFilters();
+    this.render();
+    this.emit('filterChange', { filters: [], filterSQL: '' });
+  }
+
+  /**
+   * Open filter dropdown for a header
+   *
+   * @param header - The header to filter
+   * @param position - Screen position for the dropdown
+   */
+  openFilterDropdown(header: HeaderDescriptor, position: { x: number; y: number }): void {
+    // Get unique values for this header from current cells
+    const axis = header.id.startsWith('column_') ? 'x' : 'y';
+    const values = this.filterManager.getUniqueValues(axis, this.currentCells);
+    const allValues = values.map(v => v.value);
+
+    // Open the dropdown
+    this.filterManager.openDropdown(
+      header.id,
+      header.axis,
+      header.facet || header.value,
+      allValues,
+      position
+    );
+
+    this.emit('filterDropdownOpen', { header, values });
+  }
+
+  /**
+   * Close the filter dropdown
+   */
+  closeFilterDropdown(): void {
+    this.filterManager.closeDropdown();
+    this.emit('filterDropdownClose', {});
+  }
+
+  // ========================================================================
   // Control Methods
   // ========================================================================
 
@@ -644,6 +722,10 @@ export class SuperGridEngine extends EventEmitter {
         // Re-render to update sort indicators
         this.render();
         this.emit('sortChange', { sortState });
+      },
+      onFilterIconClick: (header) => {
+        // Emit event for React to handle dropdown UI
+        this.emit('filterIconClick', { header });
       },
     });
   }
