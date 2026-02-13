@@ -19,6 +19,9 @@ export interface SelectionState {
   anchorId: string | null;
 }
 
+/** Scroll-to-node function type for view registration */
+export type ScrollToNodeFn = (id: string) => void;
+
 export interface SelectionContextValue {
   selection: SelectionState;
   /** Single select: replace selection with one id, set anchor */
@@ -37,6 +40,12 @@ export interface SelectionContextValue {
   isSelected: (id: string) => boolean;
   /** Set cells for range selection calculation */
   setCells: (cells: CellDescriptor[]) => void;
+  /** Scroll to a specific node - registered by active view (Grid, Network, etc.) */
+  scrollToNode: ScrollToNodeFn | null;
+  /** Register scroll function from active view (call on view mount) */
+  registerScrollToNode: (fn: ScrollToNodeFn) => void;
+  /** Unregister scroll function (call on view unmount) */
+  unregisterScrollToNode: () => void;
 }
 
 const SelectionContext = createContext<SelectionContextValue | null>(null);
@@ -49,6 +58,20 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
 
   // Store cells for range selection (ref to avoid re-renders)
   const cellsRef = useRef<CellDescriptor[]>([]);
+
+  // Store scroll-to-node function registered by active view
+  const scrollToNodeRef = useRef<ScrollToNodeFn | null>(null);
+  const [scrollToNode, setScrollToNode] = useState<ScrollToNodeFn | null>(null);
+
+  const registerScrollToNode = useCallback((fn: ScrollToNodeFn) => {
+    scrollToNodeRef.current = fn;
+    setScrollToNode(() => fn);
+  }, []);
+
+  const unregisterScrollToNode = useCallback(() => {
+    scrollToNodeRef.current = null;
+    setScrollToNode(null);
+  }, []);
 
   const setCells = useCallback((cells: CellDescriptor[]) => {
     cellsRef.current = cells;
@@ -136,6 +159,9 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
         clear,
         isSelected,
         setCells,
+        scrollToNode,
+        registerScrollToNode,
+        unregisterScrollToNode,
       }}
     >
       {children}
