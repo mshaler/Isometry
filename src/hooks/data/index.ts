@@ -6,3 +6,4 @@ export { usePAFV } from './usePAFV';
 export { usePAFVLiveData } from './usePAFVLiveData';
 export { useGraphAnalytics } from './useGraphAnalytics';
 export { useAllTags as useTagColors } from './useTagColors';
+export { useFacetAggregates, type FacetCount, type AllFacetCounts } from './useFacetAggregates';
