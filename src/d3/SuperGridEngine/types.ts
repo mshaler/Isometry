@@ -61,13 +61,18 @@ export interface CellDescriptor {
 export interface HeaderDescriptor {
   id: string;
   level: number;
+  depth: number;
   value: string;
   axis: LATCHAxis;
   facet?: string;
   span: number;
   position: { x: number; y: number; width: number; height: number };
-  childCount: number;
+  childCount?: number;
   isLeaf: boolean;
+  /** Index of the first leaf cell this header spans (0-based) */
+  startIndex: number;
+  /** Index of the last leaf cell this header spans (0-based) */
+  endIndex: number;
 }
 
 export interface HeaderTree {
