@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 75 of 76 (SuperGrid Phase C)
-Plan: 01 of 04 READY
-Status: Phase 75 READY — SuperFilter header dropdowns next
-Last activity: 2026-02-13 — Created Phase 75 milestone structure
+Plan: 02 of 04 COMPLETE
+Status: Phase 75 in progress — SuperSort complete, 2 plans remaining
+Last activity: 2026-02-13 — Completed 75-02-PLAN.md (SuperSort)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
-Progress (v5.0 SuperGrid Phase C): [..............................] 0% (0/4 plans)
+Progress (v5.0 SuperGrid Phase C): [########......................] 25% (1/4 plans)
 
 ## Performance Metrics
 
@@ -92,6 +92,13 @@ Progress (v5.0 SuperGrid Phase C): [..............................] 0% (0/4 plan
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 75-02 decisions (SuperSort - Multi-Level Sort):**
+- SORT-DEC-01: Max 3 sort levels (configurable via constructor)
+- SORT-DEC-02: Sort indicators use blue (#3B82F6) color scheme
+- SORT-DEC-03: Priority badges shown only for multi-sort (2+ levels)
+- SORT-DEC-04: Arrow position: right side of header, 24px offset
+- SORT-DEC-05: Header click triggers both sort and selection (dual behavior)
 
 **Phase 74-04 decisions (SuperPosition - Coordinate Tracking):**
 - POS-DEC-01: Position reuse preserves lastUpdated timestamp (existing positions not recomputed)
@@ -421,8 +428,13 @@ node_properties table (EAV)
 - [x] Phase 74-04: SuperPosition Coordinate Tracking (COMPLETE - ~5 minutes)
 
 **v5.0 (SuperGrid MVP) — PHASE C READY:**
-- [ ] Phase 75: SuperGrid Phase C (TBD)
-- [ ] Phase 76: SuperGrid Polish (TBD)
+- [ ] Phase 75: SuperGrid Phase C (SuperFilter, SuperSort, SuperCards, SuperAudit) — 4 plans
+- [ ] Phase 76: SuperGrid Polish (SuperSearch, Performance, Visual) — 3 plans
+
+**Phase 76 scope (MVP gap closure):**
+- 76-01: SuperSearch — FTS5 integration with in-grid highlighting (MVP criterion)
+- 76-02: Performance Verification — 10k card benchmarks (MVP criterion)
+- 76-03: Visual Polish — Nested header animation refactor (deferred from 61-01)
 
 **Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
