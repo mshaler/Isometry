@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
-  Save, AlertCircle, Settings
+  Save, AlertCircle, Settings, Plus
 } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTipTapEditor } from '@/hooks';
@@ -67,7 +67,7 @@ function MinimizedView({ className, theme, isDirty, onMaximize }: {
   );
 }
 
-function EmptyCardView({ theme }: { theme: string }) {
+function EmptyCardView({ theme, onCreateCard }: { theme: string; onCreateCard: () => void }) {
   return (
     <div className={`h-full ${
       theme === 'NeXTSTEP' ? 'bg-white border-[#707070]' : 'bg-gray-50 border-gray-200'
@@ -75,7 +75,18 @@ function EmptyCardView({ theme }: { theme: string }) {
       <div className="text-center">
         <AlertCircle size={24} className="mx-auto mb-2 text-gray-400" />
         <p className="text-sm">No card selected</p>
-        <p className="text-xs text-gray-400">Create a card to start editing</p>
+        <p className="text-xs text-gray-400 mb-3">Create a card to start editing</p>
+        <button
+          onClick={onCreateCard}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-colors ${
+            theme === 'NeXTSTEP'
+              ? 'bg-[#0066cc] hover:bg-[#0055aa] text-white'
+              : 'bg-blue-500 hover:bg-blue-600 text-white'
+          }`}
+        >
+          <Plus size={16} />
+          Create New Card
+        </button>
       </div>
     </div>
   );
@@ -100,8 +111,17 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   });
 
   const { run: dbRun } = useSQLite();
-  const { loadCard } = useNotebook();
+  const { loadCard, createCard } = useNotebook();
   const { selection } = useSelection();
+
+  // Handle creating a new card
+  const handleCreateCard = useCallback(async () => {
+    try {
+      await createCard('capture');
+    } catch (error) {
+      console.error('Failed to create card:', error);
+    }
+  }, [createCard]);
 
   // SYNC-02: When user clicks card in Preview, load it in Capture
   // This effect reacts to selection changes from NetworkGraph, Timeline, etc.
@@ -301,7 +321,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
               />
             </>
           ) : (
-            <EmptyCardView theme={theme} />
+            <EmptyCardView theme={theme} onCreateCard={handleCreateCard} />
           )}
         </div>
 
