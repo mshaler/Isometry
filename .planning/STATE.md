@@ -10,14 +10,14 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 74 of 76 (SuperGrid Phase B)
-Plan: 01 of 04 READY
-Status: Phase 74 PLANNING — GSD milestone created for SuperGrid interaction features
-Last activity: 2026-02-13 — Created Phase 74 milestone (SuperDynamic, SuperSize, SuperSelect, SuperPosition)
+Plan: 02 of 04 READY
+Status: Phase 74 IN PROGRESS — SuperDynamic complete, SuperSize next
+Last activity: 2026-02-13 — Completed 74-01 (SuperDynamic - D3 drag axis repositioning)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [###################...........] 66% (4/6 phases) — deferred for SuperGrid
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
-Progress (v5.0 SuperGrid Phase B): [..............................] 0% (0/4 plans)
+Progress (v5.0 SuperGrid Phase B): [########......................] 25% (1/4 plans)
 
 ## Performance Metrics
 
@@ -30,6 +30,9 @@ Progress (v5.0 SuperGrid Phase B): [..............................] 0% (0/4 plan
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 74 - v5.0 SuperGrid Phase B):**
+- Phase 74-01: COMPLETE (~8m) — SuperDynamic axis repositioning with D3 drag-and-drop
 
 **Recent completions (Phase 73 - v5.0 SuperGrid Phase A) — PHASE COMPLETE:**
 - Phase 73-04: COMPLETE (~5m) — Header Click Zones with zone-based hit testing & hover highlighting
@@ -79,6 +82,12 @@ Progress (v5.0 SuperGrid Phase B): [..............................] 0% (0/4 plan
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 74-01 decisions (SuperDynamic - Axis Repositioning):**
+- DRAG-DEC-01: Ghost element 50% opacity for clear drag feedback
+- DRAG-DEC-02: Drop zone highlight uses blue (#3B82F6) with 0.2 opacity
+- DRAG-DEC-03: Escape key cancels drag via document keydown listener
+- DRAG-DEC-04: swapPlaneMapping delegates to transpose (x/y swap = row/column swap)
 
 **Phase 71-02 decisions (EventKitAdapter):**
 - EK-DEC-01: Use iOS 17+ requestFullAccessToEvents() async API (cleaner concurrency)
@@ -363,7 +372,12 @@ node_properties table (EAV)
 - [x] Phase 73-02: SuperDensity Controls (COMPLETE - ~6 minutes)
 - [x] Phase 73-03: SuperZoom Upper-Left Anchor (COMPLETE - ~4 minutes)
 - [x] Phase 73-04: Header Click Zones (COMPLETE - ~5 minutes)
-- [ ] Phase 74: SuperGrid Phase B (TBD)
+
+**v5.0 (SuperGrid MVP) — PHASE B IN PROGRESS:**
+- [x] Phase 74-01: SuperDynamic Axis Repositioning (COMPLETE - ~8 minutes)
+- [ ] Phase 74-02: SuperSize Column/Row Resizing
+- [ ] Phase 74-03: SuperSelect Multi-Selection
+- [ ] Phase 74-04: SuperPosition Cell Navigation
 - [ ] Phase 75: SuperGrid Phase C (TBD)
 - [ ] Phase 76: SuperGrid Polish (TBD)
 
@@ -385,6 +399,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 73-04 COMPLETE — Header Click Zones with zone-based hit testing
-Resume file: .planning/phases/74-supergrid-phase-b/ (TBD)
-Next action: Plan Phase 74 (SuperGrid Phase B)
+Stopped at: Phase 74-01 COMPLETE — SuperDynamic axis repositioning with D3 drag-and-drop
+Resume file: .planning/phases/74-supergrid-phase-b/74-02-PLAN.md
+Next action: Execute Phase 74-02 (SuperSize - column/row resizing)

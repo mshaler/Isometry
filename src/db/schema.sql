@@ -284,3 +284,33 @@ INSERT OR IGNORE INTO notebook_cards (id, node_id, card_type, markdown_content, 
     ('nb-1', 'card-1', 'capture', '# Welcome to Isometry\n\nThis demonstrates the three-canvas notebook integration.', '{"color": "blue", "pinned": true}'),
     ('nb-2', 'card-2', 'preview', '## Project Alpha Status\n\n- Phase 1: Complete\n- Phase 2: In Progress\n- Phase 3: Planning', '{"status_board": true}'),
     ('nb-3', 'card-12', 'shell', '```python\n# ML Research Code\nimport numpy as np\n```', '{"language": "python", "executable": true}');
+
+-- ============================================================================
+-- SuperGrid State Persistence (SuperSize feature)
+-- ============================================================================
+
+-- Header States: Persists expanded/collapsed state and column widths
+CREATE TABLE IF NOT EXISTS header_states (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dataset_id TEXT NOT NULL,
+    app_context TEXT NOT NULL DEFAULT 'supergrid',
+    state_data TEXT NOT NULL,  -- JSON: {expandedNodes, columnWidths, totalWidth, lastModified}
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
+    UNIQUE(dataset_id, app_context)
+);
+
+CREATE INDEX IF NOT EXISTS idx_header_states_dataset ON header_states(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_header_states_context ON header_states(dataset_id, app_context);
+
+-- Column Widths: Dedicated table for column width persistence (faster access)
+CREATE TABLE IF NOT EXISTS column_widths (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    dataset_id TEXT NOT NULL,
+    app_context TEXT NOT NULL DEFAULT 'supergrid',
+    width_data TEXT NOT NULL,  -- JSON: {headerId: width, ...}
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
+    UNIQUE(dataset_id, app_context)
+);
+
+CREATE INDEX IF NOT EXISTS idx_column_widths_dataset ON column_widths(dataset_id);
+CREATE INDEX IF NOT EXISTS idx_column_widths_context ON column_widths(dataset_id, app_context);
