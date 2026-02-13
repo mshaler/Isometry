@@ -563,25 +563,9 @@ export class SuperGridRenderer {
     });
   }
 
-  /**
-   * Get fill color based on header level for visual hierarchy.
-   * Deeper levels get lighter shades.
-   * @internal Reserved for future progressive disclosure feature
-   */
-  private _getHeaderFillByLevel(level: number): string {
-    const fills = ['#e0e0e0', '#ebebeb', '#f5f5f5', '#fafafa'];
-    return fills[Math.min(level, fills.length - 1)];
-  }
-
-  /**
-   * Get font size based on header level.
-   * Root headers are larger, deeper levels are smaller.
-   * @internal Reserved for future progressive disclosure feature
-   */
-  private _getHeaderFontSize(level: number): string {
-    const sizes = ['13px', '12px', '11px', '10px'];
-    return sizes[Math.min(level, sizes.length - 1)];
-  }
+  // Reserved for future progressive disclosure feature:
+  // _getHeaderFillByLevel(level): fills by depth level
+  // _getHeaderFontSize(level): font sizes by depth level
 
   /**
    * Render grid headers (columns and rows) using D3 .join() pattern.

@@ -395,7 +395,6 @@ export class SuperGridEngine extends EventEmitter {
 
     // Find all cells that fall within this header's span
     const isColumnHeader = header.id.startsWith('column_');
-    const isRowHeader = header.id.startsWith('row_');
 
     // Get leaf indices covered by this header (startIndex to endIndex)
     // For multi-level headers, the position encodes the span
