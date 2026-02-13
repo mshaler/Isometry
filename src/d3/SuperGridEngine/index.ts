@@ -33,6 +33,7 @@ import { DragManager, type DragManagerConfig } from './DragManager';
 import { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeResult } from './ResizeManager';
 import { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection } from './SelectManager';
 import { PositionManager, derivePositionFromNode } from './PositionManager';
+import { SortManager, type SortLevel, type MultiSortState } from './SortManager';
 
 // Re-export types for external use
 export * from './types';
@@ -40,6 +41,7 @@ export { DragManager, type DragManagerConfig };
 export { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeResult };
 export { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection };
 export { PositionManager, derivePositionFromNode };
+export { SortManager, type SortLevel, type MultiSortState };
 
 /**
  * SuperGridEngine - The single D3 rendering authority for grid views

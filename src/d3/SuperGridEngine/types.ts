@@ -222,6 +222,27 @@ export interface SerializedPositionState {
   customSortOrders: Array<{ groupKey: string; nodeIds: string[] }>;
 }
 
+// Multi-Sort Types (SuperSort - Plan 75-02)
+export interface SortLevel {
+  /** Header ID for rendering indicators */
+  headerId: string;
+  /** LATCH axis this sort applies to */
+  axis: LATCHAxis;
+  /** Database column/facet to sort by */
+  facet: string;
+  /** Sort direction */
+  direction: 'asc' | 'desc';
+  /** Priority (1 = primary, 2 = secondary, etc.) */
+  priority: number;
+}
+
+export interface MultiSortState {
+  /** Active sort levels in priority order */
+  levels: SortLevel[];
+  /** Maximum allowed sort levels (default 3) */
+  maxLevels: number;
+}
+
 // Configuration Types
 export interface SuperGridConfig {
   width: number;
