@@ -29,9 +29,11 @@ import type {
 import { SuperGridDataManager } from './DataManager';
 import { SuperGridRenderer } from './Renderer';
 import { SuperGridHeaderManager } from './HeaderManager';
+import { DragManager, type DragManagerConfig } from './DragManager';
 
 // Re-export types for external use
 export * from './types';
+export { DragManager, type DragManagerConfig };
 
 /**
  * SuperGridEngine - The single D3 rendering authority for grid views
