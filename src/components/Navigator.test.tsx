@@ -4,13 +4,31 @@
  * TDD tests for Navigator refactoring to use Dropdown component.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { Navigator } from './Navigator';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AppStateProvider } from '@/contexts/AppStateContext';
-import { PAFVProvider } from '@/contexts/PAFVContext';
+import { PAFVProvider } from '@/state/PAFVContext';
+
+// Mock property classification hook to avoid database dependency
+// Classification uses L/A/T/C/H/GRAPH keys for BUCKET_CONFIG
+vi.mock('@/hooks/data/usePropertyClassification', () => ({
+  usePropertyClassification: () => ({
+    classification: {
+      L: [],   // Location
+      A: [],   // Alphabet
+      T: [],   // Time
+      C: [],   // Category
+      H: [],   // Hierarchy
+      GRAPH: [] // Graph relationships
+    },
+    loading: false,
+    error: null,
+    refresh: vi.fn()
+  })
+}));
 
 // Helper to wrap component with providers (including Router for URL state and PAFV for Navigator wells)
 function renderWithProviders(ui: React.ReactElement, { theme }: { theme?: 'NeXTSTEP' | 'Modern' } = {}) {
@@ -79,12 +97,13 @@ describe('Navigator', () => {
       renderWithProviders(<Navigator />);
 
       // Click on the Views dropdown (shows 'Grid' by default)
-      const viewsButton = screen.getByRole('button', { name: /Grid/i });
-      fireEvent.click(viewsButton);
+      // Use getAllByRole since 'Grid' may appear in multiple buttons
+      const viewsButtons = screen.getAllByRole('button', { name: /Grid/i });
+      fireEvent.click(viewsButtons[0]);
 
-      // Should show view options
-      expect(screen.getByText('List')).toBeInTheDocument();
-      expect(screen.getByText('Kanban')).toBeInTheDocument();
+      // Should show view options (use getAllByText since 'List' may appear multiple times)
+      expect(screen.getAllByText('List').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Kanban').length).toBeGreaterThan(0);
     });
 
     it('shows Datasets options when Datasets dropdown is clicked', () => {
@@ -118,8 +137,9 @@ describe('Navigator', () => {
       renderWithProviders(<Navigator />);
 
       // Click on the Views dropdown
-      const viewsButton = screen.getByRole('button', { name: /Grid/i });
-      fireEvent.click(viewsButton);
+      // Use getAllByRole since 'Grid' may appear in multiple buttons
+      const viewsButtons = screen.getAllByRole('button', { name: /Grid/i });
+      fireEvent.click(viewsButtons[0]);
 
       // Click on 'Kanban' option
       const kanbanOption = screen.getByRole('button', { name: /^Kanban$/ });
@@ -135,8 +155,8 @@ describe('Navigator', () => {
       renderWithProviders(<Navigator />);
 
       // PAFVNavigator should be visible by default
-      // It renders content with "Rows", "Columns", "Layers" labels
-      expect(screen.getByText('Rows')).toBeInTheDocument();
+      // It renders LATCH bucket sections like "Location", "Time", etc.
+      expect(screen.getByText('Location')).toBeInTheDocument();
     });
 
     it('hides PAFVNavigator when collapsed', () => {
@@ -147,7 +167,7 @@ describe('Navigator', () => {
       fireEvent.click(toggleButton);
 
       // PAFVNavigator content should be hidden
-      expect(screen.queryByText('Rows')).not.toBeInTheDocument();
+      expect(screen.queryByText('Location')).not.toBeInTheDocument();
     });
 
     it('shows PAFVNavigator again when re-expanded', () => {
@@ -157,11 +177,11 @@ describe('Navigator', () => {
 
       // Collapse
       fireEvent.click(toggleButton);
-      expect(screen.queryByText('Rows')).not.toBeInTheDocument();
+      expect(screen.queryByText('Location')).not.toBeInTheDocument();
 
       // Re-expand
       fireEvent.click(toggleButton);
-      expect(screen.getByText('Rows')).toBeInTheDocument();
+      expect(screen.getByText('Location')).toBeInTheDocument();
     });
   });
 

@@ -13,6 +13,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { Slider } from '@/components/ui/slider';
+import { compileFilterPredicates, type FilterPredicate } from '@/services/query/filterAst';
 
 export interface SliderFilter {
   id: string;
@@ -23,6 +24,7 @@ export interface SliderFilter {
   max: number;
   value: [number, number];
   formatLabel?: (value: number) => string;
+  derivedField?: string;
 }
 
 export interface LatchGraphSlidersProps {
@@ -32,6 +34,10 @@ export interface LatchGraphSlidersProps {
   onFilterChange: (filterId: string, value: [number, number]) => void;
   /** Whether to show collapsed or expanded view */
   collapsed?: boolean;
+  /** Optional empty-state message when no filters are available */
+  emptyStateMessage?: string;
+  /** Optional action to reset/clear upstream filter state */
+  onResetFilters?: () => void;
 }
 
 /**
@@ -109,8 +115,10 @@ export function LatchGraphSliders({
   filters,
   onFilterChange,
   collapsed = false,
+  emptyStateMessage = 'No slider filters available for this dataset yet.',
+  onResetFilters,
 }: LatchGraphSlidersProps) {
-  if (collapsed || filters.length === 0) {
+  if (collapsed) {
     return null;
   }
 
@@ -123,23 +131,56 @@ export function LatchGraphSliders({
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        {filters.map((filter) => (
-          <SliderFilterControl
-            key={filter.id}
-            filter={filter}
-            onChange={(value) => onFilterChange(filter.id, value)}
-          />
-        ))}
-      </div>
+      {filters.length === 0 ? (
+        <div className="flex items-center justify-between gap-2 rounded border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
+          <span>{emptyStateMessage}</span>
+          {onResetFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="rounded border border-border px-2 py-1 text-xs hover:bg-muted"
+            >
+              Reset
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {filters.map((filter) => (
+            <SliderFilterControl
+              key={filter.id}
+              filter={filter}
+              onChange={(value) => onFilterChange(filter.id, value)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 /** Classification input type (matches PropertyClassification) */
 export interface SliderClassification {
+  L: Array<{ sourceColumn: string; name: string }>;
+  A: Array<{ sourceColumn: string; name: string }>;
   T: Array<{ sourceColumn: string; name: string }>;
+  C: Array<{ sourceColumn: string; name: string }>;
   H: Array<{ sourceColumn: string; name: string }>;
+  GRAPH: Array<{ sourceColumn: string; name: string }>;
+}
+
+function extractTagCount(value: unknown): number {
+  if (Array.isArray(value)) return value.length;
+  if (typeof value !== 'string') return 0;
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed)) return parsed.length;
+  } catch {
+    // Fall through to CSV parsing.
+  }
+  return trimmed.split(',').map((s) => s.trim()).filter(Boolean).length;
 }
 
 /**
@@ -217,6 +258,105 @@ export function useSliderFilters(
       }
     }
 
+    // Location filters (latitude/longitude)
+    for (const prop of classification.L) {
+      if (prop.sourceColumn !== 'latitude' && prop.sourceColumn !== 'longitude') continue;
+      const values = data
+        .map(d => Number(d[prop.sourceColumn]))
+        .filter(v => !isNaN(v));
+
+      if (values.length > 0) {
+        const min = Math.floor(Math.min(...values));
+        const max = Math.ceil(Math.max(...values));
+        if (min !== max) {
+          const currentValue = activeFilters.get(`location-${prop.sourceColumn}`) || [min, max];
+          result.push({
+            id: `location-${prop.sourceColumn}`,
+            label: prop.name,
+            dimension: 'L',
+            property: prop.sourceColumn,
+            min,
+            max,
+            value: currentValue,
+          });
+        }
+      }
+    }
+
+    // Alphabet filters (string length)
+    for (const prop of classification.A) {
+      const lengths = data
+        .map(d => d[prop.sourceColumn])
+        .filter((v): v is string => typeof v === 'string')
+        .map(v => v.length);
+
+      if (lengths.length > 0) {
+        const min = Math.min(...lengths);
+        const max = Math.max(...lengths);
+        if (min !== max) {
+          const currentValue = activeFilters.get(`alphabet-len-${prop.sourceColumn}`) || [min, max];
+          result.push({
+            id: `alphabet-len-${prop.sourceColumn}`,
+            label: `${prop.name} Length`,
+            dimension: 'A',
+            property: prop.sourceColumn,
+            derivedField: `len:${prop.sourceColumn}`,
+            min,
+            max,
+            value: currentValue,
+          });
+        }
+      }
+    }
+
+    // Category filters (tag count)
+    for (const prop of classification.C) {
+      if (prop.sourceColumn !== 'tags') continue;
+      const counts = data.map(d => extractTagCount(d[prop.sourceColumn]));
+      if (counts.length > 0) {
+        const min = Math.min(...counts);
+        const max = Math.max(...counts);
+        if (min !== max) {
+          const currentValue = activeFilters.get(`category-tagcount-${prop.sourceColumn}`) || [min, max];
+          result.push({
+            id: `category-tagcount-${prop.sourceColumn}`,
+            label: 'Tag Count',
+            dimension: 'C',
+            property: prop.sourceColumn,
+            derivedField: `tagcount:${prop.sourceColumn}`,
+            min,
+            max,
+            value: currentValue,
+          });
+        }
+      }
+    }
+
+    // GRAPH filters (degree metric)
+    const degreeMetric = classification.GRAPH.find(
+      p => p.sourceColumn === 'degree' || p.sourceColumn === 'graph_degree'
+    );
+    const degreeValues = data
+      .map(d => Number(d.graph_degree))
+      .filter(v => !isNaN(v));
+    if (degreeMetric && degreeValues.length > 0) {
+      const min = Math.min(...degreeValues);
+      const max = Math.max(...degreeValues);
+      if (min !== max) {
+        const currentValue = activeFilters.get('graph-degree') || [min, max];
+        result.push({
+          id: 'graph-degree',
+          label: degreeMetric.name,
+          dimension: 'G',
+          property: 'graph_degree',
+          derivedField: 'graph.degree',
+          min,
+          max,
+          value: currentValue,
+        });
+      }
+    }
+
     return result;
   }, [data, classification, activeFilters]);
 
@@ -231,8 +371,7 @@ export function useSliderFilters(
 
   // Build SQL WHERE clause from active filters
   const buildWhereClause = useCallback((): { clause: string; params: (string | number)[] } => {
-    const clauses: string[] = [];
-    const params: (string | number)[] = [];
+    const predicates: FilterPredicate[] = [];
 
     for (const filter of filters) {
       const filterValue = activeFilters.get(filter.id);
@@ -245,18 +384,29 @@ export function useSliderFilters(
           // For time columns, compare ISO strings
           const minDate = new Date(min).toISOString();
           const maxDate = new Date(max).toISOString();
-          clauses.push(`${filter.property} >= ? AND ${filter.property} <= ?`);
-          params.push(minDate, maxDate);
-        } else if (filter.dimension === 'H') {
-          clauses.push(`${filter.property} >= ? AND ${filter.property} <= ?`);
-          params.push(min, max);
+          predicates.push({
+            field: filter.property,
+            operator: 'range',
+            value: [minDate, maxDate],
+          });
+        } else {
+          predicates.push({
+            field: filter.derivedField || filter.property,
+            operator: 'range',
+            value: [min, max],
+          });
         }
       }
     }
 
+    const compiled = compileFilterPredicates(predicates);
+    const clause = compiled.whereClause
+      .replace(/^deleted_at IS NULL\s*(AND\s*)?/i, '')
+      .trim();
+
     return {
-      clause: clauses.length > 0 ? clauses.join(' AND ') : '',
-      params,
+      clause,
+      params: compiled.parameters as (string | number)[],
     };
   }, [filters, activeFilters]);
 

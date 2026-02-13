@@ -22,6 +22,16 @@ import { SAMPLE_DATA_SQL } from './sample-data';
  * - Direct D3.js data binding
  */
 
+/**
+ * Schema version for detecting stale IndexedDB data.
+ * Increment when schema changes require a fresh database.
+ * History:
+ * - v1: Initial schema
+ * - v2: Added node_properties EAV table (Phase 63)
+ * - v3: Added grid_x/grid_y columns (Phase 66)
+ */
+const SCHEMA_VERSION = 3;
+
 /** FTS5 performance test result */
 export interface FTS5PerformanceResult {
   results: number;
@@ -176,6 +186,46 @@ export function SQLiteProvider({
             database = new sqlInstance.Database(savedData);
             // Verify database is valid
             database.exec("SELECT 1");
+
+            // Check schema version - if outdated, clear and recreate
+            let schemaValid = false;
+            try {
+              const versionResult = database.exec("SELECT value FROM settings WHERE key = 'schema_version'");
+              const storedVersion = versionResult.length > 0 && versionResult[0]?.values.length > 0
+                ? parseInt(String(versionResult[0].values[0]?.[0] || '0'), 10)
+                : 0;
+
+              if (storedVersion >= SCHEMA_VERSION) {
+                schemaValid = true;
+                console.log(`[SQLiteProvider] Schema version ${storedVersion} is current`);
+              } else {
+                console.warn(`[SQLiteProvider] Schema outdated (v${storedVersion} < v${SCHEMA_VERSION}), will recreate`);
+              }
+            } catch {
+              // No schema_version setting - legacy database
+              console.warn('[SQLiteProvider] No schema_version found, will recreate database');
+            }
+
+            // Also check for required tables
+            if (schemaValid) {
+              try {
+                database.exec("SELECT 1 FROM node_properties LIMIT 1");
+              } catch {
+                console.warn('[SQLiteProvider] node_properties table missing, will recreate');
+                schemaValid = false;
+              }
+            }
+
+            if (!schemaValid) {
+              // Schema is outdated - clear IndexedDB and recreate
+              console.log('[SQLiteProvider] Clearing stale IndexedDB data...');
+              database.close();
+              database = null;
+              if (persistence) {
+                await persistence.clear();
+              }
+              savedData = null;
+            }
           } catch (dbError) {
             // Corrupt database detected - clear and recreate
             console.error('[SQLiteProvider] Corrupt database detected, clearing IndexedDB');
@@ -232,7 +282,12 @@ export function SQLiteProvider({
                 const schema = await schemaResponse.text();
                 database.exec(schema);
                 database.exec(SAMPLE_DATA_SQL);
-                console.log('[SQLiteProvider] Schema and sample data loaded');
+                // Store schema version for migration detection
+                database.run(
+                  "INSERT OR REPLACE INTO settings (key, value) VALUES ('schema_version', ?)",
+                  [String(SCHEMA_VERSION)]
+                );
+                console.log(`[SQLiteProvider] Schema v${SCHEMA_VERSION} and sample data loaded`);
               }
             } catch (schemaError) {
               console.error('[SQLiteProvider] Schema load failed:', schemaError);

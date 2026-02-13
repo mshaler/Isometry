@@ -44,7 +44,7 @@ const ALTO_DATASETS = [
  */
 export function IntegratedLayout() {
   const { theme } = useTheme();
-  const { state: pafvState, clearFacetFromAllPlanes } = usePAFV();
+  const { state: pafvState, clearFacetFromAllPlanes, resetToDefaults } = usePAFV();
   const databaseService = useDatabaseService();
   const { classification, refresh: refreshClassification } = usePropertyClassification();
 
@@ -53,6 +53,8 @@ export function IntegratedLayout() {
     importFromPublic,
     status: importStatus,
     progress: importProgress,
+    error: importHookError,
+    clearData,
   } = useAltoIndexImport();
 
   // Current data for slider filter generation
@@ -62,8 +64,12 @@ export function IntegratedLayout() {
   const sliderClassification: SliderClassification | null = useMemo(() => {
     if (!classification) return null;
     return {
+      L: classification.L.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
+      A: classification.A.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
       T: classification.T.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
+      C: classification.C.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
       H: classification.H.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
+      GRAPH: classification.GRAPH.map(p => ({ sourceColumn: p.sourceColumn, name: p.name })),
     };
   }, [classification]);
 
@@ -81,6 +87,9 @@ export function IntegratedLayout() {
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
   const superGridRef = useRef<SuperGrid | null>(null); // Stable ref to avoid losing grid during re-renders
   const [altoImported, setAltoImported] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [lastImportedCount, setLastImportedCount] = useState(0);
+  const [dataRevision, setDataRevision] = useState(0);
   const importStartedRef = useRef(false);
 
   // Cleanup SuperGrid on unmount
@@ -163,6 +172,57 @@ export function IntegratedLayout() {
     setFilterValue(filterId, value);
   }, [setFilterValue]);
 
+  const runImport = useCallback(async (clearExisting: boolean) => {
+    if (!databaseService?.isReady()) return;
+    setImportError(null);
+    importStartedRef.current = true;
+    try {
+      const result = await importFromPublic({ clearExisting, limit: 5000 });
+      setAltoImported(true);
+      setLastImportedCount(result.imported);
+      setDataRevision(prev => prev + 1);
+      refreshClassification?.();
+      contextLogger.debug('[IntegratedLayout] Alto-index import complete', {
+        imported: result.imported,
+        skipped: result.skipped,
+        errors: result.errors.length,
+      });
+    } catch (err) {
+      importStartedRef.current = false;
+      const message = err instanceof Error ? err.message : 'Import failed';
+      setImportError(message);
+      contextLogger.warn('[IntegratedLayout] Alto-index import failed', { error: message });
+    }
+  }, [databaseService, importFromPublic]);
+
+  const handleRetryImport = useCallback(() => {
+    runImport(true);
+  }, [runImport]);
+
+  const handleReloadDataset = useCallback(() => {
+    setAltoImported(true);
+    setImportError(null);
+    resetFilters();
+    setDataRevision(prev => prev + 1);
+    contextLogger.debug('[IntegratedLayout] Dataset reload requested', { dataset: activeDataset });
+  }, [activeDataset, resetFilters]);
+
+  const handleResetLayout = useCallback(() => {
+    resetToDefaults();
+    resetFilters();
+    contextLogger.debug('[IntegratedLayout] Layout and filters reset');
+  }, [resetToDefaults, resetFilters]);
+
+  const handleClearImportedData = useCallback(async () => {
+    await clearData();
+    setCurrentData([]);
+    setAltoImported(false);
+    setLastImportedCount(0);
+    setImportError(null);
+    setDataRevision(prev => prev + 1);
+    importStartedRef.current = false;
+  }, [clearData]);
+
   // Theme-aware colors
   const isNeXTSTEP = theme === 'NeXTSTEP';
   const bgColor = isNeXTSTEP ? 'bg-[#1E1E1E]' : 'bg-gray-50';
@@ -232,26 +292,12 @@ export function IntegratedLayout() {
     // Mark as started immediately to prevent re-entry
     importStartedRef.current = true;
 
-    // Import with stratified sampling across all data types (500 per type minimum)
-    importFromPublic({ clearExisting: true, limit: 5000 })
-      .then((result) => {
-        setAltoImported(true);
-        contextLogger.debug('[IntegratedLayout] Alto-index import complete', {
-          imported: result.imported,
-          skipped: result.skipped,
-          errors: result.errors.length,
-        });
-
-      })
-      .catch((err) => {
-        importStartedRef.current = false; // Allow retry on error
-        contextLogger.warn('[IntegratedLayout] Alto-index import failed', { error: err.message });
-      });
-  }, [databaseService, altoImported, importFromPublic]);
+    runImport(true);
+  }, [databaseService, altoImported, runImport]);
 
   // Load data when SuperGrid initializes or dataset changes
   useEffect(() => {
-    if (!superGrid || !altoImported || !svgRef.current || !databaseService?.isReady()) {
+    if (!superGrid || !svgRef.current || !databaseService?.isReady()) {
       return;
     }
 
@@ -270,10 +316,17 @@ export function IntegratedLayout() {
     resetFilters();
 
     // Load current data for slider filter generation
-    // Note: Using string interpolation because execute() doesn't bind params (see operations.ts)
     const dataResult = databaseService.query(
-      `SELECT * FROM nodes WHERE node_type = '${nodeType}' AND deleted_at IS NULL LIMIT 5000`,
-      []
+      `SELECT n.*,
+          (
+            SELECT COUNT(*)
+            FROM edges e
+            WHERE e.source_id = n.id OR e.target_id = n.id
+          ) AS graph_degree
+       FROM nodes n
+       WHERE n.node_type = ? AND n.deleted_at IS NULL
+       LIMIT 5000`,
+      [nodeType]
     );
     setCurrentData(dataResult || []);
 
@@ -289,11 +342,11 @@ export function IntegratedLayout() {
       dataset: activeDataset,
       nodeType,
     });
-  }, [superGrid, activeDataset, altoImported, databaseService, resetFilters]);
+  }, [superGrid, activeDataset, databaseService, resetFilters, dataRevision]);
 
   // Re-query SuperGrid when slider filters change
   useEffect(() => {
-    if (!superGrid || !svgRef.current || !altoImported) return;
+    if (!superGrid || !svgRef.current || !databaseService?.isReady()) return;
 
     const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
     const nodeType = dataset?.nodeType || 'notes';
@@ -320,18 +373,36 @@ export function IntegratedLayout() {
       filterClause,
       filterParams,
     });
-  }, [superGrid, activeDataset, altoImported, buildWhereClause]);
+  }, [superGrid, activeDataset, buildWhereClause, databaseService, dataRevision]);
 
   // Sync PAFV projection to SuperGrid
   useEffect(() => {
     // Guard: only need superGrid - it already has container reference
     // svgRef.current may be null during React's render cycle even when SuperGrid exists
-    if (!superGrid) return;
+    if (!superGrid || !databaseService?.isReady()) return;
 
     // Update container if ref is available (handles React StrictMode remounts)
     if (svgRef.current) {
       superGrid.updateContainer(svgRef.current);
     }
+
+    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
+    const nodeType = dataset?.nodeType || 'notes';
+    const { clause: filterClause, params: filterParams } = buildWhereClause();
+    let whereClause = `node_type = ? AND deleted_at IS NULL`;
+    const parameters: (string | number)[] = [nodeType];
+    if (filterClause) {
+      whereClause += ` AND ${filterClause}`;
+      parameters.push(...filterParams);
+    }
+
+    // Re-query before applying projection to avoid stale/filtered-out in-memory cards.
+    superGrid.query({
+      whereClause,
+      parameters,
+      activeFilters: [],
+      isEmpty: false,
+    });
 
     const projection = mappingsToProjection(pafvState.mappings);
     superGrid.setProjection(projection);
@@ -341,7 +412,7 @@ export function IntegratedLayout() {
       xAxis: projection.xAxis?.facet || 'none',
       yAxis: projection.yAxis?.facet || 'none',
     });
-  }, [superGrid, pafvState.mappings]);
+  }, [superGrid, pafvState.mappings, databaseService, activeDataset, buildWhereClause]);
 
   // Sync density level to SuperGrid
   useEffect(() => {
@@ -379,12 +450,8 @@ export function IntegratedLayout() {
   }, [superGrid, pafvState.sizeEncoding]);
 
   // Loading state
-  if (!databaseService?.isReady() || importStatus === 'loading' || importStatus === 'importing') {
-    const loadingMessage = importStatus === 'importing'
-      ? `Importing alto-index data... ${importProgress}%`
-      : importStatus === 'loading'
-        ? 'Loading alto-index data...'
-        : 'Loading Integrated Layout...';
+  if (!databaseService?.isReady()) {
+    const loadingMessage = 'Loading Integrated Layout...';
 
     return (
       <div className={`h-screen ${bgColor} flex items-center justify-center`}>
@@ -437,6 +504,48 @@ export function IntegratedLayout() {
           ))}
         </div>
 
+        {/* Status + Actions */}
+        <div className={`h-8 ${panelBg} border-b ${borderColor} flex items-center justify-between px-4 text-[11px]`}>
+          <div className={`flex items-center gap-3 ${mutedColor}`}>
+            <span>Dataset: {activeDataset}</span>
+            <span>Rows: {currentData.length}</span>
+            <span>Imported: {lastImportedCount}</span>
+            <span>Sliders: {sliderFilters.length}</span>
+            {importStatus === 'importing' && <span>Importing... {importProgress}%</span>}
+            {(importError || importHookError) && <span className="text-red-500">Import failed</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReloadDataset}
+              className="px-2 py-0.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Reload Dataset
+            </button>
+            <button
+              type="button"
+              onClick={handleResetLayout}
+              className="px-2 py-0.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Reset Layout
+            </button>
+            <button
+              type="button"
+              onClick={handleRetryImport}
+              className="px-2 py-0.5 rounded border border-blue-300 text-blue-700 hover:bg-blue-50"
+            >
+              Re-import
+            </button>
+            <button
+              type="button"
+              onClick={handleClearImportedData}
+              className="px-2 py-0.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
+              Clear Imported
+            </button>
+          </div>
+        </div>
+
         {/* LatchNavigator (6-column LATCH+GRAPH property grid) */}
         <LatchNavigator
           enabledProperties={enabledProperties}
@@ -450,6 +559,12 @@ export function IntegratedLayout() {
         <LatchGraphSliders
           filters={sliderFilters}
           onFilterChange={handleSliderFilterChange}
+          emptyStateMessage={
+            importStatus === 'importing'
+              ? 'Analyzing imported data to build slider controls...'
+              : 'No time/hierarchy ranges available yet. Try another dataset or re-import.'
+          }
+          onResetFilters={resetFilters}
         />
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
@@ -459,8 +574,51 @@ export function IntegratedLayout() {
             style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
           />
 
-          {/* Empty state overlay */}
-          {pafvState.mappings.length === 0 && (
+          {/* Overlay states */}
+          {(importStatus === 'loading' || importStatus === 'importing') && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/5">
+              <div className={`${panelBg} border ${borderColor} rounded px-4 py-3 text-center shadow-sm`}>
+                <p className={`text-sm ${textColor}`}>Importing alto-index data...</p>
+                <p className={`text-xs ${mutedColor}`}>{importProgress}% complete</p>
+              </div>
+            </div>
+          )}
+
+          {(importError || importHookError) && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={`${panelBg} border ${borderColor} rounded px-4 py-3 text-center shadow-sm max-w-md`}>
+                <p className="text-sm text-red-500 mb-1">Import failed</p>
+                <p className={`text-xs ${mutedColor} mb-3`}>
+                  {importError || importHookError || 'Unable to load alto-index data.'}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleRetryImport}
+                  className="px-3 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 text-xs"
+                >
+                  Retry Import
+                </button>
+              </div>
+            </div>
+          )}
+
+          {currentData.length === 0 && importStatus !== 'importing' && !importError && !importHookError && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className={`${panelBg} border ${borderColor} rounded px-4 py-3 text-center shadow-sm`}>
+                <p className={`text-sm ${textColor} mb-1`}>No cards in this dataset</p>
+                <p className={`text-xs ${mutedColor} mb-3`}>Switch datasets or run a fresh import.</p>
+                <button
+                  type="button"
+                  onClick={handleRetryImport}
+                  className="px-3 py-1 rounded border border-blue-300 text-blue-700 hover:bg-blue-50 text-xs"
+                >
+                  Import Data
+                </button>
+              </div>
+            </div>
+          )}
+
+          {pafvState.mappings.length === 0 && currentData.length > 0 && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div className={`text-center ${mutedColor}`}>
                 <p className="text-lg mb-2">No axes assigned</p>

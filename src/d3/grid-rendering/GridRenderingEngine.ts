@@ -277,27 +277,6 @@ export class GridRenderingEngine {
   }
 
   /**
-   * Compute which row/column values have data (for dense mode header filtering)
-   */
-  private computePopulatedDimensions(cards: unknown[]): {
-    columns: Set<string>;
-    rows: Set<string>;
-  } {
-    const columns = new Set<string>();
-    const rows = new Set<string>();
-
-    cards.forEach(card => {
-      const c = card as Record<string, unknown>;
-      if (!c._isEmpty) {
-        if (c._projectedCol != null) columns.add(String(c._projectedCol));
-        if (c._projectedRow != null) rows.add(String(c._projectedRow));
-      }
-    });
-
-    return { columns, rows };
-  }
-
-  /**
    * Generate Cartesian grid for sparse mode, pass through for dense mode
    * Called at the start of render() before card positioning
    */
@@ -998,27 +977,21 @@ export class GridRenderingEngine {
    */
   private renderProjectionHeaders(): void {
     if (!this.currentProjection) return;
+    // IMPORTANT: Do not rebuild headers from projected index values here.
+    // Header order must stay coupled to the facet-derived header arrays created
+    // during computeAllPositions/computeStackedPositions, otherwise headers drift
+    // out of alignment with card cell coordinates.
 
-    // Store original cards before any density filtering for header computation
-    const originalCards = this.currentData?.cards || [];
-
-    // Density-based header expansion/contraction
-    if (this.densityState?.extentDensity === 'sparse') {
-      // SPARSE: EXPAND headers to full dimension range (all possible values)
-      const fullRange = this.computeFullDimensionRange(originalCards);
-      this.currentHeaders = {
-        columns: fullRange.columns,
-        rows: fullRange.rows
-      };
-    } else if (this.densityState?.extentDensity === 'populated-only') {
-      // DENSE: CONTRACT headers to populated-only
-      const populated = this.computePopulatedDimensions(originalCards);
-      if (this.currentHeaders) {
-        this.currentHeaders = {
-          columns: this.currentHeaders.columns.filter(h => populated.columns.has(h)),
-          rows: this.currentHeaders.rows.filter(h => populated.rows.has(h))
-        };
-      }
+    // Guard: when axes are assigned but header lists collapse to empty,
+    // keep a visible fallback so headers do not disappear entirely.
+    if (!this.currentHeaders) {
+      this.currentHeaders = { columns: [], rows: [] };
+    }
+    if (this.currentProjection.xAxis?.facet && this.currentHeaders.rows.length === 0) {
+      this.currentHeaders.rows = ['Unassigned'];
+    }
+    if (this.currentProjection.yAxis?.facet && this.currentHeaders.columns.length === 0) {
+      this.currentHeaders.columns = ['Unassigned'];
     }
 
     // Check if X-axis has stacked facets (multiple facets assigned)

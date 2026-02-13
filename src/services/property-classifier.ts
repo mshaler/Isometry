@@ -93,7 +93,7 @@ function discoverDynamicProperties(db: Database): DynamicProperty[] {
       key,
       value_type,
       COUNT(DISTINCT node_id) as node_count,
-      MIN(value) as sample_value
+      MIN(COALESCE(value_string, value_json, value)) as sample_value
     FROM node_properties
     GROUP BY key, value_type
     HAVING node_count >= 3

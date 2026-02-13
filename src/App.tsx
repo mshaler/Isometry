@@ -122,23 +122,19 @@ function App() {
     );
   }
 
-  // TEMP: Redirect to P0 test until TypeScript cleanup is complete
+  // Default: IntegratedLayout (no ?test= param required)
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Isometry v4 - Bridge Elimination</h1>
-      <p className="text-gray-600 mb-4">
-        TypeScript cleanup in progress. Available tests:
-      </p>
-      <div className="space-y-2">
-        <div><a href="?test=integrated" className="text-blue-600 underline font-bold">🎯 Integrated Layout</a> - Phase 57 Navigator + SuperGrid + Density</div>
-        <div><a href="?test=p0" className="text-blue-600 underline">P0 Gate Test</a> - Foundation verification + SuperGrid v4 demo</div>
-        <div><a href="?test=supergrid" className="text-blue-600 underline">SuperGrid + sql.js + FTS5</a> - Complete integration demonstration</div>
-        <div><a href="?test=cli-test" className="text-blue-600 underline font-bold">🧪 CLI Integration Test</a> - Verify Phase 3 Claude CLI integration</div>
-        <div><a href="?test=three-canvas" className="text-blue-600 underline">Three-Canvas Notebook</a> - Complete three-canvas integration demo</div>
-        <div><a href="?test=navigator" className="text-blue-600 underline font-bold">🧭 Navigator Test</a> - Phase 51 Navigator UI Integration</div>
-        <div><a href="?test=sqlite" className="text-blue-600 underline">SQLite Test</a> - sql.js integration testing</div>
-      </div>
-    </div>
+    <SQLiteProvider>
+      <FilterProvider>
+        <ThemeProvider>
+          <PAFVProvider>
+            <AppStateProvider>
+              <IntegratedLayout />
+            </AppStateProvider>
+          </PAFVProvider>
+        </ThemeProvider>
+      </FilterProvider>
+    </SQLiteProvider>
   );
 }
 

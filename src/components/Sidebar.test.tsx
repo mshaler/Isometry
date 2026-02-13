@@ -11,11 +11,14 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { FilterProvider } from '@/contexts/FilterContext';
 
 // Mock useSQLiteQuery to avoid database dependency
-vi.mock('@/hooks/useSQLiteQuery', () => ({
+// Uses the correct path and returns query state structure
+vi.mock('@/hooks/database/useSQLiteQuery', () => ({
   useSQLiteQuery: vi.fn(() => ({
-    data: [{ name: 'category' }, { name: 'status' }, { name: 'priority' }],
+    data: [],
     loading: false,
     error: null,
+    refetch: vi.fn(),
+    duration: 0
   })),
 }));
 
