@@ -243,6 +243,49 @@ export interface MultiSortState {
   maxLevels: number;
 }
 
+// SuperCard Types (SuperCards - Plan 75-03)
+// Provides visual distinction for header cards and aggregation rows
+
+/**
+ * Card type distinguishes data cards from structural SuperCards.
+ * - data: Regular user data cards
+ * - header: Column/row header cards with chrome styling
+ * - aggregation: Bottom-row count/sum/avg cells
+ */
+export type CardType = 'data' | 'header' | 'aggregation';
+
+/**
+ * Aggregation function type for SuperCard aggregation cells.
+ */
+export type AggregationType = 'count' | 'sum' | 'avg';
+
+/**
+ * SuperCard extends basic card with type-specific metadata.
+ * SuperCards are excluded from FTS5 search results.
+ */
+export interface SuperCard {
+  /** Unique identifier (prefixed with 'header-' or 'agg-' for SuperCards) */
+  id: string;
+  /** Card type: data, header, or aggregation */
+  type: CardType;
+  /** Reference to header descriptor ID (header cards only) */
+  headerId?: string;
+  /** Hierarchy level for nested headers (0 = root) */
+  headerLevel?: number;
+  /** Type of aggregation (aggregation cards only) */
+  aggregationType?: AggregationType;
+  /** Computed aggregation value (aggregation cards only) */
+  aggregationValue?: number;
+  /** Grid X position (column index) */
+  gridX: number;
+  /** Grid Y position (row index) */
+  gridY: number;
+  /** Cell width in pixels */
+  width: number;
+  /** Cell height in pixels */
+  height: number;
+}
+
 // Configuration Types
 export interface SuperGridConfig {
   width: number;
@@ -257,4 +300,53 @@ export interface SuperGridConfig {
   maxHeaderLevels: number;
   colorScheme: 'default' | 'status' | 'priority' | 'custom';
   animationDuration: number;
+}
+
+// ============================================================================
+// Audit Types (SuperAudit - Plan 75-04)
+// ============================================================================
+
+/**
+ * Source type for cell values.
+ * - raw: User-entered data, no computation
+ * - computed: Derived value (aggregation, calculation)
+ * - enriched: ETL-derived data from external source
+ * - formula: Spreadsheet-style formula result
+ */
+export type ValueSource = 'raw' | 'computed' | 'enriched' | 'formula';
+
+/**
+ * Audit information for a single cell.
+ */
+export interface CellAuditInfo {
+  /** Source type of the cell value */
+  source: ValueSource;
+  /** ISO timestamp of last computation (for computed/formula cells) */
+  computedAt?: string;
+  /** Formula string (for formula cells) */
+  formula?: string;
+  /** ETL source identifier (for enriched cells) */
+  enrichedBy?: string;
+}
+
+/**
+ * Recent CRUD operation on a cell.
+ */
+export interface RecentChange {
+  /** Type of CRUD operation */
+  type: 'create' | 'update' | 'delete';
+  /** Timestamp of the operation */
+  timestamp: number;
+}
+
+/**
+ * Complete audit state for the grid.
+ */
+export interface AuditState {
+  /** Whether audit highlighting is enabled */
+  enabled: boolean;
+  /** Whether to show formulas instead of values */
+  showFormulas: boolean;
+  /** Recent CRUD changes keyed by cell ID */
+  recentChanges: Map<string, RecentChange>;
 }

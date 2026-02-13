@@ -35,6 +35,25 @@ import { SelectManager, type SelectManagerConfig, type LassoState, calculateRang
 import { PositionManager, derivePositionFromNode } from './PositionManager';
 import { SortManager, type SortLevel, type MultiSortState } from './SortManager';
 import { FilterManager, type HeaderFilter, compileHeaderFiltersToSQL } from './FilterManager';
+import {
+  SuperCardRenderer,
+  isSuperCard,
+  isSuperCardId,
+  CHROME_GRADIENT,
+  AGGREGATION_STYLE,
+} from './SuperCardRenderer';
+import { AggregationManager, type AggregationConfig } from './AggregationManager';
+import {
+  AuditRenderer,
+  type ValueSource,
+  type CellAuditInfo,
+  type AuditState as AuditRendererState,
+  createAuditState,
+  getAuditTintColor,
+  getIndicatorColor,
+  CRUD_FLASH_COLORS,
+  AUDIT_TINT_COLORS,
+} from './AuditRenderer';
 
 // Re-export types for external use
 export * from './types';
@@ -44,6 +63,19 @@ export { SelectManager, type SelectManagerConfig, type LassoState, calculateRang
 export { PositionManager, derivePositionFromNode };
 export { SortManager, type SortLevel, type MultiSortState };
 export { FilterManager, type HeaderFilter, compileHeaderFiltersToSQL };
+export { SuperCardRenderer, isSuperCard, isSuperCardId, CHROME_GRADIENT, AGGREGATION_STYLE };
+export { AggregationManager, type AggregationConfig };
+export {
+  AuditRenderer,
+  type ValueSource,
+  type CellAuditInfo,
+  type AuditRendererState,
+  createAuditState,
+  getAuditTintColor,
+  getIndicatorColor,
+  CRUD_FLASH_COLORS,
+  AUDIT_TINT_COLORS,
+};
 
 /**
  * SuperGridEngine - The single D3 rendering authority for grid views
@@ -63,6 +95,7 @@ export class SuperGridEngine extends EventEmitter {
   private positionManager: PositionManager;
   private sortManager: SortManager;
   private filterManager: FilterManager;
+  private auditRenderer: AuditRenderer;
 
   // Core state (D3 owns this)
   private nodes: Node[] = [];
@@ -109,6 +142,7 @@ export class SuperGridEngine extends EventEmitter {
     );
     this.positionManager = new PositionManager();
     this.sortManager = new SortManager();
+    this.auditRenderer = new AuditRenderer();
     this.filterManager = new FilterManager({
       onFilterChange: (filters) => {
         // Re-render to update filter icon states
@@ -483,6 +517,61 @@ export class SuperGridEngine extends EventEmitter {
   closeFilterDropdown(): void {
     this.filterManager.closeDropdown();
     this.emit('filterDropdownClose', {});
+  }
+
+  // ========================================================================
+  // Audit Methods (SuperAudit)
+  // ========================================================================
+
+  /**
+   * Get AuditRenderer instance for direct access to audit state
+   */
+  getAuditRenderer(): AuditRenderer {
+    return this.auditRenderer;
+  }
+
+  /**
+   * Enable or disable audit highlighting mode.
+   * When enabled, computed/enriched/formula cells show visual tinting.
+   */
+  setAuditEnabled(enabled: boolean): void {
+    this.auditRenderer.setEnabled(enabled);
+    this.render();
+    this.emit('auditChange', { enabled });
+  }
+
+  /**
+   * Check if audit mode is enabled.
+   */
+  isAuditEnabled(): boolean {
+    return this.auditRenderer.getState().enabled;
+  }
+
+  /**
+   * Track a CRUD change for a cell.
+   * Triggers flash animation and auto-cleanup after 2 seconds.
+   *
+   * @param cellId - The cell ID
+   * @param changeType - 'create' | 'update' | 'delete'
+   */
+  onCellChange(cellId: string, changeType: 'create' | 'update' | 'delete'): void {
+    this.auditRenderer.trackChange(cellId, changeType);
+    this.emit('cellCRUDChange', { cellId, changeType });
+  }
+
+  /**
+   * Set audit info for a specific cell.
+   * Used to mark cells as computed, enriched, or formula.
+   */
+  setAuditInfo(cellId: string, info: CellAuditInfo): void {
+    this.auditRenderer.setAuditInfo(cellId, info);
+  }
+
+  /**
+   * Clear all audit info.
+   */
+  clearAuditInfo(): void {
+    this.auditRenderer.clearAllAuditInfo();
   }
 
   // ========================================================================
