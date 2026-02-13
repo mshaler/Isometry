@@ -88,18 +88,42 @@ const GRAPH_METRICS = [
  * @returns Array of discovered dynamic properties
  */
 function discoverDynamicProperties(db: Database): DynamicProperty[] {
-  const result = db.exec(`
-    SELECT
-      key,
-      value_type,
-      COUNT(DISTINCT node_id) as node_count,
-      MIN(COALESCE(value_string, value_json, value)) as sample_value
-    FROM node_properties
-    GROUP BY key, value_type
-    HAVING node_count >= 3
-    ORDER BY node_count DESC
-    LIMIT 50
-  `);
+  // Try query with typed columns first, fall back to legacy 'value' column
+  // This handles databases created before v4.8 ETL schema migration
+  let result;
+  try {
+    result = db.exec(`
+      SELECT
+        key,
+        value_type,
+        COUNT(DISTINCT node_id) as node_count,
+        MIN(COALESCE(value_string, value_json, value)) as sample_value
+      FROM node_properties
+      GROUP BY key, value_type
+      HAVING node_count >= 3
+      ORDER BY node_count DESC
+      LIMIT 50
+    `);
+  } catch {
+    // Fallback for old schema without typed columns
+    try {
+      result = db.exec(`
+        SELECT
+          key,
+          COALESCE(value_type, 'string') as value_type,
+          COUNT(DISTINCT node_id) as node_count,
+          MIN(value) as sample_value
+        FROM node_properties
+        GROUP BY key
+        HAVING node_count >= 3
+        ORDER BY node_count DESC
+        LIMIT 50
+      `);
+    } catch {
+      // Table doesn't exist or other error - return empty
+      return [];
+    }
+  }
 
   if (result.length === 0 || !result[0].values) {
     return [];
