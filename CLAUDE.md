@@ -448,6 +448,30 @@ const matches = db.exec(`
 
 ---
 
+## Specification Documents (MUST READ)
+
+These specs are authoritative. When in doubt, the spec wins.
+
+| Spec | Location | When to Read |
+|------|----------|-------------|
+| **SuperGrid Specification** | `specs/SuperGrid-Specification.md` | Before ANY SuperGrid work. Contains all Super* features, acceptance criteria, testing requirements. |
+| **Static Analysis Ratchet** | `specs/Static-Analysis-Ratchet.md` | When `npm run check` fails or ratchet thresholds need adjustment. |
+| **Alto-Index ETL** | `specs/GSD-ALTO-INDEX-ETL.md` | When working with Apple Notes import pipeline. |
+| **Product Positioning** | `specs/isometry-product-positioning.md` | For understanding why we're building what we're building. |
+
+### SuperGrid Specification Is Authoritative
+
+The `specs/SuperGrid-Specification.md` document is the **single source of truth** for SuperGrid behavior. It contains:
+- All 14 Super* features with detailed behavior specs
+- Testing criteria tables for each feature
+- MVP acceptance checklist (Section 11)
+- Performance targets
+- Edge case handling
+
+**Rule:** If code behavior differs from the spec, the code is wrong. Fix the code, not the spec.
+
+---
+
 ## Architecture References (in this directory)
 
 | Document | What It Covers |

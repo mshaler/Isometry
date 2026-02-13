@@ -1,6 +1,7 @@
 import { chromium } from 'playwright';
 
 const url = process.env.VITE_DEV_URL || 'http://localhost:5173/';
+const systemChromePath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 function log(prefix, message) {
   const time = new Date().toISOString();
@@ -8,7 +9,21 @@ function log(prefix, message) {
   console.log(`[${time}] ${prefix} ${message}`);
 }
 
-const browser = await chromium.launch({ headless: false });
+let browser;
+try {
+  browser = await chromium.launch({ headless: false });
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("Executable doesn't exist")) {
+    log('info:', 'Playwright Chromium not found, falling back to system Chrome');
+    browser = await chromium.launch({
+      headless: false,
+      executablePath: systemChromePath,
+    });
+  } else {
+    throw error;
+  }
+}
 const page = await browser.newPage();
 
 page.on('console', message => {
