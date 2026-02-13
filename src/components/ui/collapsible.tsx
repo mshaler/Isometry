@@ -50,11 +50,31 @@ export function CollapsibleTrigger({ children, onOpenChange, open }: Collapsible
 export interface CollapsibleContentProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   open?: boolean;
+  maxHeight?: string;
 }
 
-export function CollapsibleContent({ children, open, className, ...props }: CollapsibleContentProps) {
+/**
+ * CollapsibleContent with smooth max-height animation
+ * Uses inline styles for maxHeight because Tailwind JIT cannot detect
+ * classes inside template literals with dynamic values.
+ * 300ms duration matches existing view transition timing in the codebase.
+ */
+export function CollapsibleContent({
+  children,
+  open,
+  className,
+  maxHeight = '24rem', // Default ~384px, suitable for Notebook panel
+  ...props
+}: CollapsibleContentProps) {
   return (
-    <div className={`overflow-hidden transition-all ${open ? 'block' : 'hidden'} ${className || ''}`} {...props}>
+    <div
+      style={{
+        maxHeight: open ? maxHeight : '0',
+        transition: 'max-height 300ms ease-in-out',
+      }}
+      className={`overflow-hidden ${className || ''}`}
+      {...props}
+    >
       {children}
     </div>
   );
