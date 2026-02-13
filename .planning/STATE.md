@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 80 (Notebook Integration)
-Plan: Not started (defining requirements)
-Status: Milestone initialized — 8 requirements defined
-Last activity: 2026-02-13 — Defined v5.1 Notebook Integration milestone
+Plan: 01 of 2 complete
+Status: In progress — Plan 80-01 complete
+Last activity: 2026-02-13 — Completed 80-01-PLAN.md (Context wiring + collapsible panel skeleton)
 
-Progress (v5.1 Notebook Integration): [                              ] 0% (0/8 requirements)
+Progress (v5.1 Notebook Integration): [###############               ] 50% (1/2 plans)
 
 ## Current Milestone: v5.1 Notebook Integration
 
@@ -23,17 +23,17 @@ Progress (v5.1 Notebook Integration): [                              ] 0% (0/8 r
 **Requirements:**
 | ID | Description | Phase | Status |
 |----|-------------|-------|--------|
-| LAYOUT-01 | Collapsed Notebook panel below Command Bar | 80 | Pending |
-| LAYOUT-02 | Expand/collapse toggle button | 80 | Pending |
-| LAYOUT-03 | All three panes when expanded | 80 | Pending |
-| CTX-01 | NotebookContext in IntegratedLayout tree | 80 | Pending |
-| CTX-02 | State persists across toggle | 80 | Pending |
-| VIS-01 | Minimal collapsed header | 80 | Pending |
-| VIS-02 | Theme respect (NeXTSTEP/Modern) | 80 | Pending |
-| VIS-03 | Smooth expand/collapse animation | 80 | Pending |
+| LAYOUT-01 | Collapsed Notebook panel below Command Bar | 80 | Done (80-01) |
+| LAYOUT-02 | Expand/collapse toggle button | 80 | Done (80-01) |
+| LAYOUT-03 | All three panes when expanded | 80 | Pending (80-02) |
+| CTX-01 | NotebookContext in IntegratedLayout tree | 80 | Done (80-01) |
+| CTX-02 | State persists across toggle | 80 | Done (80-01) |
+| VIS-01 | Minimal collapsed header | 80 | Done (80-01) |
+| VIS-02 | Theme respect (NeXTSTEP/Modern) | 80 | Done (80-01) |
+| VIS-03 | Smooth expand/collapse animation | 80 | Done (80-01) |
 
 **Phase 80 Plans:**
-- [ ] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
+- [x] 80-01-PLAN.md — Context wiring + collapsible panel skeleton (COMPLETE - ~4 min)
 - [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
 
 ## Previous Milestones
@@ -149,6 +149,11 @@ Progress (v5.1 Notebook Integration): [                              ] 0% (0/8 r
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 80-01 decisions (Notebook Integration - Context Wiring):**
+- PANEL-DEC-01: Use inline styles for max-height animation instead of Tailwind arbitrary values (Tailwind JIT can't detect dynamic classes)
+- PANEL-DEC-02: Default to collapsed state to preserve existing UI layout
+- PANEL-DEC-03: Position Notebook panel between Command Bar and Dataset Switcher
 
 **Phase 78 decisions (URL Deep Linking):**
 - DEEPLINK-DEC-01: Keep URL param for shareability (users can copy/paste URLs)
@@ -562,6 +567,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Milestone v5.1 initialized — 8 requirements, Phase 80 defined
-Resume file: N/A — Ready for `/gsd:plan-phase 80`
-Next action: Create phase 80-01-PLAN.md (Context wiring + collapsible panel skeleton)
+Stopped at: Plan 80-01 complete — NotebookProvider wired, collapsible panel skeleton added
+Resume file: .planning/phases/80-notebook-integration/80-02-PLAN.md
+Next action: Execute 80-02-PLAN.md (Full NotebookLayout embedding with polish)
