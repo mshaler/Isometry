@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 78 of 79 (URL Deep Linking)
-Plan: 02 of 02 COMPLETE
-Status: Phase 78 COMPLETE — Node deep links + Filter URL persistence working
-Last activity: 2026-02-13 — Phase 78-02 complete (filter URL persistence)
+Phase: 79 of 79 (Catalog Browser)
+Plan: 01 of 03 COMPLETE
+Status: In Progress — Facet aggregate queries complete, UI next
+Last activity: 2026-02-13 — Completed 79-01-PLAN.md (facet aggregates)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
@@ -20,7 +20,7 @@ Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 pl
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
 Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 plans) ✅ PHASE C COMPLETE
 Progress (v5.0 SuperGrid Polish): [##############################] 100% (3/3 plans) ✅ PHASE 76 COMPLETE
-Progress (v4.9 Data Layer): [############                  ] 43% (3/7 plans) — Phase 78 COMPLETE
+Progress (v4.9 Data Layer): [#################             ] 57% (4/7 plans) — Phase 79-01 COMPLETE
 
 ## Upcoming: v4.9 Data Layer Completion
 
@@ -41,7 +41,7 @@ Progress (v4.9 Data Layer): [############                  ] 43% (3/7 plans) —
 - 78-02: Filter state serialization to URL (COMPLETE - pre-existing implementation)
 
 **Phase 79 (Catalog Browser):**
-- 79-01: Facet aggregate queries (useFacetAggregates hook)
+- 79-01: Facet aggregate queries (COMPLETE - useFacetAggregates hook + query functions)
 - 79-02: Catalog browser UI (FolderTree, TagCloud, StatusChips)
 - 79-03: Breadcrumb navigation (FilterBreadcrumb)
 
@@ -56,6 +56,9 @@ Progress (v4.9 Data Layer): [############                  ] 43% (3/7 plans) —
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 79 - Catalog Browser):**
+- Phase 79-01: COMPLETE (~4m) — Facet aggregate queries (getFolderCounts, getTagCounts, getStatusCounts) + useFacetAggregates hook
 
 **Recent completions (Phase 78 - URL Deep Linking) — PHASE COMPLETE:**
 - Phase 78-02: COMPLETE (~3m) — Filter URL persistence (pre-existing implementation verified)
