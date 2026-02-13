@@ -96,6 +96,14 @@ None - no external service configuration required.
 - All 6 format importers now implemented (MD, XLSX, DOCX, JSON, HTML, CSV)
 - Ready for Phase 70: Integration testing and batch import
 
+## Self-Check: PASSED
+
+All files verified:
+- [x] `src/etl/importers/ExcelImporter.ts` - FOUND
+- [x] `src/etl/__tests__/ExcelImporter.test.ts` - FOUND
+- [x] Commit `4bbcf1c8` (test) - FOUND
+- [x] Commit `c0654712` (feat) - FOUND
+
 ---
 *Phase: 69-file-importers*
 *Completed: 2026-02-12*
