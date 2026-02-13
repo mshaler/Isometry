@@ -277,8 +277,20 @@ function SuperGridCore({
       {isFeatureEnabled('enableSuperSearch') && (
         <div className="supergrid__super-search">
           <SuperSearch
-            onSearch={(query) => devLogger.debug('SuperSearch query executed', { query })}
-            onHighlight={(cardIds) => devLogger.debug('SuperSearch highlight triggered', { cardIds, count: cardIds.length })}
+            onSearch={(query) => {
+              devLogger.debug('SuperSearch query executed', { query });
+            }}
+            onHighlight={(cardIds) => {
+              devLogger.debug('SuperSearch highlight triggered', { cardIds, count: cardIds.length });
+              // Update search results in SuperGrid state for in-grid highlighting
+              updateState({
+                search: {
+                  ...superState.search,
+                  results: cardIds,
+                  highlightMode: cardIds.length > 0
+                }
+              });
+            }}
           />
         </div>
       )}

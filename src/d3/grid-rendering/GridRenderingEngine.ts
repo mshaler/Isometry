@@ -61,6 +61,9 @@ export class GridRenderingEngine {
   // Selection state for view transition persistence
   private selectedIds: Set<string> = new Set();
 
+  // Search highlight state for FTS5 results
+  private searchHighlightIds: Set<string> = new Set();
+
   // Density state for sparse/dense filtering
   private densityState: JanusDensityState | null = null;
 
@@ -155,6 +158,17 @@ export class GridRenderingEngine {
     this.selectedIds = selectedIds;
     superGridLogger.debug('GridRenderingEngine: selected IDs set', {
       count: selectedIds.size,
+    });
+  }
+
+  /**
+   * Set search highlight IDs for FTS5 search results
+   * Called from SuperGrid when SuperSearch finds matches
+   */
+  public setSearchHighlightIds(highlightIds: Set<string>): void {
+    this.searchHighlightIds = highlightIds;
+    superGridLogger.debug('GridRenderingEngine: search highlight IDs set', {
+      count: highlightIds.size,
     });
   }
 
@@ -1683,10 +1697,11 @@ export class GridRenderingEngine {
         String(d.description || d.content || '')
       );
 
-    // Capture selectedIds for use in transition callbacks
+    // Capture selectedIds and searchHighlightIds for use in transition callbacks
     const selectedIds = this.selectedIds;
+    const searchHighlightIds = this.searchHighlightIds;
 
-    // Animate enter cards fading in with selection state applied on completion
+    // Animate enter cards fading in with selection and search highlight state applied on completion
     cardEnter
       .transition()
       .duration(this.config.animationDuration)
@@ -1694,14 +1709,30 @@ export class GridRenderingEngine {
       .attr('opacity', 1)
       .on('end', function (d: CardRecord) {
         const card = d3.select(this);
-        const isSelected = selectedIds.has(String(d.id));
+        const cardId = String(d.id);
+        const isSelected = selectedIds.has(cardId);
+        const isSearchHighlight = searchHighlightIds.has(cardId);
+
+        // Apply selection state
         card.classed('selected', isSelected);
+        // Apply search highlight state
+        card.classed('search-highlight', isSearchHighlight);
+
+        // Determine stroke color: selection > search highlight > default
+        const strokeColor = isSelected ? '#2563eb' : isSearchHighlight ? '#facc15' : '#e1e5e9';
+        const strokeWidth = isSelected ? 2 : isSearchHighlight ? 2 : 1;
+
         card.select('.card-bg')
-          .attr('stroke', isSelected ? '#2563eb' : '#e1e5e9')
-          .attr('stroke-width', isSelected ? 2 : 1);
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', strokeWidth);
+
+        // Apply search highlight background tint
+        if (isSearchHighlight && !isSelected) {
+          card.select('.card-bg').attr('fill', 'rgba(250, 204, 21, 0.15)');
+        }
       });
 
-    // Update existing cards with FLIP animation and selection state
+    // Update existing cards with FLIP animation and selection/search highlight state
     cardSelection
       .transition()
       .duration(this.config.animationDuration)
@@ -1711,11 +1742,27 @@ export class GridRenderingEngine {
       )
       .on('end', function (d: CardRecord) {
         const card = d3.select(this);
-        const isSelected = selectedIds.has(String(d.id));
+        const cardId = String(d.id);
+        const isSelected = selectedIds.has(cardId);
+        const isSearchHighlight = searchHighlightIds.has(cardId);
+
+        // Apply selection state
         card.classed('selected', isSelected);
+        // Apply search highlight state
+        card.classed('search-highlight', isSearchHighlight);
+
+        // Determine stroke color: selection > search highlight > default
+        const strokeColor = isSelected ? '#2563eb' : isSearchHighlight ? '#facc15' : '#e1e5e9';
+        const strokeWidth = isSelected ? 2 : isSearchHighlight ? 2 : 1;
+
         card.select('.card-bg')
-          .attr('stroke', isSelected ? '#2563eb' : '#e1e5e9')
-          .attr('stroke-width', isSelected ? 2 : 1);
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', strokeWidth);
+
+        // Apply search highlight background tint
+        if (isSearchHighlight && !isSelected) {
+          card.select('.card-bg').attr('fill', 'rgba(250, 204, 21, 0.15)');
+        }
       });
 
     // Update card background fill on existing cards

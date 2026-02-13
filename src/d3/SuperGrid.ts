@@ -630,6 +630,19 @@ export class SuperGrid {
     }
   }
 
+  /**
+   * Set search highlight IDs for FTS5 search results
+   * Called from SuperGridV5 when SuperSearch finds matches
+   */
+  public setSearchHighlightIds(highlightIds: string[]): void {
+    this.renderingEngine.setSearchHighlightIds(new Set(highlightIds));
+    superGridLogger.debug('SuperGrid: search highlight IDs set', {
+      count: highlightIds.length,
+    });
+    // Re-render to apply highlights
+    this.render();
+  }
+
   private handleFocusChange(_focusedId: string | null): void {
     // Focus change handling if needed
   }
