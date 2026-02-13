@@ -3,6 +3,27 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
+## v5.1 Requirements — Notebook Integration
+
+Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+
+### Layout Integration
+
+- [ ] **LAYOUT-01**: User can see a collapsed Notebook panel below Command Bar
+- [ ] **LAYOUT-02**: User can expand/collapse the Notebook panel via toggle button
+- [ ] **LAYOUT-03**: User can see all three Notebook panes (Capture, Shell, Preview) when expanded
+
+### Context Wiring
+
+- [ ] **CTX-01**: NotebookContext available in IntegratedLayout tree
+- [ ] **CTX-02**: Notebook state persists across expand/collapse cycles
+
+### Visual Polish
+
+- [ ] **VIS-01**: Collapsed state shows minimal header with expand indicator
+- [ ] **VIS-02**: Expanded state respects theme (NeXTSTEP/Modern)
+- [ ] **VIS-03**: Smooth expand/collapse animation
+
 ## v4.7 Requirements — Schema-on-Read
 
 Dynamic YAML property discovery and storage for true schema-on-read semantics.
@@ -154,8 +175,22 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v4.4/v4.5 shipped: 11 requirements
 - v4.6 requirements: 6 total (3 shipped Phase 61, 3 deferred Phase 62)
 - v4.7 requirements: 8 total (mapped to phases 63-65)
-- Mapped to phases: 8/8 active v4.7 requirements (100% coverage)
+- v5.1 requirements: 8 total (mapped to phase 80)
+- Mapped to phases: 8/8 active v5.1 requirements (100% coverage)
+
+### v5.1 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| LAYOUT-01 | Phase 80 | Pending |
+| LAYOUT-02 | Phase 80 | Pending |
+| LAYOUT-03 | Phase 80 | Pending |
+| CTX-01 | Phase 80 | Pending |
+| CTX-02 | Phase 80 | Pending |
+| VIS-01 | Phase 80 | Pending |
+| VIS-02 | Phase 80 | Pending |
+| VIS-03 | Phase 80 | Pending |
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-12 (v4.7 requirements mapped to phases 63-65)*
+*Last updated: 2026-02-13 (v5.1 Notebook Integration requirements added)*

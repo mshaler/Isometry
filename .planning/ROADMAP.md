@@ -9,9 +9,12 @@
 - **v5.0 Type Safety Restoration** - Phases 52-55 (shipped 2026-02-10)
 - **v4.4 SuperGrid PAFV Projection** - Phases 56-59 (shipped 2026-02-11)
 - **v4.5 Stacked/Nested Headers** - Phase 60 (shipped 2026-02-11)
-- **v4.6 SuperGrid Polish** - Phases 61-62 (partial: 61 complete, 62 deferred)
+- **v4.6 SuperGrid Polish** - Phases 61-62 (shipped 2026-02-12)
 - **v4.7 Schema-on-Read** - Phases 63-65 (shipped 2026-02-12)
-- 📋 **v4.8 ETL Consolidation** - Phases 67-72 (planned)
+- **v4.8 ETL Consolidation** - Phases 67-72 (shipped 2026-02-12)
+- **v5.0 SuperGrid MVP** - Phases 73-76 (shipped 2026-02-13)
+- **v4.9 Data Layer Completion** - Phases 77-79 (shipped 2026-02-13)
+- 🚧 **v5.1 Notebook Integration** - Phase 80 (current)
 
 ## Phases
 
@@ -397,6 +400,26 @@ Plans:
   3. CLAUDE.md updated with ETL architecture
 **Plans**: TBD
 
+## 🚧 v5.1 Notebook Integration (Current)
+
+**Milestone Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+
+### Phase 80: Notebook Integration
+**Goal**: Add collapsible Notebook panel to IntegratedLayout with all three panes
+**Depends on**: Phase 79 (v4.9 Data Layer complete)
+**Requirements**: LAYOUT-01, LAYOUT-02, LAYOUT-03, CTX-01, CTX-02, VIS-01, VIS-02, VIS-03
+**Success Criteria** (what must be TRUE):
+  1. User sees collapsed Notebook panel below Command Bar (default state)
+  2. User can click toggle to expand/collapse the panel with smooth animation
+  3. Expanded panel shows all three Notebook panes (Capture, Shell, Preview)
+  4. NotebookContext is available in the component tree
+  5. Panel respects current theme (NeXTSTEP/Modern)
+**Plans**: 2 plans in 2 waves
+
+Plans:
+- [ ] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
+- [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -432,8 +455,9 @@ Plans:
 | 76. SuperGrid Polish | v5.0 | 3/3 | Complete | 2026-02-13 |
 | 77. Versioning | v4.9 | 1/1 | Complete | 2026-02-13 |
 | 78. URL Deep Linking | v4.9 | 2/2 | Complete | 2026-02-13 |
-| 79. Catalog Browser | v4.9 | 0/3 | Planned | - |
+| 79. Catalog Browser | v4.9 | 3/3 | Complete | 2026-02-13 |
+| 80. Notebook Integration | v5.1 | 0/2 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-13 (Phase 78 complete — URL Deep Linking with node ?nodeId= and filter URL persistence)*
+*Last updated: 2026-02-13 (v5.1 Notebook Integration milestone started)*

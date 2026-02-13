@@ -2,48 +2,60 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-12)
+See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** v5.0 SuperGrid MVP — Multi-level headers, density controls, zoom anchoring
+**Current focus:** v5.1 Notebook Integration — Collapsible NotebookLayout panel in IntegratedLayout
 
 ## Current Position
 
-Phase: 79 of 79 (Catalog Browser)
-Plan: 03 of 03 COMPLETE
-Status: Phase COMPLETE — All v4.9 Data Layer phases done
-Last activity: 2026-02-13 — Completed 79-03-PLAN.md (FilterBreadcrumb navigation)
+Phase: 80 (Notebook Integration)
+Plan: Not started (defining requirements)
+Status: Milestone initialized — 8 requirements defined
+Last activity: 2026-02-13 — Defined v5.1 Notebook Integration milestone
 
-Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
-Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
-Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
-Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 plans) ✅ PHASE C COMPLETE
-Progress (v5.0 SuperGrid Polish): [##############################] 100% (3/3 plans) ✅ PHASE 76 COMPLETE
-Progress (v4.9 Data Layer): [##############################] 100% (7/7 plans) ✅ MILESTONE COMPLETE
+Progress (v5.1 Notebook Integration): [                              ] 0% (0/8 requirements)
 
-## Upcoming: v4.9 Data Layer Completion
+## Current Milestone: v5.1 Notebook Integration
+
+**Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+
+**Requirements:**
+| ID | Description | Phase | Status |
+|----|-------------|-------|--------|
+| LAYOUT-01 | Collapsed Notebook panel below Command Bar | 80 | Pending |
+| LAYOUT-02 | Expand/collapse toggle button | 80 | Pending |
+| LAYOUT-03 | All three panes when expanded | 80 | Pending |
+| CTX-01 | NotebookContext in IntegratedLayout tree | 80 | Pending |
+| CTX-02 | State persists across toggle | 80 | Pending |
+| VIS-01 | Minimal collapsed header | 80 | Pending |
+| VIS-02 | Theme respect (NeXTSTEP/Modern) | 80 | Pending |
+| VIS-03 | Smooth expand/collapse animation | 80 | Pending |
+
+**Phase 80 Plans:**
+- [ ] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
+- [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+
+## Previous Milestones
+
+### v4.9 Data Layer (COMPLETE)
 
 **Milestone:** `.planning/milestones/v4.9-data-layer-completion.md`
-**Priority Order:** Versioning (P0) → URL Deep Linking (P1) → Catalog Browser (P2)
 
-| Phase | Name | Plans | Priority | Status |
-|-------|------|-------|----------|--------|
-| 77 | Versioning | 77-01 | P0 | COMPLETE |
-| 78 | URL Deep Linking | 78-01, 78-02 | P1 | COMPLETE |
-| 79 | Catalog Browser | 79-01, 79-02, 79-03 | P2 | COMPLETE |
+| Phase | Name | Plans | Status |
+|-------|------|-------|--------|
+| 77 | Versioning | 77-01 | COMPLETE |
+| 78 | URL Deep Linking | 78-01, 78-02 | COMPLETE |
+| 79 | Catalog Browser | 79-01, 79-02, 79-03 | COMPLETE |
 
-**Phase 77 (Versioning) COMPLETE:**
-- 77-01: Version increment trigger (COMPLETE)
+### v5.0 SuperGrid MVP (COMPLETE)
 
-**Phase 78 (URL Deep Linking) COMPLETE:**
-- 78-01: Node deep links via ?nodeId= parameter (COMPLETE)
-- 78-02: Filter state serialization to URL (COMPLETE - pre-existing implementation)
-
-**Phase 79 (Catalog Browser) COMPLETE:**
-- 79-01: Facet aggregate queries (COMPLETE - useFacetAggregates hook + query functions)
-- 79-02: Catalog browser UI (COMPLETE - FolderTree, TagCloud, StatusChips, CatalogBrowser)
-- 79-03: Breadcrumb navigation (COMPLETE - FilterBreadcrumb with 18 tests)
+| Phase | Name | Plans | Status |
+|-------|------|-------|--------|
+| 73 | Phase A | 73-01 to 73-04 | COMPLETE |
+| 74 | Phase B | 74-01 to 74-04 | COMPLETE |
+| 75 | Phase C | 75-01 to 75-04 | COMPLETE |
+| 76 | Polish | 76-01 to 76-03 | COMPLETE |
 
 ## Performance Metrics
 
@@ -550,6 +562,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 79 COMPLETE — Catalog Browser (facets, UI, breadcrumb)
-Resume file: N/A — All v4.9 Data Layer plans complete
-Next action: Define next milestone (v5.1 Feature Gaps or new features)
+Stopped at: Milestone v5.1 initialized — 8 requirements, Phase 80 defined
+Resume file: N/A — Ready for `/gsd:plan-phase 80`
+Next action: Create phase 80-01-PLAN.md (Context wiring + collapsible panel skeleton)

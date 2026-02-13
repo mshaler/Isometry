@@ -27,19 +27,45 @@ Multi-facet stacked axis support with d3.stratify hierarchy, multi-level header 
 ### v4.6 SuperGrid Polish (IN PROGRESS)
 D3 animated view transitions with selection persistence. Phase 61 complete, Phase 62 (Density Filtering) pending.
 
-## Current Milestone: v5.0 SuperGrid MVP
+## Current Milestone: v5.1 Notebook Integration
 
-**Goal:** Implement the four critical SuperGrid features that bring MVP from 30% → 70% completion.
+**Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
 
-**Phase A Target Features:**
-- **SuperStack Multi-Level Headers** — Nested headers with visual spanning
-- **SuperDensity Controls** — Value (GROUP BY) + Extent (empty cell filtering)
-- **SuperZoom Upper-Left Anchor** — Pin zoom to top-left corner
-- **Header Click Zones** — Zone-based hit testing and cursor feedback
+**Target features:**
+- Collapsible panel UI (default collapsed, expand/collapse toggle)
+- All three Notebook panes (Capture, Shell, Preview) when expanded
+- Context provider wiring (NotebookProvider in tree)
+- Theme-consistent styling (NeXTSTEP/Modern)
 
 **Reference Documents:**
-- `SuperGrid-GSD-Implementation-Plan.md` — Implementation guidance
-- `specs/SuperGrid-Specification.md` — Full feature specification
+- `src/components/notebook/NotebookLayout.tsx` — Existing notebook component
+- `src/components/IntegratedLayout.tsx` — Integration target
+
+## Previous Milestone: v5.0 SuperGrid MVP (COMPLETE)
+
+**Goal:** Implemented critical SuperGrid features bringing MVP from 30% → 90% completion.
+
+**Phases A/B/C + Polish:** All complete
+- ✅ **SuperStack Multi-Level Headers** — Nested headers with visual spanning
+- ✅ **SuperDensity Controls** — Value (GROUP BY) + Extent (empty cell filtering)
+- ✅ **SuperZoom Upper-Left Anchor** — Pin zoom to top-left corner
+- ✅ **Header Click Zones** — Zone-based hit testing and cursor feedback
+- ✅ **SuperDynamic** — Drag-and-drop axis repositioning
+- ✅ **SuperSize** — Cell & header resize with persistence
+- ✅ **SuperSelect** — Multi-selection with lasso and range
+- ✅ **SuperPosition** — PAFV coordinate tracking for view transitions
+- ✅ **SuperFilter/Sort/Cards/Audit** — Phase C visual polish
+
+## Previous Milestone: v4.9 Data Layer (COMPLETE)
+
+**Goal:** Complete data layer features for production readiness.
+
+**Delivered:**
+- ✅ Versioning with auto-increment trigger
+- ✅ URL deep linking with ?nodeId= parameter
+- ✅ Filter state serialization to URL
+- ✅ Catalog Browser with facet aggregates
+- ✅ FilterBreadcrumb navigation
 
 ## Previous Milestone: v4.7 Schema-on-Read (COMPLETE)
 
@@ -264,4 +290,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-12 after v4.7 milestone start*
+*Last updated: 2026-02-13 — Phase 74 (SuperGrid Phase B) planning complete*
