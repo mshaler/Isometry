@@ -9,14 +9,15 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 73 of 76 (SuperGrid Phase A)
-Plan: 04 of 04 COMPLETE
-Status: Phase 73 COMPLETE — All 4 plans in Phase A complete
-Last activity: 2026-02-13 — Completed 73-04 (Header Click Zones)
+Phase: 74 of 76 (SuperGrid Phase B)
+Plan: 01 of 04 READY
+Status: Phase 74 PLANNING — GSD milestone created for SuperGrid interaction features
+Last activity: 2026-02-13 — Created Phase 74 milestone (SuperDynamic, SuperSize, SuperSelect, SuperPosition)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [###################...........] 66% (4/6 phases) — deferred for SuperGrid
-Progress (v5.0 SuperGrid): [##############################] 100% (4/4 plans in Phase A) ✅ PHASE A COMPLETE
+Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
+Progress (v5.0 SuperGrid Phase B): [..............................] 0% (0/4 plans)
 
 ## Performance Metrics
 
@@ -35,6 +36,9 @@ Progress (v5.0 SuperGrid): [##############################] 100% (4/4 plans in P
 - Phase 73-03: COMPLETE (~4m) — SuperZoom pinned upper-left anchor with boundary constraints
 - Phase 73-02: COMPLETE (~6m) — SuperDensity controls with Janus value/extent model
 - Phase 73-01: COMPLETE (~6m) — SuperStack multi-level headers with hierarchy building
+
+**Recent completions (Phase 71 - v4.8 Swift Bridge):**
+- Phase 71-01: COMPLETE (~12m) — ETLBridge actor + CanonicalNode + ETLBridgeError + unit tests
 
 **Previous completions (Phase 70 - v4.8 Integration):**
 - Phase 70-02: COMPLETE (~5m) — AltoImporter extends BaseImporter, CanonicalNode[] output
@@ -75,6 +79,19 @@ Progress (v5.0 SuperGrid): [##############################] 100% (4/4 plans in P
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 71-02 decisions (EventKitAdapter):**
+- EK-DEC-01: Use iOS 17+ requestFullAccessToEvents() async API (cleaner concurrency)
+- EK-DEC-02: Calendar title becomes folder for LATCH organization
+- EK-DEC-03: Priority mapping from 0-9 (EK) to 0-5 (Canonical)
+- EK-DEC-04: MockEventData/MockReminderData for testable conversion without entitlements
+- EK-DEC-05: Continuation wrapper for fetchReminders callback API
+
+**Phase 71-01 decisions (Swift Bridge ETL Foundation):**
+- BRIDGE-DEC-01: Renamed ImportResult to ETLImportResult to avoid conflict with existing ImportResult in AltoIndexImporter
+- BRIDGE-DEC-02: Removed duplicate CanonicalNode from EventKitAdapter.swift - consolidated in Bridge/CanonicalNode.swift
+- BRIDGE-DEC-03: Removed Equatable conformance from CanonicalNode because existing AnyCodable doesn't conform to Equatable
+- BRIDGE-DEC-04: Used @MainActor helper function instead of MainActor.run closure (Swift 5.9 compatibility)
 
 **Phase 73-04 decisions (Header Click Zones):**
 - ZONE-DEC-01: Parent label zone 32px height (matches typical header text height)
@@ -338,7 +355,7 @@ node_properties table (EAV)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
 - [~] Phase 70: Integration — PAUSED (Plans 01-02 complete, SuperGrid prioritized)
-- [ ] Phase 71: Swift Bridge
+- [~] Phase 71: Swift Bridge — Plans 01-02 COMPLETE (~23 minutes combined)
 - [ ] Phase 72: Quality & Docs
 
 **v5.0 (SuperGrid MVP) — PHASE A COMPLETE:**
