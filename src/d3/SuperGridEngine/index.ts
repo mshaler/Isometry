@@ -56,6 +56,7 @@ export class SuperGridEngine extends EventEmitter {
   private dataManager: SuperGridDataManager;
   private renderer: SuperGridRenderer;
   private headerManager: SuperGridHeaderManager;
+  private positionManager: PositionManager;
 
   // Core state (D3 owns this)
   private nodes: Node[] = [];
@@ -100,6 +101,7 @@ export class SuperGridEngine extends EventEmitter {
       this.config.headerMinWidth,
       this.config.headerMinHeight
     );
+    this.positionManager = new PositionManager();
 
     this.initializeState();
     this.setupRendererCallbacks();
@@ -143,11 +145,21 @@ export class SuperGridEngine extends EventEmitter {
 
   /**
    * Set nodes and edges data - triggers re-render
+   * Uses PositionManager to track positions across data changes
    */
   setData(nodes: Node[], edges: Edge[] = []): void {
     this.nodes = [...nodes];
     // Note: edges will be implemented in future iterations
-    this.generateCellsFromData();
+
+    // Use PositionManager for position tracking (maintains positions across filter changes)
+    this.currentCells = this.positionManager.recalculateAllPositions(
+      this.nodes,
+      this.pafvConfig,
+      this.gridDimensions
+    );
+
+    this.generateHeaderTree();
+    this.calculateGridDimensions();
     this.render();
     this.emit('dataChange', { nodeCount: nodes.length, edgeCount: edges.length });
   }
@@ -224,13 +236,46 @@ export class SuperGridEngine extends EventEmitter {
 
   /**
    * Set axis mapping - triggers grid recalculation and re-render
+   * Uses PositionManager to track logical coordinates across transitions
    */
   setAxisMapping(mapping: PAFVConfiguration): void {
     this.pafvConfig = { ...mapping };
-    this.generateCellsFromData();
+
+    // Use PositionManager for PAFV-aware position tracking
+    this.currentCells = this.positionManager.recalculateAllPositions(
+      this.nodes,
+      this.pafvConfig,
+      this.gridDimensions
+    );
+
     this.generateHeaderTree();
     this.calculateGridDimensions();
     this.render();
+    this.emit('axisChange', { pafv: this.pafvConfig });
+  }
+
+  /**
+   * Handle PAFV configuration change with position recalculation.
+   * This method is called when axis mappings change to ensure
+   * cards maintain logical position context across view transitions.
+   */
+  onPAFVChange(newConfig: PAFVConfiguration): void {
+    // Recalculate positions using PositionManager
+    this.currentCells = this.positionManager.recalculateAllPositions(
+      this.nodes,
+      newConfig,
+      this.gridDimensions
+    );
+
+    // Update config
+    this.pafvConfig = { ...newConfig };
+
+    // Regenerate view
+    this.generateHeaderTree();
+    this.calculateGridDimensions();
+    this.render();
+
+    // Emit change event
     this.emit('axisChange', { pafv: this.pafvConfig });
   }
 
@@ -303,6 +348,27 @@ export class SuperGridEngine extends EventEmitter {
       levelGroups: [...this.progressiveState.levelGroups],
       activeLevelTab: this.progressiveState.activeLevelTab
     };
+  }
+
+  /**
+   * Get PositionManager instance for direct access to position state
+   */
+  getPositionManager(): PositionManager {
+    return this.positionManager;
+  }
+
+  /**
+   * Get serialized position state for SQLite persistence
+   */
+  getSerializedPositionState(): string {
+    return this.positionManager.serializeState();
+  }
+
+  /**
+   * Restore position state from SQLite-stored JSON
+   */
+  restorePositionState(json: string): void {
+    this.positionManager.deserializeState(json);
   }
 
   // ========================================================================
@@ -388,6 +454,21 @@ export class SuperGridEngine extends EventEmitter {
     this.selectionState.focusedCell = undefined;
     this.updateSelection();
     this.emit('selectionChange', { selection: this.getSelection() });
+  }
+
+  /**
+   * Set custom sort order for a cell group
+   * Used for manual reordering within a group that survives view transitions
+   */
+  setCustomSortOrder(groupKey: string, nodeIds: string[]): void {
+    this.positionManager.setCustomOrder(groupKey, nodeIds);
+  }
+
+  /**
+   * Get custom sort order for a cell group
+   */
+  getCustomSortOrder(groupKey: string): string[] | undefined {
+    return this.positionManager.getCustomOrder(groupKey);
   }
 
   /**
@@ -510,18 +591,6 @@ export class SuperGridEngine extends EventEmitter {
         this.emit('renderComplete', { renderTime, cellCount });
       }
     });
-  }
-
-  private generateCellsFromData(): void {
-    // Extract axis facet fields from PAFV configuration
-    const xAxisField = this.pafvConfig.xMapping?.facet ?? 'node_type';
-    const yAxisField = this.pafvConfig.yMapping?.facet ?? 'folder';
-
-    this.currentCells = this.dataManager.generateCellsFromNodes(
-      this.nodes,
-      xAxisField,
-      yAxisField
-    );
   }
 
   private generateHeaderTree(): void {

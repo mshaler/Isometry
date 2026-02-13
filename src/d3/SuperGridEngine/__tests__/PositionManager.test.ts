@@ -437,4 +437,144 @@ describe('PositionManager', () => {
       expect(coords.gridX).toBe(1);
     });
   });
+
+  describe('handleFilterRemoval', () => {
+    it('preserves positions for filtered-out nodes', () => {
+      // Initial state with all nodes
+      positionManager.recalculateAllPositions(
+        mockNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      const originalPosition = positionManager.getPosition('node-2');
+      expect(originalPosition).toBeDefined();
+
+      // Simulate filter: recalculate with only some nodes
+      const filteredNodes = mockNodes.filter((n) => n.id !== 'node-2');
+      positionManager.recalculateAllPositions(
+        filteredNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      // Position for node-2 should still be stored
+      const preservedPosition = positionManager.getPosition('node-2');
+      expect(preservedPosition).toEqual(originalPosition);
+    });
+
+    it('restores correct position after filter removal', () => {
+      // Calculate initial positions
+      positionManager.recalculateAllPositions(
+        mockNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      const originalX = positionManager.getPosition('node-1')!.x.value;
+      const originalY = positionManager.getPosition('node-1')!.y.value;
+
+      // Filter -> unfilter cycle
+      positionManager.recalculateAllPositions(
+        [mockNodes[0]],
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      positionManager.recalculateAllPositions(
+        mockNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      // Position values should be identical
+      const restoredPosition = positionManager.getPosition('node-1')!;
+      expect(restoredPosition.x.value).toBe(originalX);
+      expect(restoredPosition.y.value).toBe(originalY);
+    });
+
+    it('handles multiple filter cycles without drift', () => {
+      positionManager.recalculateAllPositions(
+        mockNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      const baseline = positionManager.serializeState();
+
+      // Multiple filter cycles
+      for (let i = 0; i < 3; i++) {
+        // Filter to single node
+        positionManager.recalculateAllPositions(
+          [mockNodes[i % mockNodes.length]],
+          mockPAFVConfig,
+          mockGridDimensions
+        );
+
+        // Restore all nodes
+        positionManager.recalculateAllPositions(
+          mockNodes,
+          mockPAFVConfig,
+          mockGridDimensions
+        );
+      }
+
+      // Compare positions after cycles
+      const afterCycles = positionManager.serializeState();
+      const baselineData = JSON.parse(baseline);
+      const afterData = JSON.parse(afterCycles);
+
+      // Position values should be stable
+      for (const nodeId of Object.keys(baselineData.positions)) {
+        expect(afterData.positions[nodeId].x.value).toBe(
+          baselineData.positions[nodeId].x.value
+        );
+        expect(afterData.positions[nodeId].y.value).toBe(
+          baselineData.positions[nodeId].y.value
+        );
+      }
+    });
+  });
+
+  describe('view transition position tracking', () => {
+    it('maintains positions when PAFV config changes', () => {
+      // Initial positions
+      positionManager.recalculateAllPositions(
+        mockNodes,
+        mockPAFVConfig,
+        mockGridDimensions
+      );
+
+      const originalPositionCount = mockNodes.length;
+
+      // Change PAFV config (different axis mapping)
+      const newConfig: PAFVConfiguration = {
+        xMapping: {
+          axis: 'Time',
+          plane: 'x',
+          facet: 'created_at',
+        },
+        yMapping: {
+          axis: 'Category',
+          plane: 'y',
+          facet: 'folder',
+        },
+        originPattern: 'anchor',
+      };
+
+      const cells = positionManager.recalculateAllPositions(
+        mockNodes,
+        newConfig,
+        mockGridDimensions
+      );
+
+      // All nodes should still have positions
+      for (const node of mockNodes) {
+        expect(positionManager.getPosition(node.id)).toBeDefined();
+      }
+
+      // Cells should be generated
+      expect(cells.length).toBeGreaterThan(0);
+    });
+  });
 });
