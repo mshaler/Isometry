@@ -124,6 +124,7 @@ function App() {
   }
 
   // Phase 57: Integrated Navigator + SuperGrid + DensitySlider layout
+  // Phase 80-01: NotebookProvider added for Notebook Integration
   if (testMode === 'integrated') {
     return (
       <SQLiteProvider>
@@ -132,9 +133,11 @@ function App() {
             <PAFVProvider>
               <SelectionProvider>
                 <AppStateProvider>
-                  <DeepLinkHandler>
-                    <IntegratedLayout />
-                  </DeepLinkHandler>
+                  <NotebookProvider>
+                    <DeepLinkHandler>
+                      <IntegratedLayout />
+                    </DeepLinkHandler>
+                  </NotebookProvider>
                 </AppStateProvider>
               </SelectionProvider>
             </PAFVProvider>
@@ -146,6 +149,7 @@ function App() {
 
   // Default: IntegratedLayout (no ?test= param required)
   // Phase 78-01: Deep linking via ?nodeId= parameter
+  // Phase 80-01: NotebookProvider added for Notebook Integration
   return (
     <SQLiteProvider>
       <FilterProvider>
@@ -153,9 +157,11 @@ function App() {
           <PAFVProvider>
             <SelectionProvider>
               <AppStateProvider>
-                <DeepLinkHandler>
-                  <IntegratedLayout />
-                </DeepLinkHandler>
+                <NotebookProvider>
+                  <DeepLinkHandler>
+                    <IntegratedLayout />
+                  </DeepLinkHandler>
+                </NotebookProvider>
               </AppStateProvider>
             </SelectionProvider>
           </PAFVProvider>
