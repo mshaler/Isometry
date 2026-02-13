@@ -522,7 +522,7 @@ export function IntegratedLayout() {
               <BookOpen className={`w-4 h-4 ${mutedColor}`} />
               <span className={`text-xs font-medium ${textColor}`}>Notebook</span>
               <span className={`text-[10px] ${mutedColor}`}>
-                {isNotebookExpanded ? '3 panes' : 'Capture / Shell / Preview'}
+                {isNotebookExpanded ? 'Expanded' : 'Capture / Shell / Preview'}
               </span>
             </div>
             {isNotebookExpanded ? (
@@ -532,16 +532,16 @@ export function IntegratedLayout() {
             )}
           </button>
 
-          {/* Expandable Content Area - placeholder for Plan 02 */}
+          {/* Expandable Content Area */}
           <div
             id="notebook-panel"
             style={{
-              maxHeight: isNotebookExpanded ? '24rem' : '0',
+              maxHeight: isNotebookExpanded ? '28rem' : '0',
               transition: 'max-height 300ms ease-in-out',
             }}
             className="overflow-hidden"
           >
-            <div className={`h-96 ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
+            <div className={`h-[28rem] ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
               <NotebookLayout />
             </div>
           </div>
