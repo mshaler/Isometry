@@ -45,7 +45,6 @@ export {
 // Main performance validation function
 import { DatabaseMode } from '../contexts/EnvironmentContext';
 import { validateBridgePerformance, validateGenericPerformance } from './utils/performance-testing';
-import { runMigrationBenchmarks } from './utils/benchmark-testing';
 import type { PerformanceReport, PerformanceTargets } from './types/performance-types';
 
 /**
@@ -70,8 +69,14 @@ export async function runPerformanceValidation(
   metrics.push(...genericResults.metrics);
 
   // Run bridge validation if applicable
-  if (provider === 'webview') {
-    const environment = { type: 'webview' as const };
+  // Note: Bridge was eliminated in v4 - this check is legacy
+  if (provider === DatabaseMode.WEBVIEW_BRIDGE) {
+    const environment: import('../utils/webview-bridge').Environment = {
+      isNative: false,
+      platform: 'web',
+      version: '1.0.0',
+      isWebView: true
+    };
     const bridgeResults = await validateBridgePerformance(environment);
     metrics.push(...bridgeResults.metrics);
   }

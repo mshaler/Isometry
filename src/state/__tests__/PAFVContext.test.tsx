@@ -213,7 +213,7 @@ describe('PAFV Serialization', () => {
     const state = DEFAULT_PAFV;
     const serialized = serializePAFV(state);
 
-    expect(serialized).toBe('x=time.year&y=category.tag&view=grid');
+    expect(serialized).toBe('x=time.year&y=category.tag&view=grid&density=2');
 
     const deserialized = deserializePAFV(serialized);
     expect(deserialized).toEqual(state);

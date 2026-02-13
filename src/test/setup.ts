@@ -26,6 +26,71 @@ class ResizeObserverMock {
 
 global.ResizeObserver = ResizeObserverMock;
 
+// Mock document.elementFromPoint for JSDOM (used by SuperDynamic drag tests)
+if (!document.elementFromPoint) {
+  document.elementFromPoint = (_x: number, _y: number) => null;
+}
+
+// Mock SVG baseVal for D3 zoom tests (JSDOM doesn't support SVG attributes)
+function addSVGMocks(element: Element): void {
+  const mockAnimatedLength = {
+    baseVal: { value: 800 },
+    animVal: { value: 800 }
+  };
+  const mockAnimatedLengthHeight = {
+    baseVal: { value: 600 },
+    animVal: { value: 600 }
+  };
+  Object.defineProperty(element, 'width', { value: mockAnimatedLength, writable: true, configurable: true });
+  Object.defineProperty(element, 'height', { value: mockAnimatedLengthHeight, writable: true, configurable: true });
+  Object.defineProperty(element, 'viewBox', {
+    value: {
+      baseVal: { x: 0, y: 0, width: 800, height: 600 },
+      animVal: { x: 0, y: 0, width: 800, height: 600 }
+    },
+    writable: true,
+    configurable: true
+  });
+  // D3 zoom accesses ownerSVGElement.width.baseVal - for SVG element itself, this is self-referential
+  Object.defineProperty(element, 'ownerSVGElement', {
+    get: () => element,
+    configurable: true
+  });
+}
+
+const originalCreateElement = document.createElement.bind(document);
+document.createElement = ((tagName: string, options?: ElementCreationOptions) => {
+  const element = originalCreateElement(tagName, options);
+  if (tagName.toLowerCase() === 'svg') {
+    addSVGMocks(element);
+  }
+  return element;
+}) as typeof document.createElement;
+
+// Also mock createElementNS for D3 which uses SVG namespace
+const originalCreateElementNS = document.createElementNS.bind(document);
+document.createElementNS = ((namespaceURI: string | null, qualifiedName: string) => {
+  const element = originalCreateElementNS(namespaceURI, qualifiedName);
+  if (qualifiedName.toLowerCase() === 'svg' || namespaceURI === 'http://www.w3.org/2000/svg') {
+    if (qualifiedName.toLowerCase() === 'svg') {
+      addSVGMocks(element);
+    } else {
+      // For child SVG elements, ownerSVGElement needs to point to parent SVG
+      // This will be set when the element is appended to an SVG
+      const mockSVG = {
+        width: { baseVal: { value: 800 }, animVal: { value: 800 } },
+        height: { baseVal: { value: 600 }, animVal: { value: 600 } }
+      };
+      Object.defineProperty(element, 'ownerSVGElement', {
+        value: mockSVG,
+        writable: true,
+        configurable: true
+      });
+    }
+  }
+  return element;
+}) as typeof document.createElementNS;
+
 // Mock matchMedia for theme detection
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

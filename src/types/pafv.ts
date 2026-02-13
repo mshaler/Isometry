@@ -92,8 +92,9 @@ export interface PAFVState {
 // - Location (L): location_name
 export const DEFAULT_PAFV: PAFVState = {
   mappings: [
-    // Single Y-axis = Kanban-style rows by folder
-    { plane: 'y', axis: 'category', facet: 'folder' },
+    // 2D grid default: x=time (years), y=category (tags)
+    { plane: 'x', axis: 'time', facet: 'year' },
+    { plane: 'y', axis: 'category', facet: 'tag' },
   ],
   viewMode: 'grid',
   densityLevel: 2, // Default to Extent Density (populated-only)

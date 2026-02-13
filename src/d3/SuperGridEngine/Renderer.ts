@@ -28,6 +28,7 @@ import { ResizeManager, type ResizeManagerConfig } from './ResizeManager';
 import { SelectManager, type SelectManagerConfig } from './SelectManager';
 import { SortManager, type SortLevel } from './SortManager';
 import { FilterManager } from './FilterManager';
+import { AuditRenderer } from './AuditRenderer';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -163,6 +164,9 @@ export class SuperGridRenderer {
   // FilterManager for header filtering (SuperFilter)
   private filterManager: FilterManager | null = null;
   private onFilterIconClick?: (header: HeaderDescriptor) => void;
+
+  // AuditRenderer for computed value highlighting (SuperAudit)
+  private auditRenderer: AuditRenderer | null = null;
 
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
@@ -726,6 +730,21 @@ export class SuperGridRenderer {
   }
 
   /**
+   * Set the AuditRenderer instance for SuperAudit functionality.
+   * Call this before rendering to enable audit overlays.
+   */
+  setAuditRenderer(auditRenderer: AuditRenderer): void {
+    this.auditRenderer = auditRenderer;
+  }
+
+  /**
+   * Get the AuditRenderer instance for external access.
+   */
+  getAuditRenderer(): AuditRenderer | null {
+    return this.auditRenderer;
+  }
+
+  /**
    * Set up resize event handlers for mousedown, mousemove, mouseup, and dblclick.
    */
   private setupResizeEventHandlers(): void {
@@ -1218,6 +1237,26 @@ export class SuperGridRenderer {
       .attr('stroke', '#ddd')
       .attr('stroke-width', 1);
 
+    // Audit overlay (SuperAudit) - tint for computed/enriched/formula cells
+    cellEnter.append('rect')
+      .attr('class', 'audit-overlay')
+      .attr('fill', 'transparent')
+      .attr('pointer-events', 'none');
+
+    // Audit indicator dot (SuperAudit) - corner indicator for computed cells
+    cellEnter.append('circle')
+      .attr('class', 'audit-indicator')
+      .attr('r', 3)
+      .attr('fill', 'transparent')
+      .attr('pointer-events', 'none');
+
+    // CRUD flash overlay (SuperAudit) - animated flash for create/update/delete
+    cellEnter.append('rect')
+      .attr('class', 'crud-flash')
+      .attr('fill', 'transparent')
+      .attr('opacity', 0)
+      .attr('pointer-events', 'none');
+
     // Cell text
     cellEnter.append('text')
       .attr('class', 'cell-text')
@@ -1285,6 +1324,48 @@ export class SuperGridRenderer {
 
     cellsAll.select('.checkbox-mark')
       .style('opacity', d => isSelected(d.id) ? 1 : 0);
+
+    // Update audit overlays (SuperAudit)
+    const auditRenderer = this.auditRenderer;
+    if (auditRenderer) {
+      // Update audit overlay tint
+      cellsAll.select('.audit-overlay')
+        .attr('width', gridDimensions.cellWidth - 2)
+        .attr('height', gridDimensions.cellHeight - 2)
+        .attr('fill', d => auditRenderer.shouldRenderOverlay(d.id)
+          ? auditRenderer.getOverlayColor(d.id)
+          : 'transparent'
+        );
+
+      // Update audit indicator dot
+      cellsAll.select('.audit-indicator')
+        .attr('cx', 8)
+        .attr('cy', 8)
+        .attr('fill', d => auditRenderer.shouldRenderOverlay(d.id)
+          ? auditRenderer.getCellIndicatorColor(d.id)
+          : 'transparent'
+        );
+
+      // Update CRUD flash overlay
+      cellsAll.select('.crud-flash')
+        .attr('width', gridDimensions.cellWidth - 2)
+        .attr('height', gridDimensions.cellHeight - 2)
+        .each(function(d) {
+          const flashColor = auditRenderer.getFlashColor(d.id);
+          if (flashColor) {
+            // Trigger flash animation
+            _d3.select(this)
+              .attr('fill', flashColor)
+              .attr('opacity', 0.4)
+              .transition()
+              .duration(500)
+              .attr('opacity', 0)
+              .on('end', function() {
+                _d3.select(this).attr('fill', 'transparent');
+              });
+          }
+        });
+    }
 
     cells.exit().remove();
   }

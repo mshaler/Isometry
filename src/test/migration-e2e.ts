@@ -297,7 +297,8 @@ export async function validateCrossPlatform(platform: 'ios' | 'macos'): Promise<
     performanceProfile = perfMeasurement.profile;
 
     // Validate bridge functionality (if WebView available)
-    if (Environment.isWebView()) {
+    // Note: Bridge was eliminated in v4 - this check is legacy
+    if (Environment.isWebView) {
       const bridgeResult = await bridgePerformanceTest();
       if (!bridgeResult.passed) {
         errors.push(`Bridge performance failed on ${platform}: ${bridgeResult.recommendations.join(', ')}`);
@@ -520,14 +521,15 @@ async function testPerformanceValidationFlow(provider: DatabaseMode): Promise<Te
 
   try {
     // Run performance tests specific to provider
+    // Note: Bridge was eliminated in v4 - this check is legacy
     if (provider === DatabaseMode.WEBVIEW_BRIDGE) {
       const bridgeResult = await bridgePerformanceTest();
       if (!bridgeResult.passed) {
         errors.push(`Bridge performance validation failed: ${bridgeResult.recommendations.join(', ')}`);
       }
 
-      // Validate specific targets
-      for (const result of bridgeResult.results) {
+      // Validate specific targets (legacy - results array is always empty now)
+      for (const result of (bridgeResult.results || []) as Array<{ success: boolean; test: string; error?: string }>) {
         if (!result.success) {
           errors.push(`Performance test '${result.test}' failed: ${result.error || 'Unknown error'}`);
         }

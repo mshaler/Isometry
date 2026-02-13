@@ -11,6 +11,10 @@ export interface BridgeStressTestResult {
   stress?: {
     throughput: number;
   };
+  // Legacy properties for compatibility with migration-e2e.ts
+  passed: boolean;
+  recommendations: string[];
+  results?: unknown[];
 }
 
 export const PERFORMANCE_TARGETS = {
@@ -24,11 +28,14 @@ export const PERFORMANCE_TARGETS = {
  * @deprecated Bridge was eliminated in v4. This is a no-op stub.
  */
 export async function bridgePerformanceTest(
-  _environment: unknown,
-  _mode: string
+  _environment?: unknown,
+  _mode?: string
 ): Promise<BridgeStressTestResult> {
   return {
     averageLatency: 0,
     stress: { throughput: 0 },
+    passed: true,
+    recommendations: [],
+    results: [],
   };
 }

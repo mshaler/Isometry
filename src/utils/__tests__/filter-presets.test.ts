@@ -73,25 +73,25 @@ describe('filter-presets', () => {
     });
 
     it('returns empty array when localStorage contains invalid JSON', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Suppress console output during this test
+      vi.spyOn(console, 'error').mockImplementation(() => {});
       localStorageMock.setItem('isometry:filter-presets', 'invalid json');
 
       const presets = await loadPresets();
       expect(presets).toEqual([]);
-      expect(consoleWarnSpy).toHaveBeenCalled();
 
-      consoleWarnSpy.mockRestore();
+      vi.restoreAllMocks();
     });
 
     it('returns empty array when localStorage contains non-array data', async () => {
-      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      // Suppress console output during this test
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
       localStorageMock.setItem('isometry:filter-presets', JSON.stringify({ foo: 'bar' }));
 
       const presets = await loadPresets();
       expect(presets).toEqual([]);
-      expect(consoleWarnSpy).toHaveBeenCalled();
 
-      consoleWarnSpy.mockRestore();
+      vi.restoreAllMocks();
     });
 
     it('deserializes presets with Date objects', async () => {

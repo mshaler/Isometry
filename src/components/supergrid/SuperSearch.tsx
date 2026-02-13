@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFTS5Search } from '@/hooks/database/useFTS5Search';
+import { isSuperCardId } from '@/d3/SuperGridEngine';
 import { Search, X, ChevronDown } from 'lucide-react';
 import './SuperSearch.css';
 
@@ -67,8 +68,11 @@ export const SuperSearch: React.FC<SuperSearchProps> = ({
   }, [query, onSearch]);
 
   // Notify parent component of highlighted cards
+  // Filter out SuperCards (header/aggregation) from search results
   useEffect(() => {
-    const cardIds = results.map(result => result.id);
+    const cardIds = results
+      .map(result => result.id)
+      .filter(id => !isSuperCardId(id));
     onHighlight(cardIds);
   }, [results, onHighlight]);
 
@@ -104,7 +108,7 @@ export const SuperSearch: React.FC<SuperSearchProps> = ({
     <div className={`super-search ${className}`}>
       <div className="super-search__input-group">
         {/* Search icon */}
-        <div className="super-search__icon">
+        <div className="super-search__icon" title="Full-text search">
           <Search size={16} />
         </div>
 

@@ -213,4 +213,80 @@ describe('SuperSearch', () => {
       expect(mockOnHighlight).toHaveBeenCalledWith([]);
     });
   });
+
+  describe('SuperCard Exclusion', () => {
+    it('should exclude header cards from highlight results', () => {
+      mockUseFTS5Search.mockReturnValue({
+        results: [
+          { id: 'node-1', name: 'Data Card', rank: -1.5 } as any,
+          { id: 'header-q1', name: 'Q1 Header', rank: -1.2 } as any,
+          { id: 'node-2', name: 'Another Card', rank: -1.0 } as any,
+        ],
+        isSearching: false,
+        error: null,
+        hasQuery: true,
+      });
+
+      render(
+        <SuperSearch
+          onSearch={mockOnSearch}
+          onHighlight={mockOnHighlight}
+          initialQuery="test"
+        />
+      );
+
+      // Should exclude header-q1
+      expect(mockOnHighlight).toHaveBeenCalledWith(['node-1', 'node-2']);
+    });
+
+    it('should exclude aggregation cards from highlight results', () => {
+      mockUseFTS5Search.mockReturnValue({
+        results: [
+          { id: 'node-1', name: 'Data Card', rank: -1.5 } as any,
+          { id: 'agg-0', name: 'Column Total', rank: -1.2 } as any,
+          { id: 'agg-total', name: 'Grand Total', rank: -1.0 } as any,
+        ],
+        isSearching: false,
+        error: null,
+        hasQuery: true,
+      });
+
+      render(
+        <SuperSearch
+          onSearch={mockOnSearch}
+          onHighlight={mockOnHighlight}
+          initialQuery="test"
+        />
+      );
+
+      // Should exclude agg-0 and agg-total
+      expect(mockOnHighlight).toHaveBeenCalledWith(['node-1']);
+    });
+
+    it('should exclude all SuperCards but keep data cards', () => {
+      mockUseFTS5Search.mockReturnValue({
+        results: [
+          { id: 'header-status', name: 'Status Header', rank: -2.0 } as any,
+          { id: 'data-1', name: 'Real Data', rank: -1.5 } as any,
+          { id: 'agg-1', name: 'Count 5', rank: -1.2 } as any,
+          { id: 'data-2', name: 'More Data', rank: -1.0 } as any,
+          { id: 'header-time', name: 'Time Header', rank: -0.5 } as any,
+        ],
+        isSearching: false,
+        error: null,
+        hasQuery: true,
+      });
+
+      render(
+        <SuperSearch
+          onSearch={mockOnSearch}
+          onHighlight={mockOnHighlight}
+          initialQuery="test"
+        />
+      );
+
+      // Should only include data-1 and data-2
+      expect(mockOnHighlight).toHaveBeenCalledWith(['data-1', 'data-2']);
+    });
+  });
 });

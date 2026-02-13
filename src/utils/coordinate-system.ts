@@ -1,8 +1,15 @@
 /**
  * Coordinate System Utilities
- * PAFV spatial projection helpers for SuperGrid
+ * Re-export barrel for coordinate-system module
+ *
+ * This file re-exports from the coordinate-system directory.
+ * For backward compatibility, it also exports the simple Point/Bounds types.
  */
 
+// Re-export everything from the directory's index
+export * from './coordinate-system/index';
+
+// Legacy simple types for backward compatibility with existing code
 export interface Point2D {
   x: number;
   y: number;
@@ -19,21 +26,26 @@ export interface Bounds {
   maxY: number;
 }
 
-export interface CoordinateSystem {
+/**
+ * Simple grid coordinate system for basic layout calculations
+ * @deprecated Use createCoordinateSystem from coordinate-system/index instead
+ */
+export interface SimpleCoordinateSystem {
   origin: Point2D;
   scale: Point2D;
   bounds: Bounds;
 }
 
 /**
- * Create a coordinate system for grid-based layouts
+ * Create a simple coordinate system for grid-based layouts
+ * @deprecated Use createCoordinateSystem from coordinate-system/index instead
  */
-export function createCoordinateSystem(
+export function createSimpleCoordinateSystem(
   width: number,
   height: number,
   gridCols: number,
   gridRows: number
-): CoordinateSystem {
+): SimpleCoordinateSystem {
   const cellWidth = width / gridCols;
   const cellHeight = height / gridRows;
 
@@ -55,7 +67,7 @@ export function createCoordinateSystem(
 export function gridToScreen(
   gridX: number,
   gridY: number,
-  coordinateSystem: CoordinateSystem
+  coordinateSystem: SimpleCoordinateSystem
 ): Point2D {
   return {
     x: coordinateSystem.origin.x + (gridX * coordinateSystem.scale.x),
@@ -69,7 +81,7 @@ export function gridToScreen(
 export function screenToGrid(
   screenX: number,
   screenY: number,
-  coordinateSystem: CoordinateSystem
+  coordinateSystem: SimpleCoordinateSystem
 ): Point2D {
   return {
     x: Math.floor((screenX - coordinateSystem.origin.x) / coordinateSystem.scale.x),

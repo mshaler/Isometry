@@ -36,5 +36,8 @@ export {
   useIsInABTest,
   useABTestConversion,
   useABTestManagement,
-  useABTestAnalytics
+  useABTestAnalytics,
+  // Aliases for backward compatibility
+  useABTests,
+  useExperimentVariant
 } from './abtest/hooks';

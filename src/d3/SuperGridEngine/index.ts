@@ -154,9 +154,10 @@ export class SuperGridEngine extends EventEmitter {
 
     this.initializeState();
     this.setupRendererCallbacks();
-    // Set up SortManager and FilterManager in renderer for visual indicators
+    // Set up SortManager, FilterManager, and AuditRenderer in renderer for visual indicators
     this.renderer.setSortManager(this.sortManager);
     this.renderer.setFilterManager(this.filterManager);
+    this.renderer.setAuditRenderer(this.auditRenderer);
   }
 
   // ========================================================================

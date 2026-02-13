@@ -89,4 +89,20 @@ export function isWordFile(file: File): boolean {
          file.type.includes('word');
 }
 
+/**
+ * Import an office file (Excel or Word) and convert to nodes
+ * Convenience function that detects file type and dispatches to correct processor
+ */
+export async function importOfficeFile(
+  file: File,
+  options: OfficeImportOptions = {}
+): Promise<OfficeImportResult> {
+  if (isExcelFile(file)) {
+    return officeProcessor.importExcel(file, options);
+  } else if (isWordFile(file)) {
+    return officeProcessor.importWord(file, options);
+  }
+  throw new Error('Unsupported file type');
+}
+
 export default OfficeDocumentProcessor;

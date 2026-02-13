@@ -91,9 +91,21 @@ export const useABTestAnalytics = () => {
     getTestMetrics,
     getTestAnalysis
   } = useABTest();
-  
+
   return {
     getTestMetrics,
     getTestAnalysis
   };
 };
+
+// Backward compatibility wrapper with getVariant alias
+export const useABTests = () => {
+  const context = useABTest();
+  return {
+    ...context,
+    // Alias for backward compatibility
+    getVariant: context.getVariantForUser,
+    experiments: context.tests
+  };
+};
+export const useExperimentVariant = useABTestVariant;
