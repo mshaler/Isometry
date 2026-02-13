@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 78 of 79 (URL Deep Linking)
-Plan: 01 of 02 COMPLETE
-Status: Phase 78 in progress — Node deep links via ?nodeId= working
-Last activity: 2026-02-13 — Phase 78-01 complete (useNodeDeepLink hook)
+Plan: 02 of 02 COMPLETE
+Status: Phase 78 COMPLETE — Node deep links + Filter URL persistence working
+Last activity: 2026-02-13 — Phase 78-02 complete (filter URL persistence)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
@@ -20,7 +20,7 @@ Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 pl
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
 Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 plans) ✅ PHASE C COMPLETE
 Progress (v5.0 SuperGrid Polish): [##############################] 100% (3/3 plans) ✅ PHASE 76 COMPLETE
-Progress (v4.9 Data Layer): [########                      ] 29% (2/7 plans) — Phase 78-01 COMPLETE
+Progress (v4.9 Data Layer): [############                  ] 43% (3/7 plans) — Phase 78 COMPLETE
 
 ## Upcoming: v4.9 Data Layer Completion
 
@@ -30,15 +30,15 @@ Progress (v4.9 Data Layer): [########                      ] 29% (2/7 plans) —
 | Phase | Name | Plans | Priority | Status |
 |-------|------|-------|----------|--------|
 | 77 | Versioning | 77-01 | P0 | COMPLETE |
-| 78 | URL Deep Linking | 78-01, 78-02 | P1 | In Progress (78-01 COMPLETE) |
+| 78 | URL Deep Linking | 78-01, 78-02 | P1 | COMPLETE |
 | 79 | Catalog Browser | 79-01, 79-02, 79-03 | P2 | Ready |
 
 **Phase 77 (Versioning):**
 - 77-01: Version increment trigger (COMPLETE)
 
-**Phase 78 (URL Deep Linking):**
+**Phase 78 (URL Deep Linking) COMPLETE:**
 - 78-01: Node deep links via ?nodeId= parameter (COMPLETE)
-- 78-02: Filter state serialization to URL
+- 78-02: Filter state serialization to URL (COMPLETE - pre-existing implementation)
 
 **Phase 79 (Catalog Browser):**
 - 79-01: Facet aggregate queries (useFacetAggregates hook)
@@ -57,7 +57,8 @@ Progress (v4.9 Data Layer): [########                      ] 29% (2/7 plans) —
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
-**Recent completions (Phase 78 - URL Deep Linking) — IN PROGRESS:**
+**Recent completions (Phase 78 - URL Deep Linking) — PHASE COMPLETE:**
+- Phase 78-02: COMPLETE (~3m) — Filter URL persistence (pre-existing implementation verified)
 - Phase 78-01: COMPLETE (~6m) — Node deep links via ?nodeId= with useNodeDeepLink hook
 
 **Recent completions (Phase 76 - v5.0 SuperGrid Polish) — PHASE COMPLETE:**
@@ -132,11 +133,14 @@ Progress (v4.9 Data Layer): [########                      ] 29% (2/7 plans) —
 
 ### Decisions
 
-**Phase 78-01 decisions (URL Deep Linking - Node Deep Links):**
+**Phase 78 decisions (URL Deep Linking):**
 - DEEPLINK-DEC-01: Keep URL param for shareability (users can copy/paste URLs)
 - DEEPLINK-DEC-02: ProcessedRef prevents re-triggering (useRef tracks processed nodeId)
 - DEEPLINK-DEC-03: requestAnimationFrame for scroll timing (ensures view rendered before scroll)
 - DEEPLINK-DEC-04: scrollToNode registration pattern (views register scroll function via context)
+- URL-DEC-01: Filter serialization implemented in prior phases (b29351de, 21b815e8)
+- URL-DEC-02: Semicolon-delimited LATCH encoding format for URL-safe human-readable filters
+- URL-DEC-03: Debounced URL updates (300ms) to prevent URL thrashing
 
 **Phase 76-03 decisions (Visual Polish - Data-Driven Nested Headers):**
 - POLISH-DEC-01: Lazy initialization of NestedHeaderRenderer in GridRenderingEngine
@@ -506,7 +510,7 @@ node_properties table (EAV)
 **v4.9 (Data Layer Completion) — IN PROGRESS:**
 - [x] Phase 77-01: Version increment trigger (COMPLETE - ~5 minutes)
 - [x] Phase 78-01: Node deep links (?nodeId=) (COMPLETE - ~6 minutes)
-- [ ] Phase 78-02: Filter state in URL
+- [x] Phase 78-02: Filter state in URL (COMPLETE - ~3 minutes, pre-existing implementation)
 - [ ] Phase 79-01: Facet aggregate queries
 - [ ] Phase 79-02: Catalog browser UI
 - [ ] Phase 79-03: Breadcrumb navigation
@@ -538,6 +542,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 78-01 COMPLETE — Node deep links via ?nodeId= working
-Resume file: .planning/phases/78-url-deep-linking/78-02-PLAN.md
-Next action: Execute Phase 78-02 (Filter state serialization to URL)
+Stopped at: Phase 78 COMPLETE — URL Deep Linking (node + filter)
+Resume file: .planning/phases/79-catalog-browser/79-01-PLAN.md
+Next action: Execute Phase 79-01 (Facet aggregate queries)
