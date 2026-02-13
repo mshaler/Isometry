@@ -379,7 +379,13 @@ Plans:
   1. ETLBridge.swift delegates file parsing to JS via WKWebView
   2. Round-trip Swift -> JS -> sql.js -> Swift works correctly
   3. Native adapters exist for EventKit, Contacts, Notes
-**Plans**: TBD
+**Plans**: 4 plans in 2 waves
+
+Plans:
+- [ ] 71-01-PLAN.md — ETLBridge.swift with callAsyncJavaScript and CanonicalNode model
+- [ ] 71-02-PLAN.md — EventKitAdapter for calendar/reminders import
+- [ ] 71-03-PLAN.md — ContactsAdapter and NotesAdapter for remaining frameworks
+- [ ] 71-04-PLAN.md — BridgeCoordinator and integration tests
 
 ### Phase 72: Quality & Documentation
 **Goal**: Achieve test coverage targets and document architecture
@@ -418,9 +424,9 @@ Plans:
 | 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
 | 69. File Importers | v4.8 | 6/6 | Complete | 2026-02-12 |
 | 70. Integration | v4.8 | 2/2 | Complete | 2026-02-12 |
-| 71. Swift Bridge | v4.8 | 0/TBD | Planned | - |
+| 71. Swift Bridge | v4.8 | 0/4 | Planned | - |
 | 72. Quality & Docs | v4.8 | 0/TBD | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-12 (Phase 70 complete — ETL integration with sql.js and Alto-importer migration)*
+*Last updated: 2026-02-12 (Phase 71 planned — Swift Bridge with 4 plans in 2 waves)*
