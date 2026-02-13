@@ -127,8 +127,11 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
           const value = properties[definition.name];
           const error = errors[definition.name];
 
-          // Only show fields that have values or are required
-          if (!definition.required && (value === null || value === undefined || value === '')) {
+          // Show built-in fields always (for discoverability), hide empty custom fields
+          const isBuiltIn = BUILT_IN_PROPERTY_DEFINITIONS.some(def => def.id === definition.id);
+          const isEmpty = value === null || value === undefined || value === '' ||
+                         (Array.isArray(value) && value.length === 0);
+          if (!isBuiltIn && !definition.required && isEmpty) {
             return null;
           }
 
