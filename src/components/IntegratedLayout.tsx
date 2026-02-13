@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { LatchNavigator } from './navigator/LatchNavigator';
 import { PafvNavigator } from './navigator/PafvNavigator';
 import { LatchGraphSliders, useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
@@ -104,6 +105,24 @@ export function IntegratedLayout() {
 
   // Dataset switcher state - default to 'notes' (the sample data table)
   const [activeDataset, setActiveDataset] = useState<string>('notes');
+
+  // Phase 80-01: Notebook panel expand/collapse state with localStorage persistence
+  const [isNotebookExpanded, setIsNotebookExpanded] = useState(() => {
+    try {
+      return localStorage.getItem('notebook_expanded') === 'true';
+    } catch {
+      return false; // Collapsed by default
+    }
+  });
+
+  // Persist notebook panel state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('notebook_expanded', isNotebookExpanded.toString());
+    } catch (err) {
+      console.warn('Failed to persist notebook expanded state', err);
+    }
+  }, [isNotebookExpanded]);
 
   // Shared state: enabled properties synced between LatchNavigator and PafvNavigator
   // Initialize with ALL properties enabled by default
@@ -482,6 +501,51 @@ export function IntegratedLayout() {
           <span className={`text-[10px] ${mutedColor}`}>
             L{pafvState.densityLevel} | {pafvState.mappings.length} axes
           </span>
+        </div>
+
+        {/* Phase 80-01: Collapsible Notebook Panel */}
+        <div className={`${panelBg} border-b ${borderColor}`}>
+          {/* Collapsed Header - always visible */}
+          <button
+            type="button"
+            onClick={() => setIsNotebookExpanded(prev => !prev)}
+            className={`
+              w-full h-8 px-4 flex items-center justify-between
+              hover:bg-opacity-80 transition-colors
+              ${isNeXTSTEP ? 'hover:bg-[#2D2D2D]' : 'hover:bg-gray-100'}
+            `}
+            aria-expanded={isNotebookExpanded}
+            aria-controls="notebook-panel"
+          >
+            <div className="flex items-center gap-2">
+              <BookOpen className={`w-4 h-4 ${mutedColor}`} />
+              <span className={`text-xs font-medium ${textColor}`}>Notebook</span>
+              <span className={`text-[10px] ${mutedColor}`}>
+                {isNotebookExpanded ? '3 panes' : 'Capture / Shell / Preview'}
+              </span>
+            </div>
+            {isNotebookExpanded ? (
+              <ChevronUp className={`w-4 h-4 ${mutedColor}`} />
+            ) : (
+              <ChevronDown className={`w-4 h-4 ${mutedColor}`} />
+            )}
+          </button>
+
+          {/* Expandable Content Area - placeholder for Plan 02 */}
+          <div
+            id="notebook-panel"
+            style={{
+              maxHeight: isNotebookExpanded ? '24rem' : '0',
+              transition: 'max-height 300ms ease-in-out',
+            }}
+            className="overflow-hidden"
+          >
+            <div className={`h-96 ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'} flex items-center justify-center`}>
+              <p className={`text-sm ${mutedColor}`}>
+                NotebookLayout will be embedded here (Plan 80-02)
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Dataset Switcher */}
