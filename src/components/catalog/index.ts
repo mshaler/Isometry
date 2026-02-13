@@ -7,6 +7,7 @@
  */
 
 export { CatalogBrowser } from './CatalogBrowser';
+export { FilterBreadcrumb } from './FilterBreadcrumb';
 export { FolderTree } from './FolderTree';
 export { TagCloud } from './TagCloud';
 export { StatusChips } from './StatusChips';
