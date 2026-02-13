@@ -495,7 +495,7 @@ public final class ProductionAnalytics: ObservableObject {
             await trackEvent(.sessionStart)
         }
 
-        logger.debug("Analytics session started: \(currentSessionId)")
+        logger.debug("Analytics session started: \(self.currentSessionId)")
     }
 
     public func endSession() {
@@ -523,7 +523,7 @@ public final class ProductionAnalytics: ObservableObject {
         }
 
         isSessionActive = false
-        logger.debug("Analytics session ended: duration=\(abs(sessionDuration))s, actions=\(sessionActionsCount)")
+        logger.debug("Analytics session ended: duration=\(abs(sessionDuration))s, actions=\(self.sessionActionsCount)")
     }
 
     // MARK: - Funnel Analysis
@@ -670,7 +670,7 @@ public final class ProductionAnalytics: ObservableObject {
             return stats.lastUsed > cutoffDate ? stats : nil
         }
 
-        logger.debug("Expired analytics data cleared (retention: \(privacySettings.dataRetentionDays) days)")
+        logger.debug("Expired analytics data cleared (retention: \(self.privacySettings.dataRetentionDays) days)")
     }
 
     // MARK: - Private Methods
@@ -848,16 +848,20 @@ extension ProductionAnalytics: PrivacyCompliantAnalytics {
         await disableAllAnalytics()
     }
 
-    nonisolated public func exportUserData() -> Data? {
-        return exportAnalyticsData()
+    nonisolated public func exportUserData() async -> Data? {
+        return await MainActor.run {
+            return exportAnalyticsData()
+        }
     }
 
     nonisolated public func deleteUserData() async {
         await clearAllData()
     }
 
-    nonisolated public func getDataRetentionPeriod() -> Int {
-        return privacySettings.dataRetentionDays
+    nonisolated public func getDataRetentionPeriod() async -> Int {
+        return await MainActor.run {
+            return privacySettings.dataRetentionDays
+        }
     }
 }
 

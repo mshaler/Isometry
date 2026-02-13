@@ -698,8 +698,10 @@ public class BridgeOptimizationMonitor: ObservableObject {
 
 // MARK: - Logger Extension
 
-extension Logger {
-    var osLog: OSLog {
-        return OSLog(subsystem: self.subsystem, category: self.category)
+// Note: Logger.subsystem and .category are not public API in swift-log
+// Use the shared OSLog subsystem instead when OSLog access is needed
+extension BridgeOptimizationMonitor {
+    static var osLog: OSLog {
+        return OSLog(subsystem: "com.isometry.bridge", category: "Performance")
     }
 }

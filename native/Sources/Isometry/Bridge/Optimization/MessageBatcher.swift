@@ -274,7 +274,7 @@ public final class MessageBatcher: ObservableObject {
         messageQueue.removeAll()
         isBackpressured = false
 
-        logger.debug("MessageBatcher cleared: \(messageQueue.count) messages cancelled")
+        logger.debug("MessageBatcher cleared: \(self.messageQueue.count) messages cancelled")
     }
 
     /// Graceful shutdown - flush remaining messages then clear
@@ -326,7 +326,7 @@ public final class MessageBatcher: ObservableObject {
         droppedMessages += dropCount
         isBackpressured = true
 
-        logger.warning("Queue overflow: dropped \(dropCount) messages. Queue size: \(messageQueue.count)")
+        logger.warning("Queue overflow: dropped \(dropCount) messages. Queue size: \(self.messageQueue.count)")
     }
 }
 

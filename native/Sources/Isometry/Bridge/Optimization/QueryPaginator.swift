@@ -354,7 +354,9 @@ public actor QueryPaginator {
                 sql += " WHERE \(cursorCondition)"
             }
 
-            parameters.append(DatabaseValue(cursor.value))
+            if let dbValue = DatabaseValue(value: cursor.value) {
+                parameters.append(dbValue)
+            }
         }
 
         // Add ordering (ensure consistent ordering for stable pagination)
