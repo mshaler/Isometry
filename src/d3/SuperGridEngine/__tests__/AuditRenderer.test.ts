@@ -324,4 +324,79 @@ describe('AuditRenderer', () => {
       expect(renderer.getRecentChangeType('cell-2')).toBe('update');
     });
   });
+
+  describe('getFlashColor', () => {
+    it('should return undefined for cells without recent changes', () => {
+      expect(renderer.getFlashColor('cell-1')).toBeUndefined();
+    });
+
+    it('should return green for create operations', () => {
+      renderer.trackChange('cell-1', 'create');
+      expect(renderer.getFlashColor('cell-1')).toBe(CRUD_FLASH_COLORS.create);
+    });
+
+    it('should return blue for update operations', () => {
+      renderer.trackChange('cell-1', 'update');
+      expect(renderer.getFlashColor('cell-1')).toBe(CRUD_FLASH_COLORS.update);
+    });
+
+    it('should return red for delete operations', () => {
+      renderer.trackChange('cell-1', 'delete');
+      expect(renderer.getFlashColor('cell-1')).toBe(CRUD_FLASH_COLORS.delete);
+    });
+  });
+
+  describe('getOverlayColor', () => {
+    it('should return transparent for cells without audit info', () => {
+      expect(renderer.getOverlayColor('cell-1')).toBe('transparent');
+    });
+
+    it('should return blue tint for computed cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'computed' });
+      expect(renderer.getOverlayColor('cell-1')).toBe(AUDIT_TINT_COLORS.computed);
+    });
+
+    it('should return green tint for enriched cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'enriched' });
+      expect(renderer.getOverlayColor('cell-1')).toBe(AUDIT_TINT_COLORS.enriched);
+    });
+
+    it('should return purple tint for formula cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'formula' });
+      expect(renderer.getOverlayColor('cell-1')).toBe(AUDIT_TINT_COLORS.formula);
+    });
+  });
+
+  describe('getCellIndicatorColor', () => {
+    it('should return transparent for cells without audit info', () => {
+      expect(renderer.getCellIndicatorColor('cell-1')).toBe('transparent');
+    });
+
+    it('should return solid blue for computed cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'computed' });
+      expect(renderer.getCellIndicatorColor('cell-1')).toBe('#3B82F6');
+    });
+
+    it('should return solid green for enriched cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'enriched' });
+      expect(renderer.getCellIndicatorColor('cell-1')).toBe('#10B981');
+    });
+
+    it('should return solid purple for formula cells', () => {
+      renderer.setAuditInfo('cell-1', { source: 'formula' });
+      expect(renderer.getCellIndicatorColor('cell-1')).toBe('#8B5CF6');
+    });
+  });
+
+  describe('destroy', () => {
+    it('should clear all state and cancel timeouts', () => {
+      renderer.setAuditInfo('cell-1', { source: 'computed' });
+      renderer.trackChange('cell-1', 'update');
+
+      renderer.destroy();
+
+      expect(renderer.getAuditInfo('cell-1')).toBeUndefined();
+      expect(renderer.hasRecentChange('cell-1')).toBe(false);
+    });
+  });
 });
