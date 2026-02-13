@@ -25,6 +25,7 @@ import {
 } from './ClickZoneManager';
 import { DragManager, type DragManagerConfig } from './DragManager';
 import { ResizeManager, type ResizeManagerConfig } from './ResizeManager';
+import { SelectManager, type SelectManagerConfig } from './SelectManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -148,8 +149,14 @@ export class SuperGridRenderer {
   private resizeMouseMoveHandler: ((event: MouseEvent) => void) | null = null;
   private resizeMouseUpHandler: (() => void) | null = null;
 
+  // SelectManager for multi-selection (SuperSelect)
+  private selectManager: SelectManager | null = null;
+  private onSelectionChange?: (selectedIds: Set<string>) => void;
+  private isSelected: (id: string) => boolean = () => false;
+
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
+  private onCellClickWithEvent?: (cell: CellDescriptor, nodes: Node[], event: MouseEvent) => void;
   private onHeaderClick?: (header: HeaderDescriptor) => void;
   private onHeaderExpandCollapse?: (header: HeaderDescriptor) => void;
   private onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
@@ -552,6 +559,7 @@ export class SuperGridRenderer {
    */
   setCallbacks(callbacks: {
     onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
+    onCellClickWithEvent?: (cell: CellDescriptor, nodes: Node[], event: MouseEvent) => void;
     onHeaderClick?: (header: HeaderDescriptor) => void;
     onHeaderExpandCollapse?: (header: HeaderDescriptor) => void;
     onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
@@ -559,8 +567,11 @@ export class SuperGridRenderer {
     onAxisSwap?: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
     onResize?: (headerId: string, newWidth: number) => void;
     onResizeEnd?: (headerId: string, finalWidth: number) => void;
+    onSelectionChange?: (selectedIds: Set<string>) => void;
+    isSelected?: (id: string) => boolean;
   }): void {
     this.onCellClick = callbacks.onCellClick;
+    this.onCellClickWithEvent = callbacks.onCellClickWithEvent;
     this.onHeaderClick = callbacks.onHeaderClick;
     this.onHeaderExpandCollapse = callbacks.onHeaderExpandCollapse;
     this.onHeaderSelectChildren = callbacks.onHeaderSelectChildren;
@@ -568,6 +579,8 @@ export class SuperGridRenderer {
     this.onAxisSwap = callbacks.onAxisSwap;
     this.onResize = callbacks.onResize;
     this.onResizeEnd = callbacks.onResizeEnd;
+    this.onSelectionChange = callbacks.onSelectionChange;
+    this.isSelected = callbacks.isSelected ?? (() => false);
   }
 
   /**
@@ -631,6 +644,39 @@ export class SuperGridRenderer {
 
     // Set up resize event handlers on SVG
     this.setupResizeEventHandlers();
+  }
+
+  /**
+   * Set up SelectManager for SuperSelect multi-selection.
+   * Call after SVG is set up.
+   */
+  setupSelectManager(): void {
+    if (!this.svg) return;
+
+    const config: SelectManagerConfig = {
+      onSelectionChange: (selectedIds) => {
+        if (this.onSelectionChange) {
+          this.onSelectionChange(selectedIds);
+        }
+      },
+      onLassoStart: () => {
+        // Optional: visual feedback when lasso starts
+      },
+      onLassoEnd: (selectedIds) => {
+        if (this.onSelectionChange) {
+          this.onSelectionChange(new Set(selectedIds));
+        }
+      },
+    };
+
+    this.selectManager = new SelectManager(this.svg, config);
+  }
+
+  /**
+   * Get the SelectManager instance for external access.
+   */
+  getSelectManager(): SelectManager | null {
+    return this.selectManager;
   }
 
   /**
@@ -899,10 +945,16 @@ export class SuperGridRenderer {
   }
 
   /**
-   * Render grid cells with data
+   * Render grid cells with data and selection checkboxes
+   *
+   * SuperSelect: Each cell includes a checkbox for selection.
+   * Click handling respects modifier keys:
+   * - Plain click: select single (replaces selection)
+   * - Cmd/Ctrl+click: toggle selection (add/remove)
+   * - Shift+click: range select from anchor to target
    */
   private renderCells(
-    _d3: typeof import('d3'),
+    d3: typeof import('d3'),
     currentCells: CellDescriptor[],
     gridDimensions: GridDimensions,
     allNodes: Node[]
@@ -910,6 +962,7 @@ export class SuperGridRenderer {
     if (!this.svg) return;
 
     const cellsGroup = this.svg.select('.cells');
+    const isSelected = this.isSelected;
 
     const cells = cellsGroup
       .selectAll<SVGGElement, CellDescriptor>('.cell')
@@ -919,37 +972,80 @@ export class SuperGridRenderer {
       .append('g')
       .attr('class', 'cell');
 
+    // Cell background rect
     cellEnter.append('rect')
+      .attr('class', 'cell-bg')
       .attr('fill', '#ffffff')
       .attr('stroke', '#ddd')
       .attr('stroke-width', 1);
 
+    // Cell text
     cellEnter.append('text')
+      .attr('class', 'cell-text')
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'middle')
       .style('font-size', '10px');
 
-    // Set up click handlers
+    // Selection checkbox group
+    const checkboxGroup = cellEnter.append('g')
+      .attr('class', 'cell-checkbox')
+      .attr('transform', 'translate(4, 4)');
+
+    // Checkbox background
+    checkboxGroup.append('rect')
+      .attr('class', 'checkbox-bg')
+      .attr('width', 14)
+      .attr('height', 14)
+      .attr('rx', 2)
+      .attr('stroke', '#999')
+      .attr('stroke-width', 1);
+
+    // Checkbox checkmark (hidden by default)
+    checkboxGroup.append('path')
+      .attr('class', 'checkbox-mark')
+      .attr('d', 'M3,7 L6,10 L11,4')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2)
+      .attr('fill', 'none');
+
+    // Set up click handlers with modifier key detection
     cellEnter
       .style('cursor', 'pointer')
-      .on('click', (_event, d) => {
-        if (this.onCellClick) {
+      .on('click', (event: MouseEvent, d: CellDescriptor) => {
+        // Call enhanced handler with event for modifier key detection
+        if (this.onCellClickWithEvent) {
+          const nodes = allNodes.filter(n => d.nodeIds.includes(n.id));
+          this.onCellClickWithEvent(d, nodes, event);
+        } else if (this.onCellClick) {
+          // Fallback to basic handler
           const nodes = allNodes.filter(n => d.nodeIds.includes(n.id));
           this.onCellClick(d, nodes);
         }
       });
 
-    cells.merge(cellEnter)
-      .attr('transform', d => `translate(${d.gridX * gridDimensions.cellWidth + gridDimensions.headerWidth}, ${d.gridY * gridDimensions.cellHeight + gridDimensions.headerHeight})`)
-      .select('rect')
+    // Update all cells (enter + update)
+    const cellsAll = cells.merge(cellEnter);
+
+    cellsAll
+      .attr('transform', d => `translate(${d.gridX * gridDimensions.cellWidth + gridDimensions.headerWidth}, ${d.gridY * gridDimensions.cellHeight + gridDimensions.headerHeight})`);
+
+    // Update background
+    cellsAll.select('.cell-bg')
       .attr('width', gridDimensions.cellWidth - 2)
       .attr('height', gridDimensions.cellHeight - 2);
 
-    cells.merge(cellEnter)
-      .select('text')
+    // Update text
+    cellsAll.select('.cell-text')
       .attr('x', gridDimensions.cellWidth / 2)
       .attr('y', gridDimensions.cellHeight / 2)
       .text(d => `${d.nodeCount} items`);
+
+    // Update checkbox state
+    cellsAll.select('.checkbox-bg')
+      .attr('fill', d => isSelected(d.id) ? '#4a90d9' : '#fff');
+
+    cellsAll.select('.checkbox-mark')
+      .style('opacity', d => isSelected(d.id) ? 1 : 0);
 
     cells.exit().remove();
   }
@@ -1017,6 +1113,7 @@ export class SuperGridRenderer {
     // Clean up managers
     this.dragManager = null;
     this.resizeManager = null;
+    this.selectManager = null;
 
     if (this.svg) {
       this.svg.remove();
