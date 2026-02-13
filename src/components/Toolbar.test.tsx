@@ -127,7 +127,7 @@ describe('Toolbar', () => {
 
   describe('command button behavior', () => {
     it('triggers action when command button is clicked', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       renderWithProviders(<Toolbar />);
 
       const newButton = screen.getByTitle('New');
@@ -138,7 +138,7 @@ describe('Toolbar', () => {
     });
 
     it('triggers action when app launcher button is clicked', () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       renderWithProviders(<Toolbar />);
 
       const gridButton = screen.getByTitle('Grid View');

@@ -125,7 +125,9 @@ describe('Error Handling System', () => {
 
       // Now details should be visible
       expect(screen.getByText('Technical Details:')).toBeInTheDocument();
-      expect(screen.getByText('Test error message')).toBeInTheDocument();
+      // Error message appears in multiple places (summary + details), use getAllByText
+      const errorMessages = screen.getAllByText('Test error message');
+      expect(errorMessages.length).toBeGreaterThan(0);
     });
   });
 
@@ -255,7 +257,9 @@ describe('Error Handling System', () => {
       );
 
       // Error boundary should catch error and display appropriate UI
-      expect(screen.getByText(/An error occurred/)).toBeInTheDocument();
+      // Use getAllByText since both ErrorBoundary and NotificationSystem may show error text
+      const errorTexts = screen.getAllByText(/An error occurred/i);
+      expect(errorTexts.length).toBeGreaterThan(0);
 
       // onError callback should be called
       expect(onErrorSpy).toHaveBeenCalled();
