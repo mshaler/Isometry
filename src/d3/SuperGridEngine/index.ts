@@ -583,14 +583,96 @@ export class SuperGridEngine extends EventEmitter {
       onCellClick: (cell, nodes) => {
         this.emit('cellClick', { cell, nodes });
       },
+      onCellClickWithEvent: (cell, nodes, event) => {
+        // Handle selection with modifier keys (SuperSelect)
+        this.handleCellClickWithModifiers(cell, event);
+        this.emit('cellClick', { cell, nodes });
+      },
       onHeaderClick: (header) => {
         this.selectHeaderChildren(header);
         this.emit('headerClick', { header });
       },
       onRenderComplete: (renderTime, cellCount) => {
         this.emit('renderComplete', { renderTime, cellCount });
+      },
+      onSelectionChange: (selectedIds) => {
+        // Update internal selection state from SelectManager
+        this.selectionState.selectedCells = selectedIds;
+        this.updateSelection();
+        this.emit('selectionChange', { selection: this.getSelection() });
+      },
+      isSelected: (id) => {
+        return this.selectionState.selectedCells.has(id);
       }
     });
+  }
+
+  /**
+   * Handle cell click with modifier key detection.
+   *
+   * SuperSelect behavior:
+   * - Plain click: select single cell (replaces selection)
+   * - Cmd/Ctrl+click: toggle cell in selection
+   * - Shift+click: range select from anchor to clicked cell
+   */
+  private handleCellClickWithModifiers(cell: CellDescriptor, event: MouseEvent): void {
+    const cmdKey = event.metaKey || event.ctrlKey;
+
+    if (event.shiftKey && this.selectionState.anchorId) {
+      // Shift+click: range selection
+      this.selectRangeFromAnchor(cell.id);
+    } else if (cmdKey) {
+      // Cmd/Ctrl+click: toggle selection
+      this.toggleCellSelection(cell.id);
+    } else {
+      // Plain click: single selection
+      this.selectSingleCell(cell.id);
+    }
+  }
+
+  /**
+   * Select a single cell, replacing any existing selection.
+   */
+  private selectSingleCell(cellId: string): void {
+    this.selectionState.selectedCells.clear();
+    this.selectionState.selectedCells.add(cellId);
+    this.selectionState.anchorId = cellId;
+    this.updateSelection();
+    this.emit('selectionChange', { selection: this.getSelection() });
+  }
+
+  /**
+   * Toggle a cell in the selection (Cmd/Ctrl+click).
+   */
+  private toggleCellSelection(cellId: string): void {
+    if (this.selectionState.selectedCells.has(cellId)) {
+      this.selectionState.selectedCells.delete(cellId);
+    } else {
+      this.selectionState.selectedCells.add(cellId);
+    }
+    this.selectionState.anchorId = cellId;
+    this.updateSelection();
+    this.emit('selectionChange', { selection: this.getSelection() });
+  }
+
+  /**
+   * Select range from anchor to target cell (Shift+click).
+   */
+  private selectRangeFromAnchor(targetId: string): void {
+    if (!this.selectionState.anchorId) return;
+
+    const anchorCell = this.currentCells.find(c => c.id === this.selectionState.anchorId);
+    const targetCell = this.currentCells.find(c => c.id === targetId);
+
+    if (!anchorCell || !targetCell) return;
+
+    // Calculate range using SelectManager's algorithm
+    const rangeIds = calculateRangeSelection(anchorCell, targetCell, this.currentCells);
+
+    this.selectionState.selectedCells.clear();
+    rangeIds.forEach(id => this.selectionState.selectedCells.add(id));
+    this.updateSelection();
+    this.emit('selectionChange', { selection: this.getSelection() });
   }
 
   private generateHeaderTree(): void {

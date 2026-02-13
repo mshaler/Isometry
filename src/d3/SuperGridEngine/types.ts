@@ -98,6 +98,8 @@ export interface SelectionState {
   selectedHeaders: Set<string>;
   focusedCell?: CellDescriptor;
   selectionMode: 'single' | 'multiple' | 'range';
+  /** Anchor cell for Shift+click range selection */
+  anchorId?: string | null;
 }
 
 export interface ViewportState {
@@ -164,6 +166,60 @@ export interface SuperGridEventData {
   renderComplete: { renderTime: number; cellCount: number };
   dataChange: { nodeCount: number; edgeCount: number };
   error: { error: Error; context: string };
+}
+
+// Position Tracking Types (SuperPosition - Plan 74-04)
+// Enables Janus polymorphic view transitions by tracking logical coordinates
+
+/**
+ * Represents a logical position on a single PAFV axis.
+ * Decouples card positions from pixel coordinates.
+ */
+export interface PAFVCoordinate {
+  /** The LATCH axis this coordinate belongs to (null if unmapped) */
+  axis: LATCHAxis | null;
+  /** Optional facet within the axis (e.g., 'due_date' within Time) */
+  facet?: string;
+  /** The actual value on this axis (e.g., "Work", "Q1", "High") */
+  value: string | number | null;
+}
+
+/**
+ * Represents a card's complete position in PAFV coordinate space.
+ * These coordinates survive view transitions and enable smooth re-mapping.
+ */
+export interface CardPosition {
+  /** Node ID this position belongs to */
+  nodeId: string;
+  /** X-axis logical coordinate */
+  x: PAFVCoordinate;
+  /** Y-axis logical coordinate */
+  y: PAFVCoordinate;
+  /** Z-axis logical coordinate (depth/layer) */
+  z: PAFVCoordinate;
+  /** Custom sort index within the card's group (for manual reordering) */
+  customSortIndex?: number;
+  /** ISO timestamp of last position update */
+  lastUpdated: string;
+}
+
+/**
+ * Represents the complete position state for all cards.
+ * Serializable for SQLite persistence (Tier 2 state).
+ */
+export interface PositionState {
+  /** Map of nodeId → CardPosition */
+  positions: Map<string, CardPosition>;
+  /** Custom sort orders by group key (groupKey → ordered nodeIds) */
+  customSortOrders: Map<string, string[]>;
+}
+
+/**
+ * Serialized form of PositionState for SQLite storage.
+ */
+export interface SerializedPositionState {
+  positions: Array<{ nodeId: string; position: CardPosition }>;
+  customSortOrders: Array<{ groupKey: string; nodeIds: string[] }>;
 }
 
 // Configuration Types
