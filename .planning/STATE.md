@@ -10,14 +10,14 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 74 of 76 (SuperGrid Phase B)
-Plan: 03 of 04 READY
-Status: Phase 74 IN PROGRESS — SuperSize complete, SuperSelect next
-Last activity: 2026-02-13 — Completed 74-02 (SuperSize - column/row resize with drag handles)
+Plan: 04 of 04 COMPLETE
+Status: PHASE 74 COMPLETE — SuperPosition coordinate tracking complete
+Last activity: 2026-02-13 — Completed 74-04 (SuperPosition - PAFV coordinate tracking)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [###################...........] 66% (4/6 phases) — deferred for SuperGrid
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
-Progress (v5.0 SuperGrid Phase B): [################..............] 50% (2/4 plans)
+Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
 
 ## Performance Metrics
 
@@ -31,7 +31,9 @@ Progress (v5.0 SuperGrid Phase B): [################..............] 50% (2/4 pla
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
-**Recent completions (Phase 74 - v5.0 SuperGrid Phase B):**
+**Recent completions (Phase 74 - v5.0 SuperGrid Phase B) — PHASE COMPLETE:**
+- Phase 74-04: COMPLETE (~5m) — SuperPosition PAFV coordinate tracking for view transitions
+- Phase 74-03: COMPLETE (~5m) — SuperSelect multi-selection with lasso and range
 - Phase 74-02: COMPLETE (~15m) — SuperSize column/row resize with drag handles and auto-fit
 - Phase 74-01: COMPLETE (~8m) — SuperDynamic axis repositioning with D3 drag-and-drop
 
@@ -85,6 +87,18 @@ Progress (v5.0 SuperGrid Phase B): [################..............] 50% (2/4 pla
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 74-04 decisions (SuperPosition - Coordinate Tracking):**
+- POS-DEC-01: Position reuse preserves lastUpdated timestamp (existing positions not recomputed)
+- POS-DEC-02: Filter removal does not clear positions (enables filter restoration)
+- POS-DEC-03: Custom sort orders stored by groupKey (e.g., "Work-Q1")
+- POS-DEC-04: SerializedPositionState uses arrays for JSON compatibility
+
+**Phase 74-03 decisions (SuperSelect - Multi-Selection):**
+- SEL-DEC-01: Lasso uses min 5px movement threshold to distinguish from click
+- SEL-DEC-02: Range selection includes both start and end cells
+- SEL-DEC-03: Toggle mode uses Cmd/Ctrl modifier key
+- SEL-DEC-04: calculateRangeSelection exported for testing without DOM
 
 **Phase 74-02 decisions (SuperSize - Column/Row Resize):**
 - SIZE-DEC-01: Minimum 40px enforced in constrainSize() for usability
@@ -390,11 +404,13 @@ node_properties table (EAV)
 - [x] Phase 73-03: SuperZoom Upper-Left Anchor (COMPLETE - ~4 minutes)
 - [x] Phase 73-04: Header Click Zones (COMPLETE - ~5 minutes)
 
-**v5.0 (SuperGrid MVP) — PHASE B IN PROGRESS:**
+**v5.0 (SuperGrid MVP) — PHASE B COMPLETE:**
 - [x] Phase 74-01: SuperDynamic Axis Repositioning (COMPLETE - ~8 minutes)
 - [x] Phase 74-02: SuperSize Column/Row Resizing (COMPLETE - ~15 minutes)
-- [ ] Phase 74-03: SuperSelect Multi-Selection
-- [ ] Phase 74-04: SuperPosition Cell Navigation
+- [x] Phase 74-03: SuperSelect Multi-Selection (COMPLETE - ~5 minutes)
+- [x] Phase 74-04: SuperPosition Coordinate Tracking (COMPLETE - ~5 minutes)
+
+**v5.0 (SuperGrid MVP) — PHASE C READY:**
 - [ ] Phase 75: SuperGrid Phase C (TBD)
 - [ ] Phase 76: SuperGrid Polish (TBD)
 
@@ -405,7 +421,10 @@ node_properties table (EAV)
 
 ### Blockers/Concerns
 
-None — Phase 73 (SuperGrid Phase A) complete. Ready for Phase 74 (SuperGrid Phase B).
+None — Phase 74 (SuperGrid Phase B) complete. Ready for Phase 75 (SuperGrid Phase C).
+
+**v5.0 Phase B Achievement:**
+SuperGrid Phase B delivers interaction capabilities: SuperDynamic axis repositioning with D3 drag-and-drop, SuperSize column/row resize with bulk and auto-fit, SuperSelect multi-selection with lasso and range modes, and SuperPosition PAFV coordinate tracking for view transitions. All four plans complete with comprehensive tests.
 
 **v5.0 Phase A Achievement:**
 SuperGrid Phase A delivers the core SuperStack, SuperDensity, SuperZoom, and Header Click Zones features. Multi-level headers with visual spanning, Janus density model controls, pinned zoom with boundary constraints, and zone-based hit testing with hover highlighting are all operational.
@@ -416,6 +435,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 74-02 COMPLETE — SuperSize column/row resize with drag handles and auto-fit
-Resume file: .planning/phases/74-supergrid-phase-b/74-03-PLAN.md
-Next action: Execute Phase 74-03 (SuperSelect - multi-selection)
+Stopped at: Phase 74 COMPLETE — SuperGrid Phase B complete (all 4 plans)
+Resume file: .planning/phases/75-supergrid-phase-c/ (TBD)
+Next action: Plan Phase 75 (SuperGrid Phase C)

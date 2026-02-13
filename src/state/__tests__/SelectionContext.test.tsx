@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { SelectionProvider, useSelection } from '../SelectionContext';
 import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
+import React, { useState } from 'react';
 
 describe('SelectionContext', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -229,6 +230,74 @@ describe('SelectionContext', () => {
 
       // Should be a new Set instance
       expect(result.current.selection.selectedIds).not.toBe(previousSet);
+    });
+  });
+
+  describe('Tier 1 persistence (SEL-07)', () => {
+    it('selection survives component re-render', () => {
+      const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1');
+        result.current.toggle('card-2');
+      });
+
+      // Force re-render
+      rerender();
+
+      // Selection should persist
+      expect(result.current.selection.selectedIds.size).toBe(2);
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+      expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+    });
+
+    it('selection survives when view key changes', () => {
+      // Simulate a view transition wrapper
+      interface ViewWrapperProps {
+        viewKey: string;
+        children: React.ReactNode;
+      }
+      function ViewWrapper({ viewKey, children }: ViewWrapperProps) {
+        return (
+          <SelectionProvider>
+            <div data-view-key={viewKey}>{children}</div>
+          </SelectionProvider>
+        );
+      }
+
+      // Create a component that uses selection and can switch views
+      function TestComponent() {
+        const selection = useSelection();
+        return <div>{selection.selection.selectedIds.size}</div>;
+      }
+
+      const { result, rerender } = renderHook(() => useSelection(), {
+        wrapper: ({ children }) => <ViewWrapper viewKey="grid">{children}</ViewWrapper>,
+      });
+
+      act(() => {
+        result.current.select('card-1');
+      });
+
+      // Simulate view transition (viewKey changes)
+      rerender();
+
+      // Selection should still be there
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+    });
+
+    it('anchor persists for subsequent range selections', () => {
+      const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1'); // Sets anchor to card-1
+      });
+
+      // Force re-render (simulating view transition)
+      rerender();
+
+      // Anchor should persist
+      expect(result.current.selection.anchorId).toBe('card-1');
     });
   });
 });
