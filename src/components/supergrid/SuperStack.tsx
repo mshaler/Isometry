@@ -208,15 +208,26 @@ function extractLocationValue(node: Node, facet: string): string {
 }
 
 function extractAlphabetValue(node: Node, facet: string): string {
+  const name = node.name || '';
   switch (facet) {
-    case 'name': return node.name.charAt(0).toUpperCase();
+    case 'name': return name.charAt(0).toUpperCase() || 'A';
     case 'summary': return (node.summary || '').charAt(0).toUpperCase() || 'A';
-    default: return node.name.charAt(0).toUpperCase();
+    default: return name.charAt(0).toUpperCase() || 'A';
   }
 }
 
 function extractTimeValue(node: Node, facet: string): string {
-  const date = new Date(node.createdAt);
+  // Handle missing or invalid date values
+  const record = node as unknown as Record<string, unknown>;
+  const dateStr = record[facet] || record.created_at || node.createdAt || record.modified_at || node.modifiedAt;
+
+  if (!dateStr) return 'Unknown';
+
+  const date = new Date(dateStr as string);
+
+  // Check for invalid date
+  if (isNaN(date.getTime())) return 'Unknown';
+
   switch (facet) {
     case 'year': return date.getFullYear().toString();
     case 'month': return date.toLocaleDateString('en-US', { month: 'long' });
