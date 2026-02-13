@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { contextLogger } from '../utils/logging/dev-logger';
 import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
 import { useAltoIndexImport } from '@/hooks/useAltoIndexImport';
+import { NotebookLayout } from './notebook/NotebookLayout';
 
 /**
  * Alto-index dataset definitions for the dataset switcher
@@ -540,10 +541,8 @@ export function IntegratedLayout() {
             }}
             className="overflow-hidden"
           >
-            <div className={`h-96 ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'} flex items-center justify-center`}>
-              <p className={`text-sm ${mutedColor}`}>
-                NotebookLayout will be embedded here (Plan 80-02)
-              </p>
+            <div className={`h-96 ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
+              <NotebookLayout />
             </div>
           </div>
         </div>
