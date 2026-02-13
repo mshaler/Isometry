@@ -17,6 +17,8 @@ import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
 export interface SelectionState {
   selectedIds: Set<string>;
   anchorId: string | null;
+  /** Most recently clicked/selected card id (for cross-canvas sync) */
+  lastSelectedId: string | null;
 }
 
 /** Scroll-to-node function type for view registration */
@@ -54,6 +56,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
   const [selection, setSelection] = useState<SelectionState>({
     selectedIds: new Set(),
     anchorId: null,
+    lastSelectedId: null,
   });
 
   // Store cells for range selection (ref to avoid re-renders)
@@ -81,6 +84,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     setSelection({
       selectedIds: new Set([id]),
       anchorId: id,
+      lastSelectedId: id,
     });
   }, []);
 
@@ -88,7 +92,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     setSelection((prev) => {
       const newIds = new Set(prev.selectedIds);
       newIds.delete(id);
-      return { ...prev, selectedIds: newIds };
+      return { ...prev, selectedIds: newIds, lastSelectedId: id };
     });
   }, []);
 
@@ -100,7 +104,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
       } else {
         newIds.add(id);
       }
-      return { selectedIds: newIds, anchorId: id };
+      return { selectedIds: newIds, anchorId: id, lastSelectedId: id };
     });
   }, []);
 
@@ -122,6 +126,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
       return {
         selectedIds: new Set(rangeIds),
         anchorId: prev.anchorId, // Keep anchor for subsequent range selects
+        lastSelectedId: toId,
       };
     });
   }, []);
@@ -130,6 +135,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     setSelection({
       selectedIds: new Set(ids),
       anchorId: null, // Clear anchor on multi-select
+      lastSelectedId: ids.length > 0 ? ids[ids.length - 1] : null,
     });
   }, []);
 
@@ -137,6 +143,7 @@ export function SelectionProvider({ children }: { children: React.ReactNode }) {
     setSelection({
       selectedIds: new Set(),
       anchorId: null,
+      lastSelectedId: null,
     });
   }, []);
 

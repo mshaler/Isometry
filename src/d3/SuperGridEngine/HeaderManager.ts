@@ -131,12 +131,15 @@ export function calculateHeaderDimensions(
     const descriptor: HeaderDescriptor = {
       id: `${orientation}_${node.level}_${node.value}_${node.startIndex}`,
       level: node.level,
+      depth: node.level, // Same as level for now
       value: node.value,
       axis: 'Category' as LATCHAxis, // Default, can be overridden
       span: node.span,
       position,
       childCount: node.children.length,
       isLeaf: node.children.length === 0,
+      startIndex: node.startIndex,
+      endIndex: node.endIndex,
     };
 
     result.push(descriptor);
@@ -244,9 +247,10 @@ export class SuperGridHeaderManager {
       );
     } else {
       // Single-level column headers (original behavior)
-      columns = sortedXEntries.map(([gridX, xValue]) => ({
+      columns = sortedXEntries.map(([gridX, xValue], index) => ({
         id: `col_${gridX}_${xValue}`,
         level: 0,
+        depth: 0,
         value: xValue || 'Unassigned',
         axis: 'Category' as LATCHAxis,
         span: 1,
@@ -257,7 +261,9 @@ export class SuperGridHeaderManager {
           height: gridDimensions.headerHeight
         },
         childCount: currentCells.filter(c => c.gridX === gridX).reduce((sum, c) => sum + c.nodeCount, 0),
-        isLeaf: true
+        isLeaf: true,
+        startIndex: index,
+        endIndex: index
       }));
     }
 
@@ -272,9 +278,10 @@ export class SuperGridHeaderManager {
       );
     } else {
       // Single-level row headers (original behavior)
-      rows = sortedYEntries.map(([gridY, yValue]) => ({
+      rows = sortedYEntries.map(([gridY, yValue], index) => ({
         id: `row_${gridY}_${yValue}`,
         level: 0,
+        depth: 0,
         value: yValue || 'Unassigned',
         axis: 'Category' as LATCHAxis,
         span: 1,
@@ -285,7 +292,9 @@ export class SuperGridHeaderManager {
           height: gridDimensions.cellHeight
         },
         childCount: currentCells.filter(c => c.gridY === gridY).reduce((sum, c) => sum + c.nodeCount, 0),
-        isLeaf: true
+        isLeaf: true,
+        startIndex: index,
+        endIndex: index
       }));
     }
 
