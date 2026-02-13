@@ -27,6 +27,7 @@ import { DragManager, type DragManagerConfig } from './DragManager';
 import { ResizeManager, type ResizeManagerConfig } from './ResizeManager';
 import { SelectManager, type SelectManagerConfig } from './SelectManager';
 import { SortManager, type SortLevel } from './SortManager';
+import { FilterManager } from './FilterManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -159,6 +160,10 @@ export class SuperGridRenderer {
   private sortManager: SortManager | null = null;
   private onSortChange?: (sortState: { levels: SortLevel[] }) => void;
 
+  // FilterManager for header filtering (SuperFilter)
+  private filterManager: FilterManager | null = null;
+  private onFilterIconClick?: (header: HeaderDescriptor) => void;
+
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
   private onCellClickWithEvent?: (cell: CellDescriptor, nodes: Node[], event: MouseEvent) => void;
@@ -177,6 +182,8 @@ export class SuperGridRenderer {
   private hitTestConfig: HitTestConfig = {
     labelHeight: 32,
     resizeEdgeWidth: 4,
+    filterIconSize: 16,
+    filterIconPadding: 4,
     gridDimensions: {
       rows: 0,
       cols: 0,
@@ -575,6 +582,7 @@ export class SuperGridRenderer {
     onSelectionChange?: (selectedIds: Set<string>) => void;
     isSelected?: (id: string) => boolean;
     onSortChange?: (sortState: { levels: SortLevel[] }) => void;
+    onFilterIconClick?: (header: HeaderDescriptor) => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
     this.onCellClickWithEvent = callbacks.onCellClickWithEvent;
@@ -588,6 +596,7 @@ export class SuperGridRenderer {
     this.onSelectionChange = callbacks.onSelectionChange;
     this.isSelected = callbacks.isSelected ?? (() => false);
     this.onSortChange = callbacks.onSortChange;
+    this.onFilterIconClick = callbacks.onFilterIconClick;
   }
 
   /**
@@ -699,6 +708,21 @@ export class SuperGridRenderer {
    */
   getSortManager(): SortManager | null {
     return this.sortManager;
+  }
+
+  /**
+   * Set the FilterManager instance for SuperFilter functionality.
+   * Call this before rendering to enable filter icons.
+   */
+  setFilterManager(filterManager: FilterManager): void {
+    this.filterManager = filterManager;
+  }
+
+  /**
+   * Get the FilterManager instance for external access.
+   */
+  getFilterManager(): FilterManager | null {
+    return this.filterManager;
   }
 
   /**
@@ -998,6 +1022,10 @@ export class SuperGridRenderer {
 
     // Render sort indicators for row headers
     this.renderSortIndicators(_d3, headersGroup, headerTree.rows);
+
+    // Render filter icons for both column and row headers
+    this.renderFilterIcons(_d3, headersGroup, headerTree.columns, 'column');
+    this.renderFilterIcons(_d3, headersGroup, headerTree.rows, 'row');
   }
 
   /**
@@ -1067,6 +1095,91 @@ export class SuperGridRenderer {
           .attr('font-weight', 'bold')
           .text(sortLevel.priority.toString());
       }
+    });
+  }
+
+  /**
+   * Render filter icons (funnel) on headers for SuperFilter.
+   *
+   * Filter icons are positioned in the top-right corner of each header.
+   * Active filters (not all values selected) show the icon in blue.
+   * Inactive filters show a gray funnel icon.
+   *
+   * @param _d3 - D3 module
+   * @param headersGroup - D3 selection for headers group
+   * @param headers - Array of header descriptors
+   * @param headerType - 'column' or 'row' to determine CSS class
+   */
+  private renderFilterIcons(
+    _d3: typeof import('d3'),
+    headersGroup: d3.Selection<d3.BaseType, unknown, null, undefined>,
+    headers: HeaderDescriptor[],
+    headerType: 'column' | 'row'
+  ): void {
+    const filterManager = this.filterManager;
+    const onFilterIconClick = this.onFilterIconClick;
+
+    // Filter icon dimensions and position
+    const iconSize = 16;
+    const iconPadding = 4;
+
+    // Funnel icon path (simplified filter funnel shape)
+    const funnelPath = 'M1,0 L15,0 L10,6 L10,14 L6,14 L6,6 Z';
+
+    // Update each header with filter icon
+    headers.forEach(header => {
+      const headerSelector = headerType === 'column' ? '.column-header' : '.row-header';
+
+      // Find the header group element
+      const headerGroup = headersGroup
+        .selectAll<SVGGElement, HeaderDescriptor>(headerSelector)
+        .filter(d => d.id === header.id);
+
+      // Remove existing filter icon
+      headerGroup.selectAll('.filter-icon').remove();
+
+      // Calculate if this header has an active filter
+      const hasActiveFilter = filterManager?.hasActiveFilter(header.id) ?? false;
+
+      // Create filter icon group
+      const iconGroup = headerGroup.append('g')
+        .attr('class', 'filter-icon')
+        .attr('transform', `translate(${header.position.width - iconPadding - iconSize}, ${iconPadding})`)
+        .style('cursor', 'pointer');
+
+      // Add hover highlight background
+      iconGroup.append('rect')
+        .attr('class', 'filter-icon-bg')
+        .attr('width', iconSize)
+        .attr('height', iconSize)
+        .attr('rx', 2)
+        .attr('fill', 'transparent');
+
+      // Draw funnel icon
+      iconGroup.append('path')
+        .attr('class', 'filter-icon-path')
+        .attr('d', funnelPath)
+        .attr('fill', hasActiveFilter ? '#3B82F6' : '#9CA3AF')  // Blue if active, gray if not
+        .attr('stroke', 'none');
+
+      // Add click handler for filter icon
+      iconGroup.on('click', (event: MouseEvent) => {
+        event.stopPropagation(); // Prevent header click
+        if (onFilterIconClick) {
+          onFilterIconClick(header);
+        }
+      });
+
+      // Add hover effect
+      iconGroup
+        .on('mouseenter', function() {
+          _d3.select(this).select('.filter-icon-bg')
+            .attr('fill', 'rgba(59, 130, 246, 0.1)');
+        })
+        .on('mouseleave', function() {
+          _d3.select(this).select('.filter-icon-bg')
+            .attr('fill', 'transparent');
+        });
     });
   }
 

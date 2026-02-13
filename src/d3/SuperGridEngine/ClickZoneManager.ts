@@ -19,7 +19,7 @@ import type { HeaderDescriptor, CellDescriptor, GridDimensions } from './types';
  * Click zones for header interaction.
  * Each zone triggers different behavior on click.
  */
-export type ClickZone = 'parent-label' | 'child-body' | 'resize-edge' | 'data-cell' | 'none';
+export type ClickZone = 'parent-label' | 'child-body' | 'resize-edge' | 'filter-icon' | 'data-cell' | 'none';
 
 /**
  * Result of hit testing a point against the grid.
@@ -41,6 +41,10 @@ export interface HitTestConfig {
   labelHeight: number;
   /** Width of the resize edge zone (default: 4px) */
   resizeEdgeWidth: number;
+  /** Size of the filter icon (default: 16px) */
+  filterIconSize?: number;
+  /** Padding from header edge to filter icon (default: 4px) */
+  filterIconPadding?: number;
   /** Grid dimensions for cell lookup */
   gridDimensions: GridDimensions;
 }
@@ -56,6 +60,7 @@ const ZONE_CURSORS: Record<ClickZone, string> = {
   'parent-label': 'pointer',
   'child-body': 'cell',
   'resize-edge': 'col-resize',
+  'filter-icon': 'pointer',
   'data-cell': 'default',
   'none': 'default',
 };
@@ -157,6 +162,34 @@ function isInParentLabelZone(
 }
 
 /**
+ * Check if a point is in the filter icon zone of a header.
+ *
+ * The filter icon is positioned in the top-right corner of leaf headers.
+ *
+ * @param point - The point to test
+ * @param header - The header to check against
+ * @param iconSize - Size of the filter icon (width and height)
+ * @param iconPadding - Padding from header edge to icon
+ * @returns true if point is in filter icon zone
+ */
+function isInFilterIconZone(
+  point: { x: number; y: number },
+  header: HeaderDescriptor,
+  iconSize: number = 16,
+  iconPadding: number = 4
+): boolean {
+  // Filter icon bounds: top-right corner of header
+  const iconBounds = {
+    x: header.position.x + header.position.width - iconPadding - iconSize,
+    y: header.position.y + iconPadding,
+    width: iconSize,
+    height: iconSize,
+  };
+
+  return isPointInBounds(point, iconBounds);
+}
+
+/**
  * Find which column header contains a point.
  *
  * @param point - The point to test (already offset for header area)
@@ -172,6 +205,9 @@ function hitTestColumnHeaders(
   // Sort headers by level (deepest first) to prioritize leaf headers
   const sortedHeaders = [...headers].sort((a, b) => b.level - a.level);
 
+  const iconSize = config.filterIconSize ?? 16;
+  const iconPadding = config.filterIconPadding ?? 4;
+
   for (const header of sortedHeaders) {
     const bounds = {
       x: header.position.x,
@@ -184,6 +220,11 @@ function hitTestColumnHeaders(
       // Check resize edge first (highest priority)
       if (isInResizeEdge(point, header, config.resizeEdgeWidth, 'column')) {
         return { zone: 'resize-edge', header };
+      }
+
+      // Check filter icon zone (second priority for leaf headers)
+      if (isInFilterIconZone(point, header, iconSize, iconPadding)) {
+        return { zone: 'filter-icon', header };
       }
 
       // Check parent label zone
@@ -215,6 +256,9 @@ function hitTestRowHeaders(
   // Sort headers by level (deepest first) to prioritize leaf headers
   const sortedHeaders = [...headers].sort((a, b) => b.level - a.level);
 
+  const iconSize = config.filterIconSize ?? 16;
+  const iconPadding = config.filterIconPadding ?? 4;
+
   for (const header of sortedHeaders) {
     const bounds = {
       x: header.position.x,
@@ -227,6 +271,11 @@ function hitTestRowHeaders(
       // Check resize edge first (highest priority)
       if (isInResizeEdge(point, header, config.resizeEdgeWidth, 'row')) {
         return { zone: 'resize-edge', header };
+      }
+
+      // Check filter icon zone (second priority)
+      if (isInFilterIconZone(point, header, iconSize, iconPadding)) {
+        return { zone: 'filter-icon', header };
       }
 
       // Check parent label zone (for row headers, this is the left portion)
@@ -361,6 +410,8 @@ export interface ZoneClickCallbacks {
   onSelectChildren?: (header: HeaderDescriptor) => void;
   /** Called when clicking data-cell zone */
   onSelectCell?: (cell: CellDescriptor) => void;
+  /** Called when clicking filter-icon zone (open filter dropdown) */
+  onFilterClick?: (header: HeaderDescriptor) => void;
 }
 
 /**
@@ -386,6 +437,12 @@ export function createZoneClickHandler(
       case 'child-body':
         if (callbacks.onSelectChildren && result.header) {
           callbacks.onSelectChildren(result.header);
+        }
+        break;
+
+      case 'filter-icon':
+        if (callbacks.onFilterClick && result.header) {
+          callbacks.onFilterClick(result.header);
         }
         break;
 

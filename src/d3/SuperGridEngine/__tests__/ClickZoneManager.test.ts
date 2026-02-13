@@ -28,6 +28,8 @@ describe('ClickZoneManager', () => {
   const defaultConfig: HitTestConfig = {
     labelHeight: 32,
     resizeEdgeWidth: 4,
+    filterIconSize: 16,
+    filterIconPadding: 4,
     gridDimensions: {
       rows: 3,
       cols: 3,
@@ -464,6 +466,89 @@ describe('ClickZoneManager', () => {
     it('should return null for data-cell and none zones', () => {
       expect(getHoverHighlightStyle('data-cell')).toBeNull();
       expect(getHoverHighlightStyle('none')).toBeNull();
+    });
+  });
+
+  describe('filter-icon zone detection', () => {
+    it('should return filter-icon zone when clicking filter icon area', () => {
+      // Jan leaf header position: x=0, y=20, width=100, height=20
+      // Filter icon at (100 - 4 - 16, 20 + 4) = (80, 24) relative to header start
+      // In SVG coords for column headers: point is in the column header area (y < headerHeight=40)
+      // Column header test offsets point by headerWidth (120) before testing
+      // So Jan header is at x=0 in header space, but we click at x = 0 + 80 = 80 (within 80-96 icon x-range)
+      // y = 24 is within 24-36 icon y-range (icon at y=24, size=16)
+      // But hit test uses point - headerWidth offset, so we need x = 80 + 120 = 200
+      const point = { x: 200, y: 28 }; // Inside filter icon of Jan header
+
+      const result = hitTest(point, columnHeaders, rowHeaders, cells, defaultConfig);
+
+      expect(result.zone).toBe('filter-icon');
+      expect(result.header?.value).toBe('Jan');
+    });
+
+    it('should prioritize resize-edge over filter-icon when overlapping', () => {
+      // Point in the resize edge (right 4px of header)
+      // Feb header at x=100, width=100, so right edge at x=200
+      // Resize edge is x=196-200
+      const point = { x: 197 + 120, y: 30 };
+
+      const result = hitTest(point, columnHeaders, rowHeaders, cells, defaultConfig);
+
+      // Resize edge has higher priority
+      expect(result.zone).toBe('resize-edge');
+    });
+
+    it('should return filter-icon for row headers too', () => {
+      // Row header position: x=0, y=0, width=120, height=80
+      // Filter icon at (120 - 4 - 16, 4) = (100, 4) relative to header
+      // Row headers are offset by headerHeight (40) in hit test
+      // So filter icon is at x=100-116, y=4-20 in header space
+      // Click at x=108, y=48 (40 header offset + 8 for y in icon range)
+      const point = { x: 108, y: 48 }; // Inside row header filter icon area
+
+      const result = hitTest(point, columnHeaders, rowHeaders, cells, defaultConfig);
+
+      expect(result.zone).toBe('filter-icon');
+      expect(result.header?.value).toBe('Active');
+    });
+
+    it('should return child-body when clicking outside filter icon area', () => {
+      // Point in Jan header but not in filter icon area (left side)
+      // Jan at x=0-100, filter icon at x=80-96
+      // Click at x=130 (120 header offset + 10) for left side of Jan header
+      const point = { x: 130, y: 30 }; // In Jan header but on left side
+
+      const result = hitTest(point, columnHeaders, rowHeaders, cells, defaultConfig);
+
+      expect(result.zone).toBe('child-body');
+    });
+  });
+
+  describe('filter-icon cursor and click handler', () => {
+    it('should return pointer cursor for filter-icon zone', () => {
+      expect(getCursorForZone('filter-icon')).toBe('pointer');
+    });
+
+    it('should call onFilterClick when filter-icon zone clicked', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+      const onFilterClick = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+        onFilterClick,
+      });
+
+      const header = columnHeaders[1]; // Jan leaf header
+      handler({ zone: 'filter-icon', header });
+
+      expect(onFilterClick).toHaveBeenCalledWith(header);
+      expect(onExpandCollapse).not.toHaveBeenCalled();
+      expect(onSelectChildren).not.toHaveBeenCalled();
+      expect(onSelectCell).not.toHaveBeenCalled();
     });
   });
 });

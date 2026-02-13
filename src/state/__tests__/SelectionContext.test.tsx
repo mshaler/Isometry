@@ -217,12 +217,10 @@ describe('SelectionContext', () => {
     it('returns new Set on each selection change', () => {
       const { result } = renderHook(() => useSelection(), { wrapper });
 
-      let previousSet: Set<string>;
-
       act(() => {
         result.current.select('card-1');
       });
-      previousSet = result.current.selection.selectedIds;
+      const previousSet = result.current.selection.selectedIds;
 
       act(() => {
         result.current.toggle('card-2');
