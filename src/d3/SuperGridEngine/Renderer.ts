@@ -4,6 +4,11 @@
  * SuperZoom: Pinned upper-left anchor for spreadsheet-like zoom behavior.
  * - Scroll wheel zoom anchors to (0,0) instead of cursor position
  * - Pan constrained to grid boundaries (can't scroll past edges)
+ *
+ * SuperSize: Column/row resize via drag handles.
+ * - Drag right edge of header to resize single column
+ * - Shift+drag for bulk resize of siblings
+ * - Double-click resize edge for auto-fit to content
  */
 
 import type { CellDescriptor, HeaderTree, HeaderDescriptor, GridDimensions, SelectionState, Node } from './types';
@@ -19,6 +24,7 @@ import {
   type HoverHighlightStyle,
 } from './ClickZoneManager';
 import { DragManager, type DragManagerConfig } from './DragManager';
+import { ResizeManager, type ResizeManagerConfig } from './ResizeManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -135,7 +141,12 @@ export class SuperGridRenderer {
   private dragManager: DragManager | null = null;
   private onAxisSwap?: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
 
-  // ResizeManager wiring deferred to Plan 74-02 Task 5
+  // ResizeManager for column/row resizing (SuperSize)
+  private resizeManager: ResizeManager | null = null;
+  private onResize?: (headerId: string, newWidth: number) => void;
+  private onResizeEnd?: (headerId: string, finalWidth: number) => void;
+  private resizeMouseMoveHandler: ((event: MouseEvent) => void) | null = null;
+  private resizeMouseUpHandler: (() => void) | null = null;
 
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
@@ -220,8 +231,13 @@ export class SuperGridRenderer {
    * Handle keydown events for drag cancellation.
    */
   private handleKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this.dragManager?.isDragging()) {
-      this.dragManager.cancelDrag();
+    if (event.key === 'Escape') {
+      if (this.dragManager?.isDragging()) {
+        this.dragManager.cancelDrag();
+      }
+      if (this.resizeManager?.isResizing()) {
+        this.resizeManager.cancelResize();
+      }
     }
   };
 
@@ -541,6 +557,8 @@ export class SuperGridRenderer {
     onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
     onRenderComplete?: (renderTime: number, cellCount: number) => void;
     onAxisSwap?: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
+    onResize?: (headerId: string, newWidth: number) => void;
+    onResizeEnd?: (headerId: string, finalWidth: number) => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
     this.onHeaderClick = callbacks.onHeaderClick;
@@ -548,6 +566,8 @@ export class SuperGridRenderer {
     this.onHeaderSelectChildren = callbacks.onHeaderSelectChildren;
     this.onRenderComplete = callbacks.onRenderComplete;
     this.onAxisSwap = callbacks.onAxisSwap;
+    this.onResize = callbacks.onResize;
+    this.onResizeEnd = callbacks.onResizeEnd;
   }
 
   /**
@@ -584,6 +604,131 @@ export class SuperGridRenderer {
       headerHeight: gridDimensions.headerHeight,
       rowHeaderWidth: gridDimensions.headerWidth,
     });
+  }
+
+  /**
+   * Set up ResizeManager for SuperSize column/row resizing.
+   * Call after SVG is set up.
+   */
+  setupResizeManager(): void {
+    if (!this.svg) return;
+
+    const config: ResizeManagerConfig = {
+      minSize: 40,
+      onResize: (headerId, newWidth) => {
+        if (this.onResize) {
+          this.onResize(headerId, newWidth);
+        }
+      },
+      onResizeEnd: (headerId, finalWidth) => {
+        if (this.onResizeEnd) {
+          this.onResizeEnd(headerId, finalWidth);
+        }
+      },
+    };
+
+    this.resizeManager = new ResizeManager(this.svg, config);
+
+    // Set up resize event handlers on SVG
+    this.setupResizeEventHandlers();
+  }
+
+  /**
+   * Set up resize event handlers for mousedown, mousemove, mouseup, and dblclick.
+   */
+  private setupResizeEventHandlers(): void {
+    if (!this.svg) return;
+
+    const svgElement = this.svg.node();
+    if (!svgElement) return;
+
+    // Handle mousedown on resize-edge zone to start resize
+    svgElement.addEventListener('mousedown', (event: MouseEvent) => {
+      if (!this.resizeManager) return;
+
+      const rect = svgElement.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      const result = hitTest(
+        point,
+        this.currentColumnHeaders,
+        this.currentRowHeaders,
+        this.currentCells,
+        this.hitTestConfig
+      );
+
+      if (result.zone === 'resize-edge' && result.header) {
+        this.resizeManager.startResize(result.header, event);
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+
+    // Handle global mousemove during resize (to track outside SVG)
+    this.resizeMouseMoveHandler = (event: MouseEvent) => {
+      if (this.resizeManager?.isResizing()) {
+        this.resizeManager.updateResize(event);
+      }
+    };
+
+    // Handle global mouseup to end resize
+    this.resizeMouseUpHandler = () => {
+      if (this.resizeManager?.isResizing()) {
+        this.resizeManager.endResize();
+      }
+    };
+
+    // Add global listeners for mouse tracking during resize
+    document.addEventListener('mousemove', this.resizeMouseMoveHandler);
+    document.addEventListener('mouseup', this.resizeMouseUpHandler);
+
+    // Handle double-click for auto-fit
+    svgElement.addEventListener('dblclick', (event: MouseEvent) => {
+      if (!this.resizeManager) return;
+
+      const rect = svgElement.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      const result = hitTest(
+        point,
+        this.currentColumnHeaders,
+        this.currentRowHeaders,
+        this.currentCells,
+        this.hitTestConfig
+      );
+
+      if (result.zone === 'resize-edge' && result.header) {
+        // Calculate auto-fit width
+        const measureText = this.resizeManager.createTextMeasurer();
+        const autoFitWidth = this.resizeManager.calculateAutoFitWidth(
+          result.header,
+          this.currentCells,
+          measureText
+        );
+        this.resizeManager.cleanupMeasurer();
+
+        // Notify callback with auto-fit result
+        if (this.onResizeEnd) {
+          this.onResizeEnd(result.header.id, autoFitWidth);
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+  }
+
+  /**
+   * Get the ResizeManager instance for external access.
+   */
+  getResizeManager(): ResizeManager | null {
+    return this.resizeManager;
   }
 
   /**
@@ -861,8 +1006,17 @@ export class SuperGridRenderer {
     // Remove keyboard handler
     document.removeEventListener('keydown', this.handleKeyDown);
 
-    // Clean up DragManager
+    // Remove resize event handlers
+    if (this.resizeMouseMoveHandler) {
+      document.removeEventListener('mousemove', this.resizeMouseMoveHandler);
+    }
+    if (this.resizeMouseUpHandler) {
+      document.removeEventListener('mouseup', this.resizeMouseUpHandler);
+    }
+
+    // Clean up managers
     this.dragManager = null;
+    this.resizeManager = null;
 
     if (this.svg) {
       this.svg.remove();
