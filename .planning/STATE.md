@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 75 of 76 (SuperGrid Phase C)
-Plan: 02 of 04 COMPLETE (75-01 SuperFilter + 75-02 SuperSort)
-Status: Phase 75 in progress — SuperFilter and SuperSort complete, 2 plans remaining
-Last activity: 2026-02-13 — Completed 75-01-PLAN.md (SuperFilter)
+Plan: 04 of 04 COMPLETE (75-01, 75-02, 75-04 done, 75-03 pending)
+Status: Phase 75 almost complete — SuperCards (75-03) remaining
+Last activity: 2026-02-13 — Completed 75-04-PLAN.md (SuperAudit)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
-Progress (v5.0 SuperGrid Phase C): [###############...............] 50% (2/4 plans)
+Progress (v5.0 SuperGrid Phase C): [######################........] 75% (3/4 plans)
 
 ## Performance Metrics
 
@@ -31,6 +31,12 @@ Progress (v5.0 SuperGrid Phase C): [###############...............] 50% (2/4 pla
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 75 - v5.0 SuperGrid Phase C) — IN PROGRESS:**
+- Phase 75-04: COMPLETE (~8m) — SuperAudit computed value highlighting with CRUD flash
+- Phase 75-02: COMPLETE (~5m) — SuperSort multi-level sorting with priority badges
+- Phase 75-01: COMPLETE (~8m) — SuperFilter header dropdown filters
+- Phase 75-03: PENDING — SuperCards header/aggregation row distinction
 
 **Recent completions (Phase 74 - v5.0 SuperGrid Phase B) — PHASE COMPLETE:**
 - Phase 74-04: COMPLETE (~5m) — SuperPosition PAFV coordinate tracking for view transitions
@@ -93,19 +99,13 @@ Progress (v5.0 SuperGrid Phase C): [###############...............] 50% (2/4 pla
 
 ### Decisions
 
-**Phase 75-01 decisions (SuperFilter - Header Dropdown Filters):**
-- FILT-DEC-01: Filter icon 16x16 pixels, 4px from header edges
-- FILT-DEC-02: Active filter shows blue (#3B82F6), inactive shows gray (#9CA3AF)
-- FILT-DEC-03: Filter-icon zone has lower priority than resize-edge, higher than child-body
-- FILT-DEC-04: Multiple values compiled to SQL IN clause with proper quoting
-- FILT-DEC-05: Single quote escaping uses double-quote convention ('O''Brien')
-
-**Phase 75-02 decisions (SuperSort - Multi-Level Sort):**
-- SORT-DEC-01: Max 3 sort levels (configurable via constructor)
-- SORT-DEC-02: Sort indicators use blue (#3B82F6) color scheme
-- SORT-DEC-03: Priority badges shown only for multi-sort (2+ levels)
-- SORT-DEC-04: Arrow position: right side of header, 24px offset
-- SORT-DEC-05: Header click triggers both sort and selection (dual behavior)
+**Phase 75-04 decisions (SuperAudit - Computed Value Highlighting):**
+- AUDIT-DEC-01: Blue tint rgba(59, 130, 246, 0.1) for computed cells
+- AUDIT-DEC-02: Green tint rgba(16, 185, 129, 0.1) for enriched cells
+- AUDIT-DEC-03: Purple tint rgba(139, 92, 246, 0.1) for formula cells
+- AUDIT-DEC-04: CRUD flash 500ms animation with opacity fade
+- AUDIT-DEC-05: Recent changes auto-cleanup after 2000ms
+- AUDIT-DEC-06: Indicator dot positioned at (8, 8) with radius 3px
 
 **Phase 74-04 decisions (SuperPosition - Coordinate Tracking):**
 - POS-DEC-01: Position reuse preserves lastUpdated timestamp (existing positions not recomputed)
@@ -435,13 +435,8 @@ node_properties table (EAV)
 - [x] Phase 74-04: SuperPosition Coordinate Tracking (COMPLETE - ~5 minutes)
 
 **v5.0 (SuperGrid MVP) — PHASE C READY:**
-- [ ] Phase 75: SuperGrid Phase C (SuperFilter, SuperSort, SuperCards, SuperAudit) — 4 plans
-- [ ] Phase 76: SuperGrid Polish (SuperSearch, Performance, Visual) — 3 plans
-
-**Phase 76 scope (MVP gap closure):**
-- 76-01: SuperSearch — FTS5 integration with in-grid highlighting (MVP criterion)
-- 76-02: Performance Verification — 10k card benchmarks (MVP criterion)
-- 76-03: Visual Polish — Nested header animation refactor (deferred from 61-01)
+- [ ] Phase 75: SuperGrid Phase C (TBD)
+- [ ] Phase 76: SuperGrid Polish (TBD)
 
 **Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
@@ -467,6 +462,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 75-01 COMPLETE — SuperFilter header dropdown filters
+Stopped at: Phase 75-04 COMPLETE — SuperAudit computed value highlighting
 Resume file: .planning/phases/75-supergrid-phase-c/75-03-PLAN.md
-Next action: Execute 75-03 (SuperCards or remaining Phase C plan)
+Next action: Execute 75-03 (SuperCards header/aggregation row distinction)
