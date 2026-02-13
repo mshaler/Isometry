@@ -26,6 +26,7 @@ import {
 import { DragManager, type DragManagerConfig } from './DragManager';
 import { ResizeManager, type ResizeManagerConfig } from './ResizeManager';
 import { SelectManager, type SelectManagerConfig } from './SelectManager';
+import { SortManager, type SortLevel } from './SortManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -153,6 +154,10 @@ export class SuperGridRenderer {
   private selectManager: SelectManager | null = null;
   private onSelectionChange?: (selectedIds: Set<string>) => void;
   private isSelected: (id: string) => boolean = () => false;
+
+  // SortManager for multi-level sorting (SuperSort)
+  private sortManager: SortManager | null = null;
+  private onSortChange?: (sortState: { levels: SortLevel[] }) => void;
 
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
@@ -569,6 +574,7 @@ export class SuperGridRenderer {
     onResizeEnd?: (headerId: string, finalWidth: number) => void;
     onSelectionChange?: (selectedIds: Set<string>) => void;
     isSelected?: (id: string) => boolean;
+    onSortChange?: (sortState: { levels: SortLevel[] }) => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
     this.onCellClickWithEvent = callbacks.onCellClickWithEvent;
@@ -581,6 +587,7 @@ export class SuperGridRenderer {
     this.onResizeEnd = callbacks.onResizeEnd;
     this.onSelectionChange = callbacks.onSelectionChange;
     this.isSelected = callbacks.isSelected ?? (() => false);
+    this.onSortChange = callbacks.onSortChange;
   }
 
   /**
@@ -677,6 +684,21 @@ export class SuperGridRenderer {
    */
   getSelectManager(): SelectManager | null {
     return this.selectManager;
+  }
+
+  /**
+   * Set the SortManager instance for SuperSort functionality.
+   * Call this before rendering to enable sort indicators.
+   */
+  setSortManager(sortManager: SortManager): void {
+    this.sortManager = sortManager;
+  }
+
+  /**
+   * Get the SortManager instance for external access.
+   */
+  getSortManager(): SortManager | null {
+    return this.sortManager;
   }
 
   /**
@@ -836,6 +858,8 @@ export class SuperGridRenderer {
 
     const headersGroup = this.svg.select('.headers');
     const onHeaderClick = this.onHeaderClick;
+    const sortManager = this.sortManager;
+    const onSortChange = this.onSortChange;
 
     // Calculate total header height for multi-level columns
     const totalColumnHeaderHeight = headerTree.maxColumnLevels > 1
@@ -866,8 +890,21 @@ export class SuperGridRenderer {
             .attr('dominant-baseline', 'middle')
             .style('user-select', 'none');
 
-          // Add click handler for header selection
-          g.on('click', (_event, d) => {
+          // Add click handler for sort and selection
+          g.on('click', (event: MouseEvent, d: HeaderDescriptor) => {
+            // Handle sort with SortManager if available
+            if (sortManager && d.facet) {
+              const newState = sortManager.handleHeaderClick(
+                d.id,
+                d.axis,
+                d.facet,
+                event.shiftKey
+              );
+              if (onSortChange) {
+                onSortChange(newState);
+              }
+            }
+            // Also call onHeaderClick for selection behavior
             if (onHeaderClick) {
               onHeaderClick(d);
             }
@@ -895,6 +932,9 @@ export class SuperGridRenderer {
           .text(d.value);
       });
 
+    // Render sort indicators for column headers
+    this.renderSortIndicators(_d3, headersGroup, headerTree.columns);
+
     // Row headers - using .join() pattern
     headersGroup
       .selectAll<SVGGElement, HeaderDescriptor>('.row-header')
@@ -914,8 +954,21 @@ export class SuperGridRenderer {
             .attr('dominant-baseline', 'middle')
             .style('user-select', 'none');
 
-          // Add click handler for header selection
-          g.on('click', (_event, d) => {
+          // Add click handler for sort and selection
+          g.on('click', (event: MouseEvent, d: HeaderDescriptor) => {
+            // Handle sort with SortManager if available
+            if (sortManager && d.facet) {
+              const newState = sortManager.handleHeaderClick(
+                d.id,
+                d.axis,
+                d.facet,
+                event.shiftKey
+              );
+              if (onSortChange) {
+                onSortChange(newState);
+              }
+            }
+            // Also call onHeaderClick for selection behavior
             if (onHeaderClick) {
               onHeaderClick(d);
             }
@@ -942,6 +995,79 @@ export class SuperGridRenderer {
           .style('font-weight', d.isLeaf ? 'normal' : '500')
           .text(d.value);
       });
+
+    // Render sort indicators for row headers
+    this.renderSortIndicators(_d3, headersGroup, headerTree.rows);
+  }
+
+  /**
+   * Render sort indicators (arrows and priority badges) on sorted headers.
+   *
+   * SuperSort visual indicators:
+   * - Arrow shows sort direction (up for asc, down for desc)
+   * - Priority badge (1, 2, 3) shown for multi-sort
+   */
+  private renderSortIndicators(
+    _d3: typeof import('d3'),
+    headersGroup: d3.Selection<d3.BaseType, unknown, null, undefined>,
+    headers: HeaderDescriptor[]
+  ): void {
+    if (!this.sortManager) return;
+
+    const sortManager = this.sortManager;
+    const sortCount = sortManager.getSortCount();
+
+    // Update each header with sort indicator
+    headers.forEach(header => {
+      const sortLevel = sortManager.getSortLevel(header.id);
+      const isColumnHeader = header.id.startsWith('column_');
+      const headerSelector = isColumnHeader ? '.column-header' : '.row-header';
+
+      // Find the header group element
+      const headerGroup = headersGroup
+        .selectAll<SVGGElement, HeaderDescriptor>(headerSelector)
+        .filter(d => d.id === header.id);
+
+      // Remove existing sort indicator
+      headerGroup.selectAll('.sort-indicator').remove();
+
+      if (!sortLevel) return;
+
+      // Create sort indicator group
+      const indicator = headerGroup.append('g')
+        .attr('class', 'sort-indicator')
+        .attr('transform', `translate(${header.position.width - 24}, 6)`);
+
+      // Draw arrow based on direction
+      const arrowPath = sortLevel.direction === 'asc'
+        ? 'M0,6 L4,0 L8,6 Z'    // Up arrow (ascending)
+        : 'M0,0 L4,6 L8,0 Z';   // Down arrow (descending)
+
+      indicator.append('path')
+        .attr('d', arrowPath)
+        .attr('fill', '#3B82F6')  // Blue color
+        .attr('stroke', 'none');
+
+      // Add priority badge for multi-sort (only if more than one sort)
+      if (sortCount > 1) {
+        // Badge circle
+        indicator.append('circle')
+          .attr('cx', 16)
+          .attr('cy', 3)
+          .attr('r', 6)
+          .attr('fill', '#3B82F6');
+
+        // Badge number
+        indicator.append('text')
+          .attr('x', 16)
+          .attr('y', 6)
+          .attr('text-anchor', 'middle')
+          .attr('fill', 'white')
+          .attr('font-size', '8px')
+          .attr('font-weight', 'bold')
+          .text(sortLevel.priority.toString());
+      }
+    });
   }
 
   /**
@@ -954,7 +1080,7 @@ export class SuperGridRenderer {
    * - Shift+click: range select from anchor to target
    */
   private renderCells(
-    d3: typeof import('d3'),
+    _d3: typeof import('d3'),
     currentCells: CellDescriptor[],
     gridDimensions: GridDimensions,
     allNodes: Node[]
