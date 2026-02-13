@@ -59,6 +59,7 @@ export class SuperGridEngine extends EventEmitter {
   private renderer: SuperGridRenderer;
   private headerManager: SuperGridHeaderManager;
   private positionManager: PositionManager;
+  private sortManager: SortManager;
 
   // Core state (D3 owns this)
   private nodes: Node[] = [];
@@ -104,9 +105,12 @@ export class SuperGridEngine extends EventEmitter {
       this.config.headerMinHeight
     );
     this.positionManager = new PositionManager();
+    this.sortManager = new SortManager();
 
     this.initializeState();
     this.setupRendererCallbacks();
+    // Set up SortManager in renderer for visual indicators
+    this.renderer.setSortManager(this.sortManager);
   }
 
   // ========================================================================
@@ -373,6 +377,36 @@ export class SuperGridEngine extends EventEmitter {
     this.positionManager.deserializeState(json);
   }
 
+  /**
+   * Get SortManager instance for direct access to sort state
+   */
+  getSortManager(): SortManager {
+    return this.sortManager;
+  }
+
+  /**
+   * Get current sort state (immutable copy)
+   */
+  getSortState(): MultiSortState {
+    return this.sortManager.getState();
+  }
+
+  /**
+   * Clear all sort levels
+   */
+  clearAllSorts(): void {
+    this.sortManager.clearAll();
+    this.render();
+    this.emit('sortChange', { sortState: this.sortManager.getState() });
+  }
+
+  /**
+   * Get compiled SQL ORDER BY clause from current sort state
+   */
+  getSortSQL(): string {
+    return this.sortManager.compileToSQL();
+  }
+
   // ========================================================================
   // Control Methods
   // ========================================================================
@@ -605,7 +639,12 @@ export class SuperGridEngine extends EventEmitter {
       },
       isSelected: (id) => {
         return this.selectionState.selectedCells.has(id);
-      }
+      },
+      onSortChange: (sortState) => {
+        // Re-render to update sort indicators
+        this.render();
+        this.emit('sortChange', { sortState });
+      },
     });
   }
 
