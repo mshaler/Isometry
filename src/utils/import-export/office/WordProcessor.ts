@@ -384,7 +384,10 @@ export class WordProcessor {
     // word/document.xml
     zip.folder('word')?.file('document.xml', wordXML);
 
-    return zip.generateAsync({ type: 'blob' });
+    return zip.generateAsync({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
   }
 
   /**

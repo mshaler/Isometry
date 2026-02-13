@@ -71,13 +71,17 @@ describe('Property Classifier Service', () => {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
-      -- Set up node_properties table for dynamic property tests
+      -- Set up node_properties table for dynamic property tests (matches schema.sql)
       CREATE TABLE IF NOT EXISTS node_properties (
         id TEXT PRIMARY KEY,
         node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
         key TEXT NOT NULL,
-        value TEXT,
-        value_type TEXT NOT NULL DEFAULT 'string',
+        value TEXT,  -- Legacy JSON/text fallback
+        value_type TEXT NOT NULL DEFAULT 'string',  -- string, number, boolean, array, object, null
+        value_string TEXT,   -- Fast path for string predicates
+        value_number REAL,   -- Fast path for numeric range predicates
+        value_boolean INTEGER, -- 0/1 boolean predicates
+        value_json TEXT,     -- JSON payload for arrays/objects
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE(node_id, key)
       );

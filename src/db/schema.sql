@@ -136,6 +136,17 @@ CREATE TRIGGER IF NOT EXISTS nodes_fts_update AFTER UPDATE ON nodes BEGIN
     VALUES (NEW.rowid, NEW.name, NEW.content, NEW.summary, NEW.tags);
 END;
 
+-- Version increment trigger
+-- Automatically increments version on any UPDATE to nodes table
+-- Respects manually set versions (only increments if version wasn't changed)
+CREATE TRIGGER IF NOT EXISTS increment_version_on_update
+AFTER UPDATE ON nodes
+FOR EACH ROW
+WHEN NEW.version = OLD.version
+BEGIN
+    UPDATE nodes SET version = OLD.version + 1 WHERE id = NEW.id;
+END;
+
 -- Edges: Relationships (GRAPH)
 CREATE TABLE IF NOT EXISTS edges (
     id TEXT PRIMARY KEY,

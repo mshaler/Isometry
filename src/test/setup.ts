@@ -26,6 +26,52 @@ class ResizeObserverMock {
 
 global.ResizeObserver = ResizeObserverMock;
 
+// Mock DragEvent for JSDOM (used by SuperDynamic drag tests)
+if (typeof global.DragEvent === 'undefined') {
+  class DragEventMock extends Event {
+    dataTransfer: DataTransfer | null = null;
+    clientX = 0;
+    clientY = 0;
+    screenX = 0;
+    screenY = 0;
+    pageX = 0;
+    pageY = 0;
+    offsetX = 0;
+    offsetY = 0;
+    ctrlKey = false;
+    shiftKey = false;
+    altKey = false;
+    metaKey = false;
+    button = 0;
+    buttons = 0;
+    relatedTarget: EventTarget | null = null;
+
+    constructor(type: string, eventInitDict?: DragEventInit) {
+      super(type, eventInitDict);
+      if (eventInitDict) {
+        this.dataTransfer = eventInitDict.dataTransfer ?? null;
+        this.clientX = eventInitDict.clientX ?? 0;
+        this.clientY = eventInitDict.clientY ?? 0;
+        this.screenX = eventInitDict.screenX ?? 0;
+        this.screenY = eventInitDict.screenY ?? 0;
+        this.ctrlKey = eventInitDict.ctrlKey ?? false;
+        this.shiftKey = eventInitDict.shiftKey ?? false;
+        this.altKey = eventInitDict.altKey ?? false;
+        this.metaKey = eventInitDict.metaKey ?? false;
+        this.button = eventInitDict.button ?? 0;
+        this.buttons = eventInitDict.buttons ?? 0;
+        this.relatedTarget = eventInitDict.relatedTarget ?? null;
+      }
+    }
+
+    getModifierState(_key: string): boolean {
+      return false;
+    }
+  }
+
+  global.DragEvent = DragEventMock as unknown as typeof DragEvent;
+}
+
 // Mock document.elementFromPoint for JSDOM (used by SuperDynamic drag tests)
 if (!document.elementFromPoint) {
   document.elementFromPoint = (_x: number, _y: number) => null;

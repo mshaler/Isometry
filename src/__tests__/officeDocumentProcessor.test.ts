@@ -13,13 +13,17 @@ Object.defineProperty(File.prototype, 'arrayBuffer', {
 vi.mock('xlsx', () => ({
   read: vi.fn(),
   utils: {
-    decode_range: vi.fn(),
-    encode_cell: vi.fn(),
-    aoa_to_sheet: vi.fn(),
-    book_new: vi.fn(),
+    decode_range: vi.fn().mockReturnValue({ s: { r: 0, c: 0 }, e: { r: 10, c: 5 } }),
+    encode_range: vi.fn().mockReturnValue('A1:F11'),
+    encode_cell: vi.fn().mockImplementation(({ r, c }: { r: number; c: number }) => {
+      const col = String.fromCharCode(65 + c);
+      return `${col}${r + 1}`;
+    }),
+    aoa_to_sheet: vi.fn().mockReturnValue({ '!ref': 'A1:A1' }),
+    book_new: vi.fn().mockReturnValue({ SheetNames: [], Sheets: {} }),
     book_append_sheet: vi.fn()
   },
-  write: vi.fn()
+  write: vi.fn().mockReturnValue(new ArrayBuffer(100))
 }));
 
 vi.mock('mammoth', () => ({

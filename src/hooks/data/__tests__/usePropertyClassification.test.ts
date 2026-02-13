@@ -66,23 +66,34 @@ describe('usePropertyClassification Hook', () => {
     mockState.error = null;
 
     // Default mock response: simulate facets table query via db.exec()
-    // The classifyProperties service calls db.exec() directly, not execute()
-    mockDbExec.mockReturnValue([
-      {
-        columns: ['id', 'name', 'facet_type', 'axis', 'source_column', 'enabled', 'sort_order'],
-        values: [
-          ['folder', 'Folder', 'select', 'C', 'folder', 1, 0],
-          ['tags', 'Tags', 'multi_select', 'C', 'tags', 1, 1],
-          ['status', 'Status', 'select', 'C', 'status', 1, 2],
-          ['priority', 'Priority', 'number', 'H', 'priority', 1, 0],
-          ['created', 'Created', 'date', 'T', 'created_at', 1, 0],
-          ['modified', 'Modified', 'date', 'T', 'modified_at', 1, 1],
-          ['due', 'Due Date', 'date', 'T', 'due_at', 1, 2],
-          ['name', 'Name', 'text', 'A', 'name', 1, 0],
-          ['location', 'Location', 'location', 'L', 'location_name', 1, 0],
-        ],
-      },
-    ]);
+    // The classifyProperties service calls db.exec() twice:
+    // 1. First call: query facets table
+    // 2. Second call: query node_properties table (discoverDynamicProperties)
+    mockDbExec.mockImplementation((sql: string) => {
+      if (sql.includes('facets')) {
+        return [
+          {
+            columns: ['id', 'name', 'facet_type', 'axis', 'source_column', 'enabled', 'sort_order'],
+            values: [
+              ['folder', 'Folder', 'select', 'C', 'folder', 1, 0],
+              ['tags', 'Tags', 'multi_select', 'C', 'tags', 1, 1],
+              ['status', 'Status', 'select', 'C', 'status', 1, 2],
+              ['priority', 'Priority', 'number', 'H', 'priority', 1, 0],
+              ['created', 'Created', 'date', 'T', 'created_at', 1, 0],
+              ['modified', 'Modified', 'date', 'T', 'modified_at', 1, 1],
+              ['due', 'Due Date', 'date', 'T', 'due_at', 1, 2],
+              ['name', 'Name', 'text', 'A', 'name', 1, 0],
+              ['location', 'Location', 'location', 'L', 'location_name', 1, 0],
+            ],
+          },
+        ];
+      }
+      if (sql.includes('node_properties')) {
+        // Return empty result for node_properties query
+        return [];
+      }
+      return [];
+    });
   });
 
   test('returns classification after db initialization', async () => {
@@ -125,8 +136,8 @@ describe('usePropertyClassification Hook', () => {
     // Should return the same cached object (referential equality)
     expect(result.current.classification).toBe(firstClassification);
 
-    // Execute should not be called again
-    expect(mockDbExec).toHaveBeenCalledTimes(1);
+    // Execute should not be called again (was called 2x initially: facets + node_properties)
+    expect(mockDbExec).toHaveBeenCalledTimes(2);
   });
 
   test('provides refresh function that reloads data', async () => {
@@ -137,16 +148,17 @@ describe('usePropertyClassification Hook', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(mockDbExec).toHaveBeenCalledTimes(1);
+    // Initial load: 2 calls (facets + node_properties)
+    expect(mockDbExec).toHaveBeenCalledTimes(2);
 
     // Call refresh
     act(() => {
       result.current.refresh();
     });
 
-    // Should call execute again
+    // Should call execute again: 2 more calls (facets + node_properties)
     await waitFor(() => {
-      expect(mockDbExec).toHaveBeenCalledTimes(2);
+      expect(mockDbExec).toHaveBeenCalledTimes(4);
     });
   });
 
