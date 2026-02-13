@@ -10,15 +10,15 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 ## Current Position
 
 Phase: 75 of 76 (SuperGrid Phase C)
-Plan: 02 of 04 COMPLETE
-Status: Phase 75 in progress — SuperSort complete, 2 plans remaining
-Last activity: 2026-02-13 — Completed 75-02-PLAN.md (SuperSort)
+Plan: 02 of 04 COMPLETE (75-01 SuperFilter + 75-02 SuperSort)
+Status: Phase 75 in progress — SuperFilter and SuperSort complete, 2 plans remaining
+Last activity: 2026-02-13 — Completed 75-01-PLAN.md (SuperFilter)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
-Progress (v5.0 SuperGrid Phase C): [########......................] 25% (1/4 plans)
+Progress (v5.0 SuperGrid Phase C): [###############...............] 50% (2/4 plans)
 
 ## Performance Metrics
 
@@ -92,6 +92,13 @@ Progress (v5.0 SuperGrid Phase C): [########......................] 25% (1/4 pla
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 75-01 decisions (SuperFilter - Header Dropdown Filters):**
+- FILT-DEC-01: Filter icon 16x16 pixels, 4px from header edges
+- FILT-DEC-02: Active filter shows blue (#3B82F6), inactive shows gray (#9CA3AF)
+- FILT-DEC-03: Filter-icon zone has lower priority than resize-edge, higher than child-body
+- FILT-DEC-04: Multiple values compiled to SQL IN clause with proper quoting
+- FILT-DEC-05: Single quote escaping uses double-quote convention ('O''Brien')
 
 **Phase 75-02 decisions (SuperSort - Multi-Level Sort):**
 - SORT-DEC-01: Max 3 sort levels (configurable via constructor)
@@ -460,6 +467,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 75-02 COMPLETE — SuperSort multi-level sorting
+Stopped at: Phase 75-01 COMPLETE — SuperFilter header dropdown filters
 Resume file: .planning/phases/75-supergrid-phase-c/75-03-PLAN.md
-Next action: Execute 75-03 (SuperCalc or remaining Phase C plan)
+Next action: Execute 75-03 (SuperCards or remaining Phase C plan)
