@@ -541,7 +541,7 @@ export function IntegratedLayout() {
             }}
             className="overflow-hidden"
           >
-            <div className={`h-[28rem] ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
+            <div className={`h-[28rem] w-full ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
               <NotebookLayout />
             </div>
           </div>

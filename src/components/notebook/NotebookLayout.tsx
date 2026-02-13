@@ -111,8 +111,7 @@ function NotebookLayoutInner() {
   return (
     <div
       ref={containerRef}
-      className="h-full grid gap-px p-1 overflow-hidden"
-      style={{ gridTemplateColumns: '1fr 1fr 1fr' }}
+      className="h-full w-full grid grid-cols-3 gap-px p-1 overflow-hidden"
     >
       {/* Capture Component - 1/3 */}
       <ErrorBoundary level="feature" name="CaptureComponent">
