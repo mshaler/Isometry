@@ -1,5 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
-import { useNotebook } from '../../contexts/NotebookContext';
+import { useEffect, useState, useRef } from 'react';
 import { CaptureComponent } from './CaptureComponent';
 import { ShellComponent } from './ShellComponent';
 import { PreviewComponent } from './PreviewComponent';
@@ -7,13 +6,7 @@ import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
 import { TerminalProvider } from '../../context/TerminalContext';
 
-interface ComponentLayout {
-  width: number;
-  height: number;
-}
-
 function NotebookLayoutInner() {
-  const { updateLayout } = useNotebook();
   const { focusComponent } = useFocusContext();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -22,15 +15,6 @@ function NotebookLayoutInner() {
   const shellRef = useFocusableComponent('shell');
   const previewRef = useFocusableComponent('preview');
   const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>('desktop');
-  const [componentLayouts, setComponentLayouts] = useState<{
-    capture: ComponentLayout;
-    shell: ComponentLayout;
-    preview: ComponentLayout;
-  }>({
-    capture: { width: 40, height: 100 }, // percentage
-    shell: { width: 30, height: 100 },
-    preview: { width: 30, height: 100 },
-  });
 
   // Handle screen size detection
   useEffect(() => {
@@ -75,114 +59,27 @@ function NotebookLayoutInner() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [focusComponent]);
 
-  // Drag resize functionality
-  const [isDragging, setIsDragging] = useState<string | null>(null);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0, startWidth: 0 });
-
-  const handleMouseDown = useCallback((divider: string, _event: React.MouseEvent) => {
-    _event.preventDefault();
-    setIsDragging(divider);
-    setDragStart({
-      x: _event.clientX,
-      y: _event.clientY,
-      startWidth: divider === 'capture-shell' ? componentLayouts.capture.width : componentLayouts.shell.width,
-    });
-  }, [componentLayouts]);
-
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
-
-    const containerRect = containerRef.current.getBoundingClientRect();
-    const deltaX = event.clientX - dragStart.x;
-    const deltaPercentage = (deltaX / containerRect.width) * 100;
-
-    if (isDragging === 'capture-shell') {
-      const newCaptureWidth = Math.max(25, Math.min(60, dragStart.startWidth + deltaPercentage));
-      const remainingWidth = 100 - newCaptureWidth;
-      const shellRatio = componentLayouts.shell.width / (componentLayouts.shell.width + componentLayouts.preview.width);
-
-      setComponentLayouts(prev => ({
-        capture: { ...prev.capture, width: newCaptureWidth },
-        shell: { ...prev.shell, width: remainingWidth * shellRatio },
-        preview: { ...prev.preview, width: remainingWidth * (1 - shellRatio) },
-      }));
-    } else if (isDragging === 'shell-preview') {
-      const remainingWidth = 100 - componentLayouts.capture.width;
-      const newShellWidth = Math.max(20, Math.min(remainingWidth - 20, dragStart.startWidth + deltaPercentage));
-      const newPreviewWidth = remainingWidth - newShellWidth;
-
-      setComponentLayouts(prev => ({
-        ...prev,
-        shell: { ...prev.shell, width: newShellWidth },
-        preview: { ...prev.preview, width: newPreviewWidth },
-      }));
-    }
-  }, [isDragging, dragStart, componentLayouts]);
-
-  const handleMouseUp = useCallback(() => {
-    if (isDragging) {
-      // Persist layout to context
-      updateLayout('capture', {
-        x: 0,
-        y: 0,
-        width: componentLayouts.capture.width,
-        height: componentLayouts.capture.height
-      });
-      updateLayout('shell', {
-        x: componentLayouts.capture.width,
-        y: 0,
-        width: componentLayouts.shell.width,
-        height: componentLayouts.shell.height
-      });
-      updateLayout('preview', {
-        x: componentLayouts.capture.width + componentLayouts.shell.width,
-        y: 0,
-        width: componentLayouts.preview.width,
-        height: componentLayouts.preview.height
-      });
-    }
-    setIsDragging(null);
-  }, [isDragging, componentLayouts, updateLayout]);
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
-
-  // Render divider for desktop mode
-  const renderDivider = (type: string, _className: string) => (
-    <div
-      className={`${_className} group`}
-      onMouseDown={(e) => handleMouseDown(type, e)}
-    >
-      <div className="w-full h-full bg-gray-300 group-hover:bg-gray-400 transition-colors cursor-col-resize flex items-center justify-center">
-        <div className="w-1 h-8 bg-gray-500 rounded"></div>
-      </div>
-    </div>
+  // Simple divider component (visual only, no resize for stability)
+  const renderDivider = () => (
+    <div className="w-px h-full bg-gray-300 flex-shrink-0" />
   );
 
   if (screenSize === 'mobile') {
     // Mobile: Stack vertically
     return (
-      <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
+      <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
         <ErrorBoundary level="feature" name="CaptureComponent">
-          <div ref={captureRef} className="flex-1 min-h-[300px] relative focusable-component" tabIndex={0}>
+          <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="ShellComponent">
-          <div ref={shellRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
+          <div ref={shellRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
             <ShellComponent className="h-full" />
           </div>
         </ErrorBoundary>
         <ErrorBoundary level="feature" name="PreviewComponent">
-          <div ref={previewRef} className="flex-1 min-h-[200px] relative focusable-component" tabIndex={0}>
+          <div ref={previewRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
             <PreviewComponent className="h-full" />
           </div>
         </ErrorBoundary>
@@ -193,20 +90,20 @@ function NotebookLayoutInner() {
   if (screenSize === 'tablet') {
     // Tablet: Capture on top, Shell and Preview side-by-side below
     return (
-      <div ref={containerRef} className="h-full flex flex-col gap-2 p-2">
+      <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
         <ErrorBoundary level="feature" name="CaptureComponent">
-          <div ref={captureRef} className="flex-1 min-h-[300px] relative focusable-component" tabIndex={0}>
+          <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
             <CaptureComponent className="h-full" />
           </div>
         </ErrorBoundary>
-        <div className="flex-1 flex gap-2 min-h-[300px]">
+        <div className="flex-1 flex gap-1 min-h-0">
           <ErrorBoundary level="feature" name="ShellComponent">
-            <div ref={shellRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
+            <div ref={shellRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
               <ShellComponent className="h-full" />
             </div>
           </ErrorBoundary>
           <ErrorBoundary level="feature" name="PreviewComponent">
-            <div ref={previewRef} className="flex-1 min-w-[300px] relative focusable-component" tabIndex={0}>
+            <div ref={previewRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
               <PreviewComponent className="h-full" />
             </div>
           </ErrorBoundary>
@@ -215,49 +112,45 @@ function NotebookLayoutInner() {
     );
   }
 
-  // Desktop: Three columns side-by-side with resizable dividers
+  // Desktop: Three equal columns side-by-side (stable layout)
   return (
     <div
       ref={containerRef}
-      className="h-full flex gap-0 p-2 select-none"
-      style={{ cursor: isDragging ? 'col-resize' : 'default' }}
+      className="h-full flex gap-0 p-1 overflow-hidden"
     >
-      {/* Capture Component */}
+      {/* Capture Component - 1/3 */}
       <ErrorBoundary level="feature" name="CaptureComponent">
         <div
           ref={captureRef}
-          style={{ width: `${componentLayouts.capture.width}%` }}
-          className="min-w-[300px] relative focusable-component"
+          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
           tabIndex={0}
         >
           <CaptureComponent className="h-full" />
         </div>
       </ErrorBoundary>
 
-      {/* Capture-Shell Divider */}
-      {renderDivider('capture-shell', 'w-1 h-full')}
+      {/* Divider */}
+      {renderDivider()}
 
-      {/* Shell Component */}
+      {/* Shell Component - 1/3 */}
       <ErrorBoundary level="feature" name="ShellComponent">
         <div
           ref={shellRef}
-          style={{ width: `${componentLayouts.shell.width}%` }}
-          className="min-w-[250px] relative focusable-component"
+          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
           tabIndex={0}
         >
           <ShellComponent className="h-full" />
         </div>
       </ErrorBoundary>
 
-      {/* Shell-Preview Divider */}
-      {renderDivider('shell-preview', 'w-1 h-full')}
+      {/* Divider */}
+      {renderDivider()}
 
-      {/* Preview Component */}
+      {/* Preview Component - 1/3 */}
       <ErrorBoundary level="feature" name="PreviewComponent">
         <div
           ref={previewRef}
-          style={{ width: `${componentLayouts.preview.width}%` }}
-          className="min-w-[250px] relative focusable-component"
+          className="flex-1 min-w-0 relative focusable-component overflow-hidden"
           tabIndex={0}
         >
           <PreviewComponent className="h-full" />
