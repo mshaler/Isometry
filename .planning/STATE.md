@@ -42,6 +42,8 @@ Progress (v5.0 SuperGrid Phase B): [################..............] 50% (2/4 pla
 - Phase 73-01: COMPLETE (~6m) — SuperStack multi-level headers with hierarchy building
 
 **Recent completions (Phase 71 - v4.8 Swift Bridge):**
+- Phase 71-03: COMPLETE (~7m) — ContactsAdapter + NotesAdapter actors with unit tests
+- Phase 71-02: COMPLETE (~11m) — EventKitAdapter actor with calendar/reminder conversion
 - Phase 71-01: COMPLETE (~12m) — ETLBridge actor + CanonicalNode + ETLBridgeError + unit tests
 
 **Previous completions (Phase 70 - v4.8 Integration):**
@@ -102,6 +104,14 @@ Progress (v5.0 SuperGrid Phase B): [################..............] 50% (2/4 pla
 - EK-DEC-03: Priority mapping from 0-9 (EK) to 0-5 (Canonical)
 - EK-DEC-04: MockEventData/MockReminderData for testable conversion without entitlements
 - EK-DEC-05: Continuation wrapper for fetchReminders callback API
+
+**Phase 71-03 decisions (ContactsAdapter & NotesAdapter):**
+- CT-DEC-01: Use iOS 17+ CNContactStore.requestAccess(for:) async API for clean concurrency
+- CT-DEC-02: Build display name from givenName + familyName, fallback to organizationName then "Unknown Contact"
+- CT-DEC-03: Store emails/phones in properties dictionary as AnyCodable arrays
+- NT-DEC-01: NotesAdapter delegates ALL markdown parsing to ETLBridge (no gray-matter in Swift)
+- NT-DEC-02: Use directory enumeration with FileManager for recursive .md discovery
+- NT-DEC-03: ImportSummary struct with totalFiles, imported, failed, errors for batch reporting
 
 **Phase 71-01 decisions (Swift Bridge ETL Foundation):**
 - BRIDGE-DEC-01: Renamed ImportResult to ETLImportResult to avoid conflict with existing ImportResult in AltoIndexImporter
@@ -371,7 +381,7 @@ node_properties table (EAV)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
 - [~] Phase 70: Integration — PAUSED (Plans 01-02 complete, SuperGrid prioritized)
-- [~] Phase 71: Swift Bridge — Plans 01-02 COMPLETE (~23 minutes combined)
+- [~] Phase 71: Swift Bridge — Plans 01-03 COMPLETE (~30 minutes combined)
 - [ ] Phase 72: Quality & Docs
 
 **v5.0 (SuperGrid MVP) — PHASE A COMPLETE:**
