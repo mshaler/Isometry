@@ -8,6 +8,16 @@
 
 import type { CellDescriptor, HeaderTree, HeaderDescriptor, GridDimensions, SelectionState, Node } from './types';
 import { devLogger } from '../../utils/logging';
+import {
+  hitTest,
+  getCursorForZone,
+  getHoverHighlightStyle,
+  createZoneClickHandler,
+  type HitTestConfig,
+  type ClickZone,
+  type HitTestResult,
+  type HoverHighlightStyle,
+} from './ClickZoneManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -123,7 +133,31 @@ export class SuperGridRenderer {
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
   private onHeaderClick?: (header: HeaderDescriptor) => void;
+  private onHeaderExpandCollapse?: (header: HeaderDescriptor) => void;
+  private onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
   private onRenderComplete?: (renderTime: number, cellCount: number) => void;
+
+  // State for hit testing
+  private currentColumnHeaders: HeaderDescriptor[] = [];
+  private currentRowHeaders: HeaderDescriptor[] = [];
+  private currentCells: CellDescriptor[] = [];
+  private currentZone: ClickZone = 'none';
+
+  // Configuration for hit testing
+  private hitTestConfig: HitTestConfig = {
+    labelHeight: 32,
+    resizeEdgeWidth: 4,
+    gridDimensions: {
+      rows: 0,
+      cols: 0,
+      cellWidth: 100,
+      cellHeight: 80,
+      headerHeight: 40,
+      headerWidth: 120,
+      totalWidth: 0,
+      totalHeight: 0,
+    },
+  };
 
   constructor(_animationDuration: number = 250) {
     // Animation duration stored for future use
@@ -151,10 +185,203 @@ export class SuperGridRenderer {
     mainGroup.append('g').attr('class', 'headers');
     mainGroup.append('g').attr('class', 'cells');
     mainGroup.append('g').attr('class', 'selection');
+    mainGroup.append('g').attr('class', 'hover-highlight');
 
     if (enableZoomPan) {
       this.setupZoomBehavior(d3);
     }
+
+    // Set up mousemove handler for cursor zone changes and hover highlighting
+    this.setupMouseMoveHandler();
+
+    // Set up click handler for zone-based actions
+    this.setupClickHandler();
+  }
+
+  /**
+   * Set up mousemove handler for zone-based cursor updates and hover highlighting.
+   * Cursor changes based on which zone the mouse is over:
+   * - parent-label: pointer (expand/collapse)
+   * - child-body: cell (select children)
+   * - resize-edge: col-resize (resize column/row)
+   * - data-cell: default
+   */
+  private setupMouseMoveHandler(): void {
+    if (!this.svg) return;
+
+    const svgElement = this.svg.node();
+    if (!svgElement) return;
+
+    svgElement.addEventListener('mousemove', (event: MouseEvent) => {
+      // Get point relative to SVG
+      const rect = svgElement.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      // Perform hit test
+      const result = hitTest(
+        point,
+        this.currentColumnHeaders,
+        this.currentRowHeaders,
+        this.currentCells,
+        this.hitTestConfig
+      );
+
+      // Update cursor if zone changed
+      if (result.zone !== this.currentZone) {
+        this.currentZone = result.zone;
+        svgElement.style.cursor = getCursorForZone(result.zone);
+      }
+
+      // Update hover highlighting
+      this.updateHoverHighlight(result);
+    });
+
+    // Clear highlight on mouse leave
+    svgElement.addEventListener('mouseleave', () => {
+      this.clearHoverHighlight();
+      this.currentZone = 'none';
+    });
+  }
+
+  /**
+   * Update hover highlight based on hit test result.
+   */
+  private updateHoverHighlight(result: HitTestResult): void {
+    if (!this.svg) return;
+
+    const highlightGroup = this.svg.select('.hover-highlight');
+
+    // Get highlight style for this zone
+    const style = getHoverHighlightStyle(result.zone, result.header);
+
+    if (!style) {
+      this.clearHoverHighlight();
+      return;
+    }
+
+    // Create or update highlight rectangle
+    let highlight = highlightGroup.select<SVGRectElement>('.hover-rect');
+
+    if (highlight.empty()) {
+      highlight = highlightGroup
+        .append('rect')
+        .attr('class', 'hover-rect')
+        .style('pointer-events', 'none');
+    }
+
+    // Apply style based on highlight type
+    const { headerWidth, headerHeight } = this.hitTestConfig.gridDimensions;
+    const isColumnHeader = result.header?.id.startsWith('column_');
+
+    highlight
+      .attr('x', style.x + (isColumnHeader ? headerWidth : 0))
+      .attr('y', style.y + (isColumnHeader ? 0 : headerHeight))
+      .attr('width', style.width)
+      .attr('height', style.height)
+      .attr('fill', this.getHighlightFill(style.type))
+      .attr('stroke', this.getHighlightStroke(style.type))
+      .attr('stroke-width', style.type === 'resize' ? 2 : 1)
+      .attr('opacity', 0.3);
+  }
+
+  /**
+   * Get fill color for highlight based on type.
+   */
+  private getHighlightFill(type: HoverHighlightStyle['type']): string {
+    switch (type) {
+      case 'span':
+        return '#007acc'; // Blue for span (expand/collapse)
+      case 'cell':
+        return '#28a745'; // Green for cell selection
+      case 'resize':
+        return 'none';
+      default:
+        return 'none';
+    }
+  }
+
+  /**
+   * Get stroke color for highlight based on type.
+   */
+  private getHighlightStroke(type: HoverHighlightStyle['type']): string {
+    switch (type) {
+      case 'span':
+        return '#005a9e';
+      case 'cell':
+        return '#1e7e34';
+      case 'resize':
+        return '#6c757d';
+      default:
+        return 'none';
+    }
+  }
+
+  /**
+   * Clear hover highlight.
+   */
+  private clearHoverHighlight(): void {
+    if (!this.svg) return;
+
+    this.svg.select('.hover-highlight').selectAll('.hover-rect').remove();
+  }
+
+  /**
+   * Set up click handler for zone-based actions.
+   */
+  private setupClickHandler(): void {
+    if (!this.svg) return;
+
+    const svgElement = this.svg.node();
+    if (!svgElement) return;
+
+    // Create zone click handler with callbacks
+    const zoneClickHandler = createZoneClickHandler({
+      onExpandCollapse: (header) => {
+        if (this.onHeaderExpandCollapse) {
+          this.onHeaderExpandCollapse(header);
+        }
+      },
+      onSelectChildren: (header) => {
+        if (this.onHeaderSelectChildren) {
+          this.onHeaderSelectChildren(header);
+        } else if (this.onHeaderClick) {
+          // Fallback to generic header click
+          this.onHeaderClick(header);
+        }
+      },
+      onSelectCell: (cell) => {
+        if (this.onCellClick) {
+          // Find nodes for this cell
+          const nodes: Node[] = []; // Would need allNodes reference
+          this.onCellClick(cell, nodes);
+        }
+      },
+    });
+
+    // Listen for clicks and dispatch based on current hover state
+    svgElement.addEventListener('click', (event: MouseEvent) => {
+      // Get point relative to SVG
+      const rect = svgElement.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      // Perform hit test to get current zone
+      const result = hitTest(
+        point,
+        this.currentColumnHeaders,
+        this.currentRowHeaders,
+        this.currentCells,
+        this.hitTestConfig
+      );
+
+      // Dispatch to zone-specific handler
+      zoneClickHandler(result);
+    });
   }
 
   /**
@@ -283,10 +510,14 @@ export class SuperGridRenderer {
   setCallbacks(callbacks: {
     onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
     onHeaderClick?: (header: HeaderDescriptor) => void;
+    onHeaderExpandCollapse?: (header: HeaderDescriptor) => void;
+    onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
     onRenderComplete?: (renderTime: number, cellCount: number) => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
     this.onHeaderClick = callbacks.onHeaderClick;
+    this.onHeaderExpandCollapse = callbacks.onHeaderExpandCollapse;
+    this.onHeaderSelectChildren = callbacks.onHeaderSelectChildren;
     this.onRenderComplete = callbacks.onRenderComplete;
   }
 
@@ -302,6 +533,14 @@ export class SuperGridRenderer {
     if (!this.svg) return;
 
     const startTime = performance.now();
+
+    // Store current state for hit testing
+    this.currentColumnHeaders = headerTree.columns;
+    this.currentRowHeaders = headerTree.rows;
+    this.currentCells = currentCells;
+
+    // Update hit test config with current grid dimensions
+    this.hitTestConfig.gridDimensions = gridDimensions;
 
     // Import d3 for rendering
     const d3 = await import('d3');

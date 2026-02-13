@@ -14,6 +14,9 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   hitTest,
   getCursorForZone,
+  updateCursor,
+  createZoneClickHandler,
+  getHoverHighlightStyle,
   type ClickZone,
   type HitTestResult,
   type HitTestConfig,
@@ -245,6 +248,52 @@ describe('ClickZoneManager', () => {
     });
   });
 
+  describe('updateCursor', () => {
+    it('should set pointer cursor for parent-label zone', () => {
+      const mockElement = { style: { cursor: '' } } as unknown as HTMLElement;
+
+      updateCursor('parent-label', mockElement);
+
+      expect(mockElement.style.cursor).toBe('pointer');
+    });
+
+    it('should set cell cursor for child-body zone', () => {
+      const mockElement = { style: { cursor: '' } } as unknown as HTMLElement;
+
+      updateCursor('child-body', mockElement);
+
+      expect(mockElement.style.cursor).toBe('cell');
+    });
+
+    it('should set col-resize cursor for resize-edge zone', () => {
+      const mockElement = { style: { cursor: '' } } as unknown as HTMLElement;
+
+      updateCursor('resize-edge', mockElement);
+
+      expect(mockElement.style.cursor).toBe('col-resize');
+    });
+
+    it('should set default cursor for data-cell zone', () => {
+      const mockElement = { style: { cursor: '' } } as unknown as HTMLElement;
+
+      updateCursor('data-cell', mockElement);
+
+      expect(mockElement.style.cursor).toBe('default');
+    });
+
+    it('should update cursor when zone changes', () => {
+      const mockElement = { style: { cursor: '' } } as unknown as HTMLElement;
+
+      // Start with one zone
+      updateCursor('resize-edge', mockElement);
+      expect(mockElement.style.cursor).toBe('col-resize');
+
+      // Change to another zone
+      updateCursor('parent-label', mockElement);
+      expect(mockElement.style.cursor).toBe('pointer');
+    });
+  });
+
   describe('zone boundary accuracy', () => {
     it('should detect label zone only within labelHeight threshold', () => {
       // Just inside label zone (at y=31, threshold is 32)
@@ -280,6 +329,141 @@ describe('ClickZoneManager', () => {
       const outsideEdge = { x: 190 + 120, y: 30 };
       const outsideResult = hitTest(outsideEdge, columnHeaders, rowHeaders, cells, defaultConfig);
       expect(outsideResult.zone).not.toBe('resize-edge');
+    });
+  });
+
+  describe('createZoneClickHandler', () => {
+    it('should call onExpandCollapse for parent-label zone clicks', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+      });
+
+      const header = columnHeaders[0]; // Q1 parent header
+      handler({ zone: 'parent-label', header });
+
+      expect(onExpandCollapse).toHaveBeenCalledWith(header);
+      expect(onSelectChildren).not.toHaveBeenCalled();
+      expect(onSelectCell).not.toHaveBeenCalled();
+    });
+
+    it('should call onSelectChildren for child-body zone clicks', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+      });
+
+      const header = columnHeaders[1]; // Jan leaf header
+      handler({ zone: 'child-body', header });
+
+      expect(onExpandCollapse).not.toHaveBeenCalled();
+      expect(onSelectChildren).toHaveBeenCalledWith(header);
+      expect(onSelectCell).not.toHaveBeenCalled();
+    });
+
+    it('should call onSelectCell for data-cell zone clicks', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+      });
+
+      const cell = cells[0];
+      handler({ zone: 'data-cell', cell });
+
+      expect(onExpandCollapse).not.toHaveBeenCalled();
+      expect(onSelectChildren).not.toHaveBeenCalled();
+      expect(onSelectCell).toHaveBeenCalledWith(cell);
+    });
+
+    it('should not call any handler for resize-edge zone (future feature)', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+      });
+
+      const header = columnHeaders[2]; // Feb header
+      handler({ zone: 'resize-edge', header });
+
+      // Resize is handled by drag, not click
+      expect(onExpandCollapse).not.toHaveBeenCalled();
+      expect(onSelectChildren).not.toHaveBeenCalled();
+      expect(onSelectCell).not.toHaveBeenCalled();
+    });
+
+    it('should not call any handler for none zone', () => {
+      const onExpandCollapse = vi.fn();
+      const onSelectChildren = vi.fn();
+      const onSelectCell = vi.fn();
+
+      const handler = createZoneClickHandler({
+        onExpandCollapse,
+        onSelectChildren,
+        onSelectCell,
+      });
+
+      handler({ zone: 'none' });
+
+      expect(onExpandCollapse).not.toHaveBeenCalled();
+      expect(onSelectChildren).not.toHaveBeenCalled();
+      expect(onSelectCell).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getHoverHighlightStyle', () => {
+    it('should return span highlight style for parent-label zone', () => {
+      const header = columnHeaders[0]; // Q1 with span=2
+
+      const style = getHoverHighlightStyle('parent-label', header);
+
+      expect(style).toBeDefined();
+      expect(style!.type).toBe('span');
+      expect(style!.x).toBe(header.position.x);
+      expect(style!.width).toBe(header.position.width);
+    });
+
+    it('should return cell highlight style for child-body zone', () => {
+      const header = columnHeaders[1]; // Jan leaf
+
+      const style = getHoverHighlightStyle('child-body', header);
+
+      expect(style).toBeDefined();
+      expect(style!.type).toBe('cell');
+      expect(style!.x).toBe(header.position.x);
+      expect(style!.width).toBe(header.position.width);
+    });
+
+    it('should return resize style for resize-edge zone', () => {
+      const header = columnHeaders[2]; // Feb
+
+      const style = getHoverHighlightStyle('resize-edge', header);
+
+      expect(style).toBeDefined();
+      expect(style!.type).toBe('resize');
+    });
+
+    it('should return null for data-cell and none zones', () => {
+      expect(getHoverHighlightStyle('data-cell')).toBeNull();
+      expect(getHoverHighlightStyle('none')).toBeNull();
     });
   });
 });

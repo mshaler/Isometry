@@ -51,6 +51,12 @@ export interface ImportResult {
   skipped: number;
   errors: string[];
   duration: number;
+  runId?: string;
+  reconciliation?: {
+    totalFiles: number;
+    importedByType: Record<string, number>;
+    skippedByReason: Record<string, number>;
+  };
 }
 
 export interface NodeRecord {
@@ -149,7 +155,12 @@ export class AltoImporter extends BaseImporter {
     filename: string
   ): CanonicalNode {
     const id = uuidv4();
-    const sourceId = generateDeterministicSourceId(filename, frontmatter, 'alto');
+    const sourceId = generateDeterministicSourceId(
+      filename,
+      frontmatter,
+      'alto',
+      body
+    );
 
     // Extract values with type coercion
     const title = String(frontmatter.title || frontmatter.name || filename);
@@ -165,7 +176,7 @@ export class AltoImporter extends BaseImporter {
     }
 
     // Folder extraction (type-specific)
-    let folder = this.extractFolder(frontmatter, dataType);
+    const folder = this.extractFolder(frontmatter, dataType);
 
     // Status extraction (reminders specific)
     let status = frontmatter.status ? String(frontmatter.status) : null;
@@ -455,7 +466,8 @@ export function mapToNodeRecord(
   const sourceId = generateDeterministicSourceId(
     filePath,
     rawFrontmatter,
-    'alto-index'
+    'alto-index',
+    content || ''
   );
 
   // Base node with defaults
@@ -596,15 +608,51 @@ export function importAltoFiles(
   files: Array<{ path: string; content: string }>,
   options: ImportOptions = {}
 ): ImportResult {
+  const runId = `alto-run-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const start = performance.now();
   const result: ImportResult = {
     imported: 0,
     skipped: 0,
     errors: [],
     duration: 0,
+    runId,
+    reconciliation: {
+      totalFiles: 0,
+      importedByType: {},
+      skippedByReason: {},
+    },
   };
 
   const { limit, dataTypes, clearExisting = false, onProgress } = options;
+
+  // Ensure import run metadata tables exist and register the run.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS etl_import_runs (
+      run_id TEXT PRIMARY KEY,
+      source TEXT NOT NULL,
+      started_at TEXT NOT NULL DEFAULT (datetime('now')),
+      finished_at TEXT,
+      status TEXT NOT NULL DEFAULT 'running',
+      total_files INTEGER NOT NULL DEFAULT 0,
+      imported_count INTEGER NOT NULL DEFAULT 0,
+      skipped_count INTEGER NOT NULL DEFAULT 0,
+      error_count INTEGER NOT NULL DEFAULT 0,
+      options_json TEXT,
+      reconciliation_json TEXT
+    );
+    CREATE TABLE IF NOT EXISTS etl_import_run_types (
+      run_id TEXT NOT NULL REFERENCES etl_import_runs(run_id) ON DELETE CASCADE,
+      node_type TEXT NOT NULL,
+      imported_count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (run_id, node_type)
+    );
+  `);
+  db.run(
+    `INSERT OR REPLACE INTO etl_import_runs (
+      run_id, source, status, options_json
+    ) VALUES (?, ?, 'running', ?)`,
+    [runId, 'alto-index', JSON.stringify(options)]
+  );
 
   // Clear existing alto-index data if requested
   if (clearExisting) {
@@ -674,6 +722,7 @@ export function importAltoFiles(
     filesToProcess = files;
   }
   const total = filesToProcess.length;
+  result.reconciliation!.totalFiles = total;
 
   for (let i = 0; i < filesToProcess.length; i++) {
     const file = filesToProcess[i]!;
@@ -683,12 +732,16 @@ export function importAltoFiles(
 
       if (!parsed) {
         result.skipped++;
+        result.reconciliation!.skippedByReason.parse_failed =
+          (result.reconciliation!.skippedByReason.parse_failed || 0) + 1;
         continue;
       }
 
       // Filter by data type if specified
       if (dataTypes && !dataTypes.includes(parsed.dataType)) {
         result.skipped++;
+        result.reconciliation!.skippedByReason.filtered_data_type =
+          (result.reconciliation!.skippedByReason.filtered_data_type || 0) + 1;
         continue;
       }
 
@@ -744,6 +797,8 @@ export function importAltoFiles(
       storeNodeProperties(db, node.id, rawFrontmatter);
 
       result.imported++;
+      result.reconciliation!.importedByType[node.node_type] =
+        (result.reconciliation!.importedByType[node.node_type] || 0) + 1;
 
       if (onProgress && i % 100 === 0) {
         onProgress(result.imported, total, file.path);
@@ -751,10 +806,43 @@ export function importAltoFiles(
     } catch (error) {
       result.errors.push(`${file.path}: ${(error as Error).message}`);
       result.skipped++;
+      result.reconciliation!.skippedByReason.error =
+        (result.reconciliation!.skippedByReason.error || 0) + 1;
     }
   }
 
   result.duration = performance.now() - start;
+  db.run(
+    `UPDATE etl_import_runs
+      SET finished_at = datetime('now'),
+          status = ?,
+          total_files = ?,
+          imported_count = ?,
+          skipped_count = ?,
+          error_count = ?,
+          reconciliation_json = ?
+      WHERE run_id = ?`,
+    [
+      result.errors.length > 0 ? 'failed' : 'completed',
+      total,
+      result.imported,
+      result.skipped,
+      result.errors.length,
+      JSON.stringify(result.reconciliation),
+      runId,
+    ]
+  );
+
+  if (result.reconciliation) {
+    for (const [nodeType, importedCount] of Object.entries(result.reconciliation.importedByType)) {
+      db.run(
+        `INSERT OR REPLACE INTO etl_import_run_types (run_id, node_type, imported_count)
+         VALUES (?, ?, ?)`,
+        [runId, nodeType, importedCount]
+      );
+    }
+  }
+
   return result;
 }
 

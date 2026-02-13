@@ -346,3 +346,146 @@ export function hitTest(
 export function updateCursor(zone: ClickZone, element: SVGSVGElement | HTMLElement): void {
   element.style.cursor = getCursorForZone(zone);
 }
+
+// ============================================================================
+// Click Handler Factory
+// ============================================================================
+
+/**
+ * Callbacks for zone-specific click actions.
+ */
+export interface ZoneClickCallbacks {
+  /** Called when clicking parent-label zone (expand/collapse) */
+  onExpandCollapse?: (header: HeaderDescriptor) => void;
+  /** Called when clicking child-body zone (select children) */
+  onSelectChildren?: (header: HeaderDescriptor) => void;
+  /** Called when clicking data-cell zone */
+  onSelectCell?: (cell: CellDescriptor) => void;
+}
+
+/**
+ * Create a click handler that routes to zone-specific callbacks.
+ *
+ * This factory creates a single handler that can be attached to the grid
+ * and will dispatch to the appropriate callback based on hit test results.
+ *
+ * @param callbacks - Zone-specific callback functions
+ * @returns A handler function that takes a HitTestResult
+ */
+export function createZoneClickHandler(
+  callbacks: ZoneClickCallbacks
+): (result: HitTestResult) => void {
+  return (result: HitTestResult) => {
+    switch (result.zone) {
+      case 'parent-label':
+        if (callbacks.onExpandCollapse && result.header) {
+          callbacks.onExpandCollapse(result.header);
+        }
+        break;
+
+      case 'child-body':
+        if (callbacks.onSelectChildren && result.header) {
+          callbacks.onSelectChildren(result.header);
+        }
+        break;
+
+      case 'data-cell':
+        if (callbacks.onSelectCell && result.cell) {
+          callbacks.onSelectCell(result.cell);
+        }
+        break;
+
+      case 'resize-edge':
+        // Resize is handled by drag, not click
+        // Future: could trigger resize mode
+        break;
+
+      case 'none':
+        // Click on empty area - could clear selection
+        break;
+    }
+  };
+}
+
+// ============================================================================
+// Hover Highlighting
+// ============================================================================
+
+/**
+ * Highlight style for hover feedback.
+ */
+export interface HoverHighlightStyle {
+  /** Type of highlight: span for parent headers, cell for individual */
+  type: 'span' | 'cell' | 'resize';
+  /** X position of highlight */
+  x: number;
+  /** Y position of highlight */
+  y: number;
+  /** Width of highlight */
+  width: number;
+  /** Height of highlight */
+  height: number;
+}
+
+/**
+ * Get the hover highlight style for a given zone and header.
+ *
+ * Different zones get different visual feedback:
+ * - parent-label: Highlights the entire span boundary
+ * - child-body: Highlights just that header's cell area
+ * - resize-edge: Shows resize indicator
+ * - data-cell, none: No header highlight
+ *
+ * @param zone - The click zone being hovered
+ * @param header - The header being hovered (optional for data-cell/none)
+ * @returns Highlight style or null if no highlight needed
+ */
+export function getHoverHighlightStyle(
+  zone: ClickZone,
+  header?: HeaderDescriptor
+): HoverHighlightStyle | null {
+  // No highlight for data cells or empty areas
+  if (zone === 'data-cell' || zone === 'none') {
+    return null;
+  }
+
+  // Header is required for other zones
+  if (!header) {
+    return null;
+  }
+
+  switch (zone) {
+    case 'parent-label':
+      // Highlight entire span for parent headers
+      return {
+        type: 'span',
+        x: header.position.x,
+        y: header.position.y,
+        width: header.position.width,
+        height: header.position.height,
+      };
+
+    case 'child-body':
+      // Highlight just this cell area
+      return {
+        type: 'cell',
+        x: header.position.x,
+        y: header.position.y,
+        width: header.position.width,
+        height: header.position.height,
+      };
+
+    case 'resize-edge':
+      // Show resize indicator
+      return {
+        type: 'resize',
+        x: header.position.x + header.position.width - 2,
+        y: header.position.y,
+        width: 4,
+        height: header.position.height,
+      };
+
+    default:
+      return null;
+  }
+}
