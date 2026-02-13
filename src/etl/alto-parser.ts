@@ -8,7 +8,7 @@
  * Adapted from CardBoard-v3's alto-parser.ts with extensions for
  * diverse data types and LATCH field mapping.
  *
- * Phase 64-02: Refactored to use gray-matter via parsers/frontmatter module.
+ * Phase 64-02: Refactored to use shared parsers/frontmatter module.
  */
 import { parseFrontmatter as parseYamlFrontmatter, type ParsedFrontmatter } from './parsers/frontmatter';
 
@@ -206,7 +206,7 @@ function hashString(str: string): string {
 
 /**
  * Parse a single alto-index markdown file content.
- * Uses gray-matter via parsers/frontmatter for full YAML 1.2 spec support.
+ * Uses shared frontmatter parser with YAML 1.2 support.
  */
 export function parseAltoFile(content: string, filePath: string = ''): ParsedAltoFile | null {
   const parsed = parseYamlFrontmatter(content);

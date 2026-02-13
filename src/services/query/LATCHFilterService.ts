@@ -13,6 +13,7 @@
  * Architecture: Bridge elimination compatible - generates SQL that works
  * directly with sql.js DatabaseService with zero serialization overhead
  */
+import { compileFilterPredicates, type FilterPredicate } from './filterAst';
 
 export interface LATCHFilter {
   id: string;
@@ -151,55 +152,16 @@ export class LATCHFilterService {
       };
     }
 
-    const conditions: string[] = ['deleted_at IS NULL']; // Always exclude soft-deleted
-    const parameters: unknown[] = [];
-
-    // Group filters by axis for logical grouping
-    const filtersByAxis = this.groupFiltersByAxis(activeFilters);
-
-    // Location (L) filters
-    if (filtersByAxis.L && filtersByAxis.L.length > 0) {
-      const locationConditions = this.compileLocationFilters(filtersByAxis.L, parameters);
-      if (locationConditions) {
-        conditions.push(`(${locationConditions})`);
-      }
-    }
-
-    // Alphabet (A) filters - text-based searching and sorting
-    if (filtersByAxis.A && filtersByAxis.A.length > 0) {
-      const alphabetConditions = this.compileAlphabetFilters(filtersByAxis.A, parameters);
-      if (alphabetConditions) {
-        conditions.push(`(${alphabetConditions})`);
-      }
-    }
-
-    // Time (T) filters
-    if (filtersByAxis.T && filtersByAxis.T.length > 0) {
-      const timeConditions = this.compileTimeFilters(filtersByAxis.T, parameters);
-      if (timeConditions) {
-        conditions.push(`(${timeConditions})`);
-      }
-    }
-
-    // Category (C) filters - folders, tags, status
-    if (filtersByAxis.C && filtersByAxis.C.length > 0) {
-      const categoryConditions = this.compileCategoryFilters(filtersByAxis.C, parameters);
-      if (categoryConditions) {
-        conditions.push(`(${categoryConditions})`);
-      }
-    }
-
-    // Hierarchy (H) filters - priority, importance, sort order
-    if (filtersByAxis.H && filtersByAxis.H.length > 0) {
-      const hierarchyConditions = this.compileHierarchyFilters(filtersByAxis.H, parameters);
-      if (hierarchyConditions) {
-        conditions.push(`(${hierarchyConditions})`);
-      }
-    }
+    const predicates: FilterPredicate[] = activeFilters.map((filter) => ({
+      field: filter.facet,
+      operator: filter.operator,
+      value: filter.value,
+    }));
+    const compiled = compileFilterPredicates(predicates);
 
     return {
-      whereClause: conditions.join(' AND '),
-      parameters,
+      whereClause: compiled.whereClause,
+      parameters: compiled.parameters,
       activeFilters,
       isEmpty: false
     };

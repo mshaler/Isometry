@@ -114,13 +114,34 @@ export async function insertCanonicalNodes(
               : value === null
                 ? 'null'
                 : typeof value;
+            const valueString = typeof value === 'string' ? value : null;
+            const valueNumber = typeof value === 'number' ? value : null;
+            const valueBoolean = typeof value === 'boolean' ? (value ? 1 : 0) : null;
+            const valueJson =
+              valueType === 'array' || valueType === 'object'
+                ? JSON.stringify(value)
+                : null;
+            const legacyValue = JSON.stringify(value);
             const propId = `prop-${node.id}-${key}`;
             db.run(
               `
-              INSERT OR REPLACE INTO node_properties (id, node_id, key, value, value_type)
-              VALUES (?, ?, ?, ?, ?)
+              INSERT OR REPLACE INTO node_properties (
+                id, node_id, key, value, value_type,
+                value_string, value_number, value_boolean, value_json
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
-              [propId, node.id, key, JSON.stringify(value), valueType]
+              [
+                propId,
+                node.id,
+                key,
+                legacyValue,
+                valueType,
+                valueString,
+                valueNumber,
+                valueBoolean,
+                valueJson,
+              ]
             );
           }
         }

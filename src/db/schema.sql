@@ -67,8 +67,12 @@ CREATE TABLE IF NOT EXISTS node_properties (
     id TEXT PRIMARY KEY,
     node_id TEXT NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
     key TEXT NOT NULL,
-    value TEXT,  -- JSON-encoded value (preserves type information)
+    value TEXT,  -- Legacy JSON/text fallback
     value_type TEXT NOT NULL DEFAULT 'string',  -- string, number, boolean, array, object, null
+    value_string TEXT,   -- Fast path for string predicates
+    value_number REAL,   -- Fast path for numeric range predicates
+    value_boolean INTEGER, -- 0/1 boolean predicates
+    value_json TEXT,     -- JSON payload for arrays/objects
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE(node_id, key)  -- One value per key per node
 );
@@ -77,6 +81,32 @@ CREATE TABLE IF NOT EXISTS node_properties (
 CREATE INDEX IF NOT EXISTS idx_node_properties_node_id ON node_properties(node_id);
 CREATE INDEX IF NOT EXISTS idx_node_properties_key ON node_properties(key);
 CREATE INDEX IF NOT EXISTS idx_node_properties_lookup ON node_properties(node_id, key);
+CREATE INDEX IF NOT EXISTS idx_node_properties_value_number ON node_properties(key, value_number);
+CREATE INDEX IF NOT EXISTS idx_node_properties_value_string ON node_properties(key, value_string);
+
+-- ETL import run metadata and reconciliation reporting
+CREATE TABLE IF NOT EXISTS etl_import_runs (
+    run_id TEXT PRIMARY KEY,
+    source TEXT NOT NULL,
+    started_at TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at TEXT,
+    status TEXT NOT NULL DEFAULT 'running', -- running, completed, failed
+    total_files INTEGER NOT NULL DEFAULT 0,
+    imported_count INTEGER NOT NULL DEFAULT 0,
+    skipped_count INTEGER NOT NULL DEFAULT 0,
+    error_count INTEGER NOT NULL DEFAULT 0,
+    options_json TEXT,
+    reconciliation_json TEXT
+);
+
+CREATE TABLE IF NOT EXISTS etl_import_run_types (
+    run_id TEXT NOT NULL REFERENCES etl_import_runs(run_id) ON DELETE CASCADE,
+    node_type TEXT NOT NULL,
+    imported_count INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (run_id, node_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_etl_import_runs_started_at ON etl_import_runs(started_at DESC);
 
 -- FTS5 virtual table for full-text search
 CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(

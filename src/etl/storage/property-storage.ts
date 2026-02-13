@@ -51,24 +51,37 @@ export function storeNodeProperties(
       continue; // Skip keys that map to nodes table columns
     }
 
-    // Determine value type for reconstruction
+    // Determine value type and typed column values
     const valueType = Array.isArray(value) ? 'array'
       : value === null ? 'null'
       : typeof value;
+    const valueString = typeof value === 'string' ? value : null;
+    const valueNumber = typeof value === 'number' ? value : null;
+    const valueBoolean = typeof value === 'boolean' ? (value ? 1 : 0) : null;
+    const valueJson =
+      valueType === 'array' || valueType === 'object' ? JSON.stringify(value) : null;
+    const legacyValue = JSON.stringify(value);
 
     // Generate property ID (deterministic for idempotency)
     const propId = `prop-${nodeId}-${key}`;
 
     // Insert or replace (handles re-imports)
     db.run(`
-      INSERT OR REPLACE INTO node_properties (id, node_id, key, value, value_type)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO node_properties (
+        id, node_id, key, value, value_type,
+        value_string, value_number, value_boolean, value_json
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       propId,
       nodeId,
       key,
-      JSON.stringify(value), // Preserve structure with JSON
-      valueType
+      legacyValue,
+      valueType,
+      valueString,
+      valueNumber,
+      valueBoolean,
+      valueJson,
     ]);
   }
 }

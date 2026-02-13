@@ -453,6 +453,30 @@ More content here.`,
       expect(nodes).toHaveLength(1);
       expect(nodes[0].name).toBe('/notes/no-frontmatter.md'); // filename fallback
     });
+
+    it('handles malformed multi-line quoted frontmatter values', async () => {
+      const source: FileSource = {
+        filename: '/calendar/malformed-location.md',
+        content: `---
+title: Calendar Event
+calendar: Work
+location: "123 Main St
+Suite 400
+Denver, CO"
+start_date: 2025-05-27T10:00:00Z
+---
+
+Event details.`,
+      };
+
+      const nodes = await importer.import(source);
+
+      expect(nodes).toHaveLength(1);
+      expect(nodes[0].name).toBe('Calendar Event');
+      expect(nodes[0].folder).toBe('Work');
+      expect(nodes[0].locationAddress).toContain('123 Main St');
+      expect(nodes[0].eventStart).toMatch(/^2025-05-27T10:00:00/);
+    });
   });
 });
 
