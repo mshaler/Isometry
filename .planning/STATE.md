@@ -9,16 +9,41 @@ See: .planning/PROJECT.md (updated 2026-02-12)
 
 ## Current Position
 
-Phase: 75 of 76 (SuperGrid Phase C)
-Plan: 04 of 04 COMPLETE
-Status: Phase 75 COMPLETE — All 4 plans done, ready for Phase 76
-Last activity: 2026-02-13 — Completed 75-03-PLAN.md (SuperCards)
+Phase: 76 of 79 (SuperGrid Polish → Data Layer)
+Plan: 03 of 03 COMPLETE
+Status: Phase 76 COMPLETE — SuperGrid Polish (SuperSearch, Performance, Visual)
+Last activity: 2026-02-13 — Phase 76 complete (data-driven nested headers)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
 Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
 Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 plans) ✅ PHASE C COMPLETE
+Progress (v5.0 SuperGrid Polish): [##############################] 100% (3/3 plans) ✅ PHASE 76 COMPLETE
+Progress (v4.9 Data Layer): [####                          ] 14% (1/7 plans) — Phase 77-01 COMPLETE
+
+## Upcoming: v4.9 Data Layer Completion
+
+**Milestone:** `.planning/milestones/v4.9-data-layer-completion.md`
+**Priority Order:** Versioning (P0) → URL Deep Linking (P1) → Catalog Browser (P2)
+
+| Phase | Name | Plans | Priority | Status |
+|-------|------|-------|----------|--------|
+| 77 | Versioning | 77-01 | P0 | Ready |
+| 78 | URL Deep Linking | 78-01, 78-02 | P1 | Ready |
+| 79 | Catalog Browser | 79-01, 79-02, 79-03 | P2 | Ready |
+
+**Phase 77 (Versioning):**
+- 77-01: Version increment trigger (AFTER UPDATE on nodes)
+
+**Phase 78 (URL Deep Linking):**
+- 78-01: Node deep links via ?nodeId= parameter
+- 78-02: Filter state serialization to URL
+
+**Phase 79 (Catalog Browser):**
+- 79-01: Facet aggregate queries (useFacetAggregates hook)
+- 79-02: Catalog browser UI (FolderTree, TagCloud, StatusChips)
+- 79-03: Breadcrumb navigation (FilterBreadcrumb)
 
 ## Performance Metrics
 
@@ -31,6 +56,11 @@ Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 pl
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 76 - v5.0 SuperGrid Polish) — PHASE COMPLETE:**
+- Phase 76-03: COMPLETE (~12m) — NestedHeaderRenderer data-driven .join() pattern with deep nesting/performance handling
+- Phase 76-02: COMPLETE (~8m) — Performance benchmark suite (14 tests, all spec targets exceeded)
+- Phase 76-01: COMPLETE (~5m) — SuperSearch FTS5 integration with in-grid highlighting
 
 **Recent completions (Phase 75 - v5.0 SuperGrid Phase C) — PHASE COMPLETE:**
 - Phase 75-04: COMPLETE (~8m) — SuperAudit computed value highlighting with CRUD flash
@@ -98,6 +128,22 @@ Progress (v5.0 SuperGrid Phase C): [##############################] 100% (4/4 pl
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 76-03 decisions (Visual Polish - Data-Driven Nested Headers):**
+- POLISH-DEC-01: Lazy initialization of NestedHeaderRenderer in GridRenderingEngine
+- POLISH-DEC-02: MAX_NESTING_DEPTH=5 with collapsed placeholder for deep hierarchies
+- POLISH-DEC-03: MAX_VISIBLE_HEADERS=100 with warning log and truncation
+- POLISH-DEC-04: Clear + re-render for test assertions (JSDOM transition limitation)
+
+**Phase 76-02 decisions (Performance Verification):**
+- PERF-DEC-01: Seeded random generator (seed: 12345) for reproducible test data
+- PERF-DEC-02: Grid processing simulation groups by folder then status
+- PERF-DEC-03: FTS5 tests include various query patterns (simple, phrase, prefix, AND/OR)
+
+**Phase 76-01 decisions (SuperSearch Integration):**
+- SEARCH-DEC-01: Yellow tint (#facc15, rgba(250, 204, 21, 0.15)) for search highlights
+- SEARCH-DEC-02: Selection styling priority over search highlight
+- SEARCH-DEC-03: Dual rendering path support (React and D3-based)
 
 **Phase 75-04 decisions (SuperAudit - Computed Value Highlighting):**
 - AUDIT-DEC-01: Blue tint rgba(59, 130, 246, 0.1) for computed cells
@@ -442,9 +488,19 @@ node_properties table (EAV)
 - [x] Phase 74-03: SuperSelect Multi-Selection (COMPLETE - ~5 minutes)
 - [x] Phase 74-04: SuperPosition Coordinate Tracking (COMPLETE - ~5 minutes)
 
-**v5.0 (SuperGrid MVP) — PHASE C READY:**
-- [ ] Phase 75: SuperGrid Phase C (TBD)
-- [ ] Phase 76: SuperGrid Polish (TBD)
+**v5.0 (SuperGrid MVP) — PHASE C COMPLETE:**
+- [x] Phase 75-01: SuperFilter header dropdown filters (COMPLETE - ~8 minutes)
+- [x] Phase 75-02: SuperSort multi-level sorting (COMPLETE - ~5 minutes)
+- [x] Phase 75-03: SuperCards header/aggregation distinction (COMPLETE - ~5 minutes)
+- [x] Phase 75-04: SuperAudit computed value highlighting (COMPLETE - ~8 minutes)
+
+**v4.9 (Data Layer Completion) — IN PROGRESS:**
+- [x] Phase 77-01: Version increment trigger (COMPLETE - ~5 minutes)
+- [ ] Phase 78-01: Node deep links (?nodeId=)
+- [ ] Phase 78-02: Filter state in URL
+- [ ] Phase 79-01: Facet aggregate queries
+- [ ] Phase 79-02: Catalog browser UI
+- [ ] Phase 79-03: Breadcrumb navigation
 
 **Technical debt:**
 - [ ] Knip unused exports cleanup (ratchet from 1000 down over time)
@@ -453,7 +509,7 @@ node_properties table (EAV)
 
 ### Blockers/Concerns
 
-None — Phase 75 (SuperGrid Phase C) complete. Ready for Phase 76 (SuperGrid Polish).
+None — Phase 75 (SuperGrid Phase C) complete. Ready for v4.9 Data Layer (Phase 77-79).
 
 **v5.0 Phase C Achievement:**
 SuperGrid Phase C delivers visual polish and data features: SuperFilter header dropdown filters with SQL compilation, SuperSort multi-level sorting with priority badges, SuperCards header/aggregation distinction with chrome gradient and search exclusion, and SuperAudit computed value highlighting with CRUD flash animations. All four plans complete with comprehensive tests.
@@ -473,6 +529,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Phase 75 COMPLETE — SuperGrid Phase C all 4 plans done
-Resume file: .planning/phases/76-supergrid-polish/76-01-PLAN.md
-Next action: Execute Phase 76 (SuperGrid Polish - SuperSearch, Performance, Visual)
+Stopped at: Phase 77-01 COMPLETE — Version increment trigger working
+Resume file: .planning/phases/78-url-deep-linking/78-01-PLAN.md
+Next action: Execute Phase 78-01 (URL Deep Linking - ?nodeId= support)

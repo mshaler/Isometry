@@ -77,16 +77,31 @@ function generateNode(index: number, random: () => number, options: GeneratorOpt
 
   return {
     id: `node-${index}`,
+    nodeType: 'note' as const,
     name,
     content,
+    summary: null,
+    latitude: null,
+    longitude: null,
+    locationName: null,
+    locationAddress: null,
     folder,
     tags,
-    status,
+    status: status as 'active' | 'pending' | 'completed' | 'archived',
     priority,
-    created_at: createdAt,
-    modified_at: modifiedAt,
+    importance: priority,
+    sortOrder: index,
+    createdAt,
+    modifiedAt,
+    dueAt: null,
+    completedAt: null,
+    eventStart: null,
+    eventEnd: null,
     source: 'benchmark',
-    source_id: `bench-${index}`,
+    sourceId: `bench-${index}`,
+    sourceUrl: null,
+    deletedAt: null,
+    version: 1,
   };
 }
 
@@ -138,10 +153,10 @@ export async function insertBenchmarkNodes(
       JSON.stringify(node.tags || []),
       node.status || 'active',
       node.priority || 3,
-      node.created_at,
-      node.modified_at,
+      node.createdAt,
+      node.modifiedAt,
       node.source || 'benchmark',
-      node.source_id || node.id,
+      node.sourceId || node.id,
     ]);
   }
 }

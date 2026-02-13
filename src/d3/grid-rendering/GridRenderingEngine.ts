@@ -18,6 +18,7 @@ import type { JanusDensityState, ExtentDensityMode } from '../../types/density-c
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
 import { superGridLogger } from '../../utils/dev-logger';
+import { NestedHeaderRenderer } from './NestedHeaderRenderer';
 
 export interface RenderingConfig {
   cardWidth: number;
@@ -44,6 +45,7 @@ export class GridRenderingEngine {
   // Header system
   private superGridHeaders: SuperGridHeaders | null = null;
   private headerLayoutService: HeaderLayoutService;
+  private nestedHeaderRenderer: NestedHeaderRenderer | null = null;
 
   // Current rendering state
   private currentData: GridData | null = null;
@@ -77,6 +79,16 @@ export class GridRenderingEngine {
     this.callbacks = callbacks;
 
     this.headerLayoutService = new HeaderLayoutService();
+
+    // Initialize data-driven nested header renderer (POLISH-01)
+    this.nestedHeaderRenderer = new NestedHeaderRenderer(container, {
+      rowHeaderWidth: config.rowHeaderWidth,
+      cardHeight: config.cardHeight,
+      cardWidth: config.cardWidth,
+      headerHeight: config.headerHeight,
+      padding: config.padding,
+      animationDuration: config.animationDuration,
+    });
   }
 
   /**
@@ -1200,6 +1212,33 @@ export class GridRenderingEngine {
     axis: 'x' | 'y',
     compositeKeys: string[]
   ): void {
+    // POLISH-01: Delegate to data-driven NestedHeaderRenderer
+    // This uses D3's .join() pattern for proper enter/update/exit transitions
+    if (this.nestedHeaderRenderer) {
+      // Update config in case it changed
+      this.nestedHeaderRenderer.updateConfig({
+        rowHeaderWidth: this.config.rowHeaderWidth,
+        cardHeight: this.config.cardHeight,
+        cardWidth: this.config.cardWidth,
+        headerHeight: this.config.headerHeight,
+        padding: this.config.padding,
+        animationDuration: this.config.animationDuration,
+      });
+
+      // Check if this is a nested hierarchy (has | separator) or single-level
+      const hasNestedKeys = compositeKeys.some(k => k.includes('|'));
+
+      if (hasNestedKeys) {
+        this.nestedHeaderRenderer.render(axis, compositeKeys);
+        return;
+      }
+
+      // Fall back to simple headers for non-nested keys
+      this.renderSimpleAxisHeaders(axis, compositeKeys);
+      return;
+    }
+
+    // Legacy fallback (should not reach here with proper initialization)
     const headerContainer = this.container.select('.headers');
     const config = this.config;
     const rowHeaderWidth = config.rowHeaderWidth;
