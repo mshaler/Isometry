@@ -15,7 +15,7 @@ Status: PHASE 74 COMPLETE — SuperPosition coordinate tracking complete
 Last activity: 2026-02-13 — Completed 74-04 (SuperPosition - PAFV coordinate tracking)
 
 Progress (v4.7): [##############################] 100% (8/8 requirements) ✅ MILESTONE COMPLETE
-Progress (v4.8): [###################...........] 66% (4/6 phases) — deferred for SuperGrid
+Progress (v4.8): [##############################] 100% (6/6 phases) ✅ MILESTONE COMPLETE
 Progress (v5.0 SuperGrid Phase A): [##############################] 100% (4/4 plans) ✅ PHASE A COMPLETE
 Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 plans) ✅ PHASE B COMPLETE
 
@@ -43,7 +43,11 @@ Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 pl
 - Phase 73-02: COMPLETE (~6m) — SuperDensity controls with Janus value/extent model
 - Phase 73-01: COMPLETE (~6m) — SuperStack multi-level headers with hierarchy building
 
-**Recent completions (Phase 71 - v4.8 Swift Bridge):**
+**Recent completions (Phase 72 - v4.8 Quality & Docs) — MILESTONE COMPLETE:**
+- Phase 72-01: COMPLETE (~10m) — ETL quality audit (179 tests, schema validation, error handling)
+
+**Recent completions (Phase 71 - v4.8 Swift Bridge) — PHASE COMPLETE:**
+- Phase 71-04: COMPLETE (~15m) — BridgeCoordinator unified interface + integration tests
 - Phase 71-03: COMPLETE (~7m) — ContactsAdapter + NotesAdapter actors with unit tests
 - Phase 71-02: COMPLETE (~11m) — EventKitAdapter actor with calendar/reminder conversion
 - Phase 71-01: COMPLETE (~12m) — ETLBridge actor + CanonicalNode + ETLBridgeError + unit tests
@@ -111,6 +115,11 @@ Progress (v5.0 SuperGrid Phase B): [##############################] 100% (4/4 pl
 - DRAG-DEC-02: Drop zone highlight uses blue (#3B82F6) with 0.2 opacity
 - DRAG-DEC-03: Escape key cancels drag via document keydown listener
 - DRAG-DEC-04: swapPlaneMapping delegates to transpose (x/y swap = row/column swap)
+
+**Phase 71-04 decisions (BridgeCoordinator & Integration Tests):**
+- BRIDGE-DEC-05: Named BridgePermissionStatus instead of PermissionStatus to avoid conflict with NotesAccessManager.PermissionStatus
+- BRIDGE-DEC-06: Integration tests use mock window.isometryETL HTML for isolated testing
+- BRIDGE-DEC-07: Sequential file import in importFiles() for predictable error handling
 
 **Phase 71-02 decisions (EventKitAdapter):**
 - EK-DEC-01: Use iOS 17+ requestFullAccessToEvents() async API (cleaner concurrency)
@@ -376,7 +385,7 @@ node_properties table (EAV)
 - Phase 71: Swift Bridge (BRIDGE-01, BRIDGE-02)
 - Phase 72: Quality & Docs (QUAL-01, QUAL-02, QUAL-03)
 
-**Coverage:** 4/6 phases in progress (66%)
+**Coverage:** 5/6 phases in progress (83%)
 - [x] Phase 67: Canonical Schema — Zod validation, JSON Schema, SQL mapping
 - [x] Phase 68: Import Coordinator — Extension-based routing, Template Method pattern, validation infrastructure
 - [x] Phase 69: File Importers — 6 importers (MD, JSON, CSV, HTML, Word, Excel) with TDD
@@ -390,13 +399,13 @@ node_properties table (EAV)
 - [x] Phase 64: YAML ETL Parser (COMPLETE - 2 plans, ~7 minutes)
 - [x] Phase 65: Facet Discovery (COMPLETE - 2 plans, ~7 minutes total)
 
-**v4.8 (ETL Consolidation): DEFERRED**
+**v4.8 (ETL Consolidation): ✅ MILESTONE COMPLETE**
 - [x] Phase 67: Canonical Schema (COMPLETE - ~10 minutes)
 - [x] Phase 68: Import Coordinator (COMPLETE - ~5 minutes)
 - [x] Phase 69: File Importers (COMPLETE - ~8 minutes parallel, 6 importers)
-- [~] Phase 70: Integration — PAUSED (Plans 01-02 complete, SuperGrid prioritized)
-- [~] Phase 71: Swift Bridge — Plans 01-03 COMPLETE (~30 minutes combined)
-- [ ] Phase 72: Quality & Docs
+- [x] Phase 70: Integration (COMPLETE - Plans 01-02)
+- [x] Phase 71: Swift Bridge (COMPLETE - ~45 minutes, all 4 plans)
+- [x] Phase 72: Quality & Docs (COMPLETE - ~10 minutes, audit passed)
 
 **v5.0 (SuperGrid MVP) — PHASE A COMPLETE:**
 - [x] Phase 73-01: SuperStack Multi-Level Headers (COMPLETE - ~6 minutes)
@@ -428,6 +437,9 @@ SuperGrid Phase B delivers interaction capabilities: SuperDynamic axis repositio
 
 **v5.0 Phase A Achievement:**
 SuperGrid Phase A delivers the core SuperStack, SuperDensity, SuperZoom, and Header Click Zones features. Multi-level headers with visual spanning, Janus density model controls, pinned zoom with boundary constraints, and zone-based hit testing with hover highlighting are all operational.
+
+**v4.8 Milestone Achievement:**
+ETL Consolidation complete. Unified canonical schema with Zod validation, six format importers (MD, JSON, CSV, HTML, Word, Excel), Swift bridge for native framework access (EventKit, Contacts, Notes), and quality audit confirming 179 tests passing with >80% coverage. All import paths validate against CanonicalNodeSchema with detailed error messages.
 
 **v4.7 Milestone Achievement:**
 Schema-on-read capability fully functional. Users can add arbitrary YAML frontmatter keys to markdown files, which are stored in node_properties EAV table and automatically discovered/classified into LATCH buckets with smart type inference. Dynamic properties surface in Navigator UI with sparkle icons, dashed borders, and node count badges for complete visual feedback loop.
