@@ -31,6 +31,9 @@ interface PAFVContextType {
   toggleCheckbox: (well: keyof Wells, _chipId: string) => void;
   transpose: () => void;
 
+  // SuperDynamic axis repositioning
+  swapPlaneMapping: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
+
   // New live data integration
   currentQuery: string;
   filteredData: Node[];
@@ -192,6 +195,22 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  /**
+   * SuperDynamic: Swap axis mappings when header is dragged to opposite zone.
+   * When x-axis is dragged to y-axis zone (or vice versa), swap rows and columns.
+   */
+  const swapPlaneMapping = useCallback((fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => {
+    // Only swap if actually moving to opposite axis
+    if (fromAxis === toAxis) return;
+
+    // Swapping axes is equivalent to transpose
+    setWells(prev => ({
+      ...prev,
+      rows: prev.columns,
+      columns: prev.rows,
+    }));
+  }, []);
+
   const refreshData = useCallback(() => {
     // Force refresh by regenerating the query
     const newQuery = generatePAFVQuery(wells);
@@ -205,6 +224,7 @@ export function PAFVProvider({ children }: { children: ReactNode }) {
         moveChip,
         toggleCheckbox,
         transpose,
+        swapPlaneMapping,
         currentQuery,
         filteredData: liveDataSubscription.data || [],
         isLoading: liveDataSubscription.isLoading,

@@ -31,11 +31,13 @@ import { SuperGridRenderer } from './Renderer';
 import { SuperGridHeaderManager } from './HeaderManager';
 import { DragManager, type DragManagerConfig } from './DragManager';
 import { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeResult } from './ResizeManager';
+import { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection } from './SelectManager';
 
 // Re-export types for external use
 export * from './types';
 export { DragManager, type DragManagerConfig };
 export { ResizeManager, type ResizeManagerConfig, type ResizeState, type ResizeResult };
+export { SelectManager, type SelectManagerConfig, type LassoState, calculateRangeSelection };
 
 /**
  * SuperGridEngine - The single D3 rendering authority for grid views

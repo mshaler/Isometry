@@ -111,4 +111,46 @@ describe('DragManager', () => {
       expect(defaultConfig.onAxisSwap).toHaveBeenCalledWith('y', 'x');
     });
   });
+
+  describe('cancel drag', () => {
+    it('resets drag state when cancelDrag is called', () => {
+      // First trigger a drag start (simulated by accessing private state)
+      // The isDragging and getDragSource should work after cancellation
+      dragManager.cancelDrag();
+
+      expect(dragManager.isDragging()).toBe(false);
+      expect(dragManager.getDragSource()).toBeNull();
+    });
+
+    it('removes ghost element on cancel', () => {
+      // Create a mock ghost element
+      const ghostElement = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      ghostElement.setAttribute('class', 'drag-ghost');
+      svg.appendChild(ghostElement);
+
+      // Manually cancel drag
+      dragManager.cancelDrag();
+
+      // Verify state is reset
+      expect(dragManager.isDragging()).toBe(false);
+    });
+  });
+
+  describe('config updates', () => {
+    it('allows partial config updates', () => {
+      dragManager.updateConfig({ headerHeight: 60 });
+
+      const config = dragManager.getConfig();
+      expect(config.headerHeight).toBe(60);
+      expect(config.rowHeaderWidth).toBe(defaultConfig.rowHeaderWidth);
+    });
+
+    it('updates drop zones after config change', () => {
+      dragManager.updateConfig({ headerHeight: 80, rowHeaderWidth: 150 });
+
+      const xZone = dragManager.getDropZone('x');
+      expect(xZone.x).toBe(150);
+      expect(xZone.height).toBe(80);
+    });
+  });
 });

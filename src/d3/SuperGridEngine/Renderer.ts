@@ -18,6 +18,7 @@ import {
   type HitTestResult,
   type HoverHighlightStyle,
 } from './ClickZoneManager';
+import { DragManager, type DragManagerConfig } from './DragManager';
 
 // ============================================================================
 // Exported Types for Pinned Zoom Transform
@@ -130,6 +131,12 @@ export class SuperGridRenderer {
   private d3Module: typeof import('d3') | null = null;
   private zoomBehavior: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null;
 
+  // DragManager for axis repositioning (SuperDynamic)
+  private dragManager: DragManager | null = null;
+  private onAxisSwap?: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
+
+  // ResizeManager wiring deferred to Plan 74-02 Task 5
+
   // Event callbacks
   private onCellClick?: (cell: CellDescriptor, nodes: Node[]) => void;
   private onHeaderClick?: (header: HeaderDescriptor) => void;
@@ -196,7 +203,27 @@ export class SuperGridRenderer {
 
     // Set up click handler for zone-based actions
     this.setupClickHandler();
+
+    // Set up keyboard handler for drag cancellation
+    this.setupKeyboardHandler();
   }
+
+  /**
+   * Set up keyboard handler for escape key drag cancellation.
+   */
+  private setupKeyboardHandler(): void {
+    // Add global keydown listener for escape key
+    document.addEventListener('keydown', this.handleKeyDown);
+  }
+
+  /**
+   * Handle keydown events for drag cancellation.
+   */
+  private handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' && this.dragManager?.isDragging()) {
+      this.dragManager.cancelDrag();
+    }
+  };
 
   /**
    * Set up mousemove handler for zone-based cursor updates and hover highlighting.
@@ -513,12 +540,50 @@ export class SuperGridRenderer {
     onHeaderExpandCollapse?: (header: HeaderDescriptor) => void;
     onHeaderSelectChildren?: (header: HeaderDescriptor) => void;
     onRenderComplete?: (renderTime: number, cellCount: number) => void;
+    onAxisSwap?: (fromAxis: 'x' | 'y', toAxis: 'x' | 'y') => void;
   }): void {
     this.onCellClick = callbacks.onCellClick;
     this.onHeaderClick = callbacks.onHeaderClick;
     this.onHeaderExpandCollapse = callbacks.onHeaderExpandCollapse;
     this.onHeaderSelectChildren = callbacks.onHeaderSelectChildren;
     this.onRenderComplete = callbacks.onRenderComplete;
+    this.onAxisSwap = callbacks.onAxisSwap;
+  }
+
+  /**
+   * Set up DragManager for SuperDynamic axis repositioning.
+   * Call after SVG is set up and grid dimensions are known.
+   */
+  setupDragManager(gridDimensions: GridDimensions): void {
+    if (!this.svg) return;
+
+    const config: DragManagerConfig = {
+      headerHeight: gridDimensions.headerHeight,
+      rowHeaderWidth: gridDimensions.headerWidth,
+      onAxisSwap: (fromAxis, toAxis) => {
+        if (this.onAxisSwap) {
+          this.onAxisSwap(fromAxis, toAxis);
+        }
+      },
+    };
+
+    this.dragManager = new DragManager(this.svg, config);
+
+    // Set up drag on both column and row headers
+    this.dragManager.setupHeaderDrag('.column-header');
+    this.dragManager.setupHeaderDrag('.row-header');
+  }
+
+  /**
+   * Update DragManager configuration when grid dimensions change.
+   */
+  updateDragManagerConfig(gridDimensions: GridDimensions): void {
+    if (!this.dragManager) return;
+
+    this.dragManager.updateConfig({
+      headerHeight: gridDimensions.headerHeight,
+      rowHeaderWidth: gridDimensions.headerWidth,
+    });
   }
 
   /**
@@ -793,6 +858,12 @@ export class SuperGridRenderer {
    * Clean up and remove SVG
    */
   destroy(): void {
+    // Remove keyboard handler
+    document.removeEventListener('keydown', this.handleKeyDown);
+
+    // Clean up DragManager
+    this.dragManager = null;
+
     if (this.svg) {
       this.svg.remove();
     }
