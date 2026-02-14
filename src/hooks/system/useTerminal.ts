@@ -131,11 +131,16 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       // Store reference for later
       dispatcherRef.current = dispatcher;
 
-      // Note: We can't set callbacks after creation with current API
-      // This is a limitation - callbacks must be set during creation
-      // For now, we'll use the dispatcher for sending only
+      // Register terminal callbacks
+      dispatcher.setTerminalCallbacks({
+        onTerminalOutput: handleTerminalOutput,
+        onTerminalSpawned: handleTerminalSpawned,
+        onTerminalExit: handleTerminalExit,
+        onTerminalError: handleTerminalError,
+        onTerminalReplayData: handleTerminalReplayData
+      });
     }
-  }, []);
+  }, [handleTerminalOutput, handleTerminalSpawned, handleTerminalExit, handleTerminalError, handleTerminalReplayData]);
 
   /**
    * Handle copy - copy selected text to clipboard
@@ -412,17 +417,6 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       dispose();
     };
   }, [dispose]);
-
-  // Note: handleTerminalOutput, handleTerminalSpawned, handleTerminalExit,
-  // handleTerminalError, handleTerminalReplayData are defined but not wired
-  // to callbacks yet - this requires updating the dispatcher initialization
-  // pattern to support callback registration after creation.
-  // For now, the hook uses polling/direct methods.
-  void handleTerminalOutput;
-  void handleTerminalSpawned;
-  void handleTerminalExit;
-  void handleTerminalError;
-  void handleTerminalReplayData;
 
   return {
     createTerminal,

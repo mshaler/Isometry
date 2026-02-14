@@ -745,6 +745,26 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
   }
 
   /**
+   * Register terminal callbacks after dispatcher creation
+   * This allows the singleton pattern to work with per-session callbacks
+   */
+  setTerminalCallbacks(callbacks: {
+    onTerminalOutput?: (sessionId: string, data: string) => void;
+    onTerminalSpawned?: (sessionId: string, pid: number) => void;
+    onTerminalExit?: (sessionId: string, exitCode: number, signal?: number) => void;
+    onTerminalError?: (sessionId: string, error: string) => void;
+    onTerminalReplayData?: (sessionId: string, data: string) => void;
+    onTerminalModeSwitched?: (sessionId: string, mode: 'shell' | 'claude-code', pid: number) => void;
+  }): void {
+    if (callbacks.onTerminalOutput) this.options.onTerminalOutput = callbacks.onTerminalOutput;
+    if (callbacks.onTerminalSpawned) this.options.onTerminalSpawned = callbacks.onTerminalSpawned;
+    if (callbacks.onTerminalExit) this.options.onTerminalExit = callbacks.onTerminalExit;
+    if (callbacks.onTerminalError) this.options.onTerminalError = callbacks.onTerminalError;
+    if (callbacks.onTerminalReplayData) this.options.onTerminalReplayData = callbacks.onTerminalReplayData;
+    if (callbacks.onTerminalModeSwitched) this.options.onTerminalModeSwitched = callbacks.onTerminalModeSwitched;
+  }
+
+  /**
    * Handle terminal-specific server messages
    */
   private handleTerminalMessage(message: ClientMessage): void {
