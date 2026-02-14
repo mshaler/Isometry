@@ -1,11 +1,14 @@
 /**
  * Tests for insertCanonicalNodes() database utility
  *
+ * Updated in Phase 84 to verify cards table insertion.
+ *
  * Verifies:
- * - Single node insertion with correct field mapping
+ * - Single card insertion with correct field mapping
+ * - nodeType -> card_type mapping
  * - Batch insertion with transaction support
  * - Tags array serialization as JSON
- * - Properties storage via EAV pattern
+ * - Properties storage via card_properties EAV table
  * - Transaction rollback on error
  */
 
@@ -68,10 +71,10 @@ describe('insertCanonicalNodes', () => {
     }
   });
 
-  it('inserts single node with correct fields', async () => {
+  it('inserts single card with correct fields', async () => {
     const node = createTestNode({
-      name: 'Single Node Test',
-      content: 'Test content for single node',
+      name: 'Single Card Test',
+      content: 'Test content for single card',
       folder: 'test-folder',
       priority: 3,
     });
@@ -82,16 +85,40 @@ describe('insertCanonicalNodes', () => {
     expect(result.failed).toBe(0);
     expect(result.errors).toHaveLength(0);
 
-    // Verify node exists in database with correct fields
-    const rows = execTestQuery(db, 'SELECT * FROM nodes WHERE id = ?', [node.id]);
+    // Verify card exists in database with correct fields (Phase 84: cards table)
+    const rows = execTestQuery(db, 'SELECT * FROM cards WHERE id = ?', [node.id]);
     expect(rows).toHaveLength(1);
 
-    const dbNode = rows[0] as Record<string, unknown>;
-    expect(dbNode.name).toBe('Single Node Test');
-    expect(dbNode.content).toBe('Test content for single node');
-    expect(dbNode.folder).toBe('test-folder');
-    expect(dbNode.priority).toBe(3);
-    expect(dbNode.node_type).toBe('note');
+    const dbCard = rows[0] as Record<string, unknown>;
+    expect(dbCard.name).toBe('Single Card Test');
+    expect(dbCard.content).toBe('Test content for single card');
+    expect(dbCard.folder).toBe('test-folder');
+    expect(dbCard.priority).toBe(3);
+    expect(dbCard.card_type).toBe('note'); // Phase 84: card_type not node_type
+  });
+
+  it('maps nodeType to card_type correctly', async () => {
+    const testCases = [
+      { nodeType: 'note', expected: 'note' },
+      { nodeType: 'task', expected: 'note' },
+      { nodeType: 'document', expected: 'note' },
+      { nodeType: 'person', expected: 'person' },
+      { nodeType: 'contact', expected: 'person' },
+      { nodeType: 'event', expected: 'event' },
+      { nodeType: 'meeting', expected: 'event' },
+      { nodeType: 'resource', expected: 'resource' },
+      { nodeType: 'link', expected: 'resource' },
+      { nodeType: 'file', expected: 'resource' },
+    ];
+
+    for (const { nodeType, expected } of testCases) {
+      const node = createTestNode({ nodeType });
+      await insertCanonicalNodes(db, [node]);
+
+      const rows = execTestQuery(db, 'SELECT card_type FROM cards WHERE id = ?', [node.id]);
+      expect(rows).toHaveLength(1);
+      expect((rows[0] as { card_type: string }).card_type).toBe(expected);
+    }
   });
 
   it('handles batch insertion', async () => {
@@ -99,7 +126,7 @@ describe('insertCanonicalNodes', () => {
     for (let i = 1; i <= 5; i++) {
       nodes.push(
         createTestNode({
-          name: `Batch Node ${i}`,
+          name: `Batch Card ${i}`,
           priority: i,
         })
       );
@@ -110,8 +137,8 @@ describe('insertCanonicalNodes', () => {
     expect(result.inserted).toBe(5);
     expect(result.failed).toBe(0);
 
-    // Verify all 5 exist in database
-    const rows = execTestQuery(db, 'SELECT COUNT(*) as count FROM nodes');
+    // Verify all 5 exist in cards table (Phase 84)
+    const rows = execTestQuery(db, 'SELECT COUNT(*) as count FROM cards');
     expect((rows[0] as { count: number }).count).toBe(5);
   });
 
@@ -122,12 +149,12 @@ describe('insertCanonicalNodes', () => {
 
     await insertCanonicalNodes(db, [node]);
 
-    // Query back and verify tags column contains JSON string
-    const rows = execTestQuery(db, 'SELECT tags FROM nodes WHERE id = ?', [node.id]);
+    // Query back and verify tags column contains JSON string (Phase 84: cards table)
+    const rows = execTestQuery(db, 'SELECT tags FROM cards WHERE id = ?', [node.id]);
     expect(rows).toHaveLength(1);
 
-    const dbNode = rows[0] as { tags: string };
-    expect(dbNode.tags).toBe('["tag1","tag2","tag3"]');
+    const dbCard = rows[0] as { tags: string };
+    expect(dbCard.tags).toBe('["tag1","tag2","tag3"]');
   });
 
   it('stores empty tags as null', async () => {
@@ -137,14 +164,14 @@ describe('insertCanonicalNodes', () => {
 
     await insertCanonicalNodes(db, [node]);
 
-    const rows = execTestQuery(db, 'SELECT tags FROM nodes WHERE id = ?', [node.id]);
+    const rows = execTestQuery(db, 'SELECT tags FROM cards WHERE id = ?', [node.id]);
     expect(rows).toHaveLength(1);
 
-    const dbNode = rows[0] as { tags: string | null };
-    expect(dbNode.tags).toBeNull();
+    const dbCard = rows[0] as { tags: string | null };
+    expect(dbCard.tags).toBeNull();
   });
 
-  it('stores properties via EAV table', async () => {
+  it('stores properties via card_properties EAV table', async () => {
     const node = createTestNode({
       properties: {
         custom_key: 'custom value',
@@ -155,10 +182,10 @@ describe('insertCanonicalNodes', () => {
 
     await insertCanonicalNodes(db, [node]);
 
-    // Query node_properties table
+    // Query card_properties table (Phase 84: renamed from node_properties)
     const rows = execTestQuery(
       db,
-      'SELECT key, value, value_type FROM node_properties WHERE node_id = ? ORDER BY key',
+      'SELECT key, value, value_type FROM card_properties WHERE card_id = ? ORDER BY key',
       [node.id]
     );
 
@@ -183,18 +210,18 @@ describe('insertCanonicalNodes', () => {
   });
 
   it('rolls back transaction on duplicate id error', async () => {
-    const nodeId = uuidv4();
+    const cardId = uuidv4();
 
-    // First node
+    // First card
     const node1 = createTestNode({
-      id: nodeId,
-      name: 'First Node',
+      id: cardId,
+      name: 'First Card',
     });
 
-    // Second node with SAME id (will cause error)
+    // Second card with SAME id (will cause error)
     const node2 = createTestNode({
-      id: nodeId,
-      name: 'Second Node',
+      id: cardId,
+      name: 'Second Card',
     });
 
     // Insert in transaction mode
@@ -206,8 +233,8 @@ describe('insertCanonicalNodes', () => {
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0].error).toContain('UNIQUE constraint failed');
 
-    // Verify first node NOT in database (rollback)
-    const rows = execTestQuery(db, 'SELECT * FROM nodes WHERE id = ?', [nodeId]);
+    // Verify first card NOT in database (rollback) - Phase 84: cards table
+    const rows = execTestQuery(db, 'SELECT * FROM cards WHERE id = ?', [cardId]);
     expect(rows).toHaveLength(0);
   });
 
@@ -220,12 +247,12 @@ describe('insertCanonicalNodes', () => {
   });
 
   it('continues on error in non-transaction mode', async () => {
-    const nodeId = uuidv4();
+    const cardId = uuidv4();
 
-    const node1 = createTestNode({ name: 'Node 1' });
-    const node2 = createTestNode({ id: nodeId, name: 'Node 2' });
-    const node3 = createTestNode({ id: nodeId, name: 'Node 3 (dup)' }); // Duplicate
-    const node4 = createTestNode({ name: 'Node 4' });
+    const node1 = createTestNode({ name: 'Card 1' });
+    const node2 = createTestNode({ id: cardId, name: 'Card 2' });
+    const node3 = createTestNode({ id: cardId, name: 'Card 3 (dup)' }); // Duplicate
+    const node4 = createTestNode({ name: 'Card 4' });
 
     const result = await insertCanonicalNodes(db, [node1, node2, node3, node4], {
       transaction: false,
@@ -236,8 +263,8 @@ describe('insertCanonicalNodes', () => {
     expect(result.failed).toBe(1);
     expect(result.errors).toHaveLength(1);
 
-    // Verify nodes 1, 2, and 4 exist (node 3 failed as duplicate)
-    const count = execTestQuery(db, 'SELECT COUNT(*) as count FROM nodes') as [{ count: number }];
+    // Verify cards 1, 2, and 4 exist (card 3 failed as duplicate) - Phase 84: cards table
+    const count = execTestQuery(db, 'SELECT COUNT(*) as count FROM cards') as [{ count: number }];
     expect(count[0].count).toBe(3);
   });
 
@@ -250,9 +277,10 @@ describe('insertCanonicalNodes', () => {
 
     await insertCanonicalNodes(db, [node]);
 
+    // Phase 84: card_properties table
     const rows = execTestQuery(
       db,
-      'SELECT key, value, value_type FROM node_properties WHERE node_id = ?',
+      'SELECT key, value, value_type FROM card_properties WHERE card_id = ?',
       [node.id]
     );
 
@@ -272,9 +300,10 @@ describe('insertCanonicalNodes', () => {
 
     await insertCanonicalNodes(db, [node]);
 
+    // Phase 84: card_properties table
     const rows = execTestQuery(
       db,
-      'SELECT key, value, value_type FROM node_properties WHERE node_id = ?',
+      'SELECT key, value, value_type FROM card_properties WHERE card_id = ?',
       [node.id]
     );
 

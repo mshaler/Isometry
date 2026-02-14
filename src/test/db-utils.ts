@@ -220,6 +220,97 @@ export class TestDatabaseManager {
       CREATE INDEX IF NOT EXISTS idx_node_properties_value_number ON node_properties(key, value_number);
       CREATE INDEX IF NOT EXISTS idx_node_properties_value_string ON node_properties(key, value_string);
 
+      -- ============================================
+      -- Phase 84: Cards & Connections
+      -- ============================================
+
+      -- Cards: Primary data table (replaces nodes)
+      CREATE TABLE IF NOT EXISTS cards (
+        id TEXT PRIMARY KEY,
+        card_type TEXT NOT NULL DEFAULT 'note' CHECK (card_type IN ('note', 'person', 'event', 'resource')),
+        name TEXT NOT NULL,
+        content TEXT,
+        summary TEXT,
+
+        -- LATCH: Location
+        latitude REAL,
+        longitude REAL,
+        location_name TEXT,
+
+        -- LATCH: Time
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        modified_at TEXT NOT NULL DEFAULT (datetime('now')),
+        due_at TEXT,
+        completed_at TEXT,
+        event_start TEXT,
+        event_end TEXT,
+
+        -- LATCH: Category
+        folder TEXT,
+        tags TEXT,  -- JSON array
+        status TEXT,
+
+        -- LATCH: Hierarchy
+        priority INTEGER DEFAULT 0,
+        sort_order INTEGER DEFAULT 0,
+
+        -- Resource-specific
+        url TEXT,
+        mime_type TEXT,
+
+        -- Person-specific
+        is_collective INTEGER DEFAULT 0,
+
+        -- Source tracking
+        source TEXT,
+        source_id TEXT,
+
+        -- Lifecycle
+        deleted_at TEXT,
+        version INTEGER DEFAULT 1,
+        sync_status TEXT DEFAULT 'pending'
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_cards_folder ON cards(folder);
+      CREATE INDEX IF NOT EXISTS idx_cards_created ON cards(created_at);
+      CREATE INDEX IF NOT EXISTS idx_cards_modified ON cards(modified_at);
+      CREATE INDEX IF NOT EXISTS idx_cards_priority ON cards(priority DESC);
+      CREATE INDEX IF NOT EXISTS idx_cards_type ON cards(card_type);
+      CREATE INDEX IF NOT EXISTS idx_cards_active ON cards(deleted_at) WHERE deleted_at IS NULL;
+
+      -- Connections: Relationships (replaces edges)
+      CREATE TABLE IF NOT EXISTS connections (
+        id TEXT PRIMARY KEY,
+        source_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+        target_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+        via_card_id TEXT REFERENCES cards(id) ON DELETE SET NULL,
+        label TEXT,
+        weight REAL DEFAULT 1.0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(source_id, target_id, label)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_connections_source ON connections(source_id);
+      CREATE INDEX IF NOT EXISTS idx_connections_target ON connections(target_id);
+
+      -- Card Properties: Dynamic key-value storage for arbitrary metadata
+      CREATE TABLE IF NOT EXISTS card_properties (
+        id TEXT PRIMARY KEY,
+        card_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+        key TEXT NOT NULL,
+        value TEXT,
+        value_type TEXT NOT NULL DEFAULT 'string',
+        value_string TEXT,
+        value_number REAL,
+        value_boolean INTEGER,
+        value_json TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        UNIQUE(card_id, key)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_card_properties_card_id ON card_properties(card_id);
+      CREATE INDEX IF NOT EXISTS idx_card_properties_key ON card_properties(key);
+
       CREATE TABLE IF NOT EXISTS etl_import_runs (
         run_id TEXT PRIMARY KEY,
         source TEXT NOT NULL,

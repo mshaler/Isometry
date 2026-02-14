@@ -4,11 +4,19 @@
  * Provides functions to insert CanonicalNode arrays into sql.js database
  * with proper field mapping, transaction support, and EAV property storage.
  *
+ * Updated in Phase 84 to insert into cards table instead of nodes.
+ *
  * @module etl/database/insertion
  */
 
 import type { Database } from 'sql.js';
-import { CanonicalNode, toSQLRecord, SQL_COLUMN_MAP } from '../types/canonical';
+import {
+  CanonicalNode,
+  toSQLRecord,
+  toCardsSQLRecord,
+  SQL_COLUMN_MAP,
+  CARDS_SQL_COLUMNS
+} from '../types/canonical';
 
 /**
  * Result of batch insertion operation.
@@ -36,6 +44,7 @@ export interface InsertOptions {
 
 /**
  * Build parameterized INSERT SQL for nodes table.
+ * @deprecated Use buildCardsInsertSQL for Phase 84+ code.
  *
  * Uses deterministic column ordering based on SQL_COLUMN_MAP.
  *
@@ -56,12 +65,35 @@ function buildInsertSQL(record: Record<string, unknown>): { sql: string; params:
 }
 
 /**
+ * Build parameterized INSERT SQL for cards table (Phase 84+).
+ *
+ * Uses deterministic column ordering based on CARDS_SQL_COLUMNS.
+ *
+ * @param record - SQL record with snake_case keys from toCardsSQLRecord()
+ * @returns Object with SQL string and ordered parameter values
+ */
+function buildCardsInsertSQL(record: Record<string, unknown>): { sql: string; params: unknown[] } {
+  const columns = [...CARDS_SQL_COLUMNS];
+  const placeholders = columns.map(() => '?').join(', ');
+
+  // Build params in same order as columns
+  const params = columns.map(col => record[col]);
+
+  const sql = `INSERT INTO cards (${columns.join(', ')}) VALUES (${placeholders})`;
+
+  return { sql, params };
+}
+
+/**
  * Insert an array of CanonicalNodes into the sql.js database.
  *
+ * Updated in Phase 84 to insert into cards table instead of nodes.
+ *
  * Handles:
- * - camelCase to snake_case field mapping via toSQLRecord()
+ * - camelCase to snake_case field mapping via toCardsSQLRecord()
  * - Tags array serialization to JSON string
- * - Properties storage to node_properties EAV table
+ * - nodeType to card_type mapping (note/person/event/resource)
+ * - Properties storage to card_properties EAV table
  * - Transaction support with rollback on failure
  *
  * @param db - sql.js Database instance
@@ -99,14 +131,16 @@ export async function insertCanonicalNodes(
   try {
     for (const node of nodes) {
       try {
-        // Convert CanonicalNode to SQL record (snake_case keys, tags serialized)
-        const record = toSQLRecord(node);
+        // Convert CanonicalNode to cards table SQL record
+        // This handles nodeType -> card_type mapping
+        const record = toCardsSQLRecord(node);
 
-        // Build and execute INSERT for nodes table
-        const { sql, params } = buildInsertSQL(record);
+        // Build and execute INSERT for cards table (Phase 84+)
+        const { sql, params } = buildCardsInsertSQL(record);
         db.run(sql, params as (string | number | Uint8Array | null)[]);
 
-        // Store properties to node_properties EAV table (if any)
+        // Store properties to card_properties EAV table (if any)
+        // Renamed from node_properties in Phase 84
         if (node.properties && Object.keys(node.properties).length > 0) {
           for (const [key, value] of Object.entries(node.properties)) {
             const valueType = Array.isArray(value)
@@ -125,8 +159,8 @@ export async function insertCanonicalNodes(
             const propId = `prop-${node.id}-${key}`;
             db.run(
               `
-              INSERT OR REPLACE INTO node_properties (
-                id, node_id, key, value, value_type,
+              INSERT OR REPLACE INTO card_properties (
+                id, card_id, key, value, value_type,
                 value_string, value_number, value_boolean, value_json
               )
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -174,6 +208,69 @@ export async function insertCanonicalNodes(
     return result;
   } catch (error) {
     // Unexpected error - rollback if in transaction
+    if (useTransaction) {
+      try {
+        db.run('ROLLBACK');
+      } catch {
+        // Ignore rollback errors
+      }
+    }
+    throw error;
+  }
+}
+
+/**
+ * @deprecated Use insertCanonicalNodes (which now inserts into cards table).
+ * Legacy function that inserted into nodes table. Kept for backward compatibility.
+ */
+export async function insertCanonicalNodesLegacy(
+  db: Database,
+  nodes: CanonicalNode[],
+  options?: InsertOptions
+): Promise<InsertResult> {
+  const useTransaction = options?.transaction !== false;
+  const result: InsertResult = {
+    inserted: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  if (nodes.length === 0) {
+    return result;
+  }
+
+  if (useTransaction) {
+    db.run('BEGIN TRANSACTION');
+  }
+
+  try {
+    for (const node of nodes) {
+      try {
+        const record = toSQLRecord(node);
+        const { sql, params } = buildInsertSQL(record);
+        db.run(sql, params as (string | number | Uint8Array | null)[]);
+        result.inserted++;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (useTransaction) {
+          db.run('ROLLBACK');
+          result.failed = nodes.length - result.inserted;
+          result.inserted = 0;
+          result.errors.push({ node, error: errorMessage });
+          return result;
+        } else {
+          result.failed++;
+          result.errors.push({ node, error: errorMessage });
+        }
+      }
+    }
+
+    if (useTransaction) {
+      db.run('COMMIT');
+    }
+
+    return result;
+  } catch (error) {
     if (useTransaction) {
       try {
         db.run('ROLLBACK');
