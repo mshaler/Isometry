@@ -145,9 +145,12 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
           () => {
             let component: ReactRenderer<SlashCommandMenuRef>;
             let popup: TippyInstance[];
+            let destroyed = false;
 
             return {
               onStart: (props: SuggestionProps<SlashCommand>) => {
+                if (destroyed) return;
+
                 component = new ReactRenderer(SlashCommandMenu, {
                   props: {
                     items: props.items,
@@ -170,30 +173,41 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
               },
 
               onUpdate: (props: SuggestionProps<SlashCommand>) => {
-                component?.updateProps({
+                if (destroyed || !component || !popup) return;
+
+                component.updateProps({
                   items: props.items,
                   command: (item: SlashCommand) => props.command(item),
                 });
 
                 if (!props.clientRect) return;
 
-                popup?.[0]?.setProps({
+                popup[0]?.setProps({
                   getReferenceClientRect: props.clientRect as () => DOMRect,
                 });
               },
 
               onKeyDown: (props: SuggestionKeyDownProps) => {
+                if (destroyed || !component || !popup) return false;
+
                 if (props.event.key === 'Escape') {
-                  popup?.[0]?.hide();
+                  popup[0]?.hide();
                   return true;
                 }
 
-                return component?.ref?.onKeyDown(props) ?? false;
+                return component.ref?.onKeyDown(props) ?? false;
               },
 
               onExit: () => {
-                popup?.[0]?.destroy();
-                component?.destroy();
+                destroyed = true;
+
+                if (popup?.[0]) {
+                  popup[0].destroy();
+                }
+
+                if (component) {
+                  component.destroy();
+                }
               },
             };
           }
@@ -207,9 +221,12 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
           () => {
             let component: ReactRenderer<WikiLinkMenuRef>;
             let popup: TippyInstance[];
+            let destroyed = false;
 
             return {
               onStart: (props: SuggestionProps<CardSuggestion>) => {
+                if (destroyed) return;
+
                 component = new ReactRenderer(WikiLinkMenu, {
                   props: {
                     items: props.items,
@@ -232,30 +249,41 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
               },
 
               onUpdate: (props: SuggestionProps<CardSuggestion>) => {
-                component?.updateProps({
+                if (destroyed || !component || !popup) return;
+
+                component.updateProps({
                   items: props.items,
                   command: (item: CardSuggestion) => props.command(item),
                 });
 
                 if (!props.clientRect) return;
 
-                popup?.[0]?.setProps({
+                popup[0]?.setProps({
                   getReferenceClientRect: props.clientRect as () => DOMRect,
                 });
               },
 
               onKeyDown: (props: SuggestionKeyDownProps) => {
+                if (destroyed || !component || !popup) return false;
+
                 if (props.event.key === 'Escape') {
-                  popup?.[0]?.hide();
+                  popup[0]?.hide();
                   return true;
                 }
 
-                return component?.ref?.onKeyDown(props) ?? false;
+                return component.ref?.onKeyDown(props) ?? false;
               },
 
               onExit: () => {
-                popup?.[0]?.destroy();
-                component?.destroy();
+                destroyed = true;
+
+                if (popup?.[0]) {
+                  popup[0].destroy();
+                }
+
+                if (component) {
+                  component.destroy();
+                }
               },
             };
           }
