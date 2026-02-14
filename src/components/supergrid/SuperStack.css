@@ -1,186 +1,189 @@
 /**
- * SuperStack Styles - Nested PAFV Headers
+ * SuperStack Styles - Spreadsheet Headers
  *
- * Visual spanning headers that adapt to PAFV axis mappings.
- * Supports both NeXTSTEP (retro) and Modern (glass) themes.
+ * Multi-level spanning headers for SuperGrid spreadsheet layout.
+ * Supports both column (top) and row (left) header orientations.
  */
 
-/* Base SuperStack Container */
+/* ============================================================================
+ * BASE SUPERSTACK CONTAINER
+ * ============================================================================ */
 .supergrid-stack {
-  display: grid;
-  gap: 0;
-  border: 1px solid var(--border-color);
-  background: var(--surface-color);
+  display: flex;
+  background: #fff;
   position: relative;
-  overflow: hidden;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  /* Fill parent container */
+  width: 100%;
+  height: 100%;
 }
 
-/* Horizontal (Column Headers) */
+/* ============================================================================
+ * HORIZONTAL HEADERS (Column Headers - Top)
+ * Arranged in horizontal rows, supporting spanning (Year > Q1, Q2, Q3...)
+ * ============================================================================ */
 .supergrid-stack--horizontal {
-  /* FIXED: Use flexbox for horizontal layout instead of CSS Grid.
-     CSS Grid with auto-fit doesn't work well when container width isn't defined,
-     causing all headers to overlap in a single cell.
-     Flexbox with row direction properly spreads headers horizontally. */
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 1px;
-  border-bottom: 2px solid var(--accent-color);
-  /* Horizontal text rendering */
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-}
-
-/* Vertical (Row Headers) */
-.supergrid-stack--vertical {
-  /* FIXED: Use flexbox for vertical layout instead of CSS Grid.
-     CSS Grid with auto-fit doesn't work well when container height isn't defined,
-     causing all headers to overlap in a single cell.
-     Flexbox with column direction properly stacks headers vertically. */
-  display: flex;
   flex-direction: column;
-  gap: 1px;
-  border-right: 2px solid var(--accent-color);
-  /* Horizontal text to prevent garbled characters */
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
+  border-bottom: 2px solid #000;
 }
 
-/* Header Level Container */
-.supergrid-stack__level {
-  display: grid;
-  gap: 1px;
-  background: var(--border-light);
-}
-
-/* Horizontal Level */
 .supergrid-stack--horizontal .supergrid-stack__level {
-  /* Use flexbox row for horizontal spreading of headers */
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
-  gap: 1px;
+  border-bottom: 1px solid #000;
+  width: 100%;
 }
 
-/* Vertical Level */
+.supergrid-stack--horizontal .supergrid-stack__level:last-child {
+  border-bottom: none;
+}
+
+/* Level 0 headers (Year) - Primary grouping, bold, larger */
+.supergrid-stack--horizontal .supergrid-stack__level--0 .supergrid-stack__header {
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 32px;
+  border-right: 1px solid #ccc;
+}
+
+.supergrid-stack--horizontal .supergrid-stack__level--0 .supergrid-stack__header:last-child {
+  border-right: none;
+}
+
+/* Level 1 headers (Quarters) - Sub-grouping */
+.supergrid-stack--horizontal .supergrid-stack__level--1 .supergrid-stack__header {
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 32px;
+  border-right: 1px solid #000;
+}
+
+.supergrid-stack--horizontal .supergrid-stack__level--1 .supergrid-stack__header:last-child {
+  border-right: none;
+}
+
+/* Level 2+ headers - Smaller, lighter */
+.supergrid-stack--horizontal .supergrid-stack__level--2 .supergrid-stack__header,
+.supergrid-stack--horizontal .supergrid-stack__level--3 .supergrid-stack__header {
+  background: #f9f9f9;
+  font-size: 12px;
+  font-weight: 500;
+  min-height: 28px;
+}
+
+/* ============================================================================
+ * VERTICAL HEADERS (Row Headers - Left)
+ * Stacked vertically with colored backgrounds
+ * ============================================================================ */
+.supergrid-stack--vertical {
+  flex-direction: column;
+  border-right: 2px solid #000;
+}
+
 .supergrid-stack--vertical .supergrid-stack__level {
-  /* Use flexbox column for vertical stacking of headers */
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  flex: 1;
+  height: 100%;
 }
 
-/* Individual Header Cell */
+/* Row header cells - stretch to fill available space */
+.supergrid-stack--vertical .supergrid-stack__header {
+  background: #fff;
+  border-bottom: 1px solid #000;
+  font-weight: 500;
+  justify-content: flex-start;
+  padding-left: 12px;
+  /* Remove fixed height, let flex: 1 distribute space equally */
+  min-height: 0;
+  flex: 1;
+}
+
+.supergrid-stack--vertical .supergrid-stack__header:last-child {
+  border-bottom: none;
+}
+
+/* ============================================================================
+ * INDIVIDUAL HEADER CELL
+ * ============================================================================ */
 .supergrid-stack__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 8px 12px;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  min-height: 36px;
-
-  /* Text styling */
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: var(--text-primary);
+  transition: background-color 0.15s ease;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  border-right: 1px solid #e0e0e0;
 }
 
-/* Header Hover State */
 .supergrid-stack__header:hover {
-  background: var(--hover-color);
-  border-color: var(--accent-color);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* Header Active State */
-.supergrid-stack__header:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-
-/* Header Text */
+/* Header text - main label */
 .supergrid-stack__header-text {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-right: 8px;
-  /* Ensure horizontal text rendering - prevents garbled characters from cached vertical styles */
+  color: #000;
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
 }
 
-/* Node Count Badge */
+/* Node count badge */
 .supergrid-stack__header-count {
-  background: var(--accent-color);
-  color: var(--accent-text);
-  font-size: 0.75rem;
+  background: #666;
+  color: #fff;
+  font-size: 11px;
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 10px;
-  margin-left: 4px;
+  margin-left: 8px;
   min-width: 20px;
   text-align: center;
 }
 
-/* Axis Indicator */
+/* Axis indicator (L/A/T/C/H) - subtle */
 .supergrid-stack__header-axis {
-  font-size: 0.6rem;
-  color: var(--text-secondary);
+  font-size: 10px;
+  color: #999;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-left: 4px;
-  opacity: 0.7;
+  margin-left: 6px;
+  opacity: 0.6;
 }
 
-/* Level-specific styling */
-.supergrid-stack__level--0 .supergrid-stack__header {
-  background: var(--primary-color);
-  color: var(--primary-text);
-  font-weight: 600;
-  border-width: 2px;
-}
-
-.supergrid-stack__level--1 .supergrid-stack__header {
-  background: var(--secondary-color);
-  color: var(--secondary-text);
-}
-
-.supergrid-stack__level--2 .supergrid-stack__header {
-  background: var(--tertiary-color);
-  color: var(--tertiary-text);
-  font-size: 0.8rem;
-}
-
-.supergrid-stack__level--3 .supergrid-stack__header {
-  background: var(--surface-secondary);
-  font-size: 0.75rem;
-  opacity: 0.9;
-}
-
-/* Empty State */
+/* ============================================================================
+ * EMPTY STATE
+ * ============================================================================ */
 .supergrid-stack--empty {
-  min-height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 60px;
+  min-width: 100px;
+  background: #f5f5f5;
 }
 
 .supergrid-stack__empty-state {
-  padding: 20px;
+  padding: 16px;
   text-align: center;
-  border: 2px dashed var(--border-light);
-  border-radius: 8px;
-  background: var(--surface-secondary);
-  opacity: 0.7;
+  color: #999;
+  font-size: 12px;
 }
 
-/* Drag and Drop States */
+/* ============================================================================
+ * DRAG AND DROP STATES
+ * ============================================================================ */
 .supergrid-stack__header[draggable="true"] {
   cursor: grab;
 }
@@ -191,91 +194,75 @@
 
 .supergrid-stack__header--dragging {
   opacity: 0.5;
-  transform: rotate(5deg);
-  z-index: 1000;
+  outline: 2px dashed #1976d2;
 }
 
 .supergrid-stack__header--drop-target {
-  border-color: var(--success-color);
-  background: var(--success-background);
-  animation: pulse 1s infinite;
+  background: #e3f2fd !important;
+  outline: 2px solid #1976d2;
 }
 
-/* Responsive Design */
+/* ============================================================================
+ * SPANNING UTILITIES
+ * For headers that span multiple columns/rows
+ * ============================================================================ */
+.supergrid-stack__header[data-span="2"] { flex: 2; }
+.supergrid-stack__header[data-span="3"] { flex: 3; }
+.supergrid-stack__header[data-span="4"] { flex: 4; }
+.supergrid-stack__header[data-span="5"] { flex: 5; }
+.supergrid-stack__header[data-span="6"] { flex: 6; }
+
+/* ============================================================================
+ * RESPONSIVE ADJUSTMENTS
+ * ============================================================================ */
 @media (max-width: 768px) {
   .supergrid-stack__header {
-    padding: 6px 8px;
-    font-size: 0.8rem;
+    padding: 6px 10px;
+    min-width: 60px;
     min-height: 32px;
-  }
-
-  .supergrid-stack__header-text {
-    margin-right: 4px;
+    font-size: 12px;
   }
 
   .supergrid-stack__header-count {
-    font-size: 0.7rem;
+    font-size: 10px;
     padding: 1px 4px;
   }
 
-  .supergrid-stack--vertical {
-    writing-mode: horizontal-tb !important;
-    text-orientation: mixed !important;
+  .supergrid-stack--horizontal .supergrid-stack__level--0 .supergrid-stack__header {
+    font-size: 14px;
   }
 }
 
-/* Theme-specific overrides */
-
-/* NeXTSTEP Theme */
+/* ============================================================================
+ * THEME: NeXTSTEP (Retro)
+ * ============================================================================ */
 [data-theme="nextstep"] .supergrid-stack {
-  border-color: #333;
   font-family: 'Courier New', monospace;
 }
 
 [data-theme="nextstep"] .supergrid-stack__header {
-  border-style: outset;
-  border-width: 2px;
-  background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 100%);
+  background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+  border: 2px outset #d4d4d4;
 }
 
 [data-theme="nextstep"] .supergrid-stack__header:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
+  background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
 }
 
-/* Modern Glass Theme */
+/* ============================================================================
+ * THEME: Modern (Glass)
+ * ============================================================================ */
 [data-theme="modern"] .supergrid-stack {
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 [data-theme="modern"] .supergrid-stack__header {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 [data-theme="modern"] .supergrid-stack__header:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
 }
-
-/* Animation keyframes */
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 var(--success-color); }
-  70% { box-shadow: 0 0 0 4px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
-}
-
-/* Utility classes for dynamic spanning */
-.span-2 { grid-column-end: span 2; }
-.span-3 { grid-column-end: span 3; }
-.span-4 { grid-column-end: span 4; }
-.span-5 { grid-column-end: span 5; }
-.span-6 { grid-column-end: span 6; }
-.span-7 { grid-column-end: span 7; }
-.span-8 { grid-column-end: span 8; }
-
-.row-span-2 { grid-row-end: span 2; }
-.row-span-3 { grid-row-end: span 3; }
-.row-span-4 { grid-row-end: span 4; }

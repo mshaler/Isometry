@@ -121,10 +121,13 @@ export function SuperStack({
         level.values.push({
           value,
           span,
-          children: Array.from(group.children),
+          children: Array.from(group.children).sort(),
           count: group.nodes.length
         });
       });
+
+      // Sort header values alphabetically to match data grid cell ordering
+      level.values.sort((a, b) => a.value.localeCompare(b.value));
 
       levels.push(level);
     });

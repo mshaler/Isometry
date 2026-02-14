@@ -1,24 +1,30 @@
 /**
- * SuperGrid Styles - The Keystone Component
+ * SuperGrid Styles - Spreadsheet Aesthetic
  *
- * Polymorphic data projection with Grid Continuum and Janus Density Model.
- * Supports NeXTSTEP and Modern themes.
+ * Designed to look like a classic spreadsheet with:
+ * - Multi-level spanning column headers
+ * - Row headers with colored backgrounds
+ * - Clean border styling (thick outer, thin inner)
+ * - Centered data cells
  */
 
-/* SuperGrid Container - Spreadsheet Style with Sticky Headers */
+/* ============================================================================
+ * MAIN SUPERGRID CONTAINER
+ * Uses CSS Grid for spreadsheet layout
+ * ============================================================================ */
 .supergrid {
   display: grid;
-  gap: 0;
   height: 100%;
   width: 100%;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: 0; /* Sharp corners like a spreadsheet */
-  overflow: auto; /* SINGLE scroll container for spreadsheet behavior */
-  position: relative;
+  background: #fff;
+  border: 3px solid #000;
+  border-collapse: collapse;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px;
-  /* CSS Grid for sticky header layout */
+  font-size: 14px;
+  overflow: auto;
+  position: relative;
+
+  /* Grid layout: corner + column-headers / row-headers + data-grid */
   grid-template-areas:
     "corner column-headers"
     "row-headers data-grid";
@@ -26,135 +32,196 @@
   grid-template-rows: auto 1fr;
 }
 
-/* Corner Cell - Sticky at both top and left */
+/* ============================================================================
+ * CORNER CELL - Top-left intersection
+ * ============================================================================ */
 .supergrid__corner {
   grid-area: corner;
   position: sticky;
   top: 0;
   left: 0;
-  z-index: 3; /* Above all headers */
-  background: var(--surface-secondary, #f5f5f5);
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
-  min-width: 120px;
-  min-height: 40px;
+  z-index: 10;
+  background: #f5f5f5;
+  border-right: 2px solid #000;
+  border-bottom: 2px solid #000;
+  min-width: 100px;
+  min-height: 60px;
 }
 
-/* Column Headers Area - Sticky at top */
+/* ============================================================================
+ * COLUMN HEADERS - Top spanning headers (Year > Quarter)
+ * ============================================================================ */
 .supergrid__column-headers {
   grid-area: column-headers;
   position: sticky;
   top: 0;
-  z-index: 2; /* Below corner, above row headers */
-  border-bottom: 1px solid var(--border-color);
-  background: var(--surface-secondary, #f5f5f5);
-  font-weight: 500;
-  font-size: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-bottom: 2px solid #000;
 }
 
-/* Content Container - wrapper for backward compatibility */
-.supergrid__content {
-  display: contents; /* Remove from layout, children participate in parent grid */
-}
-
-/* Row Headers Area - Sticky at left */
+/* ============================================================================
+ * ROW HEADERS - Left side labels
+ * ============================================================================ */
 .supergrid__row-headers {
   grid-area: row-headers;
   position: sticky;
   left: 0;
-  z-index: 1; /* Below corner and column headers */
-  border-right: 1px solid var(--border-color);
-  background: var(--surface-secondary, #f5f5f5);
-  min-width: 120px;
-  font-weight: 500;
-  font-size: 12px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  background: #f5f5f5;
+  border-right: 2px solid #000;
+  min-width: 100px;
 }
 
-/* Data Grid Area - no own scroll, parent handles it */
+/* Content wrapper (display: contents for grid pass-through) */
+.supergrid__content {
+  display: contents;
+}
+
+/* ============================================================================
+ * DATA GRID - Main cell area
+ * ============================================================================ */
 .supergrid__data-grid {
   grid-area: data-grid;
   display: grid;
+  background: #000; /* Border color shows through gaps */
   gap: 1px;
-  background: var(--border-light);
-  overflow: visible; /* Parent handles scroll */
-  padding: 0;
-  /* Zoom transform origin for upper-left anchor */
-  transform-origin: 0 0;
+  overflow: visible;
 }
 
-/* Grid Mode Variants */
-
-/* Gallery Mode: Icon View */
-.supergrid--gallery .supergrid__data-grid {
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  grid-auto-rows: 140px;
-  gap: 12px;
-  padding: 16px;
-}
-
-/* List Mode: Single Column */
-.supergrid--list .supergrid__data-grid {
-  grid-template-columns: 1fr;
-  grid-auto-rows: 48px;
-  gap: 2px;
-}
-
-/* Kanban Mode: Flexible Columns */
-.supergrid--kanban .supergrid__data-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  grid-template-rows: 1fr;
-  gap: 16px;
-  padding: 16px;
-}
-
-/* Grid/SuperGrid Modes: Dynamic Columns - Spreadsheet Style */
-.supergrid--grid .supergrid__data-grid,
-.supergrid--supergrid .supergrid__data-grid {
-  /* Grid dimensions set dynamically via inline styles */
-  gap: 0; /* No gap - spreadsheet uses borders only */
-  background: var(--border-color); /* Border color shows between cells */
-  overflow: visible; /* Parent supergrid handles scroll */
-}
-
-/* Cell Styling - Spreadsheet Aesthetic */
+/* ============================================================================
+ * DATA CELLS - Individual spreadsheet cells
+ * ============================================================================ */
 .supergrid__cell {
-  background: var(--surface-color);
-  border: none; /* Use grid gap with background for borders */
-  border-right: 1px solid var(--border-color);
-  border-bottom: 1px solid var(--border-color);
+  background: #fff;
   display: flex;
-  align-items: flex-start; /* Align to top like spreadsheets */
-  justify-content: flex-start; /* Align to left */
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  min-height: 40px;
   cursor: pointer;
   transition: background-color 0.1s ease;
-  position: relative;
-  overflow: hidden;
-  min-height: 32px; /* Uniform minimum row height */
+  text-align: center;
+  font-weight: 500;
 }
 
 .supergrid__cell:hover {
-  background: var(--hover-color);
-  /* No transform or shadow - spreadsheet style */
+  background: #f0f7ff;
 }
 
-.supergrid__cell:active {
-  background: var(--active-color);
-}
-
-/* Selected cell */
 .supergrid__cell--selected {
-  background: var(--selection-color, rgba(66, 133, 244, 0.15));
-  outline: 2px solid var(--accent-color);
+  background: #e3f2fd;
+  outline: 2px solid #1976d2;
   outline-offset: -2px;
 }
 
-/* Gallery Cell Styling */
+/* Cell content wrapper */
+.supergrid__cell-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Single node in cell */
+.supergrid__node {
+  width: 100%;
+  text-align: center;
+}
+
+.supergrid__node-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.supergrid__node-summary {
+  font-size: 11px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multiple nodes (stacked) */
+.supergrid__multi-node {
+  width: 100%;
+  text-align: center;
+}
+
+.supergrid__node-count {
+  background: #1976d2;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.supergrid__node-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
+.supergrid__node--preview {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #f5f5f5;
+  border-radius: 3px;
+}
+
+.supergrid__node-more {
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
+}
+
+/* ============================================================================
+ * GALLERY MODE - Icon grid view
+ * ============================================================================ */
+.supergrid--gallery {
+  grid-template-areas: "data-grid";
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+
+.supergrid--gallery .supergrid__corner,
+.supergrid--gallery .supergrid__column-headers,
+.supergrid--gallery .supergrid__row-headers {
+  display: none;
+}
+
+.supergrid--gallery .supergrid__data-grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  padding: 16px;
+  background: transparent;
+}
+
 .supergrid__cell--gallery {
   flex-direction: column;
-  padding: 12px;
+  padding: 16px;
+  border: 1px solid #ddd;
   border-radius: 8px;
-  background: var(--surface-secondary);
-  text-align: center;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.supergrid__cell--gallery:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
 }
 
 .supergrid__cell-icon {
@@ -164,10 +231,9 @@
 }
 
 .supergrid__cell-title {
-  font-size: 0.875rem;
+  font-size: 12px;
   font-weight: 500;
-  color: var(--text-primary);
-  line-height: 1.2;
+  text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -175,158 +241,11 @@
   -webkit-box-orient: vertical;
 }
 
-/* Cell Content - Spreadsheet Style */
-.supergrid__cell-content {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  padding: 4px 8px; /* Tighter padding like a spreadsheet */
-}
-
-/* Single Node in Cell - Spreadsheet Style */
-.supergrid__node {
-  width: 100%;
-  padding: 2px 0;
-  cursor: pointer;
-  border-radius: 0; /* No rounded corners in spreadsheet */
-  transition: background-color 0.1s ease;
-}
-
-.supergrid__node:hover {
-  background: var(--hover-light, rgba(0,0,0,0.04));
-}
-
-.supergrid__node-title {
-  font-weight: 400; /* Normal weight like spreadsheet text */
-  color: var(--text-primary);
-  font-size: 13px;
-  line-height: 1.3;
-  margin-bottom: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.supergrid__node-summary {
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Multiple Nodes (SuperSize) */
-.supergrid__multi-node {
-  width: 100%;
-}
-
-.supergrid__node-count {
-  background: var(--accent-color);
-  color: var(--accent-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  text-align: center;
-  margin-bottom: 6px;
-  display: inline-block;
-}
-
-.supergrid__node-preview {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.supergrid__node--preview {
-  background: var(--surface-secondary);
-  font-size: 0.75rem;
-  padding: 2px 6px;
-  border-radius: 3px;
-  opacity: 0.8;
-}
-
-.supergrid__node--preview:hover {
-  opacity: 1;
-  background: var(--hover-light);
-}
-
-.supergrid__node-more {
-  color: var(--text-secondary);
-  font-size: 0.7rem;
-  font-style: italic;
-  padding: 2px 6px;
-  text-align: center;
-}
-
-/* State Styling */
-
-/* Loading State */
-.supergrid--loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  color: var(--text-secondary);
-}
-
-.supergrid__loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--border-light);
-  border-top: 3px solid var(--accent-color);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 16px;
-}
-
-/* Error State */
-.supergrid--error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  padding: 32px;
-  text-align: center;
-  color: var(--error-color);
-}
-
-.supergrid__error-icon {
-  font-size: 3rem;
-  margin-bottom: 16px;
-}
-
-.supergrid--error h3 {
-  margin: 0 0 8px 0;
-  color: var(--error-color);
-}
-
-.supergrid--error p {
-  margin: 0 0 16px 0;
-  color: var(--text-secondary);
-}
-
-.supergrid--error details {
-  text-align: left;
-  background: var(--surface-secondary);
-  padding: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border-light);
-}
-
-.supergrid--error code {
-  font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
-  color: var(--text-primary);
-  word-break: break-all;
-}
-
-/* Empty State */
+/* ============================================================================
+ * STATE STYLES - Loading, Error, Empty
+ * ============================================================================ */
+.supergrid--loading,
+.supergrid--error,
 .supergrid--empty {
   display: flex;
   flex-direction: column;
@@ -335,170 +254,155 @@
   min-height: 200px;
   padding: 32px;
   text-align: center;
-  color: var(--text-secondary);
 }
 
+.supergrid__loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e0e0e0;
+  border-top: 3px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.supergrid--error {
+  color: #c62828;
+}
+
+.supergrid__error-icon,
 .supergrid__empty-icon {
   font-size: 3rem;
   margin-bottom: 16px;
   opacity: 0.5;
 }
 
+.supergrid--error h3,
 .supergrid--empty h3 {
   margin: 0 0 8px 0;
-  color: var(--text-primary);
 }
 
+.supergrid--error p,
 .supergrid--empty p {
   margin: 0 0 16px 0;
+  color: #666;
 }
 
+.supergrid--error details,
 .supergrid--empty code {
-  background: var(--surface-secondary);
-  padding: 8px 12px;
+  background: #f5f5f5;
+  padding: 12px;
   border-radius: 6px;
+  border: 1px solid #e0e0e0;
   font-family: 'Courier New', monospace;
-  font-size: 0.875rem;
-  color: var(--text-primary);
+  font-size: 12px;
 }
 
-/* Debug Panel */
+/* ============================================================================
+ * DENSITY CONTROLS - Hidden by default, shown on hover
+ * ============================================================================ */
+.supergrid__density-controls {
+  display: none; /* Hidden - use PAFV controls in the toolbar instead */
+}
+
+/* ============================================================================
+ * DEBUG PANEL - Hidden by default
+ * ============================================================================ */
 .supergrid__debug {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: var(--surface-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 0.75rem;
-  max-width: 300px;
-  z-index: 1000;
+  display: none; /* Hidden - too intrusive for normal use */
 }
 
 .supergrid__debug summary {
   cursor: pointer;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #333;
 }
 
 .supergrid__debug pre {
   margin: 8px 0 0 0;
   padding: 8px;
-  background: var(--surface-color);
+  background: #f5f5f5;
   border-radius: 4px;
-  font-size: 0.7rem;
+  font-size: 10px;
   overflow: auto;
-  max-height: 200px;
-  color: var(--text-secondary);
+  max-height: 180px;
+  color: #666;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .supergrid--gallery .supergrid__data-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    grid-auto-rows: 120px;
-    gap: 8px;
-    padding: 12px;
-  }
-
-  .supergrid__cell--gallery {
-    padding: 8px;
-  }
-
-  .supergrid__cell-icon {
-    font-size: 1.5rem;
-    margin-bottom: 6px;
-  }
-}
-
-@media (max-width: 768px) {
-  .supergrid__row-headers {
-    min-width: 80px;
-  }
-
-  .supergrid__node-title {
-    font-size: 0.8rem;
-  }
-
-  .supergrid__node-summary {
-    font-size: 0.7rem;
-  }
-
-  .supergrid__debug {
-    position: static;
-    margin: 8px;
-  }
-}
-
-/* Theme-specific Styles */
-
-/* NeXTSTEP Theme */
-[data-theme="nextstep"] .supergrid {
-  border-color: #333;
-  font-family: 'Courier New', monospace;
-}
-
-[data-theme="nextstep"] .supergrid__cell {
-  border-style: outset;
-  border-width: 2px;
-  background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 100%);
-}
-
-[data-theme="nextstep"] .supergrid__cell:hover {
-  background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%);
-}
-
-[data-theme="nextstep"] .supergrid__cell--gallery {
-  border-style: inset;
-  background: linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%);
-}
-
-/* Modern Glass Theme */
-[data-theme="modern"] .supergrid {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="modern"] .supergrid__cell {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(5px);
-}
-
-[data-theme="modern"] .supergrid__cell:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Animations */
+/* ============================================================================
+ * ANIMATIONS
+ * ============================================================================ */
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ============================================================================
+ * RESPONSIVE ADJUSTMENTS
+ * ============================================================================ */
+@media (max-width: 768px) {
+  .supergrid__cell {
+    padding: 6px 8px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+
+  .supergrid__corner,
+  .supergrid__row-headers {
+    min-width: 80px;
+  }
+
+  .supergrid__debug {
+    position: static;
+    margin: 8px;
+    max-width: 100%;
+  }
 }
 
-/* Spreadsheet cells don't animate on load */
-.supergrid--grid .supergrid__cell,
-.supergrid--supergrid .supergrid__cell {
-  animation: none;
+/* ============================================================================
+ * THEME: NeXTSTEP (Retro)
+ * ============================================================================ */
+[data-theme="nextstep"] .supergrid {
+  border-color: #333;
+  font-family: 'Courier New', monospace;
+  background: #d4d4d4;
 }
 
-/* Gallery mode keeps animation */
-.supergrid--gallery .supergrid__cell {
-  animation: fadeIn 0.3s ease-out;
+[data-theme="nextstep"] .supergrid__corner,
+[data-theme="nextstep"] .supergrid__row-headers {
+  background: linear-gradient(180deg, #e8e8e8 0%, #c8c8c8 100%);
 }
 
-/* High-performance CSS Grid utilities */
-.grid-auto-fit {
-  grid-template-columns: repeat(auto-fit, minmax(var(--min-column-width, 200px), 1fr));
+[data-theme="nextstep"] .supergrid__cell {
+  background: #e0e0e0;
+  border: 2px outset #d4d4d4;
 }
 
-.grid-auto-fill {
-  grid-template-columns: repeat(auto-fill, minmax(var(--min-column-width, 200px), 1fr));
+[data-theme="nextstep"] .supergrid__cell:hover {
+  background: #f0f0f0;
+}
+
+/* ============================================================================
+ * THEME: Modern (Glass/Liquid)
+ * ============================================================================ */
+[data-theme="modern"] .supergrid {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+}
+
+[data-theme="modern"] .supergrid__corner,
+[data-theme="modern"] .supergrid__row-headers,
+[data-theme="modern"] .supergrid__column-headers {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+[data-theme="modern"] .supergrid__cell {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+[data-theme="modern"] .supergrid__cell:hover {
+  background: rgba(255, 255, 255, 0.9);
 }

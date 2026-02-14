@@ -190,8 +190,9 @@ export function SuperGrid({
     });
 
     // Convert to cell descriptors for density filtering
-    const sortedColumns = Array.from(columnValues).sort();
-    const sortedRows = Array.from(rowValues).sort();
+    // Use localeCompare for consistent sorting with SuperStack headers
+    const sortedColumns = Array.from(columnValues).sort((a, b) => a.localeCompare(b));
+    const sortedRows = Array.from(rowValues).sort((a, b) => a.localeCompare(b));
 
     const allCells: CellDescriptor[] = Array.from(cells.entries()).map(([key, cellNodes]) => {
       const [rowKey, colKey] = key.split('||');
