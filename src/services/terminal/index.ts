@@ -8,7 +8,7 @@
 
 export { TerminalPTYServer } from './terminalPTYServer';
 export type { PTYSessionState } from './terminalPTYServer';
-export { OutputBuffer } from './outputBuffer';
+export { OutputBuffer, sanitizeAnsiEscapes } from './outputBuffer';
 export * from './terminalTypes';
 export {
   isTerminalMessage,

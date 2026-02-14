@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTerminal } from '@/hooks';
-// import { useTerminalContext } from '../../context/TerminalContext';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
+import { getClaudeCodeDispatcher, WebSocketClaudeCodeDispatcher } from '@/services/claude-code/claudeCodeWebSocketDispatcher';
+import { devLogger } from '@/utils/logging';
 
 interface TerminalProps {
   className?: string;
@@ -11,8 +12,13 @@ interface TerminalProps {
 }
 
 /**
- * Terminal component using @xterm/xterm for command execution
- * Integrates with TerminalContext for shared state management
+ * Terminal component using @xterm/xterm with real PTY backend
+ *
+ * Features:
+ * - Real shell execution via node-pty WebSocket
+ * - Mode toggle: shell / claude-code
+ * - Automatic reconnection with output replay
+ * - Copy/paste support (Cmd+C/Cmd+V)
  */
 export function Terminal({
   className = '',
@@ -23,39 +29,56 @@ export function Terminal({
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [terminalId] = useState(() => `terminal-${Math.random().toString(36).substr(2, 9)}`);
   const [isReady, setIsReady] = useState(false);
+  const [reconnecting, setReconnecting] = useState(false);
+  const sessionIdRef = useRef<string | null>(null);
 
   const {
     createTerminal,
-    // executeCommand, // Unused
-    // writeOutput, // Unused
     attachToProcess,
     dispose,
     resizeTerminal,
     getCurrentWorkingDirectory,
     terminal,
-    isConnected
+    isConnected,
+    currentMode,
+    switchMode
   } = useTerminal({
     workingDirectory: initialDirectory,
     shell,
-    onCommand,
-    onNavigateHistory: (direction: 'up' | 'down') => {
-      // TODO: Implement command history
-      console.warn('Navigate history:', direction);
-      return null;
-    }
+    onCommand
   });
+
+  /**
+   * Handle reconnection with replay
+   */
+  const handleReconnect = useCallback(async () => {
+    if (!sessionIdRef.current) return;
+
+    setReconnecting(true);
+    devLogger.debug('Attempting reconnection', { component: 'Terminal' });
+
+    try {
+      const dispatcher = await getClaudeCodeDispatcher();
+      if (dispatcher instanceof WebSocketClaudeCodeDispatcher) {
+        // Request replay of buffered output
+        dispatcher.requestTerminalReplay(sessionIdRef.current);
+      }
+      setReconnecting(false);
+    } catch (error) {
+      devLogger.error('Reconnection failed', { component: 'Terminal', error });
+      setReconnecting(false);
+    }
+  }, []);
 
   // Initialize terminal when container is ready
   useEffect(() => {
     if (!terminalContainerRef.current || isReady) return;
 
-    // Set the container ID for terminal creation
     terminalContainerRef.current.id = terminalId;
 
     const terminalInstance = createTerminal(terminalId);
     if (terminalInstance) {
       setIsReady(true);
-      // Auto-attach to process after creation
       setTimeout(() => {
         attachToProcess();
       }, 100);
@@ -74,11 +97,9 @@ export function Terminal({
     if (!isReady || !terminal) return;
 
     const handleResize = () => {
-      // Auto-fit terminal to container
-      resizeTerminal(0, 0);
+      resizeTerminal(0, 0); // Auto-fit
     };
 
-    // Initial resize
     setTimeout(handleResize, 200);
 
     const resizeObserver = new ResizeObserver(handleResize);
@@ -91,6 +112,21 @@ export function Terminal({
     };
   }, [isReady, terminal, resizeTerminal]);
 
+  // Handle connection status changes
+  useEffect(() => {
+    if (!isConnected && isReady && !reconnecting) {
+      // Lost connection, attempt reconnect
+      handleReconnect();
+    }
+  }, [isConnected, isReady, reconnecting, handleReconnect]);
+
+  /**
+   * Handle mode toggle
+   */
+  const handleModeToggle = useCallback(() => {
+    const newMode = currentMode === 'shell' ? 'claude-code' : 'shell';
+    switchMode(newMode);
+  }, [currentMode, switchMode]);
 
   return (
     <ErrorBoundary level="component" name="Terminal">
@@ -107,8 +143,30 @@ export function Terminal({
               Terminal - {getCurrentWorkingDirectory().replace('/Users/mshaler', '~')}
             </span>
           </div>
-          <div className="text-gray-400 text-xs">
-            {isConnected ? '●' : '○'} {isConnected ? 'Connected' : 'Disconnected'}
+
+          <div className="flex items-center gap-3">
+            {/* Mode Toggle */}
+            <button
+              onClick={handleModeToggle}
+              className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                currentMode === 'claude-code'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
+              }`}
+              title={`Switch to ${currentMode === 'shell' ? 'Claude Code' : 'Shell'} mode`}
+            >
+              {currentMode === 'claude-code' ? '🤖 Claude' : '💻 Shell'}
+            </button>
+
+            {/* Connection Status */}
+            <div className="text-gray-400 text-xs flex items-center gap-1">
+              <span className={isConnected ? 'text-green-400' : 'text-red-400'}>
+                {isConnected ? '●' : '○'}
+              </span>
+              <span>
+                {reconnecting ? 'Reconnecting...' : isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -122,17 +180,16 @@ export function Terminal({
           }}
         />
 
-        {/* Terminal Footer (optional) */}
+        {/* Terminal Footer */}
         <div className="terminal-footer flex-shrink-0 h-6 bg-gray-700 flex items-center justify-between px-2 text-xs text-gray-300">
           <span>Shell: {shell}</span>
-          <span>CWD: {getCurrentWorkingDirectory()}</span>
+          <span>Mode: {currentMode}</span>
         </div>
       </div>
     </ErrorBoundary>
   );
 }
 
-// Export utilities for external command execution
 export { type TerminalProps };
 export const TerminalUtils = {
   executeCommand: (terminalRef: React.RefObject<any>, cmd: string) => {
