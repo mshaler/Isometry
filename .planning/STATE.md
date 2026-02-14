@@ -11,8 +11,8 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 Phase: 84 (Cards & Connections)
 Plan: 02 of 4 complete
-Status: In progress — Plan 84-02 complete
-Last activity: 2026-02-13 — Completed 84-02-PLAN.md (TypeScript Card/Connection types)
+Status: In progress — Plans 84-01 and 84-02 complete
+Last activity: 2026-02-14 — Completed 84-01-PLAN.md (Schema foundation + migration)
 
 Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 plans)
 
@@ -68,6 +68,10 @@ Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 p
 - v4.4: 9 plans, 4 phases (56-59), same day
 - v4.5: 3 plans, 1 phase (60), ~25 minutes
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
+
+**Recent completions (Phase 84 - Cards & Connections):**
+- Phase 84-01: COMPLETE (~5m) — Schema foundation with cards/connections tables, migration script, 24 tests
+- Phase 84-02: COMPLETE (prior session) — TypeScript Card/Connection interfaces with type guards
 
 **Recent completions (Phase 79 - Catalog Browser) — PHASE COMPLETE:**
 - Phase 79-03: COMPLETE (~6m) — FilterBreadcrumb component with LATCH filter segments, navigation/removal, clear all
@@ -149,6 +153,15 @@ Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 p
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 84-01 decisions (Cards & Connections - Schema Foundation):**
+- SCHEMA-01: 12 node_types consolidated to 4 card_types (note, person, event, resource)
+- SCHEMA-02: edge_type enum removed - connections use lowercase labels (schema-on-read)
+- SCHEMA-03: via_card_id enables bridge cards (e.g., "met at" an event)
+- SCHEMA-04: Deprecated columns removed (location_address, importance, grid_x/y, source_url)
+- SCHEMA-05: New columns added (url, mime_type, is_collective, sync_status)
+- MIGRATION-01: Backup tables (nodes_backup, edges_backup) for rollback safety
+- MIGRATION-02: Type mapping: LINK->link, NEST->parent, SEQUENCE->precedes, AFFINITY->related
 
 **Phase 84-02 decisions (Cards & Connections - TypeScript Types):**
 - CARD-TYPE-01: CardType constrained to 4 types (note/person/event/resource) - no expansion
