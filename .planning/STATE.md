@@ -13,7 +13,7 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 Phase: 95 of 98 (Data Layer & Backlinks - Capture Writing Surface v6.2)
 Plan: 4 of 4 complete
 Status: Phase complete
-Last activity: 2026-02-14 — Completed 95-01 Templates Data Layer
+Last activity: 2026-02-14 — Completed 95-04 Save as Template
 
 Progress (Phase 95): [██████████] 100% (4 of 4 plans)
 Overall: [████████░░] 96% (99 of ~130 total phases across all milestones)
@@ -143,6 +143,8 @@ Recent decisions affecting v6.1 SuperStack work:
 - TMPL-MODAL-01: Use CustomEvent for slash command to modal communication ✅ Implemented 95-02
 - TMPL-MODAL-02: Variable substitution for {{date}} and {{time}} on insert ✅ Implemented 95-02
 - TMPL-MODAL-03: Theme-aware styling (NeXTSTEP vs Modern) ✅ Implemented 95-02
+- TMPL-SAVE-01: getEditorContent helper for markdown serialization with getText fallback ✅ Implemented 95-04
+- TMPL-SAVE-02: Save as Template button placed between Save and Minimize in header ✅ Implemented 95-04
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -174,15 +176,14 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 95-02 COMPLETE - Template Picker Modal
-Resume file: .planning/phases/95-data-layer-backlinks/95-02-SUMMARY.md
+Stopped at: Phase 95-04 COMPLETE - Save as Template
+Resume file: .planning/phases/95-data-layer-backlinks/95-04-SUMMARY.md
 
-**Phase 95-02 Summary:**
-- /template slash command dispatches CustomEvent
-- TemplatePickerModal with FTS5 search, preview pane, keyboard navigation
-- Event wiring in CaptureComponent to open modal
-- Variable substitution for {{date}} and {{time}}
-- Usage count tracking via incrementTemplateUsage
-- Commits: 9e5822b9, f0fa9079, 4ac5b012
+**Phase 95-04 Summary:**
+- SaveAsTemplateModal with name/description/category inputs
+- Content preview truncated to 500 chars with character count
+- Save as Template button in CaptureComponent header (FileText icon)
+- Uses @tiptap/markdown serialization with getText fallback
+- Commits: 95d0346e, 81644918
 
-**Next step:** Phase 95 complete - ready for Phase 96 (Block Types & Slash Commands)
+**Next step:** Phase 95 COMPLETE - ready for Phase 96 (Block Types & Slash Commands)
