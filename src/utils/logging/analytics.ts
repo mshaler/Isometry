@@ -99,7 +99,10 @@ class AnalyticsService {
   private conceptScores: number[] = [];
 
   constructor() {
-    this.isEnabled = import.meta.env.VITE_ENABLE_ANALYTICS === 'true';
+    // Handle both Vite (browser) and Node.js contexts
+    this.isEnabled = typeof import.meta.env !== 'undefined'
+      ? import.meta.env.VITE_ENABLE_ANALYTICS === 'true'
+      : false;
     this.sessionStart = Date.now();
 
     // Track session duration on page unload
