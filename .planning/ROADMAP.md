@@ -278,10 +278,13 @@ Plans:
   2. Templates persist in sql.js database with proper schema
   3. User can see backlinks panel showing all cards linking to current card
   4. Clicking backlink navigates to that card
-**Plans**: TBD
+**Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 95-01: TBD (use /gsd:plan-phase)
+- [ ] 95-01-PLAN.md — Template data layer with sql.js storage and seeding (TMPL-05)
+- [ ] 95-02-PLAN.md — Template picker modal and /template command (TMPL-01, TMPL-02, TMPL-03)
+- [ ] 95-03-PLAN.md — Backlinks panel in RightSidebar (BACK-01, BACK-02, BACK-03, BACK-04)
+- [ ] 95-04-PLAN.md — Save as Template functionality (TMPL-04)
 
 ### Phase 96: Block Types & Slash Commands
 **Goal**: Rich block types (callout, toggle, divider, bookmark) and expanded slash commands
@@ -415,11 +418,11 @@ Plans:
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
 | 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
-| 95. Data Layer & Backlinks | v6.2 | 0/0 | Not started | - |
+| 95. Data Layer & Backlinks | v6.2 | 0/4 | Planned | - |
 | 96. Block Types & Slash Commands | v6.2 | 0/0 | Not started | - |
 | 97. Inline Properties | v6.2 | 0/0 | Not started | - |
 | 98. Isometry Embeds & Polish | v6.2 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (Phase 91 complete)*
+*Last updated: 2026-02-14 (Phase 95 planned)*
