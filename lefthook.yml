@@ -4,6 +4,9 @@
 pre-commit:
   parallel: false
   commands:
+    cleanup-screenshots:
+      run: rm -f *.png 2>/dev/null || true
+      glob: "*.png"
     check-quick:
       run: npm run check:quick
       stage_fixed: true
