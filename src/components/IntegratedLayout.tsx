@@ -537,11 +537,21 @@ export function IntegratedLayout() {
             id="notebook-panel"
             style={{
               maxHeight: isNotebookExpanded ? '28rem' : '0',
-              transition: 'max-height 300ms ease-in-out',
+              opacity: isNotebookExpanded ? 1 : 0,
+              transition: 'max-height 300ms ease-in-out, opacity 150ms ease-in-out',
+              willChange: isNotebookExpanded ? 'max-height, opacity' : 'auto',
+              contain: 'layout',
             }}
             className="overflow-hidden"
           >
-            <div className={`h-[28rem] w-full ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}>
+            <div
+              className={`h-[28rem] w-full ${isNeXTSTEP ? 'bg-[#1A1A1A]' : 'bg-gray-50'}`}
+              style={{
+                // Prevent layout thrashing from content when collapsed
+                visibility: isNotebookExpanded ? 'visible' : 'hidden',
+                transitionDelay: isNotebookExpanded ? '0ms' : '300ms',
+              }}
+            >
               <NotebookLayout />
             </div>
           </div>

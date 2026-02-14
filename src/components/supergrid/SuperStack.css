@@ -17,9 +17,18 @@
 
 /* Horizontal (Column Headers) */
 .supergrid-stack--horizontal {
-  grid-auto-flow: row;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  /* FIXED: Use flexbox for horizontal layout instead of CSS Grid.
+     CSS Grid with auto-fit doesn't work well when container width isn't defined,
+     causing all headers to overlap in a single cell.
+     Flexbox with row direction properly spreads headers horizontally. */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1px;
   border-bottom: 2px solid var(--accent-color);
+  /* Horizontal text rendering */
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
 }
 
 /* Vertical (Row Headers) */
@@ -46,8 +55,11 @@
 
 /* Horizontal Level */
 .supergrid-stack--horizontal .supergrid-stack__level {
-  grid-auto-flow: column;
-  grid-template-columns: subgrid;
+  /* Use flexbox row for horizontal spreading of headers */
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1px;
 }
 
 /* Vertical Level */

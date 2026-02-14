@@ -1,0 +1,318 @@
+{
+  "version": "2.0.0",
+  "name": "SuperGrid Data Flow & Layout Fix Specification",
+  "description": "Complete specification for fixing SuperGrid rendering, incorporating Codex data flow validation",
+  "created": "2026-02-12",
+  "authors": ["Claude AI (Architecture)", "Codex (Validation)", "Michael Shaler"],
+  
+  "executiveSummary": {
+    "problem": "SuperGrid renders cards in a single vertical column instead of a 2D grid with proper headers",
+    "rootCauses": [
+      "GridRenderingEngine.ts has stacked header support but may not be receiving correct axis data",
+      "Property discovery uses static facets table, not dynamic YAML properties from imported data",
+      "Disconnect between PAFV Navigator axis assignments and GridRenderingEngine data binding"
+    ],
+    "approach": "Two-track fix: (A) Quick render fix using existing infrastructure, (B) Architectural improvements for schema-on-read"
+  },
+
+  "dataFlowAnalysis": {
+    "currentFlow": {
+      "step1_ETL": {
+        "files": [
+          "src/hooks/useAltoIndexImport.ts:59",
+          "src/etl/alto-importer.ts:77",
+          "src/etl/alto-parser.ts:197"
+        ],
+        "status": "WORKING with caveats",
+        "issues": [
+          "Parser is custom/fragile, not full YAML",
+          "Only fixed fields mapped, not arbitrary frontmatter",
+          "source_id can degrade to 'alto-notes-undefined'"
+        ]
+      },
+      "step2_PropertyDiscovery": {
+        "files": [
+          "src/services/property-classifier.ts:89",
+          "src/db/schema.sql:127 (facets table)"
+        ],
+        "status": "BROKEN for dynamic properties",
+        "issues": [
+          "Properties come from static facets rows",
+          "YAML keys not discovered dynamically",
+          "Importer maps only fixed fields"
+        ]
+      },
+      "step3_PAFVNavigator": {
+        "files": [
+          "src/components/navigator/PafvNavigator.tsx:375"
+        ],
+        "status": "WORKING",
+        "notes": "Drag/drop and stacked assignments implemented correctly"
+      },
+      "step4_SuperGridRendering": {
+        "files": [
+          "src/d3/grid-rendering/GridRenderingEngine.ts:281,333,872",
+          "src/d3/SuperGridEngine/DataManager.ts",
+          "src/d3/SuperGridEngine/HeaderManager.ts",
+          "src/d3/SuperGridEngine/Renderer.ts"
+        ],
+        "status": "CODE EXISTS but not receiving correct data",
+        "notes": "D3 SuperGrid supports stacked x/y headers and composite-key positioning"
+      },
+      "step5_LATCHSliders": {
+        "files": [
+          "src/components/navigator/LatchGraphSliders.tsx:140",
+          "src/components/IntegratedLayout.tsx:293"
+        ],
+        "status": "PARTIAL",
+        "issues": [
+          "Only Time + Hierarchy implemented",
+          "GRAPH sliders are future-state"
+        ]
+      }
+    },
+    
+    "keyInsight": "The GridRenderingEngine.ts at lines 281, 333, 872 HAS the stacked header logic. The fix should ensure this code path is actually executed with correct data, not rewrite the rendering."
+  },
+
+  "trackA_QuickFix": {
+    "goal": "Get SuperGrid rendering correctly using existing infrastructure",
+    "priority": "HIGH - Do this first",
+    "estimatedEffort": "4-8 hours",
+    
+    "tasks": [
+      {
+        "id": "A1",
+        "name": "Verify GridRenderingEngine is being used",
+        "file": "src/d3/SuperGridEngine/index.ts",
+        "action": "Check if SuperGridEngine delegates to GridRenderingEngine or uses its own simpler Renderer.ts",
+        "hypothesis": "The SuperGridEngine may be using the simplified Renderer.ts instead of the full GridRenderingEngine.ts"
+      },
+      {
+        "id": "A2", 
+        "name": "Trace axis data flow",
+        "files": [
+          "src/components/navigator/PafvNavigator.tsx",
+          "src/components/IntegratedLayout.tsx",
+          "src/d3/SuperGridEngine/index.ts"
+        ],
+        "action": "Add console.logs to trace: (1) What axes are assigned in PafvNavigator, (2) What gets passed to SuperGridEngine, (3) What GridRenderingEngine receives",
+        "expectedOutput": "Identify where axis values are lost or transformed incorrectly"
+      },
+      {
+        "id": "A3",
+        "name": "Connect existing stacked header code",
+        "file": "src/d3/grid-rendering/GridRenderingEngine.ts",
+        "action": "Ensure the stacked header logic at lines 281, 333, 872 is invoked when multiple facets are on same plane",
+        "codeLocations": {
+          "stackedXHeaders": "line 281",
+          "stackedYHeaders": "line 333", 
+          "compositeKeyPositioning": "line 872"
+        }
+      },
+      {
+        "id": "A4",
+        "name": "Fix HeaderManager to use real values",
+        "file": "src/d3/SuperGridEngine/HeaderManager.ts",
+        "currentBehavior": "Creates placeholder headers ('Column 0', 'Row 0')",
+        "requiredBehavior": "Extract actual axis values from cell data (cell.xValue, cell.yValue)"
+      },
+      {
+        "id": "A5",
+        "name": "Apply layout configuration",
+        "file": "src/d3/SuperGridEngine/Renderer.ts",
+        "action": "Apply the layout values from layoutConfig section below"
+      }
+    ],
+    
+    "verificationSteps": [
+      "Load alto-index Notes dataset",
+      "Assign 'folder' to Y-axis, 'type' to X-axis in PAFV Navigator",
+      "Verify column headers show actual type values (notes, contacts, etc.)",
+      "Verify row headers show actual folder values",
+      "Verify cards appear at correct grid intersections",
+      "Verify nested headers work when multiple facets assigned to same plane"
+    ]
+  },
+
+  "trackB_ArchitecturalFix": {
+    "goal": "Implement true schema-on-read for dynamic YAML properties",
+    "priority": "MEDIUM - Do after Track A works",
+    "estimatedEffort": "2-3 days",
+    
+    "tasks": [
+      {
+        "id": "B1",
+        "name": "Add dynamic properties table",
+        "file": "src/db/schema.sql",
+        "sql": "CREATE TABLE node_properties (id TEXT PRIMARY KEY, node_id TEXT REFERENCES nodes(id), key TEXT NOT NULL, value_type TEXT NOT NULL, value_text TEXT, value_number REAL, value_date TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP, UNIQUE(node_id, key))"
+      },
+      {
+        "id": "B2",
+        "name": "Fix query parameter binding",
+        "file": "src/db/operations.ts:33",
+        "issue": "execute() ignores params",
+        "fix": "Use stmt.bind(params) before stepping"
+      },
+      {
+        "id": "B3",
+        "name": "Upgrade YAML parser",
+        "file": "src/etl/alto-parser.ts",
+        "action": "Replace handwritten parser with 'yaml' package, preserve unknown keys into node_properties"
+      },
+      {
+        "id": "B4",
+        "name": "Dynamic facet discovery",
+        "file": "src/services/property-classifier.ts",
+        "action": "Query node_properties for distinct keys, classify and surface as facets"
+      },
+      {
+        "id": "B5",
+        "name": "Harden ETL identity",
+        "file": "src/etl/alto-parser.ts:285",
+        "action": "Make source_id deterministic with fallback (filePath + frontmatter hash)"
+      }
+    ]
+  },
+
+  "layoutConfig": {
+    "_comment": "Same as v1 spec - apply these values in Track A task A5",
+    "cell": {
+      "width": 200,
+      "height": 120,
+      "padding": 8,
+      "gap": 4,
+      "borderRadius": 4,
+      "borderWidth": 1,
+      "borderColor": "#e2e8f0",
+      "backgroundColor": "#ffffff"
+    },
+    "rowHeader": {
+      "width": 140,
+      "fontSize": 12,
+      "fontWeight": "600",
+      "backgroundColor": "#f1f5f9",
+      "textColor": "#334155",
+      "textAlign": "right",
+      "padding": { "top": 8, "right": 12, "bottom": 8, "left": 8 },
+      "nestingIndent": 16
+    },
+    "columnHeader": {
+      "height": 40,
+      "fontSize": 12,
+      "fontWeight": "600",
+      "backgroundColor": "#f1f5f9",
+      "textColor": "#334155",
+      "textAlign": "center",
+      "padding": { "top": 8, "right": 8, "bottom": 8, "left": 8 }
+    },
+    "nestedHeaders": {
+      "enabled": true,
+      "maxLevels": 3,
+      "levelHeights": [40, 36, 32],
+      "levelWidths": [140, 120, 100],
+      "indentPerLevel": 16
+    },
+    "card": {
+      "titleFontSize": 14,
+      "titleFontWeight": "600",
+      "titleLineClamp": 1,
+      "descriptionFontSize": 12,
+      "descriptionLineClamp": 2,
+      "overflow": "hidden",
+      "colorCoding": {
+        "enabled": true,
+        "property": "node_type",
+        "palette": {
+          "notes": "#fbbf24",
+          "contacts": "#34d399",
+          "calendar": "#60a5fa",
+          "reminders": "#f472b6",
+          "messages": "#a78bfa",
+          "safari-history": "#fb923c",
+          "safari-bookmarks": "#2dd4bf",
+          "voice-memos": "#f87171"
+        }
+      }
+    }
+  },
+
+  "criticalFileMap": {
+    "_comment": "Files to examine in priority order for Track A",
+    "priority1_DataFlow": [
+      {
+        "file": "src/components/IntegratedLayout.tsx",
+        "lines": [51, 272, 280, 293],
+        "purpose": "Main integration point - check how PAFV state flows to SuperGrid"
+      },
+      {
+        "file": "src/d3/SuperGridEngine/index.ts",
+        "purpose": "Check if it uses GridRenderingEngine.ts or simplified Renderer.ts"
+      }
+    ],
+    "priority2_HeaderGeneration": [
+      {
+        "file": "src/d3/grid-rendering/GridRenderingEngine.ts",
+        "lines": [281, 333, 872],
+        "purpose": "HAS stacked header code - ensure it's being called"
+      },
+      {
+        "file": "src/d3/SuperGridEngine/HeaderManager.ts",
+        "purpose": "Currently generates placeholder headers - needs real values"
+      }
+    ],
+    "priority3_CellPositioning": [
+      {
+        "file": "src/d3/SuperGridEngine/DataManager.ts",
+        "purpose": "Cell positioning logic - verify gridX/gridY calculation"
+      },
+      {
+        "file": "src/d3/SuperGridEngine/Renderer.ts",
+        "purpose": "D3 rendering - apply layout config"
+      }
+    ]
+  },
+
+  "debuggingInstructions": {
+    "step1": "Open browser DevTools Console",
+    "step2": "Load the app with ?test=integrated",
+    "step3": "Import alto-index Notes dataset",
+    "step4": "In Console, add breakpoints or logs in these files:",
+    "breakpoints": [
+      "IntegratedLayout.tsx line 280 - See what node_type filtering produces",
+      "PafvNavigator.tsx line 375 - See axis assignments",
+      "SuperGridEngine/index.ts loadDataWithSQLFields - See what SQL is executed",
+      "GridRenderingEngine.ts line 281 - See if stacked header code runs"
+    ],
+    "step5": "Check: Are axis values (folder names, type names) present? Or only indices?"
+  },
+
+  "testFailures": {
+    "_comment": "From Codex validation - fix these for CI",
+    "propertyClassifier": {
+      "file": "src/services/__tests__/property-classifier.test.ts:223",
+      "issue": "Naming mismatch: expects 'LINK' but gets 'Link'"
+    },
+    "superDynamic": {
+      "file": "src/__tests__/SuperDynamic.test.ts:20",
+      "issue": "Stale import: '/services/PAFVAxisService' should be '/services/supergrid/PAFVAxisService.ts'"
+    }
+  },
+
+  "successCriteria": {
+    "trackA": [
+      "SuperGrid displays as 2D grid, not single column",
+      "Column headers show actual X-axis values",
+      "Row headers show actual Y-axis values",
+      "Cards positioned at correct grid intersections",
+      "Nested headers work for multiple facets on same plane",
+      "Card content doesn't overflow boundaries"
+    ],
+    "trackB": [
+      "Arbitrary YAML frontmatter keys appear as facets in Navigator",
+      "Dynamic properties stored in node_properties table",
+      "Query parameter binding works without string interpolation",
+      "source_id is deterministic and collision-free"
+    ]
+  }
+}
