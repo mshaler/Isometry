@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 85 of 93 (Backend Infrastructure & Terminal Execution)
-Plan: 1 of 5 complete
+Plan: 2 of 5 complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 85-01-PLAN.md (PTY Backend Infrastructure)
+Last activity: 2026-02-14 — Completed 85-02-PLAN.md (WebSocket Server Integration)
 
-Progress (Phase 85): [██░░░░░░░░] 20% (1 of 5 plans)
+Progress (Phase 85): [████░░░░░░] 40% (2 of 5 plans)
 Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
 
 ## Current Milestone: v6.2 Capture Writing Surface
@@ -52,7 +52,7 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 **Phases:**
 - Phase 85: Backend Infrastructure & Terminal Execution (5 plans)
   - [x] 85-01: PTY Backend Infrastructure (~4m)
-  - [ ] 85-02: WebSocket Server Integration
+  - [x] 85-02: WebSocket Server Integration (~4m)
   - [ ] 85-03: xterm.js Frontend Integration
   - [ ] 85-04: Terminal Tab Component
   - [ ] 85-05: Terminal Verification
@@ -115,6 +115,11 @@ Recent decisions affecting v6.1 work:
 - TERM-02: spawn() with args array, never string interpolation
 - TERM-03: 64KB output buffer for reconnection replay
 
+**Message Routing (from 85-02):**
+- TERM-04: Type guards for message dispatch (isTerminalMessage, isCommandMessage, etc.)
+- TERM-05: Local interface to avoid circular dependency
+- TERM-06: Layered dispatch: ping -> terminal -> file-monitoring -> command -> unknown
+
 See PROJECT.md Key Decisions table for full history.
 
 ### Pending Todos
@@ -135,14 +140,14 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 85 Plan 01 complete, ready for Plan 02 (WebSocket Server Integration)
-Resume file: .planning/phases/85-backend-terminal/85-02-PLAN.md
+Stopped at: Phase 85 Plan 02 complete, ready for Plan 03 (xterm.js Frontend Integration)
+Resume file: .planning/phases/85-backend-terminal/85-03-PLAN.md
 
-**Phase 85 Plan 01 Complete:**
-- ✅ terminalTypes.ts: PTYConfig, TerminalSession, message type unions
-- ✅ outputBuffer.ts: 64KB circular buffer for replay
-- ✅ terminalPTYServer.ts: PTY session manager with node-pty
-- ✅ index.ts: Module exports
-- ✅ Tests: 7 passing OutputBuffer tests
+**Phase 85 Plan 02 Complete:**
+- messageRouter.ts: Type guards for WebSocket message routing
+- claudeCodeServer.ts: TerminalPTYServer integration
+- index.ts: Export message router functions
+- Ping/pong heartbeat support
+- Terminal cleanup on disconnect and server stop
 
-**Next step:** Execute Plan 85-02 (WebSocket Server Integration)
+**Next step:** Execute Plan 85-03 (xterm.js Frontend Integration)
