@@ -14,7 +14,10 @@
 - **v4.8 ETL Consolidation** - Phases 67-72 (shipped 2026-02-12)
 - **v5.0 SuperGrid MVP** - Phases 73-76 (shipped 2026-02-13)
 - **v4.9 Data Layer Completion** - Phases 77-79 (shipped 2026-02-13)
-- 🚧 **v5.1 Notebook Integration** - Phase 80 (current)
+- **v5.1 Notebook Integration** - Phase 80 (shipped 2026-02-14)
+- **v5.2 Cards & Connections** - Phase 84 (shipped 2026-02-13)
+- 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
+- 🚧 **v6.1 SuperStack Enhancement** - Phases 89-93 (current)
 
 ## Phases
 
@@ -128,38 +131,7 @@ Plans:
 
 **Milestone Goal:** Connect property classification to Navigator UI for dynamic LATCH+GRAPH axis selection with SuperGrid
 
-#### Phase 50: Foundation (Schema-on-Read Classification)
-**Goal**: Build property classification service that reads facets table and produces LATCH+GRAPH bucketed property list
-**Depends on**: Phase 42 (v4.1 complete)
-**Requirements**: FOUND-01, FOUND-02, FOUND-03, FOUND-04, FOUND-05
-**Success Criteria** (what must be TRUE):
-  1. classifyProperties(db) returns PropertyClassification with correct LATCH+GRAPH buckets
-  2. GRAPH bucket contains 4 edge types (LINK, NEST, SEQUENCE, AFFINITY) + 2 metrics (degree, weight)
-  3. Disabled facets are excluded from classification
-  4. Sort order is respected within each bucket
-  5. usePropertyClassification hook provides cached, refreshable access
-**Gate**: Property classifier returns correct LATCH-bucketed results from live database.
-**Plans**: 2 plans in 1 wave
-
-Plans:
-- [x] 50-01-PLAN.md — Property classification service validation with tests
-- [x] 50-02-PLAN.md — usePropertyClassification hook caching validation
-
-#### Phase 51: Navigator UI Integration
-**Goal**: Connect usePropertyClassification hook to Navigator UI, replacing hardcoded axes with dynamic LATCH+GRAPH buckets
-**Depends on**: Phase 50 (property classification complete)
-**Requirements**: NAV-01, NAV-02, NAV-03, NAV-04, NAV-05
-**Success Criteria** (what must be TRUE):
-  1. Navigator displays LATCH buckets from usePropertyClassification() instead of hardcoded axes
-  2. User can expand each LATCH bucket to see individual facets (e.g., Time -> created, modified, due)
-  3. GRAPH bucket appears in Navigator with 4 edge types and 2 metrics
-  4. Dragging a facet to a well updates SuperGrid axis mapping
-  5. Facet changes in database reflect in Navigator after refresh
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 51-01-PLAN.md — DraggableFacet and PlaneDropZone components with type mappings
-- [x] 51-02-PLAN.md — SimplePAFVNavigator refactor with classification buckets
+[Collapsed for brevity - full details in original ROADMAP.md]
 
 </details>
 
@@ -184,270 +156,152 @@ Plans:
 </details>
 
 <details>
-<summary>v4.4 SuperGrid PAFV Projection (Phases 56-59) - SHIPPED 2026-02-11</summary>
+<summary>v4.4 through v5.2 - SHIPPED</summary>
 
-**Milestone Goal:** Wire SuperGrid to consume PAFV axis mappings from PAFVContext for 2D card positioning with dynamic headers and smooth transitions.
-
-**Key Accomplishments:**
-- PAFV Projection Core connecting Navigator axis mappings to GridRenderingEngine for 2D card positioning
-- Dynamic header generation from dataset values with date/category formatting
-- Infinite render loop fix with comprehensive context memoization
-- useRenderLoopGuard development safeguard
-
-**Stats:** 4 phases (56-59), 9 plans, ~20 minutes execution time
+[Additional milestones collapsed for brevity]
 
 </details>
 
-<details>
-<summary>v4.5 Stacked/Nested Headers (Phase 60) - SHIPPED 2026-02-11</summary>
+## 🚧 v6.1 SuperStack Enhancement (In Progress)
 
-**Milestone Goal:** Implement spreadsheet-style hierarchical headers with visual spanning for multi-axis projections
+**Milestone Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
-**Key Accomplishments:**
-- Stacked/nested hierarchical headers with d3.stratify for multi-facet axes (Excel pivot table style)
-- Parent header cells visually spanning across children with bottom-up span calculation
-- Header click sorting with visual indicators (asc/desc/none toggle cycle)
+**Reference:** `superstack-implementation-plan.md` contains complete implementation specification.
 
-**Stats:** 1 phase (60), 3 plans, ~25 minutes execution time
-
-#### Phase 60: SuperGrid Stacked/Nested Headers
-**Goal**: Implement spreadsheet-style hierarchical headers with visual spanning for multi-axis projections
-**Depends on**: Phase 59
-**Requirements**: STACK-01, STACK-02, STACK-03
+### Phase 89: Static Headers Foundation
+**Goal**: Create type definitions and render static nested headers with correct spans
+**Depends on**: Phase 84 (Cards & Connections)
+**Requirements**: SSTACK-01, SSTACK-02, SSTACK-03, SSTACK-04, SSTACK-05, SSTACK-06
 **Success Criteria** (what must be TRUE):
-  1. Multi-level header hierarchy renders when multiple facets assigned to same plane (stacked axes)
-  2. Parent header cells span across their child headers (like Excel pivot table headers)
-  3. Headers integrate with existing HeaderLayoutService span calculation algorithm
-  4. Header clicks allow sorting by that level of the hierarchy
-**Plans**: 3 plans in 3 waves
-
-Plans:
-- [x] 60-01-PLAN.md — Extend types and generate multi-facet hierarchies
-- [x] 60-02-PLAN.md — Render stacked headers with visual spanning
-- [x] 60-03-PLAN.md — Header click sorting at hierarchy levels
-
-</details>
-
-<details>
-<summary>v4.6 SuperGrid Polish (Phases 61-62) - SHIPPED 2026-02-12</summary>
-
-**Milestone Goal:** Complete SuperGrid projection system with animated view transitions and sparse/dense cell filtering.
-
-### Phase 61: View Transitions
-**Goal**: Cards and headers animate smoothly when axis mappings change
-**Depends on**: Phase 60 (Stacked/Nested Headers complete)
-**Requirements**: TRANS-01, TRANS-02, TRANS-03
-**Success Criteria** (what must be TRUE):
-  1. User changes axis mapping in Navigator and sees cards smoothly transition to new positions (300ms animation)
-  2. User changes axis mapping and sees header elements smoothly transition with cards
-  3. User has cards selected, changes axis mapping, and selected cards remain selected after transition
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 61-01-PLAN.md — Card/header transitions with selection preservation
-
-### Phase 62: Density Filtering
-**Goal**: User controls whether empty cells display via density controls
-**Depends on**: Phase 61 (View Transitions complete)
-**Requirements**: DENS-01, DENS-02, DENS-03
-**Success Criteria** (what must be TRUE):
-  1. User sets pan level to sparse and sees full Cartesian grid including empty cells
-  2. User sets pan level to dense and sees only populated cells (empty cells hidden)
-  3. User adjusts pan slider and sees cell filtering respond immediately
-  4. Density changes preserve existing card positions and selection state
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 62-01-PLAN.md — Wire Janus extent density controls to GridRenderingEngine for sparse/dense cell filtering
-
-</details>
-
-## 🚧 v4.7 Schema-on-Read (In Progress)
-
-**Milestone Goal:** Dynamic YAML property discovery and storage for true schema-on-read semantics.
-
-### Phase 63: Schema & Query Safety
-**Goal**: Add node_properties table and fix query parameter binding for arbitrary YAML frontmatter storage
-**Depends on**: Phase 61 (View Transitions complete)
-**Requirements**: SCHEMA-01, SCHEMA-02, QUERY-01
-**Success Criteria** (what must be TRUE):
-  1. Database contains node_properties table with foreign key to nodes and cascade delete
-  2. Arbitrary YAML keys can be stored as key-value pairs linked to node_id
-  3. All SQL queries use stmt.bind(params) instead of string interpolation for injection safety
-  4. execute() function in db/operations.ts correctly passes params to sql.js stmt.bind()
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 63-01-PLAN.md — Add node_properties table to schema and fix execute() parameter binding
-
-### Phase 64: ETL Pipeline Upgrade
-**Goal**: Replace custom YAML parser with full-spec parser and harden source_id generation
-**Depends on**: Phase 63 (Schema & Query Safety complete)
-**Requirements**: ETL-01, ETL-02, ETL-03
-**Success Criteria** (what must be TRUE):
-  1. YAML parser uses npm yaml package instead of custom regex-based parser
-  2. Unknown frontmatter keys flow into node_properties table without schema changes
-  3. source_id generation is deterministic (filePath + frontmatter hash) with collision detection
-  4. ETL pipeline preserves all YAML frontmatter regardless of whether keys are recognized
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 64-01-PLAN.md — Install gray-matter/yaml dependencies, create frontmatter parser and deterministic ID modules
-- [x] 64-02-PLAN.md — Wire modules into alto-parser and alto-importer with property storage integration
-
-### Phase 65: Facet Discovery
-**Goal**: Surface dynamic properties from node_properties as available Navigator facets
-**Depends on**: Phase 64 (ETL Pipeline Upgrade complete)
-**Requirements**: FACET-01, FACET-02
-**Success Criteria** (what must be TRUE):
-  1. Property classifier queries node_properties for distinct keys and includes them in classification
-  2. Dynamic properties appear as draggable facets in Navigator alongside schema-defined facets
-  3. Navigator UI distinguishes dynamic vs schema facets (different styling or section)
-  4. Dragging dynamic property to plane updates axis mapping and SuperGrid renders it
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 65-01-PLAN.md — Extend property classifier with dynamic property discovery from node_properties
-- [x] 65-02-PLAN.md — Add visual distinction for dynamic properties in Navigator UI
-
-## 📋 v4.8 ETL Consolidation (Planned)
-
-**Milestone Goal:** Consolidate file-based ETL in TypeScript with canonical schema validation and multi-format importers.
-
-**Source:** etl-consolidation-plan.md
-
-### Phase 67: Canonical Schema
-**Goal**: Create Zod-validated canonical Node schema with JSON Schema export
-**Depends on**: v4.7 complete (Phase 65)
-**Requirements**: SCHEMA-01, SCHEMA-02, SCHEMA-03
-**Success Criteria** (what must be TRUE):
-  1. CanonicalNodeSchema validates all LATCH dimensions and provenance fields
-  2. JSON Schema exports for Swift interop
-  3. SQL_COLUMN_MAP maps camelCase to snake_case for database insertion
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 67-01-PLAN.md — Canonical Node Schema with Zod validation
-
-### Phase 68: Import Coordinator
-**Goal**: Create central router for file imports with format detection
-**Depends on**: Phase 67 (Canonical Schema complete)
-**Requirements**: COORD-01, COORD-02, COORD-03
-**Success Criteria** (what must be TRUE):
-  1. ImportCoordinator routes files to appropriate importers by extension
-  2. BaseImporter interface defines import/parse/validate/transform contract
-  3. Format detection works for all supported extensions
-**Plans**: 1 plan in 1 wave
-
-Plans:
-- [x] 68-01-PLAN.md — BaseImporter abstract class and ImportCoordinator router
-
-### Phase 69: File Importers
-**Goal**: Implement importers for MD, XLSX, DOCX, JSON, HTML, CSV
-**Depends on**: Phase 68
-**Requirements**: IMP-01 through IMP-06
-**Success Criteria** (what must be TRUE):
-  1. Each importer produces valid CanonicalNode[] from input files
-  2. All importers handle edge cases and malformed input gracefully
-  3. Test coverage >80% for each importer
-**Plans**: 6 plans in 2 waves
-
-Plans:
-- [x] 69-01-PLAN.md — MarkdownImporter with gray-matter + marked (TDD)
-- [x] 69-02-PLAN.md — JsonImporter with native parsing (TDD)
-- [x] 69-03-PLAN.md — CsvImporter with PapaParse (TDD)
-- [x] 69-04-PLAN.md — HtmlImporter with DOMParser (TDD)
-- [x] 69-05-PLAN.md — WordImporter with mammoth (TDD)
-- [x] 69-06-PLAN.md — ExcelImporter with SheetJS (TDD)
-
-### Phase 70: Integration
-**Goal**: Wire importers to sql.js and migrate alto-importer
-**Depends on**: Phase 69
-**Requirements**: INT-01, INT-02, INT-03
-**Success Criteria** (what must be TRUE):
-  1. window.isometryETL.importFile() exposes ETL API for Swift bridge
-  2. Alto-importer uses CanonicalNode pipeline
-  3. Database insertion handles all CanonicalNode fields correctly
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 70-01-PLAN.md — Database insertion utilities and window.isometryETL bridge
-- [x] 70-02-PLAN.md — Alto-importer migration to CanonicalNode pipeline
-
-### Phase 71: Swift Bridge
-**Goal**: Enable Swift to delegate file processing to JS
-**Depends on**: Phase 70
-**Requirements**: BRIDGE-01, BRIDGE-02
-**Success Criteria** (what must be TRUE):
-  1. ETLBridge.swift delegates file parsing to JS via WKWebView
-  2. Round-trip Swift -> JS -> sql.js -> Swift works correctly
-  3. Native adapters exist for EventKit, Contacts, Notes
-**Plans**: 4 plans in 2 waves
-
-Plans:
-- [ ] 71-01-PLAN.md — ETLBridge.swift with callAsyncJavaScript and CanonicalNode model
-- [ ] 71-02-PLAN.md — EventKitAdapter for calendar/reminders import
-- [ ] 71-03-PLAN.md — ContactsAdapter and NotesAdapter for remaining frameworks
-- [ ] 71-04-PLAN.md — BridgeCoordinator and integration tests
-
-### Phase 72: Quality & Documentation
-**Goal**: Achieve test coverage targets and document architecture
-**Depends on**: Phase 71
-**Requirements**: QUAL-01, QUAL-02, QUAL-03
-**Success Criteria** (what must be TRUE):
-  1. ETL module has >80% test coverage
-  2. Schema validation at every import
-  3. CLAUDE.md updated with ETL architecture
+  1. HeaderNode, HeaderTree, FacetConfig, SuperStackState types defined
+  2. Tree builder transforms flat rows into hierarchical header structure
+  3. Column headers span correctly (Year spans 12 months)
+  4. Row headers span correctly (Folder spans all tags)
+  5. Visual appearance matches ASCII mockups in implementation plan
 **Plans**: TBD
 
-## ✅ v5.1 Notebook Integration (Complete)
+Plans:
+- [ ] 89-01: TBD (use /gsd:plan-phase)
 
-**Milestone Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
-**Completed:** 2026-02-14
-
-### Phase 80: Notebook Integration
-**Goal**: Add collapsible Notebook panel to IntegratedLayout with all three panes
-**Depends on**: Phase 79 (v4.9 Data Layer complete)
-**Requirements**: LAYOUT-01, LAYOUT-02, LAYOUT-03, CTX-01, CTX-02, VIS-01, VIS-02, VIS-03
+### Phase 90: SQL Integration
+**Goal**: Build headers from live SQLite queries
+**Depends on**: Phase 89 (Static headers render)
+**Requirements**: SQL-01, SQL-02, SQL-03, SQL-04, SQL-05
 **Success Criteria** (what must be TRUE):
-  1. User sees collapsed Notebook panel below Command Bar (default state)
-  2. User can click toggle to expand/collapse the panel with smooth animation
-  3. Expanded panel shows all three Notebook panes (Capture, Shell, Preview)
-  4. NotebookContext is available in the component tree
-  5. Panel respects current theme (NeXTSTEP/Modern)
-**Plans**: 2 plans in 2 waves
+  1. Header discovery query builds GROUP BY with COUNT
+  2. Time facets extract via strftime (year, quarter, month)
+  3. Multi-select facets (tags) explode via json_each
+  4. Query completes in <100ms for 10K cards
+  5. Empty datasets show graceful empty state
+**Plans**: TBD
 
 Plans:
-- [x] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
-- [x] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+- [ ] 90-01: TBD (use /gsd:plan-phase)
 
-## 📋 Phase 84: Cards & Connections (Planned)
-
-**Milestone Goal:** Migrate from nodes/edges to cards/connections data model for simpler, more consistent data semantics.
-
-**Source:** CARDS-AND-CONNECTIONS.md
-
-### Phase 84: Cards & Connections
-**Goal**: Migrate from nodes/edges to cards/connections data model
-**Depends on**: None (foundational change)
-**Requirements**: cards table with 4-type constraint, connections with via_card_id, TypeScript types, query updates
+### Phase 91: Interactions
+**Goal**: Collapse/expand, click-to-filter, keyboard navigation
+**Depends on**: Phase 90 (SQL integration)
+**Requirements**: INT-01, INT-02, INT-03, INT-04, INT-05
 **Success Criteria** (what must be TRUE):
-  1. cards table created with card_type CHECK constraint for 4 types (note, person, event, resource)
-  2. connections table created with via_card_id for rich relationship bridging
-  3. All data migrated from nodes -> cards with type mapping
-  4. All data migrated from edges -> connections with edge_type -> label
-  5. TypeScript compiles clean with Card/Connection types
-  6. FTS5 search works on cards table
-  7. SuperGrid renders correctly
-  8. ETL importers produce valid cards
-  9. All tests pass
-**Plans**: 4 plans in 3 waves
+  1. Click collapse icon toggles children visibility
+  2. Spans recalculate correctly when headers collapse
+  3. Click header filters data to that path subset
+  4. Selected header highlighted visually
+  5. Arrow keys navigate between headers
+**Plans**: TBD
 
 Plans:
-- [ ] 84-01-PLAN.md — Schema migration (cards/connections tables, indexes, FTS5)
-- [ ] 84-02-PLAN.md — TypeScript types (Card interface, type guards, converters)
-- [ ] 84-03-PLAN.md — Query updates (hooks, services, ETL)
-- [ ] 84-04-PLAN.md — Test & cleanup (integration tests, verification, documentation)
+- [ ] 91-01: TBD (use /gsd:plan-phase)
+
+### Phase 92: Data Cell Integration
+**Goal**: Connect headers to data cells with coordinated scroll
+**Depends on**: Phase 91 (Interactions)
+**Requirements**: CELL-01, CELL-02, CELL-03, CELL-04
+**Success Criteria** (what must be TRUE):
+  1. Data cells render at correct positions relative to leaf headers
+  2. Headers stay fixed while data area scrolls
+  3. Density level affects cell rendering (counts vs chips)
+  4. Selection syncs between headers and data cells
+**Plans**: TBD
+
+Plans:
+- [ ] 92-01: TBD (use /gsd:plan-phase)
+
+### Phase 93: Polish & Performance
+**Goal**: Virtual scrolling, accessibility, animations
+**Depends on**: Phase 92 (Data cell integration)
+**Requirements**: PERF-01, PERF-02, A11Y-01, UX-01, UX-02
+**Success Criteria** (what must be TRUE):
+  1. 10K cells render at 30+ fps via virtual scrolling
+  2. Headers remain sticky during scroll
+  3. ARIA labels present for screen readers
+  4. Empty state displays informative message
+  5. Collapse/expand transitions animate smoothly
+**Plans**: TBD
+
+Plans:
+- [ ] 93-01: TBD (use /gsd:plan-phase)
+
+## 📋 v6.0 Interactive Shell (Deferred)
+
+**Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
+**Status:** Roadmap created, not started. Resume with `/gsd:plan-phase 85`
+
+### Phase 85: Backend Infrastructure & Terminal Execution
+**Goal**: User can execute shell commands and see real-time output
+**Depends on**: Phase 84 (Cards & Connections)
+**Requirements**: BACK-01, BACK-02, BACK-05, TERM-01, TERM-02, TERM-03, TERM-04, TERM-05
+**Success Criteria** (what must be TRUE):
+  1. User can type commands in terminal and see stdout/stderr streamed in real-time
+  2. User can toggle between Claude Code and native shell modes without losing session
+  3. Terminal reconnects automatically with output buffer replay after connection loss
+  4. System safely spawns/terminates subprocess without command injection vulnerabilities
+  5. WebSocket server routes terminal messages to correct handlers
+**Plans**: TBD
+
+Plans:
+- [ ] 85-01: TBD (use /gsd:plan-phase)
+
+### Phase 86: Claude AI MCP Integration
+**Goal**: User can chat with Claude AI and approve tool executions
+**Depends on**: Phase 85 (Backend infrastructure operational)
+**Requirements**: BACK-04, CLAI-01, CLAI-02, CLAI-03, CLAI-04, CLAI-05, CLAI-06
+**Success Criteria** (what must be TRUE):
+  1. User can send messages and see streaming responses with typing indicator
+  2. User must approve tool calls via modal before execution
+  3. AI can access MCP resources (file system, database) with user consent
+  4. System manages context lifecycle without memory leaks
+**Plans**: TBD
+
+Plans:
+- [ ] 86-01: TBD (use /gsd:plan-phase)
+
+### Phase 87: GSD File Synchronization
+**Goal**: User sees live GSD state and can update task status bidirectionally
+**Depends on**: Phase 85 (Backend infrastructure operational)
+**Requirements**: BACK-03, GSD-01, GSD-02, GSD-03, GSD-04, GSD-05, GSD-06
+**Success Criteria** (what must be TRUE):
+  1. User sees phase progress display auto-updated when files change
+  2. User can toggle task status (pending/in_progress/complete) and changes write to files
+  3. File watcher detects `.planning/` changes with <500ms debounced update
+  4. System shows conflict resolution UI when concurrent edits detected
+**Plans**: TBD
+
+Plans:
+- [ ] 87-01: TBD (use /gsd:plan-phase)
+
+### Phase 88: Integration & Polish
+**Goal**: All three Shell tabs work together seamlessly
+**Depends on**: Phase 86 (Claude AI), Phase 87 (GSD sync)
+**Requirements**: None (integration verification)
+**Success Criteria** (what must be TRUE):
+  1. User can switch between Terminal/Claude AI/GSD tabs without state loss
+  2. Terminal output can be saved as cards via Claude AI chat
+  3. GSD phase execution triggers correctly in Terminal tab
+**Plans**: TBD
+
+Plans:
+- [ ] 88-01: TBD (use /gsd:plan-phase)
 
 ## Progress
 
@@ -455,38 +309,25 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 18-27 | v3.1 | All | Complete | 2026-02-01 |
 | 34-42 | v4.1 | All | Complete | 2026-02-10 |
-| 43. Shell Integration Completion | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 44. Preview Visualization Expansion | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 45. TipTap Editor Migration | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 46. Live Data Synchronization | v4.2 | 3/3 | Complete | 2026-02-10 |
-| 50. Foundation (Schema-on-Read) | v4.3 | 2/2 | Complete | 2026-02-10 |
-| 51. Navigator UI Integration | v4.3 | 2/2 | Complete | 2026-02-10 |
-| 52-55. Type Safety Restoration | v5.0 | N/A (wave strategy) | Complete | 2026-02-10 |
-| 56. PAFV Projection Core | v4.4 | 3/3 | Complete | 2026-02-11 |
-| 57. Header Generation | v4.4 | 3/3 | Complete | 2026-02-11 |
-| 58. Transitions & Polish | v4.4 | 2/2 | Complete | 2026-02-11 |
-| 59. Stability & Memoization | v4.4 | 1/1 | Complete | 2026-02-11 |
-| 60. Stacked/Nested Headers | v4.5 | 3/3 | Complete | 2026-02-11 |
-| 61. View Transitions | v4.6 | 1/1 | Complete | 2026-02-12 |
-| 62. Density Filtering | v4.6 | 1/1 | Complete | 2026-02-12 |
-| 63. Schema & Query Safety | v4.7 | 1/1 | Complete | 2026-02-12 |
-| 64. ETL Pipeline Upgrade | v4.7 | 2/2 | Complete | 2026-02-12 |
-| 65. Facet Discovery | v4.7 | 2/2 | Complete | 2026-02-12 |
-| 67. Canonical Schema | v4.8 | 1/1 | Complete | 2026-02-12 |
-| 68. Import Coordinator | v4.8 | 1/1 | Complete | 2026-02-12 |
-| 69. File Importers | v4.8 | 6/6 | Complete | 2026-02-12 |
-| 70. Integration | v4.8 | 2/2 | Complete | 2026-02-12 |
-| 71. Swift Bridge | v4.8 | 4/4 | Complete | 2026-02-12 |
-| 72. Quality & Docs | v4.8 | 1/1 | Complete | 2026-02-12 |
-| 73. SuperStack Multi-Level Headers | v5.0 | 1/1 | Complete | 2026-02-12 |
-| 74. SuperGrid Phase B | v5.0 | 4/4 | Complete | 2026-02-12 |
-| 75. SuperGrid Phase C | v5.0 | 4/4 | Complete | 2026-02-13 |
-| 76. SuperGrid Polish | v5.0 | 3/3 | Complete | 2026-02-13 |
-| 77. Versioning | v4.9 | 1/1 | Complete | 2026-02-13 |
-| 78. URL Deep Linking | v4.9 | 2/2 | Complete | 2026-02-13 |
-| 79. Catalog Browser | v4.9 | 3/3 | Complete | 2026-02-13 |
-| 80. Notebook Integration | v5.1 | 2/2 | Complete | 2026-02-14 |
+| 43-46 | v4.2 | 12/12 | Complete | 2026-02-10 |
+| 50-51 | v4.3 | 4/4 | Complete | 2026-02-10 |
+| 52-55 | v5.0 | N/A (wave) | Complete | 2026-02-10 |
+| 56-59 | v4.4 | 9/9 | Complete | 2026-02-11 |
+| 60 | v4.5 | 3/3 | Complete | 2026-02-11 |
+| 61-62 | v4.6 | 2/2 | Complete | 2026-02-12 |
+| 63-65 | v4.7 | 5/5 | Complete | 2026-02-12 |
+| 67-72 | v4.8 | 13/13 | Complete | 2026-02-12 |
+| 73-76 | v5.0 MVP | 12/12 | Complete | 2026-02-13 |
+| 77-79 | v4.9 | 6/6 | Complete | 2026-02-13 |
+| 80 | v5.1 | 2/2 | Complete | 2026-02-14 |
+| 84 | v5.2 | 4/4 | Complete | 2026-02-13 |
+| 85-88 | v6.0 | 0/0 | Deferred | - |
+| 89. Static Headers | v6.1 | 0/0 | Not started | - |
+| 90. SQL Integration | v6.1 | 0/0 | Not started | - |
+| 91. Interactions | v6.1 | 0/0 | Not started | - |
+| 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
+| 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (v5.1 Notebook Integration milestone complete)*
+*Last updated: 2026-02-13 (v6.1 SuperStack Enhancement phases added)*

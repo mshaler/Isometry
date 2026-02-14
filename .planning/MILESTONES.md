@@ -1,5 +1,66 @@
 # Project Milestones: Isometry
 
+## v6.1 SuperStack Enhancement (In Progress)
+
+**Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
+
+**Phases planned:** 89-93 (5 phases)
+- Phase 89: Static Headers Foundation (6 requirements)
+- Phase 90: SQL Integration (5 requirements)
+- Phase 91: Interactions (5 requirements)
+- Phase 92: Data Cell Integration (4 requirements)
+- Phase 93: Polish & Performance (5 requirements)
+
+**What SuperStack Delivers:**
+- Multi-level nested headers on both row and column axes
+- Collapsible hierarchy with expand/collapse at any level
+- Span calculation where parent headers span child headers visually
+- Click-to-filter to drill down to header subsets
+- Foundation for all SuperGrid interactions
+
+**Reference:** Complete implementation specification in `superstack-implementation-plan.md`
+
+**Started:** 2026-02-13
+
+---
+
+## v6.0 Interactive Shell (Deferred)
+
+**Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
+
+**Phases planned:** 85-88 (4 phases, 22 requirements)
+**Status:** Roadmap created, not started
+**Resume:** `/gsd:plan-phase 85`
+
+---
+
+## v5.2 Cards & Connections (Shipped: 2026-02-13)
+
+**Delivered:** Migrated from nodes/edges to cards/connections with 4-type constraint
+
+**Phase completed:** 84 (4 plans)
+
+**Key accomplishments:**
+- Schema migration from 12 node_types to 4 card_types (note, person, event, resource)
+- Connections use lowercase labels (schema-on-read) instead of edge_type enum
+- via_card_id enables bridge cards for rich relationship modeling
+- Backup tables for rollback safety
+
+---
+
+## v5.1 Notebook Integration (Shipped: 2026-02-14)
+
+**Delivered:** Integrated NotebookLayout into IntegratedLayout as a collapsible panel
+
+**Phase completed:** 80 (2 plans)
+
+**Key accomplishments:**
+- Collapsible Notebook panel below Command Bar
+- Context wiring with NotebookContext in IntegratedLayout tree
+- Smooth expand/collapse animation with theme support
+
+---
+
 ## v5.0 Type Safety Restoration (Shipped: 2026-02-10)
 
 **Delivered:** Eliminated all TypeScript compilation errors, restored pre-commit hooks and CI quality gates

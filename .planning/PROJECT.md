@@ -33,7 +33,29 @@ Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 
 ### v5.2 Cards & Connections (SHIPPED)
 Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
 
-## Current Milestone: v6.0 Interactive Shell
+## Current Milestone: v6.1 SuperStack Enhancement
+
+**Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
+
+**Target features:**
+- **Multi-level nested headers** on both row and column axes
+- **Collapsible hierarchy** with expand/collapse at any level
+- **Span calculation** where parent headers span child headers visually
+- **Click-to-filter** to drill down to header subsets
+- **PAFV integration** mapping Facets to Planes via header trees
+
+**Implementation Phases:**
+1. **Static Headers** — Type definitions, tree builder, D3.js renderer with correct spans
+2. **SQL Integration** — Build headers from live SQLite queries (strftime, json_each)
+3. **Interactions** — Collapse/expand, click-to-filter, keyboard navigation
+4. **Data Cell Integration** — Connect headers to data cells, coordinate scroll
+5. **Polish** — Virtual scrolling, sticky headers, accessibility, animations
+
+**Reference Documents:**
+- `superstack-implementation-plan.md` — Complete implementation specification
+- `src/superstack/` — Implementation directory (being created)
+
+## Previous Milestone: v6.0 Interactive Shell
 
 **Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
 

@@ -3,7 +3,51 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
-## v6.0 Requirements — Interactive Shell
+## v6.1 Requirements — SuperStack Enhancement
+
+Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
+
+### Static Headers Foundation
+
+- [ ] **SSTACK-01**: System defines HeaderNode, HeaderTree, FacetConfig, SuperStackState types
+- [ ] **SSTACK-02**: System builds header tree from flat query row data (tree builder)
+- [ ] **SSTACK-03**: System renders column headers with correct hierarchical spans (Year spans 12 months)
+- [ ] **SSTACK-04**: System renders row headers with correct hierarchical spans (Folder spans all tags)
+- [ ] **SSTACK-05**: System provides default dimensions and common facet configurations
+- [ ] **SSTACK-06**: Static headers render with CSS styling matching ASCII mockups
+
+### SQL Integration
+
+- [ ] **SQL-01**: System builds header discovery query (GROUP BY with COUNT)
+- [ ] **SQL-02**: System handles time facets via strftime (year, quarter, month, week)
+- [ ] **SQL-03**: System handles multi_select facets via json_each (tags)
+- [ ] **SQL-04**: System shows loading state during header discovery
+- [ ] **SQL-05**: System handles empty datasets gracefully
+
+### Interactions
+
+- [ ] **INT-01**: User can collapse/expand headers (toggle collapsed state)
+- [ ] **INT-02**: System recalculates spans when headers collapse (collapsed parent = span 1)
+- [ ] **INT-03**: User can click header to filter data to that subset (path-based filtering)
+- [ ] **INT-04**: System highlights selected header visually
+- [ ] **INT-05**: User can navigate headers via keyboard (arrow keys)
+
+### Data Cell Integration
+
+- [ ] **CELL-01**: Data cells render in correct positions relative to leaf headers
+- [ ] **CELL-02**: System coordinates scroll between headers and data area
+- [ ] **CELL-03**: Density level affects cell rendering (counts vs card chips)
+- [ ] **CELL-04**: Selection syncs between headers and data cells
+
+### Polish & Performance
+
+- [ ] **PERF-01**: Virtual scrolling for >1000 cells maintains 30+ fps
+- [ ] **PERF-02**: Headers remain sticky while scrolling data area
+- [ ] **A11Y-01**: ARIA labels present for screen reader accessibility
+- [ ] **UX-01**: Empty state displays informative message
+- [ ] **UX-02**: Collapse/expand transitions animate smoothly
+
+## v6.0 Requirements — Interactive Shell (DEFERRED)
 
 Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
 
@@ -223,33 +267,68 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-02 | Phase 80 | Complete |
 | VIS-03 | Phase 80 | Complete |
 
-### v6.0 Traceability (Pending Roadmap)
+
+### v6.0 Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TERM-01 | TBD | Pending |
-| TERM-02 | TBD | Pending |
-| TERM-03 | TBD | Pending |
-| TERM-04 | TBD | Pending |
-| TERM-05 | TBD | Pending |
-| CLAI-01 | TBD | Pending |
-| CLAI-02 | TBD | Pending |
-| CLAI-03 | TBD | Pending |
-| CLAI-04 | TBD | Pending |
-| CLAI-05 | TBD | Pending |
-| CLAI-06 | TBD | Pending |
-| GSD-01 | TBD | Pending |
-| GSD-02 | TBD | Pending |
-| GSD-03 | TBD | Pending |
-| GSD-04 | TBD | Pending |
-| GSD-05 | TBD | Pending |
-| GSD-06 | TBD | Pending |
-| BACK-01 | TBD | Pending |
-| BACK-02 | TBD | Pending |
-| BACK-03 | TBD | Pending |
-| BACK-04 | TBD | Pending |
-| BACK-05 | TBD | Pending |
+| TERM-01 | Phase 85 | Pending |
+| TERM-02 | Phase 85 | Pending |
+| TERM-03 | Phase 85 | Pending |
+| TERM-04 | Phase 85 | Pending |
+| TERM-05 | Phase 85 | Pending |
+| BACK-01 | Phase 85 | Pending |
+| BACK-02 | Phase 85 | Pending |
+| BACK-05 | Phase 85 | Pending |
+| CLAI-01 | Phase 86 | Pending |
+| CLAI-02 | Phase 86 | Pending |
+| CLAI-03 | Phase 86 | Pending |
+| CLAI-04 | Phase 86 | Pending |
+| CLAI-05 | Phase 86 | Pending |
+| CLAI-06 | Phase 86 | Pending |
+| BACK-04 | Phase 86 | Pending |
+| GSD-01 | Phase 87 | Pending |
+| GSD-02 | Phase 87 | Pending |
+| GSD-03 | Phase 87 | Pending |
+| GSD-04 | Phase 87 | Pending |
+| GSD-05 | Phase 87 | Pending |
+| GSD-06 | Phase 87 | Pending |
+| BACK-03 | Phase 87 | Pending |
+
+**Coverage:** 22/22 requirements mapped (100%)
+
+### v6.1 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| SSTACK-01 | Phase 89 | Pending |
+| SSTACK-02 | Phase 89 | Pending |
+| SSTACK-03 | Phase 89 | Pending |
+| SSTACK-04 | Phase 89 | Pending |
+| SSTACK-05 | Phase 89 | Pending |
+| SSTACK-06 | Phase 89 | Pending |
+| SQL-01 | Phase 90 | Pending |
+| SQL-02 | Phase 90 | Pending |
+| SQL-03 | Phase 90 | Pending |
+| SQL-04 | Phase 90 | Pending |
+| SQL-05 | Phase 90 | Pending |
+| INT-01 | Phase 91 | Pending |
+| INT-02 | Phase 91 | Pending |
+| INT-03 | Phase 91 | Pending |
+| INT-04 | Phase 91 | Pending |
+| INT-05 | Phase 91 | Pending |
+| CELL-01 | Phase 92 | Pending |
+| CELL-02 | Phase 92 | Pending |
+| CELL-03 | Phase 92 | Pending |
+| CELL-04 | Phase 92 | Pending |
+| PERF-01 | Phase 93 | Pending |
+| PERF-02 | Phase 93 | Pending |
+| A11Y-01 | Phase 93 | Pending |
+| UX-01 | Phase 93 | Pending |
+| UX-02 | Phase 93 | Pending |
+
+**Coverage:** 25/25 requirements mapped (100%)
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-14 (v6.0 Interactive Shell requirements added)*
+*Last updated: 2026-02-13 (v6.1 SuperStack Enhancement requirements added)*
