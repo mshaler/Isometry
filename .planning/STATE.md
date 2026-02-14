@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 85 of 93 (Backend Infrastructure & Terminal Execution)
-Plan: 2 of 5 complete
+Plan: 3 of 5 complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 85-02-PLAN.md (WebSocket Server Integration)
+Last activity: 2026-02-14 — Completed 85-03-PLAN.md (xterm.js Frontend Integration)
 
-Progress (Phase 85): [████░░░░░░] 40% (2 of 5 plans)
+Progress (Phase 85): [██████░░░░] 60% (3 of 5 plans)
 Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
 
 ## Current Milestone: v6.2 Capture Writing Surface
@@ -53,7 +53,7 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 - Phase 85: Backend Infrastructure & Terminal Execution (5 plans)
   - [x] 85-01: PTY Backend Infrastructure (~4m)
   - [x] 85-02: WebSocket Server Integration (~4m)
-  - [ ] 85-03: xterm.js Frontend Integration
+  - [x] 85-03: xterm.js Frontend Integration (~5m)
   - [ ] 85-04: Terminal Tab Component
   - [ ] 85-05: Terminal Verification
 - Phase 86: Claude AI MCP Integration (7 requirements)
@@ -87,12 +87,12 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 85 (Backend Terminal) | 3/5 | ~4.3m | In Progress |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
 | 80 (Notebook Integration) | 2 | ~4.5m | Complete |
 | 79 (Catalog Browser) | 3 | ~4.7m | Complete |
-| 78 (URL Deep Linking) | 2 | ~4.5m | Complete |
 
-*Updated: 2026-02-13*
+*Updated: 2026-02-14*
 
 ## Accumulated Context
 
@@ -120,6 +120,11 @@ Recent decisions affecting v6.1 work:
 - TERM-05: Local interface to avoid circular dependency
 - TERM-06: Layered dispatch: ping -> terminal -> file-monitoring -> command -> unknown
 
+**Frontend Integration (from 85-03):**
+- TERM-07: Terminal callbacks defined in WebSocketDispatcherOptions interface
+- TERM-08: useTerminal uses dispatcher methods, not direct WebSocket messages
+- TERM-09: Session ID generated client-side (term-{timestamp}-{random})
+
 See PROJECT.md Key Decisions table for full history.
 
 ### Pending Todos
@@ -140,14 +145,12 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 85 Plan 02 complete, ready for Plan 03 (xterm.js Frontend Integration)
-Resume file: .planning/phases/85-backend-terminal/85-03-PLAN.md
+Stopped at: Phase 85 Plan 03 complete, ready for Plan 04 (Terminal Tab Component)
+Resume file: .planning/phases/85-backend-terminal/85-04-PLAN.md
 
-**Phase 85 Plan 02 Complete:**
-- messageRouter.ts: Type guards for WebSocket message routing
-- claudeCodeServer.ts: TerminalPTYServer integration
-- index.ts: Export message router functions
-- Ping/pong heartbeat support
-- Terminal cleanup on disconnect and server stop
+**Phase 85 Plan 03 Complete:**
+- claudeCodeWebSocketDispatcher.ts: Terminal callbacks and send methods
+- useTerminal.ts: Real PTY communication via dispatcher
+- Keystroke forwarding, resize sync, session cleanup
 
-**Next step:** Execute Plan 85-03 (xterm.js Frontend Integration)
+**Next step:** Execute Plan 85-04 (Terminal Tab Component)

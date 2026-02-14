@@ -32,6 +32,8 @@ interface UseTerminalReturn {
   isConnected: boolean;
   handleCopy: () => Promise<boolean>;
   handlePaste: () => Promise<string | null>;
+  currentMode: 'shell' | 'claude-code';
+  switchMode: (mode: 'shell' | 'claude-code') => void;
 }
 
 /**
@@ -47,6 +49,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   const sessionIdRef = useRef<string>(`term-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
   const dispatcherRef = useRef<WebSocketClaudeCodeDispatcher | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [currentMode, setCurrentMode] = useState<'shell' | 'claude-code'>('shell');
 
   const terminalContext = useTerminalContext();
 
@@ -367,6 +370,22 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   }, [terminalContext.setWorkingDirectory]);
 
   /**
+   * Switch terminal mode (shell <-> claude-code)
+   */
+  const switchMode = useCallback((mode: 'shell' | 'claude-code') => {
+    const dispatcher = dispatcherRef.current;
+    if (!dispatcher) {
+      devLogger.warn('Cannot switch mode: dispatcher not available', {
+        component: 'useTerminal'
+      });
+      return;
+    }
+
+    dispatcher.switchTerminalMode(sessionIdRef.current, mode);
+    setCurrentMode(mode);
+  }, []);
+
+  /**
    * Dispose terminal
    */
   const dispose = useCallback(() => {
@@ -418,6 +437,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     terminal: terminalRef.current,
     isConnected,
     handleCopy,
-    handlePaste
+    handlePaste,
+    currentMode,
+    switchMode
   };
 }

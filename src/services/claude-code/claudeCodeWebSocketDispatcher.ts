@@ -39,6 +39,11 @@ export interface WebSocketDispatcherOptions extends ClaudeCodeDispatcherOptions 
   onTerminalExit?: (sessionId: string, exitCode: number, signal?: number) => void;
   onTerminalError?: (sessionId: string, error: string) => void;
   onTerminalReplayData?: (sessionId: string, data: string) => void;
+  onTerminalModeSwitched?: (
+    sessionId: string,
+    mode: 'shell' | 'claude-code',
+    pid: number
+  ) => void;
 }
 
 /** Default reconnection configuration */
@@ -724,6 +729,22 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
   }
 
   /**
+   * Switch terminal mode (shell <-> claude-code)
+   */
+  switchTerminalMode(
+    sessionId: string,
+    mode: 'shell' | 'claude-code',
+    preserveCwd = true
+  ): void {
+    this.sendMessage({
+      type: 'terminal:switch-mode',
+      sessionId,
+      mode,
+      preserveCwd
+    } as unknown as ServerMessage);
+  }
+
+  /**
    * Handle terminal-specific server messages
    */
   private handleTerminalMessage(message: ClientMessage): void {
@@ -741,13 +762,24 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         this.options.onTerminalSpawned?.(sessionId, msgData.pid as number);
         break;
       case 'terminal:exit':
-        this.options.onTerminalExit?.(sessionId, msgData.exitCode as number, msgData.signal as number | undefined);
+        this.options.onTerminalExit?.(
+          sessionId,
+          msgData.exitCode as number,
+          msgData.signal as number | undefined
+        );
         break;
       case 'terminal:error':
         this.options.onTerminalError?.(sessionId, msgData.error as string);
         break;
       case 'terminal:replay-data':
         this.options.onTerminalReplayData?.(sessionId, msgData.data as string);
+        break;
+      case 'terminal:mode-switched':
+        this.options.onTerminalModeSwitched?.(
+          sessionId,
+          msgData.mode as 'shell' | 'claude-code',
+          msgData.pid as number
+        );
         break;
     }
   }
