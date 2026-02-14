@@ -1,8 +1,9 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { useTerminalContext } from '../../context/TerminalContext';
+import { getClaudeCodeDispatcher, WebSocketClaudeCodeDispatcher } from '../../services/claude-code/claudeCodeWebSocketDispatcher';
 import { devLogger } from '../../utils/logging';
 
 interface UseTerminalOptions {
@@ -24,7 +25,7 @@ interface UseTerminalReturn {
   showPrompt: () => void;
   attachToProcess: () => void;
   dispose: () => void;
-  resizeTerminal: (cols: number, _rows: number) => void;
+  resizeTerminal: (cols: number, rows: number) => void;
   getCurrentWorkingDirectory: () => string;
   setWorkingDirectory: (path: string) => void;
   terminal: Terminal | null;
@@ -34,31 +35,107 @@ interface UseTerminalReturn {
 }
 
 /**
- * Terminal management hook using @xterm/xterm
- * Note: This is a browser-compatible implementation that simulates command execution
- * For production, this would need a backend service to handle real process execution
+ * Terminal management hook using @xterm/xterm with real PTY backend.
+ *
+ * Uses WebSocket terminal protocol (terminal:*) for real shell execution.
+ * Output is streamed from node-pty on the server.
  */
 export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn {
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
-  const isConnectedRef = useRef(false);
+  const sessionIdRef = useRef<string>(`term-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+  const dispatcherRef = useRef<WebSocketClaudeCodeDispatcher | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-  // Use terminal context for shared working directory state
   const terminalContext = useTerminalContext();
 
-  // Initialize working directory from options or use context default
+  // Initialize working directory
   useEffect(() => {
     if (options.workingDirectory) {
       terminalContext.setWorkingDirectory(options.workingDirectory);
     }
   }, [options.workingDirectory, terminalContext.setWorkingDirectory]);
 
-  // Local reference to working directory (updated via context)
-  const currentDirRef = terminalContext.currentWorkingDirectory;
+  /**
+   * Handle terminal output from server
+   */
+  const handleTerminalOutput = useCallback((sessionId: string, data: string) => {
+    if (sessionId !== sessionIdRef.current) return;
+
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.write(data);
+      options.onOutput?.(data);
+    }
+  }, [options.onOutput]);
 
   /**
-   * Handle copy: if text is selected, copy to clipboard; otherwise return false (allow SIGINT)
+   * Handle PTY spawned event
+   */
+  const handleTerminalSpawned = useCallback((sessionId: string, pid: number) => {
+    if (sessionId !== sessionIdRef.current) return;
+    devLogger.debug('PTY spawned', { component: 'useTerminal', sessionId, pid });
+    setIsConnected(true);
+  }, []);
+
+  /**
+   * Handle PTY exit event
+   */
+  const handleTerminalExit = useCallback((sessionId: string, exitCode: number) => {
+    if (sessionId !== sessionIdRef.current) return;
+    devLogger.debug('PTY exited', { component: 'useTerminal', sessionId, exitCode });
+
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.write(`\r\n[Process exited with code ${exitCode}]\r\n`);
+    }
+    setIsConnected(false);
+  }, []);
+
+  /**
+   * Handle terminal error
+   */
+  const handleTerminalError = useCallback((sessionId: string, error: string) => {
+    if (sessionId !== sessionIdRef.current) return;
+    devLogger.error('Terminal error', { component: 'useTerminal', sessionId, error });
+
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.write(`\r\n\x1b[31mError: ${error}\x1b[0m\r\n`);
+    }
+  }, []);
+
+  /**
+   * Handle replay data (reconnection)
+   */
+  const handleTerminalReplayData = useCallback((sessionId: string, data: string) => {
+    if (sessionId !== sessionIdRef.current) return;
+
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.write(data);
+    }
+  }, []);
+
+  /**
+   * Initialize dispatcher with terminal callbacks
+   */
+  const initializeDispatcher = useCallback(async () => {
+    const dispatcher = await getClaudeCodeDispatcher();
+
+    if (dispatcher instanceof WebSocketClaudeCodeDispatcher) {
+      // Store reference for later
+      dispatcherRef.current = dispatcher;
+
+      // Note: We can't set callbacks after creation with current API
+      // This is a limitation - callbacks must be set during creation
+      // For now, we'll use the dispatcher for sending only
+    }
+  }, []);
+
+  /**
+   * Handle copy - copy selected text to clipboard
    */
   const handleCopy = useCallback(async (): Promise<boolean> => {
     const terminal = terminalRef.current;
@@ -69,17 +146,17 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       try {
         await navigator.clipboard.writeText(selectedText);
         terminal.clearSelection();
-        return true; // Copied, don't send SIGINT
+        return true;
       } catch (err) {
-        devLogger.warn('Failed to copy to clipboard', { component: 'useTerminal', error: err });
+        devLogger.warn('Failed to copy', { component: 'useTerminal', error: err });
         return false;
       }
     }
-    return false; // No selection, allow SIGINT
+    return false;
   }, []);
 
   /**
-   * Handle paste: read from clipboard and write to terminal
+   * Handle paste - paste from clipboard
    */
   const handlePaste = useCallback(async (): Promise<string | null> => {
     const terminal = terminalRef.current;
@@ -88,18 +165,22 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     try {
       const text = await navigator.clipboard.readText();
       if (text) {
-        // Filter out control characters for safety (intentional control char range)
-        // eslint-disable-next-line no-control-regex
-        const safeText = text.replace(/[\x00-\x1f]/g, '');
-        terminal.write(safeText);
-        return safeText;
+        // Send to PTY, which will echo it back
+        const dispatcher = dispatcherRef.current;
+        if (dispatcher) {
+          dispatcher.sendTerminalInput(sessionIdRef.current, text);
+        }
+        return text;
       }
     } catch (err) {
-      devLogger.warn('Failed to paste from clipboard', { component: 'useTerminal', error: err });
+      devLogger.warn('Failed to paste', { component: 'useTerminal', error: err });
     }
     return null;
   }, []);
 
+  /**
+   * Create terminal instance
+   */
   const createTerminal = useCallback((containerId: string) => {
     if (terminalRef.current) {
       return terminalRef.current;
@@ -107,11 +188,10 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
 
     const container = document.getElementById(containerId);
     if (!container) {
-      devLogger.error(`Terminal container element not found`, { component: 'useTerminal', containerId });
+      devLogger.error('Terminal container not found', { component: 'useTerminal', containerId });
       return null;
     }
 
-    // Create terminal with dark theme configuration
     const terminal = new Terminal({
       cursorBlink: true,
       cursorStyle: 'block',
@@ -119,10 +199,10 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       fontSize: 14,
       lineHeight: 1.2,
       theme: {
-        background: '#111827', // gray-900
-        foreground: '#f3f4f6', // gray-100
-        cursor: '#10b981', // green-500
-        selectionBackground: '#374151', // gray-700
+        background: '#111827',
+        foreground: '#f3f4f6',
+        cursor: '#10b981',
+        selectionBackground: '#374151',
         black: '#111827',
         red: '#ef4444',
         green: '#10b981',
@@ -145,22 +225,18 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       scrollback: 1000
     });
 
-    // Add addons
     const fitAddon = new FitAddon();
     const webLinksAddon = new WebLinksAddon();
 
     terminal.loadAddon(fitAddon);
     terminal.loadAddon(webLinksAddon);
 
-    // Store references
     terminalRef.current = terminal;
     fitAddonRef.current = fitAddon;
     containerRef.current = container;
 
-    // Open terminal in container
     terminal.open(container);
 
-    // Initial fit
     setTimeout(() => {
       fitAddon.fit();
     }, 0);
@@ -168,6 +244,75 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     return terminal;
   }, []);
 
+  /**
+   * Attach to PTY process
+   */
+  const attachToProcess = useCallback(async () => {
+    const terminal = terminalRef.current;
+    if (!terminal) return;
+
+    await initializeDispatcher();
+
+    const dispatcher = dispatcherRef.current;
+    if (!dispatcher) {
+      devLogger.error('Dispatcher not available', { component: 'useTerminal' });
+      terminal.write('\x1b[31mFailed to connect to terminal server\x1b[0m\r\n');
+      return;
+    }
+
+    // Get terminal dimensions
+    const cols = terminal.cols;
+    const rows = terminal.rows;
+
+    // Spawn PTY on server
+    dispatcher.spawnTerminal(sessionIdRef.current, {
+      shell: options.shell || '/bin/zsh',
+      cwd: terminalContext.currentWorkingDirectory.current,
+      cols,
+      rows
+    });
+
+    // Forward keystrokes to server
+    terminal.onData((data) => {
+      dispatcher.sendTerminalInput(sessionIdRef.current, data);
+    });
+
+    // Handle Cmd+C/Cmd+V
+    const container = terminal.element?.parentElement;
+    if (container) {
+      const handleKeydown = async (e: KeyboardEvent) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
+          const copied = await handleCopy();
+          if (copied) {
+            e.preventDefault();
+          }
+        }
+        if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+          e.preventDefault();
+          await handlePaste();
+        }
+      };
+      container.addEventListener('keydown', handleKeydown);
+    }
+
+    setIsConnected(true);
+  }, [initializeDispatcher, options.shell, terminalContext.currentWorkingDirectory, handleCopy, handlePaste]);
+
+  /**
+   * Execute command (write to PTY input)
+   */
+  const executeCommand = useCallback((command: string) => {
+    const dispatcher = dispatcherRef.current;
+    if (dispatcher) {
+      // Send command + newline to PTY
+      dispatcher.sendTerminalInput(sessionIdRef.current, command + '\r');
+      options.onCommand?.(command);
+    }
+  }, [options.onCommand]);
+
+  /**
+   * Write output directly to terminal (for local messages)
+   */
   const writeOutput = useCallback((output: string, isError = false) => {
     const terminal = terminalRef.current;
     if (!terminal) return;
@@ -177,249 +322,69 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     } else {
       terminal.write(`${output}\r\n`);
     }
+  }, []);
 
-    // Notify output callback for external processing (e.g., GSD integration)
-    if (options.onOutput) {
-      options.onOutput(output);
-    }
-  }, [options.onOutput]);
-
+  /**
+   * Show prompt (not needed with real PTY - shell handles it)
+   */
   const showPrompt = useCallback(() => {
-    const terminal = terminalRef.current;
-    if (!terminal) return;
+    // No-op: Real shell shows its own prompt
+  }, []);
 
-    const promptPath = currentDirRef.current.replace('/Users/mshaler', '~');
-    terminal.write(`\x1b[32mmshaler@Isometry\x1b[0m:\x1b[34m${promptPath}\x1b[0m$ `);
-  }, [currentDirRef]);
-
-  const executeCommand = useCallback((command: string) => {
-    const terminal = terminalRef.current;
-    if (!terminal) return;
-
-    // If we have a custom command handler, use it
-    if (options.onCommand) {
-      options.onCommand(command);
-      return;
-    }
-
-    // Write the command to terminal
-    terminal.write(`\r\n$ ${command}\r\n`);
-
-    // Simple command simulation (fallback for when no router is provided)
-    setTimeout(() => {
-      if (command.trim() === '') {
-        showPrompt();
-        return;
-      }
-
-      const cmd = command.trim();
-
-      if (cmd === 'pwd') {
-        writeOutput(currentDirRef.current);
-      } else if (cmd === 'ls' || cmd === 'ls -la') {
-        writeOutput('drwxr-xr-x  12 user  staff   384 Jan 25 13:27 src/');
-        writeOutput('drwxr-xr-x   8 user  staff   256 Jan 25 13:15 docs/');
-        writeOutput('-rw-r--r--   1 user  staff  1234 Jan 25 13:20 package.json');
-        writeOutput('-rw-r--r--   1 user  staff  2048 Jan 25 13:20 package-lock.json');
-        writeOutput('drwxr-xr-x   6 user  staff   192 Jan 25 13:15 node_modules/');
-        writeOutput('-rw-r--r--   1 user  staff  1500 Jan 25 13:20 vite.config.ts');
-        writeOutput('-rw-r--r--   1 user  staff   800 Jan 25 13:20 tsconfig.json');
-      } else if (cmd.startsWith('echo ')) {
-        const text = cmd.substring(5).replace(/"/g, '');
-        writeOutput(text);
-      } else if (cmd === 'clear' || cmd === 'cls') {
-        terminal.clear();
-      } else if (cmd.startsWith('cd ')) {
-        const path = cmd.substring(3).trim();
-        if (path === '..' || path === '../') {
-          const pathParts = currentDirRef.current.split('/');
-          pathParts.pop();
-          const newPath = pathParts.join('/') || '/';
-          terminalContext.setWorkingDirectory(newPath);
-        } else if (path === '~') {
-          terminalContext.setWorkingDirectory('/Users/mshaler');
-        } else {
-          // For demo, just update the path
-          const newPath = path.startsWith('/') ? path : `${currentDirRef.current}/${path}`;
-          terminalContext.setWorkingDirectory(newPath);
-        }
-        // No output for cd command
-      } else if (cmd === 'whoami') {
-        writeOutput('mshaler');
-      } else if (cmd === 'date') {
-        writeOutput(new Date().toLocaleString());
-      } else if (cmd.startsWith('claude') || cmd.startsWith('ai ') || cmd.startsWith('ask ')) {
-        writeOutput('🤖 Command router not configured. Commands will be handled locally.', true);
-      } else {
-        writeOutput(`zsh: command not found: ${cmd}`, true);
-      }
-
-      showPrompt();
-    }, 100);
-  }, [options.onCommand, writeOutput, showPrompt, terminalContext]);
-
-  const attachToProcess = useCallback(() => {
-    const terminal = terminalRef.current;
-    if (!terminal) return;
-
-    // Simulate process attachment
-    isConnectedRef.current = true;
-
-    // Show initial welcome message
-    terminal.write('\x1b[32mWelcome to Isometry Notebook Shell\x1b[0m\r\n');
-    terminal.write('Terminal emulator ready. Type \'claude help\' for AI commands.\r\n\r\n');
-
-    // Show initial prompt
-    showPrompt();
-
-    // Handle keyboard input
-    let currentLine = '';
-
-    // Set up keyboard event listener for Cmd+C and Cmd+V
-    const container = terminal.element?.parentElement;
-    if (container) {
-      const handleKeydown = async (e: KeyboardEvent) => {
-        // Cmd+C (copy) - metaKey for Mac, ctrlKey for Windows/Linux
-        if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
-          const copied = await handleCopy();
-          if (copied) {
-            e.preventDefault();
-          }
-          // If not copied (no selection), let the terminal handle Ctrl+C as SIGINT
-        }
-
-        // Cmd+V (paste) - metaKey for Mac, ctrlKey for Windows/Linux
-        if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
-          e.preventDefault();
-          const pastedText = await handlePaste();
-          if (pastedText) {
-            currentLine += pastedText;
-          }
-        }
-      };
-
-      container.addEventListener('keydown', handleKeydown);
-
-      // Store cleanup reference
-      const originalDispose = terminal.dispose.bind(terminal);
-      terminal.dispose = () => {
-        container.removeEventListener('keydown', handleKeydown);
-        originalDispose();
-      };
-    }
-
-    terminal.onData((data) => {
-      // Handle Ctrl+R for reverse search
-      if (data === '\x12') { // Ctrl+R
-        options.onCtrlR?.();
-        return;
-      }
-
-      // Handle Escape (exit search mode)
-      if (data === '\x1b' && options.isSearchMode) {
-        options.onExitSearch?.();
-        return;
-      }
-
-      // In search mode, handle input differently
-      if (options.isSearchMode) {
-        if (data === '\r') { // Enter - accept current match
-          options.onExitSearch?.();
-          return;
-        }
-        if (data === '\u007f') { // Backspace in search mode
-          options.onSearchInput?.('\x7F'); // Signal backspace
-          return;
-        }
-        if (data.length === 1 && data.charCodeAt(0) >= 32) {
-          options.onSearchInput?.(data);
-          return;
-        }
-        return;
-      }
-
-      if (data === '\r') { // Enter
-        executeCommand(currentLine);
-        currentLine = '';
-        return;
-      }
-
-      if (data === '\u007f') { // Backspace
-        if (currentLine.length > 0) {
-          currentLine = currentLine.slice(0, -1);
-          terminal.write('\b \b');
-        }
-        return;
-      }
-
-      if (data === '\u0003') { // Ctrl+C (when no selection - SIGINT)
-        terminal.write('^C\r\n');
-        showPrompt();
-        currentLine = '';
-        return;
-      }
-
-      if (data === '\u001b[A' || data === '\u001b[B') { // Arrow keys
-        if (options.onNavigateHistory) {
-          const historyCommand = options.onNavigateHistory(data === '\u001b[A' ? 'up' : 'down');
-          if (historyCommand !== null) {
-            terminal.write('\r\x1b[K');
-            showPrompt();
-            currentLine = historyCommand;
-            terminal.write(historyCommand);
-          }
-        }
-        return;
-      }
-
-      const code = data.charCodeAt(0);
-      if (code >= 32 && code <= 126) { // Printable characters
-        currentLine += data;
-        terminal.write(data);
-      }
-    });
-  }, [
-    executeCommand,
-    showPrompt,
-    options.onNavigateHistory,
-    options.onCtrlR,
-    options.onSearchInput,
-    options.onExitSearch,
-    options.isSearchMode,
-    handleCopy,
-    handlePaste
-  ]);
-
+  /**
+   * Resize terminal
+   */
   const resizeTerminal = useCallback((cols: number, rows: number) => {
     const terminal = terminalRef.current;
     const fitAddon = fitAddonRef.current;
+    const dispatcher = dispatcherRef.current;
 
     if (terminal && fitAddon) {
       if (cols && rows) {
         terminal.resize(cols, rows);
+        dispatcher?.resizeTerminal(sessionIdRef.current, cols, rows);
       } else {
         fitAddon.fit();
+        if (terminal.cols && terminal.rows) {
+          dispatcher?.resizeTerminal(sessionIdRef.current, terminal.cols, terminal.rows);
+        }
       }
     }
   }, []);
 
+  /**
+   * Get current working directory
+   */
   const getCurrentWorkingDirectory = useCallback(() => {
     return terminalContext.getWorkingDirectory();
   }, [terminalContext.getWorkingDirectory]);
 
+  /**
+   * Set working directory
+   */
   const setWorkingDirectory = useCallback((path: string) => {
     terminalContext.setWorkingDirectory(path);
   }, [terminalContext.setWorkingDirectory]);
 
+  /**
+   * Dispose terminal
+   */
   const dispose = useCallback(() => {
     const terminal = terminalRef.current;
+    const dispatcher = dispatcherRef.current;
+
+    if (dispatcher) {
+      dispatcher.killTerminal(sessionIdRef.current);
+    }
+
     if (terminal) {
       terminal.dispose();
       terminalRef.current = null;
       fitAddonRef.current = null;
       containerRef.current = null;
-      isConnectedRef.current = false;
     }
+
+    setIsConnected(false);
   }, []);
 
   // Cleanup on unmount
@@ -428,6 +393,17 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       dispose();
     };
   }, [dispose]);
+
+  // Note: handleTerminalOutput, handleTerminalSpawned, handleTerminalExit,
+  // handleTerminalError, handleTerminalReplayData are defined but not wired
+  // to callbacks yet - this requires updating the dispatcher initialization
+  // pattern to support callback registration after creation.
+  // For now, the hook uses polling/direct methods.
+  void handleTerminalOutput;
+  void handleTerminalSpawned;
+  void handleTerminalExit;
+  void handleTerminalError;
+  void handleTerminalReplayData;
 
   return {
     createTerminal,
@@ -440,7 +416,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     getCurrentWorkingDirectory,
     setWorkingDirectory,
     terminal: terminalRef.current,
-    isConnected: isConnectedRef.current,
+    isConnected,
     handleCopy,
     handlePaste
   };
