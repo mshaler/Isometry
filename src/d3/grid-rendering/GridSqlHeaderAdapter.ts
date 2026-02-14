@@ -12,6 +12,7 @@
  * - Avoids modifying oversized engine class
  *
  * Phase 90-02: Tree Builder from Query Results
+ * Phase 91-02: ARIA attributes and focus visuals for keyboard navigation
  */
 
 import type { HeaderTree, HeaderNode } from '../../superstack/types/superstack';
@@ -137,8 +138,30 @@ export class GridSqlHeaderAdapter {
       rows: this.rowHeaderTree?.leafCount ?? 0,
     });
 
+    // Add ARIA attributes for accessibility (Phase 91-02)
+    this.addAriaAttributes();
+
     // Attach event handlers after rendering
     this.attachHeaderEventHandlers();
+  }
+
+  /**
+   * Add ARIA attributes to all headers for accessibility.
+   * Per WCAG 2.4.3: role, aria-expanded, tabindex, data-header-id.
+   */
+  private addAriaAttributes(): void {
+    const allHeaders = this.container.selectAll('.row-header, .col-header');
+
+    allHeaders
+      .attr('tabindex', '-1') // Focusable via JS but not Tab order
+      .attr('role', 'gridcell')
+      .attr('aria-expanded', (d: unknown) => {
+        const data = d as NestedHeaderData;
+        // Only set aria-expanded if node has children (is expandable)
+        // span > 1 indicates this header spans multiple leaves (has children)
+        return data.span > 1 ? String(!data.isCollapsed) : null;
+      })
+      .attr('data-header-id', (d: unknown) => (d as NestedHeaderData).key);
   }
 
   /**
@@ -247,6 +270,78 @@ export class GridSqlHeaderAdapter {
         const data = parent.datum() as NestedHeaderData | undefined;
         return data?.key === selectedId ? 2 : 1;
       });
+  }
+
+  /**
+   * Update focus visual indicator for keyboard navigation.
+   * Shows visible focus ring per WCAG 2.4.7 (3:1 contrast minimum).
+   * Uses dashed stroke to differentiate from selection solid stroke.
+   */
+  public updateFocusedHeader(focusedId: string | null): void {
+    this.container.selectAll('.row-header, .col-header')
+      .classed('focused', (d: unknown) => {
+        const headerData = d as NestedHeaderData;
+        return headerData.key === focusedId;
+      })
+      .select('rect')
+      .attr('stroke', (d: unknown) => {
+        const headerData = d as NestedHeaderData;
+        if (headerData.key === focusedId) {
+          return '#1d4ed8'; // Blue-700 for focus (different from selection blue-600)
+        }
+        // Keep selection stroke if selected but not focused
+        return '#cbd5e1';
+      })
+      .attr('stroke-width', (d: unknown) => {
+        const headerData = d as NestedHeaderData;
+        return headerData.key === focusedId ? 3 : 1; // Thicker for focus
+      })
+      .attr('stroke-dasharray', (d: unknown) => {
+        const headerData = d as NestedHeaderData;
+        return headerData.key === focusedId ? '4 2' : null; // Dashed for focus
+      });
+  }
+
+  /**
+   * Get ordered list of header IDs for keyboard navigation.
+   * Returns headers in visual order (columns first, then rows).
+   * Traverses tree depth-first to maintain hierarchy.
+   */
+  public getHeaderIds(): string[] {
+    const ids: string[] = [];
+
+    // Collect column headers first (visual reading order: left-to-right)
+    if (this.columnHeaderTree) {
+      this.collectHeaderIds(this.columnHeaderTree.roots, 'x', ids);
+    }
+
+    // Then row headers (visual order: top-to-bottom)
+    if (this.rowHeaderTree) {
+      this.collectHeaderIds(this.rowHeaderTree.roots, 'y', ids);
+    }
+
+    return ids;
+  }
+
+  /**
+   * Recursively collect header IDs in visual order.
+   * Depth-first traversal respects collapsed state.
+   */
+  private collectHeaderIds(
+    nodes: HeaderNode[],
+    axis: 'x' | 'y',
+    ids: string[]
+  ): void {
+    for (const node of nodes) {
+      // Build key in NestedHeaderData format: "{axis}_{depth}_{path.join('|')}"
+      const key = `${axis}_${node.depth}_${node.path.join('|')}`;
+      ids.push(key);
+
+      // Only traverse children if not collapsed and has children
+      if (!node.collapsed && node.children.length > 0) {
+        this.collectHeaderIds(node.children, axis, ids);
+      }
+    }
   }
 
   /**
