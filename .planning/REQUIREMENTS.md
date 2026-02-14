@@ -3,26 +3,64 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
-## v5.1 Requirements — Notebook Integration
+## v6.0 Requirements — Interactive Shell
+
+Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
+
+### Terminal Execution
+
+- [ ] **TERM-01**: User can execute shell commands via subprocess (node-pty backend)
+- [ ] **TERM-02**: User sees stdout/stderr streamed to terminal in real-time
+- [ ] **TERM-03**: User can toggle between Claude Code and native shell modes
+- [ ] **TERM-04**: System handles process lifecycle (spawn, signal, terminate)
+- [ ] **TERM-05**: Terminal reconnects automatically with output buffer replay
+
+### Claude AI Chat
+
+- [ ] **CLAI-01**: User can send messages and see chat history
+- [ ] **CLAI-02**: System connects to MCP server via Streamable HTTP transport
+- [ ] **CLAI-03**: User sees streaming responses with typing indicator
+- [ ] **CLAI-04**: User must approve tool calls before execution (modal)
+- [ ] **CLAI-05**: AI can access resources (file system, database) via MCP
+- [ ] **CLAI-06**: System manages context lifecycle (create/use/release)
+
+### GSD GUI Sync
+
+- [ ] **GSD-01**: System reads `.planning/` files (STATE.md, ROADMAP.md, phase plans)
+- [ ] **GSD-02**: File watcher detects changes with debounced updates
+- [ ] **GSD-03**: User sees phase progress display from files
+- [ ] **GSD-04**: User can update task status, changes write back to files
+- [ ] **GSD-05**: System shows conflict resolution UI for concurrent edits
+- [ ] **GSD-06**: User can toggle task status (pending/in_progress/complete)
+
+### Backend Infrastructure
+
+- [ ] **BACK-01**: WebSocket server routes messages by type (terminal/mcp/file)
+- [ ] **BACK-02**: Backend integrates node-pty for terminal subprocess
+- [ ] **BACK-03**: Backend runs chokidar file watcher for `.planning/` directory
+- [ ] **BACK-04**: MCP client service handles Claude API communication
+- [ ] **BACK-05**: Security: use argument arrays, never string command interpolation
+
+## v5.1 Requirements — Notebook Integration (COMPLETE)
 
 Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
 
 ### Layout Integration
 
-- [ ] **LAYOUT-01**: User can see a collapsed Notebook panel below Command Bar
-- [ ] **LAYOUT-02**: User can expand/collapse the Notebook panel via toggle button
-- [ ] **LAYOUT-03**: User can see all three Notebook panes (Capture, Shell, Preview) when expanded
+- [x] **LAYOUT-01**: User can see a collapsed Notebook panel below Command Bar
+- [x] **LAYOUT-02**: User can expand/collapse the Notebook panel via toggle button
+- [x] **LAYOUT-03**: User can see all three Notebook panes (Capture, Shell, Preview) when expanded
 
 ### Context Wiring
 
-- [ ] **CTX-01**: NotebookContext available in IntegratedLayout tree
-- [ ] **CTX-02**: Notebook state persists across expand/collapse cycles
+- [x] **CTX-01**: NotebookContext available in IntegratedLayout tree
+- [x] **CTX-02**: Notebook state persists across expand/collapse cycles
 
 ### Visual Polish
 
-- [ ] **VIS-01**: Collapsed state shows minimal header with expand indicator
-- [ ] **VIS-02**: Expanded state respects theme (NeXTSTEP/Modern)
-- [ ] **VIS-03**: Smooth expand/collapse animation
+- [x] **VIS-01**: Collapsed state shows minimal header with expand indicator
+- [x] **VIS-02**: Expanded state respects theme (NeXTSTEP/Modern)
+- [x] **VIS-03**: Smooth expand/collapse animation
 
 ## v4.7 Requirements — Schema-on-Read
 
@@ -110,13 +148,6 @@ Complete SuperGrid projection system with animated view transitions and sparse/d
 
 Deferred to future releases. Tracked but not in current roadmap.
 
-### Shell AI Integration
-
-- **SHAI-01**: User can chat with Claude AI in dedicated Shell tab
-- **SHAI-02**: User sees streaming responses with typing indicator
-- **SHAI-03**: User benefits from rate limit queue preventing API errors
-- **SHAI-04**: User can use MCP tools for enhanced context
-
 ### Advanced Editor
 
 - **AEDT-01**: User can embed D3 visualizations inline in editor
@@ -175,22 +206,50 @@ Which phases cover which requirements. Updated during roadmap creation.
 - v4.4/v4.5 shipped: 11 requirements
 - v4.6 requirements: 6 total (3 shipped Phase 61, 3 deferred Phase 62)
 - v4.7 requirements: 8 total (mapped to phases 63-65)
-- v5.1 requirements: 8 total (mapped to phase 80)
-- Mapped to phases: 8/8 active v5.1 requirements (100% coverage)
+- v5.1 requirements: 8 total (mapped to phase 80) — COMPLETE
+- v6.0 requirements: 22 total (pending phase mapping)
+- Mapped to phases: 22/22 active v6.0 requirements (pending roadmap)
 
-### v5.1 Traceability
+### v5.1 Traceability (COMPLETE)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LAYOUT-01 | Phase 80 | Pending |
-| LAYOUT-02 | Phase 80 | Pending |
-| LAYOUT-03 | Phase 80 | Pending |
-| CTX-01 | Phase 80 | Pending |
-| CTX-02 | Phase 80 | Pending |
-| VIS-01 | Phase 80 | Pending |
-| VIS-02 | Phase 80 | Pending |
-| VIS-03 | Phase 80 | Pending |
+| LAYOUT-01 | Phase 80 | Complete |
+| LAYOUT-02 | Phase 80 | Complete |
+| LAYOUT-03 | Phase 80 | Complete |
+| CTX-01 | Phase 80 | Complete |
+| CTX-02 | Phase 80 | Complete |
+| VIS-01 | Phase 80 | Complete |
+| VIS-02 | Phase 80 | Complete |
+| VIS-03 | Phase 80 | Complete |
+
+### v6.0 Traceability (Pending Roadmap)
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| TERM-01 | TBD | Pending |
+| TERM-02 | TBD | Pending |
+| TERM-03 | TBD | Pending |
+| TERM-04 | TBD | Pending |
+| TERM-05 | TBD | Pending |
+| CLAI-01 | TBD | Pending |
+| CLAI-02 | TBD | Pending |
+| CLAI-03 | TBD | Pending |
+| CLAI-04 | TBD | Pending |
+| CLAI-05 | TBD | Pending |
+| CLAI-06 | TBD | Pending |
+| GSD-01 | TBD | Pending |
+| GSD-02 | TBD | Pending |
+| GSD-03 | TBD | Pending |
+| GSD-04 | TBD | Pending |
+| GSD-05 | TBD | Pending |
+| GSD-06 | TBD | Pending |
+| BACK-01 | TBD | Pending |
+| BACK-02 | TBD | Pending |
+| BACK-03 | TBD | Pending |
+| BACK-04 | TBD | Pending |
+| BACK-05 | TBD | Pending |
 
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-13 (v5.1 Notebook Integration requirements added)*
+*Last updated: 2026-02-14 (v6.0 Interactive Shell requirements added)*
