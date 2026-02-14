@@ -5,16 +5,17 @@
  */
 
 import { useState } from 'react';
-import { Palette, Settings as SettingsIcon } from 'lucide-react';
+import { Palette, Settings as SettingsIcon, Link2 } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TabPanel, type Tab } from '@/components/ui/TabPanel';
 import { AccordionSection } from '@/components/ui/AccordionSection';
+import { BacklinksPanel } from './notebook/BacklinksPanel';
 
 // ============================================
 // Types
 // ============================================
 
-type TabType = 'formats' | 'settings';
+type TabType = 'formats' | 'settings' | 'backlinks';
 
 // ============================================
 // Section Content Components
@@ -115,6 +116,12 @@ export function RightSidebar() {
       label: 'Settings',
       icon: <SettingsIcon className="w-4 h-4" />,
       content: <div className="p-2">{renderSections(settingsSections, false)}</div>,
+    },
+    {
+      id: 'backlinks',
+      label: 'Backlinks',
+      icon: <Link2 className="w-4 h-4" />,
+      content: <BacklinksPanel />,
     },
   ];
 
