@@ -50,17 +50,7 @@ export function queryTemplates(
 
     if (!results[0]?.values) return [];
 
-    return results[0].values.map(([id, name, description, cat, content, variables, createdAt, modifiedAt, usageCount]) => ({
-      id: String(id),
-      name: String(name),
-      description: description ? String(description) : null,
-      category: cat ? String(cat) : null,
-      content: String(content),
-      variables: parseVariables(variables),
-      createdAt: String(createdAt),
-      modifiedAt: String(modifiedAt),
-      usageCount: Number(usageCount),
-    }));
+    return results[0].values.map((row) => rowToTemplate(row as TemplateRow));
   } catch (error) {
     console.error('Failed to query templates:', error);
     return [];
@@ -93,17 +83,7 @@ export function searchTemplates(
 
     if (!results[0]?.values) return [];
 
-    return results[0].values.map(([id, name, description, category, content, variables, createdAt, modifiedAt, usageCount]) => ({
-      id: String(id),
-      name: String(name),
-      description: description ? String(description) : null,
-      category: category ? String(category) : null,
-      content: String(content),
-      variables: parseVariables(variables),
-      createdAt: String(createdAt),
-      modifiedAt: String(modifiedAt),
-      usageCount: Number(usageCount),
-    }));
+    return results[0].values.map((row) => rowToTemplate(row as TemplateRow));
   } catch (error) {
     console.error('FTS5 search failed, falling back to regular query:', error);
     return queryTemplates(db);
@@ -129,19 +109,7 @@ export function getTemplate(
 
     if (!results[0]?.values?.[0]) return null;
 
-    const [id, name, description, category, content, variables, createdAt, modifiedAt, usageCount] = results[0].values[0];
-
-    return {
-      id: String(id),
-      name: String(name),
-      description: description ? String(description) : null,
-      category: category ? String(category) : null,
-      content: String(content),
-      variables: parseVariables(variables),
-      createdAt: String(createdAt),
-      modifiedAt: String(modifiedAt),
-      usageCount: Number(usageCount),
-    };
+    return rowToTemplate(results[0].values[0] as TemplateRow);
   } catch (error) {
     console.error('Failed to get template:', error);
     return null;
@@ -418,4 +386,28 @@ function parseVariables(variables: unknown): TemplateVariable[] {
   } catch {
     return [];
   }
+}
+
+/**
+ * Convert a SQL result row to a Template object.
+ * Row format: [id, name, description, category, content, variables, createdAt, modifiedAt, usageCount]
+ */
+type TemplateRow = [
+  unknown, unknown, unknown, unknown, unknown,
+  unknown, unknown, unknown, unknown
+];
+
+function rowToTemplate(row: TemplateRow): Template {
+  const [id, name, desc, cat, content, vars, created, modified, usage] = row;
+  return {
+    id: String(id),
+    name: String(name),
+    description: desc ? String(desc) : null,
+    category: cat ? String(cat) : null,
+    content: String(content),
+    variables: parseVariables(vars),
+    createdAt: String(created),
+    modifiedAt: String(modified),
+    usageCount: Number(usage),
+  };
 }
