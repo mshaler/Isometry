@@ -15,16 +15,66 @@
  * This component replaces 40KB of MessageBridge with direct SQLite access.
  */
 
-import { useMemo, useCallback, useRef, useState } from 'react';
+import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { SuperStack } from './SuperStack';
 import { DensityControls } from './DensityControls';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
+import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
+import { useSQLite } from '@/db/SQLiteProvider';
 import { filterEmptyCells, type ExtentMode } from '@/d3/SuperGridEngine/DataManager';
 import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
+import type { FacetConfig } from '@/superstack/types/superstack';
+import { GridSqlHeaderAdapter } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
+import type { SqlHeaderAdapterConfig } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
+import * as d3 from 'd3';
 import './SuperStack.css';
 import './SuperGrid.css';
+
+/**
+ * Map AxisMapping (from PAFV) to FacetConfig (for SuperStack).
+ * Converts LATCH axis to single-letter format and infers dataType.
+ */
+function mapAxisMappingToFacetConfig(mapping: AxisMapping): FacetConfig {
+  // Map LATCH dimension to FacetConfig axis (single letter)
+  const axisMap: Record<LATCHAxis, 'L' | 'A' | 'T' | 'C' | 'H'> = {
+    location: 'L',
+    alphabet: 'A',
+    time: 'T',
+    category: 'C',
+    hierarchy: 'H',
+  };
+
+  // Infer dataType from LATCH dimension
+  const dataTypeMap: Record<LATCHAxis, FacetConfig['dataType']> = {
+    time: 'date',
+    category: 'select',
+    hierarchy: 'select',
+    alphabet: 'text',
+    location: 'text',
+  };
+
+  // Infer timeFormat for time facets based on common column names
+  let timeFormat: string | undefined;
+  if (mapping.axis === 'time') {
+    // Default to year for most time columns
+    timeFormat = '%Y';
+    // Could extend this with column-specific formats:
+    // if (mapping.facet.includes('month')) timeFormat = '%B';
+    // if (mapping.facet.includes('quarter')) timeFormat = '%Q';
+  }
+
+  return {
+    id: mapping.facet,
+    name: mapping.facet,
+    axis: axisMap[mapping.axis],
+    sourceColumn: mapping.facet,
+    dataType: dataTypeMap[mapping.axis],
+    timeFormat,
+    sortOrder: 'asc',
+  };
+}
 
 interface SuperGridProps {
   /** SQL query for nodes data */
@@ -134,6 +184,68 @@ export function SuperGrid({
       effectiveMode: mode === 'supergrid' && (xMappings.length === 0 && yMappings.length === 0) ? 'gallery' : mode
     };
   }, [pafvState.mappings, mode]);
+
+  // SQL-driven header discovery (Phase 90-02)
+  // Get database instance from SQLiteProvider
+  const { db } = useSQLite();
+
+  // Convert PAFV mappings to FacetConfig arrays
+  // X-axis (columns) mapping -> columnFacets, Y-axis (rows) mapping -> rowFacets
+  const columnFacets = useMemo(() => {
+    const xMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'x');
+    return xMappings.map(mapAxisMappingToFacetConfig);
+  }, [pafvState.mappings]);
+
+  const rowFacets = useMemo(() => {
+    const yMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'y');
+    return yMappings.map(mapAxisMappingToFacetConfig);
+  }, [pafvState.mappings]);
+
+  // Use header discovery hook (SQL-04: loading state, SQL-05: empty datasets)
+  const {
+    columnTree,
+    rowTree,
+    isLoading: headersLoading,
+    error: headerError,
+    // refresh: refreshHeaders, // Available for manual refresh if needed
+  } = useHeaderDiscovery(db, columnFacets, rowFacets);
+
+  // Create GridSqlHeaderAdapter ref for coordinating SQL-driven headers
+  const svgRef = useRef<SVGSVGElement>(null);
+  const sqlHeaderAdapterRef = useRef<GridSqlHeaderAdapter | null>(null);
+
+  // Initialize adapter when SVG ref is available
+  useEffect(() => {
+    if (svgRef.current && !sqlHeaderAdapterRef.current) {
+      const config: SqlHeaderAdapterConfig = {
+        rowHeaderWidth: 200, // Default, should match SuperStack config
+        headerHeight: 40,
+        cellWidth: 160,
+        cellHeight: 100,
+        padding: 4,
+        animationDuration: 300,
+      };
+
+      // Cast to SVGElement since GridSqlHeaderAdapter expects base SVGElement
+      sqlHeaderAdapterRef.current = new GridSqlHeaderAdapter(
+        d3.select(svgRef.current as SVGElement),
+        config
+      );
+    }
+  }, []);
+
+  // Update adapter when header trees change
+  useEffect(() => {
+    if (sqlHeaderAdapterRef.current) {
+      sqlHeaderAdapterRef.current.setColumnHeaderTree(columnTree);
+      sqlHeaderAdapterRef.current.setRowHeaderTree(rowTree);
+
+      // Render SQL-driven headers if available
+      if (sqlHeaderAdapterRef.current.hasSqlDrivenHeaders()) {
+        sqlHeaderAdapterRef.current.renderSqlDrivenHeaders();
+      }
+    }
+  }, [columnTree, rowTree]);
 
   // Group nodes by grid coordinates
   // Supports stacked facets using composite keys (e.g., "folder|status")
@@ -296,6 +408,25 @@ export function SuperGrid({
           />
         </div>
       )}
+
+      {/* Header Discovery Loading/Error Indicators (SQL-04, SQL-05) */}
+      {headersLoading && (
+        <div className="supergrid__header-status supergrid__header-status--loading">
+          <span className="supergrid__spinner" />
+          <span>Discovering headers...</span>
+        </div>
+      )}
+      {headerError && (
+        <div className="supergrid__header-status supergrid__header-status--error">
+          <span className="supergrid__error-icon">⚠️</span>
+          <span>Header discovery failed: {headerError.message}</span>
+        </div>
+      )}
+
+      {/* SVG container for SQL-driven headers (hidden, adapter renders into this) */}
+      <svg ref={svgRef} className="supergrid__sql-headers" style={{ position: 'absolute', width: 0, height: 0 }}>
+        <g className="headers" />
+      </svg>
 
       {/* Corner Cell - Sticky at top-left intersection */}
       {enableSuperStack && gridLayout.hasColumns && gridLayout.hasRows && (
