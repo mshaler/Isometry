@@ -12,3 +12,5 @@ export type {
 
 export { WikiLink, createWikiLinkSuggestion } from './wiki-links';
 export type { WikiLinkOptions, WikiLinkSuggestionProps } from './wiki-links';
+
+export { AppleNotesShortcuts } from './keyboard-shortcuts';

@@ -4,6 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from '@tiptap/markdown';
+import CharacterCount from '@tiptap/extension-character-count';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
 import DOMPurify from 'dompurify';
@@ -15,6 +16,7 @@ import {
   createSlashCommandSuggestion,
   WikiLink,
   createWikiLinkSuggestion,
+  AppleNotesShortcuts,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
 import {
@@ -140,6 +142,10 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
           size: 2,
         },
       }),
+      CharacterCount.configure({
+        // No character limit - just tracking
+      }),
+      AppleNotesShortcuts,
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
           () => {
@@ -365,7 +371,9 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
     isDirty,
     isSaving,
     saveNow,
-    activeCard
+    activeCard,
+    characterCount: editor?.storage.characterCount?.characters() ?? 0,
+    wordCount: editor?.storage.characterCount?.words() ?? 0,
   };
 }
 
