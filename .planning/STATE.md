@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 92 - Data Cell Integration (SuperStack Enhancement v6.1)
+**Current focus:** Phase 95 - Data Layer & Backlinks (Capture Writing Surface v6.2)
 
 ## Current Position
 
-Phase: 92 of 98 (Data Cell Integration - SuperStack Enhancement v6.1)
-Plan: 0 of TBD complete
-Status: Ready for planning
-Last activity: 2026-02-14 — Completed Phase 91 (Interactions - 2/2 plans)
+Phase: 95 of 98 (Data Layer & Backlinks - Capture Writing Surface v6.2)
+Plan: 3 of 4 complete
+Status: In progress
+Last activity: 2026-02-14 — Completed 95-03 Backlinks Panel
 
-Progress (Phase 91): [██████████] 100% (2 of 2 plans)
-Overall: [████████░░] 95% (96 of ~130 total phases across all milestones)
+Progress (Phase 95): [███████░░░] 75% (3 of 4 plans)
+Overall: [████████░░] 96% (99 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -30,13 +30,17 @@ Overall: [████████░░] 95% (96 of ~130 total phases across al
   - [x] 94-02: Paste Sanitization + Tippy.js Cleanup (~5m) ✓
   - [x] 94-03: Apple Notes Keyboard Shortcuts (~5.5m) ✓
   - [x] 94-04: Word Count + Undo/Redo Polish (~6m) ✓
-- Phase 95: Data Layer & Backlinks (9 requirements)
+- Phase 95: Data Layer & Backlinks (9 requirements) — IN PROGRESS (3/4 plans)
+  - [x] 95-01: Wiki-Link Edge Creation ✓
+  - [x] 95-02: Backlinks Query Infrastructure ✓
+  - [x] 95-03: Backlinks Panel in RightSidebar ✓
+  - [ ] 95-04: Forward Links Panel
 - Phase 96: Block Types & Slash Commands (14 requirements)
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 94 complete ✓, ready for Phase 95
+**Current:** Phase 95 in progress (3/4 plans)
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -83,11 +87,11 @@ Overall: [████████░░] 95% (96 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 95 (Data Layer) | 3/4 | ~4m | In Progress |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
-| 84 (Cards & Connections) | 4 | ~7m | Complete |
 
 *Updated: 2026-02-14*
 
@@ -132,6 +136,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
 - CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
 - CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
+- BACK-QUERY-01: Use nodeId for backlink queries (edges reference nodes.id not notebook_cards.id) ✅ Implemented 95-03
+- BACK-LIMIT-01: Default 50 backlinks limit for performance protection ✅ Implemented 95-03
+- BACK-SELF-01: Exclude self-referencing links from backlink results ✅ Implemented 95-03
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -163,15 +170,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 91-02 COMPLETE - Header Keyboard Navigation
-Resume file: .planning/phases/91-interactions/91-02-SUMMARY.md
+Stopped at: Phase 95-03 COMPLETE - Backlinks Panel
+Resume file: .planning/phases/95-data-layer-backlinks/95-03-SUMMARY.md
 
-**Phase 91-02 Summary:**
-- Created HeaderKeyboardController for WCAG 2.4.3 keyboard navigation
-- Added ARIA attributes to headers (role=gridcell, aria-expanded, tabindex, data-header-id)
-- Implemented visible focus ring (3px dashed blue-700 stroke)
-- Integrated keyboard controller with SuperGrid lifecycle
+**Phase 95-03 Summary:**
+- Created BacklinksPanel component for viewing reverse relationships
+- Added Backlinks tab to RightSidebar
+- Click-to-navigate from backlink to source card
+- queryBacklinks now excludes self-references and has 50-item limit
 - 0 deviations
-- Commits: f73c3139, ff3ecb71, 3fd8fbab
+- Commits: 625f14ae, 74937376, 3e225f84
 
-**Next step:** Execute Phase 91-03 or continue with Phase 95 (Capture data layer)
+**Next step:** Execute Phase 95-04 (Forward Links Panel)
