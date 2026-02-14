@@ -67,7 +67,11 @@ function App() {
   // Phase 92: Focused SuperGrid scroll test with alto-index data
   // Verifies CELL-02 (CSS sticky header scroll coordination)
   if (testMode === 'sg-scroll') {
-    return <SuperGridScrollTest />;
+    return (
+      <SQLiteProvider>
+        <SuperGridScrollTest />
+      </SQLiteProvider>
+    );
   }
 
   if (testMode === 'cli-test') {
