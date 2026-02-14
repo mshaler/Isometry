@@ -400,9 +400,10 @@ Plans:
   3. CLAUDE.md updated with ETL architecture
 **Plans**: TBD
 
-## 🚧 v5.1 Notebook Integration (Current)
+## ✅ v5.1 Notebook Integration (Complete)
 
 **Milestone Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+**Completed:** 2026-02-14
 
 ### Phase 80: Notebook Integration
 **Goal**: Add collapsible Notebook panel to IntegratedLayout with all three panes
@@ -418,7 +419,7 @@ Plans:
 
 Plans:
 - [x] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
-- [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+- [x] 80-02-PLAN.md — Full NotebookLayout embedding with polish
 
 ## 📋 Phase 84: Cards & Connections (Planned)
 
@@ -484,8 +485,8 @@ Plans:
 | 77. Versioning | v4.9 | 1/1 | Complete | 2026-02-13 |
 | 78. URL Deep Linking | v4.9 | 2/2 | Complete | 2026-02-13 |
 | 79. Catalog Browser | v4.9 | 3/3 | Complete | 2026-02-13 |
-| 80. Notebook Integration | v5.1 | 0/2 | Planned | - |
+| 80. Notebook Integration | v5.1 | 2/2 | Complete | 2026-02-14 |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-13 (v5.1 Notebook Integration milestone started)*
+*Last updated: 2026-02-14 (v5.1 Notebook Integration milestone complete)*

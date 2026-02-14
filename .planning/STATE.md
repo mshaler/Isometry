@@ -9,32 +9,33 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 84 (Cards & Connections)
-Plan: 04 of 4 complete
-Status: PHASE COMPLETE
-Last activity: 2026-02-14 — Completed 84-04-PLAN.md (Verification and cleanup documentation)
+Phase: 80 (Notebook Integration)
+Plan: 02 of 2 complete
+Status: MILESTONE COMPLETE
+Last activity: 2026-02-14 — Completed 80-02-PLAN.md (Full NotebookLayout embedding with polish)
 
-Progress (v5.2 Cards & Connections): [##############################] 100% (4/4 plans)
+Progress (v5.1 Notebook Integration): [##############################] 100% (2/2 plans)
 
-## Current Milestone: v5.1 Notebook Integration
+## Current Milestone: v5.1 Notebook Integration — COMPLETE
 
 **Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+**Completed:** 2026-02-14
 
 **Requirements:**
 | ID | Description | Phase | Status |
 |----|-------------|-------|--------|
 | LAYOUT-01 | Collapsed Notebook panel below Command Bar | 80 | Done (80-01) |
 | LAYOUT-02 | Expand/collapse toggle button | 80 | Done (80-01) |
-| LAYOUT-03 | All three panes when expanded | 80 | Pending (80-02) |
+| LAYOUT-03 | All three panes when expanded | 80 | Done (80-02) |
 | CTX-01 | NotebookContext in IntegratedLayout tree | 80 | Done (80-01) |
-| CTX-02 | State persists across toggle | 80 | Done (80-01) |
+| CTX-02 | State persists across toggle | 80 | Done (80-02) |
 | VIS-01 | Minimal collapsed header | 80 | Done (80-01) |
-| VIS-02 | Theme respect (NeXTSTEP/Modern) | 80 | Done (80-01) |
-| VIS-03 | Smooth expand/collapse animation | 80 | Done (80-01) |
+| VIS-02 | Theme respect (NeXTSTEP/Modern) | 80 | Done (80-02) |
+| VIS-03 | Smooth expand/collapse animation | 80 | Done (80-02) |
 
 **Phase 80 Plans:**
 - [x] 80-01-PLAN.md — Context wiring + collapsible panel skeleton (COMPLETE - ~4 min)
-- [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+- [x] 80-02-PLAN.md — Full NotebookLayout embedding with polish (COMPLETE - ~5 min gap closure)
 
 ## Previous Milestones
 
@@ -594,7 +595,7 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Plan 84-02 complete — Card/Connection TypeScript types with type guards and row converters
-Resume file: .planning/phases/84-cards-and-connections/84-03-PLAN.md
-Next action: Execute 84-03-PLAN.md (Data layer integration - useCards hook and CardManager)
+Last session: 2026-02-14
+Stopped at: Phase 80 complete — v5.1 Notebook Integration milestone finished
+Resume file: N/A (milestone complete)
+Next action: `/gsd:new-milestone` or continue to next planned phase (84 Cards & Connections)
