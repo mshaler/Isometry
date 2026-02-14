@@ -73,10 +73,13 @@ module.exports = {
     // =========================================================================
     {
       name: 'd3-no-import-react-state',
-      comment: 'D3 modules should not import React state management',
+      comment: 'D3 modules should not import React state management (ThemeContext allowed for styling)',
       severity: 'warn',
       from: { path: '^src/d3/' },
-      to: { path: '^src/(contexts|state)/' },
+      to: {
+        path: '^src/(contexts|state)/',
+        pathNot: '^src/contexts/ThemeContext\\.tsx$',
+      },
     },
   ],
 

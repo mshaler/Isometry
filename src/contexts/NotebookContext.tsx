@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import type { NotebookCard, NotebookCardType, NotebookTemplate } from '../types/notebook';
 import { useSQLite } from '../db/SQLiteProvider';
-import { useNotebookIntegration } from '@/hooks';
+import { useNotebookIntegration } from '../hooks/system/useNotebookIntegration';
 import { useNotebookPerformance } from '../hooks/performance/useNotebookPerformance';
 import { useErrorReporting } from '../services/system/ErrorReportingService';
 import { devLogger } from "../utils/logging/dev-logger";

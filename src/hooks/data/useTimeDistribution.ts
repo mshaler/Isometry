@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useDatabaseService } from '@/hooks';
+import { useDatabaseService } from '../database/useDatabaseService';
 
 export interface TimeBucket {
   start: Date;
