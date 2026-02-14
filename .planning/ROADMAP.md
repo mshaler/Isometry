@@ -417,8 +417,36 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
+- [x] 80-01-PLAN.md — Context wiring + collapsible panel skeleton
 - [ ] 80-02-PLAN.md — Full NotebookLayout embedding with polish
+
+## 📋 Phase 84: Cards & Connections (Planned)
+
+**Milestone Goal:** Migrate from nodes/edges to cards/connections data model for simpler, more consistent data semantics.
+
+**Source:** CARDS-AND-CONNECTIONS.md
+
+### Phase 84: Cards & Connections
+**Goal**: Migrate from nodes/edges to cards/connections data model
+**Depends on**: None (foundational change)
+**Requirements**: cards table with 4-type constraint, connections with via_card_id, TypeScript types, query updates
+**Success Criteria** (what must be TRUE):
+  1. cards table created with card_type CHECK constraint for 4 types (note, person, event, resource)
+  2. connections table created with via_card_id for rich relationship bridging
+  3. All data migrated from nodes -> cards with type mapping
+  4. All data migrated from edges -> connections with edge_type -> label
+  5. TypeScript compiles clean with Card/Connection types
+  6. FTS5 search works on cards table
+  7. SuperGrid renders correctly
+  8. ETL importers produce valid cards
+  9. All tests pass
+**Plans**: 4 plans in 3 waves
+
+Plans:
+- [ ] 84-01-PLAN.md — Schema migration (cards/connections tables, indexes, FTS5)
+- [ ] 84-02-PLAN.md — TypeScript types (Card interface, type guards, converters)
+- [ ] 84-03-PLAN.md — Query updates (hooks, services, ETL)
+- [ ] 84-04-PLAN.md — Test & cleanup (integration tests, verification, documentation)
 
 ## Progress
 
