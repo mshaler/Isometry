@@ -83,6 +83,26 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     },
   },
   {
+    id: 'template',
+    label: 'Insert Template',
+    description: 'Choose from saved templates',
+    category: 'template',
+    shortcut: 'template',
+    action: ({ editor, range }) => {
+      // Delete the slash command trigger first
+      editor.chain().focus().deleteRange(range).run();
+
+      // Dispatch event to open template picker modal
+      // The modal will handle inserting the selected template
+      window.dispatchEvent(new CustomEvent('isometry:open-template-picker', {
+        detail: {
+          editor,
+          insertPosition: editor.state.selection.from
+        }
+      }));
+    },
+  },
+  {
     id: 'meeting-template',
     label: 'Meeting Notes',
     description: 'Insert meeting notes template',
