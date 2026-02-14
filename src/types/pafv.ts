@@ -89,9 +89,9 @@ export interface PAFVState {
 // - Location (L): location_name
 export const DEFAULT_PAFV: PAFVState = {
   mappings: [
-    // 2D grid default: x=time (years), y=category (tags)
-    { plane: 'x', axis: 'time', facet: 'year' },
-    { plane: 'y', axis: 'category', facet: 'tag' },
+    // 2D grid default uses concrete schema columns to avoid empty projection collapse
+    { plane: 'x', axis: 'category', facet: 'folder' },
+    { plane: 'y', axis: 'category', facet: 'status' },
   ],
   viewMode: 'grid',
   densityLevel: 2, // Default to Extent Density (populated-only)
@@ -118,4 +118,3 @@ export interface SortConfig {
   /** Hierarchy level where sort was initiated (for visual indicator) */
   level: number;
 }
-

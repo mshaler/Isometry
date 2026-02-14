@@ -11,9 +11,10 @@ import type {
 } from '../../types/grid-core';
 import type {
   PAFVProjection,
+  AxisProjection,
   GridHeaders,
 } from '../../types/grid';
-import type { EncodingConfig } from '../../types/pafv';
+import type { EncodingConfig, LATCHAxis } from '../../types/pafv';
 import type { JanusDensityState, ExtentDensityMode } from '../../types/density-control';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
@@ -50,6 +51,7 @@ export class GridRenderingEngine {
   // Current rendering state
   private currentData: GridData | null = null;
   private currentProjection: PAFVProjection | null = null;
+  private effectiveProjection: PAFVProjection | null = null;
   private currentHeaders: GridHeaders | null = null;
   private isHeadersInitialized = false;
 
@@ -125,6 +127,7 @@ export class GridRenderingEngine {
    */
   public setProjection(projection: PAFVProjection | null): void {
     this.currentProjection = projection;
+    this.effectiveProjection = projection;
     superGridLogger.debug('GridRenderingEngine: projection set', {
       xAxis: projection?.xAxis?.facet || 'none',
       yAxis: projection?.yAxis?.facet || 'none',
@@ -136,6 +139,137 @@ export class GridRenderingEngine {
    */
   public getProjection(): PAFVProjection | null {
     return this.currentProjection;
+  }
+
+  /**
+   * Get projection currently used for rendering (after fallback heuristics).
+   */
+  private getActiveProjection(): PAFVProjection | null {
+    return this.effectiveProjection ?? this.currentProjection;
+  }
+
+  /**
+   * Resolve an effective projection for the current cards.
+   * If a selected facet is mostly null, it falls back to a better-populated facet
+   * with higher cardinality on the same LATCH axis.
+   */
+  private resolveProjectionFallback(cards: unknown[]): PAFVProjection | null {
+    if (!this.currentProjection) {
+      return null;
+    }
+
+    const xAxis = this.resolveAxisFallback(this.currentProjection.xAxis, cards, 'x');
+    const yAxis = this.resolveAxisFallback(this.currentProjection.yAxis, cards, 'y');
+
+    return {
+      ...this.currentProjection,
+      xAxis,
+      yAxis,
+    };
+  }
+
+  private resolveAxisFallback(
+    axisProjection: AxisProjection | null,
+    cards: unknown[],
+    plane: 'x' | 'y'
+  ): AxisProjection | null {
+    if (!axisProjection || cards.length === 0) {
+      return axisProjection;
+    }
+
+    const selectedFacets = axisProjection.facets?.length
+      ? axisProjection.facets
+      : [axisProjection.facet];
+
+    const used = new Set<string>();
+    const resolvedFacets: string[] = [];
+
+    for (const selectedFacet of selectedFacets) {
+      const selectedStats = this.computeFacetStats(cards, selectedFacet);
+      let chosenFacet = selectedFacet;
+      const isMostlyNull = selectedStats.populatedRatio < 0.35;
+
+      if (isMostlyNull) {
+        const candidates = this.getAxisFallbackCandidates(axisProjection.axis)
+          .filter((candidate) => !used.has(candidate))
+          .filter((candidate) => candidate !== selectedFacet);
+
+        const best = this.pickBestFallbackFacet(cards, candidates);
+        if (best) {
+          chosenFacet = best;
+          const bestStats = this.computeFacetStats(cards, best);
+          superGridLogger.warn('[GridRenderingEngine] Axis facet fallback applied', {
+            plane,
+            axis: axisProjection.axis,
+            fromFacet: selectedFacet,
+            toFacet: best,
+            selectedPopulatedRatio: selectedStats.populatedRatio,
+            fallbackPopulatedRatio: bestStats.populatedRatio,
+            fallbackUniqueValues: bestStats.uniqueCount,
+          });
+        }
+      }
+
+      used.add(chosenFacet);
+      resolvedFacets.push(chosenFacet);
+    }
+
+    if (resolvedFacets.length === 0) {
+      return axisProjection;
+    }
+
+    return {
+      ...axisProjection,
+      facet: resolvedFacets[0] ?? axisProjection.facet,
+      facets: resolvedFacets.length > 1 ? resolvedFacets : undefined,
+    };
+  }
+
+  private computeFacetStats(cards: unknown[], facet: string): {
+    populatedCount: number;
+    populatedRatio: number;
+    uniqueCount: number;
+  } {
+    const values = cards
+      .map((card) => this.resolveFacetValue(card as Record<string, unknown>, facet))
+      .filter((value): value is string => value != null);
+    const populatedCount = values.length;
+    const populatedRatio = cards.length > 0 ? populatedCount / cards.length : 0;
+    const uniqueCount = new Set(values).size;
+    return { populatedCount, populatedRatio, uniqueCount };
+  }
+
+  private pickBestFallbackFacet(cards: unknown[], candidates: string[]): string | null {
+    let bestFacet: string | null = null;
+    let bestScore = -1;
+
+    for (const candidate of candidates) {
+      const stats = this.computeFacetStats(cards, candidate);
+      if (stats.populatedRatio < 0.35 || stats.uniqueCount === 0) {
+        continue;
+      }
+      const score = stats.populatedRatio * stats.uniqueCount;
+      if (score > bestScore) {
+        bestScore = score;
+        bestFacet = candidate;
+      }
+    }
+
+    return bestFacet;
+  }
+
+  private getAxisFallbackCandidates(axis: LATCHAxis): string[] {
+    const axisDefaults: Record<LATCHAxis, string[]> = {
+      location: ['location_name', 'location_address', 'latitude', 'longitude'],
+      alphabet: ['name', 'summary', 'content'],
+      time: ['created_at', 'modified_at', 'due_at', 'event_start', 'event_end', 'year', 'quarter', 'month', 'day'],
+      category: ['folder', 'status', 'tags', 'tag', 'node_type'],
+      hierarchy: ['priority', 'importance', 'sort_order'],
+    };
+
+    // Keep fallback candidates axis-scoped to avoid selecting technical identifiers
+    // like "id" purely due to high cardinality.
+    return [...axisDefaults[axis]];
   }
 
   /**
@@ -318,6 +452,92 @@ export class GridRenderingEngine {
   }
 
   /**
+   * Resolve projection facet values from a card record.
+   * Supports both direct columns and virtual/derived facets used by PAFV.
+   */
+  private resolveFacetValue(
+    cardRecord: Record<string, unknown>,
+    facet: string
+  ): string | null {
+    const normalize = (value: unknown): string | null => {
+      if (value == null) return null;
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      }
+      if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+      if (Array.isArray(value)) {
+        const first = value.find((item) => item != null && String(item).trim() !== '');
+        return first != null ? String(first) : null;
+      }
+      return String(value);
+    };
+
+    const parseTag = (tagsValue: unknown): string | null => {
+      if (tagsValue == null) return null;
+      if (Array.isArray(tagsValue)) {
+        const first = tagsValue.find((tag) => tag != null && String(tag).trim() !== '');
+        return first != null ? String(first).trim() : null;
+      }
+      if (typeof tagsValue === 'string') {
+        const trimmed = tagsValue.trim();
+        if (!trimmed) return null;
+        if (trimmed.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(trimmed);
+            if (Array.isArray(parsed)) {
+              const first = parsed.find((tag) => tag != null && String(tag).trim() !== '');
+              return first != null ? String(first).trim() : null;
+            }
+          } catch {
+            // Fall through to plain string handling
+          }
+        }
+        const firstDelimited = trimmed.split(',').map((part) => part.trim()).find(Boolean);
+        return firstDelimited || null;
+      }
+      return null;
+    };
+
+    const parseDate = (value: unknown): Date | null => {
+      const normalized = normalize(value);
+      if (!normalized) return null;
+      const date = new Date(normalized);
+      return Number.isNaN(date.getTime()) ? null : date;
+    };
+
+    switch (facet) {
+      case 'tag':
+      case 'tags':
+        return parseTag(cardRecord.tags);
+      case 'year': {
+        const date = parseDate(cardRecord.created_at);
+        return date ? String(date.getFullYear()) : null;
+      }
+      case 'quarter': {
+        const date = parseDate(cardRecord.created_at);
+        return date ? `Q${Math.floor(date.getMonth() / 3) + 1}` : null;
+      }
+      case 'month': {
+        const date = parseDate(cardRecord.created_at);
+        return date
+          ? date.toLocaleDateString('en-US', { month: 'long' })
+          : null;
+      }
+      case 'day': {
+        const date = parseDate(cardRecord.created_at);
+        return date
+          ? date.toLocaleDateString('en-US', { weekday: 'long' })
+          : null;
+      }
+      default:
+        return normalize(cardRecord[facet]);
+    }
+  }
+
+  /**
    * Update color scale based on current encoding and data
    */
   private updateColorScale(): void {
@@ -359,21 +579,24 @@ export class GridRenderingEngine {
    * Generate column and row headers from card data and projection
    */
   private generateProjectionHeaders(cards: unknown[]): GridHeaders {
-    if (!this.currentProjection) {
+    const projection = this.getActiveProjection();
+    if (!projection) {
       return { columns: [], rows: [] };
     }
 
     // NOTE: X-Plane (labeled "Rows" in Navigator) → rows (vertical headers on left)
     //       Y-Plane (labeled "Columns" in Navigator) → columns (horizontal headers at top)
-    const xFacet = this.currentProjection.xAxis?.facet;
-    const yFacet = this.currentProjection.yAxis?.facet;
+    const xFacet = projection.xAxis?.facet;
+    const yFacet = projection.yAxis?.facet;
 
     // X-Plane → rows (vertical headers on left side)
     const rows: string[] = xFacet
       ? [
           ...new Set(
             cards
-              .map((c) => (c as Record<string, unknown>)[xFacet])
+              .map((c) =>
+                this.resolveFacetValue(c as Record<string, unknown>, xFacet)
+              )
               .filter((v) => v != null)
               .map((v) => String(v))
           ),
@@ -385,7 +608,9 @@ export class GridRenderingEngine {
       ? [
           ...new Set(
             cards
-              .map((c) => (c as Record<string, unknown>)[yFacet])
+              .map((c) =>
+                this.resolveFacetValue(c as Record<string, unknown>, yFacet)
+              )
               .filter((v) => v != null)
               .map((v) => String(v))
           ),
@@ -396,13 +621,17 @@ export class GridRenderingEngine {
     // NOTE: xFacet → rows (X-Plane labeled "Rows"), yFacet → columns (Y-Plane labeled "Columns")
     if (
       xFacet &&
-      cards.some((c) => (c as Record<string, unknown>)[xFacet] == null)
+      cards.some(
+        (c) => this.resolveFacetValue(c as Record<string, unknown>, xFacet) == null
+      )
     ) {
       rows.push('Unassigned'); // Fixed: xFacet null values go to rows, not columns
     }
     if (
       yFacet &&
-      cards.some((c) => (c as Record<string, unknown>)[yFacet] == null)
+      cards.some(
+        (c) => this.resolveFacetValue(c as Record<string, unknown>, yFacet) == null
+      )
     ) {
       columns.push('Unassigned'); // Fixed: yFacet null values go to columns, not rows
     }
@@ -424,20 +653,21 @@ export class GridRenderingEngine {
     card: unknown,
     headers: GridHeaders
   ): { row: number; col: number } {
-    if (!this.currentProjection) {
+    const projection = this.getActiveProjection();
+    if (!projection) {
       return { row: -1, col: -1 };
     }
 
     // NOTE: X-Plane (labeled "Rows" in Navigator) → row position
     //       Y-Plane (labeled "Columns" in Navigator) → col position
-    const xFacet = this.currentProjection.xAxis?.facet;
-    const yFacet = this.currentProjection.yAxis?.facet;
+    const xFacet = projection.xAxis?.facet;
+    const yFacet = projection.yAxis?.facet;
     const cardRecord = card as Record<string, unknown>;
 
     // X-Plane → row position (vertical axis)
     let row = -1;
     if (xFacet) {
-      const xValue = cardRecord[xFacet];
+      const xValue = this.resolveFacetValue(cardRecord, xFacet);
       row =
         xValue != null
           ? headers.rows.indexOf(String(xValue))
@@ -447,7 +677,7 @@ export class GridRenderingEngine {
     // Y-Plane → col position (horizontal axis)
     let col = -1;
     if (yFacet) {
-      const yValue = cardRecord[yFacet];
+      const yValue = this.resolveFacetValue(cardRecord, yFacet);
       col =
         yValue != null
           ? headers.columns.indexOf(String(yValue))
@@ -462,13 +692,14 @@ export class GridRenderingEngine {
    * Handles both single-facet and stacked (multi-facet) axes
    */
   private computeAllPositions(cards: unknown[]): void {
-    if (!this.currentProjection) {
+    const projection = this.getActiveProjection();
+    if (!projection) {
       return;
     }
 
     // Check if axes are stacked (multiple facets)
-    const xFacets = this.currentProjection.xAxis?.facets;
-    const yFacets = this.currentProjection.yAxis?.facets;
+    const xFacets = projection.xAxis?.facets;
+    const yFacets = projection.yAxis?.facets;
     const xIsStacked = xFacets && xFacets.length > 1;
     const yIsStacked = yFacets && yFacets.length > 1;
 
@@ -478,8 +709,8 @@ export class GridRenderingEngine {
       yIsStacked,
       xFacets,
       yFacets,
-      xFacet: this.currentProjection.xAxis?.facet,
-      yFacet: this.currentProjection.yAxis?.facet,
+      xFacet: projection.xAxis?.facet,
+      yFacet: projection.yAxis?.facet,
     });
 
     // For stacked axes, compute positions based on composite keys
@@ -521,6 +752,9 @@ export class GridRenderingEngine {
     xFacets: string[] | undefined,
     yFacets: string[] | undefined
   ): void {
+    const projection = this.getActiveProjection();
+    if (!projection) return;
+
     // Build composite keys for rows (X-Plane → "Rows" in Navigator)
     const rowKeys = new Map<string, number>();
     if (xFacets && xFacets.length > 0) {
@@ -534,12 +768,12 @@ export class GridRenderingEngine {
       sortedKeys.forEach((key, index) => {
         rowKeys.set(key, index);
       });
-    } else if (this.currentProjection?.xAxis?.facet) {
+    } else if (projection.xAxis?.facet) {
       // Single facet fallback
-      const facet = this.currentProjection.xAxis.facet;
+      const facet = projection.xAxis.facet;
       const uniqueValues = new Set<string>();
       cards.forEach((card) => {
-        const value = (card as Record<string, unknown>)[facet];
+        const value = this.resolveFacetValue(card as Record<string, unknown>, facet);
         uniqueValues.add(value != null ? String(value) : 'Unassigned');
       });
       Array.from(uniqueValues).sort().forEach((value, index) => {
@@ -560,12 +794,12 @@ export class GridRenderingEngine {
       sortedKeys.forEach((key, index) => {
         columnKeys.set(key, index);
       });
-    } else if (this.currentProjection?.yAxis?.facet) {
+    } else if (projection.yAxis?.facet) {
       // Single facet fallback
-      const facet = this.currentProjection.yAxis.facet;
+      const facet = projection.yAxis.facet;
       const uniqueValues = new Set<string>();
       cards.forEach((card) => {
-        const value = (card as Record<string, unknown>)[facet];
+        const value = this.resolveFacetValue(card as Record<string, unknown>, facet);
         uniqueValues.add(value != null ? String(value) : 'Unassigned');
       });
       Array.from(uniqueValues).sort().forEach((value, index) => {
@@ -593,8 +827,11 @@ export class GridRenderingEngine {
       if (xFacets && xFacets.length > 0) {
         const xKey = this.buildCompositeKey(card, xFacets);
         cardRecord._projectedRow = rowKeys.get(xKey) ?? -1;
-      } else if (this.currentProjection?.xAxis?.facet) {
-        const value = cardRecord[this.currentProjection.xAxis.facet];
+      } else if (projection.xAxis?.facet) {
+        const value = this.resolveFacetValue(
+          cardRecord,
+          projection.xAxis.facet
+        );
         const key = value != null ? String(value) : 'Unassigned';
         cardRecord._projectedRow = rowKeys.get(key) ?? -1;
       } else {
@@ -605,8 +842,11 @@ export class GridRenderingEngine {
       if (yFacets && yFacets.length > 0) {
         const yKey = this.buildCompositeKey(card, yFacets);
         cardRecord._projectedCol = columnKeys.get(yKey) ?? -1;
-      } else if (this.currentProjection?.yAxis?.facet) {
-        const value = cardRecord[this.currentProjection.yAxis.facet];
+      } else if (projection.yAxis?.facet) {
+        const value = this.resolveFacetValue(
+          cardRecord,
+          projection.yAxis.facet
+        );
         const key = value != null ? String(value) : 'Unassigned';
         cardRecord._projectedCol = columnKeys.get(key) ?? -1;
       } else {
@@ -622,7 +862,7 @@ export class GridRenderingEngine {
   private buildCompositeKey(card: unknown, facets: string[]): string {
     const cardRecord = card as Record<string, unknown>;
     const parts = facets.map((facet) => {
-      const value = cardRecord[facet];
+      const value = this.resolveFacetValue(cardRecord, facet);
       return value != null ? String(value) : 'Unassigned';
     });
     return parts.join('|');
@@ -685,6 +925,8 @@ export class GridRenderingEngine {
 
     // Compute positions from projection or use simple grid layout
     if (this.currentData.cards) {
+      this.effectiveProjection = this.resolveProjectionFallback(this.currentData.cards);
+
       if (this.currentProjection) {
         this.computeAllPositions(this.currentData.cards);
       } else {
@@ -1002,7 +1244,8 @@ export class GridRenderingEngine {
    * Render headers from projection - supports both single and stacked facets
    */
   private renderProjectionHeaders(): void {
-    if (!this.currentProjection) return;
+    const projection = this.getActiveProjection();
+    if (!projection) return;
     // IMPORTANT: Do not rebuild headers from projected index values here.
     // Header order must stay coupled to the facet-derived header arrays created
     // during computeAllPositions/computeStackedPositions, otherwise headers drift
@@ -1013,24 +1256,24 @@ export class GridRenderingEngine {
     if (!this.currentHeaders) {
       this.currentHeaders = { columns: [], rows: [] };
     }
-    if (this.currentProjection.xAxis?.facet && this.currentHeaders.rows.length === 0) {
+    if (projection.xAxis?.facet && this.currentHeaders.rows.length === 0) {
       this.currentHeaders.rows = ['Unassigned'];
     }
-    if (this.currentProjection.yAxis?.facet && this.currentHeaders.columns.length === 0) {
+    if (projection.yAxis?.facet && this.currentHeaders.columns.length === 0) {
       this.currentHeaders.columns = ['Unassigned'];
     }
 
     // Check if X-axis has stacked facets (multiple facets assigned)
-    const xAxisStacked = (this.currentProjection.xAxis?.facets?.length ?? 0) > 1;
-    const yAxisStacked = (this.currentProjection.yAxis?.facets?.length ?? 0) > 1;
+    const xAxisStacked = (projection.xAxis?.facets?.length ?? 0) > 1;
+    const yAxisStacked = (projection.yAxis?.facets?.length ?? 0) > 1;
 
     // DIAGNOSTIC: Log stacked header detection (always visible)
     superGridLogger.debug('[SuperGrid Headers]', {
-      xAxis: this.currentProjection.xAxis?.facet || 'none',
-      xFacets: this.currentProjection.xAxis?.facets || [],
+      xAxis: projection.xAxis?.facet || 'none',
+      xFacets: projection.xAxis?.facets || [],
       xAxisStacked,
-      yAxis: this.currentProjection.yAxis?.facet || 'none',
-      yFacets: this.currentProjection.yAxis?.facets || [],
+      yAxis: projection.yAxis?.facet || 'none',
+      yFacets: projection.yAxis?.facets || [],
       yAxisStacked,
       willRenderStacked: xAxisStacked || yAxisStacked,
       densityMode: this.densityState?.extentDensity || 'default',
