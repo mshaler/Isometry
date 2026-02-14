@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 80 (Notebook Integration)
-Plan: 01 of 2 complete
-Status: In progress — Plan 80-01 complete
-Last activity: 2026-02-13 — Completed 80-01-PLAN.md (Context wiring + collapsible panel skeleton)
+Phase: 84 (Cards & Connections)
+Plan: 02 of 4 complete
+Status: In progress — Plan 84-02 complete
+Last activity: 2026-02-13 — Completed 84-02-PLAN.md (TypeScript Card/Connection types)
 
-Progress (v5.1 Notebook Integration): [###############               ] 50% (1/2 plans)
+Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 plans)
 
 ## Current Milestone: v5.1 Notebook Integration
 
@@ -149,6 +149,12 @@ Progress (v5.1 Notebook Integration): [###############               ] 50% (1/2 
 ## Accumulated Context
 
 ### Decisions
+
+**Phase 84-02 decisions (Cards & Connections - TypeScript Types):**
+- CARD-TYPE-01: CardType constrained to 4 types (note/person/event/resource) - no expansion
+- CARD-TYPE-02: Connection uses label (string) instead of edge_type enum - schema-on-read
+- CARD-TYPE-03: SyncStatus field added for offline-first support (pending/synced/conflict/error)
+- CARD-TYPE-04: isCollective boolean only meaningful for PersonCard (groups vs individuals)
 
 **Phase 80-01 decisions (Notebook Integration - Context Wiring):**
 - PANEL-DEC-01: Use inline styles for max-height animation instead of Tailwind arbitrary values (Tailwind JIT can't detect dynamic classes)
@@ -567,6 +573,6 @@ Schema-on-read capability fully functional. Users can add arbitrary YAML frontma
 ## Session Continuity
 
 Last session: 2026-02-13
-Stopped at: Plan 80-01 complete — NotebookProvider wired, collapsible panel skeleton added
-Resume file: .planning/phases/80-notebook-integration/80-02-PLAN.md
-Next action: Execute 80-02-PLAN.md (Full NotebookLayout embedding with polish)
+Stopped at: Plan 84-02 complete — Card/Connection TypeScript types with type guards and row converters
+Resume file: .planning/phases/84-cards-and-connections/84-03-PLAN.md
+Next action: Execute 84-03-PLAN.md (Data layer integration - useCards hook and CardManager)

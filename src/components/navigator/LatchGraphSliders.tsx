@@ -424,4 +424,3 @@ export function useSliderFilters(
   };
 }
 
-export default LatchGraphSliders;
