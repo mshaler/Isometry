@@ -3,6 +3,7 @@ import {
   Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
   Save, AlertCircle, Settings, Plus
 } from 'lucide-react';
+import type { Editor } from '@tiptap/react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useTipTapEditor } from '@/hooks';
 import { useSQLite } from '../../db/SQLiteProvider';
@@ -10,6 +11,7 @@ import { useNotebook } from '../../contexts/NotebookContext';
 import { useSelection } from '../../state/SelectionContext';
 import PropertyEditor from './PropertyEditor';
 import { TipTapEditor, EditorToolbar, EditorStatusBar } from './editor';
+import { TemplatePickerModal } from './editor/TemplatePickerModal';
 
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
@@ -97,6 +99,8 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [propertiesExpanded, setPropertiesExpanded] = useState(false);
   const [propertyUpdateCount, setPropertyUpdateCount] = useState(0);
+  const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
+  const [templatePickerEditor, setTemplatePickerEditor] = useState<Editor | null>(null);
 
   // Use the new TipTap editor hook with integrated slash commands
   const {
@@ -215,12 +219,20 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       handleSendToShell(customEvent.detail.content);
     };
 
+    const handleOpenTemplatePicker = (event: Event) => {
+      const customEvent = event as CustomEvent<{ editor: Editor; insertPosition: number }>;
+      setTemplatePickerEditor(customEvent.detail.editor);
+      setIsTemplatePickerOpen(true);
+    };
+
     window.addEventListener('isometry:save-card', handleSaveCardEvent);
     window.addEventListener('isometry:send-to-shell', handleSendToShellEvent);
+    window.addEventListener('isometry:open-template-picker', handleOpenTemplatePicker);
 
     return () => {
       window.removeEventListener('isometry:save-card', handleSaveCardEvent);
       window.removeEventListener('isometry:send-to-shell', handleSendToShellEvent);
+      window.removeEventListener('isometry:open-template-picker', handleOpenTemplatePicker);
     };
   }, [handleSaveCard, handleSendToShell]);
 
@@ -413,6 +425,17 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
           )}
         </div>
       </div>
+
+      {/* Template Picker Modal (opened via /template slash command) */}
+      <TemplatePickerModal
+        isOpen={isTemplatePickerOpen}
+        onClose={() => {
+          setIsTemplatePickerOpen(false);
+          // Return focus to editor
+          templatePickerEditor?.commands.focus();
+        }}
+        editor={templatePickerEditor}
+      />
     </div>
   );
 }
