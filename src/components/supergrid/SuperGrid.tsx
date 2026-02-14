@@ -29,6 +29,7 @@ import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
 import type { FacetConfig } from '@/superstack/types/superstack';
 import { GridSqlHeaderAdapter } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
 import type { SqlHeaderAdapterConfig } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
+import { HeaderKeyboardController } from '@/d3/grid-rendering/HeaderKeyboardController';
 import * as d3 from 'd3';
 import { superGridLogger } from '@/utils/dev-logger';
 import './SuperStack.css';
@@ -214,6 +215,7 @@ export function SuperGrid({
 
   // Use header interactions hook for collapse/filter state (Phase 91-01)
   const {
+    collapsedIds,
     selectedHeaderId,
     handleHeaderToggle,
     handleHeaderClick: handleInteractionHeaderClick,
@@ -230,9 +232,17 @@ export function SuperGrid({
     },
   });
 
+  // Handle keyboard toggle - determines new collapsed state from collapsedIds (Phase 91-02)
+  const handleKeyboardToggle = useCallback((headerId: string) => {
+    const isCurrentlyCollapsed = collapsedIds.has(headerId);
+    handleHeaderToggle(headerId, !isCurrentlyCollapsed);
+  }, [collapsedIds, handleHeaderToggle]);
+
   // Create GridSqlHeaderAdapter ref for coordinating SQL-driven headers
   const svgRef = useRef<SVGSVGElement>(null);
   const sqlHeaderAdapterRef = useRef<GridSqlHeaderAdapter | null>(null);
+  // HeaderKeyboardController ref for keyboard navigation (Phase 91-02)
+  const keyboardControllerRef = useRef<HeaderKeyboardController | null>(null);
 
   // Initialize adapter when SVG ref is available
   useEffect(() => {
@@ -277,6 +287,47 @@ export function SuperGrid({
       sqlHeaderAdapterRef.current.updateSelectedHeader(selectedHeaderId);
     }
   }, [selectedHeaderId]);
+
+  // Initialize HeaderKeyboardController when SVG is ready (Phase 91-02)
+  useEffect(() => {
+    if (!svgRef.current || !sqlHeaderAdapterRef.current) return;
+
+    const container = d3.select(svgRef.current as SVGElement);
+
+    // Create keyboard controller
+    keyboardControllerRef.current = new HeaderKeyboardController(
+      container,
+      { enableKeyboardNavigation: true },
+      {
+        onFocusChange: (headerId) => {
+          sqlHeaderAdapterRef.current?.updateFocusedHeader(headerId);
+        },
+        onToggle: (headerId) => {
+          handleKeyboardToggle(headerId);
+        },
+        onSelect: (headerId) => {
+          handleHeaderSelect(headerId);
+        },
+      }
+    );
+
+    // Set initial header IDs for navigation
+    const headerIds = sqlHeaderAdapterRef.current.getHeaderIds();
+    keyboardControllerRef.current.setHeaderIds(headerIds);
+
+    return () => {
+      keyboardControllerRef.current?.destroy();
+      keyboardControllerRef.current = null;
+    };
+  }, [handleKeyboardToggle, handleHeaderSelect]);
+
+  // Update header IDs when trees change (Phase 91-02)
+  useEffect(() => {
+    if (keyboardControllerRef.current && sqlHeaderAdapterRef.current) {
+      const headerIds = sqlHeaderAdapterRef.current.getHeaderIds();
+      keyboardControllerRef.current.setHeaderIds(headerIds);
+    }
+  }, [columnTree, rowTree]);
 
   // Group nodes by grid coordinates
   // Supports stacked facets using composite keys (e.g., "folder|status")
