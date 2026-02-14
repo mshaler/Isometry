@@ -20,7 +20,8 @@ import {
   TerminalSpawnedMessage,
   TerminalExitMessage,
   TerminalErrorMessage,
-  TerminalReplayDataMessage
+  TerminalReplayDataMessage,
+  TerminalModeSwitchedMessage
 } from './terminalTypes';
 import { devLogger } from '../../utils/logging/dev-logger';
 
@@ -61,6 +62,14 @@ export class TerminalPTYServer {
         break;
       case 'terminal:replay':
         this.handleReplay(ws, message.sessionId);
+        break;
+      case 'terminal:switch-mode':
+        await this.handleModeSwitch(
+          ws,
+          message.sessionId,
+          message.mode,
+          message.preserveCwd !== false  // Default true
+        );
         break;
     }
   }
@@ -291,10 +300,136 @@ export class TerminalPTYServer {
     }
   }
 
+  /**
+   * Switch terminal mode (shell <-> claude-code)
+   *
+   * Implementation:
+   * 1. Get current session's working directory
+   * 2. Kill current PTY (gracefully)
+   * 3. Spawn new PTY with new mode
+   * 4. Preserve output buffer for context
+   */
+  private async handleModeSwitch(
+    ws: WebSocket,
+    sessionId: string,
+    newMode: TerminalMode,
+    preserveCwd: boolean
+  ): Promise<void> {
+    const session = this.sessions.get(sessionId);
+
+    if (!session) {
+      this.sendToClient(ws, {
+        type: 'terminal:error',
+        sessionId,
+        error: 'Session not found for mode switch'
+      });
+      return;
+    }
+
+    if (session.mode === newMode) {
+      // Already in requested mode
+      return;
+    }
+
+    devLogger.debug('Switching terminal mode', {
+      component: 'TerminalPTYServer',
+      sessionId,
+      fromMode: session.mode,
+      toMode: newMode
+    });
+
+    // Capture current working directory before killing
+    const currentCwd = preserveCwd ? session.config.cwd : session.config.cwd;
+
+    // Kill existing PTY
+    if (session.pty) {
+      session.pty.kill('SIGTERM');
+      session.pty = null;
+    }
+
+    // Update session mode
+    session.mode = newMode;
+
+    // Clear output buffer (fresh start for new mode)
+    session.outputBuffer.clear();
+
+    // Determine shell based on mode
+    // Note: Both modes spawn the user's shell - in claude-code mode,
+    // the user types 'claude' to start the claude CLI
+    const shell = session.config.shell || '/bin/zsh';
+
+    try {
+      const pty = spawn(shell, [], {
+        name: 'xterm-256color',
+        cols: session.config.cols || 80,
+        rows: session.config.rows || 24,
+        cwd: currentCwd,
+        env: {
+          ...process.env,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          // Add mode indicator env var
+          ISOMETRY_TERMINAL_MODE: newMode
+        }
+      });
+
+      session.pty = pty;
+
+      // Handle PTY output
+      pty.onData((data: string) => {
+        session.outputBuffer.append(data);
+        this.broadcastToSession(sessionId, {
+          type: 'terminal:output',
+          sessionId,
+          data
+        });
+      });
+
+      // Handle PTY exit
+      pty.onExit(({ exitCode, signal }) => {
+        this.broadcastToSession(sessionId, {
+          type: 'terminal:exit',
+          sessionId,
+          exitCode,
+          signal
+        });
+        setTimeout(() => this.sessions.delete(sessionId), 100);
+      });
+
+      // Notify client of successful mode switch
+      this.sendToClient(ws, {
+        type: 'terminal:mode-switched',
+        sessionId,
+        mode: newMode,
+        pid: pty.pid
+      });
+
+      devLogger.debug('Mode switch complete', {
+        component: 'TerminalPTYServer',
+        sessionId,
+        mode: newMode,
+        pid: pty.pid
+      });
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Mode switch failed';
+      this.sendToClient(ws, {
+        type: 'terminal:error',
+        sessionId,
+        error: errorMsg
+      });
+    }
+  }
+
   // Helper methods
   private sendToClient(
     ws: WebSocket,
-    message: TerminalSpawnedMessage | TerminalExitMessage | TerminalErrorMessage | TerminalReplayDataMessage
+    message:
+      | TerminalSpawnedMessage
+      | TerminalExitMessage
+      | TerminalErrorMessage
+      | TerminalReplayDataMessage
+      | TerminalModeSwitchedMessage
   ): void {
     if (ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
