@@ -264,10 +264,10 @@ Plans:
 **Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 94-01-PLAN.md — Markdown serialization fix via @tiptap/markdown (FOUND-01)
-- [ ] 94-02-PLAN.md — Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
-- [ ] 94-03-PLAN.md — Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
-- [ ] 94-04-PLAN.md — Word count + Undo/Redo polish (POLISH-01, POLISH-02)
+- [x] 94-01-PLAN.md — Markdown serialization fix via @tiptap/markdown (FOUND-01)
+- [x] 94-02-PLAN.md — Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
+- [x] 94-03-PLAN.md — Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
+- [x] 94-04-PLAN.md — Word count + Undo/Redo polish (POLISH-01, POLISH-02)
 
 ### Phase 95: Data Layer & Backlinks
 **Goal**: Templates system with sql.js storage and backlinks panel for Obsidian-style graph navigation
@@ -411,10 +411,10 @@ Plans:
 | 86-88 | v6.0 | 0/0 | Deferred | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
-| 91. Interactions | v6.1 | 0/2 | Planned | - |
+| 91. Interactions | v6.1 | 0/0 | Not started | - |
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
-| 94. Foundation & Critical Fixes | v6.2 | 0/4 | Planned | - |
+| 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 95. Data Layer & Backlinks | v6.2 | 0/0 | Not started | - |
 | 96. Block Types & Slash Commands | v6.2 | 0/0 | Not started | - |
 | 97. Inline Properties | v6.2 | 0/0 | Not started | - |
@@ -422,4 +422,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (Phase 91 plans created)*
+*Last updated: 2026-02-14 (Phase 94 complete)*
