@@ -84,7 +84,7 @@ export function usePAFVProjection(
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
         COUNT(CASE WHEN status = 'blocked' THEN 1 END) as blocked_count,
         GROUP_CONCAT(DISTINCT tags) as all_tags
-      FROM nodes
+      FROM cards
       ${whereClause}
       ${groupBy}
       ORDER BY ${yAxis}, ${xAxis}${zAxis ? ', ' + zAxis : ''}
@@ -146,7 +146,7 @@ export function useAxisValues(
     SELECT
       ${columnName} as value,
       COUNT(*) as count
-    FROM nodes
+    FROM cards
     WHERE deleted_at IS NULL
       AND ${columnName} IS NOT NULL
       AND ${columnName} != ''
@@ -214,7 +214,7 @@ export function useSearchProjection(
                WHEN n.content LIKE ? THEN 0.6
                ELSE 0.4
              END as search_rank
-      FROM nodes n
+      FROM cards n
       WHERE (
         n.name LIKE ? OR
         n.summary LIKE ? OR
@@ -337,7 +337,7 @@ export function useTimeProjection(
         COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
         COUNT(CASE WHEN status = 'blocked' THEN 1 END) as blocked_count,
         GROUP_CONCAT(DISTINCT tags) as all_tags
-      FROM nodes
+      FROM cards
       WHERE deleted_at IS NULL
         AND ${timeField} IS NOT NULL
       GROUP BY ${groupByFields}

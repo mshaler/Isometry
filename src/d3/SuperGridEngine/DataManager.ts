@@ -331,6 +331,7 @@ export class SuperGridDataManager {
       const groupBy = groupByClause ? `GROUP BY ${groupByClause}` : '';
 
       // Direct sql.js query - synchronous execution in same memory space
+      // Uses cards table (migrated from nodes in Phase 84)
       const dataQuery = `
         SELECT
           ${xAxisField} as x_value,
@@ -340,7 +341,7 @@ export class SuperGridDataManager {
           GROUP_CONCAT(name, '|') as card_names,
           AVG(priority) as avg_priority,
           status
-        FROM nodes
+        FROM cards
         ${whereClause}
         ${groupBy ? groupBy + ', ' + xAxisField + ', ' + yAxisField : `GROUP BY ${xAxisField}, ${yAxisField}`}
         ORDER BY ${yAxisField}, ${xAxisField}
