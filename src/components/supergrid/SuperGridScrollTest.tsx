@@ -44,9 +44,9 @@ export function SuperGridScrollTest(): JSX.Element {
     result: importResult,
   } = useAltoIndexImport();
 
-  // Load all nodes
+  // Load only alto-index nodes (exclude sample data)
   const { data: allNodes, loading: nodesLoading } = useSQLiteQuery<Node>(
-    `SELECT * FROM nodes WHERE deleted_at IS NULL ORDER BY name ASC`,
+    `SELECT * FROM nodes WHERE deleted_at IS NULL AND source = 'alto-index' ORDER BY name ASC`,
     []
   );
 
