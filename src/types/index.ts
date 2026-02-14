@@ -4,6 +4,29 @@ export * from './filter';
 export * from './view';
 export * from './pafv';
 
+// Card types (Phase 84 - new data model)
+export type {
+  Card,
+  CardType,
+  NoteCard,
+  PersonCard,
+  EventCard,
+  ResourceCard,
+  Connection,
+  SyncStatus,
+} from './card';
+
+export {
+  isNote,
+  isPerson,
+  isEvent,
+  isResource,
+  isValidCardType,
+  rowToCard,
+  rowToConnection,
+  cardToRow,
+} from './card';
+
 // Isometry LPG types
 export * from './lpg';
 
