@@ -14,9 +14,9 @@
  * Phase 90-02: Tree Builder from Query Results
  */
 
-import type { HeaderTree } from '../../superstack/types/superstack';
+import type { HeaderTree, HeaderNode } from '../../superstack/types/superstack';
 import { NestedHeaderRenderer } from './NestedHeaderRenderer';
-import type { NestedHeaderConfig } from './NestedHeaderRenderer';
+import type { NestedHeaderConfig, NestedHeaderData } from './NestedHeaderRenderer';
 import { superGridLogger } from '../../utils/dev-logger';
 import * as d3 from 'd3';
 
@@ -31,6 +31,12 @@ export interface SqlHeaderAdapterConfig {
   cellHeight: number;
   padding?: number;
   animationDuration?: number;
+  /** Callback when header collapse state is toggled */
+  onHeaderToggle?: (headerId: string, collapsed: boolean) => void;
+  /** Callback when header is clicked for filtering */
+  onHeaderFilter?: (node: HeaderNode) => void;
+  /** Callback when header is selected (visual highlight) */
+  onHeaderSelect?: (nodeId: string | null) => void;
 }
 
 /**
@@ -130,6 +136,117 @@ export class GridSqlHeaderAdapter {
       columns: this.columnHeaderTree?.leafCount ?? 0,
       rows: this.rowHeaderTree?.leafCount ?? 0,
     });
+
+    // Attach event handlers after rendering
+    this.attachHeaderEventHandlers();
+  }
+
+  /**
+   * Attach click event handlers to all header elements.
+   * Must be called AFTER renderSqlDrivenHeaders().
+   *
+   * Click handling:
+   * - Click on collapse icon (.collapse-icon) -> toggles collapse
+   * - Click elsewhere on header -> selects and filters
+   */
+  public attachHeaderEventHandlers(): void {
+    const container = this.container;
+
+    // Select all header groups (both row and column)
+    const headers = container.selectAll('.row-header, .col-header');
+
+    headers.on('click', (event: MouseEvent) => {
+      event.stopPropagation();
+
+      // Get the header data from the element
+      const target = event.currentTarget as SVGGElement;
+      const selection = d3.select(target);
+      const headerData = selection.datum() as NestedHeaderData | undefined;
+
+      if (!headerData) return;
+
+      const headerId = headerData.key;
+
+      // Determine click intent based on target
+      // For now: all clicks go to filter (collapse icons not yet rendered)
+      // Future: detect .collapse-icon class on event.target
+
+      // Map NestedHeaderData back to HeaderNode for filter callback
+      const node = this.findHeaderNodeByKey(headerId);
+      if (node) {
+        // Select this header
+        this.config.onHeaderSelect?.(headerId);
+        // Trigger filter callback
+        this.config.onHeaderFilter?.(node);
+      }
+
+      superGridLogger.debug('[GridSqlHeaderAdapter] Header clicked', {
+        headerId,
+        nodeFound: !!node,
+      });
+    });
+  }
+
+  /**
+   * Find HeaderNode from key (path-based lookup in stored trees).
+   * Key format from NestedHeaderRenderer: "{axis}_{level}_{pathJoinedByPipe}"
+   */
+  private findHeaderNodeByKey(key: string): HeaderNode | null {
+    // Key format: "x_0_Work" or "y_1_Work|Active"
+    const isColumn = key.startsWith('x_');
+    const tree = isColumn ? this.columnHeaderTree : this.rowHeaderTree;
+    if (!tree) return null;
+
+    // Extract the path portion from key: skip axis prefix and level
+    // "x_0_Work" -> "Work", "y_1_Work|Active" -> "Work|Active"
+    const keyParts = key.split('_');
+    if (keyParts.length < 3) return null;
+
+    // Rejoin everything after axis and level (handles values containing underscores)
+    const pathPart = keyParts.slice(2).join('_');
+    const pathSegments = pathPart.split('|');
+
+    return this.searchTreeByPath(tree.roots, pathSegments);
+  }
+
+  /**
+   * Search tree for node matching path segments.
+   */
+  private searchTreeByPath(nodes: HeaderNode[], pathParts: string[]): HeaderNode | null {
+    if (pathParts.length === 0) return null;
+
+    for (const node of nodes) {
+      if (node.value === pathParts[0]) {
+        // If this is the last path segment, we found our node
+        if (pathParts.length === 1) return node;
+        // Otherwise, search children for remaining path
+        return this.searchTreeByPath(node.children, pathParts.slice(1));
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Update visual highlight for selected header.
+   * Adds 'selected' class and updates stroke styling.
+   */
+  public updateSelectedHeader(selectedId: string | null): void {
+    this.container.selectAll('.row-header, .col-header')
+      .classed('selected', function() {
+        const data = d3.select(this).datum() as NestedHeaderData | undefined;
+        return data?.key === selectedId;
+      })
+      .select('rect')
+      .attr('stroke', function() {
+        const parent = d3.select((this as SVGRectElement).parentElement);
+        const data = parent.datum() as NestedHeaderData | undefined;
+        return data?.key === selectedId ? '#2563eb' : '#cbd5e1';
+      })
+      .attr('stroke-width', function() {
+        const parent = d3.select((this as SVGRectElement).parentElement);
+        const data = parent.datum() as NestedHeaderData | undefined;
+        return data?.key === selectedId ? 2 : 1;
+      });
   }
 
   /**
