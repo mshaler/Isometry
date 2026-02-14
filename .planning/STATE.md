@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 90 of 93 (SQL Integration)
-Plan: 2 of 2 complete
-Status: Phase 90 complete ✓
-Last activity: 2026-02-14 — Completed 90-02-PLAN.md (Tree Builder from Query Results)
+Phase: 94 of 98 (Foundation & Critical Fixes - Capture Writing Surface v6.2)
+Plan: 1 of 4 complete
+Status: Phase 94 in progress
+Last activity: 2026-02-14 — Completed 94-01-PLAN.md (Markdown Serialization Fix)
 
-Progress (Phase 90): [██████████] 100% (2 of 2 plans)
-Overall: [████████░░] 90% (90 of ~130 total phases across all milestones)
+Progress (Phase 94): [██▓░░░░░░░] 25% (1 of 4 plans)
+Overall: [████████░░] 94% (94 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -25,14 +25,18 @@ Overall: [████████░░] 90% (90 of ~130 total phases across al
 **Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
 
 **Phases:**
-- Phase 94: Foundation & Critical Fixes (11 requirements) — Ready to plan
+- Phase 94: Foundation & Critical Fixes (11 requirements) — IN PROGRESS (1/4 plans complete)
+  - [x] 94-01: Markdown Serialization Fix (~5m) ✓
+  - [ ] 94-02: Paste Sanitization + Tippy.js Cleanup
+  - [ ] 94-03: Apple Notes Keyboard Shortcuts
+  - [ ] 94-04: Word Count + Undo/Redo Polish
 - Phase 95: Data Layer & Backlinks (9 requirements)
 - Phase 96: Block Types & Slash Commands (14 requirements)
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 94 planned (4 plans), ready for `/gsd:execute-phase 94`
+**Current:** Phase 94 execution in progress (plan 94-01 complete)
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -77,6 +81,7 @@ Overall: [████████░░] 90% (90 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 94 (Foundation Fixes) | 1/4 | ~5.1m | In Progress |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
@@ -91,7 +96,9 @@ Overall: [████████░░] 90% (90 of ~130 total phases across al
 Recent decisions affecting v6.2 work:
 
 **Capture Writing Surface (Phase 94-98):**
-- CAPTURE-01: Migrate from getText() to @tiptap/markdown for lossless serialization (Phase 94 blocker)
+- MD-01: Use @tiptap/markdown extension with storage API (official TipTap approach) ✅ Implemented 94-01
+- MD-02: Manual test plan instead of automated unit tests (TipTap test environment would delay fix) ✅ Implemented 94-01
+- CAPTURE-01: ~~Migrate from getText() to @tiptap/markdown~~ ✅ COMPLETE (94-01)
 - CAPTURE-02: DOMPurify for paste sanitization (security requirement)
 - CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
 - CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
@@ -135,29 +142,30 @@ None yet.
 **Technical Debt:**
 - knip unused exports: 275 reported (baseline ratchet at 1000, needs cleanup)
 - Directory health: src/services (22/15 files)
+- TipTap automated tests: Manual test plan in place, need test infrastructure (follow-up to 94-01)
 
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 90 complete (SQL Integration), ready for Phase 91 (Interactions)
-Resume file: .planning/phases/90-sql-integration/90-02-SUMMARY.md
+Stopped at: Phase 94 plan 94-01 complete (Markdown Serialization Fix)
+Resume file: .planning/phases/94-foundation-critical-fixes/94-01-SUMMARY.md
 
-**Phase 90 Complete:**
-- 90-01: Header Discovery Query Generator (buildHeaderDiscoveryQuery, buildStackedHeaderQuery)
-- 90-02: Tree Builder from Query Results (HeaderDiscoveryService, useHeaderDiscovery, GridSqlHeaderAdapter)
-- SQL-driven headers integrated into SuperGrid with loading states and empty dataset handling
-- 9 tests pass (30 total in header-discovery.test.ts)
+**Phase 94 Plan 94-01 Complete:**
+- Eliminated critical data loss bug: getText() → @tiptap/markdown
+- Added Markdown extension to editor configuration
+- Replaced lossy serialization in onUpdate and saveNow
+- Created comprehensive manual test plan
+- All formatting (bold, italic, lists, links, headings) now persists
+- Duration: ~5.1 minutes
+- Commits: 29d6ecb0, 60ee0a36
 
-**Next step:** Begin Phase 91 planning (Interactions)
-
-**Phase 94 Plans Created:**
-- 94-01-PLAN.md: Markdown serialization fix via @tiptap/markdown (FOUND-01)
+**Phase 94 Remaining Plans:**
 - 94-02-PLAN.md: Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
 - 94-03-PLAN.md: Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
 - 94-04-PLAN.md: Word count + Undo/Redo polish (POLISH-01, POLISH-02)
 
 **Wave structure:**
-- Wave 1: 94-01 (critical blocker), 94-02 (security/memory) — parallel
+- Wave 1: 94-01 ✅ (critical blocker), 94-02 (security/memory) — parallel
 - Wave 2: 94-03 (shortcuts), 94-04 (polish) — depend on 94-01
 
-**Next step:** Execute `/gsd:execute-phase 94`
+**Next step:** Execute plan 94-02 (or continue Phase 94 execution)
