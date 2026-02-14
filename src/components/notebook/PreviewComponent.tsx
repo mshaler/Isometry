@@ -24,8 +24,10 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState<PreviewTab>('supergrid');
   const [dataPointCount, setDataPointCount] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -101,6 +103,45 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
     setZoom(zoom - 25);
   }, [zoom, setZoom]);
 
+  // Fullscreen handler using Fullscreen API
+  const handleFullscreen = useCallback(() => {
+    if (!containerRef.current) return;
+
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.error('Fullscreen request failed:', err);
+      });
+    } else {
+      document.exitFullscreen().then(() => {
+        setIsFullscreen(false);
+      });
+    }
+  }, []);
+
+  // Listen for fullscreen changes (e.g., user presses Escape)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  // Universal refresh handler that works for all tabs
+  const handleRefresh = useCallback(() => {
+    if (activeTab === 'web-preview') {
+      refresh(); // Use web preview refresh
+    } else {
+      // For other tabs, trigger a re-render by toggling a state
+      // This will cause SuperGrid, Network, etc. to refetch data
+      setDataPointCount(prev => prev); // Force re-render signal
+      // Also refresh the web preview hook state
+      refresh();
+    }
+  }, [activeTab, refresh]);
+
   // Tab definitions with icons and labels
   const tabs: Array<{ id: PreviewTab; icon: typeof Grid3x3; label: string; description: string }> = [
     { id: 'supergrid', icon: Grid3x3, label: 'SuperGrid', description: 'Polymorphic data projection' },
@@ -141,7 +182,10 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   }
 
   return (
-    <div className={`${className} ${theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'} border rounded-lg flex flex-col`}>
+    <div
+      ref={containerRef}
+      className={`${className} ${theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'} border rounded-lg flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 rounded-none' : ''}`}
+    >
       {/* Header */}
       <div className={`flex items-center justify-between p-2 ${theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100'} rounded-t-lg border-b`}>
         <div className="flex items-center gap-2">
@@ -211,7 +255,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
           )}
 
           <button
-            onClick={refresh}
+            onClick={handleRefresh}
             disabled={isLoading}
             className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors disabled:opacity-50`}
             title="Refresh"
@@ -219,10 +263,15 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             <RotateCcw size={14} className={`text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
           <button
+            onClick={handleFullscreen}
             className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors`}
-            title="Fullscreen"
+            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
           >
-            <Maximize size={14} className="text-gray-600" />
+            {isFullscreen ? (
+              <Minimize2 size={14} className="text-gray-600" />
+            ) : (
+              <Maximize size={14} className="text-gray-600" />
+            )}
           </button>
           <button
             onClick={() => setIsMinimized(true)}

@@ -24,22 +24,29 @@ PAFV context integration, 2D cell positioning with _projectedRow/_projectedCol, 
 ### v4.5 Stacked/Nested Headers (SHIPPED)
 Multi-facet stacked axis support with d3.stratify hierarchy, multi-level header rendering, header click sorting with visual indicators. Phase 60.
 
-### v4.6 SuperGrid Polish (IN PROGRESS)
-D3 animated view transitions with selection persistence. Phase 61 complete, Phase 62 (Density Filtering) pending.
+### v4.6 SuperGrid Polish (SHIPPED)
+D3 animated view transitions with selection persistence. Phases 61-62 complete.
 
-## Current Milestone: v5.1 Notebook Integration
+### v5.1 Notebook Integration (SHIPPED)
+Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 80 complete.
 
-**Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
+### v5.2 Cards & Connections (SHIPPED)
+Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
+
+## Current Milestone: v6.0 Interactive Shell
+
+**Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
 
 **Target features:**
-- Collapsible panel UI (default collapsed, expand/collapse toggle)
-- All three Notebook panes (Capture, Shell, Preview) when expanded
-- Context provider wiring (NotebookProvider in tree)
-- Theme-consistent styling (NeXTSTEP/Modern)
+- **Terminal Tab**: Dual-mode execution (Claude Code subprocess + native shell) with toggle
+- **Claude AI Tab**: Full MCP server protocol with resources, tools, and prompts
+- **GSD GUI Tab**: Bidirectional sync with `.planning/` files (read + write)
 
 **Reference Documents:**
-- `src/components/notebook/NotebookLayout.tsx` — Existing notebook component
-- `src/components/IntegratedLayout.tsx` — Integration target
+- `src/components/notebook/ShellComponent.tsx` — Shell container with tabs
+- `src/components/shell/Terminal.tsx` — xterm.js terminal component
+- `src/components/gsd/GSDInterface.tsx` — GSD GUI component
+- `src/services/claude-code/` — Claude Code services
 
 ## Previous Milestone: v5.0 SuperGrid MVP (COMPLETE)
 

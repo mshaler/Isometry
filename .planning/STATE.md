@@ -2,21 +2,32 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-13)
+See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Polymorphic data projection platform with PAFV spatial projection system
-**Current focus:** v5.1 Notebook Integration — Collapsible NotebookLayout panel in IntegratedLayout
+**Current focus:** v6.0 Interactive Shell — Complete Shell tabs (Terminal, Claude AI, GSD GUI)
 
 ## Current Position
 
-Phase: 80 (Notebook Integration)
-Plan: 02 of 2 complete
-Status: MILESTONE COMPLETE
-Last activity: 2026-02-14 — Completed 80-02-PLAN.md (Full NotebookLayout embedding with polish)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-14 — Milestone v6.0 started
 
-Progress (v5.1 Notebook Integration): [##############################] 100% (2/2 plans)
+Progress (v6.0 Interactive Shell): [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
-## Current Milestone: v5.1 Notebook Integration — COMPLETE
+## Current Milestone: v6.0 Interactive Shell
+
+**Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
+
+**Target Features:**
+- **Terminal Tab**: Dual-mode execution (Claude Code subprocess + native shell) with toggle
+- **Claude AI Tab**: Full MCP server protocol with resources, tools, and prompts
+- **GSD GUI Tab**: Bidirectional sync with `.planning/` files (read + write)
+
+**Requirements:** (pending definition)
+
+## Previous Milestone: v5.1 Notebook Integration — COMPLETE
 
 **Goal:** Integrate NotebookLayout into IntegratedLayout as a collapsible panel below Command Bar.
 **Completed:** 2026-02-14
