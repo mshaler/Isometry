@@ -12,6 +12,14 @@ import { stat } from 'fs/promises';
 import { join, relative } from 'path';
 import { ClaudeCodeCommand, CommandExecution } from './claudeCodeDispatcher';
 import { devLogger } from '../../utils/logging';
+import { TerminalPTYServer } from '../terminal/terminalPTYServer';
+import {
+  isTerminalMessage,
+  isCommandMessage,
+  isFileMonitoringMessage,
+  isPingMessage
+} from '../terminal/messageRouter';
+import type { TerminalClientMessage } from '../terminal/terminalTypes';
 
 export interface ServerMessage {
   type: 'command' | 'cancel' | 'input' | 'start_file_monitoring' | 'stop_file_monitoring';
@@ -47,10 +55,12 @@ export class ClaudeCodeServer {
   private fileWatchers = new Map<string, FSWatcher>(); // sessionId -> watcher
   private monitoredPaths = new Map<string, { path: string; sessionId: string }>(); // sessionId -> monitoring info
   private port: number;
+  private terminalServer: TerminalPTYServer;
 
   constructor(port: number = 8080) {
     this.port = port;
     this.wss = new WebSocketServer({ port });
+    this.terminalServer = new TerminalPTYServer();
     this.setupWebSocketHandlers();
   }
 
@@ -77,6 +87,7 @@ export class ClaudeCodeServer {
 
       ws.on('close', () => {
         devLogger.debug('GSD client disconnected', { component: 'ClaudeCodeServer' });
+        this.terminalServer.removeClient(ws);
       });
 
       ws.on('error', (error) => {
@@ -89,49 +100,70 @@ export class ClaudeCodeServer {
 
   /**
    * Handle incoming WebSocket messages
+   * Routes messages to appropriate handler based on message type
    */
-  private async handleMessage(ws: WebSocket, message: ServerMessage): Promise<void> {
-    devLogger.debug('Processing message type', { component: 'ClaudeCodeServer', messageType: message.type });
-    switch (message.type) {
-      case 'command':
-        if (message.command) {
-          devLogger.debug('Executing command', { component: 'ClaudeCodeServer', command: message.command.command, args: message.command.args });
-          await this.executeCommand(ws, message.command);
-        } else {
-          devLogger.debug('No command in message', { component: 'ClaudeCodeServer' });
-        }
-        break;
+  private async handleMessage(ws: WebSocket, message: unknown): Promise<void> {
+    devLogger.debug('Processing message', {
+      component: 'ClaudeCodeServer',
+      type: (message as Record<string, unknown>)?.type || 'unknown'
+    });
 
-      case 'cancel':
-        if (message.executionId) {
-          await this.cancelExecution(ws, message.executionId);
-        }
-        break;
-
-      case 'input':
-        if (message.executionId && message.input) {
-          await this.sendInput(ws, message.executionId, message.input);
-        }
-        break;
-
-      case 'start_file_monitoring':
-        if (message.projectPath && message.sessionId) {
-          await this.startFileMonitoring(ws, message.sessionId, message.projectPath);
-        }
-        break;
-
-      case 'stop_file_monitoring':
-        if (message.sessionId) {
-          await this.stopFileMonitoring(ws, message.sessionId);
-        }
-        break;
-
-      default:
-        ws.send(JSON.stringify({
-          type: 'error',
-          data: `Unknown message type: ${message.type}`
-        }));
+    // Handle ping (heartbeat) first
+    if (isPingMessage(message)) {
+      ws.send(JSON.stringify({ type: 'pong' }));
+      return;
     }
+
+    // Route terminal messages to PTY server
+    if (isTerminalMessage(message)) {
+      await this.terminalServer.handleMessage(ws, message as TerminalClientMessage);
+      return;
+    }
+
+    // Route file monitoring messages
+    if (isFileMonitoringMessage(message)) {
+      const msg = message as ServerMessage;
+      if (msg.type === 'start_file_monitoring' && msg.projectPath && msg.sessionId) {
+        await this.startFileMonitoring(ws, msg.sessionId, msg.projectPath);
+      } else if (msg.type === 'stop_file_monitoring' && msg.sessionId) {
+        await this.stopFileMonitoring(ws, msg.sessionId);
+      }
+      return;
+    }
+
+    // Route command messages (existing behavior)
+    if (isCommandMessage(message)) {
+      const msg = message as ServerMessage;
+      switch (msg.type) {
+        case 'command':
+          if (msg.command) {
+            devLogger.debug('Executing command', {
+              component: 'ClaudeCodeServer',
+              command: msg.command.command,
+              args: msg.command.args
+            });
+            await this.executeCommand(ws, msg.command);
+          }
+          break;
+        case 'cancel':
+          if (msg.executionId) {
+            await this.cancelExecution(ws, msg.executionId);
+          }
+          break;
+        case 'input':
+          if (msg.executionId && msg.input) {
+            await this.sendInput(ws, msg.executionId, msg.input);
+          }
+          break;
+      }
+      return;
+    }
+
+    // Unknown message type
+    ws.send(JSON.stringify({
+      type: 'error',
+      data: `Unknown message type: ${(message as Record<string, unknown>)?.type}`
+    }));
   }
 
   /**
@@ -562,6 +594,9 @@ export class ClaudeCodeServer {
         execution.process.kill('SIGTERM');
       }
     }
+
+    // Cleanup terminal sessions
+    this.terminalServer.cleanup();
 
     // Close all file watchers
     for (const [sessionId, watcher] of this.fileWatchers) {
