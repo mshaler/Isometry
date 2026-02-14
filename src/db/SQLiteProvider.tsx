@@ -9,6 +9,7 @@ import { createDatabaseOperations } from './operations';
 import { testDatabaseCapabilities, type DatabaseCapabilities } from './capabilities';
 import { createPersistenceOperations } from './persistence';
 import { SAMPLE_DATA_SQL } from './sample-data';
+import { seedBuiltInTemplates } from '../utils/editor/templates';
 
 /**
  * SQLiteProvider - Direct sql.js access for Isometry v4
@@ -321,6 +322,9 @@ export function SQLiteProvider({
             console.error('[SQLiteProvider] Failed to create facets:', createError);
           }
         }
+
+        // Seed built-in templates (uses INSERT OR IGNORE, safe to call on every init)
+        seedBuiltInTemplates(database);
 
         setDb(database);
 
