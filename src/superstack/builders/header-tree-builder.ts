@@ -213,6 +213,23 @@ function collectVisibleLeaves(nodes: HeaderNode[]): HeaderNode[] {
 }
 
 /**
+ * Toggle collapse state for a node and recalculate tree metrics.
+ * This is a convenience wrapper that combines findNodeById + toggle + recalculate.
+ *
+ * @param tree - The HeaderTree to modify (mutates in place)
+ * @param nodeId - ID of the node to toggle
+ * @returns true if node was found and toggled, false otherwise
+ */
+export function toggleHeaderCollapse(tree: HeaderTree, nodeId: string): boolean {
+  const node = findNodeById(tree, nodeId);
+  if (!node) return false;
+
+  node.collapsed = !node.collapsed;
+  recalculateTree(tree);
+  return true;
+}
+
+/**
  * Find a node by ID in the tree.
  */
 export function findNodeById(tree: HeaderTree, id: string): HeaderNode | null {
