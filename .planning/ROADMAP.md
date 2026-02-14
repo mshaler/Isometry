@@ -197,8 +197,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 90-01-PLAN.md - Query generator with facet type dispatch (SQL-01, SQL-02, SQL-03)
-- [ ] 90-02-PLAN.md - Service layer, React hook, and GridRenderingEngine integration (SQL-04, SQL-05)
+- [x] 90-01-PLAN.md - Query generator with facet type dispatch (SQL-01, SQL-02, SQL-03)
+- [x] 90-02-PLAN.md - Service layer, React hook, and GridRenderingEngine integration (SQL-04, SQL-05)
 
 ### Phase 91: Interactions
 **Goal**: Collapse/expand, click-to-filter, keyboard navigation
@@ -409,7 +409,7 @@ Plans:
 | 85. Backend Terminal | v6.0 | 0/5 | Planned | - |
 | 86-88 | v6.0 | 0/0 | Deferred | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
-| 90. SQL Integration | v6.1 | 0/2 | Not started | - |
+| 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 0/0 | Not started | - |
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
