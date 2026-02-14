@@ -190,4 +190,3 @@ export function Dropdown<T = string>({
   );
 }
 
-export default Dropdown;

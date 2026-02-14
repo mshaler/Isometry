@@ -135,4 +135,3 @@ export const createLogger = (_context: string): DevLogger => {
   return logger;
 };
 
-export default devLogger;

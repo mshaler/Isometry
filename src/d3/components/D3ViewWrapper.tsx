@@ -231,4 +231,3 @@ export function D3ViewWrapper<T extends CardValue = CardValue>({
   );
 }
 
-export default D3ViewWrapper;

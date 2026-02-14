@@ -382,4 +382,3 @@ export function ImportWizard({ isOpen, onClose, onImportComplete, folder }: Impo
   );
 }
 
-export default ImportWizard;

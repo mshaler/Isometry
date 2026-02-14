@@ -441,4 +441,3 @@ export const ConflictResolutionModal: React.FC<ConflictResolutionModalProps> = (
   );
 };
 
-export default ConflictResolutionModal;

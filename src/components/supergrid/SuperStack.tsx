@@ -157,27 +157,40 @@ export function SuperStack({
     );
   }
 
+  // Force horizontal text rendering to prevent garbled characters
+  // This is a nuclear fix that overrides any cached CSS with vertical writing-mode
+  const forceHorizontalText: React.CSSProperties = {
+    writingMode: 'horizontal-tb',
+    textOrientation: 'mixed',
+    direction: 'ltr',
+  };
+
   return (
-    <div className={`supergrid-stack supergrid-stack--${orientation}`}>
+    <div
+      className={`supergrid-stack supergrid-stack--${orientation}`}
+      style={forceHorizontalText}
+    >
       {headerLevels.map(level => (
         <div
           key={`level-${level.level}`}
           className={`supergrid-stack__level supergrid-stack__level--${level.level}`}
           data-axis={level.axis}
           data-facet={level.facet}
+          style={forceHorizontalText}
         >
           {level.values.map((headerValue, index) => (
             <div
               key={`${level.level}-${headerValue.value}-${index}`}
               className={`supergrid-stack__header`}
               style={{
-                [orientation === 'horizontal' ? 'gridColumnEnd' : 'gridRowEnd']: `span ${headerValue.span}`
+                [orientation === 'horizontal' ? 'gridColumnEnd' : 'gridRowEnd']: `span ${headerValue.span}`,
+                ...forceHorizontalText
               }}
               draggable={enableDragDrop}
               onDragStart={(e) => handleDragStart(e, level.level)}
               onClick={() => handleHeaderClick(level.level, headerValue.value, level.axis)}
             >
-              <span className="supergrid-stack__header-text">
+              <span className="supergrid-stack__header-text" style={forceHorizontalText}>
                 {headerValue.value}
               </span>
               {headerValue.count > 1 && (

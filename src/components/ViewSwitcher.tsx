@@ -237,4 +237,3 @@ export function useViewSwitcher(canvasId: string, defaultView: ViewType = ViewTy
   };
 }
 
-export default ViewSwitcher;

@@ -150,4 +150,3 @@ export function useWebSocketConnection(): UseWebSocketConnectionResult {
   };
 }
 
-export default useWebSocketConnection;

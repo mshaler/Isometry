@@ -138,4 +138,3 @@ export function GridContinuumSwitcher({
   );
 }
 
-export default GridContinuumSwitcher;

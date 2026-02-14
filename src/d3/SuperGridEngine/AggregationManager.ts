@@ -145,4 +145,3 @@ export class AggregationManager {
   }
 }
 
-export default AggregationManager;

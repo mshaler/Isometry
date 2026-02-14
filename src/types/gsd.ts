@@ -74,16 +74,6 @@ export interface GSDSessionState {
   showDetails: boolean;
 }
 
-export interface GSDActions {
-  sendChoice: (index: number) => void;
-  sendText: (text: string) => void;
-  sendFromCapture: () => void;
-  abort: () => void;
-  restart: () => void;
-  toggleDetails: () => void;
-  collapse: () => void;
-}
-
 export interface ChoicePromptProps {
   choices: GSDChoice[];
   multiSelect: boolean;

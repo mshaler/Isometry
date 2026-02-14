@@ -11,9 +11,6 @@ export interface Chip {
 // LATCH axis types (full names for clarity)
 export type LATCHAxis = 'location' | 'alphabet' | 'time' | 'category' | 'hierarchy';
 
-// Legacy abbreviation support
-export type LATCHAxisAbbr = 'L' | 'A' | 'T' | 'C' | 'H';
-
 // Plane types (visual dimensions)
 export type Plane = 'x' | 'y' | 'z' | 'color' | 'size' | 'shape';
 
@@ -122,10 +119,3 @@ export interface SortConfig {
   level: number;
 }
 
-// Legacy state for backward compatibility
-export interface LegacyPAFVState {
-  xAxis: string | null;
-  yAxis: string | null;
-  zAxis: string | null;
-  available: string[];
-}

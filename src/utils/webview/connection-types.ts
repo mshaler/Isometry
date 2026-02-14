@@ -26,13 +26,6 @@ export interface ConnectionMetrics {
   queuedMessages: number;
 }
 
-export interface ConnectionEvent {
-  type: 'connected' | 'disconnected' | 'reconnecting' | 'error' | 'quality_changed';
-  timestamp: Date;
-  data?: unknown;
-  error?: Error;
-}
-
 export interface ReconnectionConfig {
   maxAttempts: number;
   baseDelay: number; // Initial delay in ms
@@ -42,43 +35,3 @@ export interface ReconnectionConfig {
   enabled: boolean;
 }
 
-export interface ConnectionConfig {
-  heartbeatInterval: number; // ms
-  heartbeatTimeout: number; // ms
-  reconnection: ReconnectionConfig;
-  qualityThresholds: {
-    latency: { good: number; poor: number };
-    packetLoss: { good: number; poor: number };
-    stability: { good: number; poor: number };
-  };
-  circuitBreaker: {
-    enabled: boolean;
-    failureThreshold: number;
-    timeout: number;
-    monitoringPeriod: number;
-  };
-}
-
-export interface ConnectionManager {
-  // State management
-  getState(): ConnectionState;
-  getMetrics(): ConnectionMetrics;
-  getQuality(): ConnectionQuality;
-  
-  // Connection control
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
-  reconnect(): Promise<void>;
-  
-  // Monitoring
-  startMonitoring(): void;
-  stopMonitoring(): void;
-  
-  // Event handling
-  on(event: string, handler: (data: unknown) => void): unknown;
-  emit(event: string, data?: unknown): unknown;
-  
-  // Quality management
-  updateQuality(metrics: Partial<ConnectionQuality>): void;
-  getHistoricalQuality(timeRange: number): ConnectionQuality[];
-}

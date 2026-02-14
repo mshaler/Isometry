@@ -378,4 +378,3 @@ export function TimelineTab({
   );
 }
 
-export default TimelineTab;

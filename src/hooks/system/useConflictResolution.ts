@@ -398,4 +398,3 @@ export function useConflictResolution() {
   };
 }
 
-export default useConflictResolution;

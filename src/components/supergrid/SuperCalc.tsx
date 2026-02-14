@@ -632,4 +632,3 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
   );
 };
 
-export default SuperCalc;

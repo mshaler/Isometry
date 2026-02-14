@@ -24,11 +24,17 @@
 
 /* Vertical (Row Headers) */
 .supergrid-stack--vertical {
-  grid-auto-flow: column;
-  grid-template-rows: repeat(auto-fit, minmax(32px, 1fr));
+  /* FIXED: Use flexbox for vertical layout instead of CSS Grid.
+     CSS Grid with auto-fit doesn't work well when container height isn't defined,
+     causing all headers to overlap in a single cell.
+     Flexbox with column direction properly stacks headers vertically. */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   border-right: 2px solid var(--accent-color);
-  /* Use horizontal text in narrow column instead of vertical writing-mode
-     which causes font rendering issues with some character sets */
+  /* Horizontal text to prevent garbled characters */
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
 }
 
 /* Header Level Container */
@@ -46,8 +52,10 @@
 
 /* Vertical Level */
 .supergrid-stack--vertical .supergrid-stack__level {
-  grid-auto-flow: row;
-  grid-template-rows: subgrid;
+  /* Use flexbox column for vertical stacking of headers */
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 /* Individual Header Cell */
@@ -90,6 +98,9 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-right: 8px;
+  /* Ensure horizontal text rendering - prevents garbled characters from cached vertical styles */
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
 }
 
 /* Node Count Badge */
@@ -196,8 +207,8 @@
   }
 
   .supergrid-stack--vertical {
-    writing-mode: horizontal-tb;
-    text-orientation: initial;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
   }
 }
 

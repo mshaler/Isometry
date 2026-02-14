@@ -204,4 +204,3 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
   };
 }
 
-export default useTimeline;

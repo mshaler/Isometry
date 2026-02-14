@@ -319,4 +319,3 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
   };
 }
 
-export default useTipTapEditor;

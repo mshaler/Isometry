@@ -292,4 +292,3 @@ export function SuperGridV4Demo({ database, className }: SuperGridV4DemoProps) {
 }
 
 // Export for use in other components
-export default SuperGridV4Demo;

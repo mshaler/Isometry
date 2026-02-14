@@ -525,33 +525,6 @@ export const useFeatureFlag = (flagName: string, userId?: string, userSegment?: 
   return isEnabled(flagName, userId, userSegment);
 };
 
-// Hook for flag metadata
-export const useFlagMetadata = (flagName: string): FlagMetadata | undefined => {
-  const { getFlagConfiguration } = useFeatureFlags();
-  return getFlagConfiguration(flagName)?.metadata;
-};
-
-// Conditional rendering component
-interface FeatureFlagWrapperProps {
-  flag: string;
-  children: ReactNode;
-  fallback?: ReactNode;
-  userId?: string;
-  userSegment?: UserSegment;
-}
-
-export const FeatureFlagWrapper: React.FC<FeatureFlagWrapperProps> = ({
-  flag,
-  children,
-  fallback = null,
-  userId,
-  userSegment
-}) => {
-  const isEnabled = useFeatureFlag(flag, userId, userSegment);
-  return <>{isEnabled ? children : fallback}</>;
-};
-
 // Declare global types for native bridge
 // Window interface extension moved to browser-bridge.d.ts to avoid conflicts
 
-export default FeatureFlagProvider;

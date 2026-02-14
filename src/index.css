@@ -55,6 +55,36 @@
   opacity: 0.9;
 }
 
+/* =============================================================================
+ * GLOBAL TEXT ORIENTATION FIX - Safari Compatibility
+ * =============================================================================
+ * Safari has issues with CSS writing-mode inheritance. Force horizontal text
+ * rendering on all SuperGrid/SuperStack elements to prevent garbled characters.
+ * This must be in index.css (not component CSS) to ensure it loads first.
+ */
+.supergrid-stack,
+.supergrid-stack *,
+.supergrid__row-headers,
+.supergrid__row-headers *,
+.supergrid__column-headers,
+.supergrid__column-headers * {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  -webkit-writing-mode: horizontal-tb !important;
+  -webkit-text-orientation: mixed !important;
+  direction: ltr !important;
+  unicode-bidi: normal !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Safari-specific hack using transform to force text repaint */
+@supports (-webkit-overflow-scrolling: touch) {
+  .supergrid-stack__header-text {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
 /* ---break---
  */
 

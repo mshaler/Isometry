@@ -54,66 +54,6 @@ export interface PAFVProjection {
 }
 
 /**
- * Extended projection with hierarchy support
- *
- * For hierarchical views (Tree, Network) that need nested structure information
- */
-export interface HierarchicalProjection extends PAFVProjection {
-  /** Parent-child relationship assignment */
-  hierarchy: {
-    parent: PlaneAssignment;
-    child: PlaneAssignment;
-    depth: PlaneAssignment;
-  };
-
-  /** Edge/connection assignment for network views */
-  edges?: {
-    source: PlaneAssignment;
-    target: PlaneAssignment;
-    type: PlaneAssignment;
-    weight: PlaneAssignment;
-  };
-}
-
-/**
- * Temporal projection for timeline views
- *
- * Specialized projection for time-based visualizations
- */
-export interface TemporalProjection extends PAFVProjection {
-  /** Start time assignment */
-  startTime: PlaneAssignment;
-
-  /** End time assignment (for duration events) */
-  endTime?: PlaneAssignment;
-
-  /** Timeline grouping assignment */
-  timeline: PlaneAssignment;
-
-  /** Event type assignment */
-  eventType?: PlaneAssignment;
-}
-
-/**
- * Geospatial projection for map views
- *
- * Specialized projection for location-based visualizations
- */
-export interface GeospatialProjection extends PAFVProjection {
-  /** Latitude assignment */
-  latitude: PlaneAssignment;
-
-  /** Longitude assignment */
-  longitude: PlaneAssignment;
-
-  /** Zoom level assignment */
-  zoom?: PlaneAssignment;
-
-  /** Region/boundary assignment */
-  region?: PlaneAssignment;
-}
-
-/**
  * Default PAFV projections for common views
  */
 export const DEFAULT_PROJECTIONS: Record<string, PAFVProjection> = {

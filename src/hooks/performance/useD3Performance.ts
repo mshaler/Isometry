@@ -246,4 +246,3 @@ export function useD3PerformanceWithMonitor(
   };
 }
 
-export default useD3Performance;

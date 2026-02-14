@@ -127,4 +127,3 @@ export function applyTimelineZoom(
     .attr('cx', d => newXScale(d.timestamp));
 }
 
-export default createTimelineZoom;

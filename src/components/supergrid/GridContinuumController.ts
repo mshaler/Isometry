@@ -392,4 +392,3 @@ export class GridContinuumController {
   }
 }
 
-export default GridContinuumController;

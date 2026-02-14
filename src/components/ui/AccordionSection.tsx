@@ -128,4 +128,3 @@ export function AccordionSection({
   );
 }
 
-export default AccordionSection;

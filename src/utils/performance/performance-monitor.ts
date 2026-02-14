@@ -17,9 +17,6 @@ export interface SimplePerformanceAlert {
   resolved?: boolean;
 }
 
-// Alias for compatibility
-export type PerformanceAlert = SimplePerformanceAlert;
-
 export interface SimpleSessionMetrics {
   // Core metrics
   queryTimeAvg: number;

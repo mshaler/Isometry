@@ -72,17 +72,6 @@ export function getHealthCheckURL(): string {
 }
 
 /**
- * Endpoint paths (relative to base URL)
- */
-export const API_PATHS = {
-  HEALTH: '/health',
-  NODES: '/nodes',
-  EDGES: '/edges',
-  QUERY: '/query',
-  SYNC: '/sync',
-} as const;
-
-/**
  * Build a full API URL from a path
  */
 export function buildAPIURL(path: string): string {

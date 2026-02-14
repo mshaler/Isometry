@@ -107,4 +107,3 @@ export const utilLogger = new DevLogger({ prefix: '[Util]', enabledLevels: quiet
 // Bridge logger with limited methods (matching existing bridge logger interface)
 export const bridgeLogger = new DevLogger({ prefix: '[Bridge]', enabledLevels: quietLevels });
 
-export default devLogger;

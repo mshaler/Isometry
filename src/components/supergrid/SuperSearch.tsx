@@ -196,4 +196,3 @@ export const SuperSearch: React.FC<SuperSearchProps> = ({
   );
 };
 
-export default SuperSearch;

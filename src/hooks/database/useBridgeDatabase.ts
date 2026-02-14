@@ -52,7 +52,3 @@ export function useBridgeDatabase() {
   };
 }
 
-/**
- * Default export for compatibility
- */
-export default useBridgeDatabase;

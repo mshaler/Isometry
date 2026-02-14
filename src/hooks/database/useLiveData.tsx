@@ -546,4 +546,3 @@ export function invalidateLiveData(pattern?: string): void {
   }));
 }
 
-export default useLiveData;

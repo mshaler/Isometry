@@ -239,4 +239,3 @@ export function DensityControls({
   );
 }
 
-export default DensityControls;

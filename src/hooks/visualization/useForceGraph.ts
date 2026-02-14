@@ -182,4 +182,3 @@ export function useForceGraph(options: UseForceGraphOptions = {}): UseForceGraph
   };
 }
 
-export default useForceGraph;

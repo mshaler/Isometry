@@ -271,4 +271,3 @@ export function NetworkGraphTab({
   );
 }
 
-export default NetworkGraphTab;

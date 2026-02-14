@@ -278,4 +278,3 @@ export class SuperCardRenderer {
   }
 }
 
-export default SuperCardRenderer;

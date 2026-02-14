@@ -95,24 +95,5 @@ export interface LiveQueryResult<T = unknown> {
   toggleBackgroundSync: (enabled: boolean) => void;
 }
 
-export interface QueryCacheInfo {
-  lastUpdated: Date | null;
-  hitCount: number;
-  missCount: number;
-  size: number;
-}
-
-export interface BackgroundSyncConfig {
-  retryAttempts?: number;
-  retryDelay?: number;
-  enableOfflineQueue?: boolean;
-}
-
-export interface ConnectionStateConfig {
-  enableReconnect?: boolean;
-  reconnectDelay?: number;
-  maxReconnectAttempts?: number;
-}
-
 export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting';
 export type SyncStatus = 'idle' | 'syncing' | 'error';

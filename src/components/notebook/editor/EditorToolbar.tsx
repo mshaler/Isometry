@@ -223,4 +223,3 @@ export function EditorToolbar({ editor, theme = 'Modern' }: EditorToolbarProps) 
   );
 }
 
-export default EditorToolbar;

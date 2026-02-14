@@ -978,4 +978,3 @@ export class SuperGridEngine extends EventEmitter {
   }
 }
 
-export default SuperGridEngine;

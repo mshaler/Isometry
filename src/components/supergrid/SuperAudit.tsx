@@ -304,4 +304,3 @@ export const SuperAudit: React.FC<SuperAuditProps> = ({
   );
 };
 
-export default SuperAudit;

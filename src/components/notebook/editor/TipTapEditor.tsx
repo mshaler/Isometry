@@ -36,4 +36,3 @@ export function TipTapEditor({ editor, className }: TipTapEditorProps) {
   );
 }
 
-export default TipTapEditor;

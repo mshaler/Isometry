@@ -527,4 +527,3 @@ export function useCanvasPerformance(options: CanvasPerformanceOptions = {}) {
   };
 }
 
-export default useCanvasPerformance;

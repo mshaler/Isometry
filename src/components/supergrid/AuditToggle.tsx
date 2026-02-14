@@ -71,4 +71,3 @@ export function AuditToggle({
   );
 }
 
-export default AuditToggle;
