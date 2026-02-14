@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:terminal": "concurrently \"npm run start:terminal-server\" \"npm run dev\"",
+    "postinstall": "chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper 2>/dev/null || true",
     "start:terminal-server": "tsx scripts/start-terminal-server.ts",
     "dev:native": "cross-env REACT_APP_USE_NATIVE_API=true vite",
     "dev:desktop": "tauri dev",

@@ -17,7 +17,8 @@
 - **v5.1 Notebook Integration** - Phase 80 (shipped 2026-02-14)
 - **v5.2 Cards & Connections** - Phase 84 (shipped 2026-02-13)
 - 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
-- 🚧 **v6.1 SuperStack Enhancement** - Phases 89-93 (current)
+- 🚧 **v6.1 SuperStack Enhancement** - Phases 89-93 (in progress)
+- 🚧 **v6.2 Capture Writing Surface** - Phases 94-98 (planning)
 
 ## Phases
 
@@ -243,6 +244,85 @@ Plans:
 Plans:
 - [ ] 93-01: TBD (use /gsd:plan-phase)
 
+## 🚧 v6.2 Capture Writing Surface (Planning)
+
+**Milestone Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
+
+**Reference:** `.planning/CAPTURE-REQUIREMENTS.md` contains complete requirements specification.
+
+### Phase 94: Foundation & Critical Fixes
+**Goal**: Fix existing data loss bugs (Markdown serialization), add security hardening (paste sanitization), and deliver Apple Notes keyboard fluency before building advanced features on lossy foundation.
+**Depends on**: Phase 93 (v6.1 SuperStack Polish)
+**Requirements**: FOUND-01, FOUND-02, FOUND-03, KEYS-01, KEYS-02, KEYS-03, KEYS-04, KEYS-05, KEYS-06, POLISH-01, POLISH-02
+**Success Criteria** (what must be TRUE):
+  1. User can save card, close editor, reopen, and all formatting (bold, lists, links) persists without loss
+  2. User can paste HTML from external sources and malicious scripts are sanitized (no XSS execution)
+  3. User can switch between cards 20+ times without memory growth (Tippy.js instances cleaned up)
+  4. User can toggle checklist with Cmd+Shift+L, set headings with Cmd+1-6, indent with Tab, insert rule with Cmd+Shift+H, strikethrough with Cmd+Shift+X
+  5. User can type `- ` and get bullet list, `1. ` and get numbered list, `[ ]` and get checkbox without manual formatting
+**Plans**: 4 plans in 2 waves
+
+Plans:
+- [ ] 94-01-PLAN.md — Markdown serialization fix via @tiptap/markdown (FOUND-01)
+- [ ] 94-02-PLAN.md — Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
+- [ ] 94-03-PLAN.md — Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
+- [ ] 94-04-PLAN.md — Word count + Undo/Redo polish (POLISH-01, POLISH-02)
+
+### Phase 95: Data Layer & Backlinks
+**Goal**: Templates system with sql.js storage and backlinks panel for Obsidian-style graph navigation
+**Depends on**: Phase 94 (Foundation complete)
+**Requirements**: TMPL-01, TMPL-02, TMPL-03, TMPL-04, TMPL-05, BACK-01, BACK-02, BACK-03, BACK-04
+**Success Criteria** (what must be TRUE):
+  1. User can insert template via /template command and see template preview
+  2. Templates persist in sql.js database with proper schema
+  3. User can see backlinks panel showing all cards linking to current card
+  4. Clicking backlink navigates to that card
+**Plans**: TBD
+
+Plans:
+- [ ] 95-01: TBD (use /gsd:plan-phase)
+
+### Phase 96: Block Types & Slash Commands
+**Goal**: Rich block types (callout, toggle, divider, bookmark) and expanded slash commands
+**Depends on**: Phase 95 (Data layer complete)
+**Requirements**: SLASH-01 through SLASH-10, BLOCK-01 through BLOCK-04
+**Success Criteria** (what must be TRUE):
+  1. User can insert callout with /callout and see styled block with icon
+  2. User can insert collapsible toggle with /toggle
+  3. Slash commands cover all heading levels, media, and references
+  4. Bookmark shows URL preview with metadata
+**Plans**: TBD
+
+Plans:
+- [ ] 96-01: TBD (use /gsd:plan-phase)
+
+### Phase 97: Inline Properties
+**Goal**: Inline property syntax (@key: value, #tag) with PropertyEditor sync
+**Depends on**: Phase 96 (Block types complete)
+**Requirements**: PROP-01, PROP-02, PROP-03, PROP-04
+**Success Criteria** (what must be TRUE):
+  1. User can type @key: value and see inline property mark
+  2. Properties sync to PropertyEditor panel
+  3. User can type #tag with autocomplete
+**Plans**: TBD
+
+Plans:
+- [ ] 97-01: TBD (use /gsd:plan-phase)
+
+### Phase 98: Isometry Embeds & Polish
+**Goal**: Live D3.js visualization embeds (/supergrid, /network, /timeline) and final polish
+**Depends on**: Phase 97 (Properties complete)
+**Requirements**: EMBED-01 through EMBED-06, POLISH-03
+**Success Criteria** (what must be TRUE):
+  1. User can embed live SuperGrid with /supergrid command
+  2. Embedded views respect LATCH filters from parameters
+  3. Embeds update when underlying data changes
+  4. Editor maintains 60fps with 10K+ character documents
+**Plans**: TBD
+
+Plans:
+- [ ] 98-01: TBD (use /gsd:plan-phase)
+
 ## 📋 v6.0 Interactive Shell (Deferred)
 
 **Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
@@ -333,7 +413,12 @@ Plans:
 | 91. Interactions | v6.1 | 0/0 | Not started | - |
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
+| 94. Foundation & Critical Fixes | v6.2 | 0/4 | Planned | - |
+| 95. Data Layer & Backlinks | v6.2 | 0/0 | Not started | - |
+| 96. Block Types & Slash Commands | v6.2 | 0/0 | Not started | - |
+| 97. Inline Properties | v6.2 | 0/0 | Not started | - |
+| 98. Isometry Embeds & Polish | v6.2 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-13 (Phase 85 plans created)*
+*Last updated: 2026-02-14 (Phase 94 plans created)*

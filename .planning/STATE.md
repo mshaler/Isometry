@@ -6,14 +6,13 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 90 - SQL Integration (SuperStack v6.1)
+**Current focus:** Phase 94 - Foundation & Critical Fixes (Capture Writing Surface v6.2)
 
 ## Current Position
 
-Phase: 90 of 93 (SQL Integration)
-Plan: 1 of 2 complete
-Status: In progress
-Last activity: 2026-02-14 — Completed 90-01-PLAN.md (Header Discovery Query Generator)
+Phase: 94 of 98 (Foundation & Critical Fixes)
+Status: Planning
+Last activity: 2026-02-14 — Starting Phase 94 planning
 
 Progress (Phase 90): [█████░░░░░] 50% (1 of 2 plans)
 Overall: [████████░░] 89% (89 of ~130 total phases across all milestones)
@@ -32,7 +31,7 @@ Overall: [████████░░] 89% (89 of ~130 total phases across al
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Status:** Roadmap complete, awaiting `/gsd:plan-phase 94`
+**Current:** Phase 94 planned (4 plans), ready for `/gsd:execute-phase 94`
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -136,13 +135,17 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 90 Plan 01 complete, ready for Plan 02 (Tree Builder)
-Resume file: .planning/phases/90-sql-integration/90-02-PLAN.md (if exists)
+Stopped at: Phase 94 planning complete, ready for execution
+Resume file: .planning/phases/94-foundation-critical-fixes/94-01-PLAN.md
 
-**Phase 90 Plan 01 Complete:**
-- src/db/queries/header-discovery.ts: Query generator with facet type dispatch
-- buildHeaderDiscoveryQuery: Handles date, multi_select, simple facets
-- buildStackedHeaderQuery: Multi-facet hierarchy queries
-- 30 tests pass including mandatory performance benchmarks (<100ms for 10K nodes)
+**Phase 94 Plans Created:**
+- 94-01-PLAN.md: Markdown serialization fix via @tiptap/markdown (FOUND-01)
+- 94-02-PLAN.md: Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
+- 94-03-PLAN.md: Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
+- 94-04-PLAN.md: Word count + Undo/Redo polish (POLISH-01, POLISH-02)
 
-**Next step:** Execute Plan 90-02 (Tree Builder from Query Results)
+**Wave structure:**
+- Wave 1: 94-01 (critical blocker), 94-02 (security/memory) — parallel
+- Wave 2: 94-03 (shortcuts), 94-04 (polish) — depend on 94-01
+
+**Next step:** Execute `/gsd:execute-phase 94`
