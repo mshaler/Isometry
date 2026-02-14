@@ -6,12 +6,19 @@
  */
 
 import type { TerminalClientMessage } from './terminalTypes';
-import type { ServerMessage } from '../claude-code/claudeCodeServer';
 
 /**
  * Message categories for WebSocket routing
  */
 export type MessageCategory = 'terminal' | 'command' | 'file-monitoring' | 'unknown';
+
+/**
+ * Command message structure (for type guard - matches ServerMessage from claudeCodeServer)
+ * Defined here to avoid circular dependency
+ */
+interface CommandMessage {
+  type: 'command' | 'cancel' | 'input';
+}
 
 /**
  * Type guard: Is this a terminal message?
@@ -36,7 +43,7 @@ export function isTerminalMessage(message: unknown): message is TerminalClientMe
 /**
  * Type guard: Is this a command execution message?
  */
-export function isCommandMessage(message: unknown): message is ServerMessage {
+export function isCommandMessage(message: unknown): message is CommandMessage {
   if (typeof message !== 'object' || message === null) return false;
   const msg = message as Record<string, unknown>;
 
