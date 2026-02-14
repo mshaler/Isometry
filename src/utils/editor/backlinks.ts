@@ -81,11 +81,12 @@ export function queryRecentCards(
 
 /**
  * Query backlinks for a given card - cards that link TO this card.
- * Used for future backlinks panel feature.
+ * Used by BacklinksPanel to show reverse relationships.
  */
 export function queryBacklinks(
   db: Database | null,
-  cardId: string
+  cardId: string,
+  limit: number = 50
 ): BacklinkInfo[] {
   if (!db) return [];
 
@@ -94,9 +95,13 @@ export function queryBacklinks(
       `SELECT DISTINCT n.id, n.name, e.created_at
        FROM nodes n
        JOIN edges e ON e.source_id = n.id
-       WHERE e.target_id = ? AND e.edge_type = 'LINK' AND n.deleted_at IS NULL
-       ORDER BY e.created_at DESC`,
-      [cardId]
+       WHERE e.target_id = ?
+         AND e.source_id != ?
+         AND e.edge_type = 'LINK'
+         AND n.deleted_at IS NULL
+       ORDER BY e.created_at DESC
+       LIMIT ?`,
+      [cardId, cardId, limit]
     );
 
     if (!results[0]?.values) return [];
