@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 84 (Cards & Connections)
-Plan: 02 of 4 complete
-Status: In progress — Plans 84-01 and 84-02 complete
-Last activity: 2026-02-14 — Completed 84-01-PLAN.md (Schema foundation + migration)
+Plan: 03 of 4 complete
+Status: In progress — Plans 84-01, 84-02, 84-03 complete
+Last activity: 2026-02-14 — Completed 84-03-PLAN.md (Data layer query migration)
 
-Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 plans)
+Progress (v5.2 Cards & Connections): [######################        ] 75% (3/4 plans)
 
 ## Current Milestone: v5.1 Notebook Integration
 
@@ -70,6 +70,7 @@ Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 p
 - v4.6: 1 plan, 1 phase (61), ~6 minutes (Phase 62 deferred)
 
 **Recent completions (Phase 84 - Cards & Connections):**
+- Phase 84-03: COMPLETE (~7m) — Data layer migration: hooks, filters, ETL use cards table
 - Phase 84-01: COMPLETE (~5m) — Schema foundation with cards/connections tables, migration script, 24 tests
 - Phase 84-02: COMPLETE (prior session) — TypeScript Card/Connection interfaces with type guards
 
@@ -162,6 +163,13 @@ Progress (v5.2 Cards & Connections): [###############               ] 50% (2/4 p
 - SCHEMA-05: New columns added (url, mime_type, is_collective, sync_status)
 - MIGRATION-01: Backup tables (nodes_backup, edges_backup) for rollback safety
 - MIGRATION-02: Type mapping: LINK->link, NEST->parent, SEQUENCE->precedes, AFFINITY->related
+
+**Phase 84-03 decisions (Cards & Connections - Data Layer Migration):**
+- QUERY-DEC-01: useLiveNodes deprecated, useLiveCards added as replacement
+- QUERY-DEC-02: insertCanonicalNodes name unchanged but inserts into cards table
+- QUERY-DEC-03: Legacy insertCanonicalNodesLegacy added for explicit nodes table insertion
+- QUERY-DEC-04: Test schema includes parallel tables (nodes/edges + cards/connections) for gradual migration
+- QUERY-DEC-05: Hierarchy CTE uses connections.label='parent' instead of edges.edge_type='NEST'
 
 **Phase 84-02 decisions (Cards & Connections - TypeScript Types):**
 - CARD-TYPE-01: CardType constrained to 4 types (note/person/event/resource) - no expansion
