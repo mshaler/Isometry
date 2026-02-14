@@ -181,7 +181,8 @@ export function SuperGrid({
         rowValues.add(rowKey);
       }
 
-      const cellKey = `${rowKey}:${colKey}`;
+      // Use a separator unlikely to appear in axis values (double pipe)
+      const cellKey = `${rowKey}||${colKey}`;
       if (!cells.has(cellKey)) {
         cells.set(cellKey, []);
       }
@@ -193,7 +194,7 @@ export function SuperGrid({
     const sortedRows = Array.from(rowValues).sort();
 
     const allCells: CellDescriptor[] = Array.from(cells.entries()).map(([key, cellNodes]) => {
-      const [rowKey, colKey] = key.split(':');
+      const [rowKey, colKey] = key.split('||');
       return {
         id: `cell-${rowKey}-${colKey}`,
         gridX: sortedColumns.indexOf(colKey),
@@ -212,7 +213,7 @@ export function SuperGrid({
     const displayCells = filteredCells.map(cell => ({
       rowKey: cell.yValue,
       colKey: cell.xValue,
-      nodes: cells.get(`${cell.yValue}:${cell.xValue}`) || []
+      nodes: cells.get(`${cell.yValue}||${cell.xValue}`) || []
     }));
 
     return {
@@ -353,16 +354,20 @@ export function SuperGrid({
             ))
           ) : (
             // Grid modes: cell-based layout
-            gridData.cells.map(cell => (
+            gridData.cells.map(cell => {
+              // Calculate grid positions (ensure minimum of 1 for valid CSS grid)
+              const colIndex = gridData.columnHeaders.indexOf(cell.colKey);
+              const rowIndex = gridData.rowHeaders.indexOf(cell.rowKey);
+              const gridColumn = gridLayout.hasColumns ? Math.max(1, colIndex + 1) : 1;
+              const gridRow = gridLayout.hasRows ? Math.max(1, rowIndex + 1) : 1;
+
+              return (
               <div
                 key={`${cell.rowKey}-${cell.colKey}`}
                 className="supergrid__cell"
                 data-row={cell.rowKey}
                 data-col={cell.colKey}
-                style={{
-                  gridColumn: gridLayout.hasColumns ? gridData.columnHeaders.indexOf(cell.colKey) + 1 : 1,
-                  gridRow: gridLayout.hasRows ? gridData.rowHeaders.indexOf(cell.rowKey) + 1 : 1
-                }}
+                style={{ gridColumn, gridRow }}
               >
                 <div className="supergrid__cell-content">
                   {cell.nodes.length === 1 ? (
@@ -400,7 +405,8 @@ export function SuperGrid({
                   )}
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
