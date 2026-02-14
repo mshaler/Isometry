@@ -1,10 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSQLiteQuery } from './useSQLiteQuery';
-import type { Node } from '../../types/node';
+import type { Card } from '../../types/card';
 
-export interface FTS5Result extends Node {
+/**
+ * FTS5 search result - Card with relevance score.
+ * Uses cards_fts virtual table for full-text search.
+ */
+export type FTS5Result = Card & {
   rank: number; // FTS5 relevance score (lower is more relevant)
-}
+};
 
 export interface FTS5SearchState {
   results: FTS5Result[];
@@ -61,14 +65,15 @@ export function useFTS5Search(
 
     // Query with FTS5 rank for relevance sorting
     // rank is a negative number (more negative = more relevant)
+    // Uses cards/cards_fts (migrated from nodes/nodes_fts in Phase 84)
     const query = `
       SELECT
-        nodes.*,
+        cards.*,
         rank AS rank
-      FROM nodes
-      JOIN nodes_fts ON nodes.id = nodes_fts.rowid
-      WHERE nodes_fts MATCH ?
-        AND nodes.deleted_at IS NULL
+      FROM cards
+      JOIN cards_fts ON cards.id = cards_fts.rowid
+      WHERE cards_fts MATCH ?
+        AND cards.deleted_at IS NULL
       ORDER BY rank
       LIMIT 100
     `;

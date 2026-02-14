@@ -13,9 +13,6 @@
 export type {
   LiveQueryOptions,
   LiveQueryResult,
-  QueryCacheInfo,
-  BackgroundSyncConfig,
-  ConnectionStateConfig,
   ConnectionState,
   SyncStatus
 } from './types';
@@ -25,7 +22,8 @@ export { useLiveQuery } from './useLiveQueryCore';
 
 // Re-export specialized variants
 export {
-  useLiveNodes,
+  useLiveCards,
+  useLiveNodes, // @deprecated - use useLiveCards
   useLiveQueryManual,
   useLiveQueryLegacy,
   useLiveQueryOptimized,

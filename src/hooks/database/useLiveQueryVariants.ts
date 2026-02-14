@@ -1,27 +1,50 @@
 /**
  * Live Query Hook Variants
  *
- * Specialized versions of the live query hook for specific use cases
+ * Specialized versions of the live query hook for specific use cases.
+ * Updated in Phase 84 to use cards/connections tables.
  */
 
 import { useLiveQuery } from './useLiveQueryCore';
 import type { LiveQueryOptions, LiveQueryResult } from './types';
+import type { Card } from '../../types/card';
 
 /**
- * Specialized hook for querying nodes with common defaults
+ * Specialized hook for querying cards with common defaults.
+ * Uses cards table (migrated from nodes in Phase 84).
+ */
+export function useLiveCards(
+  whereClause: string = '',
+  params: unknown[] = [],
+  options: Omit<LiveQueryOptions, 'params'> = {}
+): LiveQueryResult<Card> {
+  const sql = `
+    SELECT * FROM cards
+    WHERE deleted_at IS NULL
+    ${whereClause ? `AND (${whereClause})` : ''}
+    ORDER BY created_at DESC
+  `;
+
+  return useLiveQuery<Card>(sql, { ...options, params });
+}
+
+/**
+ * @deprecated Use useLiveCards instead. Will be removed in Phase 85.
+ * Specialized hook for querying nodes with common defaults.
  */
 export function useLiveNodes<T = unknown>(
   whereClause: string = '',
   params: unknown[] = [],
   options: Omit<LiveQueryOptions, 'params'> = {}
 ): LiveQueryResult<T> {
+  // Delegate to useLiveCards internally for backward compatibility
   const sql = `
-    SELECT * FROM nodes 
+    SELECT * FROM cards
     WHERE deleted_at IS NULL
     ${whereClause ? `AND (${whereClause})` : ''}
     ORDER BY created_at DESC
   `;
-  
+
   return useLiveQuery<T>(sql, { ...options, params });
 }
 

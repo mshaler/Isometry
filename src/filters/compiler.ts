@@ -101,8 +101,9 @@ function compileAlphabetFilter(filter: AlphabetFilter): CompiledQuery {
     const fts5Query = buildFTS5Query(filter.value);
     if (fts5Query) {
       // Join with FTS5 virtual table for fast search
+      // Uses cards_fts (migrated from nodes_fts in Phase 84)
       return {
-        sql: 'id IN (SELECT rowid FROM nodes_fts WHERE nodes_fts MATCH ?)',
+        sql: 'id IN (SELECT rowid FROM cards_fts WHERE cards_fts MATCH ?)',
         params: [fts5Query],
       };
     } else {
@@ -217,20 +218,22 @@ function escapeFTS5Simple(input: string): string {
 function compileCategoryFilter(filter: CategoryFilter): CompiledQuery {
   const conditions: string[] = [];
   const params: (string | number | null)[] = [];
-  
+
   if (filter.folders?.length) {
     const placeholders = filter.folders.map(() => '?').join(', ');
     const op = filter.type === 'include' ? 'IN' : 'NOT IN';
     conditions.push(`folder ${op} (${placeholders})`);
     params.push(...filter.folders);
   }
-  
+
+  // Map nodeTypes filter to card_type column (migrated from node_type in Phase 84)
+  // Valid card types: 'note', 'person', 'event', 'resource'
   if (filter.nodeTypes?.length) {
     const placeholders = filter.nodeTypes.map(() => '?').join(', ');
-    conditions.push(`node_type IN (${placeholders})`);
+    conditions.push(`card_type IN (${placeholders})`);
     params.push(...filter.nodeTypes);
   }
-  
+
   return {
     sql: conditions.join(' AND '),
     params,
@@ -310,27 +313,29 @@ function compileHierarchyFilter(filter: HierarchyFilter): CompiledQuery {
   }
 
   // Subtree filter (via recursive CTE)
+  // Uses cards/connections (migrated from nodes/edges in Phase 84)
   if (filter.type === 'subtree' && filter.subtreeRoots?.length) {
     // Build recursive CTE to get all descendants of selected root nodes
     const rootPlaceholders = filter.subtreeRoots.map(() => '?').join(', ');
 
     // Recursive CTE pattern:
-    // 1. Start with selected root nodes
-    // 2. Recursively add all descendants via NEST edges
+    // 1. Start with selected root cards
+    // 2. Recursively add all descendants via 'parent' connections
+    //    (parent label = old NEST edge_type)
     // Note: This uses a subquery that will be joined with the main query
     const subtreeSQL = `id IN (
       WITH RECURSIVE subtree AS (
-        -- Base case: selected root nodes
-        SELECT id FROM nodes WHERE id IN (${rootPlaceholders})
+        -- Base case: selected root cards
+        SELECT id FROM cards WHERE id IN (${rootPlaceholders})
 
         UNION ALL
 
-        -- Recursive case: find children via NEST edges
-        SELECT n.id
-        FROM nodes n
-        INNER JOIN edges e ON e.target_id = n.id
-        INNER JOIN subtree s ON e.source_id = s.id
-        WHERE e.edge_type = 'NEST'
+        -- Recursive case: find children via parent connections
+        SELECT c.id
+        FROM cards c
+        INNER JOIN connections conn ON conn.target_id = c.id
+        INNER JOIN subtree s ON conn.source_id = s.id
+        WHERE conn.label = 'parent'
       )
       SELECT id FROM subtree
     )`;
