@@ -2,6 +2,7 @@
 // import SQLiteV4TestApp from './SQLiteV4TestApp'; // TEMP: Disabled due to broken SQLiteProvider
 import { SQLiteP0GateTest } from './SQLiteP0GateTest';
 import SuperGridSQLDemo from './components/SuperGridSQLDemo';
+import { SuperGridScrollTest } from './components/supergrid/SuperGridScrollTest';
 import { SQLiteProvider } from './db/SQLiteProvider';
 import { CLIIntegrationTest } from './CLIIntegrationTest';
 import { NotebookLayout } from './components/notebook/NotebookLayout';
@@ -61,6 +62,12 @@ function App() {
         <SuperGridSQLDemo />
       </SQLiteProvider>
     );
+  }
+
+  // Phase 92: Focused SuperGrid scroll test with alto-index data
+  // Verifies CELL-02 (CSS sticky header scroll coordination)
+  if (testMode === 'sg-scroll') {
+    return <SuperGridScrollTest />;
   }
 
   if (testMode === 'cli-test') {
