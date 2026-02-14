@@ -50,16 +50,17 @@ export function SuperGridScrollTest(): JSX.Element {
     []
   );
 
-  // Auto-import alto-index Notes data on mount when no data exists
+  // Track if we've already attempted import this session
+  const importAttemptedRef = useRef(false);
+
+  // Auto-import alto-index Notes data on mount (always import, replacing sample data)
   useEffect(() => {
-    if (!dbLoading && !dbError && !nodesLoading && importStatus === 'idle') {
-      // Check if we need to import (no nodes in database)
-      if (!allNodes || allNodes.length === 0) {
-        // Import only notes, not contacts/calendar/etc
-        importFromPublic({ clearExisting: true, dataTypes: ['notes'] });
-      }
+    if (!dbLoading && !dbError && importStatus === 'idle' && !importAttemptedRef.current) {
+      importAttemptedRef.current = true;
+      // Import Notes, clearing sample data first
+      importFromPublic({ clearExisting: true, dataTypes: ['notes'] });
     }
-  }, [dbLoading, dbError, nodesLoading, allNodes, importStatus, importFromPublic]);
+  }, [dbLoading, dbError, importStatus, importFromPublic]);
 
   // Create projection config
   const projection: PAFVProjection = useMemo(() => ({
