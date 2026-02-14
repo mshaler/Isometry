@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 85 of 93 (Backend Infrastructure & Terminal Execution)
-Plan: 3 of 5 complete
+Plan: 4 of 5 complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 85-03-PLAN.md (xterm.js Frontend Integration)
+Last activity: 2026-02-14 — Completed 85-04-PLAN.md (Terminal Mode Switching)
 
-Progress (Phase 85): [██████░░░░] 60% (3 of 5 plans)
+Progress (Phase 85): [████████░░] 80% (4 of 5 plans)
 Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
 
 ## Current Milestone: v6.2 Capture Writing Surface
@@ -54,7 +54,7 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
   - [x] 85-01: PTY Backend Infrastructure (~4m)
   - [x] 85-02: WebSocket Server Integration (~4m)
   - [x] 85-03: xterm.js Frontend Integration (~5m)
-  - [ ] 85-04: Terminal Tab Component
+  - [x] 85-04: Terminal Mode Switching (~8m)
   - [ ] 85-05: Terminal Verification
 - Phase 86: Claude AI MCP Integration (7 requirements)
 - Phase 87: GSD File Synchronization (7 requirements)
@@ -87,7 +87,7 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 85 (Backend Terminal) | 3/5 | ~4.3m | In Progress |
+| 85 (Backend Terminal) | 4/5 | ~5.3m | In Progress |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
 | 80 (Notebook Integration) | 2 | ~4.5m | Complete |
 | 79 (Catalog Browser) | 3 | ~4.7m | Complete |
@@ -125,6 +125,11 @@ Recent decisions affecting v6.1 work:
 - TERM-08: useTerminal uses dispatcher methods, not direct WebSocket messages
 - TERM-09: Session ID generated client-side (term-{timestamp}-{random})
 
+**Mode Switching (from 85-04):**
+- TERM-10: Mode switch kills and respawns PTY rather than in-place modification
+- TERM-11: Working directory preserved by default on mode switch
+- TERM-12: ISOMETRY_TERMINAL_MODE env var set for shell scripts to detect mode
+
 See PROJECT.md Key Decisions table for full history.
 
 ### Pending Todos
@@ -145,12 +150,13 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 85 Plan 03 complete, ready for Plan 04 (Terminal Tab Component)
-Resume file: .planning/phases/85-backend-terminal/85-04-PLAN.md
+Stopped at: Phase 85 Plan 04 complete, ready for Plan 05 (Terminal Verification)
+Resume file: .planning/phases/85-backend-terminal/85-05-PLAN.md
 
-**Phase 85 Plan 03 Complete:**
-- claudeCodeWebSocketDispatcher.ts: Terminal callbacks and send methods
-- useTerminal.ts: Real PTY communication via dispatcher
-- Keystroke forwarding, resize sync, session cleanup
+**Phase 85 Plan 04 Complete:**
+- terminalTypes.ts: Mode switch message types
+- terminalPTYServer.ts: handleModeSwitch with PTY respawn
+- claudeCodeWebSocketDispatcher.ts: switchTerminalMode method
+- useTerminal.ts: currentMode state and switchMode function
 
-**Next step:** Execute Plan 85-04 (Terminal Tab Component)
+**Next step:** Execute Plan 85-05 (Terminal Verification)
