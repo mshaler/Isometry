@@ -54,12 +54,20 @@ export interface TerminalReplayMessage {
   sessionId: string;
 }
 
+export interface TerminalSwitchModeMessage {
+  type: 'terminal:switch-mode';
+  sessionId: string;
+  mode: TerminalMode;         // 'shell' or 'claude-code'
+  preserveCwd?: boolean;      // Default: true
+}
+
 export type TerminalClientMessage =
   | TerminalInputMessage
   | TerminalResizeMessage
   | TerminalSpawnMessage
   | TerminalKillMessage
-  | TerminalReplayMessage;
+  | TerminalReplayMessage
+  | TerminalSwitchModeMessage;
 
 // Server -> Client messages
 export interface TerminalOutputMessage {
@@ -93,9 +101,17 @@ export interface TerminalReplayDataMessage {
   data: string;           // Buffered output for replay
 }
 
+export interface TerminalModeSwitchedMessage {
+  type: 'terminal:mode-switched';
+  sessionId: string;
+  mode: TerminalMode;
+  pid: number;
+}
+
 export type TerminalServerMessage =
   | TerminalOutputMessage
   | TerminalSpawnedMessage
   | TerminalExitMessage
   | TerminalErrorMessage
-  | TerminalReplayDataMessage;
+  | TerminalReplayDataMessage
+  | TerminalModeSwitchedMessage;

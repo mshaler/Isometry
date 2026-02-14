@@ -33,6 +33,12 @@ export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'di
 /** Extended options with status change callback */
 export interface WebSocketDispatcherOptions extends ClaudeCodeDispatcherOptions {
   onStatusChange?: (status: ConnectionStatus, attemptNumber?: number) => void;
+  // Terminal callbacks
+  onTerminalOutput?: (sessionId: string, data: string) => void;
+  onTerminalSpawned?: (sessionId: string, pid: number) => void;
+  onTerminalExit?: (sessionId: string, exitCode: number, signal?: number) => void;
+  onTerminalError?: (sessionId: string, error: string) => void;
+  onTerminalReplayData?: (sessionId: string, data: string) => void;
 }
 
 /** Default reconnection configuration */
@@ -341,6 +347,12 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
    * Handle messages from the server
    */
   private handleServerMessage(message: ClientMessage): void {
+    // Handle terminal messages
+    if (message.type?.startsWith('terminal:')) {
+      this.handleTerminalMessage(message);
+      return;
+    }
+
     // Handle messages that don't require an execution (file monitoring, etc.)
     if (message.type === 'file_change' || message.type === 'monitoring_started' || message.type === 'monitoring_stopped') {
       this.handleNonExecutionMessage(message);
@@ -643,6 +655,101 @@ export class WebSocketClaudeCodeDispatcher implements ClaudeCodeDispatcher {
    */
   private generateExecutionId(): string {
     return `exec-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Send terminal spawn request
+   */
+  spawnTerminal(sessionId: string, config: {
+    shell?: string;
+    cwd?: string;
+    cols?: number;
+    rows?: number;
+  }): void {
+    this.sendMessage({
+      type: 'terminal:spawn',
+      sessionId,
+      config: {
+        shell: config.shell || '/bin/zsh',
+        cwd: config.cwd || process.cwd(),
+        cols: config.cols || 80,
+        rows: config.rows || 24
+      },
+      mode: 'shell'
+    } as unknown as ServerMessage);
+  }
+
+  /**
+   * Send terminal input (keystrokes)
+   */
+  sendTerminalInput(sessionId: string, data: string): void {
+    this.sendMessage({
+      type: 'terminal:input',
+      sessionId,
+      data
+    } as unknown as ServerMessage);
+  }
+
+  /**
+   * Resize terminal
+   */
+  resizeTerminal(sessionId: string, cols: number, rows: number): void {
+    this.sendMessage({
+      type: 'terminal:resize',
+      sessionId,
+      cols,
+      rows
+    } as unknown as ServerMessage);
+  }
+
+  /**
+   * Kill terminal session
+   */
+  killTerminal(sessionId: string, signal?: string): void {
+    this.sendMessage({
+      type: 'terminal:kill',
+      sessionId,
+      signal
+    } as unknown as ServerMessage);
+  }
+
+  /**
+   * Request replay of buffered output (for reconnection)
+   */
+  requestTerminalReplay(sessionId: string): void {
+    this.sendMessage({
+      type: 'terminal:replay',
+      sessionId
+    } as unknown as ServerMessage);
+  }
+
+  /**
+   * Handle terminal-specific server messages
+   */
+  private handleTerminalMessage(message: ClientMessage): void {
+    const msgData = message as unknown as Record<string, unknown>;
+    const sessionId = msgData.sessionId as string | undefined;
+    if (!sessionId) return;
+
+    const msgType = message.type as string;
+
+    switch (msgType) {
+      case 'terminal:output':
+        this.options.onTerminalOutput?.(sessionId, msgData.data as string);
+        break;
+      case 'terminal:spawned':
+        this.options.onTerminalSpawned?.(sessionId, msgData.pid as number);
+        break;
+      case 'terminal:exit':
+        this.options.onTerminalExit?.(sessionId, msgData.exitCode as number, msgData.signal as number | undefined);
+        break;
+      case 'terminal:error':
+        this.options.onTerminalError?.(sessionId, msgData.error as string);
+        break;
+      case 'terminal:replay-data':
+        this.options.onTerminalReplayData?.(sessionId, msgData.data as string);
+        break;
+    }
   }
 }
 
