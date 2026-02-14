@@ -13,12 +13,15 @@ export function sanitizeAnsiEscapes(data: string): string {
   // Pattern matches:
   // ESC P ... ESC \    (7-bit DCS)
   // 0x90 ... 0x9C      (8-bit DCS)
+  // eslint-disable-next-line no-control-regex
   const dcsPattern = /\x1bP[^\x1b]*\x1b\\|\x90[^\x9c]*\x9c/g;
 
   // Also block OSC 52 (clipboard write) which could be abused
+  // eslint-disable-next-line no-control-regex
   const osc52Pattern = /\x1b\]52;[^;]*;[^\x07\x1b]*(?:\x07|\x1b\\)/g;
 
   // Block DECSC/DECRC manipulation sequences that could affect state
+  // eslint-disable-next-line no-control-regex
   const stateManipPattern = /\x1b7|\x1b8|\x1b\[s|\x1b\[u/g;
 
   return data
