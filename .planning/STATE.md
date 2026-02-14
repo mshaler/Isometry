@@ -6,70 +6,60 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 85 - Backend Infrastructure & Terminal Execution
+**Current focus:** Phase 90 - SQL Integration (SuperStack v6.1)
 
 ## Current Position
 
-Phase: 85 of 93 (Backend Infrastructure & Terminal Execution)
-Plan: 4 of 5 complete
+Phase: 90 of 93 (SQL Integration)
+Plan: 1 of 2 complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 85-04-PLAN.md (Terminal Mode Switching)
+Last activity: 2026-02-14 — Completed 90-01-PLAN.md (Header Discovery Query Generator)
 
-Progress (Phase 85): [████████░░] 80% (4 of 5 plans)
-Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
+Progress (Phase 90): [█████░░░░░] 50% (1 of 2 plans)
+Overall: [████████░░] 89% (89 of ~130 total phases across all milestones)
 
-## Current Milestone: v6.2 Capture Writing Surface
+## Active Milestones
 
-**Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
+### v6.2 Capture Writing Surface — CURRENT
 
-**Target features:**
-- Apple Notes Fluency — Full keyboard shortcuts, smart formatting, auto-lists, inline checklists
-- Notion Slash Commands — Block types, embeds, references
-- Obsidian Power — Backlinks, templates, inline properties
-- Isometry-Native Embeds — /supergrid, /network, /timeline live views
+**Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
 
-**Status:** Gathering requirements
+**Phases:**
+- Phase 94: Foundation & Critical Fixes (11 requirements) — Ready to plan
+- Phase 95: Data Layer & Backlinks (9 requirements)
+- Phase 96: Block Types & Slash Commands (14 requirements)
+- Phase 97: Inline Properties (4 requirements)
+- Phase 98: Isometry Embeds & Polish (7 requirements)
 
-## Previous Milestone: v6.1 SuperStack Enhancement (Paused)
+**Total requirements:** 43
+**Status:** Roadmap complete, awaiting `/gsd:plan-phase 94`
+
+### v6.1 SuperStack Enhancement — IN PROGRESS
 
 **Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
 **Phases:**
 - Phase 89: Static Headers Foundation (6 requirements) ✓
-- Phase 90: SQL Integration (5 requirements)
+- Phase 90: SQL Integration (5 requirements) — 20% complete (1/5 requirements)
+  - [x] 90-01: Header Discovery Query Generator (~3m) ✓
+  - [ ] 90-02: Tree Builder from Query Results
 - Phase 91: Interactions (5 requirements)
 - Phase 92: Data Cell Integration (4 requirements)
 - Phase 93: Polish & Performance (5 requirements)
 
 **Total requirements:** 25
-**Resume:** `/gsd:plan-phase 90` when ready
+**Current:** Phase 90-01 complete, ready for 90-02
 
-## Current Milestone: v6.0 Interactive Shell — IN PROGRESS
+### v6.0 Interactive Shell — IN PROGRESS
 
 **Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Phase 85 in progress
+**Status:** Phase 85 in progress (4/5 plans complete)
 
 **Phases:**
-- Phase 85: Backend Infrastructure & Terminal Execution (5 plans)
-  - [x] 85-01: PTY Backend Infrastructure (~4m)
-  - [x] 85-02: WebSocket Server Integration (~4m)
-  - [x] 85-03: xterm.js Frontend Integration (~5m)
-  - [x] 85-04: Terminal Mode Switching (~8m)
-  - [ ] 85-05: Terminal Verification
+- Phase 85: Backend Infrastructure & Terminal Execution (5 plans) — 80% complete
 - Phase 86: Claude AI MCP Integration (7 requirements)
 - Phase 87: GSD File Synchronization (7 requirements)
 - Phase 88: Integration & Polish (verification only)
-
-## Previous Milestone: v5.2 Cards & Connections — COMPLETE
-
-**Goal:** Migrate from nodes/edges to cards/connections with 4-type constraint.
-**Completed:** 2026-02-13
-
-**Phase 84 Plans:**
-- [x] 84-01: Schema migration with type constraints (~5m)
-- [x] 84-02: TypeScript Card/Connection interfaces
-- [x] 84-03: Data layer migration (~7m)
-- [x] 84-04: Verification and cleanup (~8m)
 
 ## Performance Metrics
 
@@ -87,10 +77,10 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 85 (Backend Terminal) | 4/5 | ~5.3m | In Progress |
+| 90 (SQL Integration) | 1/2 | ~3m | In Progress |
+| 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
 | 80 (Notebook Integration) | 2 | ~4.5m | Complete |
-| 79 (Catalog Browser) | 3 | ~4.7m | Complete |
 
 *Updated: 2026-02-14*
 
@@ -98,37 +88,28 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 
 ### Decisions
 
-Recent decisions affecting v6.1 work:
+Recent decisions affecting v6.2 work:
 
-**SuperStack Implementation:**
+**Capture Writing Surface (Phase 94-98):**
+- CAPTURE-01: Migrate from getText() to @tiptap/markdown for lossless serialization (Phase 94 blocker)
+- CAPTURE-02: DOMPurify for paste sanitization (security requirement)
+- CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
+- CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
+- CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
+
+**SuperStack Implementation (from v6.1):**
 - SSTACK-01: D3.js for all header rendering (enter/update/exit pattern)
 - SSTACK-02: SQLite queries drive header discovery (GROUP BY, json_each, strftime)
 - SSTACK-03: Header trees built from flat query results (not pre-hierarchical data)
 - SSTACK-04: Spans calculated bottom-up (leaves have span=1, parents sum children)
+- SQL-01: Dispatch query generation on facet.dataType (Phase 90-01)
+- SQL-02: Quarter calculation via formula not strftime('%Q') (Phase 90-01)
+- SQL-03: Month name ordering by numeric month not alphabetic (Phase 90-01)
 
-**Architecture (from v4.1):**
-- Bridge elimination via sql.js direct access (eliminated 40KB MessageBridge)
-- D3.js queries SQLite synchronously in same memory space
-
-**Terminal Security (from 85-01):**
+**Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
 - TERM-02: spawn() with args array, never string interpolation
-- TERM-03: 64KB output buffer for reconnection replay
-
-**Message Routing (from 85-02):**
-- TERM-04: Type guards for message dispatch (isTerminalMessage, isCommandMessage, etc.)
-- TERM-05: Local interface to avoid circular dependency
-- TERM-06: Layered dispatch: ping -> terminal -> file-monitoring -> command -> unknown
-
-**Frontend Integration (from 85-03):**
-- TERM-07: Terminal callbacks defined in WebSocketDispatcherOptions interface
-- TERM-08: useTerminal uses dispatcher methods, not direct WebSocket messages
-- TERM-09: Session ID generated client-side (term-{timestamp}-{random})
-
-**Mode Switching (from 85-04):**
 - TERM-10: Mode switch kills and respawns PTY rather than in-place modification
-- TERM-11: Working directory preserved by default on mode switch
-- TERM-12: ISOMETRY_TERMINAL_MODE env var set for shell scripts to detect mode
 
 See PROJECT.md Key Decisions table for full history.
 
@@ -137,6 +118,11 @@ See PROJECT.md Key Decisions table for full history.
 None yet.
 
 ### Blockers/Concerns
+
+**v6.2 Capture Writing Surface:**
+- Phase 94 critical: Current editor uses lossy getText() serialization — must migrate to @tiptap/markdown before adding features
+- Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
+- Research gap: Template picker UX (modal vs sidebar) — start with modal, iterate if needed
 
 **v6.1 SuperStack:**
 - No blockers identified
@@ -150,13 +136,13 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 85 Plan 04 complete, ready for Plan 05 (Terminal Verification)
-Resume file: .planning/phases/85-backend-terminal/85-05-PLAN.md
+Stopped at: Phase 90 Plan 01 complete, ready for Plan 02 (Tree Builder)
+Resume file: .planning/phases/90-sql-integration/90-02-PLAN.md (if exists)
 
-**Phase 85 Plan 04 Complete:**
-- terminalTypes.ts: Mode switch message types
-- terminalPTYServer.ts: handleModeSwitch with PTY respawn
-- claudeCodeWebSocketDispatcher.ts: switchTerminalMode method
-- useTerminal.ts: currentMode state and switchMode function
+**Phase 90 Plan 01 Complete:**
+- src/db/queries/header-discovery.ts: Query generator with facet type dispatch
+- buildHeaderDiscoveryQuery: Handles date, multi_select, simple facets
+- buildStackedHeaderQuery: Multi-facet hierarchy queries
+- 30 tests pass including mandatory performance benchmarks (<100ms for 10K nodes)
 
-**Next step:** Execute Plan 85-05 (Terminal Verification)
+**Next step:** Execute Plan 90-02 (Tree Builder from Query Results)

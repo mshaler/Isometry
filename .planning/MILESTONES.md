@@ -1,5 +1,30 @@
 # Project Milestones: Isometry
 
+## v6.2 Capture Writing Surface (Planned)
+
+**Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, and Isometry-native embeds.
+
+**Phases planned:** 94-98 (5 phases)
+- Phase 94: Foundation & Critical Fixes (11 requirements)
+- Phase 95: Data Layer & Backlinks (9 requirements)
+- Phase 96: Block Types & Slash Commands (14 requirements)
+- Phase 97: Inline Properties (4 requirements)
+- Phase 98: Isometry Embeds & Polish (7 requirements)
+
+**What v6.2 Delivers:**
+- Apple Notes keyboard fluency (53 shortcuts)
+- Notion-style slash commands (30+ commands)
+- Obsidian power features (backlinks, templates, inline properties)
+- Isometry-native live embeds (SuperGrid, Network, Timeline in notes)
+- Critical fixes: Markdown serialization, XSS sanitization, memory cleanup
+
+**Reference:** CAPTURE-ROADMAP.md, CAPTURE-REQUIREMENTS.md
+
+**Created:** 2026-02-14
+**Status:** Roadmap complete, awaiting `/gsd:plan-phase 94`
+
+---
+
 ## v6.1 SuperStack Enhancement (In Progress)
 
 **Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
