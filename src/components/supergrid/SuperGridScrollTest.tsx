@@ -50,6 +50,16 @@ export function SuperGridScrollTest(): JSX.Element {
     []
   );
 
+  // Auto-import alto-index data on mount when no data exists
+  useEffect(() => {
+    if (!dbLoading && !dbError && !nodesLoading && importStatus === 'idle') {
+      // Check if we need to import (no nodes in database)
+      if (!allNodes || allNodes.length === 0) {
+        importFromPublic({ clearExisting: true });
+      }
+    }
+  }, [dbLoading, dbError, nodesLoading, allNodes, importStatus, importFromPublic]);
+
   // Create projection config
   const projection: PAFVProjection = useMemo(() => ({
     xAxis: { facet: xFacet, axis: 'category' },
