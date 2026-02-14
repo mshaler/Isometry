@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 94 - Foundation & Critical Fixes (Capture Writing Surface v6.2)
+**Current focus:** Phase 91 - Interactions (SuperStack Enhancement v6.1)
 
 ## Current Position
 
-Phase: 94 of 98 (Foundation & Critical Fixes - Capture Writing Surface v6.2)
-Plan: 4 of 4 complete
-Status: Phase 94 COMPLETE
-Last activity: 2026-02-14 — Completed 94-03-PLAN.md (Apple Notes Keyboard Shortcuts)
+Phase: 91 of 98 (Interactions - SuperStack Enhancement v6.1)
+Plan: 1 of 5 complete
+Status: In progress
+Last activity: 2026-02-14 — Completed 91-01-PLAN.md (Header Collapse/Expand + Click-to-Filter)
 
-Progress (Phase 94): [██████████] 100% (4 of 4 plans)
+Progress (Phase 91): [██░░░░░░░░] 20% (1 of 5 plans)
 Overall: [████████░░] 94% (94 of ~130 total phases across all milestones)
 
 ## Active Milestones
@@ -47,12 +47,17 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 - Phase 90: SQL Integration (5 requirements) — ✓ COMPLETE
   - [x] 90-01: Header Discovery Query Generator (~3m) ✓
   - [x] 90-02: Tree Builder from Query Results (~6m) ✓
-- Phase 91: Interactions (5 requirements)
+- Phase 91: Interactions (5 requirements) — IN PROGRESS (1/5)
+  - [x] 91-01: Header Collapse/Expand + Click-to-Filter (~10m) ✓
+  - [ ] 91-02: Drag Axis Reordering
+  - [ ] 91-03: TBD
+  - [ ] 91-04: TBD
+  - [ ] 91-05: TBD
 - Phase 92: Data Cell Integration (4 requirements)
 - Phase 93: Polish & Performance (5 requirements)
 
 **Total requirements:** 25
-**Current:** Phase 90 complete, ready for Phase 91
+**Current:** Phase 91 plan 01 complete, ready for Phase 91-02
 
 ### v6.0 Interactive Shell — IN PROGRESS
 
@@ -81,11 +86,11 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 91 (Interactions) | 1/5 | ~10m | In Progress |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
-| 80 (Notebook Integration) | 2 | ~4.5m | Complete |
 
 *Updated: 2026-02-14*
 
@@ -93,7 +98,24 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 
 ### Decisions
 
-Recent decisions affecting v6.2 work:
+Recent decisions affecting v6.1 SuperStack work:
+
+**Header Interactions (Phase 91):**
+- INT-STATE-01: Keep collapse state LOCAL in useHeaderInteractions (Set<string>), not in Context API - prevents re-render cascade ✅ Implemented 91-01
+- INT-CLONE-01: Use structuredClone(tree) before mutation - React requires immutable updates ✅ Implemented 91-01
+- INT-LOG-01: Use superGridLogger.debug for filter constraints - FilterContext wiring deferred to Phase 92 ✅ Implemented 91-01
+
+**SuperStack Implementation (from v6.1):**
+- SSTACK-01: D3.js for all header rendering (enter/update/exit pattern)
+- SSTACK-02: SQLite queries drive header discovery (GROUP BY, json_each, strftime)
+- SSTACK-03: Header trees built from flat query results (not pre-hierarchical data)
+- SSTACK-04: Spans calculated bottom-up (leaves have span=1, parents sum children)
+- SQL-01: Dispatch query generation on facet.dataType (Phase 90-01)
+- SQL-02: Quarter calculation via formula not strftime('%Q') (Phase 90-01)
+- SQL-03: Month name ordering by numeric month not alphabetic (Phase 90-01)
+- SQL-ARCH-01: Use NestedHeaderRenderer directly, not GridRenderingEngine wrapper (Phase 90-02)
+- SQL-05-IMPL: Empty datasets return empty HeaderTree (leafCount=0) not null (Phase 90-02)
+- FACET-MAP-01: Infer FacetConfig from AxisMapping using LATCH heuristics (Phase 90-02)
 
 **Capture Writing Surface (Phase 94-98):**
 - MD-01: Use @tiptap/markdown extension with storage API (official TipTap approach) ✅ Implemented 94-01
@@ -111,18 +133,6 @@ Recent decisions affecting v6.2 work:
 - CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
 - CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
 
-**SuperStack Implementation (from v6.1):**
-- SSTACK-01: D3.js for all header rendering (enter/update/exit pattern)
-- SSTACK-02: SQLite queries drive header discovery (GROUP BY, json_each, strftime)
-- SSTACK-03: Header trees built from flat query results (not pre-hierarchical data)
-- SSTACK-04: Spans calculated bottom-up (leaves have span=1, parents sum children)
-- SQL-01: Dispatch query generation on facet.dataType (Phase 90-01)
-- SQL-02: Quarter calculation via formula not strftime('%Q') (Phase 90-01)
-- SQL-03: Month name ordering by numeric month not alphabetic (Phase 90-01)
-- SQL-ARCH-01: Use NestedHeaderRenderer directly, not GridRenderingEngine wrapper (Phase 90-02)
-- SQL-05-IMPL: Empty datasets return empty HeaderTree (leafCount=0) not null (Phase 90-02)
-- FACET-MAP-01: Infer FacetConfig from AxisMapping using LATCH heuristics (Phase 90-02)
-
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
 - TERM-02: spawn() with args array, never string interpolation
@@ -136,17 +146,14 @@ None yet.
 
 ### Blockers/Concerns
 
-**v6.2 Capture Writing Surface:**
-- ~~Phase 94 critical: Current editor uses lossy getText() serialization~~ ✅ RESOLVED (94-01)
-- ~~Security: XSS vulnerability via pasted HTML~~ ✅ RESOLVED (94-02)
-- ~~Memory leaks: Tippy instances not cleaned up~~ ✅ RESOLVED (94-02)
-- Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
-- Research gap: Template picker UX (modal vs sidebar) — start with modal, iterate if needed
-
 **v6.1 SuperStack:**
 - No blockers identified
-- Implementation plan is comprehensive with type definitions ready
-- File structure already specified: `src/superstack/`
+- useHeaderInteractions hook ready for additional interaction types
+- Click-to-filter logs constraints to console (FilterContext wiring in Phase 92)
+
+**v6.2 Capture Writing Surface:**
+- Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
+- Research gap: Template picker UX (modal vs sidebar) — start with modal, iterate if needed
 
 **Technical Debt:**
 - knip unused exports: 275 reported (baseline ratchet at 1000, needs cleanup)
@@ -156,35 +163,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 94 COMPLETE - All 4 plans executed
-Resume file: .planning/phases/94-foundation-critical-fixes/94-03-SUMMARY.md
+Stopped at: Phase 91-01 COMPLETE - Header Collapse/Expand + Click-to-Filter
+Resume file: .planning/phases/91-interactions/91-01-SUMMARY.md
 
-**Phase 94 COMPLETE - All Plans Summary:**
+**Phase 91-01 Summary:**
+- Created useHeaderInteractions hook with local collapse state (avoids Context re-render cascade)
+- Added toggleHeaderCollapse to header-tree-builder
+- Implemented click handlers in GridSqlHeaderAdapter (D3 event delegation)
+- Wired interactions through SuperGrid component
+- 1 deviation: Fixed unrelated max-len lint error in useTerminal.ts (blocking)
+- Commits: 1ffe667b, 84b75ed7, 42b775a6
 
-**94-01: Markdown Serialization Fix (~5.1m)**
-- Eliminated critical data loss bug: getText() → @tiptap/markdown
-- All formatting (bold, italic, lists, links, headings) now persists
-- Commits: 29d6ecb0, 60ee0a36
-
-**94-02: Paste Sanitization + Tippy Cleanup (~5.1m)**
-- Added XSS protection: DOMPurify paste sanitization
-- Fixed memory leaks: Tippy.js cleanup guards
-- Commits: 29d6ecb0 (Markdown fix), 60ee0a36 (paste sanitization)
-
-**94-03: Apple Notes Keyboard Shortcuts (~5.5m)**
-- Implemented 30+ keyboard shortcuts (Cmd+1-6, Cmd+Shift+L, Tab/Shift+Tab)
-- Added smart formatting (`- ` → bullet, `1. ` → number, `[ ]` → checkbox)
-- Installed TaskList/TaskItem extensions for native task support
-- 1 deviation: Fixed ESLint no-control-regex errors (terminal security code)
-- Commits: d071fdb9 (extension), 523166a2 (lint fix), 93ab2dc0 (TaskList)
-
-**94-04: Word Count + Undo/Redo Polish (~6m)**
-- Added real-time word/character count: EditorStatusBar component
-- Verified Undo/Redo buttons functional in toolbar
-- Commits: fc37ea01, aebbdcdc
-
-**Wave structure:**
-- Wave 1: 94-01 ✅, 94-02 ✅ (critical blocker + security)
-- Wave 2: 94-03 ✅, 94-04 ✅ (UX enhancements)
-
-**Next step:** Proceed to Phase 95 (Data Layer & Backlinks) or Phase 91 (SuperStack Interactions)
+**Next step:** Execute Phase 91-02 (Drag Axis Reordering) or continue with Phase 95
