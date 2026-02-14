@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 94 of 98 (Foundation & Critical Fixes - Capture Writing Surface v6.2)
-Plan: 1 of 4 complete
+Plan: 3 of 4 complete
 Status: Phase 94 in progress
-Last activity: 2026-02-14 — Completed 94-01-PLAN.md (Markdown Serialization Fix)
+Last activity: 2026-02-14 — Completed 94-04-PLAN.md (Word Count + Undo/Redo Polish)
 
-Progress (Phase 94): [██▓░░░░░░░] 25% (1 of 4 plans)
+Progress (Phase 94): [███████▓░░] 75% (3 of 4 plans)
 Overall: [████████░░] 94% (94 of ~130 total phases across all milestones)
 
 ## Active Milestones
@@ -25,11 +25,11 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 **Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
 
 **Phases:**
-- Phase 94: Foundation & Critical Fixes (11 requirements) — IN PROGRESS (1/4 plans complete)
+- Phase 94: Foundation & Critical Fixes (11 requirements) — IN PROGRESS (3/4 plans complete)
   - [x] 94-01: Markdown Serialization Fix (~5m) ✓
-  - [ ] 94-02: Paste Sanitization + Tippy.js Cleanup
+  - [x] 94-02: Paste Sanitization + Tippy.js Cleanup (~5m) ✓
   - [ ] 94-03: Apple Notes Keyboard Shortcuts
-  - [ ] 94-04: Word Count + Undo/Redo Polish
+  - [x] 94-04: Word Count + Undo/Redo Polish (~6m) ✓
 - Phase 95: Data Layer & Backlinks (9 requirements)
 - Phase 96: Block Types & Slash Commands (14 requirements)
 - Phase 97: Inline Properties (4 requirements)
@@ -81,7 +81,7 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 94 (Foundation Fixes) | 1/4 | ~5.1m | In Progress |
+| 94 (Foundation Fixes) | 3/4 | ~5.4m | In Progress |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
@@ -98,8 +98,12 @@ Recent decisions affecting v6.2 work:
 **Capture Writing Surface (Phase 94-98):**
 - MD-01: Use @tiptap/markdown extension with storage API (official TipTap approach) ✅ Implemented 94-01
 - MD-02: Manual test plan instead of automated unit tests (TipTap test environment would delay fix) ✅ Implemented 94-01
+- SEC-01: DOMPurify for paste sanitization via transformPastedHTML (prevents XSS) ✅ Implemented 94-02
+- MEM-01: Destroyed flag pattern for Tippy cleanup (prevents memory leaks) ✅ Implemented 94-02
+- POLISH-COUNT: Use TipTap CharacterCount extension storage API ✅ Implemented 94-04
+- POLISH-STATUS: Separate EditorStatusBar component at bottom of editor ✅ Implemented 94-04
 - CAPTURE-01: ~~Migrate from getText() to @tiptap/markdown~~ ✅ COMPLETE (94-01)
-- CAPTURE-02: DOMPurify for paste sanitization (security requirement)
+- CAPTURE-02: ~~DOMPurify for paste sanitization~~ ✅ COMPLETE (94-02)
 - CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
 - CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
 - CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
@@ -130,7 +134,9 @@ None yet.
 ### Blockers/Concerns
 
 **v6.2 Capture Writing Surface:**
-- Phase 94 critical: Current editor uses lossy getText() serialization — must migrate to @tiptap/markdown before adding features
+- ~~Phase 94 critical: Current editor uses lossy getText() serialization~~ ✅ RESOLVED (94-01)
+- ~~Security: XSS vulnerability via pasted HTML~~ ✅ RESOLVED (94-02)
+- ~~Memory leaks: Tippy instances not cleaned up~~ ✅ RESOLVED (94-02)
 - Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
 - Research gap: Template picker UX (modal vs sidebar) — start with modal, iterate if needed
 
@@ -147,7 +153,26 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 94 plan 94-01 complete (Markdown Serialization Fix)
+Stopped at: Phase 94 plan 94-04 complete (Word Count + Undo/Redo Polish)
+Resume file: .planning/phases/94-foundation-critical-fixes/94-04-SUMMARY.md
+
+**Phase 94 Plan 94-04 Complete:**
+- Added real-time word/character count: EditorStatusBar component
+- Integrated @tiptap/extension-character-count for accurate tracking
+- Status bar shows counts and save status (Saving.../Unsaved/Saved)
+- Verified Undo/Redo buttons functional in toolbar
+- No deviations from plan
+- Duration: ~6 minutes
+- Commits: fc37ea01, aebbdcdc
+
+**Phase 94 Remaining Plans:**
+- 94-03-PLAN.md: Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
+
+**Wave structure:**
+- Wave 1: 94-01 ✅ (critical blocker), 94-02 ✅ (security/memory)
+- Wave 2: 94-03 (shortcuts), 94-04 ✅ (polish)
+
+**Next step:** Execute plan 94-03 (Apple Notes keyboard shortcuts)
 Resume file: .planning/phases/94-foundation-critical-fixes/94-01-SUMMARY.md
 
 **Phase 94 Plan 94-01 Complete:**

@@ -5,6 +5,8 @@ import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Markdown } from '@tiptap/markdown';
 import CharacterCount from '@tiptap/extension-character-count';
+import TaskList from '@tiptap/extension-task-list';
+import TaskItem from '@tiptap/extension-task-item';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
 import DOMPurify from 'dompurify';
@@ -144,6 +146,10 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       }),
       CharacterCount.configure({
         // No character limit - just tracking
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true, // Allow nested task items
       }),
       AppleNotesShortcuts,
       SlashCommands.configure({
