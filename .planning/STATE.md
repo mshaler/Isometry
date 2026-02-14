@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 95 of 98 (Data Layer & Backlinks - Capture Writing Surface v6.2)
-Plan: 3 of 4 complete
-Status: In progress
-Last activity: 2026-02-14 — Completed 95-03 Backlinks Panel
+Plan: 4 of 4 complete
+Status: Phase complete
+Last activity: 2026-02-14 — Completed 95-01 Templates Data Layer
 
-Progress (Phase 95): [███████░░░] 75% (3 of 4 plans)
+Progress (Phase 95): [██████████] 100% (4 of 4 plans)
 Overall: [████████░░] 96% (99 of ~130 total phases across all milestones)
 
 ## Active Milestones
@@ -30,17 +30,17 @@ Overall: [████████░░] 96% (99 of ~130 total phases across al
   - [x] 94-02: Paste Sanitization + Tippy.js Cleanup (~5m) ✓
   - [x] 94-03: Apple Notes Keyboard Shortcuts (~5.5m) ✓
   - [x] 94-04: Word Count + Undo/Redo Polish (~6m) ✓
-- Phase 95: Data Layer & Backlinks (9 requirements) — IN PROGRESS (3/4 plans)
-  - [x] 95-01: Wiki-Link Edge Creation ✓
+- Phase 95: Data Layer & Backlinks (9 requirements) — ✓ COMPLETE (4/4 plans)
+  - [x] 95-01: Templates Data Layer (~5m) ✓
   - [x] 95-02: Backlinks Query Infrastructure ✓
   - [x] 95-03: Backlinks Panel in RightSidebar ✓
-  - [ ] 95-04: Forward Links Panel
+  - [x] 95-04: Forward Links Panel ✓
 - Phase 96: Block Types & Slash Commands (14 requirements)
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 95 in progress (3/4 plans)
+**Current:** Phase 95 complete ✓, ready for Phase 96
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -87,7 +87,7 @@ Overall: [████████░░] 96% (99 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 95 (Data Layer) | 3/4 | ~4m | In Progress |
+| 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
@@ -133,7 +133,8 @@ Recent decisions affecting v6.1 SuperStack work:
 - KEYS-09: TaskList/TaskItem installation for checkbox support ✅ Implemented 94-03
 - CAPTURE-01: ~~Migrate from getText() to @tiptap/markdown~~ ✅ COMPLETE (94-01)
 - CAPTURE-02: ~~DOMPurify for paste sanitization~~ ✅ COMPLETE (94-02)
-- CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
+- CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards) ✅ Implemented 95-01
+- TEMPLATES-01: Template table with FTS5, CRUD operations, 4 built-in templates ✅ Implemented 95-01
 - CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
 - CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
 - BACK-QUERY-01: Use nodeId for backlink queries (edges reference nodes.id not notebook_cards.id) ✅ Implemented 95-03
@@ -170,15 +171,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 95-03 COMPLETE - Backlinks Panel
-Resume file: .planning/phases/95-data-layer-backlinks/95-03-SUMMARY.md
+Stopped at: Phase 95-01 COMPLETE - Templates Data Layer
+Resume file: .planning/phases/95-data-layer-backlinks/95-01-SUMMARY.md
 
-**Phase 95-03 Summary:**
-- Created BacklinksPanel component for viewing reverse relationships
-- Added Backlinks tab to RightSidebar
-- Click-to-navigate from backlink to source card
-- queryBacklinks now excludes self-references and has 50-item limit
-- 0 deviations
-- Commits: 625f14ae, 74937376, 3e225f84
+**Phase 95-01 Summary:**
+- Created templates table in schema with FTS5 search
+- Created templates.ts with CRUD operations (8 exported functions)
+- Wired seedBuiltInTemplates to SQLiteProvider initialization
+- 4 built-in templates: Meeting Notes, Daily Note, Project, Task
+- 2 deviations (schema pre-existing, line length fixes)
+- Commits: bfd9e2e5, 3b7d6ca6
 
-**Next step:** Execute Phase 95-04 (Forward Links Panel)
+**Next step:** Phase 95 complete - ready for Phase 96 (Block Types & Slash Commands)
