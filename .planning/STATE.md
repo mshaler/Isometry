@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 91 of 98 (Interactions - SuperStack Enhancement v6.1)
-Plan: 1 of 5 complete
+Plan: 2 of 5 complete
 Status: In progress
-Last activity: 2026-02-14 — Completed 91-01-PLAN.md (Header Collapse/Expand + Click-to-Filter)
+Last activity: 2026-02-14 — Completed 91-02-PLAN.md (Header Keyboard Navigation)
 
-Progress (Phase 91): [██░░░░░░░░] 20% (1 of 5 plans)
-Overall: [████████░░] 94% (94 of ~130 total phases across all milestones)
+Progress (Phase 91): [████░░░░░░] 40% (2 of 5 plans)
+Overall: [████████░░] 94% (95 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -47,9 +47,9 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 - Phase 90: SQL Integration (5 requirements) — ✓ COMPLETE
   - [x] 90-01: Header Discovery Query Generator (~3m) ✓
   - [x] 90-02: Tree Builder from Query Results (~6m) ✓
-- Phase 91: Interactions (5 requirements) — IN PROGRESS (1/5)
+- Phase 91: Interactions (5 requirements) — IN PROGRESS (2/5)
   - [x] 91-01: Header Collapse/Expand + Click-to-Filter (~10m) ✓
-  - [ ] 91-02: Drag Axis Reordering
+  - [x] 91-02: Header Keyboard Navigation (~4m) ✓
   - [ ] 91-03: TBD
   - [ ] 91-04: TBD
   - [ ] 91-05: TBD
@@ -57,7 +57,7 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 - Phase 93: Polish & Performance (5 requirements)
 
 **Total requirements:** 25
-**Current:** Phase 91 plan 01 complete, ready for Phase 91-02
+**Current:** Phase 91 plan 02 complete, ready for Phase 91-03
 
 ### v6.0 Interactive Shell — IN PROGRESS
 
@@ -86,7 +86,7 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 91 (Interactions) | 1/5 | ~10m | In Progress |
+| 91 (Interactions) | 2/5 | ~7m | In Progress |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
@@ -104,6 +104,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - INT-STATE-01: Keep collapse state LOCAL in useHeaderInteractions (Set<string>), not in Context API - prevents re-render cascade ✅ Implemented 91-01
 - INT-CLONE-01: Use structuredClone(tree) before mutation - React requires immutable updates ✅ Implemented 91-01
 - INT-LOG-01: Use superGridLogger.debug for filter constraints - FilterContext wiring deferred to Phase 92 ✅ Implemented 91-01
+- INT-KB-01: Parse header key format to determine parent/child/sibling relationships ✅ Implemented 91-02
+- INT-KB-02: Focus visuals use dashed stroke to differentiate from selection solid stroke ✅ Implemented 91-02
+- INT-KB-03: Header IDs collected depth-first respecting collapsed state ✅ Implemented 91-02
 
 **SuperStack Implementation (from v6.1):**
 - SSTACK-01: D3.js for all header rendering (enter/update/exit pattern)
@@ -163,15 +166,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 91-01 COMPLETE - Header Collapse/Expand + Click-to-Filter
-Resume file: .planning/phases/91-interactions/91-01-SUMMARY.md
+Stopped at: Phase 91-02 COMPLETE - Header Keyboard Navigation
+Resume file: .planning/phases/91-interactions/91-02-SUMMARY.md
 
-**Phase 91-01 Summary:**
-- Created useHeaderInteractions hook with local collapse state (avoids Context re-render cascade)
-- Added toggleHeaderCollapse to header-tree-builder
-- Implemented click handlers in GridSqlHeaderAdapter (D3 event delegation)
-- Wired interactions through SuperGrid component
-- 1 deviation: Fixed unrelated max-len lint error in useTerminal.ts (blocking)
-- Commits: 1ffe667b, 84b75ed7, 42b775a6
+**Phase 91-02 Summary:**
+- Created HeaderKeyboardController for WCAG 2.4.3 keyboard navigation
+- Added ARIA attributes to headers (role=gridcell, aria-expanded, tabindex, data-header-id)
+- Implemented visible focus ring (3px dashed blue-700 stroke)
+- Integrated keyboard controller with SuperGrid lifecycle
+- 0 deviations
+- Commits: f73c3139, ff3ecb71, 3fd8fbab
 
-**Next step:** Execute Phase 91-02 (Drag Axis Reordering) or continue with Phase 95
+**Next step:** Execute Phase 91-03 or continue with Phase 95 (Capture data layer)
