@@ -259,6 +259,12 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     const terminal = terminalRef.current;
     if (!terminal) return;
 
+    // Prevent duplicate PTY spawns
+    if (isConnected) {
+      devLogger.debug('Already connected, skipping spawn', { component: 'useTerminal' });
+      return;
+    }
+
     await initializeDispatcher();
 
     const dispatcher = dispatcherRef.current;
@@ -304,7 +310,15 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     }
 
     setIsConnected(true);
-  }, [initializeDispatcher, options.shell, terminalContext.currentWorkingDirectory, handleCopy, handlePaste]);
+    // Dependencies list for connect callback
+  }, [
+    isConnected,
+    initializeDispatcher,
+    options.shell,
+    terminalContext.currentWorkingDirectory,
+    handleCopy,
+    handlePaste,
+  ]);
 
   /**
    * Execute command (write to PTY input)

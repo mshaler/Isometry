@@ -20,6 +20,7 @@ import { SuperStack } from './SuperStack';
 import { DensityControls } from './DensityControls';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
+import { useHeaderInteractions } from '@/hooks/useHeaderInteractions';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { filterEmptyCells, type ExtentMode } from '@/d3/SuperGridEngine/DataManager';
 import type { Node } from '@/types/node';
@@ -29,6 +30,7 @@ import type { FacetConfig } from '@/superstack/types/superstack';
 import { GridSqlHeaderAdapter } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
 import type { SqlHeaderAdapterConfig } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
 import * as d3 from 'd3';
+import { superGridLogger } from '@/utils/dev-logger';
 import './SuperStack.css';
 import './SuperGrid.css';
 
@@ -203,12 +205,30 @@ export function SuperGrid({
 
   // Use header discovery hook (SQL-04: loading state, SQL-05: empty datasets)
   const {
-    columnTree,
-    rowTree,
+    columnTree: discoveredColumnTree,
+    rowTree: discoveredRowTree,
     isLoading: headersLoading,
     error: headerError,
     // refresh: refreshHeaders, // Available for manual refresh if needed
   } = useHeaderDiscovery(db, columnFacets, rowFacets);
+
+  // Use header interactions hook for collapse/filter state (Phase 91-01)
+  const {
+    selectedHeaderId,
+    handleHeaderToggle,
+    handleHeaderClick: handleInteractionHeaderClick,
+    handleHeaderSelect,
+    columnTree,
+    rowTree,
+  } = useHeaderInteractions({
+    columnTree: discoveredColumnTree,
+    rowTree: discoveredRowTree,
+    onFilterChange: (constraints) => {
+      // TODO: Wire to FilterContext in Phase 92 (Data Cell Integration)
+      // For now, log to console for debugging
+      superGridLogger.debug('[SuperGrid] Filter constraints from header click:', constraints);
+    },
+  });
 
   // Create GridSqlHeaderAdapter ref for coordinating SQL-driven headers
   const svgRef = useRef<SVGSVGElement>(null);
@@ -224,6 +244,10 @@ export function SuperGrid({
         cellHeight: 100,
         padding: 4,
         animationDuration: 300,
+        // Phase 91-01: Wire interaction callbacks
+        onHeaderToggle: handleHeaderToggle,
+        onHeaderFilter: handleInteractionHeaderClick,
+        onHeaderSelect: handleHeaderSelect,
       };
 
       // Cast to SVGElement since GridSqlHeaderAdapter expects base SVGElement
@@ -232,7 +256,7 @@ export function SuperGrid({
         config
       );
     }
-  }, []);
+  }, [handleHeaderToggle, handleInteractionHeaderClick, handleHeaderSelect]);
 
   // Update adapter when header trees change
   useEffect(() => {
@@ -246,6 +270,13 @@ export function SuperGrid({
       }
     }
   }, [columnTree, rowTree]);
+
+  // Update selected header visual highlight (Phase 91-01)
+  useEffect(() => {
+    if (sqlHeaderAdapterRef.current) {
+      sqlHeaderAdapterRef.current.updateSelectedHeader(selectedHeaderId);
+    }
+  }, [selectedHeaderId]);
 
   // Group nodes by grid coordinates
   // Supports stacked facets using composite keys (e.g., "folder|status")
