@@ -10,12 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 94 of 98 (Foundation & Critical Fixes)
-Status: Planning
-Last activity: 2026-02-14 — Starting Phase 94 planning
+Phase: 90 of 93 (SQL Integration)
+Plan: 2 of 2 complete
+Status: Phase 90 complete ✓
+Last activity: 2026-02-14 — Completed 90-02-PLAN.md (Tree Builder from Query Results)
 
-Progress (Phase 90): [█████░░░░░] 50% (1 of 2 plans)
-Overall: [████████░░] 89% (89 of ~130 total phases across all milestones)
+Progress (Phase 90): [██████████] 100% (2 of 2 plans)
+Overall: [████████░░] 90% (90 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -39,15 +40,15 @@ Overall: [████████░░] 89% (89 of ~130 total phases across al
 
 **Phases:**
 - Phase 89: Static Headers Foundation (6 requirements) ✓
-- Phase 90: SQL Integration (5 requirements) — 20% complete (1/5 requirements)
+- Phase 90: SQL Integration (5 requirements) — ✓ COMPLETE
   - [x] 90-01: Header Discovery Query Generator (~3m) ✓
-  - [ ] 90-02: Tree Builder from Query Results
+  - [x] 90-02: Tree Builder from Query Results (~6m) ✓
 - Phase 91: Interactions (5 requirements)
 - Phase 92: Data Cell Integration (4 requirements)
 - Phase 93: Polish & Performance (5 requirements)
 
 **Total requirements:** 25
-**Current:** Phase 90-01 complete, ready for 90-02
+**Current:** Phase 90 complete, ready for Phase 91
 
 ### v6.0 Interactive Shell — IN PROGRESS
 
@@ -76,7 +77,7 @@ Overall: [████████░░] 89% (89 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 90 (SQL Integration) | 1/2 | ~3m | In Progress |
+| 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 | 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 | 84 (Cards & Connections) | 4 | ~7m | Complete |
 | 80 (Notebook Integration) | 2 | ~4.5m | Complete |
@@ -104,6 +105,9 @@ Recent decisions affecting v6.2 work:
 - SQL-01: Dispatch query generation on facet.dataType (Phase 90-01)
 - SQL-02: Quarter calculation via formula not strftime('%Q') (Phase 90-01)
 - SQL-03: Month name ordering by numeric month not alphabetic (Phase 90-01)
+- SQL-ARCH-01: Use NestedHeaderRenderer directly, not GridRenderingEngine wrapper (Phase 90-02)
+- SQL-05-IMPL: Empty datasets return empty HeaderTree (leafCount=0) not null (Phase 90-02)
+- FACET-MAP-01: Infer FacetConfig from AxisMapping using LATCH heuristics (Phase 90-02)
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -135,8 +139,16 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 94 planning complete, ready for execution
-Resume file: .planning/phases/94-foundation-critical-fixes/94-01-PLAN.md
+Stopped at: Phase 90 complete (SQL Integration), ready for Phase 91 (Interactions)
+Resume file: .planning/phases/90-sql-integration/90-02-SUMMARY.md
+
+**Phase 90 Complete:**
+- 90-01: Header Discovery Query Generator (buildHeaderDiscoveryQuery, buildStackedHeaderQuery)
+- 90-02: Tree Builder from Query Results (HeaderDiscoveryService, useHeaderDiscovery, GridSqlHeaderAdapter)
+- SQL-driven headers integrated into SuperGrid with loading states and empty dataset handling
+- 9 tests pass (30 total in header-discovery.test.ts)
+
+**Next step:** Begin Phase 91 planning (Interactions)
 
 **Phase 94 Plans Created:**
 - 94-01-PLAN.md: Markdown serialization fix via @tiptap/markdown (FOUND-01)
