@@ -33,7 +33,22 @@ Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 
 ### v5.2 Cards & Connections (SHIPPED)
 Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
 
-## Current Milestone: v6.1 SuperStack Enhancement
+## Current Milestone: v6.2 Capture Writing Surface
+
+**Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
+
+**Target features:**
+- **Apple Notes Fluency** — Full keyboard shortcuts, smart formatting, auto-lists, inline checklists
+- **Notion Slash Commands** — Block types (/callout, /toggle, /divider, /columns), embeds (/image, /file, /bookmark), references (/mention, /date)
+- **Obsidian Power** — Backlinks panel, templates, inline frontmatter/properties editing
+- **Isometry-Native Embeds** — `/supergrid`, `/network`, `/timeline` live view references
+
+**Design Principles:**
+- Zero friction capture — keyboard-first, mouse-optional
+- Write naturally — formatting aids thought, doesn't interrupt it
+- Deep integration — Capture IS Isometry, not a bolt-on editor
+
+## Previous Milestone: v6.1 SuperStack Enhancement (In Progress)
 
 **Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 

@@ -6,32 +6,43 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 89 - Static Headers Foundation
+**Current focus:** Defining requirements for v6.2 Capture Writing Surface
 
 ## Current Position
 
-Phase: 90 of 93 (SQL Integration)
-Plan: 0 of 0 in current phase (ready to plan)
-Status: Phase 89 complete, ready for Phase 90
-Last activity: 2026-02-13 — Completed Phase 89 (Static Headers Foundation)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-13 — Milestone v6.2 started
 
-Progress (v6.1): [██░░░░░░░░] 20% (1 of 5 phases)
+Progress (v6.2): [░░░░░░░░░░] 0% (defining requirements)
 Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
 
-## Current Milestone: v6.1 SuperStack Enhancement
+## Current Milestone: v6.2 Capture Writing Surface
+
+**Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
+
+**Target features:**
+- Apple Notes Fluency — Full keyboard shortcuts, smart formatting, auto-lists, inline checklists
+- Notion Slash Commands — Block types, embeds, references
+- Obsidian Power — Backlinks, templates, inline properties
+- Isometry-Native Embeds — /supergrid, /network, /timeline live views
+
+**Status:** Gathering requirements
+
+## Previous Milestone: v6.1 SuperStack Enhancement (Paused)
 
 **Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
 **Phases:**
-- Phase 89: Static Headers Foundation (6 requirements)
+- Phase 89: Static Headers Foundation (6 requirements) ✓
 - Phase 90: SQL Integration (5 requirements)
 - Phase 91: Interactions (5 requirements)
 - Phase 92: Data Cell Integration (4 requirements)
 - Phase 93: Polish & Performance (5 requirements)
 
 **Total requirements:** 25
-
-**Implementation context:** Comprehensive implementation plan in `superstack-implementation-plan.md` provides complete type definitions, SQL query strategy, D3.js rendering approach, and test specifications. Research not needed—plan is detailed enough.
+**Resume:** `/gsd:plan-phase 90` when ready
 
 ## Previous Milestone: v6.0 Interactive Shell — DEFERRED
 
