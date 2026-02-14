@@ -9,7 +9,7 @@ import { useSQLite } from '../../db/SQLiteProvider';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useSelection } from '../../state/SelectionContext';
 import PropertyEditor from './PropertyEditor';
-import { TipTapEditor, EditorToolbar } from './editor';
+import { TipTapEditor, EditorToolbar, EditorStatusBar } from './editor';
 
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
 
@@ -104,7 +104,9 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     isDirty,
     isSaving,
     saveNow,
-    activeCard
+    activeCard,
+    wordCount,
+    characterCount,
   } = useTipTapEditor({
     autoSaveDelay: 2000,
     enableAutoSave: true
@@ -311,13 +313,22 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 relative">
+        <div className="flex-1 relative flex flex-col">
           {activeCard ? (
             <>
               <EditorToolbar editor={editor} theme={theme} />
-              <TipTapEditor
-                editor={editor}
-                className="min-h-[400px] p-2"
+              <div className="flex-1 overflow-auto">
+                <TipTapEditor
+                  editor={editor}
+                  className="min-h-[400px] p-2"
+                />
+              </div>
+              <EditorStatusBar
+                wordCount={wordCount}
+                characterCount={characterCount}
+                isSaving={isSaving}
+                isDirty={isDirty}
+                theme={theme}
               />
             </>
           ) : (
