@@ -3,8 +3,10 @@ import { useEditor, ReactRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Markdown } from '@tiptap/markdown';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import type { SuggestionProps, SuggestionKeyDownProps } from '@tiptap/suggestion';
+import DOMPurify from 'dompurify';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { debounce } from '../../utils/debounce';
@@ -104,6 +106,21 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
     immediatelyRender: true,
     shouldRerenderOnTransaction: false,
 
+    // Security: Sanitize pasted HTML to prevent XSS attacks
+    editorProps: {
+      transformPastedHTML: (html) => {
+        return DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: [
+            'p', 'br', 'strong', 'b', 'em', 'i', 'u', 's',
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'ul', 'ol', 'li', 'blockquote', 'code', 'pre',
+            'a', 'span', 'div'
+          ],
+          ALLOWED_ATTR: ['href', 'title', 'class'],
+        });
+      },
+    },
+
     extensions: [
       StarterKit.configure({
         // StarterKit includes: bold, italic, code, heading, bulletList,
@@ -115,6 +132,13 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       }),
       Placeholder.configure({
         placeholder: 'Type / for commands, [[ for links...',
+      }),
+      Markdown.configure({
+        // Configure markdown serialization options
+        indentation: {
+          style: 'space',
+          size: 2,
+        },
       }),
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
@@ -245,9 +269,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       // Skip if we're programmatically updating content
       if (isUpdatingContentRef.current) return;
 
-      // Extract content from editor as text
-      // TODO: Use proper markdown serialization when @tiptap/pm package is added
-      const content = ed.getText();
+      // Extract content from editor as markdown using @tiptap/markdown extension
+      const content = ed.storage.markdown.manager.serialize(ed.getJSON());
 
       setIsDirty(true);
 
@@ -262,9 +285,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
   const saveNow = useCallback(async () => {
     if (!editor || !activeCard?.id || !isDirty) return;
 
-    // Extract content from editor as text
-    // TODO: Use proper markdown serialization when @tiptap/pm package is added
-    const content = editor.getText();
+    // Extract content from editor as markdown using @tiptap/markdown extension
+    const content = editor.storage.markdown.manager.serialize(editor.getJSON());
 
     setIsSaving(true);
     try {
