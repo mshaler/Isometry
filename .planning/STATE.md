@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Defining requirements for v6.2 Capture Writing Surface
+**Current focus:** Phase 85 - Backend Infrastructure & Terminal Execution
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-13 — Milestone v6.2 started
+Phase: 85 of 93 (Backend Infrastructure & Terminal Execution)
+Plan: 1 of 5 complete
+Status: In progress
+Last activity: 2026-02-14 — Completed 85-01-PLAN.md (PTY Backend Infrastructure)
 
-Progress (v6.2): [░░░░░░░░░░] 0% (defining requirements)
+Progress (Phase 85): [██░░░░░░░░] 20% (1 of 5 plans)
 Overall: [████████░░] 88% (88 of ~100 total phases across all milestones)
 
 ## Current Milestone: v6.2 Capture Writing Surface
@@ -44,14 +44,18 @@ Overall: [████████░░] 88% (88 of ~100 total phases across al
 **Total requirements:** 25
 **Resume:** `/gsd:plan-phase 90` when ready
 
-## Previous Milestone: v6.0 Interactive Shell — DEFERRED
+## Current Milestone: v6.0 Interactive Shell — IN PROGRESS
 
 **Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Roadmap created (Phases 85-88), not yet started
-**Resume:** `/gsd:plan-phase 85` when ready
+**Status:** Phase 85 in progress
 
-**Phases (planned):**
-- Phase 85: Backend Infrastructure & Terminal Execution (8 requirements)
+**Phases:**
+- Phase 85: Backend Infrastructure & Terminal Execution (5 plans)
+  - [x] 85-01: PTY Backend Infrastructure (~4m)
+  - [ ] 85-02: WebSocket Server Integration
+  - [ ] 85-03: xterm.js Frontend Integration
+  - [ ] 85-04: Terminal Tab Component
+  - [ ] 85-05: Terminal Verification
 - Phase 86: Claude AI MCP Integration (7 requirements)
 - Phase 87: GSD File Synchronization (7 requirements)
 - Phase 88: Integration & Polish (verification only)
@@ -106,6 +110,11 @@ Recent decisions affecting v6.1 work:
 - Bridge elimination via sql.js direct access (eliminated 40KB MessageBridge)
 - D3.js queries SQLite synchronously in same memory space
 
+**Terminal Security (from 85-01):**
+- TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
+- TERM-02: spawn() with args array, never string interpolation
+- TERM-03: 64KB output buffer for reconnection replay
+
 See PROJECT.md Key Decisions table for full history.
 
 ### Pending Todos
@@ -125,16 +134,15 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-13
-Stopped at: Phase 89 complete, ready for Phase 90 (SQL Integration)
-Resume file: None
+Last session: 2026-02-14
+Stopped at: Phase 85 Plan 01 complete, ready for Plan 02 (WebSocket Server Integration)
+Resume file: .planning/phases/85-backend-terminal/85-02-PLAN.md
 
-**Phase 89 Complete:**
-- ✅ Types: HeaderNode, HeaderTree, FacetConfig, SuperStackState
-- ✅ Config: DEFAULT_DIMENSIONS, COMMON_FACETS, formatLabel
-- ✅ Builder: buildHeaderTree with span calculation
-- ✅ Renderer: D3.js SuperStackRenderer with enter/update/exit
-- ✅ Tests: 14 passing tests for tree building and spans
-- ✅ CSS: Styling with theme support
+**Phase 85 Plan 01 Complete:**
+- ✅ terminalTypes.ts: PTYConfig, TerminalSession, message type unions
+- ✅ outputBuffer.ts: 64KB circular buffer for replay
+- ✅ terminalPTYServer.ts: PTY session manager with node-pty
+- ✅ index.ts: Module exports
+- ✅ Tests: 7 passing OutputBuffer tests
 
-**Next step:** Run `/gsd:plan-phase 90` to implement SQL Integration (header discovery from live SQLite queries)
+**Next step:** Execute Plan 85-02 (WebSocket Server Integration)
