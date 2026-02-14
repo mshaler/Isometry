@@ -50,12 +50,13 @@ export function SuperGridScrollTest(): JSX.Element {
     []
   );
 
-  // Auto-import alto-index data on mount when no data exists
+  // Auto-import alto-index Notes data on mount when no data exists
   useEffect(() => {
     if (!dbLoading && !dbError && !nodesLoading && importStatus === 'idle') {
       // Check if we need to import (no nodes in database)
       if (!allNodes || allNodes.length === 0) {
-        importFromPublic({ clearExisting: true });
+        // Import only notes, not contacts/calendar/etc
+        importFromPublic({ clearExisting: true, dataTypes: ['notes'] });
       }
     }
   }, [dbLoading, dbError, nodesLoading, allNodes, importStatus, importFromPublic]);
@@ -225,13 +226,13 @@ export function SuperGridScrollTest(): JSX.Element {
       <div className="bg-white border-b p-4 flex items-center gap-6 flex-shrink-0">
         <h1 className="text-lg font-bold">SuperGrid Scroll Test</h1>
 
-        {/* Import Button */}
+        {/* Import Button - Notes only */}
         <button
-          onClick={() => importFromPublic({ clearExisting: true })}
+          onClick={() => importFromPublic({ clearExisting: true, dataTypes: ['notes'] })}
           disabled={importStatus === 'loading' || importStatus === 'importing'}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
         >
-          {importStatus === 'importing' ? `Importing ${importProgress}%` : 'Import Alto-Index'}
+          {importStatus === 'importing' ? `Importing ${importProgress}%` : 'Import Notes'}
         </button>
 
         {/* Stats */}
