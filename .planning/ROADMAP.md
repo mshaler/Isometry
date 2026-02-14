@@ -193,10 +193,11 @@ Plans:
   3. Multi-select facets (tags) explode via json_each
   4. Query completes in <100ms for 10K cards
   5. Empty datasets show graceful empty state
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 90-01: TBD (use /gsd:plan-phase)
+- [ ] 90-01-PLAN.md - Query generator with facet type dispatch (SQL-01, SQL-02, SQL-03)
+- [ ] 90-02-PLAN.md - Service layer, React hook, and GridRenderingEngine integration (SQL-04, SQL-05)
 
 ### Phase 91: Interactions
 **Goal**: Collapse/expand, click-to-filter, keyboard navigation
