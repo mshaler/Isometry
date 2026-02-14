@@ -225,10 +225,12 @@ Plans:
   2. Headers stay fixed while data area scrolls
   3. Density level affects cell rendering (counts vs chips)
   4. Selection syncs between headers and data cells
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 92-01: TBD (use /gsd:plan-phase)
+- [ ] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02)
+- [ ] 92-02-PLAN.md — Density-aware rendering (counts vs card chips) (CELL-03)
+- [ ] 92-03-PLAN.md — Selection synchronization between headers and data cells (CELL-04)
 
 ### Phase 93: Polish & Performance
 **Goal**: Virtual scrolling, accessibility, animations
