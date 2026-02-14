@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 94 of 98 (Foundation & Critical Fixes - Capture Writing Surface v6.2)
-Plan: 3 of 4 complete
-Status: Phase 94 in progress
-Last activity: 2026-02-14 — Completed 94-04-PLAN.md (Word Count + Undo/Redo Polish)
+Plan: 4 of 4 complete
+Status: Phase 94 COMPLETE
+Last activity: 2026-02-14 — Completed 94-03-PLAN.md (Apple Notes Keyboard Shortcuts)
 
-Progress (Phase 94): [███████▓░░] 75% (3 of 4 plans)
+Progress (Phase 94): [██████████] 100% (4 of 4 plans)
 Overall: [████████░░] 94% (94 of ~130 total phases across all milestones)
 
 ## Active Milestones
@@ -25,10 +25,10 @@ Overall: [████████░░] 94% (94 of ~130 total phases across al
 **Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
 
 **Phases:**
-- Phase 94: Foundation & Critical Fixes (11 requirements) — IN PROGRESS (3/4 plans complete)
+- Phase 94: Foundation & Critical Fixes (11 requirements) — ✓ COMPLETE (4/4 plans)
   - [x] 94-01: Markdown Serialization Fix (~5m) ✓
   - [x] 94-02: Paste Sanitization + Tippy.js Cleanup (~5m) ✓
-  - [ ] 94-03: Apple Notes Keyboard Shortcuts
+  - [x] 94-03: Apple Notes Keyboard Shortcuts (~5.5m) ✓
   - [x] 94-04: Word Count + Undo/Redo Polish (~6m) ✓
 - Phase 95: Data Layer & Backlinks (9 requirements)
 - Phase 96: Block Types & Slash Commands (14 requirements)
@@ -102,6 +102,9 @@ Recent decisions affecting v6.2 work:
 - MEM-01: Destroyed flag pattern for Tippy cleanup (prevents memory leaks) ✅ Implemented 94-02
 - POLISH-COUNT: Use TipTap CharacterCount extension storage API ✅ Implemented 94-04
 - POLISH-STATUS: Separate EditorStatusBar component at bottom of editor ✅ Implemented 94-04
+- KEYS-07: AppleNotesShortcuts extension pattern (centralize all shortcuts) ✅ Implemented 94-03
+- KEYS-08: Graceful TaskList fallback (toggleTaskList || toggleBulletList) ✅ Implemented 94-03
+- KEYS-09: TaskList/TaskItem installation for checkbox support ✅ Implemented 94-03
 - CAPTURE-01: ~~Migrate from getText() to @tiptap/markdown~~ ✅ COMPLETE (94-01)
 - CAPTURE-02: ~~DOMPurify for paste sanitization~~ ✅ COMPLETE (94-02)
 - CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards)
@@ -153,44 +156,35 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 94 plan 94-04 complete (Word Count + Undo/Redo Polish)
-Resume file: .planning/phases/94-foundation-critical-fixes/94-04-SUMMARY.md
+Stopped at: Phase 94 COMPLETE - All 4 plans executed
+Resume file: .planning/phases/94-foundation-critical-fixes/94-03-SUMMARY.md
 
-**Phase 94 Plan 94-04 Complete:**
-- Added real-time word/character count: EditorStatusBar component
-- Integrated @tiptap/extension-character-count for accurate tracking
-- Status bar shows counts and save status (Saving.../Unsaved/Saved)
-- Verified Undo/Redo buttons functional in toolbar
-- No deviations from plan
-- Duration: ~6 minutes
-- Commits: fc37ea01, aebbdcdc
+**Phase 94 COMPLETE - All Plans Summary:**
 
-**Phase 94 Remaining Plans:**
-- 94-03-PLAN.md: Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
-
-**Wave structure:**
-- Wave 1: 94-01 ✅ (critical blocker), 94-02 ✅ (security/memory)
-- Wave 2: 94-03 (shortcuts), 94-04 ✅ (polish)
-
-**Next step:** Execute plan 94-03 (Apple Notes keyboard shortcuts)
-Resume file: .planning/phases/94-foundation-critical-fixes/94-01-SUMMARY.md
-
-**Phase 94 Plan 94-01 Complete:**
+**94-01: Markdown Serialization Fix (~5.1m)**
 - Eliminated critical data loss bug: getText() → @tiptap/markdown
-- Added Markdown extension to editor configuration
-- Replaced lossy serialization in onUpdate and saveNow
-- Created comprehensive manual test plan
 - All formatting (bold, italic, lists, links, headings) now persists
-- Duration: ~5.1 minutes
 - Commits: 29d6ecb0, 60ee0a36
 
-**Phase 94 Remaining Plans:**
-- 94-02-PLAN.md: Paste sanitization + Tippy.js cleanup (FOUND-02, FOUND-03)
-- 94-03-PLAN.md: Apple Notes keyboard shortcuts (KEYS-01 through KEYS-06)
-- 94-04-PLAN.md: Word count + Undo/Redo polish (POLISH-01, POLISH-02)
+**94-02: Paste Sanitization + Tippy Cleanup (~5.1m)**
+- Added XSS protection: DOMPurify paste sanitization
+- Fixed memory leaks: Tippy.js cleanup guards
+- Commits: 29d6ecb0 (Markdown fix), 60ee0a36 (paste sanitization)
+
+**94-03: Apple Notes Keyboard Shortcuts (~5.5m)**
+- Implemented 30+ keyboard shortcuts (Cmd+1-6, Cmd+Shift+L, Tab/Shift+Tab)
+- Added smart formatting (`- ` → bullet, `1. ` → number, `[ ]` → checkbox)
+- Installed TaskList/TaskItem extensions for native task support
+- 1 deviation: Fixed ESLint no-control-regex errors (terminal security code)
+- Commits: d071fdb9 (extension), 523166a2 (lint fix), 93ab2dc0 (TaskList)
+
+**94-04: Word Count + Undo/Redo Polish (~6m)**
+- Added real-time word/character count: EditorStatusBar component
+- Verified Undo/Redo buttons functional in toolbar
+- Commits: fc37ea01, aebbdcdc
 
 **Wave structure:**
-- Wave 1: 94-01 ✅ (critical blocker), 94-02 (security/memory) — parallel
-- Wave 2: 94-03 (shortcuts), 94-04 (polish) — depend on 94-01
+- Wave 1: 94-01 ✅, 94-02 ✅ (critical blocker + security)
+- Wave 2: 94-03 ✅, 94-04 ✅ (UX enhancements)
 
-**Next step:** Execute plan 94-02 (or continue Phase 94 execution)
+**Next step:** Proceed to Phase 95 (Data Layer & Backlinks) or Phase 91 (SuperStack Interactions)
