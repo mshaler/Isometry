@@ -213,8 +213,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 91-01-PLAN.md — Collapse/expand toggle, click-to-filter, visual highlight (INT-01, INT-02, INT-03, INT-04)
-- [ ] 91-02-PLAN.md — Keyboard navigation with ARIA accessibility (INT-05)
+- [x] 91-01-PLAN.md — Collapse/expand toggle, click-to-filter, visual highlight (INT-01, INT-02, INT-03, INT-04)
+- [x] 91-02-PLAN.md — Keyboard navigation with ARIA accessibility (INT-05)
 
 ### Phase 92: Data Cell Integration
 **Goal**: Connect headers to data cells with coordinated scroll
@@ -411,7 +411,7 @@ Plans:
 | 86-88 | v6.0 | 0/0 | Deferred | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
-| 91. Interactions | v6.1 | 0/0 | Not started | - |
+| 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
 | 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
@@ -422,4 +422,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (Phase 94 complete)*
+*Last updated: 2026-02-14 (Phase 91 complete)*
