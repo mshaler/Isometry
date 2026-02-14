@@ -140,6 +140,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - BACK-QUERY-01: Use nodeId for backlink queries (edges reference nodes.id not notebook_cards.id) ✅ Implemented 95-03
 - BACK-LIMIT-01: Default 50 backlinks limit for performance protection ✅ Implemented 95-03
 - BACK-SELF-01: Exclude self-referencing links from backlink results ✅ Implemented 95-03
+- TMPL-MODAL-01: Use CustomEvent for slash command to modal communication ✅ Implemented 95-02
+- TMPL-MODAL-02: Variable substitution for {{date}} and {{time}} on insert ✅ Implemented 95-02
+- TMPL-MODAL-03: Theme-aware styling (NeXTSTEP vs Modern) ✅ Implemented 95-02
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -161,7 +164,7 @@ None yet.
 
 **v6.2 Capture Writing Surface:**
 - Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
-- Research gap: Template picker UX (modal vs sidebar) — start with modal, iterate if needed
+- Template picker UX: ✅ RESOLVED - Modal approach implemented in 95-02
 
 **Technical Debt:**
 - knip unused exports: 275 reported (baseline ratchet at 1000, needs cleanup)
@@ -171,15 +174,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 95-01 COMPLETE - Templates Data Layer
-Resume file: .planning/phases/95-data-layer-backlinks/95-01-SUMMARY.md
+Stopped at: Phase 95-02 COMPLETE - Template Picker Modal
+Resume file: .planning/phases/95-data-layer-backlinks/95-02-SUMMARY.md
 
-**Phase 95-01 Summary:**
-- Created templates table in schema with FTS5 search
-- Created templates.ts with CRUD operations (8 exported functions)
-- Wired seedBuiltInTemplates to SQLiteProvider initialization
-- 4 built-in templates: Meeting Notes, Daily Note, Project, Task
-- 2 deviations (schema pre-existing, line length fixes)
-- Commits: bfd9e2e5, 3b7d6ca6
+**Phase 95-02 Summary:**
+- /template slash command dispatches CustomEvent
+- TemplatePickerModal with FTS5 search, preview pane, keyboard navigation
+- Event wiring in CaptureComponent to open modal
+- Variable substitution for {{date}} and {{time}}
+- Usage count tracking via incrementTemplateUsage
+- Commits: 9e5822b9, f0fa9079, 4ac5b012
 
 **Next step:** Phase 95 complete - ready for Phase 96 (Block Types & Slash Commands)

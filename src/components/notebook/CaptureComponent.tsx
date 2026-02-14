@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
-  Save, AlertCircle, Settings, Plus
+  Save, AlertCircle, Settings, Plus, FileText
 } from 'lucide-react';
 import type { Editor } from '@tiptap/react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -10,7 +10,7 @@ import { useSQLite } from '../../db/SQLiteProvider';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useSelection } from '../../state/SelectionContext';
 import PropertyEditor from './PropertyEditor';
-import { TipTapEditor, EditorToolbar, EditorStatusBar } from './editor';
+import { TipTapEditor, EditorToolbar, EditorStatusBar, SaveAsTemplateModal } from './editor';
 import { TemplatePickerModal } from './editor/TemplatePickerModal';
 
 // Note: GlobalErrorReporting interface is declared in ErrorBoundary component
@@ -101,6 +101,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   const [propertyUpdateCount, setPropertyUpdateCount] = useState(0);
   const [isTemplatePickerOpen, setIsTemplatePickerOpen] = useState(false);
   const [templatePickerEditor, setTemplatePickerEditor] = useState<Editor | null>(null);
+  const [isSaveAsTemplateOpen, setIsSaveAsTemplateOpen] = useState(false);
 
   // Use the new TipTap editor hook with integrated slash commands
   const {
@@ -277,6 +278,15 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     ).length;
   }, [activeCard?.properties, propertyUpdateCount]);
 
+  // Get content for template saving - use markdown serialization if available
+  const getEditorContent = useCallback(() => {
+    if (!editor) return '';
+    if (editor.storage?.markdown?.manager) {
+      return editor.storage.markdown.manager.serialize(editor.getJSON());
+    }
+    return editor.getText() || '';
+  }, [editor]);
+
   if (isMinimized) {
     return (
       <MinimizedView
@@ -313,6 +323,14 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
             title="Save now (Cmd+S)"
           >
             <Save size={14} className="text-gray-600" />
+          </button>
+          <button
+            onClick={() => setIsSaveAsTemplateOpen(true)}
+            disabled={!activeCard || !editor?.getText()?.trim()}
+            className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors disabled:opacity-50`}
+            title="Save as Template"
+          >
+            <FileText size={14} className="text-gray-600" />
           </button>
           <button
             onClick={() => setIsMinimized(true)}
@@ -435,6 +453,16 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
           templatePickerEditor?.commands.focus();
         }}
         editor={templatePickerEditor}
+      />
+
+      {/* Save as Template Modal */}
+      <SaveAsTemplateModal
+        isOpen={isSaveAsTemplateOpen}
+        onClose={() => setIsSaveAsTemplateOpen(false)}
+        content={getEditorContent()}
+        onSuccess={() => {
+          console.log('Template saved successfully');
+        }}
       />
     </div>
   );
