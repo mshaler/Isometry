@@ -18,4 +18,3 @@ export interface ChartRendererParams {
   colors: D3ChartTheme;
 }
 
-export type ChartRenderer = (params: ChartRendererParams) => void;

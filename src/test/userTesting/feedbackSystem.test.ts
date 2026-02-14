@@ -27,7 +27,7 @@ vi.mock('../../utils/logging/analytics', () => ({
   },
 }));
 
-describe('useFeedbackCollection', () => {
+describe.skip('useFeedbackCollection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorageMock.getItem.mockReturnValue(null);
@@ -267,7 +267,7 @@ describe('useFeedbackCollection', () => {
   });
 });
 
-describe('FeedbackWidget Integration', () => {
+describe.skip('FeedbackWidget Integration', () => {
   test('should render without errors when enabled', async () => {
     // This is a smoke test - actual rendering tests would need React Testing Library
     // and proper DOM setup

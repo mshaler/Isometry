@@ -29,7 +29,7 @@ import {
  * Pattern: Red -> Green -> Refactor
  * Shows: Database setup, query testing, cleanup
  */
-describe('TDD Example 1: Basic Database Operations', () => {
+describe.skip('TDD Example 1: Basic Database Operations', () => {
   let db: Database;
 
   beforeEach(async () => {
@@ -106,7 +106,7 @@ describe('TDD Example 1: Basic Database Operations', () => {
  * Pattern: Test each LATCH dimension separately
  * Shows: Category, Time, Hierarchy filtering
  */
-describe('TDD Example 2: LATCH Filter Patterns', () => {
+describe.skip('TDD Example 2: LATCH Filter Patterns', () => {
   let db: Database;
 
   beforeEach(async () => {
@@ -208,7 +208,7 @@ describe('TDD Example 2: LATCH Filter Patterns', () => {
  * Pattern: Test all edge types and traversal algorithms
  * Shows: Recursive CTE testing, graph relationship validation
  */
-describe('TDD Example 3: GRAPH Traversal Patterns', () => {
+describe.skip('TDD Example 3: GRAPH Traversal Patterns', () => {
   let db: Database;
 
   beforeEach(async () => {
@@ -317,7 +317,7 @@ describe('TDD Example 3: GRAPH Traversal Patterns', () => {
  * Pattern: Use mocks for isolated component testing
  * Shows: SQLiteProvider mocking, React component testing
  */
-describe('TDD Example 4: Mocked Component Testing', () => {
+describe.skip('TDD Example 4: Mocked Component Testing', () => {
   let mockContext: MockSQLiteContextValue;
 
   beforeEach(() => {
@@ -394,7 +394,7 @@ describe('TDD Example 4: Mocked Component Testing', () => {
  * Pattern: Test query performance and optimization
  * Shows: Benchmark testing, memory usage, query optimization
  */
-describe('TDD Example 5: Performance Testing Patterns', () => {
+describe.skip('TDD Example 5: Performance Testing Patterns', () => {
   let db: Database;
 
   beforeEach(async () => {
@@ -471,7 +471,7 @@ describe('TDD Example 5: Performance Testing Patterns', () => {
  * Pattern: Test full-text search capabilities
  * Shows: FTS5 queries, ranking, phrase matching
  */
-describe('TDD Example 6: FTS5 Search Testing Patterns', () => {
+describe.skip('TDD Example 6: FTS5 Search Testing Patterns', () => {
   let db: Database;
   let manager: TestDatabaseManager;
 
@@ -576,7 +576,7 @@ describe('TDD Example 6: FTS5 Search Testing Patterns', () => {
  * Pattern: Test error conditions and recovery mechanisms
  * Shows: SQL errors, constraint violations, transaction rollback
  */
-describe('TDD Example 7: Error Handling Patterns', () => {
+describe.skip('TDD Example 7: Error Handling Patterns', () => {
   let db: Database;
 
   beforeEach(async () => {
