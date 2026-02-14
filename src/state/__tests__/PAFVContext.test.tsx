@@ -191,8 +191,8 @@ describe('PAFVContext', () => {
     it('should get axis for plane', () => {
       const { result } = renderHook(() => usePAFV(), { wrapper });
 
-      // Default mappings: x=time, y=category
-      expect(result.current.getAxisForPlane('x')).toBe('time');
+      // Default mappings: x=category.folder, y=category.status
+      expect(result.current.getAxisForPlane('x')).toBe('category');
       expect(result.current.getAxisForPlane('y')).toBe('category');
       expect(result.current.getAxisForPlane('color')).toBeNull();
     });
@@ -200,9 +200,10 @@ describe('PAFVContext', () => {
     it('should get plane for axis', () => {
       const { result } = renderHook(() => usePAFV(), { wrapper });
 
-      // Default mappings: x=time, y=category
-      expect(result.current.getPlaneForAxis('time')).toBe('x');
-      expect(result.current.getPlaneForAxis('category')).toBe('y');
+      // Default mappings: x=category.folder, y=category.status (both category)
+      // getPlaneForAxis returns the first plane with this axis
+      expect(result.current.getPlaneForAxis('category')).toBe('x');
+      expect(result.current.getPlaneForAxis('time')).toBeNull();
       expect(result.current.getPlaneForAxis('location')).toBeNull();
     });
   });
@@ -213,7 +214,8 @@ describe('PAFV Serialization', () => {
     const state = DEFAULT_PAFV;
     const serialized = serializePAFV(state);
 
-    expect(serialized).toBe('x=time.year&y=category.tag&view=grid&density=2');
+    // Default mappings: x=category.folder, y=category.status
+    expect(serialized).toBe('x=category.folder&y=category.status&view=grid&density=2');
 
     const deserialized = deserializePAFV(serialized);
     expect(deserialized).toEqual(state);

@@ -509,17 +509,17 @@ Test content.`
     expect(result.nodeId).toBeTruthy();
     expect(result.errors).toHaveLength(0);
 
-    // Verify node exists in database
-    const rows = execTestQuery(db, 'SELECT * FROM nodes WHERE id = ?', [
+    // Verify card exists in database (Phase 84: cards table replaces nodes)
+    const rows = execTestQuery(db, 'SELECT * FROM cards WHERE id = ?', [
       result.nodeId,
     ]);
     expect(rows).toHaveLength(1);
 
-    const dbNode = rows[0] as Record<string, unknown>;
-    expect(dbNode.name).toBe('Backward Compatibility Test');
-    expect(dbNode.folder).toBe('Test');
-    expect(dbNode.priority).toBe(3);
-    expect(dbNode.source).toBe('alto-index');
+    const dbCard = rows[0] as Record<string, unknown>;
+    expect(dbCard.name).toBe('Backward Compatibility Test');
+    expect(dbCard.folder).toBe('Test');
+    expect(dbCard.priority).toBe(3);
+    expect(dbCard.source).toBe('alto-index');
   });
 
   it('handles missing frontmatter in backward-compatible wrapper', async () => {
@@ -534,14 +534,14 @@ Test content.`
     expect(result.nodeId).toBeTruthy();
     expect(result.errors).toHaveLength(0);
 
-    // Verify node uses filename as name
-    const rows = execTestQuery(db, 'SELECT name FROM nodes WHERE id = ?', [
+    // Verify card uses filename as name (Phase 84: cards table replaces nodes)
+    const rows = execTestQuery(db, 'SELECT name FROM cards WHERE id = ?', [
       result.nodeId,
     ]);
     expect((rows[0] as { name: string }).name).toBe('/notes/no-frontmatter.md');
   });
 
-  it('stores properties in node_properties table', async () => {
+  it('stores properties in card_properties table', async () => {
     const result = await importAltoFile(
       db,
       '/notes/properties-test.md',
@@ -555,10 +555,10 @@ Content.`
 
     expect(result.nodeId).toBeTruthy();
 
-    // Check node_properties table
+    // Check card_properties table (Phase 84: card_properties replaces node_properties)
     const props = execTestQuery(
       db,
-      'SELECT key, value FROM node_properties WHERE node_id = ?',
+      'SELECT key, value FROM card_properties WHERE card_id = ?',
       [result.nodeId]
     );
 

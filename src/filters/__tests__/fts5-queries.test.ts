@@ -16,7 +16,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params).toContain('test');
     });
 
@@ -49,7 +49,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       // Should join words with space (implicit AND in FTS5)
       expect(result.params[0]).toContain('machine');
       expect(result.params[0]).toContain('learning');
@@ -69,7 +69,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('test*');
     });
 
@@ -103,7 +103,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('"machine learning"');
     });
 
@@ -119,7 +119,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       // Should have closing quote added
       expect(result.params[0]).toContain('"');
     });
@@ -138,7 +138,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('AND');
     });
 
@@ -154,7 +154,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('OR');
     });
 
@@ -170,7 +170,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('NOT');
     });
   });
@@ -188,7 +188,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       // FTS5 special chars like * and - are handled
       // * triggers operator detection, - is removed in escapeFTS5Simple
       const query = result.params[0] as string;
@@ -208,7 +208,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params[0]).toContain('(');
       expect(result.params[0]).toContain(')');
     });
@@ -225,7 +225,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       // Should fallback to simple search (no operators)
       const query = result.params[0] as string;
       expect(query).not.toContain('(');
@@ -246,7 +246,7 @@ describe('FTS5 Query Generation', () => {
 
       const result = compileFilters(filters);
 
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       const query = result.params[0] as string;
       expect(query.length).toBeLessThanOrEqual(200);
     });
@@ -268,7 +268,7 @@ describe('FTS5 Query Generation', () => {
       const result = compileFilters(filters);
 
       // Normal search should use FTS5
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.params).toHaveLength(1);
       expect(result.params[0]).toBe('test123');
     });
@@ -316,7 +316,7 @@ describe('FTS5 Query Generation', () => {
 
       // Should combine all filters with AND
       expect(result.sql).toContain('deleted_at IS NULL');
-      expect(result.sql).toContain('nodes_fts MATCH');
+      expect(result.sql).toContain('cards_fts MATCH');
       expect(result.sql).toContain('created_at');
       expect(result.sql).toContain('folder');
       expect(result.sql.split('AND').length).toBeGreaterThan(2);
