@@ -1,0 +1,287 @@
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { X, Search, FileText } from 'lucide-react';
+import type { Editor } from '@tiptap/react';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useSQLite } from '@/db/SQLiteProvider';
+import {
+  queryTemplates,
+  searchTemplates,
+  incrementTemplateUsage,
+  type Template
+} from '@/utils/editor/templates';
+
+interface TemplatePickerModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  editor: Editor | null;
+}
+
+/**
+ * Substitute template variables like {{date}} and {{time}} with actual values.
+ */
+function substituteVariables(content: string): string {
+  const now = new Date();
+  return content
+    .replace(/\{\{date\}\}/g, now.toLocaleDateString())
+    .replace(/\{\{time\}\}/g, now.toLocaleTimeString());
+}
+
+export function TemplatePickerModal({
+  isOpen,
+  onClose,
+  editor
+}: TemplatePickerModalProps) {
+  const { theme } = useTheme();
+  const { db } = useSQLite();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Load templates when modal opens
+  useEffect(() => {
+    if (isOpen && db) {
+      const loaded = queryTemplates(db);
+      setTemplates(loaded);
+      if (loaded.length > 0 && !selectedId) {
+        setSelectedId(loaded[0].id);
+      }
+    }
+  }, [isOpen, db, selectedId]);
+
+  // Focus search input when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [isOpen]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchQuery('');
+      setSelectedId(null);
+    }
+  }, [isOpen]);
+
+  // Filter templates by search query
+  const filteredTemplates = useMemo(() => {
+    if (!searchQuery.trim()) return templates;
+    if (!db) return templates;
+    return searchTemplates(db, searchQuery);
+  }, [templates, searchQuery, db]);
+
+  // Get selected template
+  const selectedTemplate = useMemo(() => {
+    return filteredTemplates.find(t => t.id === selectedId);
+  }, [filteredTemplates, selectedId]);
+
+  // Handle template insertion
+  const handleInsert = useCallback(() => {
+    if (!selectedTemplate || !editor) return;
+
+    // Substitute variables
+    const content = substituteVariables(selectedTemplate.content);
+
+    // Insert content and focus editor
+    editor.chain()
+      .focus()
+      .insertContent(content)
+      .focus('end')
+      .run();
+
+    // Increment usage count
+    if (db) {
+      incrementTemplateUsage(db, selectedTemplate.id);
+    }
+
+    onClose();
+  }, [selectedTemplate, editor, db, onClose]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      onClose();
+    } else if (e.key === 'Enter' && selectedTemplate) {
+      e.preventDefault();
+      handleInsert();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      const currentIndex = filteredTemplates.findIndex(t => t.id === selectedId);
+      const nextIndex = Math.min(currentIndex + 1, filteredTemplates.length - 1);
+      setSelectedId(filteredTemplates[nextIndex]?.id ?? null);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const currentIndex = filteredTemplates.findIndex(t => t.id === selectedId);
+      const prevIndex = Math.max(currentIndex - 1, 0);
+      setSelectedId(filteredTemplates[prevIndex]?.id ?? null);
+    }
+  }, [selectedId, filteredTemplates, selectedTemplate, handleInsert, onClose]);
+
+  if (!isOpen) return null;
+
+  const bgClass = theme === 'NeXTSTEP' ? 'bg-[#c0c0c0]' : 'bg-white';
+  const borderClass = theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-300';
+  const headerBgClass = theme === 'NeXTSTEP' ? 'bg-[#d4d4d4]' : 'bg-gray-100';
+  const hoverClass = theme === 'NeXTSTEP' ? 'hover:bg-[#b0b0b0]' : 'hover:bg-gray-100';
+  const selectedClass = theme === 'NeXTSTEP'
+    ? 'bg-[#0066cc] text-white'
+    : 'bg-blue-500 text-white';
+  const inputClass = theme === 'NeXTSTEP'
+    ? 'bg-white border-t-2 border-l-2 border-[#707070] border-b-2 border-r-2 ' +
+      'border-b-[#e8e8e8] border-r-[#e8e8e8]'
+    : 'bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 ' +
+      'focus:ring-blue-500';
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={onClose}
+      onKeyDown={handleKeyDown}
+    >
+      <div
+        className={`${bgClass} ${borderClass} border rounded-lg shadow-xl w-[700px] ` +
+          'max-h-[80vh] flex flex-col'}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`${headerBgClass} px-4 py-3 rounded-t-lg border-b ${borderClass} ` +
+          'flex items-center justify-between'}>
+          <h2 className="text-lg font-medium">Insert Template</h2>
+          <button
+            onClick={onClose}
+            className={`p-1 rounded ${hoverClass}`}
+            title="Close (Esc)"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Search */}
+        <div className="px-4 py-3 border-b border-gray-200">
+          <div className="relative">
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search templates..."
+              className={`w-full pl-10 pr-4 py-2 text-sm ${inputClass}`}
+            />
+          </div>
+        </div>
+
+        {/* Content - List and Preview */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Template List */}
+          <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
+            {filteredTemplates.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No templates found
+              </div>
+            ) : (
+              filteredTemplates.map(template => (
+                <button
+                  key={template.id}
+                  onClick={() => setSelectedId(template.id)}
+                  onDoubleClick={handleInsert}
+                  className={`w-full text-left p-3 transition-colors ${
+                    selectedId === template.id ? selectedClass : hoverClass
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <FileText
+                      size={14}
+                      className={
+                        selectedId === template.id ? 'text-white' : 'text-gray-500'
+                      }
+                    />
+                    <span className="text-sm font-medium truncate">
+                      {template.name}
+                    </span>
+                  </div>
+                  {template.description && (
+                    <p className={`text-xs mt-1 truncate ${
+                      selectedId === template.id ? 'text-blue-100' : 'text-gray-500'
+                    }`}>
+                      {template.description}
+                    </p>
+                  )}
+                  {template.category && (
+                    <span className={`inline-block text-xs mt-1 px-2 py-0.5 rounded ${
+                      selectedId === template.id
+                        ? 'bg-blue-400/30 text-blue-100'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {template.category}
+                    </span>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+
+          {/* Preview Pane */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {selectedTemplate ? (
+              <div>
+                <h3 className="text-lg font-medium mb-2">{selectedTemplate.name}</h3>
+                {selectedTemplate.description && (
+                  <p className="text-sm text-gray-600 mb-4">
+                    {selectedTemplate.description}
+                  </p>
+                )}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <pre className="text-sm whitespace-pre-wrap font-mono text-gray-700">
+                    {selectedTemplate.content}
+                  </pre>
+                </div>
+                <p className="text-xs text-gray-500 mt-3">
+                  Used {selectedTemplate.usageCount} time
+                  {selectedTemplate.usageCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+            ) : (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <FileText size={32} className="mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">Select a template to preview</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className={`px-4 py-3 border-t ${borderClass} flex justify-end gap-2`}>
+          <button
+            onClick={onClose}
+            className={`px-4 py-2 text-sm rounded ${
+              theme === 'NeXTSTEP'
+                ? 'bg-[#e0e0e0] hover:bg-[#d0d0d0] border border-[#707070]'
+                : 'bg-gray-200 hover:bg-gray-300'
+            }`}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleInsert}
+            disabled={!selectedTemplate}
+            className={`px-4 py-2 text-sm rounded text-white disabled:opacity-50 ${
+              theme === 'NeXTSTEP'
+                ? 'bg-[#0066cc] hover:bg-[#0055aa]'
+                : 'bg-blue-500 hover:bg-blue-600'
+            }`}
+          >
+            Insert Template
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
