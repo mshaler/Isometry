@@ -246,7 +246,7 @@ Plans:
 ## 📋 v6.0 Interactive Shell (Deferred)
 
 **Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Roadmap created, not started. Resume with `/gsd:plan-phase 85`
+**Status:** Plans created for Phase 85. Resume with `/gsd:execute-phase 85`
 
 ### Phase 85: Backend Infrastructure & Terminal Execution
 **Goal**: User can execute shell commands and see real-time output
@@ -258,10 +258,14 @@ Plans:
   3. Terminal reconnects automatically with output buffer replay after connection loss
   4. System safely spawns/terminates subprocess without command injection vulnerabilities
   5. WebSocket server routes terminal messages to correct handlers
-**Plans**: TBD
+**Plans**: 5 plans in 4 waves
 
 Plans:
-- [ ] 85-01: TBD (use /gsd:plan-phase)
+- [ ] 85-01-PLAN.md — PTY backend with node-pty, types, and output buffer
+- [ ] 85-02-PLAN.md — WebSocket message routing for terminal integration
+- [ ] 85-03-PLAN.md — Frontend terminal WebSocket protocol
+- [ ] 85-04-PLAN.md — Mode switching (shell/claude-code)
+- [ ] 85-05-PLAN.md — UI integration, reconnection, and verification
 
 ### Phase 86: Claude AI MCP Integration
 **Goal**: User can chat with Claude AI and approve tool executions
@@ -322,13 +326,14 @@ Plans:
 | 77-79 | v4.9 | 6/6 | Complete | 2026-02-13 |
 | 80 | v5.1 | 2/2 | Complete | 2026-02-14 |
 | 84 | v5.2 | 4/4 | Complete | 2026-02-13 |
-| 85-88 | v6.0 | 0/0 | Deferred | - |
+| 85. Backend Terminal | v6.0 | 0/5 | Planned | - |
+| 86-88 | v6.0 | 0/0 | Deferred | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
-| 90. SQL Integration | v6.1 | 0/0 | Not started | - |
+| 90. SQL Integration | v6.1 | 0/2 | Not started | - |
 | 91. Interactions | v6.1 | 0/0 | Not started | - |
 | 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-13 (v6.1 SuperStack Enhancement phases added)*
+*Last updated: 2026-02-13 (Phase 85 plans created)*
