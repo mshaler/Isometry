@@ -5,7 +5,156 @@
 -- Compatible with sql.js (browser) and SQLite.swift (native)
 -- ============================================================================
 
--- Nodes: Primary data table (cards)
+-- ============================================================================
+-- CARDS & CONNECTIONS (Phase 84 - New Primary Data Model)
+-- ============================================================================
+-- Cards replace nodes with 4 distinct types: note, person, event, resource
+-- Connections replace edges with via_card_id for intermediated relationships
+
+-- Cards: Primary data table (4 types with constrained card_type)
+CREATE TABLE IF NOT EXISTS cards (
+    id TEXT PRIMARY KEY NOT NULL,
+    card_type TEXT NOT NULL DEFAULT 'note' CHECK(card_type IN ('note', 'person', 'event', 'resource')),
+    name TEXT NOT NULL,
+    content TEXT,
+    summary TEXT,
+
+    -- LATCH: Location
+    latitude REAL,
+    longitude REAL,
+    location_name TEXT,
+
+    -- LATCH: Time
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    modified_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    due_at TEXT,
+    completed_at TEXT,
+    event_start TEXT,
+    event_end TEXT,
+
+    -- LATCH: Category
+    folder TEXT,
+    tags TEXT,  -- JSON array
+    status TEXT,
+
+    -- LATCH: Hierarchy
+    priority INTEGER NOT NULL DEFAULT 0,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+
+    -- Resource-specific fields
+    url TEXT,
+    mime_type TEXT,
+
+    -- Person-specific fields
+    is_collective INTEGER NOT NULL DEFAULT 0,  -- 0 = individual, 1 = group/org
+
+    -- Source tracking
+    source TEXT,
+    source_id TEXT,
+
+    -- Lifecycle management
+    deleted_at TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    sync_status TEXT DEFAULT 'pending'  -- pending, synced, conflict
+);
+
+-- Indexes for cards table (LATCH filtering)
+CREATE INDEX IF NOT EXISTS idx_cards_type ON cards(card_type) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_folder ON cards(folder) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_created ON cards(created_at);
+CREATE INDEX IF NOT EXISTS idx_cards_modified ON cards(modified_at);
+CREATE INDEX IF NOT EXISTS idx_cards_status ON cards(status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_priority ON cards(priority DESC) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_due ON cards(due_at) WHERE due_at IS NOT NULL AND deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_event ON cards(event_start) WHERE event_start IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cards_source ON cards(source, source_id) WHERE source IS NOT NULL AND source_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_cards_active ON cards(deleted_at) WHERE deleted_at IS NULL;
+
+-- Connections: Relationships between cards (replaces edges)
+-- Key difference: via_card_id allows intermediated connections (e.g., "met at" an event)
+CREATE TABLE IF NOT EXISTS connections (
+    id TEXT PRIMARY KEY NOT NULL,
+    source_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+    target_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+    via_card_id TEXT REFERENCES cards(id) ON DELETE SET NULL,
+    label TEXT,  -- User-provided relationship label (schema-on-read)
+    weight REAL NOT NULL DEFAULT 1.0,
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    UNIQUE(source_id, target_id, via_card_id)
+);
+
+-- Indexes for connections table
+CREATE INDEX IF NOT EXISTS idx_conn_source ON connections(source_id);
+CREATE INDEX IF NOT EXISTS idx_conn_target ON connections(target_id);
+CREATE INDEX IF NOT EXISTS idx_conn_via ON connections(via_card_id) WHERE via_card_id IS NOT NULL;
+
+-- FTS5 virtual table for cards full-text search
+CREATE VIRTUAL TABLE IF NOT EXISTS cards_fts USING fts5(
+    name,
+    content,
+    tags,
+    folder,
+    content='cards',
+    content_rowid='rowid'
+);
+
+-- FTS5 triggers for cards
+CREATE TRIGGER IF NOT EXISTS trg_cards_fts_insert AFTER INSERT ON cards BEGIN
+    INSERT INTO cards_fts(rowid, name, content, tags, folder)
+    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_cards_fts_delete AFTER DELETE ON cards BEGIN
+    INSERT INTO cards_fts(cards_fts, rowid, name, content, tags, folder)
+    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_cards_fts_update AFTER UPDATE ON cards BEGIN
+    INSERT INTO cards_fts(cards_fts, rowid, name, content, tags, folder)
+    VALUES ('delete', OLD.rowid, OLD.name, OLD.content, OLD.tags, OLD.folder);
+    INSERT INTO cards_fts(rowid, name, content, tags, folder)
+    VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
+END;
+
+-- Version increment trigger for cards
+-- Automatically increments version on any UPDATE to cards table
+-- Respects manually set versions (only increments if version wasn't changed)
+CREATE TRIGGER IF NOT EXISTS increment_cards_version_on_update
+AFTER UPDATE ON cards
+FOR EACH ROW
+WHEN NEW.version = OLD.version
+BEGIN
+    UPDATE cards SET version = OLD.version + 1 WHERE id = NEW.id;
+END;
+
+-- Card Properties: Dynamic key-value storage for arbitrary properties (renamed from node_properties)
+-- Note: This table definition is for new installations. Migration script handles renaming.
+CREATE TABLE IF NOT EXISTS card_properties (
+    id TEXT PRIMARY KEY,
+    card_id TEXT NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+    key TEXT NOT NULL,
+    value TEXT,  -- Legacy JSON/text fallback
+    value_type TEXT NOT NULL DEFAULT 'string',  -- string, number, boolean, array, object, null
+    value_string TEXT,   -- Fast path for string predicates
+    value_number REAL,   -- Fast path for numeric range predicates
+    value_boolean INTEGER, -- 0/1 boolean predicates
+    value_json TEXT,     -- JSON payload for arrays/objects
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+    UNIQUE(card_id, key)  -- One value per key per card
+);
+
+-- Indexes for card_properties
+CREATE INDEX IF NOT EXISTS idx_card_properties_card_id ON card_properties(card_id);
+CREATE INDEX IF NOT EXISTS idx_card_properties_key ON card_properties(key);
+CREATE INDEX IF NOT EXISTS idx_card_properties_lookup ON card_properties(card_id, key);
+CREATE INDEX IF NOT EXISTS idx_card_properties_value_number ON card_properties(key, value_number);
+CREATE INDEX IF NOT EXISTS idx_card_properties_value_string ON card_properties(key, value_string);
+
+-- ============================================================================
+-- LEGACY TABLES (Nodes & Edges - kept for migration, will be dropped in Plan 04)
+-- ============================================================================
+
+-- Nodes: Primary data table (cards) [LEGACY - migrate to cards table]
 CREATE TABLE IF NOT EXISTS nodes (
     id TEXT PRIMARY KEY,
     node_type TEXT NOT NULL DEFAULT 'note',
