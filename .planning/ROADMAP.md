@@ -297,10 +297,12 @@ Plans:
   2. User can insert collapsible toggle with /toggle
   3. Slash commands cover all heading levels, media, and references
   4. Bookmark shows URL preview with metadata
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 96-01: TBD (use /gsd:plan-phase)
+- [ ] 96-01-PLAN.md — Basic slash commands (headings, divider, quote, date)
+- [ ] 96-02-PLAN.md — Callout block with custom TipTap node and React view
+- [ ] 96-03-PLAN.md — Toggle and Bookmark blocks with custom nodes
 
 ### Phase 97: Inline Properties
 **Goal**: Inline property syntax (@key: value, #tag) with PropertyEditor sync
