@@ -8,7 +8,7 @@ import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
 import { createDatabaseOperations } from './operations';
 import { testDatabaseCapabilities, type DatabaseCapabilities } from './capabilities';
 import { createPersistenceOperations } from './persistence';
-import { SAMPLE_DATA_SQL } from './sample-data';
+// SAMPLE_DATA_SQL removed - no longer loading hardcoded sample data
 import { seedBuiltInTemplates } from '../utils/editor/templates';
 
 /**
@@ -31,7 +31,7 @@ import { seedBuiltInTemplates } from '../utils/editor/templates';
  * - v2: Added node_properties EAV table (Phase 63)
  * - v3: Added grid_x/grid_y columns (Phase 66)
  */
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4; // v4: Removed hardcoded sample data loading
 
 /** FTS5 performance test result */
 export interface FTS5PerformanceResult {
@@ -282,13 +282,12 @@ export function SQLiteProvider({
               if (schemaResponse.ok) {
                 const schema = await schemaResponse.text();
                 database.exec(schema);
-                database.exec(SAMPLE_DATA_SQL);
                 // Store schema version for migration detection
                 database.run(
                   "INSERT OR REPLACE INTO settings (key, value) VALUES ('schema_version', ?)",
                   [String(SCHEMA_VERSION)]
                 );
-                console.log(`[SQLiteProvider] Schema v${SCHEMA_VERSION} and sample data loaded`);
+                console.log(`[SQLiteProvider] Schema v${SCHEMA_VERSION} loaded (empty database)`);
               }
             } catch (schemaError) {
               console.error('[SQLiteProvider] Schema load failed:', schemaError);
