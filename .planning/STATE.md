@@ -70,11 +70,20 @@ Overall: [████████░░] 99% (104 of ~130 total phases across a
 ### v6.0 Interactive Shell — IN PROGRESS
 
 **Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Phase 85 in progress (4/5 plans complete)
+**Status:** Phase 86 in progress (2/4 plans complete)
 
 **Phases:**
-- Phase 85: Backend Infrastructure & Terminal Execution (5 plans) — 80% complete
-- Phase 86: Claude AI MCP Integration (7 requirements)
+- Phase 85: Backend Infrastructure & Terminal Execution (5 plans) — ✓ COMPLETE
+  - [x] 85-01: PTY spawn (shell mode) ✓
+  - [x] 85-02: PTY spawn (claude-code mode) ✓
+  - [x] 85-03: xterm.js frontend integration ✓
+  - [x] 85-04: Terminal mode switching ✓
+  - [x] 85-05: Mode toggle UI + ANSI sanitization ✓
+- Phase 86: Claude AI Integration (4 plans) — IN PROGRESS (2/4)
+  - [x] 86-01: Basic Chat Interface ✓
+  - [x] 86-02: Project Context ✓
+  - [ ] 86-03: MCP Tool Integration (planned)
+  - [ ] 86-04: Claude Code Integration (planned)
 - Phase 87: GSD File Synchronization (7 requirements)
 - Phase 88: Integration & Polish (verification only)
 
@@ -203,15 +212,21 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Stopped at: Phase 92 COMPLETE - All 4 plans executed
-Resume file: .planning/phases/92-data-cell-integration/
+Last session: 2026-02-14
+Stopped at: Phase 86-02 COMPLETE - Project Context
+Resume file: .planning/phases/86-claude-ai-integration/
 
-**Phase 92 Summary (All Plans):**
-- 92-01: Core infrastructure - DataCellRenderer, CellDataService, SuperGridScrollContainer
-- 92-02: Density-aware rendering - collapsed mode (count badges) vs leaf mode (cards)
-- 92-03: Selection synchronization - SelectionContext integration, visual highlights, modifier keys
-- 92-04: Hierarchical headers - HierarchicalHeaderRenderer bridges folder paths to nested headers
+**Phase 86 Summary (Plans 1-2 Complete):**
+- 86-01: Basic Chat Interface - ClaudeAIChat component, useClaudeAI hook, streaming responses
+- 86-02: Project Context - LATCH/GRAPH/PAFV architecture in system prompt, active card context
+
+**Next Step:** Test Claude AI chat in browser, then implement 86-03 (MCP Tools) and 86-04 (Claude Code)
+
+**To test Claude AI:**
+1. Add `VITE_ANTHROPIC_API_KEY=sk-ant-...` to `.env` file
+2. Run `npm run dev`
+3. Click the Claude AI tab in Shell
+4. Chat with Claude - it knows about Isometry architecture
 
 **Key Fix:** Defaulted to collapsed density mode to prevent text overlap when 6,741 cards share grid positions
 
