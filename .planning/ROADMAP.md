@@ -32,17 +32,21 @@
 
 **Requirements:** SETTINGS-01 to SETTINGS-04, DISCOVER-01 to DISCOVER-04 (8 total)
 
-**Plans:** 2 plans
+**Plans:** 2 plans in 1 wave
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, schema migration |
-| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts` |
+| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, `src/hooks/useSettings.ts` |
+| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts`, `src/hooks/useFacetValues.ts` |
+
+Plans:
+- [ ] 100-01-PLAN.md — Settings service with CRUD and React hook (Wave 1)
+- [ ] 100-02-PLAN.md — Facet discovery queries with TanStack Query caching (Wave 1)
 
 **Success Criteria:**
 1. Settings table exists and CRUD operations work
 2. Facet discovery queries return distinct values from actual data
-3. Results cached via TanStack Query
+3. Results cached via TanStack Query with 5-minute staleTime
 
 ---
 
@@ -506,8 +510,9 @@ Plans:
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
 | 97. Inline Properties | v6.2 | 2/2 | Complete | 2026-02-14 |
 | 98. Isometry Embeds & Polish | v6.2 | 4/4 | Complete | 2026-02-14 |
-| 99. SuperStack SQL | v6.3 | 0/5 | In Progress | - |
+| 99. SuperStack SQL | v6.3 | 5/5 | Complete | 2026-02-15 |
+| 100. Settings & Discovery | v6.4 | 0/2 | Planning | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 88 planned — Integration & Polish)*
+*Last updated: 2026-02-15 (Phase 100 planned — Settings & Discovery Layer)*
