@@ -34,3 +34,13 @@ export {
   type GSDSyncMessage,
   type GSDSyncResponse,
 } from './gsdFileSyncService';
+
+// Conflict resolution
+export {
+  applyResolution,
+  detectConflict,
+  formatConflictSummary,
+  type ConflictData,
+  type ConflictResolution,
+  type TaskDiff,
+} from './gsdConflictResolver';
