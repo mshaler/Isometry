@@ -234,11 +234,45 @@ export function incrementTemplateUsage(
 }
 
 /**
+ * Ensure templates table exists (for databases initialized before Phase 95).
+ * Uses CREATE TABLE IF NOT EXISTS so it's safe to call on every init.
+ */
+function ensureTemplatesTableExists(db: Database): void {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS templates (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      category TEXT,
+      content TEXT NOT NULL,
+      variables TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      modified_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      usage_count INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE INDEX IF NOT EXISTS idx_templates_category ON templates(category);
+    CREATE INDEX IF NOT EXISTS idx_templates_usage ON templates(usage_count DESC);
+    CREATE INDEX IF NOT EXISTS idx_templates_name ON templates(name);
+  `);
+}
+
+/**
  * Seed built-in templates on first database initialization.
  * Uses INSERT OR IGNORE so it's safe to call on every init.
+ *
+ * NOTE: First ensures templates table exists to handle databases
+ * initialized before Phase 95 (schema race condition fix).
  */
 export function seedBuiltInTemplates(db: Database | null): void {
   if (!db) return;
+
+  // Ensure table exists before seeding (fixes race condition for pre-Phase 95 databases)
+  try {
+    ensureTemplatesTableExists(db);
+  } catch (tableError) {
+    console.error('[templates] Failed to ensure templates table exists:', tableError);
+    return;
+  }
 
   const builtInTemplates = [
     {
