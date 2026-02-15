@@ -440,7 +440,7 @@ Plans:
 ## v6.0 Interactive Shell (Deferred)
 
 **Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Phases 85-86 complete, Phase 87 planned, Phase 88 pending.
+**Status:** Phases 85-88 complete. v6.0 Interactive Shell COMPLETE.
 
 ### Phase 85: Backend Infrastructure & Terminal Execution — COMPLETE
 **Goal**: User can execute shell commands and see real-time output
@@ -478,7 +478,7 @@ Plans:
 - [x] 86-03-PLAN.md — MCP Tool Integration (6 database query tools)
 - [x] 86-04-PLAN.md — Claude Code Auto-Spawn with mode switching
 
-### Phase 87: GSD File Synchronization
+### Phase 87: GSD File Synchronization — COMPLETE
 **Goal**: User sees live GSD state and can update task status bidirectionally
 **Depends on**: Phase 85 (Backend infrastructure operational)
 **Requirements**: BACK-03, GSD-01, GSD-02, GSD-03, GSD-04, GSD-05, GSD-06
@@ -496,7 +496,7 @@ Plans:
 - [x] 87-04-PLAN.md — React hooks and progress display component (Wave 2)
 - [x] 87-05-PLAN.md — Conflict detection and resolution UI (Wave 3)
 
-### Phase 88: Integration & Polish
+### Phase 88: Integration & Polish — COMPLETE
 **Goal**: All three Shell tabs work together seamlessly
 **Depends on**: Phase 86 (Claude AI), Phase 87 (GSD sync)
 **Requirements**: None (integration verification)
@@ -504,12 +504,16 @@ Plans:
   1. User can switch between Terminal/Claude AI/GSD tabs without state loss
   2. Terminal output can be saved as cards via Claude AI chat
   3. GSD phase execution triggers correctly in Terminal tab
-**Plans**: 3 plans in 2 waves
+**Plans**: 3/3 complete
 
 Plans:
-- [ ] 88-01-PLAN.md — Tab state preservation integration tests (Wave 1)
-- [ ] 88-02-PLAN.md — Cross-tab data flow verification tests (Wave 1)
-- [ ] 88-03-PLAN.md — Manual verification and phase completion (Wave 2)
+- [x] 88-01-PLAN.md — Tab state preservation integration tests (Wave 1)
+- [x] 88-02-PLAN.md — Cross-tab data flow verification tests (Wave 1)
+- [x] 88-03-PLAN.md — Manual verification and phase completion (Wave 2)
+
+**Bug fixes during verification:**
+- PTY cleanup: Kill PTY when last client disconnects (commit 804dd636)
+- Editor CSS: Add formatting styles for bold/italic/headings (commit afb0d1a1)
 
 ## Progress
 
@@ -532,7 +536,7 @@ Plans:
 | 85. Backend Terminal | v6.0 | 5/5 | Complete | 2026-02-14 |
 | 86. Claude AI Integration | v6.0 | 4/4 | Complete | 2026-02-15 |
 | 87. GSD File Sync | v6.0 | 5/5 | Complete | 2026-02-15 |
-| 88. Integration & Polish | v6.0 | 0/3 | Planning | - |
+| 88. Integration & Polish | v6.0 | 3/3 | Complete | 2026-02-15 |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
