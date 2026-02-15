@@ -27,9 +27,11 @@
 
 **Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
 
+**Depends on:** Phase 93 (v6.1 SuperStack Enhancement complete)
+
 **Requirements:** QUERY-01 through QUERY-06, QUTIL-01 through QUTIL-04, TEST-01 through TEST-05, HOOK-01 through HOOK-05, DEMO-01 through DEMO-03 (23 total)
 
-**Plans:**
+**Plans:** 5 plans in 3 waves
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -38,6 +40,13 @@
 | 99-03 | Integration Tests | TEST-01 to TEST-05 | `__tests__/sql-integration.test.ts` |
 | 99-04 | React Hook | HOOK-01 to HOOK-05 | `hooks/useSuperStackData.ts` |
 | 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` + index.ts exports |
+
+Plans:
+- [ ] 99-01-PLAN.md — SQL query builders with json_each() and strftime() (Wave 1)
+- [ ] 99-02-PLAN.md — Query utilities for facet chain creation (Wave 1)
+- [ ] 99-03-PLAN.md — Integration tests with real sql.js database (Wave 2)
+- [ ] 99-04-PLAN.md — useSuperStackData React hook (Wave 2)
+- [ ] 99-05-PLAN.md — Demo component with live data rendering (Wave 3)
 
 **Success Criteria:**
 1. SQL queries build correctly for folder + tags rows, year + month columns
@@ -422,7 +431,8 @@ Plans:
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
 | 97. Inline Properties | v6.2 | 2/2 | Complete | 2026-02-14 |
 | 98. Isometry Embeds & Polish | v6.2 | 4/4 | Complete | 2026-02-14 |
+| 99. SuperStack SQL | v6.3 | 0/5 | In Progress | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 86 Claude AI Integration complete, 4/4 plans)*
+*Last updated: 2026-02-15 (Phase 99 plans created, 5 plans in 3 waves)*
