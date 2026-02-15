@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.5 Console Cleanup — Defining requirements
+**Current focus:** v6.5 Console Cleanup — Complete
 
 ## Current Position
 
 Phase: 103 (Console Cleanup)
-Plan: 01/01 — COMPLETE
+Plan: 02/02 — COMPLETE
 Status: Phase complete
-Last activity: 2026-02-15 — Completed 103-01-PLAN.md
+Last activity: 2026-02-15 — Completed 103-02-PLAN.md (DevLogger Enhancement)
 
 Progress: [███████░░░] 70% (Phase 100: ✓, Phase 101: ✓, Phase 102: pending, Phase 103: ✓)
-Overall: v6.5 Console Cleanup — Phase 103 complete
+Overall: v6.5 Console Cleanup — Phase 103 complete (2/2 plans)
 
 ## Active Milestones
 
@@ -29,13 +29,18 @@ Overall: v6.5 Console Cleanup — Phase 103 complete
 **Delivered:**
 - ✓ Fixed TipTap duplicate 'link' extension error
 - ✓ Added favicon to eliminate 404
-- Clean browser console on initial page load
+- ✓ Fixed DevLogger console method mapping (debug→log, info→info)
+- ✓ Gated HeaderDiscoveryService logs (9 logs removed)
+- ✓ Gated PropertyClassifier logs (8 logs removed)
+- ✓ Gated SQLiteProvider logs (13 logs removed)
+- Clean browser console on initial page load and during normal operation
 
 **Phases:**
-- Phase 103: Console Cleanup — ✅ COMPLETE (1/1 plans, 2026-02-15)
+- Phase 103: Console Cleanup — ✅ COMPLETE (2/2 plans, 2026-02-15)
   - [x] 103-01: Fix Console Startup Errors (~4m) ✓
+  - [x] 103-02: DevLogger Enhancement & Service Log Gating (~14m) ✓
 
-**Total requirements:** 2 | **Status:** 2/2 complete
+**Total requirements:** 5 | **Status:** 5/5 complete
 
 ### v6.4 Hardcoded Values Cleanup — IN PROGRESS
 
@@ -165,7 +170,12 @@ Overall: v6.5 Console Cleanup — Phase 103 complete
 
 ### Decisions
 
-Recent decisions affecting v6.1 SuperStack work:
+Recent decisions:
+
+**Console Cleanup (Phase 103):**
+- LOG-MAP-01: DevLogger semantic methods use console.log for debug level ✅ Implemented 103-02
+- LOG-GATE-01: quietLevels = ['warn', 'error'] for service loggers ✅ Implemented 103-02
+- LOG-SQLITE-01: Separate sqliteLogger for SQLiteProvider lifecycle logs ✅ Implemented 103-02
 
 **Polish & Performance (Phase 93):**
 - PERF-01: TanStack Virtual for row-based virtualization, 100-cell threshold ✅ Implemented 93-01
