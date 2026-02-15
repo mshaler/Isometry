@@ -119,7 +119,45 @@ export const EmbedExtension = Node.create({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(EmbedNode);
+    return ReactNodeViewRenderer(EmbedNode, {
+      // CRITICAL: Optimize re-renders for 60fps performance
+      // Only re-render when THIS node's attributes actually change.
+      // Without this, embeds re-render on every keystroke causing 60fps drops.
+      //
+      // The update callback controls React re-renders:
+      // - Return true = "I handled it" (NodeView stays, may or may not re-render React)
+      // - Return false = "Can't handle" (NodeView destroyed/recreated)
+      // - Call updateProps() to trigger React re-render
+      update: ({ oldNode, newNode, updateProps }) => {
+        const oldAttrs = oldNode.attrs;
+        const newAttrs = newNode.attrs;
+
+        // Check if any embed-specific attribute changed
+        const attributesChanged = (
+          oldAttrs.type !== newAttrs.type ||
+          oldAttrs.filter !== newAttrs.filter ||
+          oldAttrs.height !== newAttrs.height ||
+          oldAttrs.width !== newAttrs.width ||
+          oldAttrs.xAxis !== newAttrs.xAxis ||
+          oldAttrs.yAxis !== newAttrs.yAxis ||
+          oldAttrs.xFacet !== newAttrs.xFacet ||
+          oldAttrs.yFacet !== newAttrs.yFacet ||
+          oldAttrs.valueDensity !== newAttrs.valueDensity ||
+          oldAttrs.extentDensity !== newAttrs.extentDensity ||
+          oldAttrs.title !== newAttrs.title ||
+          oldAttrs.sql !== newAttrs.sql
+        );
+
+        // Only trigger React re-render if attributes changed
+        // This prevents re-renders during typing elsewhere in the document
+        if (attributesChanged) {
+          updateProps();
+        }
+
+        // Always return true - we handle all updates for this node
+        return true;
+      },
+    });
   },
 
   addCommands() {
