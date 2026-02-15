@@ -121,11 +121,12 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Insert code block template',
     category: 'format',
     shortcut: 'code',
-    content: '```typescript\n// \n```',
     action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertContent(
-        '```typescript\n// \n```'
-      ).run();
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .setCodeBlock({ language: 'typescript' })
+        .run();
     },
   },
   {
@@ -134,24 +135,70 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     description: 'Insert checkbox task list',
     category: 'format',
     shortcut: 'tasks',
-    content: '## Tasks\n- [ ] \n- [ ] \n- [ ] ',
     action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertContent(
-        '## Tasks\n- [ ] \n- [ ] \n- [ ] '
-      ).run();
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .toggleTaskList()
+        .run();
+    },
+  },
+  // Isometry Embeds - Live D3.js visualizations
+  {
+    id: 'supergrid',
+    label: 'SuperGrid',
+    description: 'Embed live SuperGrid visualization',
+    category: 'isometry',
+    shortcut: 'grid',
+    action: ({ editor, range }) => {
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .setEmbed('supergrid')
+        .run();
     },
   },
   {
     id: 'table',
-    label: 'Table',
-    description: 'Insert markdown table',
-    category: 'format',
+    label: 'Table (SuperGrid)',
+    description: 'Insert table as live SuperGrid view',
+    category: 'isometry',
     shortcut: 'table',
-    content: '| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n|          |          |          |\n|          |          |          |',
     action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).insertContent(
-        '| Column 1 | Column 2 | Column 3 |\n|----------|----------|----------|\n|          |          |          |\n|          |          |          |'
-      ).run();
+      // Tables are SuperGrid embeds - live PAFV projections
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .setEmbed('supergrid', { title: 'Table' })
+        .run();
+    },
+  },
+  {
+    id: 'network',
+    label: 'Network Graph',
+    description: 'Embed live network visualization',
+    category: 'isometry',
+    shortcut: 'network',
+    action: ({ editor, range }) => {
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .setEmbed('network')
+        .run();
+    },
+  },
+  {
+    id: 'timeline',
+    label: 'Timeline',
+    description: 'Embed live timeline visualization',
+    category: 'isometry',
+    shortcut: 'timeline',
+    action: ({ editor, range }) => {
+      editor.chain()
+        .focus()
+        .deleteRange(range)
+        .setEmbed('timeline')
+        .run();
     },
   },
   {
@@ -293,6 +340,37 @@ export const SLASH_COMMANDS: SlashCommand[] = [
     shortcut: 'bookmark',
     action: ({ editor, range }) => {
       editor.chain().focus().deleteRange(range).setBookmark().run();
+    },
+  },
+  // Isometry Embeds - Live D3.js visualizations
+  {
+    id: 'supergrid',
+    label: 'SuperGrid',
+    description: 'Embed live SuperGrid visualization',
+    category: 'isometry',
+    shortcut: 'grid',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setEmbed('supergrid').run();
+    },
+  },
+  {
+    id: 'network',
+    label: 'Network Graph',
+    description: 'Embed live network visualization',
+    category: 'isometry',
+    shortcut: 'network',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setEmbed('network').run();
+    },
+  },
+  {
+    id: 'timeline',
+    label: 'Timeline',
+    description: 'Embed live timeline visualization',
+    category: 'isometry',
+    shortcut: 'timeline',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setEmbed('timeline').run();
     },
   },
 ];

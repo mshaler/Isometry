@@ -498,12 +498,23 @@
 
 .tiptap-editor {
   position: relative;
+  height: 100%;
+  width: 100%;
+  cursor: text;
+}
+
+/* EditorContent wrapper div needs to fill container */
+.tiptap-editor > div {
+  height: 100%;
+  min-height: 100%;
 }
 
 /* Ensure ProseMirror contenteditable receives focus and input */
 .tiptap-editor .ProseMirror {
   outline: none;
   min-height: 100%;
+  height: 100%;
+  padding: 1rem;
   cursor: text;
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -532,6 +543,137 @@
 .tiptap-editor,
 .tiptap-editor * {
   pointer-events: auto;
+}
+
+/* ============================================================================
+ * Isometry Embed Styles (Phase 98)
+ * ============================================================================
+ * Live D3.js visualizations embedded in documents.
+ * SuperGrid embeds replace tables with live PAFV projections.
+ */
+
+.embed {
+  margin: 1rem 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: hsl(var(--card));
+}
+
+.embed__container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.embed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.embed__type-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.embed__controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.embed__control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.embed__control-btn:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.embed__content {
+  width: 100%;
+  overflow: hidden;
+}
+
+.embed__svg {
+  display: block;
+  width: 100%;
+  background: hsl(var(--background));
+}
+
+.embed__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  min-height: 200px;
+  color: hsl(var(--muted-foreground));
+}
+
+.embed__spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid hsl(var(--border));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: embed-spin 0.8s linear infinite;
+}
+
+@keyframes embed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.embed__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: hsl(var(--destructive));
+}
+
+/* Embed type variants */
+.embed--supergrid .embed__type-label {
+  color: hsl(221 83% 53%);
+}
+
+.embed--network .embed__type-label {
+  color: hsl(262 83% 58%);
+}
+
+.embed--timeline .embed__type-label {
+  color: hsl(25 95% 53%);
+}
+
+/* Placeholder content styles */
+.embed__supergrid-placeholder,
+.embed__network-placeholder,
+.embed__timeline-placeholder {
+  width: 100%;
+  height: 100%;
 }
 
 /* ============================================================================
@@ -634,4 +776,138 @@
 .hashtag-menu__tag {
   color: hsl(142 76% 36%);
   font-weight: 500;
+}
+
+/* =============================================================================
+ * Isometry Embed Styles
+ * =============================================================================
+ * Used by TipTap EmbedExtension for live D3.js visualizations in the editor.
+ * SuperGrid, Network, and Timeline embeds. Theme-aware using CSS custom properties.
+ */
+.embed {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-raised, none);
+}
+
+.embed__container {
+  display: flex;
+  flex-direction: column;
+}
+
+.embed__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: hsl(var(--muted) / 0.3);
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.embed__type-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+}
+
+.embed__controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.embed__control-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.embed__control-btn:hover {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.embed__content {
+  min-height: 200px;
+  overflow: hidden;
+}
+
+.embed__svg {
+  display: block;
+  width: 100%;
+}
+
+/* Loading state */
+.embed__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  gap: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}
+
+.embed__spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid hsl(var(--border));
+  border-top-color: hsl(var(--primary));
+  border-radius: 50%;
+  animation: embed-spin 1s linear infinite;
+}
+
+@keyframes embed-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Error state */
+.embed__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 200px;
+  color: hsl(var(--destructive));
+  font-size: 0.875rem;
+}
+
+/* Type-specific variants */
+.embed--supergrid .embed__type-label {
+  color: hsl(217 100% 50%);
+}
+
+.embed--network .embed__type-label {
+  color: hsl(262 83% 58%);
+}
+
+.embed--timeline .embed__type-label {
+  color: hsl(38 92% 50%);
+}
+
+/* Placeholder containers */
+.embed__supergrid-placeholder,
+.embed__network-placeholder,
+.embed__timeline-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

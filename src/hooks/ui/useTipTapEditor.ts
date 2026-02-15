@@ -25,6 +25,7 @@ import {
   InlinePropertyExtension,
   HashtagExtension,
   createHashtagSuggestion,
+  EmbedExtension,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
 import {
@@ -171,6 +172,7 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       CalloutExtension,
       ToggleExtension,
       BookmarkExtension,
+      EmbedExtension,
       InlinePropertyExtension,
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
@@ -401,7 +403,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       }),
     ],
 
-    content: activeCard?.markdownContent || '',
+    // Start empty - useEffect will parse and load markdown content after editor is ready
+    content: '',
 
     onUpdate: ({ editor: ed }) => {
       // Skip if we're programmatically updating content
@@ -453,7 +456,15 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       isUpdatingContentRef.current = true;
 
       // Update editor content with new card's markdown
-      editor.commands.setContent(activeCard?.markdownContent || '');
+      // Parse markdown to ProseMirror document using the Markdown extension
+      const markdownContent = activeCard?.markdownContent || '';
+      if (markdownContent && editor.storage.markdown?.manager) {
+        const parsed = editor.storage.markdown.manager.parse(markdownContent);
+        editor.commands.setContent(parsed);
+      } else {
+        // Fallback for empty content or if manager not ready
+        editor.commands.setContent(markdownContent);
+      }
       setIsDirty(false);
 
       // Clear flag after React has processed the update

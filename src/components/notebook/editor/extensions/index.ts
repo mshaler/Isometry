@@ -33,3 +33,6 @@ export {
   type HashtagOptions,
   type HashtagSuggestionProps,
 } from './HashtagExtension';
+
+export { EmbedExtension } from './EmbedExtension';
+export type { EmbedType, EmbedAttributes } from './embed-types';
