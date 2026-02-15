@@ -81,6 +81,68 @@ const GRAPH_METRICS = [
 // ============================================================================
 
 /**
+ * Check if a column in the nodes table has meaningful values for filtering.
+ * Used to hide facets for columns that don't have useful data.
+ *
+ * A column has "meaningful data" if:
+ * - Text columns: at least 2 distinct non-empty values (useful for filtering)
+ * - Numeric columns: at least 2 distinct non-default values
+ * - Always-present columns: always true (core data)
+ *
+ * @param db - sql.js Database instance
+ * @param sourceColumn - Column name to check
+ * @returns true if the column has meaningful data for filtering
+ */
+function columnHasData(db: Database, sourceColumn: string): boolean {
+  // Skip columns that are always present and useful
+  const alwaysPresentColumns = ['name', 'created_at', 'modified_at', 'folder', 'tags'];
+  if (alwaysPresentColumns.includes(sourceColumn)) {
+    return true;
+  }
+
+  try {
+    // Generic approach: check for meaningful variation in ANY column
+    // Try numeric check first (most numeric columns default to 0)
+    const numericSql = `
+      SELECT COUNT(DISTINCT ${sourceColumn}) as cnt FROM nodes
+      WHERE ${sourceColumn} IS NOT NULL
+        AND ${sourceColumn} != 0
+        AND deleted_at IS NULL
+    `;
+    const numericResult = db.exec(numericSql);
+    const numericCount = numericResult.length > 0 && numericResult[0].values.length > 0
+      ? Number(numericResult[0].values[0][0])
+      : 0;
+
+    if (numericCount >= 2) {
+      console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): true (${numericCount} distinct numeric values)`);
+      return true;
+    }
+
+    // Fall back to text check (handles both text and numeric as strings)
+    const textSql = `
+      SELECT COUNT(DISTINCT ${sourceColumn}) as cnt FROM nodes
+      WHERE ${sourceColumn} IS NOT NULL
+        AND TRIM(CAST(${sourceColumn} AS TEXT)) != ''
+        AND deleted_at IS NULL
+    `;
+    const textResult = db.exec(textSql);
+    const textCount = textResult.length > 0 && textResult[0].values.length > 0
+      ? Number(textResult[0].values[0][0])
+      : 0;
+
+    const hasData = textCount >= 2;
+    console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): ${hasData} (${textCount} distinct values)`);
+    return hasData;
+  } catch (error) {
+    // Column doesn't exist, wrong type, or other SQL error
+    // This is NORMAL for schema-on-read - gracefully return false (CLASSIFY-03)
+    console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): false (error: ${error})`);
+    return false;
+  }
+}
+
+/**
  * Discover dynamic properties from node_properties table.
  * Returns properties that appear in at least 3 nodes.
  *
@@ -205,6 +267,8 @@ function humanizeKey(key: string): string {
  * @returns PropertyClassification with all properties grouped by bucket
  */
 export function classifyProperties(db: Database): PropertyClassification {
+  console.log('[PropertyClassifier] classifyProperties called');
+
   // Initialize empty classification
   const classification: PropertyClassification = {
     L: [],
@@ -237,14 +301,27 @@ export function classifyProperties(db: Database): PropertyClassification {
     const enabledIdx = columns.indexOf('enabled');
     const sortOrderIdx = columns.indexOf('sort_order');
 
+    console.log(`[PropertyClassifier] Processing ${result[0].values.length} facet rows`);
+
     for (const row of result[0].values) {
       const axis = row[axisIdx] as string;
       const sourceColumn = row[sourceColumnIdx] as string;
+      const name = row[nameIdx] as string;
+
+      // Skip facets whose source columns have no data in the current dataset
+      // This prevents showing Priority, Status, Due Date for Notes data
+      const hasData = columnHasData(db, sourceColumn);
+      if (!hasData) {
+        console.log(`[PropertyClassifier] SKIPPING facet "${name}" (${sourceColumn}) - no data`);
+        continue;
+      }
+
+      console.log(`[PropertyClassifier] INCLUDING facet "${name}" (${sourceColumn}) → bucket ${axis}`);
       schemaSourceColumns.add(sourceColumn);
 
       const property: ClassifiedProperty = {
         id: row[idIdx] as string,
-        name: row[nameIdx] as string,
+        name,
         bucket: axis as LATCHBucket,
         sourceColumn,
         facetType: row[facetTypeIdx] as string,
@@ -329,6 +406,15 @@ export function classifyProperties(db: Database): PropertyClassification {
       isEdgeProperty: false,
     });
   }
+
+  console.log('[PropertyClassifier] Final classification:', {
+    L: classification.L.map(p => p.name),
+    A: classification.A.map(p => p.name),
+    T: classification.T.map(p => p.name),
+    C: classification.C.map(p => p.name),
+    H: classification.H.map(p => p.name),
+    GRAPH: classification.GRAPH.map(p => p.name),
+  });
 
   return classification;
 }
