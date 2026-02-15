@@ -20,9 +20,35 @@
 - ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
 - ✓ **v6.2 Capture Writing Surface** - Phases 94-98 (shipped 2026-02-14)
 - ✓ **v6.3 SuperStack SQL Integration** - Phase 99 (shipped 2026-02-15)
-- 🏗️ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (current)
+- ⏸️ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (paused)
+- 🏗️ **v6.5 Console Cleanup** - Phase 103 (current)
 
 ## Phases
+
+### Phase 103: Console Cleanup
+
+**Goal:** Eliminate console errors and excessive debug logging for clean developer experience.
+
+**Depends on:** None (standalone cleanup)
+
+**Requirements:** BUG-01 to BUG-03, LOG-01 to LOG-07, WARN-01 to WARN-04 (14 total)
+
+**Plans:** 3 plans in 2 waves
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 103-01 | Bug Fixes | BUG-01 to BUG-03 | Fixed `useTipTapEditor.ts`, added `favicon.ico` |
+| 103-02 | Log Level Controls | LOG-01 to LOG-07 | Enhanced `dev-logger.ts` with configurable levels |
+| 103-03 | Warning Resolution | WARN-01 to WARN-04 | Fixed axis fallback, gated warnings |
+
+**Success Criteria:**
+1. Browser console shows no errors on fresh page load
+2. TipTap initializes without duplicate extension warning
+3. Favicon loads successfully (no 404)
+4. Debug logs gated behind 'debug' level (not visible by default)
+5. Axis facet fallback behavior fixed or intentional
+
+---
 
 ### Phase 100: Settings & Discovery Layer (COMPLETE)
 
@@ -56,22 +82,27 @@ Plans:
 
 **Goal:** Update UI components to use discovery queries instead of hardcoded values.
 
-**Depends on:** Phase 100 (settings and discovery ready)
+**Depends on:** Phase 100 (settings and discovery ready) - COMPLETE
 
 **Requirements:** UI-01 to UI-05, CLASSIFY-01 to CLASSIFY-03 (8 total)
 
-**Plans:** 2 plans
+**Plans:** 2 plans in 1 wave
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` |
-| 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` |
+| 101-01 | CardDetailModal | UI-01 to UI-03, UI-05 | Updated `CardDetailModal.tsx` |
+| 101-02 | LATCHFilter & Classifier | UI-04, UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` |
+
+Plans:
+- [ ] 101-01-PLAN.md - CardDetailModal folder/status dropdowns with Phase 100 hooks (Wave 1)
+- [ ] 101-02-PLAN.md - LATCHFilter priority discovery + property-classifier cleanup (Wave 1)
 
 **Success Criteria:**
 1. CardDetailModal dropdowns populated from data
 2. Status colors from settings or neutral defaults
 3. LATCHFilter priority range discovered dynamically
 4. Property classifier handles missing columns without hardcoded defaults
+5. Empty state hints shown when no values discovered
 
 ---
 
@@ -514,7 +545,8 @@ Plans:
 | 98. Isometry Embeds & Polish | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 99. SuperStack SQL | v6.3 | 5/5 | Complete | 2026-02-15 |
 | 100. Settings & Discovery | v6.4 | 2/2 | Complete | 2026-02-15 |
+| 103. Console Cleanup | v6.5 | 0/3 | Planning | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 100 complete — Settings & Discovery Layer)*
+*Last updated: 2026-02-15 (v6.5 Console Cleanup started)*
