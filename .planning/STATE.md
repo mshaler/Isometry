@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 87 (GSD File Synchronization)
-Plan: 1 of 5 complete
+Plan: 2 of 5 complete
 Status: In progress
-Last activity: 2026-02-15 — Completed 87-01-PLAN.md (GSD File Parser)
+Last activity: 2026-02-15 — Completed 87-02-PLAN.md (File Watcher Integration)
 
-Progress (Phase 87): [██░░░░░░░░] 20%
+Progress (Phase 87): [████░░░░░░] 40%
 Overall: Resuming v6.0 Interactive Shell milestone
 
 ## Active Milestones
@@ -95,7 +95,7 @@ Overall: Resuming v6.0 Interactive Shell milestone
   - [x] 86-04: Claude Code Integration ✓
 - Phase 87: GSD File Synchronization (5 plans) — IN PROGRESS
   - [x] 87-01: GSD File Parser (~5m) ✓
-  - [ ] 87-02: File Watcher Integration
+  - [x] 87-02: File Watcher Integration (~5m) ✓
   - [ ] 87-03: State Synchronization
   - [ ] 87-04: Bidirectional Updates
   - [ ] 87-05: Error Handling & Recovery
@@ -230,6 +230,10 @@ Recent decisions affecting v6.1 SuperStack work:
 - PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
 - PARSE-03: Status derived from <done> content presence (pending/complete) ✅ Implemented 87-01
 - PARSE-04: parseGSDPlanContent helper for testing without file I/O ✅ Implemented 87-01
+- WATCH-01: Chokidar awaitWriteFinish with 400ms stabilityThreshold (<500ms GSD-02) ✅ Implemented 87-02
+- WATCH-02: Single watcher per project shared across clients ✅ Implemented 87-02
+- WATCH-03: skipWatchPaths with 600ms timeout prevents update loops ✅ Implemented 87-02
+- ROUTE-01: Type guard in messageRouter for GSD messages ✅ Implemented 87-02
 
 See PROJECT.md Key Decisions table for full history.
 
@@ -256,8 +260,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Plan 87-01 (GSD File Parser)
-Next: Plan 87-02 (File Watcher Integration)
+Completed: Plan 87-02 (File Watcher Integration)
+Next: Plan 87-03 (State Synchronization)
+
+**Phase 87-02 Complete:**
+- GSDFileWatcher class with chokidar
+- 400ms debounce (within <500ms GSD-02 requirement)
+- skipWatchPaths for preventing update loops
+- isGSDFileMessage type guard for WebSocket routing
+- 5 timing verification tests
 
 **Phase 87-01 Complete:**
 - GSD file parser with gray-matter
@@ -271,5 +282,6 @@ Next: Plan 87-02 (File Watcher Integration)
 - Query time: ~46ms (target: <100ms)
 
 **Reference:**
+- `.planning/phases/87-gsd-file-synchronization/87-02-SUMMARY.md` — Plan 87-02 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-01-SUMMARY.md` — Plan 87-01 execution summary
 - `superstack-phase2-sql-integration.md` — Full implementation specification
