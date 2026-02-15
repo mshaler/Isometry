@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 96 - Block Types & Slash Commands (Capture Writing Surface v6.2)
+**Current focus:** Phase 98 - Isometry Embeds & Polish (Capture Writing Surface v6.2)
 
 ## Current Position
 
-Phase: 93 of 98 (Polish & Performance - SuperStack Enhancement v6.1)
-Plan: 3 of 3 complete
-Status: Complete
-Last activity: 2026-02-14 — Completed Phase 93 (all 3 plans)
+Phase: 98 of 98 (Isometry Embeds & Polish - Capture Writing Surface v6.2)
+Plan: 1 of 4 complete
+Status: In progress
+Last activity: 2026-02-15 — Completed 98-01: Core Embed Infrastructure
 
-Progress (Phase 93): [██████████] 100% (3 of 3 plans)
-Overall: [████████░░] 99% (105 of ~130 total phases across all milestones)
+Progress (Phase 98): [███░░░░░░░] 25% (1 of 4 plans)
+Overall: [█████████░] 99% (106 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -42,10 +42,14 @@ Overall: [████████░░] 99% (105 of ~130 total phases across a
 - Phase 97: Inline Properties (4 requirements) — ✓ COMPLETE (2/2 plans)
   - [x] 97-01: Inline Property Mark (@key: value syntax) ✓
   - [x] 97-02: Hashtag Mark with Autocomplete (#tag syntax) ✓
-- Phase 98: Isometry Embeds & Polish (7 requirements)
+- Phase 98: Isometry Embeds & Polish (7 requirements) — IN PROGRESS (1/4 plans)
+  - [x] 98-01: Core Embed Infrastructure (~5m) ✓
+  - [ ] 98-02: D3.js Visualization Integration (planned)
+  - [ ] 98-03: Embed Configuration UI (planned)
+  - [ ] 98-04: Polish & Performance (planned)
 
 **Total requirements:** 43
-**Current:** Phase 97 COMPLETE (2/2 plans), ready for Phase 98
+**Current:** Phase 98 IN PROGRESS (1/4 plans)
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -108,6 +112,7 @@ Overall: [████████░░] 99% (105 of ~130 total phases across a
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 98 (Isometry Embeds) | 1/4 | ~5m | In Progress |
 | 97 (Inline Properties) | 2/2 | ~5m | Complete ✓ |
 | 93 (Polish & Performance) | 3/3 | ~5m | Complete ✓ |
 | 96 (Block Types) | 3/3 | ~5m | Complete ✓ |
@@ -116,7 +121,7 @@ Overall: [████████░░] 99% (105 of ~130 total phases across a
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 
-*Updated: 2026-02-14*
+*Updated: 2026-02-15*
 
 ## Accumulated Context
 
@@ -196,6 +201,14 @@ Recent decisions affecting v6.1 SuperStack work:
 - BOOKMARK-02: Google favicon service for simple icon display without server-side unfurling ✅ Implemented 96-03
 - BOOKMARK-03: Auto-add https:// if user forgets protocol ✅ Implemented 96-03
 
+**Isometry Embeds (Phase 98):**
+- EMBED-01: atom: true for non-editable embed blocks (like bookmark) ✅ Implemented 98-01
+- EMBED-02: ReactNodeViewRenderer for type-specific D3 visualization rendering ✅ Implemented 98-01
+- EMBED-03: ResizeObserver for responsive width, manual height controls ✅ Implemented 98-01
+- EMBED-04: Placeholder SVG visualizations with data info (full D3 in 98-02) ✅ Implemented 98-01
+- EMBED-05: /supergrid, /network, /timeline slash commands ✅ Implemented 98-01
+- EMBED-06: /table maps to SuperGrid embed with title "Table" ✅ Implemented 98-01
+
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
 - TERM-02: spawn() with args array, never string interpolation
@@ -215,7 +228,7 @@ None yet.
 - Click-to-filter logs constraints to console (FilterContext wiring in Phase 92)
 
 **v6.2 Capture Writing Surface:**
-- Phase 98 risk: D3.js + TipTap NodeView integration pattern unproven — needs validation spike (Plan 98-01)
+- Phase 98 risk: ✅ RESOLVED - D3.js + TipTap NodeView integration validated in 98-01 (placeholder approach works)
 - Template picker UX: ✅ RESOLVED - Modal approach implemented in 95-02
 
 **Technical Debt:**
@@ -225,26 +238,26 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Phase 97 COMPLETE - Inline Properties
-Resume file: .planning/phases/97-inline-properties/
+Last session: 2026-02-15
+Stopped at: Phase 98 Plan 01 COMPLETE - Core Embed Infrastructure
+Resume file: .planning/phases/98-isometry-embeds/
 
-**Phase 97 Summary (2/2 Plans Complete):**
-- 97-01: Inline Property Mark (@key: value TipTap Mark extension)
-- 97-02: Hashtag Mark with Autocomplete (#tag syntax with TagService and dropdown)
+**Phase 98 Summary (1/4 Plans Complete):**
+- 98-01: Core Embed Infrastructure ✓ (EmbedExtension, EmbedNode, slash commands)
 
 **v6.2 Capture Writing Surface Progress:**
 - Phase 94 (Foundation) ✓
 - Phase 95 (Data Layer & Backlinks) ✓
 - Phase 96 (Block Types) ✓
 - Phase 97 (Inline Properties) ✓
-- Phase 98 (Isometry Embeds & Polish) — NEXT
+- Phase 98 (Isometry Embeds & Polish) — IN PROGRESS (1/4)
 
 **Next Steps:**
-1. Continue v6.2 with Phase 98: Isometry Embeds & Polish
+1. Continue Phase 98-02: D3.js Visualization Integration
 2. Or resume v6.0 Interactive Shell (Phase 86-03: MCP Tools)
 
-**Key Deliverables from Phase 97:**
-- InlinePropertyExtension: @key: value syntax with styled blue badges
-- HashtagExtension: #tag autocomplete with TagService and dropdown menu
-- useInlinePropertySync and useHashtagSync hooks for PropertyEditor sync
+**Key Deliverables from Phase 98-01:**
+- EmbedExtension: TipTap Node with setEmbed command
+- EmbedNode: React NodeView with placeholder D3 visualizations
+- /supergrid, /network, /timeline, /table slash commands
+- CSS styles for embed blocks with loading/error states
