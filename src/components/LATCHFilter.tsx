@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useFilters } from '@/state/FilterContext';
 import type { FilterState } from '@/types/filter';
 import { LocationMapWidget } from './LocationMapWidget';
@@ -47,8 +47,33 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
   // Build tree for Hierarchy filter
   const tree = useNodeTree(allNodes || [], nestEdges || []);
 
-  // Priority range state for tree view
+  // Discover actual priority range from data
+  const { data: priorityStatsRows } = useSQLiteQuery<{ min: number; max: number }>(
+    `SELECT
+       COALESCE(MIN(priority), 1) as min,
+       COALESCE(MAX(priority), 10) as max
+     FROM nodes
+     WHERE priority IS NOT NULL AND deleted_at IS NULL`,
+    [],
+    { enabled: axis === 'hierarchy' }
+  );
+
+  // Extract first row from query results
+  const priorityStats = priorityStatsRows?.[0];
+
+  // Use discovered range or sensible defaults
+  const discoveredMin = priorityStats?.min ?? 1;
+  const discoveredMax = priorityStats?.max ?? 10;
+
+  // Priority range state - initialized from discovered values
   const [priorityRange, setPriorityRange] = useState<[number, number]>([1, 10]);
+
+  // Sync state with discovered values when data arrives
+  React.useEffect(() => {
+    if (priorityStats) {
+      setPriorityRange([priorityStats.min, priorityStats.max]);
+    }
+  }, [priorityStats]);
 
   // For Location filter: fetch all nodes with location data
   const { markers } = useMapMarkers();
@@ -236,7 +261,7 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
             onSelectionChange={(ids) => {
               if (ids.length === 0) {
                 // No selection: clear filter or use priority-only
-                if (priorityRange[0] === 1 && priorityRange[1] === 10) {
+                if (priorityRange[0] === discoveredMin && priorityRange[1] === discoveredMax) {
                   setPreviewHierarchy(null);
                 } else {
                   setPreviewHierarchy({
@@ -271,7 +296,7 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
                   minPriority: range[0],
                   maxPriority: range[1],
                 });
-              } else if (range[0] !== 1 || range[1] !== 10) {
+              } else if (range[0] !== discoveredMin || range[1] !== discoveredMax) {
                 setPreviewHierarchy({
                   type: 'range',
                   minPriority: range[0],
