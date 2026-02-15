@@ -30,50 +30,50 @@ class DevLogger {
   // Semantic logging methods for specific debugging contexts
   inspect(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`🔍 ${label}:`), data);
+      console.log(this.formatMessage(`🔍 ${label}:`), data);
     }
   }
 
   state(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`🔄 ${label}:`), data);
+      console.log(this.formatMessage(`🔄 ${label}:`), data);
     }
   }
 
   render(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`🎨 ${label}:`), data);
+      console.log(this.formatMessage(`🎨 ${label}:`), data);
     }
   }
 
   metrics(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`📊 ${label}:`), data);
+      console.log(this.formatMessage(`📊 ${label}:`), data);
     }
   }
 
   data(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`🗂️ ${label}:`), data);
+      console.log(this.formatMessage(`🗂️ ${label}:`), data);
     }
   }
 
   setup(label: string, data: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(`🏗️ ${label}:`), data);
+      console.log(this.formatMessage(`🏗️ ${label}:`), data);
     }
   }
 
   // Standard log levels
   debug(message: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
-      console.warn(this.formatMessage(message), data);
+      console.log(this.formatMessage(message), data);
     }
   }
 
   info(message: string, data?: unknown): void {
     if (this.shouldLog('info')) {
-      console.warn(this.formatMessage(message), data);
+      console.info(this.formatMessage(message), data);
     }
   }
 
@@ -103,6 +103,7 @@ export const contextLogger = new DevLogger({ prefix: '[Context]', enabledLevels:
 export const hookLogger = new DevLogger({ prefix: '[Hook]', enabledLevels: quietLevels });
 export const componentLogger = new DevLogger({ prefix: '[Component]', enabledLevels: quietLevels });
 export const utilLogger = new DevLogger({ prefix: '[Util]', enabledLevels: quietLevels });
+export const sqliteLogger = new DevLogger({ prefix: '[SQLite]', enabledLevels: quietLevels });
 
 // Bridge logger with limited methods (matching existing bridge logger interface)
 export const bridgeLogger = new DevLogger({ prefix: '[Bridge]', enabledLevels: quietLevels });

@@ -146,6 +146,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       StarterKit.configure({
         // StarterKit includes: bold, italic, code, heading, bulletList,
         // orderedList, blockquote, history (undo/redo), etc.
+        // Disable built-in Link to prevent duplicate with our configured version
+        link: false,
       }),
       Link.configure({
         openOnClick: false, // Don't open links on click while editing
