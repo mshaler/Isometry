@@ -407,15 +407,6 @@ export function classifyProperties(db: Database): PropertyClassification {
     });
   }
 
-  console.log('[PropertyClassifier] Final classification:', {
-    L: classification.L.map(p => p.name),
-    A: classification.A.map(p => p.name),
-    T: classification.T.map(p => p.name),
-    C: classification.C.map(p => p.name),
-    H: classification.H.map(p => p.name),
-    GRAPH: classification.GRAPH.map(p => p.name),
-  });
-
   return classification;
 }
 

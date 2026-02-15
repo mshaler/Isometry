@@ -100,7 +100,7 @@ export class GSDFileSyncService {
           );
           break;
 
-        case 'gsd_read_plan':
+        case 'gsd_read_plan': {
           if (!message.planPath) {
             throw new Error('planPath required for gsd_read_plan');
           }
@@ -116,6 +116,7 @@ export class GSDFileSyncService {
             } as GSDSyncResponse)
           );
           break;
+        }
 
         case 'gsd_task_update':
           if (
