@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200">
+  <g class="d3-force-graph">
+    <g class="links">
+      <line class="link" x1="100" y1="100" x2="200" y2="50" stroke="#999" stroke-width="2"/>
+      <line class="link" x1="100" y1="100" x2="200" y2="150" stroke="#999" stroke-width="2"/>
+      <line class="link" x1="200" y1="50" x2="300" y2="100" stroke="#999" stroke-width="1"/>
+      <line class="link" x1="200" y1="150" x2="300" y2="100" stroke="#999" stroke-width="1"/>
+    </g>
+    <g class="nodes">
+      <circle class="node" cx="100" cy="100" r="20" fill="#4A90A4"/>
+      <circle class="node" cx="200" cy="50" r="15" fill="#6B8E23"/>
+      <circle class="node" cx="200" cy="150" r="15" fill="#6B8E23"/>
+      <circle class="node" cx="300" cy="100" r="18" fill="#CD853F"/>
+    </g>
+    <g class="labels">
+      <text x="100" y="100" text-anchor="middle" dy="4">Root</text>
+      <text x="200" y="50" text-anchor="middle" dy="4">A</text>
+      <text x="200" y="150" text-anchor="middle" dy="4">B</text>
+      <text x="300" y="100" text-anchor="middle" dy="4">C</text>
+    </g>
+  </g>
+</svg>
