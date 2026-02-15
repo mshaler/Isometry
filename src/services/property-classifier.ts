@@ -10,6 +10,7 @@
  */
 
 import type { Database } from 'sql.js';
+import { devLogger } from '../utils/dev-logger';
 
 // ============================================================================
 // Types
@@ -115,7 +116,7 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       : 0;
 
     if (numericCount >= 2) {
-      console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): true (${numericCount} distinct numeric values)`);
+      devLogger.debug('columnHasData', { sourceColumn, hasData: true, distinctCount: numericCount });
       return true;
     }
 
@@ -132,12 +133,12 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       : 0;
 
     const hasData = textCount >= 2;
-    console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): ${hasData} (${textCount} distinct values)`);
+    devLogger.debug('columnHasData', { sourceColumn, hasData, distinctCount: textCount });
     return hasData;
   } catch (error) {
     // Column doesn't exist, wrong type, or other SQL error
     // This is NORMAL for schema-on-read - gracefully return false (CLASSIFY-03)
-    console.log(`[PropertyClassifier] columnHasData("${sourceColumn}"): false (error: ${error})`);
+    devLogger.debug('columnHasData error', { sourceColumn, error });
     return false;
   }
 }
@@ -267,7 +268,7 @@ function humanizeKey(key: string): string {
  * @returns PropertyClassification with all properties grouped by bucket
  */
 export function classifyProperties(db: Database): PropertyClassification {
-  console.log('[PropertyClassifier] classifyProperties called');
+  devLogger.debug('classifyProperties called');
 
   // Initialize empty classification
   const classification: PropertyClassification = {
@@ -301,7 +302,7 @@ export function classifyProperties(db: Database): PropertyClassification {
     const enabledIdx = columns.indexOf('enabled');
     const sortOrderIdx = columns.indexOf('sort_order');
 
-    console.log(`[PropertyClassifier] Processing ${result[0].values.length} facet rows`);
+    devLogger.debug('Processing facet rows', { count: result[0].values.length });
 
     for (const row of result[0].values) {
       const axis = row[axisIdx] as string;
@@ -312,11 +313,11 @@ export function classifyProperties(db: Database): PropertyClassification {
       // This prevents showing Priority, Status, Due Date for Notes data
       const hasData = columnHasData(db, sourceColumn);
       if (!hasData) {
-        console.log(`[PropertyClassifier] SKIPPING facet "${name}" (${sourceColumn}) - no data`);
+        devLogger.debug('Skipping facet (no data)', { name, sourceColumn });
         continue;
       }
 
-      console.log(`[PropertyClassifier] INCLUDING facet "${name}" (${sourceColumn}) → bucket ${axis}`);
+      devLogger.debug('Including facet', { name, sourceColumn, axis });
       schemaSourceColumns.add(sourceColumn);
 
       const property: ClassifiedProperty = {

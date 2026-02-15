@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useMemo,
 import initSqlJs from 'sql.js';
 import type { Database, SqlJsStatic } from 'sql.js';
 import type { SQLiteCapabilityError } from './types';
-import { devLogger } from '../utils/dev-logger';
+import { devLogger, sqliteLogger } from '../utils/dev-logger';
 import { useRenderLoopGuard } from '../hooks/debug/useRenderLoopGuard';
 import { IndexedDBPersistence, AutoSaveManager } from './IndexedDBPersistence';
 import { createDatabaseOperations } from './operations';
@@ -135,7 +135,7 @@ export function SQLiteProvider({
     const initDatabase = async () => {
       // Guard against double initialization (React.StrictMode runs effects twice)
       if (initializationRef.current.started) {
-        console.log('[SQLiteProvider] Skipping duplicate initialization (StrictMode guard)');
+        sqliteLogger.debug('Skipping duplicate initialization (StrictMode guard)');
         // If we already have a database from previous init, use it
         if (initializationRef.current.database && initializationRef.current.completed) {
           setDb(initializationRef.current.database);
@@ -164,7 +164,7 @@ export function SQLiteProvider({
           await persistenceRef.current.init();
           persistence = persistenceRef.current;
         } catch (persistenceInitError) {
-          console.warn('[SQLiteProvider] IndexedDB init failed, using memory-only mode:', persistenceInitError);
+          sqliteLogger.warn('IndexedDB init failed, using memory-only mode', { error: persistenceInitError });
           persistenceRef.current = null;
         }
 
@@ -174,7 +174,7 @@ export function SQLiteProvider({
           try {
             savedData = await persistence.load();
           } catch (loadError) {
-            console.warn('[SQLiteProvider] Failed to load from IndexedDB:', loadError);
+            sqliteLogger.warn('Failed to load from IndexedDB', { error: loadError });
             savedData = null;
           }
         }
@@ -198,13 +198,13 @@ export function SQLiteProvider({
 
               if (storedVersion >= SCHEMA_VERSION) {
                 schemaValid = true;
-                console.log(`[SQLiteProvider] Schema version ${storedVersion} is current`);
+                sqliteLogger.debug('Schema version current', { storedVersion });
               } else {
-                console.warn(`[SQLiteProvider] Schema outdated (v${storedVersion} < v${SCHEMA_VERSION}), will recreate`);
+                sqliteLogger.warn('Schema outdated, will recreate', { storedVersion, required: SCHEMA_VERSION });
               }
             } catch {
               // No schema_version setting - legacy database
-              console.warn('[SQLiteProvider] No schema_version found, will recreate database');
+              sqliteLogger.warn('No schema_version found, will recreate database');
             }
 
             // Also check for required tables
@@ -212,14 +212,14 @@ export function SQLiteProvider({
               try {
                 database.exec("SELECT 1 FROM node_properties LIMIT 1");
               } catch {
-                console.warn('[SQLiteProvider] node_properties table missing, will recreate');
+                sqliteLogger.warn('node_properties table missing, will recreate');
                 schemaValid = false;
               }
             }
 
             if (!schemaValid) {
               // Schema is outdated - clear IndexedDB and recreate
-              console.log('[SQLiteProvider] Clearing stale IndexedDB data...');
+              sqliteLogger.debug('Clearing stale IndexedDB data');
               database.close();
               database = null;
               if (persistence) {
@@ -275,7 +275,7 @@ export function SQLiteProvider({
             }
           } catch (fetchError) {
             // Fall back to empty database with schema + sample data
-            console.log('[SQLiteProvider] Creating fresh database with schema...');
+            sqliteLogger.debug('Creating fresh database with schema');
             database = new sqlInstance.Database();
             try {
               const schemaResponse = await fetch('/schema.sql');
@@ -287,7 +287,7 @@ export function SQLiteProvider({
                   "INSERT OR REPLACE INTO settings (key, value) VALUES ('schema_version', ?)",
                   [String(SCHEMA_VERSION)]
                 );
-                console.log(`[SQLiteProvider] Schema v${SCHEMA_VERSION} loaded (empty database)`);
+                sqliteLogger.debug('Schema loaded', { version: SCHEMA_VERSION });
               }
             } catch (schemaError) {
               console.error('[SQLiteProvider] Schema load failed:', schemaError);
@@ -295,7 +295,7 @@ export function SQLiteProvider({
           }
         }
 
-        console.log('[SQLiteProvider] Database ready, setting state...');
+        sqliteLogger.debug('Database ready, setting state');
 
         // Store database in ref for StrictMode resilience
         initializationRef.current.database = database;
@@ -305,18 +305,18 @@ export function SQLiteProvider({
           const facetCheck = database.exec("SELECT COUNT(*) as count FROM facets");
           const facetCount = facetCheck[0]?.values[0]?.[0] as number || 0;
           if (facetCount === 0) {
-            console.log('[SQLiteProvider] Facets table empty, seeding...');
+            sqliteLogger.debug('Facets table empty, seeding');
             const { FACETS_SEED_SQL } = await import('./sample-data');
             database.exec(FACETS_SEED_SQL);
-            console.log('[SQLiteProvider] Facets seeded');
+            sqliteLogger.debug('Facets seeded');
           }
         } catch (facetError) {
-          console.warn('[SQLiteProvider] Facets check/seed failed:', facetError);
+          sqliteLogger.warn('Facets check/seed failed', { error: facetError });
           // Table might not exist - try creating and seeding
           try {
             const { FACETS_SEED_SQL } = await import('./sample-data');
             database.exec(FACETS_SEED_SQL);
-            console.log('[SQLiteProvider] Facets table created and seeded');
+            sqliteLogger.debug('Facets table created and seeded');
           } catch (createError) {
             console.error('[SQLiteProvider] Failed to create facets:', createError);
           }
@@ -358,7 +358,7 @@ export function SQLiteProvider({
           }
         }
 
-        console.log('[SQLiteProvider] ✅ Initialization complete');
+        sqliteLogger.debug('Initialization complete');
         initializationRef.current.completed = true;
         setLoading(false);
       } catch (error) {
@@ -382,14 +382,14 @@ export function SQLiteProvider({
       }
       // Note: We intentionally do NOT close the database here
       // to preserve it across StrictMode remounts
-      console.log('[SQLiteProvider] Cleanup called (database preserved in ref)');
+      sqliteLogger.debug('Cleanup called (database preserved in ref)');
     };
   }, [databaseUrl, enableLogging]);
 
   // Proper cleanup on page unload (not React lifecycle)
   useEffect(() => {
     const handleBeforeUnload = () => {
-      console.log('[SQLiteProvider] Page unloading, closing database...');
+      sqliteLogger.debug('Page unloading, closing database');
       if (initializationRef.current.database) {
         try {
           initializationRef.current.database.close();
