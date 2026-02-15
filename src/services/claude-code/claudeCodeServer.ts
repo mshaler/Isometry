@@ -17,9 +17,11 @@ import {
   isTerminalMessage,
   isCommandMessage,
   isFileMonitoringMessage,
-  isPingMessage
+  isPingMessage,
+  isGSDFileMessage,
 } from '../terminal/messageRouter';
 import type { TerminalClientMessage } from '../terminal/terminalTypes';
+import { GSDFileSyncService, type GSDSyncMessage } from '../gsd';
 
 export interface ServerMessage {
   type: 'command' | 'cancel' | 'input' | 'start_file_monitoring' | 'stop_file_monitoring';
@@ -56,11 +58,13 @@ export class ClaudeCodeServer {
   private monitoredPaths = new Map<string, { path: string; sessionId: string }>(); // sessionId -> monitoring info
   private port: number;
   private terminalServer: TerminalPTYServer;
+  private gsdSyncService: GSDFileSyncService;
 
   constructor(port: number = 8080) {
     this.port = port;
     this.wss = new WebSocketServer({ port });
     this.terminalServer = new TerminalPTYServer();
+    this.gsdSyncService = new GSDFileSyncService(process.cwd());
     this.setupWebSocketHandlers();
   }
 
@@ -128,6 +132,12 @@ export class ClaudeCodeServer {
       } else if (msg.type === 'stop_file_monitoring' && msg.sessionId) {
         await this.stopFileMonitoring(ws, msg.sessionId);
       }
+      return;
+    }
+
+    // Route GSD file sync messages
+    if (isGSDFileMessage(message)) {
+      await this.gsdSyncService.handleMessage(ws, message as GSDSyncMessage);
       return;
     }
 
@@ -597,6 +607,9 @@ export class ClaudeCodeServer {
 
     // Cleanup terminal sessions
     this.terminalServer.cleanup();
+
+    // Cleanup GSD sync service
+    this.gsdSyncService.cleanup();
 
     // Close all file watchers
     for (const [sessionId, watcher] of this.fileWatchers) {

@@ -27,3 +27,10 @@ export {
 
 // File writing
 export { updateTaskStatus, writeGSDPlanFile } from './gsdFileWriter';
+
+// Sync service
+export {
+  GSDFileSyncService,
+  type GSDSyncMessage,
+  type GSDSyncResponse,
+} from './gsdFileSyncService';

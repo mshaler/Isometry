@@ -25,7 +25,7 @@ interface CommandMessage {
  * Defined here to avoid circular dependency with gsd services
  */
 interface GSDClientMessage {
-  type: 'start_gsd_watch' | 'stop_gsd_watch' | 'gsd_task_update';
+  type: 'start_gsd_watch' | 'stop_gsd_watch' | 'gsd_task_update' | 'gsd_read_plan';
   sessionId?: string;
   planPath?: string;
   taskIndex?: number;
@@ -95,7 +95,8 @@ export function isGSDFileMessage(message: unknown): message is GSDClientMessage 
   return (
     msg.type === 'start_gsd_watch' ||
     msg.type === 'stop_gsd_watch' ||
-    msg.type === 'gsd_task_update'
+    msg.type === 'gsd_task_update' ||
+    msg.type === 'gsd_read_plan'
   );
 }
 
