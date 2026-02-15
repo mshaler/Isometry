@@ -19,8 +19,38 @@
 - 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
 - ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
 - ✓ **v6.2 Capture Writing Surface** - Phases 94-98 (shipped 2026-02-14)
+- 🏗️ **v6.3 SuperStack SQL Integration** - Phase 99 (current)
 
 ## Phases
+
+### Phase 99: SuperStack SQL Integration
+
+**Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
+
+**Requirements:** QUERY-01 through QUERY-06, QUTIL-01 through QUTIL-04, TEST-01 through TEST-05, HOOK-01 through HOOK-05, DEMO-01 through DEMO-03 (23 total)
+
+**Plans:**
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 99-01 | SQL Query Builders | QUERY-01 to QUERY-06 | `queries/header-discovery.ts` |
+| 99-02 | Query Utilities | QUTIL-01 to QUTIL-04 | `queries/query-utils.ts` |
+| 99-03 | Integration Tests | TEST-01 to TEST-05 | `__tests__/sql-integration.test.ts` |
+| 99-04 | React Hook | HOOK-01 to HOOK-05 | `hooks/useSuperStackData.ts` |
+| 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` + index.ts exports |
+
+**Success Criteria:**
+1. SQL queries build correctly for folder + tags rows, year + month columns
+2. Multi-select facets (tags) explode via `json_each()` with correct counts
+3. Time facets extract correctly via `strftime()`
+4. Integration tests pass against real sql.js database
+5. Query completes in <100ms for test dataset
+6. `useSuperStackData` hook returns trees with correct loading/error states
+7. Demo component renders live data with collapse/expand interactions
+
+**Reference:** `superstack-phase2-sql-integration.md`
+
+---
 
 <details>
 <summary>v3.1 Live Database Integration (Phases 18-27) - SHIPPED 2026-02-01</summary>
@@ -317,7 +347,7 @@ Plans:
 - [ ] 85-04-PLAN.md — Mode switching (shell/claude-code)
 - [ ] 85-05-PLAN.md — UI integration, reconnection, and verification
 
-### Phase 86: Claude AI MCP Integration
+### Phase 86: Claude AI MCP Integration — ✓ COMPLETE
 **Goal**: User can chat with Claude AI and approve tool executions
 **Depends on**: Phase 85 (Backend infrastructure operational)
 **Requirements**: BACK-04, CLAI-01, CLAI-02, CLAI-03, CLAI-04, CLAI-05, CLAI-06
@@ -326,10 +356,13 @@ Plans:
   2. User must approve tool calls via modal before execution
   3. AI can access MCP resources (file system, database) with user consent
   4. System manages context lifecycle without memory leaks
-**Plans**: TBD
+**Plans**: 4/4 complete
 
 Plans:
-- [ ] 86-01: TBD (use /gsd:plan-phase)
+- [x] 86-01-PLAN.md — Basic Chat Interface with Anthropic SDK streaming
+- [x] 86-02-PLAN.md — Project Context (LATCH/GRAPH/PAFV architecture awareness)
+- [x] 86-03-PLAN.md — MCP Tool Integration (6 database query tools)
+- [x] 86-04-PLAN.md — Claude Code Auto-Spawn with mode switching
 
 ### Phase 87: GSD File Synchronization
 **Goal**: User sees live GSD state and can update task status bidirectionally
@@ -376,8 +409,9 @@ Plans:
 | 77-79 | v4.9 | 6/6 | Complete | 2026-02-13 |
 | 80 | v5.1 | 2/2 | Complete | 2026-02-14 |
 | 84 | v5.2 | 4/4 | Complete | 2026-02-13 |
-| 85. Backend Terminal | v6.0 | 0/5 | Planned | - |
-| 86-88 | v6.0 | 0/0 | Deferred | - |
+| 85. Backend Terminal | v6.0 | 5/5 | Complete | 2026-02-14 |
+| 86. Claude AI Integration | v6.0 | 4/4 | Complete | 2026-02-15 |
+| 87-88 | v6.0 | 0/0 | Deferred | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
@@ -391,4 +425,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (v6.2 shipped: Phase 98 complete, 4/4 plans)*
+*Last updated: 2026-02-15 (Phase 86 Claude AI Integration complete, 4/4 plans)*

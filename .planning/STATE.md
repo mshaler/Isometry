@@ -2,56 +2,53 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-13)
+See: .planning/PROJECT.md (updated 2026-02-14)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 98 - Isometry Embeds & Polish (Capture Writing Surface v6.2)
+**Current focus:** v6.3 SuperStack SQL Integration — Defining requirements
 
 ## Current Position
 
-Phase: 98 of 98 (Isometry Embeds & Polish - Capture Writing Surface v6.2)
-Plan: 4 of 4 complete
-Status: COMPLETE
-Last activity: 2026-02-15 — Completed 98-04: Polish & Performance
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-14 — Milestone v6.3 started
 
-Progress (Phase 98): [██████████] 100% (4 of 4 plans)
-Overall: [██████████] 100% (v6.2 Capture Writing Surface COMPLETE)
+Progress (v6.3): [░░░░░░░░░░] 0%
+Overall: v6.2 Capture Writing Surface COMPLETE
 
 ## Active Milestones
 
-### v6.2 Capture Writing Surface — CURRENT
+### v6.3 SuperStack SQL Integration — CURRENT
+
+**Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
+
+**Status:** Defining requirements
+
+**Target features:**
+- SQL Query Builders (`header-discovery.ts`) with json_each, strftime
+- Query Utilities (time chains, validation, complexity estimation)
+- React Hook (`useSuperStackData`) for data fetching
+- Integration Tests with real sql.js database
+- Demo Component (`SuperStackDemo.tsx`)
+
+**Phases:** TBD (awaiting roadmap creation)
+
+### v6.2 Capture Writing Surface — COMPLETE
 
 **Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
 
 **Phases:**
-- Phase 94: Foundation & Critical Fixes (11 requirements) — ✓ COMPLETE (4/4 plans)
-  - [x] 94-01: Markdown Serialization Fix (~5m) ✓
-  - [x] 94-02: Paste Sanitization + Tippy.js Cleanup (~5m) ✓
-  - [x] 94-03: Apple Notes Keyboard Shortcuts (~5.5m) ✓
-  - [x] 94-04: Word Count + Undo/Redo Polish (~6m) ✓
-- Phase 95: Data Layer & Backlinks (9 requirements) — ✓ COMPLETE (4/4 plans)
-  - [x] 95-01: Templates Data Layer (~5m) ✓
-  - [x] 95-02: Backlinks Query Infrastructure ✓
-  - [x] 95-03: Backlinks Panel in RightSidebar ✓
-  - [x] 95-04: Forward Links Panel ✓
-- Phase 96: Block Types & Slash Commands (14 requirements) — ✓ COMPLETE (3/3 plans)
-  - [x] 96-01: Basic Slash Commands (~6m) ✓
-  - [x] 96-02: Callout Blocks (~4m) ✓
-  - [x] 96-03: Additional Block Types (~6m) ✓
-- Phase 97: Inline Properties (4 requirements) — ✓ COMPLETE (2/2 plans)
-  - [x] 97-01: Inline Property Mark (@key: value syntax) ✓
-  - [x] 97-02: Hashtag Mark with Autocomplete (#tag syntax) ✓
-- Phase 98: Isometry Embeds & Polish (7 requirements) — ✓ COMPLETE (4/4 plans)
-  - [x] 98-01: Core Embed Infrastructure (~5m) ✓
-  - [x] 98-02: D3.js Visualization Integration ✓
-  - [x] 98-03: Embed Configuration UI (~4m) ✓
-  - [x] 98-04: Polish & Performance (~5m) ✓
+- Phase 94: Foundation & Critical Fixes — ✓ COMPLETE (4/4 plans)
+- Phase 95: Data Layer & Backlinks — ✓ COMPLETE (4/4 plans)
+- Phase 96: Block Types & Slash Commands — ✓ COMPLETE (3/3 plans)
+- Phase 97: Inline Properties — ✓ COMPLETE (2/2 plans)
+- Phase 98: Isometry Embeds & Polish — ✓ COMPLETE (4/4 plans)
 
-**Total requirements:** 43
-**Current:** Phase 98 COMPLETE (4/4 plans) — v6.2 Capture Writing Surface COMPLETE
+**Total requirements:** 43 | **Status:** COMPLETE
 
-### v6.1 SuperStack Enhancement — IN PROGRESS
+### v6.1 SuperStack Enhancement — COMPLETE
 
 **Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
@@ -73,10 +70,9 @@ Overall: [██████████] 100% (v6.2 Capture Writing Surface COM
   - [x] 93-02: Accessibility (ARIA + empty states) (~5m) ✓
   - [x] 93-03: GPU-accelerated animations + sticky headers (~5m) ✓
 
-**Total requirements:** 26
-**Current:** Phase 93 COMPLETE (3/3 plans) — v6.1 SuperStack Enhancement COMPLETE
+**Total requirements:** 26 | **Status:** COMPLETE
 
-### v6.0 Interactive Shell — IN PROGRESS
+### v6.0 Interactive Shell — DEFERRED
 
 **Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
 **Status:** Phase 86 in progress (2/4 plans complete)
@@ -88,11 +84,11 @@ Overall: [██████████] 100% (v6.2 Capture Writing Surface COM
   - [x] 85-03: xterm.js frontend integration ✓
   - [x] 85-04: Terminal mode switching ✓
   - [x] 85-05: Mode toggle UI + ANSI sanitization ✓
-- Phase 86: Claude AI Integration (4 plans) — IN PROGRESS (2/4)
+- Phase 86: Claude AI Integration (4 plans) — ✓ COMPLETE
   - [x] 86-01: Basic Chat Interface ✓
   - [x] 86-02: Project Context ✓
-  - [ ] 86-03: MCP Tool Integration (planned)
-  - [ ] 86-04: Claude Code Integration (planned)
+  - [x] 86-03: MCP Tool Integration ✓
+  - [x] 86-04: Claude Code Integration ✓
 - Phase 87: GSD File Synchronization (7 requirements)
 - Phase 88: Integration & Polish (verification only)
 
@@ -244,31 +240,19 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Stopped at: Phase 98 COMPLETE - v6.2 Capture Writing Surface COMPLETE
-Resume file: .planning/phases/98-isometry-embeds/
+Last session: 2026-02-14
+Starting: v6.3 SuperStack SQL Integration
+Resume file: N/A (defining requirements)
 
-**Phase 98 Summary (4/4 Plans Complete):**
-- 98-01: Core Embed Infrastructure ✓ (EmbedExtension, EmbedNode, slash commands)
-- 98-02: D3.js Visualization Integration ✓ (Live D3 rendering, useEmbedData hook)
-- 98-03: Embed Configuration UI ✓ (EmbedToolbar, view switching, filter display)
-- 98-04: Polish & Performance ✓ (60fps typing, RAF batching, debounced resize)
+**v6.3 SuperStack SQL Integration:**
+- Connect SuperStack headers to live SQLite data
+- SQL query builders with json_each, strftime
+- useSuperStackData React hook
+- Integration tests with real sql.js
 
-**v6.2 Capture Writing Surface Progress:**
-- Phase 94 (Foundation) ✓
-- Phase 95 (Data Layer & Backlinks) ✓
-- Phase 96 (Block Types) ✓
-- Phase 97 (Inline Properties) ✓
-- Phase 98 (Isometry Embeds & Polish) ✓ COMPLETE
+**Previous milestone (v6.2 Capture Writing Surface) COMPLETE:**
+- Phase 94-98 all complete (17/17 plans)
+- 43 requirements delivered
 
-**MILESTONE COMPLETE: v6.2 Capture Writing Surface**
-
-**Next Steps:**
-1. Resume v6.0 Interactive Shell (Phase 86-03: MCP Tools)
-2. Or start new milestone planning
-
-**Key Deliverables from Phase 98-04:**
-- Update callback in ReactNodeViewRenderer prevents unnecessary re-renders
-- RAF-batched D3 rendering for 60fps performance
-- 100ms debounced resize handling
-- Clean unmount with proper RAF/timer cleanup
+**Reference:**
+- `superstack-phase2-sql-integration.md` — Full implementation specification
