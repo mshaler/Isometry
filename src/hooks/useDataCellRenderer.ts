@@ -21,8 +21,10 @@ export interface UseDataCellRendererOptions {
   cells: DataCellData[];
   /** Density state for density-aware rendering (leaf vs collapsed) */
   densityState?: CellDensityState;
+  /** Set of selected node IDs for visual highlighting */
+  selectedIds?: Set<string>;
   /** Callback when a cell is clicked */
-  onCellClick?: (node: Node) => void;
+  onCellClick?: (node: Node, event: MouseEvent) => void;
   /** Transition duration in milliseconds */
   transitionDuration?: number;
 }
@@ -55,6 +57,7 @@ export function useDataCellRenderer(
     coordinateSystem,
     cells,
     densityState,
+    selectedIds,
     onCellClick,
     transitionDuration = 300,
   } = options;
@@ -72,19 +75,20 @@ export function useDataCellRenderer(
     }
   }, [coordinateSystem]);
 
-  // Re-render when cells or density state changes
+  // Re-render when cells, density state, or selection changes
   useEffect(() => {
     if (!containerRef.current || !rendererRef.current || !cells) return;
 
     const container = d3.select(containerRef.current);
 
-    // Render cells with current density state
+    // Render cells with current density state and selection
     rendererRef.current.render(container, cells, {
       densityState,
+      selectedIds,
       onCellClick,
       transitionDuration,
     });
-  }, [containerRef, cells, densityState, onCellClick, transitionDuration]);
+  }, [containerRef, cells, densityState, selectedIds, onCellClick, transitionDuration]);
 
   // Cleanup on unmount
   useEffect(() => {
