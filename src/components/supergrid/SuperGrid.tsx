@@ -21,12 +21,16 @@ import { DensityControls } from './DensityControls';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
 import { useHeaderInteractions } from '@/hooks/useHeaderInteractions';
+import { useDataCellRenderer } from '@/hooks/useDataCellRenderer';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { filterEmptyCells, type ExtentMode } from '@/d3/SuperGridEngine/DataManager';
+import { CellDataService } from '@/services/supergrid/CellDataService';
 import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
 import type { FacetConfig } from '@/superstack/types/superstack';
+import type { JanusDensityState, ValueDensityMode } from '@/types/density-control';
+import type { D3CoordinateSystem, PAFVProjection } from '@/types/grid';
 import { GridSqlHeaderAdapter } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
 import type { SqlHeaderAdapterConfig } from '@/d3/grid-rendering/GridSqlHeaderAdapter';
 import { HeaderKeyboardController } from '@/d3/grid-rendering/HeaderKeyboardController';
@@ -134,6 +138,7 @@ export function SuperGrid({
   onDensityChange
 }: SuperGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
+  const dataGridRef = useRef<SVGGElement>(null);
   const { state: pafvState } = usePAFV();
 
   // Janus Density State
@@ -422,6 +427,74 @@ export function SuperGrid({
     };
   }, [nodes, gridLayout, extentDensity]);
 
+  // Create JanusDensityState from component state (Phase 92-02)
+  const densityState: JanusDensityState = useMemo(() => {
+    // Map valueDensity number (0-3) to ValueDensityMode ('leaf' | 'collapsed')
+    const valueDensityMode: ValueDensityMode = valueDensity > 0 ? 'collapsed' : 'leaf';
+
+    return {
+      valueDensity: valueDensityMode,
+      extentDensity: extentDensity === 'dense' ? 'populated-only' : 'sparse',
+      viewDensity: 'spreadsheet',
+      regionConfig: [],
+      axisGranularity: {},
+      aggregationPreferences: {
+        defaultFunction: 'count',
+        facetAggregations: {},
+        preservePrecision: true,
+        showAggregationSource: true,
+      },
+    };
+  }, [valueDensity, extentDensity]);
+
+  // Create coordinate system for D3 rendering (Phase 92-02)
+  const coordinateSystem: D3CoordinateSystem = useMemo(() => {
+    const cellWidth = 160;
+    const cellHeight = 100;
+
+    return {
+      originX: 0,
+      originY: 0,
+      cellWidth,
+      cellHeight,
+      logicalToScreen: (logicalX: number, logicalY: number) => ({
+        x: logicalX * cellWidth,
+        y: logicalY * cellHeight,
+      }),
+      screenToLogical: (screenX: number, screenY: number) => ({
+        x: Math.floor(screenX / cellWidth),
+        y: Math.floor(screenY / cellHeight),
+      }),
+    };
+  }, []);
+
+  // Transform nodes to DataCellData using CellDataService (Phase 92-02)
+  const dataCells = useMemo(() => {
+    if (!nodes?.length || !gridLayout.hasColumns || !gridLayout.hasRows) {
+      return [];
+    }
+
+    const cellDataService = new CellDataService();
+    const projection: PAFVProjection = {
+      xAxis: gridLayout.columnFacet
+        ? { axis: gridLayout.columnAxis!, facet: gridLayout.columnFacet }
+        : null,
+      yAxis: gridLayout.rowFacet
+        ? { axis: gridLayout.rowAxis!, facet: gridLayout.rowFacet }
+        : null,
+    };
+
+    return cellDataService.transformToCellData(nodes, projection);
+  }, [nodes, gridLayout]);
+
+  // Use DataCellRenderer hook for density-aware rendering (Phase 92-02)
+  useDataCellRenderer(dataGridRef, {
+    coordinateSystem,
+    cells: dataCells,
+    densityState,
+    onCellClick,
+  });
+
   // Handle cell click
   const handleCellClick = useCallback((node: Node) => {
     onCellClick?.(node);
@@ -551,9 +624,25 @@ export function SuperGrid({
               : '1fr',
             gridTemplateRows: gridLayout.hasRows
               ? `repeat(${gridData.rowHeaders.length || 1}, 1fr)`
-              : 'auto'
+              : 'auto',
+            position: 'relative',
           }}
         >
+          {/* D3 Data Cell Rendering (Phase 92-02) */}
+          <svg
+            className="supergrid__data-cells-svg"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              pointerEvents: 'none',
+            }}
+          >
+            <g ref={dataGridRef} style={{ pointerEvents: 'auto' }} />
+          </svg>
+
           {gridLayout.effectiveMode === 'gallery' ? (
             // Gallery mode: icon view
             nodes.map((node: Node) => (

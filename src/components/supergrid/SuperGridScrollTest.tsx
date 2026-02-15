@@ -20,6 +20,7 @@ import { useAltoIndexImport } from '@/hooks/useAltoIndexImport';
 import { SuperGridScrollContainer } from './SuperGridScrollContainer';
 import { DataCellRenderer } from '@/d3/grid-rendering/DataCellRenderer';
 import { transformToCellData } from '@/services/supergrid/CellDataService';
+import { parseFolderHierarchy, calculateHeaderLevels } from './HierarchicalHeaderRenderer';
 import type { Node } from '@/types/node';
 import type { D3CoordinateSystem, DataCellData, PAFVProjection } from '@/types/grid';
 
@@ -206,6 +207,25 @@ export function SuperGridScrollTest(): JSX.Element {
     };
   }, [allNodes, xFacet, yFacet, extractAxisValue]);
 
+  // Calculate header depths for hierarchical display
+  const { xHeaderDepth, yHeaderDepth: _yHeaderDepth } = useMemo(() => {
+    const getDepth = (labels: string[], facet: string | null) => {
+      if (facet !== 'folder') return 1;
+      const compositeKeys = parseFolderHierarchy(labels);
+      const { maxDepth } = calculateHeaderLevels(compositeKeys, 'x');
+      return maxDepth;
+    };
+
+    return {
+      xHeaderDepth: getDepth(xLabels, xFacet),
+      yHeaderDepth: getDepth(yLabels, yFacet),
+    };
+  }, [xLabels, yLabels, xFacet, yFacet]);
+
+  // Calculate effective header dimensions
+  const _effectiveHeaderHeight = xFacet === 'folder' ? HEADER_HEIGHT * xHeaderDepth : HEADER_HEIGHT;
+  const _effectiveHeaderWidth = yFacet === 'folder' ? HEADER_WIDTH : HEADER_WIDTH;
+
   // Create coordinate system
   const coordinateSystem: D3CoordinateSystem = useMemo(() => ({
     originX: 0,
@@ -224,63 +244,232 @@ export function SuperGridScrollTest(): JSX.Element {
     }),
   }), [contentWidth, contentHeight]);
 
-  // Render column headers
+  // Render column headers - hierarchical when folder axis, flat otherwise
   useEffect(() => {
     if (!columnHeaderRef.current || xLabels.length === 0) return;
 
     const svg = d3.select(columnHeaderRef.current);
     svg.selectAll('*').remove();
 
-    const g = svg.append('g');
+    if (xFacet === 'folder') {
+      // Use hierarchical rendering for folder paths
+      const g = svg.append('g');
+      const compositeKeys = parseFolderHierarchy(xLabels);
+      const { headers } = calculateHeaderLevels(compositeKeys, 'x');
 
-    xLabels.forEach((label, i) => {
-      g.append('rect')
-        .attr('x', i * CELL_WIDTH)
-        .attr('y', 0)
-        .attr('width', CELL_WIDTH - 1)
-        .attr('height', HEADER_HEIGHT - 1)
-        .attr('fill', '#e5e7eb')
-        .attr('stroke', '#d1d5db');
+      // Render hierarchical headers inline
+      const levels = new Map<number, typeof headers>();
+      headers.forEach(h => {
+        if (!levels.has(h.level)) levels.set(h.level, []);
+        levels.get(h.level)!.push(h);
+      });
 
-      g.append('text')
-        .attr('x', i * CELL_WIDTH + CELL_WIDTH / 2)
-        .attr('y', HEADER_HEIGHT / 2)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', '11px')
-        .attr('font-weight', '500')
-        .text(label.length > 12 ? label.slice(0, 12) + '...' : label);
-    });
-  }, [xLabels]);
+      const maxLevel = Math.max(...headers.map(h => h.level));
+      const positioned: typeof headers = [];
 
-  // Render row headers
+      // Position leaf headers
+      const leafHeaders = levels.get(maxLevel) || [];
+      leafHeaders.forEach((header, index) => {
+        header.x = index * CELL_WIDTH;
+        header.y = maxLevel * HEADER_HEIGHT;
+        header.width = CELL_WIDTH - 1;
+        header.height = HEADER_HEIGHT - 1;
+        positioned.push(header);
+      });
+
+      // Position parent headers
+      for (let level = maxLevel - 1; level >= 0; level--) {
+        const levelHeaders = levels.get(level) || [];
+        levelHeaders.forEach(header => {
+          const children = positioned.filter(h =>
+            h.level === level + 1 && h.parentKey === header.key
+          );
+          if (children.length > 0) {
+            const minX = Math.min(...children.map(c => c.x!));
+            const maxX = Math.max(...children.map(c => c.x! + c.width!));
+            header.x = minX;
+            header.y = level * HEADER_HEIGHT;
+            header.width = maxX - minX - 1;
+            header.height = HEADER_HEIGHT - 1;
+          } else {
+            header.x = 0;
+            header.y = level * HEADER_HEIGHT;
+            header.width = CELL_WIDTH - 1;
+            header.height = HEADER_HEIGHT - 1;
+          }
+          positioned.push(header);
+        });
+      }
+
+      // Render with D3 join
+      g.selectAll<SVGGElement, typeof headers[0]>('.col-header')
+        .data(positioned, d => d.key)
+        .join(
+          enter => {
+            const groups = enter.append('g')
+              .attr('class', d => `col-header col-header--level-${d.level}`)
+              .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+            groups.append('rect')
+              .attr('width', d => d.width!)
+              .attr('height', d => d.height!)
+              .attr('fill', d => d.level === 0 ? '#e2e8f0' : '#f1f5f9')
+              .attr('stroke', d => d.level === 0 ? '#cbd5e1' : '#e2e8f0')
+              .attr('rx', 4);
+
+            groups.append('text')
+              .attr('x', d => d.width! / 2)
+              .attr('y', d => d.height! / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', d => d.level === 0 ? '11px' : '10px')
+              .attr('font-weight', d => d.level === 0 ? '600' : '400')
+              .attr('fill', d => d.level === 0 ? '#334155' : '#64748b')
+              .text(d => {
+                const maxChars = Math.max(8, Math.floor(d.width! / 8));
+                return d.value.length > maxChars ? d.value.slice(0, maxChars) + '...' : d.value;
+              });
+
+            return groups;
+          }
+        );
+    } else {
+      // Flat headers for non-folder axes
+      const g = svg.append('g');
+      xLabels.forEach((label, i) => {
+        g.append('rect')
+          .attr('x', i * CELL_WIDTH)
+          .attr('y', 0)
+          .attr('width', CELL_WIDTH - 1)
+          .attr('height', HEADER_HEIGHT - 1)
+          .attr('fill', '#e5e7eb')
+          .attr('stroke', '#d1d5db');
+
+        g.append('text')
+          .attr('x', i * CELL_WIDTH + CELL_WIDTH / 2)
+          .attr('y', HEADER_HEIGHT / 2)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('font-size', '11px')
+          .attr('font-weight', '500')
+          .text(label.length > 12 ? label.slice(0, 12) + '...' : label);
+      });
+    }
+  }, [xLabels, xFacet]);
+
+  // Render row headers - hierarchical when folder axis, flat otherwise
   useEffect(() => {
     if (!rowHeaderRef.current || yLabels.length === 0) return;
 
     const svg = d3.select(rowHeaderRef.current);
     svg.selectAll('*').remove();
 
-    const g = svg.append('g');
+    if (yFacet === 'folder') {
+      // Use hierarchical rendering for folder paths
+      const g = svg.append('g');
+      const compositeKeys = parseFolderHierarchy(yLabels);
+      const { headers } = calculateHeaderLevels(compositeKeys, 'y');
 
-    yLabels.forEach((label, i) => {
-      g.append('rect')
-        .attr('x', 0)
-        .attr('y', i * CELL_HEIGHT)
-        .attr('width', HEADER_WIDTH - 1)
-        .attr('height', CELL_HEIGHT - 1)
-        .attr('fill', '#e5e7eb')
-        .attr('stroke', '#d1d5db');
+      const levels = new Map<number, typeof headers>();
+      headers.forEach(h => {
+        if (!levels.has(h.level)) levels.set(h.level, []);
+        levels.get(h.level)!.push(h);
+      });
 
-      g.append('text')
-        .attr('x', HEADER_WIDTH / 2)
-        .attr('y', i * CELL_HEIGHT + CELL_HEIGHT / 2)
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'middle')
-        .attr('font-size', '11px')
-        .attr('font-weight', '500')
-        .text(label.length > 15 ? label.slice(0, 15) + '...' : label);
-    });
-  }, [yLabels]);
+      const maxLevel = Math.max(...headers.map(h => h.level));
+      const positioned: typeof headers = [];
+
+      // Position leaf headers (rightmost)
+      const leafHeaders = levels.get(maxLevel) || [];
+      leafHeaders.forEach((header, index) => {
+        const levelWidth = HEADER_WIDTH / (maxLevel + 1);
+        header.x = maxLevel * levelWidth;
+        header.y = index * CELL_HEIGHT;
+        header.width = levelWidth - 2;
+        header.height = CELL_HEIGHT - 1;
+        positioned.push(header);
+      });
+
+      // Position parent headers (left to right)
+      for (let level = maxLevel - 1; level >= 0; level--) {
+        const levelHeaders = levels.get(level) || [];
+        const levelWidth = HEADER_WIDTH / (maxLevel + 1);
+        levelHeaders.forEach(header => {
+          const children = positioned.filter(h =>
+            h.level === level + 1 && h.parentKey === header.key
+          );
+          if (children.length > 0) {
+            const minY = Math.min(...children.map(c => c.y!));
+            const maxY = Math.max(...children.map(c => c.y! + c.height!));
+            header.x = level * levelWidth;
+            header.y = minY;
+            header.width = levelWidth - 2;
+            header.height = maxY - minY - 1;
+          } else {
+            header.x = level * levelWidth;
+            header.y = 0;
+            header.width = levelWidth - 2;
+            header.height = CELL_HEIGHT - 1;
+          }
+          positioned.push(header);
+        });
+      }
+
+      // Render with D3 join
+      g.selectAll<SVGGElement, typeof headers[0]>('.row-header')
+        .data(positioned, d => d.key)
+        .join(
+          enter => {
+            const groups = enter.append('g')
+              .attr('class', d => `row-header row-header--level-${d.level}`)
+              .attr('transform', d => `translate(${d.x}, ${d.y})`);
+
+            groups.append('rect')
+              .attr('width', d => d.width!)
+              .attr('height', d => d.height!)
+              .attr('fill', d => d.level === 0 ? '#e2e8f0' : '#f1f5f9')
+              .attr('stroke', d => d.level === 0 ? '#cbd5e1' : '#e2e8f0')
+              .attr('rx', 4);
+
+            groups.append('text')
+              .attr('x', d => d.width! / 2)
+              .attr('y', d => d.height! / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', d => d.level === 0 ? '11px' : '10px')
+              .attr('font-weight', d => d.level === 0 ? '600' : '400')
+              .attr('fill', d => d.level === 0 ? '#334155' : '#64748b')
+              .text(d => {
+                const maxChars = Math.max(6, Math.floor(d.width! / 7));
+                return d.value.length > maxChars ? d.value.slice(0, maxChars) + '...' : d.value;
+              });
+
+            return groups;
+          }
+        );
+    } else {
+      // Flat headers for non-folder axes
+      const g = svg.append('g');
+      yLabels.forEach((label, i) => {
+        g.append('rect')
+          .attr('x', 0)
+          .attr('y', i * CELL_HEIGHT)
+          .attr('width', HEADER_WIDTH - 1)
+          .attr('height', CELL_HEIGHT - 1)
+          .attr('fill', '#e5e7eb')
+          .attr('stroke', '#d1d5db');
+
+        g.append('text')
+          .attr('x', HEADER_WIDTH / 2)
+          .attr('y', i * CELL_HEIGHT + CELL_HEIGHT / 2)
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'middle')
+          .attr('font-size', '11px')
+          .attr('font-weight', '500')
+          .text(label.length > 15 ? label.slice(0, 15) + '...' : label);
+      });
+    }
+  }, [yLabels, yFacet]);
 
   // Render data cells with white background
   useEffect(() => {
@@ -408,8 +597,8 @@ export function SuperGridScrollTest(): JSX.Element {
                   {yFacet} / {xFacet}
                 </div>
               }
-              headerWidth={HEADER_WIDTH}
-              headerHeight={HEADER_HEIGHT}
+              headerWidth={effectiveHeaderWidth}
+              headerHeight={effectiveHeaderHeight}
               contentWidth={contentWidth}
               contentHeight={contentHeight}
             />
