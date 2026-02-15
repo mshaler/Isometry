@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 100 (Settings & Discovery Layer)
-Plan: 0 of 2 complete
-Status: Milestone started, awaiting plan execution
-Last activity: 2026-02-15 — Created v6.4 milestone documents
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-02-15 — Completed 100-01-PLAN.md (Settings Registry)
 
-Progress (Phase 100): [░░░░░░░░░░] 0%
-Overall: Milestone v6.4 started, Phase 100 (Settings & Discovery Layer) first
+Progress (Phase 100): [█████░░░░░] 50%
+Overall: Milestone v6.4 Phase 100 in progress (1/2 plans complete)
 
 ## Active Milestones
 
@@ -29,7 +29,7 @@ Overall: Milestone v6.4 started, Phase 100 (Settings & Discovery Layer) first
 **Plans:**
 | Plan | Focus | Requirements | Deliverables | Status |
 |------|-------|--------------|--------------|--------|
-| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, schema migration | ⏳ |
+| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, `src/hooks/useSettings.ts` | ✅ |
 | 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts` | ⏳ |
 | 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` | ⏳ |
 | 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` | ⏳ |
@@ -255,6 +255,13 @@ Recent decisions affecting v6.1 SuperStack work:
 - TRIGGER-03: Reverse flow: GSD file changes -> WebSocket -> React hooks ✅ Documented 88-02
 - ROUTING-01: WebSocket message routing is tab-agnostic via type guards ✅ Verified 88-02
 
+**Settings & Discovery Layer (Phase 100):**
+- SETTINGS-JSON: JSON.stringify/parse for all settings values (type-safe, supports complex objects) ✅ Implemented 100-01
+- SETTINGS-UPSERT: ON CONFLICT(key) DO UPDATE for atomic create/update ✅ Implemented 100-01
+- SETTINGS-SEED: seedDefaultSettings checks existence before insert (preserves user values) ✅ Implemented 100-01
+- SETTINGS-CACHE: staleTime: Infinity for settings cache (rarely change externally) ✅ Implemented 100-01
+- SETTINGS-OPTIMISTIC: Mutation immediately updates query cache before database confirm ✅ Implemented 100-01
+
 **GSD File Synchronization (Phase 87):**
 - PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
 - PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
@@ -303,8 +310,17 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 88-01 (Tab Switch Integration Tests)
-Next: Phase 88-02 (Filter Synchronization) or Phase 88-03 (Performance Instrumentation)
+Completed: Phase 100-01 (Settings Registry)
+Next: Phase 100-02 (Discovery Queries)
+Resume file: .planning/phases/100-settings-discovery/100-02-PLAN.md
+
+**Phase 100-01 Complete:**
+- SettingsService with CRUD operations wrapping sql.js
+- useSetting<T>(key, defaultValue) React hook with TanStack Query caching
+- useAllSettings() hook for debugging/inspector UI
+- seedDefaultSettings() for first-run initialization
+- 16/16 tests passing for all CRUD operations and edge cases
+- Foundation ready for Phase 101 UI integration
 
 **Phase 88-01 Complete:**
 - 25 integration tests for tab switch state preservation
