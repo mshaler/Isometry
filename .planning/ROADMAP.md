@@ -335,9 +335,9 @@ Plans:
 ## v6.0 Interactive Shell (Deferred)
 
 **Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** Plans created for Phase 85. Resume with `/gsd:execute-phase 85`
+**Status:** Phases 85-86 complete, Phase 87 planned, Phase 88 pending.
 
-### Phase 85: Backend Infrastructure & Terminal Execution
+### Phase 85: Backend Infrastructure & Terminal Execution — COMPLETE
 **Goal**: User can execute shell commands and see real-time output
 **Depends on**: Phase 84 (Cards & Connections)
 **Requirements**: BACK-01, BACK-02, BACK-05, TERM-01, TERM-02, TERM-03, TERM-04, TERM-05
@@ -347,16 +347,16 @@ Plans:
   3. Terminal reconnects automatically with output buffer replay after connection loss
   4. System safely spawns/terminates subprocess without command injection vulnerabilities
   5. WebSocket server routes terminal messages to correct handlers
-**Plans**: 5 plans in 4 waves
+**Plans**: 5/5 complete
 
 Plans:
-- [ ] 85-01-PLAN.md — PTY backend with node-pty, types, and output buffer
-- [ ] 85-02-PLAN.md — WebSocket message routing for terminal integration
-- [ ] 85-03-PLAN.md — Frontend terminal WebSocket protocol
-- [ ] 85-04-PLAN.md — Mode switching (shell/claude-code)
-- [ ] 85-05-PLAN.md — UI integration, reconnection, and verification
+- [x] 85-01-PLAN.md — PTY backend with node-pty, types, and output buffer
+- [x] 85-02-PLAN.md — WebSocket message routing for terminal integration
+- [x] 85-03-PLAN.md — Frontend terminal WebSocket protocol
+- [x] 85-04-PLAN.md — Mode switching (shell/claude-code)
+- [x] 85-05-PLAN.md — UI integration, reconnection, and verification
 
-### Phase 86: Claude AI MCP Integration — ✓ COMPLETE
+### Phase 86: Claude AI MCP Integration — COMPLETE
 **Goal**: User can chat with Claude AI and approve tool executions
 **Depends on**: Phase 85 (Backend infrastructure operational)
 **Requirements**: BACK-04, CLAI-01, CLAI-02, CLAI-03, CLAI-04, CLAI-05, CLAI-06
@@ -382,10 +382,14 @@ Plans:
   2. User can toggle task status (pending/in_progress/complete) and changes write to files
   3. File watcher detects `.planning/` changes with <500ms debounced update
   4. System shows conflict resolution UI when concurrent edits detected
-**Plans**: TBD
+**Plans**: 5 plans in 3 waves
 
 Plans:
-- [ ] 87-01: TBD (use /gsd:plan-phase)
+- [ ] 87-01-PLAN.md — GSD file parser with gray-matter frontmatter extraction (Wave 1)
+- [ ] 87-02-PLAN.md — Chokidar file watcher with debounced events (Wave 1)
+- [ ] 87-03-PLAN.md — Bidirectional sync service and ClaudeCodeServer integration (Wave 2)
+- [ ] 87-04-PLAN.md — React hooks and progress display component (Wave 2)
+- [ ] 87-05-PLAN.md — Conflict detection and resolution UI (Wave 3)
 
 ### Phase 88: Integration & Polish
 **Goal**: All three Shell tabs work together seamlessly
@@ -420,7 +424,8 @@ Plans:
 | 84 | v5.2 | 4/4 | Complete | 2026-02-13 |
 | 85. Backend Terminal | v6.0 | 5/5 | Complete | 2026-02-14 |
 | 86. Claude AI Integration | v6.0 | 4/4 | Complete | 2026-02-15 |
-| 87-88 | v6.0 | 0/0 | Deferred | - |
+| 87. GSD File Sync | v6.0 | 0/5 | Planned | - |
+| 88. Integration & Polish | v6.0 | 0/0 | Pending | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
@@ -435,4 +440,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 99 plans created, 5 plans in 3 waves)*
+*Last updated: 2026-02-15 (Phase 87 plans created, 5 plans in 3 waves)*
