@@ -8,6 +8,8 @@
 import * as d3 from 'd3';
 import type { DataCellData, D3CoordinateSystem } from '@/types/grid';
 import type { Node } from '@/types/node';
+import type { JanusDensityState } from '@/types/density-control';
+import { CellDataService } from '@/services/supergrid/CellDataService';
 
 /**
  * Options for cell rendering
@@ -17,6 +19,8 @@ export interface DataCellRenderOptions {
   onCellClick?: (node: Node) => void;
   /** Transition duration in milliseconds (default: 300) */
   transitionDuration?: number;
+  /** Janus density state for density-aware rendering */
+  densityState?: JanusDensityState;
 }
 
 /**
@@ -30,9 +34,11 @@ export interface DataCellRenderOptions {
  */
 export class DataCellRenderer {
   private coordinateSystem: D3CoordinateSystem;
+  private cellDataService: CellDataService;
 
   constructor(coordinateSystem: D3CoordinateSystem) {
     this.coordinateSystem = coordinateSystem;
+    this.cellDataService = new CellDataService();
   }
 
   /**
@@ -40,7 +46,7 @@ export class DataCellRenderer {
    *
    * @param container - D3 selection of the SVG group for data cells
    * @param cells - Array of cell data with logical coordinates
-   * @param options - Rendering options (callbacks, transitions)
+   * @param options - Rendering options (callbacks, transitions, density state)
    */
   render(
     container: d3.Selection<SVGGElement, unknown, null, undefined>,
@@ -49,6 +55,36 @@ export class DataCellRenderer {
   ): void {
     if (!container || !cells) return;
 
+    const densityState = options.densityState;
+
+    // Determine rendering mode based on density state
+    const isCollapsedMode = densityState?.valueDensity === 'collapsed';
+
+    // Apply aggregation if in collapsed mode
+    const renderCells = isCollapsedMode
+      ? this.cellDataService.aggregateCellsByPosition(cells)
+      : cells;
+
+    // Choose rendering function based on mode
+    if (isCollapsedMode) {
+      this.renderCollapsedMode(container, renderCells, options);
+    } else {
+      this.renderLeafMode(container, renderCells, options);
+    }
+  }
+
+  /**
+   * Render cells in leaf mode (individual card text)
+   *
+   * @param container - D3 selection of the SVG group for data cells
+   * @param cells - Array of cell data with logical coordinates
+   * @param options - Rendering options
+   */
+  private renderLeafMode(
+    container: d3.Selection<SVGGElement, unknown, null, undefined>,
+    cells: DataCellData[],
+    options: DataCellRenderOptions
+  ): void {
     const transitionDuration = options.transitionDuration ?? 300;
 
     // D3 data binding with key function for stable identity
@@ -136,6 +172,164 @@ export class DataCellRenderer {
 
     // Performance optimization: Add will-change for zoom transforms
     container.style('will-change', 'transform');
+  }
+
+  /**
+   * Render cells in collapsed mode (count badges)
+   *
+   * Renders aggregated cells as circles with count badges instead of rectangles with text
+   *
+   * @param container - D3 selection of the SVG group for data cells
+   * @param cells - Array of aggregated cell data
+   * @param options - Rendering options
+   */
+  private renderCollapsedMode(
+    container: d3.Selection<SVGGElement, unknown, null, undefined>,
+    cells: DataCellData[],
+    options: DataCellRenderOptions
+  ): void {
+    const transitionDuration = options.transitionDuration ?? 300;
+
+    // D3 data binding with key function for stable identity
+    const cellGroups = container
+      .selectAll<SVGGElement, DataCellData>('.data-cell')
+      .data(cells, d => d.id)
+      .join(
+        // ENTER: Create new cell elements as circles
+        enter => {
+          const group = enter
+            .append('g')
+            .attr('class', 'data-cell data-cell--collapsed')
+            .attr('data-node-id', d => d.node.id)
+            .style('cursor', 'pointer')
+            .style('opacity', 0); // Start invisible for fade-in
+
+          // Cell circle background
+          group
+            .append('circle')
+            .attr('class', 'cell-circle')
+            .attr('fill', '#3b82f6')
+            .attr('stroke', '#2563eb')
+            .attr('stroke-width', 2)
+            .attr('r', 20); // Default radius
+
+          // Count badge text
+          group
+            .append('text')
+            .attr('class', 'cell-count')
+            .attr('fill', '#ffffff')
+            .attr('font-size', '14px')
+            .attr('font-weight', 'bold')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central');
+
+          // Hover effect
+          group
+            .on('mouseenter', function () {
+              d3.select(this)
+                .select('.cell-circle')
+                .attr('fill', '#2563eb')
+                .attr('stroke', '#1d4ed8')
+                .attr('stroke-width', 3);
+            })
+            .on('mouseleave', function () {
+              d3.select(this)
+                .select('.cell-circle')
+                .attr('fill', '#3b82f6')
+                .attr('stroke', '#2563eb')
+                .attr('stroke-width', 2);
+            });
+
+          // Click handler
+          if (options.onCellClick) {
+            group.on('click', function (event, d) {
+              event.stopPropagation();
+              options.onCellClick!(d.node);
+            });
+          }
+
+          // Fade in new cells
+          group
+            .transition()
+            .duration(transitionDuration)
+            .ease(d3.easeCubicInOut)
+            .style('opacity', 1);
+
+          return group;
+        },
+        // UPDATE: Update existing elements
+        update => update,
+        // EXIT: Remove old elements with fade-out
+        exit => {
+          exit
+            .transition()
+            .duration(200)
+            .ease(d3.easeCubicOut)
+            .style('opacity', 0)
+            .remove();
+          return exit;
+        }
+      );
+
+    // Position and update all cells with smooth transitions
+    this.updateCollapsedPositions(cellGroups, transitionDuration);
+
+    // Performance optimization
+    container.style('will-change', 'transform');
+  }
+
+  /**
+   * Update positions of collapsed mode cells
+   *
+   * @param cellGroups - D3 selection of cell groups
+   * @param transitionDuration - Duration of position transitions
+   */
+  private updateCollapsedPositions(
+    cellGroups: d3.Selection<SVGGElement, DataCellData, SVGGElement, unknown>,
+    transitionDuration: number
+  ): void {
+    const { cellWidth, cellHeight } = this.coordinateSystem;
+    const coordinateSystem = this.coordinateSystem;
+
+    cellGroups.each(function (this: SVGGElement, d: DataCellData) {
+      const group = d3.select<SVGGElement, DataCellData>(this);
+      const { x, y } = coordinateSystem.logicalToScreen(d.logicalX, d.logicalY);
+
+      // Center the circle in the cell
+      const cx = x + cellWidth / 2;
+      const cy = y + cellHeight / 2;
+
+      // Calculate radius based on aggregation count (larger for more items)
+      const baseRadius = 20;
+      const maxRadius = Math.min(cellWidth, cellHeight) / 3;
+      const count = d.aggregationCount ?? 1;
+      const radius = Math.min(baseRadius + Math.log2(count) * 5, maxRadius);
+
+      // Transition circle position and size
+      group
+        .select<SVGCircleElement>('.cell-circle')
+        .transition()
+        .duration(transitionDuration)
+        .ease(d3.easeCubicInOut)
+        .attr('cx', cx)
+        .attr('cy', cy)
+        .attr('r', radius);
+
+      // Transition text position and update count
+      group
+        .select<SVGTextElement>('.cell-count')
+        .transition()
+        .duration(transitionDuration)
+        .ease(d3.easeCubicInOut)
+        .attr('x', cx)
+        .attr('y', cy)
+        .on('end', function () {
+          // Update count text after position transition completes
+          const textElement = this as SVGTextElement;
+          textElement.textContent = String(count);
+        })
+        .text(String(count));
+    });
   }
 
   /**
