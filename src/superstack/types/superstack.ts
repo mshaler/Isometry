@@ -32,6 +32,12 @@ export interface FacetConfig {
   /** For time facets: strftime format (e.g., '%Y' for year) */
   timeFormat?: string;
 
+  /** Path separator for hierarchical text values (e.g., "/" for "BairesDev/MSFT") */
+  pathSeparator?: string;
+
+  /** Maximum depth when splitting paths (default: unlimited) */
+  maxPathDepth?: number;
+
   /** For select facets: predefined option values */
   options?: string[];
 

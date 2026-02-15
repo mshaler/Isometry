@@ -30,6 +30,10 @@ export function buildHeaderTree(
   facets: FacetConfig[],
   axis: 'row' | 'column'
 ): HeaderTree {
+  console.log(`[buildHeaderTree] Input: ${rows.length} rows, ${facets.length} facets`);
+  console.log(`[buildHeaderTree] Facet IDs:`, facets.map(f => f.id));
+  console.log(`[buildHeaderTree] First row:`, JSON.stringify(rows[0]));
+
   const roots: HeaderNode[] = [];
   const nodeMap = new Map<string, HeaderNode>();
 
@@ -84,6 +88,9 @@ export function buildHeaderTree(
 
   // Collect leaf nodes
   const leaves = collectLeaves(roots);
+
+  console.log(`[buildHeaderTree] Result: ${roots.length} roots, ${leaves.length} leaves`);
+  console.log(`[buildHeaderTree] Root values:`, roots.slice(0, 10).map(r => r.value));
 
   return {
     axis,

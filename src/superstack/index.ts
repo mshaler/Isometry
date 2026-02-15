@@ -38,5 +38,39 @@ export {
 // Renderers
 export { SuperStackRenderer } from './renderers/superstack-renderer';
 
+// Queries (Phase 99)
+export {
+  buildHeaderDiscoveryQuery,
+  buildSingleAxisQuery,
+  buildAggregateQuery,
+  type QueryFilter,
+  type QueryOptions,
+  type BuiltQuery,
+  type FilterOperator,
+} from './queries/header-discovery';
+
+// Query Utilities (Phase 99)
+export {
+  createTimeFacetChain,
+  createCategoryFacetChain,
+  validateFacetConfigs,
+  estimateQueryComplexity,
+  FACET_PRESETS,
+  type TimeFacetLevel,
+  type CategoryFacetLevel,
+} from './queries/query-utils';
+
+// Hooks (Phase 99)
+export {
+  useSuperStackData,
+  useRowHeaders,
+  useColHeaders,
+  type SuperStackDataConfig,
+  type SuperStackDataResult,
+} from './hooks/useSuperStackData';
+
+// Demo Components (Phase 99)
+export { SuperStackDemo } from './demos/SuperStackDemo';
+
 // Styles (import for side effects)
 import './styles/superstack.css';
