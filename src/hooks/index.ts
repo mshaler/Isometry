@@ -51,6 +51,15 @@ export type { SimplePerformanceAlert as PerformanceAlert, OptimizationSuggestion
 export type { AnalyticsMetrics } from '../utils/performance/performance-monitor';
 export type { LiveDataPerformanceMetrics } from './database/useLiveData';
 
+// Embed hooks
+export {
+  useEmbedData,
+  useSuperGridData,
+  useNetworkData,
+  useTimelineData,
+} from './embed/useEmbedData';
+export type { Edge, EmbedData, UseEmbedDataOptions } from './embed/useEmbedData';
+
 // Data hooks
 export { useAllTags as useTagColors } from './data/useTagColors';
 export { usePAFV } from './data/usePAFV';
