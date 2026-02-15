@@ -1,4 +1,6 @@
 import React from 'react';
+import { useFolderValues, useStatusValues } from '@/hooks/useFacetValues';
+import { useSetting } from '@/hooks/useSettings';
 
 interface CardData {
   id: string;
@@ -54,6 +56,9 @@ interface CardStatusFieldProps {
   editValue: string;
   displayValue: string;
   onEdit: (value: string) => void;
+  statusOptions: Array<{ value: string; label: string }>;
+  statusLoading: boolean;
+  getStatusColor: (status?: string) => string;
 }
 
 interface CardMetadataProps {
@@ -70,6 +75,26 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
   const [editMode, setEditMode] = React.useState(false);
   const [editedCard, setEditedCard] = React.useState<Partial<CardData>>({});
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false);
+
+  // Phase 101-01: Dynamic folder/status discovery
+  const { data: folderValues, isLoading: foldersLoading } = useFolderValues();
+  const { data: statusValues, isLoading: statusLoading } = useStatusValues();
+  const [statusColors] = useSetting<Record<string, string>>('status_colors', {});
+
+  // Helper: Get status color from settings with neutral fallback
+  const getStatusColor = (status?: string): string => {
+    if (!status) return '#9ca3af'; // neutral gray
+    return statusColors[status] || '#9ca3af'; // neutral default for unknown
+  };
+
+  // Status options for dropdown
+  const statusOptions = [
+    { value: '', label: 'No status' },
+    ...(statusValues || []).map(sv => ({
+      value: sv.value,
+      label: sv.value
+    }))
+  ];
 
   React.useEffect(() => {
     if (card) {
@@ -175,31 +200,47 @@ export function CardDetailModal({ card, isOpen, isLoading = false, onClose, onSa
             />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <CardFormSelect
-                label="Folder"
-                editMode={editMode}
-                isLoading={isLoading}
-                editValue={editedCard.folder || ''}
-                displayValue={card.folder || 'No folder'}
-                onEdit={(value: string) => setEditedCard(prev => ({ ...prev, folder: value || undefined }))}
-                options={[
-                  { value: '', label: 'No folder' },
-                  { value: 'work', label: 'Work' },
-                  { value: 'personal', label: 'Personal' },
-                  { value: 'projects', label: 'Projects' },
-                  { value: 'ideas', label: 'Ideas' },
-                  { value: 'archive', label: 'Archive' }
-                ]}
-              />
+              <div>
+                <CardFormSelect
+                  label="Folder"
+                  editMode={editMode}
+                  isLoading={isLoading || foldersLoading}
+                  editValue={editedCard.folder || ''}
+                  displayValue={card.folder || 'No folder'}
+                  onEdit={(value: string) => setEditedCard(prev => ({ ...prev, folder: value || undefined }))}
+                  options={[
+                    { value: '', label: 'No folder' },
+                    ...(folderValues || []).map(fv => ({
+                      value: fv.value,
+                      label: fv.value
+                    }))
+                  ]}
+                />
+                {!foldersLoading && (folderValues?.length === 0) && (
+                  <p className="text-xs text-gray-500 mt-1 italic">
+                    No folders found. Type a folder name when creating cards to add options.
+                  </p>
+                )}
+              </div>
 
-              <CardStatusField
-                label="Status"
-                editMode={editMode}
-                isLoading={isLoading}
-                editValue={editedCard.status || ''}
-                displayValue={card.status || ''}
-                onEdit={(value: string) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
-              />
+              <div>
+                <CardStatusField
+                  label="Status"
+                  editMode={editMode}
+                  isLoading={isLoading}
+                  editValue={editedCard.status || ''}
+                  displayValue={card.status || ''}
+                  onEdit={(value: string) => setEditedCard(prev => ({ ...prev, status: value || undefined }))}
+                  statusOptions={statusOptions}
+                  statusLoading={statusLoading}
+                  getStatusColor={getStatusColor}
+                />
+                {!statusLoading && (statusValues?.length === 0) && (
+                  <p className="text-xs text-gray-500 mt-1 italic">
+                    No statuses found. Set a status when creating cards to add options.
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -423,25 +464,11 @@ function CardStatusField({
   isLoading,
   editValue,
   displayValue,
-  onEdit
+  onEdit,
+  statusOptions,
+  statusLoading,
+  getStatusColor
 }: CardStatusFieldProps) {
-  const statusOptions = [
-    { value: '', label: 'No status' },
-    { value: 'active', label: 'Active' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'blocked', label: 'Blocked' },
-    { value: 'in_progress', label: 'In Progress' }
-  ];
-
-  const getStatusColor = (status?: string) => {
-    switch (status) {
-      case 'active': return '#10b981';
-      case 'completed': return '#6b7280';
-      case 'blocked': return '#ef4444';
-      case 'in_progress': return '#f59e0b';
-      default: return '#9ca3af';
-    }
-  };
 
   return (
     <div>
@@ -453,7 +480,7 @@ function CardStatusField({
           value={editValue}
           onChange={(e) => onEdit(e.target.value)}
           className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={isLoading}
+          disabled={isLoading || statusLoading}
         >
           {statusOptions.map((option: { value: string; label: string }) => (
             <option key={option.value} value={option.value}>

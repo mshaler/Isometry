@@ -250,6 +250,15 @@ export function LATCHFilter({ axis, label, description }: LATCHFilterProps) {
         );
 
       case 'hierarchy':
+        // Handle empty state when no nodes or edges exist
+        if (!allNodes || allNodes.length === 0) {
+          return (
+            <div className="text-gray-500 italic text-sm py-4">
+              No hierarchy data. Create cards with parent-child relationships to use this filter.
+            </div>
+          );
+        }
+
         return (
           <HierarchyTreeView
             tree={tree}
