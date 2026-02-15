@@ -135,3 +135,33 @@ export function isScaleOrdinal(scale: D3Scale): scale is d3.ScaleOrdinal<string,
  * Use FlexibleSelection when working with mixed D3 selection types
  * Use D3GroupSelection for known SVG group elements with typed datum
  */
+
+// ============================================================================
+// D3 Component Props Types (consolidated from d3-types.ts)
+// ============================================================================
+
+import type { Node } from './node';
+
+/** Props interface for D3ListView component */
+export interface D3ListViewProps {
+  /** SQL query to execute and observe for live data */
+  sql?: string;
+  /** Parameters for the SQL query */
+  queryParams?: unknown[];
+  /** Direct data array (alternative to SQL query) */
+  data?: Node[];
+  /** Callback when node is clicked */
+  onNodeClick?: (node: Node) => void;
+}
+
+/** Props interface for D3GridView component */
+export interface D3GridViewProps {
+  /** SQL query to execute and observe for live data */
+  sql?: string;
+  /** Parameters for the SQL query */
+  queryParams?: unknown[];
+  /** Direct data array (alternative to SQL query) */
+  data?: Node[];
+  /** Callback when node is clicked */
+  onNodeClick?: (node: Node) => void;
+}

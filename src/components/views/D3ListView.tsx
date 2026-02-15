@@ -4,7 +4,7 @@ import { usePAFV } from '@/hooks';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
-import type { D3ListViewProps } from '../../types/d3-types';
+import type { D3ListViewProps } from '../../types/d3';
 
 export type { D3ListViewProps };
 import * as d3 from 'd3';

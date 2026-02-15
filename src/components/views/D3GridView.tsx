@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useLiveQuery } from '../../hooks/database/useLiveQuery';
 import type { Node } from '../../types/node';
 import type { AxisMapping } from '../../types/pafv';
-import type { D3GridViewProps } from '../../types/d3-types';
+import type { D3GridViewProps } from '../../types/d3';
 
 export type { D3GridViewProps };
 import { performanceMonitor, type NativeRenderingMetrics } from '../../utils/d3-visualization/d3Performance';
