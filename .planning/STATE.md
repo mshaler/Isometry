@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 87 (GSD File Synchronization)
-Plan: 2 of 5 complete
+Plan: 4 of 5 complete
 Status: In progress
-Last activity: 2026-02-15 — Completed 87-02-PLAN.md (File Watcher Integration)
+Last activity: 2026-02-15 — Completed 87-04-PLAN.md (React Hooks & Progress Display)
 
-Progress (Phase 87): [████░░░░░░] 40%
+Progress (Phase 87): [████████░░] 80%
 Overall: Resuming v6.0 Interactive Shell milestone
 
 ## Active Milestones
@@ -96,8 +96,8 @@ Overall: Resuming v6.0 Interactive Shell milestone
 - Phase 87: GSD File Synchronization (5 plans) — IN PROGRESS
   - [x] 87-01: GSD File Parser (~5m) ✓
   - [x] 87-02: File Watcher Integration (~5m) ✓
-  - [ ] 87-03: State Synchronization
-  - [ ] 87-04: Bidirectional Updates
+  - [x] 87-03: State Synchronization (~5m) ✓
+  - [x] 87-04: React Hooks & Progress Display (~3m) ✓
   - [ ] 87-05: Error Handling & Recovery
 - Phase 88: Integration & Polish (verification only)
 
@@ -234,6 +234,16 @@ Recent decisions affecting v6.1 SuperStack work:
 - WATCH-02: Single watcher per project shared across clients ✅ Implemented 87-02
 - WATCH-03: skipWatchPaths with 600ms timeout prevents update loops ✅ Implemented 87-02
 - ROUTE-01: Type guard in messageRouter for GSD messages ✅ Implemented 87-02
+- WRITE-01: Atomic writes via temp file + rename ✅ Implemented 87-03
+- WRITE-02: Task status stored as <done> element presence ✅ Implemented 87-03
+- SYNC-SVC-01: GSDFileSyncService orchestrates all file operations ✅ Implemented 87-03
+- SYNC-SVC-02: markWritePath called before updateTaskStatus ✅ Implemented 87-03
+- SYNC-01: Use React Query invalidation on gsd_file_update messages (not polling) ✅ Implemented 87-04
+- SYNC-02: Optimistic updates via useMutation onMutate with rollback context ✅ Implemented 87-04
+- SYNC-03: 10-second timeout on plan data requests ✅ Implemented 87-04
+- UI-01: Three-state icons (Circle/Clock/CheckCircle) from lucide-react ✅ Implemented 87-04
+- A11Y-01: role="button" with tabIndex and onKeyDown for task items ✅ Implemented 87-04
+- A11Y-02: aria-label describes current status and next status on click ✅ Implemented 87-04
 
 See PROJECT.md Key Decisions table for full history.
 
@@ -260,8 +270,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Plan 87-02 (File Watcher Integration)
-Next: Plan 87-03 (State Synchronization)
+Completed: Plan 87-04 (React Hooks & Progress Display)
+Next: Plan 87-05 (Error Handling & Recovery)
+
+**Phase 87-04 Complete:**
+- useGSDFileSync hook for WebSocket file watching
+- useGSDTaskToggle hook with optimistic updates and rollback
+- GSDProgressDisplay component with progress bar and task list
+- Cache invalidation on gsd_file_update messages
+- Accessible task toggling (keyboard + ARIA)
 
 **Phase 87-02 Complete:**
 - GSDFileWatcher class with chokidar
@@ -282,6 +299,7 @@ Next: Plan 87-03 (State Synchronization)
 - Query time: ~46ms (target: <100ms)
 
 **Reference:**
+- `.planning/phases/87-gsd-file-synchronization/87-04-SUMMARY.md` — Plan 87-04 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-02-SUMMARY.md` — Plan 87-02 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-01-SUMMARY.md` — Plan 87-01 execution summary
 - `superstack-phase2-sql-integration.md` — Full implementation specification
