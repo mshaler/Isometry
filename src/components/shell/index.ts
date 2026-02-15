@@ -5,3 +5,4 @@
 export { Terminal, TerminalUtils } from './Terminal';
 export { GSDProgressDisplay } from './GSDProgressDisplay';
 export type { GSDProgressDisplayProps } from './GSDProgressDisplay';
+export { GSDConflictModal } from './GSDConflictModal';

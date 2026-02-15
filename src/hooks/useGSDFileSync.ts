@@ -7,7 +7,12 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import type { GSDFileChangeEvent, ParsedPlanFile } from '../services/gsd';
+import type {
+  ConflictData,
+  ConflictResolution,
+  GSDFileChangeEvent,
+  ParsedPlanFile,
+} from '../services/gsd';
 import { devLogger } from '../utils/logging';
 
 /**
@@ -41,8 +46,40 @@ interface GSDPlanDataMessage {
   data: ParsedPlanFile;
 }
 
-type GSDOutboundMessage = GSDWatchStartMessage | GSDWatchStopMessage | GSDPlanRequest;
-type GSDInboundMessage = GSDWatchStartedMessage | GSDFileChangeEvent | GSDPlanDataMessage;
+interface GSDConflictMessage {
+  type: 'gsd_conflict';
+  sessionId: string;
+  planPath: string;
+  conflict: ConflictData;
+}
+
+interface GSDConflictResolvedMessage {
+  type: 'gsd_conflict_resolved';
+  sessionId: string;
+  planPath: string;
+  resolution: ConflictResolution;
+  data: ParsedPlanFile;
+}
+
+interface GSDResolveConflictMessage {
+  type: 'gsd_resolve_conflict';
+  sessionId: string;
+  planPath: string;
+  resolution: ConflictResolution;
+  conflict: ConflictData;
+}
+
+type GSDOutboundMessage =
+  | GSDWatchStartMessage
+  | GSDWatchStopMessage
+  | GSDPlanRequest
+  | GSDResolveConflictMessage;
+type GSDInboundMessage =
+  | GSDWatchStartedMessage
+  | GSDFileChangeEvent
+  | GSDPlanDataMessage
+  | GSDConflictMessage
+  | GSDConflictResolvedMessage;
 
 /**
  * Options for useGSDFileSync hook
@@ -66,6 +103,10 @@ export interface UseGSDFileSyncState {
   isWatching: boolean;
   /** Last file update event */
   lastUpdate: GSDFileChangeEvent | null;
+  /** Active conflict data if any */
+  conflict: ConflictData | null;
+  /** Whether conflict modal is open */
+  isConflictModalOpen: boolean;
 }
 
 /**
@@ -76,6 +117,8 @@ export interface UseGSDFileSyncResult extends UseGSDFileSyncState {
   ws: WebSocket | null;
   /** Request parsed plan data from server */
   requestPlan: (planPath: string) => Promise<ParsedPlanFile | null>;
+  /** Resolve active conflict with user's choice */
+  resolveConflict: (resolution: ConflictResolution) => void;
 }
 
 /**
@@ -87,7 +130,9 @@ function isGSDMessage(data: unknown): data is GSDInboundMessage {
   return (
     msg.type === 'gsd_watch_started' ||
     msg.type === 'gsd_file_update' ||
-    msg.type === 'gsd_plan_data'
+    msg.type === 'gsd_plan_data' ||
+    msg.type === 'gsd_conflict' ||
+    msg.type === 'gsd_conflict_resolved'
   );
 }
 
@@ -114,6 +159,8 @@ export function useGSDFileSync(options: UseGSDFileSyncOptions): UseGSDFileSyncRe
   const [isWatching, setIsWatching] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<GSDFileChangeEvent | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const [conflict, setConflict] = useState<ConflictData | null>(null);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
 
   // Refs for callbacks and pending requests
   const pendingPlanRequests = useRef<Map<string, {
@@ -170,6 +217,37 @@ export function useGSDFileSync(options: UseGSDFileSyncOptions): UseGSDFileSyncRe
                 component: 'useGSDFileSync',
                 planPath: data.planPath,
                 taskCount: data.data.tasks.length,
+              });
+            }
+            break;
+
+          case 'gsd_conflict':
+            if (data.sessionId === sessionId) {
+              // Server detected conflict - show modal to user
+              setConflict(data.conflict);
+              setIsConflictModalOpen(true);
+
+              devLogger.debug('GSD conflict detected', {
+                component: 'useGSDFileSync',
+                planPath: data.planPath,
+                diffCount: data.conflict.diffs.length,
+              });
+            }
+            break;
+
+          case 'gsd_conflict_resolved':
+            if (data.sessionId === sessionId) {
+              // Conflict resolved - close modal and update cache
+              setConflict(null);
+              setIsConflictModalOpen(false);
+
+              // Update query cache with resolved data
+              queryClient.setQueryData(['gsd-plan', data.planPath], data.data);
+
+              devLogger.debug('GSD conflict resolved', {
+                component: 'useGSDFileSync',
+                planPath: data.planPath,
+                resolution: data.resolution,
               });
             }
             break;
@@ -284,11 +362,40 @@ export function useGSDFileSync(options: UseGSDFileSyncOptions): UseGSDFileSyncRe
     [ws, sessionId]
   );
 
+  // Resolve conflict with user's choice
+  const resolveConflict = useCallback(
+    (resolution: ConflictResolution) => {
+      if (ws?.readyState === WebSocket.OPEN && conflict) {
+        const message: GSDResolveConflictMessage = {
+          type: 'gsd_resolve_conflict',
+          sessionId,
+          planPath: conflict.planPath,
+          resolution,
+          conflict,
+        };
+        ws.send(JSON.stringify(message));
+
+        // Optimistically close modal
+        setIsConflictModalOpen(false);
+
+        devLogger.debug('GSD conflict resolution sent', {
+          component: 'useGSDFileSync',
+          planPath: conflict.planPath,
+          resolution,
+        });
+      }
+    },
+    [ws, sessionId, conflict]
+  );
+
   return {
     isConnected,
     isWatching,
     lastUpdate,
     ws,
     requestPlan,
+    conflict,
+    isConflictModalOpen,
+    resolveConflict,
   };
 }
