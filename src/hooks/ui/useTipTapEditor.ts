@@ -19,9 +19,6 @@ import {
   WikiLink,
   createWikiLinkSuggestion,
   AppleNotesShortcuts,
-  CalloutExtension,
-  ToggleExtension,
-  BookmarkExtension,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
 import {
@@ -155,9 +152,10 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
         nested: true, // Allow nested task items
       }),
       AppleNotesShortcuts,
-      CalloutExtension,
-      ToggleExtension,
-      BookmarkExtension,
+      // TEMP: Disabled for debugging - uncomment after issue is fixed
+      // CalloutExtension,
+      // ToggleExtension,
+      // BookmarkExtension,
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
           () => {

@@ -1,11 +1,20 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
-import { claudeService, type ChatMessage, buildSystemPrompt, type ProjectContext } from '@/services/claude-ai';
+import { claudeService, type ChatMessage, buildSystemPrompt, type ProjectContext, type ToolResult } from '@/services/claude-ai';
+import { useDatabaseService } from './database/useDatabaseService';
 import { devLogger } from '@/utils/logging';
+
+export interface ToolEvent {
+  toolName: string;
+  toolInput: Record<string, unknown>;
+  result?: ToolResult;
+  toolId?: string;
+}
 
 interface UseClaudeAIOptions {
   systemPrompt?: string;
   projectContext?: ProjectContext;
   includeArchitecture?: boolean;
+  enableTools?: boolean;
 }
 
 export function useClaudeAI(options: UseClaudeAIOptions = {}) {
@@ -13,8 +22,10 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
+  const [toolEvents, setToolEvents] = useState<ToolEvent[]>([]);
   const abortRef = useRef(false);
 
+  const dbService = useDatabaseService();
   const isConfigured = claudeService.isConfigured();
 
   // Build system prompt with project context
@@ -58,6 +69,7 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setStreamingContent('');
+    setToolEvents([]);
 
     // Prepare messages for API (exclude IDs and timestamps)
     const apiMessages = [...messages, userMessage].map(m => ({
@@ -68,44 +80,73 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
     try {
       let fullResponse = '';
 
-      await claudeService.sendMessageStreaming(
-        apiMessages,
-        {
-          onText: (text) => {
-            if (abortRef.current) return;
-            fullResponse += text;
-            setStreamingContent(fullResponse);
-          },
-          onComplete: () => {
-            if (abortRef.current) return;
-
-            const assistantMessage: ChatMessage = {
-              id: generateId(),
-              role: 'assistant',
-              content: fullResponse,
-              timestamp: new Date()
-            };
-
-            setMessages(prev => [...prev, assistantMessage]);
-            setStreamingContent('');
-            setIsLoading(false);
-          },
-          onError: (err) => {
-            devLogger.error('Claude chat error', { component: 'useClaudeAI', error: err });
-            setError(err.message);
-            setIsLoading(false);
-            setStreamingContent('');
-          }
+      const commonCallbacks = {
+        onText: (text: string) => {
+          if (abortRef.current) return;
+          fullResponse += text;
+          setStreamingContent(fullResponse);
         },
-        effectiveSystemPrompt
-      );
+        onComplete: () => {
+          if (abortRef.current) return;
+
+          const assistantMessage: ChatMessage = {
+            id: generateId(),
+            role: 'assistant',
+            content: fullResponse,
+            timestamp: new Date()
+          };
+
+          setMessages(prev => [...prev, assistantMessage]);
+          setStreamingContent('');
+          setIsLoading(false);
+        },
+        onError: (err: Error) => {
+          devLogger.error('Claude chat error', { component: 'useClaudeAI', error: err });
+          setError(err.message);
+          setIsLoading(false);
+          setStreamingContent('');
+        }
+      };
+
+      if (options.enableTools && dbService.db) {
+        // Use tool-enabled endpoint
+        await claudeService.sendMessageWithTools(
+          apiMessages,
+          {
+            ...commonCallbacks,
+            onToolUse: (event) => {
+              setToolEvents(prev => [...prev, {
+                toolName: event.toolName,
+                toolInput: event.toolInput,
+                toolId: event.toolId
+              }]);
+            },
+            onToolResult: (toolId, result) => {
+              setToolEvents(prev =>
+                prev.map(e =>
+                  e.toolId === toolId ? { ...e, result } : e
+                )
+              );
+            }
+          },
+          effectiveSystemPrompt,
+          dbService
+        );
+      } else {
+        // Use standard streaming endpoint
+        await claudeService.sendMessageStreaming(
+          apiMessages,
+          commonCallbacks,
+          effectiveSystemPrompt
+        );
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
       setIsLoading(false);
       setStreamingContent('');
     }
-  }, [messages, isLoading, effectiveSystemPrompt]);
+  }, [messages, isLoading, effectiveSystemPrompt, options.enableTools, dbService]);
 
   /**
    * Clear chat history
@@ -142,6 +183,7 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
     error,
     streamingContent,
     isConfigured,
+    toolEvents,
     sendMessage,
     clearMessages,
     stopGeneration

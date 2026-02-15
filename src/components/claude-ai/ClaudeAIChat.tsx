@@ -1,11 +1,27 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
-import { Send, Square, Trash2, AlertCircle, Bot, User } from 'lucide-react';
+import { Send, Square, Trash2, AlertCircle, Bot, User, Wrench, Database } from 'lucide-react';
 import { useClaudeAI, useProjectContext } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 interface ClaudeAIChatProps {
   className?: string;
   systemPrompt?: string;
+  enableTools?: boolean;
+}
+
+/**
+ * Format tool result data for display
+ */
+function formatToolResultData(data: unknown): string {
+  if (Array.isArray(data)) {
+    return `${data.length} results`;
+  }
+  if (typeof data === 'object' && data !== null) {
+    return Object.entries(data as Record<string, unknown>)
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+  }
+  return String(data);
 }
 
 /**
@@ -18,7 +34,7 @@ interface ClaudeAIChatProps {
  * - Stop generation button
  * - Clear chat button
  */
-export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
+export function ClaudeAIChat({ className, systemPrompt, enableTools = true }: ClaudeAIChatProps) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -32,13 +48,15 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
     error,
     streamingContent,
     isConfigured,
+    toolEvents,
     sendMessage,
     clearMessages,
     stopGeneration
   } = useClaudeAI({
     systemPrompt,
     projectContext,
-    includeArchitecture: true
+    includeArchitecture: true,
+    enableTools
   });
 
   // Auto-scroll to bottom on new messages
@@ -105,9 +123,17 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
                   Context: {projectContext.activeCard.name}
                 </p>
               )}
-              <p className="text-xs mt-2 text-gray-700">
-                Isometry architecture context enabled
-              </p>
+              <div className="flex flex-col gap-1 mt-2">
+                <p className="text-xs text-gray-700">
+                  Isometry architecture context enabled
+                </p>
+                {enableTools && (
+                  <p className="text-xs text-gray-700 flex items-center justify-center gap-1">
+                    <Wrench size={10} />
+                    Database tools enabled
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -152,6 +178,48 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
             <div className="max-w-[80%] rounded-lg px-4 py-2 text-sm bg-gray-800 text-gray-200">
               <pre className="whitespace-pre-wrap font-sans">{streamingContent}</pre>
               <span className="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-1" />
+            </div>
+          </div>
+        )}
+
+        {/* Tool executions */}
+        {toolEvents.length > 0 && (
+          <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+            <div className="flex items-center gap-2 text-xs text-gray-400 mb-2">
+              <Wrench size={12} />
+              <span>Tool Executions</span>
+            </div>
+            <div className="space-y-2">
+              {toolEvents.map((event, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs">
+                  <Database size={12} className="text-purple-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-purple-400">{event.toolName}</span>
+                      {event.result && (
+                        <span className={cn(
+                          'text-[10px] px-1.5 py-0.5 rounded',
+                          event.result.success
+                            ? 'bg-green-900/50 text-green-400'
+                            : 'bg-red-900/50 text-red-400'
+                        )}>
+                          {event.result.success ? 'success' : 'failed'}
+                        </span>
+                      )}
+                    </div>
+                    {event.result?.data !== undefined && event.result?.data !== null && (
+                      <div className="mt-1 text-gray-500 truncate">
+                        {formatToolResultData(event.result.data)}
+                      </div>
+                    )}
+                    {event.result?.error !== undefined && (
+                      <div className="mt-1 text-red-400 text-[10px]">
+                        {event.result.error}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
