@@ -59,22 +59,6 @@ export function useLiveQueryManual<T = unknown>(
 }
 
 /**
- * Legacy version with backward compatibility
- */
-export function useLiveQueryLegacy<T = unknown>(
-  sql: string,
-  params: unknown[] = [],
-  options: Omit<LiveQueryOptions, 'params'> = {}
-): LiveQueryResult<T> {
-  return useLiveQuery<T>(sql, { 
-    ...options, 
-    params,
-    enableCache: false, // Legacy behavior
-    enableBackgroundSync: false // Legacy behavior
-  });
-}
-
-/**
  * High-performance version with optimized settings
  */
 export function useLiveQueryOptimized<T = unknown>(

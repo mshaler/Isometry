@@ -25,7 +25,6 @@ export {
   useLiveCards,
   useLiveNodes, // @deprecated - use useLiveCards
   useLiveQueryManual,
-  useLiveQueryLegacy,
   useLiveQueryOptimized,
   useLiveQueryOffline,
   useLiveQueryReadOnly

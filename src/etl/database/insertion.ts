@@ -12,9 +12,7 @@
 import type { Database } from 'sql.js';
 import {
   CanonicalNode,
-  toSQLRecord,
   toCardsSQLRecord,
-  SQL_COLUMN_MAP,
   CARDS_SQL_COLUMNS
 } from '../types/canonical';
 
@@ -40,28 +38,6 @@ export interface InsertOptions {
    * If false, each insert is independent.
    */
   transaction?: boolean;
-}
-
-/**
- * Build parameterized INSERT SQL for nodes table.
- * @deprecated Use buildCardsInsertSQL for Phase 84+ code.
- *
- * Uses deterministic column ordering based on SQL_COLUMN_MAP.
- *
- * @param record - SQL record with snake_case keys from toSQLRecord()
- * @returns Object with SQL string and ordered parameter values
- */
-function buildInsertSQL(record: Record<string, unknown>): { sql: string; params: unknown[] } {
-  // Get columns in deterministic order from SQL_COLUMN_MAP
-  const columns = Object.values(SQL_COLUMN_MAP);
-  const placeholders = columns.map(() => '?').join(', ');
-
-  // Build params in same order as columns
-  const params = columns.map(col => record[col]);
-
-  const sql = `INSERT INTO nodes (${columns.join(', ')}) VALUES (${placeholders})`;
-
-  return { sql, params };
 }
 
 /**
@@ -208,69 +184,6 @@ export async function insertCanonicalNodes(
     return result;
   } catch (error) {
     // Unexpected error - rollback if in transaction
-    if (useTransaction) {
-      try {
-        db.run('ROLLBACK');
-      } catch {
-        // Ignore rollback errors
-      }
-    }
-    throw error;
-  }
-}
-
-/**
- * @deprecated Use insertCanonicalNodes (which now inserts into cards table).
- * Legacy function that inserted into nodes table. Kept for backward compatibility.
- */
-export async function insertCanonicalNodesLegacy(
-  db: Database,
-  nodes: CanonicalNode[],
-  options?: InsertOptions
-): Promise<InsertResult> {
-  const useTransaction = options?.transaction !== false;
-  const result: InsertResult = {
-    inserted: 0,
-    failed: 0,
-    errors: [],
-  };
-
-  if (nodes.length === 0) {
-    return result;
-  }
-
-  if (useTransaction) {
-    db.run('BEGIN TRANSACTION');
-  }
-
-  try {
-    for (const node of nodes) {
-      try {
-        const record = toSQLRecord(node);
-        const { sql, params } = buildInsertSQL(record);
-        db.run(sql, params as (string | number | Uint8Array | null)[]);
-        result.inserted++;
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (useTransaction) {
-          db.run('ROLLBACK');
-          result.failed = nodes.length - result.inserted;
-          result.inserted = 0;
-          result.errors.push({ node, error: errorMessage });
-          return result;
-        } else {
-          result.failed++;
-          result.errors.push({ node, error: errorMessage });
-        }
-      }
-    }
-
-    if (useTransaction) {
-      db.run('COMMIT');
-    }
-
-    return result;
-  } catch (error) {
     if (useTransaction) {
       try {
         db.run('ROLLBACK');
