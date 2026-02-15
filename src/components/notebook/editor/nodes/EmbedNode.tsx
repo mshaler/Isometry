@@ -5,11 +5,14 @@
  * SuperGrid embeds are the table replacement - live PAFV projections.
  *
  * @see Phase 98: Isometry Embeds
+ * @see Phase 98-02: Live Data Updates
  */
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
-import { useSQLite } from '../../../../db/SQLiteProvider';
-import { EmbedType, DEFAULT_EMBED_DIMENSIONS } from '../extensions/embed-types';
+import * as d3 from 'd3';
+import { useEmbedData } from '../../../../hooks/embed/useEmbedData';
+import { EmbedType, DEFAULT_EMBED_DIMENSIONS, type EmbedAttributes } from '../extensions/embed-types';
+import { EmbedToolbar } from './EmbedToolbar';
 
 interface EmbedDimensions {
   width: number;
@@ -62,10 +65,22 @@ export function EmbedNode({ node, updateAttributes }: NodeViewProps) {
     updateAttributes({ height: newHeight });
   }, [node.attrs.height, updateAttributes]);
 
+  // Handle embed type changes from toolbar (Phase 98-03)
+  const handleTypeChange = useCallback((newType: EmbedType) => {
+    updateAttributes({ type: newType });
+  }, [updateAttributes]);
+
   return (
     <NodeViewWrapper className={`embed embed--${embedType}`}>
       <div ref={containerRef} className="embed__container">
-        {/* Embed header with type label and controls */}
+        {/* View switching toolbar (Phase 98-03) */}
+        <EmbedToolbar
+          currentType={embedType}
+          onTypeChange={handleTypeChange}
+          attrs={node.attrs as Partial<EmbedAttributes>}
+        />
+
+        {/* Height controls */}
         <div className="embed__header" contentEditable={false}>
           <span className="embed__type-label">
             {getEmbedLabel(embedType)}
@@ -76,7 +91,7 @@ export function EmbedNode({ node, updateAttributes }: NodeViewProps) {
               className="embed__control-btn"
               title="Shrink"
             >
-              −
+              {'\u2212'}
             </button>
             <button
               onClick={handleExpandHeight}
@@ -146,6 +161,9 @@ function EmbedContent({
 
 /**
  * SuperGrid Embed - Live PAFV projection (replaces tables)
+ *
+ * Uses useEmbedData for live data updates via dataVersion reactivity.
+ * Renders a grid visualization showing cards grouped by PAFV axes.
  */
 function SuperGridEmbed({
   dimensions,
@@ -154,29 +172,105 @@ function SuperGridEmbed({
   dimensions: EmbedDimensions;
   attrs: Record<string, unknown>;
 }) {
-  const { db } = useSQLite();
   const svgRef = useRef<SVGSVGElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [nodeCount, setNodeCount] = useState(0);
 
-  // Query data from database
+  // Filter from attrs (set in 98-03 via toolbar)
+  const filter = (attrs.filter as string) || '';
+
+  // Live data from useEmbedData - automatically updates when dataVersion changes
+  const { nodes, loading, error } = useEmbedData({
+    type: 'supergrid',
+    filter,
+    limit: 200,
+  });
+  const nodeCount = nodes.length;
+
+  // D3 rendering effect - renders a simple grid layout
   useEffect(() => {
-    if (!db) return;
+    if (!svgRef.current || loading || nodes.length === 0) return;
 
-    setLoading(true);
-    try {
-      // Default query - all non-deleted nodes
-      const sql = (attrs.sql as string) || 'SELECT COUNT(*) as count FROM nodes WHERE deleted_at IS NULL';
-      const result = db.exec(sql);
-      if (result.length > 0 && result[0].values.length > 0) {
-        setNodeCount(result[0].values[0][0] as number);
-      }
-    } catch (error) {
-      console.error('SuperGrid embed query error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [db, attrs.sql]);
+    const svg = d3.select(svgRef.current);
+    const margin = { top: 40, right: 20, bottom: 40, left: 20 };
+    const width = dimensions.width - margin.left - margin.right;
+    const height = dimensions.height - margin.top - margin.bottom;
+
+    // Clear previous content
+    svg.selectAll('*').remove();
+
+    // Create container group
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Grid pattern background
+    const defs = svg.append('defs');
+    defs.append('pattern')
+      .attr('id', 'embed-grid')
+      .attr('width', 40)
+      .attr('height', 40)
+      .attr('patternUnits', 'userSpaceOnUse')
+      .append('path')
+      .attr('d', 'M 40 0 L 0 0 0 40')
+      .attr('fill', 'none')
+      .attr('stroke', '#e5e7eb')
+      .attr('stroke-width', 1);
+
+    g.append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', 'url(#embed-grid)');
+
+    // Calculate grid layout
+    const cellSize = 80;
+    const cellPadding = 8;
+    const cols = Math.max(1, Math.floor(width / (cellSize + cellPadding)));
+    const displayNodes = nodes.slice(0, 20); // Show max 20 nodes in embed
+
+    // Render node cells using D3 join pattern
+    g.selectAll('.embed-cell')
+      .data(displayNodes, (d) => (d as { id: string }).id)
+      .join(
+        enter => enter.append('g')
+          .attr('class', 'embed-cell')
+          .attr('transform', (_, i) => {
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            return `translate(${col * (cellSize + cellPadding)},${row * (cellSize + cellPadding)})`;
+          })
+          .call(enterG => {
+            enterG.append('rect')
+              .attr('width', cellSize)
+              .attr('height', cellSize - 20)
+              .attr('rx', 4)
+              .attr('fill', '#f3f4f6')
+              .attr('stroke', '#d1d5db')
+              .attr('stroke-width', 1);
+            enterG.append('text')
+              .attr('x', cellSize / 2)
+              .attr('y', (cellSize - 20) / 2)
+              .attr('text-anchor', 'middle')
+              .attr('dominant-baseline', 'middle')
+              .attr('font-size', 11)
+              .attr('fill', '#374151')
+              .text(d => (d.name || '').slice(0, 12) + ((d.name || '').length > 12 ? '...' : ''));
+          }),
+        update => update,
+        exit => exit.remove()
+      );
+
+    // Info text
+    g.append('text')
+      .attr('x', width / 2)
+      .attr('y', height - 10)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#9ca3af')
+      .attr('font-size', 12)
+      .text(`Showing ${displayNodes.length} of ${nodeCount} cards`);
+
+    // Cleanup on unmount
+    return () => {
+      svg.selectAll('*').remove();
+    };
+  }, [nodes, loading, dimensions, nodeCount]);
 
   if (loading) {
     return (
@@ -187,156 +281,367 @@ function SuperGridEmbed({
     );
   }
 
-  // For Phase 98-01: Show placeholder with data info
-  // Full D3 integration in Phase 98-02
+  if (error) {
+    return (
+      <div className="embed__error">
+        <span>Error: {error.message}</span>
+      </div>
+    );
+  }
+
+  if (nodes.length === 0) {
+    return (
+      <div className="embed__empty">
+        <svg width={dimensions.width} height={dimensions.height} className="embed__svg">
+          <text
+            x={dimensions.width / 2}
+            y={dimensions.height / 2}
+            textAnchor="middle"
+            fill="#9ca3af"
+            fontSize="14"
+          >
+            No cards match filter
+          </text>
+        </svg>
+      </div>
+    );
+  }
+
   return (
-    <div className="embed__supergrid-placeholder">
+    <div className="embed__supergrid">
       <svg
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
         className="embed__svg"
-      >
-        {/* Placeholder grid pattern */}
-        <defs>
-          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" strokeWidth="1"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
-
-        {/* Info text */}
-        <text
-          x={dimensions.width / 2}
-          y={dimensions.height / 2 - 20}
-          textAnchor="middle"
-          className="embed__placeholder-title"
-          fill="#6b7280"
-          fontSize="16"
-          fontWeight="500"
-        >
-          SuperGrid Embed
-        </text>
-        <text
-          x={dimensions.width / 2}
-          y={dimensions.height / 2 + 10}
-          textAnchor="middle"
-          fill="#9ca3af"
-          fontSize="14"
-        >
-          {nodeCount} nodes | {String(attrs.xAxis || 'category')}/{String(attrs.xFacet || 'folder')} × {String(attrs.yAxis || 'time')}/{String(attrs.yFacet || 'year')}
-        </text>
-        <text
-          x={dimensions.width / 2}
-          y={dimensions.height / 2 + 35}
-          textAnchor="middle"
-          fill="#d1d5db"
-          fontSize="12"
-        >
-          Click to open full SuperGrid view
-        </text>
-      </svg>
+      />
     </div>
   );
 }
 
 /**
  * Network Embed - Force-directed graph visualization
+ *
+ * Uses useEmbedData for live node and edge data.
+ * Renders a force-directed network graph using D3.
  */
 function NetworkEmbed({
   dimensions,
+  attrs,
 }: {
   dimensions: EmbedDimensions;
   attrs: Record<string, unknown>;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const simulationRef = useRef<d3.Simulation<d3.SimulationNodeDatum, undefined> | null>(null);
+
+  const filter = (attrs.filter as string) || '';
+
+  // Live data with edges for network
+  const { nodes, edges, loading, error } = useEmbedData({
+    type: 'network',
+    filter,
+    includeEdges: true,
+    limit: 100,
+  });
+
+  // D3 force-directed graph
+  useEffect(() => {
+    if (!svgRef.current || loading) return;
+
+    const svg = d3.select(svgRef.current);
+    const width = dimensions.width;
+    const height = dimensions.height;
+
+    // Clear previous content
+    svg.selectAll('*').remove();
+
+    // Stop any existing simulation
+    if (simulationRef.current) {
+      simulationRef.current.stop();
+    }
+
+    if (nodes.length === 0) {
+      svg.append('text')
+        .attr('x', width / 2)
+        .attr('y', height / 2)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#9ca3af')
+        .text('No nodes to display');
+      return;
+    }
+
+    // Transform data for D3 force simulation
+    const graphNodes = nodes.slice(0, 50).map(n => ({
+      id: n.id,
+      name: n.name,
+      folder: n.folder,
+    }));
+
+    // Build node id set for filtering edges
+    const nodeIdSet = new Set(graphNodes.map(n => n.id));
+
+    // Filter edges to only include those between visible nodes
+    const graphLinks = edges
+      .filter(e => nodeIdSet.has(e.source_id) && nodeIdSet.has(e.target_id))
+      .map(e => ({
+        source: e.source_id,
+        target: e.target_id,
+        type: e.edge_type,
+      }));
+
+    // Create force simulation
+    const simulation = d3.forceSimulation(graphNodes as d3.SimulationNodeDatum[])
+      .force('link', d3.forceLink(graphLinks).id((d: unknown) => (d as { id: string }).id).distance(60))
+      .force('charge', d3.forceManyBody().strength(-100))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(25));
+
+    simulationRef.current = simulation;
+
+    // Draw links
+    const link = svg.append('g')
+      .attr('class', 'links')
+      .selectAll('line')
+      .data(graphLinks)
+      .join('line')
+      .attr('stroke', '#93c5fd')
+      .attr('stroke-width', 2)
+      .attr('stroke-opacity', 0.6);
+
+    // Draw nodes
+    const node = svg.append('g')
+      .attr('class', 'nodes')
+      .selectAll('g')
+      .data(graphNodes)
+      .join('g');
+
+    node.append('circle')
+      .attr('r', 15)
+      .attr('fill', '#dbeafe')
+      .attr('stroke', '#3b82f6')
+      .attr('stroke-width', 2);
+
+    node.append('title')
+      .text(d => d.name || d.id);
+
+    // Update positions on tick
+    // D3 simulation mutates nodes to add x/y properties
+    type SimNode = { x?: number; y?: number };
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => (d.source as unknown as SimNode).x ?? 0)
+        .attr('y1', d => (d.source as unknown as SimNode).y ?? 0)
+        .attr('x2', d => (d.target as unknown as SimNode).x ?? 0)
+        .attr('y2', d => (d.target as unknown as SimNode).y ?? 0);
+
+      node.attr('transform', d => `translate(${(d as unknown as SimNode).x ?? 0},${(d as unknown as SimNode).y ?? 0})`);
+    });
+
+    // Info text
+    svg.append('text')
+      .attr('x', width / 2)
+      .attr('y', height - 10)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#9ca3af')
+      .attr('font-size', 12)
+      .text(`${graphNodes.length} nodes, ${graphLinks.length} edges`);
+
+    // Cleanup
+    return () => {
+      if (simulationRef.current) {
+        simulationRef.current.stop();
+        simulationRef.current = null;
+      }
+      svg.selectAll('*').remove();
+    };
+  }, [nodes, edges, loading, dimensions]);
+
+  if (loading) {
+    return (
+      <div className="embed__loading">
+        <div className="embed__spinner" />
+        <span>Loading Network...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="embed__error">
+        <span>Error: {error.message}</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="embed__network-placeholder">
+    <div className="embed__network">
       <svg
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
         className="embed__svg"
-      >
-        {/* Placeholder network visualization */}
-        <circle cx={dimensions.width / 2} cy={dimensions.height / 2} r="30" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
-        <circle cx={dimensions.width / 2 - 80} cy={dimensions.height / 2 - 60} r="20" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
-        <circle cx={dimensions.width / 2 + 80} cy={dimensions.height / 2 - 40} r="25" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
-        <circle cx={dimensions.width / 2 - 60} cy={dimensions.height / 2 + 70} r="22" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
-        <circle cx={dimensions.width / 2 + 70} cy={dimensions.height / 2 + 50} r="18" fill="#dbeafe" stroke="#3b82f6" strokeWidth="2" />
-
-        {/* Connections */}
-        <line x1={dimensions.width / 2} y1={dimensions.height / 2} x2={dimensions.width / 2 - 80} y2={dimensions.height / 2 - 60} stroke="#93c5fd" strokeWidth="2" />
-        <line x1={dimensions.width / 2} y1={dimensions.height / 2} x2={dimensions.width / 2 + 80} y2={dimensions.height / 2 - 40} stroke="#93c5fd" strokeWidth="2" />
-        <line x1={dimensions.width / 2} y1={dimensions.height / 2} x2={dimensions.width / 2 - 60} y2={dimensions.height / 2 + 70} stroke="#93c5fd" strokeWidth="2" />
-        <line x1={dimensions.width / 2} y1={dimensions.height / 2} x2={dimensions.width / 2 + 70} y2={dimensions.height / 2 + 50} stroke="#93c5fd" strokeWidth="2" />
-
-        <text
-          x={dimensions.width / 2}
-          y={dimensions.height - 20}
-          textAnchor="middle"
-          fill="#6b7280"
-          fontSize="14"
-        >
-          Network Graph Embed
-        </text>
-      </svg>
+      />
     </div>
   );
 }
 
 /**
  * Timeline Embed - Chronological visualization
+ *
+ * Uses useEmbedData for live data.
+ * Renders nodes on a timeline based on created_at timestamp.
  */
 function TimelineEmbed({
   dimensions,
+  attrs,
 }: {
   dimensions: EmbedDimensions;
   attrs: Record<string, unknown>;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
-  const lineY = dimensions.height / 2;
+
+  const filter = (attrs.filter as string) || '';
+
+  const { nodes, loading, error } = useEmbedData({
+    type: 'timeline',
+    filter,
+    limit: 100,
+  });
+
+  // Sort nodes by date and compute time range
+  const sortedNodes = useMemo(() => {
+    if (nodes.length === 0) return [];
+    return [...nodes]
+      .filter(n => n.createdAt)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+      .slice(0, 50);
+  }, [nodes]);
+
+  // D3 timeline rendering
+  useEffect(() => {
+    if (!svgRef.current || loading || sortedNodes.length === 0) return;
+
+    const svg = d3.select(svgRef.current);
+    const margin = { top: 30, right: 40, bottom: 40, left: 40 };
+    const width = dimensions.width - margin.left - margin.right;
+    const height = dimensions.height - margin.top - margin.bottom;
+
+    // Clear previous
+    svg.selectAll('*').remove();
+
+    const g = svg.append('g')
+      .attr('transform', `translate(${margin.left},${margin.top})`);
+
+    // Time scale
+    const timeExtent = d3.extent(sortedNodes, d => new Date(d.createdAt)) as [Date, Date];
+    const xScale = d3.scaleTime()
+      .domain(timeExtent)
+      .range([0, width]);
+
+    // Draw timeline axis
+    const lineY = height / 2;
+
+    g.append('line')
+      .attr('x1', 0)
+      .attr('y1', lineY)
+      .attr('x2', width)
+      .attr('y2', lineY)
+      .attr('stroke', '#d1d5db')
+      .attr('stroke-width', 2);
+
+    // Draw time markers (events)
+    g.selectAll('.timeline-event')
+      .data(sortedNodes, (d) => (d as { id: string }).id)
+      .join('g')
+      .attr('class', 'timeline-event')
+      .attr('transform', d => `translate(${xScale(new Date(d.createdAt))},${lineY})`)
+      .call(eventG => {
+        eventG.append('circle')
+          .attr('r', 8)
+          .attr('fill', '#fef3c7')
+          .attr('stroke', '#f59e0b')
+          .attr('stroke-width', 2);
+
+        eventG.append('line')
+          .attr('y1', -15)
+          .attr('y2', 15)
+          .attr('stroke', '#e5e7eb')
+          .attr('stroke-width', 1);
+
+        eventG.append('title')
+          .text(d => `${d.name}\n${new Date(d.createdAt).toLocaleDateString()}`);
+      });
+
+    // Draw axis
+    const xAxis = d3.axisBottom(xScale)
+      .ticks(5)
+      .tickFormat(d => d3.timeFormat('%b %Y')(d as Date));
+
+    g.append('g')
+      .attr('transform', `translate(0,${height - 10})`)
+      .call(xAxis)
+      .selectAll('text')
+      .attr('fill', '#6b7280')
+      .attr('font-size', 11);
+
+    // Info text
+    svg.append('text')
+      .attr('x', dimensions.width / 2)
+      .attr('y', 20)
+      .attr('text-anchor', 'middle')
+      .attr('fill', '#6b7280')
+      .attr('font-size', 12)
+      .text(`${sortedNodes.length} events`);
+
+    return () => {
+      svg.selectAll('*').remove();
+    };
+  }, [sortedNodes, loading, dimensions]);
+
+  if (loading) {
+    return (
+      <div className="embed__loading">
+        <div className="embed__spinner" />
+        <span>Loading Timeline...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="embed__error">
+        <span>Error: {error.message}</span>
+      </div>
+    );
+  }
+
+  if (sortedNodes.length === 0) {
+    return (
+      <div className="embed__empty">
+        <svg width={dimensions.width} height={dimensions.height} className="embed__svg">
+          <text
+            x={dimensions.width / 2}
+            y={dimensions.height / 2}
+            textAnchor="middle"
+            fill="#9ca3af"
+            fontSize="14"
+          >
+            No events to display
+          </text>
+        </svg>
+      </div>
+    );
+  }
 
   return (
-    <div className="embed__timeline-placeholder">
+    <div className="embed__timeline">
       <svg
         ref={svgRef}
         width={dimensions.width}
         height={dimensions.height}
         className="embed__svg"
-      >
-        {/* Timeline axis */}
-        <line
-          x1="40"
-          y1={lineY}
-          x2={dimensions.width - 40}
-          y2={lineY}
-          stroke="#d1d5db"
-          strokeWidth="2"
-        />
-
-        {/* Timeline markers */}
-        {[0.2, 0.4, 0.6, 0.8].map((pos, i) => {
-          const x = 40 + (dimensions.width - 80) * pos;
-          return (
-            <g key={i}>
-              <circle cx={x} cy={lineY} r="8" fill="#fef3c7" stroke="#f59e0b" strokeWidth="2" />
-              <line x1={x} y1={lineY - 20} x2={x} y2={lineY + 20} stroke="#e5e7eb" strokeWidth="1" />
-            </g>
-          );
-        })}
-
-        <text
-          x={dimensions.width / 2}
-          y={dimensions.height - 20}
-          textAnchor="middle"
-          fill="#6b7280"
-          fontSize="14"
-        >
-          Timeline Embed
-        </text>
-      </svg>
+      />
     </div>
   );
 }
