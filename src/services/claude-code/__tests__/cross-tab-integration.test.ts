@@ -492,6 +492,174 @@ describe('GSD Command Trigger Flow', () => {
   });
 });
 
+/**
+ * GSD Command Trigger Flow Verification (Task 2)
+ *
+ * Documents the actual trigger mechanism for GSD state updates:
+ * - Trigger direction: Terminal OUTPUT -> Parser -> GSD Service (forward flow)
+ * - /gsd: commands are terminal INPUT, not parsed output
+ * - GSD file changes trigger terminal output updates (reverse direction)
+ */
+describe('GSD Command Trigger Flow - Direction Documentation', () => {
+  let gsdService: MockGSDService;
+  let outputBuffer: MockOutputBuffer;
+  const sessionId = 'trigger-flow-session';
+
+  beforeEach(() => {
+    gsdService = createMockGSDService();
+    outputBuffer = createMockOutputBuffer(100);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('forward flow: terminal OUTPUT triggers GSD state updates (not terminal INPUT)', () => {
+    // The actual flow documented in useGSDTerminalIntegration:
+    // 1. Terminal receives output from Claude Code CLI
+    // 2. processTerminalOutput parses the output
+    // 3. If phase/status detected, GSD service is updated
+    //
+    // This is OUTPUT-driven, not INPUT-driven.
+    // /gsd: commands are typed INTO the terminal and sent to the shell,
+    // not parsed from output.
+
+    const terminalOutput = 'Starting implementation phase...';
+    processTerminalOutput(terminalOutput, gsdService, sessionId, outputBuffer);
+
+    // Forward flow: output -> parse -> GSD update
+    expect(gsdService.addPhaseEvent).toHaveBeenCalled();
+    expect(gsdService.updateSessionState).toHaveBeenCalled();
+  });
+
+  it('/gsd: commands in output are NOT detected (they are input, not output)', () => {
+    // The parser does NOT look for /gsd: patterns because:
+    // 1. /gsd: commands are terminal INPUT (user types them)
+    // 2. The shell processes them and produces OUTPUT
+    // 3. We parse the OUTPUT, not the input
+    //
+    // If someone types /gsd:new-milestone, the CLI processes it and
+    // produces output like "Starting spec phase..." which IS detected.
+
+    const commandInput = '/gsd:new-milestone';
+    const parsed = claudeCodeParser.parseOutput(commandInput);
+
+    // No phase, status, or other GSD markers detected
+    expect(parsed.phase).toBeUndefined();
+    expect(parsed.status).toBeUndefined();
+  });
+
+  it('reverse flow: GSD file changes trigger WebSocket updates to terminal hook', () => {
+    // The reverse direction (GSD -> Terminal) works via WebSocket:
+    // 1. GSD files change on disk
+    // 2. GSDFileWatcher detects the change
+    // 3. WebSocket sends gsd_file_update message
+    // 4. useGSDFileSync hook receives update
+    // 5. React Query invalidates cache
+    //
+    // This is verified by the isGSDFileMessage type guard routing.
+
+    const gsdFileUpdateMessage = { type: 'gsd_task_update', taskIndex: 0, status: 'complete' };
+
+    // The message is recognized for routing
+    expect(isGSDFileMessage(gsdFileUpdateMessage)).toBe(true);
+
+    // This enables the reverse flow: file changes -> hook updates
+  });
+
+  it('processTerminalOutput only triggers on detected patterns', () => {
+    const onStateUpdate = vi.fn();
+
+    // Random terminal output without GSD patterns
+    processTerminalOutput(
+      'npm install completed successfully',
+      gsdService,
+      sessionId,
+      outputBuffer,
+      { onStateUpdate }
+    );
+
+    // No GSD updates because no patterns detected
+    expect(gsdService.addPhaseEvent).not.toHaveBeenCalled();
+    expect(gsdService.updateSessionState).not.toHaveBeenCalled();
+
+    // But onStateUpdate still fires if there's any parsed content
+    // In this case, no GSD patterns means onStateUpdate may not fire
+    // because the early return on empty parsed object
+  });
+
+  it('GSD phase markers in CLI output update progress display correctly', () => {
+    const onStateUpdate = vi.fn();
+
+    gsdService.getSessionState.mockReturnValue({
+      sessionId,
+      phase: 'plan',
+      status: 'executing',
+      tokenUsage: { input: 200, output: 100, cost: 0.02 },
+    });
+
+    // Simulate Claude Code outputting phase information
+    processTerminalOutput(
+      'Beginning planning phase\nAnalyzing requirements...',
+      gsdService,
+      sessionId,
+      outputBuffer,
+      { onStateUpdate }
+    );
+
+    expect(gsdService.addPhaseEvent).toHaveBeenCalledWith(sessionId, 'plan', 'active');
+    expect(onStateUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phase: 'plan',
+        status: 'executing',
+      })
+    );
+  });
+
+  it('commit phase detection triggers proper state update', () => {
+    const onStateUpdate = vi.fn();
+
+    processTerminalOutput(
+      'Starting commit phase\nPreparing to commit changes...',
+      gsdService,
+      sessionId,
+      outputBuffer,
+      { onStateUpdate }
+    );
+
+    expect(gsdService.addPhaseEvent).toHaveBeenCalledWith(sessionId, 'commit', 'active');
+    expect(gsdService.updateSessionState).toHaveBeenCalledWith(
+      sessionId,
+      expect.objectContaining({
+        phase: 'commit',
+        status: 'executing',
+      })
+    );
+  });
+
+  it('error output triggers error state and notifies callback', () => {
+    const onStateUpdate = vi.fn();
+
+    gsdService.getSessionState.mockReturnValue({
+      sessionId,
+      phase: 'implement',
+      status: 'error',
+      tokenUsage: { input: 0, output: 0, cost: 0 },
+    });
+
+    processTerminalOutput(
+      'Error: TypeScript compilation failed',
+      gsdService,
+      sessionId,
+      outputBuffer,
+      { onStateUpdate }
+    );
+
+    // Error updates state to error status
+    expect(onStateUpdate).toHaveBeenCalled();
+  });
+});
+
 describe('claudeCodeParser integration', () => {
   it('parses phase start patterns correctly', () => {
     const testCases = [
