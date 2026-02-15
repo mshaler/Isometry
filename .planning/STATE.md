@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.5 Console Cleanup — Complete
+**Current focus:** v6.4 Hardcoded Values Cleanup — COMPLETE
 
 ## Current Position
 
 Phase: 102 (Sample Data & Test Cleanup)
-Plan: 01/01 — COMPLETE
-Status: Plan complete
-Last activity: 2026-02-15 — Completed 102-01-PLAN.md (Sample Data Cleanup)
+Plan: 02/02 — COMPLETE
+Status: Phase complete
+Last activity: 2026-02-15 — Completed 102-02-PLAN.md (Schema-Flexible Test Fixtures)
 
-Progress: [████████░░] 80% (Phase 100: ✓, Phase 101: ✓, Phase 102: ✓, Phase 103: ✓)
-Overall: v6.4 Hardcoded Values Cleanup — Phase 102 complete (1/1 plans)
+Progress: [██████████] 100% (Phase 100: ✓, Phase 101: ✓, Phase 102: ✓, Phase 103: ✓)
+Overall: v6.4 Hardcoded Values Cleanup — COMPLETE (all phases done)
 
 ## Active Milestones
 
@@ -47,20 +47,31 @@ Overall: v6.4 Hardcoded Values Cleanup — Phase 102 complete (1/1 plans)
 
 **Total requirements:** 5 | **Status:** 5/5 complete
 
-### v6.4 Hardcoded Values Cleanup — IN PROGRESS
+### v6.4 Hardcoded Values Cleanup — COMPLETE
 
 **Goal:** Eliminate or externalize hardcoded LATCH filter values.
 
-**Status:** ✅ Phase 101 COMPLETE, Phase 102 PENDING
+**Status:** ✅ COMPLETE
+
+**Delivered:**
+- SettingsService with CRUD operations wrapping sql.js
+- Dynamic facet discovery from live SQLite data (folder, status, tags, priority)
+- CardDetailModal with dynamic dropdowns
+- Priority range discovered via MIN/MAX query (not hardcoded)
+- Sample data reflects schema-on-read philosophy
+- Test fixtures with nodes lacking optional status/priority
+- loadTestFixtures with graceful fallback for missing columns
 
 **Phases:**
 - Phase 100: Settings & Discovery Layer — ✅ COMPLETE (2/2 plans)
 - Phase 101: UI Integration — ✅ COMPLETE (2/2 plans, 2026-02-15)
   - [x] 101-01: Dynamic CardDetailModal Dropdowns (~5m) ✓
   - [x] 101-02: Dynamic LATCH Values (~4m) ✓
-- Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
+- Phase 102: Sample Data & Test Cleanup — ✅ COMPLETE (2/2 plans, 2026-02-15)
+  - [x] 102-01: Sample Data Cleanup (~5m) ✓
+  - [x] 102-02: Schema-Flexible Test Fixtures (~5m) ✓
 
-**Total requirements:** 22 | **Status:** 16/22 complete (Phases 100-101 done)
+**Total requirements:** 22 | **Status:** 22/22 complete
 
 ### v6.3 SuperStack SQL Integration — COMPLETE
 
@@ -304,6 +315,12 @@ Recent decisions:
 - CLASSIFY-02: numericColumnsWithDefaults object removed entirely ✅ Implemented 101-02
 - CLASSIFY-03: Missing columns return false gracefully via try-catch (schema-on-read) ✅ Implemented 101-02
 
+**Sample Data & Test Cleanup (Phase 102):**
+- TEST-01: TEST_FACETS status/priority facets have no hardcoded options (dynamic discovery) ✅ Implemented 102-01
+- TEST-02: Use undefined (not null) for missing fields in TypeScript test fixtures ✅ Implemented 102-02
+- TEST-03: Fallback to 7-column minimal schema if full schema insert fails ✅ Implemented 102-02
+- TEST-FIX-01: Filter priority-based tests with AND priority IS NOT NULL ✅ Implemented 102-02
+
 **Console Cleanup (Phase 103):**
 - LINK-DUP-01: Disable built-in Link in StarterKit to prevent duplicate with custom Link configuration ✅ Implemented 103-01
 - FAVICON-PATH-01: Use absolute path /favicon.svg for React Router compatibility ✅ Implemented 103-01
@@ -356,9 +373,18 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 103-03 (Remaining Console Log Gating) — v6.5 Console Cleanup COMPLETE
-Next: Phase 102 (Sample Data & Test Cleanup) for v6.4 milestone
-Resume file: .planning/phases/102-sample-data-test-cleanup/102-01-PLAN.md (if exists)
+Completed: Phase 102-02 (Schema-Flexible Test Fixtures) — v6.4 Hardcoded Values Cleanup COMPLETE
+Next: No pending phases. All milestones (v6.4, v6.5) are complete.
+Resume file: N/A
+
+**Phase 102-02 Complete:**
+- Added 3 schema-flexible test nodes (fixture-node-9,10,11) simulating imports without status/priority
+- Updated loadTestFixtures to use ?? instead of || for nullable fields
+- Added try-catch with fallback to 7-column minimal schema
+- Fixed PAFV tests to filter nodes without priority (deviation Rule 1)
+- Commit: 481b4ef9 (feat)
+- Requirements satisfied: TEST-01, TEST-02, TEST-03
+- v6.4 Hardcoded Values Cleanup milestone COMPLETE
 
 **Phase 101-01 Complete:**
 - Dynamic folder/status dropdowns in CardDetailModal using Phase 100 hooks
