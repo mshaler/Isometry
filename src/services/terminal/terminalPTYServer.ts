@@ -321,10 +321,22 @@ export class TerminalPTYServer {
 
   /**
    * Remove a client from session tracking (on disconnect)
+   * Kills PTY when last client disconnects to prevent zombie processes
    */
   removeClient(ws: WebSocket): void {
-    for (const session of this.sessions.values()) {
+    for (const [sessionId, session] of this.sessions) {
       session.clients.delete(ws);
+
+      // Kill PTY when last client disconnects
+      if (session.clients.size === 0 && session.pty) {
+        devLogger.debug('Last client disconnected, killing PTY', {
+          component: 'TerminalPTYServer',
+          sessionId,
+          pid: session.pty.pid
+        });
+        session.pty.kill('SIGTERM');
+        this.sessions.delete(sessionId);
+      }
     }
   }
 
