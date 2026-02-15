@@ -305,7 +305,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     facet_type: 'select',
     axis: 'C',
     source_column: 'status',
-    options: '["active", "in_progress", "completed", "blocked", "cancelled"]',
+    // Options discovered dynamically from TEST_NODES, not hardcoded
     icon: 'status',
     color: '#10B981',
     enabled: true,
@@ -317,7 +317,7 @@ export const TEST_FACETS: Partial<TestLPGFacet>[] = [
     facet_type: 'range',
     axis: 'H',
     source_column: 'priority',
-    options: '{"min": 1, "max": 5, "step": 1}',
+    // Range discovered via MIN/MAX query (Phase 101), not hardcoded
     icon: 'priority',
     color: '#F59E0B',
     enabled: true,
