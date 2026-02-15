@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 96 of 98 (Block Types & Slash Commands - Capture Writing Surface v6.2)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In progress
-Last activity: 2026-02-15 — Completed 96-01 Basic Slash Commands
+Last activity: 2026-02-15 — Completed 96-02 Callout Blocks
 
-Progress (Phase 96): [███░░░░░░░] 33% (1 of 3 plans)
-Overall: [████████░░] 97% (100 of ~130 total phases across all milestones)
+Progress (Phase 96): [██████░░░░] 67% (2 of 3 plans)
+Overall: [████████░░] 97% (101 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -35,15 +35,15 @@ Overall: [████████░░] 97% (100 of ~130 total phases across a
   - [x] 95-02: Backlinks Query Infrastructure ✓
   - [x] 95-03: Backlinks Panel in RightSidebar ✓
   - [x] 95-04: Forward Links Panel ✓
-- Phase 96: Block Types & Slash Commands (14 requirements) — IN PROGRESS (1/3 plans)
+- Phase 96: Block Types & Slash Commands (14 requirements) — IN PROGRESS (2/3 plans)
   - [x] 96-01: Basic Slash Commands (~6m) ✓
-  - [ ] 96-02: Callout Blocks
+  - [x] 96-02: Callout Blocks (~4m) ✓
   - [ ] 96-03: Additional Block Types
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 96 in progress (1/3 plans complete)
+**Current:** Phase 96 in progress (2/3 plans complete)
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -94,7 +94,7 @@ Overall: [████████░░] 97% (100 of ~130 total phases across a
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 96 (Block Types) | 1/3 | ~6m | In Progress |
+| 96 (Block Types) | 2/3 | ~5m | In Progress |
 | 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
@@ -154,6 +154,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - TMPL-SAVE-02: Save as Template button placed between Save and Minimize in header ✅ Implemented 95-04
 - SLASH-01: Use StarterKit built-in extensions (Heading, HorizontalRule, Blockquote) - no new dependencies ✅ Implemented 96-01
 - SLASH-02: Date formatting with toLocaleDateString for readable output ✅ Implemented 96-01
+- CALL-01: Extract callout-types.ts to break circular dependency between CalloutExtension.ts and CalloutNode.tsx ✅ Implemented 96-02
+- CALL-02: Use Unicode escapes for emojis to avoid encoding issues ✅ Implemented 96-02
+- CALL-03: contentEditable={false} on select prevents TipTap capturing dropdown input ✅ Implemented 96-02
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -185,13 +188,14 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Phase 96-01 COMPLETE - Basic Slash Commands
-Resume file: .planning/phases/96-block-types-slash-commands/96-01-SUMMARY.md
+Stopped at: Phase 96-02 COMPLETE - Callout Blocks
+Resume file: .planning/phases/96-block-types-slash-commands/96-02-SUMMARY.md
 
-**Phase 96-01 Summary:**
-- Added 9 new slash commands: /h1-/h6, /divider, /quote, /date
-- Uses TipTap StarterKit built-in extensions (setHeading, setHorizontalRule, setBlockquote)
-- Date command inserts formatted date (e.g., "Friday, February 14, 2026")
-- Commits: 8bdf0da8, 701467cd
+**Phase 96-02 Summary:**
+- Created CalloutExtension TipTap node with type attribute (info/warning/tip/error)
+- Built CalloutNode React component with icon and dropdown type selector
+- Added /callout slash command for easy insertion
+- Theme-aware CSS styling with distinct colored left borders
+- Commits: 5a6d5d54, 07b59916
 
-**Next step:** Continue Phase 96 with 96-02 (Callout Blocks)
+**Next step:** Continue Phase 96 with 96-03 (Additional Block Types) or start Phase 97

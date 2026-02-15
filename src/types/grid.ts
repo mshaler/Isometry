@@ -36,6 +36,10 @@ export interface DataCellData {
   logicalX: number;
   logicalY: number;
   value: string;
+  /** Number of cells aggregated at this position (for dense mode) */
+  aggregationCount?: number;
+  /** Source nodes when multiple cells are aggregated */
+  sourceNodes?: Node[];
 }
 
 /**

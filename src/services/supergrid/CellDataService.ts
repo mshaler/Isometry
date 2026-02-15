@@ -5,6 +5,7 @@
  * Handles transformation from SQLite rows to grid cell coordinates
  */
 
+import * as d3 from 'd3';
 import type { Node } from '@/types/node';
 import type { DataCellData, PAFVProjection } from '@/types/grid';
 
@@ -121,6 +122,55 @@ export class CellDataService {
 
     // Fallback for other types
     return String(rawValue);
+  }
+
+  /**
+   * Aggregate cells by position for dense mode rendering
+   *
+   * When valueDensity is 'collapsed', multiple cells at the same logical position
+   * are aggregated into a single cell with count badge.
+   *
+   * @param cells - Array of individual data cells
+   * @returns Array of aggregated cells with sourceNodes and aggregationCount
+   */
+  aggregateCellsByPosition(cells: DataCellData[]): DataCellData[] {
+    if (!cells || cells.length === 0) {
+      return [];
+    }
+
+    // Group cells by (logicalX, logicalY) position using d3.group
+    const groupedByPosition = d3.group(
+      cells,
+      (d) => d.logicalX,
+      (d) => d.logicalY
+    );
+
+    const aggregatedCells: DataCellData[] = [];
+
+    // Convert groups to aggregated cells
+    groupedByPosition.forEach((yGroups, logicalX) => {
+      yGroups.forEach((cellsAtPosition, logicalY) => {
+        if (cellsAtPosition.length === 1) {
+          // Single cell - no aggregation needed
+          aggregatedCells.push(cellsAtPosition[0]);
+        } else {
+          // Multiple cells - aggregate
+          const sourceNodes = cellsAtPosition.map((c) => c.node);
+          const aggregatedCell: DataCellData = {
+            id: `aggregated-${logicalX}-${logicalY}`,
+            node: cellsAtPosition[0].node, // Primary node (first)
+            logicalX,
+            logicalY,
+            value: `${cellsAtPosition.length} items`, // Count as display value
+            aggregationCount: cellsAtPosition.length,
+            sourceNodes,
+          };
+          aggregatedCells.push(aggregatedCell);
+        }
+      });
+    });
+
+    return aggregatedCells;
   }
 }
 
