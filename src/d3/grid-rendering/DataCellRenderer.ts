@@ -25,11 +25,13 @@ export interface CellDensityState {
  */
 export interface DataCellRenderOptions {
   /** Callback when a cell is clicked */
-  onCellClick?: (node: Node) => void;
+  onCellClick?: (node: Node, event: MouseEvent) => void;
   /** Transition duration in milliseconds (default: 300) */
   transitionDuration?: number;
   /** Density state for density-aware rendering (only valueDensity is used) */
   densityState?: CellDensityState;
+  /** Set of selected node IDs for visual highlighting */
+  selectedIds?: Set<string>;
 }
 
 /**
@@ -95,6 +97,7 @@ export class DataCellRenderer {
     options: DataCellRenderOptions
   ): void {
     const transitionDuration = options.transitionDuration ?? 300;
+    const selectedIds = options.selectedIds ?? new Set<string>();
 
     // D3 data binding with key function for stable identity
     const cellGroups = container
@@ -114,9 +117,9 @@ export class DataCellRenderer {
           group
             .append('rect')
             .attr('class', 'cell-bg')
-            .attr('fill', '#ffffff')
-            .attr('stroke', '#e5e7eb')
-            .attr('stroke-width', 1)
+            .attr('fill', d => selectedIds.has(d.node.id) ? '#dbeafe' : '#ffffff')
+            .attr('stroke', d => selectedIds.has(d.node.id) ? '#3b82f6' : '#e5e7eb')
+            .attr('stroke-width', d => selectedIds.has(d.node.id) ? 2 : 1)
             .attr('rx', 2); // Slight border radius
 
           // Cell text (truncated if too long)
@@ -137,19 +140,20 @@ export class DataCellRenderer {
                 .attr('stroke', '#3b82f6')
                 .attr('stroke-width', 2);
             })
-            .on('mouseleave', function () {
+            .on('mouseleave', function (_event, d) {
+              const isSelected = selectedIds.has(d.node.id);
               d3.select(this)
                 .select('.cell-bg')
-                .attr('fill', '#ffffff')
-                .attr('stroke', '#e5e7eb')
-                .attr('stroke-width', 1);
+                .attr('fill', isSelected ? '#dbeafe' : '#ffffff')
+                .attr('stroke', isSelected ? '#3b82f6' : '#e5e7eb')
+                .attr('stroke-width', isSelected ? 2 : 1);
             });
 
           // Click handler
           if (options.onCellClick) {
             group.on('click', function (event, d) {
               event.stopPropagation();
-              options.onCellClick!(d.node);
+              options.onCellClick!(d.node, event);
             });
           }
 
@@ -162,8 +166,15 @@ export class DataCellRenderer {
 
           return group;
         },
-        // UPDATE: Update existing elements (position will be updated below)
-        update => update,
+        // UPDATE: Update existing elements (update selection state and position)
+        update => {
+          update
+            .select('.cell-bg')
+            .attr('fill', d => selectedIds.has(d.node.id) ? '#dbeafe' : '#ffffff')
+            .attr('stroke', d => selectedIds.has(d.node.id) ? '#3b82f6' : '#e5e7eb')
+            .attr('stroke-width', d => selectedIds.has(d.node.id) ? 2 : 1);
+          return update;
+        },
         // EXIT: Remove old elements with fade-out
         exit => {
           exit
@@ -198,6 +209,7 @@ export class DataCellRenderer {
     options: DataCellRenderOptions
   ): void {
     const transitionDuration = options.transitionDuration ?? 300;
+    const selectedIds = options.selectedIds ?? new Set<string>();
 
     // D3 data binding with key function for stable identity
     const cellGroups = container
@@ -217,9 +229,9 @@ export class DataCellRenderer {
           group
             .append('circle')
             .attr('class', 'cell-circle')
-            .attr('fill', '#3b82f6')
-            .attr('stroke', '#2563eb')
-            .attr('stroke-width', 2)
+            .attr('fill', d => selectedIds.has(d.node.id) ? '#2563eb' : '#3b82f6')
+            .attr('stroke', d => selectedIds.has(d.node.id) ? '#3b82f6' : '#2563eb')
+            .attr('stroke-width', d => selectedIds.has(d.node.id) ? 3 : 2)
             .attr('r', 20); // Default radius
 
           // Count badge text
@@ -241,19 +253,20 @@ export class DataCellRenderer {
                 .attr('stroke', '#1d4ed8')
                 .attr('stroke-width', 3);
             })
-            .on('mouseleave', function () {
+            .on('mouseleave', function (_event, d) {
+              const isSelected = selectedIds.has(d.node.id);
               d3.select(this)
                 .select('.cell-circle')
-                .attr('fill', '#3b82f6')
-                .attr('stroke', '#2563eb')
-                .attr('stroke-width', 2);
+                .attr('fill', isSelected ? '#2563eb' : '#3b82f6')
+                .attr('stroke', isSelected ? '#3b82f6' : '#2563eb')
+                .attr('stroke-width', isSelected ? 3 : 2);
             });
 
           // Click handler
           if (options.onCellClick) {
             group.on('click', function (event, d) {
               event.stopPropagation();
-              options.onCellClick!(d.node);
+              options.onCellClick!(d.node, event);
             });
           }
 
@@ -266,8 +279,15 @@ export class DataCellRenderer {
 
           return group;
         },
-        // UPDATE: Update existing elements
-        update => update,
+        // UPDATE: Update existing elements (update selection state)
+        update => {
+          update
+            .select('.cell-circle')
+            .attr('fill', d => selectedIds.has(d.node.id) ? '#2563eb' : '#3b82f6')
+            .attr('stroke', d => selectedIds.has(d.node.id) ? '#3b82f6' : '#2563eb')
+            .attr('stroke-width', d => selectedIds.has(d.node.id) ? 3 : 2);
+          return update;
+        },
         // EXIT: Remove old elements with fade-out
         exit => {
           exit
