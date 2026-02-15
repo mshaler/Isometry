@@ -911,3 +911,119 @@
   align-items: center;
   justify-content: center;
 }
+
+/**
+ * Embed Toolbar Styles (Phase 98-03)
+ *
+ * View switching toolbar for embedded visualizations.
+ * Supports SuperGrid, Network, and Timeline view toggles.
+ */
+.embed-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: hsl(var(--muted));
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+  gap: 0.75rem;
+}
+
+.embed-toolbar__views {
+  display: flex;
+  gap: 0.25rem;
+  background: hsl(var(--background));
+  border-radius: calc(var(--radius) - 2px);
+  padding: 0.125rem;
+}
+
+.embed-toolbar__view-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem;
+  border: none;
+  background: transparent;
+  border-radius: calc(var(--radius) - 3px);
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  transition: all 0.15s ease;
+}
+
+.embed-toolbar__view-btn:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+
+.embed-toolbar__view-btn--active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.embed-toolbar__view-btn--active:hover {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.embed-toolbar__view-icon {
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.embed-toolbar__view-label {
+  font-weight: 500;
+}
+
+.embed-toolbar__filter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  background: hsl(var(--background));
+  border-radius: calc(var(--radius) - 2px);
+  font-size: 0.6875rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.embed-toolbar__filter-icon {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.embed-toolbar__filter-text {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* NeXTSTEP theme overrides for embed toolbar */
+[data-theme="nextstep"] .embed-toolbar {
+  background: #c0c0c0;
+  border-bottom: 1px solid #808080;
+}
+
+[data-theme="nextstep"] .embed-toolbar__views {
+  background: #e0e0e0;
+  border: 1px solid #808080;
+}
+
+[data-theme="nextstep"] .embed-toolbar__view-btn {
+  color: #000000;
+}
+
+[data-theme="nextstep"] .embed-toolbar__view-btn:hover {
+  background: #d0d0d0;
+}
+
+[data-theme="nextstep"] .embed-toolbar__view-btn--active {
+  background: #000000;
+  color: #ffffff;
+}
+
+[data-theme="nextstep"] .embed-toolbar__filter {
+  background: #e0e0e0;
+  border: 1px solid #808080;
+  color: #404040;
+}
