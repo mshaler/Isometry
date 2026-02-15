@@ -20,7 +20,7 @@
 - ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
 - ✓ **v6.2 Capture Writing Surface** - Phases 94-98 (shipped 2026-02-14)
 - ✓ **v6.3 SuperStack SQL Integration** - Phase 99 (shipped 2026-02-15)
-- ⏸️ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (paused)
+- ✓ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (shipped 2026-02-15)
 - ✓ **v6.5 Console Cleanup** - Phase 103 (shipped 2026-02-15)
 
 ## Phases
@@ -115,15 +115,15 @@ Plans:
 
 ---
 
-### Phase 102: Sample Data & Test Cleanup
+### Phase 102: Sample Data & Test Cleanup (COMPLETE)
 
 **Goal:** Remove hardcoded values from sample data and test fixtures.
 
-**Depends on:** Phase 101 (UI no longer depends on hardcoded values)
+**Depends on:** Phase 101 (UI no longer depends on hardcoded values) - COMPLETE
 
 **Requirements:** SAMPLE-01 to SAMPLE-03, TEST-01 to TEST-03 (6 total)
 
-**Plans:** 2 plans in 1 wave
+**Plans:** 2 plans in 1 wave — ALL COMPLETE
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -131,13 +131,15 @@ Plans:
 | 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` |
 
 Plans:
-- [ ] 102-01-PLAN.md — Remove status/priority from FACETS_SEED_SQL, use realistic priority values (Wave 1)
-- [ ] 102-02-PLAN.md — Remove hardcoded TEST_FACETS options, add schema-flexible loadTestFixtures (Wave 1)
+- [x] 102-01-PLAN.md — Remove status/priority from FACETS_SEED_SQL, use realistic priority values (Wave 1) ✓
+- [x] 102-02-PLAN.md — Remove hardcoded TEST_FACETS options, add schema-flexible loadTestFixtures (Wave 1) ✓
 
-**Success Criteria:**
-1. FACETS_SEED_SQL seeds only universal facets (name, created_at, modified_at, folder, tags)
-2. Sample data does not assume priority/status exist
-3. Test fixtures work with minimal schema assumptions
+**Success Criteria:** ALL MET
+1. ✓ FACETS_SEED_SQL seeds only universal facets (folder, tags, created, modified, due, name, location)
+2. ✓ Sample data does not assume priority/status exist
+3. ✓ Test fixtures work with minimal schema assumptions
+
+**Completed:** 2026-02-15
 
 ---
 
@@ -563,8 +565,9 @@ Plans:
 | 99. SuperStack SQL | v6.3 | 5/5 | Complete | 2026-02-15 |
 | 100. Settings & Discovery | v6.4 | 2/2 | Complete | 2026-02-15 |
 | 101. UI Integration | v6.4 | 2/2 | Complete | 2026-02-15 |
-| 103. Console Cleanup | v6.5 | 0/3 | Planning | - |
+| 102. Sample Data & Test Cleanup | v6.4 | 2/2 | Complete | 2026-02-15 |
+| 103. Console Cleanup | v6.5 | 2/2 | Complete | 2026-02-15 |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (v6.5 Console Cleanup planned)*
+*Last updated: 2026-02-15 (v6.4 Hardcoded Values Cleanup complete)*
