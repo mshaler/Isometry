@@ -110,7 +110,9 @@ function App() {
 
                     {/* Footer with instructions */}
                     <div className="h-10 bg-gray-800 border-t border-gray-700 flex items-center px-4 text-xs text-gray-400">
-                      <span>Cmd+1 (Capture) | Cmd+2 (Shell) | Cmd+3 (Preview) | Cmd+S (Save) | Type / for commands</span>
+                      <span>
+                        Cmd+1 (Capture) | Cmd+2 (Shell) | Cmd+3 (Preview) | Cmd+S (Save) | / for commands
+                      </span>
                     </div>
                   </div>
                 </NotebookProvider>

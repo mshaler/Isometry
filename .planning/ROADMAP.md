@@ -18,7 +18,7 @@
 - **v5.2 Cards & Connections** - Phase 84 (shipped 2026-02-13)
 - 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
 - ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
-- 🚧 **v6.2 Capture Writing Surface** - Phases 94-98 (in progress)
+- ✓ **v6.2 Capture Writing Surface** - Phases 94-98 (shipped 2026-02-14)
 
 ## Phases
 
@@ -202,7 +202,8 @@ Plans:
 
 </details>
 
-## v6.2 Capture Writing Surface (In Progress)
+<details>
+<summary>v6.2 Capture Writing Surface (Phases 94-98) - SHIPPED 2026-02-14</summary>
 
 **Milestone Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
 
@@ -285,10 +286,12 @@ Plans:
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 98-01-PLAN.md — Embed TipTap extension, React NodeView, and slash commands (EMBED-01, EMBED-03, EMBED-04)
-- [ ] 98-02-PLAN.md — Live data updates with dataVersion reactivity and LATCH filters (EMBED-02, EMBED-05)
-- [ ] 98-03-PLAN.md — View-switching toolbar for embeds (EMBED-06)
-- [ ] 98-04-PLAN.md — Performance optimization for 60fps with embeds (POLISH-03)
+- [x] 98-01-PLAN.md — Embed TipTap extension, React NodeView, and slash commands (EMBED-01, EMBED-03, EMBED-04)
+- [x] 98-02-PLAN.md — Live data updates with dataVersion reactivity and LATCH filters (EMBED-02, EMBED-05)
+- [x] 98-03-PLAN.md — View-switching toolbar for embeds (EMBED-06)
+- [x] 98-04-PLAN.md — Performance optimization for 60fps with embeds (POLISH-03)
+
+</details>
 
 ## v6.0 Interactive Shell (Deferred)
 
@@ -384,8 +387,8 @@ Plans:
 | 95. Data Layer & Backlinks | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
 | 97. Inline Properties | v6.2 | 2/2 | Complete | 2026-02-14 |
-| 98. Isometry Embeds & Polish | v6.2 | 0/4 | Planned | - |
+| 98. Isometry Embeds & Polish | v6.2 | 4/4 | Complete | 2026-02-14 |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-14 (Phase 98 planned: 4 plans in 3 waves)*
+*Last updated: 2026-02-14 (v6.2 shipped: Phase 98 complete, 4/4 plans)*
