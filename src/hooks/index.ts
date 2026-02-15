@@ -30,6 +30,7 @@ export { useWebSocketConnection } from './useWebSocketConnection';
 export type { UseWebSocketConnectionResult } from './useWebSocketConnection';
 export { useCommandHistory } from './useCommandHistory';
 export type { UseCommandHistoryResult } from './useCommandHistory';
+export { useClaudeAI } from './useClaudeAI';
 
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
@@ -43,7 +44,7 @@ export { useNotebookPerformance } from './performance/useNotebookPerformance';
 export type { OptimizationPlan } from './performance/useRenderingOptimization';
 export type { VirtualLiveQueryOptions } from './performance/useVirtualLiveQuery';
 export type { PerformanceMetrics } from '../types/performance';
-export type { PerformanceAlert, OptimizationSuggestion } from '../utils/performance/performance-monitor';
+export type { SimplePerformanceAlert as PerformanceAlert, OptimizationSuggestion } from '../utils/performance/performance-monitor';
 export type { AnalyticsMetrics } from '../utils/performance/performance-monitor';
 export type { LiveDataPerformanceMetrics } from './database/useLiveData';
 

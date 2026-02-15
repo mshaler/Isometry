@@ -3,6 +3,7 @@ import { Terminal, Minimize2, Maximize2, Circle, Bot, Settings, Search } from 'l
 import { useTerminal, useCommandHistory } from '@/hooks';
 import { TerminalProvider } from '../../context/TerminalContext';
 import { GSDInterface } from '../gsd/GSDInterface';
+import { ClaudeAIChat } from '../claude-ai';
 import { useGSDTerminalIntegration } from '../../hooks/useGSDTerminalIntegration';
 import { devLogger } from '../../utils/logging/dev-logger';
 // import { getClaudeCodeDispatcher } from '../../services/claudeCodeWebSocketDispatcher';
@@ -280,14 +281,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
 
         {/* Claude AI Tab - MCP Assistant */}
         {activeTab === 'claude-ai' && (
-          <div className="flex-1 flex items-center justify-center text-gray-400">
-            <div className="text-center">
-              <Bot size={48} className="mx-auto mb-3 text-gray-600" />
-              <div className="font-medium mb-1 text-gray-300">Claude AI Assistant</div>
-              <div className="text-sm mb-3">AI-powered assistance with MCP integration</div>
-              <div className="text-xs">Coming soon: Direct AI conversation interface</div>
-            </div>
-          </div>
+          <ClaudeAIChat className="flex-1" />
         )}
 
         {/* GSD GUI Tab - Getting Shit Done interface */}
