@@ -1,6 +1,51 @@
 # Project Milestones: Isometry
 
-## v6.2 Capture Writing Surface (Planned)
+## v6.4 Hardcoded Values Cleanup (In Progress)
+
+**Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+
+**Phases planned:** 100-102 (3 phases, 22 requirements)
+- Phase 100: Settings & Discovery Layer (8 requirements)
+- Phase 101: UI Integration (8 requirements)
+- Phase 102: Sample Data & Test Cleanup (6 requirements)
+
+**What v6.4 Delivers:**
+- Settings registry in SQLite for configuration values
+- Dynamic facet value discovery from actual data
+- UI components using discovery instead of hardcoded options
+- Property classifier handling missing columns gracefully
+- Clean sample data and test fixtures with minimal schema assumptions
+
+**Hardcoded values to eliminate:**
+- `sample-data.ts`: FACETS_SEED_SQL seeding status/priority facets
+- `CardDetailModal.tsx`: Hardcoded folder/status options and colors
+- `LATCHFilter.tsx`: Hardcoded priority range [1, 10]
+- `property-classifier.ts`: Numeric defaults for priority/importance/sort_order
+- `fixtures.ts`: TEST_FACETS/TEST_NODES with hardcoded status/priority values
+
+**Reference:** MILESTONE-CONTEXT.md
+
+**Started:** 2026-02-15
+**Status:** Phase 100 awaiting plan execution
+
+---
+
+## v6.3 SuperStack SQL Integration (Shipped: 2026-02-15)
+
+**Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
+
+**Phases completed:** 99 (single phase, 5 plans)
+
+**Key accomplishments:**
+- SQL query builders with json_each() and strftime() support
+- Query utilities for facet chain creation and validation
+- Integration tests with real sql.js database
+- useSuperStackData React hook for data fetching
+- Demo component with live data rendering
+
+---
+
+## v6.2 Capture Writing Surface (Shipped: 2026-02-14)
 
 **Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, and Isometry-native embeds.
 

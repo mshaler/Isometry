@@ -19,11 +19,79 @@
 - 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
 - ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
 - ✓ **v6.2 Capture Writing Surface** - Phases 94-98 (shipped 2026-02-14)
-- 🏗️ **v6.3 SuperStack SQL Integration** - Phase 99 (current)
+- ✓ **v6.3 SuperStack SQL Integration** - Phase 99 (shipped 2026-02-15)
+- 🏗️ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (current)
 
 ## Phases
 
-### Phase 99: SuperStack SQL Integration
+### Phase 100: Settings & Discovery Layer
+
+**Goal:** Create settings registry and facet value discovery queries for schema-on-read architecture.
+
+**Depends on:** Phase 99 (sql.js foundation verified)
+
+**Requirements:** SETTINGS-01 to SETTINGS-04, DISCOVER-01 to DISCOVER-04 (8 total)
+
+**Plans:** 2 plans
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, schema migration |
+| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts` |
+
+**Success Criteria:**
+1. Settings table exists and CRUD operations work
+2. Facet discovery queries return distinct values from actual data
+3. Results cached via TanStack Query
+
+---
+
+### Phase 101: UI Integration
+
+**Goal:** Update UI components to use discovery queries instead of hardcoded values.
+
+**Depends on:** Phase 100 (settings and discovery ready)
+
+**Requirements:** UI-01 to UI-05, CLASSIFY-01 to CLASSIFY-03 (8 total)
+
+**Plans:** 2 plans
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` |
+| 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` |
+
+**Success Criteria:**
+1. CardDetailModal dropdowns populated from data
+2. Status colors from settings or neutral defaults
+3. LATCHFilter priority range discovered dynamically
+4. Property classifier handles missing columns without hardcoded defaults
+
+---
+
+### Phase 102: Sample Data & Test Cleanup
+
+**Goal:** Remove hardcoded values from sample data and test fixtures.
+
+**Depends on:** Phase 101 (UI no longer depends on hardcoded values)
+
+**Requirements:** SAMPLE-01 to SAMPLE-03, TEST-01 to TEST-03 (6 total)
+
+**Plans:** 2 plans
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 102-01 | Sample Data | SAMPLE-01 to SAMPLE-03 | Updated `src/db/sample-data.ts` |
+| 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` |
+
+**Success Criteria:**
+1. FACETS_SEED_SQL seeds only universal facets (name, created_at, modified_at, folder, tags)
+2. Sample data does not assume priority/status exist
+3. Test fixtures work with minimal schema assumptions
+
+---
+
+### Phase 99: SuperStack SQL Integration (COMPLETE)
 
 **Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
 

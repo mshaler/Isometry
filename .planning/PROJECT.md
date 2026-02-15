@@ -33,24 +33,33 @@ Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 
 ### v5.2 Cards & Connections (SHIPPED)
 Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
 
-## Current Milestone: v6.3 SuperStack SQL Integration
+## Current Milestone: v6.4 Hardcoded Values Cleanup
+
+**Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+
+**Problem:** Hardcoded LATCH filter values have crept into the codebase, violating schema-on-read principles where metadata should come from source data.
+
+**Target changes:**
+- **Settings Registry** — SQLite `settings` table for configuration key-value pairs
+- **Discovery Queries** — Dynamic facet value discovery from actual data
+- **UI Integration** — CardDetailModal, LATCHFilter use discovery over hardcoded values
+- **Property Classifier** — Handle missing columns gracefully without assumptions
+- **Test Fixtures** — Minimal schema assumptions, realistic test data
+
+**Hardcoded values to eliminate:**
+- `sample-data.ts`: FACETS_SEED_SQL seeding status/priority facets
+- `CardDetailModal.tsx`: Hardcoded folder/status options and status colors
+- `LATCHFilter.tsx`: Hardcoded priority range [1, 10]
+- `property-classifier.ts`: Numeric defaults for priority/importance/sort_order
+- `fixtures.ts`: TEST_FACETS/TEST_NODES with hardcoded status/priority values
+
+**Reference:** `MILESTONE-CONTEXT.md`
+
+## Previous Milestone: v6.3 SuperStack SQL Integration (COMPLETE)
 
 **Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
 
-**Target features:**
-- **SQL Query Builders** — `header-discovery.ts` for GROUP BY queries with `json_each()` multi-select support, `strftime()` time extraction
-- **Query Utilities** — Time facet chains, category chains, validation, complexity estimation
-- **React Hook** — `useSuperStackData` for data fetching, tree building, loading states, refetch
-- **Integration Tests** — Real sql.js database tests verifying queries, tree building, performance
-- **Demo Component** — `SuperStackDemo.tsx` showing live data rendering with interactions
-
-**Design Principles:**
-- Headers built from actual GROUP BY queries, not hardcoded mock data
-- Multi-select facets (tags) explode via `json_each()`
-- Time facets extract via `strftime()`
-- Performance target: <100ms for 10K cards
-
-**Reference:** `superstack-phase2-sql-integration.md`
+**Shipped:** 2026-02-15 (Phase 99, 5 plans)
 
 ## Previous Milestone: v6.2 Capture Writing Surface (COMPLETE)
 
@@ -344,4 +353,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-15 — Milestone v6.3 SuperStack SQL Integration started*
+*Last updated: 2026-02-15 — Milestone v6.4 Hardcoded Values Cleanup started*

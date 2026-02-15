@@ -3,7 +3,51 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
-## v6.3 Requirements — SuperStack SQL Integration
+## v6.4 Requirements — Hardcoded Values Cleanup
+
+Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+
+### Settings Registry (Phase 100)
+
+- [ ] **SETTINGS-01**: `settings` table created with `key TEXT PRIMARY KEY`, `value TEXT` (JSON), timestamps
+- [ ] **SETTINGS-02**: `getSetting(key)` returns parsed JSON value or null
+- [ ] **SETTINGS-03**: `setSetting(key, value)` upserts with timestamp update
+- [ ] **SETTINGS-04**: Settings seeded on first database initialization (empty defaults)
+
+### Discovery Queries (Phase 100)
+
+- [ ] **DISCOVER-01**: `discoverFolderValues()` returns `SELECT DISTINCT folder FROM cards WHERE folder IS NOT NULL`
+- [ ] **DISCOVER-02**: `discoverStatusValues()` returns `SELECT DISTINCT status FROM cards WHERE status IS NOT NULL`
+- [ ] **DISCOVER-03**: `discoverFacetValues(column)` generic query for any facet column
+- [ ] **DISCOVER-04**: Results cached via TanStack Query with 5-minute stale time
+
+### UI Integration (Phase 101)
+
+- [ ] **UI-01**: CardDetailModal folder dropdown populated from discovery query
+- [ ] **UI-02**: CardDetailModal status dropdown populated from discovery query
+- [ ] **UI-03**: Status colors derived from settings or use neutral default
+- [ ] **UI-04**: LATCHFilter priority range discovered from data or settings
+- [ ] **UI-05**: Empty states shown when no values discovered
+
+### Property Classifier Updates (Phase 101)
+
+- [ ] **CLASSIFY-01**: `columnHasData()` handles all numeric columns without hardcoded defaults
+- [ ] **CLASSIFY-02**: Remove hardcoded `numericColumnsWithDefaults` object
+- [ ] **CLASSIFY-03**: Missing columns return false gracefully (no assumptions)
+
+### Sample Data Cleanup (Phase 102)
+
+- [ ] **SAMPLE-01**: Remove FACETS_SEED_SQL status/priority facets (seed only universal facets)
+- [ ] **SAMPLE-02**: SAMPLE_NOTES use null or dynamic priority (not hardcoded 0-5)
+- [ ] **SAMPLE-03**: Sample data reflects realistic schema-on-read imports
+
+### Test Fixtures Cleanup (Phase 102)
+
+- [ ] **TEST-01**: TEST_FACETS avoid status options hardcoding (use placeholder or remove)
+- [ ] **TEST-02**: TEST_NODES status/priority values optional or removed
+- [ ] **TEST-03**: loadTestFixtures handles missing columns gracefully
+
+## v6.3 Requirements — SuperStack SQL Integration (COMPLETE)
 
 Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
 

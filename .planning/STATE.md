@@ -6,19 +6,42 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.0 Interactive Shell — Phase 87 GSD File Synchronization
+**Current focus:** v6.4 Hardcoded Values Cleanup — Phase 100 Settings & Discovery Layer
 
 ## Current Position
 
-Phase: 87 (GSD File Synchronization)
-Plan: 5 of 5 complete
-Status: Phase complete
-Last activity: 2026-02-15 — Completed 87-05-PLAN.md (Conflict Detection & Resolution)
+Phase: 100 (Settings & Discovery Layer)
+Plan: 0 of 2 complete
+Status: Milestone started, awaiting plan execution
+Last activity: 2026-02-15 — Created v6.4 milestone documents
 
-Progress (Phase 87): [██████████] 100%
-Overall: Phase 87 complete, Phase 88 (Integration & Polish) next
+Progress (Phase 100): [░░░░░░░░░░] 0%
+Overall: Milestone v6.4 started, Phase 100 (Settings & Discovery Layer) first
 
 ## Active Milestones
+
+### v6.4 Hardcoded Values Cleanup — IN PROGRESS
+
+**Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+
+**Status:** 🏗️ IN PROGRESS
+
+**Plans:**
+| Plan | Focus | Requirements | Deliverables | Status |
+|------|-------|--------------|--------------|--------|
+| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, schema migration | ⏳ |
+| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts` | ⏳ |
+| 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` | ⏳ |
+| 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` | ⏳ |
+| 102-01 | Sample Data | SAMPLE-01 to SAMPLE-03 | Updated `src/db/sample-data.ts` | ⏳ |
+| 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` | ⏳ |
+
+**Phases:**
+- Phase 100: Settings & Discovery Layer — ⏳ IN PROGRESS
+- Phase 101: UI Integration — ⏳ PENDING
+- Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
+
+**Total requirements:** 22 | **Status:** IN PROGRESS
 
 ### v6.3 SuperStack SQL Integration — COMPLETE
 
