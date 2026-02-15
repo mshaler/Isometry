@@ -169,10 +169,10 @@ export function buildNestedHeaderData(
 
   // POLISH-03: Performance degradation - truncate if too many headers
   if (allHeaders.length > MAX_VISIBLE_HEADERS) {
-    console.warn(
-      `[NestedHeaderRenderer] Header count (${allHeaders.length}) exceeds ` +
-      `MAX_VISIBLE_HEADERS (${MAX_VISIBLE_HEADERS}). Truncating.`
-    );
+    superGridLogger.debug('Headers truncated', {
+      original: allHeaders.length,
+      truncated: MAX_VISIBLE_HEADERS
+    });
 
     // Prioritize parent headers (lower levels)
     const sorted = [...allHeaders].sort((a, b) => a.level - b.level);

@@ -17,14 +17,22 @@ import React, { useMemo, useCallback } from 'react';
 import { usePAFV } from '@/hooks';
 import type { LATCHAxis, AxisMapping } from '@/types/pafv';
 import type { Node } from '@/types/node';
+import type { HeaderTree, HeaderNode as TreeHeaderNode } from '@/superstack/types/superstack';
+import { superGridLogger } from '@/utils/dev-logger';
 
 interface SuperStackProps {
   /** Orientation: column headers (horizontal) or row headers (vertical) */
   orientation: 'horizontal' | 'vertical';
-  /** Nodes data to create hierarchy from */
-  nodes: Node[];
+  /** Nodes data to create hierarchy from (legacy mode) */
+  nodes?: Node[];
+  /** SQL-driven HeaderTree (Phase 99 - preferred) */
+  headerTree?: HeaderTree | null;
   /** Callback when header cell is clicked */
   onHeaderClick?: (level: number, value: string, axis: LATCHAxis) => void;
+  /** Callback when header node is toggled (collapse/expand) */
+  onHeaderToggle?: (headerId: string, collapsed: boolean) => void;
+  /** Set of collapsed header IDs */
+  collapsedIds?: Set<string>;
   /** Enable drag-and-drop axis reordering */
   enableDragDrop?: boolean;
   /** Maximum nesting levels to display */
@@ -57,11 +65,31 @@ interface HeaderValue {
 export function SuperStack({
   orientation,
   nodes,
+  headerTree,
   onHeaderClick,
+  onHeaderToggle,
+  collapsedIds = new Set(),
   enableDragDrop = false,
   maxLevels = 4
 }: SuperStackProps) {
   const { state: pafvState } = usePAFV();
+
+  // Map LATCH axis letter to full name
+  const axisLetterToName: Record<string, LATCHAxis> = {
+    'L': 'location',
+    'A': 'alphabet',
+    'T': 'time',
+    'C': 'category',
+    'H': 'hierarchy',
+  };
+
+  // Debug logging for header tree
+  superGridLogger.debug(`headerTree (${orientation})`, {
+    hasTree: !!headerTree,
+    rootCount: headerTree?.roots?.length ?? 0,
+    facetCount: headerTree?.facets?.length ?? 0,
+    leafCount: headerTree?.leafCount ?? 0,
+  });
 
   // Extract active axis mappings for this orientation
   const activeMappings = useMemo(() => {
@@ -80,7 +108,7 @@ export function SuperStack({
 
   // Build hierarchical header data from nodes
   const headerLevels = useMemo(() => {
-    if (!activeMappings.length || !nodes.length) return [];
+    if (!activeMappings.length || !nodes?.length) return [];
 
     // Group nodes by hierarchy levels
     const levels: HeaderLevel[] = [];
@@ -96,7 +124,7 @@ export function SuperStack({
       // Get unique values for this axis/facet from nodes
       const valueGroups = new Map<string, { nodes: Node[], children: Set<string> }>();
 
-      nodes.forEach(node => {
+      nodes?.forEach(node => {
         const value = extractNodeValue(node, mapping.axis, mapping.facet);
         if (!valueGroups.has(value)) {
           valueGroups.set(value, { nodes: [], children: new Set() });
@@ -147,7 +175,131 @@ export function SuperStack({
     e.dataTransfer.effectAllowed = 'move';
   }, [enableDragDrop]);
 
-  // Render nothing if no mappings
+  // ============================================================
+  // HeaderTree-based rendering (Phase 99 - SQL-driven headers)
+  // ============================================================
+  if (headerTree && headerTree.roots.length > 0) {
+    // Flatten tree by depth for level-based rendering
+    const flattenByDepth = (treeNodes: TreeHeaderNode[]): Map<number, TreeHeaderNode[]> => {
+      const result = new Map<number, TreeHeaderNode[]>();
+
+      const traverse = (node: TreeHeaderNode, currentDepth: number) => {
+        if (!result.has(currentDepth)) {
+          result.set(currentDepth, []);
+        }
+        result.get(currentDepth)!.push(node);
+
+        // Only traverse children if not collapsed
+        if (!collapsedIds.has(node.id) && node.children.length > 0) {
+          node.children.forEach(child => traverse(child, currentDepth + 1));
+        }
+      };
+
+      treeNodes.forEach(root => traverse(root, 0));
+      return result;
+    };
+
+    const nodesByDepth = flattenByDepth(headerTree.roots);
+    const depths = Array.from(nodesByDepth.keys()).sort((a, b) => a - b);
+
+    superGridLogger.debug(`SQL-driven rendering (${orientation})`, {
+      depths,
+      nodesAtDepth0: nodesByDepth.get(0)?.length ?? 0,
+      firstFewLabels: nodesByDepth.get(0)?.slice(0, 10).map(n => n.label),
+      totalLeaves: headerTree.leafCount,
+    });
+
+    // Debug: Log when rendering a large number of headers
+    const headerCount = nodesByDepth.get(0)?.length ?? 0;
+    if (headerCount > 1000) {
+      superGridLogger.debug(`High header count (${orientation})`, { headerCount, threshold: 1000 });
+    }
+
+    // Force horizontal text rendering
+    const forceHorizontalText: React.CSSProperties = {
+      writingMode: 'horizontal-tb',
+      textOrientation: 'mixed',
+      direction: 'ltr',
+    };
+
+    // Handle toggle click
+    const handleToggleClick = (e: React.MouseEvent, node: TreeHeaderNode) => {
+      e.stopPropagation();
+      const isCollapsed = collapsedIds.has(node.id);
+      onHeaderToggle?.(node.id, !isCollapsed);
+    };
+
+    return (
+      <div
+        className={`supergrid-stack supergrid-stack--${orientation} supergrid-stack--sql-driven`}
+        style={forceHorizontalText}
+      >
+        {depths.map(depth => {
+          const nodesAtDepth = nodesByDepth.get(depth) || [];
+          // Get facet info from first node at this depth
+          const facet = nodesAtDepth[0]?.facet;
+          const axisName = facet ? axisLetterToName[facet.axis] || 'category' : 'category';
+
+          return (
+            <div
+              key={`depth-${depth}`}
+              className={`supergrid-stack__level supergrid-stack__level--${depth}`}
+              data-axis={axisName}
+              data-facet={facet?.sourceColumn}
+              style={forceHorizontalText}
+            >
+              {nodesAtDepth.map((node, index) => {
+                const hasChildren = node.children.length > 0;
+                const isCollapsed = collapsedIds.has(node.id);
+
+                return (
+                  <div
+                    key={`${depth}-${node.id}-${index}`}
+                    className={`supergrid-stack__header ${hasChildren ? 'supergrid-stack__header--expandable' : ''} ${isCollapsed ? 'supergrid-stack__header--collapsed' : ''}`}
+                    style={{
+                      [orientation === 'horizontal' ? 'gridColumnEnd' : 'gridRowEnd']: `span ${node.span}`,
+                      ...forceHorizontalText
+                    }}
+                    draggable={enableDragDrop}
+                    onDragStart={(e) => handleDragStart(e, depth)}
+                    onClick={() => onHeaderClick?.(depth, node.value, axisName)}
+                  >
+                    {/* Collapse/expand toggle */}
+                    {hasChildren && (
+                      <button
+                        className="supergrid-stack__toggle"
+                        onClick={(e) => handleToggleClick(e, node)}
+                        aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                      >
+                        {isCollapsed ? '▶' : '▼'}
+                      </button>
+                    )}
+                    <span className="supergrid-stack__header-text" style={forceHorizontalText}>
+                      {node.label}
+                    </span>
+                    {node.aggregate?.count && node.aggregate.count > 0 && (
+                      <span className="supergrid-stack__header-count">
+                        {node.aggregate.count}
+                      </span>
+                    )}
+                    <span className="supergrid-stack__header-axis">
+                      {facet?.axis || 'C'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // ============================================================
+  // Legacy rendering (nodes-based, kept for backward compatibility)
+  // ============================================================
+
+  // Render nothing if no mappings (and no headerTree)
   if (!headerLevels.length) {
     return (
       <div className={`supergrid-stack supergrid-stack--${orientation} supergrid-stack--empty`}>
