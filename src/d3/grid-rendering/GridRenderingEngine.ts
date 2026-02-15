@@ -11,10 +11,9 @@ import type {
 } from '../../types/grid-core';
 import type {
   PAFVProjection,
-  AxisProjection,
   GridHeaders,
 } from '../../types/grid';
-import type { EncodingConfig, LATCHAxis } from '../../types/pafv';
+import type { EncodingConfig } from '../../types/pafv';
 import type { JanusDensityState, ExtentDensityMode } from '../../types/density-control';
 import { SuperGridHeaders, type HeaderClickEvent } from '../SuperGridHeaders';
 import { HeaderLayoutService } from '../../services/supergrid/HeaderLayoutService';
@@ -51,9 +50,9 @@ export class GridRenderingEngine {
   // Current rendering state
   private currentData: GridData | null = null;
   private currentProjection: PAFVProjection | null = null;
-  private effectiveProjection: PAFVProjection | null = null;
   private currentHeaders: GridHeaders | null = null;
   private isHeadersInitialized = false;
+  private renderedCards: Array<Record<string, unknown>> = [];
 
   // Encoding state
   private colorEncoding: EncodingConfig | null = null;
@@ -119,6 +118,16 @@ export class GridRenderingEngine {
    */
   public updateContainer(container: d3.Selection<SVGElement, unknown, null, undefined>): void {
     this.container = container;
+    this.superGridHeaders = null;
+    this.isHeadersInitialized = false;
+    this.nestedHeaderRenderer = new NestedHeaderRenderer(container, {
+      rowHeaderWidth: this.config.rowHeaderWidth,
+      cardHeight: this.config.cardHeight,
+      cardWidth: this.config.cardWidth,
+      headerHeight: this.config.headerHeight,
+      padding: this.config.padding,
+      animationDuration: this.config.animationDuration,
+    });
   }
 
   /**
@@ -127,7 +136,6 @@ export class GridRenderingEngine {
    */
   public setProjection(projection: PAFVProjection | null): void {
     this.currentProjection = projection;
-    this.effectiveProjection = projection;
     superGridLogger.debug('GridRenderingEngine: projection set', {
       xAxis: projection?.xAxis?.facet || 'none',
       yAxis: projection?.yAxis?.facet || 'none',
@@ -139,137 +147,6 @@ export class GridRenderingEngine {
    */
   public getProjection(): PAFVProjection | null {
     return this.currentProjection;
-  }
-
-  /**
-   * Get projection currently used for rendering (after fallback heuristics).
-   */
-  private getActiveProjection(): PAFVProjection | null {
-    return this.effectiveProjection ?? this.currentProjection;
-  }
-
-  /**
-   * Resolve an effective projection for the current cards.
-   * If a selected facet is mostly null, it falls back to a better-populated facet
-   * with higher cardinality on the same LATCH axis.
-   */
-  private resolveProjectionFallback(cards: unknown[]): PAFVProjection | null {
-    if (!this.currentProjection) {
-      return null;
-    }
-
-    const xAxis = this.resolveAxisFallback(this.currentProjection.xAxis, cards, 'x');
-    const yAxis = this.resolveAxisFallback(this.currentProjection.yAxis, cards, 'y');
-
-    return {
-      ...this.currentProjection,
-      xAxis,
-      yAxis,
-    };
-  }
-
-  private resolveAxisFallback(
-    axisProjection: AxisProjection | null,
-    cards: unknown[],
-    plane: 'x' | 'y'
-  ): AxisProjection | null {
-    if (!axisProjection || cards.length === 0) {
-      return axisProjection;
-    }
-
-    const selectedFacets = axisProjection.facets?.length
-      ? axisProjection.facets
-      : [axisProjection.facet];
-
-    const used = new Set<string>();
-    const resolvedFacets: string[] = [];
-
-    for (const selectedFacet of selectedFacets) {
-      const selectedStats = this.computeFacetStats(cards, selectedFacet);
-      let chosenFacet = selectedFacet;
-      const isMostlyNull = selectedStats.populatedRatio < 0.35;
-
-      if (isMostlyNull) {
-        const candidates = this.getAxisFallbackCandidates(axisProjection.axis)
-          .filter((candidate) => !used.has(candidate))
-          .filter((candidate) => candidate !== selectedFacet);
-
-        const best = this.pickBestFallbackFacet(cards, candidates);
-        if (best) {
-          chosenFacet = best;
-          const bestStats = this.computeFacetStats(cards, best);
-          superGridLogger.debug('Axis facet fallback applied', {
-            plane,
-            axis: axisProjection.axis,
-            fromFacet: selectedFacet,
-            toFacet: best,
-            selectedPopulatedRatio: selectedStats.populatedRatio,
-            fallbackPopulatedRatio: bestStats.populatedRatio,
-            fallbackUniqueValues: bestStats.uniqueCount,
-          });
-        }
-      }
-
-      used.add(chosenFacet);
-      resolvedFacets.push(chosenFacet);
-    }
-
-    if (resolvedFacets.length === 0) {
-      return axisProjection;
-    }
-
-    return {
-      ...axisProjection,
-      facet: resolvedFacets[0] ?? axisProjection.facet,
-      facets: resolvedFacets.length > 1 ? resolvedFacets : undefined,
-    };
-  }
-
-  private computeFacetStats(cards: unknown[], facet: string): {
-    populatedCount: number;
-    populatedRatio: number;
-    uniqueCount: number;
-  } {
-    const values = cards
-      .map((card) => this.resolveFacetValue(card as Record<string, unknown>, facet))
-      .filter((value): value is string => value != null);
-    const populatedCount = values.length;
-    const populatedRatio = cards.length > 0 ? populatedCount / cards.length : 0;
-    const uniqueCount = new Set(values).size;
-    return { populatedCount, populatedRatio, uniqueCount };
-  }
-
-  private pickBestFallbackFacet(cards: unknown[], candidates: string[]): string | null {
-    let bestFacet: string | null = null;
-    let bestScore = -1;
-
-    for (const candidate of candidates) {
-      const stats = this.computeFacetStats(cards, candidate);
-      if (stats.populatedRatio < 0.35 || stats.uniqueCount === 0) {
-        continue;
-      }
-      const score = stats.populatedRatio * stats.uniqueCount;
-      if (score > bestScore) {
-        bestScore = score;
-        bestFacet = candidate;
-      }
-    }
-
-    return bestFacet;
-  }
-
-  private getAxisFallbackCandidates(axis: LATCHAxis): string[] {
-    const axisDefaults: Record<LATCHAxis, string[]> = {
-      location: ['location_name', 'location_address', 'latitude', 'longitude'],
-      alphabet: ['name', 'summary', 'content'],
-      time: ['created_at', 'modified_at', 'due_at', 'event_start', 'event_end', 'year', 'quarter', 'month', 'day'],
-      category: ['folder', 'status', 'tags', 'tag', 'node_type'],
-      hierarchy: ['priority', 'importance', 'sort_order'],
-    };
-
-    // Keep fallback candidates axis-scoped to avoid selecting technical identifiers
-    // like "id" purely due to high cardinality.
-    return [...axisDefaults[axis]];
   }
 
   /**
@@ -541,13 +418,17 @@ export class GridRenderingEngine {
    * Update color scale based on current encoding and data
    */
   private updateColorScale(): void {
-    if (!this.colorEncoding || !this.currentData?.cards) {
+    const cards = this.renderedCards.length
+      ? this.renderedCards
+      : (this.currentData?.cards as Array<Record<string, unknown>> | undefined) ?? [];
+
+    if (!this.colorEncoding || cards.length === 0) {
       this.colorScale = null;
       return;
     }
 
     const { property, type } = this.colorEncoding;
-    const values = this.currentData.cards
+    const values = cards
       .map((c) => (c as Record<string, unknown>)[property])
       .filter((v) => v != null);
 
@@ -579,15 +460,14 @@ export class GridRenderingEngine {
    * Generate column and row headers from card data and projection
    */
   private generateProjectionHeaders(cards: unknown[]): GridHeaders {
-    const projection = this.getActiveProjection();
-    if (!projection) {
+    if (!this.currentProjection) {
       return { columns: [], rows: [] };
     }
 
     // NOTE: X-Plane (labeled "Rows" in Navigator) → rows (vertical headers on left)
     //       Y-Plane (labeled "Columns" in Navigator) → columns (horizontal headers at top)
-    const xFacet = projection.xAxis?.facet;
-    const yFacet = projection.yAxis?.facet;
+    const xFacet = this.currentProjection.xAxis?.facet;
+    const yFacet = this.currentProjection.yAxis?.facet;
 
     // X-Plane → rows (vertical headers on left side)
     const rows: string[] = xFacet
@@ -653,15 +533,14 @@ export class GridRenderingEngine {
     card: unknown,
     headers: GridHeaders
   ): { row: number; col: number } {
-    const projection = this.getActiveProjection();
-    if (!projection) {
+    if (!this.currentProjection) {
       return { row: -1, col: -1 };
     }
 
     // NOTE: X-Plane (labeled "Rows" in Navigator) → row position
     //       Y-Plane (labeled "Columns" in Navigator) → col position
-    const xFacet = projection.xAxis?.facet;
-    const yFacet = projection.yAxis?.facet;
+    const xFacet = this.currentProjection.xAxis?.facet;
+    const yFacet = this.currentProjection.yAxis?.facet;
     const cardRecord = card as Record<string, unknown>;
 
     // X-Plane → row position (vertical axis)
@@ -692,14 +571,13 @@ export class GridRenderingEngine {
    * Handles both single-facet and stacked (multi-facet) axes
    */
   private computeAllPositions(cards: unknown[]): void {
-    const projection = this.getActiveProjection();
-    if (!projection) {
+    if (!this.currentProjection) {
       return;
     }
 
     // Check if axes are stacked (multiple facets)
-    const xFacets = projection.xAxis?.facets;
-    const yFacets = projection.yAxis?.facets;
+    const xFacets = this.currentProjection.xAxis?.facets;
+    const yFacets = this.currentProjection.yAxis?.facets;
     const xIsStacked = xFacets && xFacets.length > 1;
     const yIsStacked = yFacets && yFacets.length > 1;
 
@@ -709,8 +587,8 @@ export class GridRenderingEngine {
       yIsStacked,
       xFacets,
       yFacets,
-      xFacet: projection.xAxis?.facet,
-      yFacet: projection.yAxis?.facet,
+      xFacet: this.currentProjection.xAxis?.facet,
+      yFacet: this.currentProjection.yAxis?.facet,
     });
 
     // For stacked axes, compute positions based on composite keys
@@ -752,9 +630,6 @@ export class GridRenderingEngine {
     xFacets: string[] | undefined,
     yFacets: string[] | undefined
   ): void {
-    const projection = this.getActiveProjection();
-    if (!projection) return;
-
     // Build composite keys for rows (X-Plane → "Rows" in Navigator)
     const rowKeys = new Map<string, number>();
     if (xFacets && xFacets.length > 0) {
@@ -768,9 +643,9 @@ export class GridRenderingEngine {
       sortedKeys.forEach((key, index) => {
         rowKeys.set(key, index);
       });
-    } else if (projection.xAxis?.facet) {
+    } else if (this.currentProjection?.xAxis?.facet) {
       // Single facet fallback
-      const facet = projection.xAxis.facet;
+      const facet = this.currentProjection.xAxis.facet;
       const uniqueValues = new Set<string>();
       cards.forEach((card) => {
         const value = this.resolveFacetValue(card as Record<string, unknown>, facet);
@@ -794,9 +669,9 @@ export class GridRenderingEngine {
       sortedKeys.forEach((key, index) => {
         columnKeys.set(key, index);
       });
-    } else if (projection.yAxis?.facet) {
+    } else if (this.currentProjection?.yAxis?.facet) {
       // Single facet fallback
-      const facet = projection.yAxis.facet;
+      const facet = this.currentProjection.yAxis.facet;
       const uniqueValues = new Set<string>();
       cards.forEach((card) => {
         const value = this.resolveFacetValue(card as Record<string, unknown>, facet);
@@ -827,10 +702,10 @@ export class GridRenderingEngine {
       if (xFacets && xFacets.length > 0) {
         const xKey = this.buildCompositeKey(card, xFacets);
         cardRecord._projectedRow = rowKeys.get(xKey) ?? -1;
-      } else if (projection.xAxis?.facet) {
+      } else if (this.currentProjection?.xAxis?.facet) {
         const value = this.resolveFacetValue(
           cardRecord,
-          projection.xAxis.facet
+          this.currentProjection.xAxis.facet
         );
         const key = value != null ? String(value) : 'Unassigned';
         cardRecord._projectedRow = rowKeys.get(key) ?? -1;
@@ -842,10 +717,10 @@ export class GridRenderingEngine {
       if (yFacets && yFacets.length > 0) {
         const yKey = this.buildCompositeKey(card, yFacets);
         cardRecord._projectedCol = columnKeys.get(yKey) ?? -1;
-      } else if (projection.yAxis?.facet) {
+      } else if (this.currentProjection?.yAxis?.facet) {
         const value = this.resolveFacetValue(
           cardRecord,
-          projection.yAxis.facet
+          this.currentProjection.yAxis.facet
         );
         const key = value != null ? String(value) : 'Unassigned';
         cardRecord._projectedCol = columnKeys.get(key) ?? -1;
@@ -919,53 +794,49 @@ export class GridRenderingEngine {
     this.setupGridStructure();
 
     if (!this.currentData) {
+      this.renderedCards = [];
       this.renderEmptyState();
       return;
     }
 
-    // Compute positions from projection or use simple grid layout
-    if (this.currentData.cards) {
-      this.effectiveProjection = this.resolveProjectionFallback(this.currentData.cards);
+    const sourceCards = this.currentData.cards ?? [];
+    const workingCards = sourceCards.map((card) => ({ ...(card as Record<string, unknown>) }));
 
-      if (this.currentProjection) {
-        this.computeAllPositions(this.currentData.cards);
-      } else {
-        // Fallback: simple grid layout when no projection
-        this.computeSimpleGridPositions(this.currentData.cards);
-      }
+    if (this.currentProjection) {
+      this.computeAllPositions(workingCards);
+    } else {
+      // Fallback: simple grid layout when no projection
+      this.computeSimpleGridPositions(workingCards);
+    }
 
-      // Step 1: Prepare cards based on density (sparse generates empty cells)
-      const preparedCards = this.prepareCardsForDensity(this.currentData.cards);
+    // Step 1: Prepare cards based on density (sparse generates empty cells)
+    const preparedCards = this.prepareCardsForDensity(workingCards);
+    // Step 2: Filter based on density (removes empty in dense mode, no-op in sparse)
+    const visibleCards = this.filterCardsByDensity(preparedCards) as Array<Record<string, unknown>>;
+    this.renderedCards = visibleCards;
 
-      // Step 2: Filter based on density (removes empty in dense mode, no-op in sparse)
-      const visibleCards = this.filterCardsByDensity(preparedCards);
+    superGridLogger.debug('GridRenderingEngine: render with density filtering', {
+      extentDensity: this.densityState?.extentDensity,
+      totalCards: preparedCards.length,
+      visibleCards: visibleCards.length,
+      selectedIds: this.selectedIds.size,
+    });
 
-      // Update currentData with visible cards for downstream rendering
-      this.currentData = { ...this.currentData, cards: visibleCards };
-
-      superGridLogger.debug('GridRenderingEngine: render with density filtering', {
-        extentDensity: this.densityState?.extentDensity,
-        totalCards: preparedCards.length,
-        visibleCards: visibleCards.length,
-        selectedIds: this.selectedIds.size,
+    // Debug: if dense mode filtered out all cards, log sample card for diagnosis
+    if (visibleCards.length === 0 && preparedCards.length > 0) {
+      const sampleCard = preparedCards[0] as Record<string, unknown>;
+      superGridLogger.warn('All cards filtered out in dense mode', {
+        name: sampleCard.name,
+        folder: sampleCard.folder,
+        status: sampleCard.status,
+        priority: sampleCard.priority,
+        tags: sampleCard.tags,
+        created_at: sampleCard.created_at,
+        _isEmpty: sampleCard._isEmpty,
+        _projectedCol: sampleCard._projectedCol,
+        _projectedRow: sampleCard._projectedRow,
+        allKeys: Object.keys(sampleCard),
       });
-
-      // Debug: if dense mode filtered out all cards, log sample card for diagnosis
-      if (visibleCards.length === 0 && preparedCards.length > 0) {
-        const sampleCard = preparedCards[0] as Record<string, unknown>;
-        superGridLogger.warn('All cards filtered out in dense mode', {
-          name: sampleCard.name,
-          folder: sampleCard.folder,
-          status: sampleCard.status,
-          priority: sampleCard.priority,
-          tags: sampleCard.tags,
-          created_at: sampleCard.created_at,
-          _isEmpty: sampleCard._isEmpty,
-          _projectedCol: sampleCard._projectedCol,
-          _projectedRow: sampleCard._projectedRow,
-          allKeys: Object.keys(sampleCard),
-        });
-      }
     }
 
     this.updateGridLayout();
@@ -983,6 +854,53 @@ export class GridRenderingEngine {
     }
 
     this.renderCards();
+    this.renderDebugHud();
+  }
+
+  private shouldShowDebugHud(): boolean {
+    try {
+      const search = new URLSearchParams(window.location.search);
+      if (search.get('sgdebug') === '1') return true;
+      return localStorage.getItem('supergrid_debug_hud') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private renderDebugHud(): void {
+    const debugHudLayer = this.container.select('.debug-hud');
+    debugHudLayer.selectAll('*').remove();
+    if (!this.shouldShowDebugHud()) return;
+
+    const lines = [
+      `cards:${this.renderedCards.length}`,
+      `x:${this.currentProjection?.xAxis?.facet ?? 'none'}`,
+      `y:${this.currentProjection?.yAxis?.facet ?? 'none'}`,
+      `rows:${this.currentHeaders?.rows.length ?? 0}`,
+      `cols:${this.currentHeaders?.columns.length ?? 0}`,
+      `density:${this.densityState?.extentDensity ?? 'default'}`,
+    ];
+
+    const backgroundHeight = 18 + lines.length * 14;
+    debugHudLayer
+      .append('rect')
+      .attr('x', 8)
+      .attr('y', 8)
+      .attr('width', 230)
+      .attr('height', backgroundHeight)
+      .attr('rx', 6)
+      .attr('fill', 'rgba(17, 24, 39, 0.82)');
+
+    lines.forEach((line, index) => {
+      debugHudLayer
+        .append('text')
+        .attr('x', 16)
+        .attr('y', 28 + index * 14)
+        .attr('fill', '#e5e7eb')
+        .attr('font-size', '11px')
+        .attr('font-family', 'ui-monospace, SFMono-Regular, Menlo, monospace')
+        .text(line);
+    });
   }
 
   /**
@@ -1011,6 +929,7 @@ export class GridRenderingEngine {
    */
   public initializeHeaders(_database: unknown): void {
     if (this.config.enableHeaders && !this.isHeadersInitialized) {
+      this.setupGridStructure();
       const headerNode = this.container.select('.headers').node() as SVGElement | null;
       if (headerNode) {
         this.superGridHeaders = new SuperGridHeaders(
@@ -1049,8 +968,7 @@ export class GridRenderingEngine {
         // Smooth scroll to card position
         const targetTransform = `translate(${viewportCenterX - cardX}, ${viewportCenterY - cardY})`;
 
-        this.container
-          .select('.grid-content')
+        this.container.select('.grid-content')
           .transition()
           .duration(this.config.animationDuration)
           .attr('transform', targetTransform);
@@ -1081,9 +999,9 @@ export class GridRenderingEngine {
    * Calculate grid width based on content
    */
   private getGridWidth(): number {
-    if (!this.currentData || !this.currentData.cards.length) return 800; // Default width
+    if (!this.renderedCards.length) return 800; // Default width
 
-    const maxX = Math.max(...this.currentData.cards.map(
+    const maxX = Math.max(...this.renderedCards.map(
       card => ((card as Record<string, unknown>).x as number) || 0
     ));
     const width = Math.max(800, maxX + this.config.cardWidth + this.config.padding * 2);
@@ -1094,10 +1012,10 @@ export class GridRenderingEngine {
    * Calculate grid height based on content
    */
   private getGridHeight(): number {
-    if (!this.currentData || !this.currentData.cards.length) return 600; // Default height
+    if (!this.renderedCards.length) return 600; // Default height
 
     // Calculate based on actual card positions if available
-    const maxY = Math.max(...this.currentData.cards.map(
+    const maxY = Math.max(...this.renderedCards.map(
       card => ((card as Record<string, unknown>).y as number) || 0
     ));
 
@@ -1116,7 +1034,7 @@ export class GridRenderingEngine {
     superGridLogger.debug('updateGridLayout', {
       hasProjection: !!this.currentProjection,
       hasHeaders: !!this.currentHeaders,
-      cardCount: this.currentData?.cards?.length ?? 0,
+      cardCount: this.renderedCards.length,
       projectionX: this.currentProjection?.xAxis?.facet || 'none',
       projectionY: this.currentProjection?.yAxis?.facet || 'none',
       headerRows: this.currentHeaders?.rows?.length ?? 0,
@@ -1135,7 +1053,7 @@ export class GridRenderingEngine {
         (this.config.cardWidth + this.config.padding)
     );
 
-    this.currentData.cards?.forEach((card: unknown, index: number) => {
+    this.renderedCards.forEach((card: unknown, index: number) => {
       const cardRecord = card as Record<string, unknown>;
       if (cardRecord.x === undefined || cardRecord.y === undefined) {
         const row = Math.floor(index / cardsPerRow);
@@ -1161,13 +1079,13 @@ export class GridRenderingEngine {
    * Update layout using projection-computed positions
    */
   private updateProjectedGridLayout(): void {
-    if (!this.currentData?.cards || !this.currentHeaders) {
+    if (!this.currentHeaders) {
       superGridLogger.warn('Missing data or headers', {
-        hasCards: !!this.currentData?.cards,
-        cardsLength: this.currentData?.cards?.length,
+        hasCards: this.renderedCards.length > 0,
+        cardsLength: this.renderedCards.length,
         hasHeaders: !!this.currentHeaders,
-        columns: this.currentHeaders?.columns?.length,
-        rows: this.currentHeaders?.rows?.length,
+        columns: 0,
+        rows: 0,
       });
       return;
     }
@@ -1178,7 +1096,7 @@ export class GridRenderingEngine {
     const cellHeight = this.config.cardHeight + this.config.padding;
 
     // DIAGNOSTIC: Log first card's position computation
-    const firstCard = this.currentData.cards[0] as Record<string, unknown> | undefined;
+    const firstCard = this.renderedCards[0] as Record<string, unknown> | undefined;
     if (firstCard) {
       superGridLogger.debug('[updateProjectedGridLayout] First card positioning:', {
         id: firstCard.id,
@@ -1193,7 +1111,7 @@ export class GridRenderingEngine {
     }
 
     let positionedCount = 0;
-    this.currentData.cards.forEach((card: unknown) => {
+    this.renderedCards.forEach((card: unknown) => {
       const cardRecord = card as Record<string, unknown>;
       const row = cardRecord._projectedRow as number ?? -1;
       const col = cardRecord._projectedCol as number ?? -1;
@@ -1208,7 +1126,7 @@ export class GridRenderingEngine {
     });
 
     superGridLogger.debug('[updateProjectedGridLayout] Positioned cards:', {
-      total: this.currentData.cards.length,
+      total: this.renderedCards.length,
       positioned: positionedCount,
       columns: this.currentHeaders.columns.length,
       rows: this.currentHeaders.rows.length,
@@ -1244,8 +1162,7 @@ export class GridRenderingEngine {
    * Render headers from projection - supports both single and stacked facets
    */
   private renderProjectionHeaders(): void {
-    const projection = this.getActiveProjection();
-    if (!projection) return;
+    if (!this.currentProjection) return;
     // IMPORTANT: Do not rebuild headers from projected index values here.
     // Header order must stay coupled to the facet-derived header arrays created
     // during computeAllPositions/computeStackedPositions, otherwise headers drift
@@ -1256,24 +1173,24 @@ export class GridRenderingEngine {
     if (!this.currentHeaders) {
       this.currentHeaders = { columns: [], rows: [] };
     }
-    if (projection.xAxis?.facet && this.currentHeaders.rows.length === 0) {
+    if (this.currentProjection.xAxis?.facet && this.currentHeaders.rows.length === 0) {
       this.currentHeaders.rows = ['Unassigned'];
     }
-    if (projection.yAxis?.facet && this.currentHeaders.columns.length === 0) {
+    if (this.currentProjection.yAxis?.facet && this.currentHeaders.columns.length === 0) {
       this.currentHeaders.columns = ['Unassigned'];
     }
 
     // Check if X-axis has stacked facets (multiple facets assigned)
-    const xAxisStacked = (projection.xAxis?.facets?.length ?? 0) > 1;
-    const yAxisStacked = (projection.yAxis?.facets?.length ?? 0) > 1;
+    const xAxisStacked = (this.currentProjection.xAxis?.facets?.length ?? 0) > 1;
+    const yAxisStacked = (this.currentProjection.yAxis?.facets?.length ?? 0) > 1;
 
     // DIAGNOSTIC: Log stacked header detection (always visible)
     superGridLogger.debug('[SuperGrid Headers]', {
-      xAxis: projection.xAxis?.facet || 'none',
-      xFacets: projection.xAxis?.facets || [],
+      xAxis: this.currentProjection.xAxis?.facet || 'none',
+      xFacets: this.currentProjection.xAxis?.facets || [],
       xAxisStacked,
-      yAxis: projection.yAxis?.facet || 'none',
-      yFacets: projection.yAxis?.facets || [],
+      yAxis: this.currentProjection.yAxis?.facet || 'none',
+      yFacets: this.currentProjection.yAxis?.facets || [],
       yAxisStacked,
       willRenderStacked: xAxisStacked || yAxisStacked,
       densityMode: this.densityState?.extentDensity || 'default',
@@ -1832,12 +1749,32 @@ export class GridRenderingEngine {
    * Setup basic grid structure (containers, etc.)
    */
   private setupGridStructure(): void {
-    // Clear existing content
-    this.container.selectAll('*').remove();
+    const headersLayer = this.container
+      .selectAll('g.headers')
+      .data([null])
+      .join('g')
+      .attr('class', 'headers');
 
-    // Create main containers
-    this.container.append('g').attr('class', 'headers');
-    this.container.append('g').attr('class', 'grid-content');
+    this.container
+      .selectAll('g.grid-content')
+      .data([null])
+      .join('g')
+      .attr('class', 'grid-content');
+
+    this.container
+      .selectAll('g.debug-hud')
+      .data([null])
+      .join('g')
+      .attr('class', 'debug-hud')
+      .attr('pointer-events', 'none');
+
+    if (this.config.enableHeaders && !this.superGridHeaders && headersLayer.node()) {
+      this.superGridHeaders = new SuperGridHeaders(
+        headersLayer.node() as SVGElement,
+        this.headerLayoutService
+      );
+      this.isHeadersInitialized = true;
+    }
 
     // Set up viewport with minimum dimensions
     const dimensions = this.getGridDimensions();
@@ -1851,22 +1788,22 @@ export class GridRenderingEngine {
    * Render hierarchical headers
    */
   private renderHierarchicalHeaders(_activeFilters: unknown[] = []): void {
-    if (!this.config.enableHeaders || !this.currentData?.cards.length) {
+    if (!this.config.enableHeaders || this.renderedCards.length === 0) {
       return;
     }
 
     try {
       // Generate headers from current data
-      if (this.superGridHeaders && this.currentData.cards.length > 0) {
+      if (this.superGridHeaders && this.renderedCards.length > 0) {
         this.superGridHeaders.renderHeaders(
-          this.currentData.cards,
+          this.renderedCards,
           'x',
           'status',
           this.getGridWidth()
         );
 
         superGridLogger.debug('Headers rendered', {
-          cardCount: this.currentData.cards.length
+          cardCount: this.renderedCards.length
         });
       } else {
         this.renderSimpleFallbackHeader();
@@ -1897,7 +1834,7 @@ export class GridRenderingEngine {
       .attr('font-family', 'system-ui, sans-serif')
       .attr('font-size', '14px')
       .attr('fill', '#333')
-      .text(`${this.currentData?.cards?.length || 0} cards`);
+      .text(`${this.renderedCards.length || 0} cards`);
 
     superGridLogger.debug('Fallback header rendered');
   }
@@ -1928,7 +1865,7 @@ export class GridRenderingEngine {
     const cardSelection = cardContainer
       .selectAll<SVGGElement, CardRecord>('.card')
       .data(
-        this.currentData.cards as CardRecord[],
+        this.renderedCards as CardRecord[],
         (d: CardRecord) => String(d.id)
       );
 
@@ -2069,7 +2006,7 @@ export class GridRenderingEngine {
     }
 
     superGridLogger.debug('Cards rendered', {
-      total: this.currentData.cards.length,
+      total: this.renderedCards.length,
       entered: cardEnter.size(),
       updated: cardSelection.size(),
       merged: cardMerged.size()
@@ -2120,8 +2057,11 @@ export class GridRenderingEngine {
     }
 
     // For numeric encoding, normalize to 0.7-1.0 range
-    if (this.sizeEncoding.type === 'numeric' && this.currentData?.cards) {
-      const numericValues = this.currentData.cards
+    if (this.sizeEncoding.type === 'numeric') {
+      const source = this.renderedCards.length
+        ? this.renderedCards
+        : (this.currentData?.cards as Array<Record<string, unknown>> | undefined) ?? [];
+      const numericValues = source
         .map((c) => Number((c as Record<string, unknown>)[this.sizeEncoding!.property]))
         .filter((v) => !isNaN(v));
 

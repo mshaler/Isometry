@@ -106,6 +106,10 @@ export function IntegratedLayout() {
 
   // Dataset switcher state - default to 'notes' (the sample data table)
   const [activeDataset, setActiveDataset] = useState<string>('notes');
+  const activeNodeType = useMemo(
+    () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
+    [activeDataset]
+  );
 
   // Phase 80-01: Notebook panel expand/collapse state with localStorage persistence
   const [isNotebookExpanded, setIsNotebookExpanded] = useState(() => {
@@ -315,7 +319,12 @@ export function IntegratedLayout() {
     runImport(true);
   }, [databaseService, altoImported, runImport]);
 
-  // Load data when SuperGrid initializes or dataset changes
+  // Reset slider filters only when dataset changes.
+  useEffect(() => {
+    resetFilters();
+  }, [activeDataset, resetFilters]);
+
+  // Unified query orchestration: one compiled query contract, one SuperGrid query.
   useEffect(() => {
     if (!superGrid || !svgRef.current || !databaseService?.isReady()) {
       return;
@@ -326,16 +335,15 @@ export function IntegratedLayout() {
     // would still point to the old (now detached) element
     superGrid.updateContainer(svgRef.current);
 
-    // Find the dataset configuration
-    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
-    const nodeType = dataset?.nodeType || 'notes';
+    const { clause: filterClause, params: filterParams } = buildWhereClause();
+    let whereClause = `node_type = ? AND deleted_at IS NULL`;
+    const parameters: (string | number)[] = [activeNodeType];
+    if (filterClause) {
+      whereClause += ` AND ${filterClause}`;
+      parameters.push(...filterParams);
+    }
 
-    contextLogger.debug('[IntegratedLayout] Loading dataset', { activeDataset, nodeType });
-
-    // Reset slider filters when dataset changes
-    resetFilters();
-
-    // Load current data for slider filter generation
+    // Load current data for slider filter generation + debug status.
     const dataResult = databaseService.query(
       `SELECT n.*,
           (
@@ -344,44 +352,13 @@ export function IntegratedLayout() {
             WHERE e.source_id = n.id OR e.target_id = n.id
           ) AS graph_degree
        FROM nodes n
-       WHERE n.node_type = ? AND n.deleted_at IS NULL
+       WHERE ${whereClause}
        LIMIT 5000`,
-      [nodeType]
+      parameters
     );
     setCurrentData(dataResult || []);
 
-    // Query the nodes table filtered by node_type (alto-index data)
-    superGrid.query({
-      whereClause: `node_type = ? AND deleted_at IS NULL`,
-      parameters: [nodeType],
-      activeFilters: [],
-      isEmpty: false,
-    });
-
-    contextLogger.setup('IntegratedLayout: Dataset loaded', {
-      dataset: activeDataset,
-      nodeType,
-    });
-  }, [superGrid, activeDataset, databaseService, resetFilters, dataRevision]);
-
-  // Re-query SuperGrid when slider filters change
-  useEffect(() => {
-    if (!superGrid || !svgRef.current || !databaseService?.isReady()) return;
-
-    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
-    const nodeType = dataset?.nodeType || 'notes';
-
-    // Build the combined WHERE clause
-    const { clause: filterClause, params: filterParams } = buildWhereClause();
-
-    let whereClause = `node_type = ? AND deleted_at IS NULL`;
-    const parameters: (string | number)[] = [nodeType];
-
-    if (filterClause) {
-      whereClause += ` AND ${filterClause}`;
-      parameters.push(...filterParams);
-    }
-
+    // Query SuperGrid once using the same contract.
     superGrid.query({
       whereClause,
       parameters,
@@ -389,11 +366,14 @@ export function IntegratedLayout() {
       isEmpty: false,
     });
 
-    contextLogger.debug('[IntegratedLayout] Slider filters applied', {
+    contextLogger.setup('IntegratedLayout: Unified query executed', {
+      dataset: activeDataset,
+      nodeType: activeNodeType,
       filterClause,
       filterParams,
+      rows: dataResult?.length ?? 0,
     });
-  }, [superGrid, activeDataset, buildWhereClause, databaseService, dataRevision]);
+  }, [superGrid, activeDataset, activeNodeType, buildWhereClause, databaseService, dataRevision]);
 
   // Sync PAFV projection to SuperGrid
   useEffect(() => {
@@ -406,24 +386,6 @@ export function IntegratedLayout() {
       superGrid.updateContainer(svgRef.current);
     }
 
-    const dataset = ALTO_DATASETS.find(d => d.id === activeDataset);
-    const nodeType = dataset?.nodeType || 'notes';
-    const { clause: filterClause, params: filterParams } = buildWhereClause();
-    let whereClause = `node_type = ? AND deleted_at IS NULL`;
-    const parameters: (string | number)[] = [nodeType];
-    if (filterClause) {
-      whereClause += ` AND ${filterClause}`;
-      parameters.push(...filterParams);
-    }
-
-    // Re-query before applying projection to avoid stale/filtered-out in-memory cards.
-    superGrid.query({
-      whereClause,
-      parameters,
-      activeFilters: [],
-      isEmpty: false,
-    });
-
     const projection = mappingsToProjection(pafvState.mappings);
     superGrid.setProjection(projection);
 
@@ -432,7 +394,7 @@ export function IntegratedLayout() {
       xAxis: projection.xAxis?.facet || 'none',
       yAxis: projection.yAxis?.facet || 'none',
     });
-  }, [superGrid, pafvState.mappings, databaseService, activeDataset, buildWhereClause]);
+  }, [superGrid, pafvState.mappings, databaseService]);
 
   // Sync density level to SuperGrid
   useEffect(() => {
