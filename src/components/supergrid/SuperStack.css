@@ -32,7 +32,8 @@
   display: flex;
   flex-direction: row;
   border-bottom: 1px solid #000;
-  width: 100%;
+  width: max-content; /* Allow level to expand beyond container */
+  min-width: 100%; /* But at least fill container */
 }
 
 .supergrid-stack--horizontal .supergrid-stack__level:last-child {
@@ -118,7 +119,7 @@
   cursor: pointer;
   transition: background-color 0.15s ease;
   flex: 1;
-  min-width: 0;
+  min-width: 80px; /* Ensure headers are readable even with many columns */
   box-sizing: border-box;
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;

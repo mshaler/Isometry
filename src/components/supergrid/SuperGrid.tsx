@@ -79,15 +79,34 @@ function mapAxisMappingToFacetConfig(mapping: AxisMapping): FacetConfig {
     // if (mapping.facet.includes('quarter')) timeFormat = '%Q';
   }
 
-  return {
+  // Folder facet uses "/" as path separator for hierarchical paths
+  // e.g., "BairesDev/MSFT" becomes two levels: "BairesDev" > "MSFT"
+  let pathSeparator: string | undefined;
+  if (mapping.facet === 'folder') {
+    pathSeparator = '/';
+  }
+
+  // Override dataType for known multi-select columns
+  // Tags are stored as JSON arrays and need json_each explosion
+  let dataType = dataTypeMap[mapping.axis];
+  if (mapping.facet === 'tags') {
+    dataType = 'multi_select';
+  }
+
+  const config = {
     id: mapping.facet,
     name: mapping.facet,
     axis: axisMap[mapping.axis],
     sourceColumn: mapping.facet,
-    dataType: dataTypeMap[mapping.axis],
+    dataType,
     timeFormat,
-    sortOrder: 'asc',
+    pathSeparator,
+    sortOrder: 'asc' as const,
   };
+
+  console.log(`[mapAxisMappingToFacetConfig] mapping.facet="${mapping.facet}", pathSeparator=${pathSeparator}`, config);
+
+  return config;
 }
 
 interface SuperGridProps {
@@ -130,7 +149,9 @@ interface SuperGridProps {
  * - SuperGrid: n axes (nested PAFV headers)
  */
 export function SuperGrid({
-  sql = "SELECT * FROM nodes WHERE deleted_at IS NULL LIMIT 100",
+  // Note: No LIMIT by default - SQL header discovery queries all nodes,
+  // so data cells need to match. Use LIMIT in parent component if needed.
+  sql = "SELECT * FROM nodes WHERE deleted_at IS NULL",
   params = [],
   nodes: nodesProp,
   mode = 'supergrid',
@@ -646,8 +667,10 @@ export function SuperGrid({
         <div className="supergrid__column-headers">
           <SuperStack
             orientation="horizontal"
-            nodes={nodes}
+            headerTree={columnTree}
+            collapsedIds={collapsedIds}
             onHeaderClick={handleHeaderClickWithSelection}
+            onHeaderToggle={handleHeaderToggle}
             enableDragDrop={enableDragDrop}
             maxLevels={maxHeaderLevels}
           />
@@ -660,8 +683,10 @@ export function SuperGrid({
           <div className="supergrid__row-headers">
             <SuperStack
               orientation="vertical"
-              nodes={nodes}
+              headerTree={rowTree}
+              collapsedIds={collapsedIds}
               onHeaderClick={handleHeaderClickWithSelection}
+              onHeaderToggle={handleHeaderToggle}
               enableDragDrop={enableDragDrop}
               maxLevels={maxHeaderLevels}
             />
@@ -669,14 +694,15 @@ export function SuperGrid({
         )}
 
         {/* Data Grid */}
+        {/* Use SQL-driven header leaf count when available for consistent column/row sizing */}
         <div
           className="supergrid__data-grid"
           style={{
             gridTemplateColumns: gridLayout.hasColumns
-              ? `repeat(${gridData.columnHeaders.length || 1}, 1fr)`
+              ? `repeat(${columnTree?.leafCount || gridData.columnHeaders.length || 1}, 1fr)`
               : '1fr',
             gridTemplateRows: gridLayout.hasRows
-              ? `repeat(${gridData.rowHeaders.length || 1}, 1fr)`
+              ? `repeat(${rowTree?.leafCount || gridData.rowHeaders.length || 1}, 1fr)`
               : 'auto',
             position: 'relative',
           }}
