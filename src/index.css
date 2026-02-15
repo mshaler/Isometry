@@ -312,3 +312,180 @@
 .callout--error {
   border-left: 4px solid hsl(var(--destructive));
 }
+
+/* =============================================================================
+ * Toggle Block Styles
+ * =============================================================================
+ * Used by TipTap ToggleExtension for collapsible sections in the editor.
+ * Theme-aware using CSS custom properties.
+ */
+.toggle {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-raised, none);
+}
+
+.toggle__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  background: hsl(var(--muted) / 0.5);
+}
+
+.toggle__header:hover {
+  background: hsl(var(--muted));
+}
+
+.toggle__icon {
+  font-size: 0.75rem;
+  width: 1rem;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+.toggle__title {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  outline: none;
+}
+
+.toggle__title::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.toggle__content {
+  padding: 1rem;
+  border-top: 1px solid hsl(var(--border));
+}
+
+.toggle__content > *:first-child {
+  margin-top: 0;
+}
+
+.toggle__content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+ * Bookmark Block Styles
+ * =============================================================================
+ * Used by TipTap BookmarkExtension for URL preview blocks in the editor.
+ * Theme-aware using CSS custom properties.
+ */
+.bookmark {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  overflow: hidden;
+  box-shadow: var(--shadow-raised, none);
+  position: relative;
+}
+
+.bookmark--editing {
+  padding: 1rem;
+}
+
+.bookmark__input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.bookmark__input:focus {
+  border-color: hsl(var(--primary));
+}
+
+.bookmark__link {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.bookmark__link:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.bookmark__favicon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 0.25rem;
+}
+
+.bookmark__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bookmark__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark__description {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.bookmark__url {
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bookmark__edit {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.bookmark:hover .bookmark__edit {
+  opacity: 1;
+}
+
+.bookmark__edit:hover {
+  background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
