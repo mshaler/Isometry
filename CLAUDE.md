@@ -666,7 +666,150 @@ Never commit with `--no-verify`. The pre-commit hook exists as a safety net.
 
 ---
 
-*Last updated: 2026-02-07*
+## GSD Automation Module
+
+The `tools/gsd/` directory contains a fully autonomous build → test → fix cycle for Claude Code.
+
+### Quick Start
+
+```bash
+# Full GSD cycle (build + test + auto-fix)
+npm run gsd
+
+# With task description
+npm run gsd "implement SuperStack headers"
+
+# Build only (quick type check)
+npm run gsd:build
+
+# Test only (skip build)
+npm run gsd:test
+```
+
+### What It Does
+
+1. **BUILD** — TypeScript compilation + Vite build, parses errors
+2. **LAUNCH** — Dev server (if needed for E2E)
+3. **VERIFY** — Vitest JSON output + DOM snapshots + hash comparison
+4. **FIX** — Applies auto-fix patterns (missing imports, semicolons, etc.)
+5. **RETRY** — Up to 3 attempts with fixes applied between cycles
+
+### Token-Efficient Design
+
+The GSD module is designed for Claude Code's token constraints:
+
+| Output Type | Tokens (approx) | Strategy |
+|-------------|-----------------|----------|
+| Build errors | 50-200 per error | Limit to 5 errors |
+| Test failures | 100-300 per failure | Limit to 3 failures |
+| DOM snapshots | 200-500 | Text structure only |
+| Visual regression | 32 chars | MD5 hash comparison |
+| Full result JSON | 200-400 | Structured summary |
+
+**vs Playwright screenshots:** 50-80% token reduction per debug cycle.
+
+### Auto-Fix Patterns
+
+The fixer module includes Isometry-specific patterns:
+
+| Pattern | Trigger | Fix |
+|---------|---------|-----|
+| `missing-d3-import` | Cannot find name 'd3' | Prepend `import * as d3 from 'd3'` |
+| `missing-vitest-import` | Cannot find name 'describe' | Prepend vitest imports |
+| `missing-superstack-types` | Cannot find 'HeaderNode' | Prepend type imports |
+| `missing-latch-type` | Cannot find 'LATCHAxis' | Prepend LATCH imports |
+| `missing-react-hooks` | Cannot find 'useState' | Prepend React hook imports |
+| `unused-variable` | TS6133 declared but never used | Prefix with `_` |
+
+### DOM Snapshots (No Screenshots)
+
+Instead of Playwright screenshots, use text-based DOM verification:
+
+```bash
+# Snapshots live here
+tests/gsd/snapshots/
+  superstack-headers.html      # Input HTML
+  superstack-headers.expected.txt  # Expected DOM structure
+```
+
+DOM structure is extracted as text:
+```
+body
+  div#superstack-container
+    svg.superstack-headers
+      g.header-group.row-headers
+        g.header-node.depth-0
+          rect.header-bg
+          text.header-label
+```
+
+### Visual Regression via Hashing
+
+SVG outputs are compared via perceptual hash:
+
+```bash
+# Hash files live here
+tests/gsd/hashes/
+  graph-layout.svg   # SVG output
+  graph-layout.hash  # MD5 hash (32 chars)
+```
+
+Clause Code sees a 32-char hash, not megabytes of image data.
+
+### State & History
+
+```bash
+.gsd/
+  state.json       # Current run state (consecutive failures, last build)
+  history.jsonl    # Run history for pattern learning
+```
+
+### Output Format
+
+GSD outputs structured JSON for Claude Code:
+
+```json
+{
+  "status": "success",
+  "attempts": 1,
+  "timestamp": "2026-02-15T10:30:00Z",
+  "data": {
+    "passed": 47,
+    "total": 47,
+    "duration": 5432
+  },
+  "summary": "✅ GSD Complete: 47/47 tests passed in 5432ms"
+}
+```
+
+### When to Use GSD
+
+| Scenario | Command |
+|----------|--------|
+| Starting implementation | `npm run gsd "implement X"` |
+| Quick type check | `npm run gsd:build` |
+| Verify tests pass | `npm run gsd:test` |
+| Full cycle before commit | `npm run gsd` |
+| Debug build failure | Check `.gsd/history.jsonl` for patterns |
+
+### Files
+
+```
+tools/gsd/
+  cli.ts        # Entry point
+  runner.ts     # Orchestrator
+  builder.ts    # TypeScript + Vite build
+  launcher.ts   # Dev server management
+  monitor.ts    # Console capture
+  verifier.ts   # Vitest + DOM + hash verification
+  fixer.ts      # Auto-fix patterns
+  parser.ts     # Error parsing
+  config.ts     # Types and defaults
+```
+
+---
+
+*Last updated: 2026-02-15*
 *Architecture: Bridge Elimination — sql.js direct access*
 *Keystone: SuperGrid polymorphic data projection*
 *Status: Phase 1 Stabilization*
