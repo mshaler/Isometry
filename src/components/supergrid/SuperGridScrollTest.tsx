@@ -597,8 +597,8 @@ export function SuperGridScrollTest(): JSX.Element {
                   {yFacet} / {xFacet}
                 </div>
               }
-              headerWidth={effectiveHeaderWidth}
-              headerHeight={effectiveHeaderHeight}
+              headerWidth={_effectiveHeaderWidth}
+              headerHeight={_effectiveHeaderHeight}
               contentWidth={contentWidth}
               contentHeight={contentHeight}
             />
