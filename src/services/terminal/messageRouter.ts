@@ -21,6 +21,18 @@ interface CommandMessage {
 }
 
 /**
+ * GSD client message structure (for type guard)
+ * Defined here to avoid circular dependency with gsd services
+ */
+interface GSDClientMessage {
+  type: 'start_gsd_watch' | 'stop_gsd_watch' | 'gsd_task_update';
+  sessionId?: string;
+  planPath?: string;
+  taskIndex?: number;
+  status?: 'pending' | 'in_progress' | 'complete';
+}
+
+/**
  * Type guard: Is this a terminal message?
  */
 export function isTerminalMessage(message: unknown): message is TerminalClientMessage {
@@ -70,6 +82,21 @@ export function isPingMessage(message: unknown): boolean {
   if (typeof message !== 'object' || message === null) return false;
   const msg = message as Record<string, unknown>;
   return msg.type === 'ping';
+}
+
+/**
+ * Type guard: Is this a GSD file sync message?
+ * Used for WebSocket dispatch of file watching and task updates.
+ */
+export function isGSDFileMessage(message: unknown): message is GSDClientMessage {
+  if (typeof message !== 'object' || message === null) return false;
+  const msg = message as Record<string, unknown>;
+
+  return (
+    msg.type === 'start_gsd_watch' ||
+    msg.type === 'stop_gsd_watch' ||
+    msg.type === 'gsd_task_update'
+  );
 }
 
 /**
