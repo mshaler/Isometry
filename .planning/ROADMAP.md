@@ -399,10 +399,12 @@ Plans:
   1. User can switch between Terminal/Claude AI/GSD tabs without state loss
   2. Terminal output can be saved as cards via Claude AI chat
   3. GSD phase execution triggers correctly in Terminal tab
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 88-01: TBD (use /gsd:plan-phase)
+- [ ] 88-01-PLAN.md — Tab state preservation integration tests (Wave 1)
+- [ ] 88-02-PLAN.md — Cross-tab data flow verification tests (Wave 1)
+- [ ] 88-03-PLAN.md — Manual verification and phase completion (Wave 2)
 
 ## Progress
 
@@ -425,7 +427,7 @@ Plans:
 | 85. Backend Terminal | v6.0 | 5/5 | Complete | 2026-02-14 |
 | 86. Claude AI Integration | v6.0 | 4/4 | Complete | 2026-02-15 |
 | 87. GSD File Sync | v6.0 | 5/5 | Complete | 2026-02-15 |
-| 88. Integration & Polish | v6.0 | 0/0 | Pending | - |
+| 88. Integration & Polish | v6.0 | 0/3 | Planning | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
@@ -440,4 +442,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 87 complete — GSD File Synchronization)*
+*Last updated: 2026-02-15 (Phase 88 planned — Integration & Polish)*
