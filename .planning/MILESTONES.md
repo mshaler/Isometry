@@ -1,6 +1,33 @@
 # Project Milestones: Isometry
 
-## v6.4 Hardcoded Values Cleanup (In Progress)
+## v6.5 Console Cleanup (In Progress)
+
+**Goal:** Eliminate console errors and excessive debug logging to provide a clean developer experience.
+
+**Phases planned:** 103 (single phase, 14 requirements)
+- Phase 103: Console Cleanup (3 bug fixes, 7 log controls, 4 warning resolutions)
+
+**What v6.5 Delivers:**
+- Clean browser console with no errors on page load
+- Configurable log levels (error, warn, info, debug)
+- Development vs production log level defaults
+- Gated verbose debug logs from SQLiteProvider, HeaderDiscoveryService, PropertyClassifier, SuperStack, GridRenderingEngine
+- Fixed TipTap duplicate extension warning
+- Added missing favicon
+
+**Issues being fixed:**
+- `useTipTapEditor.ts`: Duplicate 'link' extension
+- `favicon.ico`: 404 error
+- Excessive debug logging from 5+ services
+- Axis facet fallback warnings
+- YAML parse fallback warnings
+
+**Started:** 2026-02-15
+**Status:** Defining requirements
+
+---
+
+## v6.4 Hardcoded Values Cleanup (Paused)
 
 **Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
 

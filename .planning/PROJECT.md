@@ -33,27 +33,31 @@ Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 
 ### v5.2 Cards & Connections (SHIPPED)
 Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
 
-## Current Milestone: v6.4 Hardcoded Values Cleanup
+## Current Milestone: v6.5 Console Cleanup
 
-**Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+**Goal:** Eliminate console errors and excessive debug logging to provide a clean developer experience.
 
-**Problem:** Hardcoded LATCH filter values have crept into the codebase, violating schema-on-read principles where metadata should come from source data.
+**Problem:** The browser console is cluttered with errors, warnings, and excessive debug logs that make debugging actual issues difficult and create a poor developer experience.
 
 **Target changes:**
-- **Settings Registry** — SQLite `settings` table for configuration key-value pairs
-- **Discovery Queries** — Dynamic facet value discovery from actual data
-- **UI Integration** — CardDetailModal, LATCHFilter use discovery over hardcoded values
-- **Property Classifier** — Handle missing columns gracefully without assumptions
-- **Test Fixtures** — Minimal schema assumptions, realistic test data
+- **Bug Fixes** — Fix TipTap duplicate 'link' extension, add missing favicon
+- **Log Level Controls** — Enhance dev-logger.ts with configurable log levels
+- **Warning Resolution** — Fix axis facet fallback warnings and YAML parse warnings
+- **Debug Log Cleanup** — Gate verbose logs behind development-only checks
 
-**Hardcoded values to eliminate:**
-- `sample-data.ts`: FACETS_SEED_SQL seeding status/priority facets
-- `CardDetailModal.tsx`: Hardcoded folder/status options and status colors
-- `LATCHFilter.tsx`: Hardcoded priority range [1, 10]
-- `property-classifier.ts`: Numeric defaults for priority/importance/sort_order
-- `fixtures.ts`: TEST_FACETS/TEST_NODES with hardcoded status/priority values
+**Issues to fix:**
+- `useTipTapEditor.ts:125`: Duplicate 'link' extension causing TipTap warning
+- `favicon.ico 404`: Missing favicon file
+- `dev-logger.ts`: Excessive debug logs from SQLiteProvider, HeaderDiscoveryService, PropertyClassifier, SuperStack, GridRenderingEngine
+- `GridRenderingEngine.ts`: Axis facet fallback warnings (status → tags)
+- `frontmatter.ts`: YAML parse fallback warnings for malformed frontmatter
 
-**Reference:** `MILESTONE-CONTEXT.md`
+**Reference:** Console output analysis from session start
+
+## Previous Milestone: v6.4 Hardcoded Values Cleanup (PAUSED)
+
+**Goal:** Eliminate or externalize hardcoded LATCH filter values.
+**Status:** Phase 100 complete, Phases 101-102 pending (paused for v6.5)
 
 ## Previous Milestone: v6.3 SuperStack SQL Integration (COMPLETE)
 

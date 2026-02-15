@@ -6,42 +6,50 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.4 Hardcoded Values Cleanup — Phase 100 Settings & Discovery Layer
+**Current focus:** v6.5 Console Cleanup — Defining requirements
 
 ## Current Position
 
-Phase: 100 (Settings & Discovery Layer)
-Plan: 2 of 2 complete
-Status: Phase complete
-Last activity: 2026-02-15 — Completed 100-02-PLAN.md (Facet Discovery)
+Phase: 103 (Console Cleanup)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-15 — Milestone v6.5 started
 
-Progress (Phase 100): [██████████] 100%
-Overall: Milestone v6.4 Phase 100 complete, Phase 101 next
+Progress: [░░░░░░░░░░] 0%
+Overall: Milestone v6.5 defining requirements
 
 ## Active Milestones
 
-### v6.4 Hardcoded Values Cleanup — IN PROGRESS
+### v6.5 Console Cleanup — IN PROGRESS
 
-**Goal:** Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
+**Goal:** Eliminate console errors and excessive debug logging to provide a clean developer experience.
 
-**Status:** 🏗️ IN PROGRESS
+**Status:** 🏗️ DEFINING REQUIREMENTS
 
-**Plans:**
-| Plan | Focus | Requirements | Deliverables | Status |
-|------|-------|--------------|--------------|--------|
-| 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, `src/hooks/useSettings.ts` | ✅ |
-| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts`, `src/hooks/useFacetValues.ts` | ✅ |
-| 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` | ⏳ |
-| 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` | ⏳ |
-| 102-01 | Sample Data | SAMPLE-01 to SAMPLE-03 | Updated `src/db/sample-data.ts` | ⏳ |
-| 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` | ⏳ |
+**Target deliverables:**
+- Fix TipTap duplicate 'link' extension error
+- Add missing favicon to eliminate 404
+- Implement log level controls in dev-logger.ts
+- Fix axis facet fallback warnings
+- Gate verbose debug logs
+
+**Phases:**
+- Phase 103: Console Cleanup — ⏳ PLANNING
+
+**Total requirements:** TBD | **Status:** DEFINING
+
+### v6.4 Hardcoded Values Cleanup — PAUSED
+
+**Goal:** Eliminate or externalize hardcoded LATCH filter values.
+
+**Status:** ⏸️ PAUSED (Phase 100 complete, awaiting v6.5 completion)
 
 **Phases:**
 - Phase 100: Settings & Discovery Layer — ✅ COMPLETE
 - Phase 101: UI Integration — ⏳ PENDING
 - Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
 
-**Total requirements:** 22 | **Status:** IN PROGRESS
+**Total requirements:** 22 | **Status:** PAUSED
 
 ### v6.3 SuperStack SQL Integration — COMPLETE
 

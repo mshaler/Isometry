@@ -3,6 +3,33 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
+## v6.5 Requirements — Console Cleanup
+
+Eliminate console errors and excessive debug logging to provide a clean developer experience.
+
+### Bug Fixes (Phase 103)
+
+- [ ] **BUG-01**: TipTap editor initializes without duplicate 'link' extension warning
+- [ ] **BUG-02**: Favicon.ico exists and loads without 404 error
+- [ ] **BUG-03**: Browser console shows no errors on initial page load
+
+### Log Level Controls (Phase 103)
+
+- [ ] **LOG-01**: `dev-logger.ts` supports configurable log levels (error, warn, info, debug)
+- [ ] **LOG-02**: Default log level is 'warn' in production, 'debug' in development
+- [ ] **LOG-03**: SQLiteProvider lifecycle logs gated behind 'debug' level
+- [ ] **LOG-04**: HeaderDiscoveryService logs gated behind 'debug' level
+- [ ] **LOG-05**: PropertyClassifier logs gated behind 'debug' level
+- [ ] **LOG-06**: SuperStack rendering logs gated behind 'debug' level
+- [ ] **LOG-07**: GridRenderingEngine logs gated behind 'debug' level
+
+### Warning Resolution (Phase 103)
+
+- [ ] **WARN-01**: Axis facet fallback logic fixed (status → tags fallback eliminated or intentional)
+- [ ] **WARN-02**: NestedHeaderRenderer truncation warning only shows in debug mode
+- [ ] **WARN-03**: YAML parse fallback warning only shows when actually recovering from malformed data
+- [ ] **WARN-04**: SuperStack header count warning only shows in debug mode
+
 ## v6.4 Requirements — Hardcoded Values Cleanup
 
 Eliminate or externalize hardcoded LATCH filter values (priority, status, folder options, etc.) to support true schema-on-read architecture.
@@ -449,6 +476,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 **Coverage:** 25/25 requirements mapped (100%)
 
+### v6.5 Traceability
+
+| Requirement | Phase | Plan | Status |
+|-------------|-------|------|--------|
+| BUG-01 | Phase 103 | 103-01 | Pending |
+| BUG-02 | Phase 103 | 103-01 | Pending |
+| BUG-03 | Phase 103 | 103-01 | Pending |
+| LOG-01 | Phase 103 | 103-02 | Pending |
+| LOG-02 | Phase 103 | 103-02 | Pending |
+| LOG-03 | Phase 103 | 103-02 | Pending |
+| LOG-04 | Phase 103 | 103-02 | Pending |
+| LOG-05 | Phase 103 | 103-02 | Pending |
+| LOG-06 | Phase 103 | 103-02 | Pending |
+| LOG-07 | Phase 103 | 103-02 | Pending |
+| WARN-01 | Phase 103 | 103-03 | Pending |
+| WARN-02 | Phase 103 | 103-03 | Pending |
+| WARN-03 | Phase 103 | 103-03 | Pending |
+| WARN-04 | Phase 103 | 103-03 | Pending |
+
+**Coverage:** 14/14 requirements mapped (100%)
+
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-13 (v6.1 SuperStack Enhancement requirements added)*
+*Last updated: 2026-02-15 (v6.5 Console Cleanup requirements added)*
