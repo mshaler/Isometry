@@ -249,6 +249,12 @@ Recent decisions affecting v6.1 SuperStack work:
 - TERM-02: spawn() with args array, never string interpolation
 - TERM-10: Mode switch kills and respawns PTY rather than in-place modification
 
+**Cross-Tab Integration (Phase 88-02):**
+- TRIGGER-01: Forward flow: Terminal OUTPUT triggers GSD state updates (not INPUT) ✅ Documented 88-02
+- TRIGGER-02: /gsd: commands are terminal INPUT, not parsed output ✅ Documented 88-02
+- TRIGGER-03: Reverse flow: GSD file changes -> WebSocket -> React hooks ✅ Documented 88-02
+- ROUTING-01: WebSocket message routing is tab-agnostic via type guards ✅ Verified 88-02
+
 **GSD File Synchronization (Phase 87):**
 - PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
 - PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
@@ -297,8 +303,14 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 87 (GSD File Synchronization)
-Next: Phase 88 (Integration & Polish)
+Completed: Phase 88-02 (Cross-Tab Data Flow Verification)
+Next: Phase 88-03 (remaining Integration & Polish) or Phase 100 (v6.4 Settings)
+
+**Phase 88-02 Complete:**
+- 35 cross-tab integration tests in `src/services/claude-code/__tests__/cross-tab-integration.test.ts`
+- Documents forward flow: Terminal OUTPUT -> Parser -> GSD Service
+- Documents reverse flow: GSD file changes -> WebSocket -> React hooks
+- WebSocket routing verified as tab-agnostic
 
 **Phase 87-05 Complete:**
 - gsdConflictResolver.ts with detectConflict(), applyResolution(), formatConflictSummary()
