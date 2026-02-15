@@ -163,7 +163,7 @@ Plans:
 
 </details>
 
-## 🚧 v6.1 SuperStack Enhancement (In Progress)
+## v6.1 SuperStack Enhancement (In Progress)
 
 **Milestone Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
@@ -229,10 +229,10 @@ Plans:
 **Plans**: 4 plans in 2 waves
 
 Plans:
-- [x] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02) ✓
-- [x] 92-02-PLAN.md — Density-aware rendering (counts vs card chips) (CELL-03) ✓
-- [x] 92-03-PLAN.md — Selection synchronization between headers and data cells (CELL-04) ✓
-- [x] 92-04-PLAN.md — SuperStack hierarchical header integration (SSTACK-VIZ) ✓
+- [x] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02)
+- [x] 92-02-PLAN.md — Density-aware rendering (counts vs card chips) (CELL-03)
+- [x] 92-03-PLAN.md — Selection synchronization between headers and data cells (CELL-04)
+- [x] 92-04-PLAN.md — SuperStack hierarchical header integration (SSTACK-VIZ)
 
 ### Phase 93: Polish & Performance
 **Goal**: Virtual scrolling, accessibility, animations
@@ -244,12 +244,14 @@ Plans:
   3. ARIA labels present for screen readers
   4. Empty state displays informative message
   5. Collapse/expand transitions animate smoothly
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 93-01: TBD (use /gsd:plan-phase)
+- [ ] 93-01-PLAN.md — Virtual scrolling with TanStack Virtual + FPS monitoring (PERF-01)
+- [ ] 93-02-PLAN.md — ARIA accessibility + informative empty states (A11Y-01, UX-01)
+- [ ] 93-03-PLAN.md — GPU-accelerated animations + sticky header verification (PERF-02, UX-02)
 
-## 🚧 v6.2 Capture Writing Surface (Planning)
+## v6.2 Capture Writing Surface (Planning)
 
 **Milestone Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
 
@@ -302,9 +304,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 96-01-PLAN.md — Basic slash commands (headings, divider, quote, date)
-- [ ] 96-02-PLAN.md — Callout block with custom TipTap node and React view
-- [ ] 96-03-PLAN.md — Toggle and Bookmark blocks with custom nodes
+- [x] 96-01-PLAN.md — Basic slash commands (headings, divider, quote, date)
+- [x] 96-02-PLAN.md — Callout block with custom TipTap node and React view
+- [x] 96-03-PLAN.md — Toggle and Bookmark blocks with custom nodes
 
 ### Phase 97: Inline Properties
 **Goal**: Inline property syntax (@key: value, #tag) with PropertyEditor sync
@@ -333,7 +335,7 @@ Plans:
 Plans:
 - [ ] 98-01: TBD (use /gsd:plan-phase)
 
-## 📋 v6.0 Interactive Shell (Deferred)
+## v6.0 Interactive Shell (Deferred)
 
 **Milestone Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
 **Status:** Plans created for Phase 85. Resume with `/gsd:execute-phase 85`
@@ -422,7 +424,7 @@ Plans:
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 92. Data Cell Integration | v6.1 | 4/4 | Complete | 2026-02-15 |
-| 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
+| 93. Polish & Performance | v6.1 | 0/3 | Planned | - |
 | 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 95. Data Layer & Backlinks | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
@@ -431,4 +433,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 92 complete, Phase 96 complete)*
+*Last updated: 2026-02-15 (Phase 93 planned: 3 plans in 2 waves)*
