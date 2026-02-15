@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 98 of 98 (Isometry Embeds & Polish - Capture Writing Surface v6.2)
-Plan: 3 of 4 complete
-Status: In progress
-Last activity: 2026-02-15 — Completed 98-03: Embed Configuration UI
+Plan: 4 of 4 complete
+Status: COMPLETE
+Last activity: 2026-02-15 — Completed 98-04: Polish & Performance
 
-Progress (Phase 98): [████████░░] 75% (3 of 4 plans)
-Overall: [█████████░] 99% (108 of ~130 total phases across all milestones)
+Progress (Phase 98): [██████████] 100% (4 of 4 plans)
+Overall: [██████████] 100% (v6.2 Capture Writing Surface COMPLETE)
 
 ## Active Milestones
 
@@ -42,14 +42,14 @@ Overall: [█████████░] 99% (108 of ~130 total phases across a
 - Phase 97: Inline Properties (4 requirements) — ✓ COMPLETE (2/2 plans)
   - [x] 97-01: Inline Property Mark (@key: value syntax) ✓
   - [x] 97-02: Hashtag Mark with Autocomplete (#tag syntax) ✓
-- Phase 98: Isometry Embeds & Polish (7 requirements) — IN PROGRESS (3/4 plans)
+- Phase 98: Isometry Embeds & Polish (7 requirements) — ✓ COMPLETE (4/4 plans)
   - [x] 98-01: Core Embed Infrastructure (~5m) ✓
   - [x] 98-02: D3.js Visualization Integration ✓
   - [x] 98-03: Embed Configuration UI (~4m) ✓
-  - [ ] 98-04: Polish & Performance (planned)
+  - [x] 98-04: Polish & Performance (~5m) ✓
 
 **Total requirements:** 43
-**Current:** Phase 98 IN PROGRESS (3/4 plans)
+**Current:** Phase 98 COMPLETE (4/4 plans) — v6.2 Capture Writing Surface COMPLETE
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -112,7 +112,7 @@ Overall: [█████████░] 99% (108 of ~130 total phases across a
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
-| 98 (Isometry Embeds) | 3/4 | ~5m | In Progress |
+| 98 (Isometry Embeds) | 4/4 | ~4.5m | Complete ✓ |
 | 97 (Inline Properties) | 2/2 | ~5m | Complete ✓ |
 | 93 (Polish & Performance) | 3/3 | ~5m | Complete ✓ |
 | 96 (Block Types) | 3/3 | ~5m | Complete ✓ |
@@ -211,6 +211,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - EMBED-07: View toggle uses role=tab and aria-pressed for accessibility ✅ Implemented 98-03
 - EMBED-08: Filter display truncates with ellipsis at 200px ✅ Implemented 98-03
 - EMBED-09: NeXTSTEP theme uses monochrome palette for toolbar ✅ Implemented 98-03
+- EMBED-10: Update callback compares old/new attributes to prevent unnecessary re-renders ✅ Implemented 98-04
+- EMBED-11: 100ms resize debounce prevents rapid dimension updates ✅ Implemented 98-04
+- EMBED-12: RAF wrapping ensures D3 renders don't block main thread ✅ Implemented 98-04
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -242,27 +245,30 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Phase 98 Plan 03 COMPLETE - Embed Configuration UI
+Stopped at: Phase 98 COMPLETE - v6.2 Capture Writing Surface COMPLETE
 Resume file: .planning/phases/98-isometry-embeds/
 
-**Phase 98 Summary (3/4 Plans Complete):**
+**Phase 98 Summary (4/4 Plans Complete):**
 - 98-01: Core Embed Infrastructure ✓ (EmbedExtension, EmbedNode, slash commands)
 - 98-02: D3.js Visualization Integration ✓ (Live D3 rendering, useEmbedData hook)
 - 98-03: Embed Configuration UI ✓ (EmbedToolbar, view switching, filter display)
+- 98-04: Polish & Performance ✓ (60fps typing, RAF batching, debounced resize)
 
 **v6.2 Capture Writing Surface Progress:**
 - Phase 94 (Foundation) ✓
 - Phase 95 (Data Layer & Backlinks) ✓
 - Phase 96 (Block Types) ✓
 - Phase 97 (Inline Properties) ✓
-- Phase 98 (Isometry Embeds & Polish) — IN PROGRESS (3/4)
+- Phase 98 (Isometry Embeds & Polish) ✓ COMPLETE
+
+**MILESTONE COMPLETE: v6.2 Capture Writing Surface**
 
 **Next Steps:**
-1. Continue Phase 98-04: Polish & Performance
-2. Or resume v6.0 Interactive Shell (Phase 86-03: MCP Tools)
+1. Resume v6.0 Interactive Shell (Phase 86-03: MCP Tools)
+2. Or start new milestone planning
 
-**Key Deliverables from Phase 98-03:**
-- EmbedToolbar: View toggle buttons (SuperGrid/Network/Timeline)
-- View switching via updateAttributes
-- Filter/projection display in toolbar
-- NeXTSTEP theme support for toolbar
+**Key Deliverables from Phase 98-04:**
+- Update callback in ReactNodeViewRenderer prevents unnecessary re-renders
+- RAF-batched D3 rendering for 60fps performance
+- 100ms debounced resize handling
+- Clean unmount with proper RAF/timer cleanup
