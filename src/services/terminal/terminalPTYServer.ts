@@ -10,6 +10,7 @@
 
 import { spawn, IPty } from 'node-pty';
 import { WebSocket } from 'ws';
+import { execSync } from 'child_process';
 import { OutputBuffer } from './outputBuffer';
 import {
   PTYConfig,
@@ -24,6 +25,18 @@ import {
   TerminalModeSwitchedMessage
 } from './terminalTypes';
 import { devLogger } from '../../utils/logging/dev-logger';
+
+/**
+ * Check if a command exists in PATH
+ */
+function commandExists(cmd: string): boolean {
+  try {
+    execSync(`which ${cmd}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export interface PTYSessionState extends TerminalSession {
   pty: IPty | null;
@@ -88,10 +101,13 @@ export class TerminalPTYServer {
     const allowedShells = ['/bin/zsh', '/bin/bash', '/bin/sh'];
     const shell = allowedShells.includes(config.shell) ? config.shell : '/bin/zsh';
 
+    // Determine effective mode - fallback to shell if claude not available
+    let effectiveMode = mode;
+
     // Create session state
     const session: PTYSessionState = {
       id: sessionId,
-      mode,
+      mode: effectiveMode,
       config: { ...config, shell },
       createdAt: new Date(),
       pty: null,
@@ -99,9 +115,39 @@ export class TerminalPTYServer {
       clients: new Set([ws])
     };
 
+    // Determine command based on mode
+    let command: string;
+    let args: string[];
+
+    if (mode === 'claude-code') {
+      if (commandExists('claude')) {
+        command = 'claude';
+        args = ['--continue']; // Continue from previous conversation if any
+      } else {
+        // Fallback: spawn shell with message
+        const fallbackMessage =
+          '\x1b[33mClaude CLI not found. Install with: npm install -g @anthropic-ai/claude-code\x1b[0m\r\n' +
+          '\x1b[33mFalling back to shell mode.\x1b[0m\r\n';
+
+        session.outputBuffer.append(fallbackMessage);
+        effectiveMode = 'shell';
+        session.mode = effectiveMode;
+        command = shell;
+        args = [];
+
+        devLogger.warn('Claude CLI not found, falling back to shell', {
+          component: 'TerminalPTYServer',
+          sessionId
+        });
+      }
+    } else {
+      command = shell;
+      args = [];
+    }
+
     try {
       // Spawn PTY process - args array, not string concatenation
-      const pty = spawn(shell, [], {
+      const pty = spawn(command, args, {
         name: 'xterm-256color',
         cols: config.cols || 80,
         rows: config.rows || 24,
@@ -110,7 +156,8 @@ export class TerminalPTYServer {
           ...process.env,
           ...config.env,
           TERM: 'xterm-256color',
-          COLORTERM: 'truecolor'
+          COLORTERM: 'truecolor',
+          ISOMETRY_TERMINAL_MODE: effectiveMode
         }
       });
 
@@ -353,13 +400,45 @@ export class TerminalPTYServer {
     // Clear output buffer (fresh start for new mode)
     session.outputBuffer.clear();
 
-    // Determine shell based on mode
-    // Note: Both modes spawn the user's shell - in claude-code mode,
-    // the user types 'claude' to start the claude CLI
-    const shell = session.config.shell || '/bin/zsh';
+    // Determine command based on mode
+    let command: string;
+    let args: string[];
+    let effectiveMode = newMode;
+
+    if (newMode === 'claude-code') {
+      if (commandExists('claude')) {
+        command = 'claude';
+        args = ['--continue']; // Continue from previous conversation if any
+      } else {
+        // Fallback: spawn shell with message
+        const fallbackMessage =
+          '\x1b[33mClaude CLI not found. Install with: npm install -g @anthropic-ai/claude-code\x1b[0m\r\n' +
+          '\x1b[33mFalling back to shell mode.\x1b[0m\r\n';
+
+        session.outputBuffer.append(fallbackMessage);
+        this.broadcastToSession(sessionId, {
+          type: 'terminal:output',
+          sessionId,
+          data: fallbackMessage
+        });
+
+        effectiveMode = 'shell';
+        session.mode = effectiveMode;
+        command = session.config.shell || '/bin/zsh';
+        args = [];
+
+        devLogger.warn('Claude CLI not found during mode switch, falling back to shell', {
+          component: 'TerminalPTYServer',
+          sessionId
+        });
+      }
+    } else {
+      command = session.config.shell || '/bin/zsh';
+      args = [];
+    }
 
     try {
-      const pty = spawn(shell, [], {
+      const pty = spawn(command, args, {
         name: 'xterm-256color',
         cols: session.config.cols || 80,
         rows: session.config.rows || 24,
@@ -369,7 +448,7 @@ export class TerminalPTYServer {
           TERM: 'xterm-256color',
           COLORTERM: 'truecolor',
           // Add mode indicator env var
-          ISOMETRY_TERMINAL_MODE: newMode
+          ISOMETRY_TERMINAL_MODE: effectiveMode
         }
       });
 
@@ -400,14 +479,14 @@ export class TerminalPTYServer {
       this.sendToClient(ws, {
         type: 'terminal:mode-switched',
         sessionId,
-        mode: newMode,
+        mode: effectiveMode,
         pid: pty.pid
       });
 
       devLogger.debug('Mode switch complete', {
         component: 'TerminalPTYServer',
         sessionId,
-        mode: newMode,
+        mode: effectiveMode,
         pid: pty.pid
       });
 

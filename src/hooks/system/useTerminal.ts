@@ -124,6 +124,32 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   }, []);
 
   /**
+   * Handle mode switched event from server
+   */
+  const handleTerminalModeSwitched = useCallback((
+    sessionId: string,
+    mode: 'shell' | 'claude-code',
+    pid: number
+  ) => {
+    if (sessionId !== sessionIdRef.current) return;
+
+    devLogger.debug('Terminal mode switched', {
+      component: 'useTerminal',
+      sessionId,
+      mode,
+      pid
+    });
+
+    setCurrentMode(mode);
+
+    // Write mode switch confirmation to terminal
+    const terminal = terminalRef.current;
+    if (terminal) {
+      terminal.write(`\r\n\x1b[36m[Switched to ${mode} mode]\x1b[0m\r\n`);
+    }
+  }, []);
+
+  /**
    * Initialize dispatcher with terminal callbacks
    */
   const initializeDispatcher = useCallback(async () => {
@@ -139,10 +165,18 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
         onTerminalSpawned: handleTerminalSpawned,
         onTerminalExit: handleTerminalExit,
         onTerminalError: handleTerminalError,
-        onTerminalReplayData: handleTerminalReplayData
+        onTerminalReplayData: handleTerminalReplayData,
+        onTerminalModeSwitched: handleTerminalModeSwitched
       });
     }
-  }, [handleTerminalOutput, handleTerminalSpawned, handleTerminalExit, handleTerminalError, handleTerminalReplayData]);
+  }, [
+    handleTerminalOutput,
+    handleTerminalSpawned,
+    handleTerminalExit,
+    handleTerminalError,
+    handleTerminalReplayData,
+    handleTerminalModeSwitched
+  ]);
 
   /**
    * Handle copy - copy selected text to clipboard

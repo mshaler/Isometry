@@ -145,18 +145,38 @@ export function Terminal({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mode Toggle */}
-            <button
-              onClick={handleModeToggle}
-              className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                currentMode === 'claude-code'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-              }`}
-              title={`Switch to ${currentMode === 'shell' ? 'Claude Code' : 'Shell'} mode`}
-            >
-              {currentMode === 'claude-code' ? '🤖 Claude' : '💻 Shell'}
-            </button>
+            {/* Mode Toggle with Status */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleModeToggle}
+                className={`px-2 py-0.5 text-xs rounded transition-colors flex items-center gap-1 ${
+                  currentMode === 'claude-code'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
+                }`}
+                title={`Switch to ${currentMode === 'shell' ? 'Claude Code' : 'Shell'} mode`}
+              >
+                {currentMode === 'claude-code' ? (
+                  <>
+                    <span className="animate-pulse">🤖</span>
+                    <span>Claude Code</span>
+                  </>
+                ) : (
+                  <>
+                    <span>💻</span>
+                    <span>Shell</span>
+                  </>
+                )}
+              </button>
+
+              {/* Mode-specific hint */}
+              <span className="text-[10px] text-gray-500">
+                {currentMode === 'claude-code'
+                  ? 'AI-assisted mode'
+                  : 'Standard terminal'
+                }
+              </span>
+            </div>
 
             {/* Connection Status */}
             <div className="text-gray-400 text-xs flex items-center gap-1">
@@ -183,7 +203,13 @@ export function Terminal({
         {/* Terminal Footer */}
         <div className="terminal-footer flex-shrink-0 h-6 bg-gray-700 flex items-center justify-between px-2 text-xs text-gray-300">
           <span>Shell: {shell}</span>
-          <span>Mode: {currentMode}</span>
+          <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+            currentMode === 'claude-code'
+              ? 'bg-purple-700 text-purple-200'
+              : 'bg-gray-600 text-gray-300'
+          }`}>
+            {currentMode === 'claude-code' ? 'Claude Code Active' : 'Shell Mode'}
+          </span>
         </div>
       </div>
     </ErrorBoundary>
