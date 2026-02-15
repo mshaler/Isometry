@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 ## Current Position
 
-Phase: 103 (Console Cleanup)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-02-15 — Milestone v6.5 started
+Phase: 101 (UI Integration)
+Plan: 02 of 03
+Status: In progress
+Last activity: 2026-02-15 — Completed 101-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0%
-Overall: Milestone v6.5 defining requirements
+Progress: [███░░░░░░░] 30% (Phase 100: ✓, Phase 101: 2/3 plans, Phase 102: pending)
+Overall: v6.4 Hardcoded Values Cleanup — Phase 101 in progress
 
 ## Active Milestones
 
@@ -38,18 +38,20 @@ Overall: Milestone v6.5 defining requirements
 
 **Total requirements:** TBD | **Status:** DEFINING
 
-### v6.4 Hardcoded Values Cleanup — PAUSED
+### v6.4 Hardcoded Values Cleanup — IN PROGRESS
 
 **Goal:** Eliminate or externalize hardcoded LATCH filter values.
 
-**Status:** ⏸️ PAUSED (Phase 100 complete, awaiting v6.5 completion)
+**Status:** 🏗️ IN PROGRESS (Phase 101 executing)
 
 **Phases:**
 - Phase 100: Settings & Discovery Layer — ✅ COMPLETE
-- Phase 101: UI Integration — ⏳ PENDING
+- Phase 101: UI Integration — 🏗️ IN PROGRESS (2/3 plans complete)
+  - [x] 101-01: Dynamic CardDetailModal Dropdowns (~5m) ✓
+  - [x] 101-02: Dynamic LATCH Values (~4m) ✓
 - Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
 
-**Total requirements:** 22 | **Status:** PAUSED
+**Total requirements:** 22 | **Status:** IN PROGRESS
 
 ### v6.3 SuperStack SQL Integration — COMPLETE
 
@@ -274,6 +276,13 @@ Recent decisions affecting v6.1 SuperStack work:
 - DISCOVER-JSON-VALID: json_valid() guard prevents malformed JSON from crashing multi-select queries ✅ Implemented 100-02
 - DISCOVER-GENERIC: discoverFacetValues works for any column, not just predefined facets ✅ Implemented 100-02
 
+**UI Integration (Phase 101):**
+- UI-04: Priority range discovered dynamically via MIN/MAX query, not hardcoded [1, 10] ✅ Implemented 101-02
+- UI-05: Empty state shown in hierarchy filter when no nodes exist ✅ Implemented 101-02
+- CLASSIFY-01: columnHasData handles all numeric columns without hardcoded defaults ✅ Implemented 101-02
+- CLASSIFY-02: numericColumnsWithDefaults object removed entirely ✅ Implemented 101-02
+- CLASSIFY-03: Missing columns return false gracefully via try-catch (schema-on-read) ✅ Implemented 101-02
+
 **GSD File Synchronization (Phase 87):**
 - PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
 - PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
@@ -322,9 +331,17 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 88 (Integration & Polish) — v6.0 Interactive Shell COMPLETE
-Next: Phase 101-01 (CardDetailModal UI Integration) or Phase 103 (Console Cleanup)
-Resume file: .planning/phases/101-ui-integration/101-01-PLAN.md (if it exists)
+Completed: Phase 101-02 (Dynamic LATCH Values) — v6.4 UI Integration in progress
+Next: Phase 101-01 (CardDetailModal UI Integration) or Phase 101-03 (remaining UI integration)
+Resume file: .planning/phases/101-ui-integration/101-01-PLAN.md or 101-03-PLAN.md
+
+**Phase 101-02 Complete:**
+- Dynamic priority range discovery in LATCHFilter via MIN/MAX query (not hardcoded [1, 10])
+- Generic numeric column handling in property-classifier (no hardcoded defaults dict)
+- Empty state handling for hierarchy filter when no data exists
+- 3 atomic commits: 8d4272c9 (feat), d93dae65 (refactor), 485c95b2 (feat)
+- Requirements satisfied: UI-04, UI-05, CLASSIFY-01, CLASSIFY-02, CLASSIFY-03
+- Ready for remaining Phase 101 UI integration tasks
 
 **Phase 100-02 Complete:**
 - Facet discovery queries with sql.js: discoverFolderValues, discoverStatusValues, discoverFacetValues
