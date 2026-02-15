@@ -121,12 +121,16 @@ Plans:
 
 **Requirements:** SAMPLE-01 to SAMPLE-03, TEST-01 to TEST-03 (6 total)
 
-**Plans:** 2 plans
+**Plans:** 2 plans in 1 wave
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
 | 102-01 | Sample Data | SAMPLE-01 to SAMPLE-03 | Updated `src/db/sample-data.ts` |
 | 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` |
+
+Plans:
+- [ ] 102-01-PLAN.md — Remove status/priority from FACETS_SEED_SQL, use realistic priority values (Wave 1)
+- [ ] 102-02-PLAN.md — Remove hardcoded TEST_FACETS options, add schema-flexible loadTestFixtures (Wave 1)
 
 **Success Criteria:**
 1. FACETS_SEED_SQL seeds only universal facets (name, created_at, modified_at, folder, tags)
