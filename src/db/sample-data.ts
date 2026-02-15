@@ -202,11 +202,11 @@ CREATE TABLE IF NOT EXISTS facets (
 );
 
 -- Seed facets (INSERT OR IGNORE ensures idempotency)
+-- Note: status/priority are NOT seeded here - they are app-specific facets
+-- that should be discovered dynamically from actual data (schema-on-read)
 INSERT OR IGNORE INTO facets (id, name, facet_type, axis, source_column) VALUES
     ('folder', 'Folder', 'select', 'C', 'folder'),
     ('tags', 'Tags', 'multi_select', 'C', 'tags'),
-    ('status', 'Status', 'select', 'C', 'status'),
-    ('priority', 'Priority', 'number', 'H', 'priority'),
     ('created', 'Created', 'date', 'T', 'created_at'),
     ('modified', 'Modified', 'date', 'T', 'modified_at'),
     ('due', 'Due Date', 'date', 'T', 'due_at'),

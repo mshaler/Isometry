@@ -198,7 +198,7 @@ export class GridRenderingEngine {
         if (best) {
           chosenFacet = best;
           const bestStats = this.computeFacetStats(cards, best);
-          superGridLogger.warn('[GridRenderingEngine] Axis facet fallback applied', {
+          superGridLogger.debug('Axis facet fallback applied', {
             plane,
             axis: axisProjection.axis,
             fromFacet: selectedFacet,
@@ -903,7 +903,7 @@ export class GridRenderingEngine {
     }
 
     // Debug: trace projection and card properties for schema-on-read verification
-    console.log('[GridRenderingEngine.render]', {
+    superGridLogger.debug('render', {
       hasProjection: !!this.currentProjection,
       xAxis: this.currentProjection?.xAxis?.facet,
       yAxis: this.currentProjection?.yAxis?.facet,
@@ -953,7 +953,7 @@ export class GridRenderingEngine {
       // Debug: if dense mode filtered out all cards, log sample card for diagnosis
       if (visibleCards.length === 0 && preparedCards.length > 0) {
         const sampleCard = preparedCards[0] as Record<string, unknown>;
-        console.warn('[GridRenderingEngine] All cards filtered out in dense mode! Sample card:', {
+        superGridLogger.warn('All cards filtered out in dense mode', {
           name: sampleCard.name,
           folder: sampleCard.folder,
           status: sampleCard.status,
@@ -1113,7 +1113,7 @@ export class GridRenderingEngine {
     if (!this.currentData) return;
 
     // DIAGNOSTIC: Log what we have for layout decision
-    console.log('[GridRenderingEngine.updateGridLayout]', {
+    superGridLogger.debug('updateGridLayout', {
       hasProjection: !!this.currentProjection,
       hasHeaders: !!this.currentHeaders,
       cardCount: this.currentData?.cards?.length ?? 0,
@@ -1162,7 +1162,7 @@ export class GridRenderingEngine {
    */
   private updateProjectedGridLayout(): void {
     if (!this.currentData?.cards || !this.currentHeaders) {
-      console.warn('[updateProjectedGridLayout] Missing data or headers:', {
+      superGridLogger.warn('Missing data or headers', {
         hasCards: !!this.currentData?.cards,
         cardsLength: this.currentData?.cards?.length,
         hasHeaders: !!this.currentHeaders,
@@ -1402,7 +1402,7 @@ export class GridRenderingEngine {
     yAxisStacked: boolean
   ): void {
     if (!this.currentHeaders) {
-      console.warn('[renderStackedProjectionHeaders] No currentHeaders available');
+      superGridLogger.debug('renderStackedProjectionHeaders: No currentHeaders available');
       this.renderSimpleFallbackHeader();
       return;
     }
