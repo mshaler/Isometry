@@ -31,6 +31,7 @@ export type { UseWebSocketConnectionResult } from './useWebSocketConnection';
 export { useCommandHistory } from './useCommandHistory';
 export type { UseCommandHistoryResult } from './useCommandHistory';
 export { useClaudeAI } from './useClaudeAI';
+export { useProjectContext } from './useProjectContext';
 
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';

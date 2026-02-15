@@ -1,9 +1,11 @@
-import { useState, useCallback, useRef } from 'react';
-import { claudeService, type ChatMessage } from '@/services/claude-ai';
+import { useState, useCallback, useRef, useMemo } from 'react';
+import { claudeService, type ChatMessage, buildSystemPrompt, type ProjectContext } from '@/services/claude-ai';
 import { devLogger } from '@/utils/logging';
 
 interface UseClaudeAIOptions {
   systemPrompt?: string;
+  projectContext?: ProjectContext;
+  includeArchitecture?: boolean;
 }
 
 export function useClaudeAI(options: UseClaudeAIOptions = {}) {
@@ -14,6 +16,22 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
   const abortRef = useRef(false);
 
   const isConfigured = claudeService.isConfigured();
+
+  // Build system prompt with project context
+  const effectiveSystemPrompt = useMemo(() => {
+    // If explicit system prompt provided, use it
+    if (options.systemPrompt) {
+      return options.systemPrompt;
+    }
+
+    // If project context provided or architecture flag set, build rich prompt
+    if (options.projectContext || options.includeArchitecture !== false) {
+      return buildSystemPrompt(options.projectContext);
+    }
+
+    // Default minimal prompt
+    return undefined;
+  }, [options.systemPrompt, options.projectContext, options.includeArchitecture]);
 
   /**
    * Generate unique message ID
@@ -79,7 +97,7 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
             setStreamingContent('');
           }
         },
-        options.systemPrompt
+        effectiveSystemPrompt
       );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -87,7 +105,7 @@ export function useClaudeAI(options: UseClaudeAIOptions = {}) {
       setIsLoading(false);
       setStreamingContent('');
     }
-  }, [messages, isLoading, options.systemPrompt]);
+  }, [messages, isLoading, effectiveSystemPrompt]);
 
   /**
    * Clear chat history

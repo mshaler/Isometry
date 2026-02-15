@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { Send, Square, Trash2, AlertCircle, Bot, User } from 'lucide-react';
-import { useClaudeAI } from '@/hooks';
+import { useClaudeAI, useProjectContext } from '@/hooks';
 import { cn } from '@/lib/utils';
 
 interface ClaudeAIChatProps {
@@ -23,6 +23,9 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Get project context (will be undefined if no active card)
+  const { projectContext } = useProjectContext();
+
   const {
     messages,
     isLoading,
@@ -32,7 +35,11 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
     sendMessage,
     clearMessages,
     stopGeneration
-  } = useClaudeAI({ systemPrompt });
+  } = useClaudeAI({
+    systemPrompt,
+    projectContext,
+    includeArchitecture: true
+  });
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -92,6 +99,14 @@ export function ClaudeAIChat({ className, systemPrompt }: ClaudeAIChatProps) {
               <p className="text-sm">Start a conversation with Claude</p>
               <p className="text-xs mt-1 text-gray-600">
                 Type a message below and press Enter
+              </p>
+              {projectContext?.activeCard && (
+                <p className="text-xs mt-2 text-purple-400">
+                  Context: {projectContext.activeCard.name}
+                </p>
+              )}
+              <p className="text-xs mt-2 text-gray-700">
+                Isometry architecture context enabled
               </p>
             </div>
           </div>
