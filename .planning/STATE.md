@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 100 (Settings & Discovery Layer)
-Plan: 1 of 2 complete
-Status: In progress
-Last activity: 2026-02-15 — Completed 100-01-PLAN.md (Settings Registry)
+Plan: 2 of 2 complete
+Status: Phase complete
+Last activity: 2026-02-15 — Completed 100-02-PLAN.md (Facet Discovery)
 
-Progress (Phase 100): [█████░░░░░] 50%
-Overall: Milestone v6.4 Phase 100 in progress (1/2 plans complete)
+Progress (Phase 100): [██████████] 100%
+Overall: Milestone v6.4 Phase 100 complete, Phase 101 next
 
 ## Active Milestones
 
@@ -30,14 +30,14 @@ Overall: Milestone v6.4 Phase 100 in progress (1/2 plans complete)
 | Plan | Focus | Requirements | Deliverables | Status |
 |------|-------|--------------|--------------|--------|
 | 100-01 | Settings Registry | SETTINGS-01 to SETTINGS-04 | `src/db/settings.ts`, `src/hooks/useSettings.ts` | ✅ |
-| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts` | ⏳ |
+| 100-02 | Discovery Queries | DISCOVER-01 to DISCOVER-04 | `src/services/facet-discovery.ts`, `src/hooks/useFacetValues.ts` | ✅ |
 | 101-01 | CardDetailModal | UI-01 to UI-03 | Updated `CardDetailModal.tsx` | ⏳ |
 | 101-02 | LATCHFilter & Classifier | UI-04 to UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` | ⏳ |
 | 102-01 | Sample Data | SAMPLE-01 to SAMPLE-03 | Updated `src/db/sample-data.ts` | ⏳ |
 | 102-02 | Test Fixtures | TEST-01 to TEST-03 | Updated `src/test/fixtures.ts` | ⏳ |
 
 **Phases:**
-- Phase 100: Settings & Discovery Layer — ⏳ IN PROGRESS
+- Phase 100: Settings & Discovery Layer — ✅ COMPLETE
 - Phase 101: UI Integration — ⏳ PENDING
 - Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
 
@@ -261,6 +261,10 @@ Recent decisions affecting v6.1 SuperStack work:
 - SETTINGS-SEED: seedDefaultSettings checks existence before insert (preserves user values) ✅ Implemented 100-01
 - SETTINGS-CACHE: staleTime: Infinity for settings cache (rarely change externally) ✅ Implemented 100-01
 - SETTINGS-OPTIMISTIC: Mutation immediately updates query cache before database confirm ✅ Implemented 100-01
+- DISCOVER-QUERY: Synchronous sql.js wrapped in async queryFn for TanStack Query caching ✅ Implemented 100-02
+- DISCOVER-STALETIME: 5-minute staleTime balances freshness with query reduction ✅ Implemented 100-02
+- DISCOVER-JSON-VALID: json_valid() guard prevents malformed JSON from crashing multi-select queries ✅ Implemented 100-02
+- DISCOVER-GENERIC: discoverFacetValues works for any column, not just predefined facets ✅ Implemented 100-02
 
 **GSD File Synchronization (Phase 87):**
 - PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
@@ -310,9 +314,16 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 100-01 (Settings Registry)
-Next: Phase 100-02 (Discovery Queries)
-Resume file: .planning/phases/100-settings-discovery/100-02-PLAN.md
+Completed: Phase 100-02 (Discovery Queries)
+Next: Phase 101-01 (CardDetailModal UI Integration)
+Resume file: .planning/phases/101-ui-integration/101-01-PLAN.md (if it exists)
+
+**Phase 100-02 Complete:**
+- Facet discovery queries with sql.js: discoverFolderValues, discoverStatusValues, discoverFacetValues
+- TanStack Query hooks with 5-minute caching: useFacetValues, useFolderValues, useStatusValues, useTagValues
+- Multi-select facet handling via json_each with json_valid safety guard
+- 21 integration tests covering standard, multi-select, and edge case discovery patterns
+- Ready for Phase 101 UI integration (dropdown population from live data)
 
 **Phase 100-01 Complete:**
 - SettingsService with CRUD operations wrapping sql.js
