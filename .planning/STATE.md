@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 87 (GSD File Synchronization)
-Plan: 4 of 5 complete
-Status: In progress
-Last activity: 2026-02-15 — Completed 87-04-PLAN.md (React Hooks & Progress Display)
+Plan: 5 of 5 complete
+Status: Phase complete
+Last activity: 2026-02-15 — Completed 87-05-PLAN.md (Conflict Detection & Resolution)
 
-Progress (Phase 87): [████████░░] 80%
-Overall: Resuming v6.0 Interactive Shell milestone
+Progress (Phase 87): [██████████] 100%
+Overall: Phase 87 complete, Phase 88 (Integration & Polish) next
 
 ## Active Milestones
 
@@ -93,12 +93,12 @@ Overall: Resuming v6.0 Interactive Shell milestone
   - [x] 86-02: Project Context ✓
   - [x] 86-03: MCP Tool Integration ✓
   - [x] 86-04: Claude Code Integration ✓
-- Phase 87: GSD File Synchronization (5 plans) — IN PROGRESS
+- Phase 87: GSD File Synchronization (5 plans) — ✓ COMPLETE
   - [x] 87-01: GSD File Parser (~5m) ✓
   - [x] 87-02: File Watcher Integration (~5m) ✓
   - [x] 87-03: State Synchronization (~5m) ✓
   - [x] 87-04: React Hooks & Progress Display (~3m) ✓
-  - [ ] 87-05: Error Handling & Recovery
+  - [x] 87-05: Conflict Detection & Resolution (~4m) ✓
 - Phase 88: Integration & Polish (verification only)
 
 ## Performance Metrics
@@ -117,6 +117,7 @@ Overall: Resuming v6.0 Interactive Shell milestone
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 87 (GSD File Sync) | 5/5 | ~4.5m | Complete ✓ |
 | 98 (Isometry Embeds) | 4/4 | ~4.5m | Complete ✓ |
 | 97 (Inline Properties) | 2/2 | ~5m | Complete ✓ |
 | 93 (Polish & Performance) | 3/3 | ~5m | Complete ✓ |
@@ -244,6 +245,9 @@ Recent decisions affecting v6.1 SuperStack work:
 - UI-01: Three-state icons (Circle/Clock/CheckCircle) from lucide-react ✅ Implemented 87-04
 - A11Y-01: role="button" with tabIndex and onKeyDown for task items ✅ Implemented 87-04
 - A11Y-02: aria-label describes current status and next status on click ✅ Implemented 87-04
+- CONFLICT-01: Conflict detection compares file vs last synced state (not live UI) ✅ Implemented 87-05
+- CONFLICT-02: Structural changes (task count) treated as special conflict type ✅ Implemented 87-05
+- CONFLICT-03: Modal closes optimistically on resolution, confirmed by WebSocket response ✅ Implemented 87-05
 
 See PROJECT.md Key Decisions table for full history.
 
@@ -270,8 +274,15 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Plan 87-04 (React Hooks & Progress Display)
-Next: Plan 87-05 (Error Handling & Recovery)
+Completed: Phase 87 (GSD File Synchronization)
+Next: Phase 88 (Integration & Polish)
+
+**Phase 87-05 Complete:**
+- gsdConflictResolver.ts with detectConflict(), applyResolution(), formatConflictSummary()
+- GSDConflictModal.tsx with theme-aware UI and diff display
+- useGSDFileSync extended with gsd_conflict message handling
+- gsdFileSyncService.ts extended with conflict detection/resolution
+- lastSyncedState Map for tracking per-plan state
 
 **Phase 87-04 Complete:**
 - useGSDFileSync hook for WebSocket file watching
@@ -306,6 +317,7 @@ Next: Plan 87-05 (Error Handling & Recovery)
 - Query time: ~46ms (target: <100ms)
 
 **Reference:**
+- `.planning/phases/87-gsd-file-synchronization/87-05-SUMMARY.md` — Plan 87-05 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-04-SUMMARY.md` — Plan 87-04 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-03-SUMMARY.md` — Plan 87-03 execution summary
 - `.planning/phases/87-gsd-file-synchronization/87-02-SUMMARY.md` — Plan 87-02 execution summary
