@@ -45,6 +45,14 @@ export const EmbedExtension = Node.create({
         parseHTML: (element) => element.getAttribute('data-sql') || '',
         renderHTML: (attributes) => attributes.sql ? { 'data-sql': attributes.sql } : {},
       },
+      // LATCH filter clause for embed data
+      // Filter syntax: SQL WHERE clause (e.g., "folder = 'work'", "status = 'active'")
+      // Multiple conditions: "folder = 'work' AND status = 'active'"
+      filter: {
+        default: '',
+        parseHTML: (element) => element.getAttribute('data-filter') || '',
+        renderHTML: (attributes) => attributes.filter ? { 'data-filter': attributes.filter } : {},
+      },
       xAxis: {
         default: 'category',
         parseHTML: (element) => element.getAttribute('data-x-axis') || 'category',
