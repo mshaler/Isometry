@@ -4,10 +4,15 @@
  * Part of Phase 92 - Data Cell Integration (CELL-02)
  * Tests CSS sticky header scroll coordination with alto-index data
  *
+ * Features:
+ * - Schema-on-read: dynamically detects available metadata fields from Notes
+ * - Hierarchical folder headers (splits on "/" for nested stacking)
+ * - Only shows axes that have actual data values
+ *
  * Access via: http://localhost:5173/?test=sg-scroll
  */
 
-import { useRef, useEffect, useMemo, useState } from 'react';
+import { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import { useSQLite } from '@/db/SQLiteProvider';
 import { useSQLiteQuery } from '@/hooks/database/useSQLiteQuery';
@@ -21,8 +26,62 @@ import type { D3CoordinateSystem, DataCellData, PAFVProjection } from '@/types/g
 // Cell dimensions for testing
 const CELL_WIDTH = 120;
 const CELL_HEIGHT = 60;
-const HEADER_WIDTH = 150;
+const HEADER_WIDTH = 200; // Wider for hierarchical folder names
 const HEADER_HEIGHT = 40;
+
+/**
+ * Schema-on-read field detection
+ * Analyzes loaded nodes to find which fields have actual values
+ */
+interface DetectedField {
+  name: string;
+  label: string;
+  valueCount: number; // Number of distinct values
+  sampleValues: string[];
+}
+
+function detectAvailableFields(nodes: Node[]): DetectedField[] {
+  if (!nodes || nodes.length === 0) return [];
+
+  // Fields to check (matching alto-importer mapping for Notes)
+  const fieldsToCheck = [
+    { name: 'folder', label: 'Folder' },
+    { name: 'created_at', label: 'Created' },
+    { name: 'modified_at', label: 'Modified' },
+    { name: 'node_type', label: 'Type' },
+    { name: 'tags', label: 'Tags' },
+  ];
+
+  const detected: DetectedField[] = [];
+
+  for (const field of fieldsToCheck) {
+    const values = new Set<string>();
+
+    for (const node of nodes) {
+      const value = (node as unknown as Record<string, unknown>)[field.name];
+      if (value !== null && value !== undefined && value !== '') {
+        // For dates, extract just the date part for grouping
+        if (field.name.endsWith('_at') && typeof value === 'string') {
+          values.add(value.split('T')[0] || '(none)');
+        } else {
+          values.add(String(value));
+        }
+      }
+    }
+
+    if (values.size > 0) {
+      detected.push({
+        name: field.name,
+        label: field.label,
+        valueCount: values.size,
+        sampleValues: Array.from(values).slice(0, 5),
+      });
+    }
+  }
+
+  // Sort by value count (more values = more interesting for axis)
+  return detected.sort((a, b) => b.valueCount - a.valueCount);
+}
 
 export function SuperGridScrollTest(): JSX.Element {
   const { loading: dbLoading, error: dbError } = useSQLite();
@@ -32,10 +91,6 @@ export function SuperGridScrollTest(): JSX.Element {
   const rowHeaderRef = useRef<SVGSVGElement>(null);
   const dataGridRef = useRef<SVGSVGElement>(null);
 
-  // Projection state
-  const [xFacet, setXFacet] = useState('folder');
-  const [yFacet, setYFacet] = useState('status');
-
   // Alto-index import
   const {
     importFromPublic,
@@ -44,28 +99,53 @@ export function SuperGridScrollTest(): JSX.Element {
     result: importResult,
   } = useAltoIndexImport();
 
-  // Load only alto-index nodes (exclude sample data)
+  // Load only alto-index Notes (exclude sample data and other types)
   const { data: allNodes, loading: nodesLoading } = useSQLiteQuery<Node>(
-    `SELECT * FROM nodes WHERE deleted_at IS NULL AND source = 'alto-index' ORDER BY name ASC`,
+    `SELECT * FROM nodes
+     WHERE deleted_at IS NULL
+       AND source = 'alto-index'
+       AND node_type = 'notes'
+     ORDER BY name ASC`,
     []
   );
 
   // Track if we've already attempted import this session
   const importAttemptedRef = useRef(false);
 
-  // Auto-import alto-index Notes data on mount (always import, replacing sample data)
+  // Auto-import alto-index Notes data on mount
   useEffect(() => {
     if (!dbLoading && !dbError && importStatus === 'idle' && !importAttemptedRef.current) {
       importAttemptedRef.current = true;
-      // Import Notes, clearing sample data first
       importFromPublic({ clearExisting: true, dataTypes: ['notes'] });
     }
   }, [dbLoading, dbError, importStatus, importFromPublic]);
 
-  // Create projection config
+  // Schema-on-read: detect available fields from loaded data
+  const availableFields = useMemo(() => {
+    return detectAvailableFields(allNodes || []);
+  }, [allNodes]);
+
+  // Dynamic axis state - default to folder (X) and created_at date (Y)
+  const [xFacet, setXFacet] = useState<string | null>(null);
+  const [yFacet, setYFacet] = useState<string | null>(null);
+
+  // Set initial axes once fields are detected
+  useEffect(() => {
+    if (availableFields.length > 0 && xFacet === null) {
+      // Default X to folder (hierarchical), Y to created_at (temporal)
+      const folderField = availableFields.find(f => f.name === 'folder');
+      const createdField = availableFields.find(f => f.name === 'created_at');
+      const nodeTypeField = availableFields.find(f => f.name === 'node_type');
+
+      setXFacet(folderField?.name || availableFields[0]?.name || 'folder');
+      setYFacet(createdField?.name || nodeTypeField?.name || availableFields[1]?.name || 'node_type');
+    }
+  }, [availableFields, xFacet]);
+
+  // Create projection config (only when axes are set)
   const projection: PAFVProjection = useMemo(() => ({
-    xAxis: { facet: xFacet, axis: 'category' },
-    yAxis: { facet: yFacet, axis: 'category' },
+    xAxis: xFacet ? { facet: xFacet, axis: 'category' } : null,
+    yAxis: yFacet ? { facet: yFacet, axis: 'category' } : null,
   }), [xFacet, yFacet]);
 
   // Transform nodes to cell data
@@ -87,9 +167,25 @@ export function SuperGridScrollTest(): JSX.Element {
     };
   }, [cells]);
 
-  // Get axis labels
+  // Helper to extract and format field values for axis labels
+  const extractAxisValue = useCallback((node: Node, facet: string): string => {
+    const value = (node as unknown as Record<string, unknown>)[facet];
+
+    if (value === null || value === undefined || value === '') {
+      return '(none)';
+    }
+
+    // For date fields, extract just the date part (YYYY-MM-DD)
+    if (facet.endsWith('_at') && typeof value === 'string') {
+      return value.split('T')[0] || '(none)';
+    }
+
+    return String(value);
+  }, []);
+
+  // Get axis labels - with hierarchical folder support
   const { xLabels, yLabels } = useMemo(() => {
-    if (!allNodes || allNodes.length === 0) {
+    if (!allNodes || allNodes.length === 0 || !xFacet || !yFacet) {
       return { xLabels: [], yLabels: [] };
     }
 
@@ -98,17 +194,17 @@ export function SuperGridScrollTest(): JSX.Element {
     const yValueSet = new Set<string>();
 
     allNodes.forEach((node) => {
-      const xVal = (node as unknown as Record<string, unknown>)[xFacet];
-      const yVal = (node as unknown as Record<string, unknown>)[yFacet];
-      xValueSet.add(xVal !== null && xVal !== undefined ? String(xVal) : '(none)');
-      yValueSet.add(yVal !== null && yVal !== undefined ? String(yVal) : '(none)');
+      const xVal = extractAxisValue(node, xFacet);
+      const yVal = extractAxisValue(node, yFacet);
+      xValueSet.add(xVal);
+      yValueSet.add(yVal);
     });
 
     return {
       xLabels: Array.from(xValueSet).sort(),
       yLabels: Array.from(yValueSet).sort(),
     };
-  }, [allNodes, xFacet, yFacet]);
+  }, [allNodes, xFacet, yFacet, extractAxisValue]);
 
   // Create coordinate system
   const coordinateSystem: D3CoordinateSystem = useMemo(() => ({
@@ -186,12 +282,21 @@ export function SuperGridScrollTest(): JSX.Element {
     });
   }, [yLabels]);
 
-  // Render data cells
+  // Render data cells with white background
   useEffect(() => {
     if (!dataGridRef.current || cells.length === 0) return;
 
     const svg = d3.select(dataGridRef.current);
     svg.selectAll('*').remove();
+
+    // Add white background rect
+    svg.append('rect')
+      .attr('class', 'grid-background')
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('width', contentWidth)
+      .attr('height', contentHeight)
+      .attr('fill', '#ffffff');
 
     const g = svg.append('g').attr('class', 'data-cells-container');
 
@@ -201,7 +306,7 @@ export function SuperGridScrollTest(): JSX.Element {
         console.log('Cell clicked:', node.name);
       },
     });
-  }, [cells, coordinateSystem]);
+  }, [cells, coordinateSystem, contentWidth, contentHeight]);
 
   // Loading state
   if (dbLoading) {
@@ -243,30 +348,36 @@ export function SuperGridScrollTest(): JSX.Element {
           Grid: {xLabels.length} x {yLabels.length}
         </div>
 
-        {/* Axis selectors */}
+        {/* Dynamic Axis selectors (schema-on-read) */}
         <div className="flex items-center gap-2">
-          <label className="text-sm">X:</label>
+          <label className="text-sm font-medium">X:</label>
           <select
-            value={xFacet}
+            value={xFacet || ''}
             onChange={(e) => setXFacet(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            className="border rounded px-2 py-1 text-sm bg-white"
+            disabled={availableFields.length === 0}
           >
-            <option value="folder">Folder</option>
-            <option value="status">Status</option>
-            <option value="priority">Priority</option>
+            {availableFields.map((field) => (
+              <option key={field.name} value={field.name}>
+                {field.label} ({field.valueCount})
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-sm">Y:</label>
+          <label className="text-sm font-medium">Y:</label>
           <select
-            value={yFacet}
+            value={yFacet || ''}
             onChange={(e) => setYFacet(e.target.value)}
-            className="border rounded px-2 py-1 text-sm"
+            className="border rounded px-2 py-1 text-sm bg-white"
+            disabled={availableFields.length === 0}
           >
-            <option value="status">Status</option>
-            <option value="folder">Folder</option>
-            <option value="priority">Priority</option>
+            {availableFields.map((field) => (
+              <option key={field.name} value={field.name}>
+                {field.label} ({field.valueCount})
+              </option>
+            ))}
           </select>
         </div>
 
