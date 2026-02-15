@@ -212,3 +212,103 @@
 .focusable-component:focus-visible {
   @apply ring-2 ring-blue-500 ring-offset-2;
 }
+
+/* =============================================================================
+ * xterm.js Terminal Scrollbar Styling
+ * =============================================================================
+ * Match scrollbar to terminal background (#111827 = gray-900)
+ */
+.xterm-viewport {
+  background-color: #111827 !important;
+}
+
+.xterm-viewport::-webkit-scrollbar {
+  width: 10px;
+  background-color: #111827;
+}
+
+.xterm-viewport::-webkit-scrollbar-track {
+  background-color: #111827;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background-color: #374151;
+  border-radius: 5px;
+  border: 2px solid #111827;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background-color: #4b5563;
+}
+
+/* Firefox scrollbar styling */
+.xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: #374151 #111827;
+}
+
+/* =============================================================================
+ * Callout Block Styles
+ * =============================================================================
+ * Used by TipTap CalloutExtension for rich callout blocks in the editor.
+ * Theme-aware using CSS custom properties.
+ */
+.callout {
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  box-shadow: var(--shadow-raised, none);
+}
+
+.callout__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.callout__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.callout__type-selector {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.25rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.25rem;
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+}
+
+.callout__content {
+  min-height: 1.5rem;
+}
+
+.callout__content > *:first-child {
+  margin-top: 0;
+}
+
+.callout__content > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Callout type variants */
+.callout--info {
+  border-left: 4px solid hsl(var(--primary));
+}
+
+.callout--warning {
+  border-left: 4px solid hsl(40 96% 53%); /* Amber/orange */
+}
+
+.callout--tip {
+  border-left: 4px solid hsl(142 76% 36%); /* Green */
+}
+
+.callout--error {
+  border-left: 4px solid hsl(var(--destructive));
+}
