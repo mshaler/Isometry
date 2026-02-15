@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 ## Current Position
 
 Phase: 96 of 98 (Block Types & Slash Commands - Capture Writing Surface v6.2)
-Plan: 2 of 3 complete
-Status: In progress
-Last activity: 2026-02-15 — Completed 96-02 Callout Blocks
+Plan: 3 of 3 complete
+Status: Phase complete
+Last activity: 2026-02-15 — Completed 96-03 Additional Block Types
 
-Progress (Phase 96): [██████░░░░] 67% (2 of 3 plans)
-Overall: [████████░░] 97% (101 of ~130 total phases across all milestones)
+Progress (Phase 96): [██████████] 100% (3 of 3 plans)
+Overall: [████████░░] 98% (102 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -35,15 +35,15 @@ Overall: [████████░░] 97% (101 of ~130 total phases across a
   - [x] 95-02: Backlinks Query Infrastructure ✓
   - [x] 95-03: Backlinks Panel in RightSidebar ✓
   - [x] 95-04: Forward Links Panel ✓
-- Phase 96: Block Types & Slash Commands (14 requirements) — IN PROGRESS (2/3 plans)
+- Phase 96: Block Types & Slash Commands (14 requirements) — ✓ COMPLETE (3/3 plans)
   - [x] 96-01: Basic Slash Commands (~6m) ✓
   - [x] 96-02: Callout Blocks (~4m) ✓
-  - [ ] 96-03: Additional Block Types
+  - [x] 96-03: Additional Block Types (~6m) ✓
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 96 in progress (2/3 plans complete)
+**Current:** Phase 96 COMPLETE (3/3 plans), ready for Phase 97
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -94,8 +94,8 @@ Overall: [████████░░] 97% (101 of ~130 total phases across a
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 96 (Block Types) | 3/3 | ~5m | Complete ✓ |
 | 92 (Data Cell Integration) | 2/4 | ~5m | In Progress |
-| 96 (Block Types) | 2/3 | ~5m | In Progress |
 | 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
@@ -164,6 +164,11 @@ Recent decisions affecting v6.1 SuperStack work:
 - CALL-01: Extract callout-types.ts to break circular dependency between CalloutExtension.ts and CalloutNode.tsx ✅ Implemented 96-02
 - CALL-02: Use Unicode escapes for emojis to avoid encoding issues ✅ Implemented 96-02
 - CALL-03: contentEditable={false} on select prevents TipTap capturing dropdown input ✅ Implemented 96-02
+- TOGGLE-01: Local useState for collapse state to avoid re-render cascade from attribute changes ✅ Implemented 96-03
+- TOGGLE-02: Start expanded (open: true) for better UX when inserting new toggle ✅ Implemented 96-03
+- BOOKMARK-01: atom: true for non-editable inline content (URL is the content) ✅ Implemented 96-03
+- BOOKMARK-02: Google favicon service for simple icon display without server-side unfurling ✅ Implemented 96-03
+- BOOKMARK-03: Auto-add https:// if user forgets protocol ✅ Implemented 96-03
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -195,15 +200,14 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Stopped at: Phase 92-02 COMPLETE - Density-Aware Data Cell Rendering
-Resume file: .planning/phases/92-data-cell-integration/92-02-SUMMARY.md
+Stopped at: Phase 96-03 COMPLETE - Additional Block Types
+Resume file: .planning/phases/96-block-types-slash-commands/96-03-SUMMARY.md
 
-**Phase 92-02 Summary:**
-- Added cell aggregation to CellDataService using d3.group()
-- Implemented density-aware rendering in DataCellRenderer (leaf vs collapsed modes)
-- Created useDataCellRenderer React hook for lifecycle management
-- Integrated hook in SuperGrid with JanusDensityState
-- Collapsed mode renders circles with count badges, leaf mode shows individual cards
-- Commits: 9bb802fb, 25e01702, 9e2f01d3, f106ae30
+**Phase 96-03 Summary:**
+- Created ToggleExtension for collapsible content sections
+- Created BookmarkExtension for URL preview blocks
+- Added /toggle and /bookmark slash commands
+- Theme-aware CSS styling matching existing callout aesthetic
+- Commits: b37350e0, 978197c0, 2081c50e
 
-**Next step:** Continue Phase 92 with 92-03 (Selection Synchronization)
+**Next step:** Phase 96 COMPLETE. Ready for Phase 97 (Inline Properties) or continue Phase 92

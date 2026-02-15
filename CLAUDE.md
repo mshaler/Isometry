@@ -20,6 +20,28 @@ Before starting ANY implementation work:
 
 ---
 
+## Session Startup: Screenshot Monitoring
+
+At the start of each session, start fswatch to monitor `~/Downloads` for screenshots:
+
+```bash
+fswatch -1 ~/Downloads/*.png &
+```
+
+When the user says "check the screenshot" or similar:
+1. Read the most recent PNG from `~/Downloads` using the Read tool
+2. The Read tool handles images natively — just read the file path
+
+**Pattern:**
+```bash
+# Find most recent screenshot
+ls -t ~/Downloads/*.png | head -1
+```
+
+Then use Read tool on that path to view the screenshot.
+
+---
+
 ## Identity
 
 **Isometry** is a polymorphic data projection platform. The same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline — with view transitions that change the SQL projection, not the data. The keystone feature is **SuperGrid**: nested dimensional headers, orthogonal density controls, and direct sql.js→D3.js rendering with zero serialization.

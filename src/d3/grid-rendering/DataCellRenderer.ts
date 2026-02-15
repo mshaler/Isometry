@@ -8,8 +8,17 @@
 import * as d3 from 'd3';
 import type { DataCellData, D3CoordinateSystem } from '@/types/grid';
 import type { Node } from '@/types/node';
-import type { JanusDensityState } from '@/types/density-control';
 import { CellDataService } from '@/services/supergrid/CellDataService';
+
+/**
+ * Simplified density state for cell rendering (only uses valueDensity)
+ */
+export interface CellDensityState {
+  /** Value density mode: 'leaf' (individual cards) or 'collapsed' (aggregated counts) */
+  valueDensity: 'leaf' | 'collapsed';
+  /** Optional: extent density for future use */
+  extentDensity?: 'sparse' | 'populated-only';
+}
 
 /**
  * Options for cell rendering
@@ -19,8 +28,8 @@ export interface DataCellRenderOptions {
   onCellClick?: (node: Node) => void;
   /** Transition duration in milliseconds (default: 300) */
   transitionDuration?: number;
-  /** Janus density state for density-aware rendering */
-  densityState?: JanusDensityState;
+  /** Density state for density-aware rendering (only valueDensity is used) */
+  densityState?: CellDensityState;
 }
 
 /**

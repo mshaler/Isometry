@@ -18,7 +18,7 @@ import { useSQLite } from '@/db/SQLiteProvider';
 import { useSQLiteQuery } from '@/hooks/database/useSQLiteQuery';
 import { useAltoIndexImport } from '@/hooks/useAltoIndexImport';
 import { SuperGridScrollContainer } from './SuperGridScrollContainer';
-import { DataCellRenderer } from '@/d3/grid-rendering/DataCellRenderer';
+import { DataCellRenderer, type CellDensityState } from '@/d3/grid-rendering/DataCellRenderer';
 import { transformToCellData } from '@/services/supergrid/CellDataService';
 import { parseFolderHierarchy, calculateHeaderLevels } from './HierarchicalHeaderRenderer';
 import type { Node } from '@/types/node';
@@ -129,6 +129,9 @@ export function SuperGridScrollTest(): JSX.Element {
   // Dynamic axis state - default to folder (X) and created_at date (Y)
   const [xFacet, setXFacet] = useState<string | null>(null);
   const [yFacet, setYFacet] = useState<string | null>(null);
+
+  // Density mode - collapsed shows count badges, leaf shows individual cards
+  const [densityMode, setDensityMode] = useState<'collapsed' | 'leaf'>('collapsed');
 
   // Set initial axes once fields are detected
   useEffect(() => {
@@ -494,8 +497,13 @@ export function SuperGridScrollTest(): JSX.Element {
       onCellClick: (node) => {
         console.log('Cell clicked:', node.name);
       },
+      // Use density mode from state - collapsed shows count badges, leaf shows individual cards
+      densityState: {
+        valueDensity: densityMode,
+        extentDensity: 'populated-only',
+      } satisfies CellDensityState,
     });
-  }, [cells, coordinateSystem, contentWidth, contentHeight]);
+  }, [cells, coordinateSystem, contentWidth, contentHeight, densityMode]);
 
   // Loading state
   if (dbLoading) {
@@ -569,6 +577,18 @@ export function SuperGridScrollTest(): JSX.Element {
             ))}
           </select>
         </div>
+
+        {/* Density Mode Toggle */}
+        <button
+          onClick={() => setDensityMode(d => d === 'collapsed' ? 'leaf' : 'collapsed')}
+          className={`px-3 py-1 rounded text-sm font-medium ${
+            densityMode === 'collapsed'
+              ? 'bg-blue-100 text-blue-700'
+              : 'bg-green-100 text-green-700'
+          }`}
+        >
+          {densityMode === 'collapsed' ? '◆ Counts' : '▣ Cards'}
+        </button>
 
         {importResult && (
           <span className="text-green-600 text-sm">

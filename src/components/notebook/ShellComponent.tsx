@@ -136,9 +136,9 @@ function ShellComponentInner({ className }: ShellComponentProps) {
     isSearchMode: commandHistory.isSearchMode,
   });
 
-  // Initialize terminal when component mounts and claude-code tab is active
+  // Initialize terminal when component mounts (container stays mounted, just hidden)
   useEffect(() => {
-    if (!isMinimized && activeTab === 'claude-code' && terminalContainerRef.current) {
+    if (!isMinimized && terminalContainerRef.current) {
       const containerId = 'terminal-container';
       terminalContainerRef.current.id = containerId;
 
@@ -146,7 +146,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
 
       const terminal = createTerminal(containerId);
       if (terminal) {
-        // Attach to simulated process
+        // Attach to PTY process
         attachToProcess();
         setConnectionStatus('connected');
       } else {
@@ -164,7 +164,18 @@ function ShellComponentInner({ className }: ShellComponentProps) {
         window.removeEventListener('resize', handleResize);
       };
     }
-  }, [isMinimized, activeTab]);
+  }, [isMinimized]);
+
+  // Resize terminal when switching back to terminal tab (container may have changed size)
+  useEffect(() => {
+    if (activeTab === 'claude-code' && !isMinimized) {
+      // Small delay to ensure visibility transition completes
+      const timeoutId = setTimeout(() => {
+        resizeTerminal(0, 0);
+      }, 50);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [activeTab, isMinimized, resizeTerminal]);
 
   // Update connection status based on terminal state
   useEffect(() => {
@@ -210,7 +221,7 @@ function ShellComponentInner({ className }: ShellComponentProps) {
   };
 
   return (
-    <div className={`${className} bg-gray-900 border border-gray-700 rounded-lg flex flex-col`}>
+    <div className={`${className} bg-gray-900 border border-gray-700 rounded-lg flex flex-col overflow-hidden`}>
       {/* Header */}
       <div className="flex items-center justify-between p-2 bg-gray-800 rounded-t-lg border-b border-gray-700">
         <div className="flex items-center gap-3">
@@ -259,17 +270,16 @@ function ShellComponentInner({ className }: ShellComponentProps) {
         })}
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 flex flex-col">
-        {activeTab === 'claude-code' ? (
-          /* Terminal Tab - Direct command execution */
-          <div
-            ref={terminalContainerRef}
-            className="flex-1 min-h-0"
-            style={{ height: '300px' }} // Minimum height for terminal
-          />
-        ) : activeTab === 'claude-ai' ? (
-          /* Claude AI Tab - MCP Assistant */
+      {/* Content Area - Terminal stays mounted but hidden to preserve xterm state */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-[#111827] relative">
+        {/* Terminal Tab - Always mounted, hidden when not active */}
+        <div
+          ref={terminalContainerRef}
+          className={`absolute inset-0 bg-[#111827] ${activeTab === 'claude-code' ? 'visible' : 'invisible'}`}
+        />
+
+        {/* Claude AI Tab - MCP Assistant */}
+        {activeTab === 'claude-ai' && (
           <div className="flex-1 flex items-center justify-center text-gray-400">
             <div className="text-center">
               <Bot size={48} className="mx-auto mb-3 text-gray-600" />
@@ -278,14 +288,16 @@ function ShellComponentInner({ className }: ShellComponentProps) {
               <div className="text-xs">Coming soon: Direct AI conversation interface</div>
             </div>
           </div>
-        ) : (
-          /* GSD GUI Tab - Getting Shit Done interface */
+        )}
+
+        {/* GSD GUI Tab - Getting Shit Done interface */}
+        {activeTab === 'gsd-gui' && (
           <GSDInterface className="flex-1" />
         )}
       </div>
 
       {/* Status Bar */}
-      <div className="border-t border-gray-700 bg-gray-800 px-3 py-1">
+      <div className="border-t border-[#111827] bg-gray-800 px-3 py-1">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">

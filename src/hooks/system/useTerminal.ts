@@ -6,6 +6,7 @@ import { useTerminalContext } from '../../context/TerminalContext';
 import { getClaudeCodeDispatcher, WebSocketClaudeCodeDispatcher } from '../../services/claude-code/claudeCodeWebSocketDispatcher';
 import { devLogger } from '../../utils/logging';
 
+
 interface UseTerminalOptions {
   workingDirectory?: string;
   shell?: string;
@@ -48,6 +49,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   const containerRef = useRef<HTMLElement | null>(null);
   const sessionIdRef = useRef<string>(`term-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
   const dispatcherRef = useRef<WebSocketClaudeCodeDispatcher | null>(null);
+  const hasSpawnedRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
   const [currentMode, setCurrentMode] = useState<'shell' | 'claude-code'>('shell');
 
@@ -190,14 +192,32 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
    * Create terminal instance
    */
   const createTerminal = useCallback((containerId: string) => {
-    if (terminalRef.current) {
-      return terminalRef.current;
-    }
-
     const container = document.getElementById(containerId);
     if (!container) {
       devLogger.error('Terminal container not found', { component: 'useTerminal', containerId });
       return null;
+    }
+
+    // If terminal exists but container changed (tab switch), re-open in new container
+    if (terminalRef.current) {
+      const existingTerminal = terminalRef.current;
+      containerRef.current = container;
+
+      // Check if terminal needs to be re-attached to DOM
+      if (!container.querySelector('.xterm')) {
+        devLogger.debug('Re-opening terminal in new container', { component: 'useTerminal' });
+        existingTerminal.open(container);
+
+        // Delayed fit and refresh to ensure DOM is ready
+        setTimeout(() => {
+          fitAddonRef.current?.fit();
+          // Force refresh to redraw buffer content
+          existingTerminal.refresh(0, existingTerminal.rows - 1);
+          // Scroll to bottom to show latest output
+          existingTerminal.scrollToBottom();
+        }, 50);
+      }
+      return existingTerminal;
     }
 
     const terminal = new Terminal({
@@ -259,11 +279,16 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     const terminal = terminalRef.current;
     if (!terminal) return;
 
-    // Prevent duplicate PTY spawns
-    if (isConnected) {
-      devLogger.debug('Already connected, skipping spawn', { component: 'useTerminal' });
+    // Prevent duplicate spawns within same instance
+    if (hasSpawnedRef.current || isConnected) {
+      devLogger.debug('Already spawned/connected, skipping spawn', {
+        component: 'useTerminal',
+        refTracked: hasSpawnedRef.current,
+        stateTracked: isConnected
+      });
       return;
     }
+    hasSpawnedRef.current = true;
 
     await initializeDispatcher();
 
@@ -278,6 +303,9 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     const cols = terminal.cols;
     const rows = terminal.rows;
 
+    // Clear terminal before spawn to remove any stale content
+    terminal.clear();
+
     // Spawn PTY on server
     dispatcher.spawnTerminal(sessionIdRef.current, {
       shell: options.shell || '/bin/zsh',
@@ -285,6 +313,11 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       cols,
       rows
     });
+
+    // Send "clear" after brief delay to clean up zsh PROMPT_SP artifacts
+    setTimeout(() => {
+      dispatcher.sendTerminalInput(sessionIdRef.current, 'clear\r');
+    }, 150);
 
     // Forward keystrokes to server
     terminal.onData((data) => {
@@ -422,6 +455,8 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
       containerRef.current = null;
     }
 
+    // Reset spawn flag to allow re-spawn on StrictMode remount
+    hasSpawnedRef.current = false;
     setIsConnected(false);
   }, []);
 

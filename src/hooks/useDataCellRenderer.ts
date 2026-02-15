@@ -7,9 +7,8 @@
 
 import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
-import { DataCellRenderer } from '@/d3/grid-rendering/DataCellRenderer';
+import { DataCellRenderer, type CellDensityState } from '@/d3/grid-rendering/DataCellRenderer';
 import type { DataCellData, D3CoordinateSystem } from '@/types/grid';
-import type { JanusDensityState } from '@/types/density-control';
 import type { Node } from '@/types/node';
 
 /**
@@ -20,8 +19,8 @@ export interface UseDataCellRendererOptions {
   coordinateSystem: D3CoordinateSystem;
   /** Array of data cells to render */
   cells: DataCellData[];
-  /** Janus density state for density-aware rendering */
-  densityState?: JanusDensityState;
+  /** Density state for density-aware rendering (leaf vs collapsed) */
+  densityState?: CellDensityState;
   /** Callback when a cell is clicked */
   onCellClick?: (node: Node) => void;
   /** Transition duration in milliseconds */
