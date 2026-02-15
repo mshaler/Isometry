@@ -385,11 +385,11 @@ Plans:
 **Plans**: 5 plans in 3 waves
 
 Plans:
-- [ ] 87-01-PLAN.md — GSD file parser with gray-matter frontmatter extraction (Wave 1)
-- [ ] 87-02-PLAN.md — Chokidar file watcher with debounced events (Wave 1)
-- [ ] 87-03-PLAN.md — Bidirectional sync service and ClaudeCodeServer integration (Wave 2)
-- [ ] 87-04-PLAN.md — React hooks and progress display component (Wave 2)
-- [ ] 87-05-PLAN.md — Conflict detection and resolution UI (Wave 3)
+- [x] 87-01-PLAN.md — GSD file parser with gray-matter frontmatter extraction (Wave 1)
+- [x] 87-02-PLAN.md — Chokidar file watcher with debounced events (Wave 1)
+- [x] 87-03-PLAN.md — Bidirectional sync service and ClaudeCodeServer integration (Wave 2)
+- [x] 87-04-PLAN.md — React hooks and progress display component (Wave 2)
+- [x] 87-05-PLAN.md — Conflict detection and resolution UI (Wave 3)
 
 ### Phase 88: Integration & Polish
 **Goal**: All three Shell tabs work together seamlessly
@@ -424,7 +424,7 @@ Plans:
 | 84 | v5.2 | 4/4 | Complete | 2026-02-13 |
 | 85. Backend Terminal | v6.0 | 5/5 | Complete | 2026-02-14 |
 | 86. Claude AI Integration | v6.0 | 4/4 | Complete | 2026-02-15 |
-| 87. GSD File Sync | v6.0 | 0/5 | Planned | - |
+| 87. GSD File Sync | v6.0 | 5/5 | Complete | 2026-02-15 |
 | 88. Integration & Polish | v6.0 | 0/0 | Pending | - |
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
@@ -440,4 +440,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 87 plans created, 5 plans in 3 waves)*
+*Last updated: 2026-02-15 (Phase 87 complete — GSD File Synchronization)*
