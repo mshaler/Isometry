@@ -40,6 +40,8 @@ export { useVirtualLiveQuery } from './performance/useVirtualLiveQuery';
 // export { useVirtualizedGrid } from './performance/useVirtualizedGrid'; // Disabled - missing dependencies
 export { useVirtualizedList } from './performance/useVirtualizedList';
 export { useNotebookPerformance } from './performance/useNotebookPerformance';
+export { useFPSMonitor } from './useFPSMonitor';
+export { useVirtualizedGrid } from './useVirtualizedGrid';
 
 // Performance types
 export type { OptimizationPlan } from './performance/useRenderingOptimization';

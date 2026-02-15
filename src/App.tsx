@@ -78,6 +78,50 @@ function App() {
     return <CLIIntegrationTest />;
   }
 
+  // Phase 96: Isolated Notebook test page (Capture, Shell, Preview only)
+  // No SuperGrid or other complex components - pure notebook debugging
+  if (testMode === 'notebook') {
+    return (
+      <SQLiteProvider>
+        <FilterProvider>
+          <ThemeProvider>
+            <PAFVProvider>
+              <SelectionProvider>
+                <NotebookProvider>
+                  <div className="h-screen w-screen bg-gray-900 flex flex-col">
+                    {/* Header */}
+                    <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
+                      <h1 className="text-white font-semibold">Notebook Test Page</h1>
+                      <span className="ml-4 text-gray-400 text-sm">
+                        Isolated testing for Capture, Shell, and Preview
+                      </span>
+                      <a
+                        href="/"
+                        className="ml-auto text-blue-400 hover:text-blue-300 text-sm"
+                      >
+                        Back to Main
+                      </a>
+                    </div>
+
+                    {/* Notebook Layout - Full Height */}
+                    <div className="flex-1 p-2 overflow-hidden">
+                      <NotebookLayout />
+                    </div>
+
+                    {/* Footer with instructions */}
+                    <div className="h-10 bg-gray-800 border-t border-gray-700 flex items-center px-4 text-xs text-gray-400">
+                      <span>Cmd+1 (Capture) | Cmd+2 (Shell) | Cmd+3 (Preview) | Cmd+S (Save) | Type / for commands</span>
+                    </div>
+                  </div>
+                </NotebookProvider>
+              </SelectionProvider>
+            </PAFVProvider>
+          </ThemeProvider>
+        </FilterProvider>
+      </SQLiteProvider>
+    );
+  }
+
   if (testMode === 'three-canvas') {
     // SYNC-03: SelectionProvider enables cross-canvas selection synchronization
     // All notebook canvases (Capture, Shell, Preview) share the same selection state

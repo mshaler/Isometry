@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 ## Current Position
 
-Phase: 92 of 98 (Data Cell Integration - SuperStack Enhancement v6.1)
-Plan: 4 of 4 complete
+Phase: 93 of 98 (Polish & Performance - SuperStack Enhancement v6.1)
+Plan: 3 of 3 complete
 Status: Complete
-Last activity: 2026-02-15 — Completed Phase 92 (all 4 plans)
+Last activity: 2026-02-14 — Completed Phase 93 (all 3 plans)
 
-Progress (Phase 92): [██████████] 100% (4 of 4 plans)
-Overall: [████████░░] 99% (104 of ~130 total phases across all milestones)
+Progress (Phase 93): [██████████] 100% (3 of 3 plans)
+Overall: [████████░░] 99% (105 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -39,11 +39,13 @@ Overall: [████████░░] 99% (104 of ~130 total phases across a
   - [x] 96-01: Basic Slash Commands (~6m) ✓
   - [x] 96-02: Callout Blocks (~4m) ✓
   - [x] 96-03: Additional Block Types (~6m) ✓
-- Phase 97: Inline Properties (4 requirements)
+- Phase 97: Inline Properties (4 requirements) — ✓ COMPLETE (2/2 plans)
+  - [x] 97-01: Inline Property Mark (@key: value syntax) ✓
+  - [x] 97-02: Hashtag Mark with Autocomplete (#tag syntax) ✓
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 96 COMPLETE (3/3 plans), ready for Phase 97
+**Current:** Phase 97 COMPLETE (2/2 plans), ready for Phase 98
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -62,10 +64,13 @@ Overall: [████████░░] 99% (104 of ~130 total phases across a
   - [x] 92-02: Density-aware rendering (counts vs card chips) ✓
   - [x] 92-03: Selection synchronization (~6m) ✓
   - [x] 92-04: SuperStack hierarchical header integration ✓
-- Phase 93: Polish & Performance (5 requirements)
+- Phase 93: Polish & Performance (5 requirements) — ✓ COMPLETE (3/3 plans)
+  - [x] 93-01: Virtual scrolling with TanStack Virtual (~5m) ✓
+  - [x] 93-02: Accessibility (ARIA + empty states) (~5m) ✓
+  - [x] 93-03: GPU-accelerated animations + sticky headers (~5m) ✓
 
 **Total requirements:** 26
-**Current:** Phase 92 COMPLETE (4/4 plans), ready for Phase 93
+**Current:** Phase 93 COMPLETE (3/3 plans) — v6.1 SuperStack Enhancement COMPLETE
 
 ### v6.0 Interactive Shell — IN PROGRESS
 
@@ -103,20 +108,28 @@ Overall: [████████░░] 99% (104 of ~130 total phases across a
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 97 (Inline Properties) | 2/2 | ~5m | Complete ✓ |
+| 93 (Polish & Performance) | 3/3 | ~5m | Complete ✓ |
 | 96 (Block Types) | 3/3 | ~5m | Complete ✓ |
 | 92 (Data Cell Integration) | 4/4 | ~5.3m | Complete ✓ |
 | 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
-| 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
 
-*Updated: 2026-02-15*
+*Updated: 2026-02-14*
 
 ## Accumulated Context
 
 ### Decisions
 
 Recent decisions affecting v6.1 SuperStack work:
+
+**Polish & Performance (Phase 93):**
+- PERF-01: TanStack Virtual for row-based virtualization, 100-cell threshold ✅ Implemented 93-01
+- PERF-02: Virtualized sticky headers - headers outside scroll container with JS scroll sync ✅ Implemented 93-03
+- A11Y-01: ARIA grid pattern with roving tabindex for keyboard navigation ✅ Implemented 93-02
+- UX-01: Three empty state variants (first-use, no-results, error) with aria-live announcements ✅ Implemented 93-02
+- UX-02: GPU-accelerated transforms (scaleX, translateX, opacity) skip layout recalculation ✅ Implemented 93-03
 
 **Data Cell Integration (Phase 92):**
 - CELL-AGG-01: Use d3.group() for cell aggregation by position ✅ Implemented 92-02
@@ -213,21 +226,25 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-14
-Stopped at: Phase 86-02 COMPLETE - Project Context
-Resume file: .planning/phases/86-claude-ai-integration/
+Stopped at: Phase 97 COMPLETE - Inline Properties
+Resume file: .planning/phases/97-inline-properties/
 
-**Phase 86 Summary (Plans 1-2 Complete):**
-- 86-01: Basic Chat Interface - ClaudeAIChat component, useClaudeAI hook, streaming responses
-- 86-02: Project Context - LATCH/GRAPH/PAFV architecture in system prompt, active card context
+**Phase 97 Summary (2/2 Plans Complete):**
+- 97-01: Inline Property Mark (@key: value TipTap Mark extension)
+- 97-02: Hashtag Mark with Autocomplete (#tag syntax with TagService and dropdown)
 
-**Next Step:** Test Claude AI chat in browser, then implement 86-03 (MCP Tools) and 86-04 (Claude Code)
+**v6.2 Capture Writing Surface Progress:**
+- Phase 94 (Foundation) ✓
+- Phase 95 (Data Layer & Backlinks) ✓
+- Phase 96 (Block Types) ✓
+- Phase 97 (Inline Properties) ✓
+- Phase 98 (Isometry Embeds & Polish) — NEXT
 
-**To test Claude AI:**
-1. Add `VITE_ANTHROPIC_API_KEY=sk-ant-...` to `.env` file
-2. Run `npm run dev`
-3. Click the Claude AI tab in Shell
-4. Chat with Claude - it knows about Isometry architecture
+**Next Steps:**
+1. Continue v6.2 with Phase 98: Isometry Embeds & Polish
+2. Or resume v6.0 Interactive Shell (Phase 86-03: MCP Tools)
 
-**Key Fix:** Defaulted to collapsed density mode to prevent text overlap when 6,741 cards share grid positions
-
-**Next step:** Phase 93 - Polish & Performance (virtual scrolling, accessibility, animations)
+**Key Deliverables from Phase 97:**
+- InlinePropertyExtension: @key: value syntax with styled blue badges
+- HashtagExtension: #tag autocomplete with TagService and dropdown menu
+- useInlinePropertySync and useHashtagSync hooks for PropertyEditor sync

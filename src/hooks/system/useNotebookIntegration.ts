@@ -69,7 +69,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
   const { filters } = useFilters();
   const { state: pafvState } = usePAFV();
   const { theme } = useTheme();
-  const { execute } = useSQLite();
+  const { execute, db, loading } = useSQLite();
 
   const [state, setState] = useState<NotebookIntegrationState>({
     isConnected: true,
@@ -88,6 +88,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
   const changeQueueRef = useRef<Set<string>>(new Set());
   const lastFilterStateRef = useRef(filters);
   const lastProjectionRef = useRef(pafvState);
+  const lastActiveCardModifiedRef = useRef<string | null>(null);
 
   // Debounced sync to avoid excessive database operations
   const debouncedSync = useCallback(() => {
@@ -102,7 +103,8 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Main synchronization logic
   const performSync = useCallback(async () => {
-    if (!execute || state.syncInProgress) return;
+    // Guard: don't sync if database isn't ready or sync already in progress
+    if (!db || loading || state.syncInProgress) return;
 
     setState(prev => ({ ...prev, syncInProgress: true }));
 
@@ -137,11 +139,11 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
         isMainAppConnected: false
       }));
     }
-  }, [execute, state.syncInProgress]);
+  }, [db, loading, execute, state.syncInProgress]);
 
   // Sync notebook cards to main app nodes
   const syncNotebookCardsToNodes = useCallback(async () => {
-    if (!execute) return;
+    if (!db) return;
 
     for (const card of cards) {
       try {
@@ -171,7 +173,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Apply main app filters to notebook cards
   const applyFiltersToNotebook = useCallback(async () => {
-    if (!execute) return;
+    if (!db) return;
 
     // Check if filters have changed
     const filtersChanged = JSON.stringify(filters) !== JSON.stringify(lastFilterStateRef.current);
@@ -201,7 +203,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Detect and handle editing conflicts
   const detectConflicts = useCallback(async () => {
-    if (!execute) return;
+    if (!db) return;
 
     const conflicts: string[] = [];
 
@@ -245,7 +247,7 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
     cardId: string,
     resolution: 'notebook' | 'main' | 'merge'
   ) => {
-    if (!execute) return;
+    if (!db) return;
 
     const card = cards.find(c => c.id === cardId);
     if (!card) return;
@@ -321,23 +323,45 @@ export function useNotebookIntegration(params: NotebookHookParams): UseNotebookI
 
   // Monitor changes to trigger sync
   useEffect(() => {
-    if (activeCard) {
-      changeQueueRef.current.add(activeCard.id);
-      setState(prev => ({ ...prev, pendingChanges: changeQueueRef.current.size }));
-      debouncedSync();
-    }
-  }, [activeCard?.modifiedAt, debouncedSync]);
+    if (!activeCard) return;
+
+    // Convert modifiedAt to string for stable comparison
+    const modifiedAtStr = activeCard.modifiedAt instanceof Date
+      ? activeCard.modifiedAt.toISOString()
+      : String(activeCard.modifiedAt || '');
+
+    // Guard: only process if modifiedAt actually changed
+    if (modifiedAtStr === lastActiveCardModifiedRef.current) return;
+    lastActiveCardModifiedRef.current = modifiedAtStr;
+
+    changeQueueRef.current.add(activeCard.id);
+    const newSize = changeQueueRef.current.size;
+
+    // Guard: only update state if pendingChanges actually changed
+    setState(prev => {
+      if (prev.pendingChanges === newSize) return prev;
+      return { ...prev, pendingChanges: newSize };
+    });
+
+    debouncedSync();
+  }, [activeCard?.id, activeCard?.modifiedAt, debouncedSync]);
 
   // Monitor filter changes
   useEffect(() => {
-    if (JSON.stringify(filters) !== JSON.stringify(lastFilterStateRef.current)) {
+    const currentFiltersStr = JSON.stringify(filters);
+    const lastFiltersStr = JSON.stringify(lastFilterStateRef.current);
+    if (currentFiltersStr !== lastFiltersStr) {
+      lastFilterStateRef.current = filters;
       debouncedSync();
     }
   }, [filters, debouncedSync]);
 
   // Monitor projection changes
   useEffect(() => {
-    if (JSON.stringify(pafvState) !== JSON.stringify(lastProjectionRef.current)) {
+    const currentPafvStr = JSON.stringify(pafvState);
+    const lastPafvStr = JSON.stringify(lastProjectionRef.current);
+    if (currentPafvStr !== lastPafvStr) {
+      lastProjectionRef.current = pafvState;
       debouncedSync();
     }
   }, [pafvState, debouncedSync]);

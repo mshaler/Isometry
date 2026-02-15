@@ -406,3 +406,47 @@
 [data-theme="modern"] .supergrid__cell:hover {
   background: rgba(255, 255, 255, 0.9);
 }
+
+/* ============================================================================
+ * VIRTUALIZED MODE - Headers outside scroll container (Phase 93 - PERF-02)
+ * Solves CSS sticky + overflow: auto conflict with TanStack Virtual
+ * ============================================================================ */
+.supergrid--virtualized {
+  /* CSS Grid layout handles sticky behavior via grid placement */
+}
+
+.supergrid__column-headers--virtualized {
+  /* Sync scroll with data grid via JS */
+  scroll-behavior: auto;
+}
+
+.supergrid__row-headers--virtualized {
+  /* Sync scroll with data grid via JS */
+  scroll-behavior: auto;
+}
+
+.supergrid__data-grid--virtualized {
+  /* Smooth scrolling for better UX */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* iOS momentum scrolling */
+}
+
+/* Ensure no sticky conflicts in virtualized mode */
+.supergrid--virtualized .supergrid__corner--fixed,
+.supergrid--virtualized .supergrid__column-headers--virtualized,
+.supergrid--virtualized .supergrid__row-headers--virtualized {
+  position: relative !important; /* Override any inherited sticky */
+}
+
+/* FPS Monitor overlay (dev-only) */
+.supergrid-fps-monitor {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  pointer-events: none;
+}

@@ -162,24 +162,55 @@ export class HeaderAnimationController {
 
   /**
    * Animate header toggle (expand/collapse)
+   * Uses GPU-accelerated animation path (Phase 93 - UX-02)
    */
   animateToggle(node: HeaderNode): void {
-    this.animateHeaderExpansion(node);
+    this.animateHeaderExpansionGPU(node);
   }
 
   /**
-   * Animate header expansion with morphing boundaries
+   * Animate header expansion with GPU-accelerated transforms
+   * Uses transform + opacity to skip layout recalculation (Phase 93 - UX-02)
    */
-  private animateHeaderExpansion(node: HeaderNode): void {
+  private animateHeaderExpansionGPU(node: HeaderNode): void {
     const transitionId = `toggle-${node.id}-${Date.now()}`;
     this.runningTransitions.add(transitionId);
 
     try {
-      // Find child nodes to animate
       const childNodes = node.children || [];
 
       if (childNodes.length > 0) {
+        // Animate parent span changes with GPU transforms
         this.animateMorphingBoundaries(node, childNodes, transitionId);
+
+        // Animate children with GPU transforms (additional reveal/hide animation)
+        childNodes.forEach((child, index) => {
+          const childElement = this.container
+            .selectAll('.header-node')
+            .filter((d: unknown) => (d as HeaderNode).id === child.id);
+
+          if (!childElement.empty()) {
+            const delay = index * 40; // Faster stagger for GPU animations
+
+            childElement
+              .interrupt()
+              .transition(`child-gpu-${transitionId}-${index}`)
+              .delay(delay)
+              .duration(this.config.animationDuration)
+              .ease(d3.easeQuadOut)
+              .style('transform', node.isExpanded
+                ? 'scaleY(1) translateY(0)'
+                : 'scaleY(0) translateY(-10px)')
+              .style('transform-origin', 'top')
+              .style('opacity', node.isExpanded ? 1 : 0)
+              .on('end', function() {
+                // Reset transform after animation to avoid stacking transforms
+                d3.select(this)
+                  .style('transform', null)
+                  .attr('transform', `translate(${child.x}, 0)`);
+              });
+          }
+        });
       }
 
       // Update expand icon
@@ -209,7 +240,8 @@ export class HeaderAnimationController {
   }
 
   /**
-   * Animate parent header span width changes with morphing boundaries
+   * Animate parent header span width changes with GPU-accelerated transforms
+   * Uses scaleX instead of width to skip layout recalculation (Phase 93 - UX-02)
    */
   private animateParentSpanChanges(parentNode: HeaderNode, transitionId: string): void {
     const parentElement = this.container
@@ -218,26 +250,45 @@ export class HeaderAnimationController {
 
     if (parentElement.empty()) return;
 
-    // Animate background width change
+    // Get current and target widths for scale calculation
+    const bgRect = parentElement.select('.header-background').node() as SVGRectElement | null;
+    const currentWidth = bgRect ? parseFloat(bgRect.getAttribute('width') || '0') : 0;
+    const targetWidth = parentNode.width;
+    const scaleX = targetWidth / (currentWidth || 1);
+
+    // GPU-accelerated: use transform instead of width
+    // This avoids layout recalculation on every frame
     parentElement.select('.header-background')
-      .interrupt() // Always interrupt previous transitions
+      .interrupt()
       .transition(`parent-span-${transitionId}`)
       .duration(this.config.animationDuration)
-      .ease(d3.easeQuadOut) // "quiet app" aesthetic
-      .attr('width', parentNode.width);
+      .ease(d3.easeQuadOut)
+      .style('transform', `scaleX(${scaleX})`)
+      .style('transform-origin', 'left center')
+      .on('end', function() {
+        // Reset transform and set final width (layout only once at end)
+        d3.select(this)
+          .style('transform', null)
+          .attr('width', targetWidth);
+      });
 
-    // Animate text positioning adjustment
+    // Text positioning uses opacity fade during width change
     parentElement.select('.header-label')
       .interrupt()
       .transition(`parent-text-${transitionId}`)
-      .duration(this.config.animationDuration)
+      .duration(this.config.animationDuration / 2)
       .ease(d3.easeQuadOut)
+      .style('opacity', 0)
+      .transition()
+      .duration(this.config.animationDuration / 2)
+      .style('opacity', 1)
       .attr('x', this.getTextX(parentNode))
       .attr('text-anchor', this.getTextAnchor(parentNode));
   }
 
   /**
-   * Animate child node positioning during parent expand/collapse
+   * Animate child node positioning with GPU-accelerated translateX
+   * Uses transform for positioning to skip layout (Phase 93 - UX-02)
    */
   private animateChildPositioning(childNodes: HeaderNode[], transitionId: string): void {
     childNodes.forEach((childNode, index) => {
@@ -250,14 +301,21 @@ export class HeaderAnimationController {
       // Stagger child animations for fluid cascading effect
       const delay = index * 50;
 
+      // GPU-accelerated: use CSS transform + opacity
       childElement
         .interrupt()
         .transition(`child-position-${transitionId}-${index}`)
         .delay(delay)
         .duration(this.config.animationDuration)
         .ease(d3.easeQuadOut)
-        .attr('transform', `translate(${childNode.x}, 0)`)
-        .style('opacity', childNode.isVisible ? 1 : 0);
+        .style('transform', `translateX(${childNode.x}px)`)
+        .style('opacity', childNode.isVisible ? 1 : 0)
+        .on('end', function() {
+          // Reset CSS transform and set final SVG transform (layout only once at end)
+          d3.select(this)
+            .style('transform', null)
+            .attr('transform', `translate(${childNode.x}, 0)`);
+        });
     });
   }
 

@@ -213,14 +213,20 @@ export function FocusProvider({ children }: FocusProviderProps) {
   }, [focusComponent]);
 
   // Initialize focus on first component when components are registered
+  // Note: Empty deps array - this only runs once on mount.
+  // Components self-register via registerComponent callback.
   useEffect(() => {
-    if (componentElements.current.size > 0 && !activeComponent.current) {
-      const firstComponent = components.find(comp => componentElements.current.has(comp));
-      if (firstComponent) {
-        focusComponent(firstComponent);
+    // Small delay to allow components to register
+    const timeoutId = setTimeout(() => {
+      if (componentElements.current.size > 0 && !activeComponent.current) {
+        const firstComponent = components.find(comp => componentElements.current.has(comp));
+        if (firstComponent) {
+          focusComponent(firstComponent);
+        }
       }
-    }
-  });
+    }, 100);
+    return () => clearTimeout(timeoutId);
+  }, [focusComponent]);
 
   // Cleanup all timeouts and listeners on unmount
   useEffect(() => {

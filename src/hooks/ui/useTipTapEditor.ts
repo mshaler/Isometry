@@ -19,8 +19,19 @@ import {
   WikiLink,
   createWikiLinkSuggestion,
   AppleNotesShortcuts,
+  CalloutExtension,
+  ToggleExtension,
+  BookmarkExtension,
+  InlinePropertyExtension,
+  HashtagExtension,
+  createHashtagSuggestion,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
+import {
+  HashtagMenu,
+  type HashtagMenuRef
+} from '../../components/notebook/editor/HashtagMenu';
+import { tagService } from '../../services/TagService';
 import {
   SlashCommandMenu,
   type SlashCommandMenuRef
@@ -77,6 +88,11 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
     if (sourceCardId && item.id !== sourceCardId) {
       createLinkEdge(db, sourceCardId, item.id);
     }
+  }, [db]);
+
+  // Query function for hashtag suggestions
+  const queryTags = useCallback((query: string): string[] => {
+    return tagService.searchTags(db, query);
   }, [db]);
 
   // Memoize the activeCard nodeId to avoid re-creating extensions on every render
@@ -152,10 +168,10 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
         nested: true, // Allow nested task items
       }),
       AppleNotesShortcuts,
-      // TEMP: Disabled for debugging - uncomment after issue is fixed
-      // CalloutExtension,
-      // ToggleExtension,
-      // BookmarkExtension,
+      CalloutExtension,
+      ToggleExtension,
+      BookmarkExtension,
+      InlinePropertyExtension,
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
           () => {
@@ -165,7 +181,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
 
             return {
               onStart: (props: SuggestionProps<SlashCommand>) => {
-                if (destroyed) return;
+                // Reset destroyed flag for new suggestion session
+                destroyed = false;
 
                 component = new ReactRenderer(SlashCommandMenu, {
                   props: {
@@ -241,7 +258,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
 
             return {
               onStart: (props: SuggestionProps<CardSuggestion>) => {
-                if (destroyed) return;
+                // Reset destroyed flag for new suggestion session
+                destroyed = false;
 
                 component = new ReactRenderer(WikiLinkMenu, {
                   props: {
@@ -270,6 +288,82 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
                 component.updateProps({
                   items: props.items,
                   command: (item: CardSuggestion) => props.command(item),
+                });
+
+                if (!props.clientRect) return;
+
+                popup[0]?.setProps({
+                  getReferenceClientRect: props.clientRect as () => DOMRect,
+                });
+              },
+
+              onKeyDown: (props: SuggestionKeyDownProps) => {
+                if (destroyed || !component || !popup) return false;
+
+                if (props.event.key === 'Escape') {
+                  popup[0]?.hide();
+                  return true;
+                }
+
+                return component.ref?.onKeyDown(props) ?? false;
+              },
+
+              onExit: () => {
+                destroyed = true;
+
+                if (popup?.[0]) {
+                  popup[0].destroy();
+                }
+
+                if (component) {
+                  component.destroy();
+                }
+              },
+            };
+          }
+        ),
+      }),
+      HashtagExtension.configure({
+        suggestion: createHashtagSuggestion(
+          queryTags,
+          undefined, // No callback needed for now
+          () => {
+            let component: ReactRenderer<HashtagMenuRef>;
+            let popup: TippyInstance[];
+            let destroyed = false;
+
+            return {
+              onStart: (props: SuggestionProps<string>) => {
+                // Reset destroyed flag for new suggestion session
+                destroyed = false;
+
+                component = new ReactRenderer(HashtagMenu, {
+                  props: {
+                    items: props.items,
+                    command: (item: string) => props.command(item),
+                  },
+                  editor: props.editor,
+                });
+
+                if (!props.clientRect) return;
+
+                popup = tippy('body', {
+                  getReferenceClientRect: props.clientRect as () => DOMRect,
+                  appendTo: () => document.body,
+                  content: component.element,
+                  showOnCreate: true,
+                  interactive: true,
+                  trigger: 'manual',
+                  placement: 'bottom-start',
+                });
+              },
+
+              onUpdate: (props: SuggestionProps<string>) => {
+                if (destroyed || !component || !popup) return;
+
+                component.updateProps({
+                  items: props.items,
+                  command: (item: string) => props.command(item),
                 });
 
                 if (!props.clientRect) return;

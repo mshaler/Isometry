@@ -18,6 +18,9 @@
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { SuperStack } from './SuperStack';
 import { DensityControls } from './DensityControls';
+import { SuperGridVirtualized } from './SuperGridVirtualized';
+import { SuperGridEmptyState, type EmptyStateType } from './SuperGridEmptyState';
+import { SuperGridAccessibility } from './SuperGridAccessibility';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
 import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
 import { useHeaderInteractions } from '@/hooks/useHeaderInteractions';
@@ -39,6 +42,9 @@ import * as d3 from 'd3';
 import { superGridLogger } from '@/utils/dev-logger';
 import './SuperStack.css';
 import './SuperGrid.css';
+
+/** Threshold for switching to virtualized rendering (PERF-01) */
+const VIRTUALIZATION_THRESHOLD = 100;
 
 /**
  * Map AxisMapping (from PAFV) to FacetConfig (for SuperStack).
@@ -553,41 +559,51 @@ export function SuperGrid({
     );
   }
 
-  // Error state
+  // Error state (Phase 93 - UX-01)
   if (error) {
     return (
       <div className="supergrid supergrid--error">
-        <div className="supergrid__error-icon">⚠️</div>
-        <h3>SuperGrid Error</h3>
-        <p>{error.message}</p>
-        <details>
-          <summary>SQL Query</summary>
-          <code>{sql}</code>
-        </details>
+        <SuperGridEmptyState
+          type="error"
+          errorMessage={error.message}
+          sql={sql}
+        />
       </div>
     );
   }
 
-  // Empty state
+  // Empty state - determine type based on filter context (Phase 93 - UX-01)
+  // pafvState is already available from usePAFV() hook
   if (!nodes?.length) {
+    // Determine empty state type by checking if PAFV has active mappings
+    // pafvState.mappings contains axis mappings - if any exist, filters are active
+    const hasActiveFilters = pafvState.mappings.length > 0;
+    const emptyType: EmptyStateType = hasActiveFilters ? 'no-results' : 'first-use';
+
     return (
       <div className="supergrid supergrid--empty">
-        <div className="supergrid__empty-icon">📊</div>
-        <h3>No Data</h3>
-        <p>No nodes found for the current query.</p>
-        <code>{sql}</code>
+        <SuperGridEmptyState
+          type={emptyType}
+          sql={sql}
+        />
       </div>
     );
   }
 
   return (
-    <div
-      ref={gridRef}
-      className={`supergrid supergrid--${gridLayout.effectiveMode}`}
-      data-mode={gridLayout.effectiveMode}
-      data-columns={gridLayout.hasColumns}
-      data-rows={gridLayout.hasRows}
+    <SuperGridAccessibility
+      rowCount={gridData.rowHeaders.length + 1}
+      colCount={gridData.columnHeaders.length + 1}
+      label={`SuperGrid with ${nodes.length} items in ${gridData.cells.length} cells`}
+      enableKeyboardNav={true}
     >
+      <div
+        ref={gridRef}
+        className={`supergrid supergrid--${gridLayout.effectiveMode}`}
+        data-mode={gridLayout.effectiveMode}
+        data-columns={gridLayout.hasColumns}
+        data-rows={gridLayout.hasRows}
+      >
       {/* Density Controls - Above the grid */}
       {enableDensityControls && (
         <div className="supergrid__density-controls">
@@ -665,20 +681,30 @@ export function SuperGrid({
             position: 'relative',
           }}
         >
-          {/* D3 Data Cell Rendering (Phase 92-02) */}
-          <svg
-            className="supergrid__data-cells-svg"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              pointerEvents: 'none',
-            }}
-          >
-            <g ref={dataGridRef} style={{ pointerEvents: 'auto' }} />
-          </svg>
+          {/* D3 Data Cell Rendering - Virtualized for large datasets (Phase 93) */}
+          {dataCells.length > VIRTUALIZATION_THRESHOLD ? (
+            <SuperGridVirtualized
+              cells={dataCells}
+              coordinateSystem={coordinateSystem}
+              densityState={{ valueDensity: densityState.valueDensity }}
+              selectedIds={selection.selectedIds}
+              onCellClick={handleCellClick}
+            />
+          ) : (
+            <svg
+              className="supergrid__data-cells-svg"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+              }}
+            >
+              <g ref={dataGridRef} style={{ pointerEvents: 'auto' }} />
+            </svg>
+          )}
 
           {gridLayout.effectiveMode === 'gallery' ? (
             // Gallery mode: icon view
@@ -764,7 +790,8 @@ export function SuperGrid({
           </details>
         </div>
       )}
-    </div>
+      </div>
+    </SuperGridAccessibility>
   );
 }
 

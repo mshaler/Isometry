@@ -19,3 +19,17 @@ export { CalloutExtension, type CalloutType, type CalloutAttributes } from './Ca
 
 export { ToggleExtension, type ToggleAttributes } from './ToggleExtension';
 export { BookmarkExtension, type BookmarkAttributes } from './BookmarkExtension';
+
+export {
+  InlinePropertyExtension,
+  type InlinePropertyAttributes,
+  type InlinePropertyOptions,
+} from './InlinePropertyExtension';
+
+export {
+  HashtagExtension,
+  createHashtagSuggestion,
+  type HashtagAttributes,
+  type HashtagOptions,
+  type HashtagSuggestionProps,
+} from './HashtagExtension';

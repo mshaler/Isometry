@@ -247,9 +247,9 @@ Plans:
 **Plans**: 3 plans in 2 waves
 
 Plans:
-- [ ] 93-01-PLAN.md — Virtual scrolling with TanStack Virtual + FPS monitoring (PERF-01)
-- [ ] 93-02-PLAN.md — ARIA accessibility + informative empty states (A11Y-01, UX-01)
-- [ ] 93-03-PLAN.md — GPU-accelerated animations + sticky header verification (PERF-02, UX-02)
+- [x] 93-01-PLAN.md — Virtual scrolling with TanStack Virtual + FPS monitoring (PERF-01) ✓
+- [x] 93-02-PLAN.md — ARIA accessibility + informative empty states (A11Y-01, UX-01) ✓
+- [x] 93-03-PLAN.md — GPU-accelerated animations + sticky header verification (PERF-02, UX-02) ✓
 
 ## v6.2 Capture Writing Surface (Planning)
 
@@ -316,10 +316,11 @@ Plans:
   1. User can type @key: value and see inline property mark
   2. Properties sync to PropertyEditor panel
   3. User can type #tag with autocomplete
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 97-01: TBD (use /gsd:plan-phase)
+- [x] 97-01-PLAN.md — Inline Property Mark (@key: value syntax, PropertyEditor sync) (PROP-01, PROP-02) ✓
+- [x] 97-02-PLAN.md — Hashtag Mark with Autocomplete (#tag syntax, tag sync) (PROP-03, PROP-04) ✓
 
 ### Phase 98: Isometry Embeds & Polish
 **Goal**: Live D3.js visualization embeds (/supergrid, /network, /timeline) and final polish
@@ -424,11 +425,11 @@ Plans:
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 92. Data Cell Integration | v6.1 | 4/4 | Complete | 2026-02-15 |
-| 93. Polish & Performance | v6.1 | 0/3 | Planned | - |
+| 93. Polish & Performance | v6.1 | 3/3 | Complete | 2026-02-14 |
 | 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 95. Data Layer & Backlinks | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
-| 97. Inline Properties | v6.2 | 0/0 | Not started | - |
+| 97. Inline Properties | v6.2 | 2/2 | Complete | 2026-02-14 |
 | 98. Isometry Embeds & Polish | v6.2 | 0/0 | Not started | - |
 
 ---

@@ -16,6 +16,7 @@ export interface ParsedFrontmatter {
 }
 
 let didWarnLenientFallback = false;
+let didWarnParseError = false;
 
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -171,10 +172,13 @@ export function parseFrontmatter(content: string): ParsedFrontmatter | null {
       raw
     };
   } catch (error) {
-    // Log more context for debugging YAML issues
-    const preview = content.slice(0, 200).replace(/\n/g, '\\n');
-    console.error('YAML parsing error:', error);
-    console.error('YAML content preview:', preview);
+    // Only log YAML parsing errors once to avoid console flood
+    if (!didWarnParseError) {
+      didWarnParseError = true;
+      const preview = content.slice(0, 200).replace(/\n/g, '\\n');
+      console.warn('YAML parsing error (further errors suppressed):', error);
+      console.warn('YAML content preview:', preview);
+    }
     return null;
   }
 }
