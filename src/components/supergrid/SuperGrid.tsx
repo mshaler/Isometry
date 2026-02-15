@@ -17,11 +17,14 @@
 
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import { SuperStack } from './SuperStack';
+import { SuperDynamic } from './SuperDynamic';
 import { DensityControls } from './DensityControls';
 import { SuperGridVirtualized } from './SuperGridVirtualized';
 import { SuperGridEmptyState, type EmptyStateType } from './SuperGridEmptyState';
 import { SuperGridAccessibility } from './SuperGridAccessibility';
 import { usePAFV, useSQLiteQuery } from '@/hooks';
+import { useAvailableFacets } from '@/hooks/useAvailableFacets';
+import { inferDimensionFromFacet } from '@/utils/latch-inference';
 import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
 import { useHeaderInteractions } from '@/hooks/useHeaderInteractions';
 import { useDataCellRenderer } from '@/hooks/useDataCellRenderer';
@@ -167,8 +170,13 @@ export function SuperGrid({
 }: SuperGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const dataGridRef = useRef<SVGGElement>(null);
-  const { state: pafvState } = usePAFV();
+  const { state: pafvState, setMapping, removeMapping } = usePAFV();
   const { selection, select, toggle, selectMultiple } = useSelection();
+  const availableFacets = useAvailableFacets();
+
+  // Track reflow state for animation
+  const [isReflowing, setIsReflowing] = useState(false);
+  const prevMappingsRef = useRef(pafvState.mappings);
 
   // Janus Density State
   const [valueDensity, setValueDensity] = useState(initialValueDensity);
@@ -184,6 +192,32 @@ export function SuperGrid({
     setExtentDensity(mode);
     onDensityChange?.(valueDensity, mode);
   }, [valueDensity, onDensityChange]);
+
+  // Handle axis change from SuperDynamic
+  const handleAxisChange = useCallback((
+    plane: 'x' | 'y' | 'z',
+    facetId: string
+  ) => {
+    if (!facetId) {
+      removeMapping(plane);
+    } else {
+      const dimension = inferDimensionFromFacet(facetId);
+      setMapping({ axis: dimension, facet: facetId, plane });
+    }
+  }, [setMapping, removeMapping]);
+
+  // Trigger reflow animation when mappings change
+  useEffect(() => {
+    const currentJson = JSON.stringify(pafvState.mappings);
+    const prevJson = JSON.stringify(prevMappingsRef.current);
+
+    if (currentJson !== prevJson) {
+      setIsReflowing(true);
+      const timeout = setTimeout(() => setIsReflowing(false), 500);
+      prevMappingsRef.current = pafvState.mappings;
+      return () => clearTimeout(timeout);
+    }
+  }, [pafvState.mappings]);
 
   // Load nodes from SQLite with direct sql.js access
   const queryEnabled = nodesProp == null;
@@ -227,15 +261,16 @@ export function SuperGrid({
   const { db } = useSQLite();
 
   // Convert PAFV mappings to FacetConfig arrays
-  // X-axis (columns) mapping -> columnFacets, Y-axis (rows) mapping -> rowFacets
+  // PAFV: X-PLANE → "Rows" (vertical headers on left) → rowFacets
+  // PAFV: Y-PLANE → "Columns" (horizontal headers at top) → columnFacets
   const columnFacets = useMemo(() => {
-    const xMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'x');
-    return xMappings.map(mapAxisMappingToFacetConfig);
+    const yMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'y');
+    return yMappings.map(mapAxisMappingToFacetConfig);
   }, [pafvState.mappings]);
 
   const rowFacets = useMemo(() => {
-    const yMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'y');
-    return yMappings.map(mapAxisMappingToFacetConfig);
+    const xMappings = pafvState.mappings.filter((m: AxisMapping) => m.plane === 'x');
+    return xMappings.map(mapAxisMappingToFacetConfig);
   }, [pafvState.mappings]);
 
   // Use header discovery hook (SQL-04: loading state, SQL-05: empty datasets)
@@ -638,6 +673,19 @@ export function SuperGrid({
         </div>
       )}
 
+      {/* MiniNav / SuperDynamic - Axis Control Panel */}
+      {enableDragDrop && (
+        <div className="supergrid__mininav">
+          <SuperDynamic
+            xAxis={gridLayout.columnFacet || ''}
+            yAxis={gridLayout.rowFacet || ''}
+            zAxis=""
+            onAxisChange={handleAxisChange}
+            availableAxes={availableFacets}
+          />
+        </div>
+      )}
+
       {/* Header Discovery Loading/Error Indicators (SQL-04, SQL-05) */}
       {headersLoading && (
         <div className="supergrid__header-status supergrid__header-status--loading">
@@ -696,7 +744,7 @@ export function SuperGrid({
         {/* Data Grid */}
         {/* Use SQL-driven header leaf count when available for consistent column/row sizing */}
         <div
-          className="supergrid__data-grid"
+          className={`supergrid__data-grid ${isReflowing ? 'supergrid__data-grid--reflowing' : ''}`}
           style={{
             gridTemplateColumns: gridLayout.hasColumns
               ? `repeat(${columnTree?.leafCount || gridData.columnHeaders.length || 1}, 1fr)`

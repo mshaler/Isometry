@@ -19,6 +19,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCellSizePersistence } from '@/hooks/useCellSizePersistence';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
@@ -122,7 +123,37 @@ export function SuperSize({
   const [showControls, setShowControls] = useState(false);
   const [globalSizeFactor, setGlobalSizeFactor] = useState(1.0);
 
+  // Persistence hook for cell sizes (Phase 104-02)
+  const { loadSizes, saveSizes, initialLoadRef } = useCellSizePersistence();
+
   const fullConfig: SuperSizeConfig = { ...DEFAULT_SUPERSIZE_CONFIG, ...config };
+
+  // Load saved state on mount (Phase 104-02)
+  useEffect(() => {
+    if (initialLoadRef.current) return;
+    initialLoadRef.current = true;
+
+    loadSizes().then(savedState => {
+      if (savedState) {
+        setGlobalSizeFactor(savedState.globalSizeFactor || 1.0);
+        setExpansionState(prev => ({
+          ...prev,
+          cellSizes: new Map(Object.entries(savedState.cellSizes || {}))
+        }));
+      }
+    });
+  }, [loadSizes]);
+
+  // Persist on size changes (Phase 104-02)
+  useEffect(() => {
+    // Skip initial render
+    if (!initialLoadRef.current) return;
+
+    saveSizes({
+      cellSizes: Object.fromEntries(expansionState.cellSizes),
+      globalSizeFactor
+    });
+  }, [expansionState.cellSizes, globalSizeFactor, saveSizes]);
 
   // Calculate cell counts and initialize state
   useEffect(() => {

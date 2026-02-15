@@ -454,3 +454,32 @@
   z-index: 9999;
   pointer-events: none;
 }
+
+/* ============================================================================
+ * MININAV / SUPERDYNAMIC - Axis Control Panel
+ * ============================================================================ */
+.supergrid__mininav {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-width: 320px;
+  overflow: auto;
+}
+
+/* ============================================================================
+ * REFLOW ANIMATION - Triggered on axis change
+ * ============================================================================ */
+.supergrid__data-grid--reflowing {
+  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.supergrid__data-grid--reflowing .supergrid__cell {
+  transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 300ms ease-out;
+}
