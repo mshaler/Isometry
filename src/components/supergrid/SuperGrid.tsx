@@ -23,6 +23,7 @@ import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
 import { useHeaderInteractions } from '@/hooks/useHeaderInteractions';
 import { useDataCellRenderer } from '@/hooks/useDataCellRenderer';
 import { useSQLite } from '@/db/SQLiteProvider';
+import { useSelection } from '@/state/SelectionContext';
 import { filterEmptyCells, type ExtentMode } from '@/d3/SuperGridEngine/DataManager';
 import { CellDataService } from '@/services/supergrid/CellDataService';
 import type { Node } from '@/types/node';
@@ -140,6 +141,7 @@ export function SuperGrid({
   const gridRef = useRef<HTMLDivElement>(null);
   const dataGridRef = useRef<SVGGElement>(null);
   const { state: pafvState } = usePAFV();
+  const { selection, select, toggle, selectMultiple } = useSelection();
 
   // Janus Density State
   const [valueDensity, setValueDensity] = useState(initialValueDensity);
@@ -487,24 +489,59 @@ export function SuperGrid({
     return cellDataService.transformToCellData(nodes, projection);
   }, [nodes, gridLayout]);
 
+  // Handle cell click with selection logic (Phase 92-03)
+  const handleCellClick = useCallback((node: Node, event?: MouseEvent) => {
+    if (event?.metaKey || event?.ctrlKey) {
+      // Cmd+click or Ctrl+click: toggle selection
+      toggle(node.id);
+    } else if (event?.shiftKey) {
+      // Shift+click: range select (not implemented yet for data cells)
+      // For now, just select the single cell
+      select(node.id);
+    } else {
+      // Regular click: single select
+      select(node.id);
+    }
+
+    // Call parent callback if provided
+    onCellClick?.(node);
+  }, [select, toggle, onCellClick]);
+
+  // Handle header click to select all cells in that row/column (Phase 92-03)
+  const handleHeaderClickWithSelection = useCallback((level: number, value: string, axis: LATCHAxis) => {
+    // Get facet name for the clicked header
+    const facet = axis === gridLayout.columnAxis ? gridLayout.columnFacet : gridLayout.rowFacet;
+
+    if (!facet || !nodes) {
+      onHeaderClick?.(level, value, axis);
+      return;
+    }
+
+    // Find all nodes that match this header value
+    const matchingNodes = nodes.filter(node => {
+      const nodeValue = extractNodeValue(node, axis, facet);
+      return nodeValue === value;
+    });
+
+    // Select all matching node IDs
+    const nodeIds = matchingNodes.map(node => node.id);
+    if (nodeIds.length > 0) {
+      selectMultiple(nodeIds);
+    }
+
+    // Call original header click handler
+    onHeaderClick?.(level, value, axis);
+  }, [nodes, gridLayout, selectMultiple, onHeaderClick]);
+
   // Use DataCellRenderer hook for density-aware rendering (Phase 92-02)
   useDataCellRenderer(dataGridRef, {
     coordinateSystem,
     cells: dataCells,
     densityState,
-    onCellClick,
+    selectedIds: selection.selectedIds,
+    onCellClick: handleCellClick,
   });
 
-  // Handle cell click
-  const handleCellClick = useCallback((node: Node) => {
-    onCellClick?.(node);
-  }, [onCellClick]);
-
-  // Handle header click (filters data)
-  const handleHeaderClick = useCallback((level: number, value: string, axis: LATCHAxis) => {
-    onHeaderClick?.(level, value, axis);
-    // TODO: Apply filter to current query
-  }, [onHeaderClick]);
 
   // Loading state
   if (loading) {
@@ -594,7 +631,7 @@ export function SuperGrid({
           <SuperStack
             orientation="horizontal"
             nodes={nodes}
-            onHeaderClick={handleHeaderClick}
+            onHeaderClick={handleHeaderClickWithSelection}
             enableDragDrop={enableDragDrop}
             maxLevels={maxHeaderLevels}
           />
@@ -608,7 +645,7 @@ export function SuperGrid({
             <SuperStack
               orientation="vertical"
               nodes={nodes}
-              onHeaderClick={handleHeaderClick}
+              onHeaderClick={handleHeaderClickWithSelection}
               enableDragDrop={enableDragDrop}
               maxLevels={maxHeaderLevels}
             />
