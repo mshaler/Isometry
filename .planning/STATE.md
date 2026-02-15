@@ -6,36 +6,38 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.3 SuperStack SQL Integration — Ready for execution
+**Current focus:** v6.0 Interactive Shell — Phase 87 GSD File Synchronization
 
 ## Current Position
 
-Phase: 99 (SuperStack SQL Integration)
-Plan: Awaiting creation
-Status: Ready to execute `/gsd:plan-phase 99`
-Last activity: 2026-02-15 — Milestone v6.3 roadmap complete
+Phase: 87 (GSD File Synchronization)
+Plan: 1 of 5 complete
+Status: In progress
+Last activity: 2026-02-15 — Completed 87-01-PLAN.md (GSD File Parser)
 
-Progress (v6.3): [░░░░░░░░░░] 0%
-Overall: v6.2 Capture Writing Surface COMPLETE
+Progress (Phase 87): [██░░░░░░░░] 20%
+Overall: Resuming v6.0 Interactive Shell milestone
 
 ## Active Milestones
 
-### v6.3 SuperStack SQL Integration — CURRENT
+### v6.3 SuperStack SQL Integration — COMPLETE
 
 **Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
 
-**Status:** Ready for Phase 99 execution
+**Status:** ✅ COMPLETE
 
 **Plans:**
-| Plan | Focus | Requirements | Deliverables |
-|------|-------|--------------|--------------|
-| 99-01 | SQL Query Builders | QUERY-01 to QUERY-06 | `queries/header-discovery.ts` |
-| 99-02 | Query Utilities | QUTIL-01 to QUTIL-04 | `queries/query-utils.ts` |
-| 99-03 | Integration Tests | TEST-01 to TEST-05 | `__tests__/sql-integration.test.ts` |
-| 99-04 | React Hook | HOOK-01 to HOOK-05 | `hooks/useSuperStackData.ts` |
-| 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` |
+| Plan | Focus | Requirements | Deliverables | Status |
+|------|-------|--------------|--------------|--------|
+| 99-01 | SQL Query Builders | QUERY-01 to QUERY-06 | `queries/header-discovery.ts` | ✅ |
+| 99-02 | Query Utilities | QUTIL-01 to QUTIL-04 | `queries/query-utils.ts` | ✅ |
+| 99-03 | Integration Tests | TEST-01 to TEST-05 | `__tests__/sql-integration.test.ts` | ✅ |
+| 99-04 | React Hook | HOOK-01 to HOOK-05 | `hooks/useSuperStackData.ts` | ✅ |
+| 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` | ✅ |
 
-**Phases:** Phase 99 (single consolidated phase)
+**Phases:** Phase 99 (single consolidated phase) — COMPLETE
+
+**Total requirements:** 23 | **Status:** COMPLETE
 
 ### v6.2 Capture Writing Surface — COMPLETE
 
@@ -91,7 +93,12 @@ Overall: v6.2 Capture Writing Surface COMPLETE
   - [x] 86-02: Project Context ✓
   - [x] 86-03: MCP Tool Integration ✓
   - [x] 86-04: Claude Code Integration ✓
-- Phase 87: GSD File Synchronization (7 requirements)
+- Phase 87: GSD File Synchronization (5 plans) — IN PROGRESS
+  - [x] 87-01: GSD File Parser (~5m) ✓
+  - [ ] 87-02: File Watcher Integration
+  - [ ] 87-03: State Synchronization
+  - [ ] 87-04: Bidirectional Updates
+  - [ ] 87-05: Error Handling & Recovery
 - Phase 88: Integration & Polish (verification only)
 
 ## Performance Metrics
@@ -218,6 +225,12 @@ Recent decisions affecting v6.1 SuperStack work:
 - TERM-02: spawn() with args array, never string interpolation
 - TERM-10: Mode switch kills and respawns PTY rather than in-place modification
 
+**GSD File Synchronization (Phase 87):**
+- PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
+- PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
+- PARSE-03: Status derived from <done> content presence (pending/complete) ✅ Implemented 87-01
+- PARSE-04: parseGSDPlanContent helper for testing without file I/O ✅ Implemented 87-01
+
 See PROJECT.md Key Decisions table for full history.
 
 ### Pending Todos
@@ -243,17 +256,20 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Starting: Phase 99 execution
-Resume command: `/gsd:plan-phase 99`
+Completed: Plan 87-01 (GSD File Parser)
+Next: Plan 87-02 (File Watcher Integration)
 
-**v6.3 SuperStack SQL Integration:**
-- 23 requirements mapped to 5 plans
-- Single phase (Phase 99)
-- Ready to execute
+**Phase 87-01 Complete:**
+- GSD file parser with gray-matter
+- 30 unit tests passing
+- Types: PlanFrontmatter, GSDTask, ParsedPlanFile
+- Functions: parseGSDPlanFile, extractTasks, normalizeTaskStatus
 
-**Previous milestone (v6.2 Capture Writing Surface) COMPLETE:**
-- Phase 94-98 all complete (17/17 plans)
-- 43 requirements delivered
+**v6.3 SuperStack SQL Integration — COMPLETE:**
+- 23 requirements delivered across 5 plans
+- 18 integration tests passing
+- Query time: ~46ms (target: <100ms)
 
 **Reference:**
+- `.planning/phases/87-gsd-file-synchronization/87-01-SUMMARY.md` — Plan 87-01 execution summary
 - `superstack-phase2-sql-integration.md` — Full implementation specification
