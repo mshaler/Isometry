@@ -167,6 +167,67 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       ).run();
     },
   },
+  // Heading commands (h1-h6)
+  {
+    id: 'h1',
+    label: 'Heading 1',
+    description: 'Large section heading',
+    category: 'format',
+    shortcut: 'h1',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 1 }).run();
+    },
+  },
+  {
+    id: 'h2',
+    label: 'Heading 2',
+    description: 'Medium section heading',
+    category: 'format',
+    shortcut: 'h2',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 2 }).run();
+    },
+  },
+  {
+    id: 'h3',
+    label: 'Heading 3',
+    description: 'Small section heading',
+    category: 'format',
+    shortcut: 'h3',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 3 }).run();
+    },
+  },
+  {
+    id: 'h4',
+    label: 'Heading 4',
+    description: 'Subsection heading',
+    category: 'format',
+    shortcut: 'h4',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 4 }).run();
+    },
+  },
+  {
+    id: 'h5',
+    label: 'Heading 5',
+    description: 'Minor heading',
+    category: 'format',
+    shortcut: 'h5',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 5 }).run();
+    },
+  },
+  {
+    id: 'h6',
+    label: 'Heading 6',
+    description: 'Smallest heading',
+    category: 'format',
+    shortcut: 'h6',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHeading({ level: 6 }).run();
+    },
+  },
 ];
 
 export interface SlashCommandSuggestionProps extends SuggestionProps<SlashCommand> {
