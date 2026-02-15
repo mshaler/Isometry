@@ -25,3 +25,6 @@ native/.build/
 
 # Large generated data files
 public/alto-index.json
+
+# GSD automation state
+.gsd/
