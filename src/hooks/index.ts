@@ -33,6 +33,20 @@ export type { UseCommandHistoryResult } from './useCommandHistory';
 export { useClaudeAI } from './useClaudeAI';
 export { useProjectContext } from './useProjectContext';
 
+// GSD hooks
+export { useGSDFileSync } from './useGSDFileSync';
+export type {
+  UseGSDFileSyncOptions,
+  UseGSDFileSyncState,
+  UseGSDFileSyncResult,
+} from './useGSDFileSync';
+export { useGSDTaskToggle, nextTaskStatus } from './useGSDTaskToggle';
+export type {
+  UseGSDTaskToggleOptions,
+  UseGSDTaskToggleResult,
+  TaskToggleVariables,
+} from './useGSDTaskToggle';
+
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
 export { useRenderingOptimization } from './performance/useRenderingOptimization';

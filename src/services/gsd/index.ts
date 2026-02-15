@@ -24,3 +24,6 @@ export {
   parseGSDPlanContent,
   parseGSDPlanFile,
 } from './gsdFileParser';
+
+// File writing
+export { updateTaskStatus, writeGSDPlanFile } from './gsdFileWriter';
