@@ -5,6 +5,7 @@
  * Handles nested objects and multi-line values via yaml package.
  */
 import YAML from 'yaml';
+import { devLogger } from '@/utils/dev-logger';
 
 export interface ParsedFrontmatter {
   /** Parsed YAML frontmatter as key-value object */
@@ -156,9 +157,7 @@ export function parseFrontmatter(content: string): ParsedFrontmatter | null {
         frontmatter = parseLenientFrontmatter(raw);
         if (!didWarnLenientFallback) {
           didWarnLenientFallback = true;
-          console.warn(
-            'YAML parse fallback enabled for malformed frontmatter records'
-          );
+          devLogger.debug('YAML parse fallback enabled for malformed frontmatter records');
         }
         if (Object.keys(frontmatter).length === 0) {
           throw strictError;
@@ -176,8 +175,8 @@ export function parseFrontmatter(content: string): ParsedFrontmatter | null {
     if (!didWarnParseError) {
       didWarnParseError = true;
       const preview = content.slice(0, 200).replace(/\n/g, '\\n');
-      console.warn('YAML parsing error (further errors suppressed):', error);
-      console.warn('YAML content preview:', preview);
+      devLogger.warn('YAML parsing error (further errors suppressed)', { error });
+      devLogger.debug('YAML content preview', { preview });
     }
     return null;
   }
