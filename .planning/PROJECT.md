@@ -52,11 +52,11 @@ Schema migration from nodes/edges to cards/connections with 4-type constraint. P
 
 **Reference:** `superstack-phase2-sql-integration.md`
 
-## Previous Milestone: v6.2 Capture Writing Surface (In Progress)
+## Previous Milestone: v6.2 Capture Writing Surface (COMPLETE)
 
 **Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
 
-**Status:** Phase 98 in progress (3/4 plans complete)
+**Shipped:** 2026-02-14 (17 plans across 5 phases)
 
 ## Previous Milestone: v6.1 SuperStack Enhancement (COMPLETE)
 
@@ -344,4 +344,4 @@ Three-component React sidecar application:
 - D3.js visualization components and themes
 
 ---
-*Last updated: 2026-02-13 — Phase 74 (SuperGrid Phase B) planning complete*
+*Last updated: 2026-02-15 — Milestone v6.3 SuperStack SQL Integration started*

@@ -3,7 +3,53 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
-## v6.1 Requirements — SuperStack Enhancement
+## v6.3 Requirements — SuperStack SQL Integration
+
+Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
+
+### SQL Query Builders
+
+- [ ] **QUERY-01**: `buildHeaderDiscoveryQuery` builds valid SQL for row + column facets with GROUP BY
+- [ ] **QUERY-02**: Multi-select facets (tags) handled via `json_each()` CROSS JOIN
+- [ ] **QUERY-03**: Time facets extracted via `strftime()` with proper format (%Y, %m, etc.)
+- [ ] **QUERY-04**: Query filters apply correctly with parameterized queries
+- [ ] **QUERY-05**: Card counts returned per facet combination
+- [ ] **QUERY-06**: Deleted nodes excluded by default (optional `includeDeleted` flag)
+
+### Query Utilities
+
+- [ ] **QUTIL-01**: `createTimeFacetChain` generates year/quarter/month/week/day configs
+- [ ] **QUTIL-02**: `createCategoryFacetChain` generates folder/status/tags configs
+- [ ] **QUTIL-03**: `validateFacetConfigs` detects missing/invalid facet settings
+- [ ] **QUTIL-04**: `estimateQueryComplexity` returns 1-10 complexity score
+
+### React Hook
+
+- [ ] **HOOK-01**: `useSuperStackData` returns `{ rowTree, colTree, isLoading, error, refetch }`
+- [ ] **HOOK-02**: Hook builds query from facet configurations automatically
+- [ ] **HOOK-03**: Hook transforms query results into HeaderTree via `buildHeaderTree`
+- [ ] **HOOK-04**: Hook tracks query execution time (`queryTime` metric)
+- [ ] **HOOK-05**: `useRowHeaders` and `useColHeaders` lightweight variants available
+
+### Integration Tests
+
+- [ ] **TEST-01**: Tests execute against real sql.js database (not mocks)
+- [ ] **TEST-02**: Multi-select facet explosion verified (tags appear as separate rows)
+- [ ] **TEST-03**: Time facet extraction verified (year/month correctly parsed)
+- [ ] **TEST-04**: Tree building from SQL results produces correct spans and counts
+- [ ] **TEST-05**: Query completes in <100ms for test dataset
+
+### Demo Component
+
+- [ ] **DEMO-01**: `SuperStackDemo` renders live data using `useSuperStackData` hook
+- [ ] **DEMO-02**: Collapse/expand interactions functional with tree recalculation
+- [ ] **DEMO-03**: Click-to-filter logs path and count to console
+
+## v6.2 Requirements — Capture Writing Surface (COMPLETE)
+
+All 43 requirements delivered across Phases 94-98. See `.planning/phases/` for details.
+
+## v6.1 Requirements — SuperStack Enhancement (COMPLETE)
 
 Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
@@ -297,7 +343,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 **Coverage:** 22/22 requirements mapped (100%)
 
-### v6.1 Traceability
+### v6.3 Traceability
+
+| Requirement | Phase | Plan | Status |
+|-------------|-------|------|--------|
+| QUERY-01 | Phase 99 | 99-01 | Pending |
+| QUERY-02 | Phase 99 | 99-01 | Pending |
+| QUERY-03 | Phase 99 | 99-01 | Pending |
+| QUERY-04 | Phase 99 | 99-01 | Pending |
+| QUERY-05 | Phase 99 | 99-01 | Pending |
+| QUERY-06 | Phase 99 | 99-01 | Pending |
+| QUTIL-01 | Phase 99 | 99-02 | Pending |
+| QUTIL-02 | Phase 99 | 99-02 | Pending |
+| QUTIL-03 | Phase 99 | 99-02 | Pending |
+| QUTIL-04 | Phase 99 | 99-02 | Pending |
+| TEST-01 | Phase 99 | 99-03 | Pending |
+| TEST-02 | Phase 99 | 99-03 | Pending |
+| TEST-03 | Phase 99 | 99-03 | Pending |
+| TEST-04 | Phase 99 | 99-03 | Pending |
+| TEST-05 | Phase 99 | 99-03 | Pending |
+| HOOK-01 | Phase 99 | 99-04 | Pending |
+| HOOK-02 | Phase 99 | 99-04 | Pending |
+| HOOK-03 | Phase 99 | 99-04 | Pending |
+| HOOK-04 | Phase 99 | 99-04 | Pending |
+| HOOK-05 | Phase 99 | 99-04 | Pending |
+| DEMO-01 | Phase 99 | 99-05 | Pending |
+| DEMO-02 | Phase 99 | 99-05 | Pending |
+| DEMO-03 | Phase 99 | 99-05 | Pending |
+
+**Coverage:** 23/23 requirements mapped (100%)
+
+### v6.1 Traceability (COMPLETE)
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
