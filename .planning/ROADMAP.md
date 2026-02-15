@@ -219,18 +219,20 @@ Plans:
 ### Phase 92: Data Cell Integration
 **Goal**: Connect headers to data cells with coordinated scroll
 **Depends on**: Phase 91 (Interactions)
-**Requirements**: CELL-01, CELL-02, CELL-03, CELL-04
+**Requirements**: CELL-01, CELL-02, CELL-03, CELL-04, SSTACK-VIZ (visual nesting)
 **Success Criteria** (what must be TRUE):
   1. Data cells render at correct positions relative to leaf headers
   2. Headers stay fixed while data area scrolls
   3. Density level affects cell rendering (counts vs chips)
   4. Selection syncs between headers and data cells
-**Plans**: 3 plans in 2 waves
+  5. Hierarchical folder paths display as nested headers (SuperStack visual nesting)
+**Plans**: 4 plans in 2 waves
 
 Plans:
-- [ ] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02)
+- [x] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02) ✓
 - [ ] 92-02-PLAN.md — Density-aware rendering (counts vs card chips) (CELL-03)
 - [ ] 92-03-PLAN.md — Selection synchronization between headers and data cells (CELL-04)
+- [ ] 92-04-PLAN.md — SuperStack hierarchical header integration (SSTACK-VIZ)
 
 ### Phase 93: Polish & Performance
 **Goal**: Virtual scrolling, accessibility, animations
@@ -419,7 +421,7 @@ Plans:
 | 89. Static Headers | v6.1 | 1/1 | Complete | 2026-02-13 |
 | 90. SQL Integration | v6.1 | 2/2 | Complete | 2026-02-14 |
 | 91. Interactions | v6.1 | 2/2 | Complete | 2026-02-14 |
-| 92. Data Cell Integration | v6.1 | 0/0 | Not started | - |
+| 92. Data Cell Integration | v6.1 | 1/4 | In progress | - |
 | 93. Polish & Performance | v6.1 | 0/0 | Not started | - |
 | 94. Foundation & Critical Fixes | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 95. Data Layer & Backlinks | v6.2 | 4/4 | Complete | 2026-02-14 |

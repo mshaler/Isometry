@@ -228,6 +228,53 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       editor.chain().focus().deleteRange(range).setHeading({ level: 6 }).run();
     },
   },
+  // Divider, quote, and date commands
+  {
+    id: 'divider',
+    label: 'Divider',
+    description: 'Insert horizontal line',
+    category: 'format',
+    shortcut: 'hr',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+    },
+  },
+  {
+    id: 'quote',
+    label: 'Quote',
+    description: 'Insert blockquote',
+    category: 'format',
+    shortcut: 'quote',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setBlockquote().run();
+    },
+  },
+  {
+    id: 'date',
+    label: 'Current Date',
+    description: "Insert today's date",
+    category: 'format',
+    shortcut: 'date',
+    action: ({ editor, range }) => {
+      const formattedDate = new Date().toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      editor.chain().focus().deleteRange(range).insertContent(formattedDate).run();
+    },
+  },
+  {
+    id: 'callout',
+    label: 'Callout',
+    description: 'Highlight important information',
+    category: 'format',
+    shortcut: 'callout',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setCallout({ type: 'info' }).run();
+    },
+  },
 ];
 
 export interface SlashCommandSuggestionProps extends SuggestionProps<SlashCommand> {
