@@ -16,3 +16,6 @@ export type { WikiLinkOptions, WikiLinkSuggestionProps } from './wiki-links';
 export { AppleNotesShortcuts } from './keyboard-shortcuts';
 
 export { CalloutExtension, type CalloutType, type CalloutAttributes } from './CalloutExtension';
+
+export { ToggleExtension, type ToggleAttributes } from './ToggleExtension';
+export { BookmarkExtension, type BookmarkAttributes } from './BookmarkExtension';

@@ -20,6 +20,8 @@ import {
   createWikiLinkSuggestion,
   AppleNotesShortcuts,
   CalloutExtension,
+  ToggleExtension,
+  BookmarkExtension,
   type SlashCommand
 } from '../../components/notebook/editor/extensions';
 import {
@@ -154,6 +156,8 @@ export function useTipTapEditor(options: UseTipTapEditorOptions = {}) {
       }),
       AppleNotesShortcuts,
       CalloutExtension,
+      ToggleExtension,
+      BookmarkExtension,
       SlashCommands.configure({
         suggestion: createSlashCommandSuggestion(
           () => {

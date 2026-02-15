@@ -275,6 +275,26 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       editor.chain().focus().deleteRange(range).setCallout({ type: 'info' }).run();
     },
   },
+  {
+    id: 'toggle',
+    label: 'Toggle',
+    description: 'Collapsible section',
+    category: 'format',
+    shortcut: 'toggle',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setToggle().run();
+    },
+  },
+  {
+    id: 'bookmark',
+    label: 'Bookmark',
+    description: 'Add URL preview',
+    category: 'format',
+    shortcut: 'bookmark',
+    action: ({ editor, range }) => {
+      editor.chain().focus().deleteRange(range).setBookmark().run();
+    },
+  },
 ];
 
 export interface SlashCommandSuggestionProps extends SuggestionProps<SlashCommand> {
