@@ -45,6 +45,7 @@ describe('SuperGrid PAFV Projection', () => {
     };
 
     // Act: Query data grouped by projection axes
+    // Filter to nodes WITH priority (schema-flexible nodes may lack priority)
     const gridData = execTestQuery(db, `
       SELECT
         folder as x_value,
@@ -53,7 +54,7 @@ describe('SuperGrid PAFV Projection', () => {
         GROUP_CONCAT(id) as node_ids,
         GROUP_CONCAT(name) as node_names
       FROM nodes
-      WHERE deleted_at IS NULL
+      WHERE deleted_at IS NULL AND priority IS NOT NULL
       GROUP BY folder, priority
       ORDER BY folder, priority DESC
     `);
@@ -82,15 +83,16 @@ describe('SuperGrid PAFV Projection', () => {
     // Arrange: Original projection (Category × Hierarchy)
     const originalProjection = { x: 'folder', y: 'priority' };
 
-    // Act: Query with original projection
+    // Act: Query with original projection (filter to nodes WITH priority)
     const originalData = execTestQuery(db, `
       SELECT folder, priority, COUNT(*) as count
       FROM nodes
-      WHERE deleted_at IS NULL
+      WHERE deleted_at IS NULL AND priority IS NOT NULL
       GROUP BY folder, priority
     `);
 
     // Arrange: New projection (Time × Category) - same data, different view
+    // Note: Must use same filter (priority IS NOT NULL) to compare same data subset
     const newProjection = { x: 'created_date', y: 'folder' };
 
     // Act: Query with new projection (view transition)
@@ -100,7 +102,7 @@ describe('SuperGrid PAFV Projection', () => {
         folder,
         COUNT(*) as count
       FROM nodes
-      WHERE deleted_at IS NULL
+      WHERE deleted_at IS NULL AND priority IS NOT NULL
       GROUP BY DATE(created_at), folder
       ORDER BY created_date DESC, folder
     `);
@@ -127,7 +129,7 @@ describe('SuperGrid PAFV Projection', () => {
       facets: { C: 'folder', H: 'priority', T: 'created_month' },
     };
 
-    // Act: Query 3D projection data
+    // Act: Query 3D projection data (filter to nodes WITH priority)
     const grid3DData = execTestQuery(db, `
       SELECT
         folder as x_value,
@@ -137,7 +139,7 @@ describe('SuperGrid PAFV Projection', () => {
         AVG(importance) as avg_importance,
         GROUP_CONCAT(id) as node_ids
       FROM nodes
-      WHERE deleted_at IS NULL
+      WHERE deleted_at IS NULL AND priority IS NOT NULL
       GROUP BY folder, priority, strftime('%Y-%m', created_at)
       ORDER BY folder, priority DESC, z_value DESC
     `);

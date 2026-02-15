@@ -197,6 +197,42 @@ export const TEST_NODES: Partial<TestLPGNode>[] = [
     created_at: '2024-01-14 16:00:00',
     modified_at: '2024-01-16 09:30:00',
   },
+  // Schema-flexible test nodes (Phase 102-02): simulate imports without status/priority
+  {
+    id: 'fixture-node-9',
+    name: 'Imported Apple Note',
+    content: 'Note imported from Apple Notes without status or priority fields.',
+    summary: 'Imported note without workflow columns',
+    folder: 'personal',
+    tags: '["imported", "apple-notes"]',
+    // status: intentionally omitted (simulates import without status)
+    // priority: intentionally omitted (simulates import without priority)
+    created_at: '2024-01-21 10:00:00',
+    modified_at: '2024-01-21 10:00:00',
+  },
+  {
+    id: 'fixture-node-10',
+    name: 'Safari Bookmark Import',
+    content: 'Bookmark imported from Safari reading list.',
+    summary: 'Bookmark without workflow fields',
+    folder: 'research',
+    tags: '["bookmark", "reference"]',
+    // No status or priority - bookmarks don't have these
+    created_at: '2024-01-22 09:00:00',
+    modified_at: '2024-01-22 09:00:00',
+  },
+  {
+    id: 'fixture-node-11',
+    name: 'Contact Card',
+    content: 'Contact information for testing.',
+    summary: 'Contact without workflow fields',
+    folder: 'contacts',
+    tags: '["contact"]',
+    status: undefined, // Explicit undefined (simulates missing workflow field)
+    priority: undefined, // Explicit undefined (simulates missing workflow field)
+    created_at: '2024-01-23 08:00:00',
+    modified_at: '2024-01-23 08:00:00',
+  },
 ];
 
 /**
@@ -444,37 +480,60 @@ export async function loadTestFixtures(db: Database, options: {
   try {
     // Load nodes
     if (nodes) {
-      const stmt = db.prepare(`
-        INSERT OR REPLACE INTO nodes (
-          id, name, content, summary, folder, tags, status, priority, importance,
-          grid_x, grid_y, created_at, modified_at, completed_at, due_at,
-          location_name, latitude, longitude
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+      try {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO nodes (
+            id, name, content, summary, folder, tags, status, priority, importance,
+            grid_x, grid_y, created_at, modified_at, completed_at, due_at,
+            location_name, latitude, longitude
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
 
-      for (const node of TEST_NODES) {
-        stmt.run([
-          node.id || '',
-          node.name || '',
-          node.content || '',
-          node.summary || '',
-          node.folder || '',
-          node.tags || '',
-          node.status || '',
-          node.priority || 0,
-          node.importance || 0,
-          node.grid_x || 0,
-          node.grid_y || 0,
-          node.created_at || new Date().toISOString(),
-          node.modified_at || new Date().toISOString(),
-          node.completed_at || null,
-          node.due_at || null,
-          node.location_name || null,
-          node.latitude || null,
-          node.longitude || null,
-        ]);
+        for (const node of TEST_NODES) {
+          stmt.run([
+            node.id || '',
+            node.name || '',
+            node.content || '',
+            node.summary || '',
+            node.folder || '',
+            node.tags || '',
+            node.status ?? null, // Use ?? for null-coalescing (handles undefined)
+            node.priority ?? null, // Use ?? for null-coalescing (handles undefined)
+            node.importance ?? null,
+            node.grid_x ?? 0,
+            node.grid_y ?? 0,
+            node.created_at || new Date().toISOString(),
+            node.modified_at || new Date().toISOString(),
+            node.completed_at ?? null,
+            node.due_at ?? null,
+            node.location_name ?? null,
+            node.latitude ?? null,
+            node.longitude ?? null,
+          ]);
+        }
+        stmt.free();
+      } catch (nodeError) {
+        // Fallback to minimal schema if some columns don't exist (TEST-03)
+        console.warn('[Test] Full schema insert failed, using minimal schema:', nodeError);
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO nodes (
+            id, name, content, folder, tags, created_at, modified_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        for (const node of TEST_NODES) {
+          stmt.run([
+            node.id || '',
+            node.name || '',
+            node.content || '',
+            node.folder || '',
+            node.tags || '',
+            node.created_at || new Date().toISOString(),
+            node.modified_at || new Date().toISOString(),
+          ]);
+        }
+        stmt.free();
       }
-      stmt.free();
     }
 
     // Load edges
