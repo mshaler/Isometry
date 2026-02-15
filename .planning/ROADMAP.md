@@ -83,7 +83,7 @@ Plans:
 
 ---
 
-### Phase 101: UI Integration
+### Phase 101: UI Integration (COMPLETE)
 
 **Goal:** Update UI components to use discovery queries instead of hardcoded values.
 
@@ -91,7 +91,7 @@ Plans:
 
 **Requirements:** UI-01 to UI-05, CLASSIFY-01 to CLASSIFY-03 (8 total)
 
-**Plans:** 2 plans in 1 wave
+**Plans:** 2 plans in 1 wave — ALL COMPLETE
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -99,15 +99,17 @@ Plans:
 | 101-02 | LATCHFilter & Classifier | UI-04, UI-05, CLASSIFY-01 to CLASSIFY-03 | Updated `LATCHFilter.tsx`, `property-classifier.ts` |
 
 Plans:
-- [ ] 101-01-PLAN.md - CardDetailModal folder/status dropdowns with Phase 100 hooks (Wave 1)
-- [ ] 101-02-PLAN.md - LATCHFilter priority discovery + property-classifier cleanup (Wave 1)
+- [x] 101-01-PLAN.md — CardDetailModal folder/status dropdowns with Phase 100 hooks (Wave 1) ✓
+- [x] 101-02-PLAN.md — LATCHFilter priority discovery + property-classifier cleanup (Wave 1) ✓
 
-**Success Criteria:**
-1. CardDetailModal dropdowns populated from data
-2. Status colors from settings or neutral defaults
-3. LATCHFilter priority range discovered dynamically
-4. Property classifier handles missing columns without hardcoded defaults
-5. Empty state hints shown when no values discovered
+**Success Criteria:** ALL MET
+1. ✓ CardDetailModal dropdowns populated from data
+2. ✓ Status colors from settings or neutral defaults
+3. ✓ LATCHFilter priority range discovered dynamically
+4. ✓ Property classifier handles missing columns without hardcoded defaults
+5. ✓ Empty state hints shown when no values discovered
+
+**Completed:** 2026-02-15
 
 ---
 
@@ -554,6 +556,7 @@ Plans:
 | 98. Isometry Embeds & Polish | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 99. SuperStack SQL | v6.3 | 5/5 | Complete | 2026-02-15 |
 | 100. Settings & Discovery | v6.4 | 2/2 | Complete | 2026-02-15 |
+| 101. UI Integration | v6.4 | 2/2 | Complete | 2026-02-15 |
 | 103. Console Cleanup | v6.5 | 0/3 | Planning | - |
 
 ---

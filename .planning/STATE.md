@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 101 (UI Integration)
-Plan: 02 of 03
-Status: In progress
-Last activity: 2026-02-15 — Completed 101-01-PLAN.md
+Plan: 02/02 — COMPLETE
+Status: Phase complete, verified
+Last activity: 2026-02-15 — Completed Phase 101 execution
 
-Progress: [███░░░░░░░] 30% (Phase 100: ✓, Phase 101: 2/3 plans, Phase 102: pending)
-Overall: v6.4 Hardcoded Values Cleanup — Phase 101 in progress
+Progress: [██████░░░░] 60% (Phase 100: ✓, Phase 101: ✓, Phase 102: pending)
+Overall: v6.4 Hardcoded Values Cleanup — Phase 101 complete, Phase 102 next
 
 ## Active Milestones
 
@@ -42,16 +42,16 @@ Overall: v6.4 Hardcoded Values Cleanup — Phase 101 in progress
 
 **Goal:** Eliminate or externalize hardcoded LATCH filter values.
 
-**Status:** 🏗️ IN PROGRESS (Phase 101 executing)
+**Status:** ✅ Phase 101 COMPLETE, Phase 102 PENDING
 
 **Phases:**
-- Phase 100: Settings & Discovery Layer — ✅ COMPLETE
-- Phase 101: UI Integration — 🏗️ IN PROGRESS (2/3 plans complete)
+- Phase 100: Settings & Discovery Layer — ✅ COMPLETE (2/2 plans)
+- Phase 101: UI Integration — ✅ COMPLETE (2/2 plans, 2026-02-15)
   - [x] 101-01: Dynamic CardDetailModal Dropdowns (~5m) ✓
   - [x] 101-02: Dynamic LATCH Values (~4m) ✓
 - Phase 102: Sample Data & Test Cleanup — ⏳ PENDING
 
-**Total requirements:** 22 | **Status:** IN PROGRESS
+**Total requirements:** 22 | **Status:** 16/22 complete (Phases 100-101 done)
 
 ### v6.3 SuperStack SQL Integration — COMPLETE
 
@@ -331,9 +331,20 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 101-02 (Dynamic LATCH Values) — v6.4 UI Integration in progress
-Next: Phase 101-01 (CardDetailModal UI Integration) or Phase 101-03 (remaining UI integration)
-Resume file: .planning/phases/101-ui-integration/101-01-PLAN.md or 101-03-PLAN.md
+Completed: Phase 101-01 (Dynamic CardDetailModal Dropdowns) — v6.4 UI Integration in progress
+Next: Phase 101-03 (remaining UI integration) or Phase 102
+Resume file: .planning/phases/101-ui-integration/101-03-PLAN.md (if exists)
+
+**Phase 101-01 Complete:**
+- Dynamic folder/status dropdowns in CardDetailModal using Phase 100 hooks
+- useFolderValues, useStatusValues, useSetting integration
+- Status colors from settings with neutral gray (#9ca3af) fallback for unknowns
+- Empty state hints when no folder/status values exist
+- Updated CardStatusFieldProps to accept dynamic data via props
+- Combined loading states for proper UX (isLoading || foldersLoading/statusLoading)
+- Commit: 485c95b2 (combined with 101-02 hierarchy empty state)
+- Requirements satisfied: UI-01, UI-02, UI-03, UI-05 (CardDetailModal portion)
+- Ready for Phase 101-03 or Phase 102
 
 **Phase 101-02 Complete:**
 - Dynamic priority range discovery in LATCHFilter via MIN/MAX query (not hardcoded [1, 10])
