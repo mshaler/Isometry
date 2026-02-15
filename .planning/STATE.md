@@ -6,17 +6,17 @@ See: .planning/PROJECT.md (updated 2026-02-13)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** Phase 95 - Data Layer & Backlinks (Capture Writing Surface v6.2)
+**Current focus:** Phase 96 - Block Types & Slash Commands (Capture Writing Surface v6.2)
 
 ## Current Position
 
-Phase: 95 of 98 (Data Layer & Backlinks - Capture Writing Surface v6.2)
-Plan: 4 of 4 complete
-Status: Phase complete
-Last activity: 2026-02-14 — Completed 95-04 Save as Template
+Phase: 96 of 98 (Block Types & Slash Commands - Capture Writing Surface v6.2)
+Plan: 1 of 3 complete
+Status: In progress
+Last activity: 2026-02-15 — Completed 96-01 Basic Slash Commands
 
-Progress (Phase 95): [██████████] 100% (4 of 4 plans)
-Overall: [████████░░] 96% (99 of ~130 total phases across all milestones)
+Progress (Phase 96): [███░░░░░░░] 33% (1 of 3 plans)
+Overall: [████████░░] 97% (100 of ~130 total phases across all milestones)
 
 ## Active Milestones
 
@@ -35,12 +35,15 @@ Overall: [████████░░] 96% (99 of ~130 total phases across al
   - [x] 95-02: Backlinks Query Infrastructure ✓
   - [x] 95-03: Backlinks Panel in RightSidebar ✓
   - [x] 95-04: Forward Links Panel ✓
-- Phase 96: Block Types & Slash Commands (14 requirements)
+- Phase 96: Block Types & Slash Commands (14 requirements) — IN PROGRESS (1/3 plans)
+  - [x] 96-01: Basic Slash Commands (~6m) ✓
+  - [ ] 96-02: Callout Blocks
+  - [ ] 96-03: Additional Block Types
 - Phase 97: Inline Properties (4 requirements)
 - Phase 98: Isometry Embeds & Polish (7 requirements)
 
 **Total requirements:** 43
-**Current:** Phase 95 complete ✓, ready for Phase 96
+**Current:** Phase 96 in progress (1/3 plans complete)
 
 ### v6.1 SuperStack Enhancement — IN PROGRESS
 
@@ -91,13 +94,13 @@ Overall: [████████░░] 96% (99 of ~130 total phases across al
 
 | Phase | Plans | Avg Duration | Status |
 |-------|-------|-------------|--------|
+| 96 (Block Types) | 1/3 | ~6m | In Progress |
 | 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 | 90 (SQL Integration) | 2/2 | ~4.5m | Complete ✓ |
-| 85 (Backend Terminal) | 4/5 | ~5.3m | Paused |
 
-*Updated: 2026-02-14*
+*Updated: 2026-02-15*
 
 ## Accumulated Context
 
@@ -149,6 +152,8 @@ Recent decisions affecting v6.1 SuperStack work:
 - TMPL-MODAL-03: Theme-aware styling (NeXTSTEP vs Modern) ✅ Implemented 95-02
 - TMPL-SAVE-01: getEditorContent helper for markdown serialization with getText fallback ✅ Implemented 95-04
 - TMPL-SAVE-02: Save as Template button placed between Save and Minimize in header ✅ Implemented 95-04
+- SLASH-01: Use StarterKit built-in extensions (Heading, HorizontalRule, Blockquote) - no new dependencies ✅ Implemented 96-01
+- SLASH-02: Date formatting with toLocaleDateString for readable output ✅ Implemented 96-01
 
 **Terminal Security (from Phase 85):**
 - TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
@@ -179,15 +184,14 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-14
-Stopped at: Phase 95-04 COMPLETE - Save as Template
-Resume file: .planning/phases/95-data-layer-backlinks/95-04-SUMMARY.md
+Last session: 2026-02-15
+Stopped at: Phase 96-01 COMPLETE - Basic Slash Commands
+Resume file: .planning/phases/96-block-types-slash-commands/96-01-SUMMARY.md
 
-**Phase 95-04 Summary:**
-- SaveAsTemplateModal with name/description/category inputs
-- Content preview truncated to 500 chars with character count
-- Save as Template button in CaptureComponent header (FileText icon)
-- Uses @tiptap/markdown serialization with getText fallback
-- Commits: 95d0346e, 81644918
+**Phase 96-01 Summary:**
+- Added 9 new slash commands: /h1-/h6, /divider, /quote, /date
+- Uses TipTap StarterKit built-in extensions (setHeading, setHorizontalRule, setBlockquote)
+- Date command inserts formatted date (e.g., "Friday, February 14, 2026")
+- Commits: 8bdf0da8, 701467cd
 
-**Next step:** Phase 95 COMPLETE - ready for Phase 96 (Block Types & Slash Commands)
+**Next step:** Continue Phase 96 with 96-02 (Callout Blocks)
