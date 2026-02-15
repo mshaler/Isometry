@@ -17,8 +17,8 @@
 - **v5.1 Notebook Integration** - Phase 80 (shipped 2026-02-14)
 - **v5.2 Cards & Connections** - Phase 84 (shipped 2026-02-13)
 - 📋 **v6.0 Interactive Shell** - Phases 85-88 (deferred)
-- 🚧 **v6.1 SuperStack Enhancement** - Phases 89-93 (in progress)
-- 🚧 **v6.2 Capture Writing Surface** - Phases 94-98 (planning)
+- ✓ **v6.1 SuperStack Enhancement** - Phases 89-93 (complete)
+- 🚧 **v6.2 Capture Writing Surface** - Phases 94-98 (in progress)
 
 ## Phases
 
@@ -163,7 +163,8 @@ Plans:
 
 </details>
 
-## v6.1 SuperStack Enhancement (In Progress)
+<details>
+<summary>v6.1 SuperStack Enhancement (Phases 89-93) - COMPLETE</summary>
 
 **Milestone Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
 
@@ -173,85 +174,35 @@ Plans:
 **Goal**: Create type definitions and render static nested headers with correct spans
 **Depends on**: Phase 84 (Cards & Connections)
 **Requirements**: SSTACK-01, SSTACK-02, SSTACK-03, SSTACK-04, SSTACK-05, SSTACK-06
-**Success Criteria** (what must be TRUE):
-  1. HeaderNode, HeaderTree, FacetConfig, SuperStackState types defined
-  2. Tree builder transforms flat rows into hierarchical header structure
-  3. Column headers span correctly (Year spans 12 months)
-  4. Row headers span correctly (Folder spans all tags)
-  5. Visual appearance matches ASCII mockups in implementation plan
-**Plans**: TBD
-
-Plans:
-- [ ] 89-01: TBD (use /gsd:plan-phase)
+**Plans**: 1/1 Complete
 
 ### Phase 90: SQL Integration
 **Goal**: Build headers from live SQLite queries
 **Depends on**: Phase 89 (Static headers render)
 **Requirements**: SQL-01, SQL-02, SQL-03, SQL-04, SQL-05
-**Success Criteria** (what must be TRUE):
-  1. Header discovery query builds GROUP BY with COUNT
-  2. Time facets extract via strftime (year, quarter, month)
-  3. Multi-select facets (tags) explode via json_each
-  4. Query completes in <100ms for 10K cards
-  5. Empty datasets show graceful empty state
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 90-01-PLAN.md - Query generator with facet type dispatch (SQL-01, SQL-02, SQL-03)
-- [x] 90-02-PLAN.md - Service layer, React hook, and GridRenderingEngine integration (SQL-04, SQL-05)
+**Plans**: 2/2 Complete
 
 ### Phase 91: Interactions
 **Goal**: Collapse/expand, click-to-filter, keyboard navigation
 **Depends on**: Phase 90 (SQL integration)
 **Requirements**: INT-01, INT-02, INT-03, INT-04, INT-05
-**Success Criteria** (what must be TRUE):
-  1. Click collapse icon toggles children visibility
-  2. Spans recalculate correctly when headers collapse
-  3. Click header filters data to that path subset
-  4. Selected header highlighted visually
-  5. Arrow keys navigate between headers
-**Plans**: 2 plans in 2 waves
-
-Plans:
-- [x] 91-01-PLAN.md — Collapse/expand toggle, click-to-filter, visual highlight (INT-01, INT-02, INT-03, INT-04)
-- [x] 91-02-PLAN.md — Keyboard navigation with ARIA accessibility (INT-05)
+**Plans**: 2/2 Complete
 
 ### Phase 92: Data Cell Integration
 **Goal**: Connect headers to data cells with coordinated scroll
 **Depends on**: Phase 91 (Interactions)
 **Requirements**: CELL-01, CELL-02, CELL-03, CELL-04, SSTACK-VIZ (visual nesting)
-**Success Criteria** (what must be TRUE):
-  1. Data cells render at correct positions relative to leaf headers
-  2. Headers stay fixed while data area scrolls
-  3. Density level affects cell rendering (counts vs chips)
-  4. Selection syncs between headers and data cells
-  5. Hierarchical folder paths display as nested headers (SuperStack visual nesting)
-**Plans**: 4 plans in 2 waves
-
-Plans:
-- [x] 92-01-PLAN.md — Core data cell rendering infrastructure with CSS Grid scroll container (CELL-01, CELL-02)
-- [x] 92-02-PLAN.md — Density-aware rendering (counts vs card chips) (CELL-03)
-- [x] 92-03-PLAN.md — Selection synchronization between headers and data cells (CELL-04)
-- [x] 92-04-PLAN.md — SuperStack hierarchical header integration (SSTACK-VIZ)
+**Plans**: 4/4 Complete
 
 ### Phase 93: Polish & Performance
 **Goal**: Virtual scrolling, accessibility, animations
 **Depends on**: Phase 92 (Data cell integration)
 **Requirements**: PERF-01, PERF-02, A11Y-01, UX-01, UX-02
-**Success Criteria** (what must be TRUE):
-  1. 10K cells render at 30+ fps via virtual scrolling
-  2. Headers remain sticky during scroll
-  3. ARIA labels present for screen readers
-  4. Empty state displays informative message
-  5. Collapse/expand transitions animate smoothly
-**Plans**: 3 plans in 2 waves
+**Plans**: 3/3 Complete
 
-Plans:
-- [x] 93-01-PLAN.md — Virtual scrolling with TanStack Virtual + FPS monitoring (PERF-01) ✓
-- [x] 93-02-PLAN.md — ARIA accessibility + informative empty states (A11Y-01, UX-01) ✓
-- [x] 93-03-PLAN.md — GPU-accelerated animations + sticky header verification (PERF-02, UX-02) ✓
+</details>
 
-## v6.2 Capture Writing Surface (Planning)
+## v6.2 Capture Writing Surface (In Progress)
 
 **Milestone Goal:** Transform Capture into a world-class writing surface combining Apple Notes fluency, Notion flexibility, and Obsidian power — with Isometry-native view embeds.
 
@@ -319,8 +270,8 @@ Plans:
 **Plans**: 2 plans in 2 waves
 
 Plans:
-- [x] 97-01-PLAN.md — Inline Property Mark (@key: value syntax, PropertyEditor sync) (PROP-01, PROP-02) ✓
-- [x] 97-02-PLAN.md — Hashtag Mark with Autocomplete (#tag syntax, tag sync) (PROP-03, PROP-04) ✓
+- [x] 97-01-PLAN.md — Inline Property Mark (@key: value syntax, PropertyEditor sync) (PROP-01, PROP-02)
+- [x] 97-02-PLAN.md — Hashtag Mark with Autocomplete (#tag syntax, tag sync) (PROP-03, PROP-04)
 
 ### Phase 98: Isometry Embeds & Polish
 **Goal**: Live D3.js visualization embeds (/supergrid, /network, /timeline) and final polish
@@ -331,10 +282,13 @@ Plans:
   2. Embedded views respect LATCH filters from parameters
   3. Embeds update when underlying data changes
   4. Editor maintains 60fps with 10K+ character documents
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 98-01: TBD (use /gsd:plan-phase)
+- [ ] 98-01-PLAN.md — Embed TipTap extension, React NodeView, and slash commands (EMBED-01, EMBED-03, EMBED-04)
+- [ ] 98-02-PLAN.md — Live data updates with dataVersion reactivity and LATCH filters (EMBED-02, EMBED-05)
+- [ ] 98-03-PLAN.md — View-switching toolbar for embeds (EMBED-06)
+- [ ] 98-04-PLAN.md — Performance optimization for 60fps with embeds (POLISH-03)
 
 ## v6.0 Interactive Shell (Deferred)
 
@@ -430,8 +384,8 @@ Plans:
 | 95. Data Layer & Backlinks | v6.2 | 4/4 | Complete | 2026-02-14 |
 | 96. Block Types & Slash Commands | v6.2 | 3/3 | Complete | 2026-02-15 |
 | 97. Inline Properties | v6.2 | 2/2 | Complete | 2026-02-14 |
-| 98. Isometry Embeds & Polish | v6.2 | 0/0 | Not started | - |
+| 98. Isometry Embeds & Polish | v6.2 | 0/4 | Planned | - |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (Phase 93 planned: 3 plans in 2 waves)*
+*Last updated: 2026-02-14 (Phase 98 planned: 4 plans in 3 waves)*
