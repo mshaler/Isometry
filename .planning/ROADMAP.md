@@ -41,6 +41,11 @@
 | 103-02 | Log Level Controls | LOG-01 to LOG-07 | Enhanced `dev-logger.ts` with configurable levels |
 | 103-03 | Warning Resolution | WARN-01 to WARN-04 | Fixed axis fallback, gated warnings |
 
+Plans:
+- [ ] 103-01-PLAN.md — Fix TipTap duplicate Link warning, add favicon link tag (Wave 1)
+- [ ] 103-02-PLAN.md — Enhance DevLogger, gate HeaderDiscoveryService/PropertyClassifier/SQLiteProvider logs (Wave 1)
+- [ ] 103-03-PLAN.md — Gate axis fallback, SuperStack, NestedHeaderRenderer, YAML warnings (Wave 2)
+
 **Success Criteria:**
 1. Browser console shows no errors on fresh page load
 2. TipTap initializes without duplicate extension warning
@@ -553,4 +558,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (v6.5 Console Cleanup started)*
+*Last updated: 2026-02-15 (v6.5 Console Cleanup planned)*
