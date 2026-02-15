@@ -1,5 +1,5 @@
 import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
-import type { CalloutType } from '../extensions/CalloutExtension';
+import type { CalloutType } from '../extensions/callout-types';
 
 const CALLOUT_CONFIG: Record<CalloutType, { icon: string; label: string }> = {
   info: { icon: '\u{1F4A1}', label: 'Info' },

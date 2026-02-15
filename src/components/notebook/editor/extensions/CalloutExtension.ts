@@ -1,12 +1,10 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { CalloutNode } from '../nodes/CalloutNode';
+import type { CalloutType, CalloutAttributes } from './callout-types';
 
-export type CalloutType = 'info' | 'warning' | 'tip' | 'error';
-
-export interface CalloutAttributes {
-  type: CalloutType;
-}
+// Re-export types for consumers
+export type { CalloutType, CalloutAttributes } from './callout-types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
