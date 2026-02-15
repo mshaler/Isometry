@@ -342,37 +342,6 @@ export const SLASH_COMMANDS: SlashCommand[] = [
       editor.chain().focus().deleteRange(range).setBookmark().run();
     },
   },
-  // Isometry Embeds - Live D3.js visualizations
-  {
-    id: 'supergrid',
-    label: 'SuperGrid',
-    description: 'Embed live SuperGrid visualization',
-    category: 'isometry',
-    shortcut: 'grid',
-    action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setEmbed('supergrid').run();
-    },
-  },
-  {
-    id: 'network',
-    label: 'Network Graph',
-    description: 'Embed live network visualization',
-    category: 'isometry',
-    shortcut: 'network',
-    action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setEmbed('network').run();
-    },
-  },
-  {
-    id: 'timeline',
-    label: 'Timeline',
-    description: 'Embed live timeline visualization',
-    category: 'isometry',
-    shortcut: 'timeline',
-    action: ({ editor, range }) => {
-      editor.chain().focus().deleteRange(range).setEmbed('timeline').run();
-    },
-  },
 ];
 
 export interface SlashCommandSuggestionProps extends SuggestionProps<SlashCommand> {
