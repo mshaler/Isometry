@@ -15,6 +15,12 @@ import { WebSocket } from 'ws';
 import { GSDFileWatcher } from './gsdFileWatcher';
 import { parseGSDPlanFile } from './gsdFileParser';
 import { updateTaskStatus } from './gsdFileWriter';
+import {
+  applyResolution,
+  detectConflict,
+  type ConflictData,
+  type ConflictResolution,
+} from './gsdConflictResolver';
 import type { ParsedPlanFile, TaskStatus } from './gsdTypes';
 import { devLogger } from '../../utils/logging';
 
@@ -22,11 +28,18 @@ import { devLogger } from '../../utils/logging';
  * Incoming message types for GSD file sync
  */
 export interface GSDSyncMessage {
-  type: 'start_gsd_watch' | 'stop_gsd_watch' | 'gsd_task_update' | 'gsd_read_plan';
+  type:
+    | 'start_gsd_watch'
+    | 'stop_gsd_watch'
+    | 'gsd_task_update'
+    | 'gsd_read_plan'
+    | 'gsd_resolve_conflict';
   sessionId: string;
   planPath?: string;
   taskIndex?: number;
   status?: TaskStatus;
+  resolution?: ConflictResolution;
+  conflict?: ConflictData;
 }
 
 /**
@@ -38,10 +51,14 @@ export interface GSDSyncResponse {
     | 'gsd_watch_stopped'
     | 'gsd_plan_data'
     | 'gsd_task_updated'
+    | 'gsd_conflict'
+    | 'gsd_conflict_resolved'
     | 'gsd_error';
   sessionId: string;
   planPath?: string;
   data?: ParsedPlanFile;
+  conflict?: ConflictData;
+  resolution?: ConflictResolution;
   error?: string;
 }
 
@@ -50,6 +67,8 @@ export interface GSDSyncResponse {
  */
 export class GSDFileSyncService {
   private fileWatcher: GSDFileWatcher;
+  /** Last synced state per plan path for conflict detection */
+  private lastSyncedState = new Map<string, ParsedPlanFile>();
 
   constructor(private projectPath: string) {
     this.fileWatcher = new GSDFileWatcher(projectPath);
@@ -128,6 +147,25 @@ export class GSDFileSyncService {
           );
           break;
 
+        case 'gsd_resolve_conflict':
+          if (
+            !message.planPath ||
+            !message.resolution ||
+            !message.conflict
+          ) {
+            throw new Error(
+              'planPath, resolution, and conflict required for gsd_resolve_conflict'
+            );
+          }
+          await this.handleConflictResolution(
+            ws,
+            message.sessionId,
+            message.planPath,
+            message.resolution,
+            message.conflict
+          );
+          break;
+
         default:
           throw new Error(
             `Unknown GSD message type: ${(message as { type: string }).type}`
@@ -150,9 +188,136 @@ export class GSDFileSyncService {
   }
 
   /**
+   * Handle file update from watcher - check for conflicts before broadcasting
+   *
+   * Call this when file watcher detects a change to check if there's a conflict
+   * with any pending UI changes.
+   *
+   * @param ws - WebSocket to send conflict notification
+   * @param sessionId - Session that owns the WebSocket
+   * @param planPath - Relative path to the plan file
+   * @param newFileState - Newly parsed file state from disk
+   * @returns Whether a conflict was detected
+   */
+  async handleFileChange(
+    ws: WebSocket,
+    sessionId: string,
+    planPath: string,
+    newFileState: ParsedPlanFile
+  ): Promise<{ hasConflict: boolean; conflict?: ConflictData }> {
+    const lastSynced = this.lastSyncedState.get(planPath);
+
+    if (!lastSynced) {
+      // First load - no conflict possible
+      this.lastSyncedState.set(planPath, newFileState);
+      return { hasConflict: false };
+    }
+
+    // Check if there are pending UI changes (compare current state)
+    const conflict = detectConflict(newFileState, lastSynced);
+
+    if (conflict) {
+      // Send conflict notification to client
+      ws.send(
+        JSON.stringify({
+          type: 'gsd_conflict',
+          sessionId,
+          planPath,
+          conflict,
+        } as GSDSyncResponse)
+      );
+
+      devLogger.debug('GSD conflict detected', {
+        component: 'GSDFileSyncService',
+        planPath,
+        diffCount: conflict.diffs.length,
+      });
+
+      return { hasConflict: true, conflict };
+    }
+
+    // No conflict - update synced state
+    this.lastSyncedState.set(planPath, newFileState);
+    return { hasConflict: false };
+  }
+
+  /**
+   * Handle conflict resolution from client
+   *
+   * @param ws - WebSocket to send response
+   * @param sessionId - Session that sent the resolution
+   * @param planPath - Path to the conflicting plan
+   * @param resolution - User's resolution choice
+   * @param conflict - The conflict data
+   */
+  async handleConflictResolution(
+    ws: WebSocket,
+    sessionId: string,
+    planPath: string,
+    resolution: ConflictResolution,
+    conflict: ConflictData
+  ): Promise<void> {
+    const resolved = applyResolution(conflict, resolution);
+
+    if (resolution === 'keep_ui' && resolved) {
+      // Write UI version back to file
+      this.fileWatcher.markWritePath(`.planning/${planPath}`);
+
+      // Update each differing task
+      for (const diff of conflict.diffs.filter((d) => d.taskIndex >= 0)) {
+        await updateTaskStatus(
+          this.projectPath,
+          planPath,
+          diff.taskIndex,
+          diff.uiValue
+        );
+      }
+
+      devLogger.debug('GSD conflict resolved with UI version', {
+        component: 'GSDFileSyncService',
+        planPath,
+        tasksUpdated: conflict.diffs.filter((d) => d.taskIndex >= 0).length,
+      });
+    }
+
+    // Update last synced state
+    const newState =
+      resolution === 'keep_ui' ? conflict.uiVersion : conflict.fileVersion;
+    this.lastSyncedState.set(planPath, newState);
+
+    // Notify client of resolution
+    ws.send(
+      JSON.stringify({
+        type: 'gsd_conflict_resolved',
+        sessionId,
+        planPath,
+        resolution,
+        data: newState,
+      } as GSDSyncResponse)
+    );
+  }
+
+  /**
+   * Update the last synced state for a plan
+   *
+   * Call this after successfully loading a plan to track its state.
+   */
+  updateSyncedState(planPath: string, state: ParsedPlanFile): void {
+    this.lastSyncedState.set(planPath, state);
+  }
+
+  /**
+   * Get the last synced state for a plan
+   */
+  getSyncedState(planPath: string): ParsedPlanFile | undefined {
+    return this.lastSyncedState.get(planPath);
+  }
+
+  /**
    * Clean up file watcher and all resources
    */
   cleanup(): void {
     this.fileWatcher.cleanup();
+    this.lastSyncedState.clear();
   }
 }
