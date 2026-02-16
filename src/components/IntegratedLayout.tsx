@@ -77,6 +77,9 @@ export function IntegratedLayout() {
 
   // Dataset switcher state - default to 'notes' (the sample data table)
   const [activeDataset, setActiveDataset] = useState<string>('notes');
+
+  // Layer highlight debug mode - highlights React (blue), D3.js (yellow), CSS (red)
+  const [layerHighlightEnabled, setLayerHighlightEnabled] = useState(false);
   const activeNodeType = useMemo(
     () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
     [activeDataset]
@@ -103,36 +106,115 @@ export function IntegratedLayout() {
     resetFilters,
   } = useSliderFilters(currentData, sliderClassification);
 
+  // Helper to look up facet info from classification
+  const getFacetInfo = useCallback((facetId: string): {
+    dataType: 'text' | 'select' | 'multi_select' | 'date' | 'number';
+    sourceColumn: string;
+  } => {
+    if (!classification) return { dataType: 'text', sourceColumn: facetId };
+    const allProperties = [
+      ...classification.L,
+      ...classification.A,
+      ...classification.T,
+      ...classification.C,
+      ...classification.H,
+    ];
+    const property = allProperties.find(p => p.sourceColumn === facetId || p.id === facetId);
+
+    // Get the actual sourceColumn from classification (e.g., 'modified_at' instead of 'modified')
+    const sourceColumn = property?.sourceColumn || facetId;
+
+    // Determine data type
+    let dataType: 'text' | 'select' | 'multi_select' | 'date' | 'number' = 'text';
+    if (property?.facetType === 'multi_select') dataType = 'multi_select';
+    else if (property?.facetType === 'select') dataType = 'select';
+    else if (property?.facetType === 'date') dataType = 'date';
+    else if (property?.facetType === 'number') dataType = 'number';
+
+    return { dataType, sourceColumn };
+  }, [classification]);
+
   // Extract row and column facets from PAFV mappings
   // Coordinate system: X-Plane = Rows (left headers), Y-Plane = Columns (top headers)
   const rowFacets = useMemo(() => {
     return pafvState.mappings
       .filter(m => m.plane === 'x')
-      .map(m => ({
-        id: m.facet,
-        name: m.facet,
-        axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
-        sourceColumn: m.facet,
-        dataType: 'text' as const,
-        sortOrder: 'asc' as const
-      }));
-  }, [pafvState.mappings]);
+      .map(m => {
+        const { dataType, sourceColumn } = getFacetInfo(m.facet);
+        return {
+          id: m.facet,
+          name: m.facet,
+          axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+          sourceColumn, // Use actual column from classification (e.g., 'modified_at' not 'modified')
+          dataType,
+          sortOrder: 'asc' as const,
+          // Folder paths should expand into hierarchy levels (BairesDev/Operations → BairesDev, Operations)
+          ...(sourceColumn === 'folder' ? { pathSeparator: '/' } : {}),
+          // Date facets require timeFormat for SQL date grouping (default: year)
+          ...(dataType === 'date' ? { timeFormat: '%Y' } : {}),
+        };
+      });
+  }, [pafvState.mappings, getFacetInfo]);
 
   const colFacets = useMemo(() => {
-    return pafvState.mappings
-      .filter(m => m.plane === 'y')
-      .map(m => ({
-        id: m.facet,
-        name: m.facet,
-        axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
-        sourceColumn: m.facet,
-        dataType: 'text' as const,
-        sortOrder: 'asc' as const
-      }));
-  }, [pafvState.mappings]);
+    const facets: Array<{
+      id: string;
+      name: string;
+      axis: 'L' | 'A' | 'T' | 'C' | 'H';
+      sourceColumn: string;
+      dataType: 'text' | 'select' | 'multi_select' | 'date' | 'number';
+      sortOrder: 'asc' | 'desc' | 'custom';
+      pathSeparator?: string;
+      timeFormat?: string;
+      options?: string[];
+    }> = [];
+
+    for (const m of pafvState.mappings.filter(m => m.plane === 'y')) {
+      const { dataType, sourceColumn } = getFacetInfo(m.facet);
+
+      // Date facets automatically expand to Year → Month hierarchy on columns
+      if (dataType === 'date') {
+        // Year level
+        facets.push({
+          id: `${m.facet}_year`,
+          name: `${m.facet} (Year)`,
+          axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+          sourceColumn,
+          dataType,
+          sortOrder: 'asc' as const, // Chronological: oldest years first (left to right)
+          timeFormat: '%Y',
+        });
+        // Month level - use custom order for chronological sorting
+        facets.push({
+          id: `${m.facet}_month`,
+          name: `${m.facet} (Month)`,
+          axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+          sourceColumn,
+          dataType,
+          sortOrder: 'custom' as const,
+          options: ['January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'],
+          timeFormat: '%B',
+        });
+      } else {
+        // Non-date facets pass through unchanged
+        facets.push({
+          id: m.facet,
+          name: m.facet,
+          axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+          sourceColumn,
+          dataType,
+          sortOrder: 'asc' as const,
+          ...(sourceColumn === 'folder' ? { pathSeparator: '/' } : {}),
+        });
+      }
+    }
+
+    return facets;
+  }, [pafvState.mappings, getFacetInfo]);
 
   // Get database reference for header discovery
-  const { db } = useSQLite();
+  const { db, reset: resetDatabase } = useSQLite();
 
   // Header discovery for CSS Grid mode
   // Note: useHeaderDiscovery interface is (db, columnFacets, rowFacets, nodeType)
@@ -272,23 +354,60 @@ export function IntegratedLayout() {
     setImportError(null);
     importStartedRef.current = true;
     try {
-      const result = await importFromPublic({ clearExisting, limit: 5000 });
+      // Full import - no limit. clearExisting purges all previous data first.
+      const result = await importFromPublic({ clearExisting });
       setAltoImported(true);
       setLastImportedCount(result.imported);
       setDataRevision(prev => prev + 1);
       refreshClassification?.();
+      // Log detailed import results including skip reasons
       contextLogger.debug('[IntegratedLayout] Alto-index import complete', {
         imported: result.imported,
         skipped: result.skipped,
         errors: result.errors.length,
+        reconciliation: result.reconciliation,
       });
+      // Also log to console for easy inspection
+      console.log('[Import Complete]', {
+        imported: result.imported,
+        skipped: result.skipped,
+        errors: result.errors.length,
+        reconciliation: result.reconciliation,
+        sampleErrors: result.errors.slice(0, 5),
+      });
+
+      // Verify database state after import - direct SQL count
+      if (db) {
+        const countResult = db.exec(`
+          SELECT node_type, COUNT(*) as count
+          FROM nodes
+          WHERE source = 'alto-index'
+          GROUP BY node_type
+          ORDER BY count DESC
+        `);
+        const dbCounts: Record<string, number> = {};
+        if (countResult[0]) {
+          for (const row of countResult[0].values) {
+            dbCounts[row[0] as string] = row[1] as number;
+          }
+        }
+        const totalResult = db.exec(`SELECT COUNT(*) FROM nodes WHERE source = 'alto-index'`);
+        const totalCount = totalResult[0]?.values[0]?.[0] as number || 0;
+
+        console.log('[Database Verification]', {
+          totalNodesInDB: totalCount,
+          byNodeType: dbCounts,
+          expectedFromImport: result.imported,
+          matchesImport: totalCount === result.imported,
+        });
+      }
     } catch (err) {
       importStartedRef.current = false;
       const message = err instanceof Error ? err.message : 'Import failed';
       setImportError(message);
       contextLogger.warn('[IntegratedLayout] Alto-index import failed', { error: message });
     }
-  }, [databaseService, importFromPublic]);
+  }, [db, databaseService, importFromPublic]);
 
   const handleRetryImport = useCallback(() => {
     runImport(true);
@@ -344,6 +463,75 @@ export function IntegratedLayout() {
     setDataRevision(prev => prev + 1);
     importStartedRef.current = false;
   }, [clearData]);
+
+  // Full database reset + fresh import (purge everything and start fresh)
+  const handleFullResetAndImport = useCallback(async () => {
+    setImportError(null);
+    setCurrentData([]);
+    setAltoImported(false);
+    setLastImportedCount(0);
+    importStartedRef.current = false;
+
+    try {
+      // Step 1: Reset database (clears IndexedDB and creates fresh schema)
+      await resetDatabase();
+      contextLogger.info('[IntegratedLayout] Database reset complete');
+
+      // Step 2: Refresh property classification (schema changed)
+      refreshClassification?.();
+
+      // Step 3: Import all data fresh (no limit)
+      const result = await importFromPublic({ clearExisting: true });
+      setAltoImported(true);
+      setLastImportedCount(result.imported);
+      setDataRevision(prev => prev + 1);
+      refreshClassification?.();
+
+      contextLogger.info('[IntegratedLayout] Full reset and import complete', {
+        imported: result.imported,
+        skipped: result.skipped,
+        errors: result.errors.length,
+      });
+      // Detailed console log for debugging import issues
+      console.log('[Full Reset Import Complete]', {
+        imported: result.imported,
+        skipped: result.skipped,
+        errors: result.errors.length,
+        reconciliation: result.reconciliation,
+        sampleErrors: result.errors.slice(0, 10),
+      });
+
+      // Verify database state after import - direct SQL count
+      if (db) {
+        const countResult = db.exec(`
+          SELECT node_type, COUNT(*) as count
+          FROM nodes
+          WHERE source = 'alto-index'
+          GROUP BY node_type
+          ORDER BY count DESC
+        `);
+        const dbCounts: Record<string, number> = {};
+        if (countResult[0]) {
+          for (const row of countResult[0].values) {
+            dbCounts[row[0] as string] = row[1] as number;
+          }
+        }
+        const totalResult = db.exec(`SELECT COUNT(*) FROM nodes WHERE source = 'alto-index'`);
+        const totalCount = totalResult[0]?.values[0]?.[0] as number || 0;
+
+        console.log('[Database Verification]', {
+          totalNodesInDB: totalCount,
+          byNodeType: dbCounts,
+          expectedFromImport: result.imported,
+          matchesImport: totalCount === result.imported,
+        });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Reset failed';
+      setImportError(message);
+      contextLogger.warn('[IntegratedLayout] Full reset failed', { error: message });
+    }
+  }, [db, resetDatabase, importFromPublic, refreshClassification]);
 
   // Theme-aware colors
   const isNeXTSTEP = theme === 'NeXTSTEP';
@@ -572,7 +760,11 @@ export function IntegratedLayout() {
     <DndProvider backend={HTML5Backend}>
       <div className={`h-screen flex flex-col ${bgColor} ${textColor}`}>
         {/* Command Bar (top) */}
-        <div className={`h-8 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-2`}>
+        <div
+          className={`h-8 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-2`}
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
           <span className={`text-xs font-mono ${mutedColor}`}>⌘</span>
           <input
             type="text"
@@ -590,7 +782,11 @@ export function IntegratedLayout() {
         </div>
 
         {/* Phase 80-01: Collapsible Notebook Panel */}
-        <div className={`${panelBg} border-b ${borderColor}`}>
+        <div
+          className={`${panelBg} border-b ${borderColor}`}
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
           {/* Collapsed Header - always visible */}
           <button
             type="button"
@@ -643,7 +839,11 @@ export function IntegratedLayout() {
         </div>
 
         {/* Dataset Switcher */}
-        <div className={`h-10 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-1`}>
+        <div
+          className={`h-10 ${panelBg} border-b ${borderColor} flex items-center px-4 gap-1`}
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
           {ALTO_DATASETS.map((dataset) => (
             <button
               key={dataset.id}
@@ -663,7 +863,11 @@ export function IntegratedLayout() {
         </div>
 
         {/* Status + Actions */}
-        <div className={`h-8 ${panelBg} border-b ${borderColor} flex items-center justify-between px-4 text-[11px]`}>
+        <div
+          className={`h-8 ${panelBg} border-b ${borderColor} flex items-center justify-between px-4 text-[11px]`}
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
           <div className={`flex items-center gap-3 ${mutedColor}`}>
             <span>Dataset: {activeDataset}</span>
             <span>Rows: {currentData.length}</span>
@@ -673,6 +877,21 @@ export function IntegratedLayout() {
             {(importError || importHookError) && <span className="text-red-500">Import failed</span>}
           </div>
           <div className="flex items-center gap-2">
+            {/* Layer Highlight Toggle - visualize React/D3/CSS layers */}
+            <button
+              type="button"
+              onClick={() => setLayerHighlightEnabled(prev => !prev)}
+              className={`
+                px-2 py-0.5 rounded border text-[10px] font-medium transition-colors
+                ${layerHighlightEnabled
+                  ? 'border-purple-500 bg-purple-100 text-purple-700'
+                  : 'border-gray-300 text-gray-500 hover:bg-gray-100'
+                }
+              `}
+              title="Toggle layer highlighting: React=blue, D3=yellow, CSS=red"
+            >
+              {layerHighlightEnabled ? '🎨 Layers ON' : '🎨 Layers'}
+            </button>
             <button
               type="button"
               onClick={handleReloadDataset}
@@ -701,18 +920,35 @@ export function IntegratedLayout() {
             >
               Clear Imported
             </button>
+            <button
+              type="button"
+              onClick={handleFullResetAndImport}
+              className="px-2 py-0.5 rounded border border-red-300 text-red-700 hover:bg-red-50 font-medium"
+            >
+              Full Reset + Import
+            </button>
           </div>
         </div>
 
         {/* LatchNavigator (6-column LATCH+GRAPH property grid) */}
-        <LatchNavigator
-          enabledProperties={enabledProperties}
-          onPropertyToggle={handlePropertyToggle}
-          nodeType={activeNodeType}
-        />
+        <div
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
+          <LatchNavigator
+            enabledProperties={enabledProperties}
+            onPropertyToggle={handlePropertyToggle}
+            nodeType={activeNodeType}
+          />
+        </div>
 
         {/* PafvNavigator (5-well axis assignment with density) */}
-        <PafvNavigator enabledProperties={enabledProperties} nodeType={activeNodeType} />
+        <div
+          data-renderer="react"
+          style={layerHighlightEnabled ? { backgroundColor: 'rgba(147, 197, 253, 0.3)', outline: '2px solid rgba(59, 130, 246, 0.5)' } : undefined}
+        >
+          <PafvNavigator enabledProperties={enabledProperties} nodeType={activeNodeType} />
+        </div>
 
         {/* LATCH*GRAPH Sliders - HIDDEN for now (Phase 105 milestone) */}
         {/* TODO(Phase-105): Re-enable LatchGraphSliders with proper data-driven filtering
@@ -731,21 +967,31 @@ export function IntegratedLayout() {
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
           {USE_CSS_GRID_SUPERGRID && rowAxis && colAxis ? (
-            <SuperGridCSS
-              rowAxis={rowAxis}
-              columnAxis={colAxis}
-              data={dataCells}
-              theme={isNeXTSTEP ? 'nextstep' : 'modern'}
-              onCellClick={handleCellClick}
-              onHeaderClick={(type, path) => {
-                contextLogger.debug('[IntegratedLayout] Header clicked', { type, path });
-              }}
-            />
+            <div
+              data-renderer="css"
+              style={layerHighlightEnabled ? { backgroundColor: 'rgba(252, 165, 165, 0.3)', outline: '2px solid rgba(239, 68, 68, 0.5)' } : undefined}
+            >
+              <SuperGridCSS
+                rowAxis={rowAxis}
+                columnAxis={colAxis}
+                data={dataCells}
+                theme={isNeXTSTEP ? 'nextstep' : 'modern'}
+                onCellClick={handleCellClick}
+                onHeaderClick={(type, path) => {
+                  contextLogger.debug('[IntegratedLayout] Header clicked', { type, path });
+                }}
+              />
+            </div>
           ) : (
-            <svg
-              ref={svgRef}
-              style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
-            />
+            <div
+              data-renderer="d3"
+              style={layerHighlightEnabled ? { backgroundColor: 'rgba(253, 224, 71, 0.3)', outline: '2px solid rgba(234, 179, 8, 0.5)' } : undefined}
+            >
+              <svg
+                ref={svgRef}
+                style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
+              />
+            </div>
           )}
 
           {/* Overlay states */}
