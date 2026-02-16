@@ -77,6 +77,18 @@ const GRAPH_METRICS = [
   { id: 'metric_weight', name: 'Weight', sourceColumn: 'weight' },
 ] as const;
 
+/** Derived properties (computed from existing columns) */
+const DERIVED_PROPERTIES = [
+  {
+    id: 'subfolder',
+    name: 'Subfolder',
+    bucket: 'H' as LATCHBucket,
+    sourceColumn: 'folder', // Derived from folder column
+    facetType: 'select',
+    pathLevel: 1, // Extract second level of folder path
+  },
+] as const;
+
 // ============================================================================
 // Implementation
 // ============================================================================
@@ -412,6 +424,25 @@ export function classifyProperties(db: Database, nodeType?: string): PropertyCla
       enabled: true,
       sortOrder: sortOrder++,
       isEdgeProperty: false,
+    });
+  }
+
+  // Add derived properties (e.g., Subfolder from folder paths)
+  for (const derived of DERIVED_PROPERTIES) {
+    // Only add if the source column has data
+    const hasData = columnHasData(db, derived.sourceColumn, nodeType);
+    if (!hasData) continue;
+
+    classification[derived.bucket].push({
+      id: derived.id,
+      name: derived.name,
+      bucket: derived.bucket,
+      sourceColumn: derived.sourceColumn,
+      facetType: derived.facetType,
+      enabled: true,
+      sortOrder: 100 + classification[derived.bucket].length, // After schema facets
+      isEdgeProperty: false,
+      isDynamic: true, // Mark as derived/dynamic
     });
   }
 

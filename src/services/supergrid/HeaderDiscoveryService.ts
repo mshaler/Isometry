@@ -53,11 +53,13 @@ export class HeaderDiscoveryService {
    *
    * @param facets - Ordered facet configurations (outermost first)
    * @param axis - 'row' or 'column' for tree orientation
+   * @param nodeType - Optional node_type filter for schema-on-read
    * @returns HeaderTree or null if database unavailable or query fails
    */
   discoverHeaders(
     facets: FacetConfig[],
-    axis: 'row' | 'column'
+    axis: 'row' | 'column',
+    nodeType?: string
   ): HeaderTree | null {
     if (!this.db || facets.length === 0) {
       superGridLogger.debug(`discoverHeaders(${axis}): no db or empty facets`);
@@ -74,8 +76,8 @@ export class HeaderDiscoveryService {
       // Generate SQL query with ORIGINAL facets to get actual data combinations
       const sql =
         facets.length === 1
-          ? buildHeaderDiscoveryQuery(facets[0])
-          : buildStackedHeaderQuery(facets);
+          ? buildHeaderDiscoveryQuery(facets[0], nodeType)
+          : buildStackedHeaderQuery(facets, nodeType);
 
       superGridLogger.debug('SQL query:', sql);
 
@@ -93,9 +95,19 @@ export class HeaderDiscoveryService {
       superGridLogger.debug(`SQL returned ${rows.length} rows`, { firstRow: rows[0] });
 
       // Check if any facet uses path separator - expand AFTER getting real data
-      const pathFacetIndex = facets.findIndex(f => f.pathSeparator);
+      // pathLevel facets extract a single level, pathSeparator (without pathLevel) expand to hierarchy
+      const pathFacetIndex = facets.findIndex(f => f.pathSeparator && f.pathLevel === undefined);
+      const pathLevelFacetIndex = facets.findIndex(f => f.pathSeparator && f.pathLevel !== undefined);
       let finalFacets = facets;
 
+      // Handle pathLevel facets first (extract single level, e.g., subfolder)
+      if (pathLevelFacetIndex >= 0) {
+        const pathLevelFacet = facets[pathLevelFacetIndex];
+        superGridLogger.debug(`Post-processing path level extraction for "${pathLevelFacet.id}" at level ${pathLevelFacet.pathLevel}`);
+        rows = this.extractPathLevelInRows(rows, pathLevelFacet);
+      }
+
+      // Then handle full path expansion facets
       if (pathFacetIndex >= 0) {
         const pathFacet = facets[pathFacetIndex];
         superGridLogger.debug(`Post-processing path expansion for "${pathFacet.id}"`);
@@ -116,6 +128,41 @@ export class HeaderDiscoveryService {
       console.error('[HeaderDiscoveryService] Query failed:', error);
       return null;
     }
+  }
+
+  /**
+   * Extract a specific path level from rows.
+   * For subfolder (pathLevel=1), extracts "Child" from "Parent/Child".
+   *
+   * @param rows - Query rows with full path values
+   * @param facet - Facet with pathLevel specified
+   * @returns Transformed rows with extracted path level values
+   */
+  private extractPathLevelInRows(
+    rows: QueryRow[],
+    facet: FacetConfig
+  ): QueryRow[] {
+    const separator = facet.pathSeparator!;
+    const level = facet.pathLevel!;
+
+    return rows.map(row => {
+      const value = String(row[facet.sourceColumn] ?? '');
+      const segments = value.split(separator).filter(s => s.length > 0);
+
+      // Extract the specified level, or empty string if path is too short
+      const extractedValue = segments[level] ?? '';
+
+      // Create new row with extracted value in the facet's id column
+      const newRow: QueryRow = { ...row };
+      newRow[facet.id] = extractedValue;
+
+      return newRow;
+    }).filter(row => {
+      // Filter out rows where the extracted level is empty
+      // (paths that don't have that level)
+      const value = row[facet.id];
+      return value !== '' && value !== undefined;
+    });
   }
 
   /**
@@ -151,13 +198,22 @@ export class HeaderDiscoveryService {
       actualMaxDepth = Math.max(actualMaxDepth, Math.min(segments.length, maxDepth));
     }
 
-    // Create synthetic facets for each path level
+    // Create synthetic facets for each path level with user-friendly names
+    // Level 0: "Folder", Level 1: "Subfolder", Level 2+: "Subfolder N"
     const syntheticFacets: FacetConfig[] = [];
     for (let i = 0; i < actualMaxDepth; i++) {
+      let levelName: string;
+      if (i === 0) {
+        levelName = pathFacet.name;
+      } else if (i === 1) {
+        levelName = `Sub${pathFacet.name.toLowerCase()}`;
+      } else {
+        levelName = `Sub${pathFacet.name.toLowerCase()} ${i}`;
+      }
       syntheticFacets.push({
         ...pathFacet,
         id: `${pathFacet.id}_level_${i}`,
-        name: i === 0 ? pathFacet.name : `${pathFacet.name} L${i + 1}`,
+        name: levelName,
         pathSeparator: undefined, // Clear to avoid nested expansion
       });
     }
@@ -185,9 +241,9 @@ export class HeaderDiscoveryService {
       }
 
       // Add split path values for each level
+      // Use empty string for levels beyond the path's actual depth (leaf indicator)
       for (let i = 0; i < actualMaxDepth; i++) {
-        // Use the segment at this level, or the last available segment (leaf repeats)
-        const segmentValue = segments[i] ?? segments[segments.length - 1] ?? '';
+        const segmentValue = segments[i] ?? '';
         expandedRow[syntheticFacets[i].id] = segmentValue;
       }
 

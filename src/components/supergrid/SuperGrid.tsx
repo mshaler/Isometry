@@ -85,8 +85,19 @@ function mapAxisMappingToFacetConfig(mapping: AxisMapping): FacetConfig {
   // Folder facet uses "/" as path separator for hierarchical paths
   // e.g., "BairesDev/MSFT" becomes two levels: "BairesDev" > "MSFT"
   let pathSeparator: string | undefined;
+  let pathLevel: number | undefined;
+  let sourceColumn = mapping.facet;
+
   if (mapping.facet === 'folder') {
     pathSeparator = '/';
+  }
+
+  // Subfolder is a derived facet that extracts the second level of folder paths
+  // e.g., "Parent/Child" → pathLevel=1 extracts "Child"
+  if (mapping.facet === 'subfolder') {
+    sourceColumn = 'folder'; // Derived from folder column
+    pathSeparator = '/';
+    pathLevel = 1; // Extract second level only
   }
 
   // Override dataType for known multi-select columns
@@ -100,10 +111,11 @@ function mapAxisMappingToFacetConfig(mapping: AxisMapping): FacetConfig {
     id: mapping.facet,
     name: mapping.facet,
     axis: axisMap[mapping.axis],
-    sourceColumn: mapping.facet,
+    sourceColumn,
     dataType,
     timeFormat,
     pathSeparator,
+    pathLevel,
     sortOrder: 'asc' as const,
   };
 
@@ -119,6 +131,8 @@ interface SuperGridProps {
   params?: unknown[];
   /** Preloaded nodes to avoid duplicate queries */
   nodes?: Node[];
+  /** Node type filter for schema-on-read header discovery */
+  nodeType?: string;
   /** Grid continuum mode */
   mode?: 'gallery' | 'list' | 'kanban' | 'grid' | 'supergrid';
   /** Enable SuperStack headers */
@@ -157,6 +171,7 @@ export function SuperGrid({
   sql = "SELECT * FROM nodes WHERE deleted_at IS NULL",
   params = [],
   nodes: nodesProp,
+  nodeType,
   mode = 'supergrid',
   enableSuperStack = true,
   enableDragDrop = true,
@@ -280,7 +295,7 @@ export function SuperGrid({
     isLoading: headersLoading,
     error: headerError,
     // refresh: refreshHeaders, // Available for manual refresh if needed
-  } = useHeaderDiscovery(db, columnFacets, rowFacets);
+  } = useHeaderDiscovery(db, columnFacets, rowFacets, nodeType);
 
   // Use header interactions hook for collapse/filter state (Phase 91-01)
   const {

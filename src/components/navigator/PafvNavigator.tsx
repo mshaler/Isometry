@@ -21,7 +21,7 @@
  */
 
 import { useDrag, useDrop } from 'react-dnd';
-import { GripVertical, X } from 'lucide-react';
+import { GripVertical, X, MapPin, SortAsc, Clock, Tag, GitBranch } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { usePAFV } from '@/state/PAFVContext';
 import { devLogger } from '@/utils/dev-logger';
@@ -45,6 +45,23 @@ const BUCKET_TO_AXIS: Record<LATCHBucket, AxisMapping['axis']> = {
   H: 'hierarchy',
 };
 
+/** LATCH axis icons - matches LatchNavigator */
+const AXIS_ICONS: Record<string, { icon: React.ReactNode; color: string }> = {
+  location: { icon: <MapPin className="w-3 h-3" />, color: '#22C55E' },
+  alphabet: { icon: <SortAsc className="w-3 h-3" />, color: '#3B82F6' },
+  time: { icon: <Clock className="w-3 h-3" />, color: '#8B5CF6' },
+  category: { icon: <Tag className="w-3 h-3" />, color: '#F59E0B' },
+  hierarchy: { icon: <GitBranch className="w-3 h-3" />, color: '#EF4444' },
+};
+
+/** Capitalize first letter of each word */
+function capitalizeWords(str: string): string {
+  return str
+    .split(/[_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -65,9 +82,11 @@ interface AxisChipProps {
   index: number;
   onRemove: () => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  /** Handle cross-plane drops with positional insertion */
+  onCrossPlaneDropAtIndex?: (item: ReorderDragItem, targetIndex: number) => void;
 }
 
-function AxisChip({ mapping, sourceWell, index, onRemove, onReorder }: AxisChipProps) {
+function AxisChip({ mapping, sourceWell, index, onRemove, onReorder, onCrossPlaneDropAtIndex }: AxisChipProps) {
   const { theme } = useTheme();
   const isNeXTSTEP = theme === 'NeXTSTEP';
 
@@ -87,33 +106,54 @@ function AxisChip({ mapping, sourceWell, index, onRemove, onReorder }: AxisChipP
     }),
   }), [mapping, sourceWell, index]);
 
-  // Make the chip a drop target for reordering within the same well
-  const [{ isOver }, drop] = useDrop(() => ({
+  // Make the chip a drop target for:
+  // 1. Reordering within the same well
+  // 2. Cross-plane drops with positional insertion (SuperDynamic)
+  const [{ isOver, canDrop: canDropHere }, drop] = useDrop(() => ({
     accept: PAFV_ITEM_TYPE,
     hover: (item: ReorderDragItem) => {
-      // Only reorder within same well
-      if (item.sourceWell !== sourceWell) return;
-      if (item.index === index) return;
-      // Call reorder
-      onReorder(item.index, index);
-      // Update the item's index for subsequent hovers
-      item.index = index;
+      // Same-well reordering: update order on hover
+      if (item.sourceWell === sourceWell) {
+        if (item.index === index) return;
+        onReorder(item.index, index);
+        item.index = index;
+      }
+      // Cross-plane drops handled on drop, not hover
+    },
+    drop: (item: ReorderDragItem) => {
+      // Cross-plane drop: insert at this position
+      if (item.sourceWell !== sourceWell && onCrossPlaneDropAtIndex) {
+        if (item.bucket === 'GRAPH') return; // Don't accept GRAPH items
+        onCrossPlaneDropAtIndex(item, index);
+      }
+      // Same-well drops already handled via hover
     },
     canDrop: (item: ReorderDragItem) => {
-      return item.sourceWell === sourceWell && item.index !== index;
+      // Can drop if: same well (reordering) OR different well (cross-plane)
+      if (item.bucket === 'GRAPH') return false;
+      return true;
     },
     collect: (monitor) => ({
-      isOver: monitor.isOver() && monitor.canDrop(),
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
     }),
-  }), [sourceWell, index, onReorder]);
-
-  const capitalizeFirst = (str: string): string => str.charAt(0).toUpperCase() + str.slice(1);
+  }), [sourceWell, index, onReorder, onCrossPlaneDropAtIndex]);
 
   // Combine drag and drop refs
   const ref = (node: HTMLDivElement | null) => {
     drag(node);
     drop(node);
   };
+
+  // Visual feedback: different highlight for same-well vs cross-plane drops
+  const getDropHighlight = () => {
+    if (!isOver || !canDropHere) return '';
+    // Cross-plane drop indicator (green glow)
+    return 'ring-2 ring-green-400 ring-offset-1 bg-green-50/20';
+  };
+
+  // Get axis icon and color
+  const axisInfo = AXIS_ICONS[mapping.axis] || { icon: null, color: '#888' };
 
   return (
     <div
@@ -122,20 +162,23 @@ function AxisChip({ mapping, sourceWell, index, onRemove, onReorder }: AxisChipP
         flex items-center justify-between gap-1 h-7 px-2 rounded text-[11px]
         cursor-grab active:cursor-grabbing
         ${isDragging ? 'opacity-40 scale-95' : ''}
-        ${isOver ? 'ring-2 ring-blue-400 ring-offset-1' : ''}
+        ${getDropHighlight()}
         transition-all
         ${isNeXTSTEP
           ? 'bg-[#4A90D9] text-white'
           : 'bg-blue-100 text-blue-800 border border-blue-200'
         }
       `}
+      title={`${mapping.axis}: ${mapping.facet}`}
     >
       <GripVertical className={`w-3 h-3 flex-shrink-0 ${isNeXTSTEP ? 'text-white/60' : 'text-blue-400'}`} />
+      {/* LATCH icon */}
+      <span style={{ color: isNeXTSTEP ? 'white' : axisInfo.color }} className="flex-shrink-0">
+        {axisInfo.icon}
+      </span>
+      {/* Capitalized facet name only */}
       <span className="truncate flex-1">
-        {capitalizeFirst(mapping.axis)}
-        {mapping.facet && (
-          <span className="opacity-70 ml-1">({mapping.facet})</span>
-        )}
+        {capitalizeWords(mapping.facet)}
       </span>
       <button
         onClick={(e) => {
@@ -320,6 +363,7 @@ export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProp
     getMappingsForPlane,
     reorderMappingsInPlane,
     moveFacetToPlane,
+    moveFacetToPlaneAtIndex,
     setDensityLevel,
     setColorEncoding,
     setSizeEncoding,
@@ -393,6 +437,23 @@ export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProp
     }
   };
 
+  // Handle cross-plane drop at specific index (SuperDynamic positional insertion)
+  const handleCrossPlaneDropAtIndex = (targetPlane: Plane) => (item: ReorderDragItem, targetIndex: number) => {
+    if (item.bucket === 'GRAPH') return;
+    const axis = BUCKET_TO_AXIS[item.bucket as LATCHBucket];
+
+    // If coming from another plane, move with position
+    if (item.sourceWell === 'x' || item.sourceWell === 'y' || item.sourceWell === 'z') {
+      devLogger.debug('[PafvNavigator] Cross-plane drop at index', {
+        from: item.sourceWell,
+        to: targetPlane,
+        facet: item.sourceColumn,
+        targetIndex
+      });
+      moveFacetToPlaneAtIndex(item.sourceWell as Plane, targetPlane, item.sourceColumn, axis, targetIndex);
+    }
+  };
+
   // Container styling
   const containerClasses = `
     w-full p-2
@@ -453,6 +514,7 @@ export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProp
                   index={index}
                   onRemove={() => removeFacetFromPlane('x', mapping.facet)}
                   onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('x', fromIndex, toIndex)}
+                  onCrossPlaneDropAtIndex={handleCrossPlaneDropAtIndex('x')}
                 />
               ))
             )}
@@ -479,6 +541,7 @@ export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProp
                   index={index}
                   onRemove={() => removeFacetFromPlane('y', mapping.facet)}
                   onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('y', fromIndex, toIndex)}
+                  onCrossPlaneDropAtIndex={handleCrossPlaneDropAtIndex('y')}
                 />
               ))
             )}
@@ -505,6 +568,7 @@ export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProp
                   index={index}
                   onRemove={() => removeFacetFromPlane('z', mapping.facet)}
                   onReorder={(fromIndex, toIndex) => reorderMappingsInPlane('z', fromIndex, toIndex)}
+                  onCrossPlaneDropAtIndex={handleCrossPlaneDropAtIndex('z')}
                 />
               ))
             )}

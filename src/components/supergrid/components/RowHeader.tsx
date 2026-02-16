@@ -2,6 +2,7 @@
  * RowHeader Component
  *
  * Renders a row header cell with vertical spanning support.
+ * Uses sticky positioning to stay fixed during horizontal scrolling.
  */
 
 import React from 'react';
@@ -9,14 +10,25 @@ import type { RowHeaderProps } from '../types';
 import { useSuperGridContext } from '../SuperGridCSSContext';
 import styles from '../styles/SuperGrid.module.css';
 
+/** Capitalize first letter of each word, handling underscores and spaces */
+function capitalizeLabel(str: string): string {
+  return str
+    .split(/[_\s]+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/** Header column width in pixels (must match gridPlacement.ts) */
+const HEADER_COLUMN_WIDTH = 100;
+
 /**
  * Row header component for vertical hierarchy display.
  *
  * Features:
  * - Vertical spanning based on leafCount
  * - Depth-based styling
- * - Expandable indicator for nodes with children
- * - Click handling for selection/expansion
+ * - Click handling for selection
+ * - Sticky positioning for freeze-pane effect
  */
 export const RowHeader: React.FC<RowHeaderProps> = ({
   node,
@@ -25,7 +37,10 @@ export const RowHeader: React.FC<RowHeaderProps> = ({
   onClick,
 }) => {
   const { theme } = useSuperGridContext();
-  const isExpandable = node.expandable || (node.children && node.children.length > 0);
+
+  // Calculate cumulative left position for sticky (depth * column width)
+  // Depth 0 = first column (left: 0), Depth 1 = second column (left: 100px), etc.
+  const stickyLeft = depth * HEADER_COLUMN_WIDTH;
 
   return (
     <div
@@ -40,15 +55,16 @@ export const RowHeader: React.FC<RowHeaderProps> = ({
         color: theme.text,
         fontWeight: depth === 0 ? 600 : 500,
         fontSize: depth === 0 ? '13px' : '12px',
+        // Sticky positioning for freeze-pane effect (horizontal scroll)
+        position: 'sticky',
+        left: stickyLeft,
       }}
       role="rowheader"
       onClick={onClick}
-      data-expandable={isExpandable}
       data-expanded={node.expanded}
       title={node.label}
     >
-      <span className={styles.headerLabel}>{node.label}</span>
-      {isExpandable && <span className={styles.expandIcon}>▶</span>}
+      <span className={styles.headerLabel}>{capitalizeLabel(node.label)}</span>
     </div>
   );
 };

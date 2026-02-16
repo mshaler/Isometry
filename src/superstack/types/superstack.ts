@@ -38,6 +38,10 @@ export interface FacetConfig {
   /** Maximum depth when splitting paths (default: unlimited) */
   maxPathDepth?: number;
 
+  /** For derived path facets: extract only this level (0-indexed) */
+  /** e.g., pathLevel=1 extracts "Child" from "Parent/Child" */
+  pathLevel?: number;
+
   /** For select facets: predefined option values */
   options?: string[];
 
