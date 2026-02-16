@@ -1,0 +1,190 @@
+/**
+ * Native <dialog> modal — backdrop blur, Escape to close, no React re-render
+ *
+ * Usage:
+ *   <dialog class="iso-dialog" id="myDialog">
+ *     <header class="iso-dialog__header">
+ *       <h2 class="iso-dialog__title">Dialog Title</h2>
+ *       <button class="iso-dialog__close" onclick="this.closest('dialog').close()">×</button>
+ *     </header>
+ *     <div class="iso-dialog__body">Content here</div>
+ *     <footer class="iso-dialog__footer">
+ *       <button class="iso-dialog__btn iso-dialog__btn--secondary">Cancel</button>
+ *       <button class="iso-dialog__btn iso-dialog__btn--primary">Confirm</button>
+ *     </footer>
+ *   </dialog>
+ *
+ * Open: document.getElementById('myDialog').showModal()
+ * Close: Native Escape key works automatically, or dialog.close()
+ *
+ * @isometry/primitives — Tier 3: Chrome
+ * @version 0.1.0
+ */
+
+.iso-dialog {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  max-width: min(90vw, 560px);
+  max-height: 85vh;
+
+  /* Styling */
+  padding: 0;
+  background: var(--iso-bg-raised);
+  border: 1px solid var(--iso-border-default);
+  border-radius: var(--iso-radius-lg);
+  box-shadow: var(--iso-shadow-deep);
+  color: var(--iso-fg-primary);
+
+  /* Open animation */
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+  transition: opacity var(--iso-transition-normal),
+              transform var(--iso-transition-normal),
+              display var(--iso-transition-normal) allow-discrete,
+              overlay var(--iso-transition-normal) allow-discrete;
+}
+
+.iso-dialog[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Starting style for animation (CSS @starting-style) */
+@starting-style {
+  .iso-dialog[open] {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+/* Backdrop */
+.iso-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity var(--iso-transition-normal),
+              display var(--iso-transition-normal) allow-discrete,
+              overlay var(--iso-transition-normal) allow-discrete;
+}
+
+.iso-dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  .iso-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Dialog header */
+.iso-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--iso-space-lg) var(--iso-space-xl);
+  border-bottom: 1px solid var(--iso-border-subtle);
+}
+
+.iso-dialog__title {
+  margin: 0;
+  font-size: var(--iso-font-size-lg);
+  font-weight: var(--iso-font-weight-semi);
+  color: var(--iso-fg-primary);
+}
+
+.iso-dialog__close {
+  background: none;
+  border: none;
+  color: var(--iso-fg-secondary);
+  cursor: pointer;
+  padding: var(--iso-space-sm);
+  border-radius: var(--iso-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--iso-transition-fast),
+              background var(--iso-transition-fast);
+}
+
+.iso-dialog__close:hover {
+  color: var(--iso-fg-primary);
+  background: var(--iso-bg-hover);
+}
+
+/* Dialog body */
+.iso-dialog__body {
+  padding: var(--iso-space-xl);
+  overflow-y: auto;
+  max-height: calc(85vh - 140px);
+}
+
+/* Dialog footer */
+.iso-dialog__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--iso-space-md);
+  padding: var(--iso-space-lg) var(--iso-space-xl);
+  border-top: 1px solid var(--iso-border-subtle);
+}
+
+/* Button styles for dialogs */
+.iso-dialog__btn {
+  padding: var(--iso-space-md) var(--iso-space-xl);
+  border-radius: var(--iso-radius-md);
+  font-size: var(--iso-font-size-sm);
+  font-weight: var(--iso-font-weight-medium);
+  cursor: pointer;
+  transition: background var(--iso-transition-fast),
+              border-color var(--iso-transition-fast);
+}
+
+.iso-dialog__btn--secondary {
+  background: transparent;
+  border: 1px solid var(--iso-border-default);
+  color: var(--iso-fg-primary);
+}
+
+.iso-dialog__btn--secondary:hover {
+  background: var(--iso-bg-hover);
+  border-color: var(--iso-border-strong);
+}
+
+.iso-dialog__btn--primary {
+  background: var(--iso-fg-accent);
+  border: 1px solid var(--iso-fg-accent);
+  color: var(--iso-fg-white);
+}
+
+.iso-dialog__btn--primary:hover {
+  background: #3d96ef;
+  border-color: #3d96ef;
+}
+
+/* Danger variant */
+.iso-dialog__btn--danger {
+  background: var(--iso-priority-high);
+  border: 1px solid var(--iso-priority-high);
+  color: var(--iso-fg-white);
+}
+
+.iso-dialog__btn--danger:hover {
+  background: #d32f2f;
+  border-color: #d32f2f;
+}
+
+/* Size variants */
+.iso-dialog--sm {
+  max-width: min(90vw, 400px);
+}
+
+.iso-dialog--lg {
+  max-width: min(90vw, 720px);
+}
+
+.iso-dialog--full {
+  max-width: 95vw;
+  max-height: 95vh;
+}
