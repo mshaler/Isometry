@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 ## Current Position
 
-Phase: 108 (CSS Primitives Tier 2) — COMPLETE
-Plan: All tasks done
-Status: Tier 2 layout primitives extracted
-Last activity: 2026-02-16 — Tier 2 layout primitives created
+Phase: 109 (CSS Chrome Primitives) — IN PROGRESS
+Plan: 02/03
+Status: Wave 1 complete (Sticky Headers, Selection, Scroll Shadows, Tooltips, Theme)
+Last activity: 2026-02-16 — Plan 109-01 and 109-02 complete
 
-Progress: [████████░░] 80% (Phase 107: complete, Phase 108: complete)
-Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 remaining)
+Progress: [████████░░] 87% (Phase 107: complete, Phase 108: complete, Phase 109: 2/3 plans)
+Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 in progress)
 
 ## Active Milestones
 
@@ -33,7 +33,10 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 remaining)
   - [x] 108-01: SuperGrid + Kanban primitives ✓
   - [x] 108-02: Timeline + Gallery primitives ✓
   - [x] 108-03: CSS reader utility ✓
-- Phase 109: CSS Chrome Primitives — PENDING (3 plans)
+- Phase 109: CSS Chrome Primitives — 🔄 IN PROGRESS (2/3 plans)
+  - [x] 109-01: Sticky Headers + Selection (Wave 1) ✓
+  - [x] 109-02: Scroll Shadows + Tooltips + Theme (Wave 1) ✓
+  - [ ] 109-03: Sidebar + Accordion + Dialog (Wave 2)
 
 **Deliverables:**
 - ✓ `src/styles/tokens.css` — Tier 1 design tokens (dark theme)
@@ -45,7 +48,7 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 remaining)
 - ✓ `src/d3/utils/css-primitives.ts` — CSS reader utility
 - ✓ Import aggregation in `src/index.css`
 
-**Total requirements:** 17 | **Status:** 15/17 complete
+**Total requirements:** 25 | **Status:** 15/25 complete (8 CHR-* requirements added)
 
 ### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 
@@ -267,6 +270,11 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 remaining)
 
 Recent decisions:
 
+**CSS Chrome Primitives (Phase 109):**
+- SCROLL-BG-ATTACH-01: Use background-attachment trick (local vs scroll) for zero-JS scroll shadows ✅ Implemented 109-02
+- TOOLTIP-PSEUDO-01: Use ::after pseudo-element with attr(data-tooltip) for tooltip content ✅ Implemented 109-02
+- FOUC-INLINE-01: Inline script in <head> sets data-theme before CSS loads ✅ Implemented 109-02
+
 **CSS Grid Integration (Phase 106):**
 - ADAPT-01: Root AxisNode wrapper required for SuperGridCSS tree structure ✅ Implemented 106-01
 - ADAPT-02: Collapsed state inverted: HeaderNode.collapsed → AxisNode.expanded ✅ Implemented 106-01
@@ -479,9 +487,20 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Completed: Phase 106 Plan 04 (SelectionContext and ThemeContext integration)
-Next: v6.7 CSS Grid Integration COMPLETE - proceed to next milestone
+Completed: Phase 109 Plan 02 (Scroll Shadows + Tooltips + Theme)
+Next: Phase 109 Plan 03 (Sidebar + Accordion + Dialog)
 Resume file: N/A
+
+**Phase 109-02 Complete:**
+- CSS-only scroll shadows using background-attachment trick (local vs scroll)
+- CSS-only tooltips via ::after pseudo-element with data-tooltip attribute
+- Theme utilities (getTheme, setTheme, toggleTheme, initTheme) with localStorage persistence
+- FOUC prevention via inline script in index.html
+- Zero JavaScript for scroll indicators, tooltips, and theme switching
+- Commits: ecad837f (scroll shadows), 703f0e4b (tooltips), 5ce23162 (theme), a3fa6866 (aggregation)
+- Duration: 154 seconds (~2.5 minutes)
+- Files: scroll-shadows.css (46 lines), tooltip.css (99 lines), theme.ts (32 lines)
+- Wave 1 Chrome primitives: COMPLETE (sticky headers, selection, scroll shadows, tooltips, theme)
 
 **Phase 106-04 Complete:**
 - Wired SelectionContext to SuperGridCSS cell clicks
