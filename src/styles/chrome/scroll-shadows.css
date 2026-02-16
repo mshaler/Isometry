@@ -1,0 +1,46 @@
+/* CSS-only scroll shadows — no JavaScript scroll listeners */
+
+.iso-scroll-container {
+  /* Scroll shadow using background-attachment trick */
+  background:
+    /* Top shadow cover (scrolls with content) */
+    linear-gradient(var(--iso-bg-base) 30%, transparent),
+    /* Bottom shadow cover (scrolls with content) */
+    linear-gradient(transparent, var(--iso-bg-base) 70%) 0 100%,
+    /* Top shadow (fixed) */
+    radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.25), transparent),
+    /* Bottom shadow (fixed) */
+    radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.25), transparent) 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Horizontal scroll variant */
+.iso-scroll-container--horizontal {
+  background:
+    /* Left shadow cover */
+    linear-gradient(90deg, var(--iso-bg-base) 30%, transparent),
+    /* Right shadow cover */
+    linear-gradient(270deg, var(--iso-bg-base) 30%, transparent) 100% 0,
+    /* Left shadow */
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.25), transparent),
+    /* Right shadow */
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.25), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+/* Both directions */
+.iso-scroll-container--both {
+  overflow: auto;
+}
+
+.iso-scroll-container--both::before,
+.iso-scroll-container--both::after {
+  content: '';
+  position: sticky;
+  display: block;
+  pointer-events: none;
+}
