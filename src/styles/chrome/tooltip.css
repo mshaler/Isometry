@@ -1,0 +1,99 @@
+/* CSS-only tooltips — no React state, no portals */
+
+[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+
+  /* Styling */
+  padding: var(--iso-space-sm) var(--iso-space-md);
+  background: var(--iso-bg-raised);
+  color: var(--iso-fg-primary);
+  font-size: var(--iso-font-size-xs);
+  font-family: var(--iso-font-sans);
+  white-space: nowrap;
+  border-radius: var(--iso-radius-sm);
+  box-shadow: var(--iso-shadow-raised);
+  z-index: var(--iso-z-tooltip);
+
+  /* Hidden by default */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--iso-transition-fast),
+              transform var(--iso-transition-fast),
+              visibility var(--iso-transition-fast);
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+}
+
+/* Position variants */
+[data-tooltip-pos="top"]::after {
+  bottom: calc(100% + 6px);
+  top: auto;
+}
+
+[data-tooltip-pos="bottom"]::after {
+  top: calc(100% + 6px);
+  bottom: auto;
+}
+
+[data-tooltip-pos="left"]::after {
+  right: calc(100% + 6px);
+  left: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+}
+
+[data-tooltip-pos="left"]:hover::after,
+[data-tooltip-pos="left"]:focus::after {
+  transform: translateY(-50%) scale(1);
+}
+
+[data-tooltip-pos="right"]::after {
+  left: calc(100% + 6px);
+  right: auto;
+  bottom: auto;
+  top: 50%;
+  transform: translateY(-50%) scale(0.9);
+}
+
+[data-tooltip-pos="right"]:hover::after,
+[data-tooltip-pos="right"]:focus::after {
+  transform: translateY(-50%) scale(1);
+}
+
+/* Arrow pointer */
+[data-tooltip]::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--iso-bg-raised);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--iso-transition-fast),
+              visibility var(--iso-transition-fast);
+  pointer-events: none;
+}
+
+[data-tooltip]:hover::before,
+[data-tooltip]:focus::before {
+  opacity: 1;
+  visibility: visible;
+}
