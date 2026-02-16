@@ -28,7 +28,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
 
   return (
     <div
-      className={`${styles.colHeader} ${styles[`depth${depth}`] || ''}`}
+      className={`${styles.colHeader} ${styles[`depth${depth}`] || ''} iso-grid-col-header ${depth > 0 ? `iso-grid-col-header--depth${depth}` : ''} iso-header`}
       style={{
         gridRowStart: placement.gridRowStart,
         gridRowEnd: placement.gridRowEnd,

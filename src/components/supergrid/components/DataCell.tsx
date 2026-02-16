@@ -45,7 +45,7 @@ export const DataCell: React.FC<DataCellProps> = ({
 
   return (
     <div
-      className={styles.dataCell}
+      className={`${styles.dataCell} iso-cell`}
       style={{
         gridRowStart: placement.gridRowStart,
         gridRowEnd: placement.gridRowEnd,

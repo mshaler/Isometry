@@ -29,7 +29,7 @@ export const RowHeader: React.FC<RowHeaderProps> = ({
 
   return (
     <div
-      className={`${styles.rowHeader} ${styles[`depth${depth}`] || ''}`}
+      className={`${styles.rowHeader} ${styles[`depth${depth}`] || ''} iso-grid-row-header ${depth > 0 ? `iso-grid-row-header--depth${depth}` : ''} iso-header`}
       style={{
         gridRowStart: placement.gridRowStart,
         gridRowEnd: placement.gridRowEnd,

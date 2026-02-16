@@ -20,7 +20,7 @@ export const CornerCell: React.FC<CornerCellProps> = ({ placement, label }) => {
 
   return (
     <div
-      className={styles.cornerCell}
+      className={`${styles.cornerCell} iso-grid-corner`}
       style={{
         gridRowStart: placement.gridRowStart,
         gridRowEnd: placement.gridRowEnd,
