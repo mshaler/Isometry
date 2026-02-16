@@ -104,9 +104,10 @@ export function IntegratedLayout() {
   } = useSliderFilters(currentData, sliderClassification);
 
   // Extract row and column facets from PAFV mappings
+  // Coordinate system: X-Plane = Rows (left headers), Y-Plane = Columns (top headers)
   const rowFacets = useMemo(() => {
     return pafvState.mappings
-      .filter(m => m.plane === 'y')
+      .filter(m => m.plane === 'x')
       .map(m => ({
         id: m.facet,
         name: m.facet,
@@ -119,7 +120,7 @@ export function IntegratedLayout() {
 
   const colFacets = useMemo(() => {
     return pafvState.mappings
-      .filter(m => m.plane === 'x')
+      .filter(m => m.plane === 'y')
       .map(m => ({
         id: m.facet,
         name: m.facet,

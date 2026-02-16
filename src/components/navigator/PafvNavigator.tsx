@@ -4,10 +4,15 @@
  * 6-column horizontal layout for PAFV axis assignment via drag-and-drop.
  * All columns equal width (16.67%) with consistent two-line titles.
  *
+ * Coordinate System (Isometric projection):
+ * - X-Plane = Rows (left headers, vertical grouping)
+ * - Y-Plane = Columns (top headers, horizontal grouping)
+ * - Z-Plane = Depth (layering/stacking)
+ *
  * Layout:
  * ┌───────────┬───────────┬───────────┬───────────┬───────────┬───────────┐
  * │ Available │  X-Plane  │  Y-Plane  │  Z-Plane  │ Encoding  │  Density  │
- * │Properties │  Columns  │   Rows    │   Depth   │Color/Size │Sparse/Dens│
+ * │Properties │   Rows    │  Columns  │   Depth   │Color/Size │Sparse/Dens│
  * ├───────────┼───────────┼───────────┼───────────┼───────────┼───────────┤
  * │  [chip]   │  [axis]   │  [axis]   │  [axis]   │  Color:   │  SPARSE   │
  * │  [chip]   │  [axis]   │  [axis]   │  [axis]   │  Size:    │    |||    │
