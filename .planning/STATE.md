@@ -229,6 +229,7 @@ Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to Super
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 
 *Updated: 2026-02-15*
+| Phase 106 P02 | 3.7 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -412,6 +413,8 @@ Recent decisions:
 
 See PROJECT.md Key Decisions table for full history.
 - [Phase 106]: CELL-PATH-01: Path computation via computeNodePath helper extracts facet values in order
+- [Phase 106]: CELL-MULTI-01: Multi-select facets extract first JSON array value, fallback to string
+- [Phase 106]: CELL-EMPTY-01: Null/undefined values mapped to '(empty)' string in paths
 
 ### Pending Todos
 
