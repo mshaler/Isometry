@@ -10,21 +10,21 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 ## Current Position
 
-Phase: 109 (CSS Chrome Primitives) — IN PROGRESS
-Plan: 02/03
-Status: Wave 1 complete (Sticky Headers, Selection, Scroll Shadows, Tooltips, Theme)
-Last activity: 2026-02-16 — Plan 109-01 and 109-02 complete
+Phase: 109 (CSS Chrome Primitives) — COMPLETE
+Plan: 03/03
+Status: All 3 plans complete (Wave 1 + Wave 2 chrome primitives)
+Last activity: 2026-02-16 — Plan 109-03 complete
 
-Progress: [████████░░] 87% (Phase 107: complete, Phase 108: complete, Phase 109: 2/3 plans)
-Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 in progress)
+Progress: [██████████] 100% (Phase 107: complete, Phase 108: complete, Phase 109: complete)
+Overall: v6.8 CSS Primitives — COMPLETE
 
 ## Active Milestones
 
-### v6.8 CSS Primitives — IN PROGRESS
+### v6.8 CSS Primitives — COMPLETE
 
 **Goal:** Implement @isometry/primitives CSS token system with three-tier architecture (tokens → primitives → chrome).
 
-**Status:** 🔄 IN PROGRESS
+**Status:** ✅ COMPLETE — Shipped 2026-02-16
 
 **Progress:**
 - Phase 107: CSS Primitives Tier 1 — ✅ COMPLETE
@@ -33,10 +33,10 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 in progress)
   - [x] 108-01: SuperGrid + Kanban primitives ✓
   - [x] 108-02: Timeline + Gallery primitives ✓
   - [x] 108-03: CSS reader utility ✓
-- Phase 109: CSS Chrome Primitives — 🔄 IN PROGRESS (2/3 plans)
+- Phase 109: CSS Chrome Primitives — ✅ COMPLETE (3/3 plans)
   - [x] 109-01: Sticky Headers + Selection (Wave 1) ✓
   - [x] 109-02: Scroll Shadows + Tooltips + Theme (Wave 1) ✓
-  - [ ] 109-03: Sidebar + Accordion + Dialog (Wave 2)
+  - [x] 109-03: Sidebar + Accordion + Dialog (Wave 2) ✓
 
 **Deliverables:**
 - ✓ `src/styles/tokens.css` — Tier 1 design tokens (dark theme)
@@ -46,9 +46,18 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 in progress)
 - ✓ `src/styles/primitives-timeline.css` — Timeline layout
 - ✓ `src/styles/primitives-gallery.css` — Gallery layout
 - ✓ `src/d3/utils/css-primitives.ts` — CSS reader utility
+- ✓ `src/styles/chrome/sticky-headers.css` — CSS-only sticky positioning
+- ✓ `src/styles/chrome/selection.css` — CSS-only selection highlighting
+- ✓ `src/styles/chrome/scroll-shadows.css` — CSS background-attachment trick
+- ✓ `src/styles/chrome/tooltip.css` — CSS pseudo-element tooltips
+- ✓ `src/styles/chrome/sidebar.css` — Data attribute collapse
+- ✓ `src/styles/chrome/accordion.css` — Native details element
+- ✓ `src/styles/chrome/dialog.css` — Native dialog element
+- ✓ `src/utils/theme.ts` — Theme utilities with localStorage
+- ✓ `src/styles/chrome-index.css` — Chrome CSS aggregator
 - ✓ Import aggregation in `src/index.css`
 
-**Total requirements:** 25 | **Status:** 15/25 complete (8 CHR-* requirements added)
+**Total requirements:** 25 | **Status:** 25/25 complete
 
 ### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 
@@ -278,6 +287,10 @@ Recent decisions:
 - SCROLL-BG-ATTACH-01: Use background-attachment trick (local vs scroll) for zero-JS scroll shadows ✅ Implemented 109-02
 - TOOLTIP-PSEUDO-01: Use ::after pseudo-element with attr(data-tooltip) for tooltip content ✅ Implemented 109-02
 - FOUC-INLINE-01: Inline script in <head> sets data-theme before CSS loads ✅ Implemented 109-02
+- SIDEBAR-DATA-ATTR-01: Sidebar collapse via data-collapsed attribute, not React state ✅ Implemented 109-03
+- ACCORDION-NATIVE-01: Use native <details> element instead of React accordion component ✅ Implemented 109-03
+- DIALOG-NATIVE-01: Use native <dialog> element with showModal() instead of React modal ✅ Implemented 109-03
+- DIALOG-BACKDROP-01: Use backdrop-filter for blur effect on dialog backdrop ✅ Implemented 109-03
 
 **CSS Grid Integration (Phase 106):**
 - ADAPT-01: Root AxisNode wrapper required for SuperGridCSS tree structure ✅ Implemented 106-01
@@ -491,20 +504,21 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Completed: Phase 109 Plan 02 (Scroll Shadows + Tooltips + Theme)
-Next: Phase 109 Plan 03 (Sidebar + Accordion + Dialog)
+Completed: Phase 109 Plan 03 (Sidebar + Accordion + Dialog)
+Next: TBD — v6.8 CSS Primitives milestone COMPLETE
 Resume file: N/A
 
-**Phase 109-02 Complete:**
-- CSS-only scroll shadows using background-attachment trick (local vs scroll)
-- CSS-only tooltips via ::after pseudo-element with data-tooltip attribute
-- Theme utilities (getTheme, setTheme, toggleTheme, initTheme) with localStorage persistence
-- FOUC prevention via inline script in index.html
-- Zero JavaScript for scroll indicators, tooltips, and theme switching
-- Commits: ecad837f (scroll shadows), 703f0e4b (tooltips), 5ce23162 (theme), a3fa6866 (aggregation)
-- Duration: 154 seconds (~2.5 minutes)
-- Files: scroll-shadows.css (46 lines), tooltip.css (99 lines), theme.ts (32 lines)
-- Wave 1 Chrome primitives: COMPLETE (sticky headers, selection, scroll shadows, tooltips, theme)
+**Phase 109-03 Complete:**
+- CSS-driven sidebar with data-collapsed attribute (one-line JS toggle)
+- Native <details> accordion with CSS styling (works without JavaScript)
+- Native <dialog> modal with backdrop blur and showModal() API
+- All 7 Phase 109 chrome modules now aggregated in chrome-index.css
+- Zero React state for sidebar, accordion, or dialog interactions
+- Commits: 712d0300 (sidebar), aaffe386 (accordion), 9a7cdf21 (dialog), ce79c616 (aggregation)
+- Duration: 206 seconds (~3.4 minutes)
+- Files: sidebar.css (104 lines), accordion.css (124 lines), dialog.css (190 lines)
+- Wave 2 Chrome primitives: COMPLETE (sidebar, accordion, dialog)
+- **v6.8 CSS Primitives milestone: COMPLETE (Phase 107, 108, 109 all complete)**
 
 **Phase 106-04 Complete:**
 - Wired SelectionContext to SuperGridCSS cell clicks
