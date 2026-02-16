@@ -24,7 +24,7 @@ Overall: v6.8 CSS Primitives — COMPLETE
 
 **Goal:** Implement @isometry/primitives CSS token system with three-tier architecture (tokens → primitives → chrome).
 
-**Status:** ✅ COMPLETE — Shipped 2026-02-16
+**Status:** Milestone complete
 
 **Progress:**
 - Phase 107: CSS Primitives Tier 1 — ✅ COMPLETE

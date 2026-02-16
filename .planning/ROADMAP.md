@@ -24,8 +24,49 @@
 - ✓ **v6.5 Console Cleanup** - Phase 103 (shipped 2026-02-15)
 - ✓ **v6.6 CSS Grid SuperGrid** - Phase 105 (shipped 2026-02-15)
 - ✓ **v6.7 CSS Grid Integration** - Phase 106 (shipped 2026-02-16)
+- 🔄 **v6.8 CSS Primitives** - Phases 107-109 (in progress)
 
 ## Phases
+
+### Phase 109: CSS Chrome Primitives
+
+**Goal:** Offload visual/presentation state from React to CSS-only patterns.
+
+**Depends on:** Phase 108 (Tier 2 Layout Primitives complete)
+
+**Requirements:** CHR-01 through CHR-08
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|-----------|----------|
+| CHR-01 | Sticky Headers | Low | P0 |
+| CHR-02 | Selection Highlighting | Low | P0 |
+| CHR-03 | Scroll Shadows | Low | P1 |
+| CHR-04 | Tooltips | Low | P1 |
+| CHR-05 | Sidebar Collapse | Medium | P1 |
+| CHR-06 | Accordion Panels | Medium | P2 |
+| CHR-07 | Dialogs | Medium | P2 |
+| CHR-08 | Theme Switching | Low | P1 |
+
+**Success Criteria:**
+1. Zero React re-renders for visual toggles (verify via React DevTools Profiler)
+2. All chrome animations run at 60fps
+3. Chrome renders correctly before JS hydration
+4. Selection highlighting uses D3 class toggle, not React state
+
+**Plans:** 3/3 plans complete
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 109-01 | Sticky + Selection | CHR-01, CHR-02 | `sticky-headers.css`, `selection.css` |
+| 109-02 | Scroll + Tooltip + Theme | CHR-03, CHR-04, CHR-08 | `scroll-shadows.css`, `tooltip.css` |
+| 109-03 | Sidebar + Accordion + Dialog | CHR-05, CHR-06, CHR-07 | `sidebar.css`, `accordion.css`, `dialog.css` |
+
+Plans:
+- [ ] 109-01-PLAN.md — Sticky Headers + Selection Highlighting (Wave 1)
+- [ ] 109-02-PLAN.md — Scroll Shadows + Tooltips + Theme (Wave 1)
+- [ ] 109-03-PLAN.md — Sidebar + Accordion + Dialog (Wave 2)
+
+---
 
 ### Phase 106: CSS Grid Integration
 

@@ -143,7 +143,7 @@ Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header s
 
 ### Interactions
 
-- [ ] **INT-01**: User can collapse/expand headers (toggle collapsed state)
+- [x] **INT-01**: User can collapse/expand headers (toggle collapsed state)
 - [ ] **INT-02**: System recalculates spans when headers collapse (collapsed parent = span 1)
 - [ ] **INT-03**: User can click header to filter data to that subset (path-based filtering)
 - [ ] **INT-04**: System highlights selected header visually
@@ -459,7 +459,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SQL-03 | Phase 90 | Pending |
 | SQL-04 | Phase 90 | Pending |
 | SQL-05 | Phase 90 | Pending |
-| INT-01 | Phase 91 | Pending |
+| INT-01 | Phase 91 | Complete |
 | INT-02 | Phase 91 | Pending |
 | INT-03 | Phase 91 | Pending |
 | INT-04 | Phase 91 | Pending |
