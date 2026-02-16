@@ -10,15 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 ## Current Position
 
-Phase: 105 (CSS Grid SuperGrid)
-Plan: 06/06 — COMPLETE
-Status: Phase complete
-Last activity: 2026-02-15 — Completed Phase 105 (CSS Grid SuperGrid replacement)
+Phase: 106 (CSS Grid Integration)
+Plan: 02/04
+Status: In progress
+Last activity: 2026-02-15 — Completed Phase 106 Plan 02 (Data cell query hook)
 
-Progress: [██████████] 100% (Phase 105: ✓)
-Overall: v6.6 CSS Grid SuperGrid — COMPLETE (architecture shift to React + CSS Grid)
+Progress: [█████░░░░░] 50% (Phase 106: 2/4 plans)
+Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to SuperGridCSS)
 
 ## Active Milestones
+
+### v6.7 CSS Grid Integration — IN PROGRESS
+
+**Goal:** Bridge HeaderDiscoveryService (SuperStack) to SuperGridCSS with adapters and data hooks for live SQL-driven rendering.
+
+**Status:** 🔄 IN PROGRESS
+
+**Progress:**
+- Phase 106: CSS Grid Integration — 🔄 IN PROGRESS (2/4 plans)
+  - [x] 106-01: HeaderTree to AxisConfig Adapter (~3m) ✓
+  - [ ] 106-02: useGridDataCells Hook
+  - [ ] 106-03: IntegratedLayout Component
+
+**Total requirements:** TBD | **Status:** 1/3 plans complete
 
 ### v6.6 CSS Grid SuperGrid — COMPLETE
 
@@ -222,6 +236,11 @@ Overall: v6.6 CSS Grid SuperGrid — COMPLETE (architecture shift to React + CSS
 
 Recent decisions:
 
+**CSS Grid Integration (Phase 106):**
+- ADAPT-01: Root AxisNode wrapper required for SuperGridCSS tree structure ✅ Implemented 106-01
+- ADAPT-02: Collapsed state inverted: HeaderNode.collapsed → AxisNode.expanded ✅ Implemented 106-01
+- ADAPT-03: Leaf nodes have undefined children, not empty array ✅ Implemented 106-01
+
 **CSS Grid SuperGrid (Phase 105):**
 - CSSGRID-01: CSS Grid over D3.js for tabular rendering (browser-native spanning, no coordinate math) ✅ Implemented 105-01
 - CSSGRID-02: Tree metrics computed via DFS with leafStart/leafCount for each node ✅ Implemented 105-01
@@ -392,6 +411,7 @@ Recent decisions:
 - CONFLICT-03: Modal closes optimistically on resolution, confirmed by WebSocket response ✅ Implemented 87-05
 
 See PROJECT.md Key Decisions table for full history.
+- [Phase 106]: CELL-PATH-01: Path computation via computeNodePath helper extracts facet values in order
 
 ### Pending Todos
 
@@ -415,10 +435,20 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-15
-Completed: Phase 105 (CSS Grid SuperGrid) — v6.6 CSS Grid SuperGrid COMPLETE
-Next: No pending phases. All milestones (v6.4, v6.5, v6.6) are complete.
+Last session: 2026-02-16
+Completed: Phase 106 Plan 01 (HeaderTree to AxisConfig adapter)
+Next: Phase 106-02 (useGridDataCells hook)
 Resume file: N/A
+
+**Phase 106-01 Complete:**
+- Created headerTreeToAxisConfig adapter bridging HeaderTree to AxisConfig
+- Created convertHeaderNode helper for recursive tree conversion
+- Field mappings: span→leafCount, collapsed→expandable/expanded
+- 13 unit tests covering normal, nested, empty, and collapsed scenarios
+- All tests pass, zero TypeScript errors
+- Commits: 2aee38ef (feat), 5b719727 (test)
+- Requirements satisfied: INT-01
+- Duration: 161 seconds (~3 minutes)
 
 **Phase 105 Complete:**
 - Replaced D3.js tabular rendering with React + CSS Grid
