@@ -75,6 +75,13 @@ export function IntegratedLayout() {
   // Current data for slider filter generation
   const [currentData, setCurrentData] = useState<Array<Record<string, unknown>>>([]);
 
+  // Dataset switcher state - default to 'notes' (the sample data table)
+  const [activeDataset, setActiveDataset] = useState<string>('notes');
+  const activeNodeType = useMemo(
+    () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
+    [activeDataset]
+  );
+
   // Convert PropertyClassification to SliderClassification format
   const sliderClassification: SliderClassification | null = useMemo(() => {
     if (!classification) return null;
@@ -145,6 +152,15 @@ export function IntegratedLayout() {
     return headerTreeToAxisConfig(columnTree);
   }, [columnTree, colFacets]);
 
+  // Fetch data cells for CSS Grid mode
+  const dataCells = useGridDataCells({
+    rowFacets: USE_CSS_GRID_SUPERGRID ? rowFacets : [],
+    colFacets: USE_CSS_GRID_SUPERGRID ? colFacets : [],
+    whereClause: buildWhereClause().clause || undefined,
+    parameters: buildWhereClause().params,
+    nodeType: activeNodeType
+  });
+
   // SuperGrid refs and state
   const svgRef = useRef<SVGSVGElement>(null);
   const [superGrid, setSuperGrid] = useState<SuperGrid | null>(null);
@@ -164,13 +180,6 @@ export function IntegratedLayout() {
       }
     };
   }, []);
-
-  // Dataset switcher state - default to 'notes' (the sample data table)
-  const [activeDataset, setActiveDataset] = useState<string>('notes');
-  const activeNodeType = useMemo(
-    () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
-    [activeDataset]
-  );
 
   // Phase 80-01: Notebook panel expand/collapse state with localStorage persistence
   const [isNotebookExpanded, setIsNotebookExpanded] = useState(() => {
@@ -348,6 +357,8 @@ export function IntegratedLayout() {
 
   // Initialize SuperGrid
   useEffect(() => {
+    if (USE_CSS_GRID_SUPERGRID) return; // Skip D3 initialization in CSS Grid mode
+
     // CRITICAL: Must check isReady() to ensure we don't create SuperGrid with loading stub
     // The loading stub has a broken database that returns empty results
     if (!svgRef.current || !databaseService?.isReady()) return;
@@ -693,16 +704,33 @@ export function IntegratedLayout() {
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
-          <svg
-            ref={svgRef}
-            style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
-          />
+          {USE_CSS_GRID_SUPERGRID && rowAxis && colAxis ? (
+            <SuperGridCSS
+              rowAxis={rowAxis}
+              columnAxis={colAxis}
+              data={dataCells}
+              theme={isNeXTSTEP ? 'nextstep' : 'modern'}
+              onCellClick={(_cell, rowPath, colPath) => {
+                contextLogger.debug('[IntegratedLayout] Cell clicked', { rowPath, colPath });
+              }}
+              onHeaderClick={(type, path) => {
+                contextLogger.debug('[IntegratedLayout] Header clicked', { type, path });
+              }}
+            />
+          ) : (
+            <svg
+              ref={svgRef}
+              style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
+            />
+          )}
 
           {/* Overlay states */}
-          {(importStatus === 'loading' || importStatus === 'importing') && (
+          {(importStatus === 'loading' || importStatus === 'importing' || (USE_CSS_GRID_SUPERGRID && headersLoading)) && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/5">
               <div className={`${panelBg} border ${borderColor} rounded px-4 py-3 text-center shadow-sm`}>
-                <p className={`text-sm ${textColor}`}>Importing alto-index data...</p>
+                <p className={`text-sm ${textColor}`}>
+                  {headersLoading && USE_CSS_GRID_SUPERGRID ? 'Discovering headers...' : 'Importing alto-index data...'}
+                </p>
                 <p className={`text-xs ${mutedColor}`}>{importProgress}% complete</p>
               </div>
             </div>
