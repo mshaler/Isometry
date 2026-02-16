@@ -33,7 +33,31 @@ Collapsible NotebookLayout panel in IntegratedLayout with context wiring. Phase 
 ### v5.2 Cards & Connections (SHIPPED)
 Schema migration from nodes/edges to cards/connections with 4-type constraint. Phase 84 complete.
 
-## Current Milestone: v6.5 Console Cleanup
+## Current Milestone: v6.6 CSS Grid SuperGrid
+
+**Goal:** Replace D3.js-based SuperGrid tabular rendering with pure React + CSS Grid for hierarchical header spanning.
+
+**Problem:** D3.js requires manual coordinate calculation for cell spanning in pivot tables. CSS Grid handles hierarchical spanning natively via `grid-row-start/end` and `grid-column-start/end`, eliminating coordinate math complexity.
+
+**Architecture Change:**
+- **Tabular/pivot rendering:** Now uses React + CSS Grid
+- **Charts/network/force simulations:** D3.js remains unchanged
+- **Key insight:** Browser's native grid layout engine handles spanning
+
+**Delivered:**
+- `types.ts` — Core TypeScript interfaces (380 lines)
+- `utils/treeMetrics.ts` — Tree traversal and metrics computation (123 lines)
+- `utils/gridPlacement.ts` — CSS Grid coordinate calculation (180 lines)
+- `hooks/useGridLayout.ts` — Layout computation hook (133 lines)
+- `SuperGridCSS.tsx` — Main component (158 lines)
+- `SuperGridCSSContext.tsx` — Theme and callback context (167 lines)
+- 84 unit tests (37 + 26 + 21) with 100% coverage on utilities
+
+**Themes:** reference, nextstep, modern, dark
+
+**Phase:** 105 (CSS Grid SuperGrid) — COMPLETE
+
+## Previous Milestone: v6.5 Console Cleanup
 
 **Goal:** Eliminate console errors and excessive debug logging to provide a clean developer experience.
 

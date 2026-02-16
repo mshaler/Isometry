@@ -6,19 +6,53 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.4 Hardcoded Values Cleanup — COMPLETE
+**Current focus:** v6.6 CSS Grid SuperGrid — COMPLETE
 
 ## Current Position
 
-Phase: 102 (Sample Data & Test Cleanup)
-Plan: 02/02 — COMPLETE
+Phase: 105 (CSS Grid SuperGrid)
+Plan: 06/06 — COMPLETE
 Status: Phase complete
-Last activity: 2026-02-15 — Completed 102-02-PLAN.md (Schema-Flexible Test Fixtures)
+Last activity: 2026-02-15 — Completed Phase 105 (CSS Grid SuperGrid replacement)
 
-Progress: [██████████] 100% (Phase 100: ✓, Phase 101: ✓, Phase 102: ✓, Phase 103: ✓)
-Overall: v6.4 Hardcoded Values Cleanup — COMPLETE (all phases done)
+Progress: [██████████] 100% (Phase 105: ✓)
+Overall: v6.6 CSS Grid SuperGrid — COMPLETE (architecture shift to React + CSS Grid)
 
 ## Active Milestones
+
+### v6.6 CSS Grid SuperGrid — COMPLETE
+
+**Goal:** Replace D3.js-based SuperGrid tabular rendering with pure React + CSS Grid for hierarchical header spanning.
+
+**Status:** ✅ COMPLETE
+
+**Delivered:**
+- ✓ Core TypeScript interfaces (`types.ts`, 380 lines)
+- ✓ Tree metrics computation (`utils/treeMetrics.ts`, 123 lines)
+- ✓ CSS Grid placement calculation (`utils/gridPlacement.ts`, 180 lines)
+- ✓ Layout computation hook (`hooks/useGridLayout.ts`, 133 lines)
+- ✓ Theme context provider (`SuperGridCSSContext.tsx`, 167 lines)
+- ✓ Cell components (CornerCell, RowHeader, ColHeader, DataCell, GridContainer)
+- ✓ Main component (`SuperGridCSS.tsx`, 158 lines)
+- ✓ 84 unit tests (100% coverage on utilities)
+- ✓ 4 themes: reference, nextstep, modern, dark
+- ✓ Demo page at `?test=cssgrid`
+
+**Architecture Impact:**
+- Tabular/pivot rendering: React + CSS Grid (NEW)
+- Charts/network/force: D3.js (unchanged)
+- Browser handles spanning natively via CSS Grid
+
+**Phases:**
+- Phase 105: CSS Grid SuperGrid — ✅ COMPLETE (6/6 sub-phases)
+  - [x] 105-01: Types and Utility Functions ✓
+  - [x] 105-02: Hook and Context ✓
+  - [x] 105-03: Cell Components ✓
+  - [x] 105-04: Main Component ✓
+  - [x] 105-05: Unit Tests (84 tests) ✓
+  - [x] 105-06: Integration ✓
+
+**Total requirements:** 20 | **Status:** 20/20 complete
 
 ### v6.5 Console Cleanup — COMPLETE
 
@@ -187,6 +221,15 @@ Overall: v6.4 Hardcoded Values Cleanup — COMPLETE (all phases done)
 ### Decisions
 
 Recent decisions:
+
+**CSS Grid SuperGrid (Phase 105):**
+- CSSGRID-01: CSS Grid over D3.js for tabular rendering (browser-native spanning, no coordinate math) ✅ Implemented 105-01
+- CSSGRID-02: Tree metrics computed via DFS with leafStart/leafCount for each node ✅ Implemented 105-01
+- CSSGRID-03: Grid placements use 1-based line numbers (CSS Grid convention) ✅ Implemented 105-01
+- CSSGRID-04: Zone layout: Corner (MiniNav), ColHeaders, RowHeaders, Data ✅ Implemented 105-03
+- CSSGRID-05: useGridLayout hook memoizes all computation on [rowAxis, colAxis] ✅ Implemented 105-02
+- CSSGRID-06: Context provider for theme and cell callbacks ✅ Implemented 105-02
+- CSSGRID-07: D3.js preserved for charts, network, force simulations ✅ Documented 105-RESEARCH
 
 **Console Cleanup (Phase 103):**
 - LOG-MAP-01: DevLogger semantic methods use console.log for debug level ✅ Implemented 103-02
@@ -373,9 +416,17 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-15
-Completed: Phase 102-02 (Schema-Flexible Test Fixtures) — v6.4 Hardcoded Values Cleanup COMPLETE
-Next: No pending phases. All milestones (v6.4, v6.5) are complete.
+Completed: Phase 105 (CSS Grid SuperGrid) — v6.6 CSS Grid SuperGrid COMPLETE
+Next: No pending phases. All milestones (v6.4, v6.5, v6.6) are complete.
 Resume file: N/A
+
+**Phase 105 Complete:**
+- Replaced D3.js tabular rendering with React + CSS Grid
+- 84 unit tests (37 treeMetrics + 26 gridPlacement + 21 useGridLayout)
+- 4 themes implemented (reference, nextstep, modern, dark)
+- Demo page verified at `?test=cssgrid`
+- GSD Phase 105 documentation created
+- Requirements satisfied: SG-CSS-01 through SG-CSS-20
 
 **Phase 102-02 Complete:**
 - Added 3 schema-flexible test nodes (fixture-node-9,10,11) simulating imports without status/priority
