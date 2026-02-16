@@ -89,9 +89,9 @@ export interface PAFVState {
 // - Location (L): location_name
 export const DEFAULT_PAFV: PAFVState = {
   mappings: [
-    // 2D grid default uses concrete schema columns to avoid empty projection collapse
+    // 2D grid default: folder rows × subfolder columns (natural hierarchy pairing)
     { plane: 'x', axis: 'category', facet: 'folder' },
-    { plane: 'y', axis: 'category', facet: 'status' },
+    { plane: 'y', axis: 'hierarchy', facet: 'subfolder' },
   ],
   viewMode: 'grid',
   densityLevel: 2, // Default to Extent Density (populated-only)
