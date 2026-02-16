@@ -1,6 +1,10 @@
 @import './styles/variables.css';
 @import './styles/tokens.css';
 @import './styles/tokens-light.css';
+@import './styles/primitives-supergrid.css';
+@import './styles/primitives-kanban.css';
+@import './styles/primitives-timeline.css';
+@import './styles/primitives-gallery.css';
 @import './styles/cb-components.css';
 @import '@xterm/xterm/css/xterm.css';
 

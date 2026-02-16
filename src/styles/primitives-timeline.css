@@ -1,0 +1,65 @@
+/**
+ * @isometry/primitives — Tier 2: Timeline Layout Primitives
+ *
+ * Configurable dimensions for Timeline polymorphic view.
+ * Time axis projection with Gantt-style bars.
+ *
+ * @version 0.2.0
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ROW DIMENSIONS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-timeline-row-h: 56px;      /* Height of each row */
+  --iso-timeline-label-w: 160px;   /* Width of row label column */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     HEADER DIMENSIONS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-timeline-hdr-h: 48px;      /* Time axis header height */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     TIME UNIT WIDTHS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-timeline-day-w: 32px;      /* Width per day (granular view) */
+  --iso-timeline-week-w: 224px;    /* Width per week (7 × 32px) */
+  --iso-timeline-month-w: 140px;   /* Width per month (collapsed view) */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BAR STYLING
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-timeline-bar-h: 24px;      /* Height of timeline bars */
+  --iso-timeline-bar-gap: 4px;     /* Gap between stacked bars */
+  --iso-timeline-bar-radius: 4px;  /* Bar border radius */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BEHAVIOR FLAGS (1 = true, 0 = false)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-timeline-show-grid: 1;     /* Show vertical grid lines */
+  --iso-timeline-show-today: 1;    /* Show today marker line */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPACT DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --iso-timeline-row-h: 40px;
+  --iso-timeline-label-w: 120px;
+  --iso-timeline-hdr-h: 36px;
+  --iso-timeline-day-w: 24px;
+  --iso-timeline-bar-h: 18px;
+  --iso-timeline-bar-gap: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORTABLE DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="comfortable"] {
+  --iso-timeline-row-h: 72px;
+  --iso-timeline-label-w: 200px;
+  --iso-timeline-hdr-h: 56px;
+  --iso-timeline-day-w: 40px;
+  --iso-timeline-bar-h: 32px;
+  --iso-timeline-bar-gap: 6px;
+}

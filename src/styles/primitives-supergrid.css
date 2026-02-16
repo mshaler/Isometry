@@ -1,0 +1,62 @@
+/**
+ * @isometry/primitives — Tier 2: SuperGrid Layout Primitives
+ *
+ * Configurable dimensions for SuperGrid polymorphic view.
+ * Read at render time by SuperGridCSS component.
+ *
+ * Usage: getComputedStyle(element).getPropertyValue('--iso-grid-cell-min-w')
+ *
+ * @version 0.2.0
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ROW HEADERS (SuperStack left axis)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-grid-row-hdr0-w: 100px;    /* Depth-0 row header width (e.g., Folder) */
+  --iso-grid-row-hdr1-w: 100px;    /* Depth-1 row header width (e.g., Tag) */
+  --iso-grid-corner-w: 200px;      /* Corner cell width (sum of row headers) */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     COLUMN HEADERS (SuperStack top axis)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-grid-col-hdr-h: 30px;      /* Height per column header level */
+  --iso-grid-col-hdr-levels: 2;    /* Number of column header depth levels */
+  --iso-grid-corner-h: 60px;       /* Corner cell height (levels × height) */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     DATA CELLS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-grid-cell-min-w: 120px;    /* Minimum data cell width */
+  --iso-grid-cell-min-h: 72px;     /* Minimum data cell height */
+  --iso-grid-cell-pad: 6px;        /* Cell content padding */
+  --iso-grid-cell-gap: 1px;        /* Gap between cells (border effect) */
+  --iso-grid-gutter: 1px;          /* Gutter width between sections */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BEHAVIOR FLAGS (1 = true, 0 = false)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-grid-sticky: 1;            /* Enable sticky headers */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPACT DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --iso-grid-col-hdr-h: 24px;
+  --iso-grid-corner-h: 48px;
+  --iso-grid-cell-min-w: 100px;
+  --iso-grid-cell-min-h: 48px;
+  --iso-grid-cell-pad: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORTABLE DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="comfortable"] {
+  --iso-grid-col-hdr-h: 36px;
+  --iso-grid-corner-h: 72px;
+  --iso-grid-cell-min-w: 160px;
+  --iso-grid-cell-min-h: 100px;
+  --iso-grid-cell-pad: 10px;
+}

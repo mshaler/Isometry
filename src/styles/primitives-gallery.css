@@ -1,0 +1,58 @@
+/**
+ * @isometry/primitives — Tier 2: Gallery Layout Primitives
+ *
+ * Configurable dimensions for Gallery polymorphic view.
+ * Grid layout with responsive auto-fit columns.
+ *
+ * @version 0.2.0
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CARD DIMENSIONS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-gallery-card-w: 220px;     /* Card width */
+  --iso-gallery-card-h: 160px;     /* Card height */
+  --iso-gallery-card-pad: 16px;    /* Card content padding */
+  --iso-gallery-card-radius: 8px;  /* Card border radius */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GRID LAYOUT
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-gallery-gap: 12px;         /* Gap between cards */
+  --iso-gallery-pad: 24px;         /* Container padding */
+  --iso-gallery-cols: 0;           /* Columns (0 = auto-fit) */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     THUMBNAIL
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-gallery-thumb-h: 80px;     /* Thumbnail area height */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BEHAVIOR FLAGS (1 = true, 0 = false)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-gallery-show-tags: 1;      /* Show tag pills */
+  --iso-gallery-show-priority: 1;  /* Show priority indicator */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPACT DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --iso-gallery-card-w: 180px;
+  --iso-gallery-card-h: 120px;
+  --iso-gallery-card-pad: 10px;
+  --iso-gallery-gap: 8px;
+  --iso-gallery-thumb-h: 60px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORTABLE DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="comfortable"] {
+  --iso-gallery-card-w: 280px;
+  --iso-gallery-card-h: 200px;
+  --iso-gallery-card-pad: 20px;
+  --iso-gallery-gap: 16px;
+  --iso-gallery-thumb-h: 100px;
+}

@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 ## Current Position
 
-Phase: 107 (CSS Primitives Tier 1) — IN PROGRESS
-Plan: 01/02
-Status: Tier 1 tokens extracted
-Last activity: 2026-02-16 — Tier 1 design tokens created
+Phase: 108 (CSS Primitives Tier 2) — COMPLETE
+Plan: All tasks done
+Status: Tier 2 layout primitives extracted
+Last activity: 2026-02-16 — Tier 2 layout primitives created
 
-Progress: [█████░░░░░] 50% (Phase 107: 1/2 plans)
-Overall: v6.8 CSS Primitives — IN PROGRESS (Tier 1 tokens complete)
+Progress: [████████░░] 80% (Phase 107: complete, Phase 108: complete)
+Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 remaining)
 
 ## Active Milestones
 
@@ -27,18 +27,25 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Tier 1 tokens complete)
 **Status:** 🔄 IN PROGRESS
 
 **Progress:**
-- Phase 107: CSS Primitives Tier 1 — 🔄 IN PROGRESS (1/2 plans)
+- Phase 107: CSS Primitives Tier 1 — ✅ COMPLETE
   - [x] 107-01: Core tokens.css (~5m) ✓
-  - [ ] 107-02: Browser verification + polish (~3m)
-- Phase 108: Tier 2 Layout Primitives — PENDING (3 plans)
+- Phase 108: Tier 2 Layout Primitives — ✅ COMPLETE
+  - [x] 108-01: SuperGrid + Kanban primitives ✓
+  - [x] 108-02: Timeline + Gallery primitives ✓
+  - [x] 108-03: CSS reader utility ✓
 - Phase 109: CSS Chrome Primitives — PENDING (3 plans)
 
-**Deliverables (so far):**
+**Deliverables:**
 - ✓ `src/styles/tokens.css` — Tier 1 design tokens (dark theme)
 - ✓ `src/styles/tokens-light.css` — Light theme override
+- ✓ `src/styles/primitives-supergrid.css` — SuperGrid layout
+- ✓ `src/styles/primitives-kanban.css` — Kanban layout
+- ✓ `src/styles/primitives-timeline.css` — Timeline layout
+- ✓ `src/styles/primitives-gallery.css` — Gallery layout
+- ✓ `src/d3/utils/css-primitives.ts` — CSS reader utility
 - ✓ Import aggregation in `src/index.css`
 
-**Total requirements:** 17 | **Status:** 10/17 complete
+**Total requirements:** 17 | **Status:** 15/17 complete
 
 ### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 

@@ -1,0 +1,55 @@
+/**
+ * @isometry/primitives — Tier 2: Kanban Layout Primitives
+ *
+ * Configurable dimensions for Kanban polymorphic view.
+ * Single-axis projection: Status → Columns
+ *
+ * @version 0.2.0
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     COLUMNS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-kanban-col-min-w: 260px;   /* Minimum column width */
+  --iso-kanban-col-max-w: 320px;   /* Maximum column width */
+  --iso-kanban-col-gap: 12px;      /* Gap between columns */
+  --iso-kanban-col-pad: 8px;       /* Padding inside column */
+  --iso-kanban-col-hdr-h: 42px;    /* Column header height */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CARDS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-kanban-card-gap: 6px;      /* Gap between cards in column */
+  --iso-kanban-card-pad: 12px;     /* Card content padding */
+  --iso-kanban-card-radius: 6px;   /* Card border radius */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BEHAVIOR FLAGS (1 = true, 0 = false)
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-kanban-show-count: 1;      /* Show card count in column header */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPACT DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --iso-kanban-col-min-w: 220px;
+  --iso-kanban-col-max-w: 280px;
+  --iso-kanban-col-gap: 8px;
+  --iso-kanban-col-hdr-h: 36px;
+  --iso-kanban-card-gap: 4px;
+  --iso-kanban-card-pad: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORTABLE DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="comfortable"] {
+  --iso-kanban-col-min-w: 300px;
+  --iso-kanban-col-max-w: 380px;
+  --iso-kanban-col-gap: 16px;
+  --iso-kanban-col-hdr-h: 48px;
+  --iso-kanban-card-gap: 8px;
+  --iso-kanban-card-pad: 16px;
+}
