@@ -49,12 +49,34 @@ export function useGridLayout(rowAxis: AxisConfig, colAxis: AxisConfig): GridLay
     const gridTemplate = generateGridTemplate(rowMetrics, colMetrics);
 
     // Step 3: Generate corner cells
+    // Corner cells show facet level names:
+    // - Last row shows row axis levels (Tags, Folder, Subfolder)
+    // - Last column shows column axis levels (Year, Month)
+    // - Other cells can be empty or show axis type
     const cornerCells: CornerCellData[] = [];
+    const rowFacetLevels = rowAxis.facetLevels || [];
+    const colFacetLevels = colAxis.facetLevels || [];
+
     for (let r = 0; r < colHeaderDepth; r++) {
       for (let c = 0; c < rowHeaderDepth; c++) {
+        let label = '';
+
+        // Last row of corner cells: show row axis level names
+        if (r === colHeaderDepth - 1 && c < rowFacetLevels.length) {
+          label = rowFacetLevels[c];
+        }
+        // Last column of corner cells: show column axis level names
+        else if (c === rowHeaderDepth - 1 && r < colFacetLevels.length) {
+          label = colFacetLevels[r];
+        }
+        // Top-left corner (all other cells)
+        else {
+          label = '';
+        }
+
         cornerCells.push({
           placement: computeCornerCellPlacement(r, c),
-          label: 'MiniNav',
+          label,
           row: r,
           col: c,
         });
@@ -62,10 +84,11 @@ export function useGridLayout(rowAxis: AxisConfig, colAxis: AxisConfig): GridLay
     }
 
     // Step 4: Generate row headers
+    // Pass rowHeaderDepth so leaf nodes span to rightmost header column
     const rowHeaderNodes = getHeaderNodes(rowMetrics);
     const rowHeaders: HeaderCell[] = rowHeaderNodes.map((fn) => ({
       node: fn.node,
-      placement: computeRowHeaderPlacement(fn, colHeaderDepth),
+      placement: computeRowHeaderPlacement(fn, colHeaderDepth, rowHeaderDepth),
       depth: fn.depth,
       path: fn.path,
       isLeaf: fn.isLeaf,

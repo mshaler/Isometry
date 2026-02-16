@@ -30,21 +30,31 @@ export interface GridTemplateOptions {
  * Row headers span vertically (multiple rows) based on leafCount.
  * They occupy columns based on their depth in the hierarchy.
  *
+ * Leaf nodes span across to the rightmost header column to fill empty space.
+ * This keeps the right edge of row headers clean when some branches are shorter.
+ *
  * @param flatNode - The flattened node with computed metrics
  * @param colHeaderDepth - Number of column header rows (R)
+ * @param rowHeaderDepth - Total depth of row headers (optional, for leaf spanning)
  * @returns GridPlacement for CSS Grid positioning
  */
 export function computeRowHeaderPlacement(
   flatNode: FlatNode,
-  colHeaderDepth: number
+  colHeaderDepth: number,
+  rowHeaderDepth?: number
 ): GridPlacement {
   // Row headers start after column header rows
   const dataRowStart = colHeaderDepth + 1;
 
+  // Column end: leaf nodes span to rightmost header column, others span single column
+  const columnEnd = flatNode.isLeaf && rowHeaderDepth !== undefined
+    ? rowHeaderDepth + 1  // Span to last header column
+    : flatNode.depth + 2; // Single column span
+
   return {
     // Column position: based on node depth (0 → col 1, 1 → col 2, etc.)
     gridColumnStart: flatNode.depth + 1,
-    gridColumnEnd: flatNode.depth + 2,
+    gridColumnEnd: columnEnd,
 
     // Row position: based on leaf span
     gridRowStart: dataRowStart + flatNode.leafStart,
