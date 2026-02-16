@@ -6,25 +6,25 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.6 CSS Grid SuperGrid — COMPLETE
+**Current focus:** v6.7 CSS Grid Integration — SHIPPED
 
 ## Current Position
 
-Phase: 106 (CSS Grid Integration)
+Phase: 106 (CSS Grid Integration) — SHIPPED
 Plan: 04/04
-Status: Complete
-Last activity: 2026-02-16 — Completed Phase 106 Plan 04 (SelectionContext and ThemeContext integration)
+Status: Milestone Complete
+Last activity: 2026-02-16 — v6.7 CSS Grid Integration shipped
 
 Progress: [██████████] 100% (Phase 106: 4/4 plans)
-Overall: v6.7 CSS Grid Integration — COMPLETE (bridging SuperStack to SuperGridCSS)
+Overall: v6.7 CSS Grid Integration — SHIPPED (SuperGridCSS integrated into IntegratedLayout)
 
 ## Active Milestones
 
-### v6.7 CSS Grid Integration — IN PROGRESS
+### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 
 **Goal:** Bridge HeaderDiscoveryService (SuperStack) to SuperGridCSS with adapters and data hooks for live SQL-driven rendering.
 
-**Status:** Milestone complete
+**Status:** ✅ COMPLETE — Archived to `.planning/milestones/v6.7-ROADMAP.md`
 
 **Progress:**
 - Phase 106: CSS Grid Integration — ✅ COMPLETE (4/4 plans)

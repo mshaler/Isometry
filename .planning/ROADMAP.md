@@ -23,7 +23,7 @@
 - ✓ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (shipped 2026-02-15)
 - ✓ **v6.5 Console Cleanup** - Phase 103 (shipped 2026-02-15)
 - ✓ **v6.6 CSS Grid SuperGrid** - Phase 105 (shipped 2026-02-15)
-- 🔄 **v6.7 CSS Grid Integration** - Phase 106 (in progress)
+- ✓ **v6.7 CSS Grid Integration** - Phase 106 (shipped 2026-02-16)
 
 ## Phases
 
@@ -66,10 +66,12 @@
 | 106-04 | Selection & Theme Sync | INT-04, INT-05 | Context integration |
 
 Plans:
-- [ ] 106-01-PLAN.md — HeaderTree → AxisConfig adapter (Wave 1)
-- [ ] 106-02-PLAN.md — Data cell query hook (Wave 1)
-- [ ] 106-03-PLAN.md — IntegratedLayout wiring (Wave 2)
-- [ ] 106-04-PLAN.md — Selection and theme sync (Wave 2)
+- [x] 106-01-PLAN.md — HeaderTree → AxisConfig adapter (Wave 1) ✓
+- [x] 106-02-PLAN.md — Data cell query hook (Wave 1) ✓
+- [x] 106-03-PLAN.md — IntegratedLayout wiring (Wave 2) ✓
+- [x] 106-04-PLAN.md — Selection and theme sync (Wave 2) ✓
+
+**Completed:** 2026-02-16
 
 ---
 
@@ -615,7 +617,9 @@ Plans:
 | 101. UI Integration | v6.4 | 2/2 | Complete | 2026-02-15 |
 | 102. Sample Data & Test Cleanup | v6.4 | 2/2 | Complete | 2026-02-15 |
 | 103. Console Cleanup | v6.5 | 2/2 | Complete | 2026-02-15 |
+| 105. CSS Grid SuperGrid | v6.6 | 1/1 | Complete | 2026-02-15 |
+| 106. CSS Grid Integration | v6.7 | 4/4 | Complete | 2026-02-16 |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-15 (v6.4 Hardcoded Values Cleanup complete)*
+*Last updated: 2026-02-16 (v6.7 CSS Grid Integration shipped)*
