@@ -50,6 +50,7 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   const sessionIdRef = useRef<string>(`term-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
   const dispatcherRef = useRef<WebSocketClaudeCodeDispatcher | null>(null);
   const hasSpawnedRef = useRef(false);
+  const clearTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [currentMode, setCurrentMode] = useState<'shell' | 'claude-code'>('shell');
 
@@ -349,8 +350,10 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
     });
 
     // Send "clear" after brief delay to clean up zsh PROMPT_SP artifacts
-    setTimeout(() => {
+    // Store timeout ref so it can be cancelled on unmount (prevents StrictMode duplicates)
+    clearTimeoutRef.current = setTimeout(() => {
       dispatcher.sendTerminalInput(sessionIdRef.current, 'clear\r');
+      clearTimeoutRef.current = null;
     }, 150);
 
     // Forward keystrokes to server
@@ -477,6 +480,12 @@ export function useTerminal(options: UseTerminalOptions = {}): UseTerminalReturn
   const dispose = useCallback(() => {
     const terminal = terminalRef.current;
     const dispatcher = dispatcherRef.current;
+
+    // Cancel pending clear timeout to prevent StrictMode duplicate commands
+    if (clearTimeoutRef.current) {
+      clearTimeout(clearTimeoutRef.current);
+      clearTimeoutRef.current = null;
+    }
 
     if (dispatcher) {
       dispatcher.killTerminal(sessionIdRef.current);
