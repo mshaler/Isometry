@@ -12,6 +12,7 @@ import {
   reorderMappingsInPlane as reorderMappingsUtil,
   getMappingsForPlane as getMappingsUtil,
   moveFacetToPlane as moveFacetUtil,
+  moveFacetToPlaneAtIndex as moveFacetAtIndexUtil,
   clearFacetFromAllPlanes as clearFacetUtil,
 } from '../utils/pafv-serialization';
 import { serializePAFV, deserializePAFV } from '../utils/pafv-serialization';
@@ -104,6 +105,16 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
 
   const moveFacetToPlaneCallback = useCallback((fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => {
     const newState = moveFacetUtil(state, fromPlane, toPlane, facet, axis);
+    setState(newState);
+
+    // Send to native bridge
+    pafvBridge.sendAxisMappingUpdate(newState);
+  }, [state, setState]);
+
+  const moveFacetToPlaneAtIndexCallback = useCallback((
+    fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis, targetIndex?: number
+  ) => {
+    const newState = moveFacetAtIndexUtil(state, fromPlane, toPlane, facet, axis, targetIndex);
     setState(newState);
 
     // Send to native bridge
@@ -231,6 +242,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     removeFacetFromPlane: removeFacetFromPlaneCallback,
     reorderMappingsInPlane: reorderMappingsInPlaneCallback,
     moveFacetToPlane: moveFacetToPlaneCallback,
+    moveFacetToPlaneAtIndex: moveFacetToPlaneAtIndexCallback,
     clearFacetFromAllPlanes: clearFacetFromAllPlanesCallback,
     getMappingsForPlane: getMappingsForPlaneCallback,
     setViewMode,
@@ -249,6 +261,7 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     removeFacetFromPlaneCallback,
     reorderMappingsInPlaneCallback,
     moveFacetToPlaneCallback,
+    moveFacetToPlaneAtIndexCallback,
     clearFacetFromAllPlanesCallback,
     getMappingsForPlaneCallback,
     setViewMode,

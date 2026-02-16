@@ -88,20 +88,64 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
 
         setStatus('importing');
 
-        // Import files
-        const importResult = importAltoFiles(
-          db,
-          data.files.map((f) => ({ path: f.path, content: f.content })),
-          {
-            dataTypes: options.dataTypes,
-            limit: options.limit,
-            clearExisting: options.clearExisting,
-            onProgress: (imported, total, current) => {
-              setProgress(Math.round((imported / total) * 100));
-              setCurrentFile(current);
-            },
+        // Memory optimization: process in batches to allow GC between batches
+        const BATCH_SIZE = 2000;
+        const totalFiles = data.files.length;
+        const cumulativeResult: ImportResult = {
+          imported: 0,
+          skipped: 0,
+          errors: [],
+          duration: 0,
+          reconciliation: {
+            totalFiles,
+            importedByType: {},
+            skippedByReason: {},
+          },
+        };
+
+        // Process in batches to reduce memory pressure
+        for (let batchStart = 0; batchStart < totalFiles; batchStart += BATCH_SIZE) {
+          const batchEnd = Math.min(batchStart + BATCH_SIZE, totalFiles);
+          const batch = data.files.slice(batchStart, batchEnd);
+
+          const batchResult = importAltoFiles(
+            db,
+            batch.map((f) => ({ path: f.path, content: f.content })),
+            {
+              dataTypes: options.dataTypes,
+              // Only clear on first batch
+              clearExisting: batchStart === 0 ? options.clearExisting : false,
+              onProgress: (imported, _batchTotal, current) => {
+                const globalProgress = batchStart + imported;
+                setProgress(Math.round((globalProgress / totalFiles) * 100));
+                setCurrentFile(current);
+              },
+            }
+          );
+
+          // Merge batch results
+          cumulativeResult.imported += batchResult.imported;
+          cumulativeResult.skipped += batchResult.skipped;
+          cumulativeResult.errors.push(...batchResult.errors);
+          cumulativeResult.duration += batchResult.duration;
+
+          // Merge reconciliation
+          if (batchResult.reconciliation) {
+            for (const [type, count] of Object.entries(batchResult.reconciliation.importedByType)) {
+              cumulativeResult.reconciliation!.importedByType[type] =
+                (cumulativeResult.reconciliation!.importedByType[type] || 0) + count;
+            }
+            for (const [reason, count] of Object.entries(batchResult.reconciliation.skippedByReason)) {
+              cumulativeResult.reconciliation!.skippedByReason[reason] =
+                (cumulativeResult.reconciliation!.skippedByReason[reason] || 0) + count;
+            }
           }
-        );
+
+          // Allow garbage collection between batches
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        const importResult = cumulativeResult;
 
         setResult(importResult);
         setStatus('done');

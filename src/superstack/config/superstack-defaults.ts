@@ -176,6 +176,13 @@ export const MONTH_NAMES = [
  * Format a value for display based on facet configuration.
  */
 export function formatLabel(facet: FacetConfig, value: string): string {
+  // Format tags with # prefix (Apple Notes style)
+  if (facet.id === 'tags' || facet.sourceColumn === 'tags') {
+    // Remove any existing brackets/quotes and add hashtag
+    const cleanValue = value.replace(/^[[\]"']+|[[\]"']+$/g, '').trim();
+    return cleanValue ? `#${cleanValue}` : value;
+  }
+
   if (facet.axis === 'T') {
     // Format time values nicely
     if (facet.id === 'month') {
