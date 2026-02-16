@@ -6,9 +6,18 @@
  */
 
 import { useDrag } from 'react-dnd';
-import { GripVertical, Sparkles } from 'lucide-react';
+import { GripVertical, Sparkles, MapPin, SortAsc, Clock, Tag, GitBranch } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import type { ClassifiedProperty, PropertyBucket } from '@/services/property-classifier';
+
+/** LATCH bucket icons with colors */
+const BUCKET_ICONS: Record<string, { icon: React.ReactNode; color: string }> = {
+  L: { icon: <MapPin className="w-3 h-3" />, color: '#22C55E' },
+  A: { icon: <SortAsc className="w-3 h-3" />, color: '#3B82F6' },
+  T: { icon: <Clock className="w-3 h-3" />, color: '#8B5CF6' },
+  C: { icon: <Tag className="w-3 h-3" />, color: '#F59E0B' },
+  H: { icon: <GitBranch className="w-3 h-3" />, color: '#EF4444' },
+};
 
 // ============================================================================
 // Constants
@@ -85,6 +94,12 @@ export function DraggablePropertyChip({ property, sourceWell }: DraggablePropert
         <GripVertical className={`w-3 h-3 flex-shrink-0 ${
           isNeXTSTEP ? 'text-[#666]' : 'text-gray-400'
         }`} />
+      )}
+      {/* LATCH bucket icon */}
+      {BUCKET_ICONS[property.bucket] && (
+        <span style={{ color: BUCKET_ICONS[property.bucket].color }} className="flex-shrink-0">
+          {BUCKET_ICONS[property.bucket].icon}
+        </span>
       )}
       <span className={`truncate flex-1 ${isNeXTSTEP ? 'text-[#E0E0E0]' : 'text-gray-700'}`}>
         {property.name}

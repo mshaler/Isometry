@@ -965,12 +965,17 @@ export function IntegratedLayout() {
         */}
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
-        <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
+        <div
+          className="flex-1 min-h-0 overflow-auto relative"
+          style={{
+            minHeight: '200px',
+            ...(layerHighlightEnabled && USE_CSS_GRID_SUPERGRID
+              ? { backgroundColor: 'rgba(252, 165, 165, 0.3)', outline: '2px solid rgba(239, 68, 68, 0.5)' }
+              : {}),
+          }}
+          data-renderer={USE_CSS_GRID_SUPERGRID ? 'css' : 'd3'}
+        >
           {USE_CSS_GRID_SUPERGRID && rowAxis && colAxis ? (
-            <div
-              data-renderer="css"
-              style={layerHighlightEnabled ? { backgroundColor: 'rgba(252, 165, 165, 0.3)', outline: '2px solid rgba(239, 68, 68, 0.5)' } : undefined}
-            >
               <SuperGridCSS
                 rowAxis={rowAxis}
                 columnAxis={colAxis}
@@ -981,17 +986,18 @@ export function IntegratedLayout() {
                   contextLogger.debug('[IntegratedLayout] Header clicked', { type, path });
                 }}
               />
-            </div>
           ) : (
-            <div
-              data-renderer="d3"
-              style={layerHighlightEnabled ? { backgroundColor: 'rgba(253, 224, 71, 0.3)', outline: '2px solid rgba(234, 179, 8, 0.5)' } : undefined}
-            >
               <svg
                 ref={svgRef}
-                style={{ minWidth: '100%', minHeight: '100%', display: 'block' }}
+                style={{
+                  minWidth: '100%',
+                  minHeight: '100%',
+                  display: 'block',
+                  ...(layerHighlightEnabled
+                    ? { backgroundColor: 'rgba(253, 224, 71, 0.3)', outline: '2px solid rgba(234, 179, 8, 0.5)' }
+                    : {}),
+                }}
               />
-            </div>
           )}
 
           {/* Overlay states */}
