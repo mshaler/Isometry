@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 106 (CSS Grid Integration)
-Plan: 03/04
-Status: In progress
-Last activity: 2026-02-16 — Completed Phase 106 Plan 03 (IntegratedLayout SuperGridCSS integration)
+Plan: 04/04
+Status: Complete
+Last activity: 2026-02-16 — Completed Phase 106 Plan 04 (SelectionContext and ThemeContext integration)
 
-Progress: [███████░░░] 75% (Phase 106: 3/4 plans)
-Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to SuperGridCSS)
+Progress: [██████████] 100% (Phase 106: 4/4 plans)
+Overall: v6.7 CSS Grid Integration — COMPLETE (bridging SuperStack to SuperGridCSS)
 
 ## Active Milestones
 
@@ -27,13 +27,13 @@ Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to Super
 **Status:** 🔄 IN PROGRESS
 
 **Progress:**
-- Phase 106: CSS Grid Integration — 🔄 IN PROGRESS (3/4 plans)
+- Phase 106: CSS Grid Integration — ✅ COMPLETE (4/4 plans)
   - [x] 106-01: HeaderTree to AxisConfig Adapter (~3m) ✓
   - [x] 106-02: useGridDataCells Hook (~4m) ✓
   - [x] 106-03: IntegratedLayout Component (~4m) ✓
-  - [ ] 106-04: (TBD)
+  - [x] 106-04: SelectionContext and ThemeContext Integration (~3m) ✓
 
-**Total requirements:** TBD | **Status:** 3/4 plans complete
+**Total requirements:** INT-01 through INT-06 | **Status:** 4/4 plans complete
 
 ### v6.6 CSS Grid SuperGrid — COMPLETE
 
@@ -232,6 +232,7 @@ Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to Super
 *Updated: 2026-02-16*
 | Phase 106 P02 | 3.7 | 2 tasks | 2 files |
 | Phase 106 P03 | 4.0 | 3 tasks | 1 file |
+| Phase 106 P04 | 2.8 | 3 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -250,6 +251,9 @@ Recent decisions:
 - INT-CSSGRID-02: Guard D3.js initialization with feature flag check ✅ Implemented 106-03
 - INT-CSSGRID-03: Conditional rendering based on rowAxis && colAxis availability ✅ Implemented 106-03
 - INT-CSSGRID-04: Move activeDataset state earlier to fix variable ordering ✅ Implemented 106-03
+- SEL-SYNC-01: Dual-layer selection (local visual + global cross-component) ✅ Implemented 106-04
+- THEME-SYNC-01: Theme prop derived from ThemeContext, reactive by default ✅ Verified 106-04
+- SEL-VISUAL-01: Selection feedback uses blue outline + opacity change ✅ Verified 106-04
 
 **CSS Grid SuperGrid (Phase 105):**
 - CSSGRID-01: CSS Grid over D3.js for tabular rendering (browser-native spanning, no coordinate math) ✅ Implemented 105-01
@@ -448,9 +452,20 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Completed: Phase 106 Plan 03 (IntegratedLayout SuperGridCSS integration)
-Next: Phase 106-04 (TBD - likely testing/polish or next integration phase)
+Completed: Phase 106 Plan 04 (SelectionContext and ThemeContext integration)
+Next: v6.7 CSS Grid Integration COMPLETE - proceed to next milestone
 Resume file: N/A
+
+**Phase 106-04 Complete:**
+- Wired SelectionContext to SuperGridCSS cell clicks
+- Fixed SelectionContext API usage: select(id) and clearSelection() instead of array-based
+- Verified theme propagation from ThemeContext to SuperGridCSS
+- Verified DataCell selection visual feedback (blue outline + opacity)
+- Dual-layer selection: local state for visuals, global state for cross-component coordination
+- Commits: 580bd6c5 (SelectionContext integration)
+- Requirements satisfied: INT-04, INT-05
+- Duration: 170 seconds (~3 minutes)
+- v6.7 CSS Grid Integration milestone: COMPLETE
 
 **Phase 106-03 Complete:**
 - Wired SuperGridCSS into IntegratedLayout with PAFV axis reactivity
