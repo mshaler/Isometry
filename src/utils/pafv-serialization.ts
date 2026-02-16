@@ -4,7 +4,8 @@ import { devLogger } from './dev-logger';
 
 /**
  * Serialize PAFV state to URL-safe string
- * Format: "x=time.year&y=category.tag&view=grid&density=2&color=priority&size=importance"
+ * Format: "x=time.year&x=category.tags&y=hierarchy.folder&view=grid&density=2"
+ * Supports stacked axes (multiple facets per plane) using repeated params.
  *
  * @param state - PAFV state to serialize
  * @returns URL-safe query string (without leading ?)
@@ -12,10 +13,10 @@ import { devLogger } from './dev-logger';
 export function serializePAFV(state: PAFVState): string {
   const params = new URLSearchParams();
 
-  // Serialize axis mappings
+  // Serialize axis mappings - use append for stacked axes (order preserved)
   for (const mapping of state.mappings) {
     const value = `${mapping.axis}.${mapping.facet}`;
-    params.set(mapping.plane, value);
+    params.append(mapping.plane, value);
   }
 
   // Serialize view mode
@@ -52,10 +53,10 @@ export function deserializePAFV(urlString: string): PAFVState {
   const validPlanes: Plane[] = ['x', 'y', 'color', 'size', 'shape'];
   const validAxes: LATCHAxis[] = ['location', 'alphabet', 'time', 'category', 'hierarchy'];
 
-  // Parse axis mappings from URL params
+  // Parse axis mappings from URL params - use getAll for stacked axes (order preserved)
   for (const plane of validPlanes) {
-    const value = params.get(plane);
-    if (value) {
+    const values = params.getAll(plane);
+    for (const value of values) {
       const [axis, facet] = value.split('.');
 
       // Validate axis is a valid LATCH axis
@@ -322,5 +323,69 @@ export function reorderMappingsInPlane(
   return {
     ...state,
     mappings: [...otherMappings, ...reordered],
+  };
+}
+
+/**
+ * Move a facet from one plane to another at a specific index (SuperDynamic)
+ * Supports both cross-plane transposition and positional insertion
+ *
+ * @param state - Current PAFV state
+ * @param fromPlane - Source plane to remove from
+ * @param toPlane - Target plane to add to
+ * @param facet - Facet name being moved
+ * @param axis - Axis type for the mapping
+ * @param targetIndex - Index in target plane to insert at (defaults to end)
+ * @returns Updated PAFV state
+ */
+export function moveFacetToPlaneAtIndex(
+  state: PAFVState,
+  fromPlane: Plane,
+  toPlane: Plane,
+  facet: string,
+  axis: LATCHAxis,
+  targetIndex?: number
+): PAFVState {
+  // Remove from source plane
+  const filteredMappings = state.mappings.filter(
+    m => !(m.plane === fromPlane && m.facet === facet)
+  );
+
+  // Check if mapping already exists in target
+  const existsInTarget = filteredMappings.some(
+    m => m.plane === toPlane && m.facet === facet
+  );
+
+  if (existsInTarget) {
+    return { ...state, mappings: filteredMappings };
+  }
+
+  // Get target plane's current mappings
+  const targetMappings = filteredMappings.filter(m => m.plane === toPlane);
+  const otherMappings = filteredMappings.filter(m => m.plane !== toPlane);
+
+  // Create new mapping
+  const newMapping: AxisMapping = { plane: toPlane, axis, facet };
+
+  // Insert at specified index or append to end
+  const insertIdx = targetIndex !== undefined && targetIndex >= 0
+    ? Math.min(targetIndex, targetMappings.length)
+    : targetMappings.length;
+
+  const updatedTargetMappings = [...targetMappings];
+  updatedTargetMappings.splice(insertIdx, 0, newMapping);
+
+  devLogger.debug('[moveFacetToPlaneAtIndex]', {
+    fromPlane,
+    toPlane,
+    facet,
+    targetIndex,
+    insertIdx,
+    resultOrder: updatedTargetMappings.map(m => m.facet),
+  });
+
+  return {
+    ...state,
+    mappings: [...otherMappings, ...updatedTargetMappings],
   };
 }
