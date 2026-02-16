@@ -137,8 +137,22 @@ export function IntegratedLayout() {
   // Extract row and column facets from PAFV mappings
   // Coordinate system: X-Plane = Rows (left headers), Y-Plane = Columns (top headers)
   const rowFacets = useMemo(() => {
-    return pafvState.mappings
-      .filter(m => m.plane === 'x')
+    const xMappings = pafvState.mappings.filter(m => m.plane === 'x');
+
+    // Check if folder is present (with path expansion, it creates Subfolder level)
+    const hasFolderWithPathExpansion = xMappings.some(m => {
+      const { sourceColumn } = getFacetInfo(m.facet);
+      return sourceColumn === 'folder';
+    });
+
+    return xMappings
+      // Skip "subfolder" if "folder" is already present (folder's path expansion creates it)
+      .filter(m => {
+        if (hasFolderWithPathExpansion && m.facet === 'subfolder') {
+          return false;
+        }
+        return true;
+      })
       .map(m => {
         const { dataType, sourceColumn } = getFacetInfo(m.facet);
         return {
@@ -169,7 +183,19 @@ export function IntegratedLayout() {
       options?: string[];
     }> = [];
 
-    for (const m of pafvState.mappings.filter(m => m.plane === 'y')) {
+    const yMappings = pafvState.mappings.filter(m => m.plane === 'y');
+
+    // Check if folder is present (with path expansion, it creates Subfolder level)
+    const hasFolderWithPathExpansion = yMappings.some(m => {
+      const { sourceColumn } = getFacetInfo(m.facet);
+      return sourceColumn === 'folder';
+    });
+
+    for (const m of yMappings) {
+      // Skip "subfolder" if "folder" is already present (folder's path expansion creates it)
+      if (hasFolderWithPathExpansion && m.facet === 'subfolder') {
+        continue;
+      }
       const { dataType, sourceColumn } = getFacetInfo(m.facet);
 
       // Date facets automatically expand to Year → Month hierarchy on columns
