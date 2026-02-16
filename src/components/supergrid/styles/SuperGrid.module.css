@@ -1,0 +1,246 @@
+/**
+ * SuperGrid CSS Module
+ * Pure CSS Grid implementation - no D3.js
+ */
+
+/* ============================================================================
+   Container
+   ============================================================================ */
+
+.superGrid {
+  --sg-border-color: #333;
+  --sg-corner-bg: #00CED1;
+  --sg-row-header-bg: #90EE90;
+  --sg-col-header-bg-l0: #FFD700;
+  --sg-col-header-bg-l1: #FFA500;
+  --sg-data-bg: #FFA500;
+  --sg-cell-padding: 4px 8px;
+  --sg-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --sg-font-size: 13px;
+  --sg-header-font-weight: 500;
+
+  font-family: var(--sg-font-family);
+  font-size: var(--sg-font-size);
+  overflow: auto;
+  border: 1px solid var(--sg-border-color);
+  max-height: 600px;
+}
+
+/* Grid Container */
+.gridContainer {
+  min-width: max-content;
+}
+
+/* ============================================================================
+   All Cells - Shared Styling
+   ============================================================================ */
+
+.cornerCell,
+.rowHeader,
+.colHeader,
+.dataCell {
+  border: 1px solid var(--sg-border-color);
+  padding: var(--sg-cell-padding);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  /* Prevent double borders */
+  margin-right: -1px;
+  margin-bottom: -1px;
+}
+
+/* ============================================================================
+   Corner Cells (MiniNav)
+   ============================================================================ */
+
+.cornerCell {
+  background: var(--sg-corner-bg);
+  font-weight: var(--sg-header-font-weight);
+  justify-content: center;
+}
+
+/* ============================================================================
+   Row Headers
+   ============================================================================ */
+
+.rowHeader {
+  background: var(--sg-row-header-bg);
+  font-weight: var(--sg-header-font-weight);
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+.rowHeader:hover {
+  filter: brightness(0.95);
+}
+
+.rowHeader[data-expandable="true"] {
+  cursor: pointer;
+}
+
+.expandIcon {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.6;
+  transition: transform 0.2s;
+}
+
+.rowHeader[data-expanded="true"] .expandIcon {
+  transform: rotate(90deg);
+}
+
+/* Depth-based styling for row headers */
+.rowHeader.depth0 {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.rowHeader.depth1 {
+  font-weight: 500;
+  font-size: 12px;
+}
+
+.rowHeader.depth2 {
+  font-weight: 400;
+  font-size: 11px;
+}
+
+/* ============================================================================
+   Column Headers
+   ============================================================================ */
+
+.colHeader {
+  font-weight: var(--sg-header-font-weight);
+  justify-content: center;
+  text-align: center;
+}
+
+.colHeader.depth0 {
+  background: var(--sg-col-header-bg-l0);
+  font-weight: 600;
+}
+
+.colHeader.depth1 {
+  background: var(--sg-col-header-bg-l1);
+}
+
+.colHeader.depth2 {
+  background: color-mix(in srgb, var(--sg-col-header-bg-l1) 80%, #fff);
+}
+
+/* ============================================================================
+   Data Cells
+   ============================================================================ */
+
+.dataCell {
+  background: var(--sg-data-bg);
+  justify-content: center;
+  cursor: cell;
+}
+
+.dataCell:hover {
+  filter: brightness(0.95);
+}
+
+.dataCell:focus {
+  outline: 2px solid #007AFF;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.dataCell[data-selected="true"] {
+  outline: 2px solid #007AFF;
+  outline-offset: -2px;
+  z-index: 1;
+  background: rgba(0, 122, 255, 0.1);
+}
+
+/* ============================================================================
+   Header Label
+   ============================================================================ */
+
+.headerLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ============================================================================
+   NeXTSTEP Theme
+   ============================================================================ */
+
+.superGrid.nextstep {
+  --sg-border-color: #000;
+  --sg-corner-bg: #AAAAAA;
+  --sg-row-header-bg: #CCCCCC;
+  --sg-col-header-bg-l0: #BBBBBB;
+  --sg-col-header-bg-l1: #DDDDDD;
+  --sg-data-bg: #FFFFFF;
+  --sg-font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+.superGrid.nextstep .cornerCell,
+.superGrid.nextstep .rowHeader,
+.superGrid.nextstep .colHeader {
+  background-image: linear-gradient(to bottom,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.1) 100%);
+}
+
+.superGrid.nextstep .dataCell {
+  border-color: #999;
+}
+
+/* ============================================================================
+   Modern Theme
+   ============================================================================ */
+
+.superGrid.modern {
+  --sg-border-color: #E5E5E5;
+  --sg-corner-bg: #F5F5F5;
+  --sg-row-header-bg: #FAFAFA;
+  --sg-col-header-bg-l0: #F0F0F0;
+  --sg-col-header-bg-l1: #F8F8F8;
+  --sg-data-bg: #FFFFFF;
+  --sg-font-family: 'Inter', -apple-system, sans-serif;
+
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.superGrid.modern .cornerCell,
+.superGrid.modern .rowHeader,
+.superGrid.modern .colHeader,
+.superGrid.modern .dataCell {
+  border-color: var(--sg-border-color);
+}
+
+/* ============================================================================
+   Dark Theme
+   ============================================================================ */
+
+.superGrid.dark {
+  --sg-border-color: #475569;
+  --sg-corner-bg: #1E293B;
+  --sg-row-header-bg: #334155;
+  --sg-col-header-bg-l0: #1E293B;
+  --sg-col-header-bg-l1: #475569;
+  --sg-data-bg: #0F172A;
+
+  color: #F8FAFC;
+}
+
+/* ============================================================================
+   Reference Image Debug Theme (for validation)
+   ============================================================================ */
+
+.superGrid.reference {
+  --sg-corner-bg: #00CED1;
+  --sg-row-header-bg: #90EE90;
+  --sg-col-header-bg-l0: #FFD700;
+  --sg-col-header-bg-l1: #FFA500;
+  --sg-data-bg: #FFA500;
+}
