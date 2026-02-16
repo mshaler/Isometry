@@ -46,7 +46,7 @@ interface WellChipProps {
 function WellChip({ mapping, index, plane, onRemove, isOnly }: WellChipProps) {
   const { theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
-  const { reorderMappingsInPlane } = usePAFV();
+  const { reorderMappingsInPlane, getMappingsForPlane } = usePAFV();
 
   const isNeXTSTEP = theme === 'NeXTSTEP';
 
@@ -72,11 +72,14 @@ function WellChip({ mapping, index, plane, onRemove, isOnly }: WellChipProps) {
       // Only accept from same plane
       if (item.plane !== plane) return;
 
-      const dragIndex = item.index;
+      // Find current index of dragged item by facet (stable identifier)
+      // This recalculates on each hover since state may have changed
+      const currentMappings = getMappingsForPlane(plane);
+      const dragIndex = currentMappings.findIndex(m => m.facet === item.facet);
       const hoverIndex = index;
 
-      // Don't replace items with themselves
-      if (dragIndex === hoverIndex) return;
+      // Item not found or same position - no action needed
+      if (dragIndex === -1 || dragIndex === hoverIndex) return;
 
       // Determine rectangle on screen
       const hoverBoundingRect = ref.current.getBoundingClientRect();
@@ -96,9 +99,6 @@ function WellChip({ mapping, index, plane, onRemove, isOnly }: WellChipProps) {
 
       // Perform the move
       reorderMappingsInPlane(plane, dragIndex, hoverIndex);
-
-      // Update the item's index for subsequent hovers
-      item.index = hoverIndex;
     },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
