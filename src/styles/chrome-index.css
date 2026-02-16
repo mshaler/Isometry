@@ -4,10 +4,16 @@
  * Imports all Chrome-level CSS modules.
  * Chrome = visual presentation layer (sticky, selection, scrolling, tooltips, etc.)
  *
- * @version 0.3.0
+ * @version 0.4.0
  */
 
+/* Phase 109 Wave 1: Sticky headers, selection, scroll shadows, tooltips */
 @import './chrome/sticky-headers.css';
 @import './chrome/selection.css';
 @import './chrome/scroll-shadows.css';
 @import './chrome/tooltip.css';
+
+/* Phase 109 Wave 2: Sidebar, accordion, dialog */
+@import './chrome/sidebar.css';
+@import './chrome/accordion.css';
+@import './chrome/dialog.css';
