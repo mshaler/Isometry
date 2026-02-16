@@ -22,8 +22,56 @@
 - ✓ **v6.3 SuperStack SQL Integration** - Phase 99 (shipped 2026-02-15)
 - ✓ **v6.4 Hardcoded Values Cleanup** - Phases 100-102 (shipped 2026-02-15)
 - ✓ **v6.5 Console Cleanup** - Phase 103 (shipped 2026-02-15)
+- ✓ **v6.6 CSS Grid SuperGrid** - Phase 105 (shipped 2026-02-15)
+- 🔄 **v6.7 CSS Grid Integration** - Phase 106 (in progress)
 
 ## Phases
+
+### Phase 106: CSS Grid Integration
+
+**Goal:** Integrate SuperGridCSS into IntegratedLayout, replacing the D3.js SuperGrid for tabular rendering while preserving the existing PAFV/LATCH data flow.
+
+**Depends on:** Phase 105 (CSS Grid SuperGrid component complete)
+
+**Requirements:** INT-01 through INT-10
+
+| REQ-ID | Requirement | Priority |
+|--------|-------------|----------|
+| INT-01 | HeaderTree → AxisConfig adapter function | P0 |
+| INT-02 | Data cell query hook for grid population | P0 |
+| INT-03 | IntegratedLayout wiring to SuperGridCSS | P0 |
+| INT-04 | Selection sync between CSS grid and SelectionContext | P1 |
+| INT-05 | Theme sync with ThemeContext | P1 |
+| INT-06 | PAFV axis change reactivity | P1 |
+| INT-07 | Collapse/expand state persistence | P2 (deferred to Phase 107) |
+| INT-08 | D3.js SuperGrid code removal | P3 (deferred to Phase 107) |
+| INT-09 | Visual regression tests | P2 (deferred to Phase 107) |
+| INT-10 | Performance validation (<100ms render) | P2 (deferred to Phase 107) |
+
+**Success Criteria:**
+1. IntegratedLayout renders using SuperGridCSS instead of D3.js SuperGrid
+2. PAFVContext axis changes trigger grid re-render with correct data
+3. Selection in grid updates SelectionContext
+4. Theme switching works seamlessly
+5. All existing unit tests pass
+6. No console errors on grid operations
+
+**Plans:** 4/4 plans complete
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 106-01 | HeaderTree → AxisConfig | INT-01 | `utils/headerTreeToAxisConfig.ts` |
+| 106-02 | Data Cell Query Hook | INT-02 | `hooks/useGridDataCells.ts` |
+| 106-03 | IntegratedLayout Wiring | INT-03, INT-06 | Updated `IntegratedLayout.tsx` |
+| 106-04 | Selection & Theme Sync | INT-04, INT-05 | Context integration |
+
+Plans:
+- [ ] 106-01-PLAN.md — HeaderTree → AxisConfig adapter (Wave 1)
+- [ ] 106-02-PLAN.md — Data cell query hook (Wave 1)
+- [ ] 106-03-PLAN.md — IntegratedLayout wiring (Wave 2)
+- [ ] 106-04-PLAN.md — Selection and theme sync (Wave 2)
+
+---
 
 ### Phase 103: Console Cleanup (COMPLETE)
 
