@@ -1,0 +1,11 @@
+/**
+ * @isometry/primitives — Tier 3: Chrome CSS Aggregator
+ *
+ * Imports all Chrome-level CSS modules.
+ * Chrome = visual presentation layer (sticky, selection, scrolling, tooltips, etc.)
+ *
+ * @version 0.3.0
+ */
+
+@import './chrome/sticky-headers.css';
+@import './chrome/selection.css';

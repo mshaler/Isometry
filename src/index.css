@@ -5,6 +5,7 @@
 @import './styles/primitives-kanban.css';
 @import './styles/primitives-timeline.css';
 @import './styles/primitives-gallery.css';
+@import './styles/chrome-index.css';
 @import './styles/cb-components.css';
 @import '@xterm/xterm/css/xterm.css';
 
