@@ -271,6 +271,10 @@ Overall: v6.8 CSS Primitives — IN PROGRESS (Phase 109 in progress)
 Recent decisions:
 
 **CSS Chrome Primitives (Phase 109):**
+- CHR-STICKY-01: CSS-only sticky positioning eliminates JavaScript scroll listeners ✅ Implemented 109-01
+- CHR-SELECT-01: Selection state uses CSS classes, not React state (D3 toggles) ✅ Implemented 109-01
+- CHR-ZINDEX-01: z-index hierarchy: corner (30) > col-headers (20,19) > row-headers (18,17) ✅ Implemented 109-01
+- CHR-DEPTH-01: Depth variants offset using Tier 2 primitives (--iso-grid-col-hdr-h, --iso-grid-row-hdr0-w) ✅ Implemented 109-01
 - SCROLL-BG-ATTACH-01: Use background-attachment trick (local vs scroll) for zero-JS scroll shadows ✅ Implemented 109-02
 - TOOLTIP-PSEUDO-01: Use ::after pseudo-element with attr(data-tooltip) for tooltip content ✅ Implemented 109-02
 - FOUC-INLINE-01: Inline script in <head> sets data-theme before CSS loads ✅ Implemented 109-02
