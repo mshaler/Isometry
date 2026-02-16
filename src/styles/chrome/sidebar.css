@@ -1,0 +1,104 @@
+/**
+ * CSS-driven sidebar — one-line JS toggle, CSS owns animation
+ *
+ * Usage:
+ *   const sidebar = document.querySelector('.iso-sidebar');
+ *   sidebar.dataset.collapsed = sidebar.dataset.collapsed !== 'true';
+ *
+ * @isometry/primitives — Tier 3: Chrome
+ * @version 0.1.0
+ */
+
+.iso-sidebar {
+  width: var(--iso-sidebar-w);
+  background: var(--iso-bg-raised);
+  border-right: 1px solid var(--iso-border-default);
+  overflow: hidden;
+  transition: width var(--iso-transition-slow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Collapsed state — controlled by data attribute */
+.iso-sidebar[data-collapsed="true"] {
+  width: var(--iso-sidebar-collapsed-w);
+}
+
+/* Hide labels when collapsed */
+.iso-sidebar[data-collapsed="true"] .iso-sidebar__label {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--iso-transition-fast),
+              visibility var(--iso-transition-fast);
+}
+
+/* Show labels when expanded */
+.iso-sidebar .iso-sidebar__label {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--iso-transition-fast) 150ms,
+              visibility var(--iso-transition-fast) 150ms;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Sidebar navigation items */
+.iso-sidebar__nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--iso-space-md);
+}
+
+.iso-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--iso-space-md);
+  padding: var(--iso-space-md);
+  border-radius: var(--iso-radius-md);
+  color: var(--iso-fg-secondary);
+  cursor: pointer;
+  transition: background var(--iso-transition-fast),
+              color var(--iso-transition-fast);
+}
+
+.iso-sidebar__item:hover {
+  background: var(--iso-bg-hover);
+  color: var(--iso-fg-primary);
+}
+
+.iso-sidebar__item--active {
+  background: var(--iso-bg-glass);
+  color: var(--iso-fg-accent);
+}
+
+/* Icon container (always visible) */
+.iso-sidebar__icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Toggle button */
+.iso-sidebar__toggle {
+  padding: var(--iso-space-md);
+  border-top: 1px solid var(--iso-border-subtle);
+  display: flex;
+  justify-content: center;
+}
+
+.iso-sidebar__toggle button {
+  background: none;
+  border: none;
+  color: var(--iso-fg-secondary);
+  cursor: pointer;
+  padding: var(--iso-space-sm);
+  border-radius: var(--iso-radius-sm);
+  transition: color var(--iso-transition-fast);
+}
+
+.iso-sidebar__toggle button:hover {
+  color: var(--iso-fg-primary);
+}
