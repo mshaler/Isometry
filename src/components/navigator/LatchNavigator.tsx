@@ -101,11 +101,13 @@ export interface LatchNavigatorProps {
   onPropertyToggle?: (propertyId: string, enabled: boolean) => void;
   /** Set of enabled property IDs (external control) */
   enabledProperties?: Set<string>;
+  /** Node type filter for schema-on-read (e.g., 'notes', 'contacts') */
+  nodeType?: string;
 }
 
-export function LatchNavigator({ onPropertyToggle, enabledProperties }: LatchNavigatorProps) {
+export function LatchNavigator({ onPropertyToggle, enabledProperties, nodeType }: LatchNavigatorProps) {
   const { theme } = useTheme();
-  const { classification, isLoading, error } = usePropertyClassification();
+  const { classification, isLoading, error } = usePropertyClassification(nodeType);
 
   // Local state for checked properties (if not externally controlled)
   const [localEnabled, setLocalEnabled] = useState<Set<string>>(new Set());

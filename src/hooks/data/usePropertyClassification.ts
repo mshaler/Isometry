@@ -36,12 +36,13 @@ export interface UsePropertyClassificationResult {
  * This hook reads the facets table and classifies properties into
  * Location, Alphabet, Time, Category, Hierarchy, and GRAPH buckets.
  *
+ * @param nodeType - Optional node_type filter for schema-on-read (e.g., 'notes', 'contacts')
  * @returns Classification result with loading/error states and refresh function
  *
  * @example
  * ```tsx
  * function NavigatorPanel() {
- *   const { classification, isLoading, error, refresh } = usePropertyClassification();
+ *   const { classification, isLoading, error, refresh } = usePropertyClassification('notes');
  *
  *   if (isLoading) return <Spinner />;
  *   if (error) return <Error message={error} />;
@@ -56,7 +57,7 @@ export interface UsePropertyClassificationResult {
  * }
  * ```
  */
-export function usePropertyClassification(): UsePropertyClassificationResult {
+export function usePropertyClassification(nodeType?: string): UsePropertyClassificationResult {
   const { db, loading: dbLoading, error: dbError } = useSQLite();
 
   const [classification, setClassification] = useState<PropertyClassification | null>(null);
@@ -64,10 +65,12 @@ export function usePropertyClassification(): UsePropertyClassificationResult {
   const [error, setError] = useState<string | null>(null);
 
   // Cache reference to prevent unnecessary re-classifications
+  // Includes nodeType to ensure re-classification when switching datasets
   const cacheRef = useRef<{
     classification: PropertyClassification | null;
     dataVersion: number;
-  }>({ classification: null, dataVersion: -1 });
+    nodeType?: string;
+  }>({ classification: null, dataVersion: -1, nodeType: undefined });
 
   // Track data version to know when to refresh
   const { dataVersion } = useSQLite();
@@ -77,9 +80,10 @@ export function usePropertyClassification(): UsePropertyClassificationResult {
       return;
     }
 
-    // Check cache - if data version hasn't changed, use cached result
+    // Check cache - if data version AND nodeType haven't changed, use cached result
     if (
       cacheRef.current.dataVersion === dataVersion &&
+      cacheRef.current.nodeType === nodeType &&
       cacheRef.current.classification !== null
     ) {
       setClassification(cacheRef.current.classification);
@@ -91,13 +95,14 @@ export function usePropertyClassification(): UsePropertyClassificationResult {
     setError(null);
 
     try {
-      // Call the classifier service
-      const result = classifyProperties(db as unknown as Database);
+      // Call the classifier service with nodeType filter
+      const result = classifyProperties(db as unknown as Database, nodeType);
 
-      // Update cache
+      // Update cache with nodeType
       cacheRef.current = {
         classification: result,
         dataVersion,
+        nodeType,
       };
 
       setClassification(result);
@@ -109,7 +114,7 @@ export function usePropertyClassification(): UsePropertyClassificationResult {
     } finally {
       setIsLoading(false);
     }
-  }, [db, dbLoading, dataVersion]);
+  }, [db, dbLoading, dataVersion, nodeType]);
 
   // Load classification when dependencies change
   useEffect(() => {

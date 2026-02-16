@@ -134,11 +134,12 @@ export function IntegratedLayout() {
   const { db } = useSQLite();
 
   // Header discovery for CSS Grid mode
-  // Note: useHeaderDiscovery interface is (db, columnFacets, rowFacets)
+  // Note: useHeaderDiscovery interface is (db, columnFacets, rowFacets, nodeType)
   const { rowTree, columnTree, isLoading: headersLoading } = useHeaderDiscovery(
     USE_CSS_GRID_SUPERGRID ? db : null,
     USE_CSS_GRID_SUPERGRID ? colFacets : [],
-    USE_CSS_GRID_SUPERGRID ? rowFacets : []
+    USE_CSS_GRID_SUPERGRID ? rowFacets : [],
+    USE_CSS_GRID_SUPERGRID ? activeNodeType : undefined
   );
 
   // Adapt HeaderTree to AxisConfig for SuperGridCSS
@@ -422,16 +423,28 @@ export function IntegratedLayout() {
     resetFilters();
   }, [activeDataset, resetFilters]);
 
-  // Unified query orchestration: one compiled query contract, one SuperGrid query.
+  // Track last query key to prevent redundant queries when buildWhereClause recreates but returns same result.
+  // This breaks the cycle: currentData changes → buildWhereClause recreates → but query key is same → skip re-query.
+  const lastQueryKeyRef = useRef<string>('');
+
+  // Unified query orchestration: populate currentData and optionally update D3 SuperGrid.
+  // In CSS Grid mode, we still need currentData for slider filter generation.
   useEffect(() => {
-    if (!superGrid || !svgRef.current || !databaseService?.isReady()) {
+    // Database must be ready in both modes
+    if (!databaseService?.isReady()) {
       return;
     }
 
-    // CRITICAL: Ensure SuperGrid container points to current SVG element
-    // React may have created a new SVG element, but SuperGrid's D3 selection
-    // would still point to the old (now detached) element
-    superGrid.updateContainer(svgRef.current);
+    // In D3 mode, also require superGrid and svgRef
+    if (!USE_CSS_GRID_SUPERGRID) {
+      if (!superGrid || !svgRef.current) {
+        return;
+      }
+      // CRITICAL: Ensure SuperGrid container points to current SVG element
+      // React may have created a new SVG element, but SuperGrid's D3 selection
+      // would still point to the old (now detached) element
+      superGrid.updateContainer(svgRef.current);
+    }
 
     const { clause: filterClause, params: filterParams } = buildWhereClause();
     let whereClause = `node_type = ? AND deleted_at IS NULL`;
@@ -440,6 +453,14 @@ export function IntegratedLayout() {
       whereClause += ` AND ${filterClause}`;
       parameters.push(...filterParams);
     }
+
+    // Build a query key to detect duplicate queries
+    const queryKey = `${activeDataset}|${whereClause}|${parameters.join(',')}|${dataRevision}`;
+    if (queryKey === lastQueryKeyRef.current) {
+      // Same query - skip to prevent infinite loop
+      return;
+    }
+    lastQueryKeyRef.current = queryKey;
 
     // Load current data for slider filter generation + debug status.
     const dataResult = databaseService.query(
@@ -456,15 +477,18 @@ export function IntegratedLayout() {
     );
     setCurrentData(dataResult || []);
 
-    // Query SuperGrid once using the same contract.
-    superGrid.query({
-      whereClause,
-      parameters,
-      activeFilters: [],
-      isEmpty: false,
-    });
+    // In D3 mode, also update SuperGrid
+    if (!USE_CSS_GRID_SUPERGRID && superGrid) {
+      superGrid.query({
+        whereClause,
+        parameters,
+        activeFilters: [],
+        isEmpty: false,
+      });
+    }
 
     contextLogger.setup('IntegratedLayout: Unified query executed', {
+      mode: USE_CSS_GRID_SUPERGRID ? 'css-grid' : 'd3',
       dataset: activeDataset,
       nodeType: activeNodeType,
       filterClause,
@@ -683,10 +707,11 @@ export function IntegratedLayout() {
         <LatchNavigator
           enabledProperties={enabledProperties}
           onPropertyToggle={handlePropertyToggle}
+          nodeType={activeNodeType}
         />
 
         {/* PafvNavigator (5-well axis assignment with density) */}
-        <PafvNavigator enabledProperties={enabledProperties} />
+        <PafvNavigator enabledProperties={enabledProperties} nodeType={activeNodeType} />
 
         {/* LATCH*GRAPH Sliders - HIDDEN for now (Phase 105 milestone) */}
         {/* TODO(Phase-105): Re-enable LatchGraphSliders with proper data-driven filtering

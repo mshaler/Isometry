@@ -301,11 +301,13 @@ function DensityColumnEqual({ densityLevel, onDensityChange, width }: DensityCol
 export interface PafvNavigatorProps {
   /** Set of enabled property IDs (from LatchNavigator checkboxes) */
   enabledProperties?: Set<string>;
+  /** Node type filter for schema-on-read (e.g., 'notes', 'contacts') */
+  nodeType?: string;
 }
 
-export function PafvNavigator({ enabledProperties }: PafvNavigatorProps = {}) {
+export function PafvNavigator({ enabledProperties, nodeType }: PafvNavigatorProps = {}) {
   const { theme } = useTheme();
-  const { classification } = usePropertyClassification();
+  const { classification } = usePropertyClassification(nodeType);
   const {
     state: pafvState,
     addMappingToPlane,

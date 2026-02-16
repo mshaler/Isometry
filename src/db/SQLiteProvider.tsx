@@ -310,6 +310,17 @@ export function SQLiteProvider({
             database.exec(FACETS_SEED_SQL);
             sqliteLogger.debug('Facets seeded');
           }
+
+          // MIGRATION: Remove hard-coded Status/Priority facets from persisted databases
+          // These were removed from schema-on-read approach - facets should only exist
+          // if their source columns have actual data in the current dataset
+          // See: schema.sql comment "App-specific facets (status, priority, due) are NOT seeded here"
+          try {
+            database.run("DELETE FROM facets WHERE id IN ('status', 'priority')");
+            sqliteLogger.debug('Migration: removed status/priority facets if present');
+          } catch {
+            // Ignore errors - table structure might vary
+          }
         } catch (facetError) {
           sqliteLogger.warn('Facets check/seed failed', { error: facetError });
           // Table might not exist - try creating and seeding

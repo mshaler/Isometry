@@ -92,9 +92,10 @@ const GRAPH_METRICS = [
  *
  * @param db - sql.js Database instance
  * @param sourceColumn - Column name to check
+ * @param nodeType - Optional node_type filter for schema-on-read (e.g., 'notes', 'contacts')
  * @returns true if the column has meaningful data for filtering
  */
-function columnHasData(db: Database, sourceColumn: string): boolean {
+function columnHasData(db: Database, sourceColumn: string, nodeType?: string): boolean {
   // Skip columns that are always present and useful
   const alwaysPresentColumns = ['name', 'created_at', 'modified_at', 'folder', 'tags'];
   if (alwaysPresentColumns.includes(sourceColumn)) {
@@ -102,6 +103,9 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
   }
 
   try {
+    // Build node_type filter condition for schema-on-read
+    const nodeTypeFilter = nodeType ? `AND node_type = '${nodeType}'` : '';
+
     // Generic approach: check for meaningful variation in ANY column
     // Try numeric check first (most numeric columns default to 0)
     const numericSql = `
@@ -109,6 +113,7 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       WHERE ${sourceColumn} IS NOT NULL
         AND ${sourceColumn} != 0
         AND deleted_at IS NULL
+        ${nodeTypeFilter}
     `;
     const numericResult = db.exec(numericSql);
     const numericCount = numericResult.length > 0 && numericResult[0].values.length > 0
@@ -116,7 +121,7 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       : 0;
 
     if (numericCount >= 2) {
-      devLogger.debug('columnHasData', { sourceColumn, hasData: true, distinctCount: numericCount });
+      devLogger.debug('columnHasData', { sourceColumn, nodeType, hasData: true, distinctCount: numericCount });
       return true;
     }
 
@@ -126,6 +131,7 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       WHERE ${sourceColumn} IS NOT NULL
         AND TRIM(CAST(${sourceColumn} AS TEXT)) != ''
         AND deleted_at IS NULL
+        ${nodeTypeFilter}
     `;
     const textResult = db.exec(textSql);
     const textCount = textResult.length > 0 && textResult[0].values.length > 0
@@ -133,7 +139,7 @@ function columnHasData(db: Database, sourceColumn: string): boolean {
       : 0;
 
     const hasData = textCount >= 2;
-    devLogger.debug('columnHasData', { sourceColumn, hasData, distinctCount: textCount });
+    devLogger.debug('columnHasData', { sourceColumn, nodeType, hasData, distinctCount: textCount });
     return hasData;
   } catch (error) {
     // Column doesn't exist, wrong type, or other SQL error
@@ -265,10 +271,11 @@ function humanizeKey(key: string): string {
  * Classify properties from the facets table into LATCH+GRAPH buckets.
  *
  * @param db - sql.js Database instance
+ * @param nodeType - Optional node_type filter for schema-on-read (e.g., 'notes', 'contacts')
  * @returns PropertyClassification with all properties grouped by bucket
  */
-export function classifyProperties(db: Database): PropertyClassification {
-  devLogger.debug('classifyProperties called');
+export function classifyProperties(db: Database, nodeType?: string): PropertyClassification {
+  devLogger.debug('classifyProperties called', { nodeType });
 
   // Initialize empty classification
   const classification: PropertyClassification = {
@@ -311,13 +318,13 @@ export function classifyProperties(db: Database): PropertyClassification {
 
       // Skip facets whose source columns have no data in the current dataset
       // This prevents showing Priority, Status, Due Date for Notes data
-      const hasData = columnHasData(db, sourceColumn);
+      const hasData = columnHasData(db, sourceColumn, nodeType);
       if (!hasData) {
-        devLogger.debug('Skipping facet (no data)', { name, sourceColumn });
+        devLogger.debug('Skipping facet (no data)', { name, sourceColumn, nodeType });
         continue;
       }
 
-      devLogger.debug('Including facet', { name, sourceColumn, axis });
+      devLogger.debug('Including facet', { name, sourceColumn, axis, nodeType });
       schemaSourceColumns.add(sourceColumn);
 
       const property: ClassifiedProperty = {
