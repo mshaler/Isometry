@@ -9,3 +9,5 @@
 
 @import './chrome/sticky-headers.css';
 @import './chrome/selection.css';
+@import './chrome/scroll-shadows.css';
+@import './chrome/tooltip.css';
