@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 ## Current Position
 
 Phase: 106 (CSS Grid Integration)
-Plan: 02/04
+Plan: 03/04
 Status: In progress
-Last activity: 2026-02-15 — Completed Phase 106 Plan 02 (Data cell query hook)
+Last activity: 2026-02-16 — Completed Phase 106 Plan 03 (IntegratedLayout SuperGridCSS integration)
 
-Progress: [█████░░░░░] 50% (Phase 106: 2/4 plans)
+Progress: [███████░░░] 75% (Phase 106: 3/4 plans)
 Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to SuperGridCSS)
 
 ## Active Milestones
@@ -27,12 +27,13 @@ Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to Super
 **Status:** 🔄 IN PROGRESS
 
 **Progress:**
-- Phase 106: CSS Grid Integration — 🔄 IN PROGRESS (2/4 plans)
+- Phase 106: CSS Grid Integration — 🔄 IN PROGRESS (3/4 plans)
   - [x] 106-01: HeaderTree to AxisConfig Adapter (~3m) ✓
-  - [ ] 106-02: useGridDataCells Hook
-  - [ ] 106-03: IntegratedLayout Component
+  - [x] 106-02: useGridDataCells Hook (~4m) ✓
+  - [x] 106-03: IntegratedLayout Component (~4m) ✓
+  - [ ] 106-04: (TBD)
 
-**Total requirements:** TBD | **Status:** 1/3 plans complete
+**Total requirements:** TBD | **Status:** 3/4 plans complete
 
 ### v6.6 CSS Grid SuperGrid — COMPLETE
 
@@ -228,8 +229,9 @@ Overall: v6.7 CSS Grid Integration — IN PROGRESS (bridging SuperStack to Super
 | 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
 | 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
 
-*Updated: 2026-02-15*
+*Updated: 2026-02-16*
 | Phase 106 P02 | 3.7 | 2 tasks | 2 files |
+| Phase 106 P03 | 4.0 | 3 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -241,6 +243,13 @@ Recent decisions:
 - ADAPT-01: Root AxisNode wrapper required for SuperGridCSS tree structure ✅ Implemented 106-01
 - ADAPT-02: Collapsed state inverted: HeaderNode.collapsed → AxisNode.expanded ✅ Implemented 106-01
 - ADAPT-03: Leaf nodes have undefined children, not empty array ✅ Implemented 106-01
+- CELL-PATH-01: Path computation via computeNodePath helper extracts facet values in order ✅ Implemented 106-02
+- CELL-MULTI-01: Multi-select facets extract first JSON array value, fallback to string ✅ Implemented 106-02
+- CELL-EMPTY-01: Null/undefined values mapped to '(empty)' string in paths ✅ Implemented 106-02
+- INT-CSSGRID-01: USE_CSS_GRID_SUPERGRID feature flag controls renderer selection ✅ Implemented 106-03
+- INT-CSSGRID-02: Guard D3.js initialization with feature flag check ✅ Implemented 106-03
+- INT-CSSGRID-03: Conditional rendering based on rowAxis && colAxis availability ✅ Implemented 106-03
+- INT-CSSGRID-04: Move activeDataset state earlier to fix variable ordering ✅ Implemented 106-03
 
 **CSS Grid SuperGrid (Phase 105):**
 - CSSGRID-01: CSS Grid over D3.js for tabular rendering (browser-native spanning, no coordinate math) ✅ Implemented 105-01
@@ -439,9 +448,34 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-16
-Completed: Phase 106 Plan 01 (HeaderTree to AxisConfig adapter)
-Next: Phase 106-02 (useGridDataCells hook)
+Completed: Phase 106 Plan 03 (IntegratedLayout SuperGridCSS integration)
+Next: Phase 106-04 (TBD - likely testing/polish or next integration phase)
 Resume file: N/A
+
+**Phase 106-03 Complete:**
+- Wired SuperGridCSS into IntegratedLayout with PAFV axis reactivity
+- Added USE_CSS_GRID_SUPERGRID feature flag (default: true)
+- Facet extraction from PAFV mappings (rowFacets/colFacets)
+- Header discovery with useHeaderDiscovery hook
+- HeaderTree to AxisConfig conversion via adapter
+- Data cells from useGridDataCells hook with SQLite queries
+- Conditional rendering: SuperGridCSS when axes exist, D3.js SVG fallback
+- Guarded D3.js initialization to prevent duplicate instance creation
+- Fixed variable ordering: moved activeDataset state earlier
+- Commits: 943fb1c9 (imports), a199cb76 (headers), 0ca9d123 (rendering)
+- Requirements satisfied: INT-03, INT-06
+- Duration: 239 seconds (~4 minutes)
+
+**Phase 106-02 Complete:**
+- Created useGridDataCells hook for SQLite → DataCell[] transformation
+- Path computation via computeNodePath helper
+- Multi-select facet handling with JSON.parse fallback
+- Null/undefined values mapped to '(empty)' string
+- 19 unit tests covering normal flow, empty states, error handling
+- All tests pass, zero TypeScript errors
+- Commits: eaefa588 (hook), ad5f6799 (tests)
+- Requirements satisfied: INT-02
+- Duration: 222 seconds (~3.7 minutes)
 
 **Phase 106-01 Complete:**
 - Created headerTreeToAxisConfig adapter bridging HeaderTree to AxisConfig
