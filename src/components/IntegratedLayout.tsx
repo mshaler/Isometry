@@ -58,7 +58,7 @@ const ALTO_DATASETS = [
  */
 export function IntegratedLayout() {
   const { theme } = useTheme();
-  const { select: setSelectedIds } = useSelection();
+  const { select, clear: clearSelection } = useSelection();
   const { state: pafvState, clearFacetFromAllPlanes, resetToDefaults } = usePAFV();
   const databaseService = useDatabaseService();
   const { classification, refresh: refreshClassification } = usePropertyClassification();
@@ -314,7 +314,7 @@ export function IntegratedLayout() {
   ) => {
     if (!cell) {
       // Clicked empty cell - clear selection
-      setSelectedIds([]);
+      clearSelection();
       contextLogger.debug('[IntegratedLayout] Empty cell clicked, selection cleared');
       return;
     }
@@ -324,14 +324,14 @@ export function IntegratedLayout() {
     if (!nodeData?.id) return;
 
     // Update global selection state
-    setSelectedIds(nodeData.id);
+    select(nodeData.id);
 
     contextLogger.debug('[IntegratedLayout] Cell selected', {
       nodeId: nodeData.id,
       rowPath,
       colPath
     });
-  }, [setSelectedIds]);
+  }, [select, clearSelection]);
 
   const handleClearImportedData = useCallback(async () => {
     await clearData();
@@ -710,9 +710,7 @@ export function IntegratedLayout() {
               columnAxis={colAxis}
               data={dataCells}
               theme={isNeXTSTEP ? 'nextstep' : 'modern'}
-              onCellClick={(_cell, rowPath, colPath) => {
-                contextLogger.debug('[IntegratedLayout] Cell clicked', { rowPath, colPath });
-              }}
+              onCellClick={handleCellClick}
               onHeaderClick={(type, path) => {
                 contextLogger.debug('[IntegratedLayout] Header clicked', { type, path });
               }}
