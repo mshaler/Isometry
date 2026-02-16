@@ -1,0 +1,41 @@
+/**
+ * @isometry/primitives — Tier 3: Selection Highlighting (Chrome)
+ *
+ * Selection and hover states for grid cells and headers.
+ * D3 toggles classes, CSS owns visual effects.
+ * Zero React state management for these presentation concerns.
+ *
+ * @version 0.3.0
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HEADER SELECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-header--selected {
+  background: var(--iso-border-accent) !important;
+  color: #ffffff;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CELL SELECTION
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-cell--in-selection {
+  outline: 2px solid var(--iso-border-accent);
+  outline-offset: -2px;
+  background: rgba(77, 166, 255, 0.08);
+}
+
+.iso-cell--in-selection .iso-mini-card {
+  border-left-color: var(--iso-border-accent);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOVER STATES
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-header:hover {
+  background: var(--iso-bg-hover);
+}
+
+.iso-cell:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
