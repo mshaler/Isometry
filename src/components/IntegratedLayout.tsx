@@ -13,7 +13,7 @@ import { headerTreeToAxisConfig } from './supergrid/adapters/headerTreeAdapter';
 import { useGridDataCells } from '@/hooks/useGridDataCells';
 import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
 import { useSQLite } from '@/db/SQLiteProvider';
-import type { AxisConfig } from './supergrid/types';
+import type { AxisConfig, DataCell as DataCellType } from './supergrid/types';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import { mappingsToProjection } from '../types/grid';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -96,6 +96,54 @@ export function IntegratedLayout() {
     resetFilters,
   } = useSliderFilters(currentData, sliderClassification);
 
+  // Extract row and column facets from PAFV mappings
+  const rowFacets = useMemo(() => {
+    return pafvState.mappings
+      .filter(m => m.plane === 'y')
+      .map(m => ({
+        id: m.facet,
+        name: m.facet,
+        axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+        sourceColumn: m.facet,
+        dataType: 'text' as const,
+        sortOrder: 'asc' as const
+      }));
+  }, [pafvState.mappings]);
+
+  const colFacets = useMemo(() => {
+    return pafvState.mappings
+      .filter(m => m.plane === 'x')
+      .map(m => ({
+        id: m.facet,
+        name: m.facet,
+        axis: m.axis as 'L' | 'A' | 'T' | 'C' | 'H',
+        sourceColumn: m.facet,
+        dataType: 'text' as const,
+        sortOrder: 'asc' as const
+      }));
+  }, [pafvState.mappings]);
+
+  // Get database reference for header discovery
+  const { db } = useSQLite();
+
+  // Header discovery for CSS Grid mode
+  // Note: useHeaderDiscovery interface is (db, columnFacets, rowFacets)
+  const { rowTree, columnTree, isLoading: headersLoading } = useHeaderDiscovery(
+    USE_CSS_GRID_SUPERGRID ? db : null,
+    USE_CSS_GRID_SUPERGRID ? colFacets : [],
+    USE_CSS_GRID_SUPERGRID ? rowFacets : []
+  );
+
+  // Adapt HeaderTree to AxisConfig for SuperGridCSS
+  const rowAxis: AxisConfig | null = useMemo(() => {
+    if (!USE_CSS_GRID_SUPERGRID || !rowTree || rowFacets.length === 0) return null;
+    return headerTreeToAxisConfig(rowTree);
+  }, [rowTree, rowFacets]);
+
+  const colAxis: AxisConfig | null = useMemo(() => {
+    if (!USE_CSS_GRID_SUPERGRID || !columnTree || colFacets.length === 0) return null;
+    return headerTreeToAxisConfig(columnTree);
+  }, [columnTree, colFacets]);
 
   // SuperGrid refs and state
   const svgRef = useRef<SVGSVGElement>(null);
@@ -248,6 +296,33 @@ export function IntegratedLayout() {
     resetFilters();
     contextLogger.debug('[IntegratedLayout] Layout and filters reset');
   }, [resetToDefaults, resetFilters]);
+
+  // Cell click handler for SuperGridCSS - syncs selection to SelectionContext
+  const handleCellClick = useCallback((
+    cell: DataCellType | undefined,
+    rowPath: string[],
+    colPath: string[]
+  ) => {
+    if (!cell) {
+      // Clicked empty cell - clear selection
+      setSelectedIds([]);
+      contextLogger.debug('[IntegratedLayout] Empty cell clicked, selection cleared');
+      return;
+    }
+
+    // Extract node ID from rawValue
+    const nodeData = cell.rawValue as { id: string } | undefined;
+    if (!nodeData?.id) return;
+
+    // Update global selection state
+    setSelectedIds(nodeData.id);
+
+    contextLogger.debug('[IntegratedLayout] Cell selected', {
+      nodeId: nodeData.id,
+      rowPath,
+      colPath
+    });
+  }, [setSelectedIds]);
 
   const handleClearImportedData = useCallback(async () => {
     await clearData();
