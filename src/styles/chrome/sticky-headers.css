@@ -1,0 +1,52 @@
+/**
+ * @isometry/primitives — Tier 3: Sticky Headers (Chrome)
+ *
+ * CSS-only sticky positioning for SuperGrid headers.
+ * No JavaScript scroll listeners, no React state.
+ * Browser-native position: sticky with z-index layering.
+ *
+ * @version 0.3.0
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COLUMN HEADERS (sticky to top)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-grid-col-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--iso-header-col0);
+}
+
+.iso-grid-col-header--depth1 {
+  top: var(--iso-grid-col-hdr-h);
+  z-index: 19;
+  background: var(--iso-header-col1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROW HEADERS (sticky to left)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-grid-row-header {
+  position: sticky;
+  left: 0;
+  z-index: 18;
+  background: var(--iso-header-row0);
+}
+
+.iso-grid-row-header--depth1 {
+  left: var(--iso-grid-row-hdr0-w);
+  z-index: 17;
+  background: var(--iso-header-row1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CORNER CELL (sticky to top-left)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.iso-grid-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  background: var(--iso-header-corner);
+}
