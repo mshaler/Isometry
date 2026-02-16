@@ -5,15 +5,27 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { LatchNavigator } from './navigator/LatchNavigator';
 import { PafvNavigator } from './navigator/PafvNavigator';
-import { LatchGraphSliders, useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
+// LatchGraphSliders temporarily hidden (Phase 105 milestone)
+import { useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
 import { SuperGrid } from '../d3/SuperGrid';
+import { SuperGridCSS } from './supergrid/SuperGridCSS';
+import { headerTreeToAxisConfig } from './supergrid/adapters/headerTreeAdapter';
+import { useGridDataCells } from '@/hooks/useGridDataCells';
+import { useHeaderDiscovery } from '@/hooks/useHeaderDiscovery';
+import { useSQLite } from '@/db/SQLiteProvider';
+import type { AxisConfig } from './supergrid/types';
 import { useDatabaseService, usePAFV } from '@/hooks';
 import { mappingsToProjection } from '../types/grid';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useSelection } from '@/state/SelectionContext';
 import { contextLogger } from '../utils/logging/dev-logger';
 import { usePropertyClassification } from '@/hooks/data/usePropertyClassification';
 import { useAltoIndexImport } from '@/hooks/useAltoIndexImport';
 import { NotebookLayout } from './notebook/NotebookLayout';
+
+// Feature flag: CSS Grid SuperGrid (Phase 106)
+// Set to true to use new CSS Grid renderer, false for D3.js fallback
+const USE_CSS_GRID_SUPERGRID = true;
 
 /**
  * Alto-index dataset definitions for the dataset switcher
@@ -46,6 +58,7 @@ const ALTO_DATASETS = [
  */
 export function IntegratedLayout() {
   const { theme } = useTheme();
+  const { select: setSelectedIds } = useSelection();
   const { state: pafvState, clearFacetFromAllPlanes, resetToDefaults } = usePAFV();
   const databaseService = useDatabaseService();
   const { classification, refresh: refreshClassification } = usePropertyClassification();
@@ -76,9 +89,9 @@ export function IntegratedLayout() {
   }, [classification]);
 
   // Slider filters hook
+  // NOTE: setFilterValue temporarily unused while LatchGraphSliders is hidden (Phase 105)
   const {
     filters: sliderFilters,
-    setFilterValue,
     buildWhereClause,
     resetFilters,
   } = useSliderFilters(currentData, sliderClassification);
@@ -192,9 +205,8 @@ export function IntegratedLayout() {
   }, [refreshClassification]);
 
   // Handle slider filter change - re-query SuperGrid with filter constraints
-  const handleSliderFilterChange = useCallback((filterId: string, value: [number, number]) => {
-    setFilterValue(filterId, value);
-  }, [setFilterValue]);
+  // NOTE: LatchGraphSliders is temporarily hidden (Phase 105 milestone)
+  // The callback would be: (filterId, value) => setFilterValue(filterId, value)
 
   const runImport = useCallback(async (clearExisting: boolean) => {
     if (!databaseService?.isReady()) return;
@@ -590,7 +602,8 @@ export function IntegratedLayout() {
         {/* PafvNavigator (5-well axis assignment with density) */}
         <PafvNavigator enabledProperties={enabledProperties} />
 
-        {/* LATCH*GRAPH Sliders for filtering/tuning */}
+        {/* LATCH*GRAPH Sliders - HIDDEN for now (Phase 105 milestone) */}
+        {/* TODO(Phase-105): Re-enable LatchGraphSliders with proper data-driven filtering
         <LatchGraphSliders
           filters={sliderFilters}
           onFilterChange={handleSliderFilterChange}
@@ -601,6 +614,7 @@ export function IntegratedLayout() {
           }
           onResetFilters={resetFilters}
         />
+        */}
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div className="flex-1 min-h-0 overflow-auto relative" style={{ minHeight: '200px' }}>
