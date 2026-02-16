@@ -1,4 +1,6 @@
 @import './styles/variables.css';
+@import './styles/tokens.css';
+@import './styles/tokens-light.css';
 @import './styles/cb-components.css';
 @import '@xterm/xterm/css/xterm.css';
 

@@ -6,19 +6,39 @@ See: .planning/PROJECT.md (updated 2026-02-15)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.7 CSS Grid Integration — SHIPPED
+**Current focus:** v6.8 CSS Primitives — IN PROGRESS
 
 ## Current Position
 
-Phase: 106 (CSS Grid Integration) — SHIPPED
-Plan: 04/04
-Status: Milestone Complete
-Last activity: 2026-02-16 — v6.7 CSS Grid Integration shipped
+Phase: 107 (CSS Primitives Tier 1) — IN PROGRESS
+Plan: 01/02
+Status: Tier 1 tokens extracted
+Last activity: 2026-02-16 — Tier 1 design tokens created
 
-Progress: [██████████] 100% (Phase 106: 4/4 plans)
-Overall: v6.7 CSS Grid Integration — SHIPPED (SuperGridCSS integrated into IntegratedLayout)
+Progress: [█████░░░░░] 50% (Phase 107: 1/2 plans)
+Overall: v6.8 CSS Primitives — IN PROGRESS (Tier 1 tokens complete)
 
 ## Active Milestones
+
+### v6.8 CSS Primitives — IN PROGRESS
+
+**Goal:** Implement @isometry/primitives CSS token system with three-tier architecture (tokens → primitives → chrome).
+
+**Status:** 🔄 IN PROGRESS
+
+**Progress:**
+- Phase 107: CSS Primitives Tier 1 — 🔄 IN PROGRESS (1/2 plans)
+  - [x] 107-01: Core tokens.css (~5m) ✓
+  - [ ] 107-02: Browser verification + polish (~3m)
+- Phase 108: Tier 2 Layout Primitives — PENDING (3 plans)
+- Phase 109: CSS Chrome Primitives — PENDING (3 plans)
+
+**Deliverables (so far):**
+- ✓ `src/styles/tokens.css` — Tier 1 design tokens (dark theme)
+- ✓ `src/styles/tokens-light.css` — Light theme override
+- ✓ Import aggregation in `src/index.css`
+
+**Total requirements:** 17 | **Status:** 10/17 complete
 
 ### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 
