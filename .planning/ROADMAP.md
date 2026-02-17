@@ -91,7 +91,7 @@ Plans:
 | REQ-A-06 | Cross-View Selection Sync | Low | P1 |
 
 **Success Criteria:**
-1. KanbanView renders columns by facet with dnd-kit drag-drop
+1. KanbanView renders columns by facet with react-dnd drag-drop
 2. Drop between columns persists facet value via SQL UPDATE
 3. ViewDispatcher routes to correct view based on activeView state
 4. GridContinuumSwitcher provides 5-mode button group
@@ -101,7 +101,7 @@ Plans:
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 111-01 | Kanban View | REQ-A-03 | `KanbanView.tsx`, dnd-kit integration |
+| 111-01 | Kanban View | REQ-A-03 | `KanbanView.tsx`, react-dnd integration |
 | 111-02 | ViewDispatcher + Switcher | REQ-A-04 | `ViewDispatcher.tsx`, `GridContinuumSwitcher.tsx` |
 | 111-03 | PAFV Allocation + Selection | REQ-A-05, REQ-A-06 | Enhanced `GridContinuumController.ts` |
 
@@ -142,8 +142,8 @@ Plans:
 
 Plans:
 - [x] 112-01-PLAN.md — Knip audit and systematic unused export removal
-- [ ] 112-02-PLAN.md — src/services directory reorganization
-- [ ] 112-03-PLAN.md — TipTap test infrastructure and extension tests
+- [x] 112-02-PLAN.md — src/services directory reorganization
+- [x] 112-03-PLAN.md — TipTap test infrastructure and extension tests
 
 ---
 
@@ -922,8 +922,8 @@ Plans:
 | 106. CSS Grid Integration | v6.7 | 4/4 | Complete | 2026-02-16 |
 | 107-109. CSS Primitives | v6.8 | 3/3 | Complete | 2026-02-16 |
 | 110. View Continuum Foundation | v6.9 | 0/2 | Pending | — |
-| 111. View Continuum Integration | v6.9 | 0/3 | Pending | — |
-| 112. Technical Debt Sprint | v6.9 | 1/3 | In Progress | — |
+| 111. View Continuum Integration | v6.9 | 0/3 | In Progress | — |
+| 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
 | 113. Network Graph Integration | v6.9 | 0/2 | Pending | — |
 | 114. Timeline & Preview | v6.9 | 0/2 | Pending | — |
 | 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
@@ -931,4 +931,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-17 (Phase 112 plan 01 complete, plan 02 created)*
+*Last updated: 2026-02-17 (Phase 111-01 plan created, Phase 112 complete)*
