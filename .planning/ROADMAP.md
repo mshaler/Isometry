@@ -178,7 +178,7 @@ Plans:
 
 Plans:
 - [x] 113-01-PLAN.md — ForceSimulationManager with lifecycle management
-- [ ] 113-02-PLAN.md — NetworkView with useSQLiteQuery integration
+- [x] 113-02-PLAN.md — NetworkView with useSQLiteQuery integration
 
 ---
 
@@ -341,7 +341,7 @@ Plans:
 - [x] 117-01-PLAN.md — ETL module integration with Apple Notes direct SQLite adapter
 - [x] 117-02-PLAN.md — NodeWriter and AppleNotesSyncService with progress reporting
 - [x] 117-03-PLAN.md — Folder hierarchy reconciliation and data integrity tests
-- [ ] 117-04-PLAN.md — UI sync trigger, progress modal, alto-index deprecation
+- [x] 117-04-PLAN.md — UI sync trigger, progress modal, alto-index deprecation
 
 ---
 
@@ -465,6 +465,44 @@ Plans:
 
 ---
 
+### Phase 105: CSS Grid SuperGrid (COMPLETE)
+
+**Goal:** Implement SuperGrid using native CSS Grid for layout with nested row/column headers and data cells.
+
+**Depends on:** Phase 103 (Console Cleanup complete)
+
+**Requirements:** TYPES-01 to TYPES-12, TREE-01 to TREE-05, PLACE-01 to PLACE-04, CELL-01 to CELL-06, MAIN-01 to MAIN-06, TEST-01 to TEST-05, INT-01 to INT-03 (41 total)
+
+**Plans:** 6 plans in 3 waves — ALL COMPLETE
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 105-01 | Types & Utils | TYPES-*, TREE-*, PLACE-* | `types.ts`, `utils/treeMetrics.ts`, `utils/gridPlacement.ts` |
+| 105-02 | Hook & Context | HOOK-*, CTX-* | `hooks/useGridLayout.ts`, `SuperGridContext.tsx` |
+| 105-03 | Cell Components | CELL-* | `RowHeaderCell.tsx`, `ColHeaderCell.tsx`, `DataCell.tsx`, `CornerCell.tsx` |
+| 105-04 | Main Component | MAIN-* | `SuperGrid.tsx` main component |
+| 105-05 | Unit Tests | TEST-* | `__tests__/treeMetrics.test.ts`, `__tests__/gridPlacement.test.ts` |
+| 105-06 | Integration | INT-* | `IntegratedLayout.tsx` integration, demo wiring |
+
+Plans:
+- [x] 105-01-PLAN.md — Types and utility functions (Wave 1) ✓
+- [x] 105-02-PLAN.md — Hook and context (Wave 1) ✓
+- [x] 105-03-PLAN.md — Cell components (Wave 2) ✓
+- [x] 105-04-PLAN.md — Main component (Wave 2) ✓
+- [x] 105-05-PLAN.md — Unit tests (Wave 3) ✓
+- [x] 105-06-PLAN.md — Integration (Wave 3) ✓
+
+**Success Criteria:** ALL MET
+1. ✓ SuperGrid renders using native CSS Grid (`display: grid`)
+2. ✓ Nested row/column headers with correct spanning
+3. ✓ Data cells positioned via computed grid placement
+4. ✓ Selection highlighting and theme support
+5. ✓ All tests pass (treeMetrics, gridPlacement)
+
+**Completed:** 2026-02-15
+
+---
+
 ### Phase 100: Settings & Discovery Layer (COMPLETE)
 
 **Goal:** Create settings registry and facet value discovery queries for schema-on-read architecture.
@@ -570,11 +608,11 @@ Plans:
 | 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` + index.ts exports |
 
 Plans:
-- [ ] 99-01-PLAN.md — SQL query builders with json_each() and strftime() (Wave 1)
-- [ ] 99-02-PLAN.md — Query utilities for facet chain creation (Wave 1)
-- [ ] 99-03-PLAN.md — Integration tests with real sql.js database (Wave 2)
-- [ ] 99-04-PLAN.md — useSuperStackData React hook (Wave 2)
-- [ ] 99-05-PLAN.md — Demo component with live data rendering (Wave 3)
+- [x] 99-01-PLAN.md — SQL query builders with json_each() and strftime() (Wave 1) ✓
+- [x] 99-02-PLAN.md — Query utilities for facet chain creation (Wave 1) ✓
+- [x] 99-03-PLAN.md — Integration tests with real sql.js database (Wave 2) ✓
+- [x] 99-04-PLAN.md — useSuperStackData React hook (Wave 2) ✓
+- [x] 99-05-PLAN.md — Demo component with live data rendering (Wave 3) ✓
 
 **Success Criteria:**
 1. SQL queries build correctly for folder + tags rows, year + month columns
@@ -981,7 +1019,7 @@ Plans:
 | 110. View Continuum Foundation | v6.9 | 0/2 | Pending | — |
 | 111. View Continuum Integration | v6.9 | 0/3 | In Progress | — |
 | 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
-| 113. Network Graph Integration | v6.9 | 1/2 | In Progress | — |
+| 113. Network Graph Integration | v6.9 | 2/2 | Complete | 2026-02-17 |
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
