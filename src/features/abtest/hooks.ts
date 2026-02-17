@@ -108,4 +108,6 @@ export const useABTests = () => {
     experiments: context.tests
   };
 };
+
+// Alias for backward compatibility (re-exported from ABTestProvider.tsx)
 export const useExperimentVariant = useABTestVariant;

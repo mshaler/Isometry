@@ -339,5 +339,3 @@ export const SuperGridCSSDemo: React.FC = () => {
     </div>
   );
 };
-
-export default SuperGridCSSDemo;

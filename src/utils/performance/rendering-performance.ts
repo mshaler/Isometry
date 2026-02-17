@@ -451,7 +451,7 @@ export const batchingOptimizer = new BatchingOptimizer();
 export const simpleRenderingMonitor = new SimpleRenderingPerformanceMonitor();
 export const simpleMemoryTracker = new SimpleMemoryTracker();
 
-// Aliases for compatibility
+// Alias for backward compatibility (used in useRenderingOptimization.ts)
 export const renderingPerformanceMonitor = simpleRenderingMonitor;
 
 // ============================================================================

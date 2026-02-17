@@ -166,5 +166,3 @@ export function PropertyEditor({ card, onUpdate, theme }: PropertyEditorProps) {
     </div>
   );
 }
-
-export default PropertyEditor;

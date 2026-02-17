@@ -9,7 +9,7 @@ import { useTipTapEditor } from '@/hooks';
 import { useSQLite } from '../../db/SQLiteProvider';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useSelection } from '../../state/SelectionContext';
-import PropertyEditor from './PropertyEditor';
+import { PropertyEditor } from './PropertyEditor';
 import { TipTapEditor, EditorToolbar, EditorStatusBar, SaveAsTemplateModal } from './editor';
 import { TemplatePickerModal } from './editor/TemplatePickerModal';
 

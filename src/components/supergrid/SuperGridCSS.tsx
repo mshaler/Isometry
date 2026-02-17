@@ -385,5 +385,3 @@ export const SuperGridCSS: React.FC<SuperGridProps> = ({
     </SuperGridCSSProvider>
   );
 };
-
-export default SuperGridCSS;

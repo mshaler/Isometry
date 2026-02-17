@@ -2,7 +2,38 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "entry": [
     "src/main.tsx",
-    "src/App.tsx"
+    "src/App.tsx",
+    "src/components/ui/index.ts",
+    "src/components/shell/index.ts",
+    "src/components/views/index.ts",
+    "src/components/supergrid/cssgrid/index.ts",
+    "src/contexts/index.ts",
+    "src/d3/index.ts",
+    "src/d3/hooks/index.ts",
+    "src/d3/SuperDensityRenderer/index.ts",
+    "src/dsl/index.ts",
+    "src/filters/index.ts",
+    "src/hooks/index.ts",
+    "src/hooks/capture/index.ts",
+    "src/hooks/embed/index.ts",
+    "src/hooks/data/index.ts",
+    "src/hooks/database/index.ts",
+    "src/hooks/performance/index.ts",
+    "src/hooks/system/index.ts",
+    "src/hooks/ui/index.ts",
+    "src/hooks/visualization/index.ts",
+    "src/state/index.ts",
+    "src/superstack/index.ts",
+    "src/superstack/demos/index.ts",
+    "src/superstack/hooks/index.ts",
+    "src/services/terminal/index.ts",
+    "src/types/index.ts",
+    "src/utils/editor/index.ts",
+    "src/utils/performance/index.ts",
+    "src/utils/webview/index.ts",
+    "src/utils/d3-visualization/index.ts",
+    "src/components/ui/inputs/index.ts",
+    "src/components/ui/buttons/index.ts"
   ],
   "project": [
     "src/**/*.{ts,tsx}"
@@ -17,7 +48,8 @@
     "@types/*",
     "autoprefixer",
     "postcss",
-    "tailwindcss"
+    "tailwindcss",
+    "@vitest/coverage-v8"
   ],
   "ignoreExportsUsedInFile": true
 }

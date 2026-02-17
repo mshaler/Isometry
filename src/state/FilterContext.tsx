@@ -407,5 +407,5 @@ export function useFilters(): FilterContextValue {
   return context;
 }
 
-// Backward compatibility export
-export const useFilter = useFilters;
+// Note: useFilter alias removed as duplicate of useFilters
+// Use useFilters directly

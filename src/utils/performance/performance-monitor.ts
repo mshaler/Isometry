@@ -451,7 +451,7 @@ export class SimplePerformanceMonitor {
  */
 export const simplePerformanceMonitor = new SimplePerformanceMonitor();
 
-// Export as performanceMonitor for compatibility with existing imports
+// Alias for backward compatibility (used in useGraphAnalytics.ts)
 export const performanceMonitor = simplePerformanceMonitor;
 
 /**

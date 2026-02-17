@@ -334,5 +334,3 @@ export const SuperDynamic: React.FC<SuperDynamicProps> = ({
     </div>
   );
 };
-
-export default SuperDynamic;

@@ -632,5 +632,3 @@ export function SuperGridScrollTest(): JSX.Element {
     </div>
   );
 }
-
-export default SuperGridScrollTest;

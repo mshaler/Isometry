@@ -104,5 +104,3 @@ export async function importOfficeFile(
   }
   throw new Error('Unsupported file type');
 }
-
-export default OfficeDocumentProcessor;

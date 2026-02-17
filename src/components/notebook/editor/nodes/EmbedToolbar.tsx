@@ -143,5 +143,3 @@ export const EmbedToolbar = memo(function EmbedToolbar({
     </div>
   );
 });
-
-export default EmbedToolbar;
