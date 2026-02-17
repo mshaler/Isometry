@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts', './src/test/sqljs-setup.ts'],
+    setupFiles: ['./src/test/setup.ts', './src/test/sqljs-setup.ts', './src/test/tiptap/setup.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     testTimeout: 15000, // 15 seconds for sql.js WASM loading
     hookTimeout: 10000,  // 10 seconds for setup/teardown with database init
