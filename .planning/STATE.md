@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 115 (Three-Canvas Notebook) IN PROGRESS
-Plan: 03 of 4 — Plans 01-02 complete (Resizable Panels, Selection Sync)
-Status: Track D EXECUTING — 115-02 complete, 115-03 next (Cross-Canvas Messaging)
-Last activity: 2026-02-17 — 115-02 Selection Sync Verification complete
+Plan: 04 of 4 — Plans 01-03 complete (Resizable Panels, Selection Sync, Cross-Canvas Messaging)
+Status: Track D EXECUTING — 115-03 complete, 115-04 next (Integration Testing & Polish)
+Last activity: 2026-02-17 — 115-03 Cross-Canvas Messaging complete
 
 Progress: [█████████░] 90%
 Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
@@ -132,6 +132,9 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 - [Phase 115]: SYNC-03-REF-01: syncAndLoadRef (useRef + reassignment) for reverse sync avoids stale closure issues
 - [Phase 115]: SYNC-03-EVENT-01: isometry:load-card custom event enables future card picker reverse sync without prop drilling
 - [Phase 115]: INDICATOR-01: In Preview badge only shown for single selection; count badge takes precedence for multi-select
+- [Phase 115-03]: GAP1-CLOSE-01: select(node.id) called in onCellClick only when matching card found — avoids spurious SelectionContext updates
+- [Phase 115-03]: GAP2-CLOSE-01: Card picker dispatches isometry:load-card (not direct loadCard) so syncAndLoadRef handles selection + load atomically
+- [Phase 115-03]: CARD-LABEL-01: Derive card label from markdownContent first line (strip heading markers) — NotebookCard has no title field
 
 ### Pending Todos
 
@@ -162,7 +165,7 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 **Phase 115:** Three-Canvas Notebook (Track D) — IN PROGRESS
 - [x] Plan 115-01: Resizable Panels (react-resizable-panels) — COMPLETE (2 tasks, 8 tests)
 - [x] Plan 115-02: Selection Sync Verification — COMPLETE (2 tasks, 7 tests, 5 min)
-- [ ] Plan 115-03: Cross-Canvas Messaging
+- [x] Plan 115-03: Cross-Canvas Messaging — COMPLETE (3 tasks, 2 tests, 7 min)
 - [ ] Plan 115-04: Integration Testing & Polish
 
 ### Blockers/Concerns
@@ -186,11 +189,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 115-02 — Selection Sync Verification (bidirectional CaptureComponent sync) — 2 tasks, 7 tests
-Next: Plan 115-03 — Cross-Canvas Messaging
+Completed: Phase 115-03 — Cross-Canvas Messaging (gap closure: SuperGrid sync + card picker) — 3 tasks, 2 tests
+Next: Plan 115-04 — Integration Testing & Polish
 Resume file: N/A
 
-**Stopped at:** Completed 115-02-PLAN.md (Selection Sync Verification)
+**Stopped at:** Completed 115-03-PLAN.md (Cross-Canvas Messaging)
 
 ---
-*Updated: 2026-02-17 (Phase 114-03 complete, Track C fully closed, Track D ready)*
+*Updated: 2026-02-17 (Phase 115-03 complete — cross-canvas messaging gaps closed, Track D plan 04 next)*
