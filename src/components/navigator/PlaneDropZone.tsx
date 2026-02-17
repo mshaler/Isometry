@@ -72,14 +72,16 @@ function WellChip({ mapping, index, plane, onRemove, isOnly }: WellChipProps) {
       // Only accept from same plane
       if (item.plane !== plane) return;
 
-      // Find current index of dragged item by facet (stable identifier)
-      // This recalculates on each hover since state may have changed
+      // Find BOTH indices dynamically by facet (stable identifiers)
+      // The `index` prop can become stale after a reorder but before React re-renders.
+      // By computing both indices from the same getMappingsForPlane call,
+      // we ensure they're consistent even if state is temporarily stale.
       const currentMappings = getMappingsForPlane(plane);
       const dragIndex = currentMappings.findIndex(m => m.facet === item.facet);
-      const hoverIndex = index;
+      const hoverIndex = currentMappings.findIndex(m => m.facet === mapping.facet);
 
       // Item not found or same position - no action needed
-      if (dragIndex === -1 || dragIndex === hoverIndex) return;
+      if (dragIndex === -1 || hoverIndex === -1 || dragIndex === hoverIndex) return;
 
       // Determine rectangle on screen
       const hoverBoundingRect = ref.current.getBoundingClientRect();

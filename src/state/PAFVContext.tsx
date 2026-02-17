@@ -39,6 +39,12 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     deserializePAFV
   );
 
+  // CRITICAL: Track latest state in a ref to avoid stale closures during rapid operations.
+  // During drag-and-drop reordering, multiple hover events can fire before React re-renders.
+  // Without this ref, each callback would use stale state and potentially revert changes.
+  const stateRef = useRef(state);
+  stateRef.current = state;
+
   // Store last Grid and List mappings for smooth view transitions
   const lastGridMappings = useRef<AxisMapping[]>(
     state.viewMode === 'grid' ? state.mappings : DEFAULT_PAFV.mappings
@@ -96,12 +102,19 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state, setState]);
 
   const reorderMappingsInPlaneCallback = useCallback((plane: Plane, fromIndex: number, toIndex: number) => {
-    const newState = reorderMappingsUtil(state, plane, fromIndex, toIndex);
+    // CRITICAL: Read from stateRef to get the latest state during rapid drag operations.
+    // Multiple hover events can fire before React re-renders, so we must use the ref
+    // which is updated synchronously, not the closure-captured state.
+    const currentState = stateRef.current;
+    const newState = reorderMappingsUtil(currentState, plane, fromIndex, toIndex);
+
+    // Update ref synchronously BEFORE setState to ensure next hover sees latest state
+    stateRef.current = newState;
     setState(newState);
 
     // Send to native bridge
     pafvBridge.sendAxisMappingUpdate(newState);
-  }, [state, setState]);
+  }, [setState]);
 
   const moveFacetToPlaneCallback = useCallback((fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => {
     const newState = moveFacetUtil(state, fromPlane, toPlane, facet, axis);
@@ -130,8 +143,10 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state, setState]);
 
   const getMappingsForPlaneCallback = useCallback((plane: Plane): AxisMapping[] => {
-    return getMappingsUtil(state, plane);
-  }, [state]);
+    // CRITICAL: Read from stateRef to get latest state during rapid drag operations.
+    // This ensures hover handlers always see current mappings, even between re-renders.
+    return getMappingsUtil(stateRef.current, plane);
+  }, []);
 
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
     let newState: PAFVState;
