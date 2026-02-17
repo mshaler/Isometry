@@ -39,11 +39,15 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     deserializePAFV
   );
 
-  // CRITICAL: Track latest state in a ref to avoid stale closures during rapid operations.
-  // During drag-and-drop reordering, multiple hover events can fire before React re-renders.
-  // Without this ref, each callback would use stale state and potentially revert changes.
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  // Track pending reorder to prevent duplicate/reverting operations during rapid drag.
+  // During drag-and-drop, multiple hover events fire before React re-renders.
+  // Without this, the same reorder can be triggered multiple times, reverting changes.
+  const pendingReorderRef = useRef<{
+    plane: Plane;
+    fromFacet: string;
+    toFacet: string;
+    timestamp: number;
+  } | null>(null);
 
   // Store last Grid and List mappings for smooth view transitions
   const lastGridMappings = useRef<AxisMapping[]>(
@@ -102,19 +106,46 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state, setState]);
 
   const reorderMappingsInPlaneCallback = useCallback((plane: Plane, fromIndex: number, toIndex: number) => {
-    // CRITICAL: Read from stateRef to get the latest state during rapid drag operations.
-    // Multiple hover events can fire before React re-renders, so we must use the ref
-    // which is updated synchronously, not the closure-captured state.
-    const currentState = stateRef.current;
-    const newState = reorderMappingsUtil(currentState, plane, fromIndex, toIndex);
+    // Get the facets being reordered for deduplication tracking
+    const planeMappings = getMappingsUtil(state, plane);
+    if (fromIndex < 0 || fromIndex >= planeMappings.length ||
+        toIndex < 0 || toIndex >= planeMappings.length) {
+      return;
+    }
 
-    // Update ref synchronously BEFORE setState to ensure next hover sees latest state
-    stateRef.current = newState;
+    const fromFacet = planeMappings[fromIndex]?.facet;
+    const toFacet = planeMappings[toIndex]?.facet;
+
+    // CRITICAL: Prevent duplicate/reverting reorders during rapid drag operations.
+    // Multiple hover events can fire before React re-renders. If we detect we're
+    // trying to reorder the same pair of facets within 100ms, skip it.
+    const now = Date.now();
+    const pending = pendingReorderRef.current;
+    if (pending &&
+        pending.plane === plane &&
+        pending.fromFacet === toFacet &&
+        pending.toFacet === fromFacet &&
+        now - pending.timestamp < 100) {
+      // This looks like a reverting reorder - skip it
+      return;
+    }
+
+    // Track this reorder
+    pendingReorderRef.current = { plane, fromFacet, toFacet, timestamp: now };
+
+    const newState = reorderMappingsUtil(state, plane, fromIndex, toIndex);
     setState(newState);
 
     // Send to native bridge
     pafvBridge.sendAxisMappingUpdate(newState);
-  }, [setState]);
+
+    // Clear pending after a short delay to allow legitimate reversals
+    setTimeout(() => {
+      if (pendingReorderRef.current?.timestamp === now) {
+        pendingReorderRef.current = null;
+      }
+    }, 150);
+  }, [state, setState]);
 
   const moveFacetToPlaneCallback = useCallback((fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => {
     const newState = moveFacetUtil(state, fromPlane, toPlane, facet, axis);
@@ -143,10 +174,8 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state, setState]);
 
   const getMappingsForPlaneCallback = useCallback((plane: Plane): AxisMapping[] => {
-    // CRITICAL: Read from stateRef to get latest state during rapid drag operations.
-    // This ensures hover handlers always see current mappings, even between re-renders.
-    return getMappingsUtil(stateRef.current, plane);
-  }, []);
+    return getMappingsUtil(state, plane);
+  }, [state]);
 
   const setViewMode = useCallback((mode: 'grid' | 'list') => {
     let newState: PAFVState;
