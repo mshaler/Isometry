@@ -339,7 +339,7 @@ Plans:
 
 Plans:
 - [x] 117-01-PLAN.md — ETL module integration with Apple Notes direct SQLite adapter
-- [ ] 117-02-PLAN.md — NodeWriter and AppleNotesSyncService with progress reporting
+- [x] 117-02-PLAN.md — NodeWriter and AppleNotesSyncService with progress reporting
 - [ ] 117-03-PLAN.md — Folder hierarchy reconciliation and data integrity tests
 - [ ] 117-04-PLAN.md — Sync triggers, conflict resolution, UI integration
 
@@ -985,8 +985,8 @@ Plans:
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
-| 117. Apple Notes SQLite Sync | v7.0 | 1/4 | In Progress | — |
+| 117. Apple Notes SQLite Sync | v7.0 | 2/4 | In Progress | — |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-17 (Phase 115-03 gap closure plan created)*
+*Last updated: 2026-02-17 (Phase 117-02 NodeWriter + AppleNotesSyncService complete)*
