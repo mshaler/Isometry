@@ -89,8 +89,37 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
       try {
         // Fetch the preprocessed JSON
         const response = await fetch('/alto-index.json');
-        if (!response.ok) {
-          throw new Error(`Failed to load alto-index.json: ${response.statusText}`);
+
+        // Handle missing file gracefully - return empty result instead of crashing
+        // This supports the deprecation path: alto-index.json may not exist for new users
+        if (!response.ok || response.status === 404) {
+          devLogger.warn('alto-index.json not found - this is expected if using Apple Notes direct sync');
+          const emptyResult: ImportResult = {
+            imported: 0,
+            skipped: 0,
+            errors: [],
+            duration: 0,
+            reconciliation: { totalFiles: 0, importedByType: {}, skippedByReason: {} },
+          };
+          setResult(emptyResult);
+          setStatus('done');
+          return emptyResult;
+        }
+
+        // Verify response is actually JSON (not HTML fallback)
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          devLogger.warn('alto-index.json returned non-JSON content - treating as missing');
+          const emptyResult: ImportResult = {
+            imported: 0,
+            skipped: 0,
+            errors: [],
+            duration: 0,
+            reconciliation: { totalFiles: 0, importedByType: {}, skippedByReason: {} },
+          };
+          setResult(emptyResult);
+          setStatus('done');
+          return emptyResult;
         }
 
         const data: AltoIndexData = await response.json();
