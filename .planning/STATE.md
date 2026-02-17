@@ -54,7 +54,7 @@ Progress: [█████████░] 90%
 - **117-03**: Sync Orchestration — NEXT
 - **117-04**: UI + Migration
 
-**Status:** Phase 117 COMPLETE — all 4 plans done. UI layer wired (useAppleNotesSync + SyncProgressModal + Toolbar menu). alto-index pipeline deprecated.
+**Status:** Milestone complete
 
 **Verification:**
 ```

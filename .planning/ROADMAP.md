@@ -328,7 +328,7 @@ Plans:
 4. Folder hierarchy correct for all nested folders
 5. Tags extracted correctly from all notes with hashtags
 
-**Plans:** 4 plans in 4 waves
+**Plans:** 4/4 plans complete
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
