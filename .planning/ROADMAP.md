@@ -239,7 +239,7 @@ Plans:
 5. Click block in Capture → highlight card in Preview
 6. Selection sync works across all view modes
 
-**Plans:** 3 plans in 2 waves
+**Plans:** 3/3 plans complete
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -1021,7 +1021,7 @@ Plans:
 | 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
 | 113. Network Graph Integration | v6.9 | 2/2 | Complete | 2026-02-17 |
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
-| 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
+| 115. Three-Canvas Layout | v6.9 | Complete    | 2026-02-17 | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
 | 117. Apple Notes SQLite Sync | v7.0 | Complete    | 2026-02-17 | — |
 
