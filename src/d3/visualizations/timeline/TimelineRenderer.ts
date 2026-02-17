@@ -24,6 +24,29 @@ const EVENT_HOVER_RADIUS = 8;
 const FALLBACK_DAYS = 30; // Default domain if no valid events
 
 // ============================================================================
+// Adaptive Tick Format
+// ============================================================================
+
+/**
+ * Returns a d3 time format string based on the visible time extent.
+ *
+ * Zoom levels:
+ * - Very zoomed out (> 365 days): Year labels (%Y)
+ * - Zoomed out (> 90 days): Month labels (%b %Y)
+ * - Normal (> 7 days): Day labels (%b %d)
+ * - Zoomed in (<= 7 days): Day+Time labels (%b %d %H:%M)
+ */
+export function getAdaptiveTickFormat(domain: [Date, Date]): string {
+  const extentMs = domain[1].getTime() - domain[0].getTime();
+  const extentDays = extentMs / (1000 * 60 * 60 * 24);
+
+  if (extentDays > 365) return '%Y';
+  if (extentDays > 90) return '%b %Y';
+  if (extentDays > 7) return '%b %d';
+  return '%b %d %H:%M';
+}
+
+// ============================================================================
 // Timeline Factory
 // ============================================================================
 
@@ -102,11 +125,12 @@ export function createTimeline(
     .range([0, innerHeight])
     .padding(0.2);
 
-  // Create X-axis
+  // Create X-axis with adaptive tick format based on zoom level
+  const adaptiveFormat = getAdaptiveTickFormat(timeDomain);
   const xAxis = d3
     .axisBottom(xScale)
     .ticks(Math.max(3, Math.floor(innerWidth / 100)))
-    .tickFormat(d => d3.timeFormat('%b %d')(d as Date));
+    .tickFormat(d => d3.timeFormat(adaptiveFormat)(d as Date));
 
   const xAxisGroup = mainGroup
     .append('g')

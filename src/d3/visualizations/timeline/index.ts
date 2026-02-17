@@ -4,7 +4,7 @@
  * D3-based timeline visualization for LATCH Time facets.
  */
 
-export { createTimeline, TimelineRenderer } from './TimelineRenderer';
+export { createTimeline, TimelineRenderer, getAdaptiveTickFormat } from './TimelineRenderer';
 export { createTimelineZoom, applyTimelineZoom } from './zoom';
 export type {
   TimelineEvent,
