@@ -4,10 +4,15 @@
  * React hook for managing timeline data from sql.js database.
  * Queries nodes by temporal LATCH facets (created_at, modified_at, due_at),
  * transforms to TimelineEvent format, and manages facet/date filtering.
+ *
+ * Integrates with FilterContext + compileFilters for LATCH filter support
+ * (matching the NetworkView pattern from Phase 113-02).
  */
 
 import { useState, useMemo, useCallback } from 'react';
 import { useSQLiteQuery } from '../database/useSQLiteQuery';
+import { useFilters } from '../../state/FilterContext';
+import { compileFilters } from '../../filters/compiler';
 import type { TimelineEvent } from '../../d3/visualizations/timeline/types';
 
 // ============================================================================
@@ -98,6 +103,19 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
   const [dateRange, setDateRangeInternal] = useState<[Date, Date] | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
+  // FILTER-01: Integrate with FilterContext for LATCH filter support
+  // Matches the pattern established by NetworkView in Phase 113-02
+  const { activeFilters } = useFilters();
+
+  // Compile LATCH filters to SQL WHERE clause
+  const { filterSql, filterParams } = useMemo(() => {
+    const compiled = compileFilters(activeFilters);
+    return {
+      filterSql: compiled.sql,
+      filterParams: compiled.params,
+    };
+  }, [activeFilters]);
+
   // Date range setter that normalizes order
   const setDateRange = useCallback((range: [Date, Date] | null) => {
     if (!range) {
@@ -113,13 +131,16 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
     }
   }, []);
 
-  // Build SQL query based on facet and date range
+  // Build SQL query based on facet, date range, and LATCH filters
+  // FILTER-01: Merge compiled LATCH filter with temporal facet filter
   const sql = useMemo(() => {
+    // Start with temporal facet condition plus LATCH filter conditions
+    // filterSql already includes "deleted_at IS NULL" from compileFilters
     const baseQuery = `
       SELECT id, name, folder, created_at, modified_at, due_at
       FROM nodes
       WHERE ${facet} IS NOT NULL
-        AND deleted_at IS NULL
+        AND ${filterSql}
     `;
 
     if (dateRange) {
@@ -133,24 +154,27 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
     return `${baseQuery}
       ORDER BY ${facet} DESC
       LIMIT ?`;
-  }, [facet, dateRange]);
+  }, [facet, dateRange, filterSql]);
 
-  // Build query params
+  // Build query params: LATCH filter params first, then date range, then limit
   const params = useMemo(() => {
+    const baseParams = [...filterParams];
     if (dateRange) {
       return [
+        ...baseParams,
         dateRange[0].toISOString(),
         dateRange[1].toISOString(),
         opts.maxEvents,
       ];
     }
-    return [opts.maxEvents];
-  }, [dateRange, opts.maxEvents]);
+    return [...baseParams, opts.maxEvents];
+  }, [filterParams, dateRange, opts.maxEvents]);
 
   // SYNC-01: Auto-refresh when database changes via dataVersion dependency
   // useSQLiteQuery includes dataVersion in its dependency array, so when
   // operations.run() increments dataVersion (after INSERT/UPDATE/DELETE),
   // this query automatically refetches and the timeline re-renders.
+  // FILTER-01: Query re-runs when filters, facet, or date range change
   const query = useSQLiteQuery<NodeRow>(sql, params, { enabled: opts.enabled });
 
   // Transform rows to TimelineEvent format
@@ -203,4 +227,3 @@ export function useTimeline(options: UseTimelineOptions = {}): UseTimelineResult
     eventCount: events.length,
   };
 }
-
