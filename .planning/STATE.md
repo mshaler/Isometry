@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 117 (Apple Notes SQLite Sync) IN PROGRESS
-Plan: 01 of 4 — Plan 01 complete (ETL Module Integration)
-Status: v7.0 EXECUTING — 117-01 complete, 117-02 next (NodeWriter Service)
-Last activity: 2026-02-17 — 117-01 ETL module integration complete
+Plan: 02 of 4 — Plans 01-02 complete (ETL Module Integration + NodeWriter Service)
+Status: v7.0 EXECUTING — 117-02 complete, 117-03 next (Sync Orchestration)
+Last activity: 2026-02-17 — 117-02 NodeWriter + AppleNotesSyncService complete
 
-Progress: [██░░░░░░░░] 25%
-Overall: v7.0 Apple Notes Direct Sync — Plan 01 Complete
+Progress: [████░░░░░░] 50%
+Overall: v7.0 Apple Notes Direct Sync — Plans 01-02 Complete
 
 ### Parallel Track: v6.9 Three-Canvas Notebook
 Phase: 115 (Three-Canvas Notebook)
@@ -50,11 +50,11 @@ Progress: [█████████░] 90%
 
 **Phase 117: Apple Notes SQLite Sync**
 - **117-01**: ETL Module Integration ✅ COMPLETE
-- **117-02**: NodeWriter Service — NEXT
-- **117-03**: Sync Orchestration
+- **117-02**: NodeWriter + AppleNotesSyncService ✅ COMPLETE
+- **117-03**: Sync Orchestration — NEXT
 - **117-04**: UI + Migration
 
-**Status:** Phase 117-01 complete. Direct SQLite access verified with correct folder hierarchy.
+**Status:** Phase 117-02 complete. NodeWriter persists CanonicalNode/Edge to sql.js; AppleNotesSyncService orchestrates full/incremental sync with progress callbacks and watermark state.
 
 **Verification:**
 ```
@@ -148,6 +148,10 @@ npm run apple-notes (in isometry-etl)
 - [Phase 115-03]: GAP1-CLOSE-01: select(node.id) called in onCellClick only when matching card found — avoids spurious SelectionContext updates
 - [Phase 115-03]: GAP2-CLOSE-01: Card picker dispatches isometry:load-card (not direct loadCard) so syncAndLoadRef handles selection + load atomically
 - [Phase 115-03]: CARD-LABEL-01: Derive card label from markdownContent first line (strip heading markers) — NotebookCard has no title field
+- [Phase 117-02]: RUNTIME-BOUNDARY-01: SourceAdapter injected (not instantiated) into AppleNotesSyncService — AppleNotesAdapter (better-sqlite3/Node.js) cannot run in same process as sql.js browser runtime; production wiring via Tauri IPC deferred to 117-04
+- [Phase 117-02]: UPSERT-TRACKING-01: Pre-upsert SELECT check determines insert vs update count in NodeWriter WriteResult — sql.js doesn't expose changes() cleanly after INSERT OR REPLACE
+- [Phase 117-02]: SOFT-DELETE-01: softDeleteBySource(source, keepIds) sets deleted_at on stale nodes; empty keepIds soft-deletes all source nodes
+- [Phase 117-02]: SETTINGS-KEY-01: Sync state JSON-serialized under 'apple_notes_sync_state' key in settings table via createSettingsService(db)
 
 ### Pending Todos
 
@@ -174,6 +178,12 @@ npm run apple-notes (in isometry-etl)
 - [x] Plan 114-01: Timeline with LATCH filter integration
 - [x] Plan 114-02: Preview Tab Integration (tab persistence, usePreviewSettings, PAFV info, zoom)
 - [x] Plan 114-03: Gap Closure (collision handling, hook adoption, zoom restore) — 3 tasks, 69 tests
+
+**Phase 117:** Apple Notes SQLite Sync — IN PROGRESS
+- [x] Plan 117-01: ETL Module Integration (AppleNotesAdapter, type-mapping, content extraction)
+- [x] Plan 117-02: NodeWriter + AppleNotesSyncService (28 tests)
+- [ ] Plan 117-03: Sync Orchestration (folder reconciliation, data integrity)
+- [ ] Plan 117-04: UI + Migration
 
 **Phase 115:** Three-Canvas Notebook (Track D) — IN PROGRESS
 - [x] Plan 115-01: Resizable Panels (react-resizable-panels) — COMPLETE (2 tasks, 8 tests)
@@ -202,11 +212,11 @@ npm run apple-notes (in isometry-etl)
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 115-03 — Cross-Canvas Messaging (gap closure: SuperGrid sync + card picker) — 3 tasks, 2 tests
-Next: Plan 115-04 — Integration Testing & Polish
+Completed: Phase 117-02 — NodeWriter + AppleNotesSyncService — 3 tasks, 28 new tests (14 NodeWriter + 14 AppleNotesSyncService)
+Next: Plan 117-03 — Sync Orchestration (folder reconciliation, data integrity validation)
 Resume file: N/A
 
-**Stopped at:** Completed 115-03-PLAN.md (Cross-Canvas Messaging)
+**Stopped at:** Completed 117-02-PLAN.md (NodeWriter + AppleNotesSyncService)
 
 ---
-*Updated: 2026-02-17 (Phase 115-03 complete — cross-canvas messaging gaps closed, Track D plan 04 next)*
+*Updated: 2026-02-17 (Phase 117-02 complete — NodeWriter + AppleNotesSyncService, 117-03 next)*
