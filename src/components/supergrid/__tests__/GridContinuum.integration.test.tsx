@@ -3,12 +3,16 @@
  *
  * End-to-end tests for the GridContinuumController + GridContinuumSwitcher integration
  * Tests the core Grid Continuum functionality without complex provider dependencies
+ *
+ * Includes cross-view selection sync tests (111-03)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, fireEvent, act, renderHook } from '@testing-library/react';
+import React from 'react';
 import { GridContinuumController } from '../GridContinuumController';
 import { GridContinuumSwitcher } from '../GridContinuumSwitcher';
+import { SelectionProvider, useSelection } from '@/state/SelectionContext';
 import type { GridContinuumMode } from '@/types/view';
 import type { Node } from '@/types/node';
 
@@ -219,5 +223,162 @@ describe('Grid Continuum Integration', () => {
         expect(projection.mode).toBe(mode);
       }
     });
+  });
+});
+
+/**
+ * Cross-View Selection Sync Tests (111-03)
+ *
+ * Validates that selection state persists across view mode transitions
+ * using SelectionContext + GridContinuumController integration.
+ */
+describe('Cross-View Selection Sync', () => {
+  let controller: GridContinuumController;
+
+  // Mock sessionStorage for test isolation
+  const mockSessionStorage = (() => {
+    let store: Record<string, string> = {};
+    return {
+      getItem: vi.fn((key: string) => store[key] || null),
+      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      clear: vi.fn(() => { store = {}; }),
+    };
+  })();
+
+  beforeEach(() => {
+    controller = new GridContinuumController();
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      value: mockSessionStorage,
+      writable: true,
+    });
+    mockSessionStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    mockSessionStorage.clear();
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <SelectionProvider>{children}</SelectionProvider>
+  );
+
+  it('preserves selection when switching from Gallery to List', () => {
+    const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+    // Start in Gallery mode
+    controller.setMode('gallery');
+
+    // Select a card
+    act(() => {
+      result.current.select('card-1');
+    });
+
+    expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+
+    // Switch to List mode
+    controller.setMode('list');
+    rerender();
+
+    // Selection should persist
+    expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+    expect(result.current.selection.anchorId).toBe('card-1');
+  });
+
+  it('preserves selection when switching from Kanban to SuperGrid', () => {
+    const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+    // Start in Kanban mode
+    controller.setMode('kanban');
+
+    // Select a card
+    act(() => {
+      result.current.select('card-2');
+    });
+
+    expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+
+    // Switch to SuperGrid mode
+    controller.setMode('supergrid');
+    rerender();
+
+    // Selection should persist
+    expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+  });
+
+  it('maintains multi-select across view transitions', () => {
+    const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+    // Start in Grid mode
+    controller.setMode('grid');
+
+    // Multi-select using toggle (Cmd+click simulation)
+    act(() => {
+      result.current.select('card-1');
+      result.current.toggle('card-2');
+      result.current.toggle('card-3');
+    });
+
+    expect(result.current.selection.selectedIds.size).toBe(3);
+
+    // Switch to Kanban mode
+    controller.setMode('kanban');
+    rerender();
+
+    // All selections should persist
+    expect(result.current.selection.selectedIds.size).toBe(3);
+    expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+    expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+    expect(result.current.selection.selectedIds.has('card-3')).toBe(true);
+  });
+
+  it('selection survives 5 consecutive mode switches', () => {
+    const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+    // Initial selection
+    act(() => {
+      result.current.select('card-1');
+      result.current.toggle('card-2');
+    });
+
+    const modes: GridContinuumMode[] = ['gallery', 'list', 'kanban', 'grid', 'supergrid', 'gallery'];
+
+    // Cycle through all modes and back
+    for (const mode of modes) {
+      controller.setMode(mode);
+      rerender();
+
+      // Selection should persist at each step
+      expect(result.current.selection.selectedIds.size).toBe(2);
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+      expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+    }
+  });
+
+  it('allocateAxes returns correct config while selection persists', () => {
+    const { result, rerender } = renderHook(() => useSelection(), { wrapper });
+
+    // Select cards
+    act(() => {
+      result.current.select('card-1');
+    });
+
+    // Verify allocateAxes returns correct config for each mode
+    const modes: GridContinuumMode[] = ['gallery', 'list', 'kanban', 'grid', 'supergrid'];
+
+    for (const mode of modes) {
+      controller.setMode(mode);
+      const allocation = controller.allocateAxes(mode);
+      rerender();
+
+      // Selection persists
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+
+      // allocateAxes returns valid config
+      expect(allocation).toBeDefined();
+      expect(allocation.axisCount).toBeGreaterThanOrEqual(0);
+      expect(allocation.description).toBeTruthy();
+    }
   });
 });
