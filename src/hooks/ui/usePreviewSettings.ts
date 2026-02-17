@@ -6,6 +6,7 @@ export interface TabConfig {
   lastAccessed: number;
   zoomLevel?: number;
   filterState?: Record<string, unknown>;
+  scrollPosition?: { x: number; y: number };
 }
 
 export interface PreviewSettings {
@@ -144,6 +145,19 @@ export function usePreviewSettings() {
     }));
   }, []);
 
+  const setTabScrollPosition = useCallback((tab: PreviewTab, scrollPosition: { x: number; y: number }) => {
+    setSettings(prev => ({
+      ...prev,
+      tabConfigs: {
+        ...prev.tabConfigs,
+        [tab]: {
+          ...prev.tabConfigs[tab],
+          scrollPosition,
+        },
+      },
+    }));
+  }, []);
+
   const getTabConfig = useCallback(
     (tab: PreviewTab): TabConfig => settings.tabConfigs[tab] ?? DEFAULT_TAB_CONFIG,
     [settings.tabConfigs]
@@ -155,6 +169,7 @@ export function usePreviewSettings() {
     setActiveTab,
     setTabZoom,
     setTabFilterState,
+    setTabScrollPosition,
     getTabConfig,
   };
 }
