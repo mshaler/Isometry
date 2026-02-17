@@ -250,7 +250,7 @@ Plans:
 Plans:
 - [x] 115-01-PLAN.md — Resizable panels with react-resizable-panels and localStorage persistence
 - [x] 115-02-PLAN.md — Bidirectional selection sync between Capture and Preview panes
-- [ ] 115-03-PLAN.md — Gap closure: SuperGrid→Capture sync, Capture card picker UI
+- [x] 115-03-PLAN.md — Gap closure: SuperGrid→Capture sync, Capture card picker UI
 
 ---
 
