@@ -202,16 +202,18 @@ Plans:
 5. Tab state persists across sessions
 6. 60 FPS zoom/pan at 500 events
 
-**Plans:** 2 plans in 1 wave
+**Plans:** 3 plans in 2 waves
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
 | 114-01 | Timeline SQL | REQ-C-02 | `TimelineView.tsx`, SQL integration |
 | 114-02 | Preview Tabs | REQ-C-03 | Tab bar in Preview pane |
+| 114-03 | Gap Closure | REQ-C-02, REQ-C-03 | Collision layout, hook adoption, zoom restore |
 
 Plans:
-- [ ] 114-01-PLAN.md — TimelineView with useSQLiteQuery and zoom levels
-- [ ] 114-02-PLAN.md — Preview pane tab bar with view switching
+- [x] 114-01-PLAN.md — TimelineView with useSQLiteQuery and zoom levels
+- [x] 114-02-PLAN.md — Preview pane tab bar with view switching
+- [ ] 114-03-PLAN.md — Gap closure: collision layout, usePreviewSettings, zoom restore
 
 ---
 
@@ -925,7 +927,7 @@ Plans:
 | 111. View Continuum Integration | v6.9 | 0/3 | In Progress | — |
 | 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
 | 113. Network Graph Integration | v6.9 | 1/2 | In Progress | — |
-| 114. Timeline & Preview | v6.9 | 0/2 | Pending | — |
+| 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
 
