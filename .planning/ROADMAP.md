@@ -71,8 +71,8 @@
 | 110-02 | List View | REQ-A-02 | `ListView.tsx`, tree structure with ARIA roles |
 
 Plans:
-- [ ] 110-01-PLAN.md — Gallery view with CSS Grid masonry + TanStack Virtual
-- [ ] 110-02-PLAN.md — List view with hierarchical tree + keyboard navigation
+- [x] 110-01-PLAN.md — Gallery view with CSS Grid masonry + TanStack Virtual
+- [x] 110-02-PLAN.md — List view with hierarchical tree + keyboard navigation
 
 ---
 
@@ -107,9 +107,9 @@ Plans:
 | 111-03 | PAFV Allocation + Selection | REQ-A-05, REQ-A-06 | Enhanced `GridContinuumController.ts` |
 
 Plans:
-- [ ] 111-01-PLAN.md — Kanban view with columns, drag-drop, SQL persistence
-- [ ] 111-02-PLAN.md — ViewDispatcher routing and mode switcher UI
-- [ ] 111-03-PLAN.md — PAFV axis allocation per mode + selection sync
+- [x] 111-01-PLAN.md — Kanban view with columns, drag-drop, SQL persistence
+- [x] 111-02-PLAN.md — ViewDispatcher routing and mode switcher UI
+- [x] 111-03-PLAN.md — PAFV axis allocation per mode + selection sync
 
 ---
 
@@ -379,9 +379,9 @@ Plans:
 | 109-03 | Sidebar + Accordion + Dialog | CHR-05, CHR-06, CHR-07 | `sidebar.css`, `accordion.css`, `dialog.css` |
 
 Plans:
-- [ ] 109-01-PLAN.md — Sticky Headers + Selection Highlighting (Wave 1)
-- [ ] 109-02-PLAN.md — Scroll Shadows + Tooltips + Theme (Wave 1)
-- [ ] 109-03-PLAN.md — Sidebar + Accordion + Dialog (Wave 2)
+- [x] 109-01-PLAN.md — Sticky Headers + Selection Highlighting (Wave 1)
+- [x] 109-02-PLAN.md — Scroll Shadows + Tooltips + Theme (Wave 1)
+- [x] 109-03-PLAN.md — Sidebar + Accordion + Dialog (Wave 2)
 
 ---
 
