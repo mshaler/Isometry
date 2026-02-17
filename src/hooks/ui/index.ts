@@ -7,3 +7,5 @@ export { useSlashCommands } from './useSlashCommands';
 export { useURLState } from './useURLState';
 export { useWebPreview } from './useWebPreview';
 export { useFilterPreview } from './useFilterPreview';
+export { usePreviewSettings } from './usePreviewSettings';
+export type { PreviewSettings, PreviewTab, TabConfig } from './usePreviewSettings';
