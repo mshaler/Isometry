@@ -11,11 +11,11 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 112 (Technical Debt Sprint)
-Plan: 02 COMPLETE — Services directory refactoring done
-Status: Phase 112-02 complete — query services moved to query/ subdirectory
-Last activity: 2026-02-17 — Plan 112-02 executed
+Plan: 03 COMPLETE — TipTap test infrastructure done
+Status: Phase 112 complete — all 3 plans executed
+Last activity: 2026-02-17 — Plan 112-03 executed
 
-Progress: [█████████░] 89%
+Progress: [██████████] 100%
 Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
 ## Active Milestones
@@ -82,6 +82,9 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [Phase 112-01]: COMPAT-ALIAS-01: Retain backward-compatibility aliases that are actively imported
 - [Phase 112]: STUB-PATTERN-01: Use explicit named re-exports rather than wildcard to maintain type safety
 - [Phase 112]: QUERY-GROUPING-01: Group facet-discovery, query-executor, TagService in query/ as all perform data access operations
+- [Phase 112-03]: JSDOM-MOCK-01: Mock getBoundingClientRect/getClientRects for ProseMirror in JSDOM
+- [Phase 112-03]: TEST-PATTERN-01: Use TestEditorWrapper with children render prop for editor access
+- [Phase 112-03]: IMMEDIATE-RENDER-01: Use immediatelyRender: true for TipTap test stability
 
 ### Pending Todos
 
@@ -89,17 +92,17 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [x] Plan 110-01: Gallery view with CSS Grid masonry + TanStack Virtual
 - [x] Plan 110-02: List view with hierarchical tree + keyboard navigation
 
-**Phase 112:** Technical Debt (runs parallel with 110-111)
+**Phase 112:** Technical Debt (runs parallel with 110-111) ✅ COMPLETE
 - [x] Plan 112-01: Knip audit and unused export removal (275 -> 91 unused exports)
 - [x] Plan 112-02: src/services directory reorganization (3 files moved to query/)
-- [ ] Plan 112-03: TipTap test infrastructure
+- [x] Plan 112-03: TipTap test infrastructure (93 tests across 7 extensions)
 
 ### Blockers/Concerns
 
 **Technical Debt (Track B targets):**
 - knip unused exports: 91 remaining (down from 275, reduced by 67%)
-- Directory health: src/services (22/15 files)
-- TipTap automated tests: Manual test plan in place, need infrastructure
+- Directory health: src/services (8/15 files - within limit after refactoring)
+- TipTap automated tests: ✅ 93 tests across 7 extensions (infrastructure complete)
 
 **View Continuum (Track A context):**
 - CSS primitives exist but aren't consumed by renderers
@@ -109,11 +112,11 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Plan 112-02 — Services directory refactoring (3 files to query/, 3 re-export stubs)
-Next: Phase 112-03 (TipTap tests), or Phase 111 (ViewDispatcher)
+Completed: Phase 112 complete — TipTap test infrastructure (93 tests)
+Next: Phase 111 (ViewDispatcher) or Phase 113 (Network/Timeline polish)
 Resume file: N/A
 
-**Stopped at:** Completed 112-02-PLAN.md (services directory refactoring)
+**Stopped at:** Completed Phase 112 (Technical Debt Sprint) - all 3 plans executed
 
 ---
-*Updated: 2026-02-17 (plan 112-02 complete, services directory refactored)*
+*Updated: 2026-02-17 (Phase 112 complete, TipTap tests operational)*
