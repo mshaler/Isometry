@@ -2,709 +2,104 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-15)
+See: .planning/PROJECT.md (updated 2026-02-16)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.8 CSS Primitives — IN PROGRESS
+**Current focus:** v6.9 Polymorphic Views & Foundation — DEFINING REQUIREMENTS
 
 ## Current Position
 
-Phase: 109 (CSS Chrome Primitives) — COMPLETE
-Plan: 03/03
-Status: All 3 plans complete (Wave 1 + Wave 2 chrome primitives)
-Last activity: 2026-02-16 — Plan 109-03 complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-16 — Milestone v6.9 started
 
-Progress: [██████████] 100% (Phase 107: complete, Phase 108: complete, Phase 109: complete)
-Overall: v6.8 CSS Primitives — COMPLETE
+Progress: [░░░░░░░░░░] 0% (Milestone initialized)
+Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
 ## Active Milestones
 
-### v6.8 CSS Primitives — COMPLETE
+### v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
-**Goal:** Implement @isometry/primitives CSS token system with three-tier architecture (tokens → primitives → chrome).
+**Goal:** Enable full Grid Continuum (Gallery/List/Kanban/Grid/SuperGrid) with CSS primitives, clean up technical debt, polish Network/Timeline views, and complete Three-Canvas notebook integration.
 
-**Status:** Milestone complete
+**Four Tracks:**
+- **Track A:** View Continuum Integration (Gallery/List/Kanban → CSS Grid + PAFV)
+- **Track B:** Technical Debt Sprint (knip, directory health, TipTap tests)
+- **Track C:** Network/Timeline Polish (SQL hooks, Preview tabs)
+- **Track D:** Three-Canvas Notebook (Capture+Shell+Preview integration)
+
+**Parallelization:** A+B parallel → C (after A) → D (after C)
 
 **Progress:**
-- Phase 107: CSS Primitives Tier 1 — ✅ COMPLETE
-  - [x] 107-01: Core tokens.css (~5m) ✓
-- Phase 108: Tier 2 Layout Primitives — ✅ COMPLETE
-  - [x] 108-01: SuperGrid + Kanban primitives ✓
-  - [x] 108-02: Timeline + Gallery primitives ✓
-  - [x] 108-03: CSS reader utility ✓
-- Phase 109: CSS Chrome Primitives — ✅ COMPLETE (3/3 plans)
-  - [x] 109-01: Sticky Headers + Selection (Wave 1) ✓
-  - [x] 109-02: Scroll Shadows + Tooltips + Theme (Wave 1) ✓
-  - [x] 109-03: Sidebar + Accordion + Dialog (Wave 2) ✓
+- Phases: TBD (roadmap pending)
+- Requirements: Defining
+
+### v6.8 CSS Primitives — SHIPPED 2026-02-16
+
+**Status:** ✅ COMPLETE — Archived
 
 **Deliverables:**
-- ✓ `src/styles/tokens.css` — Tier 1 design tokens (dark theme)
-- ✓ `src/styles/tokens-light.css` — Light theme override
-- ✓ `src/styles/primitives-supergrid.css` — SuperGrid layout
-- ✓ `src/styles/primitives-kanban.css` — Kanban layout
-- ✓ `src/styles/primitives-timeline.css` — Timeline layout
-- ✓ `src/styles/primitives-gallery.css` — Gallery layout
-- ✓ `src/d3/utils/css-primitives.ts` — CSS reader utility
-- ✓ `src/styles/chrome/sticky-headers.css` — CSS-only sticky positioning
-- ✓ `src/styles/chrome/selection.css` — CSS-only selection highlighting
-- ✓ `src/styles/chrome/scroll-shadows.css` — CSS background-attachment trick
-- ✓ `src/styles/chrome/tooltip.css` — CSS pseudo-element tooltips
-- ✓ `src/styles/chrome/sidebar.css` — Data attribute collapse
-- ✓ `src/styles/chrome/accordion.css` — Native details element
-- ✓ `src/styles/chrome/dialog.css` — Native dialog element
-- ✓ `src/utils/theme.ts` — Theme utilities with localStorage
-- ✓ `src/styles/chrome-index.css` — Chrome CSS aggregator
-- ✓ Import aggregation in `src/index.css`
-
-**Total requirements:** 25 | **Status:** 25/25 complete
+- ✓ Tier 1 tokens.css (dark + light themes)
+- ✓ Tier 2 primitives (supergrid, kanban, timeline, gallery)
+- ✓ Tier 3 chrome (sticky-headers, selection, scroll-shadows, tooltip, sidebar, accordion, dialog)
+- ✓ css-primitives.ts reader utility
+- ✓ chrome-index.css aggregator
 
 ### v6.7 CSS Grid Integration — SHIPPED 2026-02-16
 
-**Goal:** Bridge HeaderDiscoveryService (SuperStack) to SuperGridCSS with adapters and data hooks for live SQL-driven rendering.
-
-**Status:** ✅ COMPLETE — Archived to `.planning/milestones/v6.7-ROADMAP.md`
-
-**Progress:**
-- Phase 106: CSS Grid Integration — ✅ COMPLETE (4/4 plans)
-  - [x] 106-01: HeaderTree to AxisConfig Adapter (~3m) ✓
-  - [x] 106-02: useGridDataCells Hook (~4m) ✓
-  - [x] 106-03: IntegratedLayout Component (~4m) ✓
-  - [x] 106-04: SelectionContext and ThemeContext Integration (~3m) ✓
-
-**Total requirements:** INT-01 through INT-06 | **Status:** 4/4 plans complete
-
-### v6.6 CSS Grid SuperGrid — COMPLETE
-
-**Goal:** Replace D3.js-based SuperGrid tabular rendering with pure React + CSS Grid for hierarchical header spanning.
-
-**Status:** ✅ COMPLETE
-
-**Delivered:**
-- ✓ Core TypeScript interfaces (`types.ts`, 380 lines)
-- ✓ Tree metrics computation (`utils/treeMetrics.ts`, 123 lines)
-- ✓ CSS Grid placement calculation (`utils/gridPlacement.ts`, 180 lines)
-- ✓ Layout computation hook (`hooks/useGridLayout.ts`, 133 lines)
-- ✓ Theme context provider (`SuperGridCSSContext.tsx`, 167 lines)
-- ✓ Cell components (CornerCell, RowHeader, ColHeader, DataCell, GridContainer)
-- ✓ Main component (`SuperGridCSS.tsx`, 158 lines)
-- ✓ 84 unit tests (100% coverage on utilities)
-- ✓ 4 themes: reference, nextstep, modern, dark
-- ✓ Demo page at `?test=cssgrid`
-
-**Architecture Impact:**
-- Tabular/pivot rendering: React + CSS Grid (NEW)
-- Charts/network/force: D3.js (unchanged)
-- Browser handles spanning natively via CSS Grid
-
-**Phases:**
-- Phase 105: CSS Grid SuperGrid — ✅ COMPLETE (6/6 sub-phases)
-  - [x] 105-01: Types and Utility Functions ✓
-  - [x] 105-02: Hook and Context ✓
-  - [x] 105-03: Cell Components ✓
-  - [x] 105-04: Main Component ✓
-  - [x] 105-05: Unit Tests (84 tests) ✓
-  - [x] 105-06: Integration ✓
-
-**Total requirements:** 20 | **Status:** 20/20 complete
-
-### v6.5 Console Cleanup — COMPLETE
-
-**Goal:** Eliminate console errors and excessive debug logging to provide a clean developer experience.
-
-**Status:** ✅ COMPLETE
-
-**Delivered:**
-- ✓ Fixed TipTap duplicate 'link' extension error
-- ✓ Added favicon to eliminate 404
-- ✓ Fixed DevLogger console method mapping (debug→log, info→info)
-- ✓ Gated HeaderDiscoveryService logs (9 logs removed)
-- ✓ Gated PropertyClassifier logs (8 logs removed)
-- ✓ Gated SQLiteProvider logs (13 logs removed)
-- ✓ Gated GridRenderingEngine verbose logs (axis fallback, diagnostics)
-- ✓ Gated SuperStack verbose logs (header tree, SQL-driven rendering)
-- ✓ Gated NestedHeaderRenderer truncation warnings
-- ✓ Gated YAML parse fallback warnings (ETL)
-- Clean browser console on initial page load and during normal operation
-
-**Phases:**
-- Phase 103: Console Cleanup — ✅ COMPLETE (3/3 plans, 2026-02-15)
-  - [x] 103-01: Fix Console Startup Errors (~4m) ✓
-  - [x] 103-02: DevLogger Enhancement & Service Log Gating (~14m) ✓
-  - [x] 103-03: Remaining Console Log Gating (~4m) ✓
-
-**Total requirements:** 5 | **Status:** 5/5 complete
-
-### v6.4 Hardcoded Values Cleanup — COMPLETE
-
-**Goal:** Eliminate or externalize hardcoded LATCH filter values.
-
-**Status:** ✅ COMPLETE
-
-**Delivered:**
-- SettingsService with CRUD operations wrapping sql.js
-- Dynamic facet discovery from live SQLite data (folder, status, tags, priority)
-- CardDetailModal with dynamic dropdowns
-- Priority range discovered via MIN/MAX query (not hardcoded)
-- Sample data reflects schema-on-read philosophy
-- Test fixtures with nodes lacking optional status/priority
-- loadTestFixtures with graceful fallback for missing columns
-
-**Phases:**
-- Phase 100: Settings & Discovery Layer — ✅ COMPLETE (2/2 plans)
-- Phase 101: UI Integration — ✅ COMPLETE (2/2 plans, 2026-02-15)
-  - [x] 101-01: Dynamic CardDetailModal Dropdowns (~5m) ✓
-  - [x] 101-02: Dynamic LATCH Values (~4m) ✓
-- Phase 102: Sample Data & Test Cleanup — ✅ COMPLETE (2/2 plans, 2026-02-15)
-  - [x] 102-01: Sample Data Cleanup (~5m) ✓
-  - [x] 102-02: Schema-Flexible Test Fixtures (~5m) ✓
-
-**Total requirements:** 22 | **Status:** 22/22 complete
-
-### v6.3 SuperStack SQL Integration — COMPLETE
-
-**Goal:** Connect SuperStack headers to live SQLite data via sql.js with query builders, React hooks, and integration tests.
-
-**Status:** ✅ COMPLETE
-
-**Plans:**
-| Plan | Focus | Requirements | Deliverables | Status |
-|------|-------|--------------|--------------|--------|
-| 99-01 | SQL Query Builders | QUERY-01 to QUERY-06 | `queries/header-discovery.ts` | ✅ |
-| 99-02 | Query Utilities | QUTIL-01 to QUTIL-04 | `queries/query-utils.ts` | ✅ |
-| 99-03 | Integration Tests | TEST-01 to TEST-05 | `__tests__/sql-integration.test.ts` | ✅ |
-| 99-04 | React Hook | HOOK-01 to HOOK-05 | `hooks/useSuperStackData.ts` | ✅ |
-| 99-05 | Demo Component | DEMO-01 to DEMO-03 | `demos/SuperStackDemo.tsx` | ✅ |
-
-**Phases:** Phase 99 (single consolidated phase) — COMPLETE
-
-**Total requirements:** 23 | **Status:** COMPLETE
-
-### v6.2 Capture Writing Surface — COMPLETE
-
-**Goal:** Transform Capture into world-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
-
-**Phases:**
-- Phase 94: Foundation & Critical Fixes — ✓ COMPLETE (4/4 plans)
-- Phase 95: Data Layer & Backlinks — ✓ COMPLETE (4/4 plans)
-- Phase 96: Block Types & Slash Commands — ✓ COMPLETE (3/3 plans)
-- Phase 97: Inline Properties — ✓ COMPLETE (2/2 plans)
-- Phase 98: Isometry Embeds & Polish — ✓ COMPLETE (4/4 plans)
-
-**Total requirements:** 43 | **Status:** COMPLETE
-
-### v6.1 SuperStack Enhancement — COMPLETE
-
-**Goal:** Dramatically enhance SuperGrid via SuperStack—the nested hierarchical header system that transforms SuperGrid from a flat grid into a true dimensional pivot table.
-
-**Phases:**
-- Phase 89: Static Headers Foundation (6 requirements) ✓
-- Phase 90: SQL Integration (5 requirements) — ✓ COMPLETE
-  - [x] 90-01: Header Discovery Query Generator (~3m) ✓
-  - [x] 90-02: Tree Builder from Query Results (~6m) ✓
-- Phase 91: Interactions (5 requirements) — ✓ COMPLETE (2/2 plans)
-  - [x] 91-01: Header Collapse/Expand + Click-to-Filter (~10m) ✓
-  - [x] 91-02: Header Keyboard Navigation (~4m) ✓
-- Phase 92: Data Cell Integration (5 requirements) — ✓ COMPLETE (4/4 plans)
-  - [x] 92-01: Core data cell rendering with CSS Grid scroll container ✓
-  - [x] 92-02: Density-aware rendering (counts vs card chips) ✓
-  - [x] 92-03: Selection synchronization (~6m) ✓
-  - [x] 92-04: SuperStack hierarchical header integration ✓
-- Phase 93: Polish & Performance (5 requirements) — ✓ COMPLETE (3/3 plans)
-  - [x] 93-01: Virtual scrolling with TanStack Virtual (~5m) ✓
-  - [x] 93-02: Accessibility (ARIA + empty states) (~5m) ✓
-  - [x] 93-03: GPU-accelerated animations + sticky headers (~5m) ✓
-
-**Total requirements:** 26 | **Status:** COMPLETE
-
-### v6.0 Interactive Shell — COMPLETE
-
-**Goal:** Complete Shell implementation with working Terminal, Claude AI, and GSD GUI tabs.
-**Status:** ✅ All 4 phases complete (85-88)
-
-**Phases:**
-- Phase 85: Backend Infrastructure & Terminal Execution (5 plans) — ✓ COMPLETE
-  - [x] 85-01: PTY spawn (shell mode) ✓
-  - [x] 85-02: PTY spawn (claude-code mode) ✓
-  - [x] 85-03: xterm.js frontend integration ✓
-  - [x] 85-04: Terminal mode switching ✓
-  - [x] 85-05: Mode toggle UI + ANSI sanitization ✓
-- Phase 86: Claude AI Integration (4 plans) — ✓ COMPLETE
-  - [x] 86-01: Basic Chat Interface ✓
-  - [x] 86-02: Project Context ✓
-  - [x] 86-03: MCP Tool Integration ✓
-  - [x] 86-04: Claude Code Integration ✓
-- Phase 87: GSD File Synchronization (5 plans) — ✓ COMPLETE
-  - [x] 87-01: GSD File Parser (~5m) ✓
-  - [x] 87-02: File Watcher Integration (~5m) ✓
-  - [x] 87-03: State Synchronization (~5m) ✓
-  - [x] 87-04: React Hooks & Progress Display (~3m) ✓
-  - [x] 87-05: Conflict Detection & Resolution (~4m) ✓
-- Phase 88: Integration & Polish — ✓ COMPLETE (3/3 plans, verification passed)
+**Status:** ✅ COMPLETE — Archived
 
 ## Performance Metrics
 
 **Recent Milestones:**
-- v5.2 Cards & Connections: 4 plans, 1 phase, ~20 minutes total
-- v5.1 Notebook Integration: 2 plans, 1 phase, ~9 minutes total
-- v4.9 Data Layer: 6 plans, 3 phases, same day
-- v5.0 SuperGrid MVP: 12 plans, 4 phases, same day
+- v6.8 CSS Primitives: 3 phases (107, 108, 109), ~2 days
+- v6.7 CSS Grid Integration: 1 phase (106), 4 plans, ~1 day
+- v6.6 CSS Grid SuperGrid: 1 phase (105), 6 sub-phases, ~2 days
 
 **Velocity:**
-- Average plan duration: ~6-8 minutes
+- Average plan duration: ~5-8 minutes
 - Recent trend: Stable (small, focused plans executing efficiently)
-
-**By Recent Phase:**
-
-| Phase | Plans | Avg Duration | Status |
-|-------|-------|-------------|--------|
-| 87 (GSD File Sync) | 5/5 | ~4.5m | Complete ✓ |
-| 98 (Isometry Embeds) | 4/4 | ~4.5m | Complete ✓ |
-| 97 (Inline Properties) | 2/2 | ~5m | Complete ✓ |
-| 93 (Polish & Performance) | 3/3 | ~5m | Complete ✓ |
-| 96 (Block Types) | 3/3 | ~5m | Complete ✓ |
-| 92 (Data Cell Integration) | 4/4 | ~5.3m | Complete ✓ |
-| 95 (Data Layer) | 4/4 | ~4m | Complete ✓ |
-| 91 (Interactions) | 2/2 | ~7m | Complete ✓ |
-| 94 (Foundation Fixes) | 4/4 | ~5.4m | Complete ✓ |
-
-*Updated: 2026-02-16*
-| Phase 106 P02 | 3.7 | 2 tasks | 2 files |
-| Phase 106 P03 | 4.0 | 3 tasks | 1 file |
-| Phase 106 P04 | 2.8 | 3 tasks | 1 file |
 
 ## Accumulated Context
 
 ### Decisions
 
-Recent decisions:
+**v6.9 Planning:**
+- TRACK-PARALLEL-01: Tracks A+B can run in parallel (independent concerns)
+- TRACK-SEQUENCE-01: Track C depends on A (views need CSS primitives wired)
+- TRACK-SEQUENCE-02: Track D depends on C (canvas integration needs working views)
 
-**CSS Chrome Primitives (Phase 109):**
-- CHR-STICKY-01: CSS-only sticky positioning eliminates JavaScript scroll listeners ✅ Implemented 109-01
-- CHR-SELECT-01: Selection state uses CSS classes, not React state (D3 toggles) ✅ Implemented 109-01
-- CHR-ZINDEX-01: z-index hierarchy: corner (30) > col-headers (20,19) > row-headers (18,17) ✅ Implemented 109-01
-- CHR-DEPTH-01: Depth variants offset using Tier 2 primitives (--iso-grid-col-hdr-h, --iso-grid-row-hdr0-w) ✅ Implemented 109-01
-- SCROLL-BG-ATTACH-01: Use background-attachment trick (local vs scroll) for zero-JS scroll shadows ✅ Implemented 109-02
-- TOOLTIP-PSEUDO-01: Use ::after pseudo-element with attr(data-tooltip) for tooltip content ✅ Implemented 109-02
-- FOUC-INLINE-01: Inline script in <head> sets data-theme before CSS loads ✅ Implemented 109-02
-- SIDEBAR-DATA-ATTR-01: Sidebar collapse via data-collapsed attribute, not React state ✅ Implemented 109-03
-- ACCORDION-NATIVE-01: Use native <details> element instead of React accordion component ✅ Implemented 109-03
-- DIALOG-NATIVE-01: Use native <dialog> element with showModal() instead of React modal ✅ Implemented 109-03
-- DIALOG-BACKDROP-01: Use backdrop-filter for blur effect on dialog backdrop ✅ Implemented 109-03
-
-**CSS Grid Integration (Phase 106):**
-- ADAPT-01: Root AxisNode wrapper required for SuperGridCSS tree structure ✅ Implemented 106-01
-- ADAPT-02: Collapsed state inverted: HeaderNode.collapsed → AxisNode.expanded ✅ Implemented 106-01
-- ADAPT-03: Leaf nodes have undefined children, not empty array ✅ Implemented 106-01
-- CELL-PATH-01: Path computation via computeNodePath helper extracts facet values in order ✅ Implemented 106-02
-- CELL-MULTI-01: Multi-select facets extract first JSON array value, fallback to string ✅ Implemented 106-02
-- CELL-EMPTY-01: Null/undefined values mapped to '(empty)' string in paths ✅ Implemented 106-02
-- INT-CSSGRID-01: USE_CSS_GRID_SUPERGRID feature flag controls renderer selection ✅ Implemented 106-03
-- INT-CSSGRID-02: Guard D3.js initialization with feature flag check ✅ Implemented 106-03
-- INT-CSSGRID-03: Conditional rendering based on rowAxis && colAxis availability ✅ Implemented 106-03
-- INT-CSSGRID-04: Move activeDataset state earlier to fix variable ordering ✅ Implemented 106-03
-- SEL-SYNC-01: Dual-layer selection (local visual + global cross-component) ✅ Implemented 106-04
-- THEME-SYNC-01: Theme prop derived from ThemeContext, reactive by default ✅ Verified 106-04
-- SEL-VISUAL-01: Selection feedback uses blue outline + opacity change ✅ Verified 106-04
-
-**CSS Grid SuperGrid (Phase 105):**
-- CSSGRID-01: CSS Grid over D3.js for tabular rendering (browser-native spanning, no coordinate math) ✅ Implemented 105-01
-- CSSGRID-02: Tree metrics computed via DFS with leafStart/leafCount for each node ✅ Implemented 105-01
-- CSSGRID-03: Grid placements use 1-based line numbers (CSS Grid convention) ✅ Implemented 105-01
-- CSSGRID-04: Zone layout: Corner (MiniNav), ColHeaders, RowHeaders, Data ✅ Implemented 105-03
-- CSSGRID-05: useGridLayout hook memoizes all computation on [rowAxis, colAxis] ✅ Implemented 105-02
-- CSSGRID-06: Context provider for theme and cell callbacks ✅ Implemented 105-02
-- CSSGRID-07: D3.js preserved for charts, network, force simulations ✅ Documented 105-RESEARCH
-
-**Console Cleanup (Phase 103):**
-- LOG-MAP-01: DevLogger semantic methods use console.log for debug level ✅ Implemented 103-02
-- LOG-GATE-01: quietLevels = ['warn', 'error'] for service loggers ✅ Implemented 103-02
-- LOG-SQLITE-01: Separate sqliteLogger for SQLiteProvider lifecycle logs ✅ Implemented 103-02
-- LOG-GRID-01: Axis facet fallback uses debug (expected behavior, not error) ✅ Implemented 103-03
-- LOG-GRID-02: GridRenderingEngine diagnostic logs use debug (render, updateGridLayout) ✅ Implemented 103-03
-- LOG-SUPERSTACK-01: SuperStack header tree and SQL-driven rendering logs use debug ✅ Implemented 103-03
-- LOG-SUPERSTACK-02: High header count threshold raised to 1000 (from 50) and uses debug ✅ Implemented 103-03
-- LOG-NESTED-01: NestedHeaderRenderer truncation uses debug (expected for large datasets) ✅ Implemented 103-03
-- LOG-YAML-01: YAML parse fallback uses devLogger.debug (expected during ETL) ✅ Implemented 103-03
-- LOG-YAML-02: YAML parse errors use devLogger.warn (actual problems, once per session) ✅ Implemented 103-03
-
-**Polish & Performance (Phase 93):**
-- PERF-01: TanStack Virtual for row-based virtualization, 100-cell threshold ✅ Implemented 93-01
-- PERF-02: Virtualized sticky headers - headers outside scroll container with JS scroll sync ✅ Implemented 93-03
-- A11Y-01: ARIA grid pattern with roving tabindex for keyboard navigation ✅ Implemented 93-02
-- UX-01: Three empty state variants (first-use, no-results, error) with aria-live announcements ✅ Implemented 93-02
-- UX-02: GPU-accelerated transforms (scaleX, translateX, opacity) skip layout recalculation ✅ Implemented 93-03
-
-**Data Cell Integration (Phase 92):**
-- CELL-AGG-01: Use d3.group() for cell aggregation by position ✅ Implemented 92-02
-- CELL-RENDER-01: Switch rendering mode based on valueDensity ('leaf' vs 'collapsed') ✅ Implemented 92-02
-- CELL-VISUAL-01: Collapsed mode uses circles with count badges instead of rectangles ✅ Implemented 92-02
-- COORD-SYS-01: Hard-code cell dimensions (160x100) in SuperGrid for now ✅ Implemented 92-02
-- SEL-CELL-01: Pass selectedIds as Set<string> to DataCellRenderer for O(1) membership testing ✅ Implemented 92-03
-- SEL-CELL-02: Blue highlight (stroke #3b82f6, fill #dbeafe) for selected cells ✅ Implemented 92-03
-- SEL-CELL-03: Modifier key detection in click handler (metaKey/ctrlKey for toggle, shift for range) ✅ Implemented 92-03
-- SEL-HEADER-01: Header click selects all cells by filtering nodes with extractNodeValue() ✅ Implemented 92-03
-
-**Header Interactions (Phase 91):**
-- INT-STATE-01: Keep collapse state LOCAL in useHeaderInteractions (Set<string>), not in Context API - prevents re-render cascade ✅ Implemented 91-01
-- INT-CLONE-01: Use structuredClone(tree) before mutation - React requires immutable updates ✅ Implemented 91-01
-- INT-LOG-01: Use superGridLogger.debug for filter constraints - FilterContext wiring deferred to Phase 92 ✅ Implemented 91-01
-- INT-KB-01: Parse header key format to determine parent/child/sibling relationships ✅ Implemented 91-02
-- INT-KB-02: Focus visuals use dashed stroke to differentiate from selection solid stroke ✅ Implemented 91-02
-- INT-KB-03: Header IDs collected depth-first respecting collapsed state ✅ Implemented 91-02
-
-**SuperStack Implementation (from v6.1):**
-- SSTACK-01: D3.js for all header rendering (enter/update/exit pattern)
-- SSTACK-02: SQLite queries drive header discovery (GROUP BY, json_each, strftime)
-- SSTACK-03: Header trees built from flat query results (not pre-hierarchical data)
-- SSTACK-04: Spans calculated bottom-up (leaves have span=1, parents sum children)
-- SQL-01: Dispatch query generation on facet.dataType (Phase 90-01)
-- SQL-02: Quarter calculation via formula not strftime('%Q') (Phase 90-01)
-- SQL-03: Month name ordering by numeric month not alphabetic (Phase 90-01)
-- SQL-ARCH-01: Use NestedHeaderRenderer directly, not GridRenderingEngine wrapper (Phase 90-02)
-- SQL-05-IMPL: Empty datasets return empty HeaderTree (leafCount=0) not null (Phase 90-02)
-- FACET-MAP-01: Infer FacetConfig from AxisMapping using LATCH heuristics (Phase 90-02)
-
-**Capture Writing Surface (Phase 94-98):**
-- MD-01: Use @tiptap/markdown extension with storage API (official TipTap approach) ✅ Implemented 94-01
-- MD-02: Manual test plan instead of automated unit tests (TipTap test environment would delay fix) ✅ Implemented 94-01
-- SEC-01: DOMPurify for paste sanitization via transformPastedHTML (prevents XSS) ✅ Implemented 94-02
-- MEM-01: Destroyed flag pattern for Tippy cleanup (prevents memory leaks) ✅ Implemented 94-02
-- POLISH-COUNT: Use TipTap CharacterCount extension storage API ✅ Implemented 94-04
-- POLISH-STATUS: Separate EditorStatusBar component at bottom of editor ✅ Implemented 94-04
-- KEYS-07: AppleNotesShortcuts extension pattern (centralize all shortcuts) ✅ Implemented 94-03
-- KEYS-08: Graceful TaskList fallback (toggleTaskList || toggleBulletList) ✅ Implemented 94-03
-- KEYS-09: TaskList/TaskItem installation for checkbox support ✅ Implemented 94-03
-- CAPTURE-01: ~~Migrate from getText() to @tiptap/markdown~~ ✅ COMPLETE (94-01)
-- CAPTURE-02: ~~DOMPurify for paste sanitization~~ ✅ COMPLETE (94-02)
-- CAPTURE-03: Templates stored in sql.js database, not files (consistency with cards) ✅ Implemented 95-01
-- TEMPLATES-01: Template table with FTS5, CRUD operations, 4 built-in templates ✅ Implemented 95-01
-- CAPTURE-04: Start with one-way property sync (editor → PropertyEditor), defer reverse sync
-- CAPTURE-05: D3.js embed integration requires validation spike before full implementation (Phase 98-01)
-- BACK-QUERY-01: Use nodeId for backlink queries (edges reference nodes.id not notebook_cards.id) ✅ Implemented 95-03
-- BACK-LIMIT-01: Default 50 backlinks limit for performance protection ✅ Implemented 95-03
-- BACK-SELF-01: Exclude self-referencing links from backlink results ✅ Implemented 95-03
-- TMPL-MODAL-01: Use CustomEvent for slash command to modal communication ✅ Implemented 95-02
-- TMPL-MODAL-02: Variable substitution for {{date}} and {{time}} on insert ✅ Implemented 95-02
-- TMPL-MODAL-03: Theme-aware styling (NeXTSTEP vs Modern) ✅ Implemented 95-02
-- TMPL-SAVE-01: getEditorContent helper for markdown serialization with getText fallback ✅ Implemented 95-04
-- TMPL-SAVE-02: Save as Template button placed between Save and Minimize in header ✅ Implemented 95-04
-- SLASH-01: Use StarterKit built-in extensions (Heading, HorizontalRule, Blockquote) - no new dependencies ✅ Implemented 96-01
-- SLASH-02: Date formatting with toLocaleDateString for readable output ✅ Implemented 96-01
-- CALL-01: Extract callout-types.ts to break circular dependency between CalloutExtension.ts and CalloutNode.tsx ✅ Implemented 96-02
-- CALL-02: Use Unicode escapes for emojis to avoid encoding issues ✅ Implemented 96-02
-- CALL-03: contentEditable={false} on select prevents TipTap capturing dropdown input ✅ Implemented 96-02
-- TOGGLE-01: Local useState for collapse state to avoid re-render cascade from attribute changes ✅ Implemented 96-03
-- TOGGLE-02: Start expanded (open: true) for better UX when inserting new toggle ✅ Implemented 96-03
-- BOOKMARK-01: atom: true for non-editable inline content (URL is the content) ✅ Implemented 96-03
-- BOOKMARK-02: Google favicon service for simple icon display without server-side unfurling ✅ Implemented 96-03
-- BOOKMARK-03: Auto-add https:// if user forgets protocol ✅ Implemented 96-03
-
-**Isometry Embeds (Phase 98):**
-- EMBED-01: atom: true for non-editable embed blocks (like bookmark) ✅ Implemented 98-01
-- EMBED-02: ReactNodeViewRenderer for type-specific D3 visualization rendering ✅ Implemented 98-01
-- EMBED-03: ResizeObserver for responsive width, manual height controls ✅ Implemented 98-01
-- EMBED-04: Placeholder SVG visualizations with data info (full D3 in 98-02) ✅ Implemented 98-01
-- EMBED-05: /supergrid, /network, /timeline slash commands ✅ Implemented 98-01
-- EMBED-06: /table maps to SuperGrid embed with title "Table" ✅ Implemented 98-01
-- EMBED-07: View toggle uses role=tab and aria-pressed for accessibility ✅ Implemented 98-03
-- EMBED-08: Filter display truncates with ellipsis at 200px ✅ Implemented 98-03
-- EMBED-09: NeXTSTEP theme uses monochrome palette for toolbar ✅ Implemented 98-03
-- EMBED-10: Update callback compares old/new attributes to prevent unnecessary re-renders ✅ Implemented 98-04
-- EMBED-11: 100ms resize debounce prevents rapid dimension updates ✅ Implemented 98-04
-- EMBED-12: RAF wrapping ensures D3 renders don't block main thread ✅ Implemented 98-04
-
-**Terminal Security (from Phase 85):**
-- TERM-01: Shell whitelist validation (/bin/zsh, /bin/bash, /bin/sh only)
-- TERM-02: spawn() with args array, never string interpolation
-- TERM-10: Mode switch kills and respawns PTY rather than in-place modification
-
-**Cross-Tab Integration (Phase 88-02):**
-- TRIGGER-01: Forward flow: Terminal OUTPUT triggers GSD state updates (not INPUT) ✅ Documented 88-02
-- TRIGGER-02: /gsd: commands are terminal INPUT, not parsed output ✅ Documented 88-02
-- TRIGGER-03: Reverse flow: GSD file changes -> WebSocket -> React hooks ✅ Documented 88-02
-- ROUTING-01: WebSocket message routing is tab-agnostic via type guards ✅ Verified 88-02
-
-**Settings & Discovery Layer (Phase 100):**
-- SETTINGS-JSON: JSON.stringify/parse for all settings values (type-safe, supports complex objects) ✅ Implemented 100-01
-- SETTINGS-UPSERT: ON CONFLICT(key) DO UPDATE for atomic create/update ✅ Implemented 100-01
-- SETTINGS-SEED: seedDefaultSettings checks existence before insert (preserves user values) ✅ Implemented 100-01
-- SETTINGS-CACHE: staleTime: Infinity for settings cache (rarely change externally) ✅ Implemented 100-01
-- SETTINGS-OPTIMISTIC: Mutation immediately updates query cache before database confirm ✅ Implemented 100-01
-- DISCOVER-QUERY: Synchronous sql.js wrapped in async queryFn for TanStack Query caching ✅ Implemented 100-02
-- DISCOVER-STALETIME: 5-minute staleTime balances freshness with query reduction ✅ Implemented 100-02
-- DISCOVER-JSON-VALID: json_valid() guard prevents malformed JSON from crashing multi-select queries ✅ Implemented 100-02
-- DISCOVER-GENERIC: discoverFacetValues works for any column, not just predefined facets ✅ Implemented 100-02
-
-**UI Integration (Phase 101):**
-- UI-04: Priority range discovered dynamically via MIN/MAX query, not hardcoded [1, 10] ✅ Implemented 101-02
-- UI-05: Empty state shown in hierarchy filter when no nodes exist ✅ Implemented 101-02
-- CLASSIFY-01: columnHasData handles all numeric columns without hardcoded defaults ✅ Implemented 101-02
-- CLASSIFY-02: numericColumnsWithDefaults object removed entirely ✅ Implemented 101-02
-- CLASSIFY-03: Missing columns return false gracefully via try-catch (schema-on-read) ✅ Implemented 101-02
-
-**Sample Data & Test Cleanup (Phase 102):**
-- TEST-01: TEST_FACETS status/priority facets have no hardcoded options (dynamic discovery) ✅ Implemented 102-01
-- TEST-02: Use undefined (not null) for missing fields in TypeScript test fixtures ✅ Implemented 102-02
-- TEST-03: Fallback to 7-column minimal schema if full schema insert fails ✅ Implemented 102-02
-- TEST-FIX-01: Filter priority-based tests with AND priority IS NOT NULL ✅ Implemented 102-02
-
-**Console Cleanup (Phase 103):**
-- LINK-DUP-01: Disable built-in Link in StarterKit to prevent duplicate with custom Link configuration ✅ Implemented 103-01
-- FAVICON-PATH-01: Use absolute path /favicon.svg for React Router compatibility ✅ Implemented 103-01
-
-**GSD File Synchronization (Phase 87):**
-- PARSE-01: Use gray-matter for frontmatter extraction (standard npm package) ✅ Implemented 87-01
-- PARSE-02: XML-like regex for task extraction (custom <task> tags) ✅ Implemented 87-01
-- PARSE-03: Status derived from <done> content presence (pending/complete) ✅ Implemented 87-01
-- PARSE-04: parseGSDPlanContent helper for testing without file I/O ✅ Implemented 87-01
-- WATCH-01: Chokidar awaitWriteFinish with 400ms stabilityThreshold (<500ms GSD-02) ✅ Implemented 87-02
-- WATCH-02: Single watcher per project shared across clients ✅ Implemented 87-02
-- WATCH-03: skipWatchPaths with 600ms timeout prevents update loops ✅ Implemented 87-02
-- ROUTE-01: Type guard in messageRouter for GSD messages ✅ Implemented 87-02
-- WRITE-01: Atomic writes via temp file + rename ✅ Implemented 87-03
-- WRITE-02: Task status stored as <done> element presence ✅ Implemented 87-03
-- SYNC-SVC-01: GSDFileSyncService orchestrates all file operations ✅ Implemented 87-03
-- SYNC-SVC-02: markWritePath called before updateTaskStatus ✅ Implemented 87-03
-- SYNC-01: Use React Query invalidation on gsd_file_update messages (not polling) ✅ Implemented 87-04
-- SYNC-02: Optimistic updates via useMutation onMutate with rollback context ✅ Implemented 87-04
-- SYNC-03: 10-second timeout on plan data requests ✅ Implemented 87-04
-- UI-01: Three-state icons (Circle/Clock/CheckCircle) from lucide-react ✅ Implemented 87-04
-- A11Y-01: role="button" with tabIndex and onKeyDown for task items ✅ Implemented 87-04
-- A11Y-02: aria-label describes current status and next status on click ✅ Implemented 87-04
-- CONFLICT-01: Conflict detection compares file vs last synced state (not live UI) ✅ Implemented 87-05
-- CONFLICT-02: Structural changes (task count) treated as special conflict type ✅ Implemented 87-05
-- CONFLICT-03: Modal closes optimistically on resolution, confirmed by WebSocket response ✅ Implemented 87-05
-
-See PROJECT.md Key Decisions table for full history.
-- [Phase 106]: CELL-PATH-01: Path computation via computeNodePath helper extracts facet values in order
-- [Phase 106]: CELL-MULTI-01: Multi-select facets extract first JSON array value, fallback to string
-- [Phase 106]: CELL-EMPTY-01: Null/undefined values mapped to '(empty)' string in paths
+**Previous milestones:** See STATE.md archive for v6.1-v6.8 decisions.
 
 ### Pending Todos
 
-None yet.
+None yet — defining requirements.
 
 ### Blockers/Concerns
 
-**v6.1 SuperStack:**
-- No blockers identified
-- useHeaderInteractions hook ready for additional interaction types
-- Click-to-filter logs constraints to console (FilterContext wiring in Phase 92)
-
-**v6.2 Capture Writing Surface:**
-- Phase 98 risk: ✅ RESOLVED - D3.js + TipTap NodeView integration validated in 98-01 (placeholder approach works)
-- Template picker UX: ✅ RESOLVED - Modal approach implemented in 95-02
-
-**Technical Debt:**
-- knip unused exports: 275 reported (baseline ratchet at 1000, needs cleanup)
+**Technical Debt (Track B targets):**
+- knip unused exports: 275 reported (baseline ratchet at 1000)
 - Directory health: src/services (22/15 files)
-- TipTap automated tests: Manual test plan in place, need test infrastructure (follow-up to 94-01)
+- TipTap automated tests: Manual test plan in place, need infrastructure
+
+**View Continuum (Track A context):**
+- CSS primitives exist but aren't consumed by renderers
+- GridContinuumController exists but uses legacy D3 projections
+- Need to bridge controller logic to CSS Grid approach
 
 ## Session Continuity
 
 Last session: 2026-02-16
-Completed: Phase 109 Plan 03 (Sidebar + Accordion + Dialog)
-Next: TBD — v6.8 CSS Primitives milestone COMPLETE
+Completed: v6.8 CSS Primitives milestone
+Next: Define v6.9 requirements, create roadmap
 Resume file: N/A
 
-**Phase 109-03 Complete:**
-- CSS-driven sidebar with data-collapsed attribute (one-line JS toggle)
-- Native <details> accordion with CSS styling (works without JavaScript)
-- Native <dialog> modal with backdrop blur and showModal() API
-- All 7 Phase 109 chrome modules now aggregated in chrome-index.css
-- Zero React state for sidebar, accordion, or dialog interactions
-- Commits: 712d0300 (sidebar), aaffe386 (accordion), 9a7cdf21 (dialog), ce79c616 (aggregation)
-- Duration: 206 seconds (~3.4 minutes)
-- Files: sidebar.css (104 lines), accordion.css (124 lines), dialog.css (190 lines)
-- Wave 2 Chrome primitives: COMPLETE (sidebar, accordion, dialog)
-- **v6.8 CSS Primitives milestone: COMPLETE (Phase 107, 108, 109 all complete)**
+**Milestone v6.9 Started:**
+- Four-track structure: A (View Continuum), B (Tech Debt), C (Network/Timeline), D (Three-Canvas)
+- Parallelization: A+B run together, C follows A, D follows C
+- Infrastructure exists: CSS primitives, GridContinuumController, existing view code
 
-**Phase 106-04 Complete:**
-- Wired SelectionContext to SuperGridCSS cell clicks
-- Fixed SelectionContext API usage: select(id) and clearSelection() instead of array-based
-- Verified theme propagation from ThemeContext to SuperGridCSS
-- Verified DataCell selection visual feedback (blue outline + opacity)
-- Dual-layer selection: local state for visuals, global state for cross-component coordination
-- Commits: 580bd6c5 (SelectionContext integration)
-- Requirements satisfied: INT-04, INT-05
-- Duration: 170 seconds (~3 minutes)
-- v6.7 CSS Grid Integration milestone: COMPLETE
-
-**Phase 106-03 Complete:**
-- Wired SuperGridCSS into IntegratedLayout with PAFV axis reactivity
-- Added USE_CSS_GRID_SUPERGRID feature flag (default: true)
-- Facet extraction from PAFV mappings (rowFacets/colFacets)
-- Header discovery with useHeaderDiscovery hook
-- HeaderTree to AxisConfig conversion via adapter
-- Data cells from useGridDataCells hook with SQLite queries
-- Conditional rendering: SuperGridCSS when axes exist, D3.js SVG fallback
-- Guarded D3.js initialization to prevent duplicate instance creation
-- Fixed variable ordering: moved activeDataset state earlier
-- Commits: 943fb1c9 (imports), a199cb76 (headers), 0ca9d123 (rendering)
-- Requirements satisfied: INT-03, INT-06
-- Duration: 239 seconds (~4 minutes)
-
-**Phase 106-02 Complete:**
-- Created useGridDataCells hook for SQLite → DataCell[] transformation
-- Path computation via computeNodePath helper
-- Multi-select facet handling with JSON.parse fallback
-- Null/undefined values mapped to '(empty)' string
-- 19 unit tests covering normal flow, empty states, error handling
-- All tests pass, zero TypeScript errors
-- Commits: eaefa588 (hook), ad5f6799 (tests)
-- Requirements satisfied: INT-02
-- Duration: 222 seconds (~3.7 minutes)
-
-**Phase 106-01 Complete:**
-- Created headerTreeToAxisConfig adapter bridging HeaderTree to AxisConfig
-- Created convertHeaderNode helper for recursive tree conversion
-- Field mappings: span→leafCount, collapsed→expandable/expanded
-- 13 unit tests covering normal, nested, empty, and collapsed scenarios
-- All tests pass, zero TypeScript errors
-- Commits: 2aee38ef (feat), 5b719727 (test)
-- Requirements satisfied: INT-01
-- Duration: 161 seconds (~3 minutes)
-
-**Phase 105 Complete:**
-- Replaced D3.js tabular rendering with React + CSS Grid
-- 84 unit tests (37 treeMetrics + 26 gridPlacement + 21 useGridLayout)
-- 4 themes implemented (reference, nextstep, modern, dark)
-- Demo page verified at `?test=cssgrid`
-- GSD Phase 105 documentation created
-- Requirements satisfied: SG-CSS-01 through SG-CSS-20
-
-**Phase 102-02 Complete:**
-- Added 3 schema-flexible test nodes (fixture-node-9,10,11) simulating imports without status/priority
-- Updated loadTestFixtures to use ?? instead of || for nullable fields
-- Added try-catch with fallback to 7-column minimal schema
-- Fixed PAFV tests to filter nodes without priority (deviation Rule 1)
-- Commit: 481b4ef9 (feat)
-- Requirements satisfied: TEST-01, TEST-02, TEST-03
-- v6.4 Hardcoded Values Cleanup milestone COMPLETE
-
-**Phase 101-01 Complete:**
-- Dynamic folder/status dropdowns in CardDetailModal using Phase 100 hooks
-- useFolderValues, useStatusValues, useSetting integration
-- Status colors from settings with neutral gray (#9ca3af) fallback for unknowns
-- Empty state hints when no folder/status values exist
-- Updated CardStatusFieldProps to accept dynamic data via props
-- Combined loading states for proper UX (isLoading || foldersLoading/statusLoading)
-- Commit: 485c95b2 (combined with 101-02 hierarchy empty state)
-- Requirements satisfied: UI-01, UI-02, UI-03, UI-05 (CardDetailModal portion)
-- Ready for Phase 101-03 or Phase 102
-
-**Phase 101-02 Complete:**
-- Dynamic priority range discovery in LATCHFilter via MIN/MAX query (not hardcoded [1, 10])
-- Generic numeric column handling in property-classifier (no hardcoded defaults dict)
-- Empty state handling for hierarchy filter when no data exists
-- 3 atomic commits: 8d4272c9 (feat), d93dae65 (refactor), 485c95b2 (feat)
-- Requirements satisfied: UI-04, UI-05, CLASSIFY-01, CLASSIFY-02, CLASSIFY-03
-- Ready for remaining Phase 101 UI integration tasks
-
-**Phase 103-03 Complete:**
-- Gated GridRenderingEngine verbose logs to debug (axis fallback, diagnostics)
-- Gated SuperStack verbose logs to debug (header tree, SQL-driven rendering)
-- Gated NestedHeaderRenderer truncation warnings to debug
-- Gated YAML parse fallback to debug, errors to warn
-- 3 atomic commits: 66c7b288 (fix), 24dc7f8d (fix), 85fb7231 (fix)
-- Requirements satisfied: LOG-GRID-01, LOG-GRID-02, LOG-SUPERSTACK-01, LOG-SUPERSTACK-02, LOG-NESTED-01, LOG-YAML-01, LOG-YAML-02
-- v6.5 Console Cleanup milestone COMPLETE
-
-**Phase 103-02 Complete:**
-- Fixed DevLogger console method mapping (debug→log, info→info)
-- Implemented quietLevels pattern for service loggers
-- Gated HeaderDiscoveryService logs (9 logs removed)
-- Gated PropertyClassifier logs (8 logs removed)
-- Gated SQLiteProvider logs (13 logs removed)
-- 5 atomic commits
-- Requirements satisfied: LOG-MAP-01, LOG-GATE-01, LOG-SQLITE-01
-
-**Phase 103-01 Complete:**
-- Fixed TipTap duplicate 'link' extension warning by disabling StarterKit's built-in Link
-- Added favicon link tag to eliminate favicon.ico 404 error
-- Clean browser console on initial page load
-- 2 atomic commits: 79149567 (fix), 9e0299f4 (fix)
-- Requirements satisfied: LINK-DUP-01, FAVICON-PATH-01
-
-**Phase 100-02 Complete:**
-- Facet discovery queries with sql.js: discoverFolderValues, discoverStatusValues, discoverFacetValues
-- TanStack Query hooks with 5-minute caching: useFacetValues, useFolderValues, useStatusValues, useTagValues
-- Multi-select facet handling via json_each with json_valid safety guard
-- 21 integration tests covering standard, multi-select, and edge case discovery patterns
-- Ready for Phase 101 UI integration (dropdown population from live data)
-
-**Phase 100-01 Complete:**
-- SettingsService with CRUD operations wrapping sql.js
-- useSetting<T>(key, defaultValue) React hook with TanStack Query caching
-- useAllSettings() hook for debugging/inspector UI
-- seedDefaultSettings() for first-run initialization
-- 16/16 tests passing for all CRUD operations and edge cases
-- Foundation ready for Phase 101 UI integration
-
-**Phase 88-01 Complete:**
-- 25 integration tests for tab switch state preservation
-- ShellComponent.integration.test.tsx: 13 tests covering all 6 tab combinations
-- shell-tab-integration.test.ts: 12 tests for hook state management
-- Regression safety net for Terminal/Claude AI/GSD tab switching
-
-**Phase 88-03 Complete (Manual Verification):**
-- PTY cleanup bug fixed: Kill PTY when last client disconnects (commit 804dd636)
-- Editor CSS bug fixed: Add formatting styles for bold/italic/headings (commit afb0d1a1)
-- Terminal tab: Working, PTY resources properly released
-- Editor formatting: Bold, italic, headings now visible
-- Tab state preservation: Verified across all 3 tabs
-- v6.0 Interactive Shell milestone: COMPLETE
-
-**Phase 88-02 Complete:**
-- 35 cross-tab integration tests in `src/services/claude-code/__tests__/cross-tab-integration.test.ts`
-- Documents forward flow: Terminal OUTPUT -> Parser -> GSD Service
-- Documents reverse flow: GSD file changes -> WebSocket -> React hooks
-- WebSocket routing verified as tab-agnostic
-
-**Phase 87-05 Complete:**
-- gsdConflictResolver.ts with detectConflict(), applyResolution(), formatConflictSummary()
-- GSDConflictModal.tsx with theme-aware UI and diff display
-- useGSDFileSync extended with gsd_conflict message handling
-- gsdFileSyncService.ts extended with conflict detection/resolution
-- lastSyncedState Map for tracking per-plan state
-
-**Phase 87-04 Complete:**
-- useGSDFileSync hook for WebSocket file watching
-- useGSDTaskToggle hook with optimistic updates and rollback
-- GSDProgressDisplay component with progress bar and task list
-- Cache invalidation on gsd_file_update messages
-- Accessible task toggling (keyboard + ARIA)
-
-**Phase 87-03 Complete:**
-- gsdFileWriter.ts with atomic writes (temp file + rename)
-- gsdFileSyncService.ts for orchestrating read/watch/write
-- ClaudeCodeServer integration for GSD message routing
-- markWritePath prevents update loops
-- gsd_read_plan added to message router
-
-**Phase 87-02 Complete:**
-- GSDFileWatcher class with chokidar
-- 400ms debounce (within <500ms GSD-02 requirement)
-- skipWatchPaths for preventing update loops
-- isGSDFileMessage type guard for WebSocket routing
-- 5 timing verification tests
-
-**Phase 87-01 Complete:**
-- GSD file parser with gray-matter
-- 30 unit tests passing
-- Types: PlanFrontmatter, GSDTask, ParsedPlanFile
-- Functions: parseGSDPlanFile, extractTasks, normalizeTaskStatus
-
-**v6.3 SuperStack SQL Integration — COMPLETE:**
-- 23 requirements delivered across 5 plans
-- 18 integration tests passing
-- Query time: ~46ms (target: <100ms)
-
-**Reference:**
-- `.planning/phases/87-gsd-file-synchronization/87-05-SUMMARY.md` — Plan 87-05 execution summary
-- `.planning/phases/87-gsd-file-synchronization/87-04-SUMMARY.md` — Plan 87-04 execution summary
-- `.planning/phases/87-gsd-file-synchronization/87-03-SUMMARY.md` — Plan 87-03 execution summary
-- `.planning/phases/87-gsd-file-synchronization/87-02-SUMMARY.md` — Plan 87-02 execution summary
-- `.planning/phases/87-gsd-file-synchronization/87-01-SUMMARY.md` — Plan 87-01 execution summary
-- `superstack-phase2-sql-integration.md` — Full implementation specification
+---
+*Updated: 2026-02-16*
