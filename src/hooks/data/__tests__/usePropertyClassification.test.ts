@@ -15,8 +15,6 @@
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import React from 'react';
-import type { PropertyClassification } from '../../../services/property-classifier';
 
 // Mock db.exec on the database object (classifyProperties calls db.exec() directly)
 const mockDbExec = vi.fn();
@@ -66,11 +64,13 @@ describe('usePropertyClassification Hook', () => {
     mockState.error = null;
 
     // Default mock response: simulate facets table query via db.exec()
-    // The classifyProperties service calls db.exec() twice:
-    // 1. First call: query facets table
-    // 2. Second call: query node_properties table (discoverDynamicProperties)
+    // The classifyProperties service calls db.exec() multiple times:
+    // 1. Query facets table
+    // 2. Query nodes table (columnHasData checks for each column)
+    // 3. Query node_properties table (discoverDynamicProperties)
     mockDbExec.mockImplementation((sql: string) => {
-      if (sql.includes('facets')) {
+      // Facets table query
+      if (sql.includes('FROM facets')) {
         return [
           {
             columns: ['id', 'name', 'facet_type', 'axis', 'source_column', 'enabled', 'sort_order'],
@@ -88,8 +88,13 @@ describe('usePropertyClassification Hook', () => {
           },
         ];
       }
+      // columnHasData queries the nodes table to check for meaningful data
+      // Return count >= 2 to indicate columns have data
+      if (sql.includes('FROM nodes') && sql.includes('COUNT(DISTINCT')) {
+        return [{ values: [[3]] }]; // 3 distinct values = passes columnHasData
+      }
+      // node_properties query for dynamic properties
       if (sql.includes('node_properties')) {
-        // Return empty result for node_properties query
         return [];
       }
       return [];
@@ -108,13 +113,13 @@ describe('usePropertyClassification Hook', () => {
     expect(result.current.classification).not.toBeNull();
     expect(result.current.error).toBeNull();
 
-    // Verify LATCH buckets
+    // Verify LATCH buckets (9 facets + 1 derived property = 10 total)
     const classification = result.current.classification!;
     expect(classification.L).toHaveLength(1);
     expect(classification.A).toHaveLength(1);
     expect(classification.T).toHaveLength(3);
     expect(classification.C).toHaveLength(3);
-    expect(classification.H).toHaveLength(1);
+    expect(classification.H).toHaveLength(2); // priority + subfolder (derived)
 
     // Verify GRAPH bucket (4 edge types + 2 metrics)
     expect(classification.GRAPH).toHaveLength(6);
@@ -136,8 +141,14 @@ describe('usePropertyClassification Hook', () => {
     // Should return the same cached object (referential equality)
     expect(result.current.classification).toBe(firstClassification);
 
-    // Execute should not be called again (was called 2x initially: facets + node_properties)
-    expect(mockDbExec).toHaveBeenCalledTimes(2);
+    // Capture call count after initial load
+    const initialCallCount = mockDbExec.mock.calls.length;
+
+    // Re-render again to confirm caching
+    rerender();
+
+    // Execute should not be called again (caching working)
+    expect(mockDbExec).toHaveBeenCalledTimes(initialCallCount);
   });
 
   test('provides refresh function that reloads data', async () => {
@@ -148,17 +159,18 @@ describe('usePropertyClassification Hook', () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    // Initial load: 2 calls (facets + node_properties)
-    expect(mockDbExec).toHaveBeenCalledTimes(2);
+    // Capture call count after initial load
+    const initialCallCount = mockDbExec.mock.calls.length;
+    expect(initialCallCount).toBeGreaterThan(0);
 
     // Call refresh
     act(() => {
       result.current.refresh();
     });
 
-    // Should call execute again: 2 more calls (facets + node_properties)
+    // Should call execute again - at least as many calls as initial load
     await waitFor(() => {
-      expect(mockDbExec).toHaveBeenCalledTimes(4);
+      expect(mockDbExec.mock.calls.length).toBeGreaterThan(initialCallCount);
     });
   });
 

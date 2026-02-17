@@ -5,7 +5,7 @@
  * testing infrastructure, following CLAUDE.md TDD requirements.
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'sql.js-fts5';
 import {
   createTestDB,
@@ -14,10 +14,9 @@ import {
   insertTestData,
   TestDatabaseManager,
 } from '../db-utils';
-import { loadTestFixtures, TEST_SCENARIOS, loadTestScenario } from '../fixtures';
+import { loadTestFixtures, loadTestScenario } from '../fixtures';
 import {
   createMockSQLiteContext,
-  mockUseSQLite,
   expectSQLQuery,
   TEST_PATTERNS,
   type MockSQLiteContextValue,

@@ -30,6 +30,8 @@ export interface SliderFilter {
 export interface LatchGraphSlidersProps {
   /** Available filters based on current data */
   filters: SliderFilter[];
+  /** Current filter values (keyed by filter id) */
+  activeFilters?: Map<string, [number, number]>;
   /** Callback when filter values change */
   onFilterChange: (filterId: string, value: [number, number]) => void;
   /** Whether to show collapsed or expanded view */
@@ -65,9 +67,11 @@ function formatPriority(value: number): string {
  */
 function SliderFilterControl({
   filter,
+  currentValue,
   onChange
 }: {
   filter: SliderFilter;
+  currentValue: [number, number];
   onChange: (value: [number, number]) => void;
 }) {
   const formatLabel = filter.formatLabel || ((v: number) => String(v));
@@ -90,14 +94,14 @@ function SliderFilterControl({
           {filter.label}
         </span>
         <span className="text-muted-foreground">
-          {formatLabel(filter.value[0])} — {formatLabel(filter.value[1])}
+          {formatLabel(currentValue[0])} — {formatLabel(currentValue[1])}
         </span>
       </div>
       <Slider
         min={filter.min}
         max={filter.max}
         step={1}
-        value={filter.value}
+        value={currentValue}
         onValueChange={(v) => onChange(v as [number, number])}
         className="w-full"
       />
@@ -113,6 +117,7 @@ function SliderFilterControl({
  */
 export function LatchGraphSliders({
   filters,
+  activeFilters,
   onFilterChange,
   collapsed = false,
   emptyStateMessage = 'No slider filters available for this dataset yet.',
@@ -150,6 +155,7 @@ export function LatchGraphSliders({
             <SliderFilterControl
               key={filter.id}
               filter={filter}
+              currentValue={activeFilters?.get(filter.id) || filter.value}
               onChange={(value) => onFilterChange(filter.id, value)}
             />
           ))}
@@ -217,7 +223,6 @@ export function useSliderFilters(
         const max = Math.max(...timestamps);
 
         if (min !== max) {
-          const currentValue = activeFilters.get(`time-${prop.sourceColumn}`) || [min, max];
           result.push({
             id: `time-${prop.sourceColumn}`,
             label: prop.name,
@@ -225,7 +230,7 @@ export function useSliderFilters(
             property: prop.sourceColumn,
             min,
             max,
-            value: currentValue,
+            value: [min, max], // Default to full range; currentValue comes from activeFilters at render time
             formatLabel: formatTimestamp,
           });
         }
@@ -243,7 +248,6 @@ export function useSliderFilters(
         const max = Math.max(...values);
 
         if (min !== max) {
-          const currentValue = activeFilters.get(`hierarchy-${prop.sourceColumn}`) || [min, max];
           result.push({
             id: `hierarchy-${prop.sourceColumn}`,
             label: prop.name,
@@ -251,7 +255,7 @@ export function useSliderFilters(
             property: prop.sourceColumn,
             min,
             max,
-            value: currentValue,
+            value: [min, max], // Default to full range
             formatLabel: prop.sourceColumn === 'priority' ? formatPriority : undefined,
           });
         }
@@ -269,7 +273,6 @@ export function useSliderFilters(
         const min = Math.floor(Math.min(...values));
         const max = Math.ceil(Math.max(...values));
         if (min !== max) {
-          const currentValue = activeFilters.get(`location-${prop.sourceColumn}`) || [min, max];
           result.push({
             id: `location-${prop.sourceColumn}`,
             label: prop.name,
@@ -277,7 +280,7 @@ export function useSliderFilters(
             property: prop.sourceColumn,
             min,
             max,
-            value: currentValue,
+            value: [min, max], // Default to full range
           });
         }
       }
@@ -294,7 +297,6 @@ export function useSliderFilters(
         const min = Math.min(...lengths);
         const max = Math.max(...lengths);
         if (min !== max) {
-          const currentValue = activeFilters.get(`alphabet-len-${prop.sourceColumn}`) || [min, max];
           result.push({
             id: `alphabet-len-${prop.sourceColumn}`,
             label: `${prop.name} Length`,
@@ -303,7 +305,7 @@ export function useSliderFilters(
             derivedField: `len:${prop.sourceColumn}`,
             min,
             max,
-            value: currentValue,
+            value: [min, max], // Default to full range
           });
         }
       }
@@ -317,7 +319,6 @@ export function useSliderFilters(
         const min = Math.min(...counts);
         const max = Math.max(...counts);
         if (min !== max) {
-          const currentValue = activeFilters.get(`category-tagcount-${prop.sourceColumn}`) || [min, max];
           result.push({
             id: `category-tagcount-${prop.sourceColumn}`,
             label: 'Tag Count',
@@ -326,7 +327,7 @@ export function useSliderFilters(
             derivedField: `tagcount:${prop.sourceColumn}`,
             min,
             max,
-            value: currentValue,
+            value: [min, max], // Default to full range
           });
         }
       }
@@ -343,7 +344,6 @@ export function useSliderFilters(
       const min = Math.min(...degreeValues);
       const max = Math.max(...degreeValues);
       if (min !== max) {
-        const currentValue = activeFilters.get('graph-degree') || [min, max];
         result.push({
           id: 'graph-degree',
           label: degreeMetric.name,
@@ -352,13 +352,13 @@ export function useSliderFilters(
           derivedField: 'graph.degree',
           min,
           max,
-          value: currentValue,
+          value: [min, max], // Default to full range
         });
       }
     }
 
     return result;
-  }, [data, classification, activeFilters]);
+  }, [data, classification]); // Note: activeFilters intentionally excluded to prevent infinite loop
 
   // Update filter value
   const setFilterValue = useCallback((id: string, value: [number, number]) => {

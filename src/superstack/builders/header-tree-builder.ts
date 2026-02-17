@@ -16,6 +16,7 @@ import type {
   QueryRow,
 } from '../types/superstack';
 import { formatLabel } from '../config/superstack-defaults';
+import { devLogger } from '@/utils/logging';
 
 /**
  * Build a header tree from flat query results.
@@ -30,9 +31,13 @@ export function buildHeaderTree(
   facets: FacetConfig[],
   axis: 'row' | 'column'
 ): HeaderTree {
-  console.log(`[buildHeaderTree] Input: ${rows.length} rows, ${facets.length} facets`);
-  console.log(`[buildHeaderTree] Facet IDs:`, facets.map(f => f.id));
-  console.log(`[buildHeaderTree] First row:`, JSON.stringify(rows[0]));
+  devLogger.debug('[buildHeaderTree] Input', {
+    component: 'header-tree-builder',
+    rowCount: rows.length,
+    facetCount: facets.length,
+    facetIds: facets.map(f => f.id),
+    firstRow: rows[0],
+  });
 
   const roots: HeaderNode[] = [];
   const nodeMap = new Map<string, HeaderNode>();
@@ -100,8 +105,12 @@ export function buildHeaderTree(
   // Collect leaf nodes
   const leaves = collectLeaves(roots);
 
-  console.log(`[buildHeaderTree] Result: ${roots.length} roots, ${leaves.length} leaves`);
-  console.log(`[buildHeaderTree] Root values:`, roots.slice(0, 10).map(r => r.value));
+  devLogger.debug('[buildHeaderTree] Result', {
+    component: 'header-tree-builder',
+    rootCount: roots.length,
+    leafCount: leaves.length,
+    rootValues: roots.slice(0, 10).map(r => r.value),
+  });
 
   return {
     axis,

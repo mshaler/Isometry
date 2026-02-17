@@ -8,6 +8,7 @@
  */
 
 import React, { useState } from 'react';
+import { devLogger } from '@/utils/logging';
 import { SuperGridCSS } from './supergrid/SuperGridCSS';
 import { themes } from './supergrid/SuperGridCSSContext';
 import type { AxisConfig, DataCell, SuperGridThemeName } from './supergrid/types';
@@ -173,12 +174,12 @@ export const SuperGridCSSDemo: React.FC = () => {
   ) => {
     const key = `${rowPath.join('/')}::${colPath.join('/')}`;
     setSelectedCell(key);
-    console.log('Cell clicked:', { cell, rowPath, colPath });
+    devLogger.debug('Cell clicked', { component: 'SuperGridCSSDemo', cell, rowPath, colPath });
   };
 
   const handleHeaderClick = (type: 'row' | 'column', path: string[]) => {
     setClickedHeader(`${type}: ${path.join(' → ')}`);
-    console.log('Header clicked:', { type, path });
+    devLogger.debug('Header clicked', { component: 'SuperGridCSSDemo', type, path });
   };
 
   return (

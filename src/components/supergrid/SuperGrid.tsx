@@ -16,6 +16,7 @@
  */
 
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
+import { devLogger } from '@/utils/logging';
 import { SuperStack } from './SuperStack';
 import { SuperDynamic } from './SuperDynamic';
 import { DensityControls } from './DensityControls';
@@ -119,7 +120,7 @@ function mapAxisMappingToFacetConfig(mapping: AxisMapping): FacetConfig {
     sortOrder: 'asc' as const,
   };
 
-  console.log(`[mapAxisMappingToFacetConfig] mapping.facet="${mapping.facet}", pathSeparator=${pathSeparator}`, config);
+  devLogger.debug(`[mapAxisMappingToFacetConfig] mapping.facet="${mapping.facet}", pathSeparator=${pathSeparator}`, { component: 'SuperGrid', config });
 
   return config;
 }

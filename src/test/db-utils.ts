@@ -79,7 +79,7 @@ export class TestDatabaseManager {
 
     try {
       db.exec(baseSchema);
-    } catch (error) {
+    } catch (_error) {
       console.warn('[Test] Schema loading with full features failed, trying simplified version');
 
       // Fallback to simplified schema if FTS5/CTEs not available
@@ -463,7 +463,7 @@ export class TestDatabaseManager {
     try {
       db.exec(`SELECT json('{"test": true}')`);
       hasJSON = true;
-    } catch (error) {
+    } catch (_error) {
       // JSON not available
     }
 
@@ -478,7 +478,7 @@ export class TestDatabaseManager {
         SELECT COUNT(*) FROM test_cte
       `);
       hasCTEs = true;
-    } catch (error) {
+    } catch (_error) {
       // CTEs not available
     }
 
@@ -487,7 +487,7 @@ export class TestDatabaseManager {
       db.exec('CREATE VIRTUAL TABLE test_fts USING fts5(content)');
       db.exec('DROP TABLE test_fts');
       hasFTS5 = true;
-    } catch (error) {
+    } catch (_error) {
       // FTS5 not available
     }
 

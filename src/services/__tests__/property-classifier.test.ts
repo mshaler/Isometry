@@ -18,7 +18,6 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import {
   classifyProperties,
-  type PropertyClassification,
   type PropertyBucket,
   type LATCHBucket,
 } from '../property-classifier';
@@ -64,12 +63,27 @@ describe('Property Classifier Service', () => {
         ('name', 'Name', 'text', 'A', 'name', 0),
         ('location', 'Location', 'location', 'L', 'location_name', 0);
 
-      -- Set up nodes table for dynamic property tests
+      -- Set up nodes table with all columns needed for facet data checks
       CREATE TABLE IF NOT EXISTS nodes (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
-        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        folder TEXT,
+        tags TEXT,
+        status TEXT,
+        priority INTEGER DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        modified_at TEXT,
+        due_at TEXT,
+        location_name TEXT,
+        deleted_at TEXT
       );
+
+      -- Insert sample data with varying values so columnHasData returns true
+      -- Use 'sample-' prefix to avoid collision with test-created nodes
+      INSERT INTO nodes (id, name, folder, tags, status, priority, created_at, modified_at, due_at, location_name) VALUES
+        ('sample-node-1', 'First Note', 'work', 'tag1,tag2', 'active', 1, '2026-01-01', '2026-01-02', '2026-02-01', 'New York'),
+        ('sample-node-2', 'Second Note', 'personal', 'tag3', 'completed', 2, '2026-01-03', '2026-01-04', '2026-02-02', 'Los Angeles'),
+        ('sample-node-3', 'Third Note', 'archive', 'tag4,tag5', 'blocked', 3, '2026-01-05', '2026-01-06', '2026-02-03', 'Chicago');
 
       -- Set up node_properties table for dynamic property tests (matches schema.sql)
       CREATE TABLE IF NOT EXISTS node_properties (
@@ -95,10 +109,10 @@ describe('Property Classifier Service', () => {
   });
 
   describe('classifyProperties', () => {
-    test('returns 9 LATCH properties in correct buckets from default facets', () => {
+    test('returns 10 LATCH properties in correct buckets from default facets', () => {
       const classification = classifyProperties(db);
 
-      // Count total LATCH properties
+      // Count total LATCH properties (9 facets + 1 derived subfolder)
       const latchCount =
         classification.L.length +
         classification.A.length +
@@ -106,14 +120,14 @@ describe('Property Classifier Service', () => {
         classification.C.length +
         classification.H.length;
 
-      expect(latchCount).toBe(9);
+      expect(latchCount).toBe(10);
 
       // Verify bucket assignments
       expect(classification.L).toHaveLength(1); // location
       expect(classification.A).toHaveLength(1); // name
       expect(classification.T).toHaveLength(3); // created, modified, due
       expect(classification.C).toHaveLength(3); // folder, tags, status
-      expect(classification.H).toHaveLength(1); // priority
+      expect(classification.H).toHaveLength(2); // priority + subfolder (derived)
     });
 
     test('GRAPH bucket contains 4 edge types + 2 computed metrics', () => {
@@ -411,7 +425,7 @@ describe('Property Classifier Service', () => {
     });
 
     test('dynamic property with collision gets renamed', () => {
-      // Create test nodes
+      // Create test nodes (no collision since sample data uses 'sample-node-*' prefix)
       for (let i = 1; i <= 3; i++) {
         db.run('INSERT INTO nodes (id, name) VALUES (?, ?)', [`node-${i}`, `Node ${i}`]);
       }
@@ -465,14 +479,14 @@ describe('Property Classifier Service', () => {
       expect(classification).toHaveProperty('H');
       expect(classification).toHaveProperty('GRAPH');
 
-      // Properties come from facets table (verified by count matching expected 9 default facets)
+      // Properties come from facets table (9 default facets) plus derived properties (1 subfolder)
       const totalLATCH =
         classification.L.length +
         classification.A.length +
         classification.T.length +
         classification.C.length +
         classification.H.length;
-      expect(totalLATCH).toBe(9);
+      expect(totalLATCH).toBe(10); // 9 facets + 1 derived (subfolder)
     });
 
     // FOUND-02: GRAPH bucket contains 4 edge types + 2 computed metrics

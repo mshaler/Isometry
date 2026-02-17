@@ -117,7 +117,7 @@ describe('computeNodePath', () => {
     expect(path).toEqual(['not-json']);
   });
 
-  it('handles empty multi_select array as empty string', () => {
+  it('handles empty multi_select array as (empty)', () => {
     const node = {
       id: 1,
       name: 'Test Card',
@@ -126,7 +126,7 @@ describe('computeNodePath', () => {
 
     const path = computeNodePath(node, [mockTagsFacet]);
 
-    expect(path).toEqual(['[]']); // Falls back to string since array is empty
+    expect(path).toEqual(['(empty)']); // Empty array treated as (empty) to match header exclusion
   });
 
   it('converts numeric values to strings', () => {

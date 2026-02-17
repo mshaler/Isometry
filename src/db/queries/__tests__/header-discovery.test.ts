@@ -123,7 +123,9 @@ describe('buildHeaderDiscoveryQuery', () => {
     it('generates month name query with numeric ordering', () => {
       const sql = buildHeaderDiscoveryQuery(monthFacet);
 
-      expect(sql).toContain(`strftime('%B', created_at)`);
+      // SQLite doesn't support strftime('%B'), so implementation uses CASE statement
+      expect(sql).toContain('CASE');
+      expect(sql).toContain("WHEN 1 THEN 'January'");
       expect(sql).toContain('as value');
       expect(sql).toContain('COUNT(*) as card_count');
       expect(sql).toContain('GROUP BY value');
@@ -289,7 +291,10 @@ describe('buildStackedHeaderQuery', () => {
 
     expect(sql).toContain(`strftime('%Y', created_at) as facet_0`);
     expect(sql).toContain(`'Q' ||`); // Quarter formula
-    expect(sql).toContain(`strftime('%B', created_at) as facet_2`);
+    // SQLite doesn't support strftime('%B'), so implementation uses CASE statement for month
+    expect(sql).toContain('CASE');
+    expect(sql).toContain("WHEN 1 THEN 'January'");
+    expect(sql).toContain('as facet_2');
     expect(sql).toContain('COUNT(*) as card_count');
     expect(sql).toContain('deleted_at IS NULL');
     expect(sql).toContain('GROUP BY');

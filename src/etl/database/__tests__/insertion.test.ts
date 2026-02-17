@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { v4 as uuidv4 } from 'uuid';
 import { createTestDB, cleanupTestDB, execTestQuery } from '@/test/db-utils';
-import { insertCanonicalNodes, InsertResult } from '../insertion';
+import { insertCanonicalNodes } from '../insertion';
 import { CanonicalNode } from '../../types/canonical';
 import type { Database } from 'sql.js-fts5';
 

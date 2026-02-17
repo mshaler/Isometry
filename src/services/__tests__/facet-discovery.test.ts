@@ -17,7 +17,6 @@ import {
   discoverStatusValues,
   discoverFacetValues,
   buildFacetDiscoveryQuery,
-  type DiscoveredValue,
 } from '../facet-discovery';
 
 describe('Facet Discovery Service', () => {

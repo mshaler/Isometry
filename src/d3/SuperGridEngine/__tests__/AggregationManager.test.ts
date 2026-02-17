@@ -12,7 +12,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   AggregationManager,
-  type AggregationConfig,
 } from '../AggregationManager';
 import type { CellDescriptor, HeaderDescriptor } from '../types';
 

@@ -34,12 +34,13 @@ describe('RightSidebar', () => {
     it('renders tab icons', () => {
       renderWithProviders(<RightSidebar />);
 
-      // Icons should be present in tab buttons (Palette and Settings icons)
+      // Icons should be present in tab buttons (Palette, Settings, and Backlinks icons)
       // TabPanel uses role="tab" for its buttons
       const tabButtons = screen.getAllByRole('tab');
-      expect(tabButtons.length).toBe(2);
+      expect(tabButtons.length).toBe(3);
       expect(tabButtons[0].textContent).toContain('Formats');
       expect(tabButtons[1].textContent).toContain('Settings');
+      expect(tabButtons[2].textContent).toContain('Backlinks');
     });
   });
 

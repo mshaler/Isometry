@@ -9,6 +9,7 @@
 
 import type { HeaderTree, HeaderNode, FacetConfig } from '@/superstack/types/superstack';
 import type { AxisConfig, AxisNode, LATCHAxisType } from '../types';
+import { devLogger } from '@/utils/logging';
 
 /**
  * Convert HeaderTree to AxisConfig for SuperGridCSS.
@@ -56,7 +57,8 @@ export function headerTreeToAxisConfig(headerTree: HeaderTree): AxisConfig {
     if (!node.children || node.children.length === 0) return 1;
     return node.children.reduce((sum, c) => sum + countLeaves(c), 0);
   };
-  console.log('[headerTreeToAxisConfig]', {
+  devLogger.debug('[headerTreeToAxisConfig]', {
+    component: 'headerTreeAdapter',
     axis: headerTree.axis,
     facetCount: headerTree.facets.length,
     facetIds: headerTree.facets.map(f => f.id),

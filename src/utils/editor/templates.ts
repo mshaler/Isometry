@@ -1,4 +1,5 @@
 import type { Database } from 'sql.js';
+import { devLogger } from '@/utils/logging';
 
 /**
  * Template variable definition for {{variable}} placeholders
@@ -52,7 +53,7 @@ export function queryTemplates(
 
     return results[0].values.map((row) => rowToTemplate(row as TemplateRow));
   } catch (error) {
-    console.error('Failed to query templates:', error);
+    devLogger.error('Failed to query templates:', { component: 'templates', error });
     return [];
   }
 }
@@ -85,7 +86,7 @@ export function searchTemplates(
 
     return results[0].values.map((row) => rowToTemplate(row as TemplateRow));
   } catch (error) {
-    console.error('FTS5 search failed, falling back to regular query:', error);
+    devLogger.error('FTS5 search failed, falling back to regular query:', { component: 'templates', error });
     return queryTemplates(db);
   }
 }
@@ -111,7 +112,7 @@ export function getTemplate(
 
     return rowToTemplate(results[0].values[0] as TemplateRow);
   } catch (error) {
-    console.error('Failed to get template:', error);
+    devLogger.error('Failed to get template:', { component: 'templates', error });
     return null;
   }
 }
@@ -137,7 +138,7 @@ export function createTemplate(
 
     return id;
   } catch (error) {
-    console.error('Failed to create template:', error);
+    devLogger.error('Failed to create template:', { component: 'templates', error });
     return null;
   }
 }
@@ -189,7 +190,7 @@ export function updateTemplate(
 
     return true;
   } catch (error) {
-    console.error('Failed to update template:', error);
+    devLogger.error('Failed to update template:', { component: 'templates', error });
     return false;
   }
 }
@@ -207,7 +208,7 @@ export function deleteTemplate(
     db.run('DELETE FROM templates WHERE id = ?', [templateId]);
     return true;
   } catch (error) {
-    console.error('Failed to delete template:', error);
+    devLogger.error('Failed to delete template:', { component: 'templates', error });
     return false;
   }
 }
@@ -228,7 +229,7 @@ export function incrementTemplateUsage(
     );
     return true;
   } catch (error) {
-    console.error('Failed to increment template usage:', error);
+    devLogger.error('Failed to increment template usage:', { component: 'templates', error });
     return false;
   }
 }
@@ -270,7 +271,7 @@ export function seedBuiltInTemplates(db: Database | null): void {
   try {
     ensureTemplatesTableExists(db);
   } catch (tableError) {
-    console.error('[templates] Failed to ensure templates table exists:', tableError);
+    devLogger.error('[templates] Failed to ensure templates table exists:', { component: 'templates', error: tableError });
     return;
   }
 
@@ -401,9 +402,9 @@ export function seedBuiltInTemplates(db: Database | null): void {
         ]
       );
     }
-    console.log('[templates] Built-in templates seeded successfully');
+    devLogger.debug('[templates] Built-in templates seeded successfully', { component: 'templates' });
   } catch (error) {
-    console.error('Failed to seed built-in templates:', error);
+    devLogger.error('Failed to seed built-in templates:', { component: 'templates', error });
   }
 }
 

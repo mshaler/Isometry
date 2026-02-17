@@ -195,7 +195,7 @@ export function NetworkView() {
   }, []);
 
   // Use simulation hook from 113-01
-  const { reheat: _reheat, stop: _stop, state: simState } = useForceSimulation({
+  const { state: simState } = useForceSimulation({
     containerRef: gRef,
     nodes,
     links,

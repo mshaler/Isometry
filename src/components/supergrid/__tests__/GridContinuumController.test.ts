@@ -8,10 +8,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GridContinuumController, type AxisAllocation } from '../GridContinuumController';
-import type { GridContinuumMode } from '@/types/view';
+import { GridContinuumController } from '../GridContinuumController';
 import type { Node } from '@/types/node';
-import type { AxisMapping } from '@/types/pafv';
 
 describe('GridContinuumController', () => {
   let controller: GridContinuumController;

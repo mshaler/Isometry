@@ -11,19 +11,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import * as d3 from 'd3';
 
 // Mock D3 selection for testing
-const mockSelection = () => ({
-  selectAll: vi.fn(() => mockSelection()),
-  data: vi.fn(() => mockSelection()),
-  join: vi.fn(() => mockSelection()),
-  append: vi.fn(() => mockSelection()),
-  attr: vi.fn(() => mockSelection()),
-  style: vi.fn(() => mockSelection()),
-  text: vi.fn(() => mockSelection()),
-  on: vi.fn(() => mockSelection()),
-  transition: vi.fn(() => mockSelection()),
-  duration: vi.fn(() => mockSelection()),
-  ease: vi.fn(() => mockSelection()),
-  remove: vi.fn(() => mockSelection()),
+const _mockSelection = () => ({
+  selectAll: vi.fn(() => _mockSelection()),
+  data: vi.fn(() => _mockSelection()),
+  join: vi.fn(() => _mockSelection()),
+  append: vi.fn(() => _mockSelection()),
+  attr: vi.fn(() => _mockSelection()),
+  style: vi.fn(() => _mockSelection()),
+  text: vi.fn(() => _mockSelection()),
+  on: vi.fn(() => _mockSelection()),
+  transition: vi.fn(() => _mockSelection()),
+  duration: vi.fn(() => _mockSelection()),
+  ease: vi.fn(() => _mockSelection()),
+  remove: vi.fn(() => _mockSelection()),
   empty: vi.fn(() => false),
   node: vi.fn(() => ({ getBoundingClientRect: () => ({ width: 100, height: 40 }) }))
 });

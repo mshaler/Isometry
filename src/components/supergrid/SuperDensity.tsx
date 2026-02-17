@@ -27,7 +27,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { usePAFV } from '@/hooks';
 import { useDatabase } from '@/db/DatabaseContext';
 import { SuperDensityService } from '@/services/supergrid/SuperDensityService';
 import { LATCHFilterService } from '@/services/query/LATCHFilterService';
@@ -88,9 +87,8 @@ export function SuperDensity({
   const containerRef = useRef<HTMLDivElement>(null);
   const filterServiceRef = useRef<LATCHFilterService>(new LATCHFilterService());
 
-  // Database and PAFV context
+  // Database context
   const { execute } = useDatabase();
-  const { state: _pafvState } = usePAFV();
 
   // Initialize SuperDensity service
   useEffect(() => {

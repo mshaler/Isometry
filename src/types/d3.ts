@@ -18,6 +18,17 @@ export type FlexibleSelection<T extends d3.BaseType = d3.BaseType> = d3.Selectio
 export type D3GroupSelection<TDatum = unknown> =
   d3.Selection<SVGGElement, TDatum, null, undefined>;
 
+/** SVG element selection */
+export type D3SVGSelection<TDatum = unknown> =
+  d3.Selection<SVGSVGElement, TDatum, null, undefined>;
+
+/** Zoom behavior type */
+export type D3ZoomBehavior<TElement extends Element = SVGSVGElement, TDatum = unknown> =
+  d3.ZoomBehavior<TElement, TDatum>;
+
+/** Color scale (ordinal) */
+export type D3ColorScale = d3.ScaleOrdinal<string, string>;
+
 // ============================================================================
 // Chart Data Types
 // ============================================================================

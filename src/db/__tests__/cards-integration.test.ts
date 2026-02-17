@@ -19,7 +19,6 @@ import {
   isPerson,
   isEvent,
   isResource,
-  type Card,
 } from '@/types/card';
 import { createMinimalTestDB, cleanupTestDB } from '@/test/db-utils';
 

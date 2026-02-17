@@ -15,7 +15,6 @@ import {
   AuditRenderer,
   type ValueSource,
   type CellAuditInfo,
-  type AuditState,
   createAuditState,
   getAuditTintColor,
   getIndicatorColor,

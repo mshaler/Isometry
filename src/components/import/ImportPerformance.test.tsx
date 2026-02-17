@@ -242,7 +242,6 @@ class ImportWizardPerformanceHarness {
         />
       );
 
-      const files = ReactTestDataGenerator.generateMockFiles(5);
       const mockResult = ReactTestDataGenerator.generateMockImportResult(10);
       this.setupMockImport(mockResult, 50);
 

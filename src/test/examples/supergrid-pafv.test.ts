@@ -39,7 +39,7 @@ describe('SuperGrid PAFV Projection', () => {
 
   test('should map LATCH dimensions to grid axes', () => {
     // Arrange: Define PAFV projection
-    const projection: PAFVProjection = {
+    const _projection: PAFVProjection = {
       planes: { x: 'C', y: 'H' }, // Category × Hierarchy
       facets: { C: 'folder', H: 'priority' },
     };
@@ -81,7 +81,7 @@ describe('SuperGrid PAFV Projection', () => {
 
   test('should support axis remapping (view transitions)', () => {
     // Arrange: Original projection (Category × Hierarchy)
-    const originalProjection = { x: 'folder', y: 'priority' };
+    const _originalProjection = { x: 'folder', y: 'priority' };
 
     // Act: Query with original projection (filter to nodes WITH priority)
     const originalData = execTestQuery(db, `
@@ -93,7 +93,7 @@ describe('SuperGrid PAFV Projection', () => {
 
     // Arrange: New projection (Time × Category) - same data, different view
     // Note: Must use same filter (priority IS NOT NULL) to compare same data subset
-    const newProjection = { x: 'created_date', y: 'folder' };
+    const _newProjection = { x: 'created_date', y: 'folder' };
 
     // Act: Query with new projection (view transition)
     const transitionedData = execTestQuery(db, `
@@ -124,7 +124,7 @@ describe('SuperGrid PAFV Projection', () => {
 
   test('should handle three-dimensional PAFV projections', () => {
     // Arrange: 3D projection (Category × Hierarchy × Time)
-    const projection3D: PAFVProjection = {
+    const _projection3D: PAFVProjection = {
       planes: { x: 'C', y: 'H', z: 'T' },
       facets: { C: 'folder', H: 'priority', T: 'created_month' },
     };

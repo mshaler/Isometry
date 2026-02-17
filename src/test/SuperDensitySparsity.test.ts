@@ -15,8 +15,6 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SuperDensityService } from '@/services/SuperDensityService';
 import { LATCHFilterService } from '@/services/LATCHFilterService';
 import type {
-  JanusDensityState,
-  DensityAggregationResult,
   DensityChangeEvent,
   RegionDensityConfig,
   DEFAULT_JANUS_DENSITY

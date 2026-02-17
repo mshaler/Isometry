@@ -12,8 +12,8 @@
  * - SCROLL-05: No competing D3 zoom panning (CSS scroll only for pan)
  */
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 /**
@@ -218,7 +218,6 @@ describe('SuperGrid Scroll Behavior', () => {
       expect(container.scrollLeft).toBe(0);
 
       // First visible cell should be at top-left (accounting for headers)
-      const firstCell = container.querySelector('.supergrid__cell');
       const dataGrid = container.querySelector('.supergrid__data-grid') as HTMLElement;
       const dataRect = dataGrid.getBoundingClientRect();
       const containerRect = container.getBoundingClientRect();
@@ -256,7 +255,6 @@ describe('SuperGrid Scroll Behavior', () => {
       document.getElementById('test-root')!.appendChild(container);
 
       const initialScrollTop = container.scrollTop;
-      const initialScrollLeft = container.scrollLeft;
 
       // Simulate wheel scroll down (positive deltaY)
       fireEvent.wheel(container, { deltaY: 100 });

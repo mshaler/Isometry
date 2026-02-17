@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   PositionManager,
   derivePositionFromNode,
@@ -545,7 +545,7 @@ describe('PositionManager', () => {
         mockGridDimensions
       );
 
-      const originalPositionCount = mockNodes.length;
+      const _originalPositionCount = mockNodes.length;
 
       // Change PAFV config (different axis mapping)
       const newConfig: PAFVConfiguration = {

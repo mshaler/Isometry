@@ -10,9 +10,6 @@ import * as d3 from 'd3';
 import { SuperZoomCartographic } from '../SuperZoomCartographic';
 import type {
   CartographicConfig,
-  CartographicState,
-  BoundaryConstraints,
-  ZoomAnchorMode,
   CartographicCallbacks
 } from '../../types/supergrid';
 
@@ -116,7 +113,7 @@ describe('SuperZoomCartographic', () => {
     });
 
     test('should apply elastic bounce-back for boundary violations', () => {
-      const initialState = superZoom.getState();
+      const _initialState = superZoom.getState();
 
       // Force pan past boundary
       superZoom.panTo(-1000, -1000);

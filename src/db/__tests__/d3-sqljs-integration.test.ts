@@ -401,7 +401,7 @@ describe('D3.js + sql.js Synchronous Integration', () => {
 
       // Bind complex data to D3.js
       const bindStart = performance.now();
-      const complexCards = d3Selection
+      const _complexCards = d3Selection
         .selectAll('.complex-card')
         .data(parsedData, (d: unknown) => d.id)
         .join('div')

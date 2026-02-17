@@ -289,7 +289,7 @@ describe('SelectionContext', () => {
       }
 
       // Create a component that uses selection and can switch views
-      function TestComponent() {
+      function _TestComponent() {
         const selection = useSelection();
         return <div>{selection.selection.selectedIds.size}</div>;
       }

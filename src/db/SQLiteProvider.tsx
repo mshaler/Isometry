@@ -227,7 +227,7 @@ export function SQLiteProvider({
               }
               savedData = null;
             }
-          } catch (dbError) {
+          } catch (_dbError) {
             // Corrupt database detected - clear and recreate
             console.error('[SQLiteProvider] Corrupt database detected, clearing IndexedDB');
             if (persistence) {
@@ -273,7 +273,7 @@ export function SQLiteProvider({
             } else {
               throw new Error(`Invalid response: status=${response.status}, contentType=${contentType}`);
             }
-          } catch (fetchError) {
+          } catch (_fetchError) {
             // Fall back to empty database with schema + sample data
             sqliteLogger.debug('Creating fresh database with schema');
             database = new sqlInstance.Database();
@@ -404,7 +404,7 @@ export function SQLiteProvider({
       if (initializationRef.current.database) {
         try {
           initializationRef.current.database.close();
-        } catch (e) {
+        } catch (_e) {
           // Ignore errors during cleanup
         }
       }

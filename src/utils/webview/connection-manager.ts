@@ -120,6 +120,9 @@ export class DefaultConnectionManager extends EventEmitter implements IConnectio
 export const DEFAULT_CONNECTION_CONFIG: ConnectionConfig = {
   heartbeatInterval: 30000,
   heartbeatTimeout: 10000,
+  healthCheckInterval: 60000,
+  connectionTimeout: 30000,
+  messageQueueSize: 100,
   reconnection: {
     maxAttempts: 5,
     baseDelay: 1000,
@@ -129,9 +132,9 @@ export const DEFAULT_CONNECTION_CONFIG: ConnectionConfig = {
     enabled: true
   },
   qualityThresholds: {
-    latency: { good: 100, poor: 1000 },
-    packetLoss: { good: 1, poor: 10 },
-    stability: { good: 95, poor: 70 }
+    latency: { good: 100, acceptable: 500, poor: 1000 },
+    packetLoss: { good: 1, acceptable: 5, poor: 10 },
+    stability: { good: 95, acceptable: 85, poor: 70 }
   },
   circuitBreaker: {
     enabled: true,

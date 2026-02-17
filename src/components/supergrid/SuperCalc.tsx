@@ -127,7 +127,7 @@ export const SuperCalc: React.FC<SuperCalcProps> = ({
         isValid: PAFV_FUNCTIONS.includes(functionName),
         error: PAFV_FUNCTIONS.includes(functionName) ? undefined : `Unknown function: ${functionName}`
       };
-    } catch (error) {
+    } catch {
       return {
         function: functionName,
         args: [],

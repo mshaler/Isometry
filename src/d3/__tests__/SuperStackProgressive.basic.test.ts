@@ -188,7 +188,7 @@ describe('SuperStack Progressive Disclosure (Basic)', () => {
   describe('Level Navigation Logic', () => {
     it('should validate level bounds for navigation', () => {
       const maxDepth = 6;
-      const maxVisibleLevels = 3;
+      const _maxVisibleLevels = 3;
 
       // Test stepping down from beginning
       let currentLevels = [0, 1, 2];

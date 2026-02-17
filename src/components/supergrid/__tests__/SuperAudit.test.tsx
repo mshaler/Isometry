@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { SuperAudit, CellState, AuditMode } from '../SuperAudit';
+import { SuperAudit, CellState } from '../SuperAudit';
 import { vi } from 'vitest';
 
 describe('SuperAudit', () => {

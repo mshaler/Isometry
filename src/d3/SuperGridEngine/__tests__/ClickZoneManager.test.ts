@@ -17,11 +17,9 @@ import {
   updateCursor,
   createZoneClickHandler,
   getHoverHighlightStyle,
-  type ClickZone,
-  type HitTestResult,
   type HitTestConfig,
 } from '../ClickZoneManager';
-import type { HeaderDescriptor, CellDescriptor, GridDimensions } from '../types';
+import type { HeaderDescriptor, CellDescriptor } from '../types';
 
 describe('ClickZoneManager', () => {
   // Default configuration for hit testing
@@ -300,7 +298,7 @@ describe('ClickZoneManager', () => {
     it('should detect label zone only within labelHeight threshold', () => {
       // Just inside label zone (at y=31, threshold is 32)
       const insidePoint = { x: 150 + 120, y: 31 };
-      const insideResult = hitTest(insidePoint, columnHeaders, rowHeaders, cells, defaultConfig);
+      hitTest(insidePoint, columnHeaders, rowHeaders, cells, defaultConfig);
 
       // Just outside label zone (at y=33, threshold is 32)
       // For the parent header at y=0, height=20, this is actually in the child header

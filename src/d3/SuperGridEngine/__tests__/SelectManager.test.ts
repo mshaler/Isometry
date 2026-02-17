@@ -4,7 +4,6 @@ import {
   SelectManager,
   type SelectManagerConfig,
   calculateRangeSelection,
-  type LassoState,
 } from '../SelectManager';
 import type { CellDescriptor } from '../types';
 

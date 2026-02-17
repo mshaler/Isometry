@@ -235,7 +235,7 @@ export function TreeView({ data, onNodeClick }: TreeViewProps) {
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
     // Add zoom
-    const zoom: D3ZoomBehavior<SVGSVGElement> = d3.zoom<SVGSVGElement, unknown>()
+    const zoom: D3ZoomBehavior<SVGSVGElement, unknown> = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.3, 3])
       .on('zoom', (event) => {
         g.attr('transform', event.transform);

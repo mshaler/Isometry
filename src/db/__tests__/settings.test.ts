@@ -132,7 +132,7 @@ describe('SettingsService', () => {
     it('updates timestamp on UPSERT', () => {
       const service = createSettingsService(db);
 
-      const timestamp1 = new Date().toISOString();
+      const _timestamp1 = new Date().toISOString();
       service.setSetting('timestamp_key', 'value1');
 
       // Wait a tiny bit to ensure timestamp changes

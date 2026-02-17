@@ -108,7 +108,8 @@ describe('computeTreeMetrics', () => {
       const metrics = computeTreeMetrics(nestedTree);
       const gc = metrics.flatNodes.find((n) => n.node.id === 'gc');
 
-      expect(gc?.path).toEqual(['root', 'parent', 'child', 'gc']);
+      // Root is virtual and excluded from paths
+      expect(gc?.path).toEqual(['parent', 'child', 'gc']);
     });
   });
 
@@ -542,7 +543,8 @@ describe('findNodeByPath', () => {
 
   it('finds node by path', () => {
     const metrics = computeTreeMetrics(tree);
-    const found = findNodeByPath(metrics, ['root', 'parent', 'child']);
+    // Root is virtual and excluded from paths
+    const found = findNodeByPath(metrics, ['parent', 'child']);
 
     expect(found).toBeDefined();
     expect(found?.node.label).toBe('Child');
@@ -550,7 +552,7 @@ describe('findNodeByPath', () => {
 
   it('returns undefined for non-existent path', () => {
     const metrics = computeTreeMetrics(tree);
-    const found = findNodeByPath(metrics, ['root', 'other', 'path']);
+    const found = findNodeByPath(metrics, ['other', 'path']);
 
     expect(found).toBeUndefined();
   });

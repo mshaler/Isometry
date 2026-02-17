@@ -9,7 +9,6 @@ import type { Database } from 'sql.js-fts5';
 import {
   createTestDB,
   cleanupTestDB,
-  execTestQuery,
 } from '../db-utils';
 import { loadTestFixtures } from '../fixtures';
 

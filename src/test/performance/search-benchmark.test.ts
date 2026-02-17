@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- Benchmark tests intentionally log timing results */
 /**
  * Search Benchmark Tests
  *

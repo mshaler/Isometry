@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { vi, describe, it, expect, beforeAll } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import MVPDemo from '../MVPDemo';
 
 // Mock SQLiteProvider since it requires sql.js and IndexedDB

@@ -272,7 +272,7 @@ export class DefaultClaudeCodeDispatcher implements ClaudeCodeDispatcher {
         const { execSync } = await import('child_process');
         execSync(`which ${path}`, { stdio: 'ignore' });
         return path;
-      } catch (error) {
+      } catch (_error) {
         // Continue trying
       }
     }

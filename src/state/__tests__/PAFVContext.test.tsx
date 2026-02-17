@@ -214,8 +214,8 @@ describe('PAFV Serialization', () => {
     const state = DEFAULT_PAFV;
     const serialized = serializePAFV(state);
 
-    // Default mappings: x=category.folder, y=category.status
-    expect(serialized).toBe('x=category.folder&y=category.status&view=grid&density=2');
+    // Default mappings: x=category.folder, y=category.tags
+    expect(serialized).toBe('x=category.folder&y=category.tags&view=grid&density=2');
 
     const deserialized = deserializePAFV(serialized);
     expect(deserialized).toEqual(state);

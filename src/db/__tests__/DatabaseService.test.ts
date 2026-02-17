@@ -61,7 +61,7 @@ describe('DatabaseService', () => {
         expect(results).toHaveLength(1);
         expect(results[0].content).toBe('hello world');
         devLogger.inspect('FTS5 virtual tables working');
-      } catch (error) {
+      } catch (_error) {
         console.warn('⚠️ FTS5 virtual tables not available. Using standard text search as fallback.');
         // Test fallback to LIKE queries for text search
         db.run(`CREATE TABLE test_text_search (content TEXT, title TEXT)`);

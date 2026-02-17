@@ -9,7 +9,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DensityControls } from '../DensityControls';
-import type { ExtentMode } from '@/d3/SuperGridEngine/DataManager';
 
 describe('DensityControls', () => {
   const mockOnValueDensityChange = vi.fn();

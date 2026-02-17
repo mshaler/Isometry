@@ -14,7 +14,6 @@ import { describe, it, expect } from 'vitest';
 import {
   generateDensityQuery,
   filterEmptyCells,
-  type ExtentMode
 } from '../DataManager';
 import type { CellDescriptor } from '../types';
 

@@ -104,7 +104,7 @@ export class ViewRegistrationManager {
    * Clear all registered renderers
    */
   public clearAll(): void {
-    for (const [_viewType, renderer] of this.viewRenderers) {
+    for (const renderer of this.viewRenderers.values()) {
       renderer.destroy();
     }
     this.viewRenderers.clear();

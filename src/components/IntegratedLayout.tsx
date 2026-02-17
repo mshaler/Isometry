@@ -5,8 +5,8 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 import { ChevronDown, ChevronUp, BookOpen } from 'lucide-react';
 import { LatchNavigator } from './navigator/LatchNavigator';
 import { PafvNavigator } from './navigator/PafvNavigator';
-// LatchGraphSliders temporarily hidden (Phase 105 milestone)
-import { useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
+// LatchGraphSliders re-enabled (Phase 105 complete)
+import { LatchGraphSliders, useSliderFilters, type SliderClassification } from './navigator/LatchGraphSliders';
 import { SuperGrid } from '../d3/SuperGrid';
 import { SuperGridCSS } from './supergrid/SuperGridCSS';
 import { headerTreeToAxisConfig } from './supergrid/adapters/headerTreeAdapter';
@@ -98,10 +98,11 @@ export function IntegratedLayout() {
     };
   }, [classification]);
 
-  // Slider filters hook
-  // NOTE: setFilterValue temporarily unused while LatchGraphSliders is hidden (Phase 105)
+  // Slider filters hook - re-enabled Phase 105 complete
   const {
     filters: sliderFilters,
+    activeFilters: sliderActiveFilters,
+    setFilterValue,
     buildWhereClause,
     resetFilters,
   } = useSliderFilters(currentData, sliderClassification);
@@ -372,8 +373,12 @@ export function IntegratedLayout() {
   }, [refreshClassification]);
 
   // Handle slider filter change - re-query SuperGrid with filter constraints
-  // NOTE: LatchGraphSliders is temporarily hidden (Phase 105 milestone)
-  // The callback would be: (filterId, value) => setFilterValue(filterId, value)
+  const handleSliderFilterChange = useCallback(
+    (filterId: string, value: [number, number]) => {
+      setFilterValue(filterId, value);
+    },
+    [setFilterValue]
+  );
 
   const runImport = useCallback(async (clearExisting: boolean) => {
     if (!databaseService?.isReady()) return;
@@ -976,10 +981,10 @@ export function IntegratedLayout() {
           <PafvNavigator enabledProperties={enabledProperties} nodeType={activeNodeType} />
         </div>
 
-        {/* LATCH*GRAPH Sliders - HIDDEN for now (Phase 105 milestone) */}
-        {/* TODO(Phase-105): Re-enable LatchGraphSliders with proper data-driven filtering
+        {/* LATCH*GRAPH Sliders - re-enabled (Phase 105 complete) */}
         <LatchGraphSliders
           filters={sliderFilters}
+          activeFilters={sliderActiveFilters}
           onFilterChange={handleSliderFilterChange}
           emptyStateMessage={
             importStatus === 'importing'
@@ -988,7 +993,6 @@ export function IntegratedLayout() {
           }
           onResetFilters={resetFilters}
         />
-        */}
 
         {/* SuperGrid Canvas - MAXIMIZED with scroll */}
         <div

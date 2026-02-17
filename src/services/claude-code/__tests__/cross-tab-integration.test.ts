@@ -479,7 +479,7 @@ describe('GSD Command Trigger Flow', () => {
       { output: 'Starting test phase', expected: 'test' },
     ];
 
-    for (const { output, expected } of phases) {
+    for (const { output, expected: _expected } of phases) {
       processTerminalOutput(output, gsdService, sessionId, outputBuffer);
     }
 

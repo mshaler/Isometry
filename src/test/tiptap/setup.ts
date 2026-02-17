@@ -92,9 +92,7 @@ if (!document.elementFromPoint) {
 }
 
 // Mock document.caretPositionFromPoint (used by some ProseMirror code paths)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 if (!(document as any).caretPositionFromPoint) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (document as any).caretPositionFromPoint = (_x: number, _y: number) => null;
 }
 
@@ -108,10 +106,8 @@ const originalGetSelection = window.getSelection;
 if (originalGetSelection) {
   window.getSelection = function (): Selection | null {
     const selection = originalGetSelection.call(window);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (selection && !(selection as any).modify) {
       // Add modify method stub (used by some ProseMirror selection code)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (selection as any).modify = () => {};
     }
     return selection;

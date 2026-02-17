@@ -63,7 +63,6 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
 
   try {
     // Initialize sql.js with custom FTS5-enabled build
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     global.__TEST_SQL__ = await initSqlJs(wasmLoader() as any);
     devLogger.info('sql.js initialized for testing', {
       fts5Enabled: true
@@ -80,6 +79,7 @@ async function initializeTestSqlJs(): Promise<SqlJsStatic> {
 // Mock WASM file content for test environment
 // Future utility for mocking WASM modules in tests
 // @ts-expect-error - Future utility, currently unused
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function createMockWasmModule() {
   // Create a minimal mock that satisfies sql.js initialization
   const mockWasm = new Uint8Array([

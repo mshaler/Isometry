@@ -287,7 +287,7 @@ describe('generateGridTemplate', () => {
   });
 
   it('uses default sizes', () => {
-    const { columns, rows } = generateGridTemplate(rowMetrics, colMetrics);
+    const { columns } = generateGridTemplate(rowMetrics, colMetrics);
 
     // Default header width is 100px
     expect(columns.startsWith('100px 100px 100px')).toBe(true);

@@ -211,7 +211,7 @@ export function SuperGridScrollTest(): JSX.Element {
   }, [allNodes, xFacet, yFacet, extractAxisValue]);
 
   // Calculate header depths for hierarchical display
-  const { xHeaderDepth, yHeaderDepth: _yHeaderDepth } = useMemo(() => {
+  const { xHeaderDepth } = useMemo(() => {
     const getDepth = (labels: string[], facet: string | null) => {
       if (facet !== 'folder') return 1;
       const compositeKeys = parseFolderHierarchy(labels);

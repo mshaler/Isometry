@@ -3,6 +3,42 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { CardDetailModal } from '../CardDetailModal';
 
+// Mock the hooks that depend on SQLiteProvider
+vi.mock('@/hooks/useFacetValues', () => ({
+  useFolderValues: vi.fn(() => ({
+    data: [
+      { value: 'work', count: 10 },
+      { value: 'personal', count: 5 },
+      { value: 'archive', count: 2 },
+    ],
+    isLoading: false,
+    error: null,
+  })),
+  useStatusValues: vi.fn(() => ({
+    data: [
+      { value: 'active', count: 8 },
+      { value: 'completed', count: 6 },
+      { value: 'blocked', count: 3 },
+    ],
+    isLoading: false,
+    error: null,
+  })),
+}));
+
+vi.mock('@/hooks/useSettings', () => ({
+  useSetting: vi.fn((key: string, defaultValue: unknown) => {
+    // Return status_colors for the color picker
+    if (key === 'status_colors') {
+      return [{
+        'active': '#22c55e',  // green
+        'completed': '#3b82f6', // blue
+        'blocked': '#ef4444', // red
+      }, vi.fn()];
+    }
+    return [defaultValue, vi.fn()];
+  }),
+}));
+
 // Mock card data matching IsometryKB schema
 const mockCard = {
   id: 'test-card-1',

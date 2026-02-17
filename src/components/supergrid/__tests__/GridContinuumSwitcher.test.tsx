@@ -8,7 +8,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GridContinuumSwitcher } from '../GridContinuumSwitcher';
-import type { GridContinuumMode } from '@/types/view';
 
 describe('GridContinuumSwitcher', () => {
   const mockOnModeChange = vi.fn();

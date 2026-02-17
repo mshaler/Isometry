@@ -8,7 +8,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { SuperGridHeaderManager, buildHeaderHierarchy, calculateHeaderDimensions } from '../HeaderManager';
-import type { CellDescriptor, HeaderDescriptor, HeaderNode } from '../types';
+import type { CellDescriptor, HeaderDescriptor } from '../types';
 
 describe('HeaderManager', () => {
   describe('buildHeaderHierarchy', () => {

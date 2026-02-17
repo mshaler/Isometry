@@ -1,0 +1,43 @@
+{
+  "name": "@isometry/etl",
+  "version": "0.1.0",
+  "description": "Isometry ETL adapters for ingesting data from various sources",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "apple-notes": "npx tsx src/adapters/apple-notes/adapter.ts"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.0.0",
+    "tsx": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "keywords": [
+    "isometry",
+    "etl",
+    "apple-notes",
+    "sqlite",
+    "data-pipeline"
+  ],
+  "author": "Isometry",
+  "license": "MIT"
+}

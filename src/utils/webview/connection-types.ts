@@ -35,3 +35,41 @@ export interface ReconnectionConfig {
   enabled: boolean;
 }
 
+export interface QualityThresholds {
+  latency: { good: number; acceptable: number; poor: number };
+  packetLoss: { good: number; acceptable: number; poor: number };
+  stability: { good: number; acceptable: number; poor: number };
+}
+
+export interface CircuitBreakerConfig {
+  enabled: boolean;
+  failureThreshold: number;
+  timeout: number;
+  monitoringPeriod: number;
+}
+
+export interface ConnectionConfig {
+  reconnection: ReconnectionConfig;
+  healthCheckInterval: number;
+  connectionTimeout: number;
+  messageQueueSize: number;
+  heartbeatInterval: number;
+  heartbeatTimeout: number;
+  qualityThresholds: QualityThresholds;
+  circuitBreaker: CircuitBreakerConfig;
+}
+
+export interface ConnectionEvent {
+  type: 'connect' | 'disconnect' | 'reconnect' | 'error' | 'stateChange';
+  timestamp: number;
+  data?: unknown;
+}
+
+export interface ConnectionManager {
+  getState(): ConnectionState;
+  getMetrics(): ConnectionMetrics;
+  connect(): Promise<void>;
+  disconnect(): Promise<void>;
+  on(event: string, listener: (...args: unknown[]) => void): void;
+  off(event: string, listener: (...args: unknown[]) => void): void;
+}

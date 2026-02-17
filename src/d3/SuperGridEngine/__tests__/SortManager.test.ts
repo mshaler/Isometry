@@ -12,7 +12,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   SortManager,
-  type SortLevel,
   type MultiSortState,
 } from '../SortManager';
 

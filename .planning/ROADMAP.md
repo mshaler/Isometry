@@ -328,7 +328,7 @@ Plans:
 4. Folder hierarchy correct for all nested folders
 5. Tags extracted correctly from all notes with hashtags
 
-**Plans:** 4 plans in 2 waves
+**Plans:** 3/3 plans complete
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -985,7 +985,7 @@ Plans:
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
-| 117. Apple Notes SQLite Sync | v7.0 | 2/4 | In Progress | — |
+| 117. Apple Notes SQLite Sync | v7.0 | Complete    | 2026-02-17 | — |
 
 ---
 *Roadmap created: 2026-02-10*

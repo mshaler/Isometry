@@ -64,7 +64,6 @@ export function SuperStackDemo(): React.ReactElement {
   const handleHeaderClick = useCallback((node: HeaderNode) => {
     // Demo: log header click for debugging
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
       console.warn('Header clicked:', node.value, node.path);
     }
     setSelectedId(node.id);

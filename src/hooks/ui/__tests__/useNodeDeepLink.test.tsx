@@ -60,6 +60,8 @@ describe('useNodeDeepLink', () => {
     vi.clearAllMocks();
     // Clear URL params
     setUrlParam('nodeId', null);
+    // Clear sessionStorage (SelectionContext persists selection state)
+    sessionStorage.clear();
     // Reset mock db to return node exists
     mockDb.exec = vi.fn().mockReturnValue([{ values: [['test-node-id']] }]);
     // Reset useSQLite mock

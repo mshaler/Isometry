@@ -9,7 +9,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { JSDOM } from 'jsdom';
-import * as d3 from 'd3';
 import {
   FilterDropdown,
   type FilterDropdownConfig,
