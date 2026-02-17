@@ -320,7 +320,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
   }
 
   return (
-    <div className={`${className} ${
+    <div className={`${className} relative ${
       theme === 'NeXTSTEP' ? 'bg-[#c0c0c0] border-[#707070]' : 'bg-white border-gray-300'
     } border rounded-lg flex flex-col`}>
       <div className={`flex items-center justify-between p-2 ${

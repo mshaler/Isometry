@@ -10,6 +10,7 @@ import { NotebookLayout } from './components/notebook/NotebookLayout';
 import { NotebookProvider } from './contexts/NotebookContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { FilterProvider } from './contexts/FilterContext';
+import { FilterProvider as LATCHFilterProvider } from './state/FilterContext';
 import { PAFVProvider } from './state/PAFVContext';
 import { SelectionProvider } from './state/SelectionContext';
 import { AppStateProvider } from './contexts/AppStateContext';
@@ -86,14 +87,16 @@ function App() {
 
   // Phase 96: Isolated Notebook test page (Capture, Shell, Preview only)
   // No SuperGrid or other complex components - pure notebook debugging
+  // Phase 115-03: Added LATCHFilterProvider for Timeline useFilters support
   if (testMode === 'notebook') {
     return (
       <SQLiteProvider>
         <FilterProvider>
-          <ThemeProvider>
-            <PAFVProvider>
-              <SelectionProvider>
-                <NotebookProvider>
+          <LATCHFilterProvider>
+            <ThemeProvider>
+              <PAFVProvider>
+                <SelectionProvider>
+                  <NotebookProvider>
                   <div className="h-screen w-screen bg-gray-900 flex flex-col">
                     {/* Header */}
                     <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
@@ -121,10 +124,11 @@ function App() {
                       </span>
                     </div>
                   </div>
-                </NotebookProvider>
-              </SelectionProvider>
-            </PAFVProvider>
-          </ThemeProvider>
+                  </NotebookProvider>
+                </SelectionProvider>
+              </PAFVProvider>
+            </ThemeProvider>
+          </LATCHFilterProvider>
         </FilterProvider>
       </SQLiteProvider>
     );
@@ -134,20 +138,23 @@ function App() {
     // SYNC-03: SelectionProvider enables cross-canvas selection synchronization
     // All notebook canvases (Capture, Shell, Preview) share the same selection state
     // Phase 78-01: Deep linking via ?nodeId= parameter
+    // Phase 115-03: Added LATCHFilterProvider for Timeline useFilters support
     return (
       <SQLiteProvider>
         <FilterProvider>
-          <ThemeProvider>
-            <PAFVProvider>
-              <SelectionProvider>
-                <DeepLinkHandler>
-                  <NotebookProvider>
-                    <NotebookLayout />
-                  </NotebookProvider>
-                </DeepLinkHandler>
-              </SelectionProvider>
-            </PAFVProvider>
-          </ThemeProvider>
+          <LATCHFilterProvider>
+            <ThemeProvider>
+              <PAFVProvider>
+                <SelectionProvider>
+                  <DeepLinkHandler>
+                    <NotebookProvider>
+                      <NotebookLayout />
+                    </NotebookProvider>
+                  </DeepLinkHandler>
+                </SelectionProvider>
+              </PAFVProvider>
+            </ThemeProvider>
+          </LATCHFilterProvider>
         </FilterProvider>
       </SQLiteProvider>
     );
@@ -188,10 +195,39 @@ function App() {
 
   // Phase 57: Integrated Navigator + SuperGrid + DensitySlider layout
   // Phase 80-01: NotebookProvider added for Notebook Integration
+  // Phase 115-03: Added LATCHFilterProvider for Timeline useFilters support
   if (testMode === 'integrated') {
     return (
       <SQLiteProvider>
         <FilterProvider>
+          <LATCHFilterProvider>
+            <ThemeProvider>
+              <PAFVProvider>
+                <SelectionProvider>
+                  <AppStateProvider>
+                    <NotebookProvider>
+                      <DeepLinkHandler>
+                        <IntegratedLayout />
+                      </DeepLinkHandler>
+                    </NotebookProvider>
+                  </AppStateProvider>
+                </SelectionProvider>
+              </PAFVProvider>
+            </ThemeProvider>
+          </LATCHFilterProvider>
+        </FilterProvider>
+      </SQLiteProvider>
+    );
+  }
+
+  // Default: IntegratedLayout (no ?test= param required)
+  // Phase 78-01: Deep linking via ?nodeId= parameter
+  // Phase 80-01: NotebookProvider added for Notebook Integration
+  // Phase 115-03: Added LATCHFilterProvider for Timeline useFilters support
+  return (
+    <SQLiteProvider>
+      <FilterProvider>
+        <LATCHFilterProvider>
           <ThemeProvider>
             <PAFVProvider>
               <SelectionProvider>
@@ -205,30 +241,7 @@ function App() {
               </SelectionProvider>
             </PAFVProvider>
           </ThemeProvider>
-        </FilterProvider>
-      </SQLiteProvider>
-    );
-  }
-
-  // Default: IntegratedLayout (no ?test= param required)
-  // Phase 78-01: Deep linking via ?nodeId= parameter
-  // Phase 80-01: NotebookProvider added for Notebook Integration
-  return (
-    <SQLiteProvider>
-      <FilterProvider>
-        <ThemeProvider>
-          <PAFVProvider>
-            <SelectionProvider>
-              <AppStateProvider>
-                <NotebookProvider>
-                  <DeepLinkHandler>
-                    <IntegratedLayout />
-                  </DeepLinkHandler>
-                </NotebookProvider>
-              </AppStateProvider>
-            </SelectionProvider>
-          </PAFVProvider>
-        </ThemeProvider>
+        </LATCHFilterProvider>
       </FilterProvider>
     </SQLiteProvider>
   );

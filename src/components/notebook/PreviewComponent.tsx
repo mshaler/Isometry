@@ -426,7 +426,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             sql="SELECT * FROM nodes WHERE deleted_at IS NULL LIMIT 100"
             mode="supergrid"
             enableSuperStack={true}
-            enableDragDrop={true}
+            enableDragDrop={false}
             onCellClick={(node) => {
               const card = cards.find(c => c.nodeId === node.id);
               if (card) {

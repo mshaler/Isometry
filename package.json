@@ -4,8 +4,8 @@
   "description": "Isometry React prototype - now with native database integration (sql.js migration completed)",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:terminal": "concurrently \"npm run start:terminal-server\" \"npm run dev\"",
+    "dev": "concurrently \"npm run start:terminal-server\" \"npm run dev:vite\"",
+    "dev:vite": "vite",
     "postinstall": "chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper 2>/dev/null || true",
     "start:terminal-server": "tsx scripts/start-terminal-server.ts",
     "dev:native": "cross-env REACT_APP_USE_NATIVE_API=true vite",

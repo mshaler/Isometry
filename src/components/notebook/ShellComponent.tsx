@@ -279,6 +279,26 @@ function ShellComponentInner({ className }: ShellComponentProps) {
           className={`absolute inset-0 bg-[#111827] ${activeTab === 'claude-code' ? 'visible' : 'invisible'}`}
         />
 
+        {/* Server Not Running Overlay */}
+        {activeTab === 'claude-code' && connectionStatus === 'disconnected' && (
+          <div className="absolute inset-0 bg-gray-900/95 flex items-center justify-center z-10">
+            <div className="text-center p-6 max-w-md">
+              <Terminal size={48} className="text-gray-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-200 mb-2">Terminal Server Not Running</h3>
+              <p className="text-sm text-gray-400 mb-4">
+                The terminal requires a backend server for command execution.
+              </p>
+              <div className="bg-gray-800 rounded-lg p-3 text-left">
+                <p className="text-xs text-gray-500 mb-2">Start with terminal server:</p>
+                <code className="text-sm text-green-400 font-mono">npm run dev:terminal</code>
+              </div>
+              <p className="text-xs text-gray-500 mt-4">
+                Or run <code className="text-green-400">npm run start:terminal-server</code> separately
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Claude AI Tab - MCP Assistant */}
         {activeTab === 'claude-ai' && (
           <ClaudeAIChat className="flex-1" />

@@ -265,8 +265,11 @@ There is no `cards` table. There is no `canvases` table in the current schema. N
 ## Build & Test Commands
 
 ```bash
-# Development server (React + Vite)
+# Development server (Vite + terminal backend for Shell)
 npm run dev
+
+# Development server WITHOUT terminal backend (Vite only, lighter)
+npm run dev:vite
 
 # Type checking (must pass with zero errors)
 npm run typecheck
