@@ -8,6 +8,9 @@
 // Core renderer
 export { createForceGraph, ForceGraphRenderer } from './ForceGraphRenderer';
 
+// Lifecycle management
+export { ForceSimulationManager } from './ForceSimulationManager';
+
 // Types
 export type {
   GraphNode,
@@ -16,6 +19,8 @@ export type {
   ForceGraphCallbacks,
   ForceGraphInstance,
   EdgeType,
+  SimulationState,
+  ForceSimulationCallbacks,
 } from './types';
 
 export { DEFAULT_FORCE_CONFIG, EDGE_TYPE_STYLES } from './types';
