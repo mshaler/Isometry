@@ -10,12 +10,12 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-Phase: 112 (Technical Debt Sprint)
-Plan: 03 COMPLETE — TipTap test infrastructure done
-Status: Phase 112 complete — all 3 plans executed
-Last activity: 2026-02-17 — Plan 112-03 executed
+Phase: 111 (View Continuum Integration)
+Plan: 01 COMPLETE — KanbanView with react-dnd drag-drop
+Status: Phase 111 in progress — 1/3 plans executed
+Last activity: 2026-02-17 — Plan 111-01 executed
 
-Progress: [██████████] 100%
+Progress: [███░░░░░░░] 33%
 Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
 ## Active Milestones
@@ -85,12 +85,20 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [Phase 112-03]: JSDOM-MOCK-01: Mock getBoundingClientRect/getClientRects for ProseMirror in JSDOM
 - [Phase 112-03]: TEST-PATTERN-01: Use TestEditorWrapper with children render prop for editor access
 - [Phase 112-03]: IMMEDIATE-RENDER-01: Use immediatelyRender: true for TipTap test stability
+- [Phase 111-01]: KANBAN-DRAG-01: Function form for useDrag item prevents stale closure issues
+- [Phase 111-01]: KANBAN-FACET-01: Y-axis PAFV mapping determines column facet with 'status' fallback
+- [Phase 111-01]: KANBAN-UNCAT-01: Cards with null facet go to '(Uncategorized)' column
 
 ### Pending Todos
 
-**Phase 110:** View Continuum Foundation (Track A Wave 1)
+**Phase 110:** View Continuum Foundation (Track A Wave 1) ✅ COMPLETE
 - [x] Plan 110-01: Gallery view with CSS Grid masonry + TanStack Virtual
 - [x] Plan 110-02: List view with hierarchical tree + keyboard navigation
+
+**Phase 111:** View Continuum Integration (Track A Wave 2)
+- [x] Plan 111-01: KanbanView with react-dnd drag-drop and SQL UPDATE persistence
+- [ ] Plan 111-02: ViewDispatcher refactor
+- [ ] Plan 111-03: View switching integration
 
 **Phase 112:** Technical Debt (runs parallel with 110-111) ✅ COMPLETE
 - [x] Plan 112-01: Knip audit and unused export removal (275 -> 91 unused exports)
@@ -112,11 +120,11 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 112 complete — TipTap test infrastructure (93 tests)
-Next: Phase 111 (ViewDispatcher) or Phase 113 (Network/Timeline polish)
+Completed: Phase 111-01 — KanbanView with react-dnd drag-drop (16 tests)
+Next: Phase 111-02 (ViewDispatcher refactor)
 Resume file: N/A
 
-**Stopped at:** Completed Phase 112 (Technical Debt Sprint) - all 3 plans executed
+**Stopped at:** Completed Phase 111-01 (KanbanView) - 1/3 plans in phase 111
 
 ---
-*Updated: 2026-02-17 (Phase 112 complete, TipTap tests operational)*
+*Updated: 2026-02-17 (Phase 111-01 complete, KanbanView operational)*
