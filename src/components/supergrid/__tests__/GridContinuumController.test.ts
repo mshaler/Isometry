@@ -8,7 +8,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GridContinuumController, type GridContinuumMode } from '../GridContinuumController';
+import { GridContinuumController, type AxisAllocation } from '../GridContinuumController';
+import type { GridContinuumMode } from '@/types/view';
 import type { Node } from '@/types/node';
 import type { AxisMapping } from '@/types/pafv';
 
@@ -181,6 +182,74 @@ describe('GridContinuumController', () => {
       );
       expect(workInProgressCell?.nodes).toHaveLength(1);
       expect(workInProgressCell?.nodes[0].id).toBe('1');
+    });
+  });
+
+  describe('allocateAxes()', () => {
+    it('returns 0 axes with null x/y for gallery mode', () => {
+      const allocation = controller.allocateAxes('gallery');
+
+      expect(allocation.axisCount).toBe(0);
+      expect(allocation.x).toBeNull();
+      expect(allocation.y).toBeNull();
+      expect(allocation.description).toContain('masonry');
+    });
+
+    it('returns 1 y-axis with default folder facet for list mode', () => {
+      const allocation = controller.allocateAxes('list');
+
+      expect(allocation.axisCount).toBe(1);
+      expect(allocation.x).toBeNull();
+      expect(allocation.y).toBe('folder');
+      expect(allocation.description).toContain('hierarchy');
+    });
+
+    it('returns 1 x-axis with default status facet for kanban mode', () => {
+      const allocation = controller.allocateAxes('kanban');
+
+      expect(allocation.axisCount).toBe(1);
+      expect(allocation.x).toBe('status');
+      expect(allocation.y).toBeNull();
+      expect(allocation.description).toContain('column');
+    });
+
+    it('returns 2 axes for grid mode with defaults', () => {
+      const allocation = controller.allocateAxes('grid');
+
+      expect(allocation.axisCount).toBe(2);
+      expect(allocation.x).toBe('status');
+      expect(allocation.y).toBe('folder');
+      expect(allocation.description).toContain('matrix');
+    });
+
+    it('uses existing mappings for supergrid mode', () => {
+      controller.setAxisMapping('x', 'time', 'created_at');
+      controller.setAxisMapping('y', 'category', 'tags');
+      controller.setAxisMapping('color', 'hierarchy', 'priority');
+
+      const allocation = controller.allocateAxes('supergrid');
+
+      expect(allocation.axisCount).toBe(3);
+      expect(allocation.x).toBe('created_at');
+      expect(allocation.y).toBe('tags');
+      expect(allocation.z).toBe('priority');
+      expect(allocation.description).toContain('stacked');
+    });
+
+    it('list mode uses custom y-axis mapping when set', () => {
+      controller.setAxisMapping('y', 'time', 'created_at');
+
+      const allocation = controller.allocateAxes('list');
+
+      expect(allocation.y).toBe('created_at');
+    });
+
+    it('kanban mode uses custom x-axis mapping when set', () => {
+      controller.setAxisMapping('x', 'category', 'folder');
+
+      const allocation = controller.allocateAxes('kanban');
+
+      expect(allocation.x).toBe('folder');
     });
   });
 

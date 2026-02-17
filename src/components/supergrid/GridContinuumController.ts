@@ -13,6 +13,20 @@ import type { Node } from '@/types/node';
 import type { LATCHAxis, AxisMapping, Plane } from '@/types/pafv';
 import type { GridContinuumMode } from '@/types/view';
 
+/**
+ * AxisAllocation - Describes which PAFV axes are active for a given view mode
+ *
+ * This interface is used by SQL query generation to determine GROUP BY clauses
+ * and by renderers to configure their axis displays.
+ */
+export interface AxisAllocation {
+  axisCount: number;
+  x: string | null;      // Facet mapped to x-axis
+  y: string | null;      // Facet mapped to y-axis
+  z?: string | null;     // Facet mapped to z-axis (SuperGrid only)
+  description: string;   // Human-readable mode description
+}
+
 // Layout types for different projections
 export type ProjectionLayout =
   | 'masonry'           // Gallery: position-only
@@ -121,6 +135,67 @@ export class GridContinuumController {
    */
   onModeTransition(handler: ModeTransitionHandler): void {
     this.transitionHandlers.push(handler);
+  }
+
+  /**
+   * Get PAFV axis allocation for a specific view mode
+   *
+   * Returns which axes are active and what facets they map to.
+   * Used by SQL query generation for GROUP BY and by renderers for axis config.
+   */
+  allocateAxes(mode: GridContinuumMode): AxisAllocation {
+    switch (mode) {
+      case 'gallery':
+        return {
+          axisCount: 0,
+          x: null,
+          y: null,
+          description: 'Position only (masonry flow)',
+        };
+      case 'list':
+        return {
+          axisCount: 1,
+          x: null,
+          y: this.axisMappings.get('y')?.facet || this.getDefaultHierarchyFacet(),
+          description: 'Single hierarchy axis',
+        };
+      case 'kanban':
+        return {
+          axisCount: 1,
+          x: this.axisMappings.get('x')?.facet || this.getDefaultCategoryFacet(),
+          y: null,
+          description: 'Single category facet for columns',
+        };
+      case 'grid':
+        return {
+          axisCount: 2,
+          x: this.axisMappings.get('x')?.facet || this.getDefaultCategoryFacet(),
+          y: this.axisMappings.get('y')?.facet || this.getDefaultHierarchyFacet(),
+          description: 'Two axes for matrix',
+        };
+      case 'supergrid':
+        return {
+          axisCount: this.axisMappings.size,
+          x: this.axisMappings.get('x')?.facet || null,
+          y: this.axisMappings.get('y')?.facet || null,
+          z: this.axisMappings.get('color')?.facet || null,
+          description: 'N axes with stacked headers',
+        };
+    }
+  }
+
+  /**
+   * Get default hierarchy facet for list mode
+   */
+  private getDefaultHierarchyFacet(): string {
+    return 'folder';  // Standard hierarchy facet
+  }
+
+  /**
+   * Get default category facet for kanban/grid modes
+   */
+  private getDefaultCategoryFacet(): string {
+    return 'status';  // Standard category facet for Kanban
   }
 
   /**
