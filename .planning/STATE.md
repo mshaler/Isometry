@@ -10,10 +10,10 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-Phase: 110 (View Continuum Foundation)
-Plan: 02 COMPLETE — Phase 110 complete
-Status: Both plans complete — GalleryView + ListView shipped
-Last activity: 2026-02-17 — Plan 110-02 executed
+Phase: 112 (Technical Debt Sprint)
+Plan: 01 COMPLETE — Knip cleanup done
+Status: Phase 112-01 complete — unused exports reduced by 184
+Last activity: 2026-02-17 — Plan 112-01 executed
 
 Progress: [█████████░] 89%
 Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
@@ -77,6 +77,9 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [Phase 110-02]: LIST-02: Groups start collapsed (empty Set) to avoid overwhelming users on initial load
 - [Phase 110-02]: LIST-03: stable transformCards function outside component to prevent useSQLiteQuery re-runs
 - [Phase 110-02]: LIST-04: folder ?? '(No Folder)' fallback ensures all cards appear in tree
+- [Phase 112-01]: KNIP-BARREL-01: Add 33 barrel file entry points to knip.json to eliminate false positives
+- [Phase 112-01]: EXPORT-PATTERN-01: Keep named exports, remove default exports where no external dependencies
+- [Phase 112-01]: COMPAT-ALIAS-01: Retain backward-compatibility aliases that are actively imported
 
 ### Pending Todos
 
@@ -85,14 +88,14 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [x] Plan 110-02: List view with hierarchical tree + keyboard navigation
 
 **Phase 112:** Technical Debt (runs parallel with 110-111)
-- [ ] Plan 112-01: Knip audit and unused export removal
+- [x] Plan 112-01: Knip audit and unused export removal (275 -> 91 unused exports)
 - [ ] Plan 112-02: src/services directory reorganization
 - [ ] Plan 112-03: TipTap test infrastructure
 
 ### Blockers/Concerns
 
 **Technical Debt (Track B targets):**
-- knip unused exports: 275 reported (baseline ratchet at 1000)
+- knip unused exports: 91 remaining (down from 275, reduced by 67%)
 - Directory health: src/services (22/15 files)
 - TipTap automated tests: Manual test plan in place, need infrastructure
 
@@ -104,11 +107,11 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Plan 110-02 — ListView + ListRow + primitives-list.css
-Next: Phase 111 — ViewDispatcher, or Phase 112 — Technical Debt Sprint (parallel)
+Completed: Plan 112-01 — Knip cleanup (33 barrel entries, 6 duplicate exports removed)
+Next: Phase 112-02 (src/services reorg), or Phase 111 (ViewDispatcher)
 Resume file: N/A
 
-**Stopped at:** Completed 110-02-PLAN.md (ListView + primitives-list.css)
+**Stopped at:** Completed 112-01-PLAN.md (knip configuration + export cleanup)
 
 ---
-*Updated: 2026-02-17 (plan 110-02 complete, phase 110 done)*
+*Updated: 2026-02-17 (plan 112-01 complete, knip unused exports 275 -> 91)*
