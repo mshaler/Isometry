@@ -6,16 +6,16 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 **Core value:** Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
 
-**Current focus:** v6.9 Polymorphic Views & Foundation — Track C COMPLETE
+**Current focus:** v6.9 Polymorphic Views & Foundation — Track D IN PROGRESS
 
 ## Current Position
 
-Phase: 115 (Three-Canvas Notebook) PLANNING
-Plan: None yet — Requirements and Research complete
-Status: Track D PLANNING — requirements defined, research done
-Last activity: 2026-02-17 — Track D planning artifacts created
+Phase: 115 (Three-Canvas Notebook) IN PROGRESS
+Plan: 03 of 4 — Plans 01-02 complete (Resizable Panels, Selection Sync)
+Status: Track D EXECUTING — 115-02 complete, 115-03 next (Cross-Canvas Messaging)
+Last activity: 2026-02-17 — 115-02 Selection Sync Verification complete
 
-Progress: [██████████] 96%
+Progress: [█████████░] 90%
 Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 
 ## Active Milestones
@@ -33,7 +33,7 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 **Parallelization:** A+B parallel → C (after A) → D (after C)
 
 **Progress:**
-[██████████] 95%
+[█████████░] 90%
 - Requirements: 20 defined (9 P0, 9 P1, 2 P2)
 
 ### v7.0 ETL Enrichment — PLANNING
@@ -126,6 +126,12 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 - [Phase 114-03]: STAGGER-01: 3-slot stagger (center/-20%bw/+20%bw) in TimelineRenderer resets to 0 when pixel gap exceeds EVENT_RADIUS*2.5
 - [Phase 114-03]: MIGRATE-01: Legacy 'preview-active-tab' sessionStorage key migrated in loadFromStorage() before STORAGE_KEY lookup
 - [Phase 114-03]: ZOOM-RESTORE-01: Zoom restore in handleTabSwitch only for D3 tabs (not web-preview); guard typeof savedZoom === 'number'
+- [Phase 115]: PANEL-API-01: react-resizable-panels v3 uses Group/Panel/Separator (not PanelGroup/PanelResizeHandle) — adapted from plan's expected older API
+- [Phase 115]: PANEL-PERSIST-01: localStorage key 'notebook-panels' stores Layout object {capture, shell, preview} as percentages; onLayoutChanged fires after drag completes (not onLayout which fires during)
+- [Phase 115]: PANEL-IMPERATIVE-01: panelRef prop (not React ref) used for PanelImperativeHandle — v3 API design; resize() method accepts percentage for equal thirds reset
+- [Phase 115]: SYNC-03-REF-01: syncAndLoadRef (useRef + reassignment) for reverse sync avoids stale closure issues
+- [Phase 115]: SYNC-03-EVENT-01: isometry:load-card custom event enables future card picker reverse sync without prop drilling
+- [Phase 115]: INDICATOR-01: In Preview badge only shown for single selection; count badge takes precedence for multi-select
 
 ### Pending Todos
 
@@ -153,9 +159,9 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 - [x] Plan 114-02: Preview Tab Integration (tab persistence, usePreviewSettings, PAFV info, zoom)
 - [x] Plan 114-03: Gap Closure (collision handling, hook adoption, zoom restore) — 3 tasks, 69 tests
 
-**Phase 115:** Three-Canvas Notebook (Track D) — PLANNING
-- [ ] Plan 115-01: Resizable Panels (react-resizable-panels)
-- [ ] Plan 115-02: Selection Sync Verification
+**Phase 115:** Three-Canvas Notebook (Track D) — IN PROGRESS
+- [x] Plan 115-01: Resizable Panels (react-resizable-panels) — COMPLETE (2 tasks, 8 tests)
+- [x] Plan 115-02: Selection Sync Verification — COMPLETE (2 tasks, 7 tests, 5 min)
 - [ ] Plan 115-03: Cross-Canvas Messaging
 - [ ] Plan 115-04: Integration Testing & Polish
 
@@ -184,7 +190,7 @@ Completed: Phase 114-03 — Gap Closure (collision handling, hook adoption, zoom
 Next: Track D — Three-Canvas Notebook Integration (Capture+Shell+Preview)
 Resume file: N/A
 
-**Stopped at:** Completed 114-03-PLAN.md (Timeline/Preview gap closure)
+**Stopped at:** Completed 115-02-PLAN.md (Selection Sync Verification)
 
 ---
 *Updated: 2026-02-17 (Phase 114-03 complete, Track C fully closed, Track D ready)*
