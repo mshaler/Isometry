@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useContext } from 'react';
 import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database, Clock } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
@@ -8,6 +8,7 @@ import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import { SuperGrid } from '../supergrid/SuperGrid';
 import { NetworkGraphTab, DataInspectorTab, TimelineTab } from './preview-tabs';
 import MDEditor from '@uiw/react-md-editor';
+import { PAFVContext } from '../../hooks/data/usePAFV';
 
 interface PreviewComponentProps {
   className?: string;
@@ -18,6 +19,8 @@ type PreviewTab = 'supergrid' | 'network' | 'timeline' | 'data-inspector' | 'web
 export function PreviewComponent({ className }: PreviewComponentProps) {
   const { theme } = useTheme();
   const { activeCard, cards, setActiveCard } = useNotebook();
+  // Use context directly (not usePAFV) to avoid throwing when PAFVProvider is absent in tests
+  const pafvContext = useContext(PAFVContext);
   const [isMinimized, setIsMinimized] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('https://example.com');
   const [isExporting, setIsExporting] = useState(false);
@@ -349,6 +352,17 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
               sql://nodes?filter=active-card-data
             </div>
+            {pafvContext && (() => {
+              const xMapping = pafvContext.state.mappings.find(m => m.plane === 'x');
+              const yMapping = pafvContext.state.mappings.find(m => m.plane === 'y');
+              return (xMapping || yMapping) ? (
+                <span className="text-xs text-gray-500 whitespace-nowrap">
+                  {xMapping ? `X: ${xMapping.facet}` : ''}
+                  {xMapping && yMapping ? ' | ' : ''}
+                  {yMapping ? `Y: ${yMapping.facet}` : ''}
+                </span>
+              ) : null;
+            })()}
             {dataPointCount > 0 && (
               <span className="text-xs text-gray-500">
                 {dataPointCount} nodes
@@ -360,11 +374,22 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
               graph://nodes+edges?layout=force-directed
             </div>
+            {dataPointCount > 0 && (
+              <span className="text-xs text-gray-500" data-testid="network-count">
+                {dataPointCount} nodes
+              </span>
+            )}
           </div>
         ) : activeTab === 'timeline' ? (
           <div className="flex items-center gap-2 p-2">
             <div className={`flex-1 px-2 py-1 text-xs ${theme === 'NeXTSTEP' ? 'bg-gray-100 border border-[#707070]' : 'bg-gray-100 border border-gray-300'} rounded text-gray-600`}>
-              timeline://nodes?facet=created_at
+              {pafvContext
+                ? (() => {
+                    const tMapping = pafvContext.state.mappings.find(m => m.plane === 'x' || m.plane === 'y');
+                    const facet = tMapping?.facet ?? 'created_at';
+                    return `timeline://nodes?facet=${facet}`;
+                  })()
+                : 'timeline://nodes?facet=created_at'}
             </div>
           </div>
         ) : activeTab === 'data-inspector' ? (
