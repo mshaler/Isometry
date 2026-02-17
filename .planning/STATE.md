@@ -99,6 +99,12 @@ npm run apple-notes (in isometry-etl)
 - TRACK-SEQUENCE-01: Track C depends on A (views need CSS primitives wired)
 - TRACK-SEQUENCE-02: Track D depends on C (canvas integration needs working views)
 
+**[Phase 116-01]: Scroll Position Persistence:**
+- SCROLL-REF-01: scrollContainerRef on content area div (overflow-auto) captures scroll from child tab content
+- SCROLL-RESTORE-01: requestAnimationFrame defers restoration to next paint cycle — avoids restoring before content renders
+- SCROLL-CLAMP-01: Clamp restored scroll to [0, max scrollWidth/scrollHeight] to handle content size changes
+- PANE-PROVIDER-01: Pass panelPercentages prop to PaneLayoutProvider in mobile layout (auto-fix for missing prop)
+
 **Previous milestones:** See STATE.md archive for v6.1-v6.8 decisions.
 - [Phase 110]: GALLERY-ROW-VIRT-01: Row-based virtualization (not CSS Grid auto-fit) because TanStack Virtual translateY is incompatible with auto-fit layout
 - [Phase 110-02]: LIST-01: ListRow.tsx pre-committed in 110-01 with identical spec content
