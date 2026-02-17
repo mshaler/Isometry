@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 113 (Network Graph Integration) IN PROGRESS
-Plan: 01 COMPLETE — Force Simulation Lifecycle Management
-Status: Track C started — 1/? plans executed
-Last activity: 2026-02-17 — Plan 113-01 executed
+Plan: 02 COMPLETE — Network Graph SQL Integration
+Status: Track C progressing — 2/3 plans executed
+Last activity: 2026-02-17 — Plan 113-02 executed
 
-Progress: [█████████░] 90%
-Overall: v6.9 Polymorphic Views & Foundation — Track C Started
+Progress: [█████████░] 92%
+Overall: v6.9 Polymorphic Views & Foundation — Track C Progressing
 
 ## Active Milestones
 
@@ -95,6 +95,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track C Started
 - [Phase 113-01]: LIFECYCLE-01: ForceSimulationManager destroy() clears DOM, nullifies refs, removes event handlers
 - [Phase 113-01]: HOOK-EFFECT-01: Two-effect pattern separates manager creation (once) from simulation lifecycle (on data change)
 - [Phase 113-01]: AUTO-STOP-01: Simulation auto-stops after maxTicks (300) or maxTime (3000ms) to prevent runaway CPU
+- [Phase 113-02]: SQLQUERY-01: useSQLiteQuery replaces useLiveData for consistent data fetching pattern
+- [Phase 113-02]: FILTER-01: LATCH filters compile to SQL WHERE clause with compileFilters()
+- [Phase 113-02]: SIMULATION-01: useForceSimulation hook manages D3 force simulation lifecycle
+- [Phase 113-02]: SELECTION-01: SelectionContext integration enables cross-canvas selection sync
+- [Phase 113-02]: EXTENDED-VIEW-01: ViewDispatcher accepts ExtendedViewMode for Grid Continuum + network/timeline
 
 ### Pending Todos
 
@@ -114,7 +119,7 @@ Overall: v6.9 Polymorphic Views & Foundation — Track C Started
 
 **Phase 113:** Network Graph Integration (Track C) IN PROGRESS
 - [x] Plan 113-01: Force Simulation Lifecycle Management (18 tests)
-- [ ] Plan 113-02: NetworkGraph with SQL query hooks (pending)
+- [x] Plan 113-02: NetworkGraph with SQL query hooks (18 tests)
 - [ ] Plan 113-03: Preview tab integration (pending)
 
 ### Blockers/Concerns
@@ -134,11 +139,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track C Started
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 113-01 — Force Simulation Lifecycle Management (18 tests)
-Next: Phase 113-02 (NetworkGraph with SQL query hooks)
+Completed: Phase 113-02 — Network Graph SQL Integration (18 tests)
+Next: Phase 113-03 (Preview tab integration)
 Resume file: N/A
 
-**Stopped at:** Completed Phase 113-01 (Force Simulation Lifecycle Management) - Track C started
+**Stopped at:** Completed Phase 113-02 (Network Graph SQL Integration) - Track C progressing
 
 ---
-*Updated: 2026-02-17 (Phase 113-01 complete, Track C Network Graph Integration started)*
+*Updated: 2026-02-17 (Phase 113-02 complete, Track C Network Graph Integration progressing)*
