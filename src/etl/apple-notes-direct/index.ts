@@ -63,3 +63,7 @@ export {
   generateEdgeUpsertSQL,
   generateBatchNodeUpsertSQL,
 } from './type-mapping';
+
+// NodeWriter: Persists canonical nodes/edges to sql.js
+export type { NodeWriter, WriteResult } from './NodeWriter';
+export { createNodeWriter } from './NodeWriter';
