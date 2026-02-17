@@ -1,340 +1,437 @@
-# Project Research Summary
+# Research Summary: Polymorphic Views & Foundation (v6.9)
 
-**Project:** Three-Canvas Notebook Integration for Isometry v4
-**Domain:** Knowledge Management with Polymorphic Data Visualization
-**Researched:** 2026-02-10
-**Confidence:** HIGH
+**Synthesized:** 2026-02-16
+**Research Scope:** Stack additions, feature landscape, architecture patterns, critical pitfalls
+**Overall Confidence:** HIGH
+
+---
 
 ## Executive Summary
 
-Isometry v4 already has a substantial Three-Canvas Notebook implementation (~10,554 lines). The foundation is operational: NotebookLayout with resize dividers, NotebookContext with full state management, CaptureComponent with MDEditor and slash commands, PreviewComponent with SuperGrid integration, and GSD GUI components. The challenge is not building from scratch, but completing the remaining 30-40% of functionality to reach production quality.
+Isometry v6.9 adds a polymorphic view continuum (Gallery → List → Kanban → Grid → SuperGrid) plus specialized views (Network, Timeline) within a unified three-canvas notebook layout. The architecture is proven: PAFV axis controller drives seven view renderers that all query the same sql.js database, eliminating data sync problems. Implementation is straightforward because:
 
-Research reveals three critical gaps: (1) Shell integration needs real Claude Code process spawning and WebSocket routing (currently stubs), (2) PreviewComponent needs multi-visualization support beyond SuperGrid (Network, Data Inspector tabs are 5% complete), and (3) cross-canvas data flow needs live synchronization (currently requires manual refresh). The stack is proven (TipTap v3.19.0, xterm.js v6.0.0, Anthropic SDK v0.74.0), but implementation requires careful attention to six critical pitfalls, particularly TipTap re-render performance (`shouldRerenderOnTransaction: false`), Claude API rate limiting with queue-based architecture, and context cascade re-renders via split Context pattern.
+1. **Core infrastructure exists:** SuperGrid (v6.6), PAFV controller, sql.js, D3 renderers already in codebase
+2. **Stack is minimal:** Only 1 new package needed (react-resizable-panels for pane layout); all views use existing React + D3 + CSS Grid ecosystem
+3. **Pattern is consistent:** All views follow "query once, render multiple ways" via useSQLiteQuery hook + renderer dispatch
+4. **Risks are known:** Force simulation lifecycle leaks, selection state loss, PAFV axis misalignment — all documented with prevention strategies
 
-The roadmap should prioritize completing Shell integration (40% of remaining work), then enhancing Preview visualizations (30%), then live data synchronization (20%), and finally polish (10%). This order matches dependency chains: Shell completion unblocks GSD workflow integration, Preview enhancements validate PAFV projections for notebook cards, and live sync requires both to be stable.
+**The differentiator is execution, not novelty.** A user can seamlessly switch from Grid (2-axis tabular) to Kanban (1-facet columns) to Timeline (temporal) on the same data without losing context. This is unique among competitors (Notion/Obsidian/Airtable offer one view type; Isometry offers all).
+
+---
 
 ## Key Findings
 
-### Recommended Stack (Additions Only)
+### From STACK.md: Minimal Ecosystem Additions
 
-The base stack (React 18, sql.js, D3.js v7, shadcn/ui) is validated and operational. Research identifies targeted additions for completing notebook functionality:
+**New Packages Required:**
+- **react-resizable-panels** (^4.0.7) — industry standard for multi-pane layouts, battle-tested in shadcn/ui, Linear, VS Code
+- **No new render libraries** — use CSS Grid (native) + D3 (existing) + TanStack Virtual (existing)
 
-**Core technologies:**
-- **@tiptap/react v3.19.0**: Block editor for Capture pane — headless architecture with ProseMirror foundation, officially maintained. TipTap integration is already started (MDEditor currently used), but TipTap provides better extensibility for slash commands and custom blocks. The February 2026 v3 release improved Markdown support specifically for AI use cases.
-- **@anthropic-ai/sdk v0.74.0**: Claude API integration for Shell AI tab — official TypeScript SDK with MCP helpers, streaming support, comprehensive error handling. Released Feb 7, 2026. Infrastructure exists but no real process spawning yet.
-- **@xterm/xterm v6.0.0**: Terminal emulator (UPGRADE from current v5.5.0) — GPU-accelerated renderer, TypeScript-native, zero dependencies. v6 released Dec 2025 with synchronized output support. ShellComponent terminal tab is 60% done, needs completion.
+**Performance Optimization Strategy (Deferred Phase 2+):**
+- Web Worker wrapper for D3 force simulations (threshold: graphs >5000 nodes)
+- Canvas-based rendering (pixijs, babylon.js) only for 10K+ nodes
+- Barnes-Hut approximation via d3-force-reuse for large networks
 
-**Supporting libraries:**
-- **@harshtalks/slash-tiptap**: Lightweight slash command extension using cmdk (already in shadcn/ui stack). For Notion-style `/` command palette.
-- **@xterm/addon-webgl v0.19.0**: WebGL2 renderer for better terminal performance. Fallback to existing canvas addon if unsupported.
-- **@tiptap/extension-markdown v3.19.0**: Bidirectional Markdown support for `.md` import/export. Early v3 release, test thoroughly for edge cases.
+**Integration Points:**
+- Three-Canvas layout: ResizablePanelGroup wraps Capture/Shell/Preview panes
+- Gallery/List/Kanban: React components with CSS Grid, fed by useSQLiteQuery hook
+- Network/Timeline: Existing D3 renderers, wired to sql.js via ViewDispatcher pattern
+- All views: Single useSQLiteQuery hook + SelectionContext ensures data consistency
 
-**What NOT to add:**
-- Y.js/CRDT (real-time collab) — not needed for single-user local-first, adds 200KB+ bundle for unused features
-- Lexical/Slate alternatives — TipTap's ProseMirror foundation is more mature
-- xterm-for-react wrapper — use xterm.js directly with React hooks (cleaner, better control)
+### From FEATURES.md: Well-Defined MVP Scope
 
-### Expected Features
+**Table Stakes (MVP — v1 Launch):**
+- Three-pane layout with resizable dividers ✓ Required
+- Block-based editor in Capture (TipTap with slash commands) — Essential
+- Properties panel mapping to LATCH metadata — Essential
+- Autosave to IndexedDB with conflict detection — Essential
+- Bidirectional links `[[page]]` creating LPG edges — Essential
+- xterm.js terminal in Shell pane — Essential
+- Notebook cards in PAFV grid — Essential (the differentiator)
+- Cross-pane selection sync (click card in Grid → highlight in Capture) — Essential
 
-**Already implemented (DO NOT reimplement):**
-- Three-pane layout with resize dividers
-- NotebookContext state management (card CRUD, templates)
-- CaptureComponent with MDEditor and slash commands
-- PreviewComponent SuperGrid tab integration
-- GSD GUI Dashboard and Command Builder
-- Template system (6 built-in templates)
-- Keyboard shortcuts
+**Differentiators (Competitive Advantage):**
+- View continuum (Gallery → SuperGrid, all on same data) — **Unique vs Notion/Obsidian**
+- Network viz with LATCH filtering (not just property-based) — **Unique**
+- Notebook cards ARE database rows (not separate entity) — **Unique**
+- Cross-view selection sync (select in Network → highlight in Timeline) — **Unique**
 
-**Must complete for v1 (table stakes):**
-- **TipTap editor upgrade**: Replace MDEditor with TipTap for better extensibility and performance (`shouldRerenderOnTransaction: false` critical for >1,000 char documents)
-- **Bidirectional links `[[page]]`**: Create LPG edges on save, autocomplete on `[[` input
-- **Shell Claude Code integration**: Real process spawning, WebSocket routing, copy/paste support
-- **Shell Claude AI tab**: Streaming API integration with MCP, rate limit queue architecture
-- **Preview Network tab**: D3 network visualization for graph relationships
-- **Preview Data Inspector tab**: SQL query interface, table view, data export
-- **Live data sync**: Auto-refresh Preview when Capture saves, bidirectional selection sync
+**Anti-Features (Explicitly Avoid):**
+- Real-time collab editing (Notion/Google Docs model) → Use local-first + CloudKit sync
+- Freeform canvas layout (Muse model) → Use PAFV grid (spatial = dimensional meaning)
+- Embedded D3 in editor → Keep D3 in Preview pane (decoupled)
+- Full terminal emulator → xterm.js + shell integration is enough
 
-**Should have (competitive advantage):**
-- **Notebook cards in PAFV grid**: Notes participate in SuperGrid projections (schema already supports this, just needs LEFT JOIN in D3 queries)
-- **Shell output → card capture**: `@save-card` annotation captures terminal output as nodes
-- **Properties panel LATCH integration**: Tag/folder/priority mapping to LATCH axes for filtering
+**Feature Complexity Tiers:**
+- **Tier 1 (<2 days):** Gallery masonry, List expand/collapse, Hover tooltips, Mode switcher
+- **Tier 2 (2-5 days):** Kanban drag-drop, Keyboard nav, Network force, Timeline zoom, Cross-view sync
+- **Tier 3 (>5 days):** Virtual scrolling at scale, Network subgraph filtering, Timeline drag-to-reschedule, Canvas fallback
 
-**Defer to v2+ (premature):**
-- D3 visualization blocks in editor (high complexity, unclear demand)
-- Formula bar with PAFV functions (already planned for SuperCalc Phase 45)
-- GSD GUI rich output parsing (depends on Claude Code integration patterns)
-- Version history per block (complex conflict UI)
+### From ARCHITECTURE.md: Proven Integration Pattern
 
-### Architecture Approach
+**Core Pattern: Provider Composition + Renderer Dispatch**
 
-Integration follows provider composition pattern — existing providers (FilterContext, PAFVContext, SelectionContext) remain unchanged. NotebookContext joins at the same level, managing `notebook_cards` table while leveraging existing LATCH filtering infrastructure.
+```
+AppStateContext (activeView: 'gallery' | 'list' | 'kanban' | 'grid' | 'supergrid' | 'network' | 'timeline')
+  ↓ (view mode)
+GridContinuumController.allocateAxes(mode) → AxisAllocation
+  ↓ (axis config)
+ViewQueryBuilder.buildQuery(allocation, filters) → SQL
+  ↓ (SQL)
+useSQLiteQuery(db, sql) → data[]
+  ↓ (data)
+ViewDispatcher → mounts correct renderer
+  ↓
+React/D3 renders
+```
 
-**Major components (existing, need completion):**
-1. **CaptureComponent** (70% done) — Replace MDEditor with TipTap, add bidirectional links autocomplete, integrate properties panel with FilterContext
-2. **ShellComponent** (35% done) — Terminal tab needs copy/paste and real Claude Code WebSocket. Claude AI tab needs streaming API integration. GSD GUI tab needs execution routing (currently 70% UI-only).
-3. **PreviewComponent** (50% done) — SuperGrid tab works. Network and Data Inspector tabs are stubs (5% complete). Need tab-specific D3 renderer routing via ViewEngine.
-4. **NotebookContext** (90% done) — Core CRUD operations implemented. Needs integration testing with sql.js triggers and FTS5 search for `notebook_cards` table.
+**Why This Works:**
+1. Single data source (sql.js) eliminates sync problems
+2. All views receive pre-grouped/filtered data via useSQLiteQuery
+3. PAFV axis allocation is view-agnostic (works for any view mode)
+4. SelectionContext syncs selections across all views (select in SuperGrid → highlight in Network)
+5. ViewDispatcher (mount/unmount) cleans up state on transitions
 
-**Key pattern: React controls, D3 renders**
-React renders one `<div ref={containerRef} />`. D3 populates it with data via `.join()`. React never touches data DOM elements. This pattern is proven in existing SuperGrid, must maintain for Network/Timeline views.
+**React vs D3 Split:**
+- **React components:** Gallery (CSS Masonry), List (tree), Kanban (columns) — component-based rendering
+- **D3 SVG:** Network (force simulation), Timeline (time scale) — require physics/math
+- **Hybrid:** SuperGrid (React + CSS Grid for layout, D3 for header spanning)
 
-**Critical integration point: notebook_cards in PAFV projections**
-`notebook_cards` table extends `nodes` with notebook-specific metadata via one-to-one `node_id` join. D3 renderers must use LEFT JOIN to include notebook cards in all visualizations. Bidirectional sync trigger propagates SuperGrid LATCH edits back to `notebook_cards.properties`.
+**New Components to Build:**
+| Component | Location | Responsibility |
+|-----------|----------|-----------------|
+| GalleryView | src/components/views/GalleryView.tsx | Masonry layout + virtual scroll |
+| ListView | src/components/views/ListView.tsx | Tree with expand/collapse |
+| KanbanView | src/components/views/KanbanView.tsx | Columns + dnd-kit drag-drop |
+| NetworkView | src/components/views/NetworkView.tsx | D3 force + selection sync |
+| TimelineView | src/components/views/TimelineView.tsx | D3 time scale + events |
+| ViewDispatcher | src/components/views/ViewDispatcher.tsx | Routes to correct view |
 
-### Critical Pitfalls
+**Critical Existing Components (Already in Code):**
+- SuperGrid.tsx (v6.6) — n-axis nested headers with CSS Grid ✓
+- FilterContext — LATCH filter → SQL compilation ✓
+- SelectionContext — cross-view selection sync ✓
+- PAFVContext — axis allocation tracking ✓
+- useSQLiteQuery hook — query execution + caching ✓
 
-Research identified 6 critical and 5 moderate pitfalls. Top 5 for completion work:
+### From PITFALLS.md: Five Critical Risks to Prevent
 
-1. **TipTap re-renders on every keystroke** — Default behavior re-renders on every transaction, causing severe lag with >1,000 characters. **Prevention:** Set `shouldRerenderOnTransaction: false` in `useEditor` config. Isolate editor with `React.memo` to prevent parent re-renders cascading. Test with 10,000 character documents.
+**Pitfall 1: Force Simulation Lifecycle Leaks (D3 Network/Timeline)** — **CRITICAL**
+- **What goes wrong:** D3 force simulations run indefinitely, stacking up as views switch. Memory grows, CPU stays 30-50% utilization.
+- **Prevention:** Create ForceSimulationManager wrapper with explicit `sim.stop()` on cleanup. Use custom `useForceSimulation` hook with cleanup function.
+- **Detection:** DevTools Memory: detached DOM nodes count stays high after view switch.
+- **When to address:** Before wiring Network/Timeline views.
 
-2. **Claude API rate limit cascading failures** — Multiple Shell tabs making concurrent requests hit 429 errors without exponential backoff, triggering acceleration limits that persist for hours. **Prevention:** Queue-based architecture with proactive header monitoring (throttle at <5 requests remaining). Implement prompt caching (5x effective throughput). Test with 5 concurrent Shell tabs.
+**Pitfall 2: Selection/Scroll State Lost During View Transitions** — **CRITICAL**
+- **What goes wrong:** User selects card, switches views, switches back — selection gone, scroll reset to top.
+- **Prevention:** Implement ViewStateManager to persist scroll position + selected nodes per view. Use sessionStorage with serialization.
+- **Detection:** Manual test: select card, switch view, switch back, verify selection preserved.
+- **When to address:** Part of mode switching requirements (phase integration).
 
-3. **Three-pane context cascade re-renders** — Capture edit triggers NotebookContext update → re-renders Shell and Preview → D3 re-initializes → loses zoom state, re-queries database → 500ms-2s freeze. **Prevention:** Split NotebookContext into NotebookDataContext (changes frequently), NotebookAPIContext (stable), NotebookLayoutContext (independent). Memoize Context Provider values. Test by editing in Capture while monitoring Shell/Preview re-renders in React DevTools.
+**Pitfall 3: PAFV Axis Mapping Not Aligned Across View Modes** — **CRITICAL**
+- **What goes wrong:** GridContinuumController says "group by Status," but SQL uses wrong column, CSS uses wrong count.
+- **Prevention:** Make GridContinuumController.getProjectionFor(mode) the single source of truth. All renderers read from it, not raw PAFV context.
+- **Detection:** Compare controller projection output with actual rendered layout.
+- **When to address:** Validate CSS precedence and SQL alignment early.
 
-4. **D3 memory leaks from event listeners** — Preview pane switches views, React unmounts component, but D3 event listeners persist on detached DOM nodes. After 10+ switches, browser memory grows 50-100MB. **Prevention:** Remove event listeners in `useEffect` cleanup: `svg.on('.zoom', null)`, `nodes.on('click', null)`. Test with 20 view switches and Memory Profiler.
+**Pitfall 4: Three-Canvas Resize Events Desynchronize State** — **MODERATE**
+- **What goes wrong:** Drag resize handle → ResizeObserver fires → SuperGrid reflows → Capture re-wraps → panes show incorrect content.
+- **Prevention:** Create shared PaneLayoutContext to coordinate dimensions. Single ResizeObserver at container level, debounce resize events.
+- **Detection:** Drag separator repeatedly, watch for smooth updates.
+- **When to address:** Critical for usability; test early.
 
-5. **Notebook card sync conflicts with PAFV projections** — Capture creates notebook card with minimal LATCH data. SuperGrid displays it in "undefined" column. User edits LATCH in SuperGrid → updates `nodes` table → doesn't propagate to `notebook_cards.properties`. **Prevention:** Create bidirectional sync trigger. Use materialized view `notebook_nodes_view` for queries. Transaction ensures atomic node + notebook_cards creation with complete LATCH metadata.
+**Pitfall 5: CSS Primitives Specificity Wars During View Switching** — **MODERATE**
+- **What goes wrong:** Both old and new view CSS apply during transition. If specificity ties break by source order, Kanban gets SuperGrid widths.
+- **Prevention:** Use CSS custom properties to toggle view layout. Ensure only one `.{view}-container` class active at a time.
+- **Detection:** DevTools Inspect during transition, check Computed tab for conflicting rules.
+- **When to address:** Validate CSS precedence early.
 
-**Security critical:**
-- **xterm.js RCE via DCS sequences** — Terminal input (from AI, clipboard, data sources) can contain malicious Device Control Strings. **Prevention:** Sanitize ANSI escapes, whitelist file paths in Tauri config, disable DCS sequences entirely. Show paste preview for suspicious patterns.
+**Additional Moderate Pitfalls:**
+- Pitfall 6: SQL query mismatch (GROUP BY columns don't match rendered columns) — Validate result against projection
+- Pitfall 7: Unused exports cleanup removes active exports indirectly — Audit before knip fix
+- Pitfall 8: Directory refactoring breaks import paths — Use path aliases, validate imports in CI
+- Pitfall 9: D3 data joins don't update when data changes — Always use update selection in .join()
+- Pitfall 10: ResizeObserver feedback loop in TipTap — Debounce and batch
+
+---
 
 ## Implications for Roadmap
 
-Based on existing implementation status, suggested completion phases:
+### Recommended Phase Structure
 
-### Phase 1: Shell Integration Completion (2 weeks)
-**Rationale:** Shell is 35% complete but blocks GSD workflow integration. Terminal tab infrastructure exists, needs Claude Code WebSocket and real process spawning. Dependencies are clear (Anthropic SDK, xterm.js), patterns are proven.
+**Phase Structure (4 Parallel Tracks):**
 
-**Delivers:**
-- Real Claude Code process spawning via WebSocket
-- Shell Terminal tab: copy/paste, command history, CWD display
-- Shell Claude AI tab: streaming API integration with queue-based rate limiting
-- Shell GSD GUI tab: command execution routing (currently UI-only)
+#### Track A: View Continuum Integration (MVP — 2-3 weeks)
+**Rationale:** Foundation for everything else; enables data validation early
 
-**Addresses:**
-- Claude API rate limit cascading failures (queue architecture)
-- xterm.js security (sanitize DCS sequences, Tauri file scope restrictions)
-- Terminal state isolation (CWD as ref, not state)
+1. **Week 1: Gallery + List Views**
+   - Build GalleryView (CSS Masonry + TanStack Virtual)
+   - Build ListView (React tree + expand/collapse + keyboard nav)
+   - Wire GridContinuumController to both modes
+   - Test: Switch Gallery → List → Gallery, verify scroll/selection preserved
+   - **Features:** Tier 1 (masonry, expand) + Tier 2 (virtual scroll, keyboard nav)
+   - **Pitfalls to avoid:** 2, 5 (state loss, CSS specificity)
 
-**Avoids:**
-- Pitfall N2 (Claude API rate limits) via queue with exponential backoff
-- Pitfall N3 (xterm.js RCE) via input sanitization and Tauri permissions
-- Pitfall N4 (context cascade) by isolating TerminalContext as ref-based
+2. **Week 2: Kanban View + Mode Switcher**
+   - Build KanbanView (CSS columns + dnd-kit drag-drop)
+   - Add SQL UPDATE persistence on drop
+   - Build ViewDispatcher component (routes to correct view)
+   - Build GridContinuumSwitcher UI (buttons)
+   - Test: Drag card between Kanban columns, verify SQL updated
+   - **Features:** Tier 2 (drag-drop, persistence)
+   - **Pitfalls to avoid:** 3, 6 (PAFV alignment, SQL mismatch)
 
-**Research flag:** No additional research needed. Official Anthropic SDK docs and xterm.js patterns are comprehensive.
-
----
-
-### Phase 2: Preview Visualization Expansion (2 weeks)
-**Rationale:** Preview pane is 50% complete (SuperGrid works, other tabs are stubs). D3 renderers exist for Network and Timeline views in separate files, just need routing via PreviewComponent tab system. Depends on notebook_cards LEFT JOIN pattern.
-
-**Delivers:**
-- Preview Network tab: D3 force-directed graph for GRAPH relationships
-- Preview Data Inspector tab: SQL query interface, table view, export
-- Preview Timeline tab: temporal LATCH projection (due dates, event times)
-- Multi-visualization tab persistence (viewport state per tab)
-
-**Uses:**
-- Existing D3.js v7 patterns (`.join()` with key functions)
-- Existing ViewEngine router infrastructure
-- sql.js LEFT JOIN for `notebook_cards` in all views
-
-**Implements:**
-- Preview tab routing with ViewEngine selection
-- Notebook cards in PAFV projections (LEFT JOIN `notebook_cards`)
-- Synchronized selection state (click in Preview → highlight in Capture)
-
-**Avoids:**
-- Pitfall N6 (D3 memory leaks) via `useEffect` cleanup for event listeners
-- Pitfall N5 (notebook sync conflicts) via bidirectional trigger and materialized view
-- Pitfall 4 (React-D3 DOM conflicts) by maintaining React controls/D3 renders boundary
-
-**Research flag:** No additional research needed. D3 Network and Timeline patterns are established. Data Inspector is standard SQL interface.
+**Deliverables:** Gallery, List, Kanban modes selectable in UI; data persists; selection synced
+**Research Flags:** None (well-documented patterns)
+**Standard Patterns:** React components, CSS Grid, dnd-kit are industry-standard
 
 ---
 
-### Phase 3: TipTap Editor Migration (1 week)
-**Rationale:** CaptureComponent is 70% complete but uses MDEditor (limited extensibility). TipTap provides better slash command integration, bidirectional links, and performance for large documents. Can be done in parallel with Phase 2.
+#### Track B: Unused Exports & Technical Debt (Parallel — 1-2 weeks)
+**Rationale:** Clean codebase reduces coupling, prevents hidden breakages during refinement
 
-**Delivers:**
-- TipTap editor with `shouldRerenderOnTransaction: false` (performance)
-- Bidirectional links `[[page]]` with autocomplete
-- Enhanced slash commands (`/save-card`, `/send-to-shell`, `/insert-viz`)
-- Properties panel integrated with LATCH filters
+1. **Week 1: Knip Cleanup with Safeguards**
+   - Audit each unused export before deletion (check internal usage)
+   - Add characterization tests for utility modules
+   - Create barrel exports for public API clarity
+   - Test: Full suite must pass before and after each knip fix
+   - **Pitfalls to avoid:** 7 (false positives), 8 (import breaks)
 
-**Uses:**
-- @tiptap/react v3.19.0
-- @harshtalks/slash-tiptap for command palette
-- @tiptap/extension-markdown for import/export
-- Existing NotebookContext for card CRUD
+2. **Week 2: Directory Health Refactoring (if needed)**
+   - Check `src/services/` file count (currently 22 files?); reorganize if >20
+   - Use TypeScript path aliases to decouple structure from imports
+   - Validate imports: `tsc --noEmit` + custom import test
+   - **Pitfalls to avoid:** 8 (import path breaks)
 
-**Implements:**
-- Custom TipTap extensions for bidirectional links
-- Slash command system integrated with NotebookContext
-- LATCH properties panel mapped to FilterContext
-
-**Avoids:**
-- Pitfall N1 (TipTap re-renders) via `shouldRerenderOnTransaction: false` config
-- Pitfall N4 (context cascade) by using split NotebookAPIContext for stable callbacks
-
-**Research flag:** Low priority. TipTap docs are comprehensive. Slash command extension is community-maintained but actively updated.
+**Deliverables:** ESLint error count = 0, no unused exports, clear module boundaries
+**Research Flags:** None (standard cleanup)
+**Standard Patterns:** Barrel exports, path aliases
 
 ---
 
-### Phase 4: Live Data Synchronization (1 week)
-**Rationale:** Cross-canvas data flow currently requires manual refresh. Depends on Phases 1-3 being stable (Shell saves, Preview displays, Capture edits must all work reliably). Uses sql.js triggers for change notification.
+#### Track C: Network/Timeline Polish (Conditional — 2-3 weeks)
+**Rationale:** Adds breadth after MVP foundation is solid. Can defer if Track A eats time.
 
-**Delivers:**
-- Auto-refresh Preview when Capture saves card
-- Bidirectional selection sync (click in Preview → scroll to block in Capture)
-- Live FTS5 search across all notebook cards
-- Change notification via sql.js custom functions
+1. **Week 2-3 (parallel with Track A Week 2): Network Graph Wiring**
+   - Refactor ForceGraphRenderer to use useSQLiteQuery
+   - Add force simulation lifecycle management (prevent Pitfall 1)
+   - Create NetworkView component with force simulation setup
+   - Add LATCH filter integration (show subgraph by facets)
+   - Test: 500+ node network, verify 60 FPS zoom/pan, memory stable on 10 mode switches
+   - **Features:** Tier 2 (force setup) + Tier 3 (scale + culling deferred)
+   - **Pitfalls to avoid:** 1 (lifecycle leaks), 6 (SQL mismatch)
 
-**Uses:**
-- sql.js triggers for INSERT/UPDATE on `notebook_cards`
-- React Context for selection state propagation
-- D3 `.join()` for efficient re-render on data change
+2. **Week 3 (parallel): Timeline View Polish**
+   - Refactor TimelineRenderer to use useSQLiteQuery
+   - Add zoom levels with adaptive tick labels (D3 time intervals)
+   - Add overlapping event layout (swimlanes)
+   - Test: 1000+ events, verify smooth zoom/pan
+   - **Features:** Tier 2 (zoom, overlapping) + Tier 3 (scale deferred)
+   - **Pitfalls to avoid:** 1 (lifecycle leaks)
 
-**Implements:**
-- DatabaseService change notification hooks
-- SelectionContext integration with CaptureComponent scroll position
-- FTS5 search with `notebook_cards_fts` virtual table
-
-**Avoids:**
-- Pitfall N4 (context cascade) by using memoized data subscriptions
-- Pitfall N5 (sync conflicts) via bidirectional trigger (already in Phase 2)
-
-**Research flag:** Medium priority. sql.js custom functions for change notification may need experimentation.
-
----
-
-### Phase 5: Polish and Performance (1 week)
-**Rationale:** All functional pieces complete, but need integration testing, performance profiling, and UX refinement. Tests 10,000+ notebook cards, validates memory usage, ensures <100ms render times.
-
-**Delivers:**
-- Performance testing with 10,000+ cards
-- Memory profiling (20+ view switches, stable heap)
-- UX improvements (loading states, error recovery, keyboard shortcuts)
-- Documentation and onboarding templates
-
-**Addresses:**
-- All "Looks Done But Isn't" checklist items from PITFALLS.md
-- Performance traps validation (TipTap with >10K chars, Claude API under load)
-- Security validation (terminal input sanitization, file access restrictions)
-
-**Research flag:** None. This is validation, not new functionality.
+**Deliverables:** Network and Timeline views selectable; LATCH filters work; performance baseline met
+**Research Flags:** "Phase 2" — Network performance at 2000+ nodes needs canvas fallback (canvas rendering, spatial indexing)
+**Standard Patterns:** D3 force, D3 time scale, virtual rendering
 
 ---
 
-### Phase Ordering Rationale
+#### Track D: Three-Canvas Notebook Integration (Final — 1-2 weeks)
+**Rationale:** Brings all pieces together; orchestrates cross-pane selection sync
 
-**Sequential dependencies:**
-1. Shell (Phase 1) must complete before GSD workflow integration can function
-2. Preview expansion (Phase 2) depends on notebook_cards sync being proven
-3. Live sync (Phase 4) requires all panes to be stable and tested
+1. **Week 3-4: Layout & Cross-Pane Sync**
+   - Implement ThreeCanvasLayout with react-resizable-panels
+   - Wire SelectionContext across Capture/Shell/Preview panes
+   - Add cross-pane highlight overlay (select in Preview Grid → highlight in Capture)
+   - Test: Click card in SuperGrid, verify Capture block highlighted; reverse
+   - **Features:** Three-pane layout, focus mode toggle, persist sizes
+   - **Pitfalls to avoid:** 4 (resize desync), 10 (ResizeObserver loop)
 
-**Parallelizable:**
-- TipTap migration (Phase 3) can overlap with Preview expansion (Phase 2)
-- Both are isolated to their respective components with minimal cross-dependencies
+2. **Week 4: State Preservation & Polish**
+   - Implement ViewStateManager (save/restore scroll, zoom, selection per view)
+   - Add keyboard shortcuts (Cmd+1/2/3 for pane focus)
+   - Test: Switch modes 5x, verify selection preserved
+   - **Pitfalls to avoid:** 2 (state loss)
 
-**Risk mitigation:**
-- Shell first minimizes Claude API integration risk early (queue architecture tested)
-- Preview second validates PAFV projection patterns before adding complexity
-- TipTap third ensures editor performance doesn't block other work
-- Live sync fourth waits until all data sources are reliable
+**Deliverables:** Three-canvas layout fully functional; cross-pane selection sync; state persists
+**Research Flags:** "Phase 2+" — Multi-monitor support (window API + Tauri integration)
+**Standard Patterns:** React Context, localStorage/sessionStorage, keyboard handlers
 
-### Research Flags
+---
 
-**No additional research needed:**
-- **Phase 1 (Shell):** Official Anthropic SDK docs (v0.74.0) and xterm.js security guide are comprehensive. MCP integration patterns documented.
-- **Phase 2 (Preview):** D3 Network and Timeline patterns are established in existing codebase. Data Inspector is standard SQL interface.
-- **Phase 5 (Polish):** Validation phase, no new domains.
+### Phase Sequencing Rationale
 
-**Low priority research:**
-- **Phase 3 (TipTap):** Community slash command extension (@harshtalks/slash-tiptap) is actively maintained, but production-readiness should be verified during implementation. Fallback: build directly on `@tiptap/suggestion` plugin.
+**Why This Order:**
 
-**Medium priority research (validation during implementation):**
-- **Phase 4 (Live Sync):** sql.js custom functions for change notification may need experimentation. Documentation is sparse. Alternative: polling with debounce.
+1. **Track A first:** View Continuum is the MVP differentiator. Without it, product is "just another grid." Also unblocks testing other tracks.
+
+2. **Track B parallel:** Knip cleanup doesn't block other tracks; can proceed independently. Early cleanup prevents hidden breakages during refinement.
+
+3. **Track C conditional:** Network/Timeline add breadth. If Track A + D take full time, defer Network/Timeline to Phase 2. They're valuable but not MVP.
+
+4. **Track D last:** Depends on all other views being wire-able in Three-Canvas. Can't test cross-pane sync without views working.
+
+**Parallel Execution:**
+- Tracks A, B can run simultaneously (independent concerns)
+- Track C runs parallel to Track A Week 2 (both are view implementations)
+- Track D runs parallel to Track C Week 3 (can integrate partially)
+
+**Risk Mitigation:**
+- **Pitfall 1 (force leaks):** Addressed in Track C, not blocker for A
+- **Pitfall 2 (state loss):** Addressed in Track D; test early with ViewStateManager
+- **Pitfall 3 (PAFV misalignment):** Test in Track A Week 1; fix before Kanban
+- **Pitfall 4 (resize desync):** Test in Track D; use PaneLayoutContext early
+
+---
+
+## Build Order Dependencies
+
+```
+┌─ Track A: View Continuum MVP (weeks 1-2)
+│  ├─ Week 1: Gallery + List (foundation)
+│  │  └─ GATE: SelectionContext working + useSQLiteQuery returning data
+│  └─ Week 2: Kanban + ViewDispatcher (completes continuum)
+│     └─ GATE: Mode switching UI functional
+│
+├─ Track B: Technical Debt (weeks 1-2, parallel)
+│  └─ Knip cleanup + Directory refactoring
+│     └─ No blocking dependencies
+│
+├─ Track C: Network/Timeline (weeks 2-3, conditional)
+│  ├─ Network: ForceSimulationManager + NetworkView
+│  │  └─ GATE: Track A complete (View Continuum working)
+│  └─ Timeline: TimelineRenderer + useSQLiteQuery wiring
+│     └─ GATE: Track A complete
+│
+└─ Track D: Three-Canvas (weeks 3-4, final)
+   ├─ ResizablePanels layout
+   │  └─ GATE: Track A complete
+   ├─ SelectionContext cross-pane sync
+   │  └─ GATE: Track A + C partially complete (at least 2 views)
+   └─ ViewStateManager + state preservation
+      └─ GATE: All views integrated
+```
+
+---
+
+## Research Flags
+
+### Which Phases Need Deeper Research
+
+**Phase Track C (Network/Timeline) — Performance at Scale**
+- Needs live profiling: Force simulation convergence with 1000+ nodes
+- Needs Canvas rendering decision: At what node count does SVG performance degrade?
+- Needs viewport-bound simulation: Only simulate visible nodes + margin
+- **Action:** Before Track C implementation, profile existing ForceGraphRenderer with 1000+ nodes, capture baseline
+
+**Phase Track D (Three-Canvas) — ResizeObserver Behavior**
+- Needs live testing: Does TipTap dynamic height trigger ResizeObserver loop?
+- Needs debounce validation: Is 500ms debounce sufficient for smooth resize?
+- **Action:** Before Track D implementation, test TipTap height changes in isolation, profile ResizeObserver callback count
+
+**Phase 2 (Canvas Rendering Fallback)**
+- Decision needed: Canvas rendering for 10K+ nodes or accept <30 FPS at that scale?
+- Decision needed: pixijs vs babylon.js for 2D canvas rendering
+- **Action:** Benchmark current SVG approach at 5000/10000 nodes, decide go/no-go on canvas
+
+### Which Phases Have Well-Documented Patterns
+
+**Track A (View Continuum)** — HIGH Confidence
+- Gallery masonry: CSS Grid `auto-fit` is standard (MDN, all browsers)
+- List tree: React tree with ARIA role is standard (shadcn/ui pattern, W3C spec)
+- Kanban drag-drop: dnd-kit is current standard (Linear, Vercel use it)
+- All feed useSQLiteQuery: Pattern already proven in SuperGrid
+
+**Track B (Technical Debt)** — HIGH Confidence
+- Knip cleanup: Well-documented tool, false positives rare
+- Directory refactoring: TypeScript path aliases are standard
+
+**Track C (Network/Timeline)** — MEDIUM-HIGH Confidence
+- D3 force simulation: Battle-tested pattern (Observable, many D3 projects)
+- D3 time scale: Standard for temporal viz (FullCalendar, Airtable)
+- Performance optimization (Canvas): Standard but requires profiling for this codebase
+
+**Track D (Three-Canvas)** — HIGH Confidence
+- react-resizable-panels: Industry standard (shadcn/ui official, used in Linear)
+- SelectionContext sync: Standard React Context pattern
+- State preservation: localStorage/sessionStorage pattern is proven
+
+---
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | All core technologies validated in production (TipTap, xterm.js, Anthropic SDK). Versions confirmed stable (Feb 2026). |
-| Features | HIGH | Existing implementation provides clear completion roadmap. Feature prioritization based on proven patterns (Notion, Obsidian, JupyterLab). |
-| Architecture | HIGH | Existing NotebookContext and three-canvas layout operational. D3/React boundaries proven in SuperGrid. Provider composition pattern validated. |
-| Pitfalls | HIGH | Pitfalls derived from official docs (TipTap performance guide, Claude API rate limits, xterm.js security advisory) and React Context performance research. |
+| Area | Confidence | Rationale |
+|------|------------|-----------|
+| **Stack (new packages)** | HIGH | react-resizable-panels verified with current versions (v4.0.7, Feb 2026). 0 new render libs needed. |
+| **Features (MVP scope)** | HIGH | Verified against official docs (TanStack Virtual, dnd-kit, D3.js), Figma/Airtable/Obsidian implementations. Table stakes align with 2026 standards. |
+| **Architecture (PAFV pattern)** | HIGH | GridContinuumController + useSQLiteQuery hook pattern already proven in SuperGrid (v6.6). ViewDispatcher follows standard React composition. |
+| **Pitfalls (prevention)** | MEDIUM-HIGH | Force lifecycle leaks, selection state loss, PAFV misalignment all documented in codebase (6 force sim instances, 2 type systems exist). Prevention strategies are standard (lifecycle management, context sync, single source of truth). |
+| **Performance (targets)** | MEDIUM | Gallery/List/Kanban targets (60 FPS at 500+ items) are achievable with TanStack Virtual + CSS Grid (proven tech). Network/Timeline performance (60 FPS at 1000+ events) assumes D3 optimization; needs profiling to confirm. |
+| **Three-Canvas (pane coordination)** | MEDIUM | ResizablePanels library is proven, SelectionContext pattern is standard. ResizeObserver behavior with TipTap dynamic height not yet tested live; needs validation. |
 
-**Overall confidence:** HIGH
+### Gaps to Address During Implementation
 
-### Gaps to Address
-
-**Implementation validation needed:**
-- **@harshtalks/slash-tiptap production-readiness:** Community package, actively maintained, but verify in testing before committing to architecture. Fallback: build slash commands directly on `@tiptap/suggestion` plugin.
-- **sql.js change notification pattern:** Documentation sparse for custom functions. May need to implement polling with debounce as fallback. Test both approaches in Phase 4.
-- **xterm.js v6 upgrade compatibility:** Breaking changes minimal (v5 → v6), but existing terminal integration uses v5.5.0. Verify addons compatible before upgrading.
-
-**Technical debt to monitor:**
-- **Existing MDEditor removal:** CaptureComponent uses MDEditor currently. TipTap migration (Phase 3) must preserve all existing slash commands and autosave behavior. Test migration path with real notebook data before committing.
-- **GSD GUI WebSocket routing:** Infrastructure exists but no real execution. Shell completion (Phase 1) unblocks this, but GSD GUI may need refactoring if Claude Code output format differs from assumptions.
-
-**Deferred features (revisit post-v1):**
-- **D3 visualization blocks in editor:** Complex TipTap extension requiring ReactNodeViewRenderer. Unclear if users prefer inline viz vs Preview pane. Validate demand before implementing.
-- **GSD GUI rich output parsing:** Depends on Claude Code integration patterns stabilizing. Parser may need redesign once real Claude Code output is tested at scale.
-
-## Sources
-
-### Primary (HIGH confidence)
-
-**Stack research:**
-- [TipTap React Installation](https://tiptap.dev/docs/editor/getting-started/install/react) — Official docs, updated Feb 6, 2026
-- [TipTap React Performance](https://tiptap.dev/docs/examples/advanced/react-performance) — `shouldRerenderOnTransaction: false` critical setting
-- [Anthropic TypeScript SDK v0.74.0](https://github.com/anthropics/anthropic-sdk-typescript) — Released Feb 7, 2026
-- [Claude API Rate Limits](https://platform.claude.com/docs/en/api/rate-limits) — Official rate limiting documentation
-- [@xterm/xterm v6.0.0 npm](https://www.npmjs.com/@xterm/xterm) — Released Dec 22, 2025
-- [xterm.js Security Guide](https://xtermjs.org/docs/guides/security/) — DCS sequence sanitization
-
-**Feature research:**
-- [Notion blocks explained](https://lilys.ai/en/notes/notion-for-beginners-20251022/notion-blocks-explained-beginners-guide) — Block-based editor UX patterns
-- [Obsidian Properties documentation](https://help.obsidian.md/Editing+and+formatting/Properties) — LATCH metadata patterns
-- [Obsidian Bases vs Notion databases](https://www.xda-developers.com/notion-databases-great-but-obsidian-bases-better/) — Dynamic schema comparison
-
-**Architecture patterns:**
-- [How to Handle React Context Performance Issues (2026)](https://oneuptime.com/blog/post/2026-01-24-react-context-performance-issues/view) — Split context pattern
-- [How to write performant React apps with Context](https://www.developerway.com/posts/how-to-write-performant-react-apps-with-context) — Memoization strategies
-
-**Pitfalls research:**
-- [TipTap Integration Performance](https://tiptap.dev/docs/guides/performance) — Re-render prevention
-- [Claude API Rate Limits: Production Scaling Guide](https://www.hashbuilds.com/articles/claude-api-rate-limits-production-scaling-guide-for-saas) — Queue architecture
-- [Don't Trust This Title: Terminal ANSI Exploits](https://www.cyberark.com/resources/threat-research-blog/dont-trust-this-title-abusing-terminal-emulators-with-ansi-escape-characters) — Security vulnerabilities
-- [Pitfalls of overusing React Context](https://blog.logrocket.com/pitfalls-of-overusing-react-context/) — Context cascade patterns
-
-### Secondary (MEDIUM confidence)
-
-**Stack alternatives:**
-- [@harshtalks/slash-tiptap npm](https://www.npmjs.com/package/@harshtalks/slash-tiptap) — Community package, actively maintained
-- [TipTap Markdown Extension](https://tiptap.dev/docs/editor/markdown) — Early v3 release, may have edge cases
-
-**Competitor analysis:**
-- [JupyterLab terminal integration](https://www.programming-helper.com/tech/jupyter-2026-interactive-notebooks-data-science-python) — Terminal UX patterns
-- [NotebookLM 2026 update](https://www.lbsocial.net/post/notebooklm-2026-update-knowledge-database) — Knowledge database workflows
-
-### Tertiary (existing codebase analysis)
-
-**Architecture validation:**
-- `/Users/mshaler/Developer/Projects/Isometry/CLAUDE.md` — Existing architecture truth
-- `/Users/mshaler/Developer/Projects/Isometry/src/contexts/NotebookContext.tsx` — Existing 384-line implementation
-- `/Users/mshaler/Developer/Projects/Isometry/src/components/notebook/NotebookLayout.tsx` — Existing 278-line three-pane layout
-- `/Users/mshaler/Developer/Projects/Isometry/src/db/schema.sql` — `notebook_cards` table schema with FTS5 triggers
-
-**Implementation status:**
-- CaptureComponent.tsx (521 lines) — 70% complete
-- ShellComponent.tsx (354 lines) — 35% complete
-- PreviewComponent.tsx (472 lines) — 50% complete
-- GSD GUI components (~3,069 lines) — 70% UI-only, needs execution
+1. **ResizeObserver behavior with TipTap:** Profile actual resize event frequency during typing. May need debounce tuning.
+2. **Force simulation convergence:** Time-to-stability with 1000+ nodes. May need custom forces or Barnes-Hut optimization.
+3. **Virtual scrolling memory:** TanStack Virtual + D3 data binding — verify memory stays <100MB at 5000 items.
+4. **CSS specificity conflicts:** Verify CSS loading order doesn't cause specificity ties during view transitions.
+5. **SQL query performance:** GROUP BY on 10K+ nodes — verify query execution <100ms.
 
 ---
 
-*Research completed: 2026-02-10*
-*Ready for roadmap: yes*
-*Focus: Completion of existing implementation, not greenfield development*
+## Roadmap Implications
+
+### Suggested Phase Schedule
+
+**Phase 6.9: Polymorphic Views (Current) — 4 weeks**
+- Track A (weeks 1-2): View Continuum MVP (Gallery, List, Kanban)
+- Track B (weeks 1-2, parallel): Technical debt cleanup
+- Track C (weeks 2-3, conditional): Network/Timeline polish
+- Track D (weeks 3-4): Three-Canvas integration
+
+**Phase 7.0: Performance & Scale (Next) — 2-3 weeks**
+- Canvas rendering fallback for 10K+ node networks
+- Virtual rendering for 5000+ event timelines
+- Web Worker optimization for force simulations
+- Performance baseline tests and profiling
+
+**Phase 7.1+: Advanced Features (Future)**
+- Real-time collaboration (Yjs + Replicache, if needed)
+- Cloud sync (CloudKit, if needed)
+- Multi-user conflict resolution UI
+- D3 visualization blocks in Capture editor
+- GSD GUI wrapper (parse Claude Code output)
+
+---
+
+## Sources
+
+**Stack Research:**
+- STACK.md — Ecosystem additions, performance targets, alternatives considered
+
+**Feature Research:**
+- FEATURES.md — Table stakes, differentiators, anti-features, MVP scope
+- GRID-CONTINUUM-FEATURES.md — Feature landscape by view mode, complexity tiers
+
+**Architecture Research:**
+- ARCHITECTURE.md — PAFV pattern, view renderers, data flow, component boundaries
+- GRID-CONTINUUM-ARCHITECTURE.md — System overview, query patterns, scaling considerations
+
+**Pitfalls Research:**
+- PITFALLS.md — Critical/moderate/minor pitfalls with prevention strategies, phase warnings
+- GRID-CONTINUUM-PITFALLS.md — Domain-specific pitfalls for polymorphic views
+
+---
+
+## Next Steps
+
+1. **Validate ViewStateManager design** — Sketch out scroll/selection/zoom persistence before Track D
+2. **Profile ForceGraphRenderer** — Measure force convergence time with 1000+ nodes before Track C commitment
+3. **Test ResizeObserver with TipTap** — Verify no feedback loops before Track D implementation
+4. **Finalize API contracts** between GridContinuumController and each view renderer
+5. **Begin Track A implementation** — Gallery view is simplest, unblocks everything else
+
+---
+
+*Research synthesized 2026-02-16
+Architecture Pattern: PAFV Controller → Query Builder → sql.js → View Renderer
+Status: Ready for roadmap planning and phase requirements definition*

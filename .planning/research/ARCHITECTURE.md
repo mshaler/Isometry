@@ -1,545 +1,789 @@
-# Architecture Patterns: Three-Canvas Notebook Integration
+# Architecture Patterns: Polymorphic Views Integration
 
-**Domain:** Three-Canvas Notebook integration with existing Isometry architecture
-**Researched:** 2026-02-10
+**Project:** Isometry v6.9 — Gallery/List/Kanban, Network/Timeline, Three-Canvas Notebook
+**Mode:** Ecosystem Research
+**Researched:** 2026-02-16
+**Overall confidence:** HIGH
 
-## Recommended Architecture
+---
 
-### Integration Pattern: Provider Hierarchy Extension
+## Executive Summary
 
-The Three-Canvas Notebook integrates with existing architecture through **provider composition**, not replacement. Existing providers (FilterContext, PAFVContext, SelectionContext) remain unchanged. NotebookContext joins at the same level.
+Isometry's view architecture is built on **provider composition** (React contexts) + **renderer dispatch** (D3.js). The system separates state management (React) from visualization (D3.js). Polymorphic view switching (Gallery → List → Kanban → Grid → SuperGrid → Network → Timeline) works by:
+
+1. **AppStateContext** tracks `activeView` (which view to render)
+2. **PAFVContext** tracks axis mappings (which data dimensions to display)
+3. **SelectionContext** tracks selected cards (cross-canvas synchronization)
+4. **FilterContext** tracks LATCH filters (which rows to include)
+5. D3 renderers consume these contexts and re-render on state changes
+
+**Key insight:** View switching does NOT require view-specific SQL queries. All views query the same filtered dataset via `useSQLiteQuery()`, then each renderer projects it differently. This eliminates duplication and ensures data consistency.
+
+---
+
+## Existing Architecture (HIGH CONFIDENCE)
+
+### State Management Hierarchy
 
 ```
 <App>
-  <DatabaseProvider>          ← Unchanged (sql.js)
-    <FilterProvider>          ← Unchanged (LATCH filters)
-      <PAFVProvider>          ← Unchanged (axis mappings)
-        <SelectionProvider>   ← Unchanged (selection state)
-          <NotebookProvider>  ← NEW (notebook state)
-            <ThemeProvider>   ← Unchanged
-              <NotebookLayout>  ← NEW (three-canvas container)
-                <CapturePane>   ← NEW
-                <ShellPane>     ← NEW
-                <PreviewPane>   ← MODIFIED (wraps existing D3 views)
+  ├─ DatabaseProvider (sql.js instance)
+  ├─ FilterProvider (LATCH filters + compiled SQL WHERE clauses)
+  ├─ PAFVProvider (axis mappings for planes x/y/z)
+  ├─ SelectionProvider (selected card IDs + anchor for range select)
+  ├─ AppStateProvider (activeView + activeDataset + activeApp)
+  ├─ ThemeProvider (light/dark mode, CSS themes)
+  └─ NotebookProvider (THREE-CANVAS, being added)
 ```
 
-### Component Boundaries
+**All contexts are peer-level.** No hierarchy beyond database access. This keeps contexts decoupled and prevents cascading re-renders.
 
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| **NotebookProvider** | Card CRUD, template management, layout state | DatabaseContext (sql.js), NotebookIntegration hook |
-| **NotebookLayout** | Three-pane container, resize handles, state persistence | NotebookContext (layout state) |
-| **CapturePane** | TipTap editor, slash commands, property editor | NotebookContext (createCard, updateCard), FilterContext (LATCH filters) |
-| **ShellPane** | Terminal tabs (Claude AI, Claude Code, GSD GUI) | TerminalContext (shell state), GSD service (command routing) |
-| **PreviewPane** | Tab router (SuperGrid, Network, Data Inspector) | Existing D3 renderers via ViewEngine, PAFVContext, FilterContext |
+### Data Binding Pattern (Core)
 
-### Data Flow
+Current pattern observed in SuperGrid and will extend to all views:
 
-#### Card Creation (Capture → Database → Preview)
-
-```
-1. User types in TipTap editor (CapturePane)
-2. Slash command `/save-card` triggers
-3. CapturePane calls NotebookContext.createCard(type, templateId?)
-4. NotebookContext:
-   a. Creates node in `nodes` table via db.execute()
-   b. Creates linked record in `notebook_cards` table
-   c. Updates local state (cards array)
-   d. Triggers re-render
-5. PreviewPane re-queries via existing FilterContext
-6. D3 renderer binds new card via .join()
-```
-
-**SQL queries:**
-```sql
--- Step 1: Insert node
-INSERT INTO nodes (id, name, content, folder, created_at, modified_at)
-VALUES (?, ?, ?, 'notebook', datetime('now'), datetime('now'));
-
--- Step 2: Insert notebook_card (links to node)
-INSERT INTO notebook_cards (id, node_id, card_type, markdown_content, properties, created_at, modified_at)
-VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'));
-```
-
-#### Shell Command Execution (Shell → Terminal → GSD)
-
-```
-1. User types command in ShellPane terminal (xterm.js)
-2. TerminalContext captures input
-3. GSD integration hook parses command
-4. Routes to:
-   - Claude AI MCP server (if AI command)
-   - Claude Code WebSocket (if /gsd command)
-   - Local shell (if system command)
-5. Output streams back to terminal
-6. GSD GUI renders structured output (if applicable)
-```
-
-#### PAFV Projection (Preview → D3 → sql.js)
-
-```
-1. User changes axis mapping in PAFVContext
-2. PAFVContext dispatches new state
-3. PreviewPane's active D3 renderer receives update via props
-4. Renderer calls db.exec() with new SQL WHERE/ORDER BY clause
-5. sql.js returns results synchronously
-6. D3 .join() re-binds data with key function (d => d.id)
-7. Enter/update/exit handles visual transition
-```
-
-**No serialization boundary.** D3 renderer calls `db.exec()` directly in same JS runtime.
-
-## Patterns to Follow
-
-### Pattern 1: Notebook Cards Join PAFV Projections
-
-**What:** Notebook cards are nodes with extended metadata. They participate in all PAFV projections just like regular nodes.
-
-**When:** User switches to Preview tab showing SuperGrid, Network, or any D3 view.
-
-**Implementation:**
 ```typescript
-// In D3 renderer (e.g., SuperGrid.ts)
-function render(container: HTMLElement, data: Node[], config: ViewConfig) {
-  // Query includes notebook_cards via JOIN
-  const results = db.exec(`
-    SELECT
-      n.*,
-      nc.card_type,
-      nc.markdown_content,
-      nc.properties
-    FROM nodes n
-    LEFT JOIN notebook_cards nc ON nc.node_id = n.id
-    WHERE n.deleted_at IS NULL
-      ${config.filters.compiledSQL}
-    ORDER BY ${config.pafvProjection.orderByClause}
+// 1. React component reads state
+function MyViewRenderer() {
+  const { state: pafvState } = usePAFV();
+  const { filters } = useFilterContext();
+  const { db } = useSQLite();
+
+  // 2. Compute SQL WHERE/ORDER BY from React state
+  const sqlWhere = compileLatchFilters(filters);
+  const sqlOrderBy = compilePafvToOrderBy(pafvState);
+
+  // 3. Query data once
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL ${sqlWhere}
+    ORDER BY ${sqlOrderBy}
   `);
 
-  // Same .join() pattern, key function ensures continuity
-  d3.select(container)
-    .selectAll('.card')
-    .data(results, d => d.id)
-    .join('div')
-      .attr('class', d => `card ${d.card_type || 'regular'}`)
-      .text(d => d.name);
-}
-```
-
-### Pattern 2: React Controls, D3 Renders
-
-**What:** React components (CapturePane, ShellPane, PreviewPane) dispatch state changes. D3 renderers consume state and render visualizations.
-
-**When:** Any user interaction that changes what's displayed.
-
-**Implementation:**
-```typescript
-// In PreviewPane (React component)
-function PreviewPane() {
-  const { state } = usePAFV();
-  const { compiledQuery } = useFilters();
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  // 4. Effect: re-render D3 on data change
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !data) return;
 
-    // D3 renderer is pure function
-    // React tells it WHAT to render, not HOW
-    const renderer = getRendererForViewType(activeTab);
-    renderer.render(containerRef.current, [], {
-      viewType: activeTab,
-      pafvProjection: state,
-      filters: compiledQuery
+    // Pure function: D3 renderer consumes React-managed state
+    renderD3Visualization(containerRef.current, data, {
+      viewMode: 'list', // from activeView
+      pafvProjection: pafvState.mappings,
+      selectedIds: selection.selectedIds,
     });
-
-    return () => renderer.destroy();
-  }, [activeTab, state, compiledQuery]);
+  }, [data, pafvState, selection]);
 
   return <div ref={containerRef} />;
 }
 ```
 
-**Never:** Pass D3 selections or DOM references through React state. React owns the container `<div>`, D3 owns everything inside.
+**Pattern name:** "React controls what to render; D3 renders it"
 
-### Pattern 3: Terminal State Isolation
+### Current View Type System
 
-**What:** TerminalContext holds current working directory (CWD) as a ref, not state. Avoids re-renders on every CWD change.
+From `AppStateContext.tsx`:
 
-**When:** User runs `cd` commands or shell navigates directories.
-
-**Implementation:**
 ```typescript
-// TerminalContext.tsx (already exists)
-export function TerminalProvider({ children }: { children: ReactNode }) {
-  const currentWorkingDirectory = useRef('/Users/mshaler/Developer/Projects/Isometry');
-
-  const setWorkingDirectory = useCallback((path: string) => {
-    currentWorkingDirectory.current = path; // Ref mutation, not state update
-  }, []);
-
-  return (
-    <TerminalContext.Provider value={{ currentWorkingDirectory, setWorkingDirectory }}>
-      {children}
-    </TerminalContext.Provider>
-  );
-}
+export type ViewName =
+  | 'List'
+  | 'Gallery'
+  | 'Timeline'
+  | 'Calendar'
+  | 'Tree'
+  | 'Kanban'
+  | 'Grid'
+  | 'Charts'
+  | 'Graphs'
+  | 'SuperGrid';
 ```
 
-**Why:** Terminal output can be hundreds of lines. Using state would trigger re-render on every line append. Refs + manual DOM manipulation (via xterm.js) is correct pattern here.
+From `types/view.ts`:
 
-### Pattern 4: TipTap Slash Commands → sql.js Writes
-
-**What:** TipTap editor's slash command system creates notebook cards by writing directly to sql.js.
-
-**When:** User types `/save-card`, `/send-to-shell`, or custom slash commands.
-
-**Implementation:**
 ```typescript
-// In CaptureComponent.tsx
-function CaptureComponent() {
-  const { createCard } = useNotebook();
+export type GridContinuumMode = 'gallery' | 'list' | 'kanban' | 'grid' | 'supergrid';
+export type ViewType = GridContinuumMode | 'timeline' | 'calendar' | 'network' | 'tree';
+```
+
+**Note:** Two type systems exist. `ViewName` in AppStateContext (capitalized, app-level) and `GridContinuumMode` + `ViewType` in types/view.ts (lowercase, renderer-level). These should be unified.
+
+### Existing Renderers
+
+| View | Location | Type | Status | SQL Pattern |
+|------|----------|------|--------|------------|
+| **SuperGrid** | `src/components/supergrid/SuperGrid.tsx` | React + CSS Grid | Active | `useHeaderDiscovery()` + `useGridDataCells()` |
+| **D3 Network** | `src/d3/visualizations/network/ForceGraphRenderer.ts` | D3.js | Active | Custom `createGraphData()` + force simulation |
+| **D3 Timeline** | `src/d3/visualizations/timeline/TimelineRenderer.ts` | D3.js | Active | Custom `createTimelineEvents()` |
+| **Kanban** | `src/d3/KanbanView.ts` | D3.js | Active | Facet grouping + data processor |
+| **List** | `src/d3/ListView.ts` | D3.js | Active | Hierarchical tree view |
+| **Gallery** | (In planning) | React or D3? | Not yet built | Should be simple layout grid |
+
+---
+
+## Integration Architecture (RECOMMENDED)
+
+### 1. Gallery/List/Kanban — CSS Grid vs D3
+
+**Question:** Should these use CSS Grid (like SuperGrid) or D3.js (like current renderers)?
+
+**Recommendation:** Use **React + CSS Grid for tabular layouts** (Gallery, List, Kanban), **D3.js for spacial/network layouts** (Network, Timeline, and SuperGrid).
+
+**Rationale:**
+
+| Consideration | CSS Grid | D3.js |
+|---------------|----------|-------|
+| **Virtualization** | Good (CSS Grid native) | Manual (D3's approach) |
+| **Drag-drop** | Good (React DnD) | Good (D3 drag behavior) |
+| **Responsive** | Native CSS media queries | Requires resize handler |
+| **Performance** | DOM-based, fast updates | SVG-based, slower with many items |
+| **Consistency** | Matches SuperGrid approach | Consistent with Network/Timeline |
+
+**Decision matrix:**
+
+- **Gallery** (masonry, no axes) → React + CSS Grid + Masonry library
+- **List** (single axis, hierarchical) → React + CSS Grid or D3.js (either works)
+- **Kanban** (facet columns) → React + CSS Grid (cards in columns)
+- **Network** (GRAPH edges) → D3.js (force simulation requires SVG)
+- **Timeline** (time × track) → D3.js (scaleTime for X-axis, scales for spatial layout)
+- **SuperGrid** (n-dimensional headers) → React + CSS Grid + D3 (hybrid: CSS for grid, D3 for headers)
+
+**Implementation:** Build Gallery/List/Kanban as **React components that consume the same `useSQLiteQuery()` hook**, not as separate D3 renderers.
+
+### 2. Component Structure: New Views
+
+#### Gallery View Component
+
+```typescript
+// src/components/views/GalleryView.tsx
+import { useSQLiteQuery } from '@/hooks';
+import { usePAFV } from '@/hooks/usePAFV';
+import { useSelection } from '@/state/SelectionContext';
+import { useFilterContext } from '@/contexts/FilterContext';
+import { Masonry } from 'react-grid-masonry'; // or framer-motion
+
+export function GalleryView() {
   const { db } = useSQLite();
+  const { filters } = useFilterContext();
+  const { state: pafvState } = usePAFV();
+  const { select, toggle } = useSelection();
 
-  const slashCommands = useMemo(() => [
-    {
-      id: 'save-card',
-      label: 'Save as Card',
-      category: 'isometry',
-      action: async () => {
-        const content = editor.getHTML();
-        const { title, summary } = extractCardInfo(content);
+  // Query: same pattern as SuperGrid
+  const sqlWhere = compileLatchFilters(filters);
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL ${sqlWhere}
+    ORDER BY modified_at DESC
+  `);
 
-        // Direct sql.js write via NotebookContext
-        const card = await createCard('capture', undefined);
-
-        // Update with markdown content
-        await db.execute(
-          'UPDATE notebook_cards SET markdown_content = ? WHERE id = ?',
-          [content, card.id]
-        );
-      }
-    }
-  ], [createCard, db]);
-
-  return <TipTapEditor slashCommands={slashCommands} />;
-}
-```
-
-### Pattern 5: Three-Canvas Layout Persistence
-
-**What:** User's pane sizes and positions are stored in localStorage and restored on app load.
-
-**When:** User resizes panes or app restarts.
-
-**Implementation:**
-```typescript
-// In NotebookLayout.tsx (to be created)
-function NotebookLayout() {
-  const { layout, updateLayout } = useNotebook();
-
-  const handleResize = useCallback((component: 'capture' | 'shell' | 'preview', newSize: LayoutPosition) => {
-    updateLayout(component, newSize);
-    // updateLayout internally calls layoutManager.saveLayout()
-  }, [updateLayout]);
-
+  // Render: React JSX with masonry layout
   return (
-    <ResizableLayout
-      initialSizes={{
-        capture: layout.capture,
-        shell: layout.shell,
-        preview: layout.preview
-      }}
-      onResize={handleResize}
-    >
-      <CapturePane />
-      <ShellPane />
-      <PreviewPane />
-    </ResizableLayout>
+    <Masonry columns={[1, 2, 3]} gap={16}>
+      {data?.map(card => (
+        <GalleryCard
+          key={card.id}
+          card={card}
+          isSelected={selection.selectedIds.has(card.id)}
+          onSelect={() => select(card.id)}
+          onToggle={() => toggle(card.id)}
+        />
+      ))}
+    </Masonry>
   );
 }
 ```
 
-**Storage:**
-```json
-// localStorage['notebook_layout']
-{
-  "capture": { "x": 0, "y": 0, "width": 40, "height": 100 },
-  "shell": { "x": 40, "y": 0, "width": 30, "height": 100 },
-  "preview": { "x": 70, "y": 0, "width": 30, "height": 100 }
-}
-```
+**Key pattern:** Same `useSQLiteQuery()` hook, different layout component.
 
-## Anti-Patterns to Avoid
-
-### Anti-Pattern 1: Dual State Management
-
-**What:** Storing the same data in both NotebookContext and FilterContext/PAFVContext.
-
-**Why bad:** State drift. Notebook cards are nodes, so they're already in the nodes table. Don't duplicate in a separate notebook-specific cache.
-
-**Instead:** NotebookContext manages `notebook_cards` table (extended metadata). FilterContext queries `nodes` table with LEFT JOIN to `notebook_cards` when needed. Single source of truth.
-
-### Anti-Pattern 2: React Rendering D3 Content
-
-**What:** Using React components to render individual cards in SuperGrid.
-
-**Why bad:** Breaks "D3 renders, React controls" principle. Thousands of React components for grid cells = performance disaster. D3's .join() is designed for this use case.
-
-**Instead:** React renders one `<div ref={containerRef} />`. D3 populates it with cards via `.join()`. React never touches card DOM elements.
-
-### Anti-Pattern 3: Terminal Output via React State
-
-**What:** Storing terminal output lines in useState and mapping to `<div>` elements.
-
-**Why bad:** Every output line triggers re-render of entire terminal component. xterm.js already manages its own DOM efficiently.
-
-**Instead:** Use xterm.js's built-in terminal instance. Pass ref to TerminalContext. Write to terminal via `terminal.writeln()` (DOM mutation, not state update).
-
-### Anti-Pattern 4: Bridging D3 and React via Callbacks
-
-**What:** D3 renderer calling React setState on every interaction (click, drag, zoom).
-
-**Why bad:** Creates serialization boundary we eliminated. D3 should handle interaction directly, only dispatching to React when control-level state changes (e.g., switching views).
-
-**Instead:** D3 owns interaction. On selection change, D3 updates SelectionContext (existing pattern). On view switch, React tells D3 which renderer to use via ViewEngine.
-
-### Anti-Pattern 5: Mixing Notebook Mode and Regular Mode
-
-**What:** Trying to support both "notebook mode" and "regular app mode" with different component trees.
-
-**Why bad:** Code duplication. NotebookLayout just wraps existing components.
-
-**Instead:** NotebookLayout is always rendered. When `isNotebookMode = false`, render PreviewPane at 100% width and hide Capture/Shell. Single component tree, conditional visibility.
-
-## Scalability Considerations
-
-| Concern | At 100 cards | At 10K cards | At 1M cards |
-|---------|--------------|--------------|-------------|
-| **Card list loading** | Query all (fast) | Query all (acceptable) | Virtual scrolling + pagination (infinite scroll) |
-| **Template library** | Load all to localStorage | Load all (5-10 templates) | Same (templates don't scale with cards) |
-| **PAFV projection** | D3 renders all | D3 renders all | Canvas fallback for >50K visible cells |
-| **FTS5 search** | Instant (<1ms) | Fast (10-50ms) | Indexed (50-200ms), acceptable for user-triggered search |
-| **Terminal history** | Array in memory | Array in memory | Circular buffer (max 1000 lines) |
-
-### Virtual Scrolling Strategy (10K+ cards)
+#### List View Component
 
 ```typescript
-// For large card sets in PreviewPane
-import { FixedSizeList } from 'react-window';
+// src/components/views/ListView.tsx
+export function ListView() {
+  const { db } = useSQLite();
+  const { filters } = useFilterContext();
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL ${compileLatchFilters(filters)}
+    ORDER BY hierarchy, name
+  `);
 
-function PreviewPane() {
-  const { cards } = useNotebook();
-
-  if (cards.length > 5000) {
-    // Use virtual scrolling for large sets
-    return (
-      <FixedSizeList
-        height={window.innerHeight}
-        itemCount={cards.length}
-        itemSize={60}
-        width="100%"
-      >
-        {({ index, style }) => (
-          <div style={style}>
-            <CardRow card={cards[index]} />
-          </div>
-        )}
-      </FixedSizeList>
-    );
-  }
-
-  // For smaller sets, render directly via D3
-  return <D3GridView cards={cards} />;
+  // Render: hierarchical tree using React recursion or CSS Grid
+  return (
+    <div className="list-view">
+      {data?.map(card => (
+        <ListItem key={card.id} card={card} level={getHierarchyLevel(card)} />
+      ))}
+    </div>
+  );
 }
 ```
 
-**Decision point:** 5,000 cards. Below = D3 .join(). Above = react-window + D3 for visible rows only.
+#### Kanban View Component
 
-## Integration Points
+```typescript
+// src/components/views/KanbanView.tsx
+export function KanbanView() {
+  const { db } = useSQLite();
+  const { filters } = useFilterContext();
+  const { state: pafvState } = usePAFV();
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL ${compileLatchFilters(filters)}
+    ORDER BY ${getFacetColumn(pafvState.mappings[0])}, name
+  `);
 
-### New Components
+  // Group by facet (e.g., status)
+  const grouped = groupBy(data, getFacetColumn(pafvState.mappings[0]));
 
-| Component | Path | Purpose |
-|-----------|------|---------|
-| `NotebookLayout` | `src/components/notebook/NotebookLayout.tsx` | Three-pane container with resize handles |
-| `CapturePane` (enhanced) | `src/components/notebook/CaptureComponent.tsx` | TipTap editor with slash commands, property panel |
-| `ShellPane` (enhanced) | `src/components/notebook/ShellComponent.tsx` | Terminal tabs (Claude AI, Claude Code, GSD GUI) |
-| `PreviewPane` (enhanced) | `src/components/notebook/PreviewComponent.tsx` | Tab router for D3 views (SuperGrid, Network, Data Inspector) |
+  return (
+    <div className="kanban-view">
+      {Object.entries(grouped).map(([facetValue, cards]) => (
+        <KanbanColumn key={facetValue} title={facetValue}>
+          {cards.map(card => (
+            <KanbanCard key={card.id} card={card} />
+          ))}
+        </KanbanColumn>
+      ))}
+    </div>
+  );
+}
+```
 
-**Status:** Skeleton implementations exist. Need enhancement for full integration.
+### 3. Network/Timeline — Wiring D3 to SQL Hooks
+
+Current pattern in ForceGraphRenderer and TimelineRenderer is **standalone** — they don't use SQL hooks. Need to wire them into the data flow.
+
+#### Pattern: D3 Renderer as Effect
+
+```typescript
+// src/components/views/NetworkView.tsx
+export function NetworkView() {
+  const { db } = useSQLite();
+  const { filters } = useFilterContext();
+  const containerRef = useRef<SVGGElement>(null);
+
+  // Query nodes
+  const nodeData = useSQLiteQuery(db, `
+    SELECT * FROM nodes WHERE deleted_at IS NULL ${compileLatchFilters(filters)}
+  `);
+
+  // Query edges (relationships)
+  const edgeData = useSQLiteQuery(db, `
+    SELECT * FROM edges WHERE deleted_at IS NULL
+  `);
+
+  // Render D3 on data change
+  useEffect(() => {
+    if (!containerRef.current || !nodeData || !edgeData) return;
+
+    const graphData = {
+      nodes: nodeData.map(n => ({ id: n.id, label: n.name, ...n })),
+      links: edgeData.map(e => ({ source: e.source_id, target: e.target_id, ...e })),
+    };
+
+    createForceGraph(containerRef.current, graphData.nodes, graphData.links, {
+      width: 1200,
+      height: 600,
+    });
+  }, [nodeData, edgeData]);
+
+  return <svg ref={containerRef} />;
+}
+```
+
+#### Pattern: Timeline Renderer
+
+```typescript
+// src/components/views/TimelineView.tsx
+export function TimelineView() {
+  const { db } = useSQLite();
+  const { filters } = useFilterContext();
+  const containerRef = useRef<SVGGElement>(null);
+
+  // Query events with time dimension
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL
+      AND (created_at IS NOT NULL OR modified_at IS NOT NULL)
+      ${compileLatchFilters(filters)}
+    ORDER BY created_at ASC
+  `);
+
+  useEffect(() => {
+    if (!containerRef.current || !data) return;
+
+    const timelineEvents = data.map(card => ({
+      id: card.id,
+      timestamp: new Date(card.created_at || card.modified_at || Date.now()),
+      track: card.folder || 'Uncategorized',
+      title: card.name,
+    }));
+
+    createTimeline(containerRef.current, timelineEvents, {
+      width: 1200,
+      height: 400,
+      margin: { top: 20, right: 20, bottom: 20, left: 100 },
+    });
+  }, [data]);
+
+  return <svg ref={containerRef} />;
+}
+```
+
+### 4. Three-Canvas Notebook Integration
+
+The Three-Canvas (Capture, Shell, Preview) is a **layout container**, not a view renderer. It coordinates view switching within the Preview pane.
+
+#### Architecture
+
+```
+<NotebookLayout>
+  ├─ <CapturePane>          ← TipTap editor, /save-card command
+  ├─ <ShellPane>            ← Terminal tabs (Claude AI, Claude Code, GSD)
+  └─ <PreviewPane>
+      ├─ Tabs: SuperGrid | Network | Timeline | List | Gallery
+      └─ <ViewDispatcher>    ← Mounts correct view based on activeView
+          └─ <SuperGridView /> or <NetworkView /> or <TimelineView />
+```
+
+#### ViewDispatcher Pattern
+
+```typescript
+// src/components/views/ViewDispatcher.tsx
+export function ViewDispatcher() {
+  const { activeView } = useAppState();
+  const viewMode: GridContinuumMode = mapViewNameToMode(activeView);
+
+  // Map view name to React component
+  const viewComponents: Record<ViewType, React.ComponentType> = {
+    gallery: GalleryView,
+    list: ListView,
+    kanban: KanbanView,
+    grid: GridView,
+    supergrid: SuperGridView,
+    network: NetworkView,
+    timeline: TimelineView,
+  };
+
+  const ViewComponent = viewComponents[viewMode] || SuperGridView;
+
+  return <ViewComponent />;
+}
+```
+
+**Important:** ViewDispatcher is always mounted in PreviewPane, so view switching simply unmounts old component and mounts new one. State preservation handled by AppStateContext + url-synced state.
+
+### 5. Mode Switching: GridContinuumController
+
+**Current state:** GridContinuumSwitcher exists as UI. Need GridContinuumController (non-UI logic) that:
+
+1. Receives view switch request
+2. Validates axis configurations for new mode
+3. Calls `setActiveView()` in AppStateContext
+4. Preserves selection if possible (cross-canvas sync)
+
+```typescript
+// src/components/supergrid/GridContinuumController.ts
+export class GridContinuumController {
+  /**
+   * Switch grid mode, validating axis requirements
+   * - gallery: 0 axes required
+   * - list: 1 axis (Y)
+   * - kanban: 1 axis (facet grouping)
+   * - grid: 2 axes (X, Y)
+   * - supergrid: 3+ axes (X, Y, Z+)
+   */
+  switchMode(newMode: GridContinuumMode, pafvState: PAFVState): boolean {
+    const requiredAxes = {
+      gallery: 0,
+      list: 1,
+      kanban: 1,
+      grid: 2,
+      supergrid: 3,
+    }[newMode];
+
+    const currentAxes = pafvState.mappings.length;
+
+    if (currentAxes < requiredAxes) {
+      // Prompt user to add axes
+      console.warn(`${newMode} requires at least ${requiredAxes} axes, current: ${currentAxes}`);
+      return false;
+    }
+
+    return true;
+  }
+}
+```
+
+---
+
+## Data Flow: Four Scenarios
+
+### Scenario 1: User Clicks View Switcher (Gallery → List)
+
+```
+1. GridContinuumSwitcher button click
+   └─> onModeChange('list')
+
+2. ViewDispatcher receives activeView = 'List'
+   └─> mounts ListView component
+
+3. ListView:
+   a. Calls useFilterContext() → gets current filters
+   b. Calls useSQLiteQuery() → queries filtered nodes
+   c. Renders list items with React JSX
+
+4. Selection state preserved:
+   a. SelectionContext still has selectedIds
+   b. ListView can highlight selected items
+```
+
+**SQL execution:** 1 query per render (batched in useSQLiteQuery hook)
+
+### Scenario 2: User Changes PAFV Axis (Grid → Network Projection)
+
+```
+1. PAFVNavigator shows "X-axis: folder, Y-axis: status"
+2. User clicks "X-axis: author" → setMapping('x', 'alphabet', 'author')
+
+3. PAFVContext updates:
+   a. state.mappings = [{dimension: 'alphabet', field: 'author', plane: 'x'}, ...]
+   b. Notifies subscribers
+
+4. Affected views re-render:
+   a. SuperGrid: re-calculates header tree with new X-axis
+   b. List: re-orders items by author
+   c. Network: unchanged (doesn't use PAFV axes, uses GRAPH edges)
+
+5. Selection preserved across views
+```
+
+**Pattern:** Axis change is orthogonal to view mode. Both can change independently.
+
+### Scenario 3: User Filters by Category (All Views Updated)
+
+```
+1. FilterBar checkbox: "status: done"
+   └─> setFilter({ axis: 'category', facet: 'status', value: 'done' })
+
+2. FilterContext compiles to SQL:
+   WHERE status = 'done' AND deleted_at IS NULL
+
+3. All mounted views re-query:
+   a. useFilterContext() detects filter change
+   b. useSQLiteQuery() re-executes with new WHERE clause
+   c. React re-renders children with new data
+
+4. Selection auto-cleaned:
+   - If selected card filtered out, deselect it
+   - Keeps consistency across views
+```
+
+**Pattern:** Filters flow through useSQLiteQuery hook, affecting all views simultaneously.
+
+### Scenario 4: User Creates Card in Capture Pane
+
+```
+1. CapturePane TipTap editor: "/save-card"
+   └─> NotebookContext.createCard(type, templateId?)
+
+2. NotebookContext.createCard():
+   a. Generates unique id
+   b. db.execute(INSERT INTO nodes ...)
+   c. db.execute(INSERT INTO notebook_cards ...)
+   d. Triggers notification to dependent queries
+
+3. All preview views re-query:
+   a. useSQLiteQuery() hook detects database change
+   b. Re-executes SELECT query
+   c. React renders new card
+
+4. New card appears in SuperGrid, Network, Timeline, etc. immediately
+```
+
+**Pattern:** Direct sql.js mutations → all views via query invalidation.
+
+---
+
+## Component Boundaries
+
+### New Components to Build
+
+| Component | Location | Responsibility | Depends On |
+|-----------|----------|-----------------|-----------|
+| **GalleryView** | `src/components/views/GalleryView.tsx` | Masonry layout, card grid | useSQLiteQuery, useSelection, useFilterContext |
+| **ListView** | `src/components/views/ListView.tsx` | Hierarchical tree list | useSQLiteQuery, useSelection, usePAFV |
+| **KanbanView** | `src/components/views/KanbanView.tsx` | Facet-based columns | useSQLiteQuery, usePAFV, useSelection |
+| **NetworkView** | `src/components/views/NetworkView.tsx` | D3 force graph | useSQLiteQuery, D3 ForceGraphRenderer |
+| **TimelineView** | `src/components/views/TimelineView.tsx` | D3 timeline | useSQLiteQuery, D3 TimelineRenderer |
+| **ViewDispatcher** | `src/components/views/ViewDispatcher.tsx` | Routes to correct view component | useAppState, all view components |
+| **GridContinuumController** | `src/d3/GridContinuumController.ts` | Mode validation logic (non-UI) | PAFVState |
 
 ### Modified Components
 
-| Component | Path | Modification |
-|-----------|------|---------|
-| `SuperGrid` | `src/d3/SuperGrid.ts` | Add LEFT JOIN to notebook_cards, render card_type badge |
-| `FilterContext` | `src/contexts/FilterContext.tsx` | Add notebook card type filter (capture/shell/preview) |
-| `DatabaseProvider` | `src/db/DatabaseContext.tsx` | Ensure notebook_cards table exists on init |
+| Component | Change | Impact |
+|-----------|--------|--------|
+| **PreviewPane** | Mount ViewDispatcher instead of hardcoded SuperGrid | Enables view switching in notebook |
+| **IntegratedLayout** | Adopt ViewDispatcher if not using three-canvas | Enables mode switching in main app |
+| **AppStateContext** | Rename/unify ViewName with ViewType enums | Eliminates type confusion |
 
-**Scope:** Minimal. Existing D3 renderers already query nodes table. Adding LEFT JOIN to notebook_cards is 1-line change.
+### Unchanged
 
-### New Contexts
+- FilterContext (keeps compiling LATCH → SQL)
+- PAFVContext (keeps managing axis mappings)
+- SelectionContext (keeps tracking selected IDs)
+- DatabaseProvider (sql.js instance)
 
-| Context | Path | Purpose |
-|---------|------|---------|
-| `NotebookContext` | `src/contexts/NotebookContext.tsx` | Card CRUD, template management, layout state |
+---
 
-**Status:** Exists. Needs integration testing with sql.js.
+## SQL Hook Pattern: useSQLiteQuery
 
-### Dependencies to Add
+**Core hook that all views use.** Already exists but needs to be consistent across new views.
 
-| Library | Version | Purpose |
-|---------|---------|---------|
-| `@tiptap/react` | ^3.19.0 | TipTap editor core |
-| `@tiptap/pm` | ^3.19.0 | ProseMirror dependencies |
-| `@tiptap/starter-kit` | ^3.19.0 | Basic TipTap extensions |
-| `xterm-for-react` | ^2.0.2 | Terminal component wrapper |
-| `xterm` | ^5.5.0 | Terminal emulator library |
-| `react-window` | ^1.8.10 | Virtual scrolling for large lists |
+```typescript
+// src/hooks/useSQLiteQuery.ts
+export function useSQLiteQuery(
+  db: Database | null,
+  query: string,
+  params?: unknown[],
+  options?: { enabled?: boolean }
+): QueryResult[] | null {
+  const [data, setData] = useState<QueryResult[] | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-**Installation:**
-```bash
-npm install @tiptap/react @tiptap/pm @tiptap/starter-kit xterm-for-react xterm react-window
+  useEffect(() => {
+    if (!db || options?.enabled === false) {
+      setData(null);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const result = db.exec(query, params);
+      setData(result);
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [db, query, JSON.stringify(params)]);
+
+  return data;
+}
 ```
 
-## Build Order (Dependency-Aware)
+**Usage pattern across all views:**
+
+```typescript
+// Every new view follows this pattern
+function MyView() {
+  const { db } = useSQLite();
+  const { filters } = useFilterContext();
+
+  const sqlWhere = compileLatchFilters(filters);
+  const data = useSQLiteQuery(db, `
+    SELECT * FROM nodes
+    WHERE deleted_at IS NULL ${sqlWhere}
+    ORDER BY name
+  `);
+
+  return <div>{data && renderData(data)}</div>;
+}
+```
+
+---
+
+## Density & Sparsity (Janus Model)
+
+SuperGrid's Janus Density Model (Value × Extent) should NOT apply to all views.
+
+| View | Pan (Extent) | Zoom (Value) | Control | Example |
+|------|--------------|--------------|---------|---------|
+| **Gallery** | ✓ Sparse-only (show all cards) | ✗ N/A | No density control | Show all as tiles |
+| **List** | ✗ N/A | ✓ Expandable (levels) | Hierarchy depth slider | Show Level 1, 2, 3 |
+| **Kanban** | ✓ Sparse/Full | ✗ N/A | Extent slider | Show non-empty columns only |
+| **SuperGrid** | ✓ Both | ✓ Both | Janus controls | Full density matrix |
+| **Network** | ✗ N/A | ✓ Zoom | D3 zoom behavior | Pinch/scroll zoom |
+| **Timeline** | ✓ Date range | ✓ Zoom | Time scrubber | Pan timeline, zoom events |
+
+**Pattern:** Density controls are view-specific, not global. SuperGrid defines the full Janus model; others implement subset.
+
+---
+
+## Known Pitfalls & Avoidance
+
+### Pitfall 1: Duplicate SQL Queries Per View
+
+**Problem:** Each view independently compiles filters → multiple DB queries for same data.
+
+**Prevention:**
+- Use shared `useSQLiteQuery()` hook with same WHERE clause
+- Query once at container level, pass data to views
+- Or: use query result caching in hook
+
+**Detection:** Run DevTools SQL profiler, count SELECT statements per filter change.
+
+### Pitfall 2: Selection State Lost on View Switch
+
+**Problem:** Switching from SuperGrid to Network loses selected cards.
+
+**Prevention:**
+- SelectionContext is global (lives in top provider)
+- Each view's `registerScrollToNode()` on mount
+- Selection survives view transitions by design
+
+**Detection:** Switch views, verify selected IDs still present in SelectionContext.
+
+### Pitfall 3: D3 Renderers Not Receiving React State Changes
+
+**Problem:** Axis changes in PAFVContext don't propagate to D3 force graph.
+
+**Prevention:**
+- D3 renderer runs in useEffect that watches PAFV state
+- Re-mount D3 simulation on state change (or update forces)
+- Use D3 transitions to smooth changes
+
+**Detection:** Change axis while viewing Network graph, verify node positions update.
+
+### Pitfall 4: Three-Canvas Panes Unaware of Each Other
+
+**Problem:** Creating card in Capture doesn't update Preview, or Preview change doesn't reflect in Shell.
+
+**Prevention:**
+- NotebookContext triggers database notifications
+- All panes use same hooks (useSQLiteQuery, SelectionContext)
+- Shell observes Preview selections for context
+
+**Detection:** Create card, switch to Preview, verify new card appears.
+
+### Pitfall 5: View Mode Requirements Not Validated
+
+**Problem:** User tries to switch to Grid mode with only 1 axis, crashes.
+
+**Prevention:**
+- GridContinuumController validates before switching
+- Show helpful error: "Grid requires 2 axes. Add Y-axis?"
+- Prevent invalid transitions at UI level
+
+**Detection:** Try to switch to Grid with <2 axes, verify graceful error.
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Reason |
+|------|-----------|--------|
+| **Current architecture** | HIGH | Reviewed AppStateContext, SelectionContext, usePAFV, useSQLiteQuery in codebase |
+| **CSS Grid for new views** | HIGH | Observed SuperGrid's CSS Grid + React pattern, matches performance needs |
+| **D3 wiring pattern** | MEDIUM-HIGH | ForceGraphRenderer and TimelineRenderer exist but don't use sql hooks; pattern inferred from SuperGrid |
+| **ViewDispatcher pattern** | MEDIUM | Follows React composition patterns, not yet built; needs validation |
+| **Notebook integration** | MEDIUM | Architecture documented but implementation incomplete; PAFV/Selection contexts confirmed |
+| **Three-canvas pane coordination** | LOW | NotebookContext structure inferred; actual implementation may reveal dependencies |
+
+---
+
+## Build Order (Recommended)
 
 ### Phase 1: Foundation (Week 1)
+- [ ] Unify ViewName / ViewType / GridContinuumMode enums
+- [ ] Build ViewDispatcher component
+- [ ] Build GridContinuumController logic
 
-1. **Verify sql.js notebook_cards table**
-   - Run schema.sql in test environment
-   - Verify FTS5 triggers work
-   - Test INSERT/UPDATE/DELETE on notebook_cards
+### Phase 2: Simple Views (Week 2)
+- [ ] Build GalleryView (React + CSS Grid + Masonry)
+- [ ] Build ListView (React + CSS)
+- [ ] Build KanbanView (React + CSS + groupBy logic)
 
-2. **Install UI dependencies**
-   - npm install TipTap, xterm, react-window
-   - Verify no version conflicts with existing D3/React versions
+### Phase 3: Complex Views (Week 3)
+- [ ] Refactor NetworkView to use useSQLiteQuery
+- [ ] Refactor TimelineView to use useSQLiteQuery
+- [ ] Add PAFV support to Network (if needed)
 
-3. **Test NotebookContext in isolation**
-   - Write unit tests for createCard, updateCard, deleteCard
-   - Mock sql.js execute function
-   - Verify localStorage persistence for layout/templates
+### Phase 4: Integration (Week 4)
+- [ ] Wire Three-Canvas PreviewPane with ViewDispatcher
+- [ ] Test view switching with selections preserved
+- [ ] Test PAFV changes across views
+- [ ] Test filter changes across views
 
-### Phase 2: Individual Panes (Week 2)
+### Phase 5: Polish (Week 5)
+- [ ] Keyboard shortcuts for view switching
+- [ ] Smooth transitions between views (D3 transitions for compatible pairs)
+- [ ] Performance benchmarks (DOM for React views, SVG for D3)
+- [ ] Accessibility audit (ARIA labels for view switcher)
 
-4. **Build CapturePane**
-   - TipTap editor with markdown support
-   - Slash command system (`/save-card`, `/send-to-shell`)
-   - Property panel (tags, priority, status)
-   - Autosave to notebook_cards table
+---
 
-5. **Build ShellPane**
-   - xterm.js terminal component
-   - Tab switching (Claude AI, Claude Code, GSD GUI)
-   - TerminalContext integration for CWD
-   - Command history (up/down arrows)
+## Architecture Decisions
 
-6. **Build PreviewPane**
-   - Tab router (SuperGrid, Network, Data Inspector)
-   - Pass-through to existing D3 renderers
-   - ViewEngine integration
+### Decision 1: React Components for Tabular Views
 
-**Test each pane standalone before integration.**
+**Chosen:** React (CSS Grid) for Gallery, List, Kanban
+**Rejected:** D3.js for all views (would be inconsistent with SuperGrid's React approach)
+**Rationale:** Faster DOM updates, simpler DnD, native virtualization
 
-### Phase 3: Layout Integration (Week 3)
+### Decision 2: Shared useSQLiteQuery Hook
 
-7. **Build NotebookLayout**
-   - Three-pane container
-   - Resize handles (react-resizable or custom)
-   - Layout persistence to localStorage
-   - Toggle notebook mode (show/hide Capture + Shell)
+**Chosen:** All views use same `useSQLiteQuery()` with compiled filters
+**Rejected:** Each view implements its own SQL query (would duplicate logic)
+**Rationale:** Single source of truth for data, easier filter/PAFV propagation
 
-8. **Connect PreviewPane to FilterContext**
-   - Add notebook card_type filter
-   - Verify LATCH filters work on joined query
-   - Test PAFV axis changes trigger re-render
+### Decision 3: ViewDispatcher as Route Component
 
-9. **Connect CapturePane to PreviewPane**
-   - Save card in Capture
-   - Verify appears in Preview SuperGrid
-   - Test property changes propagate
+**Chosen:** ViewDispatcher mounts/unmounts view components on mode change
+**Rejected:** Conditional rendering inside one mega-component
+**Rationale:** Cleaner component boundaries, easier to test individual views
 
-### Phase 4: Polish (Week 4)
+### Decision 4: GlobalSelection (SelectionContext) Not View-Specific
 
-10. **Add keyboard shortcuts**
-    - Cmd+S to save card
-    - Cmd+Enter to send to shell
-    - Cmd+1/2/3 to switch panes
+**Chosen:** SelectionContext is global, survives view transitions
+**Rejected:** Each view manages its own selection (separate Set<id> per view)
+**Rationale:** Cross-canvas sync (create card in Capture, select it in Preview), operations apply to multiple views
 
-11. **Add template library UI**
-    - Template picker in CapturePane
-    - Built-in templates (meeting notes, code snippet, etc.)
-    - Custom template creation from existing cards
+---
 
-12. **Performance testing**
-    - Load 10K notebook cards
-    - Measure render time in SuperGrid
-    - Add virtual scrolling if needed
-    - Test FTS5 search performance
+## Integration Points Summary
 
-**Gate:** All tests pass, no console errors, < 100ms render time for 1K cards.
+| Integration Point | Current | New | Impact |
+|------------------|---------|-----|--------|
+| **View list** | SuperGrid only | SuperGrid + Gallery/List/Kanban/Network/Timeline | ViewDispatcher routes, AppStateContext tracks activeView |
+| **SQL queries** | useHeaderDiscovery + useGridDataCells (SuperGrid-specific) | Unified useSQLiteQuery | Consistency across views |
+| **PAFV integration** | Axis mappings → SuperGrid headers | Axis mappings → all views | PAFV changes affect all views simultaneously |
+| **Selection sync** | SelectionContext → SuperGrid | SelectionContext → all views | Selection preserved across view transitions |
+| **Filter propagation** | FilterContext → SuperGrid | FilterContext → all views via useSQLiteQuery | Single filter query, all views update |
+| **Three-Canvas** | Not present | PreviewPane + ViewDispatcher | Notebook layout coordinates view switching |
 
-## Data Flow Changes
+---
 
-### Before (Regular App Mode)
+## Gaps & Phase-Specific Research
 
-```
-User interaction
-  → React dispatches to FilterContext
-  → FilterContext compiles to SQL
-  → D3 renderer calls db.exec()
-  → D3 .join() re-binds data
-```
+**To be addressed in Phase implementation:**
 
-### After (Notebook Mode)
+1. **Keyboard navigation:** How do List/Network/Timeline implement keyboard selection? Need unified keyboard controller.
+2. **Virtualization:** List and Kanban need virtualization for 10K+ items. Research React Window integration.
+3. **Drag-drop:** Gallery/Kanban need drag-drop. How to sync with D3 Network/Timeline drag?
+4. **Transitions:** Can D3 transitions smoothly morph SuperGrid → Network? Test D3 morphs.
+5. **Shell integration:** How does Claude Code terminal in Shell pane interact with view changes?
 
-```
-User types in Capture
-  → NotebookContext.createCard()
-  → db.execute(INSERT INTO notebook_cards)
-  → (same as before for Preview updates)
+---
 
-User switches Preview tab
-  → PreviewPane state change
-  → ViewEngine selects renderer
-  → D3 renderer calls db.exec() with LEFT JOIN notebook_cards
-  → D3 .join() re-binds data
-```
+## References
 
-**Key insight:** Data flow is additive, not replaced. Notebook mode adds CapturePane and ShellPane as data input sources. PreviewPane still uses existing FilterContext → D3 → sql.js pipeline.
+- **Existing:**
+  - `src/components/supergrid/SuperGrid.tsx` — SuperStack + CSS Grid + PAFV pattern
+  - `src/contexts/AppStateContext.tsx` — activeView + URL syncing
+  - `src/state/SelectionContext.tsx` — multi-view selection sync
+  - `src/d3/visualizations/network/ForceGraphRenderer.ts` — D3 network renderer (needs SQL hook wiring)
+  - `src/d3/visualizations/timeline/TimelineRenderer.ts` — D3 timeline renderer (needs SQL hook wiring)
 
-## Suggested Build Order (Tasks)
+- **To be created:**
+  - `src/components/views/ViewDispatcher.tsx`
+  - `src/components/views/GalleryView.tsx`
+  - `src/components/views/ListView.tsx`
+  - `src/components/views/KanbanView.tsx`
+  - `src/components/views/NetworkView.tsx`
+  - `src/components/views/TimelineView.tsx`
+  - `src/d3/GridContinuumController.ts`
 
-1. ✅ Verify sql.js with notebook_cards schema
-2. ✅ Install TipTap, xterm, react-window dependencies
-3. ✅ Test NotebookContext CRUD operations
-4. ⬜ Build CapturePane with TipTap + slash commands
-5. ⬜ Build ShellPane with xterm.js tabs
-6. ⬜ Build PreviewPane tab router
-7. ⬜ Build NotebookLayout three-pane container
-8. ⬜ Integrate FilterContext with notebook card_type filter
-9. ⬜ Connect CapturePane → PreviewPane flow
-10. ⬜ Add keyboard shortcuts
-11. ⬜ Add template library UI
-12. ⬜ Performance test with 10K cards
+---
 
-**Parallelizable:** Tasks 4, 5, 6 can be built independently and tested in isolation.
-
-**Sequential:** Tasks 7-9 require 4-6 complete. Tasks 10-12 require 7-9 complete.
-
-## Sources
-
-**Existing Architecture:**
-- `/Users/mshaler/Developer/Projects/Isometry/CLAUDE.md` — Architecture truth document
-- `/Users/mshaler/Developer/Projects/Isometry/src/contexts/NotebookContext.tsx` — Existing notebook context implementation
-- `/Users/mshaler/Developer/Projects/Isometry/src/contexts/FilterContext.tsx` — LATCH filter → SQL compilation
-- `/Users/mshaler/Developer/Projects/Isometry/src/state/PAFVContext.tsx` — PAFV axis mappings
-- `/Users/mshaler/Developer/Projects/Isometry/src/db/schema.sql` — SQLite schema with notebook_cards table
-- `/Users/mshaler/Developer/Projects/Isometry/src/engine/contracts/ViewEngine.ts` — D3 renderer interface
-
-**Dependencies:**
-- [TipTap React Integration](https://tiptap.dev/docs/editor/getting-started/install/react) — Official TipTap React docs (2026)
-- [xterm-for-react](https://github.com/robert-harbison/xterm-for-react) — React wrapper for xterm.js
-- [@pablo-lion/xterm-react](https://www.npmjs.com/package/@pablo-lion/xterm-react) — Alternative xterm React wrapper
-- [react-window](https://www.npmjs.com/package/react-window) — Virtual scrolling for large lists
-
-**Confidence:** HIGH — Architecture patterns verified in existing codebase, dependencies actively maintained, integration points well-defined.
+*Research completed 2026-02-16 by Claude Code*
+*Architecture patterns HIGH confidence; implementation details MEDIUM confidence pending phase work*
