@@ -117,8 +117,10 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
     enableAutoSave: true
   });
 
+  const [showCardPicker, setShowCardPicker] = useState(false);
+
   const { run: dbRun } = useSQLite();
-  const { loadCard, createCard } = useNotebook();
+  const { loadCard, createCard, cards } = useNotebook();
   const { selection, select: selectionSelect } = useSelection();
 
   // Handle creating a new card
@@ -363,6 +365,15 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
             <FileText size={14} className="text-gray-600" />
           </button>
           <button
+            onClick={() => setShowCardPicker(true)}
+            className={`p-1 rounded hover:${
+              theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'
+            } transition-colors`}
+            title="Open Card"
+          >
+            <FileText size={14} className="text-gray-600" />
+          </button>
+          <button
             onClick={() => setIsMinimized(true)}
             className={`p-1 rounded hover:${theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-200'} transition-colors`}
             title="Minimize"
@@ -473,6 +484,47 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
           )}
         </div>
       </div>
+
+      {/* Card Picker — backdrop closes on click outside */}
+      {showCardPicker && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowCardPicker(false)}
+        />
+      )}
+
+      {/* Card Picker Dropdown */}
+      {showCardPicker && (
+        <div className={`absolute top-12 left-4 z-50 ${
+          theme === 'NeXTSTEP' ? 'bg-[#d4d4d4] border-[#707070]' : 'bg-white border-gray-300'
+        } border rounded-lg shadow-lg max-h-64 overflow-y-auto min-w-48`}>
+          <div className={`p-2 border-b ${
+            theme === 'NeXTSTEP' ? 'border-[#707070]' : 'border-gray-200'
+          } font-medium text-sm`}>
+            Select Card
+          </div>
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              onClick={() => {
+                // Dispatch isometry:load-card event for reverse sync
+                window.dispatchEvent(new CustomEvent('isometry:load-card', {
+                  detail: { cardId: card.id }
+                }));
+                setShowCardPicker(false);
+              }}
+              className={`w-full text-left px-3 py-2 text-sm hover:${
+                theme === 'NeXTSTEP' ? 'bg-[#b0b0b0]' : 'bg-gray-100'
+              } ${activeCard?.id === card.id ? 'font-medium' : ''}`}
+            >
+              {card.markdownContent?.split('\n')[0]?.replace(/^#+\s*/, '').trim() || `Card ${card.id.slice(0, 8)}`}
+            </button>
+          ))}
+          {cards.length === 0 && (
+            <div className="px-3 py-2 text-sm text-gray-500">No cards available</div>
+          )}
+        </div>
+      )}
 
       {/* Template Picker Modal (opened via /template slash command) */}
       <TemplatePickerModal
