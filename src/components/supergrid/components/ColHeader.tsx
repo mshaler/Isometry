@@ -10,14 +10,6 @@ import type { ColHeaderProps } from '../types';
 import { useSuperGridContext } from '../SuperGridCSSContext';
 import styles from '../styles/SuperGrid.module.css';
 
-/** Capitalize first letter of each word, handling underscores and spaces */
-function capitalizeLabel(str: string): string {
-  return str
-    .split(/[_\s]+/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
 /** Header row height in pixels (must match gridPlacement.ts) */
 const HEADER_ROW_HEIGHT = 32;
 
@@ -62,7 +54,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
       role="columnheader"
       onClick={onClick}
     >
-      <span className={styles.headerLabel}>{capitalizeLabel(node.label)}</span>
+      <span className={styles.headerLabel}>{node.label}</span>
     </div>
   );
 };
