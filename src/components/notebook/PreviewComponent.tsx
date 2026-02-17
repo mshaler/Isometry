@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useContext } from 'react';
+import { usePreviewSettings } from '@/hooks/ui';
 import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRight, Download, ZoomIn, ZoomOut, Globe, BarChart3, Grid3x3, Network, Database, Clock } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
@@ -25,27 +26,14 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const [previewUrl, setPreviewUrl] = useState('https://example.com');
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState<PreviewTab>(() => {
-    try {
-      const stored = sessionStorage.getItem('preview-active-tab');
-      const validTabs: PreviewTab[] = ['supergrid', 'network', 'timeline', 'data-inspector', 'web-preview', 'd3-visualization'];
-      if (stored && validTabs.includes(stored as PreviewTab)) {
-        return stored as PreviewTab;
-      }
-    } catch {
-      // sessionStorage unavailable (e.g., private browsing)
-    }
-    return 'supergrid';
-  });
+  // Hook-based tab persistence and per-tab zoom (replaces inline sessionStorage)
+  const {
+    activeTab,
+    setActiveTab,
+    setTabZoom,
+  } = usePreviewSettings();
   const [dataPointCount, setDataPointCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Per-tab zoom state (in-memory; D3 tabs restore on switch)
-  const tabZoomRef = useRef<Record<string, number>>({
-    timeline: 1,
-    network: 1,
-    'd3-visualization': 100,
-  });
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -177,23 +165,14 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   const ContentIcon = currentTab.icon;
 
-  // Persist active tab to sessionStorage on change
-  useEffect(() => {
-    try {
-      sessionStorage.setItem('preview-active-tab', activeTab);
-    } catch {
-      // sessionStorage unavailable (e.g., private browsing) — silently ignore
-    }
-  }, [activeTab]);
-
-  // Tab switch handler that preserves per-tab zoom
+  // Tab switch handler that preserves per-tab zoom using hook
   const handleTabSwitch = useCallback((tab: PreviewTab) => {
     // Save current zoom before switching (web-preview uses its own zoom hook)
     if (activeTab !== 'web-preview') {
-      tabZoomRef.current[activeTab] = zoom;
+      setTabZoom(activeTab, zoom);
     }
     setActiveTab(tab);
-  }, [activeTab, zoom]);
+  }, [activeTab, zoom, setTabZoom, setActiveTab]);
 
   // Update data point count when cards change (cross-canvas data flow)
   useEffect(() => {

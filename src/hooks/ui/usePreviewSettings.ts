@@ -45,6 +45,16 @@ function createDefaultSettings(): PreviewSettings {
 
 function loadFromStorage(): PreviewSettings {
   try {
+    // Migrate legacy 'preview-active-tab' key (written by old inline sessionStorage in PreviewComponent)
+    const legacyTab = sessionStorage.getItem('preview-active-tab');
+    if (legacyTab && VALID_TABS.includes(legacyTab as PreviewTab)) {
+      const defaults = createDefaultSettings();
+      defaults.activeTab = legacyTab as PreviewTab;
+      sessionStorage.removeItem('preview-active-tab');
+      saveToStorage(defaults);
+      return defaults;
+    }
+
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return createDefaultSettings();
 
