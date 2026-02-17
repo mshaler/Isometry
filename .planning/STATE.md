@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 110 (View Continuum Foundation)
-Plan: 02 (List view)
-Status: Plan 01 complete — GalleryView + GalleryCard shipped
-Last activity: 2026-02-17 — Plan 110-01 executed
+Plan: 02 COMPLETE — Phase 110 complete
+Status: Both plans complete — GalleryView + ListView shipped
+Last activity: 2026-02-17 — Plan 110-02 executed
 
 Progress: [█████████░] 89%
 Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
@@ -73,12 +73,16 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
 **Previous milestones:** See STATE.md archive for v6.1-v6.8 decisions.
 - [Phase 110]: GALLERY-ROW-VIRT-01: Row-based virtualization (not CSS Grid auto-fit) because TanStack Virtual translateY is incompatible with auto-fit layout
+- [Phase 110-02]: LIST-01: ListRow.tsx pre-committed in 110-01 with identical spec content
+- [Phase 110-02]: LIST-02: Groups start collapsed (empty Set) to avoid overwhelming users on initial load
+- [Phase 110-02]: LIST-03: stable transformCards function outside component to prevent useSQLiteQuery re-runs
+- [Phase 110-02]: LIST-04: folder ?? '(No Folder)' fallback ensures all cards appear in tree
 
 ### Pending Todos
 
 **Phase 110:** View Continuum Foundation (Track A Wave 1)
 - [x] Plan 110-01: Gallery view with CSS Grid masonry + TanStack Virtual
-- [ ] Plan 110-02: List view with hierarchical tree + keyboard navigation
+- [x] Plan 110-02: List view with hierarchical tree + keyboard navigation
 
 **Phase 112:** Technical Debt (runs parallel with 110-111)
 - [ ] Plan 112-01: Knip audit and unused export removal
@@ -100,11 +104,11 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Plan 110-01 — GalleryView + GalleryCard components
-Next: Plan 110-02 — ListView hierarchical tree
+Completed: Plan 110-02 — ListView + ListRow + primitives-list.css
+Next: Phase 111 — ViewDispatcher, or Phase 112 — Technical Debt Sprint (parallel)
 Resume file: N/A
 
-**Stopped at:** Completed 110-01-PLAN.md (GalleryView + GalleryCard)
+**Stopped at:** Completed 110-02-PLAN.md (ListView + primitives-list.css)
 
 ---
-*Updated: 2026-02-17 (plan 110-01 complete)*
+*Updated: 2026-02-17 (plan 110-02 complete, phase 110 done)*
