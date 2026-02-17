@@ -214,7 +214,7 @@ Plans:
 Plans:
 - [x] 114-01-PLAN.md — TimelineView with useSQLiteQuery and zoom levels
 - [x] 114-02-PLAN.md — Preview pane tab bar with view switching
-- [ ] 114-03-PLAN.md — Gap closure: collision layout, usePreviewSettings, zoom restore
+- [x] 114-03-PLAN.md — Gap closure: collision layout, usePreviewSettings, zoom restore
 
 ---
 
