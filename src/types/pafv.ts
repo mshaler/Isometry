@@ -89,9 +89,10 @@ export interface PAFVState {
 // - Location (L): location_name
 export const DEFAULT_PAFV: PAFVState = {
   mappings: [
-    // 2D grid default: folder rows × subfolder columns (natural hierarchy pairing)
+    // 2D grid default: folder rows × tags columns
+    // Note: 'subfolder' is derived from folder path expansion, not a physical column
     { plane: 'x', axis: 'category', facet: 'folder' },
-    { plane: 'y', axis: 'hierarchy', facet: 'subfolder' },
+    { plane: 'y', axis: 'category', facet: 'tags' },
   ],
   viewMode: 'grid',
   densityLevel: 2, // Default to Extent Density (populated-only)
