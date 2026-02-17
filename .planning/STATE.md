@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 
 ## Current Position
 
-Phase: 111 (View Continuum Integration) COMPLETE
-Plan: 03 COMPLETE — PAFV Axis Allocation + Selection Sync
-Status: Phase 111 complete — 3/3 plans executed
-Last activity: 2026-02-17 — Plan 111-03 executed
+Phase: 113 (Network Graph Integration) IN PROGRESS
+Plan: 01 COMPLETE — Force Simulation Lifecycle Management
+Status: Track C started — 1/? plans executed
+Last activity: 2026-02-17 — Plan 113-01 executed
 
-Progress: [██████████] 100%
-Overall: v6.9 Polymorphic Views & Foundation — Track A Complete
+Progress: [█████████░] 90%
+Overall: v6.9 Polymorphic Views & Foundation — Track C Started
 
 ## Active Milestones
 
@@ -92,6 +92,9 @@ Overall: v6.9 Polymorphic Views & Foundation — Track A Complete
 - [Phase 111-03]: ALLOC-01: allocateAxes() returns defaults (status/folder) when no mappings set
 - [Phase 111-03]: PERSIST-01: sessionStorage over localStorage for session-scoped selection
 - [Phase 111-03]: PERSIST-02: Silent catch on quota errors to prevent UI crashes
+- [Phase 113-01]: LIFECYCLE-01: ForceSimulationManager destroy() clears DOM, nullifies refs, removes event handlers
+- [Phase 113-01]: HOOK-EFFECT-01: Two-effect pattern separates manager creation (once) from simulation lifecycle (on data change)
+- [Phase 113-01]: AUTO-STOP-01: Simulation auto-stops after maxTicks (300) or maxTime (3000ms) to prevent runaway CPU
 
 ### Pending Todos
 
@@ -108,6 +111,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track A Complete
 - [x] Plan 112-01: Knip audit and unused export removal (275 -> 91 unused exports)
 - [x] Plan 112-02: src/services directory reorganization (3 files moved to query/)
 - [x] Plan 112-03: TipTap test infrastructure (93 tests across 7 extensions)
+
+**Phase 113:** Network Graph Integration (Track C) IN PROGRESS
+- [x] Plan 113-01: Force Simulation Lifecycle Management (18 tests)
+- [ ] Plan 113-02: NetworkGraph with SQL query hooks (pending)
+- [ ] Plan 113-03: Preview tab integration (pending)
 
 ### Blockers/Concerns
 
@@ -126,11 +134,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track A Complete
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 111-03 — PAFV Axis Allocation + Selection Sync (18 tests)
-Next: Track C (Network/Timeline Polish) or Track D (Three-Canvas Notebook)
+Completed: Phase 113-01 — Force Simulation Lifecycle Management (18 tests)
+Next: Phase 113-02 (NetworkGraph with SQL query hooks)
 Resume file: N/A
 
-**Stopped at:** Completed Phase 111 (View Continuum Integration) - Track A complete
+**Stopped at:** Completed Phase 113-01 (Force Simulation Lifecycle Management) - Track C started
 
 ---
-*Updated: 2026-02-17 (Phase 111-03 complete, Track A View Continuum Integration complete)*
+*Updated: 2026-02-17 (Phase 113-01 complete, Track C Network Graph Integration started)*
