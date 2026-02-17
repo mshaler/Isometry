@@ -6,6 +6,7 @@
  */
 
 import * as d3 from 'd3';
+import { getAdaptiveTickFormat } from './TimelineRenderer';
 
 // ============================================================================
 // Types
@@ -104,26 +105,47 @@ export function createTimelineZoom(
  * @param newXScale - Rescaled X scale from zoom transform
  * @param xAxisGroup - X axis group element to update
  */
+// Track pending rAF for zoom updates to avoid multiple frames queuing
+let pendingZoomFrame: number | null = null;
+
 export function applyTimelineZoom(
   container: d3.Selection<SVGGElement, unknown, null, undefined>,
   newXScale: d3.ScaleTime<number, number>,
   xAxisGroup: d3.Selection<SVGGElement, unknown, null, undefined>
 ): void {
-  // Update X axis
-  const xAxis = d3
-    .axisBottom(newXScale)
-    .ticks(Math.max(3, 6))
-    .tickFormat(d => d3.timeFormat('%b %d')(d as Date));
+  // Cancel any pending frame to prevent queuing multiple updates
+  if (pendingZoomFrame !== null) {
+    cancelAnimationFrame(pendingZoomFrame);
+  }
 
-  xAxisGroup.call(xAxis);
+  // Use requestAnimationFrame for smooth 60 FPS zoom/pan updates
+  pendingZoomFrame = requestAnimationFrame(() => {
+    pendingZoomFrame = null;
 
-  // Style axis
-  xAxisGroup.selectAll('text').attr('fill', '#6b7280').attr('font-size', '11px');
-  xAxisGroup.selectAll('line, path').attr('stroke', '#d1d5db');
+    // Use adaptive tick format based on current visible domain
+    const [domainStart, domainEnd] = newXScale.domain() as [Date, Date];
+    const adaptiveFormat = getAdaptiveTickFormat([domainStart, domainEnd]);
 
-  // Update event positions
-  container
-    .selectAll<SVGCircleElement, { timestamp: Date }>('circle.event')
-    .attr('cx', d => newXScale(d.timestamp));
+    // Update X axis with adaptive tick labels
+    const xAxis = d3
+      .axisBottom(newXScale)
+      .ticks(Math.max(3, 6))
+      .tickFormat(d => d3.timeFormat(adaptiveFormat)(d as Date));
+
+    xAxisGroup.call(xAxis);
+
+    // Style axis
+    xAxisGroup.selectAll('text').attr('fill', '#6b7280').attr('font-size', '11px');
+    xAxisGroup.selectAll('line, path').attr('stroke', '#d1d5db');
+
+    // Update event positions — only render events within visible domain
+    const [visStart, visEnd] = newXScale.domain() as [Date, Date];
+    container
+      .selectAll<SVGCircleElement, { timestamp: Date }>('circle.event')
+      .style('display', d =>
+        d.timestamp >= visStart && d.timestamp <= visEnd ? null : 'none'
+      )
+      .attr('cx', d => newXScale(d.timestamp));
+  });
 }
 
