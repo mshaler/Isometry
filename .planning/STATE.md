@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 ## Current Position
 
-Phase: 117 (Apple Notes SQLite Sync) IN PROGRESS
-Plan: 03 of 4 — Plans 01-03 complete (ETL Module Integration + NodeWriter Service + Validation)
-Status: v7.0 EXECUTING — 117-03 complete, 117-04 next (UI + Migration)
-Last activity: 2026-02-17 — 117-03 Folder Hierarchy Validation + DataIntegrityValidator complete
+Phase: 117 (Apple Notes SQLite Sync) COMPLETE
+Plan: 04 of 4 — ALL PLANS COMPLETE (ETL + NodeWriter + Validation + UI/Migration)
+Status: v7.0 COMPLETE — 117-04 done (useAppleNotesSync hook, SyncProgressModal, Toolbar sync trigger, alto-index deprecation)
+Last activity: 2026-02-17 — 117-04 UI Sync Trigger + alto-index Deprecation complete
 
-Progress: [██████░░░░] 75%
-Overall: v7.0 Apple Notes Direct Sync — Plans 01-03 Complete
+Progress: [█████████░] 90%
+Overall: v7.0 Apple Notes Direct Sync — ALL Plans Complete
 
 ### Parallel Track: v6.9 Three-Canvas Notebook
 Phase: 115 (Three-Canvas Notebook)
@@ -54,7 +54,7 @@ Progress: [█████████░] 90%
 - **117-03**: Sync Orchestration — NEXT
 - **117-04**: UI + Migration
 
-**Status:** Milestone complete
+**Status:** Phase 117 COMPLETE — all 4 plans done. UI layer wired (useAppleNotesSync + SyncProgressModal + Toolbar menu). alto-index pipeline deprecated.
 
 **Verification:**
 ```
@@ -156,6 +156,9 @@ npm run apple-notes (in isometry-etl)
 - [Phase 117-03]: TIMESTAMP-TOLERANCE-01: 1000ms default tolerance for Core Data timestamp round-trip (Core Data stores seconds, not milliseconds)
 - [Phase 117-03]: TAG-ORDER-01: Order-independent tag comparison via JSON.stringify(sorted) — Apple Notes doesn't guarantee hashtag order
 - [Phase 117-03]: EMPTY-FOLDER-01: null folder maps to '' via ?? '' in validateFolderPath — unfiled notes have null folder in nodes table
+- [Phase 117]: MOCK-ADAPTER-01: createMockAdapter() implements full SourceAdapter interface returning empty data — enables UI wiring without Tauri IPC
+- [Phase 117]: TOOLBAR-MOCK-01: vi.mock('../hooks/useAppleNotesSync') in Toolbar tests keeps tests independent of SQLiteProvider
+- [Phase 117]: DEPRECATE-01: alto-importer.ts, alto-parser.ts, useAltoIndexImport.ts marked deprecated with console.warn (not deleted — still used by IntegratedLayout)
 
 ### Pending Todos
 
@@ -183,11 +186,11 @@ npm run apple-notes (in isometry-etl)
 - [x] Plan 114-02: Preview Tab Integration (tab persistence, usePreviewSettings, PAFV info, zoom)
 - [x] Plan 114-03: Gap Closure (collision handling, hook adoption, zoom restore) — 3 tasks, 69 tests
 
-**Phase 117:** Apple Notes SQLite Sync — IN PROGRESS
+**Phase 117:** Apple Notes SQLite Sync — COMPLETE
 - [x] Plan 117-01: ETL Module Integration (AppleNotesAdapter, type-mapping, content extraction)
 - [x] Plan 117-02: NodeWriter + AppleNotesSyncService (28 tests)
 - [x] Plan 117-03: Folder Hierarchy Validation + DataIntegrityValidator (46 tests)
-- [ ] Plan 117-04: UI + Migration
+- [x] Plan 117-04: UI + Migration (useAppleNotesSync, SyncProgressModal, Toolbar sync trigger, alto-index deprecation)
 
 **Phase 115:** Three-Canvas Notebook (Track D) — IN PROGRESS
 - [x] Plan 115-01: Resizable Panels (react-resizable-panels) — COMPLETE (2 tasks, 8 tests)
@@ -216,11 +219,11 @@ npm run apple-notes (in isometry-etl)
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 117-03 — Folder Hierarchy Validation + DataIntegrityValidator — 3 tasks, 46 new tests (17 folder-hierarchy + 29 data-integrity)
-Next: Plan 117-04 — UI + Migration (Tauri IPC wiring, sync status UI, alto-index.json migration)
+Completed: Phase 117-04 — UI Sync Trigger + alto-index Deprecation — 3 tasks, 7 files, ~9 min
+Next: Plan 115-04 — Three-Canvas Notebook Integration Testing & Polish (parallel track)
 Resume file: N/A
 
-**Stopped at:** Completed 117-03-PLAN.md (Folder Hierarchy Validation + DataIntegrityValidator)
+**Stopped at:** Completed 117-04-PLAN.md (UI Sync Trigger + alto-index Deprecation)
 
 ---
-*Updated: 2026-02-17 (Phase 117-03 complete — Folder Hierarchy Validation + DataIntegrityValidator, 117-04 next)*
+*Updated: 2026-02-17 (Phase 117 COMPLETE — all 4 plans done. Apple Notes Direct Sync UI layer complete. 115-04 next.)*
