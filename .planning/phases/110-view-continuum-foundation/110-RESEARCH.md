@@ -1,53 +1,55 @@
-# Phase 110: View Continuum Foundation — Research
+# Phase 110: View Continuum Foundation - Research
 
 **Researched:** 2026-02-16
 **Domain:** React view renderers with TanStack Virtual, SQL data integration, PAFV axis allocation
-**Confidence:** HIGH (codebase is the primary source; Context7 unavailable, verified against installed packages)
+**Confidence:** HIGH
 
 ---
 
 ## Summary
 
-Phase 110 builds the Gallery and List view renderers — the first two entries in the Grid Continuum (0-axis gallery, 1-axis list). The codebase already has all the infrastructure these views need: `useSQLiteQuery` is operational and fully typed, `@tanstack/react-virtual` v3.13.18 is installed and wrapped in working hooks (`useVirtualizedList`, `useVirtualizedGrid`), `SelectionContext` provides the `select()` API, `FilterContext` provides `activeFilters`, and `compileFilters()` turns LATCH state into SQL WHERE clauses.
+Phase 110 builds the Gallery and List view renderers - the first two entries in the Grid Continuum (0-axis gallery, 1-axis list). The codebase already has comprehensive infrastructure: `useSQLiteQuery` is operational at `src/hooks/database/useSQLiteQuery.ts`, `@tanstack/react-virtual` v3.13.18 is installed with multiple wrapper hooks, `SelectionContext` provides selection APIs, `FilterContext` provides LATCH filter state, and `compileFilters()` compiles LATCH state to SQL WHERE clauses.
 
-The key discovery is that **most of the primitives are already built** — `VirtualizedGrid/index.tsx` and `VirtualizedList/index.tsx` are functional general-purpose virtualized containers. What Phase 110 must build are the **Isometry-specific view wrappers**: `GalleryView.tsx` (which applies `primitives-gallery.css` layout tokens) and `ListView.tsx` (which builds the PAFV-aware tree structure with proper ARIA roles). These are thin, purpose-built components that compose the existing infrastructure into semantically correct views.
+**Key discovery:** The existing `VirtualizedGrid` and `VirtualizedList` components in `src/components/` are feature-rich but complex (500+ lines each) with live query support. For Phase 110, simpler purpose-built wrappers using the core `useVirtualizedList`/`useVirtualizedGrid` hooks directly will be cleaner. The existing `GalleryCard.tsx` provides the card renderer pattern, and `primitives-gallery.css` / `primitives-list.css` provide CSS tokens.
 
-The existing `HierarchyTreeView.tsx` is a filter panel widget, not a data view — it takes a pre-built `Tree` object and handles checkbox selection for filter state. The `ListView.tsx` for Phase 110 is different: it must fetch nodes from SQL, group them by the PAFV hierarchy axis allocation, and update `SelectionContext` on click.
+The existing `ListViewRenderer.tsx` is a deprecated class-based stub. The `useListData` hook at `src/hooks/data/useListData.ts` provides the grouping pattern (reads PAFV Y-axis mapping for sort/group). The `TreeView.tsx` is D3-based and not suitable for React tree expand/collapse state.
 
-**Primary recommendation:** Build `GalleryView.tsx` and `ListView.tsx` as thin wrappers over the existing `VirtualizedGrid`/`VirtualizedList` infrastructure, consuming `useSQLiteQuery` + `FilterContext` directly, and writing to `SelectionContext` on card click.
+**Primary recommendation:** Build `GalleryView.tsx` and `ListView.tsx` as focused functional components that compose `useFilteredNodes` + `useVirtualizedList` + `useSelection`, using the CSS primitives for styling.
 
 ---
 
 ## Standard Stack
 
-### Core (already installed — no new npm installs needed)
+### Core (already installed - no new npm installs needed)
 
 | Library | Version | Purpose | Status |
 |---------|---------|---------|--------|
-| `@tanstack/react-virtual` | 3.13.18 | Virtual scrolling for 500+ items | Installed, wrapped in hooks |
-| `useSQLiteQuery` | internal | SQL → Node[] data fetching | Operational at `src/hooks/database/useSQLiteQuery.ts` |
-| `SelectionContext` | internal | Single card selection API | Operational at `src/state/SelectionContext.tsx` |
+| `@tanstack/react-virtual` | 3.13.18 | Virtual scrolling for 500+ items | Installed, multiple hooks available |
+| `useSQLiteQuery` | internal | SQL -> Node[] data fetching | Operational at `src/hooks/database/useSQLiteQuery.ts` |
+| `useFilteredNodes` | internal | Filtered node fetching with FilterContext | Operational at `src/hooks/data/useFilteredNodes.ts` |
+| `SelectionContext` | internal | Selection API with scrollToNode registration | Operational at `src/state/SelectionContext.tsx` |
 | `FilterContext` | internal | LATCH filter state | Operational at `src/state/FilterContext.tsx` |
-| `compileFilters()` | internal | FilterState → SQL WHERE | Operational at `src/filters/compiler.ts` |
-| `primitives-gallery.css` | Phase 109 | Gallery layout CSS tokens | Exists at `src/styles/primitives-gallery.css` |
-| Tailwind CSS | 3.x | Component styling | Operational throughout codebase |
+| `compileFilters()` | internal | FilterState -> SQL WHERE | Operational at `src/filters/compiler.ts` |
+| `primitives-gallery.css` | internal | Gallery layout CSS tokens | Exists at `src/styles/primitives-gallery.css` |
+| `primitives-list.css` | internal | List layout CSS tokens | Exists at `src/styles/primitives-list.css` |
 
 ### Supporting
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `useVirtualizedList` | internal | TanStack Virtual wrapper for linear lists | ListView's scroll container |
-| `useVirtualizedGrid` | internal | TanStack Virtual wrapper for 2D grid | GalleryView's scroll container |
-| `GridContinuumController` | internal | Mode-to-SQL-projection mapping | When reading current view mode |
+| `useVirtualizedList` | internal | TanStack Virtual wrapper for linear lists | ListView scroll container |
+| `useVirtualizedGrid` | internal | TanStack Virtual wrapper for 2D grid | GalleryView (if 2D virtualization needed) |
+| `useListData` | internal | PAFV-aware grouping for list views | ListView grouping logic |
+| `GalleryCard` | internal | Card component for gallery | GalleryView card renderer |
 | `lucide-react` | installed | Icon library (ChevronRight, ChevronDown) | ListView expand/collapse toggles |
 
 ### Alternatives Considered
 
 | Instead of | Could Use | Tradeoff |
 |------------|-----------|----------|
-| `useVirtualizedList` (existing) | Raw `useVirtualizer` from TanStack | Existing hook is already tuned; use it |
-| CSS Grid auto-fit (gallery) | Masonry via JS layout libs | CSS Grid auto-fit is the correct approach per `primitives-gallery.css` tokens |
-| Recursive React tree (list) | D3 hierarchy | React is correct here: tree expand/collapse state = application state (survives reload for UX) |
+| `useVirtualizedList` (existing) | Raw `useVirtualizer` from TanStack | Existing hook already tuned; use it |
+| CSS Grid auto-fit (gallery) | TanStack 2D grid virtualization | CSS Grid handles responsive columns naturally; single-axis virtualization (rows) is sufficient |
+| Recursive React tree (list) | D3 hierarchy | React is correct: tree expand/collapse state = application state |
 
 **Installation:** No new packages needed. All dependencies are in `package.json`.
 
@@ -63,255 +65,145 @@ src/
 │   └── views/
 │       ├── GalleryView.tsx        # NEW: Phase 110-01 deliverable
 │       ├── ListView.tsx           # NEW: Phase 110-02 deliverable
-│       ├── BaseViewRenderer.ts    # EXISTS: base class (not relevant — use functional components)
-│       ├── GridViewRenderer.tsx   # EXISTS: legacy placeholder stub (@deprecated)
-│       └── ListViewRenderer.tsx   # EXISTS: legacy placeholder stub (@deprecated)
+│       ├── ListRow.tsx            # NEW: extracted row component
+│       ├── GalleryCard.tsx        # EXISTS: card renderer (reuse)
+│       ├── ListViewRenderer.tsx   # EXISTS: @deprecated class stub
+│       └── GridViewRenderer.tsx   # EXISTS: @deprecated class stub
 └── styles/
-    ├── primitives-gallery.css     # EXISTS: Phase 109 delivered — import this
-    └── primitives-list.css        # NEW: create with --iso-list-* CSS tokens for list
+    ├── primitives-gallery.css     # EXISTS: CSS tokens for gallery
+    └── primitives-list.css        # EXISTS: CSS tokens for list
 ```
 
-### Pattern 1: Filter-Aware Data Fetching
+### Pattern 1: Filter-Aware Data Fetching (VERIFIED)
 
-Both views must react to `FilterContext` changes. The canonical pattern:
+Both views use `useFilteredNodes` which integrates `FilterContext` + `useSQLiteQuery`:
 
 ```typescript
-// Source: src/hooks/database/useSQLiteQuery.ts + src/filters/compiler.ts
-import { useFilters } from '@/state/FilterContext';
-import { compileFilters } from '@/filters/compiler';
-import { useSQLiteQuery } from '@/hooks/database/useSQLiteQuery';
-import { useMemo } from 'react';
-import { rowToNode, Node } from '@/types/node';
+// Source: src/hooks/data/useFilteredNodes.ts
+import { useFilteredNodes } from '@/hooks/data/useFilteredNodes';
+import { useSelection } from '@/state/SelectionContext';
 
 function GalleryView() {
-  const { activeFilters } = useFilters();
+  const { data: nodes, loading, error } = useFilteredNodes();
+  const { select, isSelected } = useSelection();
 
-  // Compile LATCH filters to SQL — stable reference
-  const { sql, params } = useMemo(() => {
-    const compiled = compileFilters(activeFilters);
-    return {
-      sql: `SELECT * FROM nodes WHERE ${compiled.sql} ORDER BY modified_at DESC`,
-      params: compiled.params,
-    };
-  }, [activeFilters]);
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} />;
 
-  const { data: nodes, loading, error } = useSQLiteQuery<Node>(sql, params, {
-    transform: (rows) => rows.map(rowToNode),
-  });
-
-  // ... render with nodes
+  return (
+    <div className="gallery-container">
+      {nodes?.map(node => (
+        <GalleryCard
+          key={node.id}
+          card={node}
+          selected={isSelected(node.id)}
+          onClick={() => select(node.id)}
+        />
+      ))}
+    </div>
+  );
 }
 ```
 
-**Key insight:** `useSQLiteQuery` re-runs automatically when `sql` or `params` change (via `useCallback` with `paramsKey`). No manual refetch needed when filters change.
+**Key insight:** `useFilteredNodes` already integrates with `FilterContext` and handles the SQL compilation. No need to call `compileFilters` directly in view components.
 
-### Pattern 2: Selection Integration
+### Pattern 2: Selection Context API (VERIFIED)
 
 ```typescript
 // Source: src/state/SelectionContext.tsx
 import { useSelection } from '@/state/SelectionContext';
 
-// In card click handler:
-const { select, isSelected } = useSelection();
+const {
+  select,           // Single select (replaces selection, sets anchor)
+  toggle,           // Cmd+click toggle
+  selectRange,      // Shift+click range select
+  selectMultiple,   // Multi-select (header click, lasso)
+  isSelected,       // Check if ID is selected
+  registerScrollToNode,    // Register view's scroll function
+  unregisterScrollToNode,  // Cleanup on unmount
+} = useSelection();
 
-const handleCardClick = useCallback((id: string) => {
-  select(id); // Replaces selection, sets anchor
-}, [select]);
+// Register scroll-to-node on mount
+useEffect(() => {
+  const scrollFn = (id: string) => {
+    const index = nodes.findIndex(n => n.id === id);
+    if (index >= 0) {
+      virtualizer.scrollToIndex(index, { align: 'center' });
+    }
+  };
+  registerScrollToNode(scrollFn);
+  return () => unregisterScrollToNode();
+}, [nodes, virtualizer, registerScrollToNode, unregisterScrollToNode]);
 ```
 
-### Pattern 3: TanStack Virtual Scroll Container (Gallery)
+### Pattern 3: TanStack Virtual Row-Only Virtualization (VERIFIED)
+
+For Gallery, use single-axis (row) virtualization + CSS Grid for columns:
 
 ```typescript
-// Source: src/hooks/performance/useVirtualizedList.ts (already wraps TanStack Virtual v3)
-// For gallery (2D grid of cards), use useVirtualizedGrid or VirtualizedGrid component:
-import { VirtualizedGrid } from '@/components/VirtualizedGrid';
+// Source: src/hooks/performance/useVirtualizedList.ts
+import { useVirtualizedList } from '@/hooks/performance/useVirtualizedList';
 
-// GalleryView applies CSS Grid for column layout, Virtual for row scroll:
-<VirtualizedGrid
-  items={nodes}
-  columnCount={autoColumns}  // Derived from container width / card min-width
-  estimateRowHeight={cardHeight}
-  renderItem={(node, index) => (
-    <GalleryCard
-      node={node}
-      selected={isSelected(node.id)}
-      onClick={() => handleCardClick(node.id)}
-    />
-  )}
-/>
+const {
+  containerRef,
+  virtualItems,
+  totalSize,
+  scrollToIndex,
+  isScrolling,
+} = useVirtualizedList(rowCount, {
+  containerHeight: height,
+  estimateSize: rowHeight,
+  overscan: 5,
+});
+
+// Render only visible rows
+{virtualItems.map(virtualRow => (
+  <div
+    key={virtualRow.key}
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: virtualRow.size,
+      transform: `translateY(${virtualRow.start}px)`,
+    }}
+  >
+    {/* Row content - CSS Grid handles columns */}
+    <div className="gallery-row">
+      {getRowItems(virtualRow.index).map(node => (
+        <GalleryCard key={node.id} card={node} />
+      ))}
+    </div>
+  </div>
+))}
 ```
 
-**Important:** The `primitives-gallery.css` provides CSS custom properties (`--iso-gallery-card-w`, `--iso-gallery-card-h`, etc.) that should drive the `columnCount` and `estimateRowHeight` calculations. Use `getComputedStyle` or read via JS if needed, but simpler to derive from the known default values (220px wide, 160px tall, 12px gap).
-
-### Pattern 4: PAFV-Aware Hierarchy for List View
-
-The List view uses the PAFV `hierarchy` axis to build the tree structure. The PAFV axis `'hierarchy'` maps to the `folder` facet by default, giving a folder-based grouping. The SQL query for hierarchy:
+### Pattern 4: useListData for PAFV-Aware Grouping (VERIFIED)
 
 ```typescript
-// Hierarchy grouping: group by folder, then list items under each folder
-// Use PAFV axis allocation to determine the grouping column
-const { activeFilters } = useFilters();
-const compiled = compileFilters(activeFilters);
+// Source: src/hooks/data/useListData.ts
+import { useListData } from '@/hooks/data/useListData';
 
-// Two-level query: fetch top-level groups, then items within
-const groupSql = `
-  SELECT DISTINCT folder as group_key
-  FROM nodes
-  WHERE ${compiled.sql}
-  ORDER BY folder
-`;
+function ListView() {
+  const {
+    groups,       // Grouped nodes (if grouping enabled)
+    flatNodes,    // All nodes sorted
+    sortAxis,     // PAFV Y-axis mapping
+    sortFacet,    // Current sort facet
+    isGrouped,    // Whether grouping is active
+    loading,
+    error,
+  } = useListData(true); // true = enable grouping
 
-const itemSql = `
-  SELECT * FROM nodes
-  WHERE ${compiled.sql}
-  ORDER BY folder, sort_order, name
-`;
+  // groups is ListGroup[] = { key: string, label: string, nodes: Node[] }[]
+}
 ```
 
-In practice for Phase 110 MVP, a simpler approach works: fetch all nodes, group in React by `folder` field, then use the tree component pattern.
-
-### Pattern 5: ListView Tree Structure with ARIA
-
-```typescript
-// ARIA tree roles per WAI-ARIA spec
-<ul role="tree" aria-label="List view">
-  {groups.map(group => (
-    <li key={group.key} role="none">
-      <div role="treeitem" aria-expanded={expanded} aria-level={1}>
-        {/* Group header with expand/collapse */}
-      </div>
-      {expanded && (
-        <ul role="group">
-          {group.items.map(node => (
-            <li key={node.id} role="treeitem" aria-level={2}>
-              {/* Card row */}
-            </li>
-          ))}
-        </ul>
-      )}
-    </li>
-  ))}
-</ul>
-```
-
-**Keyboard navigation pattern:**
-- ArrowDown/ArrowUp: move focus between visible treeitem elements
-- ArrowRight: expand collapsed item or move to first child
-- ArrowLeft: collapse expanded item or move to parent
-- Enter/Space: select focused item
-- Use `tabIndex={0}` on focused item, `tabIndex={-1}` on others (roving tabindex pattern)
-
-### Anti-Patterns to Avoid
-
-- **Don't use `useVirtualLiveQuery`** for Phase 110 — it's a more complex live query system with cache and polling. `useSQLiteQuery` is the correct choice here.
-- **Don't use the legacy class-based renderers** (`ListViewRenderer`, `GridViewRenderer`) — they are deprecated stubs.
-- **Don't put tree expand/collapse state in a context** — it's ephemeral UI state, belongs in `useState` within the component.
-- **Don't use D3 for the list tree** — tree expand/collapse is application state (React owns it per the Phase 109 litmus test: "If lost on reload, does user lose work?" For a selection context: yes; for expand state: arguably yes for UX reasons, so React is correct).
-- **Don't forget to register/unregister `scrollToNode`** in `SelectionContext` — both views should register a `scrollToNode` function on mount so cross-canvas scrolling works.
-
----
-
-## Don't Hand-Roll
-
-| Problem | Don't Build | Use Instead | Why |
-|---------|-------------|-------------|-----|
-| Virtual scrolling | Custom windowing | `useVirtualizedList` / `useVirtualizedGrid` hooks | Already built, TanStack Virtual handles edge cases |
-| LATCH filter SQL | Custom SQL builder | `compileFilters()` from `src/filters/compiler.ts` | Already handles all 5 LATCH axes |
-| Selection state | Local selectedId state | `useSelection()` from `SelectionContext` | Cross-canvas sync, range select, scroll-to built in |
-| Node type transformation | Custom row mapping | `rowToNode()` from `src/types/node.ts` | Maps raw sql.js rows to typed Node objects |
-| Data fetching | Manual `db.exec()` | `useSQLiteQuery()` | Loading states, error handling, re-execution on change |
-
-**Key insight:** Phase 110's job is wiring, not building. The infrastructure is ready. New code is the glue layer.
-
----
-
-## Common Pitfalls
-
-### Pitfall 1: Column Count Calculation for Gallery
-
-**What goes wrong:** Using a fixed column count instead of deriving from container width, resulting in broken layouts at different screen sizes.
-
-**Why it happens:** Gallery uses CSS Grid `auto-fit` with `--iso-gallery-card-w: 220px`. If the React component also provides a fixed `columnCount` prop to TanStack Virtual, they conflict.
-
-**How to avoid:** Use a `ResizeObserver` (or `useCallback` with a ref) to measure the container width, then compute `columnCount = Math.floor(containerWidth / (cardWidth + gap))`. Alternatively, use only CSS Grid for column layout and only TanStack for row virtualization (single-axis approach).
-
-**Warning signs:** Gallery shows only 1-3 columns regardless of window size, or items overflow horizontally.
-
-### Pitfall 2: Stale SQL Params Reference
-
-**What goes wrong:** Passing `params` as a new array literal on every render causes `useSQLiteQuery` to re-execute on every render.
-
-**Why it happens:** `useSQLiteQuery` memoizes params via `JSON.stringify(params)`, so a new array with same values is fine. But if `params` includes objects or the SQL changes unnecessarily, it can trigger redundant queries.
-
-**How to avoid:** Wrap SQL and params computation in `useMemo` with `activeFilters` as the only dependency (as shown in Pattern 1 above).
-
-**Warning signs:** Console shows database queries firing continuously even without user interaction.
-
-### Pitfall 3: ListView Hierarchy from Wrong Axis
-
-**What goes wrong:** List view groups by `folder` when the PAFV context has a different hierarchy axis allocated (e.g., `tags` or `status`).
-
-**Why it happens:** The List view is supposed to read the PAFV `hierarchy` axis allocation to determine how to group nodes, not always use `folder`.
-
-**How to avoid:** Read the PAFV context to get the hierarchy axis mapping, then use the `facet.sourceColumn` as the grouping column. For Phase 110 MVP, it's acceptable to default to `folder` with a TODO comment, but the architecture should support dynamic grouping.
-
-**Warning signs:** List view doesn't update its grouping when user changes PAFV hierarchy axis in SuperGrid.
-
-### Pitfall 4: Missing ScrollToNode Registration
-
-**What goes wrong:** External `scrollToNode` calls (from cross-canvas sync) have no effect.
-
-**Why it happens:** `SelectionContext` stores a `scrollToNode` ref that must be registered by the active view. If views don't call `registerScrollToNode` on mount and `unregisterScrollToNode` on unmount, the function is null.
-
-**How to avoid:** Both `GalleryView` and `ListView` must register a scroll function using `useEffect` on mount.
-
-**Warning signs:** Selecting a card from the Capture canvas doesn't scroll the Preview to that card.
-
-### Pitfall 5: ARIA Tree Keyboard Navigation Loop
-
-**What goes wrong:** Arrow key navigation gets stuck or doesn't work as expected with virtualized list items.
-
-**Why it happens:** Virtual lists don't render all DOM elements. Arrow key navigation that relies on DOM `nextSibling` breaks when items outside the viewport aren't in the DOM.
-
-**How to avoid:** Implement keyboard navigation via index-based state (`focusedIndex`) rather than DOM traversal. On ArrowDown, increment `focusedIndex` and call `scrollToIndex(focusedIndex)` to bring item into view.
-
-**Warning signs:** Arrow key press focuses a non-visible item without scrolling, or wraps unexpectedly.
-
----
-
-## Code Examples
-
-Verified patterns from codebase analysis:
-
-### useSQLiteQuery with LATCH filters
-
-```typescript
-// Source: src/hooks/database/useSQLiteQuery.ts + src/filters/compiler.ts
-import { useMemo } from 'react';
-import { useFilters } from '@/state/FilterContext';
-import { compileFilters } from '@/filters/compiler';
-import { useSQLiteQuery } from '@/hooks/database/useSQLiteQuery';
-import { rowToNode, Node } from '@/types/node';
-
-const { activeFilters } = useFilters();
-
-const { sql: whereClause, params } = useMemo(
-  () => compileFilters(activeFilters),
-  [activeFilters]
-);
-
-const { data: nodes, loading } = useSQLiteQuery<Node>(
-  `SELECT * FROM nodes WHERE ${whereClause} ORDER BY modified_at DESC`,
-  params,
-  { transform: (rows) => rows.map(rowToNode) }
-);
-```
-
-### Gallery CSS Grid Layout
+### Pattern 5: CSS Grid for Gallery Layout (VERIFIED)
 
 ```css
-/* Source: src/styles/primitives-gallery.css — ALREADY EXISTS from Phase 109 */
-/* Gallery component applies these token classes to its container: */
+/* Source: src/styles/primitives-gallery.css */
 .gallery-container {
   display: grid;
   grid-template-columns: repeat(
@@ -323,14 +215,14 @@ const { data: nodes, loading } = useSQLiteQuery<Node>(
 }
 ```
 
-### ListView ARIA tree pattern
+### Pattern 6: ListView ARIA Tree Structure
 
 ```tsx
-// WAI-ARIA tree pattern for ListView
+// WAI-ARIA tree pattern
 <div
   role="tree"
   aria-label="List view"
-  onKeyDown={handleKeyDown}  // Roving tabindex keyboard nav
+  onKeyDown={handleKeyDown}
 >
   {groups.map((group, groupIndex) => (
     <div key={group.key} role="none">
@@ -343,22 +235,23 @@ const { data: nodes, loading } = useSQLiteQuery<Node>(
         tabIndex={focusedId === group.key ? 0 : -1}
         onClick={() => toggleGroup(group.key)}
       >
-        {/* group header */}
+        <ChevronRight className={expandedGroups.has(group.key) ? 'rotate-90' : ''} />
+        {group.label} ({group.nodes.length})
       </div>
       {expandedGroups.has(group.key) && (
         <div role="group">
-          {group.items.map((node, itemIndex) => (
+          {group.nodes.map((node, itemIndex) => (
             <div
               key={node.id}
               role="treeitem"
               aria-level={2}
-              aria-setsize={group.items.length}
+              aria-setsize={group.nodes.length}
               aria-posinset={itemIndex + 1}
-              tabIndex={focusedId === node.id ? 0 : -1}
               aria-selected={isSelected(node.id)}
-              onClick={() => { select(node.id); }}
+              tabIndex={focusedId === node.id ? 0 : -1}
+              onClick={() => select(node.id)}
             >
-              {/* card row */}
+              <ListRow node={node} />
             </div>
           ))}
         </div>
@@ -368,62 +261,345 @@ const { data: nodes, loading } = useSQLiteQuery<Node>(
 </div>
 ```
 
-### TanStack Virtual v3 — single-axis for ListView
+### Anti-Patterns to Avoid
+
+- **Don't use the complex `VirtualizedGrid`/`VirtualizedList` components** - they include live query support and are 500+ lines. Use the simpler `useVirtualizedList` hook directly.
+- **Don't use the legacy class-based renderers** (`ListViewRenderer`, `GridViewRenderer`) - they are deprecated stubs.
+- **Don't put tree expand/collapse state in a context** - it's ephemeral UI state, belongs in `useState`.
+- **Don't use D3 for the list tree** - tree expand/collapse is application state (React owns it).
+- **Don't forget to register/unregister `scrollToNode`** - both views must register a scroll function on mount.
+
+---
+
+## Don't Hand-Roll
+
+| Problem | Don't Build | Use Instead | Why |
+|---------|-------------|-------------|-----|
+| Virtual scrolling | Custom windowing | `useVirtualizedList` hook | Already built, handles edge cases |
+| Filtered node fetching | Manual SQL + filter compilation | `useFilteredNodes()` | Integrates FilterContext automatically |
+| Selection state | Local selectedId state | `useSelection()` from SelectionContext | Cross-canvas sync, range select built in |
+| Node type transformation | Custom row mapping | `rowToNode()` from `src/types/node.ts` | Maps raw sql.js rows to typed Node |
+| PAFV-aware grouping | Manual group by facet | `useListData()` | Reads PAFV Y-axis, sorts and groups |
+| Gallery card rendering | New card component | `GalleryCard` from `src/components/views/` | Already exists with CSS token integration |
+
+**Key insight:** Phase 110's job is composition, not construction. The infrastructure is ready.
+
+---
+
+## Common Pitfalls
+
+### Pitfall 1: Column Count vs CSS Grid auto-fit Conflict
+
+**What goes wrong:** Providing explicit `columnCount` to TanStack Virtual while CSS Grid uses `auto-fit`, causing layout conflicts.
+
+**How to avoid:** Use CSS Grid `auto-fit` for columns (responsive). Use TanStack Virtual only for row virtualization (single-axis). Calculate rows as `Math.ceil(nodes.length / columnsPerRow)` where columnsPerRow is derived from container width.
+
+**Warning signs:** Gallery shows wrong number of columns, or items overflow.
+
+### Pitfall 2: Stale Virtual Items on Filter Change
+
+**What goes wrong:** Virtual list renders stale items briefly after filter change because virtualizer hasn't recalculated.
+
+**How to avoid:** Key the virtualizer on `nodes.length` or use `scrollToIndex(0)` when nodes change significantly.
+
+**Warning signs:** Brief flash of wrong items when filter changes.
+
+### Pitfall 3: Missing ScrollToNode Registration
+
+**What goes wrong:** External `scrollToNode` calls (from cross-canvas sync) have no effect.
+
+**How to avoid:** Both views must call `registerScrollToNode(scrollFn)` on mount and `unregisterScrollToNode()` on unmount.
+
+**Warning signs:** Selecting a card from Capture canvas doesn't scroll Preview to it.
+
+### Pitfall 4: ARIA Tree Keyboard Navigation with Virtualization
+
+**What goes wrong:** Arrow keys try to focus DOM elements that aren't rendered.
+
+**How to avoid:** Use index-based focus state (`focusedIndex`), not DOM traversal. On arrow key, update index and call `scrollToIndex()` to ensure item is rendered.
+
+**Warning signs:** Arrow keys don't work or focus invisible items.
+
+### Pitfall 5: ListView Groups from Wrong PAFV Axis
+
+**What goes wrong:** List groups by `folder` when PAFV has different hierarchy axis.
+
+**How to avoid:** `useListData` reads PAFV Y-axis mapping automatically. Trust its `sortAxis`/`sortFacet` values.
+
+**Warning signs:** List grouping doesn't change when PAFV axis changes.
+
+---
+
+## Code Examples
+
+### GalleryView Structure
 
 ```typescript
-// Source: src/hooks/performance/useVirtualizedList.ts — ALREADY BUILT
-// ListView uses single-axis virtualization (vertical scroll only)
-// Flat list of visible items (expanded group headers + visible children)
-const flatItems = useMemo(() => {
-  const result: Array<{ type: 'group'; key: string } | { type: 'item'; node: Node }> = [];
-  groups.forEach(group => {
-    result.push({ type: 'group', key: group.key });
-    if (expandedGroups.has(group.key)) {
-      group.items.forEach(node => result.push({ type: 'item', node }));
-    }
-  });
-  return result;
-}, [groups, expandedGroups]);
+// src/components/views/GalleryView.tsx
+import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { useFilteredNodes } from '@/hooks/data/useFilteredNodes';
+import { useSelection } from '@/state/SelectionContext';
+import { useVirtualizedList } from '@/hooks/performance/useVirtualizedList';
+import { GalleryCard } from './GalleryCard';
+import '@/styles/primitives-gallery.css';
 
-// Pass flatItems.length to useVirtualizedList
-const { containerRef, virtualItems, totalSize } = useVirtualizedList(
-  flatItems.length,
-  {
-    containerHeight,
-    estimateSize: 44,  // ~44px per row
-    overscan: 10,
-  }
-);
+const CARD_WIDTH = 220; // --iso-gallery-card-w
+const CARD_HEIGHT = 160; // --iso-gallery-card-h
+const GAP = 12; // --iso-gallery-gap
+
+export function GalleryView() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { data: nodes, loading, error } = useFilteredNodes();
+  const { select, isSelected, registerScrollToNode, unregisterScrollToNode } = useSelection();
+
+  // Calculate columns from container width
+  const [columns, setColumns] = useState(4);
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width;
+      setColumns(Math.max(1, Math.floor(width / (CARD_WIDTH + GAP))));
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Group nodes into rows
+  const rows = useMemo(() => {
+    if (!nodes) return [];
+    const result: Node[][] = [];
+    for (let i = 0; i < nodes.length; i += columns) {
+      result.push(nodes.slice(i, i + columns));
+    }
+    return result;
+  }, [nodes, columns]);
+
+  // Virtualize rows
+  const { containerRef: scrollRef, virtualItems, totalSize, scrollToIndex } = useVirtualizedList(
+    rows.length,
+    { containerHeight: 600, estimateSize: CARD_HEIGHT + GAP, overscan: 3 }
+  );
+
+  // Register scroll-to-node
+  useEffect(() => {
+    const scrollFn = (id: string) => {
+      const nodeIndex = nodes?.findIndex(n => n.id === id) ?? -1;
+      if (nodeIndex >= 0) {
+        const rowIndex = Math.floor(nodeIndex / columns);
+        scrollToIndex(rowIndex, { align: 'center' });
+      }
+    };
+    registerScrollToNode(scrollFn);
+    return () => unregisterScrollToNode();
+  }, [nodes, columns, scrollToIndex, registerScrollToNode, unregisterScrollToNode]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div ref={containerRef} className="h-full w-full overflow-hidden">
+      <div ref={scrollRef} className="h-full overflow-auto">
+        <div style={{ height: totalSize, position: 'relative' }}>
+          {virtualItems.map(virtualRow => (
+            <div
+              key={virtualRow.key}
+              className="gallery-row"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+                display: 'grid',
+                gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                gap: GAP,
+                padding: `0 var(--iso-gallery-pad, 24px)`,
+              }}
+            >
+              {rows[virtualRow.index]?.map(node => (
+                <GalleryCard
+                  key={node.id}
+                  card={node}
+                  selected={isSelected(node.id)}
+                  onClick={() => select(node.id)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### ListView Structure
+
+```typescript
+// src/components/views/ListView.tsx
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { useListData } from '@/hooks/data/useListData';
+import { useSelection } from '@/state/SelectionContext';
+import { useVirtualizedList } from '@/hooks/performance/useVirtualizedList';
+import { ChevronRight } from 'lucide-react';
+import '@/styles/primitives-list.css';
+
+const ROW_HEIGHT = 44; // --iso-list-row-h
+const GROUP_HEIGHT = 36; // --iso-list-group-h
+
+export function ListView() {
+  const { groups, flatNodes, loading, error } = useListData(true);
+  const { select, isSelected, registerScrollToNode, unregisterScrollToNode } = useSelection();
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  // Flatten for virtualization
+  const flatItems = useMemo(() => {
+    if (!groups) return [];
+    const result: Array<{ type: 'group'; key: string; label: string; count: number } | { type: 'item'; node: Node }> = [];
+    groups.forEach(group => {
+      result.push({ type: 'group', key: group.key, label: group.label, count: group.nodes.length });
+      if (expandedGroups.has(group.key)) {
+        group.nodes.forEach(node => result.push({ type: 'item', node }));
+      }
+    });
+    return result;
+  }, [groups, expandedGroups]);
+
+  // Virtualize
+  const { containerRef, virtualItems, totalSize, scrollToIndex } = useVirtualizedList(
+    flatItems.length,
+    {
+      containerHeight: 600,
+      estimateSize: (index) => flatItems[index]?.type === 'group' ? GROUP_HEIGHT : ROW_HEIGHT,
+      overscan: 10,
+    }
+  );
+
+  const toggleGroup = useCallback((key: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // Register scroll-to-node
+  useEffect(() => {
+    const scrollFn = (id: string) => {
+      const index = flatItems.findIndex(item =>
+        item.type === 'item' && item.node.id === id
+      );
+      if (index >= 0) scrollToIndex(index, { align: 'center' });
+    };
+    registerScrollToNode(scrollFn);
+    return () => unregisterScrollToNode();
+  }, [flatItems, scrollToIndex, registerScrollToNode, unregisterScrollToNode]);
+
+  // Keyboard navigation
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    // ... roving tabindex implementation
+  }, [flatItems, focusedId, expandedGroups]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+
+  return (
+    <div
+      ref={containerRef}
+      role="tree"
+      aria-label="List view"
+      onKeyDown={handleKeyDown}
+      className="h-full overflow-auto"
+    >
+      <div style={{ height: totalSize, position: 'relative' }}>
+        {virtualItems.map(virtualItem => {
+          const item = flatItems[virtualItem.index];
+          if (!item) return null;
+
+          if (item.type === 'group') {
+            return (
+              <div
+                key={item.key}
+                role="treeitem"
+                aria-expanded={expandedGroups.has(item.key)}
+                aria-level={1}
+                tabIndex={focusedId === item.key ? 0 : -1}
+                className="list-group-header"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: virtualItem.size,
+                  transform: `translateY(${virtualItem.start}px)`,
+                }}
+                onClick={() => toggleGroup(item.key)}
+              >
+                <ChevronRight className={expandedGroups.has(item.key) ? 'rotate-90' : ''} />
+                <span>{item.label}</span>
+                <span className="list-group-count">{item.count}</span>
+              </div>
+            );
+          }
+
+          return (
+            <div
+              key={item.node.id}
+              role="treeitem"
+              aria-level={2}
+              aria-selected={isSelected(item.node.id)}
+              tabIndex={focusedId === item.node.id ? 0 : -1}
+              className="list-row"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: virtualItem.size,
+                transform: `translateY(${virtualItem.start}px)`,
+                paddingLeft: 'var(--iso-list-indent, 24px)',
+              }}
+              onClick={() => select(item.node.id)}
+            >
+              {item.node.name}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 ```
 
 ---
 
 ## What Exists vs. What to Build
 
-### Already Built (Phase 109 + prior work)
+### Already Built
 
 | Asset | Location | Status |
 |-------|----------|--------|
-| `primitives-gallery.css` | `src/styles/primitives-gallery.css` | Complete — CSS tokens for gallery layout |
-| `useSQLiteQuery` | `src/hooks/database/useSQLiteQuery.ts` | Complete — SQL fetching hook |
-| `useVirtualizedList` | `src/hooks/performance/useVirtualizedList.ts` | Complete — TanStack Virtual wrapper |
-| `useVirtualizedGrid` | `src/hooks/performance/useVirtualizedGrid.ts` | Complete — 2D TanStack Virtual wrapper |
-| `VirtualizedGrid` | `src/components/VirtualizedGrid/index.tsx` | Complete — generic grid component |
-| `VirtualizedList` | `src/components/VirtualizedList/index.tsx` | Complete — generic list component |
-| `SelectionContext` / `useSelection` | `src/state/SelectionContext.tsx` | Complete — selection API |
-| `FilterContext` / `useFilters` | `src/state/FilterContext.tsx` | Complete — LATCH filter state |
-| `compileFilters` | `src/filters/compiler.ts` | Complete — LATCH → SQL compiler |
-| `GridContinuumController` | `src/components/supergrid/GridContinuumController.ts` | Complete — mode definitions |
-| `GridContinuumSwitcher` | `src/components/supergrid/GridContinuumSwitcher.tsx` | Complete — mode switcher UI |
-| `HierarchyTreeView` | `src/components/HierarchyTreeView.tsx` | Exists — but it's a filter widget, not a data view |
+| `primitives-gallery.css` | `src/styles/primitives-gallery.css` | Complete (59 lines) |
+| `primitives-list.css` | `src/styles/primitives-list.css` | Complete (63 lines) |
+| `useSQLiteQuery` | `src/hooks/database/useSQLiteQuery.ts` | Complete (240 lines) |
+| `useFilteredNodes` | `src/hooks/data/useFilteredNodes.ts` | Complete (100 lines) |
+| `useListData` | `src/hooks/data/useListData.ts` | Complete (200 lines) |
+| `useVirtualizedList` | `src/hooks/performance/useVirtualizedList.ts` | Complete (226 lines) |
+| `SelectionContext` | `src/state/SelectionContext.tsx` | Complete (186 lines) |
+| `FilterContext` | `src/state/FilterContext.tsx` | Complete (412 lines) |
+| `compileFilters` | `src/filters/compiler.ts` | Complete (351 lines) |
+| `GalleryCard` | `src/components/views/GalleryCard.tsx` | Complete (82 lines) |
+| `GridContinuumSwitcher` | `src/components/supergrid/GridContinuumSwitcher.tsx` | Complete (141 lines) |
 
 ### Must Build in Phase 110
 
 | Asset | Location | Notes |
 |-------|----------|-------|
-| `GalleryView.tsx` | `src/components/views/GalleryView.tsx` | New: wraps VirtualizedGrid, consumes primitives-gallery.css tokens |
-| `ListView.tsx` | `src/components/views/ListView.tsx` | New: PAFV-aware tree, ARIA roles, keyboard nav |
-| `primitives-list.css` | `src/styles/primitives-list.css` | New: CSS tokens for list row heights, indent levels |
+| `GalleryView.tsx` | `src/components/views/GalleryView.tsx` | New: row-virtualized grid using CSS auto-fit |
+| `ListView.tsx` | `src/components/views/ListView.tsx` | New: PAFV-aware tree with ARIA roles |
+| `ListRow.tsx` | `src/components/views/ListRow.tsx` | New: extracted row component for list items |
 
 ---
 
@@ -431,34 +607,36 @@ const { containerRef, virtualItems, totalSize } = useVirtualizedList(
 
 | Old Approach | Current Approach | When Changed | Impact |
 |--------------|------------------|--------------|--------|
-| Class-based `ListViewRenderer` | Functional `ListView.tsx` | Phase 110 | Deprecated class stubs replaced with functional components |
-| D3-based tree rendering | React tree with useState | Phase 110 | Tree expand state is application state; React is correct owner |
-| Manual grid column calculation | CSS Grid `auto-fit` | Phase 109 | `primitives-gallery.css` provides CSS token-driven layout |
-| `useVirtualLiveQuery` (complex) | `useSQLiteQuery` (simple) | Ongoing | For static fetch-on-filter-change, simpler hook is sufficient |
+| Class-based `ListViewRenderer` | Functional `ListView.tsx` | Phase 110 | Deprecated stubs replaced |
+| D3-based tree rendering | React tree with useState | Phase 110 | Tree expand state is application state |
+| Manual filter compilation in views | `useFilteredNodes` hook | Pre-Phase 110 | Views don't touch SQL directly |
+| Complex `VirtualizedGrid` component | Simple `useVirtualizedList` hook | Phase 110 | Purpose-built views, not generic components |
 
 **Deprecated/outdated:**
-- `src/components/views/ListViewRenderer.tsx`: `@deprecated` — the class-based renderer is a placeholder stub, not the target for Phase 110
-- `src/components/views/GridViewRenderer.tsx`: `@deprecated` — same situation
-- `src/components/views/TreeView.tsx`: D3-based tree with hardcoded folder grouping; useful as reference but not the target
+- `src/components/views/ListViewRenderer.tsx`: @deprecated class stub
+- `src/components/views/GridViewRenderer.tsx`: @deprecated class stub
+- `src/components/views/TreeView.tsx`: D3-based tree (not suitable for React state)
+- `src/components/VirtualizedGrid/index.tsx`: 599 lines, too complex for Phase 110 needs
+- `src/components/VirtualizedList/index.tsx`: 509 lines, too complex for Phase 110 needs
 
 ---
 
 ## Open Questions
 
-1. **Gallery: CSS-only columns vs. computed columnCount for TanStack**
-   - What we know: `primitives-gallery.css` uses `auto-fit` which is pure CSS. TanStack Virtual's 2D mode needs an explicit `columnCount`.
-   - What's unclear: Should gallery use CSS-only column layout (no horizontal virtualization) + TanStack only for rows? Or should it use TanStack 2D with computed column count?
-   - Recommendation: Use single-axis TanStack (rows only) + CSS Grid for columns. This avoids the column count computation problem and lets CSS handle responsive columns naturally. Only row-level virtualization is needed for 500+ items.
+1. **Gallery: How many columns at different breakpoints?**
+   - What we know: CSS `auto-fit` with `minmax(220px, 1fr)` is responsive.
+   - What's unclear: Should we enforce specific breakpoints (mobile: 1col, tablet: 2-3col, desktop: 4+col)?
+   - Recommendation: Let CSS `auto-fit` handle it naturally. The 220px min-width creates natural responsive behavior.
 
-2. **ListView: Which PAFV axis drives grouping?**
-   - What we know: `PAFVContext` has `viewMode: 'grid' | 'list'` and `mappings: AxisMapping[]`. The hierarchy axis mapping holds the facet.
-   - What's unclear: For Phase 110 MVP, should ListView always group by `folder`, or should it read the active PAFV hierarchy mapping?
-   - Recommendation: For Phase 110 MVP, default to `folder` as the grouping column. Add a `groupByFacet` prop so the switcher can pass the PAFV hierarchy mapping later. Document this as a Phase 111 enhancement.
+2. **ListView: Expand all groups by default?**
+   - What we know: `expandedGroups` is `useState<Set<string>>()` starting empty.
+   - What's unclear: Should all groups start expanded, or all collapsed?
+   - Recommendation: Start expanded. Users expect to see data. Collapsing is a declutter action.
 
-3. **Component file size limit**
-   - What we know: CLAUDE.md enforces 300-line warn / 500-line error limits.
-   - What's unclear: `GalleryView.tsx` with card component inline might approach 300 lines.
-   - Recommendation: Extract the card renderer into a `GalleryCard.tsx` sub-component from the start. `ListView.tsx` should extract `ListRow.tsx` for the individual row renderer. This keeps each file under 200 lines.
+3. **Performance target verification**
+   - What we know: REQ-A-01 requires 60 FPS at 500+ items.
+   - What's unclear: How to measure FPS in Vitest?
+   - Recommendation: Use `useFPSMonitor` hook for dev mode. For tests, verify that virtualization threshold kicks in (VIRTUALIZATION_THRESHOLD = 100 in `useVirtualizedGrid`).
 
 ---
 
@@ -466,34 +644,32 @@ const { containerRef, virtualItems, totalSize } = useVirtualizedList(
 
 ### Primary (HIGH confidence)
 
-- Codebase: `src/hooks/database/useSQLiteQuery.ts` — complete implementation verified
-- Codebase: `src/hooks/performance/useVirtualizedList.ts` — complete implementation verified
-- Codebase: `src/hooks/performance/useVirtualizedGrid.ts` — complete implementation verified
-- Codebase: `src/state/SelectionContext.tsx` — selection API verified
-- Codebase: `src/state/FilterContext.tsx` — filter state API verified
-- Codebase: `src/filters/compiler.ts` — LATCH to SQL compiler verified
-- Codebase: `src/styles/primitives-gallery.css` — Phase 109 deliverable verified
-- Codebase: `src/components/supergrid/GridContinuumController.ts` — mode definitions verified
-- Codebase: `package.json` — `@tanstack/react-virtual: ^3.13.18` confirmed installed
+- Codebase: `src/hooks/database/useSQLiteQuery.ts` - verified implementation
+- Codebase: `src/hooks/data/useFilteredNodes.ts` - verified integration
+- Codebase: `src/hooks/data/useListData.ts` - verified PAFV grouping
+- Codebase: `src/hooks/performance/useVirtualizedList.ts` - verified TanStack Virtual v3 wrapper
+- Codebase: `src/state/SelectionContext.tsx` - verified API (select, toggle, registerScrollToNode)
+- Codebase: `src/state/FilterContext.tsx` - verified LATCH filter state
+- Codebase: `src/filters/compiler.ts` - verified LATCH to SQL compiler
+- Codebase: `src/styles/primitives-gallery.css` - verified CSS tokens
+- Codebase: `src/styles/primitives-list.css` - verified CSS tokens
+- Codebase: `src/components/views/GalleryCard.tsx` - verified card component
+- Codebase: `package.json` - `@tanstack/react-virtual: ^3.13.18` confirmed
 
 ### Secondary (MEDIUM confidence)
 
-- WAI-ARIA Authoring Practices 1.2 — Tree View pattern (https://www.w3.org/WAI/ARIA/apg/patterns/treeview/) — standard pattern, well established
-- TanStack Virtual v3 docs — single-axis virtualizer API (verified against installed version 3.13.18, which uses `useVirtualizer` hook)
-
-### Tertiary (LOW confidence — flag for validation)
-
-- CSS Grid `auto-fit` with TanStack row-only approach: reasonable inference from `primitives-gallery.css` design, but the actual implementation in `GalleryView.tsx` should verify column count derivation
+- WAI-ARIA Authoring Practices 1.2 - Tree View pattern (https://www.w3.org/WAI/ARIA/apg/patterns/treeview/)
+- TanStack Virtual v3 docs - `useVirtualizer` hook API
 
 ---
 
 ## Metadata
 
 **Confidence breakdown:**
-- Standard stack: HIGH — all dependencies confirmed in package.json and src/
-- Architecture: HIGH — patterns derived from existing working code in the codebase
-- Pitfalls: MEDIUM-HIGH — derived from code analysis (stale refs, ARIA keyboard nav are well-known React/a11y patterns)
-- What exists vs. what to build: HIGH — read all relevant files directly
+- Standard stack: HIGH - all dependencies confirmed in package.json and src/
+- Architecture: HIGH - patterns derived from existing working code
+- Pitfalls: HIGH - derived from direct code analysis
+- What exists vs. what to build: HIGH - read all relevant files
 
 **Research date:** 2026-02-16
-**Valid until:** 2026-03-16 (30 days — stable stack, no fast-moving dependencies)
+**Valid until:** 2026-03-16 (30 days - stable stack)

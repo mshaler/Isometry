@@ -1,6 +1,8 @@
 // Grid Continuum views (Phase 110+)
 export { GalleryView } from './GalleryView';
 export { GalleryCard } from './GalleryCard';
+export { ListView } from './ListView';
+export { ListRow } from './ListRow';
 
 // D3.js-powered view components (non-migrated views only)
 export { TimelineView } from './TimelineView';
