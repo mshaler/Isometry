@@ -246,8 +246,8 @@ Plans:
 | 115-02 | Selection Sync | REQ-D-02 | Enhanced SelectionContext, highlight overlays |
 
 Plans:
-- [ ] 115-01-PLAN.md — ThreeCanvasLayout with react-resizable-panels
-- [ ] 115-02-PLAN.md — Cross-pane SelectionContext sync
+- [ ] 115-01-PLAN.md — Resizable panels with react-resizable-panels and localStorage persistence
+- [ ] 115-02-PLAN.md — Bidirectional selection sync between Capture and Preview panes
 
 ---
 
