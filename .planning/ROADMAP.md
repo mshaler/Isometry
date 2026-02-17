@@ -328,20 +328,20 @@ Plans:
 4. Folder hierarchy correct for all nested folders
 5. Tags extracted correctly from all notes with hashtags
 
-**Plans:** 3/3 plans complete
+**Plans:** 4 plans in 4 waves
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 117-01 | JXA Extractor | SYNC-01, PERF-02 | `jxa-bridge.ts`, `extract-notes.jxa` |
-| 117-02 | Sync Service | SYNC-02, SYNC-03, PERF-01 | `AppleNotesSyncService.ts` |
-| 117-03 | Folder Hierarchy | SYNC-04, DATA-01 | Folder reconciliation, validation |
-| 117-04 | Integration | SYNC-05, SYNC-06 | UI triggers, background sync |
+| 117-01 | JXA Extractor | SYNC-01, PERF-02 | `AppleNotesAdapter.ts`, type mapping |
+| 117-02 | Sync Service | SYNC-02, SYNC-03, PERF-01 | `AppleNotesSyncService.ts`, `NodeWriter.ts` |
+| 117-03 | Folder Hierarchy | SYNC-04, DATA-01 | `DataIntegrityValidator`, folder tests |
+| 117-04 | UI Integration | SYNC-05, SYNC-06 | UI sync trigger, alto-index deprecation |
 
 Plans:
 - [x] 117-01-PLAN.md — ETL module integration with Apple Notes direct SQLite adapter
 - [x] 117-02-PLAN.md — NodeWriter and AppleNotesSyncService with progress reporting
-- [ ] 117-03-PLAN.md — Folder hierarchy reconciliation and data integrity tests
-- [ ] 117-04-PLAN.md — Sync triggers, conflict resolution, UI integration
+- [x] 117-03-PLAN.md — Folder hierarchy reconciliation and data integrity tests
+- [ ] 117-04-PLAN.md — UI sync trigger, progress modal, alto-index deprecation
 
 ---
 
