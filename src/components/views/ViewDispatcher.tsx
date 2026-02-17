@@ -1,28 +1,37 @@
 /**
  * ViewDispatcher - Routes to the correct view based on activeView prop
  *
- * Central routing component for the Grid Continuum. Each mode represents
- * a different PAFV axis allocation for the same underlying data.
+ * Central routing component for the Grid Continuum and extended views.
+ * Each mode represents a different PAFV axis allocation for the same
+ * underlying data.
  *
- * Gallery (0) -> List (1) -> Kanban (1 facet) -> Grid (2) -> SuperGrid (n)
+ * Grid Continuum:
+ *   Gallery (0) -> List (1) -> Kanban (1 facet) -> Grid (2) -> SuperGrid (n)
+ *
+ * Extended Views:
+ *   Network (force-directed graph) | Timeline | Calendar | Tree
  */
 import type { GridContinuumMode } from '@/types/view';
 import { GalleryView } from './GalleryView';
 import { ListView } from './ListView';
 import { KanbanView } from './KanbanView';
+import { NetworkView } from './NetworkView';
 import { cn } from '@/lib/utils';
 
+/** Extended view type including Grid Continuum modes and additional views */
+type ExtendedViewMode = GridContinuumMode | 'network' | 'timeline';
+
 interface ViewDispatcherProps {
-  /** Current Grid Continuum mode determining which view to render */
-  activeView: GridContinuumMode;
+  /** Current view mode - Grid Continuum modes or extended views */
+  activeView: ExtendedViewMode;
   /** Optional CSS class name */
   className?: string;
 }
 
 /**
  * ViewDispatcher routes to the appropriate view component based on the
- * current Grid Continuum mode. The parent component owns the activeView
- * state and passes it down as a prop.
+ * current view mode. The parent component owns the activeView state and
+ * passes it down as a prop.
  *
  * Note: Grid and SuperGrid modes currently show a placeholder because
  * SuperGridCSS requires explicit PAFV axis configuration that must be
@@ -37,6 +46,17 @@ export function ViewDispatcher({ activeView, className }: ViewDispatcherProps) {
       return <ListView />;
     case 'kanban':
       return <KanbanView />;
+    case 'network':
+      return <NetworkView />;
+    case 'timeline':
+      return (
+        <div className={cn('flex items-center justify-center h-full text-muted-foreground', className)}>
+          <div className="text-center">
+            <p className="text-lg font-medium">Timeline View</p>
+            <p className="text-sm">Coming in Phase 113-03</p>
+          </div>
+        </div>
+      );
     case 'grid':
       return (
         <div className={cn('flex items-center justify-center h-full text-muted-foreground', className)}>
