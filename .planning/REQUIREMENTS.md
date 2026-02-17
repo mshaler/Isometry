@@ -897,6 +897,33 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 **Coverage:** 14/14 requirements mapped (100%)
 
+### v6.9 Traceability
+
+| Requirement | Phase | Plan | Status |
+|-------------|-------|------|--------|
+| REQ-A-01 | Phase 110 | 110-01 | Pending |
+| REQ-A-02 | Phase 110 | 110-02 | Pending |
+| REQ-A-03 | Phase 111 | 111-01 | Pending |
+| REQ-A-04 | Phase 111 | 111-02 | Pending |
+| REQ-A-05 | Phase 111 | 111-03 | Pending |
+| REQ-A-06 | Phase 111 | 111-03 | Pending |
+| REQ-B-01 | Phase 112 | 112-01 | Pending |
+| REQ-B-02 | Phase 112 | 112-02 | Pending |
+| REQ-B-03 | Phase 112 | 112-03 | Pending |
+| REQ-C-04 | Phase 113 | 113-01 | Pending |
+| REQ-C-01 | Phase 113 | 113-02 | Pending |
+| REQ-C-02 | Phase 114 | 114-01 | Pending |
+| REQ-C-03 | Phase 114 | 114-02 | Pending |
+| REQ-D-01 | Phase 115 | 115-01 | Pending |
+| REQ-D-02 | Phase 115 | 115-02 | Pending |
+| REQ-D-03 | Phase 116 | 116-01 | Pending |
+| REQ-D-04 | Phase 116 | 116-02 | Pending |
+| REQ-NF-01 | Phase 116 | 116-03 | Pending |
+| REQ-NF-02 | Phase 116 | 116-03 | Pending |
+| REQ-NF-03 | Phase 116 | 116-03 | Pending |
+
+**Coverage:** 20/20 requirements mapped (100%)
+
 ---
 *Requirements defined: 2026-02-10*
-*Last updated: 2026-02-15 (v6.5 Console Cleanup requirements added)*
+*Last updated: 2026-02-16 (v6.9 Polymorphic Views & Foundation requirements added)*

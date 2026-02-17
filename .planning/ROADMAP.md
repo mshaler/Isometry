@@ -24,9 +24,269 @@
 - ✓ **v6.5 Console Cleanup** - Phase 103 (shipped 2026-02-15)
 - ✓ **v6.6 CSS Grid SuperGrid** - Phase 105 (shipped 2026-02-15)
 - ✓ **v6.7 CSS Grid Integration** - Phase 106 (shipped 2026-02-16)
-- 🔄 **v6.8 CSS Primitives** - Phases 107-109 (in progress)
+- ✓ **v6.8 CSS Primitives** - Phases 107-109 (shipped 2026-02-16)
+- 🔄 **v6.9 Polymorphic Views & Foundation** - Phases 110-116 (in progress)
 
 ## Phases
+
+---
+
+## v6.9 Polymorphic Views & Foundation
+
+**Goal:** Enable full Grid Continuum (Gallery/List/Kanban/Grid/SuperGrid) with CSS primitives, clean up technical debt, polish Network/Timeline views, and complete Three-Canvas notebook integration.
+
+**Parallelization:**
+- Tracks A+B run in parallel (Phases 110-111 || 112)
+- Track C depends on Track A (Phases 113-114 after 111)
+- Track D depends on Track C (Phases 115-116 after 114)
+
+---
+
+### Phase 110: View Continuum Foundation (Track A Wave 1)
+
+**Goal:** Build Gallery and List view renderers with CSS Grid and SQL data integration.
+
+**Depends on:** Phase 109 (CSS Chrome Primitives complete)
+
+**Requirements:** REQ-A-01, REQ-A-02
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-A-01 | Gallery View Renderer | Medium | P0 |
+| REQ-A-02 | List View Renderer | Medium | P0 |
+
+**Success Criteria:**
+1. GalleryView renders cards in responsive masonry grid with TanStack Virtual
+2. ListView renders hierarchical tree with expand/collapse and keyboard nav
+3. Both views consume useSQLiteQuery for data fetching
+4. Both views update SelectionContext on card click
+5. 60 FPS scroll at 500+ items in both views
+
+**Plans:** 2 plans in 1 wave
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 110-01 | Gallery View | REQ-A-01 | `GalleryView.tsx`, `primitives-gallery.css` integration |
+| 110-02 | List View | REQ-A-02 | `ListView.tsx`, tree structure with ARIA roles |
+
+Plans:
+- [ ] 110-01-PLAN.md — Gallery view with CSS Grid masonry + TanStack Virtual
+- [ ] 110-02-PLAN.md — List view with hierarchical tree + keyboard navigation
+
+---
+
+### Phase 111: View Continuum Integration (Track A Wave 2)
+
+**Goal:** Build Kanban view, ViewDispatcher, mode switcher, and PAFV axis allocation.
+
+**Depends on:** Phase 110 (Gallery + List views working)
+
+**Requirements:** REQ-A-03, REQ-A-04, REQ-A-05, REQ-A-06
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-A-03 | Kanban View Renderer | Medium | P0 |
+| REQ-A-04 | Grid Continuum Mode Switcher | Low | P0 |
+| REQ-A-05 | PAFV Axis Allocation | Medium | P0 |
+| REQ-A-06 | Cross-View Selection Sync | Low | P1 |
+
+**Success Criteria:**
+1. KanbanView renders columns by facet with dnd-kit drag-drop
+2. Drop between columns persists facet value via SQL UPDATE
+3. ViewDispatcher routes to correct view based on activeView state
+4. GridContinuumSwitcher provides 5-mode button group
+5. Selection persists across all view mode transitions
+
+**Plans:** 3 plans in 2 waves
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 111-01 | Kanban View | REQ-A-03 | `KanbanView.tsx`, dnd-kit integration |
+| 111-02 | ViewDispatcher + Switcher | REQ-A-04 | `ViewDispatcher.tsx`, `GridContinuumSwitcher.tsx` |
+| 111-03 | PAFV Allocation + Selection | REQ-A-05, REQ-A-06 | Enhanced `GridContinuumController.ts` |
+
+Plans:
+- [ ] 111-01-PLAN.md — Kanban view with columns, drag-drop, SQL persistence
+- [ ] 111-02-PLAN.md — ViewDispatcher routing and mode switcher UI
+- [ ] 111-03-PLAN.md — PAFV axis allocation per mode + selection sync
+
+---
+
+### Phase 112: Technical Debt Sprint (Track B — Parallel)
+
+**Goal:** Clean up unused exports, refactor directories, and establish TipTap test infrastructure.
+
+**Depends on:** None (runs parallel with Phases 110-111)
+
+**Requirements:** REQ-B-01, REQ-B-02, REQ-B-03
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-B-01 | Knip Unused Exports Cleanup | Medium | P1 |
+| REQ-B-02 | src/services Directory Refactoring | Low | P2 |
+| REQ-B-03 | TipTap Automated Test Infrastructure | Medium | P2 |
+
+**Success Criteria:**
+1. Knip unused exports reduced from 275 to <100
+2. src/services top-level file count ≤15
+3. TipTap custom extensions have unit tests
+4. All existing tests pass throughout cleanup
+
+**Plans:** 3 plans in 2 waves
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 112-01 | Knip Cleanup | REQ-B-01 | Reduced unused exports, barrel exports |
+| 112-02 | Directory Health | REQ-B-02 | Reorganized `src/services/` |
+| 112-03 | TipTap Tests | REQ-B-03 | Test utilities, extension tests |
+
+Plans:
+- [ ] 112-01-PLAN.md — Knip audit and systematic unused export removal
+- [ ] 112-02-PLAN.md — src/services directory reorganization
+- [ ] 112-03-PLAN.md — TipTap test infrastructure and extension tests
+
+---
+
+### Phase 113: Network Graph Integration (Track C Wave 1)
+
+**Goal:** Create ForceSimulationManager and wire Network view to SQL data.
+
+**Depends on:** Phase 111 (ViewDispatcher working)
+
+**Requirements:** REQ-C-04, REQ-C-01
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-C-04 | Force Simulation Lifecycle Management | Medium | P0 |
+| REQ-C-01 | Network Graph SQL Integration | Medium | P1 |
+
+**Success Criteria:**
+1. ForceSimulationManager wraps D3 force with start/stop/reheat
+2. useForceSimulation hook integrates with React lifecycle
+3. No memory leaks on 10 consecutive view switches
+4. NetworkView uses useSQLiteQuery for nodes/edges
+5. LATCH filter changes trigger network re-render
+6. 60 FPS at 500 nodes
+
+**Plans:** 2 plans in 1 wave
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 113-01 | Force Lifecycle | REQ-C-04 | `ForceSimulationManager.ts`, `useForceSimulation.ts` |
+| 113-02 | Network SQL | REQ-C-01 | `NetworkView.tsx`, SQL integration |
+
+Plans:
+- [ ] 113-01-PLAN.md — ForceSimulationManager with lifecycle management
+- [ ] 113-02-PLAN.md — NetworkView with useSQLiteQuery integration
+
+---
+
+### Phase 114: Timeline & Preview Integration (Track C Wave 2)
+
+**Goal:** Wire Timeline view to SQL and add Network/Timeline to Preview tabs.
+
+**Depends on:** Phase 113 (Network view working)
+
+**Requirements:** REQ-C-02, REQ-C-03
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-C-02 | Timeline View SQL Integration | Medium | P1 |
+| REQ-C-03 | Preview Tab Integration | Low | P1 |
+
+**Success Criteria:**
+1. TimelineView uses useSQLiteQuery for time-based events
+2. Zoom levels with adaptive tick labels (day/week/month/year)
+3. Overlapping event layout with swimlanes
+4. Preview pane has tab bar: SuperGrid | Network | Timeline
+5. Tab state persists across sessions
+6. 60 FPS zoom/pan at 500 events
+
+**Plans:** 2 plans in 1 wave
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 114-01 | Timeline SQL | REQ-C-02 | `TimelineView.tsx`, SQL integration |
+| 114-02 | Preview Tabs | REQ-C-03 | Tab bar in Preview pane |
+
+Plans:
+- [ ] 114-01-PLAN.md — TimelineView with useSQLiteQuery and zoom levels
+- [ ] 114-02-PLAN.md — Preview pane tab bar with view switching
+
+---
+
+### Phase 115: Three-Canvas Layout (Track D Wave 1)
+
+**Goal:** Implement resizable three-pane layout with cross-pane selection sync.
+
+**Depends on:** Phase 114 (All views working in Preview)
+
+**Requirements:** REQ-D-01, REQ-D-02
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-D-01 | Three-Canvas Layout | Medium | P0 |
+| REQ-D-02 | Cross-Pane Selection Sync | Medium | P0 |
+
+**Success Criteria:**
+1. ThreeCanvasLayout.tsx with Capture | Shell | Preview panes
+2. Resizable dividers with persistent sizes
+3. Minimum pane widths enforced
+4. Click card in Preview → highlight block in Capture
+5. Click block in Capture → highlight card in Preview
+6. Selection sync works across all view modes
+
+**Plans:** 2 plans in 1 wave
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 115-01 | Resizable Layout | REQ-D-01 | `ThreeCanvasLayout.tsx`, react-resizable-panels |
+| 115-02 | Selection Sync | REQ-D-02 | Enhanced SelectionContext, highlight overlays |
+
+Plans:
+- [ ] 115-01-PLAN.md — ThreeCanvasLayout with react-resizable-panels
+- [ ] 115-02-PLAN.md — Cross-pane SelectionContext sync
+
+---
+
+### Phase 116: State & Polish (Track D Wave 2)
+
+**Goal:** ViewStateManager for state preservation and pane resize coordination.
+
+**Depends on:** Phase 115 (Three-Canvas layout working)
+
+**Requirements:** REQ-D-03, REQ-D-04, REQ-NF-01, REQ-NF-02, REQ-NF-03
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| REQ-D-03 | View State Preservation | Medium | P1 |
+| REQ-D-04 | Pane Resize Coordination | Low | P1 |
+| REQ-NF-01 | Performance Validation | Medium | P0 |
+| REQ-NF-02 | CSS Primitives Consumption | Low | P1 |
+| REQ-NF-03 | Test Coverage | Medium | P1 |
+
+**Success Criteria:**
+1. ViewStateManager persists scroll/zoom/selection per view
+2. State restored on view switch (5x mode switch test)
+3. PaneLayoutContext coordinates resize events
+4. Debounced resize with no overflow
+5. All views meet 60 FPS performance targets
+6. All new components have unit + integration tests
+
+**Plans:** 3 plans in 2 waves
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 116-01 | View State Manager | REQ-D-03 | `ViewStateManager.ts`, sessionStorage |
+| 116-02 | Pane Coordination | REQ-D-04 | `PaneLayoutContext.tsx`, ResizeObserver |
+| 116-03 | Performance & Tests | REQ-NF-* | Performance validation, test suite |
+
+Plans:
+- [ ] 116-01-PLAN.md — ViewStateManager with scroll/zoom/selection persistence
+- [ ] 116-02-PLAN.md — PaneLayoutContext with debounced resize
+- [ ] 116-03-PLAN.md — Performance validation and comprehensive test coverage
+
+---
 
 ### Phase 109: CSS Chrome Primitives
 
@@ -660,7 +920,15 @@ Plans:
 | 103. Console Cleanup | v6.5 | 2/2 | Complete | 2026-02-15 |
 | 105. CSS Grid SuperGrid | v6.6 | 1/1 | Complete | 2026-02-15 |
 | 106. CSS Grid Integration | v6.7 | 4/4 | Complete | 2026-02-16 |
+| 107-109. CSS Primitives | v6.8 | 3/3 | Complete | 2026-02-16 |
+| 110. View Continuum Foundation | v6.9 | 0/2 | Pending | — |
+| 111. View Continuum Integration | v6.9 | 0/3 | Pending | — |
+| 112. Technical Debt Sprint | v6.9 | 0/3 | Pending (parallel) | — |
+| 113. Network Graph Integration | v6.9 | 0/2 | Pending | — |
+| 114. Timeline & Preview | v6.9 | 0/2 | Pending | — |
+| 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
+| 116. State & Polish | v6.9 | 0/3 | Pending | — |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-16 (v6.7 CSS Grid Integration shipped)*
+*Last updated: 2026-02-16 (v6.9 Polymorphic Views & Foundation roadmap added)*
