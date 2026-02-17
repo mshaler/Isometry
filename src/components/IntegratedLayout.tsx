@@ -61,7 +61,24 @@ export function IntegratedLayout() {
   const { select, clear: clearSelection } = useSelection();
   const { state: pafvState, clearFacetFromAllPlanes, resetToDefaults } = usePAFV();
   const databaseService = useDatabaseService();
-  const { classification, refresh: refreshClassification } = usePropertyClassification();
+
+  // Dataset switcher state - default to 'notes' (the sample data table)
+  // Must be defined BEFORE usePropertyClassification to filter by node_type
+  const [activeDataset, setActiveDataset] = useState<string>('notes');
+
+  // Layer highlight debug mode - highlights React (blue), D3.js (yellow), CSS (red)
+  const [layerHighlightEnabled, setLayerHighlightEnabled] = useState(false);
+
+  // Compute activeNodeType from dataset selection
+  // Used for schema-on-read filtering in property classification and header discovery
+  const activeNodeType = useMemo(
+    () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
+    [activeDataset]
+  );
+
+  // Property classification with nodeType filter
+  // This filters Available Properties to only show properties with actual data for the current dataset
+  const { classification, refresh: refreshClassification } = usePropertyClassification(activeNodeType);
 
   // Alto-index import hook
   const {
@@ -74,16 +91,6 @@ export function IntegratedLayout() {
 
   // Current data for slider filter generation
   const [currentData, setCurrentData] = useState<Array<Record<string, unknown>>>([]);
-
-  // Dataset switcher state - default to 'notes' (the sample data table)
-  const [activeDataset, setActiveDataset] = useState<string>('notes');
-
-  // Layer highlight debug mode - highlights React (blue), D3.js (yellow), CSS (red)
-  const [layerHighlightEnabled, setLayerHighlightEnabled] = useState(false);
-  const activeNodeType = useMemo(
-    () => ALTO_DATASETS.find(d => d.id === activeDataset)?.nodeType || 'notes',
-    [activeDataset]
-  );
 
   // Convert PropertyClassification to SliderClassification format
   const sliderClassification: SliderClassification | null = useMemo(() => {

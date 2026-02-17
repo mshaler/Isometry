@@ -47,6 +47,10 @@ export type {
   TaskToggleVariables,
 } from './useGSDTaskToggle';
 
+// Sync hooks
+export { useAppleNotesSync } from './useAppleNotesSync';
+export type { SyncStatus, UseAppleNotesSyncResult } from './useAppleNotesSync';
+
 // Performance hooks
 export { useD3Performance, useD3PerformanceWithMonitor } from './performance/useD3Performance';
 export { useRenderingOptimization } from './performance/useRenderingOptimization';
