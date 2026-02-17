@@ -4,6 +4,7 @@ import { Monitor, Minimize2, Maximize2, RotateCcw, Maximize, ArrowLeft, ArrowRig
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNotebook } from '../../contexts/NotebookContext';
 import { useWebPreview } from '@/hooks';
+import { useSelection } from '../../state/SelectionContext';
 import { exportToPDF, exportToHTML, exportToJSON } from '../../utils/import-export/exportUtils';
 import { D3VisualizationRenderer } from './D3VisualizationRenderer';
 import { SuperGrid } from '../supergrid/SuperGrid';
@@ -20,6 +21,7 @@ type PreviewTab = 'supergrid' | 'network' | 'timeline' | 'data-inspector' | 'web
 export function PreviewComponent({ className }: PreviewComponentProps) {
   const { theme } = useTheme();
   const { activeCard, cards, setActiveCard } = useNotebook();
+  const { select } = useSelection();
   // Use context directly (not usePAFV) to avoid throwing when PAFVProvider is absent in tests
   const pafvContext = useContext(PAFVContext);
   const [isMinimized, setIsMinimized] = useState(false);
@@ -426,16 +428,14 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
             enableSuperStack={true}
             enableDragDrop={true}
             onCellClick={(node) => {
-              // Handle cell selection - update activeCard to trigger cross-canvas updates
-              console.warn('SuperGrid cell clicked:', node);
               const card = cards.find(c => c.nodeId === node.id);
               if (card) {
                 setActiveCard(card);
+                select(node.id);  // Sync to SelectionContext for Capture
               }
             }}
-            onHeaderClick={(level, value, axis) => {
-              // Handle header filtering
-              console.warn('SuperGrid header clicked:', { level, value, axis });
+            onHeaderClick={(_level, _value, _axis) => {
+              // Header filtering handled by PAFV axis mapping
             }}
           />
         ) : activeTab === 'network' ? (
@@ -443,10 +443,10 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
           <NetworkGraphTab
             className="h-full"
             onNodeSelect={(nodeId) => {
-              // Find the card associated with this node
               const card = cards.find(c => c.nodeId === nodeId);
               if (card) {
                 setActiveCard(card);
+                select(nodeId);  // Ensure Capture sync
               }
             }}
           />
