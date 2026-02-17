@@ -173,25 +173,27 @@ function NotebookLayoutInner() {
   if (screenSize === 'tablet') {
     // Tablet: Capture on top, Shell and Preview side-by-side below
     return (
-      <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
-        <ErrorBoundary level="feature" name="CaptureComponent">
-          <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
-            <CaptureComponent className="h-full" />
+      <PaneLayoutProvider>
+        <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
+          <ErrorBoundary level="feature" name="CaptureComponent">
+            <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
+              <CaptureComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
+          <div className="flex-1 flex gap-1 min-h-0">
+            <ErrorBoundary level="feature" name="ShellComponent">
+              <div ref={shellRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
+                <ShellComponent className="h-full" />
+              </div>
+            </ErrorBoundary>
+            <ErrorBoundary level="feature" name="PreviewComponent">
+              <div ref={previewRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
+                <PreviewComponent className="h-full" />
+              </div>
+            </ErrorBoundary>
           </div>
-        </ErrorBoundary>
-        <div className="flex-1 flex gap-1 min-h-0">
-          <ErrorBoundary level="feature" name="ShellComponent">
-            <div ref={shellRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
-              <ShellComponent className="h-full" />
-            </div>
-          </ErrorBoundary>
-          <ErrorBoundary level="feature" name="PreviewComponent">
-            <div ref={previewRef} className="flex-1 min-w-0 relative focusable-component" tabIndex={0}>
-              <PreviewComponent className="h-full" />
-            </div>
-          </ErrorBoundary>
         </div>
-      </div>
+      </PaneLayoutProvider>
     );
   }
 
@@ -200,81 +202,83 @@ function NotebookLayoutInner() {
   const defaultLayout = storedLayout ?? getDefaultLayout();
 
   return (
-    <div ref={containerRef} className="h-full w-full overflow-hidden p-1">
-      <Group
-        orientation="horizontal"
-        defaultLayout={defaultLayout}
-        onLayoutChanged={handleLayoutChanged}
-        className="h-full"
-      >
-        {/* Capture Panel - 1/3 */}
-        <Panel
-          id={PANEL_IDS.capture}
-          panelRef={capturePanelRef}
-          defaultSize={DEFAULT_SIZE}
-          minSize={MIN_SIZE}
-          collapsible={false}
+    <PaneLayoutProvider panelPercentages={panelPercentages}>
+      <div ref={containerRef} className="h-full w-full overflow-hidden p-1">
+        <Group
+          orientation="horizontal"
+          defaultLayout={defaultLayout}
+          onLayoutChanged={handleLayoutChanged}
+          className="h-full"
         >
-          <ErrorBoundary level="feature" name="CaptureComponent">
-            <div
-              ref={captureRef}
-              className="h-full relative focusable-component overflow-hidden"
-              tabIndex={0}
-            >
-              <CaptureComponent className="h-full w-full" />
-            </div>
-          </ErrorBoundary>
-        </Panel>
+          {/* Capture Panel - 1/3 */}
+          <Panel
+            id={PANEL_IDS.capture}
+            panelRef={capturePanelRef}
+            defaultSize={DEFAULT_SIZE}
+            minSize={MIN_SIZE}
+            collapsible={false}
+          >
+            <ErrorBoundary level="feature" name="CaptureComponent">
+              <div
+                ref={captureRef}
+                className="h-full relative focusable-component overflow-hidden"
+                tabIndex={0}
+              >
+                <CaptureComponent className="h-full w-full" />
+              </div>
+            </ErrorBoundary>
+          </Panel>
 
-        <Separator
-          className="w-1 bg-gray-300 hover:bg-blue-400 transition-colors duration-150 cursor-col-resize mx-px"
-          onDoubleClick={handleDividerDoubleClick}
-        />
+          <Separator
+            className="w-1 bg-gray-300 hover:bg-blue-400 transition-colors duration-150 cursor-col-resize mx-px"
+            onDoubleClick={handleDividerDoubleClick}
+          />
 
-        {/* Shell Panel - 1/3 */}
-        <Panel
-          id={PANEL_IDS.shell}
-          panelRef={shellPanelRef}
-          defaultSize={DEFAULT_SIZE}
-          minSize={MIN_SIZE}
-          collapsible={false}
-        >
-          <ErrorBoundary level="feature" name="ShellComponent">
-            <div
-              ref={shellRef}
-              className="h-full relative focusable-component overflow-hidden"
-              tabIndex={0}
-            >
-              <ShellComponent className="h-full w-full" />
-            </div>
-          </ErrorBoundary>
-        </Panel>
+          {/* Shell Panel - 1/3 */}
+          <Panel
+            id={PANEL_IDS.shell}
+            panelRef={shellPanelRef}
+            defaultSize={DEFAULT_SIZE}
+            minSize={MIN_SIZE}
+            collapsible={false}
+          >
+            <ErrorBoundary level="feature" name="ShellComponent">
+              <div
+                ref={shellRef}
+                className="h-full relative focusable-component overflow-hidden"
+                tabIndex={0}
+              >
+                <ShellComponent className="h-full w-full" />
+              </div>
+            </ErrorBoundary>
+          </Panel>
 
-        <Separator
-          className="w-1 bg-gray-300 hover:bg-blue-400 transition-colors duration-150 cursor-col-resize mx-px"
-          onDoubleClick={handleDividerDoubleClick}
-        />
+          <Separator
+            className="w-1 bg-gray-300 hover:bg-blue-400 transition-colors duration-150 cursor-col-resize mx-px"
+            onDoubleClick={handleDividerDoubleClick}
+          />
 
-        {/* Preview Panel - 1/3 */}
-        <Panel
-          id={PANEL_IDS.preview}
-          panelRef={previewPanelRef}
-          defaultSize={DEFAULT_SIZE}
-          minSize={MIN_SIZE}
-          collapsible={false}
-        >
-          <ErrorBoundary level="feature" name="PreviewComponent">
-            <div
-              ref={previewRef}
-              className="h-full relative focusable-component overflow-hidden"
-              tabIndex={0}
-            >
-              <PreviewComponent className="h-full w-full" />
-            </div>
-          </ErrorBoundary>
-        </Panel>
-      </Group>
-    </div>
+          {/* Preview Panel - 1/3 */}
+          <Panel
+            id={PANEL_IDS.preview}
+            panelRef={previewPanelRef}
+            defaultSize={DEFAULT_SIZE}
+            minSize={MIN_SIZE}
+            collapsible={false}
+          >
+            <ErrorBoundary level="feature" name="PreviewComponent">
+              <div
+                ref={previewRef}
+                className="h-full relative focusable-component overflow-hidden"
+                tabIndex={0}
+              >
+                <PreviewComponent className="h-full w-full" />
+              </div>
+            </ErrorBoundary>
+          </Panel>
+        </Group>
+      </div>
+    </PaneLayoutProvider>
   );
 }
 
