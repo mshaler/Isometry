@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   Edit3, Minimize2, Maximize2, ChevronDown, ChevronRight,
   Save, AlertCircle, Settings, Plus, FileText
@@ -119,7 +119,7 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
 
   const { run: dbRun } = useSQLite();
   const { loadCard, createCard } = useNotebook();
-  const { selection } = useSelection();
+  const { selection, select: selectionSelect } = useSelection();
 
   // Handle creating a new card
   const handleCreateCard = useCallback(async () => {
@@ -129,6 +129,25 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
       console.error('Failed to create card:', error);
     }
   }, [createCard]);
+
+  // SYNC-03 (reverse): Emitted when Capture explicitly loads a card (e.g. future card
+  // picker). Syncs selection to SelectionContext so Preview highlights the same card.
+  // Stored in a ref for stable identity; called by custom event from card picker UI.
+  const syncAndLoadRef = useRef<(cardId: string) => void>(() => {});
+  syncAndLoadRef.current = (cardId: string) => {
+    selectionSelect(cardId);
+    loadCard(cardId);
+  };
+
+  // Listen for 'isometry:load-card' events (emitted by future card picker UI)
+  useEffect(() => {
+    const handleLoadCardEvent = (event: Event) => {
+      const { cardId } = (event as CustomEvent<{ cardId: string }>).detail;
+      if (cardId) syncAndLoadRef.current(cardId);
+    };
+    window.addEventListener('isometry:load-card', handleLoadCardEvent);
+    return () => window.removeEventListener('isometry:load-card', handleLoadCardEvent);
+  }, []);
 
   // SYNC-02: When user clicks card in Preview, load it in Capture
   // This effect reacts to selection changes from NetworkGraph, Timeline, etc.
@@ -314,6 +333,17 @@ export function CaptureComponent({ className }: CaptureComponentProps) {
           <span className="text-xs text-gray-500">Type / for commands</span>
           {isDirty && <div className="w-2 h-2 bg-orange-500 rounded-full" title="Unsaved changes" />}
           {isSaving && <div className="text-xs text-gray-500">Saving...</div>}
+          {selection.selectedIds.size > 1 && (
+            <div className="text-xs text-blue-500 px-1">
+              {selection.selectedIds.size} selected
+            </div>
+          )}
+          {activeCard && selection.selectedIds.size === 1 &&
+            (selection.selectedIds.has(activeCard.id ?? '') || selection.selectedIds.has(activeCard.nodeId ?? '')) && (
+            <div className="text-xs text-green-600 px-1" title="This card is selected in Preview">
+              In Preview
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button
