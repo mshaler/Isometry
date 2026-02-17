@@ -151,3 +151,22 @@ export interface ForceGraphInstance {
   /** Update node positions (for external control) */
   updateNodePosition: (nodeId: string, x: number, y: number) => void;
 }
+
+// ============================================================================
+// Force Simulation Manager Types
+// ============================================================================
+
+/**
+ * Simulation lifecycle state
+ */
+export type SimulationState = 'stopped' | 'running' | 'cooling';
+
+/**
+ * Callbacks for simulation events
+ */
+export interface ForceSimulationCallbacks {
+  /** Called on each simulation tick with updated positions */
+  onTick?: (nodes: GraphNode[], links: GraphLink[]) => void;
+  /** Called when simulation ends (alpha reaches minimum) */
+  onEnd?: () => void;
+}
