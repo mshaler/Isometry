@@ -7,6 +7,7 @@ export { KanbanView } from './KanbanView';
 export { KanbanColumn } from './KanbanColumn';
 export { KanbanCard, KANBAN_CARD_TYPE } from './KanbanCard';
 export type { KanbanDragItem } from './KanbanCard';
+export { ViewDispatcher } from './ViewDispatcher';
 
 // D3.js-powered view components (non-migrated views only)
 export { TimelineView } from './TimelineView';
