@@ -3,6 +3,10 @@ export { GalleryView } from './GalleryView';
 export { GalleryCard } from './GalleryCard';
 export { ListView } from './ListView';
 export { ListRow } from './ListRow';
+export { KanbanView } from './KanbanView';
+export { KanbanColumn } from './KanbanColumn';
+export { KanbanCard, KANBAN_CARD_TYPE } from './KanbanCard';
+export type { KanbanDragItem } from './KanbanCard';
 
 // D3.js-powered view components (non-migrated views only)
 export { TimelineView } from './TimelineView';
