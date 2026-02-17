@@ -60,8 +60,10 @@ function insertRawNode(db: Database, params: {
   source_id?: string;
 }): void {
   db.run(
-    `INSERT INTO nodes (id, node_type, name, folder, tags, created_at, modified_at, source, source_id, priority, importance, sort_order, version)
-     VALUES (?, 'note', ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 1)`,
+    `INSERT INTO nodes (
+      id, node_type, name, folder, tags, created_at, modified_at,
+      source, source_id, priority, importance, sort_order, version
+    ) VALUES (?, 'note', ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 1)`,
     [
       params.id,
       params.name,
@@ -383,18 +385,14 @@ describe('Data Integrity Validation', () => {
         modified_at: '2026-02-17T10:00:00.000Z',
       });
 
-      // Insert edge with missing target (bypasses FK since nodes table has no enforced REFERENCES without cascade)
-      // We need to disable FK enforcement or use a soft approach
-      // For testing, we'll use raw SQL and check warnings
-      try {
-        db.run(`PRAGMA foreign_keys = OFF`);
-        db.run(
-          `INSERT INTO edges (id, edge_type, source_id, target_id, weight, directed, created_at)
-           VALUES ('orphan-edge-1', 'LINK', 'apple-notes:600', 'apple-notes:NONEXISTENT', 1.0, 1, '2026-02-17T10:00:00.000Z')`
-        );
-      } finally {
-        db.run(`PRAGMA foreign_keys = ON`);
-      }
+      // Disable FK enforcement to insert orphan edge for testing
+      db.run(`PRAGMA foreign_keys = OFF`);
+      db.run(
+        `INSERT INTO edges (id, edge_type, source_id, target_id, weight, directed, created_at)
+         VALUES ('orphan-edge-1', 'LINK', 'apple-notes:600', 'apple-notes:NONEXISTENT',
+           1.0, 1, '2026-02-17T10:00:00.000Z')`
+      );
+      db.run(`PRAGMA foreign_keys = ON`);
 
       const result = validator.validateSource('apple-notes');
 
@@ -418,13 +416,13 @@ describe('Data Integrity Validation', () => {
       const dupTime = '2026-02-17T10:00:00.000Z';
       db.run(
         `INSERT INTO nodes (${dupCols}) VALUES (
-          'apple-notes:700a', 'note', 'Note A', 'Work', ?, ?, 'apple-notes', 'duplicate-id', 0, 0, 0, 1
+          'apple-notes:700a', 'note', 'Note A', 'Work', ?, ?, 'apple-notes', 'dup-id', 0, 0, 0, 1
         )`,
         [dupTime, dupTime]
       );
       db.run(
         `INSERT INTO nodes (${dupCols}) VALUES (
-          'apple-notes:700b', 'note', 'Note B', 'Work', ?, ?, 'apple-notes', 'duplicate-id', 0, 0, 0, 1
+          'apple-notes:700b', 'note', 'Note B', 'Work', ?, ?, 'apple-notes', 'dup-id', 0, 0, 0, 1
         )`,
         [dupTime, dupTime]
       );
@@ -483,7 +481,10 @@ describe('Data Integrity Validation', () => {
       expect(folderError).toBeNull();
 
       // Validate it is NOT the alto-index.json bug folder
-      const wrongFolderError = validator.validateFolderPath('apple-notes:138083', 'BairesDev/Operations');
+      const wrongFolderError = validator.validateFolderPath(
+        'apple-notes:138083',
+        'BairesDev/Operations'
+      );
       expect(wrongFolderError).not.toBeNull();
       expect(wrongFolderError!.type).toBe('folder_mismatch');
     });
@@ -509,8 +510,16 @@ describe('Data Integrity Validation', () => {
       writer.upsertNodes([staceyNode]);
 
       // Timestamps should be within 1ms (exact ISO string round-trip)
-      const createdError = validator.validateTimestamp('apple-notes:138083', 'created_at', created);
-      const modifiedError = validator.validateTimestamp('apple-notes:138083', 'modified_at', modified);
+      const createdError = validator.validateTimestamp(
+        'apple-notes:138083',
+        'created_at',
+        created
+      );
+      const modifiedError = validator.validateTimestamp(
+        'apple-notes:138083',
+        'modified_at',
+        modified
+      );
 
       expect(createdError).toBeNull();
       expect(modifiedError).toBeNull();

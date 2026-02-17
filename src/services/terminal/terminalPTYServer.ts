@@ -42,6 +42,8 @@ export interface PTYSessionState extends TerminalSession {
   pty: IPty | null;
   outputBuffer: OutputBuffer;
   clients: Set<WebSocket>;
+  /** Marks session as killed/dying - prevents old PTY output from leaking to new sessions */
+  isKilled: boolean;
 }
 
 /**
@@ -90,6 +92,11 @@ export class TerminalPTYServer {
   /**
    * Spawn a new PTY session
    * SECURITY: Uses spawn with args array, never string interpolation
+   *
+   * Handles React StrictMode race condition:
+   * - If session exists and is alive (not killed): reconnect client to existing session
+   * - If session exists but is killed/dying: delete old session and spawn fresh
+   * - If no session exists: spawn new session
    */
   private async spawnSession(
     ws: WebSocket,
@@ -97,6 +104,47 @@ export class TerminalPTYServer {
     config: PTYConfig,
     mode: TerminalMode
   ): Promise<void> {
+    // Check for existing session (handles StrictMode unmount-remount race)
+    const existingSession = this.sessions.get(sessionId);
+    if (existingSession) {
+      if (!existingSession.isKilled && existingSession.pty) {
+        // Session is alive - reconnect client to existing session
+        devLogger.debug('Reconnecting client to existing session', {
+          component: 'TerminalPTYServer',
+          sessionId,
+          pid: existingSession.pty.pid
+        });
+
+        existingSession.clients.add(ws);
+
+        // Send spawned message with existing PID
+        this.sendToClient(ws, {
+          type: 'terminal:spawned',
+          sessionId,
+          pid: existingSession.pty.pid
+        });
+
+        // Send buffered output for replay
+        const bufferedData = existingSession.outputBuffer.getAll();
+        if (bufferedData) {
+          this.sendToClient(ws, {
+            type: 'terminal:replay-data',
+            sessionId,
+            data: bufferedData
+          });
+        }
+        return;
+      } else {
+        // Session is killed/dying - delete old session before spawning fresh
+        devLogger.debug('Replacing killed session', {
+          component: 'TerminalPTYServer',
+          sessionId,
+          wasKilled: existingSession.isKilled
+        });
+        this.sessions.delete(sessionId);
+      }
+    }
+
     // Validate shell path - whitelist allowed shells
     const allowedShells = ['/bin/zsh', '/bin/bash', '/bin/sh'];
     const shell = allowedShells.includes(config.shell) ? config.shell : '/bin/zsh';
@@ -112,7 +160,8 @@ export class TerminalPTYServer {
       createdAt: new Date(),
       pty: null,
       outputBuffer: new OutputBuffer(),
-      clients: new Set([ws])
+      clients: new Set([ws]),
+      isKilled: false
     };
 
     // Determine command based on mode
@@ -172,7 +221,22 @@ export class TerminalPTYServer {
       });
 
       // Handle PTY output
+      // IMPORTANT: Capture session reference to detect if this PTY has been replaced
+      const thisSession = session;
       pty.onData((data: string) => {
+        // Guard: Check if this session is still active and not killed
+        // This prevents dying PTY output from leaking to new sessions during StrictMode remount
+        const currentSession = this.sessions.get(sessionId);
+        if (!currentSession || currentSession !== thisSession || thisSession.isKilled) {
+          devLogger.debug('Ignoring output from stale/killed PTY', {
+            component: 'TerminalPTYServer',
+            sessionId,
+            isKilled: thisSession.isKilled,
+            sessionMismatch: currentSession !== thisSession
+          });
+          return;
+        }
+
         // Buffer for replay
         session.outputBuffer.append(data);
 
@@ -304,10 +368,16 @@ export class TerminalPTYServer {
 
   /**
    * Kill a PTY session
+   *
+   * IMPORTANT: Sets isKilled=true BEFORE killing to prevent race condition
+   * where old PTY output broadcasts to new session during StrictMode remount
    */
   private async killSession(sessionId: string, signal?: string): Promise<void> {
     const session = this.sessions.get(sessionId);
     if (!session?.pty) return;
+
+    // Mark as killed FIRST - this prevents onData from broadcasting during death throes
+    session.isKilled = true;
 
     const sig = signal || 'SIGTERM';
     session.pty.kill(sig);
@@ -334,6 +404,8 @@ export class TerminalPTYServer {
           sessionId,
           pid: session.pty.pid
         });
+        // Mark as killed FIRST to prevent output leaking
+        session.isKilled = true;
         session.pty.kill('SIGTERM');
         this.sessions.delete(sessionId);
       }
@@ -353,6 +425,7 @@ export class TerminalPTYServer {
   cleanup(): void {
     for (const [sessionId, session] of this.sessions) {
       if (session.pty) {
+        session.isKilled = true;
         session.pty.kill('SIGTERM');
       }
       this.sessions.delete(sessionId);
@@ -400,8 +473,9 @@ export class TerminalPTYServer {
     // Capture current working directory before killing
     const currentCwd = preserveCwd ? session.config.cwd : session.config.cwd;
 
-    // Kill existing PTY
+    // Kill existing PTY - mark as killed first to prevent output leaking
     if (session.pty) {
+      session.isKilled = true;
       session.pty.kill('SIGTERM');
       session.pty = null;
     }
@@ -465,9 +539,18 @@ export class TerminalPTYServer {
       });
 
       session.pty = pty;
+      session.isKilled = false; // Reset killed flag for new PTY
 
       // Handle PTY output
+      // IMPORTANT: Capture session reference to detect if this PTY has been replaced
+      const thisSession = session;
       pty.onData((data: string) => {
+        // Guard: Check if this session is still active and not killed
+        const currentSession = this.sessions.get(sessionId);
+        if (!currentSession || currentSession !== thisSession || thisSession.isKilled) {
+          return;
+        }
+
         session.outputBuffer.append(data);
         this.broadcastToSession(sessionId, {
           type: 'terminal:output',
