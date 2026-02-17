@@ -30,6 +30,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const {
     activeTab,
     setActiveTab,
+    getTabConfig,
     setTabZoom,
   } = usePreviewSettings();
   const [dataPointCount, setDataPointCount] = useState(0);
@@ -167,12 +168,20 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
 
   // Tab switch handler that preserves per-tab zoom using hook
   const handleTabSwitch = useCallback((tab: PreviewTab) => {
-    // Save current zoom before switching (web-preview uses its own zoom hook)
+    // Save current zoom before switching (web-preview manages its own zoom)
     if (activeTab !== 'web-preview') {
       setTabZoom(activeTab, zoom);
     }
     setActiveTab(tab);
-  }, [activeTab, zoom, setTabZoom, setActiveTab]);
+
+    // Restore saved zoom for the new tab (only for D3 tabs, not web-preview)
+    if (tab !== 'web-preview') {
+      const savedZoom = getTabConfig(tab).zoomLevel;
+      if (typeof savedZoom === 'number' && savedZoom !== zoom) {
+        setZoom(savedZoom);
+      }
+    }
+  }, [activeTab, zoom, setTabZoom, setActiveTab, getTabConfig, setZoom]);
 
   // Update data point count when cards change (cross-canvas data flow)
   useEffect(() => {

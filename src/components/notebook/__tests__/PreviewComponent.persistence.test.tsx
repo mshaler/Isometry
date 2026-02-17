@@ -237,4 +237,46 @@ describe('usePreviewSettings', () => {
       expect(result.current.activeTab).toBe('supergrid');
     });
   });
+
+  describe('zoom restore on tab switch', () => {
+    it('restores saved zoom level when switching back to a tab', () => {
+      const { result } = renderHook(() => usePreviewSettings());
+
+      // Set zoom for network tab
+      act(() => result.current.setTabZoom('network', 150));
+
+      // Switch to timeline and set different zoom
+      act(() => result.current.setActiveTab('timeline'));
+      act(() => result.current.setTabZoom('timeline', 75));
+
+      // Verify both zooms are stored
+      expect(result.current.getTabConfig('network').zoomLevel).toBe(150);
+      expect(result.current.getTabConfig('timeline').zoomLevel).toBe(75);
+
+      // Switch back to network — zoom should still be 150
+      act(() => result.current.setActiveTab('network'));
+      expect(result.current.getTabConfig('network').zoomLevel).toBe(150);
+    });
+
+    it('preserves zoom independently per tab across multiple switches', () => {
+      const { result } = renderHook(() => usePreviewSettings());
+
+      act(() => result.current.setTabZoom('supergrid', 200));
+      act(() => result.current.setTabZoom('timeline', 50));
+      act(() => result.current.setTabZoom('network', 125));
+
+      // Each tab retains its own zoom
+      expect(result.current.getTabConfig('supergrid').zoomLevel).toBe(200);
+      expect(result.current.getTabConfig('timeline').zoomLevel).toBe(50);
+      expect(result.current.getTabConfig('network').zoomLevel).toBe(125);
+    });
+
+    it('returns undefined zoomLevel for tabs not yet visited (safe to check)', () => {
+      const { result } = renderHook(() => usePreviewSettings());
+
+      // Fresh hook — no zoom set yet for data-inspector
+      const config = result.current.getTabConfig('data-inspector');
+      expect(config.zoomLevel).toBeUndefined();
+    });
+  });
 });
