@@ -34,6 +34,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
     setActiveTab,
     getTabConfig,
     setTabZoom,
+    setTabScrollPosition,
   } = usePreviewSettings();
   const [dataPointCount, setDataPointCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -41,6 +42,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const {
     content,
@@ -168,8 +170,16 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   const ContentIcon = currentTab.icon;
 
-  // Tab switch handler that preserves per-tab zoom using hook
+  // Tab switch handler that preserves per-tab zoom and scroll position using hook
   const handleTabSwitch = useCallback((tab: PreviewTab) => {
+    // Save current scroll position before switching
+    if (scrollContainerRef.current) {
+      setTabScrollPosition(activeTab, {
+        x: scrollContainerRef.current.scrollLeft,
+        y: scrollContainerRef.current.scrollTop,
+      });
+    }
+
     // Save current zoom before switching (web-preview manages its own zoom)
     if (activeTab !== 'web-preview') {
       setTabZoom(activeTab, zoom);
@@ -183,7 +193,23 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
         setZoom(savedZoom);
       }
     }
-  }, [activeTab, zoom, setTabZoom, setActiveTab, getTabConfig, setZoom]);
+  }, [activeTab, zoom, setTabZoom, setActiveTab, getTabConfig, setZoom, setTabScrollPosition]);
+
+  // Restore scroll position after tab change and content render
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      const savedScroll = getTabConfig(activeTab).scrollPosition;
+      if (savedScroll && scrollContainerRef.current) {
+        // Clamp to valid scroll bounds to handle content size changes
+        const maxScrollX = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth;
+        const maxScrollY = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.clientHeight;
+        scrollContainerRef.current.scrollTo(
+          Math.min(savedScroll.x, Math.max(0, maxScrollX)),
+          Math.min(savedScroll.y, Math.max(0, maxScrollY))
+        );
+      }
+    });
+  }, [activeTab, getTabConfig]);
 
   // Update data point count when cards change (cross-canvas data flow)
   useEffect(() => {
@@ -419,7 +445,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 relative">
+      <div ref={scrollContainerRef} className="flex-1 relative overflow-auto">
         {activeTab === 'supergrid' ? (
           /* SuperGrid Tab - Primary Data Projection */
           <SuperGrid

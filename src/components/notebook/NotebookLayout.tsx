@@ -6,6 +6,7 @@ import { PreviewComponent } from './PreviewComponent';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { FocusProvider, useFocusContext, useFocusableComponent } from '../../context/FocusContext';
 import { TerminalProvider } from '../../context/TerminalContext';
+import { PaneLayoutProvider } from '../../context/PaneLayoutContext';
 
 const STORAGE_KEY = 'notebook-panels';
 const DEFAULT_SIZE = 33.33;
@@ -63,6 +64,25 @@ function NotebookLayoutInner() {
   const shellPanelRef = useRef<PanelImperativeHandle>(null);
   const previewPanelRef = useRef<PanelImperativeHandle>(null);
 
+  // Track panel percentages for PaneLayoutProvider
+  const [panelPercentages, setPanelPercentages] = useState<{ capture: number; shell: number; preview: number }>({
+    capture: DEFAULT_SIZE,
+    shell: DEFAULT_SIZE,
+    preview: DEFAULT_SIZE,
+  });
+
+  // Load initial percentages from stored layout
+  useEffect(() => {
+    const stored = loadPanelLayout();
+    if (stored) {
+      setPanelPercentages({
+        capture: (stored[PANEL_IDS.capture] as number) ?? DEFAULT_SIZE,
+        shell: (stored[PANEL_IDS.shell] as number) ?? DEFAULT_SIZE,
+        preview: (stored[PANEL_IDS.preview] as number) ?? DEFAULT_SIZE,
+      });
+    }
+  }, []);
+
   // Handle screen size detection
   // Breakpoints adjusted: desktop at 900px to support half-screen workflows
   useEffect(() => {
@@ -115,30 +135,38 @@ function NotebookLayoutInner() {
   }, []);
 
   // Persist sizes to localStorage after user finishes dragging
+  // Also update percentages for PaneLayoutProvider
   const handleLayoutChanged = useCallback((layout: Layout) => {
     savePanelLayout(layout);
+    setPanelPercentages({
+      capture: (layout[PANEL_IDS.capture] as number) ?? DEFAULT_SIZE,
+      shell: (layout[PANEL_IDS.shell] as number) ?? DEFAULT_SIZE,
+      preview: (layout[PANEL_IDS.preview] as number) ?? DEFAULT_SIZE,
+    });
   }, []);
 
   if (screenSize === 'mobile') {
     // Mobile: Stack vertically
     return (
-      <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
-        <ErrorBoundary level="feature" name="CaptureComponent">
-          <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
-            <CaptureComponent className="h-full" />
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary level="feature" name="ShellComponent">
-          <div ref={shellRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
-            <ShellComponent className="h-full" />
-          </div>
-        </ErrorBoundary>
-        <ErrorBoundary level="feature" name="PreviewComponent">
-          <div ref={previewRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
-            <PreviewComponent className="h-full" />
-          </div>
-        </ErrorBoundary>
-      </div>
+      <PaneLayoutProvider panelPercentages={panelPercentages}>
+        <div ref={containerRef} className="h-full flex flex-col gap-1 p-1 overflow-hidden">
+          <ErrorBoundary level="feature" name="CaptureComponent">
+            <div ref={captureRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
+              <CaptureComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
+          <ErrorBoundary level="feature" name="ShellComponent">
+            <div ref={shellRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
+              <ShellComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
+          <ErrorBoundary level="feature" name="PreviewComponent">
+            <div ref={previewRef} className="flex-1 min-h-0 relative focusable-component" tabIndex={0}>
+              <PreviewComponent className="h-full" />
+            </div>
+          </ErrorBoundary>
+        </div>
+      </PaneLayoutProvider>
     );
   }
 
