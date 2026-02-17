@@ -11,12 +11,12 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 ## Current Position
 
 Phase: 117 (Apple Notes SQLite Sync) IN PROGRESS
-Plan: 02 of 4 — Plans 01-02 complete (ETL Module Integration + NodeWriter Service)
-Status: v7.0 EXECUTING — 117-02 complete, 117-03 next (Sync Orchestration)
-Last activity: 2026-02-17 — 117-02 NodeWriter + AppleNotesSyncService complete
+Plan: 03 of 4 — Plans 01-03 complete (ETL Module Integration + NodeWriter Service + Validation)
+Status: v7.0 EXECUTING — 117-03 complete, 117-04 next (UI + Migration)
+Last activity: 2026-02-17 — 117-03 Folder Hierarchy Validation + DataIntegrityValidator complete
 
-Progress: [████░░░░░░] 50%
-Overall: v7.0 Apple Notes Direct Sync — Plans 01-02 Complete
+Progress: [██████░░░░] 75%
+Overall: v7.0 Apple Notes Direct Sync — Plans 01-03 Complete
 
 ### Parallel Track: v6.9 Three-Canvas Notebook
 Phase: 115 (Three-Canvas Notebook)
@@ -54,7 +54,7 @@ Progress: [█████████░] 90%
 - **117-03**: Sync Orchestration — NEXT
 - **117-04**: UI + Migration
 
-**Status:** Phase 117-02 complete. NodeWriter persists CanonicalNode/Edge to sql.js; AppleNotesSyncService orchestrates full/incremental sync with progress callbacks and watermark state.
+**Status:** Phase 117-03 complete. DataIntegrityValidator validates folder paths, timestamps, and tags post-sync. Stacey success criterion confirmed end-to-end: NodeWriter → Family/Stacey.
 
 **Verification:**
 ```
@@ -152,6 +152,10 @@ npm run apple-notes (in isometry-etl)
 - [Phase 117-02]: UPSERT-TRACKING-01: Pre-upsert SELECT check determines insert vs update count in NodeWriter WriteResult — sql.js doesn't expose changes() cleanly after INSERT OR REPLACE
 - [Phase 117-02]: SOFT-DELETE-01: softDeleteBySource(source, keepIds) sets deleted_at on stale nodes; empty keepIds soft-deletes all source nodes
 - [Phase 117-02]: SETTINGS-KEY-01: Sync state JSON-serialized under 'apple_notes_sync_state' key in settings table via createSettingsService(db)
+- [Phase 117-03]: ORPHAN-WARNING-01: Orphan edges are warnings (not errors) in validateSource — valid:true stays so UI can surface warnings separately
+- [Phase 117-03]: TIMESTAMP-TOLERANCE-01: 1000ms default tolerance for Core Data timestamp round-trip (Core Data stores seconds, not milliseconds)
+- [Phase 117-03]: TAG-ORDER-01: Order-independent tag comparison via JSON.stringify(sorted) — Apple Notes doesn't guarantee hashtag order
+- [Phase 117-03]: EMPTY-FOLDER-01: null folder maps to '' via ?? '' in validateFolderPath — unfiled notes have null folder in nodes table
 
 ### Pending Todos
 
@@ -182,7 +186,7 @@ npm run apple-notes (in isometry-etl)
 **Phase 117:** Apple Notes SQLite Sync — IN PROGRESS
 - [x] Plan 117-01: ETL Module Integration (AppleNotesAdapter, type-mapping, content extraction)
 - [x] Plan 117-02: NodeWriter + AppleNotesSyncService (28 tests)
-- [ ] Plan 117-03: Sync Orchestration (folder reconciliation, data integrity)
+- [x] Plan 117-03: Folder Hierarchy Validation + DataIntegrityValidator (46 tests)
 - [ ] Plan 117-04: UI + Migration
 
 **Phase 115:** Three-Canvas Notebook (Track D) — IN PROGRESS
@@ -212,11 +216,11 @@ npm run apple-notes (in isometry-etl)
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 117-02 — NodeWriter + AppleNotesSyncService — 3 tasks, 28 new tests (14 NodeWriter + 14 AppleNotesSyncService)
-Next: Plan 117-03 — Sync Orchestration (folder reconciliation, data integrity validation)
+Completed: Phase 117-03 — Folder Hierarchy Validation + DataIntegrityValidator — 3 tasks, 46 new tests (17 folder-hierarchy + 29 data-integrity)
+Next: Plan 117-04 — UI + Migration (Tauri IPC wiring, sync status UI, alto-index.json migration)
 Resume file: N/A
 
-**Stopped at:** Completed 117-02-PLAN.md (NodeWriter + AppleNotesSyncService)
+**Stopped at:** Completed 117-03-PLAN.md (Folder Hierarchy Validation + DataIntegrityValidator)
 
 ---
-*Updated: 2026-02-17 (Phase 117-02 complete — NodeWriter + AppleNotesSyncService, 117-03 next)*
+*Updated: 2026-02-17 (Phase 117-03 complete — Folder Hierarchy Validation + DataIntegrityValidator, 117-04 next)*
