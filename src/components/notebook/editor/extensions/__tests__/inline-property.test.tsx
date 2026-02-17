@@ -158,7 +158,9 @@ describe('InlinePropertyExtension', () => {
   describe('HTML Parsing', () => {
     it('parses inline properties from HTML', async () => {
       let editorRef: Editor | null = null;
-      const htmlWithProperty = `<p><span data-type="inline-property" data-key="status" data-value="active" class="inline-property">@status: active</span></p>`;
+      const htmlWithProperty =
+        '<p><span data-type="inline-property" data-key="status" ' +
+        'data-value="active" class="inline-property">@status: active</span></p>';
 
       render(
         <TestEditorWrapper
