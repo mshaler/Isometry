@@ -40,6 +40,13 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const [dataPointCount, setDataPointCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Per-tab zoom state (in-memory; D3 tabs restore on switch)
+  const tabZoomRef = useRef<Record<string, number>>({
+    timeline: 1,
+    network: 1,
+    'd3-visualization': 100,
+  });
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
@@ -179,6 +186,15 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
     }
   }, [activeTab]);
 
+  // Tab switch handler that preserves per-tab zoom
+  const handleTabSwitch = useCallback((tab: PreviewTab) => {
+    // Save current zoom before switching (web-preview uses its own zoom hook)
+    if (activeTab !== 'web-preview') {
+      tabZoomRef.current[activeTab] = zoom;
+    }
+    setActiveTab(tab);
+  }, [activeTab, zoom]);
+
   // Update data point count when cards change (cross-canvas data flow)
   useEffect(() => {
     setDataPointCount(cards.length);
@@ -314,7 +330,7 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabSwitch(tab.id)}
               className={`flex items-center gap-2 px-3 py-2 text-sm border-r transition-colors ${
                 isActive
                   ? `${theme === 'NeXTSTEP' ? 'bg-white border-[#707070]' : 'bg-white border-gray-300'} text-blue-600 font-medium`
