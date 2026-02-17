@@ -146,7 +146,10 @@ export class HeaderDiscoveryService {
     const level = facet.pathLevel!;
 
     return rows.map(row => {
-      const value = String(row[facet.sourceColumn] ?? '');
+      // BUG FIX: Read from facet.id, not facet.sourceColumn
+      // transformSqlResults stores values under facet.id (e.g., 'subfolder'),
+      // not under sourceColumn (e.g., 'folder')
+      const value = String(row[facet.id] ?? '');
       const segments = value.split(separator).filter(s => s.length > 0);
 
       // Extract the specified level, or empty string if path is too short

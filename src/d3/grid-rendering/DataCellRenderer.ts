@@ -123,13 +123,15 @@ export class DataCellRenderer {
             .attr('rx', 2); // Slight border radius
 
           // Cell text (truncated if too long)
+          // Set initial text on enter to avoid smearing from late updates
           group
             .append('text')
             .attr('class', 'cell-text')
             .attr('fill', '#1f2937')
             .attr('font-size', '11px')
             .attr('text-anchor', 'start')
-            .attr('dominant-baseline', 'hanging');
+            .attr('dominant-baseline', 'hanging')
+            .text(d => d.value ?? '');
 
           // Hover effect
           group
@@ -235,6 +237,7 @@ export class DataCellRenderer {
             .attr('r', 20); // Default radius
 
           // Count badge text
+          // Set initial count on enter to avoid smearing from late updates
           group
             .append('text')
             .attr('class', 'cell-count')
@@ -242,7 +245,8 @@ export class DataCellRenderer {
             .attr('font-size', '14px')
             .attr('font-weight', 'bold')
             .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central');
+            .attr('dominant-baseline', 'central')
+            .text(d => String(d.aggregationCount ?? 1));
 
           // Hover effect
           group
@@ -345,19 +349,24 @@ export class DataCellRenderer {
         .attr('r', radius);
 
       // Transition text position and update count
-      group
-        .select<SVGTextElement>('.cell-count')
+      const countSelection = group.select<SVGTextElement>('.cell-count');
+
+      // Interrupt any existing transitions to prevent smearing
+      countSelection.interrupt();
+
+      // Set text content immediately
+      const textElement = countSelection.node();
+      if (textElement) {
+        textElement.textContent = String(count);
+      }
+
+      // Animate position only
+      countSelection
         .transition()
         .duration(transitionDuration)
         .ease(d3.easeCubicInOut)
         .attr('x', cx)
-        .attr('y', cy)
-        .on('end', function () {
-          // Update count text after position transition completes
-          const textElement = this as SVGTextElement;
-          textElement.textContent = String(count);
-        })
-        .text(String(count));
+        .attr('y', cy);
     });
   }
 
@@ -392,28 +401,34 @@ export class DataCellRenderer {
         .attr('width', cellWidth - 2) // -2 for visual gap between cells
         .attr('height', cellHeight - 2);
 
-      // Transition text position and update content
+      // Transition text position
+      // Note: Text content is set on enter; only position updates here
       const maxTextWidth = cellWidth - 12; // Padding on both sides
-      group
-        .select<SVGTextElement>('.cell-text')
+      const textSelection = group.select<SVGTextElement>('.cell-text');
+
+      // Interrupt any existing transitions to prevent smearing
+      textSelection.interrupt();
+
+      // Set text content immediately (not during transition to avoid race conditions)
+      const textElement = textSelection.node();
+      if (textElement) {
+        let text = d.value ?? '';
+        textElement.textContent = text;
+
+        // Truncate text if it exceeds cell width
+        while (textElement.getComputedTextLength() > maxTextWidth && text.length > 0) {
+          text = text.slice(0, -1);
+          textElement.textContent = text + '…';
+        }
+      }
+
+      // Animate position only (content is already set)
+      textSelection
         .transition()
         .duration(transitionDuration)
         .ease(d3.easeCubicInOut)
         .attr('x', x + 6) // 6px left padding
-        .attr('y', y + 6) // 6px top padding
-        .on('end', function () {
-          // Update text content after position transition completes
-          const textElement = this as SVGTextElement;
-          let text = d.value;
-          textElement.textContent = text;
-
-          // Truncate text if it exceeds cell width
-          while (textElement.getComputedTextLength() > maxTextWidth && text.length > 0) {
-            text = text.slice(0, -1);
-            textElement.textContent = text + '…';
-          }
-        })
-        .text(d.value);
+        .attr('y', y + 6); // 6px top padding
     });
   }
 }

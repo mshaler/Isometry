@@ -2,6 +2,7 @@
 // import SQLiteV4TestApp from './SQLiteV4TestApp'; // TEMP: Disabled due to broken SQLiteProvider
 import { SQLiteP0GateTest } from './SQLiteP0GateTest';
 import SuperGridSQLDemo from './components/SuperGridSQLDemo';
+import { SuperGridCSSDemo } from './components/SuperGridCSSDemo';
 import { SuperGridScrollTest } from './components/supergrid/SuperGridScrollTest';
 import { SQLiteProvider } from './db/SQLiteProvider';
 import { CLIIntegrationTest } from './CLIIntegrationTest';
@@ -62,6 +63,11 @@ function App() {
         <SuperGridSQLDemo />
       </SQLiteProvider>
     );
+  }
+
+  // Phase 105: CSS Grid SuperGrid test - pure React + CSS Grid implementation
+  if (testMode === 'cssgrid') {
+    return <SuperGridCSSDemo />;
   }
 
   // Phase 92: Focused SuperGrid scroll test with alto-index data

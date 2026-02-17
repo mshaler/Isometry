@@ -1,5 +1,32 @@
 # Isometry v4 — Claude Code Operating Instructions
 
+## ⚠️ MANDATORY: GSD Automation Loop
+
+**Before writing ANY code, run:**
+```bash
+npm run gsd
+```
+
+**After EVERY code change, run:**
+```bash
+npm run gsd
+```
+
+This is non-negotiable. The GSD automation module handles build → test → fix cycles automatically. Do NOT manually run `npm run build`, `npm run test`, or `tsc` separately. Use `npm run gsd` for the full loop.
+
+**If GSD fails:**
+1. Read the JSON output (it's token-efficient)
+2. Apply the suggested fix or use the auto-fix that was attempted
+3. Run `npm run gsd` again
+4. Repeat until status is `"success"`
+
+**Quick variants:**
+- `npm run gsd:build` — Type check only (fastest)
+- `npm run gsd:test` — Tests only (skip build)
+- `npm run gsd "task description"` — Full cycle with context
+
+---
+
 ## ⚠️ MANDATORY: GSD Workflow (Non-Negotiable)
 
 **ALL work in this repository MUST be formalized as GSD milestones.** No exceptions unless the user explicitly says otherwise.

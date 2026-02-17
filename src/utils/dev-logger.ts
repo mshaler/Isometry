@@ -97,7 +97,9 @@ export const devLogger = new DevLogger({ enabledLevels: ['warn', 'error'] });
 // Specialized loggers for different modules - all limited to warn/error to prevent flood
 // Re-enable debug when actively debugging specific modules
 const quietLevels: Array<'debug' | 'info' | 'warn' | 'error'> = ['warn', 'error'];
-export const superGridLogger = new DevLogger({ prefix: '[SuperGrid]', enabledLevels: quietLevels });
+// TEMP: Enable debug for SuperGrid to diagnose header rendering issue
+const debugLevels: Array<'debug' | 'info' | 'warn' | 'error'> = ['debug', 'info', 'warn', 'error'];
+export const superGridLogger = new DevLogger({ prefix: '[SuperGrid]', enabledLevels: debugLevels });
 export const d3Logger = new DevLogger({ prefix: '[D3]', enabledLevels: quietLevels });
 export const contextLogger = new DevLogger({ prefix: '[Context]', enabledLevels: quietLevels });
 export const hookLogger = new DevLogger({ prefix: '[Hook]', enabledLevels: quietLevels });

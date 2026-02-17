@@ -13,7 +13,8 @@ import { superGridLogger } from '../../utils/dev-logger';
 export const MAX_NESTING_DEPTH = 5;
 
 // POLISH-03: Maximum visible headers before performance degradation
-export const MAX_VISIBLE_HEADERS = 100;
+// Temporarily increased to 10000 to test full dataset UX
+export const MAX_VISIBLE_HEADERS = 10000;
 
 export interface NestedHeaderData {
   key: string;        // Unique identifier for D3 data binding
@@ -256,42 +257,53 @@ export class NestedHeaderRenderer {
     // Calculate positions for children
     children.forEach(child => {
       const parent = parents.find(p => child.parentKey === p.key);
-      if (parent) {
+      if (parent && parent.y !== undefined) {
         const childIndexInParent = children
           .filter(c => c.parentKey === parent.key)
           .indexOf(child);
-        child.y = parent.y! + childIndexInParent * cellHeight;
+        child.y = parent.y + childIndexInParent * cellHeight;
+        child.x = rowHeaderWidth / 2 + 2;
+        child.width = rowHeaderWidth / 2 - 4;
+        child.height = cardHeight;
+      } else {
+        // Fallback: position based on startIndex if parent not found
+        child.y = headerOffset + child.startIndex * cellHeight;
         child.x = rowHeaderWidth / 2 + 2;
         child.width = rowHeaderWidth / 2 - 4;
         child.height = cardHeight;
       }
     });
 
-    // Render parent headers with .join()
+    // Filter out any headers with invalid positions
+    const validParents = parents.filter(d =>
+      d.x !== undefined && d.y !== undefined && !isNaN(d.x) && !isNaN(d.y) &&
+      d.width !== undefined && d.height !== undefined && !isNaN(d.width) && !isNaN(d.height)
+    );
+
     const parentSelection = headerContainer
       .selectAll<SVGGElement, NestedHeaderData>('.row-header--parent')
-      .data(parents, d => d.key);
+      .data(validParents, d => d.key);
 
     parentSelection.join(
       // ENTER: Create new parent headers
       enter => {
         const g = enter.append('g')
           .attr('class', 'row-header row-header--parent')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`)
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`)
           .attr('opacity', 0);
 
         // Background rect
         g.append('rect')
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!)
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20)
           .attr('fill', '#e2e8f0')
           .attr('stroke', '#cbd5e1')
           .attr('rx', 4);
 
         // Label text
         g.append('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .attr('text-anchor', 'middle')
           .attr('font-size', '11px')
           .attr('font-weight', '600')
@@ -309,17 +321,17 @@ export class NestedHeaderRenderer {
       update => {
         update.transition()
           .duration(animationDuration)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`);
 
         update.select('rect')
           .transition()
           .duration(animationDuration)
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!);
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20);
 
         update.select('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .text(d => d.value);
 
         return update;
@@ -339,27 +351,33 @@ export class NestedHeaderRenderer {
     );
 
     // Render child headers with .join()
+    // Filter out any headers with invalid positions
+    const validChildren = children.filter(d =>
+      d.x !== undefined && d.y !== undefined && !isNaN(d.x) && !isNaN(d.y) &&
+      d.width !== undefined && d.height !== undefined && !isNaN(d.width) && !isNaN(d.height)
+    );
+
     const childSelection = headerContainer
       .selectAll<SVGGElement, NestedHeaderData>('.row-header--child')
-      .data(children, d => d.key);
+      .data(validChildren, d => d.key);
 
     childSelection.join(
       enter => {
         const g = enter.append('g')
           .attr('class', 'row-header row-header--child')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`)
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`)
           .attr('opacity', 0);
 
         g.append('rect')
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!)
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20)
           .attr('fill', '#f1f5f9')
           .attr('stroke', '#e2e8f0')
           .attr('rx', 4);
 
         g.append('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .attr('text-anchor', 'middle')
           .attr('font-size', '10px')
           .attr('fill', '#64748b')
@@ -374,17 +392,17 @@ export class NestedHeaderRenderer {
       update => {
         update.transition()
           .duration(animationDuration)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`);
 
         update.select('rect')
           .transition()
           .duration(animationDuration)
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!);
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20);
 
         update.select('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .text(d => d.value);
 
         return update;
@@ -430,11 +448,17 @@ export class NestedHeaderRenderer {
     // Calculate positions for children
     children.forEach(child => {
       const parent = parents.find(p => child.parentKey === p.key);
-      if (parent) {
+      if (parent && parent.x !== undefined) {
         const childIndexInParent = children
           .filter(c => c.parentKey === parent.key)
           .indexOf(child);
-        child.x = parent.x! + childIndexInParent * (cardWidth + padding);
+        child.x = parent.x + childIndexInParent * (cardWidth + padding);
+        child.y = parentHeaderHeight + 2;
+        child.width = cardWidth;
+        child.height = childHeaderHeight;
+      } else {
+        // Fallback: position based on startIndex if parent not found
+        child.x = rowHeaderWidth + padding + child.startIndex * (cardWidth + padding);
         child.y = parentHeaderHeight + 2;
         child.width = cardWidth;
         child.height = childHeaderHeight;
@@ -442,27 +466,33 @@ export class NestedHeaderRenderer {
     });
 
     // Render parent headers with .join()
+    // Filter out any headers with invalid positions
+    const validColParents = parents.filter(d =>
+      d.x !== undefined && d.y !== undefined && !isNaN(d.x) && !isNaN(d.y) &&
+      d.width !== undefined && d.height !== undefined && !isNaN(d.width) && !isNaN(d.height)
+    );
+
     const parentSelection = headerContainer
       .selectAll<SVGGElement, NestedHeaderData>('.col-header--parent')
-      .data(parents, d => d.key);
+      .data(validColParents, d => d.key);
 
     parentSelection.join(
       enter => {
         const g = enter.append('g')
           .attr('class', 'col-header col-header--parent')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`)
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`)
           .attr('opacity', 0);
 
         g.append('rect')
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!)
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20)
           .attr('fill', '#e2e8f0')
           .attr('stroke', '#cbd5e1')
           .attr('rx', 4);
 
         g.append('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .attr('text-anchor', 'middle')
           .attr('font-size', '11px')
           .attr('font-weight', '600')
@@ -478,17 +508,17 @@ export class NestedHeaderRenderer {
       update => {
         update.transition()
           .duration(animationDuration)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`);
 
         update.select('rect')
           .transition()
           .duration(animationDuration)
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!);
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20);
 
         update.select('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .text(d => d.value);
 
         return update;
@@ -507,27 +537,33 @@ export class NestedHeaderRenderer {
     );
 
     // Render child headers with .join()
+    // Filter out any headers with invalid positions
+    const validColChildren = children.filter(d =>
+      d.x !== undefined && d.y !== undefined && !isNaN(d.x) && !isNaN(d.y) &&
+      d.width !== undefined && d.height !== undefined && !isNaN(d.width) && !isNaN(d.height)
+    );
+
     const childSelection = headerContainer
       .selectAll<SVGGElement, NestedHeaderData>('.col-header--child')
-      .data(children, d => d.key);
+      .data(validColChildren, d => d.key);
 
     childSelection.join(
       enter => {
         const g = enter.append('g')
           .attr('class', 'col-header col-header--child')
-          .attr('transform', d => `translate(${d.x}, ${d.y})`)
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`)
           .attr('opacity', 0);
 
         g.append('rect')
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!)
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20)
           .attr('fill', '#f1f5f9')
           .attr('stroke', '#e2e8f0')
           .attr('rx', 4);
 
         g.append('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .attr('text-anchor', 'middle')
           .attr('font-size', '10px')
           .attr('fill', '#64748b')
@@ -542,17 +578,17 @@ export class NestedHeaderRenderer {
       update => {
         update.transition()
           .duration(animationDuration)
-          .attr('transform', d => `translate(${d.x}, ${d.y})`);
+          .attr('transform', d => `translate(${d.x ?? 0}, ${d.y ?? 0})`);
 
         update.select('rect')
           .transition()
           .duration(animationDuration)
-          .attr('width', d => d.width!)
-          .attr('height', d => d.height!);
+          .attr('width', d => d.width ?? 50)
+          .attr('height', d => d.height ?? 20);
 
         update.select('text')
-          .attr('x', d => d.width! / 2)
-          .attr('y', d => d.height! / 2 + 4)
+          .attr('x', d => (d.width ?? 50) / 2)
+          .attr('y', d => (d.height ?? 20) / 2 + 4)
           .text(d => d.value);
 
         return update;

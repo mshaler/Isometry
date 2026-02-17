@@ -26,6 +26,9 @@ export interface AxisConfig {
 
   /** Hierarchical tree of values */
   tree: AxisNode;
+
+  /** Optional: Facet level names for multi-level hierarchies (e.g., ['Tags', 'Folder', 'Subfolder']) */
+  facetLevels?: string[];
 }
 
 /**
@@ -316,6 +319,10 @@ export interface GridContainerProps {
 export interface CornerCellProps {
   placement: GridPlacement;
   label: string;
+  /** Column index in corner area (0-based), used for sticky left calculation */
+  col: number;
+  /** Row index in corner area (0-based), used for sticky top calculation */
+  row: number;
 }
 
 /**

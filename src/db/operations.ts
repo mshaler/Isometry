@@ -35,6 +35,10 @@ export function createDatabaseOperations(
       throw new Error('Database not initialized');
     }
 
+    // MEMORY GUARD: Prevent unbounded result sets from causing OOM
+    const MAX_ROWS = 50000; // ~25MB at 500 bytes/row
+    let rowCount = 0;
+
     try {
       const stmt = db.prepare(sql);
 
@@ -46,6 +50,17 @@ export function createDatabaseOperations(
       const results: Record<string, unknown>[] = [];
 
       while (stmt.step()) {
+        rowCount++;
+
+        // OOM prevention: stop if we hit the row limit
+        if (rowCount > MAX_ROWS) {
+          stmt.free();
+          console.error(`[SQLiteProvider.execute()] OOM prevention: Query returned >${MAX_ROWS} rows. Add LIMIT to your query.`);
+          console.error('[SQLiteProvider.execute()] Truncated SQL:', sql.slice(0, 200));
+          // Return what we have instead of throwing
+          return results;
+        }
+
         const columns = stmt.getColumnNames();
         const values = stmt.get();
         const row: Record<string, unknown> = {};
@@ -59,6 +74,15 @@ export function createDatabaseOperations(
       stmt.free();
       return results;
     } catch (error) {
+      // Check if this is an OOM-related error
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('memory') || errorMessage.includes('allocation') || errorMessage.includes('heap')) {
+        console.error('[SQLiteProvider.execute()] MEMORY ERROR:', {
+          error: errorMessage,
+          rowsProcessed: rowCount,
+          sqlPreview: sql.slice(0, 200),
+        });
+      }
       devLogger.error('SQLiteProvider.execute() failed', error);
       throw error;
     }

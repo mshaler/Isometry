@@ -178,6 +178,17 @@ export class AltoImporter extends BaseImporter {
     // Folder extraction (type-specific)
     const folder = this.extractFolder(frontmatter, dataType);
 
+    // Extract parent folder and subfolder from folder path (e.g., "BairesDev/MSFT" → "BairesDev", "MSFT")
+    let parentFolder: string | null = null;
+    let subfolder: string | null = null;
+    if (folder && folder.includes('/')) {
+      const segments = folder.split('/').filter(s => s.length > 0);
+      if (segments.length >= 2) {
+        parentFolder = segments[0];
+        subfolder = segments.slice(1).join('/'); // Rest of path after first level
+      }
+    }
+
     // Status extraction (reminders specific)
     let status = frontmatter.status ? String(frontmatter.status) : null;
     if (dataType === 'reminders' && frontmatter.is_flagged) {
@@ -240,7 +251,12 @@ export class AltoImporter extends BaseImporter {
       deletedAt: null,
 
       // Dynamic properties (keys not in SQL_COLUMN_MAP)
-      properties: this.extractUnknownProperties(frontmatter),
+      // Include derived folder hierarchy for PAFV Navigator
+      properties: {
+        ...this.extractUnknownProperties(frontmatter),
+        ...(parentFolder ? { parent_folder: parentFolder } : {}),
+        ...(subfolder ? { subfolder: subfolder } : {}),
+      },
     };
   }
 

@@ -46,6 +46,17 @@ export function buildHeaderTree(
     for (let depth = 0; depth < facets.length; depth++) {
       const facet = facets[depth];
       const value = String(row[facet.id] ?? '');
+
+      // Skip empty values (leaf indicator from path expansion)
+      // The parent node becomes the leaf for this path
+      if (value === '') {
+        // Still accumulate counts to the last valid parent
+        if (parentNode?.aggregate) {
+          parentNode.aggregate.count += (row.card_count as number) || 0;
+        }
+        break; // Stop traversing deeper
+      }
+
       currentPath.push(value);
 
       const nodeId = currentPath.join('|');
@@ -115,17 +126,20 @@ function sortNodes(nodes: HeaderNode[], facets: FacetConfig[]): void {
   // Sort this level based on facet configuration
   if (nodes.length > 0) {
     const facet = nodes[0].facet;
+    // Use locale-aware, case-insensitive, numeric-aware comparison
+    const collator = new Intl.Collator('en', { sensitivity: 'base', numeric: true });
+
     nodes.sort((a, b) => {
       if (facet.sortOrder === 'desc') {
-        return b.value.localeCompare(a.value);
+        return collator.compare(b.value, a.value);
       }
       if (facet.sortOrder === 'custom' && facet.options) {
         const aIndex = facet.options.indexOf(a.value);
         const bIndex = facet.options.indexOf(b.value);
         return (aIndex === -1 ? Infinity : aIndex) - (bIndex === -1 ? Infinity : bIndex);
       }
-      // Default: ascending
-      return a.value.localeCompare(b.value);
+      // Default: ascending alphanumeric (case-insensitive)
+      return collator.compare(a.value, b.value);
     });
   }
 }

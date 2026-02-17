@@ -37,6 +37,7 @@ export interface UseHeaderDiscoveryResult {
  * @param db - sql.js Database instance (from useSQLite)
  * @param columnFacets - Facet configurations for column headers (Y-axis)
  * @param rowFacets - Facet configurations for row headers (X-axis)
+ * @param nodeType - Optional node_type filter (schema-on-read)
  * @returns Header trees with loading/error state
  *
  * @example
@@ -45,14 +46,16 @@ export interface UseHeaderDiscoveryResult {
  * const { columnTree, rowTree, isLoading, error } = useHeaderDiscovery(
  *   db,
  *   [{ id: 'folder', name: 'Folder', axis: 'C', sourceColumn: 'folder', dataType: 'select', sortOrder: 'asc' }],
- *   [{ id: 'status', name: 'Status', axis: 'C', sourceColumn: 'status', dataType: 'select', sortOrder: 'asc' }]
+ *   [{ id: 'status', name: 'Status', axis: 'C', sourceColumn: 'status', dataType: 'select', sortOrder: 'asc' }],
+ *   'notes'
  * );
  * ```
  */
 export function useHeaderDiscovery(
   db: Database | null,
   columnFacets: FacetConfig[],
-  rowFacets: FacetConfig[]
+  rowFacets: FacetConfig[],
+  nodeType?: string
 ): UseHeaderDiscoveryResult {
   const [columnTree, setColumnTree] = useState<HeaderTree | null>(null);
   const [rowTree, setRowTree] = useState<HeaderTree | null>(null);
@@ -78,13 +81,13 @@ export function useHeaderDiscovery(
       // Discover column headers (Y-Plane in PAFV)
       const cols =
         columnFacets.length > 0
-          ? headerDiscoveryService.discoverHeaders(columnFacets, 'column')
+          ? headerDiscoveryService.discoverHeaders(columnFacets, 'column', nodeType)
           : null;
 
       // Discover row headers (X-Plane in PAFV)
       const rows =
         rowFacets.length > 0
-          ? headerDiscoveryService.discoverHeaders(rowFacets, 'row')
+          ? headerDiscoveryService.discoverHeaders(rowFacets, 'row', nodeType)
           : null;
 
       setColumnTree(cols);
@@ -96,7 +99,7 @@ export function useHeaderDiscovery(
     } finally {
       setIsLoading(false);
     }
-  }, [db, columnFacets, rowFacets]);
+  }, [db, columnFacets, rowFacets, nodeType]);
 
   // Discover headers when dependencies change
   useEffect(() => {

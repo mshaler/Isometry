@@ -21,9 +21,11 @@
 
   font-family: var(--sg-font-family);
   font-size: var(--sg-font-size);
+  /* Overflow: auto is REQUIRED for sticky positioning to work */
+  /* This makes superGrid the scroll container for freeze-pane headers */
   overflow: auto;
+  max-height: 100%;
   border: 1px solid var(--sg-border-color);
-  max-height: 600px;
 }
 
 /* Grid Container */
@@ -50,6 +52,9 @@
   /* Prevent double borders */
   margin-right: -1px;
   margin-bottom: -1px;
+
+  /* Note: position is set inline for headers (sticky) and relative for data cells */
+  /* Z-index layering is handled by individual cell type rules below */
 }
 
 /* ============================================================================
@@ -60,6 +65,8 @@
   background: var(--sg-corner-bg);
   font-weight: var(--sg-header-font-weight);
   justify-content: center;
+  /* Highest z-index: corner cells appear above all other cells */
+  z-index: 30;
 }
 
 /* ============================================================================
@@ -71,6 +78,8 @@
   font-weight: var(--sg-header-font-weight);
   cursor: pointer;
   justify-content: flex-start;
+  /* Row headers above column headers (for horizontal scroll) and data cells */
+  z-index: 20;
 }
 
 .rowHeader:hover {
@@ -93,19 +102,23 @@
 }
 
 /* Depth-based styling for row headers */
+/* Leftmost columns (lower depth) have higher z-index to stay on top during scroll */
 .rowHeader.depth0 {
   font-weight: 600;
   font-size: 13px;
+  z-index: 25; /* Highest row header - stays on top */
 }
 
 .rowHeader.depth1 {
   font-weight: 500;
   font-size: 12px;
+  z-index: 24;
 }
 
 .rowHeader.depth2 {
   font-weight: 400;
   font-size: 11px;
+  z-index: 23;
 }
 
 /* ============================================================================
@@ -116,6 +129,8 @@
   font-weight: var(--sg-header-font-weight);
   justify-content: center;
   text-align: center;
+  /* Column headers above data cells, below row headers */
+  z-index: 10;
 }
 
 .colHeader.depth0 {
@@ -139,6 +154,10 @@
   background: var(--sg-data-bg);
   justify-content: center;
   cursor: cell;
+  /* Data cells use relative positioning for z-index stacking */
+  position: relative;
+  /* Data cells have lowest z-index - always below headers */
+  z-index: 1;
 }
 
 .dataCell:hover {
@@ -148,13 +167,15 @@
 .dataCell:focus {
   outline: 2px solid #007AFF;
   outline-offset: -2px;
-  z-index: 1;
+  /* Focused data cell slightly above other data cells, still below headers */
+  z-index: 5;
 }
 
 .dataCell[data-selected="true"] {
   outline: 2px solid #007AFF;
   outline-offset: -2px;
-  z-index: 1;
+  /* Selected data cell slightly above other data cells, still below headers */
+  z-index: 5;
   background: rgba(0, 122, 255, 0.1);
 }
 
@@ -208,7 +229,7 @@
   --sg-font-family: 'Inter', -apple-system, sans-serif;
 
   border-radius: 8px;
-  overflow: hidden;
+  /* Removed overflow: hidden to allow parent container to handle scrolling */
 }
 
 .superGrid.modern .cornerCell,

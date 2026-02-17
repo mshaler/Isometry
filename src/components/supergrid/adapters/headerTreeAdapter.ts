@@ -48,10 +48,32 @@ export function headerTreeToAxisConfig(headerTree: HeaderTree): AxisConfig {
     children: children.length > 0 ? children : [],
   };
 
+  // Debug: log tree structure
+  const countNodes = (node: AxisNode): number => {
+    return 1 + (node.children?.reduce((sum, c) => sum + countNodes(c), 0) ?? 0);
+  };
+  const countLeaves = (node: AxisNode): number => {
+    if (!node.children || node.children.length === 0) return 1;
+    return node.children.reduce((sum, c) => sum + countLeaves(c), 0);
+  };
+  console.log('[headerTreeToAxisConfig]', {
+    axis: headerTree.axis,
+    facetCount: headerTree.facets.length,
+    facetIds: headerTree.facets.map(f => f.id),
+    rootCount: headerTree.roots.length,
+    totalNodes: countNodes(tree),
+    totalLeaves: countLeaves(tree),
+    sampleRoots: headerTree.roots.slice(0, 5).map(r => ({ id: r.id, label: r.label, childCount: r.children.length })),
+  });
+
+  // Extract facet level names for corner cell labels
+  const facetLevels: string[] = headerTree.facets.map((f) => f.name || f.sourceColumn);
+
   return {
     type,
     facet: primaryFacet.sourceColumn,
     tree,
+    facetLevels,
   };
 }
 

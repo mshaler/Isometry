@@ -179,7 +179,120 @@ export function SuperStack({
   // HeaderTree-based rendering (Phase 99 - SQL-driven headers)
   // ============================================================
   if (headerTree && headerTree.roots.length > 0) {
-    // Flatten tree by depth for level-based rendering
+    // Flatten tree to get all nodes with their grid positions
+    const flattenTree = (treeNodes: TreeHeaderNode[]): TreeHeaderNode[] => {
+      const result: TreeHeaderNode[] = [];
+
+      const traverse = (node: TreeHeaderNode) => {
+        result.push(node);
+        // Only traverse children if not collapsed
+        if (!collapsedIds.has(node.id) && node.children.length > 0) {
+          node.children.forEach(child => traverse(child));
+        }
+      };
+
+      treeNodes.forEach(root => traverse(root));
+      return result;
+    };
+
+    const allNodes = flattenTree(headerTree.roots);
+    const maxDepth = headerTree.maxDepth;
+
+    superGridLogger.debug(`SQL-driven rendering (${orientation})`, {
+      nodeCount: allNodes.length,
+      maxDepth,
+      firstFewNodes: allNodes.slice(0, 5).map(n => ({
+        label: n.label,
+        depth: n.depth,
+        span: n.span,
+        startIndex: n.startIndex,
+      })),
+      totalLeaves: headerTree.leafCount,
+    });
+
+    // Force horizontal text rendering
+    const forceHorizontalText: React.CSSProperties = {
+      writingMode: 'horizontal-tb',
+      textOrientation: 'mixed',
+      direction: 'ltr',
+    };
+
+    // Handle toggle click
+    const handleToggleClick = (e: React.MouseEvent, node: TreeHeaderNode) => {
+      e.stopPropagation();
+      const isCollapsed = collapsedIds.has(node.id);
+      onHeaderToggle?.(node.id, !isCollapsed);
+    };
+
+    // For VERTICAL headers (row headers), use CSS Grid with proper spanning
+    // Each header gets gridColumn based on depth and gridRow based on startIndex/span
+    if (orientation === 'vertical') {
+      return (
+        <div
+          className={`supergrid-stack supergrid-stack--${orientation} supergrid-stack--sql-driven supergrid-stack--grid-layout`}
+          style={{
+            ...forceHorizontalText,
+            display: 'grid',
+            gridTemplateColumns: `repeat(${maxDepth}, auto)`,
+            gridTemplateRows: `repeat(${headerTree.leafCount}, 1fr)`,
+          }}
+        >
+          {allNodes.map((node, index) => {
+            const hasChildren = node.children.length > 0;
+            const isCollapsed = collapsedIds.has(node.id);
+            const facet = node.facet;
+            const axisName = facet ? axisLetterToName[facet.axis] || 'category' : 'category';
+
+            // CSS Grid uses 1-based indices
+            const gridColumn = node.depth + 1;
+            const gridRowStart = node.startIndex + 1;
+            const gridRowEnd = gridRowStart + node.span;
+
+            return (
+              <div
+                key={`${node.depth}-${node.id}-${index}`}
+                className={`supergrid-stack__header supergrid-stack__header--depth-${node.depth} ${hasChildren ? 'supergrid-stack__header--expandable' : ''} ${isCollapsed ? 'supergrid-stack__header--collapsed' : ''}`}
+                style={{
+                  gridColumn,
+                  gridRowStart,
+                  gridRowEnd,
+                  ...forceHorizontalText
+                }}
+                data-axis={axisName}
+                data-facet={facet?.sourceColumn}
+                draggable={enableDragDrop}
+                onDragStart={(e) => handleDragStart(e, node.depth)}
+                onClick={() => onHeaderClick?.(node.depth, node.value, axisName)}
+              >
+                {/* Collapse/expand toggle */}
+                {hasChildren && (
+                  <button
+                    className="supergrid-stack__toggle"
+                    onClick={(e) => handleToggleClick(e, node)}
+                    aria-label={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    {isCollapsed ? '▶' : '▼'}
+                  </button>
+                )}
+                <span className="supergrid-stack__header-text" style={forceHorizontalText}>
+                  {node.label}
+                </span>
+                {node.aggregate?.count && node.aggregate.count > 0 && (
+                  <span className="supergrid-stack__header-count">
+                    {node.aggregate.count}
+                  </span>
+                )}
+                <span className="supergrid-stack__header-axis">
+                  {facet?.axis || 'C'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // For HORIZONTAL headers (column headers), flatten by depth for level-based rendering
     const flattenByDepth = (treeNodes: TreeHeaderNode[]): Map<number, TreeHeaderNode[]> => {
       const result = new Map<number, TreeHeaderNode[]>();
 
@@ -202,33 +315,6 @@ export function SuperStack({
     const nodesByDepth = flattenByDepth(headerTree.roots);
     const depths = Array.from(nodesByDepth.keys()).sort((a, b) => a - b);
 
-    superGridLogger.debug(`SQL-driven rendering (${orientation})`, {
-      depths,
-      nodesAtDepth0: nodesByDepth.get(0)?.length ?? 0,
-      firstFewLabels: nodesByDepth.get(0)?.slice(0, 10).map(n => n.label),
-      totalLeaves: headerTree.leafCount,
-    });
-
-    // Debug: Log when rendering a large number of headers
-    const headerCount = nodesByDepth.get(0)?.length ?? 0;
-    if (headerCount > 1000) {
-      superGridLogger.debug(`High header count (${orientation})`, { headerCount, threshold: 1000 });
-    }
-
-    // Force horizontal text rendering
-    const forceHorizontalText: React.CSSProperties = {
-      writingMode: 'horizontal-tb',
-      textOrientation: 'mixed',
-      direction: 'ltr',
-    };
-
-    // Handle toggle click
-    const handleToggleClick = (e: React.MouseEvent, node: TreeHeaderNode) => {
-      e.stopPropagation();
-      const isCollapsed = collapsedIds.has(node.id);
-      onHeaderToggle?.(node.id, !isCollapsed);
-    };
-
     return (
       <div
         className={`supergrid-stack supergrid-stack--${orientation} supergrid-stack--sql-driven`}
@@ -246,18 +332,27 @@ export function SuperStack({
               className={`supergrid-stack__level supergrid-stack__level--${depth}`}
               data-axis={axisName}
               data-facet={facet?.sourceColumn}
-              style={forceHorizontalText}
+              style={{
+                ...forceHorizontalText,
+                display: 'grid',
+                gridTemplateColumns: `repeat(${headerTree.leafCount}, 1fr)`,
+              }}
             >
               {nodesAtDepth.map((node, index) => {
                 const hasChildren = node.children.length > 0;
                 const isCollapsed = collapsedIds.has(node.id);
+
+                // CSS Grid: use startIndex for column position, span for width
+                const gridColumnStart = node.startIndex + 1;
+                const gridColumnEnd = gridColumnStart + node.span;
 
                 return (
                   <div
                     key={`${depth}-${node.id}-${index}`}
                     className={`supergrid-stack__header ${hasChildren ? 'supergrid-stack__header--expandable' : ''} ${isCollapsed ? 'supergrid-stack__header--collapsed' : ''}`}
                     style={{
-                      [orientation === 'horizontal' ? 'gridColumnEnd' : 'gridRowEnd']: `span ${node.span}`,
+                      gridColumnStart,
+                      gridColumnEnd,
                       ...forceHorizontalText
                     }}
                     draggable={enableDragDrop}

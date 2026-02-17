@@ -31,7 +31,12 @@ export function computeTreeMetrics(root: AxisNode): TreeMetrics {
     leafStart: number,
     path: string[]
   ): number {
-    const currentPath = [...path, node.id];
+    // Extract raw value from node.id (last segment of pipe-separated path)
+    // node.id is like "Stacey|BairesDev|MSFT", we want just "MSFT"
+    // node.label has formatting (e.g., "#Stacey" for tags) which doesn't match data
+    const idSegments = node.id.split('|');
+    const rawValue = idSegments[idSegments.length - 1] || node.label;
+    const currentPath = [...path, rawValue];
 
     // Leaf node: no children
     if (!node.children || node.children.length === 0) {
@@ -66,9 +71,10 @@ export function computeTreeMetrics(root: AxisNode): TreeMetrics {
   }
 
   // Skip the virtual root, start with its children
+  // Start with empty path - don't include root.id in leaf paths
   let leafStart = 0;
   for (const child of root.children || []) {
-    const leaves = traverse(child, 0, leafStart, [root.id]);
+    const leaves = traverse(child, 0, leafStart, []);
     leafStart += leaves;
   }
 
@@ -98,12 +104,11 @@ export function getLeafNodes(metrics: TreeMetrics): FlatNode[] {
 
 /**
  * Get non-root nodes for rendering headers.
- * Filters out the virtual root node.
+ * All flat nodes are valid headers (virtual root is already skipped during traversal).
  */
-export function getHeaderNodes(metrics: TreeMetrics, rootId: string = 'root'): FlatNode[] {
-  return metrics.flatNodes.filter(
-    (fn) => fn.path.length > 1 && fn.path[0] === rootId
-  );
+export function getHeaderNodes(metrics: TreeMetrics, _rootId: string = 'root'): FlatNode[] {
+  // All nodes in flatNodes are valid headers - the virtual root is never added
+  return metrics.flatNodes;
 }
 
 /**
