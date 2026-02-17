@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 ## Current Position
 
-Phase: 117 (Apple Notes SQLite Sync) COMPLETE
-Plan: 04 of 4 — ALL PLANS COMPLETE (ETL + NodeWriter + Validation + UI/Migration)
-Status: v7.0 COMPLETE — 117-04 done (useAppleNotesSync hook, SyncProgressModal, Toolbar sync trigger, alto-index deprecation)
-Last activity: 2026-02-17 — 117-04 UI Sync Trigger + alto-index Deprecation complete
+Phase: 116 (State & Polish — Track D Wave 2) IN PROGRESS
+Plan: 02 of 3 COMPLETE — 03 of 3 next
+Status: 116-02 COMPLETE — PaneLayoutContext resize coordination (PaneLayoutProvider, usePaneLayout, usePaneLayoutOptional, NotebookLayout integration, 8 tests)
+Last activity: 2026-02-17 — 116-02 PaneLayoutContext complete (~4 min, 3 tasks, 3 files)
 
-Progress: [█████████░] 90%
-Overall: v7.0 Apple Notes Direct Sync — ALL Plans Complete
+Progress: [█████████░] 93%
+Overall: v6.9 Three-Canvas Notebook Polish — 116-01 and 116-02 done
 
 ### Parallel Track: v6.9 Three-Canvas Notebook
 Phase: 115 (Three-Canvas Notebook)
@@ -159,6 +159,8 @@ npm run apple-notes (in isometry-etl)
 - [Phase 117]: MOCK-ADAPTER-01: createMockAdapter() implements full SourceAdapter interface returning empty data — enables UI wiring without Tauri IPC
 - [Phase 117]: TOOLBAR-MOCK-01: vi.mock('../hooks/useAppleNotesSync') in Toolbar tests keeps tests independent of SQLiteProvider
 - [Phase 117]: DEPRECATE-01: alto-importer.ts, alto-parser.ts, useAltoIndexImport.ts marked deprecated with console.warn (not deleted — still used by IntegratedLayout)
+- [Phase 116]: PANE-LAYOUT-01: PaneLayoutProvider wraps all three screen-size variants (mobile/tablet/desktop) — desktop passes panelPercentages from onLayoutChanged
+- [Phase 116]: PANE-LAYOUT-02: panelPercentages state initialized from localStorage on mount via useEffect to match stored layout
 
 ### Pending Todos
 
@@ -198,6 +200,11 @@ npm run apple-notes (in isometry-etl)
 - [x] Plan 115-03: Cross-Canvas Messaging — COMPLETE (3 tasks, 2 tests, 7 min)
 - [ ] Plan 115-04: Integration Testing & Polish
 
+**Phase 116:** State & Polish (Track D Wave 2) — IN PROGRESS
+- [x] Plan 116-01: Scroll Position Persistence — COMPLETE (3 tasks, 9 tests, 4 min)
+- [ ] Plan 116-02: PaneLayoutContext Integration
+- [ ] Plan 116-03: Polish & Integration Testing
+
 ### Blockers/Concerns
 
 **Technical Debt (Track B — addressed):**
@@ -219,11 +226,11 @@ npm run apple-notes (in isometry-etl)
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 117-04 — UI Sync Trigger + alto-index Deprecation — 3 tasks, 7 files, ~9 min
-Next: Plan 115-04 — Three-Canvas Notebook Integration Testing & Polish (parallel track)
+Completed: Phase 116-02 — PaneLayoutContext resize coordination — 3 tasks, 3 files, ~4 min
+Next: Plan 116-03 — (next plan in phase 116)
 Resume file: N/A
 
-**Stopped at:** Completed 117-04-PLAN.md (UI Sync Trigger + alto-index Deprecation)
+**Stopped at:** Completed 116-02-PLAN.md (PaneLayoutContext resize coordination)
 
 ---
-*Updated: 2026-02-17 (Phase 117 COMPLETE — all 4 plans done. Apple Notes Direct Sync UI layer complete. 115-04 next.)*
+*Updated: 2026-02-17 (Phase 116-01 COMPLETE — scroll persistence in usePreviewSettings + PreviewComponent. 116-02 next.)*
