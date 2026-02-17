@@ -119,6 +119,10 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
 - [Phase 114-02]: PERSIST-04: usePreviewSettings hook merges stored tabConfigs with defaults — new tabs always have fallback values
 - [Phase 114-02]: ZOOM-01: tabZoomRef (useRef) for per-tab zoom, saved before tab switch via handleTabSwitch
 - [Phase 114-02]: SESSION-01: LEFTHOOK=0 bypass used due to 36 pre-existing TS errors in unrelated files (ChartsView, TreeView, webview)
+- [Phase 114]: TIMELINE-FILTER-01: LATCH filter SQL merged with temporal facet filter using compileFilters(), matching NetworkView pattern
+- [Phase 114]: TIMELINE-TICK-01: getAdaptiveTickFormat() in types.ts (not TimelineRenderer.ts) to break circular module dependency zoom.ts -> TimelineRenderer.ts
+- [Phase 114]: TIMELINE-PERF-01: requestAnimationFrame + cancelAnimationFrame in applyTimelineZoom for 60 FPS zoom/pan at 500 events
+- [Phase 114]: TIMELINE-MOCK-01: vi.fn() directly in vi.mock() factories (not vi.hoisted pattern) to avoid __vi_import_1__ TDZ errors in vitest 4.x
 
 ### Pending Todos
 
@@ -173,7 +177,7 @@ Completed: Phase 114-02 — Preview Tab Integration (16 tests)
 Next: Track D — Three-Canvas Notebook Integration (Capture+Shell+Preview)
 Resume file: N/A
 
-**Stopped at:** Completed Phase 114-02 (Preview Tab Integration) - Track C COMPLETE, Track D Ready
+**Stopped at:** Completed 114-01-PLAN.md (Timeline View SQL Integration)
 
 ---
 *Updated: 2026-02-17 (Phase 114-02 complete, Track C complete, Track D ready)*
