@@ -8,6 +8,40 @@
 
 **Goal:** Enable full Grid Continuum (Gallery/List/Kanban/Grid/SuperGrid) with CSS primitives, clean up technical debt, polish Network/Timeline views, and complete Three-Canvas notebook integration.
 
+## Next Milestone: v7.0 Apple Notes Direct Sync
+
+**Goal:** Replace alto-index.json intermediary with direct Apple Notes → sql.js synchronization, eliminating data integrity bugs (folder mapping errors, stale data, duplicates).
+
+**Motivation:** Investigation of "phantom card" bug revealed alto-index.json has folder mapping errors — note "Under stress, Stacey channels mean Cindy" appears in `BairesDev/Operations` in alto-index but is actually in `Family/Stacey` in Apple Notes.
+
+**Phase 117: Apple Notes SQLite Sync**
+- **117-01**: ETL Module Integration — Integrate isometry-etl adapter ✅ COMPLETE
+- **117-02**: NodeWriter Service — CanonicalNode → sql.js mapping with deduplication
+- **117-03**: Sync Orchestration — Full/incremental sync with progress reporting
+- **117-04**: UI + Migration — Sync button, auto-sync, deprecate alto-index
+
+**Key Capabilities:**
+- Direct SQLite access to NoteStore.sqlite (no intermediary files)
+- Correct folder hierarchy via ZFOLDER + ZPARENT SQL joins
+- Protobuf content extraction with markdown conversion
+- Inline tag extraction from note text (#hashtags)
+- Incremental sync via Core Data modification timestamps
+- Live data — no more stale alto-index.json exports
+
+**Technical Approach:**
+- `better-sqlite3` for native Node.js SQLite access (read-only)
+- Database: `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
+- Canonical format: CanonicalNode/CanonicalEdge with LATCH properties
+- NEST edges for folder containment relationships
+- Sync state persisted in Isometry settings table
+
+**Verified:** Query confirms correct folder mapping:
+```sql
+SELECT n.ZTITLE1, f.ZTITLE2, pf.ZTITLE2 FROM ZICCLOUDSYNCINGOBJECT n ...
+-- Result: "Under stress, Stacey channels mean Cindy" | "Stacey" | "Family"
+-- ✅ Correct folder path: Family/Stacey
+```
+
 **Four Tracks:**
 
 1. **Track A: View Continuum Integration** — Wire Gallery, List, Kanban modes to CSS Grid + PAFV axis allocation
@@ -128,4 +162,4 @@ Transform the Isometry ecosystem with a capture-shell-preview workflow that brid
 | Track D after C | Canvas integration needs working views | Pending |
 
 ---
-*Last updated: 2026-02-16 — Milestone v6.9 Polymorphic Views & Foundation started*
+*Last updated: 2026-02-17 — v7.0 ETL Enrichment milestone planned*

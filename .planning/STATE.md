@@ -10,13 +10,19 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 ## Current Position
 
-Phase: 115 (Three-Canvas Notebook) IN PROGRESS
-Plan: 04 of 4 — Plans 01-03 complete (Resizable Panels, Selection Sync, Cross-Canvas Messaging)
-Status: Track D EXECUTING — 115-03 complete, 115-04 next (Integration Testing & Polish)
-Last activity: 2026-02-17 — 115-03 Cross-Canvas Messaging complete
+Phase: 117 (Apple Notes SQLite Sync) IN PROGRESS
+Plan: 01 of 4 — Plan 01 complete (ETL Module Integration)
+Status: v7.0 EXECUTING — 117-01 complete, 117-02 next (NodeWriter Service)
+Last activity: 2026-02-17 — 117-01 ETL module integration complete
 
+Progress: [██░░░░░░░░] 25%
+Overall: v7.0 Apple Notes Direct Sync — Plan 01 Complete
+
+### Parallel Track: v6.9 Three-Canvas Notebook
+Phase: 115 (Three-Canvas Notebook)
+Plan: 04 of 4 — Plans 01-03 complete
+Status: Track D — 115-04 next (Integration Testing & Polish)
 Progress: [█████████░] 90%
-Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 
 ## Active Milestones
 
@@ -36,19 +42,26 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 [█████████░] 90%
 - Requirements: 20 defined (9 P0, 9 P1, 2 P2)
 
-### v7.0 ETL Enrichment — PLANNING
+### v7.0 Apple Notes Direct Sync — IN PROGRESS
 
-**Goal:** Extend ETL pipeline with post-import enrichment to extract structured data from markdown bodies.
+**Goal:** Replace alto-index.json intermediary with direct Apple Notes → sql.js synchronization, eliminating data integrity bugs (folder mapping errors, stale data, duplicates).
 
-**Motivation:** Alto-Index Contacts store structured data (Job Title, Email, Phone) in markdown bodies, not frontmatter. Current ETL only processes frontmatter, so Navigator shows no contact-specific properties.
+**Motivation:** Investigation of "phantom card" bug revealed alto-index.json has folder mapping errors — note "Under stress, Stacey channels mean Cindy" appears in `BairesDev/Operations` in alto-index but is actually in `Family/Stacey` in Apple Notes.
 
-**Four Phases:**
-- Phase 114: Contact Body Parser (P0)
-- Phase 115: Enrichment Infrastructure (P0)
-- Phase 116: Notes Enrichment (P1) — Tasks, Callouts, Links
-- Phase 117: Rich Data Features (P2) — Safari Reader, Headings, Code/Tables
+**Phase 117: Apple Notes SQLite Sync**
+- **117-01**: ETL Module Integration ✅ COMPLETE
+- **117-02**: NodeWriter Service — NEXT
+- **117-03**: Sync Orchestration
+- **117-04**: UI + Migration
 
-**Status:** Requirements and Roadmap complete, ready for execution after v6.9 Track C.
+**Status:** Phase 117-01 complete. Direct SQLite access verified with correct folder hierarchy.
+
+**Verification:**
+```
+npm run apple-notes (in isometry-etl)
+→ 6,707 nodes, 13,197 edges from 6,666 notes
+→ "Under stress, Stacey channels mean Cindy" → Family/Stacey ✅
+```
 
 ### v6.8 CSS Primitives — SHIPPED 2026-02-16
 
