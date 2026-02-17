@@ -1,0 +1,62 @@
+/**
+ * @isometry/primitives — Tier 2: List Layout Primitives
+ *
+ * Configurable dimensions for List/Tree polymorphic view.
+ * Hierarchical tree structure with indented groups.
+ *
+ * @version 0.2.0
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ROW DIMENSIONS
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-list-row-h: 44px;           /* Standard row height */
+  --iso-list-row-h-compact: 32px;   /* Compact density */
+  --iso-list-row-pad-x: 12px;       /* Horizontal padding */
+  --iso-list-row-pad-y: 8px;        /* Vertical padding */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     HIERARCHY INDENTATION
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-list-indent: 24px;          /* Indent per level */
+  --iso-list-max-depth: 6;          /* Max nesting depth */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     GROUP HEADER
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-list-group-h: 36px;         /* Group header height */
+  --iso-list-group-gap: 4px;        /* Gap after group */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     EXPAND/COLLAPSE TOGGLE
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-list-toggle-size: 20px;     /* Chevron toggle size */
+  --iso-list-toggle-gap: 8px;       /* Gap after toggle */
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     SELECTION
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --iso-list-select-bg: var(--color-primary-alpha-10, rgba(59, 130, 246, 0.1));
+  --iso-list-select-border: var(--color-primary, #3b82f6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMPACT DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="compact"] {
+  --iso-list-row-h: var(--iso-list-row-h-compact);
+  --iso-list-row-pad-y: 4px;
+  --iso-list-group-h: 28px;
+  --iso-list-indent: 20px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COMFORTABLE DENSITY OVERRIDE
+   ═══════════════════════════════════════════════════════════════════════════ */
+[data-density="comfortable"] {
+  --iso-list-row-h: 52px;
+  --iso-list-row-pad-y: 12px;
+  --iso-list-group-h: 44px;
+  --iso-list-indent: 28px;
+}
