@@ -278,7 +278,7 @@ Plans:
 5. All views meet 60 FPS performance targets
 6. All new components have unit + integration tests
 
-**Plans:** 3 plans in 2 waves
+**Plans:** 3/3 plans complete
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
@@ -1022,7 +1022,7 @@ Plans:
 | 113. Network Graph Integration | v6.9 | 2/2 | Complete | 2026-02-17 |
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | Complete    | 2026-02-17 | — |
-| 116. State & Polish | v6.9 | 0/3 | Pending | — |
+| 116. State & Polish | v6.9 | Complete    | 2026-02-17 | — |
 | 117. Apple Notes SQLite Sync | v7.0 | Complete    | 2026-02-17 | — |
 
 ---
