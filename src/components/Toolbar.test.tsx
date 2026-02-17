@@ -9,6 +9,17 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { Toolbar } from './Toolbar';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 
+// Mock useAppleNotesSync to avoid SQLiteProvider dependency in tests
+vi.mock('../hooks/useAppleNotesSync', () => ({
+  useAppleNotesSync: () => ({
+    syncStatus: 'idle',
+    progress: null,
+    result: null,
+    startFullSync: vi.fn(),
+    startIncrementalSync: vi.fn(),
+  }),
+}));
+
 // Helper to wrap component with providers
 function renderWithProviders(ui: React.ReactElement) {
   return render(<ThemeProvider>{ui}</ThemeProvider>);
