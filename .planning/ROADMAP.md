@@ -176,7 +176,7 @@ Plans:
 | 113-02 | Network SQL | REQ-C-01 | `NetworkView.tsx`, SQL integration |
 
 Plans:
-- [ ] 113-01-PLAN.md — ForceSimulationManager with lifecycle management
+- [x] 113-01-PLAN.md — ForceSimulationManager with lifecycle management
 - [ ] 113-02-PLAN.md — NetworkView with useSQLiteQuery integration
 
 ---
@@ -924,11 +924,11 @@ Plans:
 | 110. View Continuum Foundation | v6.9 | 0/2 | Pending | — |
 | 111. View Continuum Integration | v6.9 | 0/3 | In Progress | — |
 | 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
-| 113. Network Graph Integration | v6.9 | 0/2 | Pending | — |
+| 113. Network Graph Integration | v6.9 | 1/2 | In Progress | — |
 | 114. Timeline & Preview | v6.9 | 0/2 | Pending | — |
 | 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-17 (Phase 111-01 plan created, Phase 112 complete)*
+*Last updated: 2026-02-17 (Phase 113-01 complete, 113-02 plan created)*
