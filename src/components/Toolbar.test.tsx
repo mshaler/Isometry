@@ -91,6 +91,15 @@ describe('Toolbar', () => {
       expect(screen.getByText('Save As…')).toBeInTheDocument();
     });
 
+    it('shows Sync Apple Notes item in File menu', () => {
+      renderWithProviders(<Toolbar />);
+
+      const fileMenu = screen.getByText('File');
+      fireEvent.click(fileMenu);
+
+      expect(screen.getByText('Sync Apple Notes…')).toBeInTheDocument();
+    });
+
     it('opens Edit menu when clicked', () => {
       renderWithProviders(<Toolbar />);
 
