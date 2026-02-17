@@ -10,13 +10,13 @@ See: .planning/PROJECT.md (updated 2026-02-17)
 
 ## Current Position
 
-Phase: 114 (Timeline Preview Integration) COMPLETE
-Plan: 02 COMPLETE — Preview Tab Integration
-Status: Track C COMPLETE — all plans executed
-Last activity: 2026-02-17 — Plan 114-02 executed
+Phase: 115 (Three-Canvas Notebook) PLANNING
+Plan: None yet — Requirements and Research complete
+Status: Track D PLANNING — requirements defined, research done
+Last activity: 2026-02-17 — Track D planning artifacts created
 
-Progress: [██████████] 95%
-Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
+Progress: [██████████] 96%
+Overall: v6.9 Polymorphic Views & Foundation — Track D In Progress
 
 ## Active Milestones
 
@@ -28,7 +28,7 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
 - **Track A:** View Continuum Integration (Gallery/List/Kanban → CSS Grid + PAFV) ✅ COMPLETE
 - **Track B:** Technical Debt Sprint (knip, directory health, TipTap tests) ✅ COMPLETE
 - **Track C:** Network/Timeline Polish (SQL hooks, Preview tabs) ✅ COMPLETE
-- **Track D:** Three-Canvas Notebook (Capture+Shell+Preview integration) — READY TO START
+- **Track D:** Three-Canvas Notebook (Capture+Shell+Preview integration) — PLANNING (Phase 115)
 
 **Parallelization:** A+B parallel → C (after A) → D (after C)
 
@@ -123,6 +123,9 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
 - [Phase 114]: TIMELINE-TICK-01: getAdaptiveTickFormat() in types.ts (not TimelineRenderer.ts) to break circular module dependency zoom.ts -> TimelineRenderer.ts
 - [Phase 114]: TIMELINE-PERF-01: requestAnimationFrame + cancelAnimationFrame in applyTimelineZoom for 60 FPS zoom/pan at 500 events
 - [Phase 114]: TIMELINE-MOCK-01: vi.fn() directly in vi.mock() factories (not vi.hoisted pattern) to avoid __vi_import_1__ TDZ errors in vitest 4.x
+- [Phase 114-03]: STAGGER-01: 3-slot stagger (center/-20%bw/+20%bw) in TimelineRenderer resets to 0 when pixel gap exceeds EVENT_RADIUS*2.5
+- [Phase 114-03]: MIGRATE-01: Legacy 'preview-active-tab' sessionStorage key migrated in loadFromStorage() before STORAGE_KEY lookup
+- [Phase 114-03]: ZOOM-RESTORE-01: Zoom restore in handleTabSwitch only for D3 tabs (not web-preview); guard typeof savedZoom === 'number'
 
 ### Pending Todos
 
@@ -148,9 +151,13 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
 **Phase 114:** Timeline Preview Integration (Track C) ✅ COMPLETE
 - [x] Plan 114-01: Timeline with LATCH filter integration
 - [x] Plan 114-02: Preview Tab Integration (tab persistence, usePreviewSettings, PAFV info, zoom)
+- [x] Plan 114-03: Gap Closure (collision handling, hook adoption, zoom restore) — 3 tasks, 69 tests
 
-**Track D (Next):** Three-Canvas Notebook Integration
-- [ ] Capture + Shell + Preview integration (depends on Track C ✅)
+**Phase 115:** Three-Canvas Notebook (Track D) — PLANNING
+- [ ] Plan 115-01: Resizable Panels (react-resizable-panels)
+- [ ] Plan 115-02: Selection Sync Verification
+- [ ] Plan 115-03: Cross-Canvas Messaging
+- [ ] Plan 115-04: Integration Testing & Polish
 
 ### Blockers/Concerns
 
@@ -173,11 +180,11 @@ Overall: v6.9 Polymorphic Views & Foundation — Track D Ready
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Phase 114-02 — Preview Tab Integration (16 tests)
+Completed: Phase 114-03 — Gap Closure (collision handling, hook adoption, zoom restore) — 3 tasks, 69 tests
 Next: Track D — Three-Canvas Notebook Integration (Capture+Shell+Preview)
 Resume file: N/A
 
-**Stopped at:** Completed 114-01-PLAN.md (Timeline View SQL Integration)
+**Stopped at:** Completed 114-03-PLAN.md (Timeline/Preview gap closure)
 
 ---
-*Updated: 2026-02-17 (Phase 114-02 complete, Track C complete, Track D ready)*
+*Updated: 2026-02-17 (Phase 114-03 complete, Track C fully closed, Track D ready)*
