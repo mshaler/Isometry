@@ -3,6 +3,8 @@ import { FileText, Save, FolderOpen, Download, LayoutGrid, Layers, BarChart3, ty
 import { useTheme } from '@/contexts/ThemeContext';
 import { IconButton } from '@/components/ui/buttons/IconButton';
 import { ImportWizard } from './ImportWizard';
+import { SyncProgressModal } from './SyncProgressModal';
+import { useAppleNotesSync } from '../hooks/useAppleNotesSync';
 
 interface MenuItem {
   label?: string;
@@ -19,8 +21,10 @@ interface MenuSection {
 export function Toolbar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [importWizardOpen, setImportWizardOpen] = useState(false);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
   // TODO: Implement submenus when needed
   const { theme, setTheme } = useTheme();
+  const { startFullSync, progress, result } = useAppleNotesSync();
 
   const menuSections: MenuSection[] = [
     {
@@ -54,6 +58,7 @@ export function Toolbar() {
         { label: 'Import Markdown…', action: () => setImportWizardOpen(true) },
         { label: 'Import Office Docs…', action: () => setImportWizardOpen(true) },
         { label: 'Import Web Page…', action: () => setImportWizardOpen(true) },
+        { label: 'Sync Apple Notes…', action: () => { void startFullSync(); setSyncModalOpen(true); } },
         { separator: true },
         { label: 'Save As…', action: () => console.warn('Save As') },
       ]
@@ -204,6 +209,14 @@ export function Toolbar() {
           // TODO: Integrate with database context to persist imported nodes
           setImportWizardOpen(false);
         }}
+      />
+
+      {/* Sync Progress Modal */}
+      <SyncProgressModal
+        isOpen={syncModalOpen}
+        onClose={() => setSyncModalOpen(false)}
+        progress={progress}
+        result={result}
       />
     </div>
   );
