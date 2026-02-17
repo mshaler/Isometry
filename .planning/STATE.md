@@ -11,9 +11,9 @@ See: .planning/PROJECT.md (updated 2026-02-16)
 ## Current Position
 
 Phase: 112 (Technical Debt Sprint)
-Plan: 01 COMPLETE — Knip cleanup done
-Status: Phase 112-01 complete — unused exports reduced by 184
-Last activity: 2026-02-17 — Plan 112-01 executed
+Plan: 02 COMPLETE — Services directory refactoring done
+Status: Phase 112-02 complete — query services moved to query/ subdirectory
+Last activity: 2026-02-17 — Plan 112-02 executed
 
 Progress: [█████████░] 89%
 Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
@@ -80,6 +80,8 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 - [Phase 112-01]: KNIP-BARREL-01: Add 33 barrel file entry points to knip.json to eliminate false positives
 - [Phase 112-01]: EXPORT-PATTERN-01: Keep named exports, remove default exports where no external dependencies
 - [Phase 112-01]: COMPAT-ALIAS-01: Retain backward-compatibility aliases that are actively imported
+- [Phase 112]: STUB-PATTERN-01: Use explicit named re-exports rather than wildcard to maintain type safety
+- [Phase 112]: QUERY-GROUPING-01: Group facet-discovery, query-executor, TagService in query/ as all perform data access operations
 
 ### Pending Todos
 
@@ -89,7 +91,7 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 
 **Phase 112:** Technical Debt (runs parallel with 110-111)
 - [x] Plan 112-01: Knip audit and unused export removal (275 -> 91 unused exports)
-- [ ] Plan 112-02: src/services directory reorganization
+- [x] Plan 112-02: src/services directory reorganization (3 files moved to query/)
 - [ ] Plan 112-03: TipTap test infrastructure
 
 ### Blockers/Concerns
@@ -107,11 +109,11 @@ Overall: v6.9 Polymorphic Views & Foundation — IN PROGRESS
 ## Session Continuity
 
 Last session: 2026-02-17
-Completed: Plan 112-01 — Knip cleanup (33 barrel entries, 6 duplicate exports removed)
-Next: Phase 112-02 (src/services reorg), or Phase 111 (ViewDispatcher)
+Completed: Plan 112-02 — Services directory refactoring (3 files to query/, 3 re-export stubs)
+Next: Phase 112-03 (TipTap tests), or Phase 111 (ViewDispatcher)
 Resume file: N/A
 
-**Stopped at:** Completed 112-01-PLAN.md (knip configuration + export cleanup)
+**Stopped at:** Completed 112-02-PLAN.md (services directory refactoring)
 
 ---
-*Updated: 2026-02-17 (plan 112-01 complete, knip unused exports 275 -> 91)*
+*Updated: 2026-02-17 (plan 112-02 complete, services directory refactored)*

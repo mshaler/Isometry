@@ -31,9 +31,8 @@ const mockBoundingClientRect: DOMRect = {
 };
 
 // Mock getBoundingClientRect on HTMLElement prototype if not already mocked
-if (!HTMLElement.prototype.getBoundingClientRect.toString().includes('[native code]')) {
-  // Already mocked, skip
-} else {
+const htmlGetBounding = HTMLElement.prototype.getBoundingClientRect;
+if (!htmlGetBounding || htmlGetBounding.toString().includes('[native code]')) {
   HTMLElement.prototype.getBoundingClientRect = function () {
     return mockBoundingClientRect;
   };
@@ -47,11 +46,19 @@ class FakeDOMRectList extends Array<DOMRect> {
   }
 }
 
-if (!Range.prototype.getClientRects.toString().includes('FakeDOMRectList')) {
-  const originalGetClientRects = Range.prototype.getClientRects;
+// Safe check for Range.prototype methods (JSDOM may not have them)
+const rangeGetClientRects = Range.prototype.getClientRects;
+if (!rangeGetClientRects) {
+  // No getClientRects at all - add our mock directly
+  Range.prototype.getClientRects = function (): DOMRectList {
+    const list = new FakeDOMRectList();
+    return list as unknown as DOMRectList;
+  };
+} else if (!rangeGetClientRects.toString().includes('FakeDOMRectList')) {
+  // Has native implementation - wrap it
   Range.prototype.getClientRects = function (): DOMRectList {
     try {
-      return originalGetClientRects.call(this);
+      return rangeGetClientRects.call(this);
     } catch {
       // JSDOM doesn't properly implement getClientRects
       const list = new FakeDOMRectList();
@@ -61,11 +68,17 @@ if (!Range.prototype.getClientRects.toString().includes('FakeDOMRectList')) {
 }
 
 // Mock getBoundingClientRect for Range
-if (!Range.prototype.getBoundingClientRect.toString().includes('mockBoundingClientRect')) {
-  const originalRangeGetBoundingClientRect = Range.prototype.getBoundingClientRect;
+const rangeGetBounding = Range.prototype.getBoundingClientRect;
+if (!rangeGetBounding) {
+  // No getBoundingClientRect - add mock directly
+  Range.prototype.getBoundingClientRect = function (): DOMRect {
+    return mockBoundingClientRect;
+  };
+} else if (!rangeGetBounding.toString().includes('mockBoundingClientRect')) {
+  // Has native implementation - wrap it
   Range.prototype.getBoundingClientRect = function (): DOMRect {
     try {
-      return originalRangeGetBoundingClientRect.call(this);
+      return rangeGetBounding.call(this);
     } catch {
       // JSDOM throws on collapsed ranges
       return mockBoundingClientRect;
