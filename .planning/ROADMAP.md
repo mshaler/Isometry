@@ -141,7 +141,7 @@ Plans:
 | 112-03 | TipTap Tests | REQ-B-03 | Test utilities, extension tests |
 
 Plans:
-- [ ] 112-01-PLAN.md — Knip audit and systematic unused export removal
+- [x] 112-01-PLAN.md — Knip audit and systematic unused export removal
 - [ ] 112-02-PLAN.md — src/services directory reorganization
 - [ ] 112-03-PLAN.md — TipTap test infrastructure and extension tests
 
@@ -923,7 +923,7 @@ Plans:
 | 107-109. CSS Primitives | v6.8 | 3/3 | Complete | 2026-02-16 |
 | 110. View Continuum Foundation | v6.9 | 0/2 | Pending | — |
 | 111. View Continuum Integration | v6.9 | 0/3 | Pending | — |
-| 112. Technical Debt Sprint | v6.9 | 0/3 | Pending (parallel) | — |
+| 112. Technical Debt Sprint | v6.9 | 1/3 | In Progress | — |
 | 113. Network Graph Integration | v6.9 | 0/2 | Pending | — |
 | 114. Timeline & Preview | v6.9 | 0/2 | Pending | — |
 | 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
@@ -931,4 +931,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-16 (v6.9 Polymorphic Views & Foundation roadmap added)*
+*Last updated: 2026-02-17 (Phase 112 plan 01 complete, plan 02 created)*
