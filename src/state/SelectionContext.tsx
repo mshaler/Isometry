@@ -9,8 +9,15 @@
  * - Lasso: select within bounds
  * - Checkboxes: per-card selection toggle
  * - Tier 1 persistence: selection survives view transitions
+ *
+ * Tier 2 persistence (111-03):
+ * - Selection persists to sessionStorage
+ * - Selection restored on page refresh (within same session)
  */
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+
+/** SessionStorage key for selection persistence */
+const SELECTION_STORAGE_KEY = 'isometry-selection-state';
 import { calculateRangeSelection } from '@/d3/SuperGridEngine/SelectManager';
 import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
 
@@ -53,11 +60,40 @@ export interface SelectionContextValue {
 const SelectionContext = createContext<SelectionContextValue | null>(null);
 
 export function SelectionProvider({ children }: { children: React.ReactNode }) {
-  const [selection, setSelection] = useState<SelectionState>({
-    selectedIds: new Set(),
-    anchorId: null,
-    lastSelectedId: null,
+  const [selection, setSelection] = useState<SelectionState>(() => {
+    // Restore selection from sessionStorage on mount
+    try {
+      const saved = sessionStorage.getItem(SELECTION_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          selectedIds: new Set<string>(parsed.selectedIds || []),
+          anchorId: parsed.anchorId || null,
+          lastSelectedId: parsed.lastSelectedId || null,
+        };
+      }
+    } catch {
+      // Ignore parse errors, use default
+    }
+    return {
+      selectedIds: new Set<string>(),
+      anchorId: null,
+      lastSelectedId: null,
+    };
   });
+
+  // Persist selection to sessionStorage on changes
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify({
+        selectedIds: Array.from(selection.selectedIds),
+        anchorId: selection.anchorId,
+        lastSelectedId: selection.lastSelectedId,
+      }));
+    } catch {
+      // Ignore quota errors silently (sessionStorage has ~5MB limit)
+    }
+  }, [selection]);
 
   // Store cells for range selection (ref to avoid re-renders)
   const cellsRef = useRef<CellDescriptor[]>([]);

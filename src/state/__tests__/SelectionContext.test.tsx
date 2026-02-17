@@ -1,13 +1,38 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { SelectionProvider, useSelection } from '../SelectionContext';
 import type { CellDescriptor } from '@/d3/SuperGridEngine/types';
-import React, { useState } from 'react';
+import React from 'react';
 
 describe('SelectionContext', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <SelectionProvider>{children}</SelectionProvider>
   );
+
+  // Mock sessionStorage for tests
+  const mockSessionStorage = (() => {
+    let store: Record<string, string> = {};
+    return {
+      getItem: vi.fn((key: string) => store[key] || null),
+      setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
+      removeItem: vi.fn((key: string) => { delete store[key]; }),
+      clear: vi.fn(() => { store = {}; }),
+    };
+  })();
+
+  beforeEach(() => {
+    // Replace sessionStorage with mock
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      value: mockSessionStorage,
+      writable: true,
+    });
+    mockSessionStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    mockSessionStorage.clear();
+  });
 
   describe('basic selection', () => {
     it('starts with empty selection', () => {
@@ -296,6 +321,92 @@ describe('SelectionContext', () => {
 
       // Anchor should persist
       expect(result.current.selection.anchorId).toBe('card-1');
+    });
+  });
+
+  describe('sessionStorage persistence (Tier 2)', () => {
+    it('persists selection to sessionStorage on change', () => {
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1');
+      });
+
+      expect(mockSessionStorage.setItem).toHaveBeenCalled();
+      const savedData = JSON.parse(mockSessionStorage.setItem.mock.calls.at(-1)?.[1] || '{}');
+      expect(savedData.selectedIds).toContain('card-1');
+      expect(savedData.anchorId).toBe('card-1');
+    });
+
+    it('restores selection from sessionStorage on mount', () => {
+      // Pre-populate sessionStorage
+      mockSessionStorage.getItem.mockReturnValue(JSON.stringify({
+        selectedIds: ['card-1', 'card-2'],
+        anchorId: 'card-1',
+        lastSelectedId: 'card-2',
+      }));
+
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+      expect(result.current.selection.selectedIds.has('card-2')).toBe(true);
+      expect(result.current.selection.anchorId).toBe('card-1');
+      expect(result.current.selection.lastSelectedId).toBe('card-2');
+    });
+
+    it('handles invalid JSON in sessionStorage gracefully', () => {
+      mockSessionStorage.getItem.mockReturnValue('not valid json {{{');
+
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      // Should fall back to empty selection
+      expect(result.current.selection.selectedIds.size).toBe(0);
+      expect(result.current.selection.anchorId).toBeNull();
+    });
+
+    it('handles sessionStorage quota errors gracefully', () => {
+      mockSessionStorage.setItem.mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+      // Should not throw
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1');
+      });
+
+      // Selection should still work in memory
+      expect(result.current.selection.selectedIds.has('card-1')).toBe(true);
+    });
+
+    it('persists multi-select to sessionStorage', () => {
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1');
+        result.current.toggle('card-2');
+        result.current.toggle('card-3');
+      });
+
+      const savedData = JSON.parse(mockSessionStorage.setItem.mock.calls.at(-1)?.[1] || '{}');
+      expect(savedData.selectedIds).toHaveLength(3);
+      expect(savedData.selectedIds).toContain('card-1');
+      expect(savedData.selectedIds).toContain('card-2');
+      expect(savedData.selectedIds).toContain('card-3');
+    });
+
+    it('clears sessionStorage on clear()', () => {
+      const { result } = renderHook(() => useSelection(), { wrapper });
+
+      act(() => {
+        result.current.select('card-1');
+        result.current.clear();
+      });
+
+      const savedData = JSON.parse(mockSessionStorage.setItem.mock.calls.at(-1)?.[1] || '{}');
+      expect(savedData.selectedIds).toHaveLength(0);
+      expect(savedData.anchorId).toBeNull();
     });
   });
 });
