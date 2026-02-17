@@ -3,6 +3,406 @@
 **Defined:** 2026-02-10
 **Core Value:** Polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as grid, kanban, network, or timeline.
 
+---
+
+## v6.9 Requirements — Polymorphic Views & Foundation
+
+**Created:** 2026-02-16
+**Research Source:** `.planning/research/SUMMARY.md`
+
+This milestone enables the full Grid Continuum (Gallery/List/Kanban/Grid/SuperGrid) with CSS primitives, cleans up technical debt, polishes Network/Timeline views, and completes Three-Canvas notebook integration.
+
+**Parallelization:**
+- Tracks A+B run in parallel (independent concerns)
+- Track C depends on Track A (views need CSS primitives wired)
+- Track D depends on Track C (canvas integration needs working views)
+
+### Track A: View Continuum Integration
+
+Build the polymorphic view system where Gallery → List → Kanban → Grid → SuperGrid render the same data with different PAFV axis allocations.
+
+#### REQ-A-01: Gallery View Renderer
+
+**Description:** Create GalleryView component that renders cards in CSS Grid masonry layout with TanStack Virtual for performance.
+
+**Acceptance Criteria:**
+- [ ] GalleryView.tsx renders cards in responsive masonry grid
+- [ ] Uses CSS Grid `auto-fit` for column count adaptation
+- [ ] Integrates with useSQLiteQuery for data fetching
+- [ ] Supports TanStack Virtual for 500+ item performance
+- [ ] Responds to LATCH filter changes via FilterContext
+- [ ] Click card → updates SelectionContext
+- [ ] 60 FPS scroll at 500+ items
+
+**Priority:** P0 (MVP foundation)
+**Dependencies:** useSQLiteQuery hook, SelectionContext, FilterContext
+
+---
+
+#### REQ-A-02: List View Renderer
+
+**Description:** Create ListView component that renders cards in hierarchical tree with expand/collapse and keyboard navigation.
+
+**Acceptance Criteria:**
+- [ ] ListView.tsx renders cards in indented tree structure
+- [ ] Supports expand/collapse at each hierarchy level
+- [ ] Keyboard navigation: Arrow keys move selection, Enter expands/collapses
+- [ ] Integrates with useSQLiteQuery for data fetching
+- [ ] Hierarchy determined by PAFV axis allocation (e.g., folder → subfolder)
+- [ ] Click card → updates SelectionContext
+- [ ] ARIA roles for accessibility (tree, treeitem)
+
+**Priority:** P0 (MVP foundation)
+**Dependencies:** useSQLiteQuery hook, SelectionContext, GridContinuumController
+
+---
+
+#### REQ-A-03: Kanban View Renderer
+
+**Description:** Create KanbanView component that renders cards in columns grouped by a single facet, with drag-and-drop between columns.
+
+**Acceptance Criteria:**
+- [ ] KanbanView.tsx renders columns based on facet values (e.g., status)
+- [ ] Uses CSS Grid for column layout
+- [ ] Drag-and-drop cards between columns via dnd-kit
+- [ ] Drop → SQL UPDATE to persist facet value change
+- [ ] Column headers show facet value + count badge
+- [ ] Integrates with useSQLiteQuery for data fetching
+- [ ] Click card → updates SelectionContext
+
+**Priority:** P0 (MVP foundation)
+**Dependencies:** useSQLiteQuery hook, SelectionContext, dnd-kit (existing)
+
+---
+
+#### REQ-A-04: Grid Continuum Mode Switcher
+
+**Description:** Create ViewDispatcher and GridContinuumSwitcher components to route between view modes and provide UI for switching.
+
+**Acceptance Criteria:**
+- [ ] ViewDispatcher.tsx routes to correct view based on activeView state
+- [ ] GridContinuumSwitcher.tsx provides button group for Gallery/List/Kanban/Grid/SuperGrid
+- [ ] Mode switch preserves current LATCH filters
+- [ ] Mode switch preserves card selection (via SelectionContext)
+- [ ] Visual indicator shows active mode
+- [ ] Keyboard shortcut support (Cmd+1-5 for modes)
+
+**Priority:** P0 (MVP foundation)
+**Dependencies:** REQ-A-01, REQ-A-02, REQ-A-03, SelectionContext
+
+---
+
+#### REQ-A-05: PAFV Axis Allocation per View Mode
+
+**Description:** Wire GridContinuumController to allocate axes differently for each view mode.
+
+**Acceptance Criteria:**
+- [ ] GridContinuumController.allocateAxes(mode) returns correct axis config:
+  - Gallery: 0 explicit axes (position only)
+  - List: 1 axis (hierarchy facet)
+  - Kanban: 1 facet (column grouping)
+  - Grid: 2 axes (x, y)
+  - SuperGrid: n axes (stacked headers)
+- [ ] Axis allocation drives SQL GROUP BY generation
+- [ ] Axis allocation drives renderer configuration
+- [ ] Single source of truth (no duplicate axis logic in renderers)
+
+**Priority:** P0 (MVP foundation)
+**Dependencies:** GridContinuumController (existing), ViewQueryBuilder
+
+---
+
+#### REQ-A-06: Cross-View Selection Synchronization
+
+**Description:** Ensure SelectionContext syncs selection state across all view modes during transitions.
+
+**Acceptance Criteria:**
+- [ ] Select card in Gallery → switch to List → same card selected
+- [ ] Select card in Kanban → switch to SuperGrid → same card selected
+- [ ] Multi-select persists across view transitions
+- [ ] Selection persists in sessionStorage for page refresh
+- [ ] Selection drives CSS `.selected` class in all renderers
+
+**Priority:** P1 (polish)
+**Dependencies:** REQ-A-04, SelectionContext
+
+---
+
+### Track B: Technical Debt Sprint
+
+Clean up unused exports, refactor oversized directories, and establish TipTap test infrastructure.
+
+#### REQ-B-01: Knip Unused Exports Cleanup
+
+**Description:** Reduce unused export count from 275 to <100 using knip analysis.
+
+**Acceptance Criteria:**
+- [ ] Run knip audit on full codebase
+- [ ] Review each unused export for false positives (check internal usage)
+- [ ] Delete truly unused exports with characterization tests as safety net
+- [ ] Create barrel exports (index.ts) for public API clarity
+- [ ] Final knip count < 100 unused exports
+- [ ] All existing tests pass before and after each batch
+
+**Priority:** P1 (health)
+**Dependencies:** None
+
+---
+
+#### REQ-B-02: src/services Directory Refactoring
+
+**Description:** Reduce src/services from 22 files to ≤15 by reorganizing into focused subdirectories.
+
+**Acceptance Criteria:**
+- [ ] Audit src/services for groupable concerns
+- [ ] Create subdirectories by domain (e.g., services/supergrid/, services/data/)
+- [ ] Move files into appropriate subdirectories
+- [ ] Update import paths (use TypeScript path aliases)
+- [ ] Validate imports: `tsc --noEmit` passes
+- [ ] Final file count ≤ 15 at top level of src/services/
+
+**Priority:** P2 (health)
+**Dependencies:** REQ-B-01 (clean exports first)
+
+---
+
+#### REQ-B-03: TipTap Automated Test Infrastructure
+
+**Description:** Establish automated testing infrastructure for TipTap editor functionality.
+
+**Acceptance Criteria:**
+- [ ] Create TipTap test utilities (render helper, mock extensions)
+- [ ] Write unit tests for custom TipTap extensions
+- [ ] Write integration tests for slash commands
+- [ ] Write tests for LATCH property binding
+- [ ] All TipTap tests run in Vitest
+- [ ] Add to CI pipeline
+
+**Priority:** P2 (health)
+**Dependencies:** None
+
+---
+
+### Track C: Network/Timeline Polish
+
+Wire existing D3 renderers to SQL-driven data hooks and add to Preview tab.
+
+#### REQ-C-01: Network Graph SQL Integration
+
+**Description:** Refactor ForceGraphRenderer to use useSQLiteQuery for data fetching.
+
+**Acceptance Criteria:**
+- [ ] NetworkView.tsx wraps ForceGraphRenderer with SQL data fetching
+- [ ] Uses useSQLiteQuery hook for nodes and edges
+- [ ] LATCH filter changes → network re-renders filtered subgraph
+- [ ] Force simulation lifecycle managed (stop on unmount, restart on data change)
+- [ ] No memory leaks on 10 consecutive view switches (verify via DevTools)
+- [ ] 60 FPS at 500 nodes
+
+**Priority:** P1 (breadth)
+**Dependencies:** Track A complete (ViewDispatcher working)
+
+---
+
+#### REQ-C-02: Timeline View SQL Integration
+
+**Description:** Refactor TimelineRenderer to use useSQLiteQuery for data fetching.
+
+**Acceptance Criteria:**
+- [ ] TimelineView.tsx wraps TimelineRenderer with SQL data fetching
+- [ ] Uses useSQLiteQuery hook for time-based events
+- [ ] LATCH filter changes → timeline re-renders filtered events
+- [ ] Zoom levels with adaptive tick labels (day/week/month/year)
+- [ ] Overlapping event layout (swimlanes)
+- [ ] 60 FPS zoom/pan at 500 events
+
+**Priority:** P1 (breadth)
+**Dependencies:** Track A complete (ViewDispatcher working)
+
+---
+
+#### REQ-C-03: Preview Tab Integration
+
+**Description:** Add Network and Timeline as selectable tabs in the Preview pane.
+
+**Acceptance Criteria:**
+- [ ] Preview pane has tab bar: SuperGrid | Network | Timeline
+- [ ] Tab selection updates activeView state
+- [ ] View-specific PAFV controls appear per tab
+- [ ] Tab state persists across sessions
+
+**Priority:** P1 (UX)
+**Dependencies:** REQ-C-01, REQ-C-02
+
+---
+
+#### REQ-C-04: Force Simulation Lifecycle Management
+
+**Description:** Create ForceSimulationManager to prevent memory leaks from D3 force simulations.
+
+**Acceptance Criteria:**
+- [ ] ForceSimulationManager class wraps D3 forceSimulation
+- [ ] Exposes start(), stop(), reheat() methods
+- [ ] Automatic stop on component unmount
+- [ ] useForceSimulation hook integrates with React lifecycle
+- [ ] No detached DOM nodes after 10 view switches (verify via DevTools Memory)
+
+**Priority:** P0 (prevents leaks)
+**Dependencies:** None (implement before REQ-C-01)
+
+---
+
+### Track D: Three-Canvas Notebook
+
+Complete Capture + Shell + Preview integration with cross-pane selection sync.
+
+#### REQ-D-01: Three-Canvas Layout
+
+**Description:** Implement resizable three-pane layout with react-resizable-panels.
+
+**Acceptance Criteria:**
+- [ ] ThreeCanvasLayout.tsx with Capture | Shell | Preview panes
+- [ ] Resizable dividers between panes
+- [ ] Pane sizes persist to localStorage
+- [ ] Minimum pane widths enforced (prevent collapse to 0)
+- [ ] Focus mode toggle (double-click divider → pane expands)
+- [ ] Keyboard shortcuts: Cmd+1/2/3 to focus pane
+
+**Priority:** P0 (MVP)
+**Dependencies:** None
+
+---
+
+#### REQ-D-02: Cross-Pane Selection Sync
+
+**Description:** Wire SelectionContext to highlight selections across all three panes.
+
+**Acceptance Criteria:**
+- [ ] Click card in Preview Grid → highlight corresponding block in Capture
+- [ ] Click block in Capture → highlight corresponding card in Preview
+- [ ] Selection highlight visible in both panes simultaneously
+- [ ] Shell pane receives selection context for AI queries
+- [ ] Selection sync works across all view modes (Gallery, List, Kanban, Grid, Network, Timeline)
+
+**Priority:** P0 (differentiator)
+**Dependencies:** REQ-D-01, Track A complete
+
+---
+
+#### REQ-D-03: View State Preservation
+
+**Description:** Create ViewStateManager to persist scroll position, zoom level, and selection per view.
+
+**Acceptance Criteria:**
+- [ ] ViewStateManager class tracks state per view mode
+- [ ] Scroll position saved/restored on view switch
+- [ ] Zoom level saved/restored (Network, Timeline)
+- [ ] Selection saved/restored (via SelectionContext)
+- [ ] State persists to sessionStorage
+- [ ] Switch modes 5x → state preserved each time
+
+**Priority:** P1 (UX polish)
+**Dependencies:** REQ-D-02
+
+---
+
+#### REQ-D-04: Pane Resize Coordination
+
+**Description:** Create PaneLayoutContext to coordinate resize events without desync.
+
+**Acceptance Criteria:**
+- [ ] Single ResizeObserver at container level
+- [ ] PaneLayoutContext provides current dimensions to children
+- [ ] Debounced resize events (500ms threshold)
+- [ ] No content overflow during resize animation
+- [ ] SuperGrid column widths adapt to available space
+
+**Priority:** P1 (UX polish)
+**Dependencies:** REQ-D-01
+
+---
+
+### Non-Functional Requirements (v6.9)
+
+#### REQ-NF-01: Performance Targets
+
+**Description:** All views meet performance baselines.
+
+**Acceptance Criteria:**
+- [ ] Gallery: 60 FPS scroll at 500+ items
+- [ ] List: 60 FPS scroll at 500+ items
+- [ ] Kanban: 60 FPS drag-drop at 100+ cards
+- [ ] SuperGrid: 60 FPS scroll at 500+ cells
+- [ ] Network: 60 FPS zoom/pan at 500 nodes
+- [ ] Timeline: 60 FPS zoom/pan at 500 events
+- [ ] Memory < 100MB at 5000 items (any view)
+- [ ] SQL query execution < 100ms for 10K nodes
+
+**Priority:** P0
+**Dependencies:** All Track A, C requirements
+
+---
+
+#### REQ-NF-02: CSS Primitives Consumption
+
+**Description:** All views consume existing CSS primitives from v6.8.
+
+**Acceptance Criteria:**
+- [ ] Gallery uses primitives-gallery.css
+- [ ] List uses primitives-supergrid.css (list mode)
+- [ ] Kanban uses primitives-kanban.css
+- [ ] Timeline uses primitives-timeline.css
+- [ ] No inline styles for layout (CSS Grid/Flex classes only)
+- [ ] CSS specificity validated during view transitions
+
+**Priority:** P1
+**Dependencies:** CSS primitives from v6.8
+
+---
+
+#### REQ-NF-03: Test Coverage
+
+**Description:** New components have comprehensive test coverage.
+
+**Acceptance Criteria:**
+- [ ] Unit tests for all view renderers (Gallery, List, Kanban, Network, Timeline)
+- [ ] Unit tests for ViewDispatcher routing
+- [ ] Unit tests for GridContinuumController axis allocation
+- [ ] Integration tests for cross-view selection sync
+- [ ] Integration tests for SQL data flow to renderers
+- [ ] All tests pass in CI
+
+**Priority:** P1
+**Dependencies:** All implementation requirements
+
+---
+
+### v6.9 Out of Scope
+
+The following are explicitly deferred:
+- Real-time collaboration (Yjs integration)
+- CloudKit sync
+- Canvas-based rendering for 10K+ nodes (Phase 7.0)
+- Web Worker force simulation optimization (Phase 7.0)
+- Multi-monitor support
+- D3 visualization blocks in Capture editor
+- GSD GUI wrapper
+
+---
+
+### v6.9 Requirement Summary
+
+| Track | REQ Count | Priority Breakdown |
+|-------|-----------|-------------------|
+| Track A (View Continuum) | 6 | 5 P0, 1 P1 |
+| Track B (Tech Debt) | 3 | 0 P0, 1 P1, 2 P2 |
+| Track C (Network/Timeline) | 4 | 1 P0, 3 P1 |
+| Track D (Three-Canvas) | 4 | 2 P0, 2 P1 |
+| Non-Functional | 3 | 1 P0, 2 P1 |
+| **Total** | **20** | **9 P0, 9 P1, 2 P2** |
+
+---
+
 ## v6.5 Requirements — Console Cleanup
 
 Eliminate console errors and excessive debug logging to provide a clean developer experience.
