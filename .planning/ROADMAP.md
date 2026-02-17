@@ -26,6 +26,7 @@
 - ✓ **v6.7 CSS Grid Integration** - Phase 106 (shipped 2026-02-16)
 - ✓ **v6.8 CSS Primitives** - Phases 107-109 (shipped 2026-02-16)
 - 🔄 **v6.9 Polymorphic Views & Foundation** - Phases 110-116 (in progress)
+- 📋 **v7.0 Apple Notes Direct Sync** - Phase 117 (planned)
 
 ## Phases
 
@@ -289,6 +290,58 @@ Plans:
 - [ ] 116-01-PLAN.md — ViewStateManager with scroll/zoom/selection persistence
 - [ ] 116-02-PLAN.md — PaneLayoutContext with debounced resize
 - [ ] 116-03-PLAN.md — Performance validation and comprehensive test coverage
+
+---
+
+## v7.0 Apple Notes Direct Sync
+
+**Goal:** Replace alto-index.json intermediary with direct Apple Notes → sql.js synchronization, eliminating data integrity bugs.
+
+**Motivation:** Investigation revealed alto-index.json has folder mapping errors — notes appearing in wrong folders.
+
+---
+
+### Phase 117: Apple Notes SQLite Sync
+
+**Goal:** Direct sync from Apple Notes to Isometry via JXA automation bridge.
+
+**Depends on:** Phase 116 (v6.9 complete, UI infrastructure ready)
+
+**Requirements:** SYNC-01 through SYNC-06, PERF-01, PERF-02, DATA-01, TECH-01 through TECH-04
+
+| REQ-ID | Task | Complexity | Priority |
+|--------|------|------------|----------|
+| SYNC-01 | JXA Note Extractor | High | P0 |
+| SYNC-02 | Incremental Sync | Medium | P0 |
+| SYNC-03 | Full Sync Service | Medium | P0 |
+| SYNC-04 | Folder Hierarchy Reconciliation | Medium | P1 |
+| SYNC-05 | Conflict Resolution | Low | P1 |
+| SYNC-06 | Sync Trigger Integration | Low | P2 |
+| PERF-01 | Sync Performance (<60s full, <5s incremental) | Medium | P0 |
+| PERF-02 | Permission Handling | Low | P0 |
+| DATA-01 | Data Integrity Validation | Medium | P0 |
+
+**Success Criteria:**
+1. "Under stress, Stacey channels mean Cindy" appears in `Family/Stacey` folder after sync
+2. All notes in Isometry match current Apple Notes state
+3. Sync completes without errors on 2000+ note library
+4. Folder hierarchy correct for all nested folders
+5. Tags extracted correctly from all notes with hashtags
+
+**Plans:** 4 plans in 2 waves
+
+| Plan | Focus | Requirements | Deliverables |
+|------|-------|--------------|--------------|
+| 117-01 | JXA Extractor | SYNC-01, PERF-02 | `jxa-bridge.ts`, `extract-notes.jxa` |
+| 117-02 | Sync Service | SYNC-02, SYNC-03, PERF-01 | `AppleNotesSyncService.ts` |
+| 117-03 | Folder Hierarchy | SYNC-04, DATA-01 | Folder reconciliation, validation |
+| 117-04 | Integration | SYNC-05, SYNC-06 | UI triggers, background sync |
+
+Plans:
+- [x] 117-01-PLAN.md — ETL module integration with Apple Notes direct SQLite adapter
+- [ ] 117-02-PLAN.md — NodeWriter and AppleNotesSyncService with progress reporting
+- [ ] 117-03-PLAN.md — Folder hierarchy reconciliation and data integrity tests
+- [ ] 117-04-PLAN.md — Sync triggers, conflict resolution, UI integration
 
 ---
 
@@ -932,6 +985,7 @@ Plans:
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
+| 117. Apple Notes SQLite Sync | v7.0 | 1/4 | In Progress | — |
 
 ---
 *Roadmap created: 2026-02-10*
