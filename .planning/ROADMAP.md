@@ -238,16 +238,18 @@ Plans:
 5. Click block in Capture → highlight card in Preview
 6. Selection sync works across all view modes
 
-**Plans:** 2 plans in 1 wave
+**Plans:** 3 plans in 2 waves
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 115-01 | Resizable Layout | REQ-D-01 | `ThreeCanvasLayout.tsx`, react-resizable-panels |
-| 115-02 | Selection Sync | REQ-D-02 | Enhanced SelectionContext, highlight overlays |
+| 115-01 | Resizable Layout | REQ-D-01 | `NotebookLayout.tsx`, react-resizable-panels |
+| 115-02 | Selection Sync | REQ-D-02 | Enhanced CaptureComponent with SelectionContext |
+| 115-03 | Gap Closure | REQ-D-02 | PreviewComponent SuperGrid sync, Capture card picker |
 
 Plans:
-- [ ] 115-01-PLAN.md — Resizable panels with react-resizable-panels and localStorage persistence
-- [ ] 115-02-PLAN.md — Bidirectional selection sync between Capture and Preview panes
+- [x] 115-01-PLAN.md — Resizable panels with react-resizable-panels and localStorage persistence
+- [x] 115-02-PLAN.md — Bidirectional selection sync between Capture and Preview panes
+- [ ] 115-03-PLAN.md — Gap closure: SuperGrid→Capture sync, Capture card picker UI
 
 ---
 
@@ -928,9 +930,9 @@ Plans:
 | 112. Technical Debt Sprint | v6.9 | 3/3 | Complete | 2026-02-17 |
 | 113. Network Graph Integration | v6.9 | 1/2 | In Progress | — |
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
-| 115. Three-Canvas Layout | v6.9 | 0/2 | Pending | — |
+| 115. Three-Canvas Layout | v6.9 | 2/3 | In Progress | — |
 | 116. State & Polish | v6.9 | 0/3 | Pending | — |
 
 ---
 *Roadmap created: 2026-02-10*
-*Last updated: 2026-02-17 (Phase 113-01 complete, 113-02 plan created)*
+*Last updated: 2026-02-17 (Phase 115-03 gap closure plan created)*
