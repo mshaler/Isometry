@@ -2,12 +2,15 @@
  * Grid Continuum Switcher - Mode switching UI component
  *
  * Provides a visual switcher for the 5 Grid Continuum modes:
- * Gallery (0) → List (1) → Kanban (1 facet) → Grid (2) → SuperGrid (n)
+ * Gallery (0) -> List (1) -> Kanban (1 facet) -> Grid (2) -> SuperGrid (n)
  *
  * Each mode represents a different PAFV axis allocation strategy for the same data.
+ *
+ * Keyboard shortcuts: Cmd+1 = Gallery, Cmd+2 = List, Cmd+3 = Kanban,
+ * Cmd+4 = Grid, Cmd+5 = SuperGrid (also works with Ctrl on Windows/Linux)
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GridContinuumMode } from '@/types/view';
 import './GridContinuumSwitcher.css';
 
@@ -22,44 +25,58 @@ interface GridContinuumSwitcherProps {
   className?: string;
 }
 
-// Mode definitions with metadata
+// Mode definitions with metadata (including keyboard shortcut hints)
 const GRID_CONTINUUM_MODES = [
   {
     id: 'gallery' as GridContinuumMode,
     label: 'Gallery',
-    icon: '⊞',
-    description: 'Gallery: position-only layout (masonry)',
+    icon: '\u229E', // Box drawing character
+    description: 'Gallery: position-only layout (masonry) - Cmd+1',
+    shortcut: '1',
     axisCount: 0
   },
   {
     id: 'list' as GridContinuumMode,
     label: 'List',
-    icon: '≡',
-    description: 'List: single axis vertical hierarchy',
+    icon: '\u2261', // Identical to
+    description: 'List: single axis vertical hierarchy - Cmd+2',
+    shortcut: '2',
     axisCount: 1
   },
   {
     id: 'kanban' as GridContinuumMode,
     label: 'Kanban',
-    icon: '⫽',
-    description: 'Kanban: facet-based column grouping',
+    icon: '\u2AFD', // Double solidus
+    description: 'Kanban: facet-based column grouping - Cmd+3',
+    shortcut: '3',
     axisCount: 1
   },
   {
     id: 'grid' as GridContinuumMode,
     label: 'Grid',
-    icon: '⊞',
-    description: 'Grid: 2D row × column matrix',
+    icon: '\u229E', // Box drawing character
+    description: 'Grid: 2D row x column matrix - Cmd+4',
+    shortcut: '4',
     axisCount: 2
   },
   {
     id: 'supergrid' as GridContinuumMode,
     label: 'SuperGrid',
-    icon: '⊞⁺',
-    description: 'SuperGrid: n-dimensional nested headers',
+    icon: '\u229E\u207A', // Box + superscript plus
+    description: 'SuperGrid: n-dimensional nested headers - Cmd+5',
+    shortcut: '5',
     axisCount: 'n'
   }
 ] as const;
+
+// Build a lookup map from key to mode
+const KEY_TO_MODE: Record<string, GridContinuumMode> = {
+  '1': 'gallery',
+  '2': 'list',
+  '3': 'kanban',
+  '4': 'grid',
+  '5': 'supergrid',
+};
 
 /**
  * GridContinuumSwitcher component
@@ -81,6 +98,24 @@ export function GridContinuumSwitcher({
     // Reset transition feedback
     setTimeout(() => setIsTransitioning(false), 300);
   };
+
+  // Keyboard shortcut handler (Cmd+1-5 on macOS, Ctrl+1-5 on Windows/Linux)
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // Only handle when Cmd (macOS) or Ctrl (Windows/Linux) is pressed
+    if (!(event.metaKey || event.ctrlKey)) return;
+
+    const mode = KEY_TO_MODE[event.key];
+    if (mode && mode !== currentMode) {
+      event.preventDefault();
+      onModeChange(mode);
+    }
+  }, [currentMode, onModeChange]);
+
+  // Register global keyboard listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   return (
     <div
@@ -137,4 +172,3 @@ export function GridContinuumSwitcher({
     </div>
   );
 }
-
