@@ -49,6 +49,9 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     timestamp: number;
   } | null>(null);
 
+  // Track if a reorder is currently being processed (prevents cascade)
+  const reorderInProgressRef = useRef(false);
+
   // Store last Grid and List mappings for smooth view transitions
   const lastGridMappings = useRef<AxisMapping[]>(
     state.viewMode === 'grid' ? state.mappings : DEFAULT_PAFV.mappings
@@ -106,6 +109,11 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
   }, [state, setState]);
 
   const reorderMappingsInPlaneCallback = useCallback((plane: Plane, fromIndex: number, toIndex: number) => {
+    // Block if a reorder is already in progress (prevents cascade)
+    if (reorderInProgressRef.current) {
+      return;
+    }
+
     // Get the facets being reordered for deduplication tracking
     const planeMappings = getMappingsUtil(state, plane);
     if (fromIndex < 0 || fromIndex >= planeMappings.length ||
@@ -117,18 +125,24 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     const toFacet = planeMappings[toIndex]?.facet;
 
     // CRITICAL: Prevent duplicate/reverting reorders during rapid drag operations.
-    // Multiple hover events can fire before React re-renders. If we detect we're
-    // trying to reorder the same pair of facets within 100ms, skip it.
+    // Multiple hover events can fire before React re-renders. Block if:
+    // 1. Same reorder (duplicate) within 200ms
+    // 2. Reverse reorder (reverting) within 200ms
     const now = Date.now();
     const pending = pendingReorderRef.current;
-    if (pending &&
-        pending.plane === plane &&
-        pending.fromFacet === toFacet &&
-        pending.toFacet === fromFacet &&
-        now - pending.timestamp < 100) {
-      // This looks like a reverting reorder - skip it
-      return;
+    if (pending && pending.plane === plane && now - pending.timestamp < 200) {
+      // Same reorder (duplicate)
+      if (pending.fromFacet === fromFacet && pending.toFacet === toFacet) {
+        return;
+      }
+      // Reverse reorder (reverting)
+      if (pending.fromFacet === toFacet && pending.toFacet === fromFacet) {
+        return;
+      }
     }
+
+    // Mark reorder in progress
+    reorderInProgressRef.current = true;
 
     // Track this reorder
     pendingReorderRef.current = { plane, fromFacet, toFacet, timestamp: now };
@@ -139,12 +153,17 @@ export function PAFVProvider({ children }: { children: React.ReactNode }) {
     // Send to native bridge
     pafvBridge.sendAxisMappingUpdate(newState);
 
-    // Clear pending after a short delay to allow legitimate reversals
+    // Clear in-progress flag after React has a chance to re-render
+    requestAnimationFrame(() => {
+      reorderInProgressRef.current = false;
+    });
+
+    // Clear pending after a longer delay to allow state to fully settle
     setTimeout(() => {
       if (pendingReorderRef.current?.timestamp === now) {
         pendingReorderRef.current = null;
       }
-    }, 150);
+    }, 300);
   }, [state, setState]);
 
   const moveFacetToPlaneCallback = useCallback((fromPlane: Plane, toPlane: Plane, facet: string, axis: LATCHAxis) => {
