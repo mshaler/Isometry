@@ -131,6 +131,40 @@ export function createTimeline(
   // Create events group
   const eventsGroup = mainGroup.append('g').attr('class', 'events');
 
+  // Pre-compute collision offsets for events in the same track
+  // Stagger up to 3 events at 25% of bandwidth each
+  function computeCollisionOffsets(evts: TimelineEvent[]): Map<string, number> {
+    const offsets = new Map<string, number>();
+    // Group events by track
+    const byTrack = new Map<string, TimelineEvent[]>();
+    for (const evt of evts) {
+      const list = byTrack.get(evt.track) ?? [];
+      list.push(evt);
+      byTrack.set(evt.track, list);
+    }
+    // For each track, sort by timestamp and detect pixel-level collisions
+    for (const [, trackEvts] of byTrack) {
+      const sorted = [...trackEvts].sort(
+        (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+      );
+      let lastX = -Infinity;
+      let offsetIndex = 0;
+      for (const evt of sorted) {
+        const cx = xScale(evt.timestamp);
+        if (Math.abs(cx - lastX) < EVENT_RADIUS * 2.5) {
+          // Collision — advance stagger slot (cycle through 0, 1, 2)
+          offsetIndex = (offsetIndex + 1) % 3;
+        } else {
+          // No collision — reset to center slot
+          offsetIndex = 0;
+        }
+        offsets.set(evt.id, offsetIndex);
+        lastX = cx;
+      }
+    }
+    return offsets;
+  }
+
   // Create tooltip element
   const tooltip = d3
     .select('body')
@@ -157,6 +191,21 @@ export function createTimeline(
       return time && !isNaN(time);
     });
 
+    // Compute per-event stagger offsets to avoid overlapping circles in the same track
+    const collisionOffsets = computeCollisionOffsets(validEvts);
+
+    /**
+     * Compute the Y-center of an event, applying vertical stagger if needed.
+     * Offset index 0 = lane center, 1 = 20% above center, 2 = 20% below center.
+     */
+    function eventCy(d: TimelineEvent): number {
+      const laneMid = (yScale(d.track) ?? 0) + yScale.bandwidth() / 2;
+      const offsetIdx = collisionOffsets.get(d.id) ?? 0;
+      // stagger: 0 → center, 1 → up 20% bw, 2 → down 20% bw
+      const offsetMap = [0, -yScale.bandwidth() * 0.2, yScale.bandwidth() * 0.2];
+      return laneMid + (offsetMap[offsetIdx] ?? 0);
+    }
+
     const circles = eventsGroup
       .selectAll<SVGCircleElement, TimelineEvent>('circle.event')
       .data(validEvts, d => d.id);
@@ -167,7 +216,7 @@ export function createTimeline(
           .append('circle')
           .attr('class', 'event')
           .attr('cx', d => xScale(d.timestamp))
-          .attr('cy', d => (yScale(d.track) ?? 0) + yScale.bandwidth() / 2)
+          .attr('cy', d => eventCy(d))
           .attr('r', 0)
           .attr('fill', d => d.color ?? trackColorMap.get(d.track) ?? '#6366f1')
           .attr('stroke', 'white')
@@ -210,7 +259,7 @@ export function createTimeline(
             .transition()
             .duration(300)
             .attr('cx', d => xScale(d.timestamp))
-            .attr('cy', d => (yScale(d.track) ?? 0) + yScale.bandwidth() / 2)
+            .attr('cy', d => eventCy(d))
             .attr('fill', d => d.color ?? trackColorMap.get(d.track) ?? '#6366f1')
         ),
       exit =>
