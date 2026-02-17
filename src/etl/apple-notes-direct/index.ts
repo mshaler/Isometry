@@ -67,3 +67,13 @@ export {
 // NodeWriter: Persists canonical nodes/edges to sql.js
 export type { NodeWriter, WriteResult } from './NodeWriter';
 export { createNodeWriter } from './NodeWriter';
+
+// Validation: Post-sync data integrity checks
+export type {
+  DataIntegrityValidator,
+  ValidationResult,
+  ValidationError,
+  ValidationWarning,
+  ValidationStats,
+} from './validation';
+export { createDataIntegrityValidator } from './validation';
