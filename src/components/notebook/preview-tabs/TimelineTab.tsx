@@ -51,7 +51,7 @@ export function TimelineTab({
   // SYNC-03: Selection synchronized across canvases
   // Clicking an event selects it everywhere
   // Events selected elsewhere are highlighted here
-  const { selection, select, isSelected } = useSelection();
+  const { selection, select, isSelected, registerScrollToNode, unregisterScrollToNode } = useSelection();
 
   // Get timeline data from hook (excluding local selection state which we now get from context)
   const {
@@ -134,6 +134,22 @@ export function TimelineTab({
     return () => observer.disconnect();
   }, []);
 
+  // SYNC-03: Register scrollToNode for cross-canvas selection sync
+  // When another canvas selects an event (e.g., NetworkView), this
+  // allows the timeline to highlight and scroll to that event.
+  useEffect(() => {
+    registerScrollToNode((id: string) => {
+      // Find the event in our list to confirm it exists
+      const event = events.find(e => e.id === id);
+      if (event) {
+        // Selection is managed by context; just update via select
+        // The D3 renderer will re-render with highlight on next effect run
+        select(id);
+      }
+    });
+    return () => unregisterScrollToNode();
+  }, [events, registerScrollToNode, unregisterScrollToNode, select]);
+
   // Initialize and update timeline
   useEffect(() => {
     if (!svgRef.current || loading || events.length === 0) return;
@@ -195,6 +211,19 @@ export function TimelineTab({
       rendererRef.current = null;
     };
   }, [events, loading, dimensions, dateRange, handleEventClick]);
+
+  // SYNC-03: Apply selection highlight styling when selection changes
+  // Separate effect to avoid full re-render on every selection change
+  useEffect(() => {
+    if (!svgRef.current) return;
+    const gSelection = d3.select(svgRef.current).select<SVGGElement>('g.timeline-container');
+    if (gSelection.empty()) return;
+
+    // Update stroke styling for all event circles based on selection state
+    gSelection.selectAll<SVGCircleElement, { id: string }>('circle.event')
+      .attr('stroke', d => isSelected(d.id) ? '#3b82f6' : 'white')
+      .attr('stroke-width', d => isSelected(d.id) ? 3 : 1.5);
+  }, [selection, isSelected]);
 
   // Get selected event info for overlay
   const selectedEvent = selectedEventId
