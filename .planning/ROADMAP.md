@@ -282,14 +282,14 @@ Plans:
 
 | Plan | Focus | Requirements | Deliverables |
 |------|-------|--------------|--------------|
-| 116-01 | View State Manager | REQ-D-03 | `ViewStateManager.ts`, sessionStorage |
-| 116-02 | Pane Coordination | REQ-D-04 | `PaneLayoutContext.tsx`, ResizeObserver |
-| 116-03 | Performance & Tests | REQ-NF-* | Performance validation, test suite |
+| 116-01 | View State Manager | REQ-D-03 | Extended `usePreviewSettings.ts` with scroll persistence |
+| 116-02 | Pane Coordination | REQ-D-04 | `PaneLayoutContext.tsx`, 500ms debounce |
+| 116-03 | Performance & Tests | REQ-NF-* | Integration tests, CSS primitives verification |
 
 Plans:
-- [ ] 116-01-PLAN.md — ViewStateManager with scroll/zoom/selection persistence
-- [ ] 116-02-PLAN.md — PaneLayoutContext with debounced resize
-- [ ] 116-03-PLAN.md — Performance validation and comprehensive test coverage
+- [ ] 116-01-PLAN.md — Extend usePreviewSettings with scroll position persistence
+- [ ] 116-02-PLAN.md — PaneLayoutContext with debounced resize coordination
+- [ ] 116-03-PLAN.md — Integration tests and performance validation
 
 ---
 
