@@ -3,9 +3,15 @@
  *
  * React hook for importing alto-index data into the sql.js database.
  * Loads preprocessed JSON from the public directory and imports nodes.
+ *
+ * @deprecated useAltoIndexImport is deprecated. Apple Notes direct sync is
+ * now available via useAppleNotesSync and the 'Sync Apple Notes...' File menu.
+ * The alto-index.json pipeline has known folder mapping errors. This hook will
+ * be removed in a future phase after IntegratedLayout.tsx and
+ * SuperGridScrollTest.tsx are migrated to useAppleNotesSync.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useSQLite } from '../db/SQLiteProvider';
 import { importAltoFiles, getImportStats, clearAltoIndexData, type ImportResult, type AltoDataType } from '../etl';
 import { devLogger } from '../utils/logging';
@@ -63,6 +69,10 @@ export function useAltoIndexImport(): UseAltoIndexImportResult {
   const [currentFile, setCurrentFile] = useState('');
   const [result, setResult] = useState<ImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    console.warn('[DEPRECATED] useAltoIndexImport is deprecated. Apple Notes direct sync is now available in File menu.');
+  }, []);
 
   const importFromJSON = useCallback(
     async (options: UseAltoIndexImportOptions = {}): Promise<ImportResult> => {

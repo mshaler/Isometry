@@ -12,6 +12,12 @@
  * - H (Hierarchy): priority, importance (derived from status)
  *
  * Phase 70-02: Refactored to extend BaseImporter and return CanonicalNode[].
+ *
+ * @deprecated alto-importer.ts is deprecated. Use Apple Notes direct sync
+ * (AppleNotesSyncService + useAppleNotesSync) instead. The alto-index.json
+ * intermediary pipeline has known folder mapping errors and is being replaced.
+ * This file will be removed in a future phase after IntegratedLayout.tsx and
+ * SuperGridScrollTest.tsx are migrated to useAppleNotesSync.
  */
 
 import type { Database } from 'sql.js';
@@ -624,6 +630,7 @@ export function importAltoFiles(
   files: Array<{ path: string; content: string }>,
   options: ImportOptions = {}
 ): ImportResult {
+  console.warn('[DEPRECATED] alto-importer.ts is deprecated. Use Apple Notes direct sync instead.');
   const runId = `alto-run-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const start = performance.now();
   const result: ImportResult = {

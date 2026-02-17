@@ -9,6 +9,12 @@
  * diverse data types and LATCH field mapping.
  *
  * Phase 64-02: Refactored to use shared parsers/frontmatter module.
+ *
+ * @deprecated alto-parser.ts is deprecated. Use Apple Notes direct sync
+ * (AppleNotesSyncService + useAppleNotesSync) instead. The alto-index.json
+ * intermediary pipeline has known folder mapping errors and is being replaced.
+ * This file will be removed in a future phase after dependent components are
+ * migrated to useAppleNotesSync.
  */
 import { parseFrontmatter as parseYamlFrontmatter, type ParsedFrontmatter } from './parsers/frontmatter';
 
@@ -209,6 +215,7 @@ function hashString(str: string): string {
  * Uses shared frontmatter parser with YAML 1.2 support.
  */
 export function parseAltoFile(content: string, filePath: string = ''): ParsedAltoFile | null {
+  console.warn('[DEPRECATED] alto-parser.ts is deprecated. Use Apple Notes direct sync instead.');
   const parsed = parseYamlFrontmatter(content);
   if (!parsed) return null;
 
