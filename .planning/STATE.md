@@ -54,7 +54,7 @@ Progress: [█████████░] 90%
 - **117-03**: Sync Orchestration — NEXT
 - **117-04**: UI + Migration
 
-**Status:** Milestone complete
+**Status:** Ready to plan
 
 **Verification:**
 ```
