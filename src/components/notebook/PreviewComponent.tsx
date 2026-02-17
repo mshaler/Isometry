@@ -22,7 +22,18 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   const [previewUrl, setPreviewUrl] = useState('https://example.com');
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const [activeTab, setActiveTab] = useState<PreviewTab>('supergrid');
+  const [activeTab, setActiveTab] = useState<PreviewTab>(() => {
+    try {
+      const stored = sessionStorage.getItem('preview-active-tab');
+      const validTabs: PreviewTab[] = ['supergrid', 'network', 'timeline', 'data-inspector', 'web-preview', 'd3-visualization'];
+      if (stored && validTabs.includes(stored as PreviewTab)) {
+        return stored as PreviewTab;
+      }
+    } catch {
+      // sessionStorage unavailable (e.g., private browsing)
+    }
+    return 'supergrid';
+  });
   const [dataPointCount, setDataPointCount] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -155,6 +166,15 @@ export function PreviewComponent({ className }: PreviewComponentProps) {
   // Get current tab info
   const currentTab = tabs.find(tab => tab.id === activeTab) || tabs[0];
   const ContentIcon = currentTab.icon;
+
+  // Persist active tab to sessionStorage on change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('preview-active-tab', activeTab);
+    } catch {
+      // sessionStorage unavailable (e.g., private browsing) — silently ignore
+    }
+  }, [activeTab]);
 
   // Update data point count when cards change (cross-canvas data flow)
   useEffect(() => {
