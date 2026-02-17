@@ -6,7 +6,7 @@
  */
 
 import * as d3 from 'd3';
-import { getAdaptiveTickFormat } from './TimelineRenderer';
+import { getAdaptiveTickFormat } from './types';
 
 // ============================================================================
 // Types

@@ -112,3 +112,26 @@ export const TRACK_COLORS = [
 export function getTrackColor(trackIndex: number): string {
   return TRACK_COLORS[trackIndex % TRACK_COLORS.length];
 }
+
+// ============================================================================
+// Adaptive Tick Format
+// ============================================================================
+
+/**
+ * Returns a d3 time format string based on the visible time extent.
+ *
+ * Zoom levels:
+ * - Very zoomed out (> 365 days): Year labels (%Y)
+ * - Zoomed out (> 90 days): Month labels (%b %Y)
+ * - Normal (> 7 days): Day labels (%b %d)
+ * - Zoomed in (<= 7 days): Day+Time labels (%b %d %H:%M)
+ */
+export function getAdaptiveTickFormat(domain: [Date, Date]): string {
+  const extentMs = domain[1].getTime() - domain[0].getTime();
+  const extentDays = extentMs / (1000 * 60 * 60 * 24);
+
+  if (extentDays > 365) return '%Y';
+  if (extentDays > 90) return '%b %Y';
+  if (extentDays > 7) return '%b %d';
+  return '%b %d %H:%M';
+}
