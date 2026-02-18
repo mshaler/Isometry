@@ -1023,7 +1023,7 @@ Plans:
 | 114. Timeline & Preview | v6.9 | 2/3 | In Progress | — |
 | 115. Three-Canvas Layout | v6.9 | Complete    | 2026-02-17 | — |
 | 116. State & Polish | v6.9 | Complete    | 2026-02-17 | — |
-| 117. Apple Notes SQLite Sync | v7.0 | Complete    | 2026-02-17 | — |
+| 117. Apple Notes SQLite Sync | v7.0 | Complete    | 2026-02-18 | — |
 
 ---
 *Roadmap created: 2026-02-10*
