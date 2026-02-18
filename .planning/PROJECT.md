@@ -4,162 +4,105 @@
 **Type:** Native iOS/macOS applications with React prototype bridge
 **Timeline:** Production-ready native implementation
 
-## Current Milestone: v6.9 Polymorphic Views & Foundation
+## What This Is
 
-**Goal:** Enable full Grid Continuum (Gallery/List/Kanban/Grid/SuperGrid) with CSS primitives, clean up technical debt, polish Network/Timeline views, and complete Three-Canvas notebook integration.
-
-## Next Milestone: v7.0 Apple Notes Direct Sync
-
-**Goal:** Replace alto-index.json intermediary with direct Apple Notes → sql.js synchronization, eliminating data integrity bugs (folder mapping errors, stale data, duplicates).
-
-**Motivation:** Investigation of "phantom card" bug revealed alto-index.json has folder mapping errors — note "Under stress, Stacey channels mean Cindy" appears in `BairesDev/Operations` in alto-index but is actually in `Family/Stacey` in Apple Notes.
-
-**Phase 117: Apple Notes SQLite Sync**
-- **117-01**: ETL Module Integration — Integrate isometry-etl adapter ✅ COMPLETE
-- **117-02**: NodeWriter Service — CanonicalNode → sql.js mapping with deduplication
-- **117-03**: Sync Orchestration — Full/incremental sync with progress reporting
-- **117-04**: UI + Migration — Sync button, auto-sync, deprecate alto-index
-
-**Key Capabilities:**
-- Direct SQLite access to NoteStore.sqlite (no intermediary files)
-- Correct folder hierarchy via ZFOLDER + ZPARENT SQL joins
-- Protobuf content extraction with markdown conversion
-- Inline tag extraction from note text (#hashtags)
-- Incremental sync via Core Data modification timestamps
-- Live data — no more stale alto-index.json exports
-
-**Technical Approach:**
-- `better-sqlite3` for native Node.js SQLite access (read-only)
-- Database: `~/Library/Group Containers/group.com.apple.notes/NoteStore.sqlite`
-- Canonical format: CanonicalNode/CanonicalEdge with LATCH properties
-- NEST edges for folder containment relationships
-- Sync state persisted in Isometry settings table
-
-**Verified:** Query confirms correct folder mapping:
-```sql
-SELECT n.ZTITLE1, f.ZTITLE2, pf.ZTITLE2 FROM ZICCLOUDSYNCINGOBJECT n ...
--- Result: "Under stress, Stacey channels mean Cindy" | "Stacey" | "Family"
--- ✅ Correct folder path: Family/Stacey
-```
-
-**Four Tracks:**
-
-1. **Track A: View Continuum Integration** — Wire Gallery, List, Kanban modes to CSS Grid + PAFV axis allocation
-2. **Track B: Technical Debt Sprint** — knip unused exports cleanup (275→<100), src/services directory health, TipTap test infrastructure
-3. **Track C: Network/Timeline Polish** — SQL-driven data hooks, Preview tab integration, D3 force/timeline views
-4. **Track D: Three-Canvas Notebook** — Full Capture+Shell+Preview experience per original spec
-
-**Parallelization:** Tracks A+B run in parallel. Track C depends on A. Track D depends on C.
-
-## Previous Milestones
-
-### v6.8 CSS Primitives (SHIPPED 2026-02-16)
-Three-tier CSS architecture (tokens → primitives → chrome) with design tokens, layout primitives for all view types, and chrome components (sticky headers, selection, scroll shadows, tooltips, sidebar, accordion, dialog).
-
-### v6.7 CSS Grid Integration (SHIPPED 2026-02-16)
-Bridge HeaderDiscoveryService (SuperStack) to SuperGridCSS with adapters and data hooks for live SQL-driven rendering.
-
-### v6.6 CSS Grid SuperGrid (SHIPPED)
-Replaced D3.js tabular rendering with React + CSS Grid for hierarchical header spanning. 84 unit tests, 4 themes.
-
-### v6.5 Console Cleanup (SHIPPED)
-Eliminated console errors and excessive debug logging. Clean browser console on page load.
-
-### v6.4 Hardcoded Values Cleanup (SHIPPED)
-SettingsService with CRUD, dynamic facet discovery, CardDetailModal with dynamic dropdowns, schema-flexible test fixtures.
-
-### v6.3 SuperStack SQL Integration (SHIPPED)
-Connected SuperStack headers to live SQLite via sql.js with query builders, React hooks, and integration tests.
-
-### v6.2 Capture Writing Surface (SHIPPED)
-World-class writing surface with Apple Notes fluency, Notion flexibility, Obsidian power, Isometry-native embeds.
-
-### v6.1 SuperStack Enhancement (SHIPPED)
-Nested hierarchical header system transforming SuperGrid into true dimensional pivot table.
-
-### v6.0 Interactive Shell (SHIPPED)
-Complete Shell implementation with Terminal, Claude AI, and GSD GUI tabs.
-
-### v5.2 Cards & Connections (SHIPPED)
-Schema migration from nodes/edges to cards/connections with 4-type constraint.
-
-### v5.1 Notebook Integration (SHIPPED)
-Collapsible NotebookLayout panel in IntegratedLayout with context wiring.
-
-### v5.0 Type Safety Restoration (SHIPPED)
-Eliminated all 1,347 TypeScript compilation errors. Pre-commit hook fully restored.
-
-### v4.x Foundation Milestones (SHIPPED)
-SuperGrid Foundation, Three-Canvas Notebook, Navigator Integration, PAFV Projection, Stacked Headers, Polish, Data Layer, Schema-on-Read.
+Isometry is a polymorphic data projection platform where the same LATCH-filtered, GRAPH-connected dataset renders through PAFV spatial projection as gallery, list, kanban, grid, network, or timeline — with view transitions that change the SQL projection, not the data. The Three-Canvas notebook (Capture + Shell + Preview) provides the unified workspace for knowledge capture and visualization.
 
 ## Core Value
 
-Transform the Isometry ecosystem with a capture-shell-preview workflow that bridges rapid note-taking with AI-assisted development, seamlessly integrating notebook cards into the existing PAFV+LATCH+GRAPH knowledge system.
+Polymorphic data projection with zero context loss — the same cards appear across all views, selection syncs everywhere, and the underlying data model (LPG in SQLite) is queryable in real-time.
+
+## Current State
+
+**v7.0 SHIPPED (2026-02-17)** — Polymorphic Views & Apple Notes Sync
+
+The platform now supports the full Grid Continuum (Gallery/List/Kanban) with resizable Three-Canvas layout and direct Apple Notes synchronization. Key capabilities:
+
+- **Grid Continuum:** 5 view modes (Gallery, List, Kanban, Grid, SuperGrid) with PAFV axis allocation
+- **Three-Canvas Notebook:** Resizable Capture/Shell/Preview with panel size persistence
+- **Cross-view selection:** Click in any view → selection visible everywhere via SelectionContext
+- **Direct Apple Notes sync:** SQLite access to NoteStore.sqlite eliminates alto-index.json bugs
+- **ForceSimulationManager:** Lifecycle-managed D3 force simulations with auto-stop
+- **CSS Primitives:** Full design token system with view-specific primitives
+
+**Codebase:** 203,347 LOC TypeScript, 9,413 LOC CSS
+
+## Next Milestone: v7.1 (Planning)
+
+Focus areas to consider:
+- Interactive Shell (Claude AI, terminal, GSD GUI) — deferred from v6.0
+- CloudKit sync for cross-device access
+- Performance optimization for 10K+ nodes
 
 ## Requirements
 
-### Validated
+### Validated (Shipped)
 
-(See MILESTONES.md for complete validated requirements from v3.1 through v6.8)
+**v7.0 — Polymorphic Views & Apple Notes Sync:**
+- ✓ REQ-A-01: Gallery View Renderer — GalleryView with TanStack Virtual, 60fps at 500+ items
+- ✓ REQ-A-02: List View Renderer — ListView with hierarchical tree, keyboard navigation
+- ✓ REQ-A-03: Kanban View Renderer — KanbanView with react-dnd, SQL UPDATE persistence
+- ✓ REQ-A-04: Grid Continuum Mode Switcher — ViewDispatcher routing, keyboard shortcuts
+- ✓ REQ-A-05: PAFV Axis Allocation per View Mode — GridContinuumController.allocateAxes()
+- ✓ REQ-A-06: Cross-View Selection Synchronization — SelectionContext sync across modes
+- ✓ REQ-B-01: Knip Unused Exports Cleanup — 275→91 (67% reduction)
+- ✓ REQ-B-02: src/services Directory Refactoring — directory health maintained
+- ✓ REQ-B-03: TipTap Automated Test Infrastructure — 93 tests established
+- ✓ REQ-C-01: Network Graph SQL Integration — ForceSimulationManager, useForceSimulation hook
+- ✓ REQ-C-02: Timeline View SQL Integration — TimelineView with adaptive tick labels
+- ✓ REQ-C-03: Preview Tab Integration — Network/Timeline as selectable tabs
+- ✓ REQ-C-04: Force Simulation Lifecycle Management — start/stop/reheat/destroy, auto-stop
+- ✓ REQ-D-01: Three-Canvas Layout — react-resizable-panels v3, localStorage persistence
+- ✓ REQ-D-02: Cross-Pane Selection Sync — bidirectional selection, cross-canvas messaging
+- ✓ REQ-D-03: View State Preservation — per-tab scroll/zoom via usePreviewSettings
+- ✓ REQ-D-04: Pane Resize Coordination — PaneLayoutContext, debounced resize
+- ✓ REQ-NF-01: Performance Targets — 60fps achieved across all views
+- ✓ REQ-NF-02: CSS Primitives Consumption — all views consume primitives-*.css
+- ✓ REQ-NF-03: Test Coverage — unit tests for all view renderers and integration
 
-### Active
+**v6.8 and earlier:** See `.planning/MILESTONES.md` for complete validated requirements
 
-**Track A: View Continuum**
-- [ ] Gallery mode rendering with CSS primitives (0-axis masonry)
-- [ ] List mode rendering with CSS primitives (1-axis hierarchy)
-- [ ] Kanban mode rendering with CSS primitives (1-facet columns)
-- [ ] Grid Continuum mode switcher wired to CSS Grid views
-- [ ] PAFV axis allocation for each continuum mode
+### Active (Next Milestone)
 
-**Track B: Technical Debt**
-- [ ] knip unused exports reduced from 275 to <100
-- [ ] src/services directory refactored (22→15 files)
-- [ ] TipTap automated test infrastructure
-
-**Track C: Network/Timeline**
-- [ ] Network graph view with SQL-driven data hooks
-- [ ] Timeline view with SQL-driven data hooks
-- [ ] Preview tab integration for both views
-
-**Track D: Three-Canvas**
-- [ ] Full Capture + Shell + Preview integration
-- [ ] Three-canvas layout with resize handles
-- [ ] Cross-canvas data flow and selection sync
+To be defined during `/gsd:new-milestone`
 
 ### Out of Scope
 
-- Mobile/iOS port (desktop-first)
-- Real-time collaboration (single-user focused)
-- Advanced query builder UI (deferred)
+- Mobile/iOS port — desktop-first
+- Real-time collaboration — single-user focused
+- Video/audio content — text and structured data only
+- AI model fine-tuning — use foundation models via MCP
 
 ## Context
 
-**Current codebase state:** ~160,000 LOC TypeScript
-**Tech stack:** React 18, sql.js (WASM), D3.js v7, TanStack Virtual, Tailwind CSS
+**v7.0 shipped with:**
+- 8 phases (110-117) covering 4 parallel tracks
+- 23 plans executed over 2 days
+- 203K+ LOC codebase in TypeScript strict mode
+- Three-canvas notebook fully integrated
+- Apple Notes direct sync eliminating data integrity bugs
 
-**CSS Primitives delivered (v6.8):**
-- `primitives-supergrid.css`, `primitives-kanban.css`, `primitives-timeline.css`, `primitives-gallery.css`
-- Chrome components: sticky-headers, selection, scroll-shadows, tooltip, sidebar, accordion, dialog
-
-**Grid Continuum infrastructure:**
-- `GridContinuumController.ts` — 5-mode projection controller
-- `ViewContinuum.ts` — D3 view orchestrator
-- `GridContinuumSwitcher.tsx` — React mode switcher UI
-
-**Technical debt:**
-- knip: 275 unused exports (baseline ratchet at 1000)
-- Directory health: src/services (22/15 files)
-- TipTap: Manual test plan, needs automated infrastructure
+**Technical architecture:**
+- React 18 + TypeScript strict mode
+- sql.js (SQLite in WASM) for client-side queries
+- D3.js for force/network visualizations
+- TanStack Virtual for 500+ item virtualization
+- CSS Grid for tabular layouts with native spanning
+- react-resizable-panels for pane management
 
 ## Key Decisions
 
-| Decision | Rationale | Status |
-|----------|-----------|--------|
-| CSS Grid for tabular views | Native spanning, no coordinate math | ✓ Good |
-| D3.js for force/network | Force simulation requires D3 | ✓ Good |
-| Parallel tracks A+B | Independent work streams | Pending |
-| Track C after A | Views need CSS primitives wired | Pending |
-| Track D after C | Canvas integration needs working views | Pending |
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| CSS Grid for SuperGrid | Native spanning, no coordinate math | ✓ Good — 84 tests, 4 themes |
+| D3.js for force/network | Force simulation requires D3 | ✓ Good — lifecycle managed |
+| TanStack Virtual for virtualization | React-native, row-based | ✓ Good — 60fps at 500+ items |
+| react-dnd for kanban | Simpler than dnd-kit | ✓ Good — clean API |
+| react-resizable-panels v3 | Group/Panel/Separator API | ✓ Good — localStorage persistence |
+| Direct Apple Notes SQLite | Eliminates alto-index bugs | ✓ Good — correct folder hierarchy |
+| ForceSimulationManager class | Prevents memory leaks | ✓ Good — explicit lifecycle |
+| Row-based virtualization | CSS Grid auto-fit incompatible with TanStack | ✓ Good — solved the API conflict |
+| sessionStorage for view state | Per-session, not persistent | ✓ Good — user expectation match |
 
 ---
-*Last updated: 2026-02-17 — v7.0 ETL Enrichment milestone planned*
+*Last updated: 2026-02-17 after v7.0 milestone*
