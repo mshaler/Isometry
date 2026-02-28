@@ -44,6 +44,10 @@ export interface CardDatum {
   priority: number;
   /** Explicit sort order within a group */
   sort_order: number;
+  /** ISO timestamp for time-axis views (Calendar, Timeline); null if no due date */
+  due_at: string | null;
+  /** Raw body content; Gallery uses as img src for resource cards; other views ignore */
+  body_text: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -151,5 +155,7 @@ export function toCardDatum(row: Record<string, unknown>): CardDatum {
     modified_at: String(row['modified_at'] ?? ''),
     priority: typeof row['priority'] === 'number' ? row['priority'] : 0,
     sort_order: typeof row['sort_order'] === 'number' ? row['sort_order'] : 0,
+    due_at: row['due_at'] != null ? String(row['due_at']) : null,
+    body_text: row['body_text'] != null ? String(row['body_text']) : null,
   };
 }

@@ -23,6 +23,8 @@ function makeCards(count: number = 6): CardDatum[] {
     modified_at: `2026-01-${String(i + 1).padStart(2, '0')}T12:00:00Z`,
     priority: i + 1,
     sort_order: i + 1,
+    due_at: null,
+    body_text: null,
   }));
 }
 
@@ -213,6 +215,8 @@ describe('GridView', () => {
           modified_at: '2026-02-01T12:00:00Z',
           priority: 0,
           sort_order: 10,
+          due_at: null,
+          body_text: null,
         },
         {
           id: 'card-new-b',
@@ -224,6 +228,8 @@ describe('GridView', () => {
           modified_at: '2026-02-02T12:00:00Z',
           priority: 0,
           sort_order: 11,
+          due_at: null,
+          body_text: null,
         },
       ];
       view.render(newCards);

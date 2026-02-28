@@ -179,6 +179,8 @@ function makeCard(id: string): CardDatum {
     modified_at: '2026-01-01T00:00:00Z',
     priority: 0,
     sort_order: 0,
+    due_at: null,
+    body_text: null,
   };
 }
 
@@ -195,7 +197,8 @@ describe('ViewManager + transitions integration', () => {
     bridge = makeMockBridge([
       { id: 'card-1', name: 'Card 1', folder: null, status: null,
         card_type: 'note', created_at: '2026-01-01T00:00:00Z',
-        modified_at: '2026-01-01T00:00:00Z', priority: 0, sort_order: 0 },
+        modified_at: '2026-01-01T00:00:00Z', priority: 0, sort_order: 0,
+        due_at: null, body_text: null },
     ]);
 
     viewManager = new ViewManager({

@@ -93,6 +93,8 @@ function makeCard(id: string, name = `Card ${id}`): CardDatum {
     modified_at: '2026-01-01T00:00:00Z',
     priority: 0,
     sort_order: 0,
+    due_at: null,
+    body_text: null,
   };
 }
 
