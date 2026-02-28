@@ -9,6 +9,9 @@ export { toCardDatum } from './types';
 export { ListView } from './ListView';
 export { GridView } from './GridView';
 export { KanbanView } from './KanbanView';
+export { CalendarView } from './CalendarView';
+export { TimelineView } from './TimelineView';
+export { GalleryView } from './GalleryView';
 
 // ViewManager
 export { ViewManager } from './ViewManager';

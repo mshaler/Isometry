@@ -24,13 +24,13 @@ import type { CardDatum } from './types';
  * Views that render SVG-based cards (share SVG container for morph transitions).
  * Only these view types can participate in morphTransition.
  */
-const SVG_VIEWS = new Set<ViewType>(['list', 'grid']);
+const SVG_VIEWS = new Set<ViewType>(['list', 'grid', 'timeline']);
 
 /**
  * Views that render HTML-based cards (require crossfade on container swap).
  * HTML-based views cannot share DOM structure with SVG views.
  */
-const HTML_VIEWS = new Set<ViewType>(['kanban']);
+const HTML_VIEWS = new Set<ViewType>(['kanban', 'calendar', 'gallery']);
 
 /**
  * Classify a ViewType into its view family.

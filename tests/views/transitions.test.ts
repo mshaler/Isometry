@@ -48,6 +48,43 @@ describe('shouldUseMorph', () => {
   it('returns false for network → tree (both GRAPH, but future Phase 7)', () => {
     expect(shouldUseMorph('network', 'tree')).toBe(false);
   });
+
+  // Phase 6 timeline additions
+  it('returns true for list -> timeline (both SVG LATCH)', () => {
+    expect(shouldUseMorph('list', 'timeline')).toBe(true);
+  });
+
+  it('returns true for grid -> timeline (both SVG LATCH)', () => {
+    expect(shouldUseMorph('grid', 'timeline')).toBe(true);
+  });
+
+  it('returns true for timeline -> list (both SVG LATCH)', () => {
+    expect(shouldUseMorph('timeline', 'list')).toBe(true);
+  });
+
+  it('returns true for timeline -> grid (both SVG LATCH)', () => {
+    expect(shouldUseMorph('timeline', 'grid')).toBe(true);
+  });
+
+  it('returns false for calendar -> list (HTML to SVG)', () => {
+    expect(shouldUseMorph('calendar', 'list')).toBe(false);
+  });
+
+  it('returns false for gallery -> grid (HTML to SVG)', () => {
+    expect(shouldUseMorph('gallery', 'grid')).toBe(false);
+  });
+
+  it('returns false for calendar -> gallery (both HTML — morph only works with SVG)', () => {
+    expect(shouldUseMorph('calendar', 'gallery')).toBe(false);
+  });
+
+  it('returns false for timeline -> kanban (SVG to HTML)', () => {
+    expect(shouldUseMorph('timeline', 'kanban')).toBe(false);
+  });
+
+  it('returns false for calendar -> network (LATCH to GRAPH family)', () => {
+    expect(shouldUseMorph('calendar', 'network')).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
