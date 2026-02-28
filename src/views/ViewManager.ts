@@ -16,6 +16,7 @@ import { toCardDatum } from './types';
 import type { StateCoordinator } from '../providers/StateCoordinator';
 import type { QueryBuilder } from '../providers/QueryBuilder';
 import type { ViewType } from '../providers/types';
+import { shouldUseMorph, crossfadeTransition } from './transitions';
 
 // ---------------------------------------------------------------------------
 // ViewManager config
@@ -56,6 +57,7 @@ export class ViewManager {
   private readonly pafv: PAFVProviderLike;
 
   private currentView: IView | null = null;
+  private currentViewType: ViewType | null = null;
   private coordinatorUnsub: (() => void) | null = null;
   private loadingTimer: ReturnType<typeof setTimeout> | null = null;
   private loadingEl: HTMLElement | null = null;
@@ -87,28 +89,101 @@ export class ViewManager {
    * @param createView - Factory function that returns a fresh IView instance
    */
   async switchTo(viewType: ViewType, createView: (type: ViewType) => IView): Promise<void> {
-    // 1. Tear down current view (prevents subscriber leaks)
-    this._teardownCurrentView();
+    // Capture outgoing view type for transition detection
+    const previousViewType = this.currentViewType;
+    const useMorph =
+      previousViewType !== null &&
+      this.currentView !== null &&
+      shouldUseMorph(previousViewType, viewType);
 
-    // 2. Clear container
-    this.container.innerHTML = '';
-    this.loadingEl = null;
+    if (useMorph) {
+      // -----------------------------------------------------------------------
+      // MORPH path: both views are SVG-based LATCH views (list↔grid)
+      // -----------------------------------------------------------------------
+      // The SVG container is preserved — d3 data join + transition animates cards
+      // to new positions. We tear down lifecycle (coordinator unsub + view.destroy)
+      // but keep the container DOM intact for the new view to inherit.
 
-    // 3. Apply VIEW_DEFAULTS for the new view type (VIEW-11)
-    this.pafv.setViewType(viewType);
+      // 1. Unsubscribe coordinator (prevents re-renders during transition)
+      if (this.coordinatorUnsub !== null) {
+        this.coordinatorUnsub();
+        this.coordinatorUnsub = null;
+      }
+      // Cancel pending loading timer
+      if (this.loadingTimer !== null) {
+        clearTimeout(this.loadingTimer);
+        this.loadingTimer = null;
+      }
+      // Destroy current view (lifecycle cleanup — not DOM)
+      if (this.currentView !== null) {
+        this.currentView.destroy();
+        this.currentView = null;
+      }
+      // Do NOT clear container.innerHTML — SVG container preserved for morph
 
-    // 4. Mount new view
-    const view = createView(viewType);
-    view.mount(this.container);
-    this.currentView = view;
+      // 3. Apply VIEW_DEFAULTS for the new view type (VIEW-11)
+      this.pafv.setViewType(viewType);
 
-    // 5. Subscribe to coordinator for re-render notifications
-    this.coordinatorUnsub = this.coordinator.subscribe(() => {
-      void this._fetchAndRender();
-    });
+      // 4. Mount new view (it will find and reuse the existing SVG or create a new one)
+      const view = createView(viewType);
+      view.mount(this.container);
+      this.currentView = view;
+      this.currentViewType = viewType;
 
-    // 6. Initial data fetch
-    await this._fetchAndRender();
+      // 5. Subscribe to coordinator for re-render notifications
+      this.coordinatorUnsub = this.coordinator.subscribe(() => {
+        void this._fetchAndRender();
+      });
+
+      // 6. Initial data fetch (new view's render() calls morphTransition internally via D3 join)
+      await this._fetchAndRender();
+    } else {
+      // -----------------------------------------------------------------------
+      // CROSSFADE path: SVG↔HTML boundary or LATCH↔GRAPH family switch
+      // -----------------------------------------------------------------------
+
+      // 1. Tear down current view (prevents subscriber leaks)
+      this._teardownCurrentView();
+
+      // 2. Clear container and perform crossfade if there's an existing view-root
+      this.loadingEl = null;
+      const hasExistingRoot = this.container.querySelector('.view-root') !== null;
+
+      if (hasExistingRoot) {
+        // Crossfade: fade out old, then mount new in a new .view-root
+        await crossfadeTransition(
+          this.container,
+          () => {
+            // This callback runs after old view-root fades out
+            // The new .view-root has already been appended by crossfadeTransition
+            // Apply VIEW_DEFAULTS and mount new view
+          },
+          0 // Use 0ms for non-browser environments; real browser uses CSS transitions
+        );
+        // Clear any remaining non-.view-root content (loading/error elements)
+        this._clearErrorAndEmpty();
+      } else {
+        // No existing view-root — clean slate (first mount or after destroy)
+        this.container.innerHTML = '';
+      }
+
+      // 3. Apply VIEW_DEFAULTS for the new view type (VIEW-11)
+      this.pafv.setViewType(viewType);
+
+      // 4. Mount new view
+      const view = createView(viewType);
+      view.mount(this.container);
+      this.currentView = view;
+      this.currentViewType = viewType;
+
+      // 5. Subscribe to coordinator for re-render notifications
+      this.coordinatorUnsub = this.coordinator.subscribe(() => {
+        void this._fetchAndRender();
+      });
+
+      // 6. Initial data fetch
+      await this._fetchAndRender();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -125,6 +200,7 @@ export class ViewManager {
     this._teardownCurrentView();
     this.container.innerHTML = '';
     this.loadingEl = null;
+    this.currentViewType = null;
   }
 
   // ---------------------------------------------------------------------------
