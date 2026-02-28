@@ -48,7 +48,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [x] **VIEW-03**: KanbanView renders cards in columns grouped by a category field with drag-drop reordering
 - [x] **VIEW-04**: CalendarView renders cards on a month/week/day grid based on date fields with DensityProvider
 - [ ] **VIEW-05**: TimelineView renders cards on a continuous time axis with swimlane grouping
-- [ ] **VIEW-06**: GalleryView renders cards as visual tiles with image/cover display
+- [x] **VIEW-06**: GalleryView renders cards as visual tiles with image/cover display
 - [ ] **VIEW-07**: NetworkView renders force-directed graph with simulation running in the Worker (not main thread)
 - [ ] **VIEW-08**: TreeView renders hierarchical layout from contains/parent connections with collapsible nodes
 - [x] **VIEW-09**: Every D3 `.data()` call uses a stable key function (`d => d.id`)
@@ -135,7 +135,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEW-03 | Phase 5 | Complete |
 | VIEW-04 | Phase 6 | Complete |
 | VIEW-05 | Phase 6 | Pending |
-| VIEW-06 | Phase 6 | Pending |
+| VIEW-06 | Phase 6 | Complete |
 | VIEW-07 | Phase 7 | Pending |
 | VIEW-08 | Phase 7 | Pending |
 | VIEW-09 | Phase 5 | Complete |
