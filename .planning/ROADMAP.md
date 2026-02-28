@@ -49,7 +49,7 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
 
 ### 🚧 v1.0 Web Runtime (Phases 3, 7)
 
-- [ ] **Phase 3: Worker Bridge** - Typed async RPC over postMessage — all SQL off main thread, correlation IDs, initialization queuing, timeouts
+- [x] **Phase 3: Worker Bridge** (2/2 plans) - Typed async RPC over postMessage — all SQL off main thread, correlation IDs, initialization queuing, timeouts — completed 2026-02-28
 - [ ] **Phase 7: Graph Views + SuperGrid** - Network and Tree graph views (Worker-hosted simulation), SuperGrid with nested PAFV dimensional headers
 
 ## Phase Details
@@ -64,7 +64,9 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
   3. Every pending promise times out and rejects after a configurable duration — silent Worker errors never hang the main thread indefinitely
   4. Message router dispatches correctly to query, mutate, graph, fts, and export handlers using existing v0.1 query modules without modification
   5. `isReady` promise resolves before any public bridge method executes — callers cannot race against initialization
-**Plans**: TBD
+**Plans**: 2/2 complete
+- Plan 01: Enable Worker Bridge Integration Tests (Wave 1) — completed 2026-02-28
+- Plan 02: Verify WKBR Requirements + Mark Phase Complete (Wave 2) — completed 2026-02-28
 
 ### Phase 7: Graph Views + SuperGrid
 **Goal**: Users can explore connection data through Network and Tree graph views (with off-main-thread force simulation) and project any dataset through SuperGrid's nested dimensional headers — the signature PAFV differentiator is fully operational
@@ -113,7 +115,7 @@ Phase 7: Graph Views + SuperGrid
 |-------|-----------|----------------|--------|-----------|
 | 1. Database Foundation | v0.1 | 4/4 | Complete | 2026-02-28 |
 | 2. CRUD + Query Layer | v0.1 | 6/6 | Complete | 2026-02-28 |
-| 3. Worker Bridge | v1.0 | 0/TBD | Not started | - |
+| 3. Worker Bridge | v1.0 | 2/2 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | v0.5 | 7/7 | Complete | 2026-02-28 |
 | 5. Core D3 Views + Transitions | v0.5 | 4/4 | Complete | 2026-02-28 |
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |

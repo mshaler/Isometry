@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
-status: planning
-last_updated: "2026-02-28T22:30:00.000Z"
+status: active
+last_updated: "2026-02-28T23:55:00.000Z"
 progress:
   total_phases: 2
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  completed_phases: 1
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # Project State
@@ -23,20 +23,20 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [Phase 3] [Phase 7]
-                                  |         |
-                                  v         v (both not started)
+[v0.1 SHIPPED] [v0.5 SHIPPED] [Phase 3 COMPLETE] [Phase 7]
+                                                      |
+                                                      v (not started)
 ```
 
-Phase: None active — milestone v0.5 just completed
-Next: Phase 3 (Worker Bridge) or Phase 7 (Graph Views + SuperGrid) — can run in parallel
-Status: 774 tests passing, 20,468 LOC TypeScript
+Phase: Phase 3 (Worker Bridge) — COMPLETE (2/2 plans, 2026-02-28)
+Next: Phase 7 (Graph Views + SuperGrid)
+Status: 798 tests passing, 20,468+ LOC TypeScript
 
 ## Performance Metrics
 
 | Metric | v0.1 Result | v0.5 Result | v1.0 Target |
 |--------|-------------|-------------|-------------|
-| Tests passing | 151 | 774 | TBD |
+| Tests passing | 151 | 774 | 798 (Phase 3) |
 | TypeScript LOC | 3,378 | 20,468 | TBD |
 | Insert p99 | <10ms | — | — |
 | FTS p99 | <100ms | — | — |
@@ -55,14 +55,13 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - D3 key function: Mandatory on every .data() call — cannot be retrofitted
 - Full Phase 4-6 decision log archived to `.planning/milestones/v0.5-phases/`
 
-### Dependencies to Add (Phase 3 setup)
+### Dependencies Added (Phase 3)
 
-- `@vitest/web-worker@4.0.18` — dev (must match installed Vitest version exactly)
-- tsconfig.json: add `"WebWorker"` to `lib` array
+- `@vitest/web-worker@4.0.18` — dev (installed, matches Vitest 4.0.x)
+- tsconfig.json: WebWorker lib NOT added (causes TS6200 conflicts; DOM lib provides needed types)
 
 ### Pending Todos
 
-- Plan Phase 3 (Worker Bridge) before starting implementation
 - Research flag: Phase 7 (SuperGrid SuperStack algorithm + graph algorithm sourcing) needs `gsd:research-phase` before planning
 
 ### Blockers/Concerns
@@ -71,18 +70,24 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - SuperGrid SuperStack header spanning: no documented D3 analogue; needs research spike before Phase 7
 - Graph algorithm implementations (PageRank, Louvain): must be zero-DOM-dependency for Worker context
 
-### Phase 3 Entry State
+### Phase 3 Completion State
 
-- v0.5 complete: 20,468 LOC, 774 tests
-- Worker Bridge spec: CLAUDE-v5.md D-002, v5/Modules/Core/WorkerBridge.md (canonical)
-- Existing query modules to reuse: src/database/queries/ (cards, connections, search, graph)
-- withStatement stub: currently throws in Phase 2; needs Database.prepare() in Phase 3
+- Phase 3 complete: 798 tests, 2/2 plans
+- WKBR-01..07 all verified with specific test coverage
+- @vitest/web-worker@4.0.18 installed, 24 integration tests pass
+- 135 total worker tests (111 unit + 24 integration), 97 mutation tests
+- No code changes to production src/ — all implementation was already done in Phases 2 + 4
+
+### Phase 7 Entry State
+
+- v0.5 complete: Provider system, D3 views, transitions all wired
 - D3 v7.9.0 already installed (Phase 5)
-- Provider system complete: FilterProvider, PAFVProvider, DensityProvider, SelectionProvider all wired
+- Worker Bridge complete: typed RPC, correlation IDs, error propagation
 - MutationManager complete: undo/redo, keyboard shortcuts, rAF batching
+- Research flag: SuperGrid SuperStack + graph algorithms need `gsd:research-phase`
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: v0.5 milestone completion
-Resume: Start `/gsd:new-milestone` or plan Phase 3/Phase 7 directly
+Stopped at: Phase 3 completion (v1.0 milestone — 1/2 phases done)
+Resume: Plan Phase 7 (Graph Views + SuperGrid) — run `gsd:research-phase 7` first per research flag

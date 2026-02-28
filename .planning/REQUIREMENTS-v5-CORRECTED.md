@@ -78,13 +78,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Worker Bridge (Phase 3 + Phase 4)
 
-- [ ] **WKBR-01**: WorkerBridge sends typed WorkerMessage with UUID correlation ID
-- [ ] **WKBR-02**: Worker responds with WorkerResponse matching request correlation ID
-- [ ] **WKBR-03**: Worker errors propagate to main thread with error code and message
-- [ ] **WKBR-04**: All database operations execute in Web Worker (main thread never blocked)
-- [ ] **WKBR-05**: MutationManager generates inverse SQL for every mutation (undo support) — per D-009 decision
-- [ ] **WKBR-06**: MutationManager sets dirty flag on write and notifies subscribers
-- [ ] **WKBR-07**: User can undo/redo mutations via command log (Cmd+Z / Cmd+Shift+Z)
+- [x] **WKBR-01**: WorkerBridge sends typed WorkerMessage with UUID correlation ID
+- [x] **WKBR-02**: Worker responds with WorkerResponse matching request correlation ID
+- [x] **WKBR-03**: Worker errors propagate to main thread with error code and message
+- [x] **WKBR-04**: All database operations execute in Web Worker (main thread never blocked)
+- [x] **WKBR-05**: MutationManager generates inverse SQL for every mutation (undo support) — per D-009 decision
+- [x] **WKBR-06**: MutationManager sets dirty flag on write and notifies subscribers
+- [x] **WKBR-07**: User can undo/redo mutations via command log (Cmd+Z / Cmd+Shift+Z)
 
 ### Views (Phase 5)
 
@@ -232,10 +232,10 @@ Canonical view types (nine total):
 | CONN-01..05 | 2 | Web Runtime v1 | Pending |
 | SRCH-01..04 | 2 | Web Runtime v1 | Pending |
 | PERF-01..04 | 2 | Web Runtime v1 | Pending |
-| WKBR-01..04 | 3 | Web Runtime v1 | Pending |
+| WKBR-01..04 | 3 | Web Runtime v1 | Complete |
 | SAFE-01..06 | 4 | Web Runtime v1 | Pending |
 | PROV-01..07 | 4 | Web Runtime v1 | Pending |
-| WKBR-05..07 | 4 | Web Runtime v1 | Pending |
+| WKBR-05..07 | 4 | Web Runtime v1 | Complete |
 | VIEW-01..13 | 5 | Web Runtime v1 | Pending |
 | SRCH-05..07 | 5 | Web Runtime v1 | Pending |
 | PERF-05 | 5 | Web Runtime v1 | Pending |
