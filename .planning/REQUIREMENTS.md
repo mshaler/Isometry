@@ -243,9 +243,9 @@ Canonical view types (nine total):
 | NSAFE-01..10 | 7 | Native App v1 | Pending |
 
 **Coverage:**
-- Web Runtime v1: 57 requirements (Phases 1-6)
+- Web Runtime v1: 68 requirements (Phases 1-6)
 - Native App v1: 10 additional requirements (Phase 7)
-- Total v1: 67 requirements
+- Total v1: 78 requirements
 - Unmapped: 0 ✓
 
 ---
