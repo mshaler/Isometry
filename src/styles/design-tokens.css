@@ -1,0 +1,56 @@
+/*
+ * Isometry v5 — Design Tokens
+ * CSS custom properties from D3Components.md design system.
+ *
+ * Dark theme color system, spacing scale, radius scale, and transition timing.
+ * Import this file before views.css and any component styles.
+ *
+ * Requirements: REND-07
+ */
+
+:root {
+  /* -------------------------------------------------------------------------
+   * Background colors
+   * ---------------------------------------------------------------------- */
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-card: #1e1e2e;
+  --bg-surface: #252540;
+
+  /* -------------------------------------------------------------------------
+   * Text colors
+   * ---------------------------------------------------------------------- */
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0b0;
+  --text-muted: #606070;
+
+  /* -------------------------------------------------------------------------
+   * Accent and status colors
+   * ---------------------------------------------------------------------- */
+  --accent: #4a9eff;
+  --accent-hover: #6ab0ff;
+  --danger: #ff4a4a;
+
+  /* -------------------------------------------------------------------------
+   * Spacing scale
+   * ---------------------------------------------------------------------- */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+
+  /* -------------------------------------------------------------------------
+   * Border radius scale
+   * ---------------------------------------------------------------------- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* -------------------------------------------------------------------------
+   * Transition timing
+   * ---------------------------------------------------------------------- */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 400ms;
+}

@@ -1,0 +1,175 @@
+/*
+ * Isometry v5 — View Styles
+ * View-specific styles: loading spinner, error banner, empty state, and cards.
+ *
+ * Requires: design-tokens.css (must be imported first for CSS variables)
+ *
+ * Requirements: REND-07, REND-08
+ */
+
+/* ---------------------------------------------------------------------------
+ * Loading state
+ * ---------------------------------------------------------------------- */
+
+/** Container shown during data fetching (after 200ms delay to avoid flash) */
+.view-loading {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+}
+
+/** Shown by ViewManager after 200ms loading timeout fires */
+.view-loading.is-visible {
+  display: flex;
+}
+
+/** CSS-only rotating spinner ring */
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid transparent;
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/** "Loading..." label below spinner */
+.spinner-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Error state
+ * ---------------------------------------------------------------------- */
+
+/** Inline error banner at top of view area — red-tinted background, not a modal */
+.view-error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background-color: rgba(255, 74, 74, 0.12); /* --danger at 12% opacity */
+  border: 1px solid rgba(255, 74, 74, 0.3);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
+}
+
+/** Error message text */
+.view-error-banner .error-message {
+  flex: 1;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+/** Retry button — accent color outline style */
+.retry-btn {
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.retry-btn:hover {
+  background-color: rgba(74, 158, 255, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty state
+ * ---------------------------------------------------------------------- */
+
+/** Centered message when query returns zero results */
+.view-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Card base styles
+ * ---------------------------------------------------------------------- */
+
+/** Base card container — used by HTML card renderer (KanbanView) */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+}
+
+.card:hover {
+  background-color: var(--bg-surface);
+}
+
+/** Primary card name — truncated with ellipsis */
+.card-name {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/** Secondary subtitle line (status or folder) */
+.card-subtitle {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/** Small type character badge */
+.card-type-badge {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Drag and drop styles (for KanbanView)
+ * ---------------------------------------------------------------------- */
+
+/** Card being dragged — dimmed to show original position */
+.dragging {
+  opacity: 0.4;
+}
+
+/** Column that is a valid drop target */
+.drag-over {
+  outline: 1px solid var(--accent);
+  outline-offset: -2px;
+}
