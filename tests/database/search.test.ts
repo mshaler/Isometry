@@ -89,8 +89,8 @@ describe('SRCH-01: BM25-ranked results', () => {
     expect(aIdx).toBeLessThan(bIdx);
   });
 
-  it('searchCards("nonexistent-term-xyz") returns empty array', () => {
-    const results = searchCards(db, 'nonexistent-term-xyz');
+  it('searchCards("nonexistentxyzabc") returns empty array (no match found)', () => {
+    const results = searchCards(db, 'nonexistentxyzabc');
     expect(results).toEqual([]);
   });
 });
