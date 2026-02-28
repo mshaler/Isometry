@@ -12,3 +12,4 @@ export {
 } from './inverses';
 export { MutationManager } from './MutationManager';
 export type { MutationBridge } from './MutationManager';
+export { setupMutationShortcuts } from './shortcuts';

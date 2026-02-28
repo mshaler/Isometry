@@ -61,3 +61,57 @@ export * as cardQueries from './database/queries/cards';
 export * as connectionQueries from './database/queries/connections';
 export * as searchQueries from './database/queries/search';
 export * as graphQueries from './database/queries/graph';
+
+// ---------------------------------------------------------------------------
+// Providers (Phase 4)
+// ---------------------------------------------------------------------------
+export {
+  FilterProvider,
+  PAFVProvider,
+  SelectionProvider,
+  DensityProvider,
+  StateCoordinator,
+  StateManager,
+  QueryBuilder,
+  ALLOWED_FILTER_FIELDS,
+  ALLOWED_OPERATORS,
+  ALLOWED_AXIS_FIELDS,
+  isValidFilterField,
+  isValidOperator,
+  isValidAxisField,
+  validateFilterField,
+  validateOperator,
+  validateAxisField,
+} from './providers';
+export type {
+  FilterField,
+  FilterOperator,
+  AxisField,
+  SortDirection,
+  TimeGranularity,
+  ViewType,
+  ViewFamily,
+  Filter,
+  AxisMapping,
+  CompiledFilter,
+  CompiledAxis,
+  CompiledDensity,
+  PersistableProvider,
+  CompiledQuery,
+  CardQueryOptions,
+} from './providers';
+
+// ---------------------------------------------------------------------------
+// Mutations (Phase 4)
+// ---------------------------------------------------------------------------
+export {
+  MutationManager,
+  setupMutationShortcuts,
+  createCardMutation,
+  updateCardMutation,
+  deleteCardMutation,
+  createConnectionMutation,
+  deleteConnectionMutation,
+  batchMutation,
+} from './mutations';
+export type { MutationCommand, Mutation, MutationBridge } from './mutations';

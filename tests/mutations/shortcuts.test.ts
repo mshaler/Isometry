@@ -65,7 +65,11 @@ function createDocumentStub() {
 // KeyboardEvent factory
 // ---------------------------------------------------------------------------
 
-function makeKeyEvent(overrides: Partial<KeyboardEvent> & { target?: Partial<HTMLElement> } = {}): KeyboardEvent {
+function makeKeyEvent(
+  overrides: Partial<Omit<KeyboardEvent, 'target'>> & {
+    target?: { tagName?: string; isContentEditable?: boolean };
+  } = {}
+): KeyboardEvent {
   const { target, ...rest } = overrides;
   const defaultTarget = { tagName: 'BODY', isContentEditable: false };
   return {
