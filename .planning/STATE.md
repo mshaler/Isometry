@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-02-28T21:41:37.116Z"
+last_updated: "2026-02-28T22:12:00Z"
 progress:
   total_phases: 3
   completed_phases: 2
@@ -18,20 +18,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 5 — Core D3 Views + Transitions
+**Current focus:** Phase 6 — Time + Visual Views (Calendar, Timeline, Gallery)
 
 ## Current Position
 
 ```
 [Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
-                        |
-                        v (active — Plans 01, 02, 03 complete)
+                                   |
+                                   v (active — Plan 01 complete)
 ```
 
-Phase: 5 (05-core-d3-views-transitions) — COMPLETE
-Plan: 04 complete → Transitions (morph + crossfade) + barrel exports for views public API
-Status: Plans 01–04 complete — ListView, GridView, KanbanView, transitions, barrel exports done; 727 tests passing
-Last activity: 2026-02-28 — 05-04 (Transitions + API) complete
+Phase: 6 (06-time-visual-views) — ACTIVE
+Plan: 01 complete → CalendarView + CardDatum expansion (due_at, body_text)
+Status: Plan 01 complete — CalendarView with 5 granularity modes done; 743 tests passing
+Last activity: 2026-02-28 — 06-01 (CalendarView + CardDatum) complete
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Last activity: 2026-02-28 — 05-04 (Transitions + API) complete
 | Phase 05-core-d3-views-transitions P02 | 4 | 2 tasks | 4 files |
 | Phase 05-core-d3-views-transitions P03 | 4 | 2 tasks | 2 files |
 | Phase 05-core-d3-views-transitions P04 | 4 | 2 tasks | 5 files |
+| Phase 06-time-visual-views P01 | 6 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,10 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 05-core-d3-views-transitions 05-04]: shouldUseMorph returns true only for list↔grid — SVG_VIEWS membership + same LATCH family both required
 - [Phase 05-core-d3-views-transitions 05-04]: Morph path preserves container.innerHTML — SVG element survives switchTo(), D3 join animates cards to new positions internally
 - [Phase 05-core-d3-views-transitions 05-04]: crossfadeTransition duration=0 for test environments avoids jsdom async timer issues while preserving DOM state assertions
+- [Phase 06-time-visual-views 06-01]: CalendarView initializes to current date via new Date() — tests use dynamic current-month dates, not hardcoded month strings, to ensure cell existence in the rendered grid
+- [Phase 06-time-visual-views 06-01]: CalendarView does NOT auto-navigate to card dates on render — user controls period via prev/next nav; view starts at current date
+- [Phase 06-time-visual-views 06-01]: Quarter/year mini-month views do not bind card chips — structural overview only; card chips rendered only in month/week/day granularity cells
+- [Phase 06-time-visual-views 06-01]: CardDatum due_at and body_text are required fields (not optional) with null as explicit value — TypeScript catches missing fields in test factories
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -127,6 +132,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T21:35:29Z
-Stopped at: Completed 05-core-d3-views-transitions/05-04-PLAN.md — Transitions (shouldUseMorph, morphTransition, crossfadeTransition) wired into ViewManager + barrel exports in src/views/index.ts and src/index.ts (727 tests passing)
-Resume: Phase 5 complete. Continue with `gsd:execute-phase 06` for Phase 6 (Time + Visual Views)
+Last session: 2026-02-28T22:12:00Z
+Stopped at: Completed 06-time-visual-views/06-01-PLAN.md — CalendarView with 5 granularity modes + CardDatum expanded with due_at/body_text (743 tests passing)
+Resume: Phase 6 active. Continue with `gsd:execute-phase 06` for Plan 02 (TimelineView) or Plan 03 (GalleryView)

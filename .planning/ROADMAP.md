@@ -161,7 +161,7 @@ Visual Views       (parallel-capable after Phase 5)
 | 3. Worker Bridge | v1.0 | 7/7 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | 7/7 | Complete   | 2026-02-28 | - |
 | 5. Core D3 Views + Transitions | 4/4 | Complete   | 2026-02-28 | - |
-| 6. Time + Visual Views | v1.0 | 0/3 | Planned | - |
+| 6. Time + Visual Views | 1/3 | In Progress|  | - |
 | 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
 ---
