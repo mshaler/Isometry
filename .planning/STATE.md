@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T11:00:08Z"
+last_updated: "2026-02-28T11:03:00.220Z"
 progress:
-  total_phases: 7
+  total_phases: 2
   completed_phases: 1
-  total_plans: 25
+  total_plans: 9
   completed_plans: 7
 ---
 
@@ -23,28 +23,28 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 2 of 7 (CRUD + Query Layer) -- IN PROGRESS
-Plan: 3 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections, partial RED), 02-03 (Search) done
-Status: Phase 2 In Progress -- 02-03 complete (FTS5 Search TDD, 21/21 tests passing)
-Last activity: 2026-02-28 -- Plan 02-03 complete (FTS5 Search with BM25 ranking, rowid joins, snippets)
+Plan: 3 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections), 02-03 (Search) done
+Status: Phase 2 In Progress -- 02-02 complete (Connection CRUD TDD, 23/23 tests passing, CONN-01..05 done)
+Last activity: 2026-02-28 -- Plan 02-02 complete (Connection CRUD with FK cascade, bidirectional direction queries)
 
 Progress: [#######...] 28% (7/25 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 2.67 min
-- Total execution time: 0.27 hours
+- Total plans completed: 7
+- Average duration: 2.71 min
+- Total execution time: 0.32 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 4 | 11 min | 2.75 min |
-| 02-crud-query-layer | 2 | 5 min | 2.5 min |
+| 02-crud-query-layer | 3 | 9 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 3 min, 3 min, 3 min, 2 min
+- Last 5 plans: 3 min, 3 min, 3 min, 2 min, 4 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -79,6 +79,9 @@ Recent decisions affecting current work:
 - [02-03]: ORDER BY rank (FTS5 virtual column) used instead of ORDER BY bm25() — pre-computed, faster with LIMIT
 - [02-03]: Test uses 'nonexistentxyzabc' (no hyphens) for no-match test — FTS5 MATCH throws on hyphenated terms (hyphen is an FTS5 minus operator)
 - [02-03]: snippet column_index -1 auto-selects best matching column across all FTS5 columns
+- [Phase 02-crud-query-layer]: UNIQUE constraint test uses non-NULL via_card_id — SQLite treats NULLs as distinct in UNIQUE (ISO SQL standard, same as [01-03] decision for cards)
+- [Phase 02-crud-query-layer]: CONN-05 cascade behavior requires no implementation code — schema ON DELETE CASCADE/SET NULL handles it; tests verify using raw db.run DELETE
+- [Phase 02-crud-query-layer]: Connections use hard delete (idempotent DELETE WHERE id=?) — no soft-delete on connections
 
 ### Pending Todos
 
@@ -95,5 +98,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-crud-query-layer 02-03-PLAN.md (FTS5 Search TDD, 21/21 tests passing, BM25 ranking + snippets)
-Resume file: .planning/phases/02-crud-query-layer/02-04-PLAN.md (Graph traversal next)
+Stopped at: Completed 02-crud-query-layer 02-02-PLAN.md (Connection CRUD TDD, 23 tests passing, CONN-01..05 done)
+Resume file: .planning/phases/02-crud-query-layer/02-03-PLAN.md (Search next, already implemented)

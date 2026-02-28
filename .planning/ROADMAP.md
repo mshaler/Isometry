@@ -152,7 +152,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 | DB-04 | 1 | Database Foundation |
 | DB-05 | 1 | Database Foundation |
 | DB-06 | 1 | Database Foundation |
-| CARD-01 | 2 | 2/5 | In Progress|  | 2 | Card Operations |
+| CARD-01 | 2 | 3/5 | In Progress|  | 2 | Card Operations |
 | CARD-03 | 2 | Card Operations |
 | CARD-04 | 2 | Card Operations |
 | CARD-05 | 2 | Card Operations |
