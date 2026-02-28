@@ -45,7 +45,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 
 - [x] **VIEW-01**: ListView renders cards as a single-column list with sort controls
 - [x] **VIEW-02**: GridView renders cards in a two-axis grid with PAFVProvider axis mappings
-- [ ] **VIEW-03**: KanbanView renders cards in columns grouped by a category field with drag-drop reordering
+- [x] **VIEW-03**: KanbanView renders cards in columns grouped by a category field with drag-drop reordering
 - [ ] **VIEW-04**: CalendarView renders cards on a month/week/day grid based on date fields with DensityProvider
 - [ ] **VIEW-05**: TimelineView renders cards on a continuous time axis with swimlane grouping
 - [ ] **VIEW-06**: GalleryView renders cards as visual tiles with image/cover display
@@ -54,7 +54,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [x] **VIEW-09**: Every D3 `.data()` call uses a stable key function (`d => d.id`)
 - [x] **VIEW-10**: ViewManager mounts/unmounts views and calls `destroy()` before switching to prevent subscriber leaks
 - [x] **VIEW-11**: Each view applies view-specific defaults from a VIEW_DEFAULTS map on first mount
-- [ ] **VIEW-12**: KanbanView drag-drop triggers mutations through MutationManager (undoable)
+- [x] **VIEW-12**: KanbanView drag-drop triggers mutations through MutationManager (undoable)
 
 ### Rendering
 
@@ -132,7 +132,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MUT-07 | Phase 4 | Complete |
 | VIEW-01 | Phase 5 | Complete |
 | VIEW-02 | Phase 5 | Complete |
-| VIEW-03 | Phase 5 | Pending |
+| VIEW-03 | Phase 5 | Complete |
 | VIEW-04 | Phase 6 | Pending |
 | VIEW-05 | Phase 6 | Pending |
 | VIEW-06 | Phase 6 | Pending |
@@ -141,7 +141,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEW-09 | Phase 5 | Complete |
 | VIEW-10 | Phase 5 | Complete |
 | VIEW-11 | Phase 5 | Complete |
-| VIEW-12 | Phase 5 | Pending |
+| VIEW-12 | Phase 5 | Complete |
 | REND-01 | Phase 7 | Pending |
 | REND-02 | Phase 7 | Pending |
 | REND-03 | Phase 5 | Pending |

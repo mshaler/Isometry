@@ -155,7 +155,7 @@ Visual Views       (parallel-capable after Phase 5)
 | 2. CRUD + Query Layer | v0.1 | 6/6 | Complete | 2026-02-28 |
 | 3. Worker Bridge | v1.0 | 7/7 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | 7/7 | Complete   | 2026-02-28 | - |
-| 5. Core D3 Views + Transitions | 1/4 | In Progress|  | - |
+| 5. Core D3 Views + Transitions | 3/4 | In Progress|  | - |
 | 6. Time + Visual Views | v1.0 | 0/TBD | Not started | - |
 | 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
