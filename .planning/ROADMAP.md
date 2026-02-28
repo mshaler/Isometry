@@ -45,9 +45,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 - WKWebView fetch() MIME type rejection solved with app:// scheme handler (integration spike here, full native shell in Phase 7)
 
 **Plans**: 4 plans (3 waves)
-- [ ] 01-01-PLAN.md -- Project scaffolding + Vite/Vitest configuration (Wave 1)
-- [ ] 01-02-PLAN.md -- Custom FTS5 WASM build (Wave 1, parallel with 01)
-- [ ] 01-03-PLAN.md -- Database wrapper + schema + FTS triggers TDD (Wave 2)
+- [x] 01-01-PLAN.md -- Project scaffolding + Vite/Vitest configuration (Wave 1)
+- [x] 01-02-PLAN.md -- Custom FTS5 WASM build (Wave 1, parallel with 01)
+- [x] 01-03-PLAN.md -- Database wrapper + schema + FTS triggers TDD (Wave 2)
 - [ ] 01-04-PLAN.md -- Production build verification + entry point (Wave 3)
 
 ### Phase 2: CRUD + Query Layer
@@ -147,7 +147,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 | Requirement | Phase | Category |
 |-------------|-------|----------|
-| DB-01 | 1 | 2/4 | In Progress|  | 1 | Database Foundation |
+| DB-01 | 1 | Database Foundation |
+| DB-02 | 1 | Database Foundation |
 | DB-03 | 1 | Database Foundation |
 | DB-04 | 1 | Database Foundation |
 | DB-05 | 1 | Database Foundation |
@@ -308,7 +309,7 @@ Phase 7: Native Platform Safety
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Database Foundation | 0/4 | Planned | - |
+| 1. Database Foundation | 3/4 | In Progress | - |
 | 2. CRUD + Query Layer | 0/TBD | Not started | - |
 | 3. Worker Bridge | 0/TBD | Not started | - |
 | 4. Providers + Mutation Safety | 0/TBD | Not started | - |

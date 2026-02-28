@@ -24,11 +24,11 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Database Foundation (Phase 1)
 
 - [x] **DB-01**: sql.js initializes successfully in dev, production, WKWebView, and Vitest; FTS5 capability verified with `SELECT * FROM pragma_compile_options WHERE compile_options LIKE '%FTS5%'`
-- [ ] **DB-02**: Canonical schema creates cards, connections, cards_fts, ui_state tables with all indexes
-- [ ] **DB-03**: FTS5 uses three separate sync triggers (insert, delete, update) to prevent index corruption
-- [ ] **DB-04**: FTS integrity-check passes after every mutation batch in tests
+- [x] **DB-02**: Canonical schema creates cards, connections, cards_fts, ui_state tables with all indexes
+- [x] **DB-03**: FTS5 uses three separate sync triggers (insert, delete, update) to prevent index corruption
+- [x] **DB-04**: FTS integrity-check passes after every mutation batch in tests
 - [x] **DB-05**: Vite config correctly serves WASM with optimizeDeps exclude and ?url import
-- [ ] **DB-06**: PRAGMA foreign_keys = ON executes on every sql.js database open (prevents orphaned connections)
+- [x] **DB-06**: PRAGMA foreign_keys = ON executes on every sql.js database open (prevents orphaned connections)
 
 ### SQL Safety (Phase 4)
 
