@@ -2,7 +2,7 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build follows a strict dependency graph: database foundation first, then CRUD and query functions, then Worker Bridge, then Providers and SQL safety, then D3 views, then ETL importers, and finally the native Swift shell. Each layer depends on everything below it. The web runtime (Phases 1-6) ships independently; the native app (Phase 7) wraps it.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge. After Phase 3, Providers (Phase 4) and ETL (Phase 6) can run in parallel; D3 views (Phase 5) depend on Phase 4. The native Swift shell (Phase 7) depends on completion of all web runtime phases (1-6). The web runtime (Phases 1-6) ships independently; the native app (Phase 7) wraps it.
 
 ## Release Gates
 
@@ -135,8 +135,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 | Requirement | Phase | Category |
 |-------------|-------|----------|
-| DB-01 | 1 | Database Foundation |
-| DB-02 | 1 | Database Foundation |
+| DB-01 | 1 | 1/4 | In Progress|  | 1 | Database Foundation |
 | DB-03 | 1 | Database Foundation |
 | DB-04 | 1 | Database Foundation |
 | DB-05 | 1 | Database Foundation |
@@ -254,8 +253,9 @@ Phases 4 and 6 can develop in parallel after Phase 3 completes (both depend only
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
-(Phases 4 and 6 may interleave if work is parallelized.)
+Phases execute by dependency graph, not strict numeric order:
+1 -> 2 -> 3 -> (4 and 6 in parallel) -> 5 -> 7
+(Phase 5 depends on 4; Phase 7 depends on all Phases 1-6.)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|

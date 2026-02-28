@@ -27,7 +27,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DB-02**: Canonical schema creates cards, connections, cards_fts, ui_state tables with all indexes
 - [ ] **DB-03**: FTS5 uses three separate sync triggers (insert, delete, update) to prevent index corruption
 - [ ] **DB-04**: FTS integrity-check passes after every mutation batch in tests
-- [ ] **DB-05**: Vite config correctly serves WASM with optimizeDeps exclude and ?url import
+- [x] **DB-05**: Vite config correctly serves WASM with optimizeDeps exclude and ?url import
 - [ ] **DB-06**: PRAGMA foreign_keys = ON executes on every sql.js database open (prevents orphaned connections)
 
 ### SQL Safety (Phase 4)
