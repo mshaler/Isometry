@@ -66,6 +66,9 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 04-providers-mutationmanager 04-03]: PAFVProvider suspends state via structuredClone when crossing LATCH/GRAPH family boundary — prevents reference aliasing
 - [Phase 04-providers-mutationmanager 04-03]: VIEW_DEFAULTS map per view type: kanban defaults to groupBy status; all others default to null axes
 - [Phase 04-providers-mutationmanager 04-03]: DensityProvider setState validates timeField+granularity eagerly; PAFVProvider defers axis validation to compile()
+- [Phase 04-providers-mutationmanager 04-04]: SelectionProvider is Tier 3 — no toJSON/setState/resetToDefaults; omission is intentional (D-005/PROV-05)
+- [Phase 04-providers-mutationmanager 04-04]: Two-tier batching: providers queueMicrotask (self-notify), StateCoordinator setTimeout(16) (cross-provider — fires after all microtasks drain)
+- [Phase 04-providers-mutationmanager 04-04]: range(id, allIds) takes ordered list as parameter — Phase 5 views pass their current sorted card list
 
 ### Dependencies to Add (Phase 3 setup)
 
