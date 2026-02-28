@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-02-28T20:10:36.496Z"
+last_updated: "2026-02-28T20:13:51.120Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 7
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -18,20 +18,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 3 — Worker Bridge (first phase of v1.0 Web Runtime)
+**Current focus:** Phase 4 — Providers + MutationManager
 
 ## Current Position
 
 ```
 [Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
-    |
-    v (next)
+             |
+             v (active — Plan 01 of 10 complete)
 ```
 
-Phase: 3 (not started)
-Plan: —
-Status: Roadmap complete — ready to plan Phase 3
-Last activity: 2026-02-28 — v1.0 Web Runtime roadmap written
+Phase: 4 (04-providers-mutationmanager)
+Plan: 01 complete → Plan 02 next
+Status: Plan 04-01 complete — FilterProvider + types + allowlist delivered
+Last activity: 2026-02-28 — 04-01 (Provider Types + FilterProvider) complete
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Last activity: 2026-02-28 — v1.0 Web Runtime roadmap written
 | Graph traversal p99 | <500ms | — |
 | Render p95 (100 cards) | — | <16ms |
 | Phase 04-providers-mutationmanager P02 | 2 | 2 tasks | 5 files |
+| Phase 04-providers-mutationmanager P01 | 5 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,8 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - D3 key function: Mandatory on every .data() call from Phase 5 first view forward — cannot be retrofitted
 - [Phase 04-providers-mutationmanager]: Used db.exec('SELECT changes()') after db.run() for row-change count in handleDbExec — Database class does not expose getRowsModified() directly
 - [Phase 04-providers-mutationmanager]: INSERT OR REPLACE with explicit strftime updated_at in handleUiSet — schema DEFAULT only fires on INSERT, not REPLACE
+- [Phase 04-providers-mutationmanager]: FilterProvider validates field/operator at both addFilter() and compile() — double validation handles JSON-restored state
+- [Phase 04-providers-mutationmanager]: Error messages start with 'SQL safety violation:' for grep-ability — established as standard across all providers
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -86,6 +89,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28
-Stopped at: v1.0 Web Runtime roadmap written — all 45 requirements mapped across Phases 3-7
-Resume: Run `gsd:plan-phase 3` to plan the Worker Bridge phase
+Last session: 2026-02-28T20:13:12Z
+Stopped at: Completed 04-providers-mutationmanager/04-01-PLAN.md — FilterProvider + allowlist + types (97 tests passing)
+Resume: Run `gsd:execute-phase 04-providers-mutationmanager 02` for PAFVProvider

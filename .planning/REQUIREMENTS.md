@@ -19,8 +19,8 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 
 ### Providers
 
-- [ ] **PROV-01**: FilterProvider compiles filter state to `{where, params}` SQL fragments with allowlisted columns only
-- [ ] **PROV-02**: FilterProvider rejects unknown fields and operators, passing SQL injection tests
+- [x] **PROV-01**: FilterProvider compiles filter state to `{where, params}` SQL fragments with allowlisted columns only
+- [x] **PROV-02**: FilterProvider rejects unknown fields and operators, passing SQL injection tests
 - [ ] **PROV-03**: PAFVProvider maps LATCH dimensions to screen planes and compiles to ORDER BY / GROUP BY fragments
 - [ ] **PROV-04**: PAFVProvider suspends and restores view family state when switching between LATCH and GRAPH
 - [ ] **PROV-05**: SelectionProvider manages selected card IDs as Tier 3 ephemeral state (never persisted)
@@ -29,7 +29,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [ ] **PROV-08**: DensityProvider supports all five time granularities (day, week, month, quarter, year)
 - [ ] **PROV-09**: StateCoordinator batches cross-provider updates within 16ms frames
 - [x] **PROV-10**: Tier 2 provider state (filter, axis, density, view) persists to SQLite ui_state and restores on launch
-- [ ] **PROV-11**: Providers expose subscribe/unsubscribe and return cleanup functions to prevent subscriber leaks
+- [x] **PROV-11**: Providers expose subscribe/unsubscribe and return cleanup functions to prevent subscriber leaks
 
 ### Mutations
 
@@ -112,8 +112,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRIDGE-05 | Phase 3 | Pending |
 | BRIDGE-06 | Phase 3 | Pending |
 | BRIDGE-07 | Phase 3 | Pending |
-| PROV-01 | Phase 4 | Pending |
-| PROV-02 | Phase 4 | Pending |
+| PROV-01 | Phase 4 | Complete |
+| PROV-02 | Phase 4 | Complete |
 | PROV-03 | Phase 4 | Pending |
 | PROV-04 | Phase 4 | Pending |
 | PROV-05 | Phase 4 | Pending |
@@ -122,7 +122,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-08 | Phase 4 | Pending |
 | PROV-09 | Phase 4 | Pending |
 | PROV-10 | Phase 4 | Complete |
-| PROV-11 | Phase 4 | Pending |
+| PROV-11 | Phase 4 | Complete |
 | MUT-01 | Phase 4 | Pending |
 | MUT-02 | Phase 4 | Pending |
 | MUT-03 | Phase 4 | Pending |
