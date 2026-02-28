@@ -99,6 +99,17 @@ export class Database {
   }
 
   /**
+   * Export the database as a binary Uint8Array.
+   * Used by WorkerBridge for native shell persistence.
+   *
+   * @returns SQLite database file as Uint8Array
+   */
+  export(): Uint8Array {
+    if (!this.db) throw new Error('Database not initialized');
+    return this.db.export();
+  }
+
+  /**
    * Close the database and release the WASM heap.
    * Must be called in afterEach() in tests to prevent memory leaks.
    */

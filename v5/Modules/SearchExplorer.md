@@ -1,5 +1,7 @@
 # SearchExplorer
 
+> **Canonical Reference:** FTS5 schema defined in [Contracts.md](./Core/Contracts.md#5-fts5-full-text-search).
+
 > Full-text search with faceted navigation
 
 ## Purpose
@@ -35,35 +37,37 @@ SearchExplorer provides instant full-text search across all card content using S
 
 ## FTS5 Schema
 
+> **See [Contracts.md](./Core/Contracts.md#5-fts5-full-text-search) for canonical schema.**
+
 ```sql
 -- Full-text search index
+-- CRITICAL: Uses rowid (INTEGER), not id (TEXT)
 CREATE VIRTUAL TABLE cards_fts USING fts5(
-  title,
+  name,
   content,
+  folder,
   tags,
-  source_name,
   content='cards',
-  content_rowid='id',
-  tokenize='porter unicode61'
+  content_rowid='rowid',
+  tokenize='porter unicode61 remove_diacritics 1'
 );
 
--- Keep FTS in sync via triggers
-CREATE TRIGGER cards_ai AFTER INSERT ON cards BEGIN
-  INSERT INTO cards_fts(rowid, title, content, tags, source_name)
-  VALUES (new.id, new.title, new.content, new.tags, new.source_name);
-END;
+-- Triggers defined in Contracts.md
 ```
 
 ## Search Queries
 
 **Basic search**:
 ```sql
+-- CRITICAL: Join on rowid, not id
+-- cards.rowid is INTEGER, cards_fts.rowid is INTEGER
 SELECT c.*,
        bm25(cards_fts) as rank,
        snippet(cards_fts, 1, '<mark>', '</mark>', '...', 32) as snippet
-FROM cards_fts
-JOIN cards c ON c.id = cards_fts.rowid
+FROM cards_fts fts
+JOIN cards c ON c.rowid = fts.rowid
 WHERE cards_fts MATCH ?
+AND c.deleted_at IS NULL
 ORDER BY rank
 LIMIT 50;
 ```
@@ -78,25 +82,38 @@ LIMIT 50;
 Extract facets from search results:
 
 ```sql
--- Category facet counts
+-- Folder facet counts
 SELECT
-  json_extract(c.raw_import, '$.type') as facet_value,
+  c.folder as facet_value,
   COUNT(*) as count
-FROM cards_fts
-JOIN cards c ON c.id = cards_fts.rowid
+FROM cards_fts fts
+JOIN cards c ON c.rowid = fts.rowid
 WHERE cards_fts MATCH ?
-GROUP BY facet_value
+AND c.deleted_at IS NULL
+GROUP BY c.folder
+ORDER BY count DESC;
+
+-- Card type facet counts
+SELECT
+  c.card_type as facet_value,
+  COUNT(*) as count
+FROM cards_fts fts
+JOIN cards c ON c.rowid = fts.rowid
+WHERE cards_fts MATCH ?
+AND c.deleted_at IS NULL
+GROUP BY c.card_type
 ORDER BY count DESC;
 ```
 
 **Facet types** (LATCH-aligned):
-| Facet | Source |
-|-------|--------|
-| Type | `$.type` from raw_import |
-| Source | `source_name` |
-| Year | EXTRACT from `created_at` |
-| Tags | `tags` array |
-| Author | `$.author` from raw_import |
+| Facet | Source Column |
+|-------|---------------|
+| Type | `card_type` |
+| Folder | `folder` |
+| Status | `status` |
+| Source | `source` |
+| Year | `strftime('%Y', created_at)` |
+| Tags | `json_each(tags)` |
 
 ## Interactions
 

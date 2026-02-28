@@ -22,8 +22,8 @@ Every knowledge worker lives in the gap between how their tools organize informa
 
 ### LATCH vs GRAPH: The Fundamental Duality
 
-| | LATCH | GRAPH |
-|---|---|---|
+|  | LATCH | GRAPH |
+| --- | --- | --- |
 | **Operation** | Separation | Connection |
 | **SQL analog** | `WHERE`, `GROUP BY`, `ORDER BY` | `JOIN` |
 | **Question** | "How do I organize these?" | "How are these related?" |
@@ -41,7 +41,7 @@ Every knowledge worker lives in the gap between how their tools organize informa
 
 ### GRAPH Edge Types
 | Type | Purpose | Example |
-|------|---------|---------|
+| --- | --- | --- |
 | **LINK** | Explicit association | "This note references that note" |
 | **NEST** | Containment hierarchy | "Project contains these tasks" |
 | **SEQUENCE** | Ordered progression | "Step 1 → Step 2 → Step 3" |
@@ -91,7 +91,7 @@ Traditional tools force **schema-on-write**: you must design your data structure
 Isometry uses **schema-on-read**: data arrives with whatever properties it naturally carries. Structure is applied at the moment you look at your data via PAFV projection selection.
 
 | Approach | When Structure Is Defined | Trade-off |
-|----------|---------------------------|-----------|
+| --- | --- | --- |
 | Schema-on-write | Before data entry | Rigid but consistent |
 | Schema-on-read | At query time | Flexible but requires PAFV |
 
@@ -163,7 +163,7 @@ Native Shell supports two variants for macOS, iOS, and Android hosts, which enab
 Inside WKWebView — no React, no framework:
 
 | Component | Technology | Role |
-|-----------|------------|------|
+| --- | --- | --- |
 | Rendering | D3.js v7 | ALL visualization and interaction |
 | Data | sql.js (WASM) | Query engine, synchronous in same JS runtime |
 | State | D3.js data join | `.join()` IS state management — no Redux/Zustand |
@@ -327,7 +327,7 @@ D3 is **not** a state container.
 Each view type is a different PAFV axis allocation. The SQL projection changes, not the data.
 
 | View | Dimensions | Axis Mapping | Use Case |
-|------|------------|--------------|----------|
+| --- | --- | --- | --- |
 | Gallery | 0 explicit | Position only | Icon/thumbnail browsing |
 | List | 1 | y-axis (hierarchy/alphabet) | Sequential reading |
 | Kanban | 1 facet | x-axis (category) | Status workflow |
@@ -409,7 +409,7 @@ For more detail: Isometry v5 Modules spec.md
 # What We Are Explicitly Not Using
 
 | Technology | Why Not | What We Use Instead |
-|------------|---------|---------------------|
+| --- | --- | --- |
 | React/Vue/Angular | Framework overhead, virtual DOM unnecessary | Pure D3.js data join |
 | Redux/Zustand/MobX | D3's enter/update/exit IS state management | D3.js `.join()` pattern |
 | React Native | Not a framework app | Web app in native shell |
@@ -418,7 +418,7 @@ For more detail: Isometry v5 Modules spec.md
 | KuzuDB/Neo4j | Graph DB overhead | SQLite recursive CTEs |
 | IndexedDB | Not needed | SQLite as primary store |
 | Next.js/Remix | Server frameworks | Local-first app |
-| RxJS | Complexity without benefit | Simple observable store | 
+| RxJS | Complexity without benefit | Simple observable store |
  
 # Why This Architecture  
 ## Performance 

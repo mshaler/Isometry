@@ -14,3 +14,9 @@ dist/
 .env
 .env.local
 .env.*.local
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# Binary archives
+v5/files.zip

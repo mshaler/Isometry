@@ -4,200 +4,880 @@
 
 The Native Shell is the thin host container that runs on Apple platforms (macOS and iOS). Its sole purpose is to provide native system integration while keeping all product logic inside the WebView.
 
-**Guiding constraint:** As much TypeScript/JavaScript as possible, as little Swift/SwiftUI as possible.
+**Guiding Principle:** sql.js (WASM SQLite) is the universal data layer. One codebase, one database format, feature-gated tiers.
 
-## Distribution Variants
+**Constraint:** As much TypeScript/JavaScript as possible, as little Swift/SwiftUI as possible.
 
-Native Shell supports two variants for macOS, iOS, and Android hosts, which enable a tiered distribution strategy differentiated by platform delivery:
+---
 
-| Variant | Target | Data Format | Features | Platform |
-|---------|--------|-------------|----------|----------|
-| **Designer Workbench** | Power users, builders | SQLite | Full ETL, all views, app composition | macOS primary |
-| **Isometry Apps** | End users, doers | JSON file | Lightweight, single-purpose apps | iOS/Android |
-
-### Variant 1: SQLite (Designer Workbench)
-- Full-featured workbench for building Isometry apps
-- Complete ETL/DB capabilities
-- All 9 view types
-- Interface Builder for app composition
-- Targeted at sophisticated users at higher value
-
-### Variant 2: JSON File (Lightweight Apps)
-- Simple distribution mechanism for published Isometry apps
-- JS/JSON only with thin reusable SwiftUI shell
-- Targeted for iOS/Android end users
-- Lower cost, drives awareness/demand generation
-- Does one thing well
-
-### Migration Path: JSON → SQLite
-- iOS app users can migrate from JSON to SQLite when upgrading to Designer Workbench
-- Import process syncs JSON payload to SQLite schema
-- Preserves all cards, connections, and layout metadata
-
-## Architecture: The Boundary
+## Unified Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  Native Shell (Swift/SwiftUI)                           │
-│  ─────────────────────────────────────────────────────  │
-│  • WKWebView container and lifecycle                    │
-│  • CloudKit sync (file-level mirroring)                 │
-│  • File system access (read/write isometry.db)          │
-│  • Push notification handling (CloudKit change tokens)  │
-│  • App lifecycle (background/foreground, iCloud status) │
-│  • Native windowing and menus                           │
-├─────────────────────────────────────────────────────────┤
-│                    Bridge Contract                       │
-│            WKScriptMessageHandler (narrow)              │
-│  ─────────────────────────────────────────────────────  │
-│  • On launch: Swift passes path to isometry.db          │
-│  • All reads/writes go through sql.js in Worker         │
-│  • Swift never touches data directly                    │
-│  • Swift syncs the file that JavaScript owns            │
-├─────────────────────────────────────────────────────────┤
-│  WebView Runtime (D3.js + sql.js)                       │
-│  ─────────────────────────────────────────────────────  │
-│  • sql.js (WASM SQLite) in Web Worker                   │
-│  • All SQL schema, queries, mutations                   │
-│  • D3.js rendering pipeline                             │
-│  • Observable layout store                              │
-│  • PAFV/LATCH/GRAPH projection engine                   │
-│  • DSL → AST → SQL compilation                          │
-│  • All interaction logic                                │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Isometry (All Platforms)                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │                         SwiftUI Native Shell                             ││
+│  │  • WKWebView container                                                   ││
+│  │  • CloudKit sync (SQLite file)                                           ││
+│  │  • File system access                                                    ││
+│  │  • Apple app database access (ETL sources)                               ││
+│  │  • App lifecycle, menus, share sheets                                    ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+│                                    │                                         │
+│                         Bridge Contract (minimal)                            │
+│                                    │                                         │
+│  ┌─────────────────────────────────────────────────────────────────────────┐│
+│  │                      WebView Runtime (sql.js + D3.js)                    ││
+│  │  • sql.js in Web Worker — ALL data access                                ││
+│  │  • D3.js — ALL rendering                                                 ││
+│  │  • Providers — ALL state management                                      ││
+│  │  • ETL parsers — ALL data transformation                                 ││
+│  └─────────────────────────────────────────────────────────────────────────┘│
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## What Lives in Swift (and only Swift)
+---
 
-| Responsibility | Why Native |
-|----------------|------------|
-| WKWebView container | Platform requirement |
-| CloudKit sync | Apple API, no JS equivalent |
-| File system access | Sandboxed, platform-specific |
-| Push notifications | System integration |
-| App lifecycle | OS-level events |
-| Native menus | Platform UX expectations |
-| Share sheets | System integration |
+## Feature-Gated Tiers (Same Codebase)
 
-## What Lives in JavaScript (everything else)
+Differentiate by **features**, not data format:
 
-| Component | Technology |
-|-----------|------------|
-| Query engine | sql.js (WASM SQLite) in Web Worker |
-| Schema & queries | All SQL lives in JS |
-| Rendering | D3.js (all views, all transitions) |
-| State | Observable layout store |
-| Projection | PAFV/LATCH/GRAPH engine |
-| DSL | Parser, AST, SQL compiler |
-| Interaction | Hit-testing, drag-and-drop, selection |
+| Tier | Platform | Cards | ETL | Editing | Views | Price |
+|------|----------|-------|-----|---------|-------|-------|
+| **Free** | iOS/macOS | 500 | ❌ | Read-only | Basic (list, grid) | Free |
+| **Pro** | iOS/macOS | 10K | Apple Apps | Read-write | All 9 views | $X/mo |
+| **Workbench** | macOS | Unlimited | Full (Slack, etc.) | + Designer | + App Builder | $Y/mo |
 
-## The Bridge Contract
+### Feature Gate Implementation
 
-The bridge is intentionally minimal:
+```swift
+// Sources/FeatureGate.swift
+
+enum Tier: String, Codable, CaseIterable {
+    case free
+    case pro
+    case workbench
+}
+
+@MainActor
+class FeatureGate: ObservableObject {
+    static let shared = FeatureGate()
+    
+    @Published var current: Tier = .free
+    
+    var maxCards: Int {
+        switch current {
+        case .free: return 500
+        case .pro: return 10_000
+        case .workbench: return .max
+        }
+    }
+    
+    var canImportAppleApps: Bool {
+        current != .free
+    }
+    
+    var canImportSlack: Bool {
+        current == .workbench
+    }
+    
+    var canEdit: Bool {
+        current != .free
+    }
+    
+    var canUseDesigner: Bool {
+        current == .workbench
+    }
+    
+    var availableViews: Set<ViewType> {
+        switch current {
+        case .free:
+            return [.list, .grid]
+        case .pro, .workbench:
+            return Set(ViewType.allCases)
+        }
+    }
+}
+```
+
+---
+
+## The Boundary: Swift vs JavaScript
+
+### What Lives in Swift (Platform Integration Only)
+
+| Responsibility | Why Native | Implementation |
+|----------------|------------|----------------|
+| WKWebView container | Platform requirement | `IsometryWebView` |
+| CloudKit sync | Apple API, no JS equivalent | `CloudKitSyncManager` |
+| File system access | Sandboxed, entitlements | `DatabaseManager` |
+| Apple app DB access | Sandbox bypass for ETL | `AppleDataAccess` |
+| Push notifications | System integration | `SyncNotificationHandler` |
+| App lifecycle | OS-level events | `SceneDelegate` |
+| Native menus | Platform UX | `MenuBuilder` |
+| Share sheets | System integration | `ShareExtension` |
+| In-App Purchase | StoreKit | `SubscriptionManager` |
+
+### What Lives in JavaScript (Everything Else)
+
+| Component | Technology | Location |
+|-----------|------------|----------|
+| Query engine | sql.js (WASM) | Web Worker |
+| Schema & migrations | SQL | `schema.sql` |
+| All views | D3.js | `Views/*.ts` |
+| State management | Providers | `Providers/*.ts` |
+| ETL parsers | TypeScript | `ETL/*.ts` |
+| PAFV projection | TypeScript | `Core/PAFV.ts` |
+| Interaction logic | TypeScript | `Interaction/*.ts` |
+
+---
+
+## Bridge Contract
+
+The bridge is intentionally minimal—three message types:
+
+### 1. Launch Payload (Swift → JS)
 
 ```typescript
-// Swift → JavaScript (on launch)
+// Sent once on WebView load
 interface LaunchPayload {
-  dbPath: string;           // Path to isometry.db
-  iCloudAvailable: boolean; // Account status
-  initialViewport: Rect;    // Window dimensions
+  type: 'launch';
+  
+  // Database
+  dbData: ArrayBuffer | null;  // Existing database, or null for new
+  dbPath: string;              // Path for save location
+  
+  // Platform context
+  platform: 'ios' | 'macos';
+  tier: 'free' | 'pro' | 'workbench';
+  
+  // iCloud
+  iCloudAvailable: boolean;
+  iCloudIdentity: string | null;
+  
+  // Viewport
+  viewport: { width: number; height: number };
+  safeAreaInsets: { top: number; bottom: number; left: number; right: number };
 }
+```
 
-// JavaScript → Swift (on checkpoint)
+### 2. Checkpoint Request (JS → Swift)
+
+```typescript
+// Sent when JS wants to persist or sync
 interface CheckpointRequest {
-  flushDatabase: boolean;   // Trigger file write
-  syncNow: boolean;         // Trigger CloudKit push
+  type: 'checkpoint';
+  
+  dbData: ArrayBuffer;  // Full database
+  reason: 'autosave' | 'explicit' | 'background' | 'sync';
 }
+```
 
-// Swift → JavaScript (on sync)
+### 3. Native Action Request (JS → Swift)
+
+```typescript
+// Sent when JS needs native capability
+interface NativeActionRequest {
+  type: 'native_action';
+  
+  action: 
+    | { kind: 'importAppleApp'; source: 'reminders' | 'calendar' | 'contacts' | 'mail' | 'messages' | 'photos' }
+    | { kind: 'shareSheet'; data: ShareData }
+    | { kind: 'openURL'; url: string }
+    | { kind: 'hapticFeedback'; style: 'light' | 'medium' | 'heavy' }
+    | { kind: 'requestReview' }
+    | { kind: 'purchase'; productId: string };
+}
+```
+
+### 4. Native Response (Swift → JS)
+
+```typescript
+// Sent in response to native actions
+interface NativeResponse {
+  type: 'native_response';
+  
+  requestId: string;
+  result: 
+    | { success: true; data?: ArrayBuffer | string }
+    | { success: false; error: string };
+}
+```
+
+### 5. Sync Notification (Swift → JS)
+
+```typescript
+// Sent when CloudKit detects changes
 interface SyncNotification {
-  changeToken: string;      // CloudKit change token
-  conflictResolution: 'local' | 'remote' | 'merge';
+  type: 'sync';
+  
+  event: 
+    | { kind: 'remoteChange'; dbData: ArrayBuffer }
+    | { kind: 'conflict'; local: ArrayBuffer; remote: ArrayBuffer }
+    | { kind: 'accountChanged'; available: boolean };
 }
 ```
 
-**Rule:** Swift never queries or mutates data directly. It only:
-1. Passes the database file path on launch
-2. Flushes the file to disk on checkpoint
-3. Syncs the file to CloudKit
-4. Notifies JavaScript of sync events
+---
 
-## sql.js vs Native SQLite
+## SwiftUI Shell Implementation
 
-| Aspect | sql.js (in WebView) | Native SQLite |
-|--------|---------------------|---------------|
-| Runtime | WASM in JavaScript | Swift/C |
-| Schema | Same (FTS5, recursive CTEs, WAL) | Same |
-| Data access | Direct, synchronous | Would require bridge |
-| Memory model | Database loaded in WASM memory | Native file handles |
-| File sync | Swift loads/saves ArrayBuffer | Swift owns file |
+### App Entry Point
 
-**Why sql.js:** Eliminates the 40KB MessageBridge code that serialized every query across Swift↔JavaScript boundary. With sql.js, D3.js queries SQLite directly in the same memory space.
+```swift
+// Sources/IsometryApp.swift
 
-**The handoff:** Swift loads `isometry.db` into memory as ArrayBuffer, passes to WebView. JavaScript owns all reads/writes. On checkpoint, JavaScript returns the ArrayBuffer for Swift to persist.
+import SwiftUI
 
-## CloudKit Sync Strategy
-
-### V1: File-Level Sync
-- CloudKit mirrors the SQLite file (not record-by-record)
-- Uses `CKRecord` with file attachment for `isometry.db`
-- Change tokens track sync state
-
-### Conflict Resolution
-| Data Type | Strategy |
-|-----------|----------|
-| Layout metadata | Last-writer-wins |
-| Cards/entities | Row-level merge on `id` + `modified_at` |
-| Connections | Union merge (additive) |
-
-### Sync Flow
-```
-Local change → SQLite mutation → Checkpoint → CloudKit push
-                                              ↓
-CloudKit notification → Pull → Merge → SQLite reload → D3 re-render
+@main
+struct IsometryApp: App {
+    @StateObject private var appState = AppState()
+    
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environmentObject(appState)
+                .environmentObject(FeatureGate.shared)
+        }
+        #if os(macOS)
+        .commands {
+            IsometryCommands()
+        }
+        #endif
+    }
+}
 ```
 
-## Undo/Redo Architecture
+### Main Content View
 
-Undo lives in SQLite, not in a separate log:
+```swift
+// Sources/Views/ContentView.swift
 
-```sql
--- Every mutation wraps in a named savepoint
-SAVEPOINT mutation_12345;
-UPDATE cards SET status = 'done' WHERE id = ?;
--- Savepoint name stored in undo stack
+import SwiftUI
 
--- Undo is rollback
-ROLLBACK TO SAVEPOINT mutation_12345;
-
--- Redo is re-execution
-RELEASE SAVEPOINT mutation_12345;
--- Re-run the saved mutation
+struct ContentView: View {
+    @EnvironmentObject var appState: AppState
+    @EnvironmentObject var featureGate: FeatureGate
+    
+    var body: some View {
+        ZStack {
+            IsometryWebView()
+                .ignoresSafeArea()
+            
+            // Native overlays
+            if appState.showSyncStatus {
+                SyncStatusOverlay()
+            }
+            
+            if appState.showUpgradePrompt {
+                UpgradePromptSheet()
+            }
+        }
+        .onAppear {
+            Task {
+                await appState.initialize()
+            }
+        }
+    }
+}
 ```
 
-**Benefits:**
-- No separate undo log
-- No client-side state diffing
-- Deterministic: database state IS undo state
+### WebView Container
+
+```swift
+// Sources/Views/IsometryWebView.swift
+
+import SwiftUI
+import WebKit
+
+struct IsometryWebView: UIViewRepresentable {  // or NSViewRepresentable for macOS
+    @EnvironmentObject var appState: AppState
+    
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        
+        // Enable Web Worker for sql.js
+        config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        
+        // Register message handlers
+        let coordinator = context.coordinator
+        config.userContentController.add(coordinator, name: "checkpoint")
+        config.userContentController.add(coordinator, name: "nativeAction")
+        
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = coordinator
+        
+        #if DEBUG
+        webView.isInspectable = true
+        #endif
+        
+        // Load the app
+        if let url = Bundle.main.url(forResource: "index", withExtension: "html", subdirectory: "WebApp") {
+            webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        }
+        
+        coordinator.webView = webView
+        return webView
+    }
+    
+    func updateUIView(_ webView: WKWebView, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(appState: appState)
+    }
+    
+    class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler {
+        var webView: WKWebView?
+        let appState: AppState
+        
+        init(appState: AppState) {
+            self.appState = appState
+        }
+        
+        // MARK: - WKNavigationDelegate
+        
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            Task {
+                await sendLaunchPayload()
+            }
+        }
+        
+        // MARK: - WKScriptMessageHandler
+        
+        func userContentController(_ controller: WKUserContentController, 
+                                   didReceive message: WKScriptMessage) {
+            guard let body = message.body as? [String: Any] else { return }
+            
+            Task {
+                switch message.name {
+                case "checkpoint":
+                    await handleCheckpoint(body)
+                case "nativeAction":
+                    await handleNativeAction(body)
+                default:
+                    break
+                }
+            }
+        }
+        
+        // MARK: - Launch
+        
+        private func sendLaunchPayload() async {
+            let dbManager = DatabaseManager.shared
+            let dbData = await dbManager.loadDatabase()
+            
+            let payload: [String: Any] = [
+                "type": "launch",
+                "dbPath": dbManager.databasePath.path,
+                "platform": platform,
+                "tier": FeatureGate.shared.current.rawValue,
+                "iCloudAvailable": FileManager.default.ubiquityIdentityToken != nil,
+                "viewport": [
+                    "width": webView?.bounds.width ?? 0,
+                    "height": webView?.bounds.height ?? 0
+                ]
+            ]
+            
+            // Send ArrayBuffer separately for efficiency
+            if let data = dbData {
+                await sendArrayBuffer(data, withPayload: payload)
+            } else {
+                await sendMessage(payload)
+            }
+        }
+        
+        // MARK: - Checkpoint
+        
+        private func handleCheckpoint(_ body: [String: Any]) async {
+            guard let base64 = body["dbData"] as? String,
+                  let data = Data(base64Encoded: base64) else { return }
+            
+            let reason = body["reason"] as? String ?? "autosave"
+            
+            do {
+                try await DatabaseManager.shared.saveDatabase(data)
+                
+                if reason == "sync" {
+                    await CloudKitSyncManager.shared.pushChanges()
+                }
+            } catch {
+                print("Checkpoint failed: \(error)")
+            }
+        }
+        
+        // MARK: - Native Actions
+        
+        private func handleNativeAction(_ body: [String: Any]) async {
+            guard let action = body["action"] as? [String: Any],
+                  let kind = action["kind"] as? String,
+                  let requestId = body["requestId"] as? String else { return }
+            
+            do {
+                let result: Any
+                
+                switch kind {
+                case "importAppleApp":
+                    let source = action["source"] as! String
+                    result = try await importAppleApp(source: source)
+                    
+                case "shareSheet":
+                    // Handle share sheet
+                    result = true
+                    
+                case "openURL":
+                    let urlString = action["url"] as! String
+                    if let url = URL(string: urlString) {
+                        await UIApplication.shared.open(url)
+                    }
+                    result = true
+                    
+                case "hapticFeedback":
+                    let style = action["style"] as? String ?? "medium"
+                    await triggerHaptic(style: style)
+                    result = true
+                    
+                case "purchase":
+                    let productId = action["productId"] as! String
+                    result = try await SubscriptionManager.shared.purchase(productId)
+                    
+                default:
+                    throw NativeActionError.unknownAction(kind)
+                }
+                
+                await sendNativeResponse(requestId: requestId, success: true, data: result)
+                
+            } catch {
+                await sendNativeResponse(requestId: requestId, success: false, error: error.localizedDescription)
+            }
+        }
+        
+        // MARK: - Apple App Import
+        
+        private func importAppleApp(source: String) async throws -> Data {
+            let appleSource = AppleDataSource(rawValue: source)!
+            let data = try appleSource.readDatabase()
+            return data
+        }
+        
+        // MARK: - Helpers
+        
+        private var platform: String {
+            #if os(iOS)
+            return "ios"
+            #else
+            return "macos"
+            #endif
+        }
+        
+        private func sendMessage(_ payload: [String: Any]) async {
+            guard let json = try? JSONSerialization.data(withJSONObject: payload),
+                  let jsonString = String(data: json, encoding: .utf8) else { return }
+            
+            await MainActor.run {
+                webView?.evaluateJavaScript("window.nativebridge.receive(\(jsonString))")
+            }
+        }
+        
+        private func sendArrayBuffer(_ data: Data, withPayload payload: [String: Any]) async {
+            var fullPayload = payload
+            fullPayload["dbData"] = data.base64EncodedString()
+            await sendMessage(fullPayload)
+        }
+        
+        private func sendNativeResponse(requestId: String, success: Bool, data: Any? = nil, error: String? = nil) async {
+            var response: [String: Any] = [
+                "type": "native_response",
+                "requestId": requestId,
+                "success": success
+            ]
+            
+            if let data = data as? Data {
+                response["data"] = data.base64EncodedString()
+            } else if let data = data {
+                response["data"] = data
+            }
+            
+            if let error = error {
+                response["error"] = error
+            }
+            
+            await sendMessage(response)
+        }
+        
+        private func triggerHaptic(style: String) async {
+            #if os(iOS)
+            await MainActor.run {
+                let generator: UIImpactFeedbackGenerator
+                switch style {
+                case "light": generator = UIImpactFeedbackGenerator(style: .light)
+                case "heavy": generator = UIImpactFeedbackGenerator(style: .heavy)
+                default: generator = UIImpactFeedbackGenerator(style: .medium)
+                }
+                generator.impactOccurred()
+            }
+            #endif
+        }
+    }
+}
+```
+
+---
+
+## Database Manager
+
+```swift
+// Sources/Data/DatabaseManager.swift
+
+import Foundation
+
+actor DatabaseManager {
+    static let shared = DatabaseManager()
+    
+    private init() {}
+    
+    var databasePath: URL {
+        // Use iCloud container if available
+        if let container = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
+            return container
+                .appendingPathComponent("Documents", isDirectory: true)
+                .appendingPathComponent("isometry.db")
+        }
+        
+        // Fall back to local documents
+        let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        return documents.appendingPathComponent("isometry.db")
+    }
+    
+    func loadDatabase() async -> Data? {
+        let path = databasePath
+        
+        // Ensure directory exists
+        let directory = path.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        
+        // Load existing database
+        guard FileManager.default.fileExists(atPath: path.path) else {
+            return nil  // New database, JS will initialize
+        }
+        
+        return try? Data(contentsOf: path)
+    }
+    
+    func saveDatabase(_ data: Data) async throws {
+        let path = databasePath
+        
+        // Atomic write
+        let tempPath = path.appendingPathExtension("tmp")
+        try data.write(to: tempPath, options: .atomic)
+        
+        // Move to final location
+        _ = try? FileManager.default.removeItem(at: path)
+        try FileManager.default.moveItem(at: tempPath, to: path)
+    }
+}
+```
+
+---
+
+## CloudKit Sync
+
+```swift
+// Sources/Sync/CloudKitSyncManager.swift
+
+import CloudKit
+
+actor CloudKitSyncManager {
+    static let shared = CloudKitSyncManager()
+    
+    private let container = CKContainer(identifier: "iCloud.com.isometry.app")
+    private let zoneID = CKRecordZone.ID(zoneName: "IsometryZone", ownerName: CKCurrentUserDefaultName)
+    private let recordType = "Database"
+    private let recordID: CKRecord.ID
+    
+    private var changeToken: CKServerChangeToken?
+    
+    private init() {
+        recordID = CKRecord.ID(recordName: "isometry-db", zoneID: zoneID)
+    }
+    
+    func setup() async throws {
+        // Create zone if needed
+        let zone = CKRecordZone(zoneID: zoneID)
+        _ = try? await container.privateCloudDatabase.modifyRecordZones(saving: [zone], deleting: [])
+        
+        // Setup subscription for push notifications
+        let subscription = CKDatabaseSubscription(subscriptionID: "isometry-changes")
+        subscription.notificationInfo = CKSubscription.NotificationInfo()
+        subscription.notificationInfo?.shouldSendContentAvailable = true
+        
+        _ = try? await container.privateCloudDatabase.modifySubscriptions(saving: [subscription], deleting: [])
+    }
+    
+    func pushChanges() async throws {
+        let data = try await DatabaseManager.shared.loadDatabase()
+        guard let data else { return }
+        
+        // Create or update record
+        let record = CKRecord(recordType: recordType, recordID: recordID)
+        
+        // Store database as CKAsset
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try data.write(to: tempURL)
+        record["database"] = CKAsset(fileURL: tempURL)
+        record["modifiedAt"] = Date()
+        
+        _ = try await container.privateCloudDatabase.modifyRecords(
+            saving: [record],
+            deleting: [],
+            savePolicy: .changedKeys
+        )
+        
+        try? FileManager.default.removeItem(at: tempURL)
+    }
+    
+    func pullChanges() async throws -> Data? {
+        let record = try await container.privateCloudDatabase.record(for: recordID)
+        
+        guard let asset = record["database"] as? CKAsset,
+              let fileURL = asset.fileURL else {
+            return nil
+        }
+        
+        return try Data(contentsOf: fileURL)
+    }
+}
+```
+
+---
+
+## JavaScript Bridge Receiver
+
+```typescript
+// src/native/bridge.ts
+
+interface NativeBridge {
+  receive(payload: LaunchPayload | NativeResponse | SyncNotification): void;
+}
+
+class NativeBridgeImpl implements NativeBridge {
+  private pendingRequests = new Map<string, {
+    resolve: (value: any) => void;
+    reject: (error: Error) => void;
+  }>();
+  
+  private onLaunch?: (payload: LaunchPayload) => void;
+  private onSync?: (notification: SyncNotification) => void;
+  
+  receive(payload: any): void {
+    switch (payload.type) {
+      case 'launch':
+        this.handleLaunch(payload);
+        break;
+        
+      case 'native_response':
+        this.handleResponse(payload);
+        break;
+        
+      case 'sync':
+        this.handleSync(payload);
+        break;
+    }
+  }
+  
+  private handleLaunch(payload: LaunchPayload): void {
+    // Decode ArrayBuffer from base64
+    if (payload.dbData && typeof payload.dbData === 'string') {
+      const binary = atob(payload.dbData);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      payload.dbData = bytes.buffer;
+    }
+    
+    this.onLaunch?.(payload);
+  }
+  
+  private handleResponse(payload: NativeResponse): void {
+    const pending = this.pendingRequests.get(payload.requestId);
+    if (!pending) return;
+    
+    this.pendingRequests.delete(payload.requestId);
+    
+    if (payload.result.success) {
+      pending.resolve(payload.result.data);
+    } else {
+      pending.reject(new Error(payload.result.error));
+    }
+  }
+  
+  private handleSync(notification: SyncNotification): void {
+    this.onSync?.(notification);
+  }
+  
+  // MARK: - Outgoing
+  
+  async checkpoint(dbData: ArrayBuffer, reason: string): Promise<void> {
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(dbData)));
+    
+    (window as any).webkit?.messageHandlers?.checkpoint?.postMessage({
+      dbData: base64,
+      reason
+    });
+  }
+  
+  async requestNativeAction<T>(action: NativeActionRequest['action']): Promise<T> {
+    const requestId = crypto.randomUUID();
+    
+    return new Promise((resolve, reject) => {
+      this.pendingRequests.set(requestId, { resolve, reject });
+      
+      (window as any).webkit?.messageHandlers?.nativeAction?.postMessage({
+        requestId,
+        action
+      });
+      
+      // Timeout after 30s
+      setTimeout(() => {
+        if (this.pendingRequests.has(requestId)) {
+          this.pendingRequests.delete(requestId);
+          reject(new Error('Native action timed out'));
+        }
+      }, 30000);
+    });
+  }
+  
+  // MARK: - Registration
+  
+  registerLaunchHandler(handler: (payload: LaunchPayload) => void): void {
+    this.onLaunch = handler;
+  }
+  
+  registerSyncHandler(handler: (notification: SyncNotification) => void): void {
+    this.onSync = handler;
+  }
+}
+
+// Global instance
+(window as any).nativebridge = new NativeBridgeImpl();
+
+export const nativeBridge = (window as any).nativebridge as NativeBridgeImpl;
+```
+
+---
+
+## App Initialization Flow
+
+```typescript
+// src/main.ts
+
+import { nativeBridge } from './native/bridge';
+import { workerBridge } from './core/WorkerBridge';
+import { stateCoordinator } from './core/Providers';
+
+nativeBridge.registerLaunchHandler(async (payload) => {
+  console.log(`Launching on ${payload.platform} with tier: ${payload.tier}`);
+  
+  // Initialize sql.js with database
+  if (payload.dbData) {
+    await workerBridge.importDatabase(payload.dbData);
+  } else {
+    await workerBridge.init();  // Creates new database
+  }
+  
+  // Restore state
+  await stateCoordinator.restore();
+  
+  // Set feature flags
+  FeatureGate.setTier(payload.tier);
+  
+  // Initialize D3 renderer
+  initializeRenderer(payload.viewport);
+  
+  // Setup autosave
+  setInterval(async () => {
+    const dbData = await workerBridge.exportDatabase();
+    await nativeBridge.checkpoint(dbData, 'autosave');
+  }, 30000);  // Every 30 seconds
+});
+
+nativeBridge.registerSyncHandler(async (notification) => {
+  if (notification.event.kind === 'remoteChange') {
+    // Reload database from remote
+    await workerBridge.importDatabase(notification.event.dbData);
+    await stateCoordinator.restore();
+    rerender();
+  }
+});
+```
+
+---
 
 ## Platform-Specific Considerations
 
 ### macOS
-- Multi-window support via `NSWindowController`
-- Native menu bar integration
-- Keyboard shortcuts mapped to DSL commands
-- Drag-and-drop from Finder
+
+```swift
+// Sources/macOS/MacCommands.swift
+
+import SwiftUI
+
+struct IsometryCommands: Commands {
+    var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Button("Import from Reminders") {
+                NotificationCenter.default.post(name: .importAppleApp, object: "reminders")
+            }
+            .keyboardShortcut("I", modifiers: [.command, .shift])
+            
+            Button("Import from Calendar") {
+                NotificationCenter.default.post(name: .importAppleApp, object: "calendar")
+            }
+        }
+        
+        CommandGroup(replacing: .undoRedo) {
+            Button("Undo") {
+                NotificationCenter.default.post(name: .undo, object: nil)
+            }
+            .keyboardShortcut("Z", modifiers: .command)
+            
+            Button("Redo") {
+                NotificationCenter.default.post(name: .redo, object: nil)
+            }
+            .keyboardShortcut("Z", modifiers: [.command, .shift])
+        }
+    }
+}
+```
 
 ### iOS
-- Single-window, tab-based navigation
-- Share sheet integration for import
-- Files app integration via Document Provider
-- Background sync with CloudKit
 
-### Android (V2)
-- Kotlin equivalent of Swift shell
-- Same thin-host architecture
-- Local storage with backup sync
+```swift
+// Sources/iOS/iOSExtensions.swift
+
+import SwiftUI
+
+extension ContentView {
+    var toolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .bottomBar) {
+            Button(action: { showImportSheet = true }) {
+                Image(systemName: "square.and.arrow.down")
+            }
+            
+            Spacer()
+            
+            Button(action: { showViewPicker = true }) {
+                Image(systemName: "rectangle.3.group")
+            }
+        }
+    }
+}
+```
+
+---
 
 ## Performance Targets
 
@@ -205,47 +885,19 @@ RELEASE SAVEPOINT mutation_12345;
 |--------|--------|-------------|
 | Cold launch | < 2s | Time to first render |
 | Database load | < 500ms | ArrayBuffer → sql.js init |
-| Sync latency | < 1s | Local change → CloudKit push |
-| Memory footprint | < 100MB | Typical 10K card dataset |
+| Checkpoint | < 200ms | Export + save |
+| Sync round-trip | < 2s | Local → CloudKit → remote |
+| Memory (10K cards) | < 100MB | Total app footprint |
 
-## Implementation Checklist
+---
 
-### Phase 1: Core Shell
-- [ ] WKWebView container with sql.js loader
-- [ ] Database file load/save bridge
-- [ ] Basic app lifecycle handling
-- [ ] Window/viewport management
+## Summary
 
-### Phase 2: CloudKit Integration
-- [ ] IsometryZone container setup
-- [ ] File-level sync with change tokens
-- [ ] Conflict detection and resolution
-- [ ] Push notification for sync events
-
-### Phase 3: Platform Polish
-- [ ] Native menu integration (macOS)
-- [ ] Share sheet import (iOS)
-- [ ] Keyboard shortcut mapping
-- [ ] Files app integration (iOS)
-
-### Phase 4: JSON Variant
-- [ ] Lightweight JSON loader
-- [ ] JSON → SQLite migration tool
-- [ ] Reusable app shell template
-
-## Test Strategy
-
-| Test Type | Scope | Tool |
-|-----------|-------|------|
-| Unit | Bridge message parsing | XCTest |
-| Integration | Database load/save cycle | XCTest + sql.js |
-| Sync | CloudKit round-trip | CloudKit test container |
-| E2E | Full app launch to render | XCUITest |
-
-## Key Principles
-
-1. **Swift is plumbing, not product** — All user-facing logic lives in JavaScript
-2. **The bridge is narrow** — One message type in each direction
-3. **JavaScript owns data** — Swift only syncs the file, never queries it
-4. **sql.js eliminates serialization** — Same memory space, no bridge overhead
-5. **CloudKit syncs files, not records** — V1 simplification, V2 can add CRDT
+| Principle | Implementation |
+|-----------|----------------|
+| **One database format** | sql.js SQLite everywhere |
+| **Feature-gated tiers** | Same code, different limits |
+| **Minimal bridge** | 5 message types total |
+| **Swift is plumbing** | Only platform integration |
+| **JavaScript owns data** | All queries, all mutations |
+| **Reusable shell** | Same SwiftUI for iOS/macOS |
