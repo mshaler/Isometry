@@ -32,6 +32,15 @@ import * as connections from '../database/queries/connections';
 import * as search from '../database/queries/search';
 import * as graph from '../database/queries/graph';
 
+// Import Phase 4 UI state handlers
+import {
+  handleUiGet,
+  handleUiSet,
+  handleUiDelete,
+  handleUiGetAll,
+  handleDbExec,
+} from './handlers/ui-state.handler';
+
 // ---------------------------------------------------------------------------
 // Worker State
 // ---------------------------------------------------------------------------
@@ -244,6 +253,39 @@ function routeRequest(
       // db.export() returns Uint8Array of the SQLite database file
       // This is useful for native shell persistence
       return exportDatabase(db);
+    }
+
+    // -------------------------------------------------------------------------
+    // UI State Operations (Phase 4)
+    // -------------------------------------------------------------------------
+    case 'ui:get': {
+      const p = payload as WorkerPayloads['ui:get'];
+      return handleUiGet(db, p);
+    }
+
+    case 'ui:set': {
+      const p = payload as WorkerPayloads['ui:set'];
+      handleUiSet(db, p);
+      return undefined as unknown as WorkerResponses['ui:set'];
+    }
+
+    case 'ui:delete': {
+      const p = payload as WorkerPayloads['ui:delete'];
+      handleUiDelete(db, p);
+      return undefined as unknown as WorkerResponses['ui:delete'];
+    }
+
+    case 'ui:getAll': {
+      const p = payload as WorkerPayloads['ui:getAll'];
+      return handleUiGetAll(db, p);
+    }
+
+    // -------------------------------------------------------------------------
+    // Generic Exec (Phase 4 — MutationManager)
+    // -------------------------------------------------------------------------
+    case 'db:exec': {
+      const p = payload as WorkerPayloads['db:exec'];
+      return handleDbExec(db, p);
     }
 
     // -------------------------------------------------------------------------
