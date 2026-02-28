@@ -144,18 +144,25 @@ describe('Database Foundation', () => {
     });
 
     it('enforces UNIQUE constraint on connections (source_id, target_id, via_card_id, label)', () => {
+      // NOTE: SQLite treats NULL as distinct in UNIQUE constraints (SQL standard).
+      // Two rows with via_card_id=NULL and same (source, target, label) are considered
+      // DIFFERENT — this is correct behavior. Test with non-NULL via_card_id to verify
+      // the UNIQUE constraint actually fires.
       const cardA = uid('card');
       const cardB = uid('card');
+      const cardVia = uid('card');
       db.run("INSERT INTO cards(id, name) VALUES(?, ?)", [cardA, 'Card A']);
       db.run("INSERT INTO cards(id, name) VALUES(?, ?)", [cardB, 'Card B']);
+      db.run("INSERT INTO cards(id, name) VALUES(?, ?)", [cardVia, 'Via Card']);
       db.run(
-        "INSERT INTO connections(id, source_id, target_id, via_card_id, label) VALUES(?, ?, ?, NULL, 'links')",
-        [uid('conn'), cardA, cardB]
+        "INSERT INTO connections(id, source_id, target_id, via_card_id, label) VALUES(?, ?, ?, ?, 'links')",
+        [uid('conn'), cardA, cardB, cardVia]
       );
+      // Same (source, target, via, label) — should throw UNIQUE constraint violation
       expect(() => {
         db.run(
-          "INSERT INTO connections(id, source_id, target_id, via_card_id, label) VALUES(?, ?, ?, NULL, 'links')",
-          [uid('conn'), cardA, cardB]
+          "INSERT INTO connections(id, source_id, target_id, via_card_id, label) VALUES(?, ?, ?, ?, 'links')",
+          [uid('conn'), cardA, cardB, cardVia]
         );
       }).toThrow();
     });
@@ -287,11 +294,13 @@ describe('Database Foundation', () => {
       }
       // Update 5 of them
       for (let i = 0; i < 5; i++) {
-        db.run("UPDATE cards SET name = ? WHERE id = ?", [`Updated Card ${i}`, ids[i]]);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        db.run("UPDATE cards SET name = ? WHERE id = ?", [`Updated Card ${i}`, ids[i]!]);
       }
       // Delete 3 of them
       for (let i = 5; i < 8; i++) {
-        db.run("DELETE FROM cards WHERE id = ?", [ids[i]]);
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        db.run("DELETE FROM cards WHERE id = ?", [ids[i]!]);
       }
       assertFtsIntegrity();
     });
