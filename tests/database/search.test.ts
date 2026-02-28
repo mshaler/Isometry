@@ -75,7 +75,7 @@ describe('SRCH-01: BM25-ranked results', () => {
     const results = searchCards(db, 'knowledge');
     expect(results.length).toBeGreaterThan(1); // need at least 2 to compare order
     for (let i = 1; i < results.length; i++) {
-      expect(results[i - 1].rank).toBeLessThanOrEqual(results[i].rank);
+      expect(results[i - 1]!.rank).toBeLessThanOrEqual(results[i]!.rank);
     }
   });
 
@@ -103,7 +103,7 @@ describe('SRCH-02: rowid joins produce correct Card objects', () => {
   it('searchCards returns Card objects with all required fields populated', () => {
     const results = searchCards(db, 'knowledge');
     expect(results.length).toBeGreaterThan(0);
-    const result = results[0];
+    const result = results[0]!;
     expect(result.card).toBeDefined();
     expect(typeof result.card.id).toBe('string');
     expect(result.card.id).toMatch(/^[0-9a-f-]{36}$/);
@@ -164,7 +164,7 @@ describe('SRCH-03: Snippets with <mark> highlighted match context', () => {
     const results = searchCards(db, 'knowledge');
     expect(results.length).toBeGreaterThan(0);
     // snippet should be a non-empty string with or without ellipsis (depending on content length)
-    expect(results[0].snippet).toBeTruthy();
+    expect(results[0]!.snippet).toBeTruthy();
   });
 });
 
