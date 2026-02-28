@@ -101,15 +101,23 @@ describe('CONN-01: createConnection', () => {
     expect(conn.weight).toBe(1.0);
   });
 
-  it('throws UNIQUE constraint violation on duplicate (same source, target, via_card_id=null, label=null)', () => {
+  it('throws UNIQUE constraint violation on duplicate (same source, target, non-null via_card_id, same label)', () => {
+    // SQLite treats NULLs as distinct in UNIQUE constraints (SQL standard).
+    // See STATE.md decision [01-03]: "UNIQUE constraint test uses non-NULL via_card_id".
+    // Use a non-NULL via_card_id to make the UNIQUE constraint trigger reliably.
+    // When via_card_id=NULL, SQLite considers each NULL distinct (ISO SQL behavior).
     createConnection(db, {
       source_id: cardA.id,
       target_id: cardB.id,
+      via_card_id: cardC.id,
+      label: 'duplicate-label',
     });
     expect(() =>
       createConnection(db, {
         source_id: cardA.id,
         target_id: cardB.id,
+        via_card_id: cardC.id,
+        label: 'duplicate-label',
       })
     ).toThrow();
   });
