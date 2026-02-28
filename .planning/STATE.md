@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-02-28T20:13:51.120Z"
+last_updated: "2026-02-28T20:19:30Z"
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 7
-  completed_plans: 2
+  total_plans: 10
+  completed_plans: 5
 ---
 
 # Project State
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ```
 [Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
              |
-             v (active — Plan 01 of 10 complete)
+             v (active — Plans 01-04 of 10 complete)
 ```
 
 Phase: 4 (04-providers-mutationmanager)
-Plan: 01 complete → Plan 02 next
-Status: Plan 04-01 complete — FilterProvider + types + allowlist delivered
-Last activity: 2026-02-28 — 04-01 (Provider Types + FilterProvider) complete
+Plan: 04 complete → Plan 05 next
+Status: Plans 04-01..04-04 complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator delivered
+Last activity: 2026-02-28 — 04-04 (SelectionProvider + StateCoordinator) complete
 
 ## Performance Metrics
 
@@ -43,6 +43,8 @@ Last activity: 2026-02-28 — 04-01 (Provider Types + FilterProvider) complete
 | FTS p99 | <100ms | — |
 | Graph traversal p99 | <500ms | — |
 | Render p95 (100 cards) | — | <16ms |
+| Phase 04-providers-mutationmanager P04 | 4 | 2 tasks | 5 files |
+| Phase 04-providers-mutationmanager P03 | 3 | 2 tasks | 4 files |
 | Phase 04-providers-mutationmanager P02 | 2 | 2 tasks | 5 files |
 | Phase 04-providers-mutationmanager P01 | 5 | 2 tasks | 6 files |
 
@@ -61,6 +63,9 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 04-providers-mutationmanager]: INSERT OR REPLACE with explicit strftime updated_at in handleUiSet — schema DEFAULT only fires on INSERT, not REPLACE
 - [Phase 04-providers-mutationmanager]: FilterProvider validates field/operator at both addFilter() and compile() — double validation handles JSON-restored state
 - [Phase 04-providers-mutationmanager]: Error messages start with 'SQL safety violation:' for grep-ability — established as standard across all providers
+- [Phase 04-providers-mutationmanager 04-03]: PAFVProvider suspends state via structuredClone when crossing LATCH/GRAPH family boundary — prevents reference aliasing
+- [Phase 04-providers-mutationmanager 04-03]: VIEW_DEFAULTS map per view type: kanban defaults to groupBy status; all others default to null axes
+- [Phase 04-providers-mutationmanager 04-03]: DensityProvider setState validates timeField+granularity eagerly; PAFVProvider defers axis validation to compile()
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -89,6 +94,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T20:13:12Z
-Stopped at: Completed 04-providers-mutationmanager/04-01-PLAN.md — FilterProvider + allowlist + types (97 tests passing)
-Resume: Run `gsd:execute-phase 04-providers-mutationmanager 02` for PAFVProvider
+Last session: 2026-02-28T20:19:30Z
+Stopped at: Completed 04-providers-mutationmanager/04-03-PLAN.md — PAFVProvider + DensityProvider (217 provider tests passing)
+Resume: Run `gsd:execute-phase 04-providers-mutationmanager 05` for QueryBuilder

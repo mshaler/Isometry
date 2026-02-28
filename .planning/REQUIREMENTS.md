@@ -21,12 +21,12 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 
 - [x] **PROV-01**: FilterProvider compiles filter state to `{where, params}` SQL fragments with allowlisted columns only
 - [x] **PROV-02**: FilterProvider rejects unknown fields and operators, passing SQL injection tests
-- [ ] **PROV-03**: PAFVProvider maps LATCH dimensions to screen planes and compiles to ORDER BY / GROUP BY fragments
-- [ ] **PROV-04**: PAFVProvider suspends and restores view family state when switching between LATCH and GRAPH
+- [x] **PROV-03**: PAFVProvider maps LATCH dimensions to screen planes and compiles to ORDER BY / GROUP BY fragments
+- [x] **PROV-04**: PAFVProvider suspends and restores view family state when switching between LATCH and GRAPH
 - [ ] **PROV-05**: SelectionProvider manages selected card IDs as Tier 3 ephemeral state (never persisted)
 - [ ] **PROV-06**: SelectionProvider supports Cmd+click toggle, Shift+click range, and select-all
-- [ ] **PROV-07**: DensityProvider compiles density levels to SQL strftime() expressions for time axes
-- [ ] **PROV-08**: DensityProvider supports all five time granularities (day, week, month, quarter, year)
+- [x] **PROV-07**: DensityProvider compiles density levels to SQL strftime() expressions for time axes
+- [x] **PROV-08**: DensityProvider supports all five time granularities (day, week, month, quarter, year)
 - [ ] **PROV-09**: StateCoordinator batches cross-provider updates within 16ms frames
 - [x] **PROV-10**: Tier 2 provider state (filter, axis, density, view) persists to SQLite ui_state and restores on launch
 - [x] **PROV-11**: Providers expose subscribe/unsubscribe and return cleanup functions to prevent subscriber leaks
@@ -114,12 +114,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRIDGE-07 | Phase 3 | Pending |
 | PROV-01 | Phase 4 | Complete |
 | PROV-02 | Phase 4 | Complete |
-| PROV-03 | Phase 4 | Pending |
-| PROV-04 | Phase 4 | Pending |
+| PROV-03 | Phase 4 | Complete |
+| PROV-04 | Phase 4 | Complete |
 | PROV-05 | Phase 4 | Pending |
 | PROV-06 | Phase 4 | Pending |
-| PROV-07 | Phase 4 | Pending |
-| PROV-08 | Phase 4 | Pending |
+| PROV-07 | Phase 4 | Complete |
+| PROV-08 | Phase 4 | Complete |
 | PROV-09 | Phase 4 | Pending |
 | PROV-10 | Phase 4 | Complete |
 | PROV-11 | Phase 4 | Complete |
