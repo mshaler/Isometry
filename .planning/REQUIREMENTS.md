@@ -50,11 +50,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Connections (Phase 2)
 
-- [ ] **CONN-01**: User can create a connection between two cards with a label
-- [ ] **CONN-02**: User can retrieve outgoing, incoming, or bidirectional connections for a card
-- [ ] **CONN-03**: User can create a connection with via_card_id for rich relationship context
-- [ ] **CONN-04**: User can delete a connection
-- [ ] **CONN-05**: Connections cascade-delete when referenced cards are hard-deleted
+- [x] **CONN-01**: User can create a connection between two cards with a label
+- [x] **CONN-02**: User can retrieve outgoing, incoming, or bidirectional connections for a card
+- [x] **CONN-03**: User can create a connection with via_card_id for rich relationship context
+- [x] **CONN-04**: User can delete a connection
+- [x] **CONN-05**: Connections cascade-delete when referenced cards are hard-deleted
 
 ### Search (Phase 2 + Phase 5)
 
@@ -123,7 +123,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **PERF-01**: Card insert p95 <10ms (single card, existing db)
 - [ ] **PERF-02**: Bulk insert p95 <1s (1000 cards, single transaction)
 - [ ] **PERF-03**: FTS search p95 <100ms (10K cards, 3-word query)
-- [ ] **PERF-04**: Graph traversal p95 <500ms (10K cards, 50K connections, depth 3)
+- [x] **PERF-04**: Graph traversal p95 <500ms (10K cards, 50K connections, depth 3)
 - [ ] **PERF-05**: View render p95 <16ms (100 visible cards, SuperGrid)
 
 ### Native Platform Safety (Phase 7)
