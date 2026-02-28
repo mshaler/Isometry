@@ -39,7 +39,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [x] **MUT-04**: Batch mutations produce a single undo step with correctly ordered inverse operations
 - [x] **MUT-05**: MutationManager sets dirty flag on every write for CloudKit sync (D-010)
 - [x] **MUT-06**: Subscriber notifications are batched per animation frame via requestAnimationFrame
-- [ ] **MUT-07**: Cmd+Z triggers undo, Cmd+Shift+Z triggers redo (keyboard shortcut integration)
+- [x] **MUT-07**: Cmd+Z triggers undo, Cmd+Shift+Z triggers redo (keyboard shortcut integration)
 
 ### Views
 
@@ -129,7 +129,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MUT-04 | Phase 4 | Complete |
 | MUT-05 | Phase 4 | Complete |
 | MUT-06 | Phase 4 | Complete |
-| MUT-07 | Phase 4 | Pending |
+| MUT-07 | Phase 4 | Complete |
 | VIEW-01 | Phase 5 | Pending |
 | VIEW-02 | Phase 5 | Pending |
 | VIEW-03 | Phase 5 | Pending |

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-02-28T20:29:58.094Z"
+last_updated: "2026-02-28T20:37:20.910Z"
 progress:
   total_phases: 2
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-02-28)
              v (active — Plans 01-04 of 10 complete)
 ```
 
-Phase: 4 (04-providers-mutationmanager)
-Plan: 06 complete → Plan 07 next
-Status: Plans 04-01..04-06 complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator, QueryBuilder, StateManager, MutationManager delivered
-Last activity: 2026-02-28 — 04-06 (MutationManager + inverse SQL generators) complete
+Phase: 4 (04-providers-mutationmanager) — COMPLETE
+Plan: 07 complete → Phase 4 done
+Status: All 7 plans complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator, QueryBuilder, StateManager, MutationManager, keyboard shortcuts, SQL injection suite, persistence tests, public API delivered
+Last activity: 2026-02-28 — 04-07 (keyboard shortcuts, SQL injection suite, Phase 4 integration) complete
 
 ## Performance Metrics
 
@@ -49,6 +49,7 @@ Last activity: 2026-02-28 — 04-06 (MutationManager + inverse SQL generators) c
 | Phase 04-providers-mutationmanager P01 | 5 | 2 tasks | 6 files |
 | Phase 04-providers-mutationmanager P05 | 4 | 2 tasks | 6 files |
 | Phase 04-providers-mutationmanager P06 | 6 | 2 tasks | 8 files |
+| Phase 04-providers-mutationmanager P07 | 275 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 04-providers-mutationmanager]: WorkerBridge.exec() public method added as bridge for MutationManager — keeps send() private while giving typed db:exec access
 - [Phase 04-providers-mutationmanager]: MutationBridge interface extracted from MutationManager — decouples from WorkerBridge concrete class for clean test mocking
 - [Phase 04-providers-mutationmanager]: batchMutation pre-reverses inverse array at creation time — undo() iterates inverse[] in order, no reversal needed in MutationManager
+- [Phase 04-providers-mutationmanager]: setupMutationShortcuts reads navigator.platform at call time, not module load, to allow vi.stubGlobal() overrides in tests
+- [Phase 04-providers-mutationmanager]: SQL injection double-validation tests use _filters direct access to bypass addFilter() and prove compile() is the second line of defence
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -105,6 +108,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T20:28:18Z
-Stopped at: Completed 04-providers-mutationmanager/04-06-PLAN.md — MutationManager + inverse SQL generators (75 mutation tests passing)
-Resume: Run `gsd:execute-phase 04-providers-mutationmanager 06` for MutationManager
+Last session: 2026-02-28T20:41:00Z
+Stopped at: Completed 04-providers-mutationmanager/04-07-PLAN.md — Keyboard shortcuts, SQL injection suite, persistence integration tests, Phase 4 public API wiring (647 tests passing)
+Resume: Phase 4 complete. Run `gsd:execute-phase 05-views` for Phase 5 (Core D3 Views + Transitions)
