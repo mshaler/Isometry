@@ -58,10 +58,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Search (Phase 2 + Phase 5)
 
-- [ ] **SRCH-01**: User can search cards by text query with BM25-ranked results
-- [ ] **SRCH-02**: Search uses rowid joins (never id joins) per D-004
-- [ ] **SRCH-03**: Search returns snippets with highlighted match context
-- [ ] **SRCH-04**: Search completes in <100ms for 10K cards (see PERF test conditions)
+- [x] **SRCH-01**: User can search cards by text query with BM25-ranked results
+- [x] **SRCH-02**: Search uses rowid joins (never id joins) per D-004
+- [x] **SRCH-03**: Search returns snippets with highlighted match context
+- [x] **SRCH-04**: Search completes in <100ms for 10K cards (see PERF test conditions)
 - [ ] **SRCH-05**: Search input is debounced at 150ms
 - [ ] **SRCH-06**: User can navigate search results with keyboard (arrow keys, Enter, Escape)
 - [ ] **SRCH-07**: User can refine search with faceted chips (card_type, folder, status, source)
