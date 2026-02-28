@@ -73,7 +73,10 @@ export class SelectionProvider {
 
     this.selectedIds.clear();
     for (let i = start; i <= end; i++) {
-      this.selectedIds.add(allIds[i]);
+      const id = allIds[i];
+      if (id !== undefined) {
+        this.selectedIds.add(id);
+      }
     }
 
     this.scheduleNotify();

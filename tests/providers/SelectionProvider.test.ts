@@ -269,15 +269,15 @@ describe('SelectionProvider', () => {
 
   describe('no persistence methods (Tier 3)', () => {
     it('does NOT have toJSON method', () => {
-      expect((provider as Record<string, unknown>)['toJSON']).toBeUndefined();
+      expect((provider as unknown as Record<string, unknown>)['toJSON']).toBeUndefined();
     });
 
     it('does NOT have setState method', () => {
-      expect((provider as Record<string, unknown>)['setState']).toBeUndefined();
+      expect((provider as unknown as Record<string, unknown>)['setState']).toBeUndefined();
     });
 
     it('does NOT have resetToDefaults method', () => {
-      expect((provider as Record<string, unknown>)['resetToDefaults']).toBeUndefined();
+      expect((provider as unknown as Record<string, unknown>)['resetToDefaults']).toBeUndefined();
     });
   });
 });

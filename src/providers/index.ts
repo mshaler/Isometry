@@ -35,3 +35,5 @@ export {
 
 // Providers
 export { FilterProvider } from './FilterProvider';
+export { SelectionProvider } from './SelectionProvider';
+export { StateCoordinator } from './StateCoordinator';
