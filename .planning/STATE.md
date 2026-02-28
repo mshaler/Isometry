@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-02-28T20:27:13.806Z"
+last_updated: "2026-02-28T20:29:58.094Z"
 progress:
   total_phases: 2
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -29,9 +29,9 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ```
 
 Phase: 4 (04-providers-mutationmanager)
-Plan: 05 complete → Plan 06 next
-Status: Plans 04-01..04-05 complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator, QueryBuilder, StateManager delivered
-Last activity: 2026-02-28 — 04-05 (QueryBuilder + StateManager) complete
+Plan: 06 complete → Plan 07 next
+Status: Plans 04-01..04-06 complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator, QueryBuilder, StateManager, MutationManager delivered
+Last activity: 2026-02-28 — 04-06 (MutationManager + inverse SQL generators) complete
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Last activity: 2026-02-28 — 04-05 (QueryBuilder + StateManager) complete
 | Phase 04-providers-mutationmanager P02 | 2 | 2 tasks | 5 files |
 | Phase 04-providers-mutationmanager P01 | 5 | 2 tasks | 6 files |
 | Phase 04-providers-mutationmanager P05 | 4 | 2 tasks | 6 files |
+| Phase 04-providers-mutationmanager P06 | 6 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 04-providers-mutationmanager 04-05]: QueryBuilder: buildGroupedQuery() prefers axis.groupBy over density.groupExpr when both are non-empty
 - [Phase 04-providers-mutationmanager 04-05]: WorkerBridge.send() made public so StateManager/MutationManager can call bridge.send() directly for ui:* and db:* operations
 - [Phase 04-providers-mutationmanager 04-05]: StateManager.restore() skips providers with no stored key (leaves at defaults) — correct behavior for fresh installs
+- [Phase 04-providers-mutationmanager]: WorkerBridge.exec() public method added as bridge for MutationManager — keeps send() private while giving typed db:exec access
+- [Phase 04-providers-mutationmanager]: MutationBridge interface extracted from MutationManager — decouples from WorkerBridge concrete class for clean test mocking
+- [Phase 04-providers-mutationmanager]: batchMutation pre-reverses inverse array at creation time — undo() iterates inverse[] in order, no reversal needed in MutationManager
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -101,6 +105,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T20:25:57Z
-Stopped at: Completed 04-providers-mutationmanager/04-05-PLAN.md — QueryBuilder + StateManager (258 provider tests passing)
+Last session: 2026-02-28T20:28:18Z
+Stopped at: Completed 04-providers-mutationmanager/04-06-PLAN.md — MutationManager + inverse SQL generators (75 mutation tests passing)
 Resume: Run `gsd:execute-phase 04-providers-mutationmanager 06` for MutationManager

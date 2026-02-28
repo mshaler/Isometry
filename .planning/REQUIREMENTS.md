@@ -23,22 +23,22 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [x] **PROV-02**: FilterProvider rejects unknown fields and operators, passing SQL injection tests
 - [x] **PROV-03**: PAFVProvider maps LATCH dimensions to screen planes and compiles to ORDER BY / GROUP BY fragments
 - [x] **PROV-04**: PAFVProvider suspends and restores view family state when switching between LATCH and GRAPH
-- [ ] **PROV-05**: SelectionProvider manages selected card IDs as Tier 3 ephemeral state (never persisted)
-- [ ] **PROV-06**: SelectionProvider supports Cmd+click toggle, Shift+click range, and select-all
+- [x] **PROV-05**: SelectionProvider manages selected card IDs as Tier 3 ephemeral state (never persisted)
+- [x] **PROV-06**: SelectionProvider supports Cmd+click toggle, Shift+click range, and select-all
 - [x] **PROV-07**: DensityProvider compiles density levels to SQL strftime() expressions for time axes
 - [x] **PROV-08**: DensityProvider supports all five time granularities (day, week, month, quarter, year)
-- [ ] **PROV-09**: StateCoordinator batches cross-provider updates within 16ms frames
+- [x] **PROV-09**: StateCoordinator batches cross-provider updates within 16ms frames
 - [x] **PROV-10**: Tier 2 provider state (filter, axis, density, view) persists to SQLite ui_state and restores on launch
 - [x] **PROV-11**: Providers expose subscribe/unsubscribe and return cleanup functions to prevent subscriber leaks
 
 ### Mutations
 
-- [ ] **MUT-01**: MutationManager is the sole write gate — all entity writes go through `exec()`
-- [ ] **MUT-02**: Every mutation generates inverse SQL for undo and stores it in a Command object
-- [ ] **MUT-03**: Undo replays inverse SQL; redo replays forward SQL
-- [ ] **MUT-04**: Batch mutations produce a single undo step with correctly ordered inverse operations
-- [ ] **MUT-05**: MutationManager sets dirty flag on every write for CloudKit sync (D-010)
-- [ ] **MUT-06**: Subscriber notifications are batched per animation frame via requestAnimationFrame
+- [x] **MUT-01**: MutationManager is the sole write gate — all entity writes go through `exec()`
+- [x] **MUT-02**: Every mutation generates inverse SQL for undo and stores it in a Command object
+- [x] **MUT-03**: Undo replays inverse SQL; redo replays forward SQL
+- [x] **MUT-04**: Batch mutations produce a single undo step with correctly ordered inverse operations
+- [x] **MUT-05**: MutationManager sets dirty flag on every write for CloudKit sync (D-010)
+- [x] **MUT-06**: Subscriber notifications are batched per animation frame via requestAnimationFrame
 - [ ] **MUT-07**: Cmd+Z triggers undo, Cmd+Shift+Z triggers redo (keyboard shortcut integration)
 
 ### Views
@@ -116,19 +116,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-02 | Phase 4 | Complete |
 | PROV-03 | Phase 4 | Complete |
 | PROV-04 | Phase 4 | Complete |
-| PROV-05 | Phase 4 | Pending |
-| PROV-06 | Phase 4 | Pending |
+| PROV-05 | Phase 4 | Complete |
+| PROV-06 | Phase 4 | Complete |
 | PROV-07 | Phase 4 | Complete |
 | PROV-08 | Phase 4 | Complete |
-| PROV-09 | Phase 4 | Pending |
+| PROV-09 | Phase 4 | Complete |
 | PROV-10 | Phase 4 | Complete |
 | PROV-11 | Phase 4 | Complete |
-| MUT-01 | Phase 4 | Pending |
-| MUT-02 | Phase 4 | Pending |
-| MUT-03 | Phase 4 | Pending |
-| MUT-04 | Phase 4 | Pending |
-| MUT-05 | Phase 4 | Pending |
-| MUT-06 | Phase 4 | Pending |
+| MUT-01 | Phase 4 | Complete |
+| MUT-02 | Phase 4 | Complete |
+| MUT-03 | Phase 4 | Complete |
+| MUT-04 | Phase 4 | Complete |
+| MUT-05 | Phase 4 | Complete |
+| MUT-06 | Phase 4 | Complete |
 | MUT-07 | Phase 4 | Pending |
 | VIEW-01 | Phase 5 | Pending |
 | VIEW-02 | Phase 5 | Pending |
