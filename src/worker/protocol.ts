@@ -65,7 +65,14 @@ export type WorkerRequestType =
   | 'graph:connected'
   | 'graph:shortestPath'
   // Database operations
-  | 'db:export';
+  | 'db:export'
+  // UI State (Phase 4)
+  | 'ui:get'
+  | 'ui:set'
+  | 'ui:delete'
+  | 'ui:getAll'
+  // Generic exec (Phase 4 — MutationManager only)
+  | 'db:exec';
 
 /**
  * Payload type map — keys are WorkerRequestType, values are payload shapes.
@@ -94,6 +101,15 @@ export interface WorkerPayloads {
 
   // Database
   'db:export': Record<string, never>; // Empty object — no payload needed
+
+  // UI State (Phase 4)
+  'ui:get': { key: string };
+  'ui:set': { key: string; value: string };
+  'ui:delete': { key: string };
+  'ui:getAll': Record<string, never>;
+
+  // Generic exec (Phase 4 — MutationManager only)
+  'db:exec': { sql: string; params: unknown[] };
 }
 
 /**
@@ -118,6 +134,15 @@ export interface WorkerResponses {
   'graph:shortestPath': string[] | null;
 
   'db:export': Uint8Array;
+
+  // UI State (Phase 4)
+  'ui:get': { key: string; value: string | null; updated_at: string | null };
+  'ui:set': void;
+  'ui:delete': void;
+  'ui:getAll': Array<{ key: string; value: string; updated_at: string }>;
+
+  // Generic exec (Phase 4 — MutationManager only)
+  'db:exec': { changes: number };
 }
 
 // ---------------------------------------------------------------------------
