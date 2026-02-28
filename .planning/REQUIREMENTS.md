@@ -43,8 +43,8 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 
 ### Views
 
-- [ ] **VIEW-01**: ListView renders cards as a single-column list with sort controls
-- [ ] **VIEW-02**: GridView renders cards in a two-axis grid with PAFVProvider axis mappings
+- [x] **VIEW-01**: ListView renders cards as a single-column list with sort controls
+- [x] **VIEW-02**: GridView renders cards in a two-axis grid with PAFVProvider axis mappings
 - [ ] **VIEW-03**: KanbanView renders cards in columns grouped by a category field with drag-drop reordering
 - [ ] **VIEW-04**: CalendarView renders cards on a month/week/day grid based on date fields with DensityProvider
 - [ ] **VIEW-05**: TimelineView renders cards on a continuous time axis with swimlane grouping
@@ -130,8 +130,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MUT-05 | Phase 4 | Complete |
 | MUT-06 | Phase 4 | Complete |
 | MUT-07 | Phase 4 | Complete |
-| VIEW-01 | Phase 5 | Pending |
-| VIEW-02 | Phase 5 | Pending |
+| VIEW-01 | Phase 5 | Complete |
+| VIEW-02 | Phase 5 | Complete |
 | VIEW-03 | Phase 5 | Pending |
 | VIEW-04 | Phase 6 | Pending |
 | VIEW-05 | Phase 6 | Pending |

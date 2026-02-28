@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: active
-last_updated: "2026-02-28T21:21:00Z"
+last_updated: "2026-02-28T21:28:30Z"
 progress:
   total_phases: 5
   completed_phases: 2
@@ -25,13 +25,13 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ```
 [Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
                         |
-                        v (active — Plan 01 of N complete)
+                        v (active — Plan 02 of 4 complete)
 ```
 
 Phase: 5 (05-core-d3-views-transitions) — IN PROGRESS
-Plan: 01 complete → IView contract, CardRenderer, ViewManager, CSS design tokens
-Status: Plan 01 complete — D3 installed, IView/CardDatum/ViewConfig types, CardRenderer SVG+HTML, ViewManager lifecycle (665 tests passing)
-Last activity: 2026-02-28 — 05-01 (D3 foundation + ViewManager) complete
+Plan: 02 complete → ListView (SVG single-column + sort), GridView (responsive grid)
+Status: Plan 02 complete — ListView and GridView implement IView, 715 tests passing
+Last activity: 2026-02-28 — 05-02 (ListView + GridView) complete
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Last activity: 2026-02-28 — 05-01 (D3 foundation + ViewManager) complete
 | Phase 04-providers-mutationmanager P06 | 6 | 2 tasks | 8 files |
 | Phase 04-providers-mutationmanager P07 | 275 | 2 tasks | 7 files |
 | Phase 05-core-d3-views-transitions P01 | 5 | 2 tasks | 8 files |
+| Phase 05-core-d3-views-transitions P02 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 05-core-d3-views-transitions 05-01]: WorkerBridgeLike and PAFVProviderLike minimal interfaces extracted in types.ts — decouples ViewManager from concrete implementations for clean test mocking (matching MutationBridge pattern)
 - [Phase 05-core-d3-views-transitions 05-01]: ViewManager.switchTo() teardown ordering: unsubscribe coordinator first, cancel loading timer, then destroy view — prevents coordinator firing into a half-torn-down view
 - [Phase 05-core-d3-views-transitions 05-01]: Loading spinner uses .is-visible CSS class toggle rather than inline style — allows CSS layer to override if needed
+- [Phase 05-core-d3-views-transitions 05-02]: D3 .transition() on 'transform' attr crashes jsdom via parseSvg in d3-interpolate — set transform directly with .attr(); use transition only for opacity
+- [Phase 05-core-d3-views-transitions 05-02]: GridView.render() reads container.clientWidth at call time — tests use Object.defineProperty(container, 'clientWidth', { configurable: true, value: N })
+- [Phase 05-core-d3-views-transitions 05-02]: exit uses .remove() synchronously — avoids async RAF jsdom issues with D3 opacity-then-remove transition chains
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -113,6 +117,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T21:21:00Z
-Stopped at: Completed 05-core-d3-views-transitions/05-01-PLAN.md — D3 7.9.0 installed, IView contract, CardRenderer SVG+HTML, ViewManager lifecycle, CSS design tokens (665 tests passing)
-Resume: Phase 5 Plan 01 complete. Continue with `gsd:execute-phase 05` for remaining Phase 5 view plans (ListView, GridView, KanbanView, transitions)
+Last session: 2026-02-28T21:28:30Z
+Stopped at: Completed 05-core-d3-views-transitions/05-02-PLAN.md — ListView (SVG single-column + sort toolbar), GridView (responsive grid), 715 tests passing
+Resume: Phase 5 Plan 02 complete. Continue with `gsd:execute-phase 05` for remaining Phase 5 plans (KanbanView, transitions)
