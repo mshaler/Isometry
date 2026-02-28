@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T11:07:00Z"
+last_updated: "2026-02-28T11:13:46Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 9
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 2 of 7 (CRUD + Query Layer) -- IN PROGRESS
-Plan: 4 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections), 02-03 (Search), 02-04 (Graph) done
-Status: Phase 2 In Progress -- 02-04 complete (Graph Traversal TDD, 19/19 tests passing, PERF-04 done)
-Last activity: 2026-02-28 -- Plan 02-04 complete (recursive CTE graph traversal, connectedCards + shortestPath)
+Phase: 2 of 7 (CRUD + Query Layer) -- COMPLETE
+Plan: 5 of 5 in current phase -- 02-01..02-05 all done
+Status: Phase 2 Complete -- 02-05 done (performance benchmarks, 151/151 tests passing, all 4 PERF thresholds verified)
+Last activity: 2026-02-28 -- Plan 02-05 complete (seed utility + bench suite + p95 assertions)
 
-Progress: [########..] 32% (8/25 total plans)
+Progress: [########..] 36% (9/25 total plans)
 
 ## Performance Metrics
 
@@ -41,10 +41,10 @@ Progress: [########..] 32% (8/25 total plans)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 4 | 11 min | 2.75 min |
-| 02-crud-query-layer | 4 | 11 min | 2.75 min |
+| 02-crud-query-layer | 5 | 14 min | 2.8 min |
 
 **Recent Trend:**
-- Last 5 plans: 3 min, 3 min, 2 min, 4 min, 2 min
+- Last 5 plans: 3 min, 2 min, 4 min, 2 min, 3 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -85,6 +85,9 @@ Recent decisions affecting current work:
 - [02-04]: min_depth subquery required in connectedCards — UNION deduplicates (card_id, depth) pairs not just card_id; same card reachable at multiple depths via bidirectional traversal
 - [02-04]: shortestPath uses path string accumulation with LIKE-based visited-node guard (not UNION dedup which collapses BFS branches)
 - [02-04]: shortestPath hard-limited to depth 10 to prevent unbounded recursion on large graphs
+- [02-05]: p99 used as conservative proxy for p95 in bench() — tinybench exposes p99 not p95; if p99 < threshold then p95 necessarily passes
+- [02-05]: Dual bench/assertion approach — bench() for human reporting, assertion test for CI gate (bench() has no expect() API)
+- [02-05]: Vitest 4 removed describe(name, fn, {timeout}) — timeout must be 2nd arg to it() instead
 
 ### Pending Todos
 
@@ -101,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-crud-query-layer 02-04-PLAN.md (Graph Traversal TDD, 19 tests passing, PERF-04 done; 131 total tests passing)
-Resume file: .planning/phases/02-crud-query-layer/02-05-PLAN.md (Performance benchmarks next)
+Stopped at: Completed 02-crud-query-layer 02-05-PLAN.md (Performance benchmarks — seed utility + bench suite + p95 assertions; 151 total tests passing; Phase 2 complete)
+Resume file: .planning/phases/03-providers/ (Phase 3: Providers — FilterProvider, AxisProvider, SelectionProvider, DensityProvider, ViewProvider)
