@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
-status: not_started
-last_updated: "2026-02-28T00:00:00.000Z"
+status: unknown
+last_updated: "2026-02-28T20:10:36.496Z"
 progress:
-  total_phases: 5
+  total_phases: 2
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 7
+  completed_plans: 1
 ---
 
 # Project State
@@ -43,6 +43,7 @@ Last activity: 2026-02-28 — v1.0 Web Runtime roadmap written
 | FTS p99 | <100ms | — |
 | Graph traversal p99 | <500ms | — |
 | Render p95 (100 cards) | — | <16ms |
+| Phase 04-providers-mutationmanager P02 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -55,6 +56,8 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - withStatement pattern: Stubbed in Phase 2 (throws); implement in Phase 3
 - db.exec()/db.run(): Used in v0.1; Worker query modules reuse these directly
 - D3 key function: Mandatory on every .data() call from Phase 5 first view forward — cannot be retrofitted
+- [Phase 04-providers-mutationmanager]: Used db.exec('SELECT changes()') after db.run() for row-change count in handleDbExec — Database class does not expose getRowsModified() directly
+- [Phase 04-providers-mutationmanager]: INSERT OR REPLACE with explicit strftime updated_at in handleUiSet — schema DEFAULT only fires on INSERT, not REPLACE
 
 ### Dependencies to Add (Phase 3 setup)
 

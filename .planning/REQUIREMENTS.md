@@ -28,7 +28,7 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [ ] **PROV-07**: DensityProvider compiles density levels to SQL strftime() expressions for time axes
 - [ ] **PROV-08**: DensityProvider supports all five time granularities (day, week, month, quarter, year)
 - [ ] **PROV-09**: StateCoordinator batches cross-provider updates within 16ms frames
-- [ ] **PROV-10**: Tier 2 provider state (filter, axis, density, view) persists to SQLite ui_state and restores on launch
+- [x] **PROV-10**: Tier 2 provider state (filter, axis, density, view) persists to SQLite ui_state and restores on launch
 - [ ] **PROV-11**: Providers expose subscribe/unsubscribe and return cleanup functions to prevent subscriber leaks
 
 ### Mutations
@@ -121,7 +121,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-07 | Phase 4 | Pending |
 | PROV-08 | Phase 4 | Pending |
 | PROV-09 | Phase 4 | Pending |
-| PROV-10 | Phase 4 | Pending |
+| PROV-10 | Phase 4 | Complete |
 | PROV-11 | Phase 4 | Pending |
 | MUT-01 | Phase 4 | Pending |
 | MUT-02 | Phase 4 | Pending |
