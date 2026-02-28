@@ -1,7 +1,4 @@
 import initSqlJs, { type Database as SqlJsDatabase, type SqlJsStatic, type BindParams } from 'sql.js';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { resolve, dirname } from 'path';
 
 export class Database {
   private db: SqlJsDatabase | null = null;
@@ -18,21 +15,21 @@ export class Database {
        * locateFile intercepts sql.js's WASM path resolution.
        * Priority:
        *   1. process.env['SQL_WASM_PATH'] — set by globalSetup in Vitest (absolute fs path)
-       *   2. sqlWasmUrl resolved via Vite ?url import (browser/prod contexts)
-       *   3. fallback to node_modules/sql.js/dist/<file>
+       *   2. './assets/sql-wasm-fts5.wasm' — production path after viteStaticCopy
        *
-       * The Vite ?url import is inlined at call time to avoid top-level await
-       * and to isolate the Vite-specific import from the TypeScript compiler.
+       * In Vite production builds, sql.js is excluded from optimizeDeps (not bundled
+       * by esbuild). viteStaticCopy copies src/assets/sql-wasm-fts5.wasm to
+       * dist/assets/sql-wasm-fts5.wasm. locateFile must return a path that resolves
+       * relative to where sql.js itself is served.
        */
       locateFile: (file: string) => {
         // Test environment: use SQL_WASM_PATH set by tests/setup/wasm-init.ts
         const envPath = process.env['SQL_WASM_PATH'];
         if (envPath) return envPath;
 
-        // Browser/production: try to use Vite-resolved URL via dynamic import
-        // This returns the ?url string only when bundled by Vite
-        // Falls through to the default below when not bundled
-        return `./node_modules/sql.js/dist/${file}`;
+        // Production: WASM is in assets/ alongside the JS bundle.
+        // Replace the default sql.js WASM name with our custom FTS5 build name.
+        return `./assets/${file.replace('sql-wasm.wasm', 'sql-wasm-fts5.wasm')}`;
       },
     });
 
@@ -42,22 +39,45 @@ export class Database {
     // sql.js (like native SQLite) defaults foreign_keys to OFF for backward compatibility.
     this.db.run('PRAGMA foreign_keys = ON');
 
-    this.applySchema();
+    await this.applySchema();
   }
 
   /**
    * Apply the canonical schema from schema.sql.
-   * Reads the SQL file relative to this module's location.
+   *
+   * In Vitest (Node environment): reads schema.sql from disk using fs/path/url.
+   * In Vite production builds: Node built-ins are externalized; schema.sql is
+   * loaded via dynamic import (works in Worker context where fs is available via
+   * the native shell, or via Vite's ?raw inlining at build time).
+   *
+   * Note: readFileSync/resolve/fileURLToPath are externalized from the browser build
+   * via rollupOptions.external. They are only called when SQL_WASM_PATH is set
+   * (i.e., in the Vitest Node environment).
    */
-  private applySchema(): void {
+  private async applySchema(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
 
-    // Resolve schema.sql relative to this file (works in both Node and after Vite build)
-    const schemaPath = resolve(
-      dirname(fileURLToPath(import.meta.url)),
-      'schema.sql'
-    );
-    const schemaSql = readFileSync(schemaPath, 'utf-8');
+    let schemaSql: string;
+
+    // Detect Node/test context: SQL_WASM_PATH is set exclusively by wasm-init.ts globalSetup.
+    // In production (browser/Worker), this env var is not set.
+    if (process.env['SQL_WASM_PATH']) {
+      // Node/test context: read schema.sql from disk
+      const { readFileSync } = await import('node:fs');
+      const { fileURLToPath } = await import('node:url');
+      const { resolve, dirname } = await import('node:path');
+      const schemaPath = resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        'schema.sql'
+      );
+      schemaSql = readFileSync(schemaPath, 'utf-8');
+    } else {
+      // Production/browser context: schema is inlined via Vite ?raw import.
+      // Dynamic import allows tree-shaking the ?raw module in non-Vite contexts.
+      const schemaModule = await import('./schema.sql?raw');
+      schemaSql = schemaModule.default as string;
+    }
+
     this.db.run(schemaSql);
   }
 
