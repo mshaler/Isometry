@@ -120,9 +120,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - Dataset: 10,000 cards, 50,000 connections, average content size 500 chars
 - Metric: p95 latency (95th percentile of 100 runs)
 
-- [ ] **PERF-01**: Card insert p95 <10ms (single card, existing db)
-- [ ] **PERF-02**: Bulk insert p95 <1s (1000 cards, single transaction)
-- [ ] **PERF-03**: FTS search p95 <100ms (10K cards, 3-word query)
+- [x] **PERF-01**: Card insert p95 <10ms (single card, existing db)
+- [x] **PERF-02**: Bulk insert p95 <1s (1000 cards, single transaction)
+- [x] **PERF-03**: FTS search p95 <100ms (10K cards, 3-word query)
 - [x] **PERF-04**: Graph traversal p95 <500ms (10K cards, 50K connections, depth 3)
 - [ ] **PERF-05**: View render p95 <16ms (100 visible cards, SuperGrid)
 
@@ -227,11 +227,11 @@ Canonical view types (nine total):
 
 | Requirement | Phase | Release Gate | Status |
 |-------------|-------|--------------|--------|
-| DB-01..06 | 1 | Web Runtime v1 | Pending |
+| DB-01..06 | 1 | Web Runtime v1 | Complete (2026-02-28) |
 | CARD-01..06 | 2 | Web Runtime v1 | Complete (2026-02-28) |
-| CONN-01..05 | 2 | Web Runtime v1 | Pending |
-| SRCH-01..04 | 2 | Web Runtime v1 | Pending |
-| PERF-01..04 | 2 | Web Runtime v1 | Pending |
+| CONN-01..05 | 2 | Web Runtime v1 | Complete (2026-02-28) |
+| SRCH-01..04 | 2 | Web Runtime v1 | Complete (2026-02-28) |
+| PERF-01..04 | 2 | Web Runtime v1 | Complete (2026-02-28) |
 | WKBR-01..04 | 3 | Web Runtime v1 | Pending |
 | SAFE-01..06 | 4 | Web Runtime v1 | Pending |
 | PROV-01..07 | 4 | Web Runtime v1 | Pending |
