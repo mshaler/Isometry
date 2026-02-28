@@ -10,7 +10,7 @@
 //
 // Requirements: REND-03, REND-04
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { shouldUseMorph, crossfadeTransition } from '../../src/views/transitions';
 import { ViewManager } from '../../src/views/ViewManager';
 import type { IView, CardDatum, WorkerBridgeLike, PAFVProviderLike } from '../../src/views/types';

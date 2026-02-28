@@ -115,3 +115,22 @@ export {
   batchMutation,
 } from './mutations';
 export type { MutationCommand, Mutation, MutationBridge } from './mutations';
+
+// ---------------------------------------------------------------------------
+// Views (Phase 5)
+// ---------------------------------------------------------------------------
+export {
+  ViewManager,
+  ListView,
+  GridView,
+  KanbanView,
+  toCardDatum,
+  renderSvgCard,
+  renderHtmlCard,
+  CARD_DIMENSIONS,
+  CARD_TYPE_ICONS,
+  shouldUseMorph,
+  morphTransition,
+  crossfadeTransition,
+} from './views';
+export type { IView, CardDatum, ViewConfig } from './views';
