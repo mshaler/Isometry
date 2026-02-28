@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.1
-milestone_name: Data Foundation
-status: complete
-last_updated: "2026-02-28T16:45:06.549Z"
+milestone: v1.0
+milestone_name: Web Runtime
+status: not_started
+last_updated: "2026-02-28T17:00:00.000Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,29 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Planning next milestone (Web Runtime v1, Phases 3-6)
+**Current focus:** Defining requirements for v1.0 Web Runtime
 
 ## Current Position
 
-Milestone: v0.1 Data Foundation -- SHIPPED 2026-02-28
-Next: Phase 3 (Worker Bridge) -- not started
-Status: Milestone complete, ready for `/gsd:new-milestone`
-
-Progress: [##........] 29% overall (2/7 phases, 10/~25 total plans)
-
-## Performance Metrics
-
-**Velocity (v0.1):**
-- Total plans completed: 10
-- Average duration: 2.7 min
-- Total execution time: ~27 min
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-database-foundation | 4 | 11 min | 2.75 min |
-| 02-crud-query-layer | 6 | 16 min | 2.67 min |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-02-28 — Milestone v1.0 started
 
 ## Accumulated Context
 
@@ -62,10 +47,10 @@ None.
 ### Blockers/Concerns
 
 - WKWebView WASM MIME type rejection -- wasm-compat.ts integration spike created (Phase 1); full solution (Swift WKURLSchemeHandler) in Phase 7
-- alto-index JSON schema format needs verification before Phase 6 planning
+- alto-index JSON schema format needs verification before ETL planning (v1.1)
 
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: v0.1 milestone completed and archived
-Resume: `/gsd:new-milestone` to start Web Runtime v1 planning (Phases 3-6)
+Stopped at: Starting v1.0 Web Runtime milestone
+Resume: Continue milestone initialization (research → requirements → roadmap)

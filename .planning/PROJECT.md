@@ -18,24 +18,26 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ FTS5 search with rowid joins and ranked results — v0.1 (21 tests)
 - ✓ Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms — v0.1 (10K-card dataset)
 
-### Active
+### Active — Current Milestone: v1.0 Web Runtime
 
+**Goal:** Build the complete web runtime — Worker Bridge, Providers, Mutation Manager, nine D3 views, and SuperGrid — so data already in SQLite can be projected through any view. No ETL in this milestone; data is pre-loaded.
+
+- [ ] Worker Bridge with typed message protocol and correlation IDs
 - [ ] Provider system (Filter, Axis, Selection, Density, View) with SQL compilation
 - [ ] SQL safety: allowlisted fields, parameterized values, injection rejection
-- [ ] Worker Bridge with typed message protocol and correlation IDs
 - [ ] Mutation Manager with command log for undo/redo
+- [ ] Three-tier state persistence (Durable, Session, Ephemeral)
 - [ ] Nine D3.js views (list, grid, kanban, calendar, timeline, gallery, network, tree, table)
 - [ ] SuperGrid: nested dimensional headers, PAFV projection, density controls
 - [ ] View transitions that animate cards between projections
-- [ ] ETL importers starting with Apple Notes
-- [ ] Three-tier state persistence (Durable, Session, Ephemeral)
 - [ ] Performance threshold: render <16ms (100 visible cards, SuperGrid)
 
 ### Out of Scope
 
+- ETL importers (Apple Notes, etc.) — v1.1 milestone, runtime-first
 - Native Swift shell — separate effort, not in this build
 - CloudKit sync implementation — native shell handles this
-- Schema-on-read extras (EAV table) — deferred to Phase 2 per D-008
+- Schema-on-read extras (EAV table) — deferred per D-008
 - Designer Workbench / App Builder — future tier
 - Android/Windows/Web native shells — v2
 - DuckDB swap — v2 optimization
@@ -95,4 +97,4 @@ Known technical debt:
 | p99 as p95 proxy | tinybench lacks p95; p99 < threshold implies p95 passes | ✓ Good — conservative |
 
 ---
-*Last updated: 2026-02-28 after v0.1 milestone*
+*Last updated: 2026-02-28 after v1.0 milestone start*
