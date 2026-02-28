@@ -39,7 +39,7 @@ See: `.planning/milestones/v0.1-ROADMAP.md` for full details.
 - [ ] **Phase 3: Worker Bridge** - Typed async RPC over postMessage — all SQL off main thread, correlation IDs, initialization queuing, timeouts
 - [x] **Phase 4: Providers + MutationManager** - SQL compilation from UI state, injection safety, three-tier persistence, undo/redo command log (completed 2026-02-28)
 - [x] **Phase 5: Core D3 Views + Transitions** - List, Grid, Kanban views with stable key functions, ViewManager lifecycle, animated LATCH transitions (completed 2026-02-28)
-- [ ] **Phase 6: Time + Visual Views** - Calendar, Timeline, Gallery views with DensityProvider time SQL integration
+- [x] **Phase 6: Time + Visual Views** - Calendar, Timeline, Gallery views with DensityProvider time SQL integration (completed 2026-02-28)
 - [ ] **Phase 7: Graph Views + SuperGrid** - Network and Tree graph views (Worker-hosted simulation), SuperGrid with nested PAFV dimensional headers
 
 ## Phase Details
@@ -161,7 +161,7 @@ Visual Views       (parallel-capable after Phase 5)
 | 3. Worker Bridge | v1.0 | 7/7 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | 7/7 | Complete   | 2026-02-28 | - |
 | 5. Core D3 Views + Transitions | 4/4 | Complete   | 2026-02-28 | - |
-| 6. Time + Visual Views | 2/3 | In Progress|  | - |
+| 6. Time + Visual Views | 3/3 | Complete   | 2026-02-28 | - |
 | 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
 ---
