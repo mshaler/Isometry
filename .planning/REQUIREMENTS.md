@@ -60,8 +60,8 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 
 - [ ] **REND-01**: SuperGrid renders nested dimensional headers with PAFVProvider stacked axis assignments
 - [ ] **REND-02**: SuperGrid parent headers visually span child groups (SuperStack)
-- [ ] **REND-03**: Animated view transitions morph cards between LATCH views using d3-transition
-- [ ] **REND-04**: Cross-family transitions (LATCH↔GRAPH) use crossfade instead of morph
+- [x] **REND-03**: Animated view transitions morph cards between LATCH views using d3-transition
+- [x] **REND-04**: Cross-family transitions (LATCH↔GRAPH) use crossfade instead of morph
 - [ ] **REND-05**: Render performance meets <16ms threshold for 100 visible cards in SuperGrid
 - [ ] **REND-06**: Network view posts only stable `{id, x, y}` positions from Worker, not per-tick updates
 - [x] **REND-07**: Views show loading state during Worker query execution
@@ -144,8 +144,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEW-12 | Phase 5 | Complete |
 | REND-01 | Phase 7 | Pending |
 | REND-02 | Phase 7 | Pending |
-| REND-03 | Phase 5 | Pending |
-| REND-04 | Phase 5 | Pending |
+| REND-03 | Phase 5 | Complete |
+| REND-04 | Phase 5 | Complete |
 | REND-05 | Phase 7 | Pending |
 | REND-06 | Phase 7 | Pending |
 | REND-07 | Phase 5 | Complete |

@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
-status: active
-last_updated: "2026-02-28T21:29:00Z"
+status: unknown
+last_updated: "2026-02-28T21:36:34.497Z"
 progress:
-  total_phases: 5
+  total_phases: 3
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 11
 ---
 
 # Project State
@@ -28,10 +28,10 @@ See: .planning/PROJECT.md (updated 2026-02-28)
                         v (active — Plans 01, 02, 03 complete)
 ```
 
-Phase: 5 (05-core-d3-views-transitions) — IN PROGRESS
-Plan: 03 complete → KanbanView HTML-based with column grouping and drag-drop MutationManager integration
-Status: Plans 01, 02, 03 complete — ListView, GridView, KanbanView done; 735 tests passing
-Last activity: 2026-02-28 — 05-03 (KanbanView) complete
+Phase: 5 (05-core-d3-views-transitions) — COMPLETE
+Plan: 04 complete → Transitions (morph + crossfade) + barrel exports for views public API
+Status: Plans 01–04 complete — ListView, GridView, KanbanView, transitions, barrel exports done; 727 tests passing
+Last activity: 2026-02-28 — 05-04 (Transitions + API) complete
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Last activity: 2026-02-28 — 05-03 (KanbanView) complete
 | Phase 05-core-d3-views-transitions P01 | 5 | 2 tasks | 8 files |
 | Phase 05-core-d3-views-transitions P02 | 4 | 2 tasks | 4 files |
 | Phase 05-core-d3-views-transitions P03 | 4 | 2 tasks | 2 files |
+| Phase 05-core-d3-views-transitions P04 | 4 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,9 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 05-core-d3-views-transitions 05-03]: onMutation callback injected via constructor options — allows test injection without real SQL while default impl uses updateCardMutation for undo support
 - [Phase 05-core-d3-views-transitions 05-03]: jsdom DragEvent polyfill extends MouseEvent — jsdom does not implement DragEvent natively; polyfill registered once at test module scope
 - [Phase 05-core-d3-views-transitions 05-03]: dragSetup/dropSetup dataset guards prevent duplicate event listeners — D3 .each() re-runs on every render() call
+- [Phase 05-core-d3-views-transitions 05-04]: shouldUseMorph returns true only for list↔grid — SVG_VIEWS membership + same LATCH family both required
+- [Phase 05-core-d3-views-transitions 05-04]: Morph path preserves container.innerHTML — SVG element survives switchTo(), D3 join animates cards to new positions internally
+- [Phase 05-core-d3-views-transitions 05-04]: crossfadeTransition duration=0 for test environments avoids jsdom async timer issues while preserving DOM state assertions
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -123,6 +127,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T21:29:00Z
-Stopped at: Completed 05-core-d3-views-transitions/05-03-PLAN.md — KanbanView HTML-based with column grouping, drag-drop, and MutationManager integration (735 tests passing)
-Resume: Phase 5 Plan 03 complete. Continue with `gsd:execute-phase 05` for remaining Phase 5 plans (transitions)
+Last session: 2026-02-28T21:35:29Z
+Stopped at: Completed 05-core-d3-views-transitions/05-04-PLAN.md — Transitions (shouldUseMorph, morphTransition, crossfadeTransition) wired into ViewManager + barrel exports in src/views/index.ts and src/index.ts (727 tests passing)
+Resume: Phase 5 complete. Continue with `gsd:execute-phase 06` for Phase 6 (Time + Visual Views)
