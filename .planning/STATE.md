@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T11:03:00.220Z"
+last_updated: "2026-02-28T11:07:00Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -23,28 +23,28 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 2 of 7 (CRUD + Query Layer) -- IN PROGRESS
-Plan: 3 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections), 02-03 (Search) done
-Status: Phase 2 In Progress -- 02-02 complete (Connection CRUD TDD, 23/23 tests passing, CONN-01..05 done)
-Last activity: 2026-02-28 -- Plan 02-02 complete (Connection CRUD with FK cascade, bidirectional direction queries)
+Plan: 4 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections), 02-03 (Search), 02-04 (Graph) done
+Status: Phase 2 In Progress -- 02-04 complete (Graph Traversal TDD, 19/19 tests passing, PERF-04 done)
+Last activity: 2026-02-28 -- Plan 02-04 complete (recursive CTE graph traversal, connectedCards + shortestPath)
 
-Progress: [#######...] 28% (7/25 total plans)
+Progress: [########..] 32% (8/25 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 2.71 min
-- Total execution time: 0.32 hours
+- Total plans completed: 8
+- Average duration: 2.63 min
+- Total execution time: 0.35 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 4 | 11 min | 2.75 min |
-| 02-crud-query-layer | 3 | 9 min | 3 min |
+| 02-crud-query-layer | 4 | 11 min | 2.75 min |
 
 **Recent Trend:**
-- Last 5 plans: 3 min, 3 min, 3 min, 2 min, 4 min
+- Last 5 plans: 3 min, 3 min, 2 min, 4 min, 2 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -82,6 +82,9 @@ Recent decisions affecting current work:
 - [Phase 02-crud-query-layer]: UNIQUE constraint test uses non-NULL via_card_id — SQLite treats NULLs as distinct in UNIQUE (ISO SQL standard, same as [01-03] decision for cards)
 - [Phase 02-crud-query-layer]: CONN-05 cascade behavior requires no implementation code — schema ON DELETE CASCADE/SET NULL handles it; tests verify using raw db.run DELETE
 - [Phase 02-crud-query-layer]: Connections use hard delete (idempotent DELETE WHERE id=?) — no soft-delete on connections
+- [02-04]: min_depth subquery required in connectedCards — UNION deduplicates (card_id, depth) pairs not just card_id; same card reachable at multiple depths via bidirectional traversal
+- [02-04]: shortestPath uses path string accumulation with LIKE-based visited-node guard (not UNION dedup which collapses BFS branches)
+- [02-04]: shortestPath hard-limited to depth 10 to prevent unbounded recursion on large graphs
 
 ### Pending Todos
 
@@ -98,5 +101,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-crud-query-layer 02-02-PLAN.md (Connection CRUD TDD, 23 tests passing, CONN-01..05 done)
-Resume file: .planning/phases/02-crud-query-layer/02-03-PLAN.md (Search next, already implemented)
+Stopped at: Completed 02-crud-query-layer 02-04-PLAN.md (Graph Traversal TDD, 19 tests passing, PERF-04 done; 131 total tests passing)
+Resume file: .planning/phases/02-crud-query-layer/02-05-PLAN.md (Performance benchmarks next)
