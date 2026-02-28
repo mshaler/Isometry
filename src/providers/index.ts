@@ -35,5 +35,12 @@ export {
 
 // Providers
 export { FilterProvider } from './FilterProvider';
+export { PAFVProvider } from './PAFVProvider';
+export { DensityProvider } from './DensityProvider';
 export { SelectionProvider } from './SelectionProvider';
 export { StateCoordinator } from './StateCoordinator';
+export { QueryBuilder } from './QueryBuilder';
+export { StateManager } from './StateManager';
+
+// QueryBuilder types
+export type { CompiledQuery, CardQueryOptions } from './QueryBuilder';

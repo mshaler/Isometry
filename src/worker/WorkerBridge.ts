@@ -259,6 +259,23 @@ export class WorkerBridge {
   }
 
   // ---------------------------------------------------------------------------
+  // Generic Exec (Phase 4 — MutationManager only)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Execute a raw SQL statement via the Worker.
+   * Intended for MutationManager's forward/inverse command execution.
+   * Returns the number of rows changed.
+   *
+   * @param sql - Parameterized SQL statement
+   * @param params - Bound parameters
+   * @returns Object with `changes` count
+   */
+  async exec(sql: string, params: unknown[]): Promise<{ changes: number }> {
+    return this.send('db:exec', { sql, params });
+  }
+
+  // ---------------------------------------------------------------------------
   // Lifecycle
   // ---------------------------------------------------------------------------
 
@@ -291,11 +308,14 @@ export class WorkerBridge {
    * Send a typed request to the worker and return a promise for the response.
    * Automatically awaits isReady before sending.
    *
+   * Public so that StateManager and MutationManager can use it directly
+   * for ui:* and db:* operations without requiring dedicated wrapper methods.
+   *
    * @param type - Request type
    * @param payload - Request payload
    * @returns Promise resolving to response data
    */
-  private async send<T extends WorkerRequestType>(
+  async send<T extends WorkerRequestType>(
     type: T,
     payload: WorkerPayloads[T]
   ): Promise<WorkerResponses[T]> {
