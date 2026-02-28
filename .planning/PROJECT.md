@@ -71,18 +71,18 @@ The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) c
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| D-001: Lightweight relations | Lower schema complexity for v5 | — Pending |
-| D-002: Single WorkerBridge spec | Core/WorkerBridge.md is canonical | — Pending |
-| D-003: Allowlist + Parameters | SQL safety without ORM overhead | — Pending |
-| D-004: rowid FTS joins | Correct FTS5 content table usage | — Pending |
-| D-005: Three-tier persistence | Clear rules for what persists where | — Pending |
-| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | — Pending |
-| D-007: Keychain-only credentials | No secrets in SQLite | — Pending |
-| D-008: Defer schema-on-read extras | Fixed schema for v5, EAV in Phase 2 | — Pending |
-| D-009: Command log undo/redo | Inverse operations, in-memory stack | — Pending |
-| D-010: Dirty flag + debounce sync | Lifecycle-aware CloudKit triggers | — Pending |
-| TDD enforcement | Spec mandates red-green-refactor | — Pending |
-| Research flexibility | Open to better tooling within locked architecture | — Pending |
+| D-001: Lightweight relations | Lower schema complexity for v5 | Decided ✓ |
+| D-002: Single WorkerBridge spec | Core/WorkerBridge.md is canonical | Decided ✓ |
+| D-003: Allowlist + Parameters | SQL safety without ORM overhead | Decided ✓ |
+| D-004: rowid FTS joins | Correct FTS5 content table usage | Decided ✓ |
+| D-005: Three-tier persistence | Clear rules for what persists where | Decided ✓ |
+| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | Decided ✓ |
+| D-007: Keychain-only credentials | No secrets in SQLite | Decided ✓ |
+| D-008: Defer schema-on-read extras | Fixed schema for v5, EAV in Phase 2 | Decided ✓ |
+| D-009: Command log undo/redo | Inverse operations, in-memory stack | Decided ✓ |
+| D-010: Dirty flag + debounce sync | Lifecycle-aware CloudKit triggers | Decided ✓ |
+| TDD enforcement | Spec mandates red-green-refactor | Decided ✓ |
+| Research flexibility | Open to better tooling within locked architecture | Decided ✓ |
 
 ---
-*Last updated: 2026-02-27 after initialization*
+*Last updated: 2026-02-27 after Codex review fixes*

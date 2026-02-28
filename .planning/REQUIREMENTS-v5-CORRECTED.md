@@ -128,12 +128,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Native Platform Safety (Phase 7)
 
-Requirements derived from `PITFALLS-NATIVE.md`.
+Requirements derived from `PITFALLS-NATIVE.md`. 
 
-> **Scope Note:** These requirements define acceptance criteria for the **native shell effort**
-> (separate from the web runtime build). They are included here for completeness and to ensure
+> **Scope Note:** These requirements define acceptance criteria for the **native shell effort** 
+> (separate from the web runtime build). They are included here for completeness and to ensure 
 > the web runtime's `db.export()` contract is compatible with native persistence needs.
->
+> 
 > **Phase 7 gates the Native App v1 release, not the Web Runtime v1 release.**
 
 - [ ] **NSAFE-01**: CloudKit zone creation guard — `ensureZoneExists()` awaited before any sync operation; `serverRecordChanged` treated as success (N1)
