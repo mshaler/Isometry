@@ -80,7 +80,13 @@ See: `.planning/milestones/v0.1-ROADMAP.md` for full details.
   4. ViewManager calls `view.destroy()` before mounting the next view — after 10 mount/destroy cycles the subscriber count is unchanged (no leaks)
   5. Views show a loading indicator while the Worker query executes and display a readable error message when a query fails — blank screens and silent failures do not occur
   6. KanbanView drag-drop triggers a MutationManager mutation that updates the card's category field and is fully undoable via Cmd+Z
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — D3 install, IView contract, CardRenderer, ViewManager with loading/error states
+- [ ] 05-02-PLAN.md — ListView with sort controls + GridView with responsive grid
+- [ ] 05-03-PLAN.md — KanbanView with drag-drop + MutationManager integration
+- [ ] 05-04-PLAN.md — View transitions (morph + crossfade) + public API barrel exports
 
 ### Phase 6: Time + Visual Views
 **Goal**: Users can view data through Calendar, Timeline, and Gallery projections with DensityProvider time-axis SQL integration exercised at all five granularity levels
@@ -149,7 +155,7 @@ Visual Views       (parallel-capable after Phase 5)
 | 2. CRUD + Query Layer | v0.1 | 6/6 | Complete | 2026-02-28 |
 | 3. Worker Bridge | v1.0 | 7/7 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | 7/7 | Complete   | 2026-02-28 | - |
-| 5. Core D3 Views + Transitions | v1.0 | 0/TBD | Not started | - |
+| 5. Core D3 Views + Transitions | v1.0 | 0/4 | Planned | - |
 | 6. Time + Visual Views | v1.0 | 0/TBD | Not started | - |
 | 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
