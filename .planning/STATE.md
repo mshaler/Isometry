@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
-status: unknown
-last_updated: "2026-02-28T22:23:57.780Z"
+status: planning
+last_updated: "2026-02-28T22:30:00.000Z"
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 14
-  completed_plans: 14
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
@@ -18,45 +18,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 6 — Time + Visual Views (Calendar, Timeline, Gallery)
+**Current focus:** v1.0 completion — Phase 3 (Worker Bridge) + Phase 7 (Graph Views + SuperGrid)
 
 ## Current Position
 
 ```
-[Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
-                                   |
-                                   v (active — Plans 01-03 complete)
+[v0.1 SHIPPED] [v0.5 SHIPPED] [Phase 3] [Phase 7]
+                                  |         |
+                                  v         v (both not started)
 ```
 
-Phase: 6 (06-time-visual-views) — ACTIVE
-Plan: 03 complete → TimelineView + transitions update + barrel exports for all Phase 6 views
-Status: Plan 03 complete — TimelineView with d3.scaleUtc() + swimlane grouping done; 774 tests passing
-Last activity: 2026-02-28 — 06-03 (TimelineView + transitions + exports) complete
+Phase: None active — milestone v0.5 just completed
+Next: Phase 3 (Worker Bridge) or Phase 7 (Graph Views + SuperGrid) — can run in parallel
+Status: 774 tests passing, 20,468 LOC TypeScript
 
 ## Performance Metrics
 
-| Metric | v0.1 Result | v1.0 Target |
-|--------|-------------|-------------|
-| Tests passing | 151 | TBD |
-| TypeScript LOC | 3,378 | TBD |
-| Insert p99 | <10ms | — |
-| FTS p99 | <100ms | — |
-| Graph traversal p99 | <500ms | — |
-| Render p95 (100 cards) | — | <16ms |
-| Phase 04-providers-mutationmanager P04 | 4 | 2 tasks | 5 files |
-| Phase 04-providers-mutationmanager P03 | 3 | 2 tasks | 4 files |
-| Phase 04-providers-mutationmanager P02 | 2 | 2 tasks | 5 files |
-| Phase 04-providers-mutationmanager P01 | 5 | 2 tasks | 6 files |
-| Phase 04-providers-mutationmanager P05 | 4 | 2 tasks | 6 files |
-| Phase 04-providers-mutationmanager P06 | 6 | 2 tasks | 8 files |
-| Phase 04-providers-mutationmanager P07 | 275 | 2 tasks | 7 files |
-| Phase 05-core-d3-views-transitions P01 | 5 | 2 tasks | 8 files |
-| Phase 05-core-d3-views-transitions P02 | 4 | 2 tasks | 4 files |
-| Phase 05-core-d3-views-transitions P03 | 4 | 2 tasks | 2 files |
-| Phase 05-core-d3-views-transitions P04 | 4 | 2 tasks | 5 files |
-| Phase 06-time-visual-views P01 | 6 | 2 tasks | 8 files |
-| Phase 06-time-visual-views P03 | 4 | 2 tasks | 6 files |
-| Phase 06-time-visual-views P02 | 3 | 2 tasks | 2 files |
+| Metric | v0.1 Result | v0.5 Result | v1.0 Target |
+|--------|-------------|-------------|-------------|
+| Tests passing | 151 | 774 | TBD |
+| TypeScript LOC | 3,378 | 20,468 | TBD |
+| Insert p99 | <10ms | — | — |
+| FTS p99 | <100ms | — | — |
+| Graph traversal p99 | <500ms | — | — |
+| Render p95 (100 cards) | — | — | <16ms |
 
 ## Accumulated Context
 
@@ -67,55 +52,11 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - TDD enforcement: Red-green-refactor for every feature, non-negotiable
 - Custom FTS5 WASM: Emscripten build complete (sql.js 1.14, 756KB)
 - withStatement pattern: Stubbed in Phase 2 (throws); implement in Phase 3
-- db.exec()/db.run(): Used in v0.1; Worker query modules reuse these directly
-- D3 key function: Mandatory on every .data() call from Phase 5 first view forward — cannot be retrofitted
-- [Phase 04-providers-mutationmanager]: Used db.exec('SELECT changes()') after db.run() for row-change count in handleDbExec — Database class does not expose getRowsModified() directly
-- [Phase 04-providers-mutationmanager]: INSERT OR REPLACE with explicit strftime updated_at in handleUiSet — schema DEFAULT only fires on INSERT, not REPLACE
-- [Phase 04-providers-mutationmanager]: FilterProvider validates field/operator at both addFilter() and compile() — double validation handles JSON-restored state
-- [Phase 04-providers-mutationmanager]: Error messages start with 'SQL safety violation:' for grep-ability — established as standard across all providers
-- [Phase 04-providers-mutationmanager 04-03]: PAFVProvider suspends state via structuredClone when crossing LATCH/GRAPH family boundary — prevents reference aliasing
-- [Phase 04-providers-mutationmanager 04-03]: VIEW_DEFAULTS map per view type: kanban defaults to groupBy status; all others default to null axes
-- [Phase 04-providers-mutationmanager 04-03]: DensityProvider setState validates timeField+granularity eagerly; PAFVProvider defers axis validation to compile()
-- [Phase 04-providers-mutationmanager 04-04]: SelectionProvider is Tier 3 — no toJSON/setState/resetToDefaults; omission is intentional (D-005/PROV-05)
-- [Phase 04-providers-mutationmanager 04-04]: Two-tier batching: providers queueMicrotask (self-notify), StateCoordinator setTimeout(16) (cross-provider — fires after all microtasks drain)
-- [Phase 04-providers-mutationmanager 04-04]: range(id, allIds) takes ordered list as parameter — Phase 5 views pass their current sorted card list
-- [Phase 04-providers-mutationmanager 04-05]: QueryBuilder: buildGroupedQuery() prefers axis.groupBy over density.groupExpr when both are non-empty
-- [Phase 04-providers-mutationmanager 04-05]: WorkerBridge.send() made public so StateManager/MutationManager can call bridge.send() directly for ui:* and db:* operations
-- [Phase 04-providers-mutationmanager 04-05]: StateManager.restore() skips providers with no stored key (leaves at defaults) — correct behavior for fresh installs
-- [Phase 04-providers-mutationmanager]: WorkerBridge.exec() public method added as bridge for MutationManager — keeps send() private while giving typed db:exec access
-- [Phase 04-providers-mutationmanager]: MutationBridge interface extracted from MutationManager — decouples from WorkerBridge concrete class for clean test mocking
-- [Phase 04-providers-mutationmanager]: batchMutation pre-reverses inverse array at creation time — undo() iterates inverse[] in order, no reversal needed in MutationManager
-- [Phase 04-providers-mutationmanager]: setupMutationShortcuts reads navigator.platform at call time, not module load, to allow vi.stubGlobal() overrides in tests
-- [Phase 04-providers-mutationmanager]: SQL injection double-validation tests use _filters direct access to bypass addFilter() and prove compile() is the second line of defence
-- [Phase 05-core-d3-views-transitions 05-01]: jsdom installed as dev dependency — vitest default is node environment; ViewManager tests require DOM APIs via @vitest-environment jsdom directive
-- [Phase 05-core-d3-views-transitions 05-01]: WorkerBridgeLike and PAFVProviderLike minimal interfaces extracted in types.ts — decouples ViewManager from concrete implementations for clean test mocking (matching MutationBridge pattern)
-- [Phase 05-core-d3-views-transitions 05-01]: ViewManager.switchTo() teardown ordering: unsubscribe coordinator first, cancel loading timer, then destroy view — prevents coordinator firing into a half-torn-down view
-- [Phase 05-core-d3-views-transitions 05-01]: Loading spinner uses .is-visible CSS class toggle rather than inline style — allows CSS layer to override if needed
-- [Phase 05-core-d3-views-transitions 05-02]: D3 .transition() on 'transform' attr crashes jsdom via parseSvg in d3-interpolate — set transform directly with .attr(); use transition only for opacity
-- [Phase 05-core-d3-views-transitions 05-02]: GridView.render() reads container.clientWidth at call time — tests use Object.defineProperty(container, 'clientWidth', { configurable: true, value: N })
-- [Phase 05-core-d3-views-transitions 05-02]: exit uses .remove() synchronously — avoids async RAF jsdom issues with D3 opacity-then-remove transition chains
-- [Phase 05-core-d3-views-transitions 05-03]: KanbanView uses HTML divs (not SVG) — HTML5 drag-drop API requires draggable HTML elements; SVG elements do not participate in HTML5 DnD
-- [Phase 05-core-d3-views-transitions 05-03]: d3.drag intentionally excluded from KanbanView — d3.drag intercepts dragstart and corrupts dataTransfer; use native addEventListener for HTML5 DnD
-- [Phase 05-core-d3-views-transitions 05-03]: onMutation callback injected via constructor options — allows test injection without real SQL while default impl uses updateCardMutation for undo support
-- [Phase 05-core-d3-views-transitions 05-03]: jsdom DragEvent polyfill extends MouseEvent — jsdom does not implement DragEvent natively; polyfill registered once at test module scope
-- [Phase 05-core-d3-views-transitions 05-03]: dragSetup/dropSetup dataset guards prevent duplicate event listeners — D3 .each() re-runs on every render() call
-- [Phase 05-core-d3-views-transitions 05-04]: shouldUseMorph returns true only for list↔grid — SVG_VIEWS membership + same LATCH family both required
-- [Phase 05-core-d3-views-transitions 05-04]: Morph path preserves container.innerHTML — SVG element survives switchTo(), D3 join animates cards to new positions internally
-- [Phase 05-core-d3-views-transitions 05-04]: crossfadeTransition duration=0 for test environments avoids jsdom async timer issues while preserving DOM state assertions
-- [Phase 06-time-visual-views 06-01]: CalendarView initializes to current date via new Date() — tests use dynamic current-month dates, not hardcoded month strings, to ensure cell existence in the rendered grid
-- [Phase 06-time-visual-views 06-01]: CalendarView does NOT auto-navigate to card dates on render — user controls period via prev/next nav; view starts at current date
-- [Phase 06-time-visual-views 06-01]: Quarter/year mini-month views do not bind card chips — structural overview only; card chips rendered only in month/week/day granularity cells
-- [Phase 06-time-visual-views 06-01]: CardDatum due_at and body_text are required fields (not optional) with null as explicit value — TypeScript catches missing fields in test factories
-- [Phase 06-time-visual-views 06-03]: TimelineView uses fixed CARD_WIDTH=80px for point-in-time cards — multi-day bar spans deferred to future plan
-- [Phase 06-time-visual-views 06-03]: computeSubRows() extracted as pure exported function for testability — greedy first-fit algorithm assigns overlapping cards to lowest available sub-row
-- [Phase 06-time-visual-views 06-03]: g.card CSS class (not 'timeline-card') is mandatory for morphTransition compatibility — TimelineView joins list/grid in SVG_VIEWS set
-- [Phase 06-time-visual-views 06-03]: SVG_VIEWS = {list, grid, timeline}; HTML_VIEWS = {kanban, calendar, gallery} — shouldUseMorph covers all Phase 5+6 view type pairs
-- [Phase 06-time-visual-views]: GalleryView uses pure HTML DOM construction (no D3) — tiles rebuilt on render(); onerror uses addEventListener+replaceWith for image fallback; GALLERY_TILE_WIDTH=240/HEIGHT=160
+- D3 key function: Mandatory on every .data() call — cannot be retrofitted
+- Full Phase 4-6 decision log archived to `.planning/milestones/v0.5-phases/`
 
 ### Dependencies to Add (Phase 3 setup)
 
-- `d3@7.9.0` — runtime
-- `@types/d3@7.4.3` — dev
 - `@vitest/web-worker@4.0.18` — dev (must match installed Vitest version exactly)
 - tsconfig.json: add `"WebWorker"` to `lib` array
 
@@ -126,19 +67,22 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ### Blockers/Concerns
 
-- WKWebView WASM MIME type rejection: wasm-compat.ts spike exists; validate in real WKWebView during Phase 3 — Vite dev server masks this entirely
-- SuperGrid SuperStack header spanning: no documented D3 analogue; needs research spike before Phase 7 planning
-- Graph algorithm implementations (PageRank, Louvain): must be zero-DOM-dependency for Worker context; source at Phase 7 planning time
+- WKWebView WASM MIME type rejection: wasm-compat.ts spike exists; validate in real WKWebView during Phase 3
+- SuperGrid SuperStack header spanning: no documented D3 analogue; needs research spike before Phase 7
+- Graph algorithm implementations (PageRank, Louvain): must be zero-DOM-dependency for Worker context
 
 ### Phase 3 Entry State
 
-- v0.1 complete: 3,378 LOC, 151 tests, all 4 perf thresholds pass
+- v0.5 complete: 20,468 LOC, 774 tests
 - Worker Bridge spec: CLAUDE-v5.md D-002, v5/Modules/Core/WorkerBridge.md (canonical)
 - Existing query modules to reuse: src/database/queries/ (cards, connections, search, graph)
 - withStatement stub: currently throws in Phase 2; needs Database.prepare() in Phase 3
+- D3 v7.9.0 already installed (Phase 5)
+- Provider system complete: FilterProvider, PAFVProvider, DensityProvider, SelectionProvider all wired
+- MutationManager complete: undo/redo, keyboard shortcuts, rAF batching
 
 ## Session Continuity
 
-Last session: 2026-02-28T22:14:44Z
-Stopped at: Completed 06-time-visual-views/06-03-PLAN.md — TimelineView with d3.scaleUtc() swimlane grouping + transitions/exports for all Phase 6 views (774 tests passing)
-Resume: Phase 6 Plans 01-03 all complete. All three Phase 6 views (CalendarView, GalleryView, TimelineView) implemented and wired. Phase 6 complete.
+Last session: 2026-02-28
+Stopped at: v0.5 milestone completion
+Resume: Start `/gsd:new-milestone` or plan Phase 3/Phase 7 directly

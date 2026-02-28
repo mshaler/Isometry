@@ -17,19 +17,22 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ Connection CRUD with via_card_id pattern for rich relationships — v0.1 (23 tests)
 - ✓ FTS5 search with rowid joins and ranked results — v0.1 (21 tests)
 - ✓ Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms — v0.1 (10K-card dataset)
+- ✓ Provider system (Filter, PAFV, Selection, Density) with SQL-safe allowlisted compilation — v0.5
+- ✓ SQL safety: double-validation (addFilter + compile), allowlisted fields/operators, injection rejection — v0.5
+- ✓ Mutation Manager with command-pattern undo/redo and rAF-batched notifications — v0.5
+- ✓ Three-tier state persistence (Durable via StateManager, Session via providers, Ephemeral via SelectionProvider) — v0.5
+- ✓ Six D3 views (list, grid, kanban, calendar, timeline, gallery) with stable key functions — v0.5
+- ✓ View transitions: SVG morph (list/grid/timeline) and crossfade (LATCH/GRAPH boundary) — v0.5
+- ✓ KanbanView drag-drop with undoable mutations (Cmd+Z) — v0.5
 
 ### Active — Current Milestone: v1.0 Web Runtime
 
-**Goal:** Build the complete web runtime — Worker Bridge, Providers, Mutation Manager, nine D3 views, and SuperGrid — so data already in SQLite can be projected through any view. No ETL in this milestone; data is pre-loaded.
+**Goal:** Complete the web runtime — Worker Bridge for off-main-thread SQL, Graph views (network, tree), and SuperGrid with nested dimensional headers.
 
-- [ ] Worker Bridge with typed message protocol and correlation IDs
-- [ ] Provider system (Filter, Axis, Selection, Density, View) with SQL compilation
-- [ ] SQL safety: allowlisted fields, parameterized values, injection rejection
-- [ ] Mutation Manager with command log for undo/redo
-- [ ] Three-tier state persistence (Durable, Session, Ephemeral)
-- [ ] Nine D3.js views (list, grid, kanban, calendar, timeline, gallery, network, tree, table)
-- [ ] SuperGrid: nested dimensional headers, PAFV projection, density controls
-- [ ] View transitions that animate cards between projections
+- [ ] Worker Bridge with typed message protocol, correlation IDs, init queuing, and timeouts
+- [ ] NetworkView: force-directed graph with simulation running in Worker (not main thread)
+- [ ] TreeView: hierarchical layout from contains/parent connections with collapsible nodes
+- [ ] SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack)
 - [ ] Performance threshold: render <16ms (100 visible cards, SuperGrid)
 
 ### Out of Scope
@@ -46,8 +49,8 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v0.1 Data Foundation with 3,378 LOC TypeScript, 151 tests passing.
-Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), Vite 7.3, Vitest 4.0.
+Shipped v0.5 Providers + Views with 20,468 LOC TypeScript, 774 tests passing.
+Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), D3.js v7.9, Vite 7.3, Vitest 4.0.
 
 Isometry v5 has extensive pre-existing specification:
 - `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
@@ -62,7 +65,9 @@ The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) c
 Known technical debt:
 - `withStatement` pattern stubbed (throws in Phase 2) — needs Database.prepare() in Phase 3
 - Schema loading uses conditional dynamic import (node:fs vs ?raw) — works but adds code paths
-- WKWebView WASM MIME type rejection spike created; full solution (Swift WKURLSchemeHandler) in Phase 7
+- WKWebView WASM MIME type rejection spike created; full solution (Swift WKURLSchemeHandler) deferred
+- D3 `.transition()` on SVG transform crashes jsdom (parseSvg) — direct `.attr()` used, transition only for opacity
+- GalleryView uses pure HTML (no D3 data join) — tiles rebuilt on render(); no incremental update
 
 ## Constraints
 
@@ -82,19 +87,24 @@ Known technical debt:
 |----------|-----------|---------|
 | D-001: Lightweight relations | Lower schema complexity for v5 | ✓ Good — v0.1 validated |
 | D-002: Single WorkerBridge spec | Core/WorkerBridge.md is canonical | Decided ✓ |
-| D-003: Allowlist + Parameters | SQL safety without ORM overhead | Decided ✓ |
+| D-003: Allowlist + Parameters | SQL safety without ORM overhead | ✓ Good — v0.5 validated (double-validation, injection tests) |
 | D-004: rowid FTS joins | Correct FTS5 content table usage | ✓ Good — v0.1 validated (21 search tests) |
-| D-005: Three-tier persistence | Clear rules for what persists where | Decided ✓ |
-| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | Decided ✓ |
+| D-005: Three-tier persistence | Clear rules for what persists where | ✓ Good — v0.5 validated (SelectionProvider Tier 3, StateManager Tier 2) |
+| D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | ✓ Good — 6/9 views shipped in v0.5 |
 | D-007: Keychain-only credentials | No secrets in SQLite | Decided ✓ |
 | D-008: Defer schema-on-read extras | Fixed schema for v5, EAV in Phase 2 | Decided ✓ |
-| D-009: Command log undo/redo | Inverse operations, in-memory stack | Decided ✓ |
+| D-009: Command log undo/redo | Inverse operations, in-memory stack | ✓ Good — v0.5 validated (MutationManager, batchMutation pre-reversal) |
 | D-010: Dirty flag + debounce sync | Lifecycle-aware CloudKit triggers | Decided ✓ |
-| TDD enforcement | Spec mandates red-green-refactor | ✓ Good — 151 tests in v0.1 |
+| TDD enforcement | Spec mandates red-green-refactor | ✓ Good — 774 tests through v0.5 |
 | Research flexibility | Open to better tooling within locked architecture | ✓ Good — Vite 7/Vitest 4 chosen |
 | Custom FTS5 WASM build | sql.js 1.14.0 lacks FTS5; Emscripten build needed | ✓ Good — 756KB, FTS5 verified |
 | db.exec()/db.run() for Phase 2 | withStatement deferred to Phase 3 | ✓ Good — simple, 151 tests pass |
 | p99 as p95 proxy | tinybench lacks p95; p99 < threshold implies p95 passes | ✓ Good — conservative |
+| HTML5 DnD over d3.drag for KanbanView | d3.drag intercepts dragstart, corrupts dataTransfer | ✓ Good — native DnD works in jsdom with polyfill |
+| SVG morph only for SVG_VIEWS pairs | list/grid/timeline share g.card elements | ✓ Good — crossfade handles all other transitions |
+| QueryBuilder as sole SQL assembly | All SQL from provider compile() outputs, no escape hatch | ✓ Good — airtight boundary |
+| Two-tier batching (microtask + setTimeout) | Providers self-notify; StateCoordinator cross-provider at 16ms | ✓ Good — no over-notification |
+| GalleryView pure HTML (no D3) | Tiles rebuilt on render; no data join needed for simple grid | ✓ Good — simpler than SVG views |
 
 ---
-*Last updated: 2026-02-28 after v1.0 milestone start*
+*Last updated: 2026-02-28 after v0.5 milestone*
