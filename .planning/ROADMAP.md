@@ -2,20 +2,21 @@
 
 ## Overview
 
-Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge. After Phase 3, Providers (Phase 4) and ETL (Phase 6) can run in parallel; D3 views (Phase 5) depend on Phase 4. The native Swift shell (Phase 7) depends on completion of all web runtime phases (1-6). The web runtime (Phases 1-6) ships independently; the native app (Phase 7) wraps it.
+Isometry v5 builds a local-first polymorphic data projection platform where sql.js (WASM with FTS5) serves as the single source of truth and D3.js data joins serve as state management — no framework, no parallel state store. The build is dependency-driven: database foundation first, then CRUD and query functions, then Worker Bridge. After Phase 3, Providers and MutationManager unblock all D3 views. Views are built from simplest to most complex, with SuperGrid last. The web runtime (Phases 3-7) ships as a complete unit.
 
 ## Milestones
 
-- ✅ **v0.1 Data Foundation** — Phases 1-2 (shipped 2026-02-28)
-- 🚧 **Web Runtime v1** — Phases 3-6 (next)
-- 📋 **Native App v1** — Phase 7 (planned)
+- [x] **v0.1 Data Foundation** — Phases 1-2 (shipped 2026-02-28)
+- [ ] **v1.0 Web Runtime** — Phases 3-7 (active)
+- [ ] **v1.1 ETL Importers** — Phases 8+ (planned)
 
 ## Release Gates
 
 | Release | Phases | Ships When |
 |---------|--------|------------|
-| **Web Runtime v1** | 1-6 | All Phase 1-6 requirements pass |
-| **Native App v1** | 7 | Web Runtime v1 + all NSAFE requirements pass |
+| **v0.1 Data Foundation** | 1-2 | SHIPPED 2026-02-28 |
+| **v1.0 Web Runtime** | 3-7 | All Phase 3-7 requirements pass |
+| **v1.1 ETL Importers** | 8+ | Web Runtime v1.0 stable |
 
 ## Phases
 
@@ -24,7 +25,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 <details>
-<summary>✅ v0.1 Data Foundation (Phases 1-2) — SHIPPED 2026-02-28</summary>
+<summary>v0.1 Data Foundation (Phases 1-2) — SHIPPED 2026-02-28</summary>
 
 - [x] Phase 1: Database Foundation (4/4 plans) — completed 2026-02-28
 - [x] Phase 2: CRUD + Query Layer (6/6 plans) — completed 2026-02-28
@@ -33,163 +34,112 @@ See: `.planning/milestones/v0.1-ROADMAP.md` for full details.
 
 </details>
 
-### 🚧 Web Runtime v1 (Phases 3-6)
+### v1.0 Web Runtime (Phases 3-7)
 
-- [ ] **Phase 3: Worker Bridge** - Typed message protocol with correlation IDs, all database operations off main thread
-- [ ] **Phase 4: Providers + Mutation Safety** - SQL allowlist, five Providers, MutationManager with undo, three-tier state persistence
-- [ ] **Phase 5: D3 Views + Search UI** - Nine views with PAFV projection, animated transitions, search UX, render performance
-- [ ] **Phase 6: ETL Importers** - Apple Notes import with deduplication, idempotent re-import, batch transactions
-
-### 📋 Native App v1 (Phase 7)
-
-- [ ] **Phase 7: Native Platform Safety** - WKWebView shell, CloudKit sync, Keychain credentials, native SQLite lifecycle
+- [ ] **Phase 3: Worker Bridge** - Typed async RPC over postMessage — all SQL off main thread, correlation IDs, initialization queuing, timeouts
+- [ ] **Phase 4: Providers + MutationManager** - SQL compilation from UI state, injection safety, three-tier persistence, undo/redo command log
+- [ ] **Phase 5: Core D3 Views + Transitions** - List, Grid, Kanban views with stable key functions, ViewManager lifecycle, animated LATCH transitions
+- [ ] **Phase 6: Time + Visual Views** - Calendar, Timeline, Gallery views with DensityProvider time SQL integration
+- [ ] **Phase 7: Graph Views + SuperGrid** - Network and Tree graph views (Worker-hosted simulation), SuperGrid with nested PAFV dimensional headers
 
 ## Phase Details
 
 ### Phase 3: Worker Bridge
-**Goal**: All database operations execute in a Web Worker with typed message passing, and the main thread is never blocked by SQL queries
-**Depends on**: Phase 2
-**Requirements**: WKBR-01, WKBR-02, WKBR-03, WKBR-04
+**Goal**: All database operations execute in a Web Worker via a typed async protocol, the main thread is never blocked by SQL, and all initialization race conditions and silent hangs are prevented
+**Depends on**: Phase 2 (query modules reused without wrappers)
+**Requirements**: BRIDGE-01, BRIDGE-02, BRIDGE-03, BRIDGE-04, BRIDGE-05, BRIDGE-06, BRIDGE-07
 **Success Criteria** (what must be TRUE):
-  1. WorkerBridge sends typed WorkerMessage envelopes with UUID correlation IDs and receives WorkerResponse matching each request
-  2. Worker errors propagate to the main thread with structured error codes and messages (not silent failures)
-  3. All database operations (CRUD, search, graph traversal) execute exclusively in the Web Worker -- main thread contains zero sql.js calls
-  4. Message serialization overhead is profiled and documented; query results use minimal projection (no SELECT *)
+  1. Worker initializes sql.js WASM, applies schema, and messages sent before initialization completes are queued and replayed — no messages are dropped
+  2. WorkerBridge sends typed messages with UUID correlation IDs and receives responses matched to the originating promise — concurrent requests resolve independently
+  3. Every pending promise times out and rejects after a configurable duration — silent Worker errors never hang the main thread indefinitely
+  4. Message router dispatches correctly to query, mutate, graph, fts, and export handlers using existing v0.1 query modules without modification
+  5. `isReady` promise resolves before any public bridge method executes — callers cannot race against initialization
+**Plans**: TBD
 
-**Plans**: 3 estimated (2 waves)
-- [ ] 03-01-PLAN.md -- Worker setup + message protocol (Wave 1)
-- [ ] 03-02-PLAN.md -- Database operation handlers (Wave 1)
-- [ ] 03-03-PLAN.md -- Error propagation + serialization profiling (Wave 2)
-
-### Phase 4: Providers + Mutation Safety
-**Goal**: UI state compiles to safe parameterized SQL through an allowlisted Provider system, mutations are undoable, and state persists correctly across the three-tier model
+### Phase 4: Providers + MutationManager
+**Goal**: UI state compiles to safe parameterized SQL through an allowlisted Provider system, every mutation is undoable, and all Tier 1/2 state persists across launch
 **Depends on**: Phase 3
-**Requirements**: SAFE-01, SAFE-02, SAFE-03, SAFE-04, SAFE-05, SAFE-06, PROV-01, PROV-02, PROV-03, PROV-04, PROV-05, PROV-06, PROV-07, WKBR-05, WKBR-06, WKBR-07
+**Requirements**: PROV-01, PROV-02, PROV-03, PROV-04, PROV-05, PROV-06, PROV-07, PROV-08, PROV-09, PROV-10, PROV-11, MUT-01, MUT-02, MUT-03, MUT-04, MUT-05, MUT-06, MUT-07
 **Success Criteria** (what must be TRUE):
-  1. FilterProvider compiles filter state to parameterized SQL WHERE clauses, validating fields against ALLOWED_FILTER_FIELDS and operators against ALLOWED_OPERATORS; unknown fields or operators are rejected at both compile time (TypeScript union) and runtime
-  2. AxisProvider compiles axis mappings to SQL ORDER BY/GROUP BY; DensityProvider controls density settings; ViewProvider tracks current view type -- all Tier 2 state persists to ui_state and restores on launch
-  3. SelectionProvider holds selected card IDs in-memory only (Tier 3) and this state is never written to any storage
-  4. SQL injection test suite passes: injection strings in values, unknown field names, and operator manipulation all rejected
-  5. User can undo and redo mutations via Cmd+Z / Cmd+Shift+Z; MutationManager generates inverse SQL for every mutation and sets dirty flag on writes
+  1. FilterProvider compiles filter state to `{where, params}` SQL fragments with allowlisted columns only — SQL injection strings, unknown fields, and unknown operators are all rejected at runtime
+  2. PAFVProvider maps LATCH dimensions to ORDER BY / GROUP BY SQL fragments and suspends/restores view family state when switching between LATCH and GRAPH views — no state is lost across the boundary
+  3. SelectionProvider holds selected card IDs in memory only (Cmd+click toggle, Shift+click range, select-all) and this state is never written to any storage tier
+  4. DensityProvider compiles all five time granularities (day, week, month, quarter, year) to strftime() SQL expressions — DensityProvider state changes the SQL, not only the CSS
+  5. User presses Cmd+Z and the last mutation is reversed; Cmd+Shift+Z re-applies it — undo and redo work through the full command log with correct inverse SQL ordering for batch mutations
+  6. Filter, axis, density, and view state (Tier 2) survive app restart — ui_state is written on change and restored on launch
+**Plans**: TBD
 
-**Plans**: 4 estimated (2 waves)
-- [ ] 04-01-PLAN.md -- FilterProvider + SQL safety TDD (Wave 1)
-- [ ] 04-02-PLAN.md -- AxisProvider + DensityProvider + ViewProvider (Wave 1)
-- [ ] 04-03-PLAN.md -- SelectionProvider + tier persistence (Wave 2)
-- [ ] 04-04-PLAN.md -- MutationManager + undo/redo (Wave 2)
-
-### Phase 5: D3 Views + Search UI
-**Goal**: Users can view their data through nine distinct projections with animated transitions between views, search with keyboard navigation and faceted refinement, and all renders complete within 16ms
+### Phase 5: Core D3 Views + Transitions
+**Goal**: Users can view data through List, Grid, and Kanban projections with animated transitions between them, and the canonical D3 data join pattern is established for all subsequent views
 **Depends on**: Phase 4
-**Requirements**: VIEW-01, VIEW-02, VIEW-03, VIEW-04, VIEW-05, VIEW-06, VIEW-07, VIEW-08, VIEW-09, VIEW-10, VIEW-11, VIEW-12, VIEW-13, SRCH-05, SRCH-06, SRCH-07, PERF-05
+**Requirements**: VIEW-01, VIEW-02, VIEW-03, VIEW-09, VIEW-10, VIEW-11, VIEW-12, REND-03, REND-04, REND-07, REND-08
 **Success Criteria** (what must be TRUE):
-  1. SuperGrid renders cards with nested dimensional headers via PAFV projection; axis changes recompile the SQL projection, not the data
-  2. All nine views render correctly: list (single-axis sort), grid (two axes), kanban (category grouping), calendar (month), timeline (linear time), gallery (thumbnails), network (force-directed), tree (hierarchy), table (raw columns)
-  3. All views use D3 data join with key function (d => d.id) and view transitions animate cards between projections with ~300ms ease-in-out
-  4. Search input is debounced at 150ms; user can navigate results with keyboard (arrow keys, Enter, Escape) and refine with faceted chips (card_type, folder, status, source)
-  5. View render completes in p95 <16ms for 100 visible cards; queries enforce LIMIT to stay under D3 SVG performance ceiling (~500 visible elements)
-
+  1. ListView renders cards in a single-column list with sort controls; GridView renders cards on a two-axis PAFV grid; KanbanView renders cards in category-grouped columns
+  2. Every D3 `.data()` call in every view uses a stable key function (`d => d.id`) — cards animate to correct positions on filter/sort changes, not arbitrary DOM index positions
+  3. Transitioning between LATCH views (List → Grid → Kanban) morphs card positions with d3-transition; transitioning between LATCH and GRAPH families uses crossfade — the data-as-projection insight is visible
+  4. ViewManager calls `view.destroy()` before mounting the next view — after 10 mount/destroy cycles the subscriber count is unchanged (no leaks)
+  5. Views show a loading indicator while the Worker query executes and display a readable error message when a query fails — blank screens and silent failures do not occur
+  6. KanbanView drag-drop triggers a MutationManager mutation that updates the card's category field and is fully undoable via Cmd+Z
 **Plans**: TBD
 
-### Phase 6: ETL Importers
-**Goal**: Users can import Apple Notes into Isometry with automatic graph extraction, deduplication, and idempotent re-import
-**Depends on**: Phase 3 (can develop in parallel with Phases 4-5; uses CRUD layer and Worker Bridge directly)
-**Requirements**: ETL-01, ETL-02, ETL-03, ETL-04, ETL-05, ETL-06
+### Phase 6: Time + Visual Views
+**Goal**: Users can view data through Calendar, Timeline, and Gallery projections with DensityProvider time-axis SQL integration exercised at all five granularity levels
+**Depends on**: Phase 5
+**Requirements**: VIEW-04, VIEW-05, VIEW-06
 **Success Criteria** (what must be TRUE):
-  1. Apple Notes importer maps notes to canonical cards and extracts connections (mentions, links, contains) as graph edges
-  2. Import deduplication uses source + source_id uniqueness; re-import is idempotent (updates modified_at if newer, no duplicates created)
-  3. Batch imports execute in transactions (100 cards per batch) and report results (new, updated, skipped counts)
-
-**Research Flag:** Verify alto-index JSON schema format is fully documented before Phase 6 planning begins. If underdocumented, a format research spike is needed.
-
+  1. CalendarView renders cards on a month/week/day grid with the active date field determined by DensityProvider — switching density levels (day, week, month, quarter, year) changes the SQL GROUP BY expression, not only the display format
+  2. TimelineView renders cards on a continuous d3.scaleTime() axis with PAFVProvider swimlane grouping — cards from the same swimlane group are horizontally aligned
+  3. GalleryView renders cards as visual tiles with image or cover display for resource card types — tile layout is responsive to container width
 **Plans**: TBD
 
-### Phase 7: Native Platform Safety
-**Goal**: The web runtime runs inside a WKWebView native shell with correct WASM serving, Keychain credential storage, CloudKit sync, and all ten native platform pitfalls addressed
-**Depends on**: Phases 1-6 (all Web Runtime phases complete)
-**Requirements**: NSAFE-01, NSAFE-02, NSAFE-03, NSAFE-04, NSAFE-05, NSAFE-06, NSAFE-07, NSAFE-08, NSAFE-09, NSAFE-10
+### Phase 7: Graph Views + SuperGrid
+**Goal**: Users can explore connection data through Network and Tree graph views (with off-main-thread force simulation) and project any dataset through SuperGrid's nested dimensional headers — the signature PAFV differentiator is fully operational
+**Depends on**: Phase 5 (Phase 6 can be parallel)
+**Requirements**: VIEW-07, VIEW-08, REND-01, REND-02, REND-05, REND-06
 **Success Criteria** (what must be TRUE):
-  1. WKWebView loads the web runtime via WKURLSchemeHandler (app:// scheme) with correct MIME types; WASM loads without fetch() rejection
-  2. CloudKit sync works end-to-end: zone creation guard prevents race conditions, change token expiration triggers full sync, rate limiting uses exponential backoff with CKErrorRetryAfterKey
-  3. CKRecord field reads handle all type coercions (Int/Int64, String/CKAsset, Date precision) and CKAsset file contents are copied immediately (never stored as temporary URLs)
-  4. Actor reentrancy is prevented: no database state assumptions held across await points; mutations use atomic transactions without suspension
-  5. Keychain uses kSecAttrAccessibleAfterFirstUnlock for background sync credentials; push notification entitlements and remote notification background mode are enabled; native SQLite enforces PRAGMA foreign_keys = ON on every connection
-
-**Research Flag:** CloudKit conflict resolution semantics and binary blob sync patterns (1MB asset limit) need investigation before Phase 7 planning.
-
+  1. NetworkView renders a force-directed graph where the force simulation runs in the Worker — main thread receives only stable `{id, x, y}` positions after the simulation converges, never per-tick updates
+  2. TreeView renders a collapsible hierarchy derived from contains/parent connections using d3-hierarchy — nodes expand and collapse without full re-render
+  3. SuperGrid renders nested dimensional headers from stacked PAFVProvider axis assignments — parent headers visually span their child column groups (SuperStack behavior)
+  4. SuperGrid render performance meets the <16ms threshold for 100 visible cards — measured via performance.now() in a Vitest benchmark
+  5. Network view posts only stable position snapshots from the Worker — the main thread renders each frame from a position map, never from mid-simulation state
 **Plans**: TBD
+
+**Research Flag**: SuperGrid SuperStack nested header spanning algorithm has no documented D3 analogue. Run `gsd:research-phase` before planning Phase 7. Graph algorithm implementations (PageRank, Louvain) also need sourcing — must have zero DOM dependencies to run in a Worker.
 
 ## Execution Policy
 
 **Primary rule:** Dependency-driven execution. A phase can start when all its dependencies are complete.
 
 **Dependency graph:**
-- Phase 2 requires Phase 1
-- Phase 3 requires Phase 2
+- Phase 3 requires Phase 2 (v0.1 shipped)
 - Phase 4 requires Phase 3
 - Phase 5 requires Phase 4
-- Phase 6 requires Phase 3 (NOT Phase 4 or 5)
-- Phase 7 requires Phases 1-6
-
-**Parallelization:**
-- Phases 4 and 6 MAY execute in parallel after Phase 3 completes
-- Phase 5 cannot start until Phase 4 completes (views require Providers)
-- If not parallelizing, execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
+- Phase 6 requires Phase 5
+- Phase 7 requires Phase 5 (Phase 6 can run in parallel with Phase 7)
 
 ```
-Phase 1: Database Foundation     ┐
-                                 ├─ v0.1 Data Foundation (SHIPPED)
-Phase 2: CRUD + Query Layer      ┘
+Phase 1: Database Foundation  ┐
+                              ├─ v0.1 Data Foundation (SHIPPED 2026-02-28)
+Phase 2: CRUD + Query Layer   ┘
     |
     v
 Phase 3: Worker Bridge
     |
+    v
+Phase 4: Providers + MutationManager
+    |
+    v
+Phase 5: Core D3 Views + Transitions
+    |
     +------------------+
     |                  |
     v                  v
-Phase 4: Providers   Phase 6: ETL (parallel-capable)
+Phase 6: Time +    Phase 7: Graph Views + SuperGrid
+Visual Views       (parallel-capable after Phase 5)
     |
     v
-Phase 5: D3 Views
-    |
-    v
-[Web Runtime v1 ships when Phases 1-6 pass]
-    |
-    v
-Phase 7: Native Platform Safety
-    |
-    v
-[Native App v1 ships when Phase 7 passes]
+[v1.0 Web Runtime ships when Phases 3-7 pass]
 ```
-
-## Delete Lifecycle
-
-### Soft Delete (User-Facing)
-- **Trigger:** User deletes a card via UI (Delete key, context menu, etc.)
-- **Effect:** `deleted_at` timestamp set; card excluded from normal queries
-- **Reversible:** Yes, via undelete (CARD-06) or undo (WKBR-07)
-- **Connections:** Soft-deleted cards retain their connections (hidden but intact)
-- **Retention:** Soft-deleted cards remain indefinitely until hard deleted
-
-### Hard Delete (System/Maintenance)
-- **Trigger:**
-  - Explicit "Empty Trash" action by user
-  - Automated cleanup after retention period (v2 feature, not in v1)
-  - ETL re-import with `replace` mode (replaces entire source dataset)
-- **Effect:** Row removed from `cards` table; `ON DELETE CASCADE` removes connections
-- **Reversible:** No — not in undo stack, not recoverable
-- **Undo interaction:** Hard delete clears any pending undo entries for that card
-
-### Cascade Behavior
-- Soft delete: Connections preserved (can be restored with card)
-- Hard delete: `ON DELETE CASCADE` removes all connections where card is source or target
-- `via_card_id` reference: Set to NULL on hard delete (does not cascade-delete the connection)
-
-### v1 Scope
-- Soft delete: Full support (CARD-04, CARD-06)
-- Hard delete: Available via direct SQL or debug tools only
-- "Empty Trash" UI: v2 feature
-- Retention-based cleanup: v2 feature
 
 ## Progress
 
@@ -197,12 +147,13 @@ Phase 7: Native Platform Safety
 |-------|-----------|----------------|--------|-----------|
 | 1. Database Foundation | v0.1 | 4/4 | Complete | 2026-02-28 |
 | 2. CRUD + Query Layer | v0.1 | 6/6 | Complete | 2026-02-28 |
-| 3. Worker Bridge | Web Runtime v1 | 0/TBD | Not started | - |
-| 4. Providers + Mutation Safety | Web Runtime v1 | 0/TBD | Not started | - |
-| 5. D3 Views + Search UI | Web Runtime v1 | 0/TBD | Not started | - |
-| 6. ETL Importers | Web Runtime v1 | 0/TBD | Not started | - |
-| 7. Native Platform Safety | Native App v1 | 0/TBD | Not started | - |
+| 3. Worker Bridge | v1.0 | 0/TBD | Not started | - |
+| 4. Providers + MutationManager | v1.0 | 0/TBD | Not started | - |
+| 5. Core D3 Views + Transitions | v1.0 | 0/TBD | Not started | - |
+| 6. Time + Visual Views | v1.0 | 0/TBD | Not started | - |
+| 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-02-27*
 *v0.1 Data Foundation shipped: 2026-02-28*
+*v1.0 Web Runtime roadmap written: 2026-02-28*

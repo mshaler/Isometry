@@ -105,57 +105,57 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRIDGE-01 | — | Pending |
-| BRIDGE-02 | — | Pending |
-| BRIDGE-03 | — | Pending |
-| BRIDGE-04 | — | Pending |
-| BRIDGE-05 | — | Pending |
-| BRIDGE-06 | — | Pending |
-| BRIDGE-07 | — | Pending |
-| PROV-01 | — | Pending |
-| PROV-02 | — | Pending |
-| PROV-03 | — | Pending |
-| PROV-04 | — | Pending |
-| PROV-05 | — | Pending |
-| PROV-06 | — | Pending |
-| PROV-07 | — | Pending |
-| PROV-08 | — | Pending |
-| PROV-09 | — | Pending |
-| PROV-10 | — | Pending |
-| PROV-11 | — | Pending |
-| MUT-01 | — | Pending |
-| MUT-02 | — | Pending |
-| MUT-03 | — | Pending |
-| MUT-04 | — | Pending |
-| MUT-05 | — | Pending |
-| MUT-06 | — | Pending |
-| MUT-07 | — | Pending |
-| VIEW-01 | — | Pending |
-| VIEW-02 | — | Pending |
-| VIEW-03 | — | Pending |
-| VIEW-04 | — | Pending |
-| VIEW-05 | — | Pending |
-| VIEW-06 | — | Pending |
-| VIEW-07 | — | Pending |
-| VIEW-08 | — | Pending |
-| VIEW-09 | — | Pending |
-| VIEW-10 | — | Pending |
-| VIEW-11 | — | Pending |
-| VIEW-12 | — | Pending |
-| REND-01 | — | Pending |
-| REND-02 | — | Pending |
-| REND-03 | — | Pending |
-| REND-04 | — | Pending |
-| REND-05 | — | Pending |
-| REND-06 | — | Pending |
-| REND-07 | — | Pending |
-| REND-08 | — | Pending |
+| BRIDGE-01 | Phase 3 | Pending |
+| BRIDGE-02 | Phase 3 | Pending |
+| BRIDGE-03 | Phase 3 | Pending |
+| BRIDGE-04 | Phase 3 | Pending |
+| BRIDGE-05 | Phase 3 | Pending |
+| BRIDGE-06 | Phase 3 | Pending |
+| BRIDGE-07 | Phase 3 | Pending |
+| PROV-01 | Phase 4 | Pending |
+| PROV-02 | Phase 4 | Pending |
+| PROV-03 | Phase 4 | Pending |
+| PROV-04 | Phase 4 | Pending |
+| PROV-05 | Phase 4 | Pending |
+| PROV-06 | Phase 4 | Pending |
+| PROV-07 | Phase 4 | Pending |
+| PROV-08 | Phase 4 | Pending |
+| PROV-09 | Phase 4 | Pending |
+| PROV-10 | Phase 4 | Pending |
+| PROV-11 | Phase 4 | Pending |
+| MUT-01 | Phase 4 | Pending |
+| MUT-02 | Phase 4 | Pending |
+| MUT-03 | Phase 4 | Pending |
+| MUT-04 | Phase 4 | Pending |
+| MUT-05 | Phase 4 | Pending |
+| MUT-06 | Phase 4 | Pending |
+| MUT-07 | Phase 4 | Pending |
+| VIEW-01 | Phase 5 | Pending |
+| VIEW-02 | Phase 5 | Pending |
+| VIEW-03 | Phase 5 | Pending |
+| VIEW-04 | Phase 6 | Pending |
+| VIEW-05 | Phase 6 | Pending |
+| VIEW-06 | Phase 6 | Pending |
+| VIEW-07 | Phase 7 | Pending |
+| VIEW-08 | Phase 7 | Pending |
+| VIEW-09 | Phase 5 | Pending |
+| VIEW-10 | Phase 5 | Pending |
+| VIEW-11 | Phase 5 | Pending |
+| VIEW-12 | Phase 5 | Pending |
+| REND-01 | Phase 7 | Pending |
+| REND-02 | Phase 7 | Pending |
+| REND-03 | Phase 5 | Pending |
+| REND-04 | Phase 5 | Pending |
+| REND-05 | Phase 7 | Pending |
+| REND-06 | Phase 7 | Pending |
+| REND-07 | Phase 5 | Pending |
+| REND-08 | Phase 5 | Pending |
 
 **Coverage:**
-- v1.0 requirements: 43 total
-- Mapped to phases: 0
-- Unmapped: 43 ⚠️
+- v1.0 requirements: 45 total (BRIDGE: 7, PROV: 11, MUT: 7, VIEW: 12, REND: 8)
+- Mapped to phases: 45
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-28*
-*Last updated: 2026-02-28 after initial definition*
+*Last updated: 2026-02-28 — traceability complete, all 45 requirements mapped*
