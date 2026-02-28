@@ -12,14 +12,14 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ sql.js database with canonical schema (cards, connections, FTS5, ui_state) — v0.1
+- ✓ Card CRUD with soft delete and parameterized queries — v0.1 (30 tests)
+- ✓ Connection CRUD with via_card_id pattern for rich relationships — v0.1 (23 tests)
+- ✓ FTS5 search with rowid joins and ranked results — v0.1 (21 tests)
+- ✓ Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms — v0.1 (10K-card dataset)
 
 ### Active
 
-- [ ] sql.js database with canonical schema (cards, connections, FTS5, ui_state)
-- [ ] Card CRUD with soft delete and parameterized queries
-- [ ] Connection CRUD with via_card_id pattern for rich relationships
-- [ ] FTS5 search with rowid joins and ranked results
 - [ ] Provider system (Filter, Axis, Selection, Density, View) with SQL compilation
 - [ ] SQL safety: allowlisted fields, parameterized values, injection rejection
 - [ ] Worker Bridge with typed message protocol and correlation IDs
@@ -29,7 +29,7 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - [ ] View transitions that animate cards between projections
 - [ ] ETL importers starting with Apple Notes
 - [ ] Three-tier state persistence (Durable, Session, Ephemeral)
-- [ ] Performance thresholds: insert <10ms, bulk insert <1s, FTS <100ms, graph <500ms, render <16ms
+- [ ] Performance threshold: render <16ms (100 visible cards, SuperGrid)
 
 ### Out of Scope
 
@@ -44,16 +44,23 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
+Shipped v0.1 Data Foundation with 3,378 LOC TypeScript, 151 tests passing.
+Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), Vite 7.3, Vitest 4.0.
+
 Isometry v5 has extensive pre-existing specification:
 - `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
 - `Isometry v5 SPEC.md` — product vision, foundational concepts (LATCH, GRAPH, PAFV)
 - `Modules/Core/Contracts.md` — schema and type definitions
 - `Modules/Core/WorkerBridge.md` — canonical message protocol
-- Implementation prompt with TDD-first phase plan and success criteria
 
 10 architectural decisions are resolved and locked. The spec is unusually complete — implementation should follow it closely, with research providing guidance on tooling/library choices within the locked architecture.
 
 The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) covers every way to *separate* information. GRAPH covers every way to *connect* it. PAFV (Planes, Axes, Facets, Values) maps any dimension to any screen coordinate.
+
+Known technical debt:
+- `withStatement` pattern stubbed (throws in Phase 2) — needs Database.prepare() in Phase 3
+- Schema loading uses conditional dynamic import (node:fs vs ?raw) — works but adds code paths
+- WKWebView WASM MIME type rejection spike created; full solution (Swift WKURLSchemeHandler) in Phase 7
 
 ## Constraints
 
@@ -71,18 +78,21 @@ The fundamental insight: LATCH (Location, Alphabet, Time, Category, Hierarchy) c
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| D-001: Lightweight relations | Lower schema complexity for v5 | Decided ✓ |
+| D-001: Lightweight relations | Lower schema complexity for v5 | ✓ Good — v0.1 validated |
 | D-002: Single WorkerBridge spec | Core/WorkerBridge.md is canonical | Decided ✓ |
 | D-003: Allowlist + Parameters | SQL safety without ORM overhead | Decided ✓ |
-| D-004: rowid FTS joins | Correct FTS5 content table usage | Decided ✓ |
+| D-004: rowid FTS joins | Correct FTS5 content table usage | ✓ Good — v0.1 validated (21 search tests) |
 | D-005: Three-tier persistence | Clear rules for what persists where | Decided ✓ |
 | D-006: Nine views with tier gating | Free/Pro/Workbench feature gates | Decided ✓ |
 | D-007: Keychain-only credentials | No secrets in SQLite | Decided ✓ |
 | D-008: Defer schema-on-read extras | Fixed schema for v5, EAV in Phase 2 | Decided ✓ |
 | D-009: Command log undo/redo | Inverse operations, in-memory stack | Decided ✓ |
 | D-010: Dirty flag + debounce sync | Lifecycle-aware CloudKit triggers | Decided ✓ |
-| TDD enforcement | Spec mandates red-green-refactor | Decided ✓ |
-| Research flexibility | Open to better tooling within locked architecture | Decided ✓ |
+| TDD enforcement | Spec mandates red-green-refactor | ✓ Good — 151 tests in v0.1 |
+| Research flexibility | Open to better tooling within locked architecture | ✓ Good — Vite 7/Vitest 4 chosen |
+| Custom FTS5 WASM build | sql.js 1.14.0 lacks FTS5; Emscripten build needed | ✓ Good — 756KB, FTS5 verified |
+| db.exec()/db.run() for Phase 2 | withStatement deferred to Phase 3 | ✓ Good — simple, 151 tests pass |
+| p99 as p95 proxy | tinybench lacks p95; p99 < threshold implies p95 passes | ✓ Good — conservative |
 
 ---
-*Last updated: 2026-02-27 after Codex review fixes*
+*Last updated: 2026-02-28 after v0.1 milestone*
