@@ -17,7 +17,9 @@ export default defineConfig({
     format: 'es',
   },
   optimizeDeps: {
-    exclude: ['sql.js'], // CRITICAL: prevents esbuild from stripping WASM loading code
+    // sql.js is CJS — Vite's esbuild pre-bundling converts it to ESM.
+    // Do NOT exclude it: workers need the pre-bundled ESM version.
+    // The WASM loading uses locateFile callback which esbuild preserves.
   },
   build: {
     target: 'es2022',
