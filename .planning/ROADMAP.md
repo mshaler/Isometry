@@ -20,7 +20,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Database Foundation** - Custom sql.js WASM with FTS5, canonical schema, three-trigger sync, Vite/Vitest infrastructure (completed 2026-02-28)
-- [ ] **Phase 2: CRUD + Query Layer** - Card/Connection CRUD, FTS5 search, graph traversal, performance benchmarks
+- [ ] **Phase 2: CRUD + Query Layer** - Card/Connection CRUD, FTS5 search, graph traversal, performance benchmarks (1/5 plans complete)
 - [ ] **Phase 3: Worker Bridge** - Typed message protocol with correlation IDs, all database operations off main thread
 - [ ] **Phase 4: Providers + Mutation Safety** - SQL allowlist, five Providers, MutationManager with undo, three-tier state persistence
 - [ ] **Phase 5: D3 Views + Search UI** - Nine views with PAFV projection, animated transitions, search UX, render performance
@@ -48,7 +48,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] 01-01-PLAN.md -- Project scaffolding + Vite/Vitest configuration (Wave 1)
 - [x] 01-02-PLAN.md -- Custom FTS5 WASM build (Wave 1, parallel with 01)
 - [x] 01-03-PLAN.md -- Database wrapper + schema + FTS triggers TDD (Wave 2)
-- [ ] 01-04-PLAN.md -- Production build verification + entry point (Wave 3)
+- [x] 01-04-PLAN.md -- Production build verification + entry point (Wave 3) -- COMPLETE 2026-02-28
 
 ### Phase 2: CRUD + Query Layer
 **Goal**: Users can create, read, update, and delete cards and connections, search with ranked results, and all operations meet performance thresholds on a 10K-card dataset
@@ -61,12 +61,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Performance benchmarks pass on a 10K-card / 50K-connection dataset: single insert p95 <10ms, bulk 1000-card insert p95 <1s, FTS search p95 <100ms, graph traversal (depth 3) p95 <500ms
   5. Prepared statement wrapper pattern with mandatory stmt.free() is established and used by all query modules
 
-**Plans**: 5 estimated (3 waves)
-- [ ] 02-01-PLAN.md -- Card CRUD TDD (Wave 1)
-- [ ] 02-02-PLAN.md -- Connection CRUD TDD (Wave 1)
+**Plans**: 5 plans (4 waves)
+- [x] 02-01-PLAN.md -- Card CRUD TDD (Wave 1) -- COMPLETE 2026-02-28 (30 tests)
+- [ ] 02-02-PLAN.md -- Connection CRUD TDD (Wave 2)
 - [ ] 02-03-PLAN.md -- FTS5 Search TDD (Wave 2)
-- [ ] 02-04-PLAN.md -- Graph traversal queries TDD (Wave 2)
-- [ ] 02-05-PLAN.md -- Performance benchmarks + prepared statement patterns (Wave 3)
+- [ ] 02-04-PLAN.md -- Graph traversal queries TDD (Wave 3)
+- [ ] 02-05-PLAN.md -- Performance benchmarks + prepared statement patterns (Wave 4)
 
 ### Phase 3: Worker Bridge
 **Goal**: All database operations execute in a Web Worker with typed message passing, and the main thread is never blocked by SQL queries
@@ -308,8 +308,8 @@ Phase 7: Native Platform Safety
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Database Foundation | 3/4 | In Progress | - |
-| 2. CRUD + Query Layer | 0/TBD | Not started | - |
+| 1. Database Foundation | 4/4 | Complete | 2026-02-28 |
+| 2. CRUD + Query Layer | 1/5 | In Progress | - |
 | 3. Worker Bridge | 0/TBD | Not started | - |
 | 4. Providers + Mutation Safety | 0/TBD | Not started | - |
 | 5. D3 Views + Search UI | 0/TBD | Not started | - |

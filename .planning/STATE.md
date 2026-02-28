@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T06:21:08.948Z"
+last_updated: "2026-02-28T03:55:00.000Z"
 progress:
-  total_phases: 1
+  total_phases: 7
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 25
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-27)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 1 - Database Foundation
+**Current focus:** Phase 2 - CRUD + Query Layer
 
 ## Current Position
 
-Phase: 1 of 7 (Database Foundation) -- COMPLETE
-Plan: 4 of 4 in current phase -- all plans done
-Status: Phase 1 Complete -- all 4 plans done, 38/38 tests passing, production build verified
-Last activity: 2026-02-28 -- Plan 01-04 complete (production build smoke test, entry point)
+Phase: 2 of 7 (CRUD + Query Layer) -- IN PROGRESS
+Plan: 1 of 5 in current phase -- 02-01 done
+Status: Phase 2 In Progress -- 02-01 complete (Card CRUD, 30 tests passing, types/helpers established)
+Last activity: 2026-02-28 -- Plan 02-01 complete (Card CRUD TDD, 30/30 tests)
 
-Progress: [####......] 16% (4/25 total plans)
+Progress: [#####.....] 20% (5/25 total plans)
 
 ## Performance Metrics
 
@@ -41,10 +41,11 @@ Progress: [####......] 16% (4/25 total plans)
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 4 | 11 min | 2.75 min |
+| 02-crud-query-layer | 1 | 3 min | 3 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 3 min, 3 min, 3 min
-- Trend: baseline
+- Last 5 plans: 2 min, 3 min, 3 min, 3 min, 3 min
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -71,6 +72,10 @@ Recent decisions affecting current work:
 - [RESOLVED in 01-04]: vite-env.d.ts added; ?raw import used for schema.sql in production context
 - [Phase 01-database-foundation]: Vite lib mode (not app mode): src/index.ts entry, ES format, sql.js externalized — produces dist/isometry.js for Phase 2+ consumers
 - [Phase 01-database-foundation]: Schema loading: conditional dynamic import — node:fs in test context (SQL_WASM_PATH set), ?raw in Vite production context; removes static Node imports that blocked Vite bundling
+- [02-01]: withStatement deferred to Phase 3+ — Database.prepare() not yet exposed; db.exec()/db.run() used for all Phase 2 queries
+- [02-01]: updateCard verifies card exists post-update via getCard() — throws if not found or soft-deleted (avoids getRowsModified() complexity)
+- [02-01]: deleteCard is idempotent — updates deleted_at on already-deleted cards without throwing
+- [02-01]: src/index.ts pre-declares all Phase 2 query module re-exports — Plans 02-02..04 do NOT modify index.ts to prevent conflicts
 
 ### Pending Todos
 
@@ -87,5 +92,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 01-database-foundation 01-04-PLAN.md (production build smoke test, entry point, all 38 tests passing, Phase 1 complete)
-Resume file: .planning/phases/02-worker-bridge/02-01-PLAN.md (Phase 2 next)
+Stopped at: Completed 02-crud-query-layer 02-01-PLAN.md (Card CRUD TDD, 30 tests passing, types/helpers established)
+Resume file: .planning/phases/02-crud-query-layer/02-02-PLAN.md (Connections CRUD next)

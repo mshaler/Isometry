@@ -41,12 +41,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Card Operations (Phase 2)
 
-- [ ] **CARD-01**: User can create a card with name and optional fields
-- [ ] **CARD-02**: User can retrieve a card by ID
-- [ ] **CARD-03**: User can update card fields (modified_at auto-updates)
-- [ ] **CARD-04**: User can soft delete a card (deleted_at set, excluded from queries)
-- [ ] **CARD-05**: User can list cards with filters (folder, status, card_type, source)
-- [ ] **CARD-06**: User can undelete a soft-deleted card
+- [x] **CARD-01**: User can create a card with name and optional fields
+- [x] **CARD-02**: User can retrieve a card by ID
+- [x] **CARD-03**: User can update card fields (modified_at auto-updates)
+- [x] **CARD-04**: User can soft delete a card (deleted_at set, excluded from queries)
+- [x] **CARD-05**: User can list cards with filters (folder, status, card_type, source)
+- [x] **CARD-06**: User can undelete a soft-deleted card
 
 ### Connections (Phase 2)
 
@@ -228,7 +228,7 @@ Canonical view types (nine total):
 | Requirement | Phase | Release Gate | Status |
 |-------------|-------|--------------|--------|
 | DB-01..06 | 1 | Web Runtime v1 | Pending |
-| CARD-01..06 | 2 | Web Runtime v1 | Pending |
+| CARD-01..06 | 2 | Web Runtime v1 | Complete (2026-02-28) |
 | CONN-01..05 | 2 | Web Runtime v1 | Pending |
 | SRCH-01..04 | 2 | Web Runtime v1 | Pending |
 | PERF-01..04 | 2 | Web Runtime v1 | Pending |
