@@ -51,9 +51,9 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [ ] **VIEW-06**: GalleryView renders cards as visual tiles with image/cover display
 - [ ] **VIEW-07**: NetworkView renders force-directed graph with simulation running in the Worker (not main thread)
 - [ ] **VIEW-08**: TreeView renders hierarchical layout from contains/parent connections with collapsible nodes
-- [ ] **VIEW-09**: Every D3 `.data()` call uses a stable key function (`d => d.id`)
-- [ ] **VIEW-10**: ViewManager mounts/unmounts views and calls `destroy()` before switching to prevent subscriber leaks
-- [ ] **VIEW-11**: Each view applies view-specific defaults from a VIEW_DEFAULTS map on first mount
+- [x] **VIEW-09**: Every D3 `.data()` call uses a stable key function (`d => d.id`)
+- [x] **VIEW-10**: ViewManager mounts/unmounts views and calls `destroy()` before switching to prevent subscriber leaks
+- [x] **VIEW-11**: Each view applies view-specific defaults from a VIEW_DEFAULTS map on first mount
 - [ ] **VIEW-12**: KanbanView drag-drop triggers mutations through MutationManager (undoable)
 
 ### Rendering
@@ -64,8 +64,8 @@ Requirements for the Web Runtime milestone. Each maps to roadmap phases.
 - [ ] **REND-04**: Cross-family transitions (LATCH↔GRAPH) use crossfade instead of morph
 - [ ] **REND-05**: Render performance meets <16ms threshold for 100 visible cards in SuperGrid
 - [ ] **REND-06**: Network view posts only stable `{id, x, y}` positions from Worker, not per-tick updates
-- [ ] **REND-07**: Views show loading state during Worker query execution
-- [ ] **REND-08**: Failed queries display error messages in views, not blank screens
+- [x] **REND-07**: Views show loading state during Worker query execution
+- [x] **REND-08**: Failed queries display error messages in views, not blank screens
 
 ## v1.1 Requirements
 
@@ -138,9 +138,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIEW-06 | Phase 6 | Pending |
 | VIEW-07 | Phase 7 | Pending |
 | VIEW-08 | Phase 7 | Pending |
-| VIEW-09 | Phase 5 | Pending |
-| VIEW-10 | Phase 5 | Pending |
-| VIEW-11 | Phase 5 | Pending |
+| VIEW-09 | Phase 5 | Complete |
+| VIEW-10 | Phase 5 | Complete |
+| VIEW-11 | Phase 5 | Complete |
 | VIEW-12 | Phase 5 | Pending |
 | REND-01 | Phase 7 | Pending |
 | REND-02 | Phase 7 | Pending |
@@ -148,8 +148,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-04 | Phase 5 | Pending |
 | REND-05 | Phase 7 | Pending |
 | REND-06 | Phase 7 | Pending |
-| REND-07 | Phase 5 | Pending |
-| REND-08 | Phase 5 | Pending |
+| REND-07 | Phase 5 | Complete |
+| REND-08 | Phase 5 | Complete |
 
 **Coverage:**
 - v1.0 requirements: 45 total (BRIDGE: 7, PROV: 11, MUT: 7, VIEW: 12, REND: 8)

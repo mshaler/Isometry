@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
-status: unknown
-last_updated: "2026-02-28T20:42:16.050Z"
+status: active
+last_updated: "2026-02-28T21:21:00Z"
 progress:
-  total_phases: 2
-  completed_phases: 1
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 5
+  completed_phases: 2
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,20 +18,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-28)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** Phase 4 — Providers + MutationManager
+**Current focus:** Phase 5 — Core D3 Views + Transitions
 
 ## Current Position
 
 ```
 [Phase 3] [Phase 4] [Phase 5] [Phase 6] [Phase 7]
-             |
-             v (active — Plans 01-04 of 10 complete)
+                        |
+                        v (active — Plan 01 of N complete)
 ```
 
-Phase: 4 (04-providers-mutationmanager) — COMPLETE
-Plan: 07 complete → Phase 4 done
-Status: All 7 plans complete — FilterProvider, PAFVProvider, DensityProvider, SelectionProvider, StateCoordinator, QueryBuilder, StateManager, MutationManager, keyboard shortcuts, SQL injection suite, persistence tests, public API delivered
-Last activity: 2026-02-28 — 04-07 (keyboard shortcuts, SQL injection suite, Phase 4 integration) complete
+Phase: 5 (05-core-d3-views-transitions) — IN PROGRESS
+Plan: 01 complete → IView contract, CardRenderer, ViewManager, CSS design tokens
+Status: Plan 01 complete — D3 installed, IView/CardDatum/ViewConfig types, CardRenderer SVG+HTML, ViewManager lifecycle (665 tests passing)
+Last activity: 2026-02-28 — 05-01 (D3 foundation + ViewManager) complete
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Last activity: 2026-02-28 — 04-07 (keyboard shortcuts, SQL injection suite, Ph
 | Phase 04-providers-mutationmanager P05 | 4 | 2 tasks | 6 files |
 | Phase 04-providers-mutationmanager P06 | 6 | 2 tasks | 8 files |
 | Phase 04-providers-mutationmanager P07 | 275 | 2 tasks | 7 files |
+| Phase 05-core-d3-views-transitions P01 | 5 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,10 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - [Phase 04-providers-mutationmanager]: batchMutation pre-reverses inverse array at creation time — undo() iterates inverse[] in order, no reversal needed in MutationManager
 - [Phase 04-providers-mutationmanager]: setupMutationShortcuts reads navigator.platform at call time, not module load, to allow vi.stubGlobal() overrides in tests
 - [Phase 04-providers-mutationmanager]: SQL injection double-validation tests use _filters direct access to bypass addFilter() and prove compile() is the second line of defence
+- [Phase 05-core-d3-views-transitions 05-01]: jsdom installed as dev dependency — vitest default is node environment; ViewManager tests require DOM APIs via @vitest-environment jsdom directive
+- [Phase 05-core-d3-views-transitions 05-01]: WorkerBridgeLike and PAFVProviderLike minimal interfaces extracted in types.ts — decouples ViewManager from concrete implementations for clean test mocking (matching MutationBridge pattern)
+- [Phase 05-core-d3-views-transitions 05-01]: ViewManager.switchTo() teardown ordering: unsubscribe coordinator first, cancel loading timer, then destroy view — prevents coordinator firing into a half-torn-down view
+- [Phase 05-core-d3-views-transitions 05-01]: Loading spinner uses .is-visible CSS class toggle rather than inline style — allows CSS layer to override if needed
 
 ### Dependencies to Add (Phase 3 setup)
 
@@ -108,6 +113,6 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 
 ## Session Continuity
 
-Last session: 2026-02-28T20:41:00Z
-Stopped at: Completed 04-providers-mutationmanager/04-07-PLAN.md — Keyboard shortcuts, SQL injection suite, persistence integration tests, Phase 4 public API wiring (647 tests passing)
-Resume: Phase 4 complete. Run `gsd:execute-phase 05-views` for Phase 5 (Core D3 Views + Transitions)
+Last session: 2026-02-28T21:21:00Z
+Stopped at: Completed 05-core-d3-views-transitions/05-01-PLAN.md — D3 7.9.0 installed, IView contract, CardRenderer SVG+HTML, ViewManager lifecycle, CSS design tokens (665 tests passing)
+Resume: Phase 5 Plan 01 complete. Continue with `gsd:execute-phase 05` for remaining Phase 5 view plans (ListView, GridView, KanbanView, transitions)
