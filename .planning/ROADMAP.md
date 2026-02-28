@@ -19,7 +19,7 @@ Isometry v5 builds a local-first polymorphic data projection platform where sql.
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Database Foundation** - Custom sql.js WASM with FTS5, canonical schema, three-trigger sync, Vite/Vitest infrastructure
+- [x] **Phase 1: Database Foundation** - Custom sql.js WASM with FTS5, canonical schema, three-trigger sync, Vite/Vitest infrastructure (completed 2026-02-28)
 - [ ] **Phase 2: CRUD + Query Layer** - Card/Connection CRUD, FTS5 search, graph traversal, performance benchmarks
 - [ ] **Phase 3: Worker Bridge** - Typed message protocol with correlation IDs, all database operations off main thread
 - [ ] **Phase 4: Providers + Mutation Safety** - SQL allowlist, five Providers, MutationManager with undo, three-tier state persistence
@@ -147,8 +147,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 | Requirement | Phase | Category |
 |-------------|-------|----------|
-| DB-01 | 1 | Database Foundation |
-| DB-02 | 1 | Database Foundation |
+| DB-01 | 1 | 4/4 | Complete   | 2026-02-28 | 1 | Database Foundation |
 | DB-03 | 1 | Database Foundation |
 | DB-04 | 1 | Database Foundation |
 | DB-05 | 1 | Database Foundation |
