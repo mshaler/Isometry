@@ -59,14 +59,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. User can create connections between cards (with optional via_card_id), query them by direction (outgoing/incoming/bidirectional), delete them, and cascade-delete triggers on hard-deleted cards
   3. User can search cards by text query and receive BM25-ranked results with highlighted snippets, using rowid joins (never id joins)
   4. Performance benchmarks pass on a 10K-card / 50K-connection dataset: single insert p95 <10ms, bulk 1000-card insert p95 <1s, FTS search p95 <100ms, graph traversal (depth 3) p95 <500ms
-  5. Prepared statement wrapper pattern with mandatory stmt.free() is established and used by all query modules
+  5. Prepared statement wrapper pattern (`withStatement`) is established as the documented Phase 3+ pattern entry point in `helpers.ts`; Phase 2 query modules use `db.exec()`/`db.run()` directly (no `Database.prepare()` yet)
 
-**Plans**: 5 plans (4 waves)
+**Plans**: 6 plans (5 waves)
 - [x] 02-01-PLAN.md -- Card CRUD TDD (Wave 1) -- COMPLETE 2026-02-28 (30 tests)
 - [x] 02-02-PLAN.md -- Connection CRUD TDD (Wave 2) -- COMPLETE 2026-02-28 (23 tests)
 - [x] 02-03-PLAN.md -- FTS5 Search TDD (Wave 2) -- COMPLETE 2026-02-28 (21 tests)
 - [x] 02-04-PLAN.md -- Graph traversal queries TDD (Wave 3) -- COMPLETE 2026-02-28 (19 tests)
 - [x] 02-05-PLAN.md -- Performance benchmarks + prepared statement patterns (Wave 4) -- COMPLETE 2026-02-28 (4 PERF thresholds verified)
+- [ ] 02-06-PLAN.md -- Gap closure: docs + typecheck fixes (Wave 5, gap_closure)
 
 ### Phase 3: Worker Bridge
 **Goal**: All database operations execute in a Web Worker with typed message passing, and the main thread is never blocked by SQL queries
