@@ -94,9 +94,14 @@ Plans:
 **Requirements**: VIEW-04, VIEW-05, VIEW-06
 **Success Criteria** (what must be TRUE):
   1. CalendarView renders cards on a month/week/day grid with the active date field determined by DensityProvider — switching density levels (day, week, month, quarter, year) changes the SQL GROUP BY expression, not only the display format
-  2. TimelineView renders cards on a continuous d3.scaleTime() axis with PAFVProvider swimlane grouping — cards from the same swimlane group are horizontally aligned
+  2. TimelineView renders cards on a continuous d3.scaleUtc() axis with PAFVProvider swimlane grouping — cards from the same swimlane group are horizontally aligned
   3. GalleryView renders cards as visual tiles with image or cover display for resource card types — tile layout is responsive to container width
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — CardDatum expansion (due_at, body_text) + CalendarView with 5 granularity modes
+- [ ] 06-02-PLAN.md — GalleryView with responsive CSS Grid tiles and image/icon fallbacks
+- [ ] 06-03-PLAN.md — TimelineView (SVG, d3.scaleUtc, swimlanes) + transitions integration + barrel exports
 
 ### Phase 7: Graph Views + SuperGrid
 **Goal**: Users can explore connection data through Network and Tree graph views (with off-main-thread force simulation) and project any dataset through SuperGrid's nested dimensional headers — the signature PAFV differentiator is fully operational
@@ -156,7 +161,7 @@ Visual Views       (parallel-capable after Phase 5)
 | 3. Worker Bridge | v1.0 | 7/7 | Complete | 2026-02-28 |
 | 4. Providers + MutationManager | 7/7 | Complete   | 2026-02-28 | - |
 | 5. Core D3 Views + Transitions | 4/4 | Complete   | 2026-02-28 | - |
-| 6. Time + Visual Views | v1.0 | 0/TBD | Not started | - |
+| 6. Time + Visual Views | v1.0 | 0/3 | Planned | - |
 | 7. Graph Views + SuperGrid | v1.0 | 0/TBD | Not started | - |
 
 ---
