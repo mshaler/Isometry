@@ -61,7 +61,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. Performance benchmarks pass on a 10K-card / 50K-connection dataset: single insert p95 <10ms, bulk 1000-card insert p95 <1s, FTS search p95 <100ms, graph traversal (depth 3) p95 <500ms
   5. Prepared statement wrapper pattern with mandatory stmt.free() is established and used by all query modules
 
-**Plans**: TBD
+**Plans**: 5 estimated (3 waves)
+- [ ] 02-01-PLAN.md -- Card CRUD TDD (Wave 1)
+- [ ] 02-02-PLAN.md -- Connection CRUD TDD (Wave 1)
+- [ ] 02-03-PLAN.md -- FTS5 Search TDD (Wave 2)
+- [ ] 02-04-PLAN.md -- Graph traversal queries TDD (Wave 2)
+- [ ] 02-05-PLAN.md -- Performance benchmarks + prepared statement patterns (Wave 3)
 
 ### Phase 3: Worker Bridge
 **Goal**: All database operations execute in a Web Worker with typed message passing, and the main thread is never blocked by SQL queries
@@ -73,7 +78,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. All database operations (CRUD, search, graph traversal) execute exclusively in the Web Worker -- main thread contains zero sql.js calls
   4. Message serialization overhead is profiled and documented; query results use minimal projection (no SELECT *)
 
-**Plans**: TBD
+**Plans**: 3 estimated (2 waves)
+- [ ] 03-01-PLAN.md -- Worker setup + message protocol (Wave 1)
+- [ ] 03-02-PLAN.md -- Database operation handlers (Wave 1)
+- [ ] 03-03-PLAN.md -- Error propagation + serialization profiling (Wave 2)
 
 ### Phase 4: Providers + Mutation Safety
 **Goal**: UI state compiles to safe parameterized SQL through an allowlisted Provider system, mutations are undoable, and state persists correctly across the three-tier model
@@ -86,7 +94,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. SQL injection test suite passes: injection strings in values, unknown field names, and operator manipulation all rejected
   5. User can undo and redo mutations via Cmd+Z / Cmd+Shift+Z; MutationManager generates inverse SQL for every mutation and sets dirty flag on writes
 
-**Plans**: TBD
+**Plans**: 4 estimated (2 waves)
+- [ ] 04-01-PLAN.md -- FilterProvider + SQL safety TDD (Wave 1)
+- [ ] 04-02-PLAN.md -- AxisProvider + DensityProvider + ViewProvider (Wave 1)
+- [ ] 04-03-PLAN.md -- SelectionProvider + tier persistence (Wave 2)
+- [ ] 04-04-PLAN.md -- MutationManager + undo/redo (Wave 2)
 
 ### Phase 5: D3 Views + Search UI
 **Goal**: Users can view their data through nine distinct projections with animated transitions between views, search with keyboard navigation and faceted refinement, and all renders complete within 16ms
@@ -217,9 +229,24 @@ Decimal phases appear between their surrounding integers in numeric order.
 - Web Runtime v1 (Phases 1-6): 68 requirements
 - Native App v1 (Phase 7): 10 requirements
 
-**Note:** The REQUIREMENTS.md summary states 67 total requirements, but individual enumeration yields 78. The discrepancy is a count error in the summary; all individual requirement IDs are mapped above.
+**Note:** Both ROADMAP and REQUIREMENTS enumerate 78 total requirements. Any prior reference to "67" was a summary typo — now corrected.
 
-## Dependency Graph
+## Execution Policy
+
+**Primary rule:** Dependency-driven execution. A phase can start when all its dependencies are complete.
+
+**Dependency graph:**
+- Phase 2 requires Phase 1
+- Phase 3 requires Phase 2
+- Phase 4 requires Phase 3
+- Phase 5 requires Phase 4
+- Phase 6 requires Phase 3 (NOT Phase 4 or 5)
+- Phase 7 requires Phases 1-6
+
+**Parallelization:**
+- Phases 4 and 6 MAY execute in parallel after Phase 3 completes
+- Phase 5 cannot start until Phase 4 completes (views require Providers)
+- If not parallelizing, execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 ```
 Phase 1: Database Foundation
@@ -248,14 +275,36 @@ Phase 7: Native Platform Safety
 [Native App v1 ships when Phase 7 passes]
 ```
 
-Phases 4 and 6 can develop in parallel after Phase 3 completes (both depend only on CRUD layer + Worker Bridge). Phase 5 requires Phase 4 (views depend on Providers). Phase 7 requires all web phases.
+## Delete Lifecycle
+
+### Soft Delete (User-Facing)
+- **Trigger:** User deletes a card via UI (Delete key, context menu, etc.)
+- **Effect:** `deleted_at` timestamp set; card excluded from normal queries
+- **Reversible:** Yes, via undelete (CARD-06) or undo (WKBR-07)
+- **Connections:** Soft-deleted cards retain their connections (hidden but intact)
+- **Retention:** Soft-deleted cards remain indefinitely until hard deleted
+
+### Hard Delete (System/Maintenance)
+- **Trigger:**
+  - Explicit "Empty Trash" action by user
+  - Automated cleanup after retention period (v2 feature, not in v1)
+  - ETL re-import with `replace` mode (replaces entire source dataset)
+- **Effect:** Row removed from `cards` table; `ON DELETE CASCADE` removes connections
+- **Reversible:** No — not in undo stack, not recoverable
+- **Undo interaction:** Hard delete clears any pending undo entries for that card
+
+### Cascade Behavior
+- Soft delete: Connections preserved (can be restored with card)
+- Hard delete: `ON DELETE CASCADE` removes all connections where card is source or target
+- `via_card_id` reference: Set to NULL on hard delete (does not cascade-delete the connection)
+
+### v1 Scope
+- Soft delete: Full support (CARD-04, CARD-06)
+- Hard delete: Available via direct SQL or debug tools only
+- "Empty Trash" UI: v2 feature
+- Retention-based cleanup: v2 feature
 
 ## Progress
-
-**Execution Order:**
-Phases execute by dependency graph, not strict numeric order:
-1 -> 2 -> 3 -> (4 and 6 in parallel) -> 5 -> 7
-(Phase 5 depends on 4; Phase 7 depends on all Phases 1-6.)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
