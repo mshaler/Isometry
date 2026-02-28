@@ -44,7 +44,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 - Vite must exclude sql.js from optimizeDeps and use ?url import for WASM path resolution
 - WKWebView fetch() MIME type rejection solved with app:// scheme handler (integration spike here, full native shell in Phase 7)
 
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+- [ ] 01-01-PLAN.md -- Project scaffolding + Vite/Vitest configuration (Wave 1)
+- [ ] 01-02-PLAN.md -- Custom FTS5 WASM build (Wave 1, parallel with 01)
+- [ ] 01-03-PLAN.md -- Database wrapper + schema + FTS triggers TDD (Wave 2)
+- [ ] 01-04-PLAN.md -- Production build verification + entry point (Wave 3)
 
 ### Phase 2: CRUD + Query Layer
 **Goal**: Users can create, read, update, and delete cards and connections, search with ranked results, and all operations meet performance thresholds on a 10K-card dataset
@@ -255,7 +259,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Database Foundation | 0/TBD | Not started | - |
+| 1. Database Foundation | 0/4 | Planned | - |
 | 2. CRUD + Query Layer | 0/TBD | Not started | - |
 | 3. Worker Bridge | 0/TBD | Not started | - |
 | 4. Providers + Mutation Safety | 0/TBD | Not started | - |
