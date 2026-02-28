@@ -135,7 +135,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 | Requirement | Phase | Category |
 |-------------|-------|----------|
-| DB-01 | 1 | 1/4 | In Progress|  | 1 | Database Foundation |
+| DB-01 | 1 | 2/4 | In Progress|  | 1 | Database Foundation |
 | DB-03 | 1 | Database Foundation |
 | DB-04 | 1 | Database Foundation |
 | DB-05 | 1 | Database Foundation |
