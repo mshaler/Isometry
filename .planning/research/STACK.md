@@ -1,386 +1,277 @@
 # Stack Research
 
 **Domain:** Local-first polymorphic data projection platform (TypeScript/D3.js, WKWebView shell)
-**Researched:** 2026-02-27
-**Confidence:** MEDIUM-HIGH (all versions verified via official sources; WKWebView WASM gotchas verified via issue trackers; FTS5 gap is a HIGH-confidence finding with significant implementation impact)
+**Researched:** 2026-02-28
+**Confidence:** HIGH — all library versions verified via npm registry; D3 module selection verified against d3js.org; Vite worker config verified via Vite 7 docs; Vitest web-worker support verified via npm
 
 ---
 
-## Recommended Stack
+## Context: What Already Exists (Do Not Re-Research)
 
-### Core Technologies
+The v0.1 Data Foundation milestone is complete and validated:
 
-| Technology | Version | Purpose | Why Recommended | Confidence |
-|------------|---------|---------|-----------------|------------|
-| TypeScript | 5.8.x | Type-safe application language | Latest stable (released Feb 28, 2025). The go-based TS7 rewrite is in preview only — stick with 5.8 for stability. Strict mode + additional flags catch runtime bugs at compile time. | HIGH |
-| sql.js (custom FTS5 build) | 1.14.0 + custom WASM | In-browser SQLite for local-first data layer | The stack decision is locked (sql.js). However: v1.14 ships with FTS3 only, not FTS5. A custom build is REQUIRED. See FTS5 section below. | HIGH |
-| D3.js | 7.9.0 | Data visualization and DOM data joins | v7.9.0 is current (no v8 as of Feb 2026). D3's `.data().join()` pattern eliminates parallel state — aligns perfectly with the no-Redux architecture. | HIGH |
-| Vite | 7.3.1 | Build tooling, dev server, WASM bundling | Latest stable. ESM-only distribution, excellent WASM support via `?init` query or `vite-plugin-wasm`. Node 20.19+ required. Vite 8 (Rolldown) is beta only — avoid. | HIGH |
-| Vitest | 4.0.x (4.0.17+) | Unit and integration testing | Same config as Vite, near-zero config for TypeScript projects. Pool rewrite in v4 removes external dependencies. Browser mode now stable but not needed here — use `pool: 'forks'` for isolation. | HIGH |
+| Technology | Version | Status |
+|------------|---------|--------|
+| TypeScript | 5.9.x (strict + extras) | Configured, 151 tests passing |
+| sql.js | 1.14.0 (custom FTS5 WASM, 756KB) | Built, tested, FTS5 verified |
+| Vite | 7.3.1 | Configured (`worker.format: 'es'`, WASM path resolved) |
+| Vitest | 4.0.18 | Configured (`pool: 'forks'`, node environment) |
+| vite-plugin-static-copy | 3.2.0 | Configured (WASM asset copying) |
+| @types/sql.js | 1.4.9 | Installed |
+| @vitest/coverage-v8 | 4.0.18 | Installed |
 
-### Supporting Libraries
+The vite.config.ts already has `worker.format: 'es'`, `optimizeDeps.exclude: ['sql.js']`, and `assetsInlineLimit: 0`. The tsconfig has the full strict mode configuration.
 
-| Library | Version | Purpose | When to Use | Confidence |
-|---------|---------|---------|-------------|------------|
-| `@types/d3` | 7.4.3 | TypeScript type definitions for D3 | Always. Note: last updated ~2 years ago. Sub-module `@types/d3-*` packages are more current — prefer sub-module imports to avoid stale umbrella types. | MEDIUM |
-| `vite-plugin-wasm` | 3.x | Enable WASM ESM integration in Vite | Required for WebAssembly imports via ESM (wasm-pack style). Not needed if using `?init` query approach with locateFile pattern for sql.js. | MEDIUM |
-| `vite-plugin-top-level-await` | 1.x | Enable top-level await in bundled code | Pair with `vite-plugin-wasm` if needed. Required for WASM modules that use async initialization at module level. | MEDIUM |
-| `vite-plugin-static-copy` | 1.x | Copy WASM assets to dist | Use to ensure `sql-wasm.wasm` is copied to `dist/` at the correct path so `locateFile` can resolve it in production. | MEDIUM |
-| `typescript-eslint` | 8.x | TypeScript-aware linting | Use `strict-type-checked` config for maximum correctness. Flat config (ESLint v9 style) is now standard. | MEDIUM |
-| `@vitest/coverage-v8` | 4.x | Code coverage | Use v8 coverage (ships with Node). Significantly faster than Istanbul for WASM-heavy test suites. | MEDIUM |
-
-### Development Tools
-
-| Tool | Purpose | Notes | Confidence |
-|------|---------|-------|------------|
-| ESLint 9.x | Code linting | Use flat config format (`eslint.config.ts`). `tseslint.configs.strictTypeChecked` catches category of bugs that strict tsconfig misses. | MEDIUM |
-| Prettier | Code formatting | Pin version. Avoids style debates. Configure in `eslint.config.ts` via `eslint-config-prettier` to disable conflicting ESLint rules. | MEDIUM |
-| Emscripten (build-time only) | Compile custom sql.js WASM with FTS5 | Required ONLY for the custom sql.js FTS5 build. Use Docker image `emscripten/emsdk` to avoid local toolchain issues. Build once, commit the WASM artifact. | HIGH |
+**This document covers only what must be ADDED for the v1.0 Web Runtime milestone.**
 
 ---
 
-## CRITICAL: sql.js and FTS5
+## Recommended Additions
 
-### The Problem
+### Core Libraries to Add
 
-**sql.js v1.14.0 ships with FTS3, not FTS5.** This is confirmed via the Makefile:
+| Library | Version | Purpose | Why This Choice | Confidence |
+|---------|---------|---------|-----------------|------------|
+| `d3` (umbrella) | 7.9.0 | Data visualization, DOM data joins, force simulation, hierarchy, transitions | D3 v7.9.0 is current (no v8 exists). The `d3` umbrella package enables tree-shaking via named imports in Vite/Rollup. Nine views need selection, scale, hierarchy, force, transition, zoom, drag — sub-module imports cover exactly what's needed. | HIGH |
+| `@types/d3` | 7.4.3 | TypeScript type definitions for D3 | The umbrella @types package re-exports all sub-module types. Last validated against D3 7.4.4. Sub-module types (d3-selection, d3-force, d3-hierarchy, d3-scale, d3-zoom) are stable and accurate for all nine views. | HIGH |
 
-```
-CFLAGS=-Oz -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS
-       -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS
-```
+### Dev Libraries to Add
 
-The PR to enable FTS5 by default (#594, opened Sep 2024) is blocked by the maintainer: "I'd rather not increase the default asset size for all existing users." It will not ship in v1.14 or likely v1.15.
-
-The architectural decision (D-004) requires FTS5 with `porter unicode61 remove_diacritics` tokenizer. **This is not available in the default sql.js build.**
-
-### Options
-
-**Option A: Custom Build (RECOMMENDED)**
-
-Modify the sql.js Makefile to add `-DSQLITE_ENABLE_FTS5` and rebuild with Emscripten. Commit the resulting `sql-wasm.wasm` and `sql-wasm.js` to the repo as a versioned artifact.
-
-```makefile
-# In sql.js/Makefile, change:
-CFLAGS=-Oz -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS \
-       -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS
-
-# To:
-CFLAGS=-Oz -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_DISABLE_LFS \
-       -DSQLITE_ENABLE_FTS3 -DSQLITE_ENABLE_FTS3_PARENTHESIS \
-       -DSQLITE_ENABLE_FTS5
-```
-
-Build via Docker:
-```bash
-docker run --rm -v $(pwd):/src emscripten/emsdk make
-```
-
-The resulting WASM is ~106KB larger (638K → 744K) — acceptable for a local-first desktop app.
-
-**Option B: `sql.js-fts5` npm fork**
-
-The `sql.js-fts5` package (last published ~5 years ago, v1.4.0) is effectively abandoned. Do NOT use this approach.
-
-**Rationale for Option A:** The project already accepts sql.js as a locked decision. A custom build preserves the full sql.js API contract (sql.js TypeScript types, initialization pattern, worker protocol). The custom WASM is a one-time build artifact that can be version-pinned.
+| Library | Version | Purpose | Why This Choice | Confidence |
+|---------|---------|---------|-----------------|------------|
+| `@vitest/web-worker` | 4.0.18 | Simulate Web Worker API in Vitest test environment | The only official Vitest package for Web Worker testing. Version matches the installed Vitest 4.0.18. Simulates `Worker` + `postMessage`/`onmessage` in a single thread — no browser needed. Required for testing WorkerBridge correlation ID logic. | HIGH |
 
 ---
 
-## WKWebView WASM Configuration
+## D3 Module Selection: What to Import
 
-### The Problem
+This project needs the following D3 sub-modules. Import named exports from `'d3'` (Vite tree-shakes correctly from the umbrella package):
 
-WKWebView has a known bug: when fetching `.wasm` files from the local filesystem (or custom URL scheme) using the `fetch()` API, it returns:
+### Sub-Modules Required Per View
 
-```
-Unexpected response MIME type. Expected 'application/wasm'
-```
+| Sub-Module | Purpose | Views Using It |
+|------------|---------|---------------|
+| `d3-selection` | DOM selection and data join (`.data().join()`) | All nine views |
+| `d3-transition` | Animated transitions between states and views | All nine views |
+| `d3-scale` | scaleLinear, scaleBand, scaleOrdinal, scaleTime | All except network |
+| `d3-axis` | Rendered axis for SuperGrid dimensional headers | SuperGrid, table, timeline, calendar |
+| `d3-array` | extent, group, rollup, bin — data aggregation for SuperGrid | SuperGrid, kanban, calendar |
+| `d3-time` | timeDay, timeMonth, timeYear for calendar/timeline | Calendar, timeline |
+| `d3-time-format` | Date formatting for axis labels | Calendar, timeline, SuperGrid |
+| `d3-hierarchy` | hierarchy(), tree(), cluster() for tree view | Tree view |
+| `d3-force` | forceSimulation, forceLink, forceManyBody, forceCenter | Network view (run in Worker) |
+| `d3-zoom` | Pinch-to-zoom, scroll zoom for network and SuperGrid | Network, SuperGrid |
+| `d3-drag` | Drag behavior for kanban card reordering | Kanban view |
+| `d3-shape` | arc(), line(), area() for potential decorative elements | Optional, network/tree |
+| `d3-color` | Color manipulation for LATCH accent colors | Design system |
+| `d3-interpolate` | Color and transform interpolation for transitions | All views (via d3-transition) |
 
-`XMLHttpRequest` succeeds where `fetch()` fails. This breaks `WebAssembly.instantiateStreaming()`.
-
-### The Workaround
-
-The Swift shell must implement a `WKURLSchemeHandler` to serve the application via a custom `app://` scheme (not `file://`), ensuring proper MIME type headers. Additionally, sql.js must be initialized with a custom `locateFile` that avoids `fetch()`-based WASM loading.
-
-**Swift side — serve app via custom scheme:**
-
-```swift
-// Register custom scheme in WKWebViewConfiguration
-let config = WKWebViewConfiguration()
-config.setURLSchemeHandler(AppSchemeHandler(), forURLScheme: "app")
-```
-
-**JavaScript side — initialize sql.js with explicit WASM URL:**
+### Import Pattern (Vite tree-shakes named exports correctly)
 
 ```typescript
-import sqlWasmUrl from './sql-wasm.wasm?url'; // Vite ?url import
+// CORRECT: Named imports from umbrella — Vite/Rollup tree-shakes these
+import {
+  select, selectAll,
+  type Selection
+} from 'd3-selection';
 
-const SQL = await initSqlJs({
-    locateFile: () => sqlWasmUrl
+import {
+  forceSimulation, forceLink, forceManyBody, forceCenter,
+  type Simulation, type SimulationNodeDatum
+} from 'd3-force';
+
+import {
+  scaleBand, scaleLinear, scaleOrdinal, scaleTime
+} from 'd3-scale';
+
+import { hierarchy, tree } from 'd3-hierarchy';
+import { zoom, type ZoomBehavior } from 'd3-zoom';
+import { drag } from 'd3-drag';
+import { axisBottom, axisLeft, axisTop } from 'd3-axis';
+import { extent, group, rollup, bin } from 'd3-array';
+import { timeDay, timeWeek, timeMonth, timeYear } from 'd3-time';
+import { timeFormat, timeParse } from 'd3-time-format';
+import { transition } from 'd3-transition';
+
+// AVOID: Global namespace import (tree-shaking unreliable via umbrella)
+import * as d3 from 'd3'; // 570KB+ — don't do this
+```
+
+### TypeScript Typing Pattern for Strict Mode
+
+The existing tsconfig's strict mode requires explicit generic parameters on D3 selections. This is the mandatory pattern for all views:
+
+```typescript
+// Always type both element AND datum generic parameters
+const svg = d3.select<SVGSVGElement, unknown>(container)
+  .append('svg');
+
+// Data join with explicit types — key function always required
+const cards = svg.selectAll<SVGGElement, Card>('.card')
+  .data<Card>(data, (d: Card) => d.id)   // Key function mandatory
+  .join('g');
+
+// Zoom behavior typed to element
+svg.call(d3.zoom<SVGSVGElement, unknown>()
+  .on('zoom', (event) => { /* transform */ }));
+```
+
+---
+
+## Worker Bridge: Stack for Testing
+
+The `WorkerBridge` is pure TypeScript with no external library dependencies — the protocol uses `postMessage`/`onmessage` directly. The only addition needed is for testing:
+
+### Testing Workers with Vitest
+
+`@vitest/web-worker` (v4.0.18) enables WorkerBridge unit tests without a real browser. It polyfills `Worker` in the Vitest node environment, simulating the structured clone algorithm for message passing:
+
+```typescript
+// In test file — must import before using Worker constructor
+import '@vitest/web-worker';
+
+// Then test WorkerBridge normally
+const bridge = new WorkerBridge();
+await bridge.init();
+const result = await bridge.query('SELECT * FROM cards');
+expect(result).toHaveLength(0);
+```
+
+**Configuration in vitest.config.ts:**
+```typescript
+export default defineConfig({
+  test: {
+    setupFiles: ['@vitest/web-worker'],  // OR per-file import
+    environment: 'node',
+    pool: 'forks',
+  }
 });
 ```
 
-**Why this works:** Vite's `?url` import returns the asset URL as a string (resolving to the correct path in both dev and prod). The custom scheme handler in Swift can serve the WASM with `Content-Type: application/wasm`, bypassing the MIME type issue.
+**Alternative approach:** Mock the WorkerBridge entirely for Provider and D3 view tests — don't test through the actual Worker for unit tests. Only use `@vitest/web-worker` for WorkerBridge integration tests that need real correlation ID matching. Provider tests should mock `workerBridge.query()` directly.
 
-### OPFS / SharedArrayBuffer: Do NOT Use
+### tsconfig: Add WebWorker Lib
 
-The official SQLite WASM build and wa-sqlite (alternatives to sql.js) both rely on OPFS (Origin Private File System) for persistence. **OPFS is NOT reliably supported in WKWebView on iOS/macOS.** SharedArrayBuffer requires `Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy` headers that cannot be set in WKWebView's local file context.
-
-sql.js's in-memory model is actually the correct architecture here: the database is exported/imported as a binary blob via the WorkerBridge when the native shell triggers CloudKit sync (D-010). No OPFS needed.
-
----
-
-## TypeScript Strict Mode Configuration
-
-### Recommended `tsconfig.json`
-
-TypeScript 5.8 is current (released Feb 28, 2025). Use strict mode plus the additional flags that TypeScript's `--init` now recommends for new projects:
+The current tsconfig has `"lib": ["ES2022", "DOM", "DOM.Iterable"]`. Worker-specific globals (`self`, `DedicatedWorkerGlobalScope`, `postMessage`) require adding `"WebWorker"`:
 
 ```json
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": false,
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "sourceMap": true,
-    "declaration": true
-  },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"]
+  }
 }
 ```
 
-**What `strict: true` enables** (verified via TypeScript docs):
-- `noImplicitAny`
-- `strictNullChecks`
-- `strictFunctionTypes`
-- `strictBindCallApply`
-- `strictPropertyInitialization`
-- `noImplicitThis`
-- `alwaysStrict`
-- `strictBuiltinIteratorReturn`
-- `useUnknownInCatchVariables`
-
-**Additional flags rationale:**
-- `noUncheckedIndexedAccess`: Forces handling of `arr[i]` being potentially `undefined`. Catches FTS result array access bugs.
-- `exactOptionalPropertyTypes`: Prevents setting optional properties to `undefined` explicitly — catches D3 datum type bugs.
-- `verbatimModuleSyntax`: Required for proper type-only import handling with Vite's ESM bundling.
-- `moduleResolution: "bundler"`: Correct setting for Vite-based projects (not `node` or `node16`).
+Without `"WebWorker"`, TypeScript does not recognize `self.onmessage` or `self.postMessage` inside worker files. This is a zero-cost tsconfig change.
 
 ---
 
-## D3.js v7 Module Imports
+## D3 Force Simulation: Run in Worker
 
-### Tree-Shakeable Import Pattern
+The network view requires force-directed layout. Running force simulation on the main thread blocks the UI during layout convergence. The spec's architecture already places all computation in the Worker — force simulation belongs there too.
 
-D3 v7.9.0 is fully ESM with sub-package structure. Import from sub-modules, not the umbrella `d3` package, for optimal tree-shaking:
+### Pattern: Simulation in Worker, Positions to Main Thread
 
 ```typescript
-// CORRECT: Sub-module imports (tree-shakeable)
-import { select, selectAll, Selection } from 'd3-selection';
+// In Web Worker (worker.ts)
 import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force';
-import { scaleLinear, scaleBand, scaleOrdinal } from 'd3-scale';
-import { axisBottom, axisLeft } from 'd3-axis';
-import { hierarchy, tree, cluster } from 'd3-hierarchy';
-import { zoom, ZoomBehavior } from 'd3-zoom';
-import { drag } from 'd3-drag';
-import { transition } from 'd3-transition';
-import { timeFormat, timeParse } from 'd3-time-format';
-import { extent, max, min, group, rollup } from 'd3-array';
 
-// AVOID: Umbrella import (pulls entire D3 bundle, ~570KB minified)
-import * as d3 from 'd3';
+function handleGraphLayout(payload: { nodes: GraphNode[]; links: GraphLink[] }) {
+  const simulation = forceSimulation(payload.nodes)
+    .force('link', forceLink(payload.links).id((d: any) => d.id))
+    .force('charge', forceManyBody().strength(-300))
+    .force('center', forceCenter(0, 0))
+    .stop();
+
+  // Run synchronously to convergence (no DOM, no requestAnimationFrame needed)
+  const iterations = Math.ceil(
+    Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())
+  );
+  simulation.tick(iterations);
+
+  // Return stable positions only — not full node objects
+  return payload.nodes.map(n => ({ id: n.id, x: n.x, y: n.y }));
+}
 ```
-
-### TypeScript Types Quality Assessment
-
-`@types/d3` v7.4.3 is the umbrella type package — **last published ~2 years ago**. Key findings:
-
-- Sub-module `@types/d3-*` packages are updated independently and more current
-- The umbrella `@types/d3` re-exports sub-module types, but may lag behind sub-module updates
-- Known issue: `@types/d3-dsv` disagrees with `d3-dsv` exports — use explicit sub-module types
-- Recommendation: Install `@types/d3` for convenience but `skipLibCheck: false` will surface any type mismatches early
-
-**Mitigation:** Since this project does not use `d3-dsv`, the known conflict does not apply. The sub-modules used (selection, force, scale, hierarchy, zoom) have stable, accurate types.
-
-### D3 Data Join Pattern (Required)
-
-Per the architectural constraints, D3's data join IS state management. Always use key functions:
 
 ```typescript
-// The canonical pattern for all views
-const cards = svg.selectAll<SVGGElement, Card>('.card')
-    .data(data, (d: Card) => d.id)  // Key function required
-    .join(
-        enter => enter.append('g').attr('class', 'card').call(initCard),
-        update => update.call(updateCard),
-        exit => exit.transition().duration(200).style('opacity', 0).remove()
-    );
+// In main thread (NetworkView.ts)
+const positions = await workerBridge.send('graph:layout', { nodes, links });
+// Now bind positions to D3 SVG elements — simulation already complete
+svg.selectAll<SVGGElement, CardNode>('g.node')
+  .data(positions, d => d.id)
+  .attr('transform', d => `translate(${d.x}, ${d.y})`);
 ```
+
+**Why this works:** `d3-force` has no DOM dependencies. It runs pure JavaScript in the Worker. `simulation.tick(n)` runs the simulation synchronously — no requestAnimationFrame. The Worker posts final `{id, x, y}` tuples (not full node objects), minimizing structured clone serialization overhead.
 
 ---
 
-## Vite Configuration for WASM + Web Worker
+## MutationManager: No External Dependencies
 
-### Complete `vite.config.ts`
-
-```typescript
-import { defineConfig } from 'vite';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
-
-export default defineConfig({
-    // Copy sql.js WASM to dist/assets so locateFile can resolve it
-    plugins: [
-        viteStaticCopy({
-            targets: [
-                {
-                    src: 'node_modules/sql.js/dist/sql-wasm.wasm',
-                    dest: 'assets'
-                }
-            ]
-        })
-    ],
-
-    // Worker bundle configuration
-    worker: {
-        format: 'es',  // ES module workers (supported by WKWebView)
-        rollupOptions: {
-            // Note: renamed from rollupOptions in Vite 7
-        }
-    },
-
-    // Optimize dependencies - exclude sql.js from pre-bundling
-    optimizeDeps: {
-        exclude: ['sql.js']
-    },
-
-    build: {
-        target: 'es2022',  // Aligns with TypeScript target
-        // WASM files larger than this threshold are kept as separate assets
-        assetsInlineLimit: 0  // Never inline WASM (size + WKWebView compat)
-    },
-
-    server: {
-        headers: {
-            // Required for SharedArrayBuffer (NOT needed for sql.js in-memory model)
-            // Only set if you later adopt OPFS-based storage
-            // 'Cross-Origin-Opener-Policy': 'same-origin',
-            // 'Cross-Origin-Embedder-Policy': 'require-corp',
-        }
-    }
-});
-```
-
-### Worker Import Pattern
-
-Per the architectural spec (D-002), all database operations run in a Web Worker. Use Vite's standard constructor pattern:
+The MutationManager (D-009 command log undo/redo) is pure TypeScript with no library dependencies. The design is:
 
 ```typescript
-// WorkerBridge.ts — main thread
-const worker = new Worker(
-    new URL('./worker/worker.ts', import.meta.url),
-    { type: 'module' }
-);
+interface Command {
+  id: string;                                    // crypto.randomUUID()
+  type: 'insert' | 'update' | 'delete' | 'batch';
+  table: 'cards' | 'connections';
+  forward: { sql: string; params: unknown[] };
+  inverse: { sql: string; params: unknown[] };
+  timestamp: number;
+}
 ```
 
-```typescript
-// worker/worker.ts — inside the worker
-import initSqlJs from 'sql.js';
+No library is needed for the command stack — a plain array with push/pop/slice handles the bounded history. The `requestAnimationFrame`-batched notification pattern in the spec requires no library either (browser-native).
 
-// WASM locateFile: resolve relative to worker script location
-const SQL = await initSqlJs({
-    locateFile: (filename: string) => `/assets/${filename}`
-});
-```
-
-**Note:** In development, Vite serves assets from the root. In production (WKWebView), the custom scheme handler serves them from the app bundle. The `locateFile` path must be consistent with wherever the WASM file is served.
+**Testing:** Standard Vitest with mocked `workerBridge` — no special setup.
 
 ---
 
-## Vitest Configuration
+## Provider System: No External Dependencies
 
-### `vitest.config.ts`
+All five providers (FilterProvider, PAFVProvider, SelectionProvider, DensityProvider, StateCoordinator) are pure TypeScript. No reactive framework is needed:
 
-```typescript
-import { defineConfig } from 'vitest/config';
+- State: plain TypeScript class fields
+- Subscriptions: `Set<() => void>` with add/delete
+- Batching: `setTimeout(16ms)` for StateCoordinator or `requestAnimationFrame`
+- SQL compilation: string interpolation with validated allowlist
 
-export default defineConfig({
-    test: {
-        // Use Node environment (no DOM needed for database/provider tests)
-        environment: 'node',
+**Testing:** Standard Vitest with node environment. Provider tests that exercise SQL compilation are fast (no WASM needed) — compile filter state, assert `{ where, params }` output strings. SQL injection tests are plain string assertions.
 
-        // Worker isolation — forks are slower but fully isolated (required for sql.js WASM)
-        pool: 'forks',
+---
 
-        // Each test file gets its own process (sql.js WASM state isolation)
-        isolate: true,
+## SuperGrid: No External Grid Library
 
-        // TypeScript paths (if using path aliases)
-        alias: {
-            '@': '/src'
-        },
+SuperGrid is a D3-rendered component with nested dimensional headers, PAFV projection, and density controls. No external grid library (AG Grid, Handsontable, Tabulator) should be used — they own DOM structure and conflict with D3's data join ownership.
 
-        // Coverage with v8 (faster than Istanbul)
-        coverage: {
-            provider: 'v8',
-            reporter: ['text', 'lcov'],
-            include: ['src/**/*.ts'],
-            exclude: ['src/**/*.d.ts', 'src/types/**']
-        },
+SuperGrid is built from:
+- `d3-selection` for the nested header structure (`<g class="header-row">`)
+- `d3-axis` for rendered axis ticks inside header cells
+- `d3-scale` (scaleBand for column/row distribution)
+- `d3-array` (`group()`, `rollup()` for data aggregation into cells)
+- `d3-zoom` for pan/zoom on the grid canvas
 
-        // Performance: individual tests must be fast
-        testTimeout: 5000,
-
-        // Globals for ergonomic test writing
-        globals: true,
-    }
-});
-```
-
-**Why `pool: 'forks'` instead of `threads`:** sql.js initializes WASM at module load time. With `threads` pool, WASM state can leak between test files in the same worker. With `forks`, each file gets a fresh process. This is slower but required for reliable database test isolation.
-
-**Vitest 4 migration note:** `poolOptions.threads` config is gone — options are now top-level. `singleThread` is now `maxWorkers: 1`. The `coverage.all` option was removed.
+No external library needed.
 
 ---
 
 ## Installation
 
 ```bash
-# Core runtime dependencies
-npm install d3-selection d3-force d3-scale d3-axis d3-hierarchy \
-            d3-zoom d3-drag d3-transition d3-time-format d3-array \
-            d3-shape d3-color d3-interpolate d3-path d3-brush d3-chord
+# Runtime: D3.js (umbrella package — Vite tree-shakes named imports)
+npm install d3
 
-# sql.js — NOTE: use custom FTS5 build WASM, not default dist
-npm install sql.js
+# TypeScript types for D3
+npm install -D @types/d3
 
-# Dev dependencies
-npm install -D typescript vite vitest \
-            @types/d3-selection @types/d3-force @types/d3-scale \
-            @types/d3-axis @types/d3-hierarchy @types/d3-zoom \
-            @types/d3-drag @types/d3-transition @types/d3-time-format \
-            @types/d3-array @types/d3-shape @types/d3-color \
-            @types/d3-interpolate @types/d3-path @types/d3-brush \
-            @types/sql.js \
-            vite-plugin-static-copy \
-            @vitest/coverage-v8 \
-            eslint typescript-eslint \
-            eslint-config-prettier prettier
+# Worker testing
+npm install -D @vitest/web-worker
 ```
 
-**After installing sql.js:** Replace `node_modules/sql.js/dist/sql-wasm.wasm` with the custom FTS5-enabled build (see custom build section above). Or maintain the custom WASM in `src/assets/sql-wasm-fts5.wasm` and reference it directly.
+**Total additions:** 1 runtime package, 2 dev packages.
+
+**No changes needed to:** Vite config (worker.format already 'es'), tsconfig (except adding "WebWorker" to lib), Vitest config (existing pool:forks + node env is correct).
 
 ---
 
@@ -388,90 +279,96 @@ npm install -D typescript vite vitest \
 
 | Recommended | Alternative | Why Not |
 |-------------|-------------|---------|
-| sql.js (custom FTS5 build) | `@sqlite.org/sqlite-wasm` (official SQLite WASM) | Requires OPFS or SharedArrayBuffer for persistence — both unsupported in WKWebView's local file context. Architecture is incompatible. |
-| sql.js (custom FTS5 build) | `wa-sqlite` | Same OPFS requirement as above. Also: less documented, fewer TypeScript types, smaller community. |
-| sql.js (custom FTS5 build) | `sql.js-fts5` npm fork | Abandoned (5 years old, v1.4.0). Based on very old sql.js. Do not use. |
-| D3.js v7 sub-module imports | Umbrella `import * as d3 from 'd3'` | ~570KB bundle penalty. No technical reason to import everything when only 6-8 sub-modules are needed. |
-| Vite 7.x | Vite 8 (beta) | Vite 8 uses Rolldown (beta). The breaking changes are extensive and the ecosystem hasn't caught up. Use Vite 7.x until Vite 8 is stable. |
-| TypeScript 5.8 | TypeScript 6.0 (beta) | TS6 beta released Feb 2026 as transition release before Go-based TS7. Not production-ready. |
-| Vitest 4 | Jest | Vitest shares Vite config, eliminates separate babel/jest-transform setup, ~10x faster on WASM-heavy test suites. No reason to use Jest in a Vite project. |
+| `d3` umbrella (tree-shaken) | Individual d3-* sub-packages | Same tree-shaking result with Vite. Umbrella is simpler to install and keeps versions in sync automatically. No reason to manage 12+ separate sub-packages. |
+| `@vitest/web-worker` | Full browser test environment (`@playwright/test` or Vitest browser mode) | Browser mode is overkill for WorkerBridge unit testing. `@vitest/web-worker` simulates Worker in Node — fast, no browser install, same Vitest config. |
+| `@vitest/web-worker` | Mocking `Worker` manually in tests | Manual mocking is error-prone for the correlation ID + Promise resolution pattern. `@vitest/web-worker` handles structured clone semantics correctly. |
+| D3 force simulation in Worker | PIXI.js for GPU-accelerated graph rendering | PIXI.js adds ~1MB bundle for a single view. The <16ms render budget for 100 visible cards is achievable with SVG + off-thread simulation. PIXI.js is the right answer at 10K+ visible nodes — overkill for this scale. |
+| D3 transitions (built-in) | GSAP / Anime.js | D3 v7's transition module integrates directly with the data join lifecycle (enter/update/exit). External animation libraries fight D3's DOM ownership. GSAP adds ~50KB for no benefit when D3 transitions handle all needed view-switching animations. |
+| Plain TypeScript for Providers | MobX / Zustand | Architecture explicitly forbids parallel entity state (D-001 rationale, CLAUDE.md). MobX/Zustand would duplicate SQLite data in JS heap. Providers hold only UI state — a `Set<() => void>` subscription pattern is sufficient. |
+| No grid library for SuperGrid | AG Grid / Handsontable | AG Grid owns its own DOM and cannot be driven by D3 data joins. SuperGrid's PAFV projection, density controls, and nested headers are custom enough that no grid library maps cleanly to the spec. |
 
 ---
 
-## What NOT to Use
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| Default sql.js WASM (from npm) | Ships with FTS3 only. FTS5 is required for `porter unicode61 remove_diacritics` tokenizer (D-004). | Custom sql.js build with `-DSQLITE_ENABLE_FTS5` flag |
-| `sql.js-fts5` npm package | Abandoned 5 years ago. Based on ancient sql.js, no TypeScript types, security risk. | Custom build of current sql.js with FTS5 |
-| `@sqlite.org/sqlite-wasm` | Requires OPFS (SharedArrayBuffer + COOP/COEP headers). WKWebView cannot set these headers. | sql.js (in-memory model matches architecture) |
-| `fetch()` for WASM in WKWebView | WKWebView misreports MIME type, breaks `WebAssembly.instantiateStreaming()`. | `locateFile` pattern with Vite `?url` import; Swift serves assets via custom URL scheme |
-| `import * as d3 from 'd3'` | Imports entire D3 library (~570KB). Tree-shaking does not work reliably on the umbrella package. | Direct sub-module imports: `import { select } from 'd3-selection'` |
-| `@types/d3` umbrella for type checking | Last updated ~2 years ago. May lag behind sub-module type updates. | Individual `@types/d3-*` sub-module type packages |
-| Zustand / MobX / Redux for card state | Architecture explicitly forbids parallel state (D-001 rationale). D3 data join IS state management. | Query sql.js directly; bind results to D3 data joins |
-| React / Vue / Svelte | Stack is locked: vanilla TypeScript + D3.js. Framework adds abstraction layer that fights D3's DOM ownership. | Vanilla D3 with typed class-based view components |
-| Vite 8 beta / Rolldown | Beta-quality. Breaking changes for worker and rollup config names. | Vite 7.x (stable) |
-| TypeScript 6.0 beta | Pre-release. TS6 is a transition release before Go rewrite. | TypeScript 5.8.x |
-| `pool: 'threads'` in Vitest | WASM state leaks between tests in same worker thread. sql.js WASM init is not safely re-entrant. | `pool: 'forks'` with `isolate: true` |
+| React / Vue / Svelte | Stack is locked — framework abstractions fight D3's DOM ownership model. D3 data joins ARE the rendering lifecycle. | Vanilla TypeScript class-based view components |
+| MobX / Zustand / Jotai / Redux | Architecture forbids parallel entity state. Two sources of truth (SQLite + JS store) will diverge. | Query sql.js directly via WorkerBridge; bind results to D3 data joins |
+| GSAP / Framer Motion | External animation libraries conflict with D3 transition lifecycle. They fight over DOM attribute ownership. | `d3-transition` built into D3 |
+| D3 v6 or below | Missing `.join()` API, worse TypeScript types, force simulation API differences. | D3 v7.9.0 |
+| `d3@next` (v6.0.0-rc.4 shows as "next" tag on npm) | The "next" tag on npm points to a v6 release candidate — this is a historical artifact. D3 v7.9.0 is current stable. Do NOT install `d3@next`. | `d3@7` or `d3@latest` |
+| AG Grid / Handsontable / Tabulator for SuperGrid | Grid libraries own their DOM — incompatible with D3 data join architecture. Density controls and PAFV projection require custom rendering. | Custom D3 SuperGrid implementation |
+| Observable Plot | A D3-based higher abstraction layer. Hides the data join model that this architecture depends on for performance and state management. | D3 directly |
+| `import * as d3 from 'd3'` | Imports full ~570KB D3 bundle. Use named imports for tree-shaking. | `import { select, scaleLinear } from 'd3-selection'` etc. |
+| `pool: 'threads'` in Vitest | WASM state leaks between tests in the same thread. | `pool: 'forks'` (already configured) |
+| `@vitest/browser` for Worker tests | Full browser test infrastructure is heavier than needed; `@vitest/web-worker` simulates Worker in Node. | `@vitest/web-worker` |
 
 ---
 
-## Stack Patterns by Context
-
-**For database tests (sql.js operations):**
-- Environment: `node`
-- Pool: `forks`
-- Isolation: `true`
-- Each test creates its own `Database` instance, calls `db.close()` in `afterEach`
-
-**For provider tests (FilterProvider, AxisProvider, etc.):**
-- Same node environment
-- Providers take a `Database` instance — pass in a fresh in-memory db
-- Test SQL output strings, not execution results, where possible
-
-**For D3 view tests:**
-- Use `jsdom` environment (only for view rendering tests)
-- Mock `WorkerBridge` — D3 tests should not hit sql.js
-
-**For WKWebView WASM initialization:**
-- Swift shell uses `WKURLSchemeHandler` for `app://` scheme
-- JavaScript calls `initSqlJs({ locateFile: () => 'app://host/assets/sql-wasm.wasm' })`
-- WASM file served by Swift scheme handler with `Content-Type: application/wasm`
-- Avoids `fetch()` MIME type bug entirely
-
----
-
-## Version Compatibility Matrix
+## Version Compatibility
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| `sql.js@1.14.0` | `@types/sql.js@1.7.x` | Types are reasonably current |
-| `vite@7.3.x` | `vitest@4.0.x` | Same VoidZero release train; use matching major versions |
-| `typescript@5.8.x` | `vite@7.3.x` | `moduleResolution: "bundler"` required for Vite compat |
-| `d3-*@7.x` | `@types/d3-*@7.x` | Match major versions strictly |
-| `vitest@4.x` | `@vitest/coverage-v8@4.x` | Coverage package must match Vitest major version |
-| `eslint@9.x` | `typescript-eslint@8.x` | Flat config only; legacy `.eslintrc` no longer supported |
-| Node.js | `vite@7.x` | Requires Node 20.19+ or 22.12+ (Vite 7 requirement) |
+| `d3@7.9.0` | `@types/d3@7.4.3` | Match major version. Types last validated against D3 7.4.4 — close enough, no breaking changes in 7.4.4 → 7.9.0 types. |
+| `d3@7.9.0` | TypeScript 5.9.x strict | Requires explicit generic type parameters on selections. `@types/d3` works with `skipLibCheck: false`. |
+| `@vitest/web-worker@4.0.18` | `vitest@4.0.18` | Must match Vitest major version exactly. |
+| `d3-force@3.0.0` | Web Worker (no DOM) | d3-force has zero DOM dependencies — runs cleanly in Worker context. |
+| `d3-hierarchy@3.1.2` | Web Worker (no DOM) | d3-hierarchy is pure computation — usable in Worker if needed for tree pre-computation. |
+| `d3-selection@3.0.0` | Main thread only | d3-selection manipulates DOM — cannot run in Worker. Only use in main-thread view renderers. |
+| TypeScript `lib: ["WebWorker"]` | `d3-force` in Worker | Adding WebWorker lib enables `self.onmessage`, `self.postMessage` in worker.ts without changing other tsconfig behavior. |
+
+---
+
+## Vite Config Changes Required
+
+The existing `vite.config.ts` requires only one addition: if importing D3 from the umbrella package inside a Worker, ensure D3 is not accidentally excluded from optimization. The current config excludes only `sql.js`:
+
+```typescript
+// vite.config.ts — only sql.js needs to be excluded
+optimizeDeps: {
+  exclude: ['sql.js'],  // d3 does NOT need to be excluded
+}
+```
+
+D3 v7 uses pure ESM and works correctly with Vite's default optimizer. No changes needed to the existing Vite config beyond the `tsconfig.json` `"WebWorker"` lib addition.
+
+---
+
+## tsconfig.json Changes Required
+
+One addition to the existing `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"]
+  }
+}
+```
+
+This enables `self`, `DedicatedWorkerGlobalScope`, `MessageEvent<T>`, and `postMessage` types inside `worker.ts`. The `DOM` lib remains for main-thread code. TypeScript resolves per-file which globals are available based on the merged lib — both are needed since the codebase contains both main-thread and worker-thread TypeScript files.
+
+**Potential issue:** With both `DOM` and `WebWorker` libs, some types that exist in both (like `MessageEvent`) may produce overloaded signatures. This is manageable — TypeScript picks the more specific version. Flag as LOW risk.
 
 ---
 
 ## Sources
 
-- sql.js GitHub releases — version 1.14.0 confirmed Feb 12, 2025: https://github.com/sql-js/sql.js/releases
-- sql.js Makefile — FTS3 only, FTS5 not included by default: https://github.com/sql-js/sql.js/blob/master/Makefile
-- sql.js PR #594 — FTS5 default PR blocked by maintainer: https://github.com/sql-js/sql.js/pull/594
-- WKWebView WASM MIME type bug — fetch vs XMLHttpRequest: https://gist.github.com/otmb/2eefc9249d347103469741542f135f5c
-- D3.js getting started — v7.9.0 current, no v8: https://d3js.org/getting-started
-- Vite 7 announcement — v7.3.1 stable, ESM-only: https://vite.dev/blog/announcing-vite7
-- Vitest 4.0 announcement — browser mode stable, pool rewrite: https://vitest.dev/blog/vitest-4
-- TypeScript 5.8 announcement — released Feb 28, 2025: https://devblogs.microsoft.com/typescript/announcing-typescript-5-8/
-- PowerSync SQLite web state — OPFS recommendations, WKWebView gap: https://www.powersync.com/blog/sqlite-persistence-on-the-web
-- SQLite web state blog — wa-sqlite OPFSCoopSyncVFS recommended for persistence: https://www.powersync.com/blog/sqlite-persistence-on-the-web
-- TypeScript strict tsconfig options: https://www.typescriptlang.org/tsconfig/strict.html
-- Vite worker options: https://vite.dev/config/worker-options
-- WebAssembly Safari support — fully supported, Tail Calls + GC added Safari 2024: https://webkit.org/blog/16301/webkit-features-in-safari-18-2/
+- npm registry — d3 7.9.0 latest, verified 2026-02-28: https://www.npmjs.com/package/d3
+- npm registry — @types/d3 7.4.3 latest: https://www.npmjs.com/package/@types/d3
+- npm registry — @vitest/web-worker 4.0.18: https://www.npmjs.com/package/@vitest/web-worker
+- D3 getting started — current version, module listing: https://d3js.org/getting-started
+- D3 force simulation off-thread — Observable example: https://observablehq.com/@d3/force-directed-web-worker
+- D3 force — simulation.tick() API, no DOM required: https://d3js.org/d3-force/simulation
+- D3 hierarchy — tree layout docs: https://d3js.org/d3-hierarchy/tree
+- D3 transition — selection-like interface docs: https://d3js.org/d3-transition
+- Vite web worker docs — constructor pattern recommended, format:es: https://vite.dev/guide/features#web-workers
+- Vite worker options — format, rollupOptions: https://vite.dev/config/worker-options
+- TypeScript lib types reference — WebWorker lib: https://www.typescriptlang.org/tsconfig#lib
+- d3/d3 GitHub issue #1053 — d3-force confirmed no DOM dependencies: https://github.com/d3/d3/issues/1053
 
 ---
 
-*Stack research for: Isometry v5 — local-first polymorphic data projection platform*
-*Researched: 2026-02-27*
+*Stack research for: Isometry v5 Web Runtime (Worker Bridge, Providers, Mutation Manager, nine D3 views, SuperGrid)*
+*Researched: 2026-02-28*

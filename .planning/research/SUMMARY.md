@@ -1,247 +1,236 @@
 # Project Research Summary
 
-**Project:** Isometry v5
-**Domain:** Local-first polymorphic data projection platform (TypeScript/D3.js, WKWebView)
-**Researched:** 2026-02-27
-**Confidence:** HIGH — architecture is fully specified in canonical docs; stack research verified via official sources; pitfalls confirmed via issue trackers and SQLite forum
+**Project:** Isometry v5 — Web Runtime (v1.0 milestone)
+**Domain:** Local-first polymorphic data projection platform (TypeScript/D3.js, sql.js WASM, WKWebView)
+**Researched:** 2026-02-28
+**Confidence:** HIGH
 
 ## Executive Summary
 
-Isometry v5 is a local-first data projection platform where a single SQLite dataset renders through PAFV (Plane-Axis-Facet-View) spatial projection as nine different views — grid, kanban, network, timeline, and more — with zero serialization between the database and the visualization layer. The core insight is that switching views changes the SQL projection, not the data. Research confirms this architecture is sound and achievable with vanilla TypeScript + D3.js + sql.js running in a Web Worker inside a WKWebView native shell. There are no fundamental blockers, but there are three non-negotiable infrastructure requirements: a custom sql.js WASM build to enable FTS5, a Swift `WKURLSchemeHandler` to serve assets with correct MIME types, and a precise FTS5 three-trigger pattern to prevent silent index corruption.
+Isometry v5 is a local-first macOS/iOS application that renders an in-browser SQLite database (sql.js via WASM) through nine D3.js projection views inside a WKWebView native shell. The v0.1 Data Foundation milestone is already complete and validated with 151 passing tests covering the sql.js database, card CRUD, connection CRUD, FTS5 search, graph traversal, and performance benchmarks on 10K cards. The v1.0 Web Runtime milestone adds the entire rendering and interaction stack on top: a typed async Worker Bridge connecting the main thread to the Worker-hosted sql.js instance, a provider system that compiles UI state to SQL fragments, a MutationManager for undo/redo, nine D3.js views with animated transitions, and the signature SuperGrid multidimensional projection view. Only three dependencies need to be added to the existing stack (D3 umbrella package, @types/d3, @vitest/web-worker) plus a one-line tsconfig change.
 
-The recommended build sequence follows a strict dependency graph: database schema first, CRUD and query functions second, Worker Bridge third, then Providers and ETL in parallel, then D3 views, and finally the native shell wrapper. This ordering is not stylistic — it reflects hard dependencies. Providers cannot compile SQL without the allowlist infrastructure, views cannot render without Providers and the Bridge, and ETL cannot import without both the CRUD layer and the Bridge. The architecture deliberately eliminates parallel state (no Redux/MobX/Zustand) by making D3's data join the state management layer, with sql.js as the single source of truth.
+The recommended architecture follows strict layered separation enforced by six non-negotiable patterns: (1) no parallel entity store — D3 data joins are state management, sql.js is the single source of truth; (2) providers compile SQL fragments, views assemble final SQL, the Worker executes it — providers never call the bridge directly; (3) MutationManager is the sole write gate — all entity writes go through `MutationManager.exec()`, which generates inverse SQL for undo, sets the dirty flag, and schedules frame-batched notification; (4) every D3 `.data()` call must supply a key function (`d => d.id`) for correct animated transitions and element identity; (5) Worker initialization uses a message queue to prevent lost messages during WASM load; (6) every pending promise in the bridge has a configurable timeout to prevent silent hangs on Worker errors.
 
-The most significant risk is the WKWebView WASM loading failure (fetch() MIME type rejection), which must be addressed in Phase 1 before any other feature work. A closely related risk is the FTS5 trigger ordering bug, which causes intermittent index corruption that is difficult to diagnose after the fact. Both are fully preventable with known workarounds documented in research. The second tier of risk involves D3 SVG performance ceilings at ~500 visible elements and Worker Bridge serialization overhead — both require discipline in query projection and LIMIT enforcement from Phase 5 onward.
+The most significant risks are WKWebView-specific (WASM MIME type rejection on local file URLs, data loss if the Worker is terminated without exporting the in-memory database) and D3-specific (missing key functions causing broken transitions, provider subscriber leaks from views that don't call `destroy()`). All critical pitfalls have documented prevention patterns and must be tested from the first phase they are introduced. The build sequence is dictated by a strict dependency DAG: WorkerBridge first, then providers and MutationManager, then D3 views from simplest to most complex, with SuperGrid (the most complex view) built after simpler views prove the pattern.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is locked for the web runtime: TypeScript 5.8, sql.js 1.14.0 (custom FTS5 WASM build), D3.js v7 sub-module imports, Vite 7, and Vitest 4. All are current stable releases. No version should be advanced beyond these (TypeScript 6 beta and Vite 8 beta are both production-unready as of Feb 2026). The single most important stack finding is that **sql.js v1.14.0 does not ship FTS5** — only FTS3. A custom Emscripten build adding `-DSQLITE_ENABLE_FTS5` is required and must be completed before any database work begins. The resulting WASM is ~106KB larger (638K → 744K), acceptable for a desktop app. The WASM must be served via a custom Swift `WKURLSchemeHandler` (`app://` scheme) to avoid WKWebView's `fetch()` MIME type rejection of local `.wasm` files.
+The v0.1 stack (TypeScript 5.9.x strict, sql.js 1.14.0 custom FTS5 WASM, Vite 7.3.1, Vitest 4.0.18) is already configured and passing 151 tests. The only additions required for v1.0 are minimal: `d3@7.9.0` (runtime), `@types/d3@7.4.3` (dev), and `@vitest/web-worker@4.0.18` (dev, for WorkerBridge unit testing). One tsconfig change is required: add `"WebWorker"` to the `lib` array to enable `self.onmessage` and `self.postMessage` types in worker.ts. No changes are needed to vite.config.ts beyond what already exists.
 
 **Core technologies:**
-- **TypeScript 5.8**: Application language — strict mode with `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` required; prevents FTS array access bugs and D3 datum type bugs
-- **sql.js 1.14.0 (custom FTS5 build)**: In-browser SQLite — in-memory model is architecturally correct for WKWebView (no OPFS, no SharedArrayBuffer needed); custom WASM committed as versioned artifact
-- **D3.js v7.9.0 (sub-module imports)**: Visualization + DOM state management — `.data(items, d => d.id).join()` pattern eliminates parallel state; tree-shakeable sub-module imports avoid 570KB umbrella bundle
-- **Vite 7.3.1**: Build tooling — `optimizeDeps: { exclude: ['sql.js'] }` mandatory; `?url` import for WASM path resolution; `assetsInlineLimit: 0` to prevent WASM inlining
-- **Vitest 4.0**: Testing — `pool: 'forks'` with `isolate: true` required for sql.js WASM state isolation between test files; `environment: 'node'` for database tests (not jsdom)
+- `d3@7.9.0`: Data visualization, DOM data joins, force simulation, transitions, zoom, hierarchy — covers all nine views via named imports (Vite tree-shakes from the umbrella package). Import named exports from sub-modules, never `import * as d3` (prevents ~570KB bundle).
+- `@types/d3@7.4.3`: TypeScript strict-mode types for all D3 sub-modules. Requires explicit generic parameters on selections (`select<SVGSVGElement, unknown>`). Works with `skipLibCheck: false`.
+- `@vitest/web-worker@4.0.18`: Worker simulation in Vitest node environment for WorkerBridge correlation ID integration tests. Must match installed Vitest version exactly.
+- `TypeScript "WebWorker" lib`: Zero-cost tsconfig addition enabling `DedicatedWorkerGlobalScope`, `self.postMessage`, and `MessageEvent<T>` inside worker.ts. With both DOM and WebWorker libs, some shared types have overloaded signatures — LOW risk.
+- D3 force simulation in Worker: `d3-force` has zero DOM dependencies, runs synchronously via `simulation.tick(n)`, posts only stable `{id, x, y}` positions to main thread — never per-tick updates.
+
+**What NOT to add:** React/Vue/Svelte (fight D3's DOM ownership model), MobX/Zustand/Redux (D-001 explicitly forbids parallel entity state), GSAP/Framer Motion (fight D3's transition lifecycle), AG Grid/Handsontable (own their DOM, incompatible with D3 data joins), Observable Plot (hides the data join model), PIXI.js (overkill for <500 visible nodes — SVG + off-thread simulation is sufficient).
 
 ### Expected Features
 
-Research confirms the feature set is well-specified in canonical docs. The dependency graph is clear and sequential.
+The v1.0 Web Runtime milestone must deliver the full stack that makes data already in SQLite visible and interactive. Users coming from Notion, Airtable, and NocoDB have formed expectations this milestone must meet.
 
-**Must have (table stakes — v1 launch):**
-- sql.js database with canonical schema (cards, connections, FTS5, app_state, view_state) — foundation for everything
-- Card CRUD with soft delete — `deleted_at` column, parameterized queries only
-- WorkerBridge with typed correlation IDs — all db operations off main thread, non-negotiable for UI responsiveness
-- SQL allowlist + FilterProvider + AxisProvider — security boundary must precede any dynamic SQL generation
-- FTS5 search with BM25 ranked results and snippets — debounced 150ms, porter+unicode61 tokenizer, rowid join
-- Three views: list, grid, kanban — proves "same data, different view" insight with animated transitions
-- Apple Notes ETL importer — primary data source; demonstrates graph extraction from real data
-- Undo/redo command log with inverse SQL — trust feature; in-memory Tier 3 stack
-- Three-tier state persistence — Tier 1/2 SQLite, Tier 3 in-memory only (selection, undo stack)
+**Must have (table stakes):**
+- Non-blocking database access — Worker Bridge with typed correlation IDs; any blocking UI operation destroys perceived quality
+- Filter state persists across navigation — three-tier persistence: FilterProvider state → Tier 1 SQLite `app_state`; Airtable and NocoDB both do this, users are confused when filters reset
+- View switching without data loss — PAFVProvider suspends/restores view family state; LATCH state survives a GRAPH detour
+- Keyboard undo/redo (Cmd+Z / Cmd+Shift+Z) — absence is trust-destroying for any desktop-class tool; Notion's undo is notoriously partial
+- Multi-select (Cmd+click toggle, Shift+click range) — consistent with every macOS desktop application
+- Sort controls — users expect ascending/descending sort on any field (PAFVProvider compiles to SQL ORDER BY)
+- Density controls — DensityProvider 4-level model that changes SQL GROUP BY expressions, not just CSS class
 
-**Should have (competitive differentiators — v1.x):**
-- PAFV SuperGrid with full axis-swapping — keystone differentiator; axis change recompiles SQL projection, not data
-- Faceted search refinement — facet counts derived from FTS result set; Notion does not have this
-- Calendar, Timeline, Gallery views — requires calendar/visual content user validation before prioritizing
-- Connection CRUD UI — graph emerges from ETL first; manual linking is v1.x
-- Network (force-directed) view — requires connections to exist first
-- Markdown and Excel ETL importers — for non-Apple Notes users
+**Should have (competitive differentiators):**
+- PAFV spatial projection (any LATCH axis to any screen plane) — no competitor allows arbitrary axis-to-plane mapping with nested SQL GROUP BY compilation
+- SuperGrid with nested dimensional headers and spanning parent headers — unique; all competitors group by one field at a time
+- Animated D3 view transitions — Notion, Airtable, NocoDB all replace content instantly; cards morphing between projections makes the "same data, different view" insight visceral
+- Full command log undo/redo with inverse SQL — most in-browser tools have no undo; every mutation is undoable without server round-trips
+- Force simulation off main thread for network view — critical for usability at 200+ nodes (blocks UI if run on main thread)
+- Graph algorithm suite (PageRank, Louvain community detection, centrality) running client-side on local data
+- Allowlist-enforced SQL safety without ORM — column names allowlisted at compile time, values always parameterized
 
-**Defer (v2+):**
-- EAV `card_properties` table — explicitly deferred by D-008; fixed schema sufficient for v5
-- Semantic/vector search — requires embedding pipeline; FTS5 BM25 covers table stakes
-- Block-level editor (Notebook module) — a product in itself; Markdown in content field is v5 sufficient
-- Collaborative features — requires CRDTs; fundamentally changes local-first architecture
-- Formula fields — requires formula parser and AST; SQL GROUP BY expressions cover 80% of grouping use cases
-- Extended ETL sources (Slack, Reminders, Calendar, Contacts) — high native integration complexity; validate Apple Notes model first
+**Defer to v1.x or v2+:**
+- Table view (Workbench tier) — virtual scroll + editable cells + column resize; explicitly deferred per FEATURES.md
+- ETL importers — v1.1 milestone; runtime must be stable before importing real data
+- Native Swift shell beyond basic WKWebView integration spike
+- CloudKit sync, EAV card_properties, semantic/vector search, collaborative features
+
+**Feature build order (P1 = blocks all else, P2 = part of milestone after P1):**
+WorkerBridge → SQL allowlist → FilterProvider + PAFVProvider + SelectionProvider + DensityProvider + MutationManager + StateCoordinator → List view (establishes pattern) → Grid + Kanban + View transitions → Calendar + Timeline + Gallery → Network + Tree → SuperGrid
 
 ### Architecture Approach
 
-The architecture follows a strict layered model: D3 views and Providers on the main thread communicate exclusively through the WorkerBridge to a Web Worker running sql.js (WASM). No entity data persists on the main thread beyond the current render cycle — D3's data join IS state management. All mutations flow through a single MutationManager which generates inverse SQL for undo, sets the CloudKit dirty flag, and notifies subscribers. The StateCoordinator batches cross-provider updates within 16ms frames to prevent redundant queries. The native Swift shell wraps the web runtime in WKWebView and handles Keychain credentials and CloudKit sync via binary database export/import — credentials never enter sql.js.
+The architecture follows a strict layered model. D3 views and Providers on the main thread communicate exclusively through the WorkerBridge to a Web Worker running sql.js (WASM). No entity data persists on the main thread beyond the current render cycle — D3's data join IS state management. The StateCoordinator batches cross-provider updates within 16ms frames. All mutations flow through MutationManager which generates inverse SQL for undo, sets the dirty flag, and notifies subscribers via requestAnimationFrame batching.
 
-**Major components:**
-1. **WorkerBridge** — promise-based proxy with UUID correlation IDs; single postMessage boundary between main thread and Worker; all db access is async
-2. **FilterProvider + PAFVProvider + DensityProvider** — compile UI state to SQL fragments (`{ where, params }`); never produce full SQL strings; column allowlist is the security boundary
-3. **MutationManager** — single write gate; generates `{ forward, inverse }` command pairs for undo stack; sets CloudKit dirty flag; notifies subscribers via requestAnimationFrame batching
-4. **Message Router (Web Worker)** — dispatches incoming messages to sql.js handlers, graph algorithm handlers, or ETL handlers by message type
-5. **StateCoordinator** — batches cross-provider state changes within 16ms frames; persists Tier 1/2 state to `app_state` table; explicitly excludes Tier 3 (selection, undo stack) from persistence
-6. **D3 Views (11 views)** — subscribe to providers; re-query via WorkerBridge on notification; render with mandatory key functions (`d => d.id`) for animated view transitions
+**Major components (in build order):**
+1. **WorkerBridge** (`src/worker/WorkerBridge.ts`) — Main-thread promise proxy over postMessage; UUID `pending` Map with per-entry timeout; singleton initialized once; exposes `isReady` promise that all public methods await internally
+2. **Message Router + Handlers** (`src/worker/worker.ts`, `src/worker/handlers/`) — Worker-side switch on message type; calls existing pure query functions from `src/database/queries/`; queues messages during WASM initialization to prevent lost messages
+3. **FilterProvider** (`src/providers/FilterProvider.ts`) — LATCH filter state compiled to `{where, params}` with column allowlist enforcement; never calls bridge directly
+4. **PAFVProvider** (`src/providers/PAFVProvider.ts`) — Axis-to-plane mappings compiled to GROUP BY + ORDER BY fragments; view family suspension/restoration across LATCH/GRAPH boundary
+5. **SelectionProvider** (`src/providers/SelectionProvider.ts`) — Tier 3 ephemeral only; `Set<string>` in-memory; never persisted to SQLite by explicit decision (D-005)
+6. **DensityProvider** (`src/providers/DensityProvider.ts`) — 4-level density model compiled to strftime() SQL expressions; controls GROUP BY granularity, not just CSS
+7. **StateCoordinator** (`src/providers/StateCoordinator.ts`) — 16ms batch window; orchestrates Tier 1/2 persistence; explicitly excludes SelectionProvider (Tier 3)
+8. **MutationManager** (`src/mutations/MutationManager.ts`) — Single write gate; `Command` with `forward` and `inverse` SQL; in-memory undo/redo stack (Tier 3); requestAnimationFrame-batched subscriber notification
+9. **D3 Views** (`src/views/*.ts`) — Nine views; every `.data()` call requires key function `d => d.id`; ListView establishes the canonical pattern; SuperGrid is most complex (built last)
+10. **ViewManager** (`src/views/ViewManager.ts`) — Mounts/unmounts active view; calls `view.destroy()` before mounting next view to prevent subscriber leaks
+
+**Key architectural rules that cannot be violated:**
+- Providers never call `workerBridge.query()` — they compile fragments only
+- All entity writes go through `MutationManager.exec()` — never through bridge directly from a view
+- Selection is Tier 3 only — never persisted (D-005 is final)
+- D3 key function is mandatory on every `.data()` call — non-negotiable for transitions
 
 ### Critical Pitfalls
 
-1. **WKWebView fetch() rejects WASM with wrong MIME type** — patch `window.fetch` to use XHR for `.wasm` URLs before calling `initSqlJs()`, OR implement `WKURLSchemeHandler` in Swift to serve all app assets via `app://` scheme with correct `Content-Type: application/wasm`. Must be solved in Phase 1 before any other work. Test in iOS simulator on first integration spike.
+1. **WKWebView WASM MIME rejection** — WKWebView's `fetch()` enforces strict MIME type validation on local file:// URLs; `initSqlJs()` hangs silently. Prevention: use `WKURLSchemeHandler` for native URL serving with correct Content-Type, or a scoped XMLHttpRequest fallback for the WASM asset only. Test in WKWebView on day one — Vite dev server masks this problem entirely.
 
-2. **FTS5 update trigger causes silent index corruption** — use the exact three-trigger pattern (separate INSERT/DELETE/UPDATE triggers, each doing one atomic operation). A single combined UPDATE trigger causes intermittent corruption (~10% of updates) because FTS5 re-reads the content row during the delete step. Add `INSERT INTO cards_fts(cards_fts) VALUES('integrity-check')` to the test suite after every mutation batch.
+2. **Worker initialization race condition** — Messages arriving at the Worker during WASM initialization (200-500ms) are lost; calls to `workerBridge.query()` before `init()` resolves fail. Prevention: register `self.onmessage` immediately but queue messages until `db` is initialized; expose an `isReady` promise on WorkerBridge that all public methods await implicitly.
 
-3. **sql.js WASM path breaks in Vite production build** — add `optimizeDeps: { exclude: ['sql.js'] }` to `vite.config.ts` (prevents esbuild from stripping WASM loading code) and use `import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url'` with `locateFile: () => sqlWasmUrl` in `initSqlJs()`. Run production build smoke test alongside dev testing from Phase 1.
+3. **Missing D3 key function causes broken transitions** — Every `.data()` call without a key function uses index-based matching; on sort/filter changes, cards animate to wrong positions and DOM nodes are unnecessarily destroyed. Prevention: enforce key function from the very first view written; it cannot be retrofitted without rewriting all join logic.
 
-4. **sql.js is entirely in-memory — data lost on Worker termination or crash** — implement D-010's dirty flag immediately on every mutation; wire `db.export()` to native shell backgrounding events (not only to the 2-second debounce). Profile export time for large databases before shipping ETL import.
+4. **Provider subscriber leak accumulates across view switches** — Views that subscribe on mount but fail to call the returned unsubscribe function on `destroy()` accumulate dead callbacks. After N view switches, N bridge queries fire per state change. Prevention: every view exposes `destroy()`; ViewManager calls it before mounting the next view; test subscriber count before and after 10 mount/destroy cycles.
 
-5. **Prepared statements leak memory and lock tables** — always use try/finally with `stmt.free()`. Prefer `db.exec()` / `db.run()` for one-shot queries. Establish the wrapper pattern in Phase 2 before any query module is written; retrofit is painful.
+5. **Pending promise map unbounded growth on silent Worker error** — If a Worker message handler throws an error that doesn't crash the Worker, the promise is never resolved or rejected and hangs forever. Prevention: every `pending.set()` call sets a timeout that rejects after a configurable duration (5s for queries, 30s for graph operations, 60s for PageRank).
+
+6. **sql.js in-memory data loss on Worker termination** — sql.js has no automatic persistence; all data exists only in the Worker's WASM heap. Prevention: implement D-010 dirty flag immediately on every mutation; wire `db.export()` to app-backgrounding signals from the native shell, not only to the 2-second debounce.
+
+7. **Empty provider fragment produces invalid SQL** — When FilterProvider or PAFVProvider returns empty strings for optional clauses, `WHERE ` or `ORDER BY ` (bare clauses) cause SQLite syntax errors on first load before any user interaction. Prevention: QueryCompiler must treat all fragments as potentially absent and provide safe defaults; test with all providers at initial default state.
 
 ## Implications for Roadmap
 
-Based on research, the dependency graph mandates a 7-phase build order. Each layer depends on everything below it. No phase can be safely reordered because the dependencies are hard (Providers cannot compile SQL without the allowlist; Views cannot render without Providers and Bridge).
+Based on combined research, the natural phase structure follows the component dependency DAG with a clear bottom-up build order. The architecture is fully specified with no ambiguous dependency relationships — phase boundaries are determined by technical prerequisites, not arbitrary feature grouping.
 
-### Phase 1: Database Foundation
+### Phase 1: Worker Bridge + Runtime Foundation
 
-**Rationale:** Everything in this project depends on sql.js with FTS5 loading correctly. The custom WASM build, WKWebView MIME type workaround, Vite production build path, and Vitest WASM test setup must all be solved before any feature work begins. Four of the ten documented pitfalls must be addressed in this phase.
+**Rationale:** WorkerBridge is the mandatory prerequisite for every other component in this milestone. No provider, view, or mutation manager can function without it. This phase also resolves the two highest-risk pitfalls: WKWebView WASM loading and Worker initialization race conditions. Failing to address these early invalidates all subsequent work.
 
-**Delivers:** Working sql.js WASM (custom FTS5 build) that initializes correctly in dev, production build, WKWebView, and Vitest node environment. Canonical schema (cards, connections, cards_fts with three-trigger sync, app_state, view_state, indexes). Test infrastructure with `integrity-check` assertions.
+**Delivers:** Working async RPC layer over postMessage; Worker initialization with message queuing during WASM load; `isReady` promise pattern on WorkerBridge; timeout on every pending promise entry; `@vitest/web-worker` integration; integration test proving main thread → Worker → sql.js → main thread round-trip under concurrency. Also includes `tsconfig.json` "WebWorker" lib addition.
 
-**Addresses:** sql.js database with canonical schema (P1 table stake)
+**Features addressed:** Non-blocking database access (table-stakes foundation); loading state during initialization; consistent card identity across views.
 
-**Avoids:** Pitfall 1 (WKWebView MIME type), Pitfall 2 (FTS5 trigger corruption), Pitfall 3 (Vite production build path), Pitfall 10 (Vitest WASM setup)
+**Pitfalls avoided:** WKWebView WASM MIME rejection (Pitfall 1); Vite production build WASM path (Pitfall 3); Worker initialization race condition (Pitfall 11); pending promise map unbounded growth (Pitfall 12).
 
-**Research flag:** STANDARD — all solutions are documented with specific code patterns; no additional research needed
+**Research flag:** STANDARD — WorkerBridge with correlation ID promises is well-documented in the spec; implementation is specified with no ambiguity.
 
-### Phase 2: CRUD + Query Functions
+### Phase 2: Provider System + MutationManager
 
-**Rationale:** Providers, Worker handlers, and ETL importers all need named query functions to build on. These are pure functions over a `Database` instance — testable without a Worker, enabling TDD before the Worker layer exists.
+**Rationale:** All five providers plus MutationManager form a single coherent system that must exist before any D3 view can function. FilterProvider and SelectionProvider are independent and can be built in parallel. DensityProvider is also independent. MutationManager is parallel to providers (both depend only on WorkerBridge). StateCoordinator requires all providers. The SQL column allowlist is a security prerequisite — it must be built before FilterProvider generates any dynamic SQL.
 
-**Delivers:** `cards.ts`, `connections.ts`, `search.ts`, `graph.ts` query modules. Card CRUD with soft delete. FTS5 rowid-join search. DedupEngine (`source + source_id` lookup). Prepared statement wrapper pattern with mandatory `stmt.free()`.
+**Delivers:** Complete provider system with SQL compilation; SQL column allowlist enforced at compile time; three-tier state persistence end-to-end; MutationManager with undo/redo command log and inverse SQL generation; frame-batched subscriber notification; full test suite for SQL compilation and injection rejection.
 
-**Addresses:** Card CRUD with soft delete (P1), FTS search (P1), connection CRUD (P2), import deduplication (table stake)
+**Features addressed:** Filter state persists across navigation; view switching without data loss; keyboard undo/redo; density controls that compile to SQL; allowlist-enforced SQL safety; mutation notification batched at frame boundary.
 
-**Avoids:** Pitfall 5 (prepared statement leaks — establish wrapper pattern here)
+**Pitfalls avoided:** Subscriber leak (Pitfall 13 — establish mount/destroy contract in provider interface before any view uses it); getState() mutation bypass (Pitfall 14 — enforce Readonly<T> return types from the start); empty provider fragment produces invalid SQL (Pitfall 15 — test with all providers at default state); undo batch inverse SQL ordering (Pitfall 16).
 
-**Research flag:** STANDARD — CRUD and FTS5 patterns are fully documented; rowid join rule is clear
+**Research flag:** STANDARD — provider architecture is fully specified in Contracts.md and Providers.md; MutationManager command log pattern is well-understood from first principles.
 
-### Phase 3: Worker Bridge
+### Phase 3: Core D3 Views (List, Grid, Kanban) + View Transitions
 
-**Rationale:** The Bridge is the prerequisite for Providers and Views to execute queries asynchronously. It must exist before Phase 4 or Phase 6 can be tested end-to-end. WorkerBridge + Message Router + worker entry point form a single deployable unit.
+**Rationale:** ListView is the simplest D3 view and establishes the canonical pattern all other views follow: key function, data join enter/update/exit, requery-on-notification, SelectionProvider CSS overlay. Building ListView correctly — especially with the stable key function — is the prerequisite for view transitions working at all. Grid proves "same data, different projection." Kanban adds MutationManager integration (drag-drop is a mutation). View transitions require at least two views with stable card identity.
 
-**Delivers:** `WorkerBridge.ts` (main thread), `main.worker.ts` (worker entry + Message Router), handler modules (`db.ts`, `graph.ts`, `etl.ts`). UUID correlation ID tracking. Worker `onerror` propagation. Typed `WorkerMessage`/`WorkerResponse` envelope.
+**Delivers:** Three working D3 views (list, grid, kanban with drag-drop); Card component shared across all views; animated view transitions with `d3-transition` and stable `d => d.id` key functions; drag-drop in kanban updating status via MutationManager (undoable); view transition strategies (morph for LATCH-to-LATCH, crossfade for LATCH-to-GRAPH family boundary).
 
-**Addresses:** WorkerBridge with correlation IDs (P1), performance (all db ops off main thread)
+**Features addressed:** View transitions (keystone differentiator); LATCH/GRAPH view family duality; kanban drag-drop; view-specific defaults; instant filter response visible end-to-end; select multiple items across views.
 
-**Avoids:** Pitfall 8 (establish minimal projection pattern for query results before views consume bridge data)
+**Pitfalls avoided:** Missing D3 key function (Pitfall from ARCHITECTURE.md anti-patterns — enforce from first view, cannot retrofit); subscriber leak (ViewManager calls `destroy()` before mounting next view, verified in this phase with mount/destroy cycle test).
 
-**Research flag:** STANDARD — postMessage/UUID pattern is well-documented; typed correlation ID approach is specified in canonical docs
+**Research flag:** STANDARD — D3 data join with stable key functions and d3-transition are extensively documented; kanban drag-drop uses `d3-drag` with established patterns.
 
-### Phase 4: Providers + State Coordination
+### Phase 4: Time + Visual Views (Calendar, Timeline, Gallery)
 
-**Rationale:** Providers compile UI state to SQL fragments — they are the safety boundary between user intent and raw SQL. SQL allowlist must be built before any dynamic SQL is generated anywhere in the codebase. StateCoordinator batching and three-tier persistence enable correct view rendering and CloudKit sync.
+**Rationale:** Calendar and Timeline both depend on DensityProvider's time hierarchy (day/week/month/quarter/year → strftime expressions) and d3-time-format. These were built in Phase 2 but not yet exercised by any view. Gallery is the simplest of the three (same 2D tile layout as Grid). These three views share time-axis SQL patterns and can be developed together.
 
-**Delivers:** `FilterProvider.ts` (LATCH → WHERE + allowlist validation), `PAFVProvider.ts` (axis → GROUP BY/ORDER BY), `SelectionProvider.ts` (Tier 3 ephemeral), `DensityProvider.ts` (density → strftime SQL), `StateCoordinator.ts` (16ms batch frame + Tier 1/2 persistence), `MutationManager.ts` (single write gate + undo command log + CloudKit dirty flag). SQL injection test suite.
+**Delivers:** Calendar view with month/week/day DensityProvider integration; Timeline view with continuous `d3.scaleTime()` and PAFVProvider swim lane assignment; Gallery view with image/cover tile rendering for resource card types. DensityProvider time SQL fragments exercised at all five granularity levels.
 
-**Addresses:** FilterProvider + AxisProvider + SQL allowlist (P1), three-tier persistence (P1), undo/redo command log (P1), SQL safety test suite (P1)
+**Features addressed:** Calendar and Timeline complete the LATCH view family; Gallery provides visual richness for resource cards; density controls exercised at real SQL granularity.
 
-**Avoids:** Pitfall 4 (wire `db.export()` to native shell lifecycle here — before ETL ships)
+**Pitfalls avoided:** Ensure time-axis DensityProvider SQL fragments produce valid GROUP BY expressions at every density level; test with all five density levels (day/week/month/quarter/year) before advancing.
 
-**Research flag:** STANDARD for provider pattern; NEEDS RESEARCH for CloudKit dirty flag integration timing with native shell lifecycle events
+**Research flag:** STANDARD — time-axis D3 views follow documented d3-time and d3-time-format patterns; DensityProvider SQL compilation for time hierarchies is straightforward strftime expression mapping.
 
-### Phase 5: D3 Views
+### Phase 5: Graph Views (Network, Tree) + SuperGrid
 
-**Rationale:** Views are the top layer of the web runtime — they depend on Providers and Bridge (both now complete). SuperGrid first because it exercises the most complex data join pattern (grouped aggregation, nested dimensional headers) and the full PAFV projection. If SuperGrid works, simpler views are straightforward.
+**Rationale:** Network and Tree views require populated connection data (seeded from test data for v1.0, ETL in v1.1), GRAPH view family state suspension in PAFVProvider, and d3-force simulation running in the Worker. SuperGrid is the most complex view in the milestone — it requires PAFVProvider axis stacking, DensityProvider group collapse, and custom nested header rendering unlike any standard D3 pattern. Building SuperGrid after simpler views prove the pattern reduces risk significantly.
 
-**Delivers:** SuperGrid (PAFV nested grid), ListView, KanbanView, ViewManager, ViewTransition (enter/update/exit animations). Subsequent views: CalendarView, TimelineView, GalleryView, GraphView (force-directed). Mandatory key function enforcement (`d => d.id`) across all views.
+**Delivers:** Network view with D3 force-directed layout computed in the Worker (never on main thread), PageRank node sizing, Louvain community coloring, pan/zoom; Tree view with d3-hierarchy layout from contains/parent connections, collapsible nodes; SuperGrid with nested dimensional headers, spanning parent headers, sticky headers, collapsible groups, and SQL GROUP BY compiled from stacked PAFV axes.
 
-**Addresses:** List + Grid + Kanban views (P1), view transitions (P1 — core differentiator), calendar/timeline/gallery (P2), network view (P2)
+**Features addressed:** PAFV spatial projection (signature differentiator); SuperGrid nested dimensional headers; force simulation off main thread; graph algorithm suite; LATCH/GRAPH view family duality exercised end-to-end; SuperStack spanning headers.
 
-**Avoids:** Pitfall 6 (D3 key function — enforce as first-view pattern); Pitfall 7 (SVG performance — LIMIT enforcement from first view); Pitfall 9 (TypeScript D3 type patterns established in first view)
+**Pitfalls avoided:** Force simulation on main thread (blocks UI at 200+ nodes — must run in Worker, post only stable `{id, x, y}` positions). SuperGrid sticky header implementation needs careful CSS position:sticky scoping.
 
-**Research flag:** NEEDS RESEARCH for SuperGrid PAFV projection SQL specifics and nested header rendering. Standard patterns apply for List and Kanban.
-
-### Phase 6: ETL Importers
-
-**Rationale:** ETL can be developed in parallel with Phase 4 (Providers) once Phase 3 (Bridge) is complete. ETL uses `workerBridge.transaction()` and existing CRUD functions — no dependency on Providers or Views. Apple Notes first because it is the primary data source and demonstrates graph extraction (mentions → person cards, links → connections).
-
-**Delivers:** `AppleNotes.ts` ETL parser, `DedupEngine` integration, `CanonicalCard`/`CanonicalConnection` mapping. Idempotent re-import with `INSERT OR IGNORE` pattern. Batch transaction (500 cards per chunk with progress reporting). `ImportResult` interface surfaced in UI. Graph edges (mentions, links, contains) extracted automatically from import.
-
-**Addresses:** Apple Notes ETL importer (P1), import deduplication (table stake), idempotent re-import (table stake), Markdown + Excel ETL (P2)
-
-**Avoids:** Pitfall 4 (ETL must not ship without export-on-background wired in Phase 4 — importing 10K notes without a save path is a data-loss guarantee)
-
-**Research flag:** STANDARD for Apple Notes JSON format parsing; NEEDS RESEARCH for alto-index JSON schema specifics if not fully documented in canonical spec
-
-### Phase 7: Native Shell
-
-**Rationale:** The Swift WKWebView shell wraps the completed web runtime. Database export format must be stable before CloudKit sync is implemented. `WKURLSchemeHandler` for the `app://` scheme is required to solve the WASM MIME type issue (can be solved in Phase 1 as an integration spike, but full native shell work belongs here).
-
-**Delivers:** WKWebView container, `WKURLSchemeHandler` (app:// scheme with correct MIME types), Keychain integration for ETL credentials, CloudKit sync (dirty flag + debounce trigger + binary db export/import), app lifecycle event handling (background → db export).
-
-**Addresses:** Performance (WKWebView responsiveness), security (credentials in Keychain not SQLite), CloudKit sync (D-010)
-
-**Avoids:** Pitfall 1 (WKWebView MIME type — fully resolved in Swift scheme handler); Pitfall 4 (data loss — background export wired here)
-
-**Research flag:** NEEDS RESEARCH for CloudKit conflict resolution semantics and how they interact with the undo stack clearing (D-009). WKWebView MessageHandler patterns are well-documented but CloudKit sync specifics for binary database blobs need validation.
+**Research flag:** NEEDS RESEARCH for SuperGrid SuperStack nested header spanning algorithm — the spec defines the behavior (parent headers visually span children in D3 SVG) but the specific D3 implementation is not analogous to any standard documented example. Flag for `gsd:research-phase` when planning Phase 5. Graph algorithm implementations (PageRank, Louvain) may also need sourcing if pure-TypeScript implementations are needed.
 
 ### Phase Ordering Rationale
 
-- **Phases 1-3 are strictly sequential**: Database → CRUD → Bridge is a hard dependency chain. No layer can be tested end-to-end without the layer below it.
-- **Phase 4 and 6 are parallel**: Both depend only on Phase 3. Providers and ETL have no dependency on each other. Different workstreams can develop them simultaneously.
-- **Phase 5 (Views) requires both 3 and 4**: Views subscribe to Providers and query via Bridge. Both must exist.
-- **Phase 7 (Native Shell) requires all web phases**: Shell wraps the completed runtime; database export format must be stable.
-- **SuperGrid before other views**: The most complex view proves the pattern; simpler views follow trivially.
+- **WorkerBridge absolutely first:** No other component can function without it. Also resolves the highest-risk WKWebView pitfalls before any feature work is invested.
+- **Providers before views:** Every view depends on compiled SQL fragments from providers. Building views without providers would require throwaway mock implementations that would be replaced anyway.
+- **MutationManager in Phase 2 (parallel to providers):** Both depend only on WorkerBridge. Kanban drag-drop in Phase 3 requires MutationManager, so it must complete before Phase 3.
+- **ListView before SuperGrid:** Establishes the D3 data join pattern. SuperGrid builds on that pattern but adds 4x complexity. Attempting SuperGrid first conflates architectural decisions with view-specific complexity.
+- **Graph views in Phase 5 (last):** Network and Tree require populated connection data (primarily from ETL, which is v1.1). For v1.0, test data suffices, but graph views are GRAPH family which requires LATCH views to exist first for PAFVProvider family suspension to have a target to return to.
+- **Table view deferred:** Explicitly deferred per FEATURES.md. Virtual scroll + editable cells + column resize is out of scope for v1.0.
 
 ### Research Flags
 
-Phases needing deeper research during planning:
-- **Phase 4 (Providers):** CloudKit dirty flag integration timing with native shell lifecycle — specifically, when and how the dirty flag triggers an export signal to Swift, and whether the 2-second debounce is configurable
-- **Phase 5 (Views):** SuperGrid PAFV projection SQL specifics (GROUP BY with nested dimensional headers, density strftime expressions) and how the LATCH/GRAPH view family boundary suspension works in PAFVProvider
-- **Phase 6 (ETL):** alto-index JSON schema format from Apple Notes export — verify this is fully specified in canonical docs before assuming; if underdocumented, a schema research spike is needed
-- **Phase 7 (Native Shell):** CloudKit conflict resolution semantics and undo stack clearing interaction; binary SQLite blob CloudKit sync patterns
+**Phases needing deeper research during planning:**
+- **Phase 5 (SuperGrid):** SuperStack nested header spanning algorithm — parent headers visually spanning children across D3 SVG elements — is custom to this project with no documented analogue. Flag for `gsd:research-phase` when planning Phase 5.
+- **Phase 5 (Graph algorithms):** PageRank and Louvain community detection are specified as Worker-side operations, but no specific TypeScript implementation is identified in the research. At Phase 5 planning, evaluate whether to implement from scratch or source a pure-JS library that runs in a Worker context without DOM dependencies.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Database Foundation):** All workarounds are documented with specific code; custom WASM build is a one-time Emscripten build
-- **Phase 2 (CRUD + Queries):** Standard SQLite CRUD, FTS5 rowid join pattern is fully documented
-- **Phase 3 (Worker Bridge):** postMessage + UUID correlation pattern is well-established; typed WorkerMessage envelope is specified in canonical docs
+**Phases with standard patterns (skip research-phase):**
+- **Phase 1 (WorkerBridge):** Promise correlation over postMessage is a standard pattern; canonical spec provides the implementation. `@vitest/web-worker` is straightforward to configure.
+- **Phase 2 (Provider system):** SQL compilation from UI state is fully specified in Contracts.md and Providers.md. MutationManager inverse SQL pattern follows standard command pattern.
+- **Phase 3 (List, Grid, Kanban, transitions):** D3 data join with stable key functions and d3-transition are extensively documented with Observable examples.
+- **Phase 4 (Calendar, Timeline, Gallery):** d3-time and d3-time-format are standard D3 modules; time-axis views follow established documented patterns.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All versions verified via official sources; FTS5 gap confirmed via sql.js Makefile and GitHub issue tracker; WKWebView WASM issue confirmed via gist and issue reports |
-| Features | HIGH | Architecture is locked in CLAUDE-v5.md; feature scope derived from spec + competitor analysis; dependency graph is explicit and logical |
-| Architecture | HIGH | Architecture is fully specified in canonical docs (CLAUDE-v5.md, Contracts.md, WorkerBridge.md, Providers.md, SuperGrid.md); research validates those decisions |
-| Pitfalls | MEDIUM-HIGH | Most pitfalls verified via official docs, GitHub issues, SQLite forum; WKWebView-specific findings are MEDIUM due to sparse public documentation; FTS5 trigger corruption verified via SQLite forum thread |
+| Stack | HIGH | All library versions verified via npm registry (2026-02-28). D3 7.9.0 confirmed current stable (no v8 exists). @vitest/web-worker 4.0.18 matches installed Vitest. Only 3 new dependencies needed. |
+| Features | HIGH | Architecture is locked in CLAUDE-v5.md (D-001 through D-010 are final decisions, not hypotheses). Competitor analysis (Notion, Airtable, NocoDB) confirms table-stakes features. Dependency graph is explicit and logical. |
+| Architecture | HIGH | Fully specified across six canonical spec documents. Integration points, data flows, and build order are explicit in ARCHITECTURE.md. The existing v0.1 codebase validates the database layer works as specified. |
+| Pitfalls | MEDIUM-HIGH | WKWebView WASM pitfalls verified via WebKit issue reports and community evidence. Worker initialization race condition verified from first principles. D3 key function pitfall is HIGH confidence from D3 issue tracker evidence. Undo batch ordering pitfall is HIGH from SQL semantics. View transition and subscriber leak pitfalls are MEDIUM (community evidence, not official). |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **FTS5 custom build process**: The custom Emscripten build of sql.js with FTS5 is required but has never been done for this project. Build once immediately in Phase 1; commit the WASM artifact. If Docker build fails (Emscripten version mismatch), fall back to manual Makefile modification on local emsdk install.
+- **WKWebView integration test environment:** The v0.1 tests run in Node/Vitest. No WKWebView-in-iOS-simulator test has been run against the completed web runtime. Pitfall 1 (WASM MIME) will only manifest when loading a production Vite build into a real WKWebView. This must be validated in Phase 1 with a native shell integration spike before Phase 3 commits to the rendering architecture.
 
-- **WKWebView `app://` scheme vs. fetch() patch**: Two workarounds exist for the MIME type issue. The Swift `WKURLSchemeHandler` approach (app:// scheme) is cleaner and preferred. The fetch() patch is a JavaScript-side fallback. Choose one approach in Phase 1 and document it — mixing both creates confusion.
+- **SuperGrid SuperStack header spanning algorithm:** The spec describes the visual behavior (parent headers span children) but does not prescribe the D3 SVG implementation. No documented analogous example exists. Options include: absolute-positioned overlay SVG elements, `foreignObject` elements, or nested `<g>` with calculated widths derived from child cell counts. This needs resolution during Phase 5 planning — flag for `gsd:research-phase`.
 
-- **db.export() performance for large databases**: Research flags that `db.export()` on a 10K+ card database takes measurable time. Profile this in Phase 4 before wiring it to the backgrounding event. If too slow, a VACUUM INTO equivalent or chunked export may be needed — but this is a known risk, not an unknown.
+- **Graph algorithm implementations:** PageRank and Louvain community detection are specified as Worker-side operations but no specific TypeScript implementation is identified. At Phase 5, evaluate pure-TypeScript implementations vs. sourcing a library. The library must have zero DOM dependencies to run in a Worker context.
 
-- **CloudKit binary blob sync reliability**: The spec mandates CloudKit sync via binary database export (D-010). Research did not validate the CloudKit side of this integration. The Swift implementation of CloudKit sync for large binary blobs (CloudKit records have a 1MB asset size limit by default) needs investigation in Phase 7. This could require splitting the database or using CloudKit large file APIs.
+- **`db.export()` performance at scale:** sql.js's `db.export()` returns a `Uint8Array` of the full database binary. At 10K+ cards, this may take measurable time. Profile before wiring to the D-010 CloudKit debounce trigger. If slow, it may need to be asynchronous with the dirty flag held open during export.
 
-- **alto-index JSON format completeness**: The Apple Notes ETL assumes access to alto-index JSON format. If the canonical spec does not fully document this format, a format research spike is needed before Phase 6 begins.
+- **DOM + WebWorker lib type conflicts:** Adding `"WebWorker"` to tsconfig alongside `"DOM"` produces overlapping type signatures for shared types like `MessageEvent`. Research flags this as LOW risk, but validate when the tsconfig change is made in Phase 1 — if TypeScript produces ambiguous type errors, the approach may need to be a separate tsconfig for the worker file.
 
 ## Sources
 
-### Primary (HIGH confidence)
-- `/Users/mshaler/Developer/Projects/Isometry/CLAUDE-v5.md` — canonical architecture and decisions (D-001 through D-010)
-- `/Users/mshaler/Developer/Projects/Isometry/v5/Modules/Core/Contracts.md` — CanonicalCard, WorkerMessage, WorkerResponse interfaces
-- `/Users/mshaler/Developer/Projects/Isometry/v5/Modules/Core/WorkerBridge.md` — Bridge architecture
-- `/Users/mshaler/Developer/Projects/Isometry/v5/Modules/Core/Providers.md` — Provider system spec
-- `/Users/mshaler/Developer/Projects/Isometry/v5/Modules/SuperGrid.md` — PAFV projection and SuperGrid spec
-- https://sqlite.org/fts5.html — FTS5 official docs; trigger patterns; integrity-check
-- https://github.com/sql-js/sql.js/blob/master/Makefile — FTS3-only build confirmed
-- https://github.com/sql-js/sql.js/pull/594 — FTS5 PR blocked by maintainer
-- https://devblogs.microsoft.com/typescript/announcing-typescript-5-8/ — TypeScript 5.8 release notes
-- https://vite.dev/blog/announcing-vite7 — Vite 7 stable announcement
-- https://vitest.dev/blog/vitest-4 — Vitest 4.0 release notes
-- https://d3js.org/d3-selection/joining — D3 data join and key function docs
+### Primary (HIGH confidence — canonical project specifications)
+- `CLAUDE-v5.md` — D-001 through D-010 locked architectural decisions, milestone definitions
+- `v5/Modules/Core/Contracts.md` — TypeScript interfaces, schema, safety rules, allowlist pattern
+- `v5/Modules/Core/WorkerBridge.md` — Canonical WorkerBridge protocol and implementation
+- `v5/Modules/Core/Providers.md` — Provider pattern, StateCoordinator, MutationManager
+- `v5/Modules/SuperGrid.md` — PAFV projection, SuperStack headers, density model
+- `v5/Modules/Views.md` — Nine view types, D3 patterns, view transition strategies
+- `v5/Modules/D3Components.md` — Design system, component patterns
 
-### Secondary (MEDIUM confidence)
-- https://gist.github.com/otmb/2eefc9249d347103469741542f135f5c — WKWebView fetch() vs XHR for local WASM
-- https://github.com/sql-js/sql.js/issues/393 — WASM MIME type error reports
-- https://sqlite.org/forum/info/da59bf102d7a7951740bd01c4942b1119512a86bfa1b11d4f762056c8eb7fc4e — FTS5 trigger corruption report
-- https://www.powersync.com/blog/sqlite-persistence-on-the-web — OPFS/SharedArrayBuffer WKWebView gap
-- https://web.dev/articles/off-main-thread — off-main-thread WASM workers
-- https://nolanlawson.com/2016/02/29/high-performance-web-worker-messages/ — postMessage serialization performance
-- https://blog.scottlogic.com/2020/05/01/rendering-one-million-points-with-d3.html — SVG performance wall
+### Primary (HIGH confidence — official documentation)
+- npm registry — d3@7.9.0, @types/d3@7.4.3, @vitest/web-worker@4.0.18 — versions verified 2026-02-28
+- d3js.org — D3 v7 module listing, force simulation API (`simulation.tick(n)` no-DOM), hierarchy, zoom, transition docs
+- vite.dev — Web worker configuration, `worker.format: 'es'`, `optimizeDeps.exclude`
+- TypeScript tsconfig reference — `lib: ["WebWorker"]` behavior, DOM + WebWorker coexistence
+- SQLite FTS5 documentation — external content tables, trigger patterns, rowid join, integrity-check
+- d3/d3 GitHub issue #1053 — d3-force confirmed zero DOM dependencies (Worker-safe)
 
-### Tertiary (LOW confidence — for competitive context only)
-- https://www.nuclino.com/solutions/obsidian-vs-notion — competitor feature comparison
-- https://thetoolchief.com/comparisons/airtable-vs-notion/ — competitor feature comparison
+### Secondary (MEDIUM confidence — community and issue tracker)
+- Observable — Force-directed web worker example, animated transitions, effective animation examples
+- Stanford Vis Group — Animated Transitions in Statistical Data Graphics (view transition strategy research)
+- WebKit behavior — WKWebView fetch() MIME validation on local file:// URLs
+- Airtable docs — Filter persistence per saved view, multi-select behavior
+- Notion/Airtable/NocoDB competitor comparison — view state behavior, undo/redo limitations
 
 ---
-*Research completed: 2026-02-27*
+*Research completed: 2026-02-28*
 *Ready for roadmap: yes*
