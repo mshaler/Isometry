@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.14
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-28T03:55:00.000Z"
+last_updated: "2026-02-28T11:00:08Z"
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 25
-  completed_plans: 5
+  completed_plans: 7
 ---
 
 # Project State
@@ -23,28 +23,28 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 ## Current Position
 
 Phase: 2 of 7 (CRUD + Query Layer) -- IN PROGRESS
-Plan: 1 of 5 in current phase -- 02-01 done
-Status: Phase 2 In Progress -- 02-01 complete (Card CRUD, 30 tests passing, types/helpers established)
-Last activity: 2026-02-28 -- Plan 02-01 complete (Card CRUD TDD, 30/30 tests)
+Plan: 3 of 5 in current phase -- 02-01 (Card CRUD), 02-02 (Connections, partial RED), 02-03 (Search) done
+Status: Phase 2 In Progress -- 02-03 complete (FTS5 Search TDD, 21/21 tests passing)
+Last activity: 2026-02-28 -- Plan 02-03 complete (FTS5 Search with BM25 ranking, rowid joins, snippets)
 
-Progress: [#####.....] 20% (5/25 total plans)
+Progress: [#######...] 28% (7/25 total plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
-- Average duration: 2.75 min
-- Total execution time: 0.18 hours
+- Total plans completed: 6
+- Average duration: 2.67 min
+- Total execution time: 0.27 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 4 | 11 min | 2.75 min |
-| 02-crud-query-layer | 1 | 3 min | 3 min |
+| 02-crud-query-layer | 2 | 5 min | 2.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 3 min, 3 min, 3 min, 3 min
+- Last 5 plans: 2 min, 3 min, 3 min, 3 min, 2 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -76,6 +76,9 @@ Recent decisions affecting current work:
 - [02-01]: updateCard verifies card exists post-update via getCard() — throws if not found or soft-deleted (avoids getRowsModified() complexity)
 - [02-01]: deleteCard is idempotent — updates deleted_at on already-deleted cards without throwing
 - [02-01]: src/index.ts pre-declares all Phase 2 query module re-exports — Plans 02-02..04 do NOT modify index.ts to prevent conflicts
+- [02-03]: ORDER BY rank (FTS5 virtual column) used instead of ORDER BY bm25() — pre-computed, faster with LIMIT
+- [02-03]: Test uses 'nonexistentxyzabc' (no hyphens) for no-match test — FTS5 MATCH throws on hyphenated terms (hyphen is an FTS5 minus operator)
+- [02-03]: snippet column_index -1 auto-selects best matching column across all FTS5 columns
 
 ### Pending Todos
 
@@ -92,5 +95,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-28
-Stopped at: Completed 02-crud-query-layer 02-01-PLAN.md (Card CRUD TDD, 30 tests passing, types/helpers established)
-Resume file: .planning/phases/02-crud-query-layer/02-02-PLAN.md (Connections CRUD next)
+Stopped at: Completed 02-crud-query-layer 02-03-PLAN.md (FTS5 Search TDD, 21/21 tests passing, BM25 ranking + snippets)
+Resume file: .planning/phases/02-crud-query-layer/02-04-PLAN.md (Graph traversal next)
