@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
 status: unknown
-last_updated: "2026-03-01T21:28:11.247Z"
+last_updated: "2026-03-01T21:30:40.710Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -41,6 +41,7 @@ Status: Phase 8 planning complete — 5 plans created across 3 waves
 | Graph traversal p99 | <500ms | — | — |
 | Render p95 (100 cards) | — | — | <16ms |
 | Phase 08 P01 | 276 | 3 tasks | 7 files |
+| Phase 08 P02 | 419 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -50,6 +51,8 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md (D-001..D-010 fi
 Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 08]: ETL types use string[] for tags, not JSON-stringified strings
 - [Phase 08]: Added stub handlers for ETL worker requests until Plan 08-02
+- [Phase 08]: 300-second timeout for ETL operations - large imports (5000+ notes) require extended processing time
+- [Phase 08]: Created src/etl/types.ts as blocking dependency (deviation from plan order to enable Wave 1 parallel execution)
 
 ### v1.1 Research Findings
 
