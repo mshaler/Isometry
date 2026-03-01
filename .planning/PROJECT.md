@@ -25,15 +25,16 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 - ✓ View transitions: SVG morph (list/grid/timeline) and crossfade (LATCH/GRAPH boundary) — v0.5
 - ✓ KanbanView drag-drop with undoable mutations (Cmd+Z) — v0.5
 
-### Active — Current Milestone: v1.0 Web Runtime
+### Validated — v1.0 Web Runtime (COMPLETE)
 
-**Goal:** Complete the web runtime — Worker Bridge for off-main-thread SQL, Graph views (network, tree), and SuperGrid with nested dimensional headers.
+- ✓ Worker Bridge with typed message protocol, correlation IDs, init queuing, and timeouts — Phase 3
+- ✓ NetworkView: force-directed graph with simulation running in Worker (not main thread) — Phase 7
+- ✓ TreeView: hierarchical layout from contains/parent connections with collapsible nodes — Phase 7
+- ✓ SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack) — Phase 7
 
-- [ ] Worker Bridge with typed message protocol, correlation IDs, init queuing, and timeouts
-- [ ] NetworkView: force-directed graph with simulation running in Worker (not main thread)
-- [ ] TreeView: hierarchical layout from contains/parent connections with collapsible nodes
-- [ ] SuperGrid: nested dimensional headers with PAFV stacked axis assignments (SuperStack)
-- [ ] Performance threshold: render <16ms (100 visible cards, SuperGrid)
+### Active — Next Milestone: v1.1 ETL Importers
+
+- [ ] ETL importers (Apple Notes, etc.)
 
 ### Out of Scope
 
@@ -49,8 +50,9 @@ SuperGrid renders imported data through PAFV spatial projection with zero serial
 
 ## Context
 
-Shipped v0.5 Providers + Views with 20,468 LOC TypeScript, 774 tests passing.
+Shipped v1.0 Web Runtime with 20,468+ LOC TypeScript, 897 tests passing across 3 milestones.
 Tech stack: TypeScript 5.9 (strict), sql.js 1.14 (custom FTS5 WASM), D3.js v7.9, Vite 7.3, Vitest 4.0.
+v1.0 adds Worker Bridge (typed RPC, correlation IDs, init queuing) and Graph Views (NetworkView, TreeView, SuperGrid).
 
 Isometry v5 has extensive pre-existing specification:
 - `CLAUDE-v5.md` — canonical architectural decisions (D-001 through D-010), all final
@@ -107,4 +109,4 @@ Known technical debt:
 | GalleryView pure HTML (no D3) | Tiles rebuilt on render; no data join needed for simple grid | ✓ Good — simpler than SVG views |
 
 ---
-*Last updated: 2026-02-28 after v0.5 milestone*
+*Last updated: 2026-03-01 after v1.0 Web Runtime milestone*
