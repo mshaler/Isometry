@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
-status: ready_to_plan
-last_updated: "2026-03-01"
+status: unknown
+last_updated: "2026-03-01T21:28:11.247Z"
 progress:
-  total_phases: 3
+  total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 5
+  completed_plans: 1
 ---
 
 # Project State
@@ -23,12 +23,12 @@ See: .planning/PROJECT.md (updated 2026-03-01)
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 ready to plan phases
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 Phase 8 planned, ready to execute
 ```
 
 Milestone: v1.1 ETL Importers — 3 phases (8, 9, 10), 19 requirements (ETL-01..19)
-Next: `/gsd:plan-phase 8` to plan Phase 8 (ETL Foundation + Apple Notes Parser)
-Status: Research complete, requirements defined, roadmap created
+Next: `/gsd:execute-phase 8` to execute Phase 8 (ETL Foundation + Apple Notes Parser)
+Status: Phase 8 planning complete — 5 plans created across 3 waves
 
 ## Performance Metrics
 
@@ -40,6 +40,7 @@ Status: Research complete, requirements defined, roadmap created
 | FTS p99 | <100ms | — | — |
 | Graph traversal p99 | <500ms | — | — |
 | Render p95 (100 cards) | — | — | <16ms |
+| Phase 08 P01 | 276 | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -47,6 +48,8 @@ Status: Research complete, requirements defined, roadmap created
 
 All architectural decisions locked in PROJECT.md / CLAUDE-v5.md (D-001..D-010 final).
 Full decision logs archived to `.planning/milestones/` for each milestone.
+- [Phase 08]: ETL types use string[] for tags, not JSON-stringified strings
+- [Phase 08]: Added stub handlers for ETL worker requests until Plan 08-02
 
 ### v1.1 Research Findings
 
@@ -73,5 +76,19 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: v1.1 milestone fully defined. PHASE-8-IMPLEMENTATION-CHECKLIST.md created. Ready for `/gsd:plan-phase 8`.
-Resume file: .planning/PHASE-8-IMPLEMENTATION-CHECKLIST.md
+Stopped at: Completed 08-01-PLAN.md
+Resume file: .planning/phases/08-etl-foundation-apple-notes/08-02-PLAN.md
+
+## Phase 8 Plans Summary
+
+| Plan | Wave | Name | Requirements | Status |
+|------|------|------|--------------|--------|
+| 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | complete |
+| 08-02 | 1 | Worker Protocol Extensions | ETL-03 | pending |
+| 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | pending |
+| 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | pending |
+| 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | pending |
+
+Wave 1 plans (08-01, 08-02) can execute in parallel.
+Wave 2 plans (08-03, 08-04) depend on 08-01, can execute in parallel.
+Wave 3 plan (08-05) depends on all previous plans.

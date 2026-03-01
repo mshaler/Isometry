@@ -90,7 +90,15 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 9. `src/worker/handlers/etl-import.handler.ts` + `worker.ts` router case + `WorkerBridge.importFile()`
 10. Integration tests: round-trip, dedup idempotency, FTS sync, catalog verification, 5K card OOM test
 
-**Plans:** TBD
+**Plans:**
+
+| Plan | Wave | Name | Reqs | Depends On |
+|------|------|------|------|------------|
+| 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | — |
+| 08-02 | 1 | Worker Protocol Extensions | ETL-03 | — |
+| 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | 08-01 |
+| 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | 08-01 |
+| 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | 08-01, 08-02, 08-03, 08-04 |
 
 ---
 
