@@ -17,3 +17,11 @@ export type { DedupResult } from './DedupEngine';
 
 // Database Writer (ETL-11)
 export { SQLiteWriter } from './SQLiteWriter';
+
+// Parsers (ETL-04)
+export { AppleNotesParser } from './parsers/AppleNotesParser';
+export type { ParsedFile, AppleNotesParseResult } from './parsers/AppleNotesParser';
+
+// Catalog (ETL-13)
+export { CatalogWriter } from './CatalogWriter';
+export type { ImportRunRecord } from './CatalogWriter';
