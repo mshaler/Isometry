@@ -11,8 +11,7 @@ attachments:
   - id: "att-2"
     type: "com.apple.notes.inlinetextattachment.hashtag"
     content: '<a class="tag link" href="/tags/learning">#learning</a>'
-  - id: "att-3"
-    type: "com.apple.notes.inlinetextattachment.link"
+  - type: "com.apple.notes.inlinetextattachment.link"
     id: "link-to-67890"
 links:
   - "https://anthropic.com"
