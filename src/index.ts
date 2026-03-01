@@ -137,3 +137,8 @@ export {
   crossfadeTransition,
 } from './views';
 export type { IView, CardDatum, ViewConfig } from './views';
+
+// ---------------------------------------------------------------------------
+// ETL Pipeline (Phase 8)
+// ---------------------------------------------------------------------------
+export * from './etl';

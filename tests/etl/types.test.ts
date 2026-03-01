@@ -164,7 +164,9 @@ describe('ETL Type Contracts', () => {
       };
 
       expect(frontmatter.id).toBe(12345);
-      expect(frontmatter.attachments?.[0].type).toContain('hashtag');
+      expect(frontmatter.attachments).toBeDefined();
+      expect(frontmatter.attachments?.length).toBeGreaterThan(0);
+      expect(frontmatter.attachments?.[0]?.type).toContain('hashtag');
     });
   });
 
