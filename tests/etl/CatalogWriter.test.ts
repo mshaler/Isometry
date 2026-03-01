@@ -5,26 +5,21 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CatalogWriter } from '../../src/etl/CatalogWriter';
 import { Database } from '../../src/database/Database';
 import type { ImportRunRecord } from '../../src/etl/CatalogWriter';
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 
 describe('CatalogWriter', () => {
   let db: Database;
   let writer: CatalogWriter;
-  let tempDir: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Create a temporary database for testing
-    tempDir = mkdtempSync(join(tmpdir(), 'catalog-writer-test-'));
-    db = new Database(join(tempDir, 'test.db'));
+    db = new Database();
+    await db.initialize();
     writer = new CatalogWriter(db);
   });
 
   afterEach(() => {
     // Clean up
     db.close();
-    rmSync(tempDir, { recursive: true, force: true });
   });
 
   it('creates new import source on first run', () => {
