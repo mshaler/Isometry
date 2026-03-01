@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Web Runtime
 status: unknown
-last_updated: "2026-03-01T02:59:33.401Z"
+last_updated: "2026-03-01T03:09:41.950Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 3
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,14 +23,14 @@ See: .planning/PROJECT.md (updated 2026-02-28)
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [Phase 3 COMPLETE] [Phase 7: 1/4 plans done]
+[v0.1 SHIPPED] [v0.5 SHIPPED] [Phase 3 COMPLETE] [Phase 7: 2/4 plans done]
                                                       |
                                                       v (in progress)
 ```
 
-Phase: Phase 7 (Graph Views + SuperGrid) — IN PROGRESS (1/4 plans, 2026-03-01)
-Next: Phase 7 Plan 02
-Status: 811 tests passing, 20,468+ LOC TypeScript
+Phase: Phase 7 (Graph Views + SuperGrid) — IN PROGRESS (2/4 plans, 2026-03-01)
+Next: Phase 7 Plan 03
+Status: 896 tests passing, 20,468+ LOC TypeScript
 
 ## Performance Metrics
 
@@ -43,6 +43,9 @@ Status: 811 tests passing, 20,468+ LOC TypeScript
 | Graph traversal p99 | <500ms | — | — |
 | Render p95 (100 cards) | — | — | <16ms |
 | Phase 07-graph-views-supergrid P01 | 233 | 2 tasks | 8 files |
+| Phase 07-graph-views-supergrid P02 | 371 | 2 tasks | 3 files |
+| Phase 07-graph-views-supergrid P04 | 390 | 2 tasks | 7 files |
+| Phase 07-graph-views-supergrid P03 | 381 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -57,6 +60,14 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 - Full Phase 4-6 decision log archived to `.planning/milestones/v0.5-phases/`
 - [Phase 07-graph-views-supergrid]: 'supergrid' is LATCH family — getViewFamily() naturally falls through since only network/tree return graph
 - [Phase 07-graph-views-supergrid]: d3-force simulation uses stop()+tick() loop off-thread with no per-tick postMessage overhead
+- [Phase 07-graph-views-supergrid P02]: NetworkView constructor accepts NetworkViewConfig ({bridge, selectionProvider?}) not full ViewConfig — SelectionProvider optional for test simplicity
+- [Phase 07-graph-views-supergrid P02]: SimulateNode warm-start uses conditional property assignment (not shorthand) to satisfy exactOptionalPropertyTypes strict mode
+- [Phase 07-graph-views-supergrid P02]: render() is async (returns Promise<void>) — TypeScript void assignability allows this for IView implementations
+- [Phase 07-graph-views-supergrid]: bench() must run in dedicated .bench.ts file (vitest bench mode) — cannot be co-located with vitest run unit tests
+- [Phase 07-graph-views-supergrid]: SuperGrid uses in-memory card grouping (not SuperGridQuery) — coordinator supplies cards array; SuperGridQuery is standalone utility for future Worker-direct integration
+- [Phase 07-graph-views-supergrid]: TreeView expand/collapse uses _children stash — never re-stratifies on toggle
+- [Phase 07-graph-views-supergrid]: SVGGElement.click() absent in jsdom — use dispatchEvent(MouseEvent) for SVG click tests
+- [Phase 07-graph-views-supergrid]: TreeView top-down vertical layout (root at top) chosen for 'contains' hierarchy readability
 
 ### Dependencies Added (Phase 3)
 
@@ -92,5 +103,5 @@ All architectural decisions locked in PROJECT.md / CLAUDE-v5.md:
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 07-01-PLAN.md (Protocol types + force simulation handler)
-Resume: Phase 7 Plan 02 — next plan in phase
+Stopped at: Completed 07-02-PLAN.md (NetworkView force-directed graph view)
+Resume: Phase 7 Plan 03 — next plan in phase

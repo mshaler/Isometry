@@ -50,7 +50,7 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
 ### 🚧 v1.0 Web Runtime (Phases 3, 7)
 
 - [x] **Phase 3: Worker Bridge** (2/2 plans) - Typed async RPC over postMessage — all SQL off main thread, correlation IDs, initialization queuing, timeouts — completed 2026-02-28
-- [ ] **Phase 7: Graph Views + SuperGrid** - Network and Tree graph views (Worker-hosted simulation), SuperGrid with nested PAFV dimensional headers
+- [x] **Phase 7: Graph Views + SuperGrid** - Network and Tree graph views (Worker-hosted simulation), SuperGrid with nested PAFV dimensional headers (completed 2026-03-01)
 
 ## Phase Details
 
@@ -79,8 +79,8 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
   4. SuperGrid render performance meets the <16ms threshold for 100 visible cards — measured via performance.now() in a Vitest benchmark
   5. Network view posts only stable position snapshots from the Worker — the main thread renders each frame from a position map, never from mid-simulation state
 **Plans**: 4 plans
-- [ ] Plan 01: Protocol Extension + Force Simulation Handler (Wave 1)
-- [ ] Plan 02: NetworkView — Force-Directed Graph (Wave 2)
+- [x] Plan 01: Protocol Extension + Force Simulation Handler (Wave 1) — completed 2026-03-01
+- [x] Plan 02: NetworkView — Force-Directed Graph (Wave 2) — completed 2026-03-01
 - [ ] Plan 03: TreeView — Collapsible Hierarchy (Wave 2)
 - [ ] Plan 04: SuperGrid + SuperStack Nested Headers (Wave 2)
 
@@ -123,7 +123,7 @@ Phase 7: Graph Views + SuperGrid
 | 4. Providers + MutationManager | v0.5 | 7/7 | Complete | 2026-02-28 |
 | 5. Core D3 Views + Transitions | v0.5 | 4/4 | Complete | 2026-02-28 |
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |
-| 7. Graph Views + SuperGrid | v1.0 | 0/4 | Planned | - |
+| 7. Graph Views + SuperGrid | 4/4 | Complete   | 2026-03-01 | - |
 
 ---
 *Roadmap created: 2026-02-27*
