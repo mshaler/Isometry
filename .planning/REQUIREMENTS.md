@@ -1,0 +1,288 @@
+# v1.1 ETL Importers — Requirements
+
+**Milestone:** v1.1 ETL Importers
+**Scope:** Full ETL pipeline — 6 source parsers, dedup, import orchestration, export (3 formats), data catalog
+**Derived from:** `v5/Modules/DataExplorer.md`, `.planning/research/SUMMARY.md`
+
+---
+
+## Category 1: ETL Foundation
+
+### ETL-01: Canonical Type Contract
+
+Define `CanonicalCard` and `CanonicalConnection` interfaces that all parsers output and all writers consume.
+
+**Success criteria:**
+- `CanonicalCard` maps 1:1 to existing `cards` table columns (id, name, content, summary, card_type, source, source_id, source_url, folder, tags, created_at, modified_at)
+- `CanonicalConnection` maps 1:1 to existing `connections` table columns (id, source_id, target_id, label, via_card_id, weight)
+- `ImportResult` type: `{inserted: number, updated: number, skipped: number, connections: number, errors: ParseError[]}`
+- `ParseError` type: `{index: number, source_id: string | null, message: string}`
+- Source type union: `'apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html'`
+- All types exported from `src/etl/types.ts`
+
+### ETL-02: Data Catalog Schema
+
+Add `import_sources` and `import_runs` tables to track provenance.
+
+**Success criteria:**
+- `import_sources` table: `id TEXT PRIMARY KEY, name TEXT, source_type TEXT, created_at TEXT`
+- `import_runs` table: `id TEXT PRIMARY KEY, source_id TEXT REFERENCES import_sources(id), filename TEXT, started_at TEXT, completed_at TEXT, cards_inserted INTEGER, cards_updated INTEGER, cards_skipped INTEGER, connections_created INTEGER, errors_json TEXT`
+- Tables created during schema initialization (appended to existing `schema.sql`)
+- No changes to existing `cards`, `connections`, or `cards_fts` tables
+
+### ETL-03: Worker Protocol Extensions
+
+Add ETL message types to the Worker Bridge protocol.
+
+**Success criteria:**
+- `etl:import` request type with payload: `{source: SourceType, data: string | ArrayBuffer, options?: ParseOptions}`
+- `etl:export` request type with payload: `{format: 'markdown' | 'json' | 'csv', cardIds?: string[]}`
+- `etl:import` response: `ImportResult`
+- `etl:export` response: `{data: string, filename: string}`
+- `import_progress` notification type: `{processed: number, total: number, source: SourceType}`
+- Types added to `protocol.ts` exhaustive union
+- `WorkerBridge.importFile()` and `WorkerBridge.exportFile()` typed methods on main-thread proxy
+- Extended timeout (300s) for `etl:import` messages
+
+---
+
+## Category 2: Source Parsers
+
+All parsers are pure functions: `(data: string | ArrayBuffer, options?: ParseOptions) => {cards: CanonicalCard[], connections: CanonicalConnection[]}`. No DB or Worker dependency. Independently testable with fixtures.
+
+### ETL-04: Apple Notes Parser
+
+Parse alto-index / apple-notes-liberator JSON export.
+
+**Success criteria:**
+- Parses `AltoExport` JSON with `notes[]` array
+- Each note → `CanonicalCard` with `card_type: 'note'`, preserved `folder`, `tags`, `created_at`, `modified_at`
+- Checklist items → `CanonicalCard` with `card_type: 'event'` + `CanonicalConnection` (label: `'contains'`) to parent note
+- @mentions → `CanonicalCard` with `card_type: 'person'` + `CanonicalConnection` (label: `'mentions'`), deduplicated by normalized name within the export
+- Note links → `CanonicalConnection` (label: `'links_to'`) between notes
+- Attachments → `CanonicalCard` with `card_type: 'resource'`, `mime_type` preserved, no Base64 data stored
+- Empty title fallback: first non-empty line of content (up to 100 chars)
+- Empty notes array → `{cards: [], connections: []}` (not an error)
+- Per-record error isolation: malformed note does not abort entire parse
+
+### ETL-05: Markdown Parser
+
+Parse array of `{path: string, content: string}` with YAML frontmatter.
+
+**Success criteria:**
+- Frontmatter parsed via gray-matter (or browser-compatible alternative)
+- `title` from frontmatter `title` field, fallback to first `#` heading, fallback to filename
+- `tags` from frontmatter `tags` (array or comma-separated string), fallback to `#hashtag` body scan
+- `created_at` / `modified_at` from frontmatter `date`/`created`/`modified` fields
+- `folder` derived from directory path in `file.path`
+- `source_id` = `file.path`
+- No connections generated (wikilink extraction deferred to v1.1.x)
+- gray-matter `fs` dependency handled (browser-compatible alias or inline parser)
+
+### ETL-06: Excel Parser
+
+Parse `.xlsx` / `.xls` binary data via SheetJS.
+
+**Success criteria:**
+- SheetJS loaded via dynamic `import('xlsx')` (not at app startup)
+- Input: `ArrayBuffer` transferred via postMessage (Transferable)
+- `cellDates: true` for proper date handling
+- Column auto-detection: case-insensitive scan for `title/name/subject`, `content/body/description`, `date/created`, `tags/labels`
+- `ParseOptions` allows explicit column override
+- Single sheet per call (default: first sheet; configurable via `options.sheet`)
+- Missing title → `'Row ${index + 1}'` fallback
+- Tags column split on comma/semicolon: `/[,;]/`
+- File size limit: reject >50MB with clear error before parse attempt
+
+### ETL-07: CSV Parser
+
+Parse `.csv` / `.tsv` text data via PapaParse.
+
+**Success criteria:**
+- UTF-8 BOM stripped before parsing (`content.replace(/^\uFEFF/, '')`)
+- PapaParse called synchronously (no `worker: true` — already inside Worker)
+- RFC 4180 quoting handled correctly (embedded commas, newlines)
+- Column auto-detection same as Excel (ETL-06)
+- Tab-separated values detected via `delimiter: 'auto'` or configurable
+- Empty file → `{cards: [], connections: []}` (not an error)
+- Ragged rows: missing fields default to empty string, not crash
+
+### ETL-08: JSON Parser
+
+Parse JSON array of objects with configurable field mapping.
+
+**Success criteria:**
+- Input: JSON string, parsed via `JSON.parse()`
+- Top-level object wrapped in array: `if (!Array.isArray(data)) data = [data]`
+- Field mapping via `ParseOptions`: `{titleField, contentField, dateField, tagsField}`
+- Default field names: `title/name`, `content/body/description`, `date/created`, `tags/labels`
+- Nested object values → `JSON.stringify(value)` for content
+- `null` field values handled gracefully (map to `null` in CanonicalCard)
+- Tags: array used directly; string split on comma/semicolon
+
+### ETL-09: HTML Parser
+
+Parse HTML string, extract article content.
+
+**Success criteria:**
+- `<script>` and `<style>` tags stripped before content extraction
+- Content extraction via node-html-parser (or equivalent Worker-safe library)
+- Title from `<title>` tag, fallback to first `<h1>`, fallback to first 50 chars of body
+- `created_at` from `<meta property="article:published_time">` if present
+- `source_url` from `<link rel="canonical">` if present
+- `source_id` = URL or filename
+- `card_type: 'note'`
+- Malformed HTML handled gracefully (lenient parser, best-effort DOM)
+
+---
+
+## Category 3: Import Pipeline
+
+### ETL-10: Dedup Engine
+
+Classify parsed cards as insert/update/skip based on existing database state.
+
+**Success criteria:**
+- Loads existing `{id, source, source_id, modified_at}` for the target source type in one query
+- No string interpolation of source_id values in SQL (injection vector — use parameterized query or in-memory Map lookup)
+- Classification: new source_id → insert; existing + newer modified_at → update; existing + same/older → skip
+- Builds `sourceIdMap: Map<string, string>` (source_id → card UUID) for connection reference resolution
+- Connection target_id resolved via sourceIdMap; unresolvable connections dropped (not error)
+- Output: `{toInsert: CanonicalCard[], toUpdate: CanonicalCard[], toSkip: string[], connections: CanonicalConnection[], sourceIdMap}`
+
+### ETL-11: SQLite Writer
+
+Batch-insert cards and connections into existing schema.
+
+**Success criteria:**
+- 100-card transaction batches (mitigates WASM OOM — P22)
+- Uses `db.prepare()` with parameterized statements (never concatenated VALUES — P23)
+- Inserts use same `INSERT INTO cards (...)` path as existing Card CRUD (FTS triggers fire automatically)
+- Updates use `UPDATE cards SET ... WHERE id = ?` for changed cards
+- Connections: `INSERT OR IGNORE INTO connections (...)` (duplicates silently dropped)
+- `setTimeout(0)` yield between batches to prevent Worker starvation
+- For initial imports (>500 cards): FTS trigger disable → bulk insert → FTS rebuild → trigger restore (P24)
+
+### ETL-12: Import Orchestrator
+
+Wire parsers → dedup → writer → catalog into end-to-end pipeline.
+
+**Success criteria:**
+- Accepts `{source, data, options}` and returns `ImportResult`
+- Dispatches to correct parser based on `source` type
+- Calls DedupEngine with parsed cards
+- Calls SQLiteWriter with dedup results
+- Calls CatalogWriter to record import run
+- Emits `import_progress` notifications at batch boundaries (every 100 cards)
+- Per-record errors accumulated (not thrown); returned in `ImportResult.errors[]`
+- Single malformed record does not abort entire import
+
+### ETL-13: Catalog Writer
+
+Record import provenance in Data Catalog tables.
+
+**Success criteria:**
+- Registers source in `import_sources` if not already present (upsert by source_type + name)
+- Writes `import_runs` row with: source_id, filename, started_at, completed_at, card counts, errors JSON
+- Errors stored as `JSON.stringify(errors)` in `errors_json` column
+- CatalogWriter called after SQLiteWriter completes (not before)
+
+---
+
+## Category 4: Export Pipeline
+
+### ETL-14: Markdown Export
+
+Export cards as `.md` files with YAML frontmatter.
+
+**Success criteria:**
+- Valid YAML frontmatter parseable by gray-matter on re-import (round-trip)
+- Frontmatter fields: `title`, `created`, `modified`, `folder`, `tags` (as YAML list)
+- Body: card `content` field
+- Soft-delete filter: `WHERE deleted_at IS NULL`
+- Optional `cardIds` filter: `WHERE id IN (...)` for selective export
+- Output: single string with `---` delimited files (or structured array)
+
+### ETL-15: JSON Export
+
+Export cards as complete JSON backup.
+
+**Success criteria:**
+- All non-deleted card columns included
+- `tags` column parsed from stored JSON string to actual array
+- Soft-delete filter: `WHERE deleted_at IS NULL`
+- Optional `cardIds` filter
+- Output: JSON string of card array
+
+### ETL-16: CSV Export
+
+Export cards as RFC 4180 CSV.
+
+**Success criteria:**
+- Fields containing commas or newlines properly quoted
+- Tags emitted as semicolon-delimited string (human-readable in spreadsheets)
+- Header row included
+- Soft-delete filter: `WHERE deleted_at IS NULL`
+- Optional `cardIds` filter
+- Uses PapaParse `unparse()` for correct RFC 4180 output
+
+### ETL-17: Export Orchestrator
+
+Coordinate export queries and formatting.
+
+**Success criteria:**
+- Accepts `{format, cardIds?}` and returns `{data: string, filename: string}`
+- Dispatches to correct formatter based on `format`
+- Filename generated: `isometry-export-{timestamp}.{ext}`
+- Integrates with existing `SelectionProvider` card IDs for selective export
+
+---
+
+## Category 5: Integration
+
+### ETL-18: Worker Handler Integration
+
+Route ETL messages through existing Worker message router.
+
+**Success criteria:**
+- `etl-import.handler.ts`: thin delegation to `ImportOrchestrator`
+- `etl-export.handler.ts`: thin delegation to `ExportOrchestrator`
+- Two new `case` branches in `worker.ts` router (exhaustive switch maintained)
+- Handler receives `db: Database` directly (same pattern as existing handlers)
+
+### ETL-19: Progress Reporting
+
+Report import progress over Worker Bridge to main thread.
+
+**Success criteria:**
+- `import_progress` as a `WorkerNotification` type (broadcast, no correlation ID)
+- Posted at batch boundaries (every 100 cards processed)
+- Payload: `{processed: number, total: number, source: SourceType}`
+- Main thread can subscribe to progress events without polling
+- Extended configurable timeout on `etl:import` message type (300s default vs 30s)
+
+---
+
+## Requirement Coverage by Phase
+
+| Phase | Requirements | Description |
+|-------|-------------|-------------|
+| Phase 8 | ETL-01, ETL-02, ETL-03, ETL-04, ETL-10, ETL-11, ETL-12, ETL-13, ETL-18 | Foundation + Apple Notes + full pipeline |
+| Phase 9 | ETL-05, ETL-06, ETL-07, ETL-08, ETL-09, ETL-14, ETL-15, ETL-16, ETL-17 | Remaining parsers + export |
+| Phase 10 | ETL-19 | Progress reporting + polish |
+
+---
+
+## Non-Requirements (Explicitly Deferred)
+
+- Column mapping UI for Excel/CSV — auto-detection covers 80% of exports (v1.1.x)
+- Markdown wikilink extraction → connections (v1.1.x)
+- Cross-source fuzzy entity resolution (v2 — false positive risk)
+- Real-time folder watch / sync (native Swift concern, not web runtime)
+- Import undo via MutationManager (use targeted DELETE by import_run_id instead)
+- Base64 attachment binary storage in sql.js (OOM risk — metadata only)
+- Streaming XLSX reads (architecturally impossible — ZIP central directory at EOF)
+
+---
+*Defined: 2026-03-01*
+*Source: DataExplorer.md spec + research SUMMARY.md*
