@@ -1,277 +1,299 @@
-# Stack Research
+# Stack Research — v1.1 ETL Importers
 
-**Domain:** Local-first polymorphic data projection platform (TypeScript/D3.js, WKWebView shell)
-**Researched:** 2026-02-28
-**Confidence:** HIGH — all library versions verified via npm registry; D3 module selection verified against d3js.org; Vite worker config verified via Vite 7 docs; Vitest web-worker support verified via npm
+**Domain:** ETL import/export pipeline additions to existing TypeScript/sql.js/D3.js app
+**Researched:** 2026-03-01
+**Confidence:** MEDIUM-HIGH — versions verified via npm registry and official docs; bundle sizes are estimates from community sources (Bundlephobia inaccessible during research); Apple Notes "alto-index" JSON schema is LOW confidence (proprietary format, no public spec found)
 
 ---
 
 ## Context: What Already Exists (Do Not Re-Research)
 
-The v0.1 Data Foundation milestone is complete and validated:
+The v1.0 Web Runtime is complete. The following are locked and need no new dependencies:
 
 | Technology | Version | Status |
 |------------|---------|--------|
-| TypeScript | 5.9.x (strict + extras) | Configured, 151 tests passing |
-| sql.js | 1.14.0 (custom FTS5 WASM, 756KB) | Built, tested, FTS5 verified |
-| Vite | 7.3.1 | Configured (`worker.format: 'es'`, WASM path resolved) |
-| Vitest | 4.0.18 | Configured (`pool: 'forks'`, node environment) |
-| vite-plugin-static-copy | 3.2.0 | Configured (WASM asset copying) |
-| @types/sql.js | 1.4.9 | Installed |
-| @vitest/coverage-v8 | 4.0.18 | Installed |
+| TypeScript | 5.9.x (strict) | Configured |
+| sql.js | 1.14.0 (custom FTS5 WASM, 756KB) | Built, tested |
+| Vite | 7.3.1 | Configured |
+| Vitest | 4.0.18 | Configured |
+| d3 | 7.9.0 | Installed |
+| @types/d3 | 7.4.3 | Installed |
+| @vitest/web-worker | 4.0.18 | Installed |
 
-The vite.config.ts already has `worker.format: 'es'`, `optimizeDeps.exclude: ['sql.js']`, and `assetsInlineLimit: 0`. The tsconfig has the full strict mode configuration.
-
-**This document covers only what must be ADDED for the v1.0 Web Runtime milestone.**
+**This document covers ONLY what must be ADDED for the v1.1 ETL Importers milestone.**
 
 ---
 
-## Recommended Additions
+## New Dependencies Required
 
-### Core Libraries to Add
+### Core Runtime Additions
 
-| Library | Version | Purpose | Why This Choice | Confidence |
-|---------|---------|---------|-----------------|------------|
-| `d3` (umbrella) | 7.9.0 | Data visualization, DOM data joins, force simulation, hierarchy, transitions | D3 v7.9.0 is current (no v8 exists). The `d3` umbrella package enables tree-shaking via named imports in Vite/Rollup. Nine views need selection, scale, hierarchy, force, transition, zoom, drag — sub-module imports cover exactly what's needed. | HIGH |
-| `@types/d3` | 7.4.3 | TypeScript type definitions for D3 | The umbrella @types package re-exports all sub-module types. Last validated against D3 7.4.4. Sub-module types (d3-selection, d3-force, d3-hierarchy, d3-scale, d3-zoom) are stable and accurate for all nine views. | HIGH |
+| Library | Version | Purpose | Why This Choice | Bundle Size (est.) | Confidence |
+|---------|---------|---------|-----------------|-------------------|------------|
+| `gray-matter` | 4.0.3 | Parse YAML/JSON frontmatter from Markdown files | Battle-tested, used by Gatsby, Astro, VitePress, TinaCMS. No better alternative for frontmatter parsing. Returns `{ data, content }` — maps directly to card fields. | ~44KB minified, ~12KB gzip | HIGH |
+| `xlsx` | 0.20.3 | Parse Excel (.xlsx, .xls, .csv, .ods) files | SheetJS Community Edition is the only serious open-source Excel parser in JS. Supports `XLSX.read(arrayBuffer, {type:'array'})` pattern needed for Worker context. | ~180KB minified, ~60KB gzip | HIGH |
+| `papaparse` | 5.5.3 | Parse CSV files with header detection, encoding, delimiter auto-detection | RFC 4180 compliant, zero dependencies, built-in Worker threading support (`worker: true`). The only browser-native multi-threaded CSV parser. @types/papaparse available separately. | ~45KB minified, ~14KB gzip | HIGH |
+| `node-html-parser` | 7.0.2 | Parse HTML to extract plain text (Apple Notes HTML body, imported HTML files) | Fast, lightweight DOM-like API with querySelector, `.text` (innerText equivalent), `.textContent`. TypeScript types bundled. Works in Worker context (no DOM dependency). | ~30KB minified, ~10KB gzip | HIGH |
 
-### Dev Libraries to Add
+### Dev-Only Additions
 
-| Library | Version | Purpose | Why This Choice | Confidence |
-|---------|---------|---------|-----------------|------------|
-| `@vitest/web-worker` | 4.0.18 | Simulate Web Worker API in Vitest test environment | The only official Vitest package for Web Worker testing. Version matches the installed Vitest 4.0.18. Simulates `Worker` + `postMessage`/`onmessage` in a single thread — no browser needed. Required for testing WorkerBridge correlation ID logic. | HIGH |
-
----
-
-## D3 Module Selection: What to Import
-
-This project needs the following D3 sub-modules. Import named exports from `'d3'` (Vite tree-shakes correctly from the umbrella package):
-
-### Sub-Modules Required Per View
-
-| Sub-Module | Purpose | Views Using It |
-|------------|---------|---------------|
-| `d3-selection` | DOM selection and data join (`.data().join()`) | All nine views |
-| `d3-transition` | Animated transitions between states and views | All nine views |
-| `d3-scale` | scaleLinear, scaleBand, scaleOrdinal, scaleTime | All except network |
-| `d3-axis` | Rendered axis for SuperGrid dimensional headers | SuperGrid, table, timeline, calendar |
-| `d3-array` | extent, group, rollup, bin — data aggregation for SuperGrid | SuperGrid, kanban, calendar |
-| `d3-time` | timeDay, timeMonth, timeYear for calendar/timeline | Calendar, timeline |
-| `d3-time-format` | Date formatting for axis labels | Calendar, timeline, SuperGrid |
-| `d3-hierarchy` | hierarchy(), tree(), cluster() for tree view | Tree view |
-| `d3-force` | forceSimulation, forceLink, forceManyBody, forceCenter | Network view (run in Worker) |
-| `d3-zoom` | Pinch-to-zoom, scroll zoom for network and SuperGrid | Network, SuperGrid |
-| `d3-drag` | Drag behavior for kanban card reordering | Kanban view |
-| `d3-shape` | arc(), line(), area() for potential decorative elements | Optional, network/tree |
-| `d3-color` | Color manipulation for LATCH accent colors | Design system |
-| `d3-interpolate` | Color and transform interpolation for transitions | All views (via d3-transition) |
-
-### Import Pattern (Vite tree-shakes named exports correctly)
-
-```typescript
-// CORRECT: Named imports from umbrella — Vite/Rollup tree-shakes these
-import {
-  select, selectAll,
-  type Selection
-} from 'd3-selection';
-
-import {
-  forceSimulation, forceLink, forceManyBody, forceCenter,
-  type Simulation, type SimulationNodeDatum
-} from 'd3-force';
-
-import {
-  scaleBand, scaleLinear, scaleOrdinal, scaleTime
-} from 'd3-scale';
-
-import { hierarchy, tree } from 'd3-hierarchy';
-import { zoom, type ZoomBehavior } from 'd3-zoom';
-import { drag } from 'd3-drag';
-import { axisBottom, axisLeft, axisTop } from 'd3-axis';
-import { extent, group, rollup, bin } from 'd3-array';
-import { timeDay, timeWeek, timeMonth, timeYear } from 'd3-time';
-import { timeFormat, timeParse } from 'd3-time-format';
-import { transition } from 'd3-transition';
-
-// AVOID: Global namespace import (tree-shaking unreliable via umbrella)
-import * as d3 from 'd3'; // 570KB+ — don't do this
-```
-
-### TypeScript Typing Pattern for Strict Mode
-
-The existing tsconfig's strict mode requires explicit generic parameters on D3 selections. This is the mandatory pattern for all views:
-
-```typescript
-// Always type both element AND datum generic parameters
-const svg = d3.select<SVGSVGElement, unknown>(container)
-  .append('svg');
-
-// Data join with explicit types — key function always required
-const cards = svg.selectAll<SVGGElement, Card>('.card')
-  .data<Card>(data, (d: Card) => d.id)   // Key function mandatory
-  .join('g');
-
-// Zoom behavior typed to element
-svg.call(d3.zoom<SVGSVGElement, unknown>()
-  .on('zoom', (event) => { /* transform */ }));
-```
+None required — existing Vitest/TypeScript setup is sufficient. All parsers are tested with standard Vitest node environment using in-memory string/Buffer fixtures.
 
 ---
 
-## Worker Bridge: Stack for Testing
+## Apple Notes Parser: No New Package Needed
 
-The `WorkerBridge` is pure TypeScript with no external library dependencies — the protocol uses `postMessage`/`onmessage` directly. The only addition needed is for testing:
+**Finding:** The `alto-index` app (altoindex.com) exports Apple Notes to **Markdown files** (not JSON). It is a macOS app that transforms Notes, Messages, Contacts, Calendar, etc. into "AI-ready markdown files." There is no publicly specified JSON schema called "alto-index JSON."
 
-### Testing Workers with Vitest
+**What this means for the parser:**
 
-`@vitest/web-worker` (v4.0.18) enables WorkerBridge unit tests without a real browser. It polyfills `Worker` in the Vitest node environment, simulating the structured clone algorithm for message passing:
+The Apple Notes parser in this project will handle **two input formats**:
 
+1. **alto-index Markdown output** — Markdown files with optional YAML frontmatter. Parse with `gray-matter` (already included for the Markdown source parser). Alto-index produces standard Markdown; frontmatter fields are not formally specified but typically include title-derived content.
+
+2. **apple-notes-liberator JSON** — The [Apple Notes Liberator](https://github.com/HamburgChimps/apple-notes-liberator) tool outputs a `notes.json` array with fields: `title`, `folder`, `text` (plain text), `embeddedObjects` (tables/files), `links`. This is a plausible "JSON export from Apple Notes" — parse with built-in `JSON.parse()`.
+
+**No new npm package needed for Apple Notes parsing.** The parser is custom TypeScript that reads either format and maps to `CanonicalCard`. Budget for format auto-detection by inspecting file extension + structure.
+
+**Confidence:** LOW for alto-index specifics (proprietary, no public schema). MEDIUM for apple-notes-liberator format (GitHub README documented).
+
+---
+
+## Markdown Parser: No New Package Needed
+
+**Finding:** A Markdown source parser does not require a full Markdown-to-HTML renderer. The goal is extracting structured metadata and plain-text body from `.md` files — not rendering HTML.
+
+`gray-matter` alone handles this:
 ```typescript
-// In test file — must import before using Worker constructor
-import '@vitest/web-worker';
+import matter from 'gray-matter';
 
-// Then test WorkerBridge normally
-const bridge = new WorkerBridge();
-await bridge.init();
-const result = await bridge.query('SELECT * FROM cards');
-expect(result).toHaveLength(0);
+const { data, content } = matter(markdownString);
+// data = { title, tags, created, folder, ... } from YAML frontmatter
+// content = raw Markdown body text (strip MD syntax if needed)
 ```
 
-**Configuration in vitest.config.ts:**
+If the plain-text body is needed without Markdown syntax, a lightweight regex strip is sufficient (`content.replace(/[#*_`[\]()]/g, '')`) — no full Markdown parser needed. The `content` field is already more useful than rendered HTML for full-text search indexing into FTS5.
+
+**Do NOT add:** `marked`, `remark`, `markdown-it`, `commonmark` — these render HTML, not needed for import. They add 50–200KB for no benefit.
+
+---
+
+## CSV Parser: PapaParse vs Alternatives
+
+**Recommendation: papaparse 5.5.3**
+
+| Library | Downloads | Worker? | Browser? | Notes |
+|---------|-----------|---------|----------|-------|
+| `papaparse` | ~700K/week | Yes (built-in) | Yes | Zero deps, RFC 4180, auto-delimiter, streaming |
+| `csv-parse` | ~1.4M/week | No | Node only | Best for Node streams; no browser support |
+| `fast-csv` | ~640K/week | No | Node only | Despite name, slowest in benchmarks |
+
+PapaParse is the only browser/Worker-native choice. Since ETL runs inside the existing Worker Bridge, the import pipeline runs in a Worker context — PapaParse is the only viable option.
+
+**TypeScript types:**
+```bash
+npm install -D @types/papaparse
+```
+
+Types are in DefinitelyTyped (`@types/papaparse` 5.3.15), not bundled. Install separately.
+
+**Important gotcha:** PapaParse's own `worker: true` option spawns a *second* Worker from inside the existing Worker. This creates a nested Worker situation that is not needed. Use PapaParse synchronously inside the existing ImportWorker instead:
+
 ```typescript
-export default defineConfig({
-  test: {
-    setupFiles: ['@vitest/web-worker'],  // OR per-file import
-    environment: 'node',
-    pool: 'forks',
-  }
+// Inside Worker — use synchronous parse, not worker:true
+import Papa from 'papaparse';
+
+const result = Papa.parse<Record<string, string>>(csvString, {
+  header: true,
+  skipEmptyLines: true,
+  dynamicTyping: false,  // Keep strings; type coercion happens in mapper
 });
+// result.data = array of row objects
+// result.errors = parse errors
+// result.meta.fields = column headers
 ```
 
-**Alternative approach:** Mock the WorkerBridge entirely for Provider and D3 view tests — don't test through the actual Worker for unit tests. Only use `@vitest/web-worker` for WorkerBridge integration tests that need real correlation ID matching. Provider tests should mock `workerBridge.query()` directly.
+---
 
-### tsconfig: Add WebWorker Lib
+## Excel Parser: SheetJS 0.20.3
 
-The current tsconfig has `"lib": ["ES2022", "DOM", "DOM.Iterable"]`. Worker-specific globals (`self`, `DedicatedWorkerGlobalScope`, `postMessage`) require adding `"WebWorker"`:
+**Critical installation note:** The `xlsx` package on npm is outdated (last published version is 0.18.x from 2023). SheetJS stopped publishing to npm. The current version (0.20.3) must be installed from the SheetJS CDN tarball:
 
-```json
-{
-  "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"]
+```bash
+npm install --save https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
+```
+
+This adds `"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"` to `package.json`. Vite handles this correctly.
+
+**Worker context pattern (the right approach for this project):**
+
+SheetJS works in Worker context by receiving an `ArrayBuffer` from the main thread. `XLSX.writeFile` does NOT work in Workers (confirmed in docs), but `XLSX.read()` works fine:
+
+```typescript
+// In Worker (ImportWorker.ts)
+import { read, utils } from 'xlsx';
+
+function parseXLSX(arrayBuffer: ArrayBuffer): Record<string, unknown>[][] {
+  const workbook = read(new Uint8Array(arrayBuffer), { type: 'array' });
+  return workbook.SheetNames.map(name => {
+    const sheet = workbook.Sheets[name];
+    return utils.sheet_to_json<Record<string, unknown>>(sheet, {
+      header: 1,        // Return array of arrays for header-agnostic parsing
+      defval: null,     // Use null for empty cells (not undefined)
+      blankrows: false, // Skip blank rows
+    });
+  });
+}
+```
+
+**Vite binary import gotcha:** Vite's default raw loader interprets binary files as UTF-8 strings, corrupting `.xlsx` files. The correct approach is to receive the `ArrayBuffer` via `postMessage` from the main thread (where the user file input or fetch already provides an ArrayBuffer), not by importing the file statically through Vite.
+
+```typescript
+// Main thread: pass ArrayBuffer through WorkerBridge
+const response = await fetch('/path/to/file.xlsx');
+const buffer = await response.arrayBuffer();
+await workerBridge.send('import:xlsx', { buffer }, [buffer]); // Transferable!
+```
+
+The `[buffer]` third argument uses the Transferable interface — zero-copy transfer to Worker, no serialization.
+
+**CVE note:** SheetJS 0.20.3 is not affected by CVE-2024-22363 (ReDoS in older xlsx versions). The CDN version is the patched release. Verify: the npm registry `xlsx@0.18.5` is the vulnerable version to avoid.
+
+---
+
+## HTML Parser: node-html-parser 7.0.2
+
+For stripping HTML tags from Apple Notes HTML body content and parsing imported HTML files:
+
+```typescript
+import { parse } from 'node-html-parser';
+
+function htmlToPlainText(html: string): string {
+  const root = parse(html);
+  return root.text;  // Equivalent to innerText — strips tags, decodes entities
+}
+
+function extractLinksFromHtml(html: string): Array<{text: string; url: string}> {
+  const root = parse(html);
+  return root.querySelectorAll('a').map(a => ({
+    text: a.text.trim(),
+    url: a.getAttribute('href') ?? '',
+  }));
+}
+```
+
+**Why not DOMParser?** `DOMParser` is available in Worker context in modern browsers, but creates a full DOM — heavyweight for bulk import processing. `node-html-parser` generates a simplified DOM, is 10x faster in benchmarks, and has no external dependencies.
+
+**Why not cheerio?** Cheerio depends on `htmlparser2` which pulls in additional dependencies. `node-html-parser` is leaner for the read-only use case needed here (no jQuery-like mutation API required).
+
+---
+
+## JSON Source Parser: No New Package Needed
+
+Plain `JSON.parse()` handles the JSON source format. The parser is custom TypeScript that validates structure and maps fields to `CanonicalCard`. No additional library needed.
+
+For robust validation of imported JSON structure (especially for apple-notes-liberator format), use TypeScript type guards — no runtime validation library needed at this scope.
+
+---
+
+## Progress Reporting: Existing Worker Bridge (No New Dependency)
+
+The ImportOrchestrator reports progress via the existing `WorkerBridge` message protocol. No new library is needed — use the existing `postMessage` pattern with a `progress` message type:
+
+```typescript
+// In Worker — emit progress events through existing bridge protocol
+self.postMessage({
+  type: 'import:progress',
+  correlationId: null,  // Broadcast, not a response to a specific request
+  payload: {
+    source: 'markdown',
+    processed: 42,
+    total: 200,
+    phase: 'parsing',  // 'parsing' | 'dedup' | 'writing'
   }
-}
+} satisfies WorkerMessage);
 ```
 
-Without `"WebWorker"`, TypeScript does not recognize `self.onmessage` or `self.postMessage` inside worker files. This is a zero-cost tsconfig change.
+The main thread registers a listener for `import:progress` messages outside the correlation ID resolver — this is a fire-and-forget broadcast pattern already supported by the Worker Bridge spec.
 
 ---
 
-## D3 Force Simulation: Run in Worker
+## DedupEngine and SQLiteWriter: No New Dependencies
 
-The network view requires force-directed layout. Running force simulation on the main thread blocks the UI during layout convergence. The spec's architecture already places all computation in the Worker — force simulation belongs there too.
+Both are pure TypeScript using the existing `sql.js` database:
 
-### Pattern: Simulation in Worker, Positions to Main Thread
+- **DedupEngine:** Queries `cards` table by `source + source_id` composite index. Returns `existing | null`. Pure sql.js queries.
+- **SQLiteWriter:** Uses existing `db.run()` pattern with parameterized INSERT statements. Batch via array reduce + transaction wrapping (`db.run('BEGIN')` / `db.run('COMMIT')`).
+- **FTS sync:** After batch insert, run `INSERT INTO cards_fts(cards_fts) VALUES('rebuild')` — existing pattern from v0.1 tests.
 
-```typescript
-// In Web Worker (worker.ts)
-import { forceSimulation, forceLink, forceManyBody, forceCenter } from 'd3-force';
-
-function handleGraphLayout(payload: { nodes: GraphNode[]; links: GraphLink[] }) {
-  const simulation = forceSimulation(payload.nodes)
-    .force('link', forceLink(payload.links).id((d: any) => d.id))
-    .force('charge', forceManyBody().strength(-300))
-    .force('center', forceCenter(0, 0))
-    .stop();
-
-  // Run synchronously to convergence (no DOM, no requestAnimationFrame needed)
-  const iterations = Math.ceil(
-    Math.log(simulation.alphaMin()) / Math.log(1 - simulation.alphaDecay())
-  );
-  simulation.tick(iterations);
-
-  // Return stable positions only — not full node objects
-  return payload.nodes.map(n => ({ id: n.id, x: n.x, y: n.y }));
-}
-```
-
-```typescript
-// In main thread (NetworkView.ts)
-const positions = await workerBridge.send('graph:layout', { nodes, links });
-// Now bind positions to D3 SVG elements — simulation already complete
-svg.selectAll<SVGGElement, CardNode>('g.node')
-  .data(positions, d => d.id)
-  .attr('transform', d => `translate(${d.x}, ${d.y})`);
-```
-
-**Why this works:** `d3-force` has no DOM dependencies. It runs pure JavaScript in the Worker. `simulation.tick(n)` runs the simulation synchronously — no requestAnimationFrame. The Worker posts final `{id, x, y}` tuples (not full node objects), minimizing structured clone serialization overhead.
+No new libraries. The existing sql.js WASM already handles this.
 
 ---
 
-## MutationManager: No External Dependencies
+## Data Catalog Schema: No New Dependencies
 
-The MutationManager (D-009 command log undo/redo) is pure TypeScript with no library dependencies. The design is:
+The `import_sources` and `import_runs` tables are added via migration SQL in the existing schema initialization. No ORM, no migration library. Pattern from existing schema:
 
-```typescript
-interface Command {
-  id: string;                                    // crypto.randomUUID()
-  type: 'insert' | 'update' | 'delete' | 'batch';
-  table: 'cards' | 'connections';
-  forward: { sql: string; params: unknown[] };
-  inverse: { sql: string; params: unknown[] };
-  timestamp: number;
-}
+```sql
+CREATE TABLE IF NOT EXISTS import_sources (
+  id TEXT PRIMARY KEY,
+  source_type TEXT NOT NULL,  -- 'apple_notes' | 'markdown' | 'excel' | 'csv' | 'json' | 'html'
+  source_path TEXT,
+  created_at INTEGER NOT NULL,
+  last_run_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS import_runs (
+  id TEXT PRIMARY KEY,
+  source_id TEXT NOT NULL REFERENCES import_sources(id),
+  started_at INTEGER NOT NULL,
+  completed_at INTEGER,
+  status TEXT NOT NULL,       -- 'running' | 'completed' | 'failed'
+  cards_created INTEGER DEFAULT 0,
+  cards_updated INTEGER DEFAULT 0,
+  cards_skipped INTEGER DEFAULT 0,
+  error_message TEXT
+);
 ```
 
-No library is needed for the command stack — a plain array with push/pop/slice handles the bounded history. The `requestAnimationFrame`-batched notification pattern in the spec requires no library either (browser-native).
-
-**Testing:** Standard Vitest with mocked `workerBridge` — no special setup.
-
 ---
 
-## Provider System: No External Dependencies
+## Export Orchestrator: No New Dependencies
 
-All five providers (FilterProvider, PAFVProvider, SelectionProvider, DensityProvider, StateCoordinator) are pure TypeScript. No reactive framework is needed:
+Three export formats (Markdown, JSON, CSV) use no new libraries:
 
-- State: plain TypeScript class fields
-- Subscriptions: `Set<() => void>` with add/delete
-- Batching: `setTimeout(16ms)` for StateCoordinator or `requestAnimationFrame`
-- SQL compilation: string interpolation with validated allowlist
+| Format | Implementation |
+|--------|---------------|
+| Markdown | String template literals. Frontmatter: `---\ntitle: ${card.name}\n---\n${card.content}` |
+| JSON | `JSON.stringify(cards, null, 2)` |
+| CSV | PapaParse `Papa.unparse(rows)` — reuse already-installed papaparse for serialization |
 
-**Testing:** Standard Vitest with node environment. Provider tests that exercise SQL compilation are fast (no WASM needed) — compile filter state, assert `{ where, params }` output strings. SQL injection tests are plain string assertions.
-
----
-
-## SuperGrid: No External Grid Library
-
-SuperGrid is a D3-rendered component with nested dimensional headers, PAFV projection, and density controls. No external grid library (AG Grid, Handsontable, Tabulator) should be used — they own DOM structure and conflict with D3's data join ownership.
-
-SuperGrid is built from:
-- `d3-selection` for the nested header structure (`<g class="header-row">`)
-- `d3-axis` for rendered axis ticks inside header cells
-- `d3-scale` (scaleBand for column/row distribution)
-- `d3-array` (`group()`, `rollup()` for data aggregation into cells)
-- `d3-zoom` for pan/zoom on the grid canvas
-
-No external library needed.
+PapaParse's `unparse()` handles CSV export (quoting, escaping, headers) correctly. No separate CSV serializer needed.
 
 ---
 
 ## Installation
 
 ```bash
-# Runtime: D3.js (umbrella package — Vite tree-shakes named imports)
-npm install d3
+# Markdown frontmatter parsing
+npm install gray-matter
 
-# TypeScript types for D3
-npm install -D @types/d3
+# Excel/XLSX parsing (from SheetJS CDN — not npm registry)
+npm install --save https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz
 
-# Worker testing
-npm install -D @vitest/web-worker
+# CSV parsing
+npm install papaparse
+
+# HTML parsing
+npm install node-html-parser
+
+# TypeScript types (PapaParse ships without bundled types)
+npm install -D @types/papaparse
 ```
 
-**Total additions:** 1 runtime package, 2 dev packages.
-
-**No changes needed to:** Vite config (worker.format already 'es'), tsconfig (except adding "WebWorker" to lib), Vitest config (existing pool:forks + node env is correct).
+**Total new runtime packages:** 4
+**Total new dev packages:** 1 (@types/papaparse)
+**No changes to:** Vite config, tsconfig, Vitest config, existing Worker Bridge code
 
 ---
 
@@ -279,13 +301,15 @@ npm install -D @vitest/web-worker
 
 | Recommended | Alternative | Why Not |
 |-------------|-------------|---------|
-| `d3` umbrella (tree-shaken) | Individual d3-* sub-packages | Same tree-shaking result with Vite. Umbrella is simpler to install and keeps versions in sync automatically. No reason to manage 12+ separate sub-packages. |
-| `@vitest/web-worker` | Full browser test environment (`@playwright/test` or Vitest browser mode) | Browser mode is overkill for WorkerBridge unit testing. `@vitest/web-worker` simulates Worker in Node — fast, no browser install, same Vitest config. |
-| `@vitest/web-worker` | Mocking `Worker` manually in tests | Manual mocking is error-prone for the correlation ID + Promise resolution pattern. `@vitest/web-worker` handles structured clone semantics correctly. |
-| D3 force simulation in Worker | PIXI.js for GPU-accelerated graph rendering | PIXI.js adds ~1MB bundle for a single view. The <16ms render budget for 100 visible cards is achievable with SVG + off-thread simulation. PIXI.js is the right answer at 10K+ visible nodes — overkill for this scale. |
-| D3 transitions (built-in) | GSAP / Anime.js | D3 v7's transition module integrates directly with the data join lifecycle (enter/update/exit). External animation libraries fight D3's DOM ownership. GSAP adds ~50KB for no benefit when D3 transitions handle all needed view-switching animations. |
-| Plain TypeScript for Providers | MobX / Zustand | Architecture explicitly forbids parallel entity state (D-001 rationale, CLAUDE.md). MobX/Zustand would duplicate SQLite data in JS heap. Providers hold only UI state — a `Set<() => void>` subscription pattern is sufficient. |
-| No grid library for SuperGrid | AG Grid / Handsontable | AG Grid owns its own DOM and cannot be driven by D3 data joins. SuperGrid's PAFV projection, density controls, and nested headers are custom enough that no grid library maps cleanly to the spec. |
+| `gray-matter` | `front-matter` (npm) | `front-matter` is simpler but gray-matter is more widely used, handles JSON/TOML frontmatter too, and returns structured `{ data, content }` with better TypeScript types. |
+| `gray-matter` | `vfile` + `remark-frontmatter` | remark ecosystem is correct for full Markdown AST processing — overkill for import (only need frontmatter metadata, not AST). Adds 5+ packages. |
+| `xlsx` from CDN | `exceljs` npm 4.4.0 | ExcelJS 4.4.0 was last published 2 years ago (2023), stale. SheetJS 0.20.3 is actively maintained on the CDN and is the standard for browser/Worker Excel parsing. ExcelJS is Stream-based (Node.js oriented) and more complex for the read-only import case. |
+| `xlsx` from CDN | npm registry `xlsx@0.18.5` | 0.18.5 is the last npm version — outdated (missing fixes, affected by ReDoS CVE-2024-22363). Must use CDN version 0.20.3. |
+| `papaparse` | `csv-parse` | `csv-parse` is Node.js stream-oriented, not browser/Worker native. Not suitable for the Worker context. |
+| `papaparse` | `fast-csv` | Despite the name, benchmarks show fast-csv is the slowest of the major CSV parsers. Also Node stream-oriented. |
+| `node-html-parser` | `cheerio` | Cheerio pulls in `htmlparser2` + `css-what` + `domhandler` — heavier dependency tree for a read-only use case. |
+| `node-html-parser` | `DOMParser` (browser built-in) | DOMParser creates a full DOM — slower for bulk batch processing during import. node-html-parser is 10x faster in benchmarks for text extraction. |
+| Custom TypeScript | Runtime JSON schema validator (`zod`, `ajv`) | At this scope, TypeScript type guards cover import validation needs without runtime overhead or additional bundle weight. |
 
 ---
 
@@ -293,16 +317,14 @@ npm install -D @vitest/web-worker
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| React / Vue / Svelte | Stack is locked — framework abstractions fight D3's DOM ownership model. D3 data joins ARE the rendering lifecycle. | Vanilla TypeScript class-based view components |
-| MobX / Zustand / Jotai / Redux | Architecture forbids parallel entity state. Two sources of truth (SQLite + JS store) will diverge. | Query sql.js directly via WorkerBridge; bind results to D3 data joins |
-| GSAP / Framer Motion | External animation libraries conflict with D3 transition lifecycle. They fight over DOM attribute ownership. | `d3-transition` built into D3 |
-| D3 v6 or below | Missing `.join()` API, worse TypeScript types, force simulation API differences. | D3 v7.9.0 |
-| `d3@next` (v6.0.0-rc.4 shows as "next" tag on npm) | The "next" tag on npm points to a v6 release candidate — this is a historical artifact. D3 v7.9.0 is current stable. Do NOT install `d3@next`. | `d3@7` or `d3@latest` |
-| AG Grid / Handsontable / Tabulator for SuperGrid | Grid libraries own their DOM — incompatible with D3 data join architecture. Density controls and PAFV projection require custom rendering. | Custom D3 SuperGrid implementation |
-| Observable Plot | A D3-based higher abstraction layer. Hides the data join model that this architecture depends on for performance and state management. | D3 directly |
-| `import * as d3 from 'd3'` | Imports full ~570KB D3 bundle. Use named imports for tree-shaking. | `import { select, scaleLinear } from 'd3-selection'` etc. |
-| `pool: 'threads'` in Vitest | WASM state leaks between tests in the same thread. | `pool: 'forks'` (already configured) |
-| `@vitest/browser` for Worker tests | Full browser test infrastructure is heavier than needed; `@vitest/web-worker` simulates Worker in Node. | `@vitest/web-worker` |
+| `marked` / `remark` / `markdown-it` | Full Markdown renderers — produce HTML, not needed for import. 50–200KB for no benefit. | `gray-matter` for frontmatter, raw content string for FTS indexing |
+| `exceljs` | Stale (2 years since last publish), Node stream API doesn't fit Worker context | `xlsx` 0.20.3 from SheetJS CDN |
+| `npm install xlsx` (registry version) | Outdated 0.18.5, affected by ReDoS CVE-2024-22363 | `npm install https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz` |
+| `zod` / `ajv` / `yup` | Runtime schema validation adds bundle weight not justified at ETL parser scope | TypeScript type guards + explicit null checks |
+| `iconv-lite` / `encoding` | Character encoding conversion — only needed if supporting non-UTF-8 CSV files | PapaParse handles BOM detection; assume UTF-8 for v1.1, add encoding support as v1.2 follow-on |
+| `archiver` / `jszip` | ZIP archive creation — not in scope for v1.1 export formats | Not needed |
+| `cheerio` | jQuery-like HTML manipulation — overkill for read-only text extraction | `node-html-parser` |
+| Nested Worker in PapaParse (`worker: true`) | Creates a second Worker inside the existing ImportWorker — nested Worker complexity for no benefit | Call PapaParse synchronously inside the existing Worker |
 
 ---
 
@@ -310,65 +332,58 @@ npm install -D @vitest/web-worker
 
 | Package | Compatible With | Notes |
 |---------|-----------------|-------|
-| `d3@7.9.0` | `@types/d3@7.4.3` | Match major version. Types last validated against D3 7.4.4 — close enough, no breaking changes in 7.4.4 → 7.9.0 types. |
-| `d3@7.9.0` | TypeScript 5.9.x strict | Requires explicit generic type parameters on selections. `@types/d3` works with `skipLibCheck: false`. |
-| `@vitest/web-worker@4.0.18` | `vitest@4.0.18` | Must match Vitest major version exactly. |
-| `d3-force@3.0.0` | Web Worker (no DOM) | d3-force has zero DOM dependencies — runs cleanly in Worker context. |
-| `d3-hierarchy@3.1.2` | Web Worker (no DOM) | d3-hierarchy is pure computation — usable in Worker if needed for tree pre-computation. |
-| `d3-selection@3.0.0` | Main thread only | d3-selection manipulates DOM — cannot run in Worker. Only use in main-thread view renderers. |
-| TypeScript `lib: ["WebWorker"]` | `d3-force` in Worker | Adding WebWorker lib enables `self.onmessage`, `self.postMessage` in worker.ts without changing other tsconfig behavior. |
+| `gray-matter@4.0.3` | TypeScript 5.9.x | Types bundled; works with strict mode. Depends on `js-yaml@^3.13.1` — NOTE: uses js-yaml v3 (not v4). Open PR #137 exists but unmerged. The js-yaml v3 `safeLoad` call is safe for trusted Markdown files. |
+| `gray-matter@4.0.3` | Vite 7.3.1 | CJS module; Vite handles CJS-to-ESM interop automatically via `optimizeDeps`. May need Vite to add to `optimizeDeps.include` if import fails. |
+| `xlsx@0.20.3` | Vite 7.3.1 | Install from CDN tarball. Import via `import { read, utils } from 'xlsx'`. Do NOT use Vite's static asset loader for binary .xlsx files — receive as ArrayBuffer via postMessage. |
+| `xlsx@0.20.3` | Worker context | `XLSX.read(uint8Array, {type:'array'})` works in Worker. `XLSX.writeFile()` does NOT work in Worker (confirmed in docs). For export, generate buffer in Worker and transfer to main thread. |
+| `papaparse@5.5.3` | TypeScript 5.9.x | Types via `@types/papaparse` (DefinitelyTyped). Use generic: `Papa.parse<MyType>(csv, {header: true})`. |
+| `papaparse@5.5.3` | Worker context | Fully Worker-compatible. Do NOT use `worker: true` option inside existing Worker (creates nested Worker). Call synchronously. |
+| `node-html-parser@7.0.2` | TypeScript 5.9.x | Types bundled. Minimum TypeScript ^4.1.2 required — satisfied by 5.9.x. |
+| `node-html-parser@7.0.2` | Worker context | No DOM dependencies — runs cleanly in Worker. No browser globals needed. |
+| `@types/papaparse@5.3.15` | `papaparse@5.5.3` | DefinitelyTyped version aligns with papaparse 5.x API. |
 
 ---
 
-## Vite Config Changes Required
+## gray-matter Security Note
 
-The existing `vite.config.ts` requires only one addition: if importing D3 from the umbrella package inside a Worker, ensure D3 is not accidentally excluded from optimization. The current config excludes only `sql.js`:
+gray-matter 4.0.3 uses `js-yaml@^3.13.1` (v3, not v4). This dependency has the following implications:
 
-```typescript
-// vite.config.ts — only sql.js needs to be excluded
-optimizeDeps: {
-  exclude: ['sql.js'],  // d3 does NOT need to be excluded
-}
-```
-
-D3 v7 uses pure ESM and works correctly with Vite's default optimizer. No changes needed to the existing Vite config beyond the `tsconfig.json` `"WebWorker"` lib addition.
+- **js-yaml v3 is safe for trusted input.** The gray-matter repo calls `js-yaml.safeLoad()` specifically (not the unsafe `load()`), which prevents arbitrary code execution.
+- **For untrusted input** (user-supplied Markdown files from unknown sources): gray-matter has a known issue where the JS engine (allowing `!!js/function`) can be triggered — but this requires `engines: {js: ...}` in options. The default gray-matter call is safe.
+- **Mitigation:** Never pass `{engines: {js: ...}}` in gray-matter options. Use default options only.
+- **Open PR #137** (update to js-yaml v4) has been open since 2022, unmerged. The project is maintained but slow-moving. If this is a blocker, use `front-matter` (npm) as a 1:1 API substitute with no js-yaml dependency.
 
 ---
 
-## tsconfig.json Changes Required
+## SheetJS CDN Dependency Risk
 
-One addition to the existing `tsconfig.json`:
+SheetJS distributes from a self-hosted CDN (`cdn.sheetjs.com`), not npm. Risks:
 
-```json
-{
-  "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"]
-  }
-}
-```
-
-This enables `self`, `DedicatedWorkerGlobalScope`, `MessageEvent<T>`, and `postMessage` types inside `worker.ts`. The `DOM` lib remains for main-thread code. TypeScript resolves per-file which globals are available based on the merged lib — both are needed since the codebase contains both main-thread and worker-thread TypeScript files.
-
-**Potential issue:** With both `DOM` and `WebWorker` libs, some types that exist in both (like `MessageEvent`) may produce overloaded signatures. This is manageable — TypeScript picks the more specific version. Flag as LOW risk.
+| Risk | Mitigation |
+|------|-----------|
+| CDN unavailability | Lock the tarball URL in package.json. The `.tgz` is committed to `node_modules` via npm install; subsequent installs use the npm cache. |
+| Version unavailability | Archive the tarball in project (or use a private npm proxy). For v1.1, this risk is acceptable. |
+| License change | SheetJS Community Edition is Apache 2.0 for the CDN version. The npm registry version retains Apache 2.0. Monitor if SheetJS changes to commercial-only. |
 
 ---
 
 ## Sources
 
-- npm registry — d3 7.9.0 latest, verified 2026-02-28: https://www.npmjs.com/package/d3
-- npm registry — @types/d3 7.4.3 latest: https://www.npmjs.com/package/@types/d3
-- npm registry — @vitest/web-worker 4.0.18: https://www.npmjs.com/package/@vitest/web-worker
-- D3 getting started — current version, module listing: https://d3js.org/getting-started
-- D3 force simulation off-thread — Observable example: https://observablehq.com/@d3/force-directed-web-worker
-- D3 force — simulation.tick() API, no DOM required: https://d3js.org/d3-force/simulation
-- D3 hierarchy — tree layout docs: https://d3js.org/d3-hierarchy/tree
-- D3 transition — selection-like interface docs: https://d3js.org/d3-transition
-- Vite web worker docs — constructor pattern recommended, format:es: https://vite.dev/guide/features#web-workers
-- Vite worker options — format, rollupOptions: https://vite.dev/config/worker-options
-- TypeScript lib types reference — WebWorker lib: https://www.typescriptlang.org/tsconfig#lib
-- d3/d3 GitHub issue #1053 — d3-force confirmed no DOM dependencies: https://github.com/d3/d3/issues/1053
+- SheetJS official docs — installation, Web Worker support, Vite integration: https://docs.sheetjs.com/docs/getting-started/installation/frameworks/
+- SheetJS Web Worker docs — confirmed `XLSX.read()` works in Worker, `XLSX.writeFile()` does not: https://docs.sheetjs.com/docs/demos/bigdata/worker/
+- SheetJS CDN — current version 0.20.3: https://cdn.sheetjs.com/
+- gray-matter GitHub — package.json shows `js-yaml@^3.13.1` dependency: https://github.com/jonschlinkert/gray-matter/blob/master/package.json
+- gray-matter npm — version 4.0.3, last published 5 years ago: https://www.npmjs.com/package/gray-matter
+- gray-matter PR #137 — js-yaml v4 update, unmerged: https://github.com/jonschlinkert/gray-matter/pull/137
+- papaparse npm — version 5.5.3, last published ~9 months ago: https://www.npmjs.com/package/papaparse
+- papaparse docs — Worker support (`worker: true` option): https://www.papaparse.com/docs
+- node-html-parser npm — version 7.0.2: https://www.npmjs.com/package/node-html-parser
+- JS CSV parsers benchmark — papaparse vs fast-csv vs csv-parse performance: https://leanylabs.com/blog/js-csv-parsers-benchmarks/
+- alto-index website — confirms Markdown output (not JSON): https://altoindex.com/
+- apple-notes-liberator GitHub — JSON schema: `{title, folder, text, embeddedObjects, links}`: https://github.com/HamburgChimps/apple-notes-liberator
+- SheetJS CVE-2024-22363 — ReDoS in xlsx npm package, CDN version unaffected: https://github.com/advisories/GHSA-5pgg-2g8v-p4x9
 
 ---
 
-*Stack research for: Isometry v5 Web Runtime (Worker Bridge, Providers, Mutation Manager, nine D3 views, SuperGrid)*
-*Researched: 2026-02-28*
+*Stack research for: Isometry v1.1 ETL Importers (Apple Notes, Markdown, Excel, CSV, JSON, HTML parsers)*
+*Researched: 2026-03-01*

@@ -1,8 +1,8 @@
 # Pitfalls Research
 
 **Domain:** Local-first TypeScript/D3.js in-browser SQLite data projection platform (WKWebView)
-**Researched:** 2026-02-27 (v0.1 pitfalls) · 2026-02-28 (v1.0 Web Runtime pitfalls added)
-**Confidence:** MEDIUM-HIGH — most pitfalls verified via official docs, GitHub issues, and community discussions; undo/redo edge cases are HIGH confidence from first principles; view transition pitfalls are MEDIUM from D3 issue tracker evidence
+**Researched:** 2026-02-27 (v0.1 pitfalls) · 2026-02-28 (v1.0 Web Runtime pitfalls added) · 2026-03-01 (v1.1 ETL Importers pitfalls added)
+**Confidence:** MEDIUM-HIGH — most pitfalls verified via official docs, GitHub issues, and community discussions; ETL pitfalls are MEDIUM confidence from sql.js GitHub issues, SheetJS docs, and community discussions; some ETL-specific pitfalls are HIGH confidence from first principles (SQL injection, dedup races, memory bounds)
 
 ---
 
@@ -649,6 +649,656 @@ enter.on('click', handleClick);  // Reference is stable across renders
 
 ---
 
+
+---
+
+## ETL Importer Pitfalls (v1.1)
+
+---
+
+### Pitfall 22: sql.js WASM Heap OOM on Large Imports (Memory Pressure)
+
+**What goes wrong:**
+Importing a large Apple Notes export (5,000+ notes with attachments) causes sql.js to consume more memory than the browser WASM heap allows, resulting in a tab crash or an `OOM: Cannot allocate Wasm memory` error. The failure mode is silent: the Worker dies, the bridge receives no response, and the main thread waits indefinitely until its timeout fires.
+
+sql.js holds the entire database in WASM heap memory. A 5,000-note import can add 20-50MB to the heap from card content alone. When combined with the base WASM binary (~756KB), existing database state, FTS5 index segments, and the parsed JSON payload (which may be held in memory during parsing), total heap consumption can exceed 150MB — the practical limit for many WKWebView environments on constrained devices.
+
+**Why it happens:**
+- sql.js does not write to disk; everything lives in WASM heap
+- The FTS5 index stores un-merged segments during bulk inserts — segment count grows until an automatic merge, temporarily doubling memory
+- The parsed JSON payload for a large export may be held alongside the in-progress database state
+- Content fields (full note text) can be large; `content TEXT` is stored in full in both the `cards` table and the FTS5 index segments
+
+**How to avoid:**
+Process imports in chunks of 500 cards per transaction:
+
+```typescript
+const CHUNK_SIZE = 500;
+
+async function writeCardsInChunks(cards: CanonicalCard[]): Promise<void> {
+  for (let i = 0; i < cards.length; i += CHUNK_SIZE) {
+    const chunk = cards.slice(i, i + CHUNK_SIZE);
+    await bridge.transaction(
+      chunk.map(card => ({ sql: INSERT_SQL, params: cardToParams(card) }))
+    );
+    // Yield to event loop between chunks to allow GC
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  // Optimize FTS5 after all inserts to merge segments and reduce fragmentation
+  await bridge.exec('INSERT INTO cards_fts(cards_fts) VALUES('optimize')');
+}
+```
+
+Additionally, for Apple Notes imports, strip or truncate `attachment.data` (Base64-encoded attachment bytes) before inserting — these should not be stored in SQLite cards:
+
+```typescript
+private parseNote(note: AltoNote): CanonicalCard {
+  // Don't embed Base64 attachment data in SQLite card content
+  const content = this.normalizeContent(note.content);
+  // summary is capped at 200 chars — enforce in parser, not SQL
+  return { ..., content, summary: this.generateSummary(content) };
+}
+```
+
+**Warning signs:**
+- Worker goes silent (no response, no error) during large imports
+- Tab memory usage visible in Activity Monitor grows past 200MB during import
+- Import succeeds for 1,000 notes but crashes at 5,000
+- `etl:import` bridge message times out
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — add a memory-pressure test that imports 5,000 synthetic cards and verifies no OOM. Use chunk writes from day one.
+
+**Severity:** CRITICAL — silent data loss, no recovery without undo/re-import
+
+---
+
+### Pitfall 23: sql.js Buffer Overflow on Large SQL String in Database.run()
+
+**What goes wrong:**
+Passing a large SQL string to `db.run()` or `db.exec()` — for example a multi-row VALUES INSERT with 3,000+ rows concatenated as a single string — causes a buffer overflow inside the WASM heap. The error manifests as "Memory access out of bounds" and corrupts subsequent database operations in the same Worker session. All queries after this point return garbage or fail silently.
+
+This is distinct from the heap OOM in Pitfall 22. This is a **query string size limit** in the sql.js WASM binding layer, independent of available memory.
+
+**Why it happens:**
+sql.js copies the SQL string into the WASM heap before passing it to SQLite. There is an undocumented limit on this copy buffer size (observed failures at ~1.5MB query strings, around 3,700 concatenated rows). The limit is inconsistent across sql.js versions and WASM build configurations.
+
+**How to avoid:**
+Never use `db.exec()` or `db.run()` with a large concatenated SQL string. Always use the `transaction(operations[])` pattern from the WorkerBridge spec, where each operation is a single parameterized INSERT:
+
+```typescript
+// WRONG: Single huge string
+db.run(`INSERT INTO cards VALUES ('id1', ...), ('id2', ...), ...`);  // 3000 rows → buffer overflow
+
+// CORRECT: Parameterized, one row per operation
+await bridge.transaction(cards.map(card => ({
+  sql: 'INSERT INTO cards (id, name, ...) VALUES (?, ?, ...)',
+  params: [card.id, card.name, ...]
+})));
+```
+
+The existing `SQLiteWriter.writeCards()` in the spec already uses the correct pattern (batch of 100 per transaction). The pitfall occurs if a developer bypasses `SQLiteWriter` to "optimize" with a multi-row VALUES INSERT.
+
+**Warning signs:**
+- "Memory access out of bounds" in Worker console
+- All subsequent `bridge.query()` calls return empty arrays after a bulk insert
+- Import appears to succeed (no thrown error) but card count in database is wrong
+- Problem only manifests above a certain batch size threshold
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — SQLiteWriter's 100-row transaction batch must be enforced as the only write path. Add a test that verifies 1,000 cards are inserted correctly across 10 transactions.
+
+**Severity:** CRITICAL — data corruption, silent failure
+
+---
+
+### Pitfall 24: FTS5 Trigger Overhead Makes Bulk Imports Prohibitively Slow
+
+**What goes wrong:**
+Each INSERT into `cards` fires three FTS5 triggers (insert, and potentially update/delete if content changes). For a bulk import of 10,000 cards, this is 10,000 trigger firings, each performing an FTS index segment merge. FTS5 merges segments automatically every 64 inserts, but the merge cost grows with segment count. A 10,000-card import that should take ~2s can take 30-60s because of FTS segment fragmentation during the import.
+
+Additionally, the insert trigger as currently defined fires even when `content` and `name` are null, writing null values into FTS — producing phantom FTS entries that return no useful text but consume index space.
+
+**Why it happens:**
+FTS5 with an external content table processes each trigger independently without batching. The trigger-based approach is correct for OLTP (single-row inserts), but for bulk ETL ingestion it creates O(n) segment merges instead of a single `INSERT INTO cards_fts SELECT ... FROM cards` pass.
+
+**How to avoid:**
+For bulk imports, disable the triggers during import and rebuild FTS manually after:
+
+```typescript
+async function bulkImportWithFTSOptimization(
+  cards: CanonicalCard[],
+  db: Database
+): Promise<void> {
+  // Disable FTS triggers for bulk import
+  db.run('DROP TRIGGER IF EXISTS trg_cards_fts_insert');
+  
+  try {
+    // Write cards in chunks (see Pitfall 22)
+    for (let i = 0; i < cards.length; i += 500) {
+      const chunk = cards.slice(i, i + 500);
+      // ... parameterized inserts
+    }
+    
+    // Rebuild FTS from cards table in one fast pass
+    db.run('INSERT INTO cards_fts(rowid, name, content, tags, folder) SELECT rowid, name, content, tags, folder FROM cards');
+    
+    // Optimize segments into a single merged segment
+    db.run("INSERT INTO cards_fts(cards_fts) VALUES('optimize')");
+    
+  } finally {
+    // Restore trigger
+    db.run(`CREATE TRIGGER IF NOT EXISTS trg_cards_fts_insert AFTER INSERT ON cards BEGIN
+      INSERT INTO cards_fts(rowid, name, content, tags, folder)
+      VALUES (NEW.rowid, NEW.name, NEW.content, NEW.tags, NEW.folder);
+    END`);
+  }
+}
+```
+
+For incremental imports (re-importing after first import), the trigger-based approach is correct — only new/changed cards are affected.
+
+**Warning signs:**
+- Import of 1,000 cards takes >5s (expected: <500ms)
+- Worker CPU usage stays at 100% for the entire import duration
+- FTS5 `integrity-check` passes but segment count is very high (>100 segments visible via fts5vocab)
+- Progress reporting stalls mid-import without Worker error
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — benchmark FTS write performance with 10K cards on first implementation. If over 5s, add the trigger-disable/rebuild pattern.
+
+**Severity:** HIGH — import unusably slow at realistic dataset sizes
+
+---
+
+### Pitfall 25: DedupEngine SQL Injection via String-Interpolated source_id Values
+
+**What goes wrong:**
+The `DedupEngine.process()` method in `DataExplorer.md` constructs an IN clause by string-interpolating source keys:
+
+```typescript
+// DANGER: source_id values from external files are interpolated directly into SQL
+const sourceKeys = cards.map(c => `'${c.source}:${c.source_id}'`).join(',');
+const existing = await this.bridge.query<...>(`
+  SELECT id, source, source_id, modified_at FROM cards
+  WHERE source || ':' || source_id IN (${sourceKeys})
+`);
+```
+
+If a source_id from an imported file contains a single quote (e.g., `O'Brien's Note`), the string interpolation breaks the SQL. If it contains `'; DROP TABLE cards; --`, it executes arbitrary SQL. Apple Notes note IDs are opaque strings (generally safe), but Markdown file paths (`file.path`) are user-supplied and can contain any character.
+
+**Why it happens:**
+The DedupEngine was written before the SQL safety rules were applied. The allowlist pattern from `Contracts.md` applies to column names in WHERE clauses, but the DedupEngine constructs an IN clause from data values — a different injection vector that the allowlist does not cover.
+
+**How to avoid:**
+Use JSON-based parameter passing to avoid the IN clause limit and injection simultaneously:
+
+```typescript
+async process(cards: CanonicalCard[], connections: CanonicalConnection[]): Promise<DedupResult> {
+  // Use JSON to pass an unlimited number of keys as a single parameter
+  const sourceKeys = cards.map(c => `${c.source}:${c.source_id}`);
+  const existing = await this.bridge.query<ExistingCard>(`
+    SELECT id, source, source_id, modified_at FROM cards
+    WHERE (source || ':' || source_id) IN (
+      SELECT value FROM json_each(?)
+    )
+  `, [JSON.stringify(sourceKeys)]);
+  // ...
+}
+```
+
+This approach is both injection-safe (all values are in a single JSON parameter) and avoids the 999-variable limit (entire array is one `?` binding).
+
+**Warning signs:**
+- Import of a Markdown file with an apostrophe in the path fails with SQL syntax error
+- `DedupEngine` produces incorrect dedup results for source IDs containing special characters
+- No test covers source_id values with quotes, semicolons, or backslashes
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — fix DedupEngine before the first ETL test. The SQL injection vector must be eliminated before any external data is processed.
+
+**Severity:** CRITICAL — SQL injection from imported file contents; silent dedup failures
+
+---
+
+### Pitfall 26: gray-matter Has a Node.js fs Dependency That Breaks in Browser/Worker
+
+**What goes wrong:**
+`gray-matter` is specified as the Markdown frontmatter parser in `DataExplorer.md`. gray-matter has a direct dependency on Node.js's `fs` module. When bundled with Vite for browser/Worker execution, the build fails with:
+
+```
+[vite] error: Cannot resolve module 'fs'
+```
+
+Or, if Vite shims `fs` with an empty stub, gray-matter imports silently fail and `matter()` returns an empty `data` object — all frontmatter is lost without error.
+
+**Why it happens:**
+gray-matter uses `fs.readFileSync` in its file-reading code path. Even though `matter(string)` (parsing from a string) does not call `fs`, the bundler cannot tree-shake the conditional import statically. GitHub issues #49 and #50 in the gray-matter repo have requested this fix, but it remains unresolved as of 2025.
+
+**How to avoid:**
+Use the `gray-matter-browser` package (a maintained browser-compatible fork) or add an explicit Vite alias to strip the fs dependency:
+
+```typescript
+// vite.config.ts — Option 1: alias to browser-safe build
+export default defineConfig({
+  resolve: {
+    alias: {
+      'gray-matter': 'gray-matter-browser'
+    }
+  }
+});
+```
+
+Alternatively, implement a minimal frontmatter parser inline for the MarkdownParser — YAML frontmatter is a simple format (delimited by `---`, key: value pairs):
+
+```typescript
+function parseFrontmatter(content: string): { data: Record<string, unknown>; content: string } {
+  if (!content.startsWith('---')) return { data: {}, content };
+  const end = content.indexOf('
+---', 3);
+  if (end === -1) return { data: {}, content };
+  
+  const yaml = content.slice(4, end).trim();
+  const body = content.slice(end + 4).trim();
+  
+  const data: Record<string, unknown> = {};
+  for (const line of yaml.split('
+')) {
+    const colon = line.indexOf(':');
+    if (colon === -1) continue;
+    const key = line.slice(0, colon).trim();
+    const value = line.slice(colon + 1).trim().replace(/^["']|["']$/g, '');
+    data[key] = value;
+  }
+  return { data, body };
+}
+```
+
+The inline parser handles 95% of real-world Obsidian/Bear frontmatter without a dependency.
+
+**Warning signs:**
+- `vite build` fails with "Cannot resolve 'fs'" when MarkdownParser is included
+- Frontmatter values are all `undefined` after import even for valid `.md` files
+- `npm run test` works (Node.js has `fs`) but browser import fails
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — verify browser/Worker compatibility of gray-matter before writing MarkdownParser tests. Run the parser in a Worker test context, not Node.js.
+
+**Severity:** HIGH — complete loss of frontmatter (dates, tags, status) for all Markdown imports
+
+---
+
+### Pitfall 27: SheetJS (xlsx) Bundle Size (~1MB) Inflates Initial Load
+
+**What goes wrong:**
+The `xlsx` npm package (SheetJS) adds approximately 1MB to the bundle in its full build, including codepage support for legacy Excel formats (XLS, XLSB, Lotus). This is significant for a WKWebView-hosted app where initial JS load time directly impacts startup time. Users experience a noticeable delay before the app is interactive, even if they never import an Excel file.
+
+**Why it happens:**
+SheetJS bundles codepage libraries and format parsers for every format it supports. The full build (`xlsx.full.min.js`) includes XLS (BIFF8), XLSB, SpreadsheetML 2003, Lotus 1-2-3, Numbers, and others. Most Isometry users only need XLSX.
+
+**How to avoid:**
+Use dynamic import to load the xlsx parser only when the user initiates an Excel import:
+
+```typescript
+// ExcelParser.ts — lazy-load SheetJS on first use
+let XLSX: typeof import('xlsx') | null = null;
+
+export class ExcelParser {
+  async parse(data: ArrayBuffer, options: ParseOptions = {}): Promise<CanonicalCard[]> {
+    if (!XLSX) {
+      XLSX = await import('xlsx');
+    }
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+    // ...
+  }
+}
+```
+
+Additionally, use the slim build in `vite.config.ts` to exclude the codepage library:
+
+```typescript
+// vite.config.ts
+resolve: {
+  alias: {
+    'xlsx': 'xlsx/dist/xlsx.mini.min.js'
+  }
+}
+```
+
+The `xlsx.mini.min.js` build is ~600KB smaller and supports XLSX, CSV, and JSON — sufficient for Isometry's use case.
+
+**Warning signs:**
+- Bundle analyzer shows `xlsx` as the largest dependency
+- App startup time increases by 500ms+ in WKWebView on slower devices
+- Lighthouse performance score drops due to large JS payload
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — add dynamic import from the first ExcelParser implementation. Do not import xlsx statically at module load time.
+
+**Severity:** MODERATE — startup performance impact; no data correctness issue
+
+---
+
+### Pitfall 28: CSV Encoding and UTF-8 BOM Silently Corrupts First Column
+
+**What goes wrong:**
+Excel-exported CSV files frequently include a UTF-8 BOM (byte order mark: `﻿` / EF BB BF) at the start of the file. When the BOM is not stripped before parsing, the first column header becomes `"﻿name"` instead of `"name"`. The `ExcelParser.findColumn()` method's candidate matching (`['title', 'name', 'subject']`) fails to find the column, and every row is assigned `"Row N"` as its title instead of the actual title field.
+
+This failure is invisible in development if test CSV files are generated without a BOM, but affects nearly all CSV exports from Excel on Windows.
+
+**Why it happens:**
+The browser `FileReader.readAsText()` does not strip the BOM by default. When the user reads a file via the native shell and passes it to the Worker as a string, the BOM is preserved as the first character.
+
+**How to avoid:**
+Strip BOM before parsing in the CSVParser:
+
+```typescript
+export class CSVParser {
+  parse(content: string, options: ParseOptions = {}): CanonicalCard[] {
+    // Strip UTF-8 BOM if present
+    const cleaned = content.charCodeAt(0) === 0xFEFF
+      ? content.slice(1)
+      : content;
+    
+    // Also handle Windows line endings
+    const normalized = cleaned.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    return this.parseCSV(normalized, options);
+  }
+}
+```
+
+Also handle the case where `data` arrives as an `ArrayBuffer` — decode with BOM-awareness:
+
+```typescript
+const decoder = new TextDecoder('utf-8', { ignoreBOM: true });
+const text = decoder.decode(arrayBuffer);
+```
+
+`TextDecoder` with `ignoreBOM: true` handles BOM stripping automatically.
+
+**Warning signs:**
+- First column of every imported CSV row has `﻿` prepended to its key
+- Column auto-detection fails for all CSV files from Excel/Windows
+- Column names like `"name"` are not found; cards all get default titles
+
+**Phase to address:** Phase 8 (CSVParser implementation) — first CSVParser test must use a BOM-prefixed fixture. Do not test only with BOM-free strings.
+
+**Severity:** MODERATE — systematic title loss for all Excel-exported CSV files; silent failure
+
+---
+
+### Pitfall 29: HTML Content Parsed with DOMParser Retains Script/Style Tags and May Execute Code
+
+**What goes wrong:**
+The `HTMLParser` (for web clippings) uses `document.createElement('div')` or `DOMParser.parseFromString()` to extract text from HTML. If the HTML contains `<script>` tags, those scripts execute immediately upon parsing in non-sandboxed contexts. If the HTML is later rendered into the DOM (e.g., in a card detail view), stored XSS payloads execute.
+
+Additionally, `DOMParser` has a known mXSS (mutation XSS) vulnerability: the parser's output can differ from the browser's DOM parser for certain edge cases (namespace issues, `<noscript>` content), causing sanitizer bypasses.
+
+**Why it happens:**
+Web clippings frequently contain JavaScript (analytics, tracking, interactivity). `document.createElement('div').innerHTML = html` executes `<script>` tags synchronously. Even without script execution, certain HTML constructs can survive naive sanitization.
+
+**How to avoid:**
+Parse HTML for text extraction only in the Worker context — the Worker has no DOM access, so scripts cannot execute. Use a pure-JS HTML-to-text library like `@mozilla/readability` for content extraction, or strip tags with a regex-only approach for the simple case:
+
+```typescript
+// Worker-safe HTML text extraction (no DOM access)
+function htmlToText(html: string): string {
+  return html
+    // Remove all script and style content
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    // Remove HTML comments
+    .replace(/<!--[\s\S]*?-->/g, '')
+    // Convert block elements to newlines
+    .replace(/<\/(p|div|h[1-6]|li|br)>/gi, '\n')
+    // Remove all remaining tags
+    .replace(/<[^>]+>/g, '')
+    // Decode HTML entities
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    // Normalize whitespace
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+```
+
+If the full HTML must be stored for rendering, store it as a raw string in `content` and render it only in a sandboxed `<iframe>` or via `DOMPurify` before display.
+
+**Warning signs:**
+- Importing HTML web clippings causes JavaScript execution in the Worker (impossible if Worker is correctly used)
+- Card detail view shows unexpected behavior for notes imported from web clippings
+- XSS payload stored in `content` field executes when card is displayed
+
+**Phase to address:** Phase 8 (HTMLParser implementation) — the HTMLParser must run in the Worker, not on the main thread. Text extraction must strip scripts before the content field is populated. No stored HTML should be rendered without DOMPurify.
+
+**Severity:** HIGH — XSS vector if HTML is rendered in UI; requires Worker-side text extraction
+
+---
+
+### Pitfall 30: Connection ID Resolution Fails for Cross-Note Links During Dedup Phase
+
+**What goes wrong:**
+`AppleNotesParser` creates `CanonicalConnection` records for internal note links (`link.type === 'note'`), using `link.target_note_id` as the connection's `target_id`. But `target_note_id` is the **source system's ID** (the Apple Notes note UUID), not the Isometry card ID.
+
+The `DedupEngine.process()` method resolves IDs via `sourceIdMap`, mapping each source system ID to its Isometry card ID. However, if the target note was not included in the current import batch (e.g., it was imported in a previous run), it won't be in `sourceIdMap`, and the connection's `target_id` remains as the Apple Notes UUID — which does not exist in the `cards` table. The connection INSERT fails with a foreign key violation, or worse, `INSERT OR IGNORE` silently drops the connection.
+
+**Why it happens:**
+The `parseLinks` method in `AppleNotesParser` creates connections with `target_id: link.target_note_id!` before the dedup phase runs. The dedup phase resolves IDs for cards in the *current batch* but not for cards from *previous batches*. Cross-batch links are orphaned.
+
+**How to avoid:**
+Resolve cross-batch links in the dedup phase by querying the database for existing source IDs:
+
+```typescript
+async process(cards: CanonicalCard[], connections: CanonicalConnection[]): Promise<DedupResult> {
+  // ... build sourceIdMap from current batch ...
+  
+  // For connection targets NOT in sourceIdMap, look them up in the database
+  const unresolvedTargetSourceIds = connections
+    .map(c => c.target_id)
+    .filter(id => !sourceIdMap.has(id));
+  
+  if (unresolvedTargetSourceIds.length > 0) {
+    const existingTargets = await this.bridge.query<{ id: string; source_id: string }>(
+      `SELECT id, source_id FROM cards WHERE source_id IN (SELECT value FROM json_each(?))`,
+      [JSON.stringify(unresolvedTargetSourceIds)]
+    );
+    
+    for (const row of existingTargets) {
+      sourceIdMap.set(row.source_id, row.id);
+    }
+  }
+  
+  // Now resolve connections — any remaining unresolved targets are truly missing
+  const resolvedConnections = connections
+    .map(conn => ({
+      ...conn,
+      target_id: sourceIdMap.get(conn.target_id) || conn.target_id
+    }))
+    .filter(conn => {
+      const isResolved = sourceIdMap.has(conn.target_id) || conn.target_id.length === 36; // UUID format check
+      if (!isResolved) {
+        console.warn(`Connection target ${conn.target_id} not found in database`);
+      }
+      return isResolved;
+    });
+}
+```
+
+**Warning signs:**
+- `connections` table has fewer rows than expected after import
+- Foreign key constraint errors during connection INSERT (if FK enforcement is enabled)
+- Graph view shows disconnected nodes for notes that were imported across multiple import runs
+- Re-importing the same export produces different connection counts than the first import
+
+**Phase to address:** Phase 8 (DedupEngine implementation) — write a test that imports a set of notes where some notes reference each other, then re-imports an expanded set. Verify connections between all notes exist after the second import.
+
+**Severity:** HIGH — silent data loss for the graph relationship layer; connections between notes dropped without warning
+
+---
+
+### Pitfall 31: Re-Import Timestamp Comparison Uses String Comparison Instead of Date Semantics
+
+**What goes wrong:**
+The `DedupEngine` decides whether to update an existing card by comparing `card.modified_at > existing.modified_at`. Both values are ISO 8601 strings. String comparison works correctly for full ISO 8601 strings (e.g., `"2024-03-15T10:00:00Z"`) because the format is lexicographically ordered. However:
+
+1. If the source system provides `modified_at` without a timezone (e.g., `"2024-03-15T10:00:00"`), string comparison is unreliable — the strings cannot be compared with the existing database values which use `Z` suffix
+2. If a parser passes a date without normalizing to UTC ISO 8601 (e.g., `"15 March 2024"` or `"2024/03/15"`), the comparison may always favor update (treating any non-ISO string as "newer")
+3. Obsidian/Bear Markdown frontmatter frequently uses `modified: 2024-03-15` (date only) — this compares incorrectly against the stored ISO 8601 timestamp
+
+**Why it happens:**
+`MarkdownParser.parseDate()` handles multiple date formats but does not always normalize to UTC. For example, `new Date("2024-03-15")` returns midnight UTC on some browsers but midnight local time on others (a known browser inconsistency). The resulting `.toISOString()` may be `"2024-03-14T23:00:00.000Z"` on a UTC+1 machine — one day off.
+
+**How to avoid:**
+Normalize all timestamps to UTC ISO 8601 with explicit Z suffix before storing:
+
+```typescript
+function normalizeTimestamp(value: unknown): string {
+  const now = new Date().toISOString();
+  if (!value) return now;
+  
+  // Handle Date objects
+  if (value instanceof Date) {
+    return isNaN(value.getTime()) ? now : value.toISOString();
+  }
+  
+  if (typeof value !== 'string') return now;
+  
+  // Already normalized
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(value)) {
+    return value;
+  }
+  
+  // Date-only format: parse as UTC noon to avoid timezone edge
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return `${value}T12:00:00.000Z`;
+  }
+  
+  // Try general parse
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? now : d.toISOString();
+}
+```
+
+Use `normalizeTimestamp()` in every parser's date fields before returning the `CanonicalCard`.
+
+**Warning signs:**
+- Re-importing the same file repeatedly triggers unnecessary updates (every card is "newer")
+- Markdown files with `date-only` frontmatter dates get updated on every re-import
+- Cards imported on machines in different timezones have inconsistent timestamps
+- DedupEngine `toUpdate` list is larger than expected on incremental imports
+
+**Phase to address:** Phase 8 (Parser implementations) — add a timestamp normalization utility before implementing any parser. Test with date-only strings, timezone-offset strings, and ISO 8601 full strings.
+
+**Severity:** MODERATE — unnecessary updates on re-import, incorrect ordering in time views; data is not corrupted but provenance is wrong
+
+---
+
+### Pitfall 32: postMessage of Large Import Data Copies Instead of Transferring
+
+**What goes wrong:**
+The `WorkerBridge.importFile(data: ArrayBuffer, source, options)` method passes an `ArrayBuffer` to the Worker via `postMessage`. Without specifying the `ArrayBuffer` in the transferable list, the Structured Clone Algorithm copies the buffer — doubling memory consumption temporarily. For a 50MB Apple Notes JSON export, this means 50MB on the main thread + 50MB copy in the Worker = 100MB peak, plus whatever sql.js needs for the import itself.
+
+After a non-transfer `postMessage`, the original `ArrayBuffer` remains on the main thread, occupying memory until GC. The main thread holds the original, the Worker holds the copy, and sql.js holds the parsed in-memory representation — three copies of the data may coexist at peak.
+
+**Why it happens:**
+The WorkerBridge `send()` method uses `this.worker.postMessage({ id, type, payload })` without a transfer list. When `payload` contains an `ArrayBuffer`, it must be explicitly listed in the transfer array for zero-copy transfer.
+
+**How to avoid:**
+Modify the bridge to detect `ArrayBuffer` payloads and use transferable transfer:
+
+```typescript
+private send<T>(type: MessageType, payload: unknown, timeoutMs = 30_000): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const id = crypto.randomUUID();
+    
+    // Collect transferables from payload
+    const transferables: Transferable[] = [];
+    if (payload instanceof ArrayBuffer) {
+      transferables.push(payload);
+    } else if (payload && typeof payload === 'object') {
+      for (const val of Object.values(payload as Record<string, unknown>)) {
+        if (val instanceof ArrayBuffer) transferables.push(val);
+      }
+    }
+    
+    // ... timeout setup ...
+    
+    // Transfer instead of copy for ArrayBuffer payloads
+    this.worker.postMessage(
+      { id, type, payload, timestamp: Date.now() },
+      transferables
+    );
+  });
+}
+```
+
+After transfer, the main thread's `ArrayBuffer` is detached (`.byteLength === 0`). Document this behavior: callers must not use the `data` reference after `importFile()` is called.
+
+**Warning signs:**
+- Activity Monitor shows doubled memory during import (main thread + Worker both holding large buffer)
+- GC pauses after large imports as main thread frees the original buffer
+- Out-of-memory during import despite the file being smaller than available memory
+
+**Phase to address:** Phase 8 (ETL Import Pipeline) — add transfer list to `importFile()` call from day one. Add a test that verifies the `ArrayBuffer.byteLength === 0` on the main thread after `importFile()` returns.
+
+**Severity:** MODERATE — memory overhead; can cause OOM on constrained devices for large imports
+
+---
+
+### Pitfall 33: Export of Large Datasets Blocks the Worker Thread
+
+**What goes wrong:**
+`ExportOrchestrator.export()` queries all cards (`SELECT * FROM cards WHERE ...`) and then serializes them to Markdown, JSON, or CSV in the Worker thread. For a 10,000-card database, this single synchronous operation blocks the Worker for several seconds. During this time, all other bridge requests (queries from D3 views, user interactions) queue up and appear frozen to the user.
+
+The JSON export is especially dangerous: `JSON.stringify(cards, null, 2)` for 10,000 cards with `content` fields can produce a 50MB+ string, which then must be serialized via `postMessage` back to the main thread as a second copy.
+
+**Why it happens:**
+The Worker is single-threaded. A single large synchronous operation monopolizes it. The bridge's pending map accumulates all queued requests during the export, and they all resolve immediately after — causing a thundering herd of simultaneous re-renders when the Worker is unblocked.
+
+**How to avoid:**
+Use pagination for large exports and stream results:
+
+```typescript
+// ExportOrchestrator — paginated export with progress events
+async exportLarge(
+  format: 'markdown' | 'json' | 'csv',
+  onProgress: (pct: number) => void
+): Promise<string> {
+  const total = await this.bridge.query<{ count: number }>(
+    'SELECT COUNT(*) as count FROM cards WHERE deleted_at IS NULL'
+  );
+  const cardCount = total[0].count;
+  
+  const PAGE_SIZE = 500;
+  const pages = Math.ceil(cardCount / PAGE_SIZE);
+  const parts: string[] = [];
+  
+  for (let page = 0; page < pages; page++) {
+    const cards = await this.bridge.query<Card>(
+      'SELECT * FROM cards WHERE deleted_at IS NULL LIMIT ? OFFSET ?',
+      [PAGE_SIZE, page * PAGE_SIZE]
+    );
+    parts.push(this.encodePage(format, cards, page === 0));
+    onProgress(Math.round(((page + 1) / pages) * 100));
+    
+    // Yield between pages to allow other Worker messages to process
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  
+  return parts.join(format === 'csv' ? '\n' : '\n\n---\n\n');
+}
+```
+
+**Warning signs:**
+- App appears frozen during large exports
+- All pending UI interactions execute simultaneously after export completes
+- Bridge timeout fires on concurrent queries during an export operation
+- Memory spike when `JSON.stringify()` runs on full card array
+
+**Phase to address:** Phase 9 (Export Pipeline) — implement paginated export from day one. Do not export all cards in a single query.
+
+**Severity:** MODERATE — UI freezes during export; no data loss
+
+
 ## Moderate Pitfalls
 
 ### Pitfall 5: sql.js Prepared Statements Leak Memory and Lock Tables
@@ -953,6 +1603,14 @@ Shortcuts that seem reasonable but create long-term problems.
 | Return live state from getState() | No copy overhead | Callers mutate internal state bypassing subscribers | Never — return Readonly or a copy |
 | Build undo only for single-row mutations | Simpler implementation | ETL batch undos fail with "too many variables" | Never for v1.0 — batch undo is required |
 | Skip MAX_ROW_HEADERS limit in SuperGrid | Render any axis mapping | Browser freeze on high-cardinality fields | Never — hard limit must exist in code |
+| String-interpolate source_id into SQL IN clause | Simpler DedupEngine code | SQL injection via imported file contents; dedup fails for IDs with quotes | Never — use json_each(?) parameter |
+| Import all cards in one db.exec() string | One call, looks simple | Buffer overflow above ~3,700 rows; silent corruption | Never — use parameterized transaction batches |
+| Leave FTS triggers enabled during bulk import | Triggers "just work" | 30-60s import time for 10K cards due to segment merges | Never — disable triggers, bulk-INSERT, then optimize |
+| Import gray-matter as a static dependency | Simple package.json | Breaks browser/Worker build due to fs module dependency | Never in browser — use gray-matter-browser or inline parser |
+| Static import of xlsx at module load | Simple parser initialization | Adds ~1MB to initial bundle even for users who never import Excel | Never — dynamic import on first use only |
+| postMessage ArrayBuffer without transfer list | Simpler bridge code | Doubles memory consumption during large file imports | Never for ETL data — always use transferables |
+| Export all cards in a single query | Simpler ExportOrchestrator | Blocks Worker for seconds; OOM for large datasets | Never for datasets >1K cards — paginate |
+| Use string comparison for modified_at dates | Fast comparison | Timezone-aware ISO 8601 required; date-only strings fail | Never — normalize all timestamps to UTC before storing |
 
 ---
 
@@ -974,6 +1632,14 @@ Common mistakes when connecting project components.
 | MutationManager + large batch | Inverse DELETE with more than 999 IDs in a single statement | Chunk the inverse into slices of 900 parameters |
 | QueryCompiler + empty providers | Concatenating SQL fragments without null guards | Every optional clause must use fallback strings; test with all providers at default state |
 | SuperGrid + high-cardinality axis | Rendering all distinct values as headers | Enforce MAX_ROW_HEADERS=50, MAX_COL_HEADERS=100 before rendering |
+| DedupEngine + Markdown file paths | String-interpolating source_id values into SQL IN clause | Use json_each(?) to pass all source keys as a single JSON parameter |
+| gray-matter + Vite/Worker | Static import fails due to fs module dependency | Use gray-matter-browser alias or inline frontmatter parser |
+| xlsx + initial bundle | Static import adds ~1MB to startup | Dynamic import on first ExcelParser use; alias to xlsx.mini.min.js |
+| WorkerBridge + large ArrayBuffer import | postMessage copies instead of transfers | Pass ArrayBuffer in the transferable list: postMessage(msg, [data]) |
+| CSVParser + Excel-exported files | UTF-8 BOM not stripped — first column header corrupted | new TextDecoder('utf-8', { ignoreBOM: true }) or check charCodeAt(0) === 0xFEFF |
+| AppleNotesParser + cross-batch links | Internal note link target_id not resolved for notes from previous imports | DedupEngine must query DB for existing source_id → card ID mappings for unresolved targets |
+| FTS5 + bulk ETL import | Three-trigger overhead makes 10K-card import take 30-60s | Disable insert trigger during import, bulk INSERT...SELECT into FTS, call OPTIMIZE, restore trigger |
+| HTMLParser + Worker thread | Parsing HTML on main thread risks script execution | All HTML parsing must run in Worker; use regex-based text extraction only, never innerHTML |
 | D3 transition + fast filter change | Starting new transition without interrupting in-flight | Always call `selection.interrupt()` before starting a new render cycle |
 
 ---
@@ -995,6 +1661,12 @@ Patterns that work at small scale but fail as usage grows.
 | Provider subscriber accumulation | Works on first mount | N concurrent bridge queries per filter change after N view remounts | After ~5 view switches without destroy() |
 | Bridge pending map with no timeout | Simple code | Silent hangs, pending map grows unbounded | Any Worker handler that throws outside try/catch |
 | Undo stack with no size limit | Simple code | Memory grows with session length for power users | Sessions with 10K+ mutations |
+| FTS triggers enabled during bulk import | Triggers auto-maintain FTS | Segment merge overhead: 10K import takes 30-60s instead of 2s | Any import >1K cards |
+| Full JSON.stringify on export | Simple serialization | 50MB+ string for 10K-card export; blocks Worker for 5-10s | Datasets >2K cards with content fields |
+| SELECT * in export query | Simple query | Full content field serialized for all cards; 100MB+ postMessage | Any export of dataset with long content fields |
+| db.exec() with multi-row VALUES string | Appears fast | Buffer overflow above ~3,700 rows; entire Worker session corrupted | Any batch exceeding ~3,700 concatenated rows |
+| postMessage ArrayBuffer without transfer | Less code | Peak memory = 2× file size; OOM on 50MB+ imports | Files larger than ~30MB on constrained devices |
+| Large import without chunk writes | Simpler code | Single transaction holds entire import in memory; OOM | Imports >2K cards with large content fields |
 
 ---
 
@@ -1009,6 +1681,9 @@ Domain-specific security issues beyond general web security.
 | Building SQL in the main thread and posting the string to Worker | SQL construction bypasses Worker-side validation | Providers compile SQL fragments; Worker assembles and executes — never post raw SQL strings from main thread |
 | `formula` filter type with user-supplied `compiledSQL` | Arbitrary SQL injection if `compiledSQL` is not sanitized | Defer formula filters to v2; in v1, do not expose `compiledSQL` to user input paths |
 | Logging full SQL queries with params in production | Leaks card content in app logs | Log query type and timing only; never log param values containing user data |
+| DedupEngine string-interpolating source_id into SQL | SQL injection from imported file names or note IDs | Use json_each(?) parameter binding — never interpolate external strings into SQL |
+| HTMLParser running on main thread (not Worker) | XSS execution from malicious script tags in imported HTML | All parsing in Worker context; strip <script> and <style> before storing content |
+| Storing attachment Base64 data in SQLite content field | Attachment bytes bloat DB; binary data in text field; accidental credential leaks in exports | Strip attachment.data from AltoExport before parsing; store only filename/mime_type |
 
 ---
 
@@ -1027,6 +1702,11 @@ Common user experience mistakes in this domain.
 | Undo appears to do nothing when used after view switch | User distrusts the undo system | Scope undo to current view context (Pitfall 20); grey out cross-context undo with tooltip |
 | SuperGrid freezes on high-cardinality axis | App appears broken; user loses work | Enforce hard cell limits; show "too many values to display — increase density" message |
 | Filter change interrupts mid-animation | Jank/snap during rapid filter interaction | Debounce re-renders; use interrupt() before new join |
+| No progress reporting during large import | Import appears frozen; user force-quits | Report progress via Worker→main postMessage every 500 cards; show progress bar |
+| Duplicate cards after re-import | Users see doubled data; no explanation | DedupEngine must show toUpdate/toSkip counts in ImportResult; UI shows "N updated, N skipped" |
+| Silent failure on import error | User thinks import succeeded | Every parse error must surface in ImportResult.errors; UI must display error count |
+| All notes in single flat list after Apple Notes import | Folder structure lost | Preserve folder from AltoNote.folder; map to card.folder; show folder tree in filters |
+| CSV import assigns "Row N" as title for all cards | All imported cards look identical | Auto-detect title column; fall back to first non-empty column; never silently default to "Row N" |
 
 ---
 
@@ -1050,6 +1730,17 @@ Things that appear complete but are missing critical pieces.
 - [ ] **SuperGrid axis:** High-cardinality axis (500 distinct values) mapped to grid — verify truncation occurs, no browser freeze
 - [ ] **View transitions:** Rapid filter changes (5 in 200ms) — verify no console errors, no visual snap, no accumulated listeners
 - [ ] **QueryCompiler empty state:** All providers at default — verify SQL is valid and parseable
+- [ ] **ETL Memory:** Import 5,000 synthetic cards — verify Worker does not OOM; chunk writes at 500 per transaction
+- [ ] **DedupEngine SQL safety:** Import a Markdown file with `O'Brien's Note.md` as path — verify no SQL syntax error; dedup works correctly
+- [ ] **CSV BOM handling:** Parse a BOM-prefixed CSV (0xEF 0xBB 0xBF at start) — verify first column header has no invisible prefix
+- [ ] **gray-matter in Worker:** Run MarkdownParser in Worker test context (not Node.js) — verify frontmatter parsed correctly
+- [ ] **xlsx dynamic import:** Load ExcelParser for first time — verify no xlsx code in initial bundle; dynamic chunk loads on use
+- [ ] **FTS after bulk import:** After 10K-card import, run FTS integrity-check — verify no FTS desync; run OPTIMIZE and confirm
+- [ ] **Cross-batch connections:** Import batch A (notes with links to batch B notes), import batch B — verify all inter-batch connections exist
+- [ ] **Re-import idempotency:** Import same file twice — verify card count unchanged (toInsert=0, toUpdate=0 or only modified-at changes)
+- [ ] **HTML XSS sanitization:** Import HTML file with `<script>alert(1)</script>` in content — verify script not stored or executed
+- [ ] **Export pagination:** Export 5K cards — verify Worker does not block; all cards present in output; no bridge timeouts during export
+- [ ] **ArrayBuffer transfer:** Verify main thread ArrayBuffer.byteLength === 0 after importFile() returns (confirms transfer, not copy)
 
 ---
 
@@ -1075,6 +1766,14 @@ When pitfalls occur despite prevention, how to recover.
 | FTS + SQL filter returns empty | LOW | Fix FilterProvider to use JOIN form; add combined filter test |
 | Undo appears to do nothing | LOW | Scope undo to view context; add visual indicator |
 | D3 listener accumulation | MEDIUM | Move `.on()` calls from update to enter selection; may require view rewrite |
+| WASM OOM during large import | MEDIUM | Reduce chunk size to 100 cards; strip large content fields (Base64 attachments); free unused prepared statements before import |
+| sql.js buffer overflow / memory corruption | HIGH | Restart Worker (terminate + new Worker()); re-import using parameterized batches only; never use multi-row VALUES strings |
+| FTS desync after bulk import | MEDIUM | `INSERT INTO cards_fts(cards_fts) VALUES('rebuild')` rebuilds FTS from cards table; safe to run at any time |
+| SQL injection in DedupEngine | CRITICAL | Replace string interpolation with json_each() pattern; audit all IN clauses in ETL code for string interpolation |
+| gray-matter fs build failure | LOW | Add vite alias to gray-matter-browser; no data loss — parser not yet in use |
+| Cross-batch connections dropped | MEDIUM | Re-run DedupEngine with cross-batch lookup enabled; connections from previous batches can be re-inserted |
+| Timestamp comparison errors on re-import | LOW | Normalize all timestamps to UTC ISO 8601 in parsers; re-import will correct modified_at for affected cards |
+| Export blocks Worker | LOW | Implement paginated export with yield between pages; existing exports must be aborted and restarted |
 
 ---
 
@@ -1105,6 +1804,18 @@ How roadmap phases should address these pitfalls.
 | D3 listener accumulation (Pitfall 19) | Phase 5: Views | Test: render same view 10×; assert single click triggers handler exactly once |
 | Undo across view switch (Pitfall 20) | Phase 4: Mutation Manager | Test: mutate in kanban, switch to list, undo; assert UX response is correct |
 | FTS + SQL filter rowid bug (Pitfall 21) | Phase 4: Providers | Test: FTS + status filter simultaneously; assert non-zero results |
+| WASM heap OOM on large import (Pitfall 22) | Phase 8: ETL Import Pipeline | Test: import 5K synthetic cards; Worker survives; chunk writes enforced |
+| sql.js buffer overflow on large SQL string (Pitfall 23) | Phase 8: ETL Import Pipeline | Test: 1K-card import via parameterized transactions; Worker memory stable after |
+| FTS trigger overhead on bulk import (Pitfall 24) | Phase 8: ETL Import Pipeline | Benchmark: 10K-card import completes in <5s; FTS integrity-check passes after |
+| DedupEngine SQL injection via source_id (Pitfall 25) | Phase 8: ETL Import Pipeline (DedupEngine) | Test: import with source_id containing single quotes, semicolons; no SQL error |
+| gray-matter fs dependency breaks Worker (Pitfall 26) | Phase 8: ETL Import Pipeline (MarkdownParser) | Test: MarkdownParser in Worker context; frontmatter parsed; no fs error |
+| xlsx bundle size (Pitfall 27) | Phase 8: ETL Import Pipeline (ExcelParser) | Bundle analysis: xlsx not in initial chunk; loads on first ExcelParser use |
+| CSV BOM corruption (Pitfall 28) | Phase 8: ETL Import Pipeline (CSVParser) | Test: BOM-prefixed fixture; first column header matches expected |
+| HTML script injection (Pitfall 29) | Phase 8: ETL Import Pipeline (HTMLParser) | Test: HTML with script tag; content field contains no executable code |
+| Cross-batch connection resolution (Pitfall 30) | Phase 8: ETL Import Pipeline (DedupEngine) | Test: two-batch import with cross-batch links; all connections present after both batches |
+| Timestamp comparison on re-import (Pitfall 31) | Phase 8: ETL Import Pipeline (Parsers) | Test: re-import same file; toUpdate count is 0 unless modified_at genuinely changed |
+| ArrayBuffer copy instead of transfer (Pitfall 32) | Phase 8: ETL Import Pipeline (WorkerBridge) | Test: verify main thread ArrayBuffer.byteLength === 0 after importFile() |
+| Export blocks Worker (Pitfall 33) | Phase 9: Export Pipeline | Test: export 5K cards; concurrent bridge query resolves within 100ms during export |
 
 ---
 
@@ -1139,8 +1850,31 @@ How roadmap phases should address these pitfalls.
 - [Isometry v5 CLAUDE-v5.md — Architectural decisions D-001 through D-010](local)
 - [Isometry v5 Modules/Core/WorkerBridge.md — Canonical bridge spec](local)
 - [Isometry v5 Modules/Providers.md — FilterProvider, PAFVProvider, QueryCompiler spec](local)
+- [sql.js Issue #482 — Buffer overflow in Database.run() with large INSERT strings](https://github.com/sql-js/sql.js/issues/482)
+- [sql.js Issue #571 — Memory access out of bounds with large query strings (~1.5MB)](https://github.com/sql-js/sql.js/issues/571)
+- [sql.js Issue #574 — Out of memory on page reload with large databases](https://github.com/sql-js/sql.js/issues/574)
+- [Hacker News: sql.js memory management discussion](https://news.ycombinator.com/item?id=28157686)
+- [SQLite FTS5 bulk insert optimization — sqlite-users mailing list](https://sqlite-users.sqlite.narkive.com/FsHtboS0/sqlite-properly-bulk-inserting-into-fts5-index-with-external-content-table)
+- [Optimizing FTS5 External Content Tables — sqlite.work](https://sqlite.work/optimizing-fts5-external-content-tables-and-vacuum-interactions/)
+- [SQLite FTS5 official docs — OPTIMIZE command, segment merging](https://sqlite.org/fts5.html)
+- [SQLite Implementation Limits — SQLITE_MAX_VARIABLE_NUMBER (999 default, 32766 after 3.32.0)](https://sqlite.org/limits.html)
+- [SheetJS Web Worker documentation — XLSX.writeFile restrictions, ESM support](https://docs.sheetjs.com/docs/demos/bigdata/worker/)
+- [SheetJS Large Datasets documentation — streaming, memory considerations](https://docs.sheetjs.com/docs/demos/bigdata/stream/)
+- [gray-matter Issue #49 — Browser compatibility, fs module dependency](https://github.com/jonschlinkert/gray-matter/issues/49)
+- [gray-matter Issue #50 — fs module removal request](https://github.com/jonschlinkert/gray-matter/issues/50)
+- [gray-matter-browser npm package — browser-safe fork](https://www.npmjs.com/package/gray-matter-browser)
+- [MDN Transferable Objects — zero-copy ArrayBuffer transfer](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Transferable_objects)
+- [Chrome Dev Blog: Transferable Objects — performance analysis](https://developer.chrome.com/blog/transferable-objects-lightning-fast)
+- [CSV encoding and UTF-8 BOM issues — comprehensive guide](https://www.elysiate.com/blog/csv-encoding-problems-utf8-bom-character-issues)
+- [TextDecoder ignoreBOM option — MDN](https://developer.mozilla.org/en-US/docs/Web/API/TextDecoder/TextDecoder)
+- [DOMPurify — cure53/DOMPurify GitHub (recommended XSS sanitizer)](https://github.com/cure53/DOMPurify)
+- [Mutation XSS and DOMParser pitfalls — research.securitum.com](https://research.securitum.com/dompurify-bypass-using-mxss/)
+- [MDN Date.parse() — browser inconsistencies with ISO 8601](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/parse)
+- [Idempotent ETL pipelines — deduplication best practices](https://airbyte.com/data-engineering-resources/the-best-way-to-handle-data-deduplication-in-etl)
+- [Isometry v5 Modules/DataExplorer.md — ETL pipeline spec](local)
 
 ---
 *Pitfalls research for: local-first TypeScript/D3.js in-browser SQLite platform (WKWebView)*
 *v0.1 Data Foundation pitfalls: Researched 2026-02-27*
 *v1.0 Web Runtime pitfalls added: 2026-02-28*
+*v1.1 ETL Importers pitfalls added: 2026-03-01*

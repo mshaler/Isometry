@@ -1,236 +1,248 @@
 # Project Research Summary
 
-**Project:** Isometry v5 — Web Runtime (v1.0 milestone)
-**Domain:** Local-first polymorphic data projection platform (TypeScript/D3.js, sql.js WASM, WKWebView)
-**Researched:** 2026-02-28
-**Confidence:** HIGH
+**Project:** Isometry v1.1 — ETL Importers
+**Domain:** ETL import/export pipeline for local-first TypeScript/sql.js personal knowledge base
+**Researched:** 2026-03-01
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-Isometry v5 is a local-first macOS/iOS application that renders an in-browser SQLite database (sql.js via WASM) through nine D3.js projection views inside a WKWebView native shell. The v0.1 Data Foundation milestone is already complete and validated with 151 passing tests covering the sql.js database, card CRUD, connection CRUD, FTS5 search, graph traversal, and performance benchmarks on 10K cards. The v1.0 Web Runtime milestone adds the entire rendering and interaction stack on top: a typed async Worker Bridge connecting the main thread to the Worker-hosted sql.js instance, a provider system that compiles UI state to SQL fragments, a MutationManager for undo/redo, nine D3.js views with animated transitions, and the signature SuperGrid multidimensional projection view. Only three dependencies need to be added to the existing stack (D3 umbrella package, @types/d3, @vitest/web-worker) plus a one-line tsconfig change.
+Isometry v1.1 adds a six-parser ETL pipeline to a fully operational web runtime (897 tests, 24,298 LOC). The v1.0 foundation is locked: TypeScript 5.9, sql.js 1.14 (custom FTS5 WASM), Vite 7.3, Vitest 4.0, D3.js v7.9, and the Worker Bridge typed RPC layer. The v1.1 work is additive — new files in `src/etl/`, minimal modifications to `protocol.ts`, `worker.ts`, `WorkerBridge.ts`, and `schema.sql`. All parsing, deduplication, and writes execute entirely inside the Web Worker; the main thread receives only a compact `ImportResult` summary. Four new runtime packages are required: `gray-matter` (Markdown frontmatter), `xlsx` from the SheetJS CDN (not npm registry), `papaparse` (CSV), and `node-html-parser` (HTML text extraction).
 
-The recommended architecture follows strict layered separation enforced by six non-negotiable patterns: (1) no parallel entity store — D3 data joins are state management, sql.js is the single source of truth; (2) providers compile SQL fragments, views assemble final SQL, the Worker executes it — providers never call the bridge directly; (3) MutationManager is the sole write gate — all entity writes go through `MutationManager.exec()`, which generates inverse SQL for undo, sets the dirty flag, and schedules frame-batched notification; (4) every D3 `.data()` call must supply a key function (`d => d.id`) for correct animated transitions and element identity; (5) Worker initialization uses a message queue to prevent lost messages during WASM load; (6) every pending promise in the bridge has a configurable timeout to prevent silent hangs on Worker errors.
+The recommended architecture is a clean pipeline: parser → DedupEngine → SQLiteWriter → CatalogWriter, orchestrated by `ImportOrchestrator`. Parsers are pure functions with zero DB or Worker dependency — they receive raw data and return `CanonicalCard[]` / `CanonicalConnection[]`. The DedupEngine and SQLiteWriter receive the `Database` object directly (not through the bridge), following the same pattern as all existing handler files. FTS5 sync is automatic via existing triggers — the ETL layer does not touch `cards_fts` directly. The `CanonicalCard` / `CanonicalConnection` interface contract is the critical integration seam: all six parsers and all three write components depend on it, so it must be defined first.
 
-The most significant risks are WKWebView-specific (WASM MIME type rejection on local file URLs, data loss if the Worker is terminated without exporting the in-memory database) and D3-specific (missing key functions causing broken transitions, provider subscriber leaks from views that don't call `destroy()`). All critical pitfalls have documented prevention patterns and must be tested from the first phase they are introduced. The build sequence is dictated by a strict dependency DAG: WorkerBridge first, then providers and MutationManager, then D3 views from simplest to most complex, with SuperGrid (the most complex view) built after simpler views prove the pattern.
+The primary risks are memory-related. sql.js holds the entire database in WASM heap; a 5,000-note Apple Notes import with FTS indexing can push memory past WKWebView limits. Mitigations are known and must be built in from day one: 100-card transaction batches in `SQLiteWriter`, FTS trigger disable/rebuild for bulk imports, dynamic import of the 1MB SheetJS library. A secondary risk cluster involves SQL safety: the `DedupEngine` spec shows string-interpolated source keys in an IN clause — this must be replaced with a JSON-based parameterized query before any external file data is processed. A third risk is browser/Worker compatibility of `gray-matter`, which has a Node.js `fs` dependency that can silently break Vite Worker builds.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-The v0.1 stack (TypeScript 5.9.x strict, sql.js 1.14.0 custom FTS5 WASM, Vite 7.3.1, Vitest 4.0.18) is already configured and passing 151 tests. The only additions required for v1.0 are minimal: `d3@7.9.0` (runtime), `@types/d3@7.4.3` (dev), and `@vitest/web-worker@4.0.18` (dev, for WorkerBridge unit testing). One tsconfig change is required: add `"WebWorker"` to the `lib` array to enable `self.onmessage` and `self.postMessage` types in worker.ts. No changes are needed to vite.config.ts beyond what already exists.
+The v1.0 stack requires no changes. Four targeted additions cover all six parsers. Six of the ten ETL components use only existing infrastructure (JSON.parse, sql.js, existing Worker Bridge patterns).
 
-**Core technologies:**
-- `d3@7.9.0`: Data visualization, DOM data joins, force simulation, transitions, zoom, hierarchy — covers all nine views via named imports (Vite tree-shakes from the umbrella package). Import named exports from sub-modules, never `import * as d3` (prevents ~570KB bundle).
-- `@types/d3@7.4.3`: TypeScript strict-mode types for all D3 sub-modules. Requires explicit generic parameters on selections (`select<SVGSVGElement, unknown>`). Works with `skipLibCheck: false`.
-- `@vitest/web-worker@4.0.18`: Worker simulation in Vitest node environment for WorkerBridge correlation ID integration tests. Must match installed Vitest version exactly.
-- `TypeScript "WebWorker" lib`: Zero-cost tsconfig addition enabling `DedicatedWorkerGlobalScope`, `self.postMessage`, and `MessageEvent<T>` inside worker.ts. With both DOM and WebWorker libs, some shared types have overloaded signatures — LOW risk.
-- D3 force simulation in Worker: `d3-force` has zero DOM dependencies, runs synchronously via `simulation.tick(n)`, posts only stable `{id, x, y}` positions to main thread — never per-tick updates.
+**New runtime packages:**
+- `gray-matter@4.0.3`: Markdown frontmatter parsing — battle-tested (Gatsby, Astro, VitePress). Requires browser-compat alias in `vite.config.ts` (`gray-matter` → `gray-matter-browser`) or an inline fallback parser due to Node.js `fs` dependency. See Pitfall 26.
+- `xlsx@0.20.3` from SheetJS CDN: Excel parsing — the only viable browser/Worker Excel parser. Must be installed via `npm install --save https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`, NOT from the npm registry (0.18.5 is outdated and has ReDoS CVE-2024-22363). Use dynamic `import('xlsx')` to defer the ~1MB bundle until first use.
+- `papaparse@5.5.3`: CSV parsing — the only browser/Worker-native CSV parser with RFC 4180 compliance. Install `@types/papaparse` separately from DefinitelyTyped. Do NOT use `worker: true` option inside the existing Worker (creates nested Workers); call PapaParse synchronously inside ImportWorker.
+- `node-html-parser@7.0.2`: HTML text extraction — zero DOM dependencies, runs in Worker context, 10x faster than DOMParser for bulk batch processing.
 
-**What NOT to add:** React/Vue/Svelte (fight D3's DOM ownership model), MobX/Zustand/Redux (D-001 explicitly forbids parallel entity state), GSAP/Framer Motion (fight D3's transition lifecycle), AG Grid/Handsontable (own their DOM, incompatible with D3 data joins), Observable Plot (hides the data join model), PIXI.js (overkill for <500 visible nodes — SVG + off-thread simulation is sufficient).
+**No new packages needed for:** Apple Notes parsing (JSON.parse), JSON import (JSON.parse), export CSV serialization (PapaParse `unparse()` reuse), dedup, SQLite writes, FTS sync, or data catalog schema.
+
+**Critical installation note:** `npm install xlsx` installs 0.18.5 from the npm registry — obsolete and vulnerable. Always use the CDN tarball.
 
 ### Expected Features
 
-The v1.0 Web Runtime milestone must deliver the full stack that makes data already in SQLite visible and interactive. Users coming from Notion, Airtable, and NocoDB have formed expectations this milestone must meet.
+**Must have (table stakes) — all required for v1.1:**
+- Idempotent re-import — `DedupEngine` keyed on `source + source_id`; re-import inserts new, updates changed, skips unchanged
+- Import result summary — `{inserted, updated, skipped, connections, errors}` returned over Worker Bridge
+- Per-record error isolation — one malformed row must not abort a 500-row import; errors accumulate in `ImportResult.errors[]`
+- Progress reporting — Worker Bridge `import_progress` broadcast events every 100 cards; existing `WorkerMessage` protocol, no new infrastructure
+- Source provenance on every card — `source`, `source_id`, `source_url` fields already exist in `cards` schema
+- Markdown export preserves frontmatter — valid YAML parseable by `gray-matter` on re-import; tags as YAML list
+- JSON export as complete backup — all columns, soft-delete filter (`deleted_at IS NULL`)
+- CSV export RFC 4180 — PapaParse `unparse()` reuses already-installed library
+- Folder structure preservation — all six parsers map to `CanonicalCard.folder`
+- Tag extraction — frontmatter tags, body `#hashtag` scan, configurable column for tabular formats
+- Timestamp preservation — `created_at` and `modified_at` from source, not import time
+- FTS5 stays in sync — SQLiteWriter uses the standard `INSERT INTO cards` path; existing triggers fire automatically
 
-**Must have (table stakes):**
-- Non-blocking database access — Worker Bridge with typed correlation IDs; any blocking UI operation destroys perceived quality
-- Filter state persists across navigation — three-tier persistence: FilterProvider state → Tier 1 SQLite `app_state`; Airtable and NocoDB both do this, users are confused when filters reset
-- View switching without data loss — PAFVProvider suspends/restores view family state; LATCH state survives a GRAPH detour
-- Keyboard undo/redo (Cmd+Z / Cmd+Shift+Z) — absence is trust-destroying for any desktop-class tool; Notion's undo is notoriously partial
-- Multi-select (Cmd+click toggle, Shift+click range) — consistent with every macOS desktop application
-- Sort controls — users expect ascending/descending sort on any field (PAFVProvider compiles to SQL ORDER BY)
-- Density controls — DensityProvider 4-level model that changes SQL GROUP BY expressions, not just CSS class
+**Should have (competitive differentiators) — also in v1.1 scope:**
+- Connection extraction from Apple Notes — checklist items → `event` cards, @mentions → `person` cards + `mentions` connections, note links → `links_to` connections; this is what makes the Apple Notes parser exceptional vs. any generic importer
+- Data Catalog with full provenance — `import_history` table records every run; no PKM tool (Obsidian, Bear, Notion) tracks this
+- Selective export by card IDs — integrates with existing `SelectionProvider` ephemeral selection
+- Checklist → task card hierarchy — tasks appear immediately in Kanban and Calendar views post-import
+- Column auto-detection for Excel/CSV — case-insensitive header matching against candidate lists covers 80% of real-world exports
 
-**Should have (competitive differentiators):**
-- PAFV spatial projection (any LATCH axis to any screen plane) — no competitor allows arbitrary axis-to-plane mapping with nested SQL GROUP BY compilation
-- SuperGrid with nested dimensional headers and spanning parent headers — unique; all competitors group by one field at a time
-- Animated D3 view transitions — Notion, Airtable, NocoDB all replace content instantly; cards morphing between projections makes the "same data, different view" insight visceral
-- Full command log undo/redo with inverse SQL — most in-browser tools have no undo; every mutation is undoable without server round-trips
-- Force simulation off main thread for network view — critical for usability at 200+ nodes (blocks UI if run on main thread)
-- Graph algorithm suite (PageRank, Louvain community detection, centrality) running client-side on local data
-- Allowlist-enforced SQL safety without ORM — column names allowlisted at compile time, values always parameterized
+**Defer to v1.1.x or later:**
+- Column mapping UI for Excel/CSV — auto-detection covers the common case; UI is significant frontend effort
+- Markdown wikilink extraction — architecture supports it; defer until Obsidian user validation confirms demand
+- Cross-source entity resolution (fuzzy dedup) — false positives destroy data trust; exact `source:source_id` dedup only in v1.1
+- Real-time folder watch — requires native Swift FSEvents; the web runtime processes bytes, it does not watch files
+- Undo for individual import operations — "undo last import" via `import_history` DELETE is the right model; not MutationManager command log
 
-**Defer to v1.x or v2+:**
-- Table view (Workbench tier) — virtual scroll + editable cells + column resize; explicitly deferred per FEATURES.md
-- ETL importers — v1.1 milestone; runtime must be stable before importing real data
-- Native Swift shell beyond basic WKWebView integration spike
-- CloudKit sync, EAV card_properties, semantic/vector search, collaborative features
-
-**Feature build order (P1 = blocks all else, P2 = part of milestone after P1):**
-WorkerBridge → SQL allowlist → FilterProvider + PAFVProvider + SelectionProvider + DensityProvider + MutationManager + StateCoordinator → List view (establishes pattern) → Grid + Kanban + View transitions → Calendar + Timeline + Gallery → Network + Tree → SuperGrid
+**Anti-features to avoid:**
+- Streaming XLSX reads — architecturally impossible (ZIP central directory at end of file); Worker offload is the correct solution
+- `SELECT *` in DedupEngine — project minimally (`id, source_id, modified_at` only)
+- String interpolation of source keys in DedupEngine SQL — SQL injection vector; use `json_each(?)` pattern
+- Base64 attachment storage in sql.js — fatal memory pressure; store metadata only (`mime_type`, `filename`)
+- Fuzzy cross-source dedup — silent data corruption risk; defer behind explicit user confirmation UI
 
 ### Architecture Approach
 
-The architecture follows a strict layered model. D3 views and Providers on the main thread communicate exclusively through the WorkerBridge to a Web Worker running sql.js (WASM). No entity data persists on the main thread beyond the current render cycle — D3's data join IS state management. The StateCoordinator batches cross-provider updates within 16ms frames. All mutations flow through MutationManager which generates inverse SQL for undo, sets the dirty flag, and notifies subscribers via requestAnimationFrame batching.
+The ETL subsystem is a new `src/etl/` top-level directory mirroring the existing `src/providers/`, `src/mutations/`, `src/views/` pattern. All six parsers are pure functions testable with file fixtures in standard Vitest node environment with no Worker or sql.js dependency. The infrastructure layer (DedupEngine, SQLiteWriter, CatalogWriter) receives `db: Database` directly — not through the WorkerBridge, which is a main-thread concept. Two new message types (`etl:import`, `etl:export`) are added to the `WorkerRequestType` union in `protocol.ts`. Four existing files are minimally modified; sixteen new files are created.
 
-**Major components (in build order):**
-1. **WorkerBridge** (`src/worker/WorkerBridge.ts`) — Main-thread promise proxy over postMessage; UUID `pending` Map with per-entry timeout; singleton initialized once; exposes `isReady` promise that all public methods await internally
-2. **Message Router + Handlers** (`src/worker/worker.ts`, `src/worker/handlers/`) — Worker-side switch on message type; calls existing pure query functions from `src/database/queries/`; queues messages during WASM initialization to prevent lost messages
-3. **FilterProvider** (`src/providers/FilterProvider.ts`) — LATCH filter state compiled to `{where, params}` with column allowlist enforcement; never calls bridge directly
-4. **PAFVProvider** (`src/providers/PAFVProvider.ts`) — Axis-to-plane mappings compiled to GROUP BY + ORDER BY fragments; view family suspension/restoration across LATCH/GRAPH boundary
-5. **SelectionProvider** (`src/providers/SelectionProvider.ts`) — Tier 3 ephemeral only; `Set<string>` in-memory; never persisted to SQLite by explicit decision (D-005)
-6. **DensityProvider** (`src/providers/DensityProvider.ts`) — 4-level density model compiled to strftime() SQL expressions; controls GROUP BY granularity, not just CSS
-7. **StateCoordinator** (`src/providers/StateCoordinator.ts`) — 16ms batch window; orchestrates Tier 1/2 persistence; explicitly excludes SelectionProvider (Tier 3)
-8. **MutationManager** (`src/mutations/MutationManager.ts`) — Single write gate; `Command` with `forward` and `inverse` SQL; in-memory undo/redo stack (Tier 3); requestAnimationFrame-batched subscriber notification
-9. **D3 Views** (`src/views/*.ts`) — Nine views; every `.data()` call requires key function `d => d.id`; ListView establishes the canonical pattern; SuperGrid is most complex (built last)
-10. **ViewManager** (`src/views/ViewManager.ts`) — Mounts/unmounts active view; calls `view.destroy()` before mounting next view to prevent subscriber leaks
+**Major components:**
+1. `src/etl/types.ts` — `CanonicalCard`, `CanonicalConnection`, `ImportResult`; foundation all other components depend on
+2. `src/etl/ImportOrchestrator.ts` — coordinates parse → dedup → write → catalog pipeline
+3. `src/etl/DedupEngine.ts` — loads all existing `source_id` values for the source type in one query, classifies insert/update/skip in memory (avoids IN clause injection risk)
+4. `src/etl/SQLiteWriter.ts` — batched INSERT with `db.prepare()` + 100-card transactions; FTS triggers fire automatically
+5. `src/etl/parsers/` (6 files) — pure transform functions, independently testable with fixtures
+6. `src/etl/ExportOrchestrator.ts` — queries cards, formats as Markdown/JSON/CSV
+7. `src/etl/CatalogWriter.ts` — writes to `import_history` and `sources` after each run
+8. Schema addition — `import_history` and `sources` tables appended to `schema.sql`
 
-**Key architectural rules that cannot be violated:**
-- Providers never call `workerBridge.query()` — they compile fragments only
-- All entity writes go through `MutationManager.exec()` — never through bridge directly from a view
-- Selection is Tier 3 only — never persisted (D-005 is final)
-- D3 key function is mandatory on every `.data()` call — non-negotiable for transitions
+**Build order (dependency DAG):**
+- Foundation first: `types.ts` → schema migration → `protocol.ts` additions
+- Infrastructure next: `SQLiteWriter` → `DedupEngine` → `CatalogWriter` (testable with hand-crafted cards, no parsers needed)
+- Parsers in parallel: all six are independent (AppleNotes → Markdown → CSV → JSON → Excel → HTML, complexity order)
+- Pipeline assembly last: `ImportOrchestrator` → `ExportOrchestrator` → handlers → worker router → WorkerBridge methods
 
 ### Critical Pitfalls
 
-1. **WKWebView WASM MIME rejection** — WKWebView's `fetch()` enforces strict MIME type validation on local file:// URLs; `initSqlJs()` hangs silently. Prevention: use `WKURLSchemeHandler` for native URL serving with correct Content-Type, or a scoped XMLHttpRequest fallback for the WASM asset only. Test in WKWebView on day one — Vite dev server masks this problem entirely.
+Pitfalls are drawn from the full PITFALLS.md catalog. ETL-specific pitfalls are Pitfalls 22-29. Pre-existing pitfalls most relevant to ETL integration are 4, 11, and 12.
 
-2. **Worker initialization race condition** — Messages arriving at the Worker during WASM initialization (200-500ms) are lost; calls to `workerBridge.query()` before `init()` resolves fail. Prevention: register `self.onmessage` immediately but queue messages until `db` is initialized; expose an `isReady` promise on WorkerBridge that all public methods await implicitly.
+1. **sql.js WASM Heap OOM on large imports (P22, CRITICAL)** — 5,000 Apple Notes with FTS indexing can exceed 150MB WKWebView limit. Use 100-card transaction chunks; yield to event loop between chunks. After bulk insert, run `INSERT INTO cards_fts(cards_fts) VALUES('optimize')` to merge FTS segments. Strip Base64 attachment data before writing.
 
-3. **Missing D3 key function causes broken transitions** — Every `.data()` call without a key function uses index-based matching; on sort/filter changes, cards animate to wrong positions and DOM nodes are unnecessarily destroyed. Prevention: enforce key function from the very first view written; it cannot be retrofitted without rewriting all join logic.
+2. **DedupEngine SQL injection from source_id values (P25, CRITICAL)** — The spec shows string-interpolated source keys; Markdown file paths are user-supplied and can contain SQL metacharacters. Replace with JSON `json_each(?)` pattern: `WHERE (source || ':' || source_id) IN (SELECT value FROM json_each(?))`. Must be fixed before the first ETL test runs.
 
-4. **Provider subscriber leak accumulates across view switches** — Views that subscribe on mount but fail to call the returned unsubscribe function on `destroy()` accumulate dead callbacks. After N view switches, N bridge queries fire per state change. Prevention: every view exposes `destroy()`; ViewManager calls it before mounting the next view; test subscriber count before and after 10 mount/destroy cycles.
+3. **sql.js buffer overflow on large SQL strings (P23, CRITICAL)** — Never pass a concatenated multi-row VALUES INSERT to `db.run()`; observed failures at ~3,700 rows (~1.5MB string). SQLiteWriter's 100-card prepared statement loop is the only correct write path. Never bypass it for "optimization."
 
-5. **Pending promise map unbounded growth on silent Worker error** — If a Worker message handler throws an error that doesn't crash the Worker, the promise is never resolved or rejected and hangs forever. Prevention: every `pending.set()` call sets a timeout that rejects after a configurable duration (5s for queries, 30s for graph operations, 60s for PageRank).
+4. **FTS5 trigger overhead makes bulk imports unusably slow (P24, HIGH)** — 10K cards via per-row triggers can take 30-60s instead of ~2s. For initial imports: disable FTS triggers, bulk-insert, rebuild via `INSERT INTO cards_fts SELECT ... FROM cards`, optimize, restore triggers. For incremental re-imports, triggers are correct and fast.
 
-6. **sql.js in-memory data loss on Worker termination** — sql.js has no automatic persistence; all data exists only in the Worker's WASM heap. Prevention: implement D-010 dirty flag immediately on every mutation; wire `db.export()` to app-backgrounding signals from the native shell, not only to the 2-second debounce.
+5. **gray-matter `fs` dependency breaks in browser/Worker (P26, HIGH)** — gray-matter imports Node.js `fs`, causing `vite build` failure or silent frontmatter loss in the browser. Use `gray-matter-browser` npm alias in `vite.config.ts` or implement a minimal inline frontmatter parser (handles 95% of real-world Obsidian/Bear YAML frontmatter without a dependency).
 
-7. **Empty provider fragment produces invalid SQL** — When FilterProvider or PAFVProvider returns empty strings for optional clauses, `WHERE ` or `ORDER BY ` (bare clauses) cause SQLite syntax errors on first load before any user interaction. Prevention: QueryCompiler must treat all fragments as potentially absent and provide safe defaults; test with all providers at initial default state.
+6. **SheetJS ~1MB bundle inflates initial load (P27, MODERATE)** — Use dynamic `import('xlsx')` in ExcelParser so SheetJS loads only on first Excel import, not on app start. Use `xlsx.mini.min.js` Vite alias to exclude legacy format codepages (~600KB savings).
+
+7. **CSV UTF-8 BOM corrupts first column header (P28, MODERATE)** — Excel CSV exports frequently include BOM; `findColumn()` fails to match `"﻿name"` against `"name"`. Strip with `new TextDecoder('utf-8', { ignoreBOM: true })`. First CSVParser test must use a BOM-prefixed fixture.
+
+8. **HTML script tag execution risk (P29, HIGH)** — Parse HTML only in Worker context (no DOM, no script execution). Use Worker-safe regex stripping for `<script>` and `<style>` tags before extracting text content.
+
+---
 
 ## Implications for Roadmap
 
-Based on combined research, the natural phase structure follows the component dependency DAG with a clear bottom-up build order. The architecture is fully specified with no ambiguous dependency relationships — phase boundaries are determined by technical prerequisites, not arbitrary feature grouping.
+Based on research, the ETL pipeline maps cleanly to three phases with a bottom-up dependency structure. The architecture is fully specified; phase boundaries are determined by technical prerequisites.
 
-### Phase 1: Worker Bridge + Runtime Foundation
+### Phase 8: ETL Foundation + Apple Notes Parser
 
-**Rationale:** WorkerBridge is the mandatory prerequisite for every other component in this milestone. No provider, view, or mutation manager can function without it. This phase also resolves the two highest-risk pitfalls: WKWebView WASM loading and Worker initialization race conditions. Failing to address these early invalidates all subsequent work.
+**Rationale:** The foundation types (`CanonicalCard`, schema migration, protocol additions) must exist before any parser can be built. Apple Notes is the primary data source and most complex parser — it drives the `CanonicalConnection` design that all other components depend on. Building the foundation and primary parser together validates the full pipeline end-to-end before adding simpler parsers. All critical pitfall mitigations (OOM chunking, SQL injection fix, FTS optimization) must be established in this phase.
 
-**Delivers:** Working async RPC layer over postMessage; Worker initialization with message queuing during WASM load; `isReady` promise pattern on WorkerBridge; timeout on every pending promise entry; `@vitest/web-worker` integration; integration test proving main thread → Worker → sql.js → main thread round-trip under concurrency. Also includes `tsconfig.json` "WebWorker" lib addition.
+**Delivers:** Full ETL pipeline from file bytes to searchable cards. Apple Notes notes, tasks (checklist → event cards), attachments (resource cards), mentions (person cards), and note links (connections) are all imported. Data Catalog records every run. FTS5 stays in sync. Worker Bridge round-trip tested end-to-end.
 
-**Features addressed:** Non-blocking database access (table-stakes foundation); loading state during initialization; consistent card identity across views.
+**Addresses:** Idempotent re-import (DedupEngine), source provenance, connection extraction, data catalog, progress reporting, FTS sync.
 
-**Pitfalls avoided:** WKWebView WASM MIME rejection (Pitfall 1); Vite production build WASM path (Pitfall 3); Worker initialization race condition (Pitfall 11); pending promise map unbounded growth (Pitfall 12).
+**Avoids:** P22 (chunk writes from day one), P23 (prepared statements only), P24 (trigger disable/rebuild for initial imports), P25 (JSON `json_each` in DedupEngine from day one).
 
-**Research flag:** STANDARD — WorkerBridge with correlation ID promises is well-documented in the spec; implementation is specified with no ambiguity.
+**Build sub-order (within phase):**
+1. `src/etl/types.ts` — CanonicalCard, CanonicalConnection, ImportResult
+2. Schema migration — `import_history`, `sources` tables added to `schema.sql`
+3. `protocol.ts` — `etl:import`, `etl:export` types in WorkerRequestType union
+4. `SQLiteWriter.ts` — 100-card batches, `db.prepare()`, transaction wrapping
+5. `DedupEngine.ts` — load-all-existing-by-source-type pattern, `json_each` query
+6. `CatalogWriter.ts` — writes `import_history` row after each run
+7. `AppleNotesParser.ts` — notes + checklist + attachments + mentions + links → canonical types
+8. `ImportOrchestrator.ts` — parser → dedup → writer → catalog pipeline
+9. Worker handler, router case, WorkerBridge `importFile()` method
+10. Integration tests: round-trip, dedup idempotency, FTS sync, catalog verification, 5K card OOM test
 
-### Phase 2: Provider System + MutationManager
+**Research flag:** No additional research needed. Architecture fully specified in `DataExplorer.md` and `WorkerBridge.md`. Pitfall mitigations are documented with code examples in PITFALLS.md.
 
-**Rationale:** All five providers plus MutationManager form a single coherent system that must exist before any D3 view can function. FilterProvider and SelectionProvider are independent and can be built in parallel. DensityProvider is also independent. MutationManager is parallel to providers (both depend only on WorkerBridge). StateCoordinator requires all providers. The SQL column allowlist is a security prerequisite — it must be built before FilterProvider generates any dynamic SQL.
+### Phase 9: Remaining Parsers + Export Orchestrator
 
-**Delivers:** Complete provider system with SQL compilation; SQL column allowlist enforced at compile time; three-tier state persistence end-to-end; MutationManager with undo/redo command log and inverse SQL generation; frame-batched subscriber notification; full test suite for SQL compilation and injection rejection.
+**Rationale:** Markdown, Excel, CSV, JSON parsers are simpler than Apple Notes (no connections, column auto-detection rather than structured graph parsing). They can be built rapidly once the pipeline infrastructure is proven. HTMLParser is the most fragile — built last. ExportOrchestrator is a read-only query path with zero new infrastructure requirements.
 
-**Features addressed:** Filter state persists across navigation; view switching without data loss; keyboard undo/redo; density controls that compile to SQL; allowlist-enforced SQL safety; mutation notification batched at frame boundary.
+**Delivers:** All six parsers complete. Export in Markdown (valid YAML frontmatter), JSON (complete backup), and CSV (RFC 4180). Worker handler integration for export. Selective export by `cardIds` integrates with existing `SelectionProvider`.
 
-**Pitfalls avoided:** Subscriber leak (Pitfall 13 — establish mount/destroy contract in provider interface before any view uses it); getState() mutation bypass (Pitfall 14 — enforce Readonly<T> return types from the start); empty provider fragment produces invalid SQL (Pitfall 15 — test with all providers at default state); undo batch inverse SQL ordering (Pitfall 16).
+**Addresses:** Full format coverage (Apple Notes, Markdown, Excel, CSV, JSON, HTML), Obsidian/Bear migration, spreadsheet hand-off, complete backup capability.
 
-**Research flag:** STANDARD — provider architecture is fully specified in Contracts.md and Providers.md; MutationManager command log pattern is well-understood from first principles.
+**Avoids:** P26 (gray-matter `fs` dependency — verify Worker compat before MarkdownParser tests), P27 (SheetJS bundle — dynamic import in ExcelParser), P28 (CSV BOM — `TextDecoder ignoreBOM` in CSVParser), P29 (HTML script execution — Worker context + regex strip).
 
-### Phase 3: Core D3 Views (List, Grid, Kanban) + View Transitions
+**Build sub-order (within phase):**
+1. `MarkdownParser.ts` — gray-matter browser alias or inline parser; frontmatter tags, timestamps, folder from path
+2. `CSVParser.ts` — PapaParse sync (no nested Worker), BOM strip, column auto-detection
+3. `JSONParser.ts` — JSON.parse, configurable field mapping, array/object normalization
+4. `ExcelParser.ts` — SheetJS dynamic import, ArrayBuffer via postMessage (Transferable), `cellDates: true`
+5. `HTMLParser.ts` — Worker-safe HTML stripping, script/style tag removal, text extraction
+6. `ExportOrchestrator.ts` — Markdown with YAML frontmatter, JSON, CSV via PapaParse unparse
+7. `etl-export.handler.ts` — thin delegation to ExportOrchestrator
+8. WorkerBridge `exportFile()` method
+9. Parser tests with real-world fixture files (BOM-prefixed CSV, Excel with dates, Obsidian vaults)
 
-**Rationale:** ListView is the simplest D3 view and establishes the canonical pattern all other views follow: key function, data join enter/update/exit, requery-on-notification, SelectionProvider CSS overlay. Building ListView correctly — especially with the stable key function — is the prerequisite for view transitions working at all. Grid proves "same data, different projection." Kanban adds MutationManager integration (drag-drop is a mutation). View transitions require at least two views with stable card identity.
+**Research flag:** HTMLParser may need additional research on `linkedom` vs `@mozilla/readability` for Worker context compatibility. FEATURES.md notes `@mozilla/readability` requires a DOM environment — verify `linkedom` as a lightweight DOM shim in Worker before implementation. If `linkedom` adds too much complexity, a regex-based approach handles 80% of web clipping use cases.
 
-**Delivers:** Three working D3 views (list, grid, kanban with drag-drop); Card component shared across all views; animated view transitions with `d3-transition` and stable `d => d.id` key functions; drag-drop in kanban updating status via MutationManager (undoable); view transition strategies (morph for LATCH-to-LATCH, crossfade for LATCH-to-GRAPH family boundary).
+### Phase 10: ETL Polish + Progress Reporting
 
-**Features addressed:** View transitions (keystone differentiator); LATCH/GRAPH view family duality; kanban drag-drop; view-specific defaults; instant filter response visible end-to-end; select multiple items across views.
+**Rationale:** Progress reporting, import history audit hooks, and integration hardening are second-order features — valuable but not blocking for functional pipeline completeness. Deferring them keeps Phases 8-9 focused on correctness.
 
-**Pitfalls avoided:** Missing D3 key function (Pitfall from ARCHITECTURE.md anti-patterns — enforce from first view, cannot retrofit); subscriber leak (ViewManager calls `destroy()` before mounting next view, verified in this phase with mount/destroy cycle test).
+**Delivers:** `import_progress` broadcast events over Worker Bridge (add to `WorkerMessage` union). Extended timeout on `importFile()` (300s vs 30s default) for large imports. FTS `optimize` post-bulk-import. Import history accessible for audit trail.
 
-**Research flag:** STANDARD — D3 data join with stable key functions and d3-transition are extensively documented; kanban drag-drop uses `d3-drag` with established patterns.
+**Addresses:** P22 follow-on (FTS optimize, progress events for stall detection), import UX transparency.
 
-### Phase 4: Time + Visual Views (Calendar, Timeline, Gallery)
+**Avoids:** Silent hang during large imports — extended configurable timeout on the `etl:import` message type.
 
-**Rationale:** Calendar and Timeline both depend on DensityProvider's time hierarchy (day/week/month/quarter/year → strftime expressions) and d3-time-format. These were built in Phase 2 but not yet exercised by any view. Gallery is the simplest of the three (same 2D tile layout as Grid). These three views share time-axis SQL patterns and can be developed together.
-
-**Delivers:** Calendar view with month/week/day DensityProvider integration; Timeline view with continuous `d3.scaleTime()` and PAFVProvider swim lane assignment; Gallery view with image/cover tile rendering for resource card types. DensityProvider time SQL fragments exercised at all five granularity levels.
-
-**Features addressed:** Calendar and Timeline complete the LATCH view family; Gallery provides visual richness for resource cards; density controls exercised at real SQL granularity.
-
-**Pitfalls avoided:** Ensure time-axis DensityProvider SQL fragments produce valid GROUP BY expressions at every density level; test with all five density levels (day/week/month/quarter/year) before advancing.
-
-**Research flag:** STANDARD — time-axis D3 views follow documented d3-time and d3-time-format patterns; DensityProvider SQL compilation for time hierarchies is straightforward strftime expression mapping.
-
-### Phase 5: Graph Views (Network, Tree) + SuperGrid
-
-**Rationale:** Network and Tree views require populated connection data (seeded from test data for v1.0, ETL in v1.1), GRAPH view family state suspension in PAFVProvider, and d3-force simulation running in the Worker. SuperGrid is the most complex view in the milestone — it requires PAFVProvider axis stacking, DensityProvider group collapse, and custom nested header rendering unlike any standard D3 pattern. Building SuperGrid after simpler views prove the pattern reduces risk significantly.
-
-**Delivers:** Network view with D3 force-directed layout computed in the Worker (never on main thread), PageRank node sizing, Louvain community coloring, pan/zoom; Tree view with d3-hierarchy layout from contains/parent connections, collapsible nodes; SuperGrid with nested dimensional headers, spanning parent headers, sticky headers, collapsible groups, and SQL GROUP BY compiled from stacked PAFV axes.
-
-**Features addressed:** PAFV spatial projection (signature differentiator); SuperGrid nested dimensional headers; force simulation off main thread; graph algorithm suite; LATCH/GRAPH view family duality exercised end-to-end; SuperStack spanning headers.
-
-**Pitfalls avoided:** Force simulation on main thread (blocks UI at 200+ nodes — must run in Worker, post only stable `{id, x, y}` positions). SuperGrid sticky header implementation needs careful CSS position:sticky scoping.
-
-**Research flag:** NEEDS RESEARCH for SuperGrid SuperStack nested header spanning algorithm — the spec defines the behavior (parent headers visually span children in D3 SVG) but the specific D3 implementation is not analogous to any standard documented example. Flag for `gsd:research-phase` when planning Phase 5. Graph algorithm implementations (PageRank, Louvain) may also need sourcing if pure-TypeScript implementations are needed.
+**Research flag:** No additional research needed. Progress notification pattern is documented in ARCHITECTURE.md as an additive `WorkerNotification` message type. The `WorkerBridgeConfig.timeout` override pattern is specified.
 
 ### Phase Ordering Rationale
 
-- **WorkerBridge absolutely first:** No other component can function without it. Also resolves the highest-risk WKWebView pitfalls before any feature work is invested.
-- **Providers before views:** Every view depends on compiled SQL fragments from providers. Building views without providers would require throwaway mock implementations that would be replaced anyway.
-- **MutationManager in Phase 2 (parallel to providers):** Both depend only on WorkerBridge. Kanban drag-drop in Phase 3 requires MutationManager, so it must complete before Phase 3.
-- **ListView before SuperGrid:** Establishes the D3 data join pattern. SuperGrid builds on that pattern but adds 4x complexity. Attempting SuperGrid first conflates architectural decisions with view-specific complexity.
-- **Graph views in Phase 5 (last):** Network and Tree require populated connection data (primarily from ETL, which is v1.1). For v1.0, test data suffices, but graph views are GRAPH family which requires LATCH views to exist first for PAFVProvider family suspension to have a target to return to.
-- **Table view deferred:** Explicitly deferred per FEATURES.md. Virtual scroll + editable cells + column resize is out of scope for v1.0.
+- Foundation types must exist before any parser or infrastructure component can compile — hard dependency, not style preference.
+- SQLiteWriter and DedupEngine are built before parsers so parsers can be integration-tested end-to-end immediately when they are ready.
+- Apple Notes parser is built before simpler parsers because it drives the `CanonicalConnection` design. The other five parsers produce no connections in v1.1, so they do not need to see the final connection model before they are written.
+- ExportOrchestrator is deferred to Phase 9 because it has zero infrastructure dependencies and reuses already-proven components (sql.js queries, PapaParse, string templates).
+- Progress reporting is deferred to Phase 10 because the existing `importFile()` extended timeout is a sufficient v1.1 UX — a spinner with no progress bar is acceptable for the initial release at realistic Apple Notes vault sizes (100-5,000 notes).
 
 ### Research Flags
 
 **Phases needing deeper research during planning:**
-- **Phase 5 (SuperGrid):** SuperStack nested header spanning algorithm — parent headers visually spanning children across D3 SVG elements — is custom to this project with no documented analogue. Flag for `gsd:research-phase` when planning Phase 5.
-- **Phase 5 (Graph algorithms):** PageRank and Louvain community detection are specified as Worker-side operations, but no specific TypeScript implementation is identified in the research. At Phase 5 planning, evaluate whether to implement from scratch or source a pure-JS library that runs in a Worker context without DOM dependencies.
+- **Phase 9 (HTMLParser):** `@mozilla/readability` requires a DOM environment. Verify `linkedom` vs `jsdom` Worker compatibility before implementation. `linkedom` is the leaner choice (no Node.js built-in dependencies) but may have API gaps vs Readability's expected DOM interface. If incompatible, a regex-based fallback handles the 80% case.
 
 **Phases with standard patterns (skip research-phase):**
-- **Phase 1 (WorkerBridge):** Promise correlation over postMessage is a standard pattern; canonical spec provides the implementation. `@vitest/web-worker` is straightforward to configure.
-- **Phase 2 (Provider system):** SQL compilation from UI state is fully specified in Contracts.md and Providers.md. MutationManager inverse SQL pattern follows standard command pattern.
-- **Phase 3 (List, Grid, Kanban, transitions):** D3 data join with stable key functions and d3-transition are extensively documented with Observable examples.
-- **Phase 4 (Calendar, Timeline, Gallery):** d3-time and d3-time-format are standard D3 modules; time-axis views follow established documented patterns.
+- **Phase 8:** Architecture fully specified in `DataExplorer.md` and `WorkerBridge.md`. Pitfall mitigations are explicit with code examples. No unknowns.
+- **Phase 9 (parsers except HTML):** gray-matter, SheetJS, PapaParse, JSON.parse — all well-documented with specific version requirements and workarounds in STACK.md and PITFALLS.md.
+- **Phase 10:** Progress reporting is a documented WorkerMessage extension. No new infrastructure.
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All library versions verified via npm registry (2026-02-28). D3 7.9.0 confirmed current stable (no v8 exists). @vitest/web-worker 4.0.18 matches installed Vitest. Only 3 new dependencies needed. |
-| Features | HIGH | Architecture is locked in CLAUDE-v5.md (D-001 through D-010 are final decisions, not hypotheses). Competitor analysis (Notion, Airtable, NocoDB) confirms table-stakes features. Dependency graph is explicit and logical. |
-| Architecture | HIGH | Fully specified across six canonical spec documents. Integration points, data flows, and build order are explicit in ARCHITECTURE.md. The existing v0.1 codebase validates the database layer works as specified. |
-| Pitfalls | MEDIUM-HIGH | WKWebView WASM pitfalls verified via WebKit issue reports and community evidence. Worker initialization race condition verified from first principles. D3 key function pitfall is HIGH confidence from D3 issue tracker evidence. Undo batch ordering pitfall is HIGH from SQL semantics. View transition and subscriber leak pitfalls are MEDIUM (community evidence, not official). |
+| Stack | MEDIUM-HIGH | npm versions verified; SheetJS CDN tarball confirmed at 0.20.3; gray-matter `fs` issue confirmed via GitHub issues. Bundle size estimates from Bundlephobia are approximations (inaccessible during research). |
+| Features | HIGH | Spec fully defined in `DataExplorer.md`. Parser behaviors verified via official library docs and WebSearch. PKM competitive patterns drawn from Obsidian, Bear, Notion, Airtable. |
+| Architecture | HIGH | Derived directly from canonical specs (`DataExplorer.md`, `WorkerBridge.md`) and confirmed against actual v1.0 source files (`protocol.ts`, `schema.sql`, handler pattern). |
+| Pitfalls | MEDIUM-HIGH | ETL pitfalls verified via sql.js GitHub issues, SheetJS docs, and first principles. gray-matter `fs` issue confirmed via GitHub issues #49/#50. Severity ratings involve judgment about WKWebView memory limits in constrained device environments. |
 
-**Overall confidence:** HIGH
+**Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-- **WKWebView integration test environment:** The v0.1 tests run in Node/Vitest. No WKWebView-in-iOS-simulator test has been run against the completed web runtime. Pitfall 1 (WASM MIME) will only manifest when loading a production Vite build into a real WKWebView. This must be validated in Phase 1 with a native shell integration spike before Phase 3 commits to the rendering architecture.
+- **Apple Notes `alto-index` format specifics (LOW confidence):** No public schema found. Format confirmed as Markdown output (not JSON), but frontmatter fields are not formally specified. Plan for format auto-detection by file extension + structure inspection. First import of a real alto-index export will reveal actual field names — build the parser defensively.
 
-- **SuperGrid SuperStack header spanning algorithm:** The spec describes the visual behavior (parent headers span children) but does not prescribe the D3 SVG implementation. No documented analogous example exists. Options include: absolute-positioned overlay SVG elements, `foreignObject` elements, or nested `<g>` with calculated widths derived from child cell counts. This needs resolution during Phase 5 planning — flag for `gsd:research-phase`.
+- **apple-notes-liberator JSON schema (MEDIUM confidence):** Documented in GitHub README but not a formal spec. Field names (`title`, `folder`, `text`, `embeddedObjects`, `links`) are from README examples. Validate against an actual export before finalizing `AppleNotesParser`.
 
-- **Graph algorithm implementations:** PageRank and Louvain community detection are specified as Worker-side operations but no specific TypeScript implementation is identified. At Phase 5, evaluate pure-TypeScript implementations vs. sourcing a library. The library must have zero DOM dependencies to run in a Worker context.
+- **HTMLParser DOM library selection:** `@mozilla/readability` requires a DOM environment. `linkedom` claims Worker compatibility but `linkedom` + `readability` in a Worker is an uncommon combination. Add a Worker compatibility test before writing HTMLParser. Fallback: regex-based text extraction (handles 80% of web clippings without a DOM shim).
 
-- **`db.export()` performance at scale:** sql.js's `db.export()` returns a `Uint8Array` of the full database binary. At 10K+ cards, this may take measurable time. Profile before wiring to the D-010 CloudKit debounce trigger. If slow, it may need to be asynchronous with the dirty flag held open during export.
+- **`json_each()` function availability in custom sql.js WASM:** The recommended SQL injection mitigation uses SQLite's JSON1 `json_each()` function. Verify this function is available in the custom FTS5 WASM build used by this project (sql.js 1.14 with custom build). If not available, use the alternative: load all `source_id` values for the source type into a JavaScript `Map` and filter in memory — same O(n) complexity, no function dependency.
 
-- **DOM + WebWorker lib type conflicts:** Adding `"WebWorker"` to tsconfig alongside `"DOM"` produces overlapping type signatures for shared types like `MessageEvent`. Research flags this as LOW risk, but validate when the tsconfig change is made in Phase 1 — if TypeScript produces ambiguous type errors, the approach may need to be a separate tsconfig for the worker file.
+- **gray-matter browser fork availability:** Research recommends `gray-matter-browser` as a browser-compatible fork via Vite alias. Verify this package is on npm and actively maintained before adopting it. If not maintained, the inline frontmatter parser is the primary approach — YAML frontmatter is simple enough to implement in ~30 lines.
+
+---
 
 ## Sources
 
-### Primary (HIGH confidence — canonical project specifications)
-- `CLAUDE-v5.md` — D-001 through D-010 locked architectural decisions, milestone definitions
-- `v5/Modules/Core/Contracts.md` — TypeScript interfaces, schema, safety rules, allowlist pattern
-- `v5/Modules/Core/WorkerBridge.md` — Canonical WorkerBridge protocol and implementation
-- `v5/Modules/Core/Providers.md` — Provider pattern, StateCoordinator, MutationManager
-- `v5/Modules/SuperGrid.md` — PAFV projection, SuperStack headers, density model
-- `v5/Modules/Views.md` — Nine view types, D3 patterns, view transition strategies
-- `v5/Modules/D3Components.md` — Design system, component patterns
+### Primary (HIGH confidence)
+- `v5/Modules/DataExplorer.md` — canonical ETL interface definitions, all parser implementations
+- `v5/Modules/Core/WorkerBridge.md` — WorkerBridge protocol spec
+- `src/worker/protocol.ts` — actual v1.0 WorkerRequestType union pattern
+- `src/database/schema.sql` — actual v1.0 schema; confirms `source`, `source_id`, `source_url` columns and `idx_cards_source` UNIQUE index already present
+- `src/worker/handlers/export.handler.ts` — handler pattern reference
 
-### Primary (HIGH confidence — official documentation)
-- npm registry — d3@7.9.0, @types/d3@7.4.3, @vitest/web-worker@4.0.18 — versions verified 2026-02-28
-- d3js.org — D3 v7 module listing, force simulation API (`simulation.tick(n)` no-DOM), hierarchy, zoom, transition docs
-- vite.dev — Web worker configuration, `worker.format: 'es'`, `optimizeDeps.exclude`
-- TypeScript tsconfig reference — `lib: ["WebWorker"]` behavior, DOM + WebWorker coexistence
-- SQLite FTS5 documentation — external content tables, trigger patterns, rowid join, integrity-check
-- d3/d3 GitHub issue #1053 — d3-force confirmed zero DOM dependencies (Worker-safe)
+### Secondary (MEDIUM confidence)
+- SheetJS official docs — https://docs.sheetjs.com — Worker support, Vite integration, CDN installation
+- SheetJS CDN — https://cdn.sheetjs.com — version 0.20.3
+- SheetJS CVE-2024-22363 — ReDoS in npm registry version; CDN version unaffected
+- gray-matter npm — https://www.npmjs.com/package/gray-matter — v4.0.3
+- gray-matter GitHub issues #49/#50 — `fs` dependency in browser builds (unresolved)
+- PapaParse docs — https://www.papaparse.com — BOM handling, streaming, RFC 4180
+- PapaParse GitHub issue #840 — UTF-8 BOM first-column header bug
+- node-html-parser npm — https://www.npmjs.com/package/node-html-parser — v7.0.2
+- sql.js GitHub issues — WASM heap limits, buffer overflow behavior
+- JS CSV parser benchmarks — https://leanylabs.com/blog/js-csv-parsers-benchmarks
 
-### Secondary (MEDIUM confidence — community and issue tracker)
-- Observable — Force-directed web worker example, animated transitions, effective animation examples
-- Stanford Vis Group — Animated Transitions in Statistical Data Graphics (view transition strategy research)
-- WebKit behavior — WKWebView fetch() MIME validation on local file:// URLs
-- Airtable docs — Filter persistence per saved view, multi-select behavior
-- Notion/Airtable/NocoDB competitor comparison — view state behavior, undo/redo limitations
+### Tertiary (LOW confidence)
+- alto-index website — https://altoindex.com — confirms Markdown output format (no public schema)
+- apple-notes-liberator GitHub — https://github.com/HamburgChimps/apple-notes-liberator — JSON schema from README
 
 ---
-*Research completed: 2026-02-28*
+*Research completed: 2026-03-01*
 *Ready for roadmap: yes*
