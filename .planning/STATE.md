@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
-status: defining_requirements
+status: ready_to_plan
 last_updated: "2026-03-01"
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -18,18 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-01)
 
 **Core value:** SuperGrid renders imported data through PAFV spatial projection with zero serialization -- sql.js queries directly feed D3.js data joins.
-**Current focus:** v1.1 ETL Importers — full import/export pipeline with 6 source parsers
+**Current focus:** v1.1 ETL Importers — full import/export pipeline with 6 source parsers, dedup, export, data catalog
 
 ## Current Position
 
 ```
-[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 defining requirements
+[v0.1 SHIPPED] [v0.5 SHIPPED] [v1.0 SHIPPED] → v1.1 ready to plan phases
 ```
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-03-01 — Milestone v1.1 started
+Milestone: v1.1 ETL Importers — 3 phases (8, 9, 10), 19 requirements (ETL-01..19)
+Next: `/gsd:plan-phase 8` to plan Phase 8 (ETL Foundation + Apple Notes Parser)
+Status: Research complete, requirements defined, roadmap created
 
 ## Performance Metrics
 
@@ -49,6 +48,14 @@ Last activity: 2026-03-01 — Milestone v1.1 started
 All architectural decisions locked in PROJECT.md / CLAUDE-v5.md (D-001..D-010 final).
 Full decision logs archived to `.planning/milestones/` for each milestone.
 
+### v1.1 Research Findings
+
+- 4 new runtime packages: gray-matter, xlsx (CDN tarball), papaparse, node-html-parser
+- Critical pitfalls: P22 (OOM), P23 (buffer overflow), P24 (FTS overhead), P25 (SQL injection in DedupEngine)
+- HTMLParser needs Worker compatibility verification (linkedom vs readability)
+- All parsing runs inside Web Worker; main thread receives only ImportResult
+- CanonicalCard/CanonicalConnection is the critical integration seam
+
 ### Known Technical Debt
 
 - `withStatement` pattern stubbed (throws) — needs Database.prepare()
@@ -66,5 +73,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: v1.1 milestone started, defining requirements
+Stopped at: v1.1 milestone fully defined — research, requirements, roadmap complete. Ready to plan Phase 8.
 Resume file: None
