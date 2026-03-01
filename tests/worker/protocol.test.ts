@@ -9,11 +9,13 @@ import {
   isSuccessResponse,
   isErrorResponse,
   DEFAULT_WORKER_CONFIG,
+  ETL_TIMEOUT,
   type WorkerRequestType,
   type WorkerRequest,
   type WorkerResponse,
   type WorkerPayloads,
   type WorkerResponses,
+  type SourceType,
 } from '../../src/worker/protocol';
 import {
   createRequest,
@@ -324,5 +326,100 @@ describe('Payload and Response type mapping', () => {
 
     // If this compiles, the types are correct
     expect(true).toBe(true);
+  });
+});
+
+describe('Worker Protocol - ETL Extensions', () => {
+  describe('ETL_TIMEOUT constant', () => {
+    it('should be 300 seconds (5 minutes)', () => {
+      expect(ETL_TIMEOUT).toBe(300_000);
+    });
+  });
+
+  describe('etl:import payload type', () => {
+    it('should accept valid import payload', () => {
+      const payload: WorkerPayloads['etl:import'] = {
+        source: 'apple_notes',
+        data: '{"files": []}',
+        options: {
+          isBulkImport: true,
+          filename: 'notes-export',
+        },
+      };
+
+      expect(payload.source).toBe('apple_notes');
+      expect(payload.data).toBeDefined();
+      expect(payload.options?.isBulkImport).toBe(true);
+    });
+
+    it('should accept all source types', () => {
+      const sources: SourceType[] = [
+        'apple_notes',
+        'markdown',
+        'excel',
+        'csv',
+        'json',
+        'html',
+      ];
+
+      sources.forEach(source => {
+        const payload: WorkerPayloads['etl:import'] = {
+          source,
+          data: '',
+        };
+        expect(payload.source).toBe(source);
+      });
+    });
+  });
+
+  describe('etl:export payload type', () => {
+    it('should accept valid export payload', () => {
+      const payload: WorkerPayloads['etl:export'] = {
+        format: 'markdown',
+        cardIds: ['card-1', 'card-2'],
+      };
+
+      expect(payload.format).toBe('markdown');
+      expect(payload.cardIds).toHaveLength(2);
+    });
+
+    it('should accept export without cardIds filter', () => {
+      const payload: WorkerPayloads['etl:export'] = {
+        format: 'json',
+      };
+
+      expect(payload.cardIds).toBeUndefined();
+    });
+  });
+
+  describe('etl:import response type', () => {
+    it('should match ImportResult shape', () => {
+      const response: WorkerResponses['etl:import'] = {
+        inserted: 100,
+        updated: 5,
+        unchanged: 10,
+        skipped: 2,
+        errors: 1,
+        connections_created: 50,
+        insertedIds: ['id-1', 'id-2'],
+        errors_detail: [{ index: 0, source_id: null, message: 'test error' }],
+      };
+
+      expect(response.inserted).toBe(100);
+      expect(response.insertedIds).toContain('id-1');
+      expect(response.errors_detail[0]?.message).toBe('test error');
+    });
+  });
+
+  describe('etl:export response type', () => {
+    it('should have data and filename', () => {
+      const response: WorkerResponses['etl:export'] = {
+        data: '# Exported content',
+        filename: 'isometry-export-2026-03-01.md',
+      };
+
+      expect(response.data).toContain('Exported');
+      expect(response.filename).toMatch(/\.md$/);
+    });
   });
 });
