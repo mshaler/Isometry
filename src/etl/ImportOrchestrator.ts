@@ -88,14 +88,24 @@ export class ImportOrchestrator {
     };
 
     // Step 6: Record in catalog
-    this.catalog.recordImportRun({
+    const record: {
+      source: SourceType;
+      sourceName: string;
+      filename?: string;
+      started_at: string;
+      completed_at: string;
+      result: ImportResult;
+    } = {
       source,
       sourceName: this.getSourceName(source, options?.filename),
-      filename: options?.filename,
       started_at: startTime,
       completed_at: new Date().toISOString(),
       result,
-    });
+    };
+    if (options?.filename !== undefined) {
+      record.filename = options.filename;
+    }
+    this.catalog.recordImportRun(record);
 
     return result;
   }
