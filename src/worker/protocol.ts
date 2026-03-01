@@ -19,6 +19,8 @@ import type {
   CardWithDepth,
 } from '../database/queries/types';
 
+import type { SourceType, ImportResult } from '../etl/types';
+
 // Re-export types that consumers of WorkerBridge will need
 export type {
   Card,
@@ -31,6 +33,9 @@ export type {
   SearchResult,
   CardWithDepth,
 };
+
+// Re-export ETL types for consumers
+export type { SourceType, ImportResult };
 
 // ---------------------------------------------------------------------------
 // Request Types
@@ -74,7 +79,10 @@ export type WorkerRequestType =
   // Generic exec (Phase 4 — MutationManager only)
   | 'db:exec'
   // Graph simulation (Phase 7 — VIEW-08)
-  | 'graph:simulate';
+  | 'graph:simulate'
+  // ETL Operations (Phase 8)
+  | 'etl:import'
+  | 'etl:export';
 
 // ---------------------------------------------------------------------------
 // Phase 7 — Force Simulation Types (VIEW-08)
@@ -170,6 +178,20 @@ export interface WorkerPayloads {
 
   // Graph simulation (Phase 7 — VIEW-08)
   'graph:simulate': SimulatePayload;
+
+  // ETL Operations (Phase 8)
+  'etl:import': {
+    source: SourceType;
+    data: string;              // File content or folder file list as JSON
+    options?: {
+      isBulkImport?: boolean;  // Enable FTS optimization for large imports
+      filename?: string;       // Source filename for catalog
+    };
+  };
+  'etl:export': {
+    format: 'markdown' | 'json' | 'csv';
+    cardIds?: string[];        // Optional filter (from SelectionProvider)
+  };
 }
 
 /**
@@ -206,6 +228,10 @@ export interface WorkerResponses {
 
   // Graph simulation (Phase 7 — VIEW-08)
   'graph:simulate': NodePosition[];
+
+  // ETL Operations (Phase 8)
+  'etl:import': ImportResult;
+  'etl:export': { data: string; filename: string };
 }
 
 // ---------------------------------------------------------------------------
@@ -455,3 +481,9 @@ export const DEFAULT_WORKER_CONFIG: Required<WorkerBridgeConfig> = {
   timeout: 30_000,
   debug: false,
 };
+
+/**
+ * Extended timeout for ETL operations.
+ * Large imports (5000+ notes) may take several minutes.
+ */
+export const ETL_TIMEOUT = 300_000;  // 300 seconds
