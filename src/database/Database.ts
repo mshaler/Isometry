@@ -1,4 +1,19 @@
-import initSqlJs, { type Database as SqlJsDatabase, type SqlJsStatic, type BindParams } from 'sql.js';
+import initSqlJs, {
+  type Database as SqlJsDatabase,
+  type SqlJsStatic,
+  type BindParams,
+  type Statement as SqlJsStatement,
+} from 'sql.js';
+
+/**
+ * Wrapped Statement interface for type-safe prepared statements.
+ * The generic T represents the expected row type when calling all().
+ */
+export interface Statement<T = unknown> {
+  run(...params: unknown[]): void;
+  all(...params: unknown[]): T[];
+  free(): void;
+}
 
 export class Database {
   private db: SqlJsDatabase | null = null;
@@ -99,6 +114,68 @@ export class Database {
   }
 
   /**
+   * Prepare a SQL statement for repeated execution with parameterized queries.
+   * CRITICAL: Always use prepare() with bound parameters (never string interpolation).
+   *
+   * @param sql SQL statement with placeholders (?, :name, @name, $name)
+   * @returns Wrapped Statement object with type-safe methods
+   */
+  prepare<T = unknown>(sql: string): Statement<T> {
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(sql);
+
+    return {
+      run: (...params: unknown[]) => {
+        stmt.run(params.length > 0 ? (params as BindParams) : undefined);
+      },
+      all: (...params: unknown[]): T[] => {
+        if (params.length > 0) {
+          stmt.bind(params as BindParams);
+        }
+        const results: T[] = [];
+        while (stmt.step()) {
+          results.push(stmt.getAsObject() as T);
+        }
+        stmt.reset();
+        return results;
+      },
+      free: () => {
+        stmt.free();
+      },
+    };
+  }
+
+  /**
+   * Execute a function within a transaction.
+   * Returns a wrapper function that executes fn inside BEGIN/COMMIT.
+   *
+   * Usage:
+   *   const insertBatch = db.transaction(() => {
+   *     for (const item of items) {
+   *       stmt.run(item);
+   *     }
+   *   });
+   *   insertBatch(); // Executes inside transaction
+   *
+   * @param fn Function to execute inside transaction
+   * @returns Wrapper function that executes fn inside transaction
+   */
+  transaction<T>(fn: () => T): () => T {
+    if (!this.db) throw new Error('Database not initialized');
+    return () => {
+      this.run('BEGIN');
+      try {
+        const result = fn();
+        this.run('COMMIT');
+        return result;
+      } catch (err) {
+        this.run('ROLLBACK');
+        throw err;
+      }
+    };
+  }
+
+  /**
    * Export the database as a binary Uint8Array.
    * Used by WorkerBridge for native shell persistence.
    *
@@ -118,3 +195,6 @@ export class Database {
     this.db = null;
   }
 }
+
+// Re-export sql.js types for use in ETL module
+export type { BindParams } from 'sql.js';
