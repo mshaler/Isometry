@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
 status: unknown
-last_updated: "2026-03-01T21:30:40.710Z"
+last_updated: "2026-03-01T21:40:29.806Z"
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 4
 ---
 
 # Project State
@@ -42,6 +42,8 @@ Status: Phase 8 planning complete — 5 plans created across 3 waves
 | Render p95 (100 cards) | — | — | <16ms |
 | Phase 08 P01 | 276 | 3 tasks | 7 files |
 | Phase 08 P02 | 419 | 3 tasks | 4 files |
+| Phase 08 P03 | 415 | 3 tasks | 6 files |
+| Phase 08 P04 | 451 | 5 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -53,6 +55,8 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 08]: Added stub handlers for ETL worker requests until Plan 08-02
 - [Phase 08]: 300-second timeout for ETL operations - large imports (5000+ notes) require extended processing time
 - [Phase 08]: Created src/etl/types.ts as blocking dependency (deviation from plan order to enable Wave 1 parallel execution)
+- [Phase 08]: DedupEngine uses single parameterized query to load all existing cards per source type (P25 SQL injection safe)
+- [Phase 08]: SQLiteWriter uses FTS5 rebuild command for external content tables instead of DELETE + INSERT
 
 ### v1.1 Research Findings
 
@@ -64,7 +68,6 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 
 ### Known Technical Debt
 
-- `withStatement` pattern stubbed (throws) — needs Database.prepare()
 - Schema loading uses conditional dynamic import (node:fs vs ?raw)
 - WKWebView WASM MIME type rejection spike exists; full solution (Swift WKURLSchemeHandler) deferred
 - D3 `.transition()` on SVG transform crashes jsdom — direct `.attr()` workaround
@@ -79,17 +82,17 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 08-01-PLAN.md
-Resume file: .planning/phases/08-etl-foundation-apple-notes/08-02-PLAN.md
+Stopped at: Completed 08-03-PLAN.md
+Resume file: .planning/phases/08-etl-foundation-apple-notes/08-05-PLAN.md
 
 ## Phase 8 Plans Summary
 
 | Plan | Wave | Name | Requirements | Status |
 |------|------|------|--------------|--------|
 | 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | complete |
-| 08-02 | 1 | Worker Protocol Extensions | ETL-03 | pending |
-| 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | pending |
-| 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | pending |
+| 08-02 | 1 | Worker Protocol Extensions | ETL-03 | complete |
+| 08-03 | 2 | DedupEngine + SQLiteWriter | ETL-10, ETL-11 | complete |
+| 08-04 | 2 | AppleNotesParser + CatalogWriter | ETL-04, ETL-13 | complete |
 | 08-05 | 3 | ImportOrchestrator + Worker Handler | ETL-12, ETL-18 | pending |
 
 Wave 1 plans (08-01, 08-02) can execute in parallel.

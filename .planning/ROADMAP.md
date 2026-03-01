@@ -92,7 +92,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 
 **Plans:**
 
-| Plan | Wave | Name | Reqs | Depends On |
+4/5 plans executed
 |------|------|------|------|------------|
 | 08-01 | 1 | ETL Types + Schema Extension | ETL-01, ETL-02 | — |
 | 08-02 | 1 | Worker Protocol Extensions | ETL-03 | — |
@@ -187,7 +187,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details.
 | 5. Core D3 Views + Transitions | v0.5 | 4/4 | Complete | 2026-02-28 |
 | 6. Time + Visual Views | v0.5 | 3/3 | Complete | 2026-02-28 |
 | 7. Graph Views + SuperGrid | v1.0 | 4/4 | Complete | 2026-03-01 |
-| 8. ETL Foundation + Apple Notes Parser | v1.1 | 0/? | Planned | - |
+| 8. ETL Foundation + Apple Notes Parser | 4/5 | In Progress|  | - |
 | 9. Remaining Parsers + Export Pipeline | v1.1 | 0/? | Planned | - |
 | 10. Progress Reporting + Polish | v1.1 | 0/? | Planned | - |
 
