@@ -41,6 +41,9 @@ import {
   handleDbExec,
 } from './handlers/ui-state.handler';
 
+// Import Phase 7 simulation handler
+import { handleGraphSimulate } from './handlers/simulate.handler';
+
 // ---------------------------------------------------------------------------
 // Worker State
 // ---------------------------------------------------------------------------
@@ -286,6 +289,14 @@ function routeRequest(
     case 'db:exec': {
       const p = payload as WorkerPayloads['db:exec'];
       return handleDbExec(db, p);
+    }
+
+    // -------------------------------------------------------------------------
+    // Graph Simulation (Phase 7 — VIEW-08)
+    // -------------------------------------------------------------------------
+    case 'graph:simulate': {
+      const p = payload as WorkerPayloads['graph:simulate'];
+      return handleGraphSimulate(p);
     }
 
     // -------------------------------------------------------------------------
