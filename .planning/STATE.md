@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: ETL Importers
 status: unknown
-last_updated: "2026-03-01T21:40:29.806Z"
+last_updated: "2026-03-01T21:41:34.000Z"
 progress:
   total_phases: 1
   completed_phases: 0
@@ -55,6 +55,9 @@ Full decision logs archived to `.planning/milestones/` for each milestone.
 - [Phase 08]: Added stub handlers for ETL worker requests until Plan 08-02
 - [Phase 08]: 300-second timeout for ETL operations - large imports (5000+ notes) require extended processing time
 - [Phase 08]: Created src/etl/types.ts as blocking dependency (deviation from plan order to enable Wave 1 parallel execution)
+- [Phase 08]: gray-matter chosen for YAML frontmatter parsing (de facto standard with built-in TypeScript definitions)
+- [Phase 08]: Two-pass regex approach for @mentions (capitalized two-word names first, then single-word fallback)
+- [Phase 08]: CatalogWriter upserts sources by (source_type, name) to enable multiple sources per type
 - [Phase 08]: DedupEngine uses single parameterized query to load all existing cards per source type (P25 SQL injection safe)
 - [Phase 08]: SQLiteWriter uses FTS5 rebuild command for external content tables instead of DELETE + INSERT
 
@@ -82,7 +85,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-01
-Stopped at: Completed 08-03-PLAN.md
+Stopped at: Completed 08-04-PLAN.md
 Resume file: .planning/phases/08-etl-foundation-apple-notes/08-05-PLAN.md
 
 ## Phase 8 Plans Summary
