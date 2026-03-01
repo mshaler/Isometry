@@ -64,9 +64,10 @@ See: `.planning/milestones/v0.5-ROADMAP.md` for full details.
   3. Every pending promise times out and rejects after a configurable duration — silent Worker errors never hang the main thread indefinitely
   4. Message router dispatches correctly to query, mutate, graph, fts, and export handlers using existing v0.1 query modules without modification
   5. `isReady` promise resolves before any public bridge method executes — callers cannot race against initialization
-**Plans**: 2/2 complete
-- Plan 01: Enable Worker Bridge Integration Tests (Wave 1) — completed 2026-02-28
-- Plan 02: Verify WKBR Requirements + Mark Phase Complete (Wave 2) — completed 2026-02-28
+**Plans**: 3 plans (2 complete + 1 gap closure)
+- [x] Plan 01: Enable Worker Bridge Integration Tests (Wave 1) — completed 2026-02-28
+- [x] Plan 02: Verify WKBR Requirements + Mark Phase Complete (Wave 2) — completed 2026-02-28
+- [ ] Plan 03: Queue Replay Test — Gap Closure (Wave 1) — closes BRIDGE-03 verification gap
 
 ### Phase 7: Graph Views + SuperGrid
 **Goal**: Users can explore connection data through Network and Tree graph views (with off-main-thread force simulation) and project any dataset through SuperGrid's nested dimensional headers — the signature PAFV differentiator is fully operational
